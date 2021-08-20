@@ -142,7 +142,7 @@ namespace AST{
     class OFlush : public Statment{
     };
 
-    class oread : public Statment{
+    class ORead : public Statment{
     };
     
     class Return : public Statment{
