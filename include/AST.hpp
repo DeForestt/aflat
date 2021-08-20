@@ -9,7 +9,18 @@ namespace AST{
         virtual std::string toString();
     };
 
+    class Ident{
+        public:
+        std::string ident;
+    };
+
+
     class Statment{
+        public:
+        virtual std::string toString();
+    };
+
+    class Member{
         public:
         virtual std::string toString();
     };
@@ -30,6 +41,12 @@ namespace AST{
         Char
     };
 
+    class Arg{
+        public:
+        virtual std::string toString();
+    };
+
+
     class Program{
         public:
         ProgramMember members;
@@ -46,10 +63,7 @@ namespace AST{
         Class Class2;
     };
 
-    class Member{
-        public:
-        virtual std::string toString();
-    };
+
 
     class Function : public Member{
         public:
@@ -59,10 +73,6 @@ namespace AST{
         Statment statment;
     };
 
-    class Arg{
-        public:
-        virtual std::string toString();
-    };
 
     class Declare : public Arg, public Statment{
         public:
@@ -70,15 +80,17 @@ namespace AST{
     };
 
 
-    class Ident{
-        public:
-        std::string ident;
-    };
 
     class Expr{
         public:
         virtual std::string toString();
     };
+
+    class ParenExpr : public Expr{
+        public:
+        Expr expr;
+    };
+
 
     class If : public Statment{
         public:
@@ -134,11 +146,6 @@ namespace AST{
     };
     
     class Return : public Statment{
-        public:
-        Expr expr;
-    };
-
-    class ParenExpr : public Expr{
         public:
         Expr expr;
     };
