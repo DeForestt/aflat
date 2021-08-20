@@ -1,0 +1,76 @@
+<Program> ::= <Class>+
+
+<Class> ::= "class" <Ident> "{" <Members> "}"
+
+<Members> 
+	::= <Function>
+    | <Declare>
+    | <Members> ";" <Members>
+
+<Function> ::= <Type> <Ident> "(" <Args> ")" <Statment>
+
+<Args> 
+   ::= <Declare>
+   | <Args> "," <Args>
+
+<Type> 
+	::= "int"
+   | "float"
+   | "string"
+   | "char"
+
+
+<Ident> 
+	::= <AChar> <Char>+
+
+<Statment>
+	::= "if" <Paren_Expr> <Statment>
+   | "if" <Paren_Expr> <Statment> "else" <Statment>
+   | <Declare>
+   | <Declare> "=" <Expr>
+   | <Ident> "=" <Expr>
+   | "while" <Paren_Expr> <Statment>
+   | "for" "(" <Declare> ";" <Expr> ";" <Statment> ")" <Statment>
+   | "{" <Sequence> "}"
+   | "iflush"
+   | "oflush"
+   | "oread"
+   | "return" <Expr>
+
+<Sequence>
+	::= <Statment> ";" <Statment>
+   | <Sequence> ";" <Sequence>
+
+<Declare> ::= <Type> <Ident>
+
+<Paren_Expr> ::= "(" <Expr> ")"
+
+<Expr>
+	::= <String>
+   | <Int>
+   | <Ident>
+   | <Expr> <Op> <Expr>
+
+<Op>
+   ::= "+"
+   | "-"
+   | "*"
+   | "/"
+   | "=="
+   | "!="
+
+<String> ::= "\"" <Wchar>+ "\""
+
+<Int> ::= <NChar>+
+
+<WChar> 
+   ::= <Char>
+   | " "
+<Char> 
+   ::= <NChar>
+   | <AChar>
+<NChar> ::= [0-9]
+
+<AChar>
+   ::= [a-z]
+   | [A-z]
