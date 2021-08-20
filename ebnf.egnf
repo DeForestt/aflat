@@ -39,7 +39,6 @@
 
 <Sequence>
 	::= <Statment> ";" <Statment>
-   | <Sequence> ";" <Sequence>
 
 <Declare> ::= <Type> <Ident>
 

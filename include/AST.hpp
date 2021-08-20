@@ -28,7 +28,7 @@ namespace AST{
     class Class : public ProgramMember{
         public:
         std::string Ident;
-        Member members
+        Member members;
     };
 
 
@@ -106,7 +106,61 @@ namespace AST{
     };
 
     class Sequence : public Statment{
-        
-    }
+        public:
+        Statment Statment1;
+        Statment Statment2;
+    };
+
+    class Iflush : public Statment{
+    };
+
+    class OFlush : public Statment{
+    };
+
+    class oread : public Statment{
+    };
+    
+    class Return : public Statment{
+        public:
+        Expr expr;
+    };
+
+    class Expr{
+        public:
+        virtual std::string toString();
+    };
+
+    class ParenExpr : public Expr{
+        public:
+        Expr expr;
+    };
+
+    class StringLiteral : public Expr{
+        public:
+        std::string val;
+    };
+
+    class IntLiteral : public Expr{
+        public:
+        int val;
+    };
+
+    class Compound : public Expr{
+        public:
+        Expr expr1;
+        Op op;
+        Expr expr2;
+    };
+
+    enum Op{
+        Plus,
+        Minus,
+        Mul,
+        Div,
+        Equ,
+        NotEqu
+    };
+
 }
+
 #endif
