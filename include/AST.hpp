@@ -132,8 +132,8 @@ namespace AST{
 
     class Sequence : public Statment{
         public:
-        Statment Statment1;
-        Statment Statment2;
+        Statment * Statment1;
+        Statment * Statment2;
     };
 
     class Iflush : public Statment{
