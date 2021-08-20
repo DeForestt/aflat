@@ -6,7 +6,7 @@
 namespace AST{
     class ProgramMember{
         public:
-        virtual std::string toString();
+        virtual std::string toString(){};
     };
 
     class Ident{
@@ -17,12 +17,12 @@ namespace AST{
 
     class Statment{
         public:
-        virtual std::string toString();
+        virtual std::string toString(){};
     };
 
     class Member{
         public:
-        virtual std::string toString();
+        virtual std::string toString(){};
     };
 
     enum Op{
@@ -43,7 +43,7 @@ namespace AST{
 
     class Arg{
         public:
-        virtual std::string toString();
+        virtual std::string toString(){};
     };
 
 
@@ -76,14 +76,14 @@ namespace AST{
 
     class Declare : public Arg, public Statment{
         public:
-        std::string toString();
+        std::string toString(){};
     };
 
 
 
     class Expr{
         public:
-        virtual std::string toString();
+        virtual std::string toString(){};
     };
 
     class ParenExpr : public Expr{

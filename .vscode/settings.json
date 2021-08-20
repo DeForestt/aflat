@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "new": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "xstring": "cpp"
     }
 }
