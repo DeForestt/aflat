@@ -1,5 +1,5 @@
 CXX       := g++
-CXX_FLAGS := -std=c++17 -ggdb
+CXX_FLAGS := -std=c++17 -ggdb -g
 
 BIN     := bin
 SRC     := src
@@ -20,3 +20,5 @@ $(BIN)/$(EXECUTABLE): $(SRC)/*.cpp
 
 clean:
 	-rm $(BIN)/*
+
+debug: gdb ./$(BIN)/$(EXECUTABLE)
