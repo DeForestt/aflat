@@ -4,7 +4,11 @@
 #include <string>
 
 namespace AST{
-
+    class ProgramMember{
+        public:
+        virtual std::string toString();
+    };
+    
     class Program{
         public:
         ProgramMember members;
