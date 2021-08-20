@@ -8,6 +8,8 @@ INCLUDE := include
 LIBRARIES   :=
 EXECUTABLE  := main
 
+GDB := gdb
+
 
 all: $(BIN)/$(EXECUTABLE)
 
@@ -21,4 +23,4 @@ $(BIN)/$(EXECUTABLE): $(SRC)/*.cpp
 clean:
 	-rm $(BIN)/*
 
-debug: gdb ./$(BIN)/$(EXECUTABLE)
+debug: $(GDB) ./$(BIN)/$(EXECUTABLE)
