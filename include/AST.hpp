@@ -8,15 +8,37 @@ namespace AST{
         public:
         virtual std::string toString();
     };
+
+    class Statment{
+        public:
+        virtual std::string toString();
+    };
+
+    enum Op{
+        Plus,
+        Minus,
+        Mul,
+        Div,
+        Equ,
+        NotEqu
+    };
     
+    enum Type{
+        Int,
+        Float,
+        String,
+        Char
+    };
+
     class Program{
         public:
         ProgramMember members;
     };
 
-    class ProgramMember{
+    class Class : public ProgramMember{
         public:
-        virtual std::string toString();
+        std::string Ident;
+        Member members;
     };
 
     class ClassList : public ProgramMember{
@@ -28,13 +50,6 @@ namespace AST{
         public:
         virtual std::string toString();
     };
-
-    class Class : public ProgramMember{
-        public:
-        std::string Ident;
-        Member members;
-    };
-
 
     class Function : public Member{
         public:
@@ -54,19 +69,13 @@ namespace AST{
         std::string toString();
     };
 
-    enum Type{
-        Int,
-        Float,
-        String,
-        Char
-    };
 
     class Ident{
         public:
         std::string ident;
     };
 
-    class Statment{
+    class Expr{
         public:
         virtual std::string toString();
     };
@@ -129,11 +138,6 @@ namespace AST{
         Expr expr;
     };
 
-    class Expr{
-        public:
-        virtual std::string toString();
-    };
-
     class ParenExpr : public Expr{
         public:
         Expr expr;
@@ -154,15 +158,6 @@ namespace AST{
         Expr expr1;
         Op op;
         Expr expr2;
-    };
-
-    enum Op{
-        Plus,
-        Minus,
-        Mul,
-        Div,
-        Equ,
-        NotEqu
     };
 
 }
