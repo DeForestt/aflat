@@ -17,7 +17,7 @@ int main()
     }
     tokens.invert();
     parse::Parser parser;
-    std::string output = parser.parseStmt(tokens)->toString();
-    std::cout << output << std::endl;
+    //std::string output = parser.parseStmt(tokens)->toString();
+    //std::cout << output << std::endl;
     return 0;
 }
