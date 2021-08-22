@@ -38,7 +38,8 @@ namespace AST{
         Int,
         Float,
         String,
-        Char
+        Char,
+        Byte
     };
 
     class Arg{
@@ -78,6 +79,7 @@ namespace AST{
         public:
         std::string toString();
         std::string Ident;
+        Type type;
     };
 
 

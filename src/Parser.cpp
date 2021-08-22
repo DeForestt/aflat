@@ -13,7 +13,8 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                 lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
                 tokens.pop();
-                dec->Ident = obj.meta; 
+                dec->Ident = obj.meta;
+                dec->type = AST::Byte; 
                 output = dec;
             }
             else{

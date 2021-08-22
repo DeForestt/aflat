@@ -7,5 +7,11 @@ std::string AST::Sequence::toString(){
 }
 
 std::string AST::Declare::toString(){
-    return "[Declare " + this->Ident + " ]"; 
+    std::string type = "Unknown type";
+    switch (this->type){
+        case AST::Byte :
+            type = "Byte";
+            break;
+    }
+    return "[Declare " + type + " " + this->Ident + " ]"; 
 };
