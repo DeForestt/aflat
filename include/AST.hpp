@@ -155,6 +155,11 @@ namespace AST{
         std::string val;
     };
 
+    class ByteLiteral : public Expr{
+        public:
+        std::byte val;
+    };
+
     class IntLiteral : public Expr{
         public:
         int val;

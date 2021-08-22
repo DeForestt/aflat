@@ -47,6 +47,7 @@
 <Expr>
 	::= <String>
    | <Int>
+   | <Byte>
    | <Ident>
    | <Expr> <Op> <Expr>
 
