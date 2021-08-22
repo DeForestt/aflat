@@ -76,7 +76,7 @@ namespace AST{
 
     class Declare : public Arg, public Statment{
         public:
-        std::string toString(){};
+        std::string toString(){return {"un-implimented stmt"}; };
         std::string Ident;
     };
 
