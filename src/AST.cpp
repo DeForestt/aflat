@@ -7,5 +7,5 @@ std::string AST::Sequence::toString(){
 }
 
 std::string AST::Declare::toString(){
-    return "Declare" + this->Ident; 
+    return "[Declare " + this->Ident + " ]"; 
 };
