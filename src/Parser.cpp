@@ -6,10 +6,19 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
     if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
         tokens.pop();
-        if(obj.meta == "oread"){
-            AST::ORead * oread = new AST::ORead;
-            //print->expr = this->parseExpr(tokens);
-            output = oread;
+        //Declare a byte;
+        if(obj.meta == "byte"){
+            AST::Declare * dec = new AST::Declare();
+            //ensures the the current token is an Ident
+            if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+                lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+                tokens.pop();
+                dec->Ident = obj.meta; 
+                output = dec;
+            }
+            else(){
+                throw tokens.pop();
+            }
         }
     }
     if (tokens.head == nullptr){
