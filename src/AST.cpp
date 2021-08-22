@@ -12,6 +12,12 @@ std::string AST::Declare::toString(){
         case AST::Byte :
             type = "Byte";
             break;
+        case AST::String :
+            type = "String";
+            break;
+        case AST::Int :
+            type = "Int";
+            break;
     }
-    return "[Declare " + type + " " + this->Ident + " ]"; 
+    return "[Declare " + type + ": " + this->Ident + " ]"; 
 };

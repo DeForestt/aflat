@@ -20,6 +20,32 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             else{
                 throw tokens.pop();
             }
+        } else if(obj.meta == "int"){ // Declare an int
+            AST::Declare * dec = new AST::Declare();
+            //ensures the the current token is an Ident
+            if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+                lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+                tokens.pop();
+                dec->Ident = obj.meta;
+                dec->type = AST::Int; 
+                output = dec;
+            }
+            else{
+                throw tokens.pop();
+            }
+        }else if(obj.meta == "string"){ // Declare a string
+            AST::Declare * dec = new AST::Declare();
+            //ensures the the current token is an Ident
+            if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+                lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+                tokens.pop();
+                dec->Ident = obj.meta;
+                dec->type = AST::Int; 
+                output = dec;
+            }
+            else{
+                throw tokens.pop();
+            }
         }
     }
     if (tokens.head == nullptr){
