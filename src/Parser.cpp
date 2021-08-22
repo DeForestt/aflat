@@ -27,7 +27,9 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                         if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                             sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
                             if (sym.Sym == ')'){
-                                func->statment = this->parseStmt(tokens);
+                                if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                                    func->statment = this->parseStmt(tokens);
+                                }
                             }
                         }
                     }
