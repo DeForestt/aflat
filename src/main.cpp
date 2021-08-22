@@ -10,7 +10,7 @@ int main()
     lex::Lexer scanner;
     links::LinkedList<lex::Token* > tokens;
     try{
-    tokens = scanner.Scan("byte i;");
+    tokens = scanner.Scan("byte imp;");
     }catch (int x){
         std::cout << "unparsable Char at index " + x;
         return 0;
