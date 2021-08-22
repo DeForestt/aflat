@@ -135,6 +135,7 @@ namespace AST{
         public:
         Statment * Statment1;
         Statment * Statment2;
+        std::string toString();
     };
 
     class Iflush : public Statment{
