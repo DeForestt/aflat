@@ -16,7 +16,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 dec->Ident = obj.meta; 
                 output = dec;
             }
-            else(){
+            else{
                 throw tokens.pop();
             }
         }
