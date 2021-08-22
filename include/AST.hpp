@@ -71,7 +71,8 @@ namespace AST{
         Type type;
         Ident ident;
         Arg arg;
-        Statment statment;
+        Statment * statment;
+        std::string toString();
     };
 
 
