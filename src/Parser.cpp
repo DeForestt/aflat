@@ -31,6 +31,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                                     sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
                                     if (sym.Sym == '{'){
                                         func->statment = this->parseStmt(tokens);
+                                        output = func;
                                     }
                                 }
                             }

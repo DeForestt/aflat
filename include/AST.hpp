@@ -66,7 +66,7 @@ namespace AST{
 
 
 
-    class Function : public Member{
+    class Function : public Member, public Statment{
         public:
         Type type;
         Ident ident;
