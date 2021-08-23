@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
     lex::Lexer scanner;
     links::LinkedList<lex::Token* > tokens;
 
-    std::ifstream ifs("myfile.txt");
+    std::ifstream ifs(argv[0]);
     std::string content( (std::istreambuf_iterator<char>(ifs) ),
                        (std::istreambuf_iterator<char>()    ) );
 
