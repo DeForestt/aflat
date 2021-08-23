@@ -5,12 +5,17 @@
 #include "LinkedList.hpp"
 #include "Parser.hpp"
 
-int main()
+int main(int argc, char *argv[])
 {
     lex::Lexer scanner;
     links::LinkedList<lex::Token* > tokens;
+
+    std::ifstream ifs("myfile.txt");
+    std::string content( (std::istreambuf_iterator<char>(ifs) ),
+                       (std::istreambuf_iterator<char>()    ) );
+
     try{
-    tokens = scanner.Scan("byte function(){byte imp; int blip;};");
+        tokens = scanner.Scan(content);
     }catch (int x){
         std::cout << "unparsable Char at index " + x;
         return 0;
