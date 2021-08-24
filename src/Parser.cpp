@@ -19,8 +19,9 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 
                 //Checking for Perenth to see if it is a function
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-                    lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
+                    lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
                     if (sym.Sym == '('){
+                        tokens.pop();
                         AST::Function * func = new AST::Function();
                         func->ident.ident = dec->Ident;
                         func->type = dec->type;
