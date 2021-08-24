@@ -46,6 +46,12 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 throw tokens.pop();
             }
         }
+        else if (obj.meta == "cwrite")
+        {
+            AST::CWrite * cwrite = new AST::CWrite();
+            cwrite->expr = this->parseExpr(tokens);
+        }
+        
     }
     
     if (tokens.head == nullptr){ 

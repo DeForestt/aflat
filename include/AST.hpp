@@ -144,9 +144,10 @@ namespace AST{
     class Iflush : public Statment{
     };
 
-    class cwrite : public Statment{
+    class CWrite : public Statment{
         public:
-        Expr expr;
+        Expr * expr;
+        std::string toString();
     };
 
     class ORead : public Statment{
@@ -154,7 +155,7 @@ namespace AST{
     
     class Return : public Statment{
         public:
-        Expr expr;
+        Expr * expr;
     };
 
     class StringLiteral : public Expr{
@@ -174,9 +175,9 @@ namespace AST{
 
     class Compound : public Expr{
         public:
-        Expr expr1;
+        Expr * expr1;
         Op op;
-        Expr expr2;
+        Expr * expr2;
     };
 
 }
