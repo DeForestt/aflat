@@ -48,7 +48,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
         }
     }
     
-    if (tokens.head == nullptr){
+    if (tokens.head == nullptr){ 
         this->Output = *output;
         return output;
     } else if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr & tokens.head->next != nullptr)
