@@ -93,8 +93,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             this->Output = *output;
             return output;
         }
-    } else{
-        if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr & tokens.head->next == nullptr){
+    } else{ if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr & tokens.head->next == nullptr){
             lex::OpSym obj = *dynamic_cast<lex::OpSym *>(tokens.peek());
             tokens.pop();
             if(obj.Sym == '}'){
@@ -103,7 +102,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             }else if (obj.Sym == ';')
             {
                 this->Output = *output;
-                return output;
+                return nullptr;
             }
             
         }
