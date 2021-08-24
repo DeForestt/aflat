@@ -98,11 +98,11 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             tokens.pop();
             if(obj.Sym == '}'){
                 this->Output = *output;
-                return output;
+                return nullptr;
             }else if (obj.Sym == ';')
             {
                 this->Output = *output;
-                return nullptr;
+                return output;
             }
             
         }
