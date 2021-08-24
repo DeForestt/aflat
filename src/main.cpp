@@ -22,8 +22,9 @@ int main(int argc, char *argv[])
     }
     tokens.invert();
     parse::Parser parser;
-    AST::Statment Prog = *parser.parseStmt(tokens);
-    std::string output = Prog.toString();
+
+    AST::Statment * Prog = parser.parseStmt(tokens);
+    std::string output = Prog->toString();
     std::cout << output << std::endl;
     return 0;
 }
