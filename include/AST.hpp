@@ -17,7 +17,7 @@ namespace AST{
 
     class Statment{
         public:
-        virtual std::string toString(){return "unimpimented statment";};
+        virtual std::string toString();
     };
 
     class Member{
