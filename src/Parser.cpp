@@ -50,6 +50,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
         {
             AST::CWrite * cwrite = new AST::CWrite();
             cwrite->expr = this->parseExpr(tokens);
+            output = cwrite;
         }
         
     }
