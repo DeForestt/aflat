@@ -7,92 +7,16 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
         tokens.pop();
         //Declare a byte;
-        if(obj.meta == "byte"){
+        if(obj.meta == "byte" | obj.meta == "int" | obj.meta == "string"){
             AST::Declare * dec = new AST::Declare();
             //ensures the the current token is an Ident
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                 lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
                 tokens.pop();
                 dec->Ident = obj.meta;
-                dec->type = AST::Byte; 
+                if(obj.meta == "byte") dec->type = AST::Byte; else if (obj.meta == "int") dec->type = AST::Int; else if (obj.meta == "string")dec->type = AST::String;
                 output = dec;
                 
-                //Checking for Perenth to see if it is a function
-                if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-                    lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                    if (sym.Sym == '('){
-                        tokens.pop();
-                        AST::Function * func = new AST::Function();
-                        func->ident.ident = dec->Ident;
-                        func->type = dec->type;
-                        if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-                            sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                            if (sym.Sym == ')'){
-                                tokens.pop();
-                                if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-                                    sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                                    if (sym.Sym == '{'){
-                                        tokens.pop();
-                                        func->statment = this->parseStmt(tokens);
-                                        output = func;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            else{
-                throw tokens.pop();
-            }
-        } else if(obj.meta == "int"){ // Declare an int
-            AST::Declare * dec = new AST::Declare();
-            //ensures the the current token is an Ident
-            if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
-                lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
-                tokens.pop();
-                dec->Ident = obj.meta;
-                dec->type = AST::Int; 
-                output = dec;
-
-                //Checking for Perenth to see if it is a function
-                if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-                    lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                    if (sym.Sym == '('){
-                        tokens.pop();
-                        AST::Function * func = new AST::Function();
-                        func->ident.ident = dec->Ident;
-                        func->type = dec->type;
-                        if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-                            sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                            if (sym.Sym == ')'){
-                                tokens.pop();
-                                if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-                                    sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                                    if (sym.Sym == '{'){
-                                        tokens.pop();
-                                        func->statment = this->parseStmt(tokens);
-                                        output = func;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            else{
-                throw tokens.pop();
-            }
-        }else if(obj.meta == "string"){ // Declare a string
-            AST::Declare * dec = new AST::Declare();
-            //ensures the the current token is an Ident
-            if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
-                lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
-                tokens.pop();
-                dec->Ident = obj.meta;
-                dec->type = AST::String; 
-                output = dec;
-
                 //Checking for Perenth to see if it is a function
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                     lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -199,13 +123,13 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
 // }
 
 
-// AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
-//     if (dynamic_cast<lex::StringObj *>(tokens.peek()) != nullptr){
-//         lex::StringObj stringObj = *dynamic_cast<lex::StringObj *>(tokens.peek());
-//         tokens.pop();
-//         AST::StringLiteral * slit = new AST::StringLiteral();
-//         slit->value = stringObj.value;
-//         return slit;
-//     }
-//     return nullptr;
-// }
+AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
+    if (dynamic_cast<lex::StringObj *>(tokens.peek()) != nullptr){
+        lex::StringObj stringObj = *dynamic_cast<lex::StringObj *>(tokens.peek());
+        tokens.pop();
+        AST::StringLiteral * slit = new AST::StringLiteral();
+        slit->val = stringObj.value;
+        return slit;
+    }
+    return nullptr;
+}

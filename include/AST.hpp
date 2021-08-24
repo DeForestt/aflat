@@ -144,7 +144,9 @@ namespace AST{
     class Iflush : public Statment{
     };
 
-    class OFlush : public Statment{
+    class cwrite : public Statment{
+        public:
+        Expr expr;
     };
 
     class ORead : public Statment{

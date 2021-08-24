@@ -12,8 +12,11 @@ namespace parse{
         public:
         AST::Statment Output;
         AST::Statment* parseStmt(links::LinkedList<lex::Token *> &tokens);
+        
+        
+        private:
+        AST::Expr* parseExpr(links::LinkedList<lex::Token *> &tokens);
         AST::Statment* parseArgs(links::LinkedList<lex::Token *> &tokens);
-        AST::Statment* parseExpr(links::LinkedList<lex::Token *> &tokens);
     };
 };
 
