@@ -7,11 +7,23 @@ std::string AST::Sequence::toString(){
 
     if (this->Statment1 != nullptr)
     {
-        output += this->Statment1->toString();
+        try
+        {
+            output += this->Statment1->toString();
+        }
+        catch(const std::exception& e)
+        { }
     }
     output += "\n";
     if (this->Statment2 != nullptr){
-        output += this->Statment2->toString();
+        try
+        {
+            output += this->Statment2->toString();
+        }
+        catch(const std::exception& e)
+        { 
+            output += "caught it";
+        }
     }
     return output;
 }
