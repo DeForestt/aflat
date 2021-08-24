@@ -26,11 +26,13 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                         func->ident.ident = dec->Ident;
                         func->type = dec->type;
                         if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-                            sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
+                            sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
                             if (sym.Sym == ')'){
+                                tokens.pop();
                                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-                                    sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
+                                    sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
                                     if (sym.Sym == '{'){
+                                        tokens.pop();
                                         func->statment = this->parseStmt(tokens);
                                         output = func;
                                     }
