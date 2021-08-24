@@ -1,7 +1,9 @@
 #include <AST.hpp>
 #include <string>
 
-std::string AST::Statment::toString(){return "unimpimented statment";}
+std::string AST::Statment::toString(){
+    return "unimpimented statment";
+}
 
 std::string AST::Sequence::toString(){
 

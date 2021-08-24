@@ -54,6 +54,31 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 dec->Ident = obj.meta;
                 dec->type = AST::Int; 
                 output = dec;
+
+                //Checking for Perenth to see if it is a function
+                if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                    lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                    if (sym.Sym == '('){
+                        tokens.pop();
+                        AST::Function * func = new AST::Function();
+                        func->ident.ident = dec->Ident;
+                        func->type = dec->type;
+                        if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                            sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                            if (sym.Sym == ')'){
+                                tokens.pop();
+                                if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                                    sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                                    if (sym.Sym == '{'){
+                                        tokens.pop();
+                                        func->statment = this->parseStmt(tokens);
+                                        output = func;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             else{
                 throw tokens.pop();
@@ -67,6 +92,31 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 dec->Ident = obj.meta;
                 dec->type = AST::String; 
                 output = dec;
+
+                //Checking for Perenth to see if it is a function
+                if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                    lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                    if (sym.Sym == '('){
+                        tokens.pop();
+                        AST::Function * func = new AST::Function();
+                        func->ident.ident = dec->Ident;
+                        func->type = dec->type;
+                        if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                            sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                            if (sym.Sym == ')'){
+                                tokens.pop();
+                                if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                                    sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                                    if (sym.Sym == '{'){
+                                        tokens.pop();
+                                        func->statment = this->parseStmt(tokens);
+                                        output = func;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             else{
                 throw tokens.pop();
