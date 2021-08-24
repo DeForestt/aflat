@@ -2,7 +2,17 @@
 #include <string>
 
 std::string AST::Sequence::toString(){
-    std::string output = this->Statment1->toString() + "\n" + this->Statment2->toString();
+
+    std::string output = "";
+
+    if (this->Statment1 != nullptr)
+    {
+        output += this->Statment1->toString();
+    }
+    output += "\n";
+    if (this->Statment2 != nullptr){
+        output += this->Statment2->toString();
+    }
     return output;
 }
 
