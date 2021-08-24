@@ -57,7 +57,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
         tokens.pop();
 
         if(obj.Sym == ';'){
-        AST::Sequence * s = new AST::Sequence;
+        AST::Sequence * s = new AST::Sequence; 
         s->Statment1 = output;
         s->Statment2 = this->parseStmt(tokens);
         this->Output = *s;
