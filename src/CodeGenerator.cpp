@@ -62,6 +62,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::Mov mov;
         mov.from = "$0x0";
         mov.to = "-0x" + std::to_string(Symbol.byteMod) + "(rdp)";
+    }else{
+        OutputFile.text.push(ASMC::Instruction());
     }
     
 
