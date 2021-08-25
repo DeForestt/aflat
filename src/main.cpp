@@ -26,12 +26,12 @@ int main(int argc, char *argv[])
     parse::Parser parser;
 
     AST::Statment * Prog = parser.parseStmt(tokens);
-    std::string output = Prog->toString();
-    std::cout << output << std::endl;
+    //std::string output = Prog->toString();
+    //std::cout << output << std::endl;
     
     gen::CodeGenerator genny;
     links::LinkedList<ASMC::Instruction *> text = genny.GenSTMT(Prog).text;
-    std::cout << "\n\n---------------------------- \n\n";
+    //std::cout << "\n\n---------------------------- \n\n";
     text.invert();
     while(text.count > 0){
         std::cout << text.pop()->toString();

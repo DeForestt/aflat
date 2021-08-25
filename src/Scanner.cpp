@@ -6,7 +6,7 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                 int i = 0;
                 while (i < input.length())
                 {
-                    if (std::isalpha(input[i]))
+                    if (std::isalpha(input[i]) || input[i] == '_')
                     {
                        lex::LObj * l_obj = new LObj();
                         l_obj->meta = "";
