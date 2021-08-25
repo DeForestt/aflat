@@ -86,10 +86,16 @@ T links::LinkedList<T>::peek(){
 template<typename T>
 void links::LinkedList<T>::stitch(LinkedList<T> l){
     links::Node<T> * pointer = head;
-    while (pointer->next != nullptr){
-        pointer = pointer->next;
+    if (pointer == nullptr){
+        head = l.head;
     }
-    pointer->next = l.head;
+    else
+    {
+        while (pointer->next != nullptr){
+            pointer = pointer->next;
+        }
+        pointer->next = l.head;
+    }
 }
 
 #endif
