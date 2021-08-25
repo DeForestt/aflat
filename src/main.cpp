@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     std::cout << text.count;
     text.invert();
     std::cout << text.count;
-    while(text.head != nullptr){
+    while(text.count > 0){
         std::cout << text.pop()->toString();
     }
 
