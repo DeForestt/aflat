@@ -6,11 +6,11 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                 int i = 0;
                 while (i < input.length())
                 {
-                    if (std::isalpha(input[i]) | input[i] == '_')
+                    if (std::isalpha(input[i]) || input[i] == '_')
                     {
                        lex::LObj * l_obj = new LObj();
                         l_obj->meta = "";
-                        while(std::isalpha(input[i])){
+                        while(std::isalpha(input[i]) || std::isdigit(input[i]) || input[i] == '_' || input[i] == '-'){
                             l_obj->meta += input[i];
                             i++;
                         }
