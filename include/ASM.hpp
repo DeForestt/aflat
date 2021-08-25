@@ -41,7 +41,7 @@ namespace ASMC{
         public:
         std::string op1;
         std::string op2;
-        std::string toString();
+        virtual std::string toString();
     };
 
     class Push : public Instruction{
