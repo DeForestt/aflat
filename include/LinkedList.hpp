@@ -19,6 +19,8 @@ namespace links{
     template<typename T>
     class LinkedList{
         public:
+            int count;
+
             Node<T> * head;
             LinkedList();
 
@@ -43,11 +45,13 @@ namespace links{
 
 template <typename T>
 links::LinkedList<T>::LinkedList(){
+    this->count = 0;
     head = nullptr;
 }
 
 template <typename T>
 void links::LinkedList<T>::push(T value){
+    this->count += 1;
     Node<T>* push = new Node<T>();
     push->next = this->head;
     push->data = value;
@@ -71,6 +75,7 @@ void links::LinkedList<T>::invert(){
 
 template <typename T>
 T links::LinkedList<T>::pop(){
+    this->count -= 1;
     T data = this->head->data;
     Node<T>* poper = this->head;
     this->head = this->head->next;
@@ -86,6 +91,7 @@ T links::LinkedList<T>::peek(){
 template<typename T>
 void links::LinkedList<T>::stitch(LinkedList<T> l){
     links::Node<T> * pointer = head;
+    this->count += l.count;
     if(l.head==nullptr){
         return;
     }
