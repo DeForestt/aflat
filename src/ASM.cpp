@@ -29,6 +29,6 @@ std::string ASMC::Pop::toString(){
 }
 
 void ASMC::File::operator<<(ASMC::File file){
-    this->data.stitch(file.data);
+    //this->data.stitch(file.data);
     this->text.stitch(file.text);
 }
