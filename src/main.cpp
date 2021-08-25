@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
     
     gen::CodeGenerator genny;
     links::LinkedList<ASMC::Instruction *> text = genny.GenSTMT(Prog).text;
+    std::cout << text.count;
     text.invert();
 
     while(text.head != nullptr){
