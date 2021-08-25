@@ -4,6 +4,8 @@
 #include "Scanner.hpp"
 #include "LinkedList.hpp"
 #include "Parser.hpp"
+#include "CodeGenerator.hpp"
+#include "ASM.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -26,5 +28,14 @@ int main(int argc, char *argv[])
     AST::Statment * Prog = parser.parseStmt(tokens);
     std::string output = Prog->toString();
     std::cout << output << std::endl;
+    
+    gen::CodeGenerator genny;
+    links::LinkedList<ASMC::Instruction> text = genny.GenSTMT(Prog).text;
+    text.invert();
+
+    while(text.head != nullptr){
+        std::cout << text.head->data.toString();
+    }
+
     return 0;
 }
