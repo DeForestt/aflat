@@ -92,7 +92,6 @@ template<typename T>
 void links::LinkedList<T>::stitch(LinkedList<T> l){
     links::Node<T> * pointer = head;
     this->count += l.count;
-    
     if (pointer == nullptr){
         pointer = l.head;
     }
