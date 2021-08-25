@@ -28,7 +28,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text.push(lable);
         OutputFile.text.push(push);
         OutputFile.text.push(mov);
-        OutputFile << this->GenSTMT(func->statment);
+        ASMC::File file = this->GenSTMT(func->statment);
+        OutputFile << file;
         delete(func);
     }else if (dynamic_cast<AST::Declare *>(STMT) != nullptr)
     {
