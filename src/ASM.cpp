@@ -1,21 +1,30 @@
 #include "ASM.hpp"
 
 std::string ASMC::Instruction::toString(){
-    return("noop");
-}
-
-std::string ASMC::ExIn::toString(){
-    std::string output = this->mnumonic + "\t" + this->operand1;
-    if (this->operand2 != ""){
-        output += ", " + this->operand2;
-    }
-    return output;
+    return("\tnoop");
 }
 
 std::string ASMC::Lable::toString(){
-    return this->lable + ":"
+    return this->lable + ":";
 }
 
-std::string ASMC::SectionHeader::toString(){
-    return this-> "." + this->section;
-}g
+std::string ASMC::LinkTask::toString(){
+    return  this->command + "\t" + this->operand;
+}
+
+std::string ASMC::Call::toString(){
+    return "\tcall\t" + this->function;
+}
+
+std::string ASMC::Mov::toString(){
+    return "\tmov\t" + this->from + ", " + this->to;
+}
+
+std::string ASMC::Pop::toString(){
+    return "\tpop\t" + this->op;
+}
+
+void ASMC::File::operator<<(ASMC::File file){
+    this->data.stitch(file.data);
+    this->text.stitch(file.text);
+}

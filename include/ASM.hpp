@@ -2,6 +2,7 @@
 #define ASM
 
 #include <string>
+#include "LinkedList.hpp"
 
 namespace ASMC{
 
@@ -16,18 +17,60 @@ namespace ASMC{
         std::string toString();
     };
 
-    class SectionHeader : public Instruction{
+    class LinkTask : public Instruction{
         public:
-        std::string section;
+        std::string command;
+        std::string operand;
         std::string toString();
     };
 
-    class ExIn : public Instruction{
+    class Mov : public Instruction{
         public:
-        std::string mnumonic;
-        std::string operand1;
-        std::string operand2;
+        std::string to;
+        std::string from;
         std::string toString();
+    };
+
+    class Call : public Instruction{
+        public:
+        std::string function;
+        std::string toString();
+    };
+
+    class XOR : public Instruction{
+        public:
+        std::string op1;
+        std::string op2;
+        std::string toString();
+    };
+
+    class Push : public Instruction{
+        public:
+        std::string op;
+        std::string toString();
+    };
+
+    class Pop : public Instruction{
+        public:
+        std::string op;
+        std::string toString();
+    };
+
+    class SysCall : public Instruction{
+        public:
+        std::string toString();
+    };
+
+    class Return : public Instruction{
+        public:
+        std::string toString();
+    };
+
+    class File{
+        public:
+        links::LinkedList<Instruction> text;
+        links::LinkedList<Instruction> data;
+        void operator<<(ASMC::File file);
     };
 
 }

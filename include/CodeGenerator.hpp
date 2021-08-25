@@ -1,15 +1,23 @@
 #ifndef GEN
-#define Gen
+#define GEN
 
 #include "AST.hpp"
 #include "LinkedList.hpp"
 #include "ASM.hpp"
 
 
-namespace Gen{
-    class CodeGenerator{
+namespace gen{
+    class Symbol{
         public:
-        links::LinkedList<ASM::Instruction> Generate();
+        std::string symbol;
+        int byteMod;
+    };
+    class CodeGenerator{
+        private:
+        links::LinkedList<Symbol> SymbolTable;
+        
+        public:
+        ASMC::File GenSTMT(AST::Statment * stmt);
     };
 }
 
