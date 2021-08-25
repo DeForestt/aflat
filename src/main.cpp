@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     links::LinkedList<ASMC::Instruction *> text = genny.GenSTMT(Prog).text;
     std::cout << text.count;
     text.invert();
-
+    std::cout << text.count;
     while(text.head != nullptr){
         std::cout << text.pop()->toString();
     }
