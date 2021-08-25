@@ -30,11 +30,11 @@ int main(int argc, char *argv[])
     std::cout << output << std::endl;
     
     gen::CodeGenerator genny;
-    links::LinkedList<ASMC::Instruction> text = genny.GenSTMT(Prog).text;
+    links::LinkedList<ASMC::Instruction *> text = genny.GenSTMT(Prog).text;
     text.invert();
 
     while(text.head != nullptr){
-        std::cout << text.pop().toString();
+        std::cout << text.pop()->toString();
     }
 
     return 0;

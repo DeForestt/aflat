@@ -68,8 +68,8 @@ namespace ASMC{
 
     class File{
         public:
-        links::LinkedList<Instruction> text;
-        links::LinkedList<Instruction> data;
+        links::LinkedList<Instruction * > text;
+        links::LinkedList<Instruction * > data;
         void operator<<(ASMC::File file);
     };
 
