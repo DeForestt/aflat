@@ -32,6 +32,9 @@ namespace links{
 
             /*Sattatches the head of another linked list to the tail of this one*/
             void stitch(links::LinkedList<T> l);
+            
+            /*stitches the head of this linked list to the tail of another one and sets the head of the other as the new head*/
+            void istitch(links::LinkedList<T> l);
 
             /*Pop removes the top eleent for the list
             Behaves likle a stack*/ 
@@ -101,6 +104,23 @@ void links::LinkedList<T>::stitch(LinkedList<T> l){
             pointer = pointer->next;
         }
         pointer->next = l.head;
+    }
+}
+
+template<typename T>
+void links::LinkedList<T>::istitch(LinkedList<T> l){
+    links::Node<T> * pointer = l.head;
+    this->count += l.count;
+    if (pointer == nullptr){
+        this->head = l.head;
+    }
+    else
+    {
+        while (pointer->next != nullptr){
+            pointer = pointer->next;
+        }
+        pointer->next = head;
+        this->head = l.head;
     }
 }
 
