@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
     try{
         tokens = scanner.Scan(content);
     }catch (int x){
-        std::cout << "unparsable Char at index  " + x;
+        std::cout << "unparsable Char at index " + x;
         return 0;
     }
     tokens.invert();
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     text.invert();
 
     while(text.head != nullptr){
-        std::cout << text.head->data.toString();
+        std::cout << text.pop().toString();
     }
 
     return 0;
