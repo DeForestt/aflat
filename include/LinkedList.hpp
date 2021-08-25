@@ -87,7 +87,7 @@ template<typename T>
 void links::LinkedList<T>::stitch(LinkedList<T> l){
     links::Node<T> * pointer = head;
     if (pointer == nullptr){
-        head = l.head;
+        pointer = l.head;
     }
     else
     {

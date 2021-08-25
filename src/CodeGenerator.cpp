@@ -6,8 +6,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
     if(dynamic_cast<AST::Sequence *>(STMT) != nullptr){
         AST::Sequence * sequence = dynamic_cast<AST::Sequence *>(STMT);
-        ASMC::File file1 = this->GenSTMT(sequence->Statment1);
-        OutputFile << file1;
+        OutputFile << this->GenSTMT(sequence->Statment1);
         ASMC::File file2 =  this->GenSTMT(sequence->Statment2);
         OutputFile << file2;
 
@@ -65,6 +64,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::Mov mov;
         mov.from = "$0x0";
         mov.to = "-0x" + std::to_string(Symbol.byteMod) + "(rdp)";
+        OutputFile.text.push(mov);
     }else{
         OutputFile.text.push(ASMC::Instruction());
     }
