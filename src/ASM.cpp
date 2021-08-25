@@ -1,7 +1,7 @@
 #include "ASM.hpp"
 
 std::string ASMC::Instruction::toString(){
-    return("\tnoop\n");
+    return("");
 }
 
 std::string ASMC::Lable::toString(){
