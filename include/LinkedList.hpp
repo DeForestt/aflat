@@ -96,7 +96,7 @@ void links::LinkedList<T>::stitch(LinkedList<T> l){
         return;
     }
     if (pointer == nullptr){
-        this = l;
+        pointer = l.head;
     }
     else
     {
