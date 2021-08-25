@@ -19,7 +19,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         */
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
         ASMC::Lable * lable = new ASMC::Lable;
-        lable->lable == func->ident.ident;
+        lable->lable = func->ident.ident;
         ASMC::Push * push = new ASMC::Push();
         push->op = "%rbp";
         ASMC::Mov * mov = new ASMC::Mov();
@@ -64,6 +64,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         mov->from = "$0x0";
         mov->to = "-0x" + std::to_string(Symbol.byteMod) + "(rdp)";
         OutputFile.text.push(mov);
+
     }else{
         OutputFile.text.push(new ASMC::Instruction());
     }
