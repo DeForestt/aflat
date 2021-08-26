@@ -121,7 +121,7 @@ AST::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
         tokens.pop();
         if(obj.meta == "int"){
-            AST::Declare * declare = new AST::Declare;
+            AST::Argument * declare = new AST::Argument();
             declare->type = AST::Int;
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                 lex::LObj l = *dynamic_cast<lex::LObj *>(tokens.pop());

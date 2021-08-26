@@ -83,6 +83,12 @@ namespace AST{
         Type type;
     };
 
+    class Argument : public Arg, public Statment{
+        public:
+        std::string Ident;
+        Type type;
+    };
+
 
 
     class Expr{

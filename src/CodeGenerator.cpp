@@ -45,6 +45,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         mov->from =  "%rsp";
         mov->to = "%rbp";
         OutputFile.text.push(lable);
+        OutputFile << this->GenSTMT(func->args);
         OutputFile.text.push(push);
         OutputFile.text.push(mov);
         ASMC::LinkTask * link = new ASMC::LinkTask();
@@ -150,8 +151,44 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         mov->from = this->GenExpr(assign->expr);
         mov->to = "-0x" + std::to_string(symbol->byteMod) + "(%rbp)";
         OutputFile.text.push(mov);
+    }else if (dynamic_cast<AST::Argument *>(STMT) != nullptr)
+    {
+                /*
+            movl $0x0, -[SymbolT + size](rdp)
+            **also needs to be added to symbol table**
+        */
+        AST::Argument * arg =  dynamic_cast<AST::Argument *>(STMT);
+        int offset = 0;
+        switch(arg->type){
+            case AST::Int:
+                offset = 4;
+                break;
+            case AST::Byte:
+                offset = 1;
+                break;
+            case AST::String:
+                offset = 4;
+                break;
+        }
+
+        if(this->SymbolTable.search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined veriable:" + arg->Ident);
+
+        gen::Symbol symbol;
+        if (this->SymbolTable.head == nullptr){
+            symbol.byteMod = offset;
+        }else{
+            symbol.byteMod = this->SymbolTable.head->data.byteMod + offset;
+        }
+        symbol.symbol = arg->Ident;
+        this->SymbolTable.push(symbol);
+
+        ASMC::Pop *pop = new ASMC::Pop();
+
+        pop->op = "-0x" + std::to_string(symbol.byteMod) + "(%rbp)";
+        OutputFile.text.push(pop);
     }
-     else{
+    
+    else{
         OutputFile.text.push(new ASMC::Instruction());
     }
     
