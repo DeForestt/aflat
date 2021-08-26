@@ -199,6 +199,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         ASMC::Call * calls = new ASMC::Call;
         calls->function = call->ident;
+        OutputFile.text.push(calls);
     }
     
     else{
