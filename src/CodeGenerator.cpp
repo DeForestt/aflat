@@ -186,6 +186,19 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         pop->op = "-0x" + std::to_string(symbol.byteMod) + "(%rbp)";
         OutputFile.text.push(pop);
+    }else if (dynamic_cast<AST::Call *>(STMT) != nullptr)
+    {
+        AST::Call * call = dynamic_cast<AST::Call *>(STMT);
+
+        while (call->Args.count > 0)
+        {
+            ASMC::Push * push = new ASMC::Push();
+            push->op = this->GenExpr(call->Args.pop());
+            OutputFile.text.push(push);
+        }
+
+        ASMC::Call * calls = new ASMC::Call;
+        calls->function = call->ident;
     }
     
     else{
