@@ -63,7 +63,7 @@ void links::LinkedList<T>::clear(){
             
             Node<T> nhead = this->head->next;
             delete(this->head);
-            this-head = nhead;
+            this->head = nhead;
         }
         this->head = nullptr;
         this->count = 0;
