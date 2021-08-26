@@ -71,6 +71,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                     AST::Assign * assign = new AST::Assign();
                     assign->Ident = obj.meta;
                     assign->expr = this->parseExpr(tokens);
+                    output = assign;
                 } else throw err::Exception("expected expression after token");
             }else throw err::Exception("expected Asignment oporator after " + obj.meta);
         }
