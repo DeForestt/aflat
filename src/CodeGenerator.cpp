@@ -106,6 +106,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 break;
         }
 
+        if(this->SymbolTable.search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
+
         gen::Symbol Symbol;
         if (this->SymbolTable.head == nullptr){
             Symbol.byteMod = offset;
