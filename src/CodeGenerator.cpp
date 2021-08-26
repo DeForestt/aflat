@@ -1,5 +1,16 @@
 #include "CodeGenerator.hpp"
 
+std::string gen::CodeGenerator::GenExpr(AST::Expr * expr){
+    std::string output = "";
+    if(dynamic_cast<AST::IntLiteral *>(expr)){
+        AST::IntLiteral * intlit = dynamic_cast<AST::IntLiteral *>(expr);
+        output = '$' + std::to_string(intlit->val);
+    }else{
+        throw ("cannot gen statment");
+    }
+    return output;
+};
+
 ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
     ASMC::File OutputFile;
@@ -79,10 +90,16 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             pop rbp
             ret
         */
+
         AST::Return * ret = new AST::Return();
+        ASMC::Mov * mov = new ASMC::Mov();
+        mov->from = this->GenExpr(ret->expr);
+        mov->to = "%rax";
+        
         ASMC::Pop * pop = new ASMC::Pop();
         pop->op = "%rbp";
         ASMC::Return * re = new ASMC::Return();
+        OutputFile.text.push(mov);
         OutputFile.text.push(pop);
         OutputFile.text.push(re);
     }

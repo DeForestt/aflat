@@ -92,7 +92,7 @@ namespace AST{
 
     class ParenExpr : public Expr{
         public:
-        Expr expr;
+        Expr * expr;
     };
 
 
@@ -112,13 +112,13 @@ namespace AST{
     class DecAssign : public Statment{
         public:
         Declare declare;
-        Expr expr;
+        Expr * expr;
     };
 
     class Assign : public Statment{
         public:
         std::string Ident;
-        Expr expr;
+        Expr * expr;
     };
 
     class While : public Statment{
@@ -129,7 +129,7 @@ namespace AST{
     class For : public Statment{
         public:
         Declare declare;
-        Expr expr;
+        Expr * expr;
         Statment ReRun;
         Statment Run;
     };
