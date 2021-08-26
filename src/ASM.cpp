@@ -28,6 +28,10 @@ std::string ASMC::Pop::toString(){
     return "\tpop\t" + this->op + "\n";
 }
 
+std::string ASMC::Return::toString(){
+    return "\tret\n";
+}
+
 void ASMC::File::operator<<(ASMC::File file){
     //this->data.stitch(file.data);
     this->text.istitch(file.text);
