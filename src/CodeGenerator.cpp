@@ -109,7 +109,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         this->SymbolTable.push(Symbol);
 
         ASMC::Movq * mov = new ASMC::Movq();
-        mov->from = "$0x0";
+        mov->from = this->GenExpr(decAssign->expr);
         mov->to = "-0x" + std::to_string(Symbol.byteMod) + "(%rbp)";
         OutputFile.text.push(mov);
 
