@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
         std::cout << file.linker.pop()->toString();
     }
 
-    std::cout << ".text";
+    std::cout << "\n\n.text\n\n";
 
     std::cout << "_start: \n\tcall main\n\tret\n\n";
 
