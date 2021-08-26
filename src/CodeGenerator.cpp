@@ -108,18 +108,18 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         if(this->SymbolTable.search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
 
-        gen::Symbol Symbol;
+        gen::Symbol symbol;
         if (this->SymbolTable.head == nullptr){
-            Symbol.byteMod = offset;
+            symbol.byteMod = offset;
         }else{
-            Symbol.byteMod = this->SymbolTable.head->data.byteMod + offset;
+            symbol.byteMod = this->SymbolTable.head->data.byteMod + offset;
         }
-        Symbol.symbol = dec->Ident;
-        this->SymbolTable.push(Symbol);
+        symbol.symbol = dec->Ident;
+        this->SymbolTable.push(symbol);
 
         ASMC::Movq * mov = new ASMC::Movq();
         mov->from = this->GenExpr(decAssign->expr);
-        mov->to = "-0x" + std::to_string(Symbol.byteMod) + "(%rbp)";
+        mov->to = "-0x" + std::to_string(symbol.byteMod) + "(%rbp)";
         OutputFile.text.push(mov);
 
     }else if (dynamic_cast<AST::Return *>(STMT) != nullptr)
@@ -141,6 +141,15 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text.push(mov);
         OutputFile.text.push(pop);
         OutputFile.text.push(re);
+    }else if (dynamic_cast<AST::Assign *>(STMT) != nullptr)
+    {
+        AST::Assign * assign = dynamic_cast<AST::Assign *>(STMT);
+        Symbol * symbol = this->SymbolTable.search<std::string>(searchSymbol, assign->Ident);
+        if(symbol == nullptr) throw err::Exception("unknown name: " + assign->Ident);
+        ASMC::Movq * mov = new ASMC::Movq();
+        mov->from = this->GenExpr(assign->expr);
+        mov->to = "-0x" + std::to_string(symbol->byteMod) + "(%rbp)";
+        OutputFile.text.push(mov);
     }
      else{
         OutputFile.text.push(new ASMC::Instruction());
