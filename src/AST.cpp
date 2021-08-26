@@ -64,6 +64,10 @@ std::string AST::Function::toString(){
     return "[function " + type + ": " + this->ident.ident + " { \n " + this->statment->toString() +  " \n}]";
 }
 
+std::string AST::Return::toString(){
+    return "[return]\n";
+}
+
 std::string AST::CWrite::toString(){
     return "CWrite";
 }

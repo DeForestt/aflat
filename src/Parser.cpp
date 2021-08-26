@@ -46,11 +46,11 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 throw tokens.pop();
             }
         }
-        else if (obj.meta == "cwrite")
+        else if (obj.meta == "return")
         {
-            AST::CWrite * cwrite = new AST::CWrite();
-            cwrite->expr = this->parseExpr(tokens);
-            output = cwrite;
+            AST::Return * ret = new AST::Return;
+            ret->expr = this->parseExpr(tokens);
+            output = ret;
         }
         
     }
@@ -137,6 +137,12 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
         AST::StringLiteral * slit = new AST::StringLiteral();
         slit->val = stringObj.value;
         return slit;
+    }
+    if(dynamic_cast<lex::INT *>(tokens.peek())!=nullptr){
+        lex::INT intObj = *dynamic_cast<lex::INT *>(tokens.pop());
+        AST::IntLiteral * ilit = new AST::IntLiteral();
+        ilit->val = std::stoi(intObj.value);
+        return ilit;
     }
     return nullptr;
 }

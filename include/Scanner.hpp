@@ -35,6 +35,11 @@ namespace lex{
         char Sym;
     };
 
+    class INT: public Token{
+        public:
+        string value;
+    };
+
     /*This will take apart the string and breake it down into "Words"
     that the parser will be able to understand*/
     class Lexer{

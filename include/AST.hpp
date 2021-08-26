@@ -156,6 +156,7 @@ namespace AST{
     class Return : public Statment{
         public:
         Expr * expr;
+        std::string toString();
     };
 
     class StringLiteral : public Expr{

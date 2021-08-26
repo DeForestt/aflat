@@ -66,10 +66,19 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         ASMC::Mov * mov = new ASMC::Mov();
         mov->from = "$0x0";
-        mov->to = "-0x" + std::to_string(Symbol.byteMod) + "(rdp)";
+        mov->to = "-0x" + std::to_string(Symbol.byteMod) + "(%rdp)";
         OutputFile.text.push(mov);
 
-    }else{
+    }else if (dynamic_cast<AST::Return *>(STMT) != nullptr)
+    {
+        AST::Return * ret = new AST::Return();
+        ASMC::Pop * pop = new ASMC::Pop();
+        pop->op = "%rdp";
+        ASMC::Return * re = new ASMC::Return();
+        OutputFile.text.push(pop);
+        OutputFile.text.push(re);
+    }
+     else{
         OutputFile.text.push(new ASMC::Instruction());
     }
     
