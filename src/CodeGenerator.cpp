@@ -44,18 +44,20 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::Mov * mov = new ASMC::Mov();
         mov->from =  "%rsp";
         mov->to = "%rbp";
+        ASMC::Mov * movp = new ASMC::Mov();
+        movp->from = "%rbp";
+        movp->to = "%rbx";
         OutputFile.text.push(lable);
+        OutputFile.text.push(movp);
         OutputFile << this->GenSTMT(func->args);
         OutputFile.text.push(push);
         OutputFile.text.push(mov);
         ASMC::LinkTask * link = new ASMC::LinkTask();
         link->command = "global";
         link->operand = func->ident.ident;
-        ASMC::Mov * movp = new ASMC::Mov();
-        movp->from = "%rbp";
-        movp->to = "%rbx";
+
         OutputFile.linker.push(link);
-        OutputFile.text.push(movp);
+
         ASMC::File file = this->GenSTMT(func->statment);
         OutputFile << file;
         delete(func);
