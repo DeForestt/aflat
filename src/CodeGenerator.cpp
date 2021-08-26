@@ -22,7 +22,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         lable->lable = func->ident.ident;
         ASMC::Push * push = new ASMC::Push();
         push->op = "%rbp";
-        ASMC::Movq * mov = new ASMC::Movq();
+        ASMC::Mov * mov = new ASMC::Mov();
         mov->from =  "%rsp";
         mov->to = "%rbp";
         OutputFile.text.push(lable);
@@ -64,7 +64,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         Symbol.symbol = dec->Ident;
         this->SymbolTable.push(Symbol);
 
-        ASMC::Mov * mov = new ASMC::Mov();
+        ASMC::Movq * mov = new ASMC::Movq();
         mov->from = "$0x0";
         mov->to = "-0x" + std::to_string(Symbol.byteMod) + "(%rbp)";
         OutputFile.text.push(mov);
