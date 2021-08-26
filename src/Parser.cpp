@@ -17,14 +17,16 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 if(obj.meta == "byte") dec->type = AST::Byte; else if (obj.meta == "int") dec->type = AST::Int; else if (obj.meta == "string")dec->type = AST::String;
                 output = dec;
                 
-                //Checking for Perenth to see if it is a function
+                
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                     lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                    //Checking for Perenth to see if it is a function
                     if (sym.Sym == '('){
                         tokens.pop();
                         AST::Function * func = new AST::Function();
                         func->ident.ident = dec->Ident;
                         func->type = dec->type;
+                        
                         if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                             sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
                             if (sym.Sym == ')'){
@@ -35,12 +37,22 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                                         tokens.pop();
                                         func->statment = this->parseStmt(tokens);
                                         output = func;
+                                        delete(dec);
                                     }
                                 }
                             }
                         }
+                    }else if (sym.Sym == '=')
+                    {
+                        tokens.pop();
+                        AST::DecAssign * assign = new AST::DecAssign;
+                        assign->declare = dec;
+                        assign->expr = this->parseExpr(tokens);
+                        output = assign;
                     }
+                    
                 }
+                
             }
             else{
                 throw tokens.pop();
@@ -52,7 +64,6 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             ret->expr = this->parseExpr(tokens);
             output = ret;
         }
-        
     }
     
     if (tokens.head == nullptr){ 

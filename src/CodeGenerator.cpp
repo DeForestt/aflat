@@ -83,6 +83,36 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         mov->to = "-0x" + std::to_string(Symbol.byteMod) + "(%rbp)";
         OutputFile.text.push(mov);
 
+    }else if (dynamic_cast<AST::DecAssign *>(STMT) != nullptr)
+    {
+        /*
+            movl $0x0, -[SymbolT + size](rdp)
+            **also needs to be added to symbol table**
+        */
+        AST::DecAssign * decAssign =  dynamic_cast<AST::DecAssign *>(STMT);
+        AST::Declare * dec = decAssign->declare;
+        int offset = 0;
+        switch(dec->type){
+            case AST::Int:
+                offset = 4;
+                break;
+            case AST::Byte:
+                offset = 1;
+                break;
+            case AST::String:
+                offset = 4;
+                break;
+        }
+
+        gen::Symbol Symbol;
+        if (this->SymbolTable.head == nullptr){
+            Symbol.byteMod = offset;
+        }else{
+            Symbol.byteMod = this->SymbolTable.head->data.byteMod + offset;
+        }
+        Symbol.symbol = dec->Ident;
+        this->SymbolTable.push(Symbol);
+
     }else if (dynamic_cast<AST::Return *>(STMT) != nullptr)
     {
         /*

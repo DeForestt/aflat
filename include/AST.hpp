@@ -111,7 +111,7 @@ namespace AST{
 
     class DecAssign : public Statment{
         public:
-        Declare declare;
+        Declare * declare;
         Expr * expr;
     };
 
