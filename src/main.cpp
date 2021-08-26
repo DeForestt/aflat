@@ -26,8 +26,6 @@ int main(int argc, char *argv[])
     parse::Parser parser;
 
     AST::Statment * Prog = parser.parseStmt(tokens);
-    //std::string output = Prog->toString();
-    //std::cout << output << std::endl;
     
     gen::CodeGenerator genny;
     ASMC::File file = genny.GenSTMT(Prog);
