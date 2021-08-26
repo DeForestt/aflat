@@ -74,7 +74,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 break;
         }
 
-        if(this->SymbolTable.search<std::string>(searchSymbol, dec->Ident)) throw err::Exception("redefined " + dec->Ident);
+        if(this->SymbolTable.search<std::string>(searchSymbol, dec->Ident)) throw err::Exception("redefined veriable:" + dec->Ident);
 
         gen::Symbol Symbol;
         if (this->SymbolTable.head == nullptr){
