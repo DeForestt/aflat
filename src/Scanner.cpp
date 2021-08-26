@@ -73,6 +73,12 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         tokens.push(cPrenth);
                         i++;
                     }
+                    else if(input[i] == '='){
+                        lex::OpSym* equ = new OpSym;
+                        equ->Sym = input[i];
+                        tokens.push(equ);
+                        i++;
+                    }
                     else{
                         throw i;
                     }
