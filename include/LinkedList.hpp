@@ -61,7 +61,7 @@ void links::LinkedList<T>::clear(){
         while (this->head->next != nullptr)
         {
             
-            Node<T> nhead = this->head->next;
+            Node<T> * nhead = this->head->next;
             delete(this->head);
             this->head = nhead;
         }
