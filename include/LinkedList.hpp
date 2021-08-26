@@ -58,14 +58,7 @@ links::LinkedList<T>::LinkedList(){
 template <typename T>
 void links::LinkedList<T>::clear(){
     if (this->count > 0){
-        while (this->head->next != nullptr)
-        {
-            
-            Node<T> * nhead = this->head->next;
-            delete(this->head);
-            this->head = nhead;
-        }
-        this->head = nullptr;
+        s->head = nullptr;
         this->count = 0;
     }
     

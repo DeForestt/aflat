@@ -31,7 +31,6 @@ int main(int argc, char *argv[])
     
     gen::CodeGenerator genny;
     ASMC::File file = genny.GenSTMT(Prog);
-    //std::cout << "\n\n---------------------------- \n\n";
     file.text.invert();
 
     std::cout << ".global _start\n";
