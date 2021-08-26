@@ -60,8 +60,10 @@ void links::LinkedList<T>::clear(){
     if (this->count > 0){
         while (this->head->next != nullptr)
         {
+            
+            Node<T> nhead = this->head->next;
             delete(this->head);
-            this->head = this->next;
+            this-head = nhead;
         }
         this->head = nullptr;
         this->count = 0;
