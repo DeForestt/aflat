@@ -6,9 +6,11 @@
 #include "Parser.hpp"
 #include "CodeGenerator.hpp"
 #include "ASM.hpp"
+#include "Exceptions.hpp"
 
 int main(int argc, char *argv[])
 {
+    try{
     lex::Lexer scanner;
     links::LinkedList<lex::Token* > tokens;
 
@@ -45,6 +47,9 @@ int main(int argc, char *argv[])
     while(file.text.count > 0){
         std::cout << file.text.pop()->toString();
     }
-
+    }
+    catch(err::Exception e){
+        std::cout << std::endl << "Exception: " << e.errorMsg << std::endl << std::endl;
+    }
     return 0;
 }

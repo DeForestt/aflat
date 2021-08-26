@@ -1,4 +1,5 @@
 #include "CodeGenerator.hpp"
+#include "Exceptions.hpp"
 
 std::string gen::CodeGenerator::GenExpr(AST::Expr * expr){
     std::string output = "";
@@ -68,6 +69,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 offset = 4;
                 break;
         }
+
+        if(this->SymbolTable.search<std::string>(searchSymbol, dec->Ident)) throw err::Exception("redefined " + dec->Ident);
 
         gen::Symbol Symbol;
         if (this->SymbolTable.head == nullptr){
@@ -139,4 +142,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
     
 
     return OutputFile;
+}
+
+bool searchSymbol(gen::Symbol sym, std::string str){
+    if (sym.symbol == str) return true; else return false;
 }
