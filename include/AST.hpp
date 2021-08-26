@@ -70,7 +70,7 @@ namespace AST{
         public:
         Type type;
         Ident ident;
-        Arg arg;
+        Statment * args;
         Statment * statment;
         std::string toString();
     };
@@ -132,6 +132,12 @@ namespace AST{
         Expr * expr;
         Statment ReRun;
         Statment Run;
+    };
+
+    class Call : public Statment{
+        public:
+        std::string ident;
+        Statment * Args;
     };
 
     class Sequence : public Statment{

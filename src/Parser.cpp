@@ -27,20 +27,14 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                         AST::Function * func = new AST::Function();
                         func->ident.ident = dec->Ident;
                         func->type = dec->type;
-                        
+                        func->args = this->parseArgs(tokens);
                         if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                             sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                            if (sym.Sym == ')'){
+                            if (sym.Sym == '{'){
                                 tokens.pop();
-                                if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-                                    sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                                    if (sym.Sym == '{'){
-                                        tokens.pop();
-                                        func->statment = this->parseStmt(tokens);
-                                        output = func;
-                                        delete(dec);
-                                    }
-                                }
+                                func->statment = this->parseStmt(tokens);
+                                output = func;
+                                delete(dec);
                             }
                         }
                     }else if (sym.Sym == '=')
@@ -72,7 +66,14 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                     assign->Ident = obj.meta;
                     assign->expr = this->parseExpr(tokens);
                     output = assign;
-                } else throw err::Exception("expected expression after token");
+                }else if (sym->Sym == '(')
+                {
+                    AST::Call * call = new AST::Call();
+                    call->ident = obj.meta;
+                    call->Args = this->parseArgs(tokens);
+                    output = call;
+                }
+                 else throw err::Exception("expected assignment oporator");
             }else throw err::Exception("expected Asignment oporator after " + obj.meta);
         }
         
@@ -114,43 +115,42 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
     return output;
 }
 
-// AST::Stmt* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens){
-//     AST::Stmt* output = new AST::Stmt;
-//     if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
-//         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
-//         tokens.pop();
-//         if(obj.meta == "int"){
-//             AST::Declare * declare = new AST::Declare;
-//             declare->dataType = AST::Int;
-//             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
-//                 lex::LObj l = *dynamic_cast<lex::LObj *>(tokens.pop());
-//                 declare->symbol = l.meta;
-//                 declare->dataType = AST::Int;
-//                 output = declare;
-//             }
-            
-//         }
-//     }
+AST::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens){
+    AST::Statment* output = new AST::Statment();
+    if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+        lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+        tokens.pop();
+        if(obj.meta == "int"){
+            AST::Declare * declare = new AST::Declare;
+            declare->type = AST::Int;
+            if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+                lex::LObj l = *dynamic_cast<lex::LObj *>(tokens.pop());
+                declare->Ident = l.meta;
+                declare->type = AST::Int;
+                output = declare;
+            }
+        }
+    }
 
-//     if (tokens.head == nullptr){
-//         throw "Bad Move";
-//     } else if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr & tokens.head->next != nullptr)
-//     {
-//         lex::OpSym obj = *dynamic_cast<lex::OpSym *>(tokens.peek());
-//         tokens.pop();
+    if (tokens.head == nullptr){
+        throw err::Exception("unterminated functioncall");
+    } else if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr & tokens.head->next != nullptr)
+    {
+        lex::OpSym obj = *dynamic_cast<lex::OpSym *>(tokens.peek());
+        tokens.pop();
 
-//         if(obj.Sym == ','){
-//         AST::Sequence * s = new AST::Sequence;
-//         s->stmt1 = output;
-//         s->stmt2 = this->parseStmt(tokens);
-//         return s;
-//         }
-//         else if(obj.Sym == ')'){
-//             return output;
-//         }
-//     }
-//     return output;
-// }
+        if(obj.Sym == ','){
+        AST::Sequence * s = new AST::Sequence;
+        s->Statment1 = output;
+        s->Statment2 = this->parseStmt(tokens);
+        return s;
+        }
+        else if(obj.Sym == ')'){
+            return output;
+        }
+    }
+    return output;
+}
 
 
 AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
