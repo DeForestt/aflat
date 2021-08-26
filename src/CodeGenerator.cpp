@@ -1,6 +1,10 @@
 #include "CodeGenerator.hpp"
 #include "Exceptions.hpp"
 
+bool searchSymbol(gen::Symbol sym, std::string str){
+    if (sym.symbol == str) return true; else return false;
+}
+
 std::string gen::CodeGenerator::GenExpr(AST::Expr * expr){
     std::string output = "";
     if(dynamic_cast<AST::IntLiteral *>(expr) != nullptr){
@@ -142,8 +146,4 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
     
 
     return OutputFile;
-}
-
-bool searchSymbol(gen::Symbol sym, std::string str){
-    if (sym.symbol == str) return true; else return false;
 }
