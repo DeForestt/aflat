@@ -20,6 +20,10 @@ std::string ASMC::Mov::toString(){
     return "\tmov\t" + this->from + ", " + this->to + "\n";
 }
 
+std::string ASMC::Movq::toString(){
+    return "\tmovq\t" + this->from + ", " + this->to + "\n";
+}
+
 std::string ASMC::Push::toString(){
     return "\tpush\t" + this->op + "\n";
 }

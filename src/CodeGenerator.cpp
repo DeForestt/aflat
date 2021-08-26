@@ -22,7 +22,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         lable->lable = func->ident.ident;
         ASMC::Push * push = new ASMC::Push();
         push->op = "%rbp";
-        ASMC::Mov * mov = new ASMC::Mov();
+        ASMC::Movq * mov = new ASMC::Movq();
         mov->from =  "%rsp";
         mov->to = "%rbp";
         OutputFile.text.push(lable);
