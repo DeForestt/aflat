@@ -70,6 +70,7 @@ namespace ASMC{
         public:
         links::LinkedList<Instruction * > text;
         links::LinkedList<Instruction * > data;
+        links::LinkedList<Instruction * > linker;
         void operator<<(ASMC::File file);
     };
 

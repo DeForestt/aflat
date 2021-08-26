@@ -30,11 +30,23 @@ int main(int argc, char *argv[])
     //std::cout << output << std::endl;
     
     gen::CodeGenerator genny;
-    links::LinkedList<ASMC::Instruction *> text = genny.GenSTMT(Prog).text;
+    ASMC::File file = genny.GenSTMT(Prog);
     //std::cout << "\n\n---------------------------- \n\n";
-    text.invert();
-    while(text.count > 0){
-        std::cout << text.pop()->toString();
+    file.text.invert();
+
+    std::cout << ".global _start";
+
+    file.linker.invert();
+        while(file.linker.count > 0){
+        std::cout << file.text.pop()->toString();
+    }
+
+    std::cout << ".text";
+
+    std::cout << "_start: \n\tcall main\n\tret\n\n";
+
+    while(file.text.count > 0){
+        std::cout << file.text.pop()->toString();
     }
 
     return 0;

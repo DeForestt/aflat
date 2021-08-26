@@ -28,6 +28,10 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text.push(lable);
         OutputFile.text.push(push);
         OutputFile.text.push(mov);
+        ASMC::LinkTask * link = new ASMC::LinkTask();
+        link->command = "global";
+        link->operand = func->ident.ident;
+        OutputFile.linker.push(link);
         ASMC::File file = this->GenSTMT(func->statment);
         OutputFile << file;
         delete(func);
