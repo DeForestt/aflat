@@ -78,11 +78,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         Symbol.symbol = dec->Ident;
         this->SymbolTable.push(Symbol);
 
-        ASMC::Movq * mov = new ASMC::Movq();
-        mov->from = "$0x0";
-        mov->to = "-0x" + std::to_string(Symbol.byteMod) + "(%rbp)";
-        OutputFile.text.push(mov);
-
     }else if (dynamic_cast<AST::DecAssign *>(STMT) != nullptr)
     {
         /*
@@ -112,6 +107,11 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
         Symbol.symbol = dec->Ident;
         this->SymbolTable.push(Symbol);
+
+        ASMC::Movq * mov = new ASMC::Movq();
+        mov->from = "$0x0";
+        mov->to = "-0x" + std::to_string(Symbol.byteMod) + "(%rbp)";
+        OutputFile.text.push(mov);
 
     }else if (dynamic_cast<AST::Return *>(STMT) != nullptr)
     {
