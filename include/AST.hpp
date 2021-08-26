@@ -2,6 +2,7 @@
 #define STRUCT
 
 #include <string>
+#include "LinkedList.hpp"
 
 namespace AST{
     class ProgramMember{
