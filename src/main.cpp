@@ -34,11 +34,11 @@ int main(int argc, char *argv[])
     //std::cout << "\n\n---------------------------- \n\n";
     file.text.invert();
 
-    std::cout << ".global _start";
+    std::cout << ".global _start\n";
 
     file.linker.invert();
         while(file.linker.count > 0){
-        std::cout << file.text.pop()->toString();
+        std::cout << file.linker.pop()->toString();
     }
 
     std::cout << ".text";
