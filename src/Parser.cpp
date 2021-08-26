@@ -144,5 +144,5 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
         ilit->val = std::stoi(intObj.value);
         return ilit;
     }
-    return nullptr;
+    else throw(tokens.peek());
 }
