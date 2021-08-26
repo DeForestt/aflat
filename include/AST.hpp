@@ -143,7 +143,7 @@ namespace AST{
     class Call : public Statment{
         public:
         std::string ident;
-        Statment * Args;
+        links::LinkedList<Expr *> Args;
     };
 
     class Sequence : public Statment{

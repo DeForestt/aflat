@@ -70,7 +70,20 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 {
                     AST::Call * call = new AST::Call();
                     call->ident = obj.meta;
-                    call->Args = this->parseArgs(tokens);
+                    bool pop = false;
+                    if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr){
+                        do{
+                            if (pop) tokens.pop();
+                            call->Args.push(this->parseExpr(tokens));
+                            pop = true;
+                        }while(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr
+                        && dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',');
+
+                        if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                            lex::OpSym * symp = dynamic_cast<lex::OpSym *> (tokens.pop());
+                            if (symp->Sym != ')') throw err::Exception("Expected closed perenth got " + symp->Sym);
+                        }
+                    }
                     output = call;
                 }
                  else throw err::Exception("expected assignment oporator");
