@@ -51,7 +51,11 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::LinkTask * link = new ASMC::LinkTask();
         link->command = "global";
         link->operand = func->ident.ident;
+        ASMC::Mov * movp = new ASMC::Mov();
+        movp->from = "%rbp";
+        movp->to = "%rbx";
         OutputFile.linker.push(link);
+        OutputFile.text.push(movp);
         ASMC::File file = this->GenSTMT(func->statment);
         OutputFile << file;
         delete(func);
@@ -184,7 +188,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         ASMC::Pop *pop = new ASMC::Pop();
 
-        pop->op = "-0x" + std::to_string(symbol.byteMod) + "(%rbp)";
+        pop->op = "-" + std::to_string(symbol.byteMod) + "(%rbx)";
         OutputFile.text.push(pop);
     }else if (dynamic_cast<AST::Call *>(STMT) != nullptr)
     {
