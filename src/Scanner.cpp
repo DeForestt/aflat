@@ -25,6 +25,7 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                             IntLit->value += input[i];
                             i++;
                         }
+                        tokens.push(IntLit);
 
                     }
                     else if(std::isspace(input[i]))
