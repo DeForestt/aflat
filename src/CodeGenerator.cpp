@@ -17,6 +17,9 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 this->GenSTMT()
                 
         */
+
+       this->SymbolTable.clear();
+
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
         ASMC::Lable * lable = new ASMC::Lable;
         lable->lable = func->ident.ident;

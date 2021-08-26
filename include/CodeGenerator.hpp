@@ -15,6 +15,7 @@ namespace gen{
     class CodeGenerator{
         private:
         links::LinkedList<Symbol> SymbolTable;
+        std::string GenExpr(AST::Expr);
         
         public:
         ASMC::File GenSTMT(AST::Statment * stmt);

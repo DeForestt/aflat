@@ -36,6 +36,9 @@ namespace links{
             /*stitches the head of this linked list to the tail of another one and sets the head of the other as the new head*/
             void istitch(links::LinkedList<T> l);
 
+            /*clears the list and sets the head to nullptr*/
+            void clear();
+
             /*Pop removes the top eleent for the list
             Behaves likle a stack*/ 
             T pop();
@@ -50,6 +53,20 @@ template <typename T>
 links::LinkedList<T>::LinkedList(){
     this->count = 0;
     head = nullptr;
+}
+
+template <typename T>
+void links::LinkedList<T>::clear(){
+    if (this->count > 0){
+        while (this->head->next != nullptr)
+        {
+            delete(this->head);
+            this->head = this->next;
+        }
+        this->head = nullptr;
+        this->count = 0;
+    }
+    
 }
 
 template <typename T>
