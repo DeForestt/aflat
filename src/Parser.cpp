@@ -1,4 +1,5 @@
 #include "Parser.hpp"
+#include "Exceptions.hpp"
 
 
 AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
@@ -55,7 +56,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 
             }
             else{
-                throw tokens.pop();
+                throw err::Exception("Unparsable token found");
             }
         }
         else if (obj.meta == "return")
@@ -63,7 +64,17 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             AST::Return * ret = new AST::Return;
             ret->expr = this->parseExpr(tokens);
             output = ret;
+        }else{
+            if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                lex::OpSym * sym = dynamic_cast<lex::OpSym *> (tokens.pop());
+                if(sym->Sym == '='){
+                    AST::Assign * assign = new AST::Assign();
+                    assign->Ident = obj.meta;
+                    assign->expr = this->parseExpr(tokens);
+                } else throw err::Exception("expected expression after token");
+            }else throw err::Exception("expected Asignment oporator after " + obj.meta);
         }
+        
     }
     
     if (tokens.head == nullptr){ 
