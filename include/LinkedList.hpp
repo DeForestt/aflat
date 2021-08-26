@@ -46,7 +46,26 @@ namespace links{
             /*Observes the first node on the list and returns its value withou
             popping it.*/
             T peek();
+
+            /*search acording to passed in logic*/
+            template <typename Z>
+            T* search(bool(* foo)(T, Z), Z input);
     };
+}
+
+
+template <typename T>
+template <typename Z>
+T* links::LinkedList<T>::search(bool(* foo)(T, Z), Z input){
+        links::Node<T> * pointer = this->head;
+        if(foo(this->head, input)) return &this->head->data;
+        while (pointer->next != nullptr){
+            pointer = pointer->next;
+            if(foo(pointer->data, input)){
+                return &pointer->data;
+            }
+        }
+        return nullptr;
 }
 
 template <typename T>
