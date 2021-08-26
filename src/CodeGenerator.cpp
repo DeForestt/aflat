@@ -2,7 +2,7 @@
 
 std::string gen::CodeGenerator::GenExpr(AST::Expr * expr){
     std::string output = "";
-    if(dynamic_cast<AST::IntLiteral *>(expr)){
+    if(dynamic_cast<AST::IntLiteral *>(expr) != nullptr){
         AST::IntLiteral * intlit = dynamic_cast<AST::IntLiteral *>(expr);
         output = '$' + std::to_string(intlit->val);
     }else{
