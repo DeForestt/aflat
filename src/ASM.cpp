@@ -9,7 +9,7 @@ std::string ASMC::Lable::toString(){
 }
 
 std::string ASMC::LinkTask::toString(){
-    return  this->command + "\t" + this->operand + "\n";
+    return  "." + this->command + "\t" + this->operand + "\n";
 }
 
 std::string ASMC::Call::toString(){
