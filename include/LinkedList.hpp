@@ -58,7 +58,7 @@ template <typename T>
 template <typename Z>
 T* links::LinkedList<T>::search(bool(* foo)(T, Z), Z input){
         links::Node<T> * pointer = this->head;
-        if (this.head == nullptr) return nullptr;
+        if (this->head == nullptr) return nullptr;
         if((*foo)(this->head->data, input)) return &this->head->data;
         while (pointer->next != nullptr){
             pointer = pointer->next;
