@@ -16,6 +16,17 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         }
                         tokens.push(l_obj);
                     }
+                    else if (std::isdigit(input[i]) || input[i] == '-')
+                    {
+                        lex::INT * IntLit = new lex::INT();
+                        IntLit->value = input[i];
+                        i++;
+                        while(std::isdigit(input[i])){
+                            IntLit->value += input[i];
+                            i++;
+                        }
+
+                    }
                     else if(std::isspace(input[i]))
                     {
                         i++;
