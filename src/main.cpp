@@ -33,10 +33,9 @@ int main(int argc, char *argv[])
     ASMC::File file = genny.GenSTMT(Prog);
     file.text.invert();
 
-    std::cout << ".global _start\n";
-
+   
     file.linker.invert();
-        while(file.linker.count > 0){
+    while(file.linker.head != nullptr){
         std::cout << file.linker.pop()->toString();
     }
 
