@@ -47,16 +47,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text.push(lable);
         OutputFile.text.push(push);
         OutputFile.text.push(mov);
-
-        if(func->args != nullptr){
-            ASMC::Pop * saveStack = new ASMC::Pop();
-            saveStack->op = "%eax";
-            OutputFile.text.push(saveStack);
-            OutputFile << this->GenSTMT(func->args);
-            ASMC::Push * restoreStack = new ASMC::Push();
-            restoreStack->op = "%eax";
-            OutputFile.text.push(restoreStack);
-        }
         
 
         ASMC::LinkTask * link = new ASMC::LinkTask();
@@ -67,7 +57,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::File file = this->GenSTMT(func->statment);
         OutputFile << file;
         delete(func);
-        
+
     }else if (dynamic_cast<AST::Declare *>(STMT) != nullptr)
     {
         /*
