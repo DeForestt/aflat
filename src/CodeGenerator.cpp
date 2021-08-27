@@ -45,16 +45,29 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         mov->from =  "%rsp";
         mov->to = "%rbp";
         OutputFile.text.push(lable);
-        OutputFile << this->GenSTMT(func->args);
         OutputFile.text.push(push);
         OutputFile.text.push(mov);
+
+        if(func->args != nullptr){
+            ASMC::Pop * saveStack = new ASMC::Pop();
+            saveStack->op = "%eax";
+            OutputFile.text.push(saveStack);
+            OutputFile << this->GenSTMT(func->args);
+            ASMC::Push * restoreStack = new ASMC::Push();
+            restoreStack->op = "%eax";
+            OutputFile.text.push(restoreStack);
+        }
+        
+
         ASMC::LinkTask * link = new ASMC::LinkTask();
         link->command = "global";
         link->operand = func->ident.ident;
+        
         OutputFile.linker.push(link);
         ASMC::File file = this->GenSTMT(func->statment);
         OutputFile << file;
         delete(func);
+        
     }else if (dynamic_cast<AST::Declare *>(STMT) != nullptr)
     {
         /*
