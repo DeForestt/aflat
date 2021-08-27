@@ -42,8 +42,6 @@ int main(int argc, char *argv[])
 
     std::cout << "\n\n.text\n\n";
 
-    std::cout << "_start: \n\tcall main\n\tmov\t$60, %rax\n\txor\t%rdi, %rdi\n\tsyscall\n";
-
     while(file.text.count > 0){
         std::cout << file.text.pop()->toString();
     }
