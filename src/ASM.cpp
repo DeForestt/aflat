@@ -37,6 +37,6 @@ std::string ASMC::Return::toString(){
 }
 
 void ASMC::File::operator<<(ASMC::File file){
-    //this->data.stitch(file.data);
+    this->linker.stitch(file.linker);
     this->text.istitch(file.text);
 }
