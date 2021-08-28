@@ -189,11 +189,12 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             symbol.byteMod = this->SymbolTable.peek().byteMod + offset;
         }
         symbol.symbol = arg->Ident;
+
         this->SymbolTable.push(symbol);
 
         ASMC::Mov * mov = new ASMC::Mov();
         mov->from = this->intArgs[intArgsCounter];
-        mov->to = symbol.byteMod;
+        mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
         OutputFile.text.push(mov);
         intArgsCounter++;
     }else if (dynamic_cast<AST::Call *>(STMT) != nullptr)
