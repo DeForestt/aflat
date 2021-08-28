@@ -165,7 +165,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             **also needs to be added to symbol table**
         */
 
-        if (intArgsCounter > 6) throw err::Exception("AFlat compiler cannot handle more than 6 int or pointer arguments.");
+        if (intArgsCounter > 6) throw err::Exception("AFlat compiler cannot handle more than 6 int arguments.");
         AST::Argument * arg =  dynamic_cast<AST::Argument *>(STMT);
         int offset = 0;
         switch(arg->type){
