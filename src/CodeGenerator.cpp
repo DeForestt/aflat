@@ -13,7 +13,7 @@ std::string gen::CodeGenerator::GenExpr(AST::Expr * expr){
     } else if (dynamic_cast<AST::Var *>(expr) != nullptr)
     {
         AST::Var var = *dynamic_cast<AST::Var *>(expr);
-        output = '-' + this->SymbolTable.search<std::string>(searchSymbol, var.Ident)->byteMod + "(%rbp)";
+        output = '-' + std::to_string(this->SymbolTable.search<std::string>(searchSymbol, var.Ident)->byteMod) + "(%rbp)";
     }
     
     else{
