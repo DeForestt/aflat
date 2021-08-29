@@ -10,8 +10,14 @@ std::string gen::CodeGenerator::GenExpr(AST::Expr * expr){
     if(dynamic_cast<AST::IntLiteral *>(expr) != nullptr){
         AST::IntLiteral * intlit = dynamic_cast<AST::IntLiteral *>(expr);
         output = '$' + std::to_string(intlit->val);
-    }else{
-        throw ("cannot gen statment");
+    } else if (dynamic_cast<AST::Var *>(expr) != nullptr)
+    {
+        AST::Var var = *dynamic_cast<AST::Var *>(expr);
+        output = '-' + this->SymbolTable.search<std::string>(searchSymbol, var.Ident)->byteMod + "(%rbp)";
+    }
+    
+    else{
+        throw err::Exception("cannot gen expr");
     }
     return output;
 };
@@ -220,6 +226,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
     else{
         OutputFile.text.push(new ASMC::Instruction());
     }
-    
+
     return OutputFile;
 }

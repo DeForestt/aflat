@@ -165,8 +165,8 @@ AST::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens){
     return output;
 }
 
-
 AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
+    
     if (dynamic_cast<lex::StringObj *>(tokens.peek()) != nullptr){
         lex::StringObj stringObj = *dynamic_cast<lex::StringObj *>(tokens.peek());
         tokens.pop();
@@ -174,11 +174,16 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
         slit->val = stringObj.value;
         return slit;
     }
-    if(dynamic_cast<lex::INT *>(tokens.peek())!=nullptr){
+
+    if(dynamic_cast<lex::INT *>(tokens.peek()) != nullptr){
         lex::INT intObj = *dynamic_cast<lex::INT *>(tokens.pop());
         AST::IntLiteral * ilit = new AST::IntLiteral();
         ilit->val = std::stoi(intObj.value);
         return ilit;
+    }
+    if(dynamic_cast<lex::LObj *>(tokens.peek()) !=nullptr){
+        lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.pop());
+        
     }
     else throw(tokens.peek());
 }

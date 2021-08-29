@@ -172,6 +172,11 @@ namespace AST{
         std::string toString();
     };
 
+    class Var : public Expr{
+        public:
+        std::string Ident;
+    };
+
     class StringLiteral : public Expr{
         public:
         std::string val;
