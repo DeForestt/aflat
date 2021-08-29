@@ -5,7 +5,7 @@ bool searchSymbol(gen::Symbol sym, std::string str){
     if (sym.symbol == str) return true; else return false;
 }
 
-std::string gen::CodeGenerator::GenExpr(AST::Expr * expr){
+std::string gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     std::string output = "";
     if(dynamic_cast<AST::IntLiteral *>(expr) != nullptr){
         AST::IntLiteral * intlit = dynamic_cast<AST::IntLiteral *>(expr);
@@ -14,7 +14,32 @@ std::string gen::CodeGenerator::GenExpr(AST::Expr * expr){
     {
         AST::Var var = *dynamic_cast<AST::Var *>(expr);
         output = '-' + std::to_string(this->SymbolTable.search<std::string>(searchSymbol, var.Ident)->byteMod) + "(%rbp)";
+    } else if (dynamic_cast<AST::Compound *>(expr) != nullptr)
+    {
+        AST::Compound comp = *dynamic_cast<AST::Compound *>(expr);
+        switch (comp.op)
+        {
+        case AST::Plus:
+            ASMC::Mov * mov1 = new ASMC::Mov();
+            ASMC::Mov * mov2 = new ASMC::Mov();
+            ASMC::Add * add = new ASMC::Add();
+            mov1->to = "%edx";
+            mov2->to = "%eax";
+            mov1->from = this->GenExpr(comp.expr1, OutputFile);
+            mov2->to = this->GenExpr(comp.expr2, OutputFile);
+            add->op1 = "%eax";
+            add->op2 = "%edx";
+            OutputFile.text << mov1;
+            OutputFile.text << mov2;
+            OutputFile.text << add;
+            output = "%eax";
+            break;
+        default:
+            throw err::Exception("Unhandled oporator");
+            break;
+        }   
     }
+    
     
     else{
         throw err::Exception("cannot gen expr");
@@ -132,7 +157,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         this->SymbolTable.push(symbol);
 
         ASMC::Movq * mov = new ASMC::Movq();
-        mov->from = this->GenExpr(decAssign->expr);
+        mov->from = this->GenExpr(decAssign->expr, OutputFile);
         mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
         OutputFile.text.push(mov);
 
@@ -146,7 +171,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         AST::Return * ret = dynamic_cast<AST::Return *>(STMT);
         ASMC::Mov * mov = new ASMC::Mov();
-        mov->from = this->GenExpr(ret->expr);
+        mov->from = this->GenExpr(ret->expr, OutputFile);
         mov->to = "%rax";
         
         ASMC::Pop * pop = new ASMC::Pop();
@@ -161,7 +186,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         Symbol * symbol = this->SymbolTable.search<std::string>(searchSymbol, assign->Ident);
         if(symbol == nullptr) throw err::Exception("unknown name: " + assign->Ident);
         ASMC::Movq * mov = new ASMC::Movq();
-        mov->from = this->GenExpr(assign->expr);
+        mov->from = this->GenExpr(assign->expr, OutputFile);
         mov->to = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
         OutputFile.text.push(mov);
     }else if (dynamic_cast<AST::Argument *>(STMT) != nullptr)
@@ -212,7 +237,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         {
             
             ASMC::Movq * mov = new ASMC::Movq();
-            mov->from = this->GenExpr(call->Args.pop());
+            mov->from = this->GenExpr(call->Args.pop(), OutputFile);
             mov->to = this->intArgs[intArgsCounter];
             intArgsCounter++;
             OutputFile.text.push(mov);

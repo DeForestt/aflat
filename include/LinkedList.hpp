@@ -27,6 +27,8 @@ namespace links{
             /*Push a new value to the top of the list*/
             void push(T value);
 
+            void operator<<(T value);
+
             /*Reverses the direction of the list*/
             void invert();
 
@@ -90,6 +92,15 @@ void links::LinkedList<T>::clear(){
 
 template <typename T>
 void links::LinkedList<T>::push(T value){
+    this->count += 1;
+    Node<T>* push = new Node<T>();
+    push->next = this->head;
+    push->data = value;
+    this->head = push;
+}
+
+template <typename T>
+void links::LinkedList<T>::operator<<(T value){
     this->count += 1;
     Node<T>* push = new Node<T>();
     push->next = this->head;

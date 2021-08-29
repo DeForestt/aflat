@@ -73,6 +73,13 @@ namespace ASMC{
         std::string toString();
     };
 
+    class Add : public Instruction{
+        public:
+        std::string op1;
+        std::string op2;
+        std::string toString();
+    };
+
     class File{
         public:
         links::LinkedList<Instruction * > text;

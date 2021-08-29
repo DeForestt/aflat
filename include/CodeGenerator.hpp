@@ -18,8 +18,7 @@ namespace gen{
         links::LinkedList<Symbol> SymbolTable;
         std::string intArgs[6] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
         int intArgsCounter;
-        std::string GenExpr(AST::Expr * expr);
-        
+        std::string GenExpr(AST::Expr * expr, ASMC::File &OutputFile);
         public:
         ASMC::File GenSTMT(AST::Statment * stmt);
     };

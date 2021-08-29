@@ -166,26 +166,40 @@ AST::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens){
 }
 
 AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
-    
+    AST::Expr * output = new AST::Expr();
     if (dynamic_cast<lex::StringObj *>(tokens.peek()) != nullptr){
         lex::StringObj stringObj = *dynamic_cast<lex::StringObj *>(tokens.peek());
         tokens.pop();
         AST::StringLiteral * slit = new AST::StringLiteral();
         slit->val = stringObj.value;
-        return slit;
-    }
-
-    if(dynamic_cast<lex::INT *>(tokens.peek()) != nullptr){
+        output = slit;
+    } else if(dynamic_cast<lex::INT *>(tokens.peek()) != nullptr){
         lex::INT intObj = *dynamic_cast<lex::INT *>(tokens.pop());
         AST::IntLiteral * ilit = new AST::IntLiteral();
         ilit->val = std::stoi(intObj.value);
-        return ilit;
-    }
-    if(dynamic_cast<lex::LObj *>(tokens.peek()) !=nullptr){
+        output = ilit;
+    } else if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.pop());
         AST::Var * var = new AST::Var();
         var->Ident = obj.meta;
-        return var;
+        output = var;
     }
-    else throw(tokens.peek());
+    else throw err::Exception("Unknown Expr");
+
+    if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+
+        AST::Compound  * compound = new AST::Compound();
+
+        lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+        if (sym.Sym == '+')
+        {
+            tokens.pop();
+            compound->op = AST::Plus;
+            compound->expr1 = output;
+            compound->expr2 = this->parseExpr(tokens);
+            return compound;
+        }
+    }
+
+    return output;
 }
