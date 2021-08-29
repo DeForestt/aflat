@@ -21,8 +21,8 @@ std::string gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile
         {
         case AST::Plus:
         {
-            ASMC::Mov * mov1 = new ASMC::Movq();
-            ASMC::Mov * mov2 = new ASMC::Movq();
+            ASMC::Mov * mov1 = new ASMC::Mov();
+            ASMC::Mov * mov2 = new ASMC::Mov();
             ASMC::Add * add = new ASMC::Add();
             mov1->to = "%edx";
             mov2->to = "%eax";
