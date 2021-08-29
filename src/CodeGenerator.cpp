@@ -177,7 +177,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::Return * ret = dynamic_cast<AST::Return *>(STMT);
         ASMC::Mov * mov = new ASMC::Mov();
         mov->from = this->GenExpr(ret->expr, OutputFile);
-        mov->to = "%rax";
+        mov->to = "%eax";
         
         ASMC::Pop * pop = new ASMC::Pop();
         pop->op = "%rbp";
