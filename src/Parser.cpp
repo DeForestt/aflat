@@ -183,7 +183,9 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
     }
     if(dynamic_cast<lex::LObj *>(tokens.peek()) !=nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.pop());
-        
+        AST::Var * var = new AST::Var();
+        var->Ident = obj.meta;
+        return var;
     }
     else throw(tokens.peek());
 }
