@@ -201,11 +201,15 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
     {
         AST::Call * call = dynamic_cast<AST::Call *>(STMT);
 
+        this->intArgsCounter = 0;
         while (call->Args.count > 0)
         {
-            ASMC::Push * push = new ASMC::Push();
-            push->op = this->GenExpr(call->Args.pop());
-            OutputFile.text.push(push);
+            
+            ASMC::Movq * mov = new ASMC::Movq();
+            mov->from = this->GenExpr(call->Args.pop());
+            mov->to = this->intArgs[intArgsCounter];
+            intArgsCounter++;
+            OutputFile.text.push(mov);
         }
 
         ASMC::Call * calls = new ASMC::Call;
@@ -217,6 +221,5 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text.push(new ASMC::Instruction());
     }
     
-
     return OutputFile;
 }
