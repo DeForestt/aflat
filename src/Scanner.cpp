@@ -1,4 +1,5 @@
 #include "Scanner.hpp"
+#include "Exceptions.hpp"
 #include <ctype.h>
 
 LinkedList<lex::Token*> lex::Lexer::Scan(string input){
@@ -78,9 +79,19 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         equ->Sym = input[i];
                         tokens.push(equ);
                         i++;
+                    }else if(input[i] == ','){
+                        lex::OpSym* com = new OpSym;
+                        com->Sym = input[i];
+                        tokens.push(com);
+                        i++;
+                    }else if(input[i] == '+'){
+                        lex::OpSym* add = new OpSym;
+                        add->Sym = input[i];
+                        tokens.push(add);
+                        i++;
                     }
                     else{
-                        throw i;
+                        throw err::Exception("unknown char: " + input[i]);
                     }
                 }
                 return tokens;
