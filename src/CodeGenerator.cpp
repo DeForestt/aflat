@@ -20,6 +20,7 @@ std::string gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile
         switch (comp.op)
         {
         case AST::Plus:
+        {
             ASMC::Mov * mov1 = new ASMC::Mov();
             ASMC::Mov * mov2 = new ASMC::Mov();
             ASMC::Add * add = new ASMC::Add();
@@ -34,9 +35,13 @@ std::string gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile
             OutputFile.text << add;
             output = "%eax";
             break;
+        }
         default:
+        {
             throw err::Exception("Unhandled oporator");
             break;
+
+        }
         }   
     }
     
