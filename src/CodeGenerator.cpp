@@ -19,29 +19,27 @@ std::string gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile
         AST::Compound comp = *dynamic_cast<AST::Compound *>(expr);
         switch (comp.op)
         {
-        case AST::Plus:
-        {
-            ASMC::Mov * mov1 = new ASMC::Mov();
-            ASMC::Mov * mov2 = new ASMC::Mov();
-            ASMC::Add * add = new ASMC::Add();
-            mov1->to = "%edx";
-            mov2->to = "%eax";
-            mov1->from = this->GenExpr(comp.expr1, OutputFile);
-            mov2->from = this->GenExpr(comp.expr2, OutputFile);
-            add->op1 = "%eax";
-            add->op2 = "%edx";
-            OutputFile.text << mov1;
-            OutputFile.text << mov2;
-            OutputFile.text << add;
-            output = "%eax";
-            break;
-        }
-        default:
-        {
-            throw err::Exception("Unhandled oporator");
-            break;
+            case AST::Plus:{
+                ASMC::Mov * mov1 = new ASMC::Mov();
+                ASMC::Mov * mov2 = new ASMC::Mov();
+                ASMC::Add * add = new ASMC::Add();
+                mov1->to = "%edx";
+                mov2->to = "%eax";
+                mov1->from = this->GenExpr(comp.expr1, OutputFile);
+                mov2->from = this->GenExpr(comp.expr2, OutputFile);
+                add->op1 = "%eax";
+                add->op2 = "%edx";
+                OutputFile.text << mov1;
+                OutputFile.text << mov2;
+                OutputFile.text << add;
+                output = "%eax";
+                break;
+            }
+            default:{
+                throw err::Exception("Unhandled oporator");
+                break;
 
-        }
+            }
         }   
     }
     
@@ -161,10 +159,17 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         symbol.symbol = dec->Ident;
         this->SymbolTable.push(symbol);
 
-        ASMC::Movq * mov = new ASMC::Movq();
-        mov->from = this->GenExpr(decAssign->expr, OutputFile);
-        mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
-        OutputFile.text.push(mov);
+        if(dynamic_cast<AST::IntLiteral *>(decAssign->expr)){
+            ASMC::Movq * mov = new ASMC::Movq();
+            mov->from = this->GenExpr(decAssign->expr, OutputFile);
+            mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
+            OutputFile.text.push(mov);
+        }else{
+            ASMC::Mov * mov = new ASMC::Mov();
+            mov->from = this->GenExpr(decAssign->expr, OutputFile);
+            mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
+            OutputFile.text.push(mov);
+        }
 
     }else if (dynamic_cast<AST::Return *>(STMT) != nullptr)
     {
@@ -175,14 +180,26 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         */
 
         AST::Return * ret = dynamic_cast<AST::Return *>(STMT);
-        ASMC::Mov * mov = new ASMC::Mov();
-        mov->from = this->GenExpr(ret->expr, OutputFile);
-        mov->to = "%eax";
+
+        if (dynamic_cast<AST::IntLiteral *>(ret->expr))
+        {
+            ASMC::Movq * mov = new ASMC::Movq();
+            mov->from = this->GenExpr(ret->expr, OutputFile);
+            mov->to = "%eax";
+            OutputFile.text.push(mov);   
+        }else{
+            ASMC::Mov * mov = new ASMC::Mov();
+            mov->from = this->GenExpr(ret->expr, OutputFile);
+            mov->to = "%eax";
+            OutputFile.text.push(mov);
+        }
+        
+
         
         ASMC::Pop * pop = new ASMC::Pop();
         pop->op = "%rbp";
         ASMC::Return * re = new ASMC::Return();
-        OutputFile.text.push(mov);
+        
         OutputFile.text.push(pop);
         OutputFile.text.push(re);
     }else if (dynamic_cast<AST::Assign *>(STMT) != nullptr)
