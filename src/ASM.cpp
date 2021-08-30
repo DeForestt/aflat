@@ -21,6 +21,10 @@ std::string ASMC::Mov::toString(){
 }
 
 std::string ASMC::Movq::toString(){
+    return "\tmovq\t" + this->from + ", " + this->to + "\n";
+}
+
+std::string ASMC::Movl::toString(){
     return "\tmovl\t" + this->from + ", " + this->to + "\n";
 }
 

@@ -160,7 +160,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         this->SymbolTable.push(symbol);
 
         if(dynamic_cast<AST::IntLiteral *>(decAssign->expr)){
-            ASMC::Movq * mov = new ASMC::Movq();
+            ASMC::Movl * mov = new ASMC::Movl();
             mov->from = this->GenExpr(decAssign->expr, OutputFile);
             mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
             OutputFile.text.push(mov);
@@ -183,7 +183,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         if (dynamic_cast<AST::IntLiteral *>(ret->expr))
         {
-            ASMC::Movq * mov = new ASMC::Movq();
+            ASMC::Movl * mov = new ASMC::Movl();
             mov->from = this->GenExpr(ret->expr, OutputFile);
             mov->to = "%eax";
             OutputFile.text.push(mov);   
@@ -207,7 +207,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::Assign * assign = dynamic_cast<AST::Assign *>(STMT);
         Symbol * symbol = this->SymbolTable.search<std::string>(searchSymbol, assign->Ident);
         if(symbol == nullptr) throw err::Exception("unknown name: " + assign->Ident);
-        ASMC::Movq * mov = new ASMC::Movq();
+        ASMC::Movl * mov = new ASMC::Movl();
         mov->from = this->GenExpr(assign->expr, OutputFile);
         mov->to = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
         OutputFile.text.push(mov);
@@ -258,7 +258,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         while (call->Args.count > 0)
         {
             
-            ASMC::Movq * mov = new ASMC::Movq();
+            ASMC::Mov * mov = new ASMC::Mov();
             mov->from = this->GenExpr(call->Args.pop(), OutputFile);
             mov->to = this->intArgs[intArgsCounter];
             intArgsCounter++;
