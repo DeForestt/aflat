@@ -27,8 +27,8 @@ std::string gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile
                 mov2->to = "%eax";
                 mov1->from = this->GenExpr(comp.expr1, OutputFile);
                 mov2->from = this->GenExpr(comp.expr2, OutputFile);
-                add->op1 = "%eax";
-                add->op2 = "%edx";
+                add->op2 = "%eax";
+                add->op1 = "%edx";
                 OutputFile.text << mov1;
                 OutputFile.text << mov2;
                 OutputFile.text << add;
