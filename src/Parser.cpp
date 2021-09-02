@@ -8,14 +8,14 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
         tokens.pop();
         //Declare a byte;
-        if(obj.meta == "byte" | obj.meta == "int" | obj.meta == "string"){
+        if(obj.meta == "byte" | obj.meta == "int" | obj.meta == "char"){
             AST::Declare * dec = new AST::Declare();
             //ensures the the current token is an Ident
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                 lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
                 tokens.pop();
                 dec->Ident = obj.meta;
-                if(obj.meta == "byte") dec->type = AST::Byte; else if (obj.meta == "int") dec->type = AST::Int; else if (obj.meta == "string")dec->type = AST::String;
+                if(obj.meta == "byte") dec->type = AST::Byte; else if (obj.meta == "int") dec->type = AST::Int; else if (obj.meta == "char")dec->type = AST::Char;
                 output = dec;
                 
                 

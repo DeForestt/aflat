@@ -44,6 +44,14 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         i++;
                         tokens.push(stringObj);
                     }
+                    else if (input[i] == '\'')
+                    {
+                        lex::CharObj* charobj = new CharObj();
+                        i++;
+                        charobj->value = input[i];
+                        i++;
+                        if (input[i] != '\'') throw err::Exception("Unterminated Char Value");
+                    }
                     else if(input[i] == ';'){
                         lex::OpSym* semi = new OpSym;
                         semi->Sym = input[i];

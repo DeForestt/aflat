@@ -30,6 +30,11 @@ namespace lex{
         string value;
     };
 
+    class CharObj: public Token{
+        public:
+        char value;
+    };
+
     class OpSym: public Token{
         public:
         char Sym;
