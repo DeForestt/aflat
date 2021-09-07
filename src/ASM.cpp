@@ -17,23 +17,26 @@ std::string ASMC::Call::toString(){
 }
 
 std::string ASMC::Mov::toString(){
-    std::string Size = "";
+    std::string size = "";
     switch (this->size)
     {
     case ASMC::Byte:
-        Size = "b";
+        size = "b";
+        break;
     case ASMC::Word:
-        Size = "s";
+        size = "s";
         break;
     case ASMC::DWord:
-        Size = "l";
+        size = "l";
+        break;
     case ASMC::QWord:
-        Size = "q";
+        size = "q";
+        break;
     default:
-        Size = "";
+        size = "";
         break;
     }
-    return "\tmov" + Size + "\t" + this->from + ", " + this->to + "\n";
+    return "\tmov" + size + "\t" + this->from + ", " + this->to + "\n";
 }
 
 std::string ASMC::Movq::toString(){
