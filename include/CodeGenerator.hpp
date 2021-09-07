@@ -11,6 +11,7 @@ namespace gen{
     class Symbol{
         public:
         std::string symbol;
+        AST::Type type;
         int byteMod;
     };
     class CodeGenerator{

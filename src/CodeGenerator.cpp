@@ -124,6 +124,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }else{
             Symbol.byteMod = this->SymbolTable.head->data.byteMod + offset;
         }
+        Symbol.type = dec->type;
         Symbol.symbol = dec->Ident;
         this->SymbolTable.push(Symbol);
 
@@ -156,6 +157,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }else{
             symbol.byteMod = this->SymbolTable.head->data.byteMod + offset;
         }
+        symbol.type = dec->type;
         symbol.symbol = dec->Ident;
         this->SymbolTable.push(symbol);
 
