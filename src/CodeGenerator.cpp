@@ -283,16 +283,21 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         {
             
             ASMC::Mov * mov = new ASMC::Mov();
-            mov->size = ASMC::QWord;
+            mov->size = ASMC::DWord;
             mov->from = this->GenExpr(call->Args.pop(), OutputFile);
-            mov->to = this->intArgs[intArgsCounter];
+            mov->to = "%eax";
+
+            ASMC::Mov * mov2 = new ASMC::Mov();
+            mov2->from = "%eax";
+            mov2->to = this->intArgs[intArgsCounter];
             intArgsCounter++;
-            OutputFile.text.push(mov);
+            OutputFile.text << mov;
+            OutputFile.text << mov2;
         }
 
         ASMC::Call * calls = new ASMC::Call;
         calls->function = call->ident;
-        OutputFile.text.push(calls);
+        OutputFile.text << calls;
     }
     
     else{
