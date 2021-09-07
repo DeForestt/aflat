@@ -289,7 +289,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
             ASMC::Mov * mov2 = new ASMC::Mov();
             mov2->from = "%eax";
-            mov->size = ASMC::AUTO;
+            mov2->size = ASMC::AUTO;
             mov2->to = this->intArgs[intArgsCounter];
             intArgsCounter++;
             OutputFile.text << mov;
