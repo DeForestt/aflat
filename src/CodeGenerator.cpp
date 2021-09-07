@@ -203,6 +203,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             OutputFile.text.push(mov);   
         }else{
             ASMC::Mov * mov = new ASMC::Mov();
+            mov->size = ASMC::DWord;
             mov->from = this->GenExpr(ret->expr, OutputFile);
             mov->to = "%eax";
             OutputFile.text.push(mov);
