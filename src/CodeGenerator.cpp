@@ -23,6 +23,8 @@ std::string gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile
                 ASMC::Mov * mov1 = new ASMC::Mov();
                 ASMC::Mov * mov2 = new ASMC::Mov();
                 ASMC::Add * add = new ASMC::Add();
+                mov1->size = ASMC::DWord;
+                mov2->size = ASMC::QWord;
                 mov1->to = "%edx";
                 mov2->to = "%eax";
                 mov1->from = this->GenExpr(comp.expr1, OutputFile);
