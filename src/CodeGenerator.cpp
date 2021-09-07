@@ -76,6 +76,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::Push * push = new ASMC::Push();
         push->op = "%rbp";
         ASMC::Mov * mov = new ASMC::Mov();
+        mov->size = ASMC::QWord;
         mov->from =  "%rsp";
         mov->to = "%rbp";
         OutputFile.text.push(lable);
