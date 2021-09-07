@@ -220,7 +220,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::Assign * assign = dynamic_cast<AST::Assign *>(STMT);
         Symbol * symbol = this->SymbolTable.search<std::string>(searchSymbol, assign->Ident);
         if(symbol == nullptr) throw err::Exception("unknown name: " + assign->Ident);
-        ASMC::Movl * mov = new ASMC::Movl();
+        ASMC::Mov * mov = new ASMC::Mov();
+        mov->size = ASMC::DWord;
         mov->from = this->GenExpr(assign->expr, OutputFile);
         mov->to = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
         OutputFile.text.push(mov);
