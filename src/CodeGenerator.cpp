@@ -278,6 +278,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         {
             
             ASMC::Mov * mov = new ASMC::Mov();
+            mov->size = ASMC::DWord;
             mov->from = this->GenExpr(call->Args.pop(), OutputFile);
             mov->to = this->intArgs[intArgsCounter];
             intArgsCounter++;
