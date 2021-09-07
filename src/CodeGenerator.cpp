@@ -257,6 +257,14 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         this->SymbolTable.push(symbol);
 
         ASMC::Mov * mov = new ASMC::Mov();
+        switch (symbol.type)
+        {
+        case AST::Int:
+            mov->size = ASMC::DWord;
+            break;
+        default:
+            break;
+        }
         mov->from = this->intArgs[intArgsCounter];
         mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
         OutputFile.text.push(mov);
