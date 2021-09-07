@@ -32,6 +32,9 @@ std::string ASMC::Mov::toString(){
     case ASMC::QWord:
         size = "q";
         break;
+    case ASMC::AUTO:
+        size = "";
+        break;
     default:
         size = "";
         break;

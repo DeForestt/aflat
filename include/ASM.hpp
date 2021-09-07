@@ -10,7 +10,8 @@ namespace ASMC{
         Byte,
         Word,
         DWord,
-        QWord
+        QWord,
+        AUTO
     };
 
     class Instruction{
