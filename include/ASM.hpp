@@ -6,6 +6,13 @@
 
 namespace ASMC{
 
+    enum Size{
+        Byte,
+        Word,
+        DWord,
+        QWord
+    };
+
     class Instruction{
         public:
         virtual std::string toString();
@@ -28,6 +35,7 @@ namespace ASMC{
         public:
         std::string to;
         std::string from;
+        Size size;
         std::string toString();
     };
 

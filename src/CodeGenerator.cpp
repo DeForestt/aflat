@@ -114,6 +114,9 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             case AST::String:
                 offset = 4;
                 break;
+            case AST::Char:
+                offset = 1;
+                break;
         }
 
         if(this->SymbolTable.search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
@@ -147,6 +150,9 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             case AST::String:
                 offset = 4;
                 break;
+            case AST::Char:
+                offset = 1;
+                break;
         }
 
         if(this->SymbolTable.search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
@@ -162,7 +168,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         this->SymbolTable.push(symbol);
 
         if(dynamic_cast<AST::IntLiteral *>(decAssign->expr)){
-            ASMC::Movl * mov = new ASMC::Movl();
+            ASMC::Mov * mov = new ASMC::Mov();
+            mov->size = ASMC::DWord;
             mov->from = this->GenExpr(decAssign->expr, OutputFile);
             mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
             OutputFile.text.push(mov);
@@ -185,7 +192,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         if (dynamic_cast<AST::IntLiteral *>(ret->expr))
         {
-            ASMC::Movl * mov = new ASMC::Movl();
+            ASMC::Mov * mov = new ASMC::Mov();
+            mov->size = ASMC::DWord;
             mov->from = this->GenExpr(ret->expr, OutputFile);
             mov->to = "%eax";
             OutputFile.text.push(mov);   
