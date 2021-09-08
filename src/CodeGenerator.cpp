@@ -32,7 +32,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         output.access = '-' + std::to_string(sym.byteMod) + "(%rbp)";
     }else if (dynamic_cast<AST::CharLiteral *>(expr) != nullptr){
         AST::CharLiteral charlit = *dynamic_cast<AST::CharLiteral *>(expr);
-        output.access = '$' + charlit.value;
+        output.access = "$" + charlit.value;
         output.size = ASMC::Byte;
     }else if (dynamic_cast<AST::Compound *>(expr) != nullptr)
     {
