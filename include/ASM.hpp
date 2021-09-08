@@ -111,7 +111,7 @@ namespace ASMC{
         std::string word;
         std::string byte;
         Register(std::string _qWord, std::string _dWord, std::string _word, std::string _byte);
-        Register();
+        Register(){}
         static bool compair(Register R, std::string input){
             if (input == R.qWord || input == R.dWord || input == R.word || input == R.byte ){
                 return true;
