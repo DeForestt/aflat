@@ -102,6 +102,11 @@ namespace AST{
         Expr * expr;
     };
 
+    class CharLiteral : public Expr{
+        public:
+        char value;
+    };
+
 
     class If : public Statment{
         public:

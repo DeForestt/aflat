@@ -181,7 +181,13 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
         AST::Var * var = new AST::Var();
         var->Ident = obj.meta;
         output = var;
+    } else if (dynamic_cast<lex::CharObj *>(tokens.peek()) != nullptr){
+        lex::CharObj obj = *dynamic_cast<lex::CharObj *>(tokens.pop());
+        AST::CharLiteral * charlit = new AST::CharLiteral();
+        charlit->value = obj.value;
+        output = charlit;
     }
+    
     else throw err::Exception("Unknown Expr");
 
     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
