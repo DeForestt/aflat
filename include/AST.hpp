@@ -23,7 +23,7 @@ namespace AST{
 
     class Member{
         public:
-        virtual std::string toString(){};
+        virtual std::string toString(){return "";};
     };
 
     enum Op{
@@ -45,7 +45,7 @@ namespace AST{
 
     class Arg{
         public:
-        virtual std::string toString(){};
+        virtual std::string toString(){return "";};
     };
 
 
@@ -94,7 +94,7 @@ namespace AST{
 
     class Expr{
         public:
-        virtual std::string toString(){};
+        virtual std::string toString(){return "";};
     };
 
     class ParenExpr : public Expr{
