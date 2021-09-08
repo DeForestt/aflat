@@ -7,7 +7,7 @@
 namespace AST{
     class ProgramMember{
         public:
-        virtual std::string toString(){};
+        virtual std::string toString(){return "";};
     };
 
     class Ident{
