@@ -1,29 +1,20 @@
 /* This linked list class will be nessisary for carrying and
 manipulating the strings being built.*/
-#ifndef LINKS
-#define LINKS
+#ifndef LINK
+#define LINK
+
+#include "LinkedList.hpp"
 
 namespace links{
-    
-    /*The Node is a genaric class used to hold values
-    in the linked list.  It is generic in case I want to
-    use it for somthing else in the futer.*/
-    
-    template<typename T>
-    class Node{
-        public:
-            T data;
-            Node * next;
-    };
 
-    template<typename T>
-    class LinkedList{
+    template<typename T, typename Z>
+    class SLinkedList{
         public:
-            bool(* foo)(T, T);
+            bool(* foo)(T, Z);
             int count;
 
-            Node<T> * head;
-            LinkedList();
+            SNode<T> * head;
+            SLinkedList();
 
             /*Push a new value to the top of the list*/
             void push(T value);
@@ -34,10 +25,10 @@ namespace links{
             void invert();
 
             /*Sattatches the head of another linked list to the tail of this one*/
-            void stitch(links::LinkedList<T> l);
+            void stitch(links::SLinkedList<T, Z> l);
             
             /*stitches the head of this linked list to the tail of another one and sets the head of the other as the new head*/
-            void istitch(links::LinkedList<T> l);
+            void istitch(links::SLinkedList<T, Z> l);
 
             /*clears the list and sets the head to nullptr*/
             void clear();
@@ -50,18 +41,13 @@ namespace links{
             popping it.*/
             T peek();
 
-            /*search acording to passed in logic*/
-            template <typename Z>
-            T* search(bool(* foo)(T, Z), Z input);
             
             T* operator[](T input);
     };
 }
 
-
-template <typename T>
-template <typename Z>
-T* links::LinkedList<T>::search(bool(* foo)(T, Z), Z input){
+template <typename T, typename Z>
+T* links::SLinkedList<T, Z>::operator[](T input){
         links::Node<T> * pointer = this->head;
         if (this->head == nullptr) return nullptr;
         if((*foo)(this->head->data, input)) return &this->head->data;
@@ -74,28 +60,14 @@ T* links::LinkedList<T>::search(bool(* foo)(T, Z), Z input){
         return nullptr;
 }
 
-template <typename T>
-T* links::LinkedList<T>::operator[](T input){
-        links::Node<T> * pointer = this->head;
-        if (this->head == nullptr) return nullptr;
-        if((*foo)(this->head->data, input)) return &this->head->data;
-        while (pointer->next != nullptr){
-            pointer = pointer->next;
-            if(foo(pointer->data, input)){
-                return &pointer->data;
-            }
-        }
-        return nullptr;
-}
-
-template <typename T>
-links::LinkedList<T>::LinkedList(){
+template <typename T, typename Z>
+links::SLinkedList<T, Z>::SLinkedList(){
     this->count = 0;
     head = nullptr;
 }
 
-template <typename T>
-void links::LinkedList<T>::clear(){
+template <typename T, typename Z>
+void links::SLinkedList<T, Z>::clear(){
     if (this->count > 0){
         //this->head = nullptr;
         while (this->count > 0)
@@ -107,8 +79,8 @@ void links::LinkedList<T>::clear(){
     
 }
 
-template <typename T>
-void links::LinkedList<T>::push(T value){
+template <typename T, typename Z>
+void links::SLinkedList<T, Z>::push(T value){
     this->count += 1;
     Node<T>* push = new Node<T>();
     push->next = this->head;
@@ -116,8 +88,8 @@ void links::LinkedList<T>::push(T value){
     this->head = push;
 }
 
-template <typename T>
-void links::LinkedList<T>::operator<<(T value){
+template <typename T, typename Z>
+void links::SLinkedList<T, Z>::operator<<(T value){
     this->count += 1;
     Node<T>* push = new Node<T>();
     push->next = this->head;
@@ -125,8 +97,8 @@ void links::LinkedList<T>::operator<<(T value){
     this->head = push;
 }
 
-template <typename T>
-void links::LinkedList<T>::invert(){
+template <typename T, typename Z>
+void links::SLinkedList<T, Z>::invert(){
     Node<T>* prev = nullptr;
     Node<T>* curr = this->head;
     Node<T>* next = nullptr;
@@ -140,8 +112,8 @@ void links::LinkedList<T>::invert(){
     this->head = prev;
 }
 
-template <typename T>
-T links::LinkedList<T>::pop(){
+template <typename T, typename Z>
+T links::SLinkedList<T, Z>::pop(){
     this->count -= 1;
     T data = this->head->data;
     Node<T>* poper = this->head;
@@ -150,13 +122,13 @@ T links::LinkedList<T>::pop(){
     return data;
 }
 
-template<typename T>
-T links::LinkedList<T>::peek(){
+template<typename T, typename Z>
+T links::SLinkedList<T, Z>::peek(){
     return this->head->data;
 }
 
-template<typename T>
-void links::LinkedList<T>::stitch(LinkedList<T> l){
+template<typename T, typename Z>
+void links::SLinkedList<T, Z>::stitch(SLinkedList<T, Z> l){
     links::Node<T> * pointer = head;
     this->count += l.count;
     if (pointer == nullptr){
@@ -171,8 +143,8 @@ void links::LinkedList<T>::stitch(LinkedList<T> l){
     }
 }
 
-template<typename T>
-void links::LinkedList<T>::istitch(LinkedList<T> l){
+template<typename T, typename Z>
+void links::SLinkedList<T, Z>::istitch(SLinkedList<T, Z> l){
     links::Node<T> * pointer = l.head;
     this->count += l.count;
     if (pointer == nullptr){

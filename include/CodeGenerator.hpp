@@ -3,6 +3,7 @@
 
 #include "AST.hpp"
 #include "LinkedList.hpp"
+#include "LinkedListS.hpp"
 #include "ASM.hpp"
 
 
@@ -21,6 +22,7 @@ namespace gen{
     };
     class CodeGenerator{
         private:
+        links::SLinkedList<ASMC::Register, std::string> registers;
         links::LinkedList<Symbol> SymbolTable;
         ASMC::Register intArgs[6] = { ASMC::Register("rdi", "edi", "di", "dil"),
                                     ASMC::Register("rsi", "esi", "si", "sil"),
