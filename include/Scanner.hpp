@@ -25,6 +25,8 @@ namespace lex{
         string meta;
     };
 
+    class Ref: public Token{};
+
     class StringObj: public Token{
         public:
         string value;

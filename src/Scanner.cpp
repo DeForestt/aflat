@@ -62,8 +62,8 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                     }
                     else if (input[i] == '?')
                     {
-                        lex::OpSym* refrence = new OpSym;
-                        refrence->Sym = input[i];
+                        lex::Ref* Ref = new lex::Ref;
+                        i++;
                     }
                     
                     else if(input[i] == '('){

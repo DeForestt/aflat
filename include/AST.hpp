@@ -204,6 +204,11 @@ namespace AST{
         Expr * expr2;
     };
 
+    class Refrence : public Expr{
+        public:
+        std::string Ident;
+    };
+
 }
 
 #endif
