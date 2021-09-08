@@ -34,6 +34,7 @@ namespace gen{
         Expr GenExpr(AST::Expr * expr, ASMC::File &OutputFile);
         public:
         ASMC::File GenSTMT(AST::Statment * stmt);
+        CodeGenerator();
     };
 }
 

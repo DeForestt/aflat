@@ -42,12 +42,12 @@ namespace links{
             T peek();
 
             
-            T* operator[](T input);
+            T* operator[](Z input);
     };
 }
 
 template <typename T, typename Z>
-T* links::SLinkedList<T, Z>::operator[](T input){
+T* links::SLinkedList<T, Z>::operator[](Z input){
         links::Node<T> * pointer = this->head;
         if (this->head == nullptr) return nullptr;
         if((*foo)(this->head->data, input)) return &this->head->data;

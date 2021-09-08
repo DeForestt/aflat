@@ -5,6 +5,18 @@ bool searchSymbol(gen::Symbol sym, std::string str){
     if (sym.symbol == str) return true; else return false;
 }
 
+gen::CodeGenerator::CodeGenerator(){
+    this->registers << ASMC::Register("rax", "eax", "ax", "al");
+    this->registers << ASMC::Register("rcx", "ecx", "cx", "cl");
+    this->registers << ASMC::Register("rdx", "edx", "dx", "dl");
+    this->registers << ASMC::Register("rbx", "ebx", "bx", "bl");
+    this->registers << ASMC::Register("rsi", "esi", "si", "sil");
+    this->registers << ASMC::Register("rdi", "edi", "di", "dil");   
+    this->registers << ASMC::Register("rsp", "esp", "sp", "spl");
+    this->registers << ASMC::Register("rbp", "ebp", "bp", "bpl");
+    this->registers.foo = ASMC::Register::compair;
+}
+
 gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     gen::Expr output;
     if(dynamic_cast<AST::IntLiteral *>(expr) != nullptr){
@@ -35,7 +47,44 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
                 mov1->size = expr1.size;
                 mov2->size = expr2.size;
-                mov1->to = "%edx";
+                switch (expr1.size)
+                {
+                case ASMC::Byte:
+                    mov1->to = this->registers["%edx"]->byte;
+                    break;
+                case ASMC::Word:
+                    mov1->to = this->registers["%edx"]->word;
+                    break;
+                case ASMC::DWord:
+                    mov1->to = this->registers["%edx"]->dWord;
+                    break;
+                case ASMC::QWord:
+                    mov1->to = this->registers["%edx"]->qWord;
+                    break;
+                default:
+                    mov1->to = this->registers["%edx"]->qWord;
+                    break;
+                }
+                
+                switch (expr2.size)
+                {
+                case ASMC::Byte:
+                    mov2->to = this->registers["%eax"]->byte;
+                    break;
+                case ASMC::Word:
+                    mov2->to = this->registers["%eax"]->word;
+                    break;
+                case ASMC::DWord:
+                    mov2->to = this->registers["%eax"]->dWord;
+                    break;
+                case ASMC::QWord:
+                    mov2->to = this->registers["%eax"]->qWord;
+                    break;
+                default:
+                    mov2->to = this->registers["%eax"]->qWord;
+                    break;
+                }
+                
                 mov2->to = "%eax";
                 mov1->from = expr1.access;
                 mov2->from = expr2.access;
