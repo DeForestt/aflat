@@ -13,7 +13,7 @@ namespace links{
             bool(* foo)(T, Z);
             int count;
 
-            SNode<T> * head;
+            Node<T> * head;
             SLinkedList();
 
             /*Push a new value to the top of the list*/
