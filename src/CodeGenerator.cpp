@@ -94,6 +94,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 OutputFile.text << mov2;
                 OutputFile.text << add;
                 output.access = "%eax";
+                output.size = ASMC::DWord;
                 break;
             }
             default:{
