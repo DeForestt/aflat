@@ -197,15 +197,15 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         if (dynamic_cast<AST::IntLiteral *>(ret->expr))
         {
             ASMC::Mov * mov = new ASMC::Mov();
-            mov->size = ASMC::DWord;
+            mov->size = ASMC::AUTO;
             mov->from = this->GenExpr(ret->expr, OutputFile);
-            mov->to = "%eax";
+            mov->to = "%rax";
             OutputFile.text.push(mov);   
         }else{
             ASMC::Mov * mov = new ASMC::Mov();
-            mov->size = ASMC::DWord;
+            mov->size = ASMC::AUTO;
             mov->from = this->GenExpr(ret->expr, OutputFile);
-            mov->to = "%eax";
+            mov->to = "%rax";
             OutputFile.text.push(mov);
         }
         
