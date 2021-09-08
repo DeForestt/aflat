@@ -60,6 +60,12 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         tokens.push(semi);
                         i++;
                     }
+                    else if (input[i] == '?')
+                    {
+                        lex::OpSym* refrence = new OpSym;
+                        refrence->Sym = input[i];
+                    }
+                    
                     else if(input[i] == '('){
                         lex::OpSym* oPrenth = new OpSym;
                         oPrenth->Sym = input[i];
