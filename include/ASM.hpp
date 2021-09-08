@@ -104,6 +104,15 @@ namespace ASMC{
         void operator<<(ASMC::File file);
     };
 
+    class Register{
+        public:
+        std::string qWord;
+        std::string dWord;
+        std::string word;
+        std::string byte;
+        Register(std::string _qWord, std::string _dWord, std::string _word, std::string _byte);
+    };
+
 }
 #endif // ASM
 

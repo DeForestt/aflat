@@ -70,3 +70,10 @@ void ASMC::File::operator<<(ASMC::File file){
     this->linker.stitch(file.linker);
     this->text.istitch(file.text);
 }
+
+ASMC::Register::Register(std::string _qWord, std::string _dWord, std::string _word, std::string _byte){
+    this->qWord = '%' + _qWord;
+    this->dWord = '%' + _dWord;
+    this->word = '%' + _word;
+    this->byte = '%' + _byte;
+}

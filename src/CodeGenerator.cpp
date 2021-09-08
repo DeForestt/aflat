@@ -270,7 +270,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         default:
             break;
         }
-        mov->from = this->intArgs[intArgsCounter];
+        mov->from = this->intArgs[intArgsCounter].dWord;
+        mov->size = ASMC::DWord;
         mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
         OutputFile.text.push(mov);
         intArgsCounter++;
@@ -290,7 +291,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             ASMC::Mov * mov2 = new ASMC::Mov();
             mov2->from = "%eax";
             mov2->size = ASMC::QWord;
-            mov2->to = this->intArgs[intArgsCounter];
+            mov2->to = this->intArgs[intArgsCounter].dWord;
             intArgsCounter++;
             OutputFile.text << mov;
             OutputFile.text << mov2;
