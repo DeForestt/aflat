@@ -51,6 +51,7 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         charobj->value = input[i];
                         i++;
                         if (input[i] != '\'') throw err::Exception("Unterminated Char Value");
+                        i++;
                     }
                     else if(input[i] == ';'){
                         lex::OpSym* semi = new OpSym;
