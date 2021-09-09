@@ -227,6 +227,12 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             case AST::Int:
                 offset = 4;
                 break;
+            case AST::IntPtr:
+                offset = 8;
+                break;
+            case AST::CharPtr:
+                offset = 8;
+                break;
             case AST::Byte:
                 offset = 1;
                 break;
