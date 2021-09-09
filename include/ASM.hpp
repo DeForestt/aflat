@@ -40,6 +40,13 @@ namespace ASMC{
         std::string toString();
     };
 
+    class Lea : public Instruction{
+        public:
+        std::string to;
+        std::string from;
+        std::string toString();
+    };
+
     class Movl : public Instruction{
         public:
         std::string to;

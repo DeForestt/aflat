@@ -42,6 +42,10 @@ std::string ASMC::Mov::toString(){
     return "\tmov" + size + "\t" + this->from + ", " + this->to + "\n";
 }
 
+std::string ASMC::Lea::toString(){
+    return "\tlea\t" + this->from + ", " + this->to + "\n"; 
+}
+
 std::string ASMC::Movq::toString(){
     return "\tmovq\t" + this->from + ", " + this->to + "\n";
 }
