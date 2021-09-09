@@ -8,33 +8,18 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
         tokens.pop();
         //Declare a byte;
-        if(obj.meta == "byte" | obj.meta == "int" | obj.meta == "char"){
+        if(obj.meta == "byte" | obj.meta == "int" | obj.meta == "char" | obj.meta == "adr"){
             AST::Declare * dec = new AST::Declare();
             //ensures the the current token is an Ident
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                 lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
                 tokens.pop();
                 dec->Ident = obj.meta;
-                if(obj.meta == "byte") dec->type = AST::Byte; else if (obj.meta == "int") dec->type = AST::Int; else if (obj.meta == "char")dec->type = AST::Char;
+                if(obj.meta == "byte") dec->type = AST::Byte;
+                else if (obj.meta == "int") dec->type = AST::Int; 
+                else if (obj.meta == "char")dec->type = AST::Char;
+                else if (obj.meta == "adr")dec->type = AST::IntPtr;
                 output = dec;
-                if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-                    lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                    if(sym.Sym == '*'){
-                        tokens.pop();
-                        switch(dec->type){
-                            case AST::Int:
-                                dec->type = AST::IntPtr;
-                                break;
-                            case AST::Char:
-                                dec->type = AST::CharPtr;
-                                break;
-                            default:
-                                throw err::Exception("Dont know how to creat this type of pointer " + obj.meta);
-                                break;
-                        }
-                        output = dec;
-                    }
-                }
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                     lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
                     //Checking for Perenth to see if it is a function
@@ -53,8 +38,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                                 delete(dec);
                             }
                         }
-                    }else if (sym.Sym == '=')
-                    {
+                    }else if (sym.Sym == '='){
                         tokens.pop();
                         AST::DecAssign * assign = new AST::DecAssign;
                         assign->declare = dec;
@@ -196,16 +180,28 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
         output = ilit;
     } else if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.pop());
-        AST::Var * var = new AST::Var();
-        var->Ident = obj.meta;
-        output = var;
+        if(obj.meta == "as"){
+            AST::DeRefence * deRef = new AST::DeRefence();
+            tokens.pop();
+        if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+            lex::LObj view = * dynamic_cast<lex::LObj *>(tokens.pop());
+            deRef->Ident = obj.meta;
+            if (view.meta == "int") deRef->type = AST::Int;
+            else if(view.meta == "char") deRef->type = AST::Char;
+            else if(view.meta == "adr") deRef->type = AST::IntPtr;
+            output = deRef;
+        }else throw err::Exception("No dereffrens type given with as");
+        } else {
+            AST::Var * var = new AST::Var();
+            var->Ident = obj.meta;
+            output = var;
+        }
     } else if (dynamic_cast<lex::CharObj *>(tokens.peek()) != nullptr){
         lex::CharObj obj = *dynamic_cast<lex::CharObj *>(tokens.pop());
         AST::CharLiteral * charlit = new AST::CharLiteral();
         charlit->value = obj.value;
         output = charlit;
-    }else if (dynamic_cast<lex::Ref *>(tokens.peek()) != nullptr)
-    {
+    }else if (dynamic_cast<lex::Ref *>(tokens.peek()) != nullptr){
         tokens.pop();
         AST::Refrence * ref = new AST::Refrence();
         if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
@@ -231,6 +227,7 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             compound->expr2 = this->parseExpr(tokens);
             return compound;
         }
+        
     }
 
     return output;

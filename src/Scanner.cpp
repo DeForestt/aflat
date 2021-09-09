@@ -67,12 +67,6 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         i++;
                     }
                     
-                    else if(input[i] == '('){
-                        lex::OpSym* oPrenth = new OpSym;
-                        oPrenth->Sym = input[i];
-                        tokens.push(oPrenth);
-                        i++;
-                    }
                     else if(input[i] == ')'){
                         lex::OpSym* cPrenth = new OpSym;
                         cPrenth->Sym = input[i];

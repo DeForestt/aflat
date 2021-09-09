@@ -209,6 +209,12 @@ namespace AST{
         std::string Ident;
     };
 
+    class DeRefence : public Expr{
+        public:
+        std::string Ident;
+        AST::Type type;
+    };
+
 }
 
 #endif

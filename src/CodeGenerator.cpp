@@ -47,8 +47,43 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         OutputFile.text << lea;
         output.access = registers["%rax"]->qWord;
         output.size = ASMC::QWord;
-    }
-     else if (dynamic_cast<AST::Compound *>(expr) != nullptr)
+    }else if(dynamic_cast<AST::DeRefence *>(expr)){
+        AST::DeRefence deRef = *dynamic_cast<AST::DeRefence *>(expr);
+        gen::Symbol sym = *this->SymbolTable.search<std::string>(searchSymbol, deRef.Ident);
+        ASMC::Mov * mov = new ASMC::Mov();
+        ASMC::Mov * mov2 = new ASMC::Mov();
+        mov->size = ASMC::DWord;
+        mov->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
+        mov->to = this->registers["%rax"]->qWord;
+        mov2->from = "(" + this->registers["%rax"]->qWord + ")";
+        switch (deRef.type)
+        {
+        case AST::Int:
+            mov2->size = ASMC::DWord;
+            mov2->to = this->registers["%rax"]->dWord;
+            output.size = ASMC::DWord;
+            output.access = this->registers["%rax"]->dWord;
+            break;
+        case AST::Char:
+            mov2->size = ASMC::Byte;
+            mov2->to = this->registers["%rax"]->byte;
+            output.size = ASMC::Byte;
+            output.access = this->registers["%rax"]->byte;
+            break;
+        case AST::IntPtr:
+            mov2->size = ASMC::QWord;
+            mov2->to = this->registers["%rax"]->qWord;
+            output.size = ASMC::QWord;
+            output.access = this->registers["%rax"]->qWord;
+            break;
+        
+        default:
+            throw err::Exception("Cannot DeRefrence to this type");
+            break;
+        }
+
+        
+    }else if (dynamic_cast<AST::Compound *>(expr) != nullptr)
     {
         AST::Compound comp = *dynamic_cast<AST::Compound *>(expr);
         switch (comp.op)
@@ -117,9 +152,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
 
             }
         }   
-    }
-    
-    
+    }  
     else{
         throw err::Exception("cannot gen expr");
     }
