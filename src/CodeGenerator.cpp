@@ -28,6 +28,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         gen::Symbol sym = *this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
         if(sym.type == AST::Int) output.size = ASMC::DWord;
             else if (sym.type == AST::Char)  output.size = ASMC::Byte;
+            else if (sym.type == AST::IntPtr) output.size = ASMC::QWord;
+            else if (sym.type == AST::CharPtr) output.size = ASMC::QWord;
 
         output.access = '-' + std::to_string(sym.byteMod) + "(%rbp)";
     }else if (dynamic_cast<AST::CharLiteral *>(expr) != nullptr){
@@ -37,6 +39,13 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     }else if (dynamic_cast<AST::Refrence *>(expr) != nullptr)
     {
         AST::Refrence ref = *dynamic_cast<AST::Refrence *>(expr);
+        gen::Symbol sym = *this->SymbolTable.search<std::string>(searchSymbol, ref.Ident);
+        ASMC::Lea * lea = new ASMC::Lea();
+        lea->to = this->registers["%rax"]->qWord;
+        lea->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
+        ASMC::Mov * mov = new ASMC::Mov();
+        output.access = registers["%rax"]->qWord;
+        output.size = ASMC::QWord;
     }
      else if (dynamic_cast<AST::Compound *>(expr) != nullptr)
     {
@@ -174,6 +183,12 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         switch(dec->type){
             case AST::Int:
                 offset = 4;
+                break;
+            case AST::IntPtr:
+                offset = 8;
+                break;
+            case AST::CharPtr:
+                offset = 8;
                 break;
             case AST::Byte:
                 offset = 1;
