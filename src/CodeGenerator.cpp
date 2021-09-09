@@ -52,7 +52,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         gen::Symbol sym = *this->SymbolTable.search<std::string>(searchSymbol, deRef.Ident);
         ASMC::Mov * mov = new ASMC::Mov();
         ASMC::Mov * mov2 = new ASMC::Mov();
-        mov->size = ASMC::DWord;
+        mov->size = ASMC::QWord;
         mov->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
         mov->to = this->registers["%rax"]->qWord;
         mov2->from = "(" + this->registers["%rax"]->qWord + ")";
