@@ -32,6 +32,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                                 throw err::Exception("Dont know how to creat this type of pointer " + obj.meta);
                                 break;
                         }
+                        output = dec;
                     }
                 }
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
