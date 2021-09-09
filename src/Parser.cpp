@@ -211,6 +211,7 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
         if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
             lex::LObj obj = * dynamic_cast<lex::LObj *>(tokens.pop());
             ref->Ident = obj.meta;
+            output = ref;
         }else throw err::Exception("No object given to refrece");
     }
     
