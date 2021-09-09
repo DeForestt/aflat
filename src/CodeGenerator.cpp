@@ -43,7 +43,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         ASMC::Lea * lea = new ASMC::Lea();
         lea->to = this->registers["%rax"]->qWord;
         lea->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
-        ASMC::Mov * mov = new ASMC::Mov();
+        //ASMC::Mov * mov = new ASMC::Mov();
+        OutputFile.text << lea;
         output.access = registers["%rax"]->qWord;
         output.size = ASMC::QWord;
     }
