@@ -76,11 +76,13 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             output.size = ASMC::QWord;
             output.access = this->registers["%rax"]->qWord;
             break;
-        
         default:
             throw err::Exception("Cannot DeRefrence to this type");
             break;
         }
+
+        OutputFile.text << mov;
+        OutputFile.text << mov2;
 
         
     }else if (dynamic_cast<AST::Compound *>(expr) != nullptr)
