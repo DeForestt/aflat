@@ -34,7 +34,11 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::CharLiteral charlit = *dynamic_cast<AST::CharLiteral *>(expr);
         output.access = "$" + std::to_string(charlit.value);
         output.size = ASMC::Byte;
-    }else if (dynamic_cast<AST::Compound *>(expr) != nullptr)
+    }else if (dynamic_cast<AST::Refrence *>(expr) != nullptr)
+    {
+        AST::Refrence ref = *dynamic_cast<AST::Refrence *>(expr);
+    }
+     else if (dynamic_cast<AST::Compound *>(expr) != nullptr)
     {
         AST::Compound comp = *dynamic_cast<AST::Compound *>(expr);
         switch (comp.op)
@@ -105,10 +109,10 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         }   
     }
     
+    
     else{
         throw err::Exception("cannot gen expr");
     }
-
     return output;
 };
 
