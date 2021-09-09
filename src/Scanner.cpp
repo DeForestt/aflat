@@ -63,6 +63,7 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                     else if (input[i] == '?')
                     {
                         lex::Ref* Ref = new lex::Ref;
+                        tokens << Ref;
                         i++;
                     }
                     
