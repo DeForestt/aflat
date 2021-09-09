@@ -180,17 +180,20 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
         output = ilit;
     } else if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.pop());
-        if(obj.meta == "as"){
-            AST::DeRefence * deRef = new AST::DeRefence();
-            tokens.pop();
-        if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
-            lex::LObj view = * dynamic_cast<lex::LObj *>(tokens.pop());
-            deRef->Ident = obj.meta;
-            if (view.meta == "int") deRef->type = AST::Int;
-            else if(view.meta == "char") deRef->type = AST::Char;
-            else if(view.meta == "adr") deRef->type = AST::IntPtr;
-            output = deRef;
-        }else throw err::Exception("No dereffrens type given with as");
+        if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+            lex::LObj aobj = *dynamic_cast<lex::LObj *>(tokens.peek());
+            if(aobj.meta == "as"){
+                AST::DeRefence * deRef = new AST::DeRefence();
+                tokens.pop();
+                if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+                    lex::LObj view = * dynamic_cast<lex::LObj *>(tokens.pop());
+                    deRef->Ident = obj.meta;
+                    if (view.meta == "int") deRef->type = AST::Int;
+                    else if(view.meta == "char") deRef->type = AST::Char;
+                    else if(view.meta == "adr") deRef->type = AST::IntPtr;
+                    output = deRef;
+                }else throw err::Exception("No dereffrens type given with as");
+            }
         } else {
             AST::Var * var = new AST::Var();
             var->Ident = obj.meta;
