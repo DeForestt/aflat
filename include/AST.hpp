@@ -36,11 +36,11 @@ namespace AST{
     };
     
     enum Type{
-        Int,
-        Float,
-        String,
-        Char,
-        Byte
+        Int, IntPtr,
+        Float, FloatPtr,
+        String, StringPtr,
+        Char, CharPtr,
+        Byte, BytePtr
     };
 
     class Arg{

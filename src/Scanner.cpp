@@ -105,7 +105,14 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         add->Sym = input[i];
                         tokens.push(add);
                         i++;
+                    }else if (input[i] == '*')
+                    {
+                        lex::OpSym* mul = new OpSym;
+                        mul->Sym = input[i];
+                        tokens << mul;
+                        i++;
                     }
+                    
                     else{
                         throw err::Exception("unknown char: " + input[i]);
                     }

@@ -16,7 +16,24 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 tokens.pop();
                 dec->Ident = obj.meta;
                 if(obj.meta == "byte") dec->type = AST::Byte; else if (obj.meta == "int") dec->type = AST::Int; else if (obj.meta == "char")dec->type = AST::Char;
-                output = dec;                
+                output = dec;
+                if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                    lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                    if(sym.Sym == '*'){
+                        tokens.pop();
+                        switch(dec->type){
+                            case AST::Int:
+                                dec->type = AST::IntPtr;
+                                break;
+                            case AST::Char:
+                                dec->type = AST::CharPtr;
+                                break;
+                            default:
+                                throw err::Exception("Dont know how to creat this type of pointer " + obj.meta);
+                                break;
+                        }
+                    }
+                }
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                     lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
                     //Checking for Perenth to see if it is a function
