@@ -97,7 +97,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
                 mov1->size = expr1.size;
-                mov2->size = expr2.size;
+                mov2->size = expr1.size;
                 switch (expr1.size)
                 {
                 case ASMC::Byte:
@@ -117,7 +117,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     break;
                 }
                 
-                switch (expr2.size)
+                switch (expr1.size)
                 {
                 case ASMC::Byte:
                     mov2->to = this->registers["%eax"]->byte;
