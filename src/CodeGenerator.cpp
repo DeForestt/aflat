@@ -356,11 +356,20 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             case AST::Int:
                 offset = 4;
                 break;
+            case AST::IntPtr:
+                offset = 8;
+                break;
+            case AST::CharPtr:
+                offset = 8;
+                break;
             case AST::Byte:
                 offset = 1;
                 break;
             case AST::String:
                 offset = 4;
+                break;
+            case AST::Char:
+                offset = 1;
                 break;
         }
 
@@ -377,18 +386,10 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         this->SymbolTable.push(symbol);
 
         ASMC::Mov * mov = new ASMC::Mov();
-        switch (symbol.type)
-        {
-        case AST::Int:
-            mov->size = ASMC::DWord;
-            break;
-        default:
-            break;
-        }
         mov->from = this->intArgs[intArgsCounter].dWord;
         mov->size = ASMC::DWord;
         mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
-        OutputFile.text.push(mov);
+        OutputFile.text << mov;
         intArgsCounter++;
     }else if (dynamic_cast<AST::Call *>(STMT) != nullptr)
     {
@@ -442,8 +443,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text << callnum;
         
         OutputFile.text << new ASMC::SysCall;
-
-
     }
     
     else{
