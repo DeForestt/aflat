@@ -139,14 +139,18 @@ AST::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens){
     if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
         tokens.pop();
-        if(obj.meta == "int"){
-            AST::Argument * declare = new AST::Argument();
-            declare->type = AST::Int;
+        if(obj.meta == "byte" | obj.meta == "int" | obj.meta == "char" | obj.meta == "adr"){
+            AST::Declare * dec = new AST::Declare();
+            //ensures the the current token is an Ident
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
-                lex::LObj l = *dynamic_cast<lex::LObj *>(tokens.pop());
-                declare->Ident = l.meta;
-                declare->type = AST::Int;
-                output = declare;
+                lex::LObj Ident = *dynamic_cast<lex::LObj *>(tokens.peek());
+                tokens.pop();
+                dec->Ident = Ident.meta;
+                if(obj.meta == "byte") dec->type = AST::Byte;
+                else if (obj.meta == "int") dec->type = AST::Int; 
+                else if (obj.meta == "char") dec->type = AST::Char;
+                else if (obj.meta == "adr")dec->type = AST::IntPtr;
+                output = dec;
             }
         }
     }
