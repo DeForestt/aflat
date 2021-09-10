@@ -168,7 +168,9 @@ namespace AST{
         std::string toString();
     };
 
-    class ORead : public Statment{
+    class Push : public Statment{
+        public:
+        Expr * expr;
     };
     
     class Return : public Statment{

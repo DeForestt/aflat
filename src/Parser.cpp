@@ -58,7 +58,13 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             AST::Return * ret = new AST::Return;
             ret->expr = this->parseExpr(tokens);
             output = ret;
-        }else{
+        } else if (obj.meta == "push")
+        {
+            AST::Push * push = new AST::Push;
+            push->expr = this->parseExpr(tokens);
+            output = push;
+        }
+         else{
             if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                 lex::OpSym * sym = dynamic_cast<lex::OpSym *> (tokens.pop());
                 if(sym->Sym == '='){
