@@ -166,7 +166,7 @@ void gen::CodeGenerator::GenArgs(AST::Statment * STMT, ASMC::File &OutputFile){
         AST::Sequence * sequence = dynamic_cast<AST::Sequence *>(STMT);
         this->GenArgs(sequence->Statment1, OutputFile);
         this->GenArgs(sequence->Statment2, OutputFile);
-    }else if (dynamic_cast<AST::Argument *>(STMT) != nullptr)
+    }else if (dynamic_cast<AST::Declare *>(STMT) != nullptr)
     {
         /*
             movl $0x0, -[SymbolT + size](rdp)
@@ -174,7 +174,7 @@ void gen::CodeGenerator::GenArgs(AST::Statment * STMT, ASMC::File &OutputFile){
         */
 
         if (intArgsCounter > 6) throw err::Exception("AFlat compiler cannot handle more than 6 int arguments.");
-        AST::Argument * arg =  dynamic_cast<AST::Argument *>(STMT);
+        AST::Declare * arg =  dynamic_cast<AST::Declare *>(STMT);
         int offset = 0;
         switch(arg->type){
             case AST::Int:
