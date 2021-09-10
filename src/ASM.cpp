@@ -5,7 +5,7 @@ std::string ASMC::Instruction::toString(){
 }
 
 std::string ASMC::SysCall::toString(){
-    return "\tsyscall\t";
+    return "\tsyscall\t\n";
 }
 
 std::string ASMC::Lable::toString(){
