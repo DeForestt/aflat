@@ -4,6 +4,10 @@ std::string ASMC::Instruction::toString(){
     return("");
 }
 
+std::string ASMC::SysCall::toString(){
+    return "\tsyscall\t";
+}
+
 std::string ASMC::Lable::toString(){
     return this->lable + ":\n";
 }
