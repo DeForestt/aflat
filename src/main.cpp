@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 
     std::cout << "\n\n.text\n\n";
 
-    while(file.text.count > 0){
+    while(file.text.head != nullptr){
         std::cout << file.text.pop()->toString();
     }
     }
