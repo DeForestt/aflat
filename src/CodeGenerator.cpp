@@ -200,7 +200,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::LinkTask * link = new ASMC::LinkTask();
         link->command = "global";
         link->operand = func->ident.ident;
-        OutputFile.text.stitch( this->GenSTMT(func->args).text);
+        OutputFile.text.stitch(this->GenSTMT(func->args).text);
         OutputFile.linker.push(link);
         ASMC::File file = this->GenSTMT(func->statment);
         OutputFile << file;
