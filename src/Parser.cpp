@@ -12,12 +12,12 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             AST::Declare * dec = new AST::Declare();
             //ensures the the current token is an Ident
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
-                lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+                lex::LObj Ident = *dynamic_cast<lex::LObj *>(tokens.peek());
                 tokens.pop();
-                dec->Ident = obj.meta;
+                dec->Ident = Ident.meta;
                 if(obj.meta == "byte") dec->type = AST::Byte;
                 else if (obj.meta == "int") dec->type = AST::Int; 
-                else if (obj.meta == "char")dec->type = AST::Char;
+                else if (obj.meta == "char") dec->type = AST::Char;
                 else if (obj.meta == "adr")dec->type = AST::IntPtr;
                 output = dec;
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
