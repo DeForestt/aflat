@@ -31,6 +31,7 @@ namespace gen{
                                     ASMC::Register("r8", "r8d", "r8w", "r8b"),
                                     ASMC::Register("r9", "r9d", "r9w", "r9b")};
         int intArgsCounter;
+        void GenArgs(AST::Statment * STMT ,ASMC::File &OutputFile);
         Expr GenExpr(AST::Expr * expr, ASMC::File &OutputFile);
         public:
         ASMC::File GenSTMT(AST::Statment * stmt);

@@ -161,6 +161,63 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     return output;
 };
 
+void gen::CodeGenerator::GenArgs(AST::Statment * STMT, ASMC::File &OutputFile){
+     if(dynamic_cast<AST::Sequence *>(STMT) != nullptr){
+        AST::Sequence * sequence = dynamic_cast<AST::Sequence *>(STMT);
+        this->GenArgs(sequence->Statment1, OutputFile);
+        this->GenArgs(sequence->Statment2, OutputFile);
+    }else if (dynamic_cast<AST::Argument *>(STMT) != nullptr)
+    {
+        /*
+            movl $0x0, -[SymbolT + size](rdp)
+            **also needs to be added to symbol table**
+        */
+
+        if (intArgsCounter > 6) throw err::Exception("AFlat compiler cannot handle more than 6 int arguments.");
+        AST::Argument * arg =  dynamic_cast<AST::Argument *>(STMT);
+        int offset = 0;
+        switch(arg->type){
+            case AST::Int:
+                offset = 4;
+                break;
+            case AST::IntPtr:
+                offset = 8;
+                break;
+            case AST::CharPtr:
+                offset = 8;
+                break;
+            case AST::Byte:
+                offset = 1;
+                break;
+            case AST::String:
+                offset = 4;
+                break;
+            case AST::Char:
+                offset = 1;
+                break;
+        }
+
+        if(this->SymbolTable.search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined veriable:" + arg->Ident);
+
+        gen::Symbol symbol;
+        if (this->SymbolTable.head == nullptr){
+            symbol.byteMod = offset;
+        }else{
+            symbol.byteMod = this->SymbolTable.peek().byteMod + offset;
+        }
+        symbol.symbol = arg->Ident;
+
+        this->SymbolTable.push(symbol);
+
+        ASMC::Mov * mov = new ASMC::Mov();
+        mov->from = this->intArgs[intArgsCounter].dWord;
+        mov->size = ASMC::DWord;
+        mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
+        OutputFile.text << mov;
+        intArgsCounter++;
+    }
+}
+
 ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
     ASMC::File OutputFile;
@@ -200,7 +257,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::LinkTask * link = new ASMC::LinkTask();
         link->command = "global";
         link->operand = func->ident.ident;
-        OutputFile.text.stitch(this->GenSTMT(func->args).text);
+        this->GenArgs(func->args, OutputFile);
         OutputFile.linker.push(link);
         ASMC::File file = this->GenSTMT(func->statment);
         OutputFile << file;
@@ -340,55 +397,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         mov->from = expr.access;
         mov->to = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
         OutputFile.text << mov;
-    }else if (dynamic_cast<AST::Argument *>(STMT) != nullptr)
-    {
-        /*
-            movl $0x0, -[SymbolT + size](rdp)
-            **also needs to be added to symbol table**
-        */
-
-        if (intArgsCounter > 6) throw err::Exception("AFlat compiler cannot handle more than 6 int arguments.");
-        AST::Argument * arg =  dynamic_cast<AST::Argument *>(STMT);
-        int offset = 0;
-        switch(arg->type){
-            case AST::Int:
-                offset = 4;
-                break;
-            case AST::IntPtr:
-                offset = 8;
-                break;
-            case AST::CharPtr:
-                offset = 8;
-                break;
-            case AST::Byte:
-                offset = 1;
-                break;
-            case AST::String:
-                offset = 4;
-                break;
-            case AST::Char:
-                offset = 1;
-                break;
-        }
-
-        if(this->SymbolTable.search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined veriable:" + arg->Ident);
-
-        gen::Symbol symbol;
-        if (this->SymbolTable.head == nullptr){
-            symbol.byteMod = offset;
-        }else{
-            symbol.byteMod = this->SymbolTable.peek().byteMod + offset;
-        }
-        symbol.symbol = arg->Ident;
-
-        this->SymbolTable.push(symbol);
-
-        ASMC::Mov * mov = new ASMC::Mov();
-        mov->from = this->intArgs[intArgsCounter].dWord;
-        mov->size = ASMC::DWord;
-        mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
-        OutputFile.text << mov;
-        intArgsCounter++;
     }else if (dynamic_cast<AST::Call *>(STMT) != nullptr)
     {
         AST::Call * call = dynamic_cast<AST::Call *>(STMT);
