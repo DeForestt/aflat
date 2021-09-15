@@ -130,17 +130,7 @@ T links::SLinkedList<T, Z>::peek(){
 
 template<typename T, typename Z>
 T links::SLinkedList<T, Z>::at(int i){
-     Node* current = this->head;
-    // the index of the
-    // node we're currently
-    // looking at
-    int count = 0;
-    while (current != nullprt) {
-        if (count == index)
-            return (current->data);
-        count++;
-        current = current->next;
-    }
+    return 0;
 }
 
 template<typename T, typename Z>
