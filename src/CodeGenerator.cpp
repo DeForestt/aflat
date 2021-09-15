@@ -451,6 +451,40 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         
         OutputFile.text << new ASMC::SysCall;
     }
+    else if (dynamic_cast<AST::If *>(STMT) != nullptr)
+    {
+        AST::If ifStmt = *dynamic_cast<AST::If *>(STMT);
+
+        ASMC::Lable * lable1;
+        lable1->lable = ".L" + std::to_string(this->lablecount);
+        this->lablecount ++;
+
+        gen::Expr expr1 =this->GenExpr(ifStmt.Condition->expr1, OutputFile);
+        gen::Expr expr2 =this->GenExpr(ifStmt.Condition->expr2, OutputFile);
+    
+        switch (ifStmt.Condition->op)
+        {
+        case AST::Equ:
+        {
+            ASMC::Cmp * cmp;
+            ASMC::Jne * jne;
+
+            cmp->from = expr1.access;
+            cmp->to = expr2.access;
+            cmp->size = expr1.size;
+
+            jne->to = lable1->lable;
+
+            OutputFile.text << cmp;
+            OutputFile << this->GenSTMT(ifStmt.statment);
+            OutputFile.text << lable1;
+            break;
+        }
+        
+        default:
+            break;
+        }
+    }
     
     else{
         OutputFile.text.push(new ASMC::Instruction());

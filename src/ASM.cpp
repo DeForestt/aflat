@@ -46,12 +46,42 @@ std::string ASMC::Mov::toString(){
     return "\tmov" + size + "\t" + this->from + ", " + this->to + "\n";
 }
 
+std::string ASMC::Cmp::toString(){
+    std::string size = "";
+    switch (this->size)
+    {
+    case ASMC::Byte:
+        size = "b";
+        break;
+    case ASMC::Word:
+        size = "s";
+        break;
+    case ASMC::DWord:
+        size = "l";
+        break;
+    case ASMC::QWord:
+        size = "q";
+        break;
+    case ASMC::AUTO:
+        size = "";
+        break;
+    default:
+        size = "";
+        break;
+    }
+    return "\tcmp" + size + "\t" + this->from + ", " + this->to + "\n";
+}
+
 std::string ASMC::Lea::toString(){
     return "\tlea\t" + this->from + ", " + this->to + "\n"; 
 }
 
 std::string ASMC::Movq::toString(){
     return "\tmovq\t" + this->from + ", " + this->to + "\n";
+}
+
+std::string ASMC::Jne::toString(){
+    return "\tjne\t" + this->to + "\n";
 }
 
 std::string ASMC::Movl::toString(){

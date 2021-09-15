@@ -40,6 +40,20 @@ namespace ASMC{
         std::string toString();
     };
 
+    class Cmp : public Instruction{
+        public:
+        std::string to;
+        std::string from;
+        Size size;
+        std::string toString();
+    };
+
+    class Jne : public Instruction{
+        public:
+        std::string to;
+        std::string toString();
+    };
+
     class Lea : public Instruction{
         public:
         std::string to;

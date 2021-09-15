@@ -30,6 +30,7 @@ namespace gen{
                                     ASMC::Register("rcx", "ecx", "cx", "cl"),
                                     ASMC::Register("r8", "r8d", "r8w", "r8b"),
                                     ASMC::Register("r9", "r9d", "r9w", "r9b")};
+        int lablecount = 0;
         int intArgsCounter;
         void GenArgs(AST::Statment * STMT ,ASMC::File &OutputFile);
         Expr GenExpr(AST::Expr * expr, ASMC::File &OutputFile);
