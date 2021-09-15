@@ -34,6 +34,18 @@ namespace AST{
         Equ,
         NotEqu
     };
+
+    class Expr{
+        public:
+        virtual std::string toString(){return "";};
+    };
+
+    class ConditionalExpr{
+        public:
+        Expr * expr1;
+        Op op;
+        Expr * expr2;
+    };
     
     enum Type{
         Int, IntPtr,
@@ -88,13 +100,6 @@ namespace AST{
         public:
         std::string Ident;
         Type type;
-    };
-
-
-
-    class Expr{
-        public:
-        virtual std::string toString(){return "";};
     };
 
     class ParenExpr : public Expr{
@@ -215,13 +220,6 @@ namespace AST{
         public:
         std::string Ident;
         AST::Type type;
-    };
-
-    class ConditionalExpr{
-        public:
-        Expr * expr1;
-        Op op;
-        Expr * expr2;
     };
 
 }
