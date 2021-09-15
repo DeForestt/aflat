@@ -63,7 +63,18 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             AST::Push * push = new AST::Push;
             push->expr = this->parseExpr(tokens);
             output = push;
+        } else if (obj.meta == "if")
+        {
+            AST::If * ifstmt = new AST::If;
+            ifstmt ->Condition = this->parseCondition(tokens);
+            if(dynamic_cast<lex::OpSym * >(tokens.peek()) != nullptr){
+                lex::OpSym sym = *dynamic_cast<lex::OpSym * >(tokens.pop());
+                if(sym.Sym == '{'){
+                    ifstmt->statment = this->parseStmt(tokens);
+                }
+            }
         }
+        
          else{
             if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                 lex::OpSym * sym = dynamic_cast<lex::OpSym *> (tokens.pop());
@@ -173,6 +184,32 @@ AST::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens){
         }
     }
     return output;
+}
+
+AST::ConditionalExpr* parse::Parser::parseCondition(links::LinkedList<lex::Token*> &tokens){
+
+    AST::ConditionalExpr * output = new AST::ConditionalExpr();
+
+    if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+        lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
+        if(sym.Sym != '(') throw err::Exception("unOpened Condition.  Please open with: (");
+    }else throw err::Exception("unOpened Condition.  Please open with: (");
+
+    output->expr1 = this->parseExpr(tokens);
+
+    if(dynamic_cast<lex::Symbol *>(tokens.peek()) != nullptr){
+        lex::Symbol sym = *dynamic_cast<lex::Symbol *>(tokens.pop());
+        if(sym.meta == "=="){
+            output->op = AST::Equ;
+        }
+    }else throw err::Exception("Condition with now conditional Oporator");
+
+    output->expr2 = this->parseExpr(tokens);
+
+    if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+        lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
+        if(sym.Sym != '(') throw err::Exception("unTerminated Condition.  Please terminate with: )");
+    }else throw err::Exception("unTerminated Condition.  Please terminate with: )");
 }
 
 AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){

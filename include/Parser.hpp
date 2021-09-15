@@ -17,6 +17,7 @@ namespace parse{
         private:
         AST::Expr* parseExpr(links::LinkedList<lex::Token *> &tokens);
         AST::Statment* parseArgs(links::LinkedList<lex::Token *> &tokens);
+        AST::ConditionalExpr* parseCondition(links::LinkedList<lex::Token *> &tokens);
     };
 };
 

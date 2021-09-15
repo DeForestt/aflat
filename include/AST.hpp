@@ -110,8 +110,8 @@ namespace AST{
 
     class If : public Statment{
         public:
-        ParenExpr parenExpr;
-        Statment statment;
+        ConditionalExpr * Condition;
+        Statment * statment;
     };
 
     class ElIf : public Statment{
@@ -220,7 +220,7 @@ namespace AST{
     class ConditionalExpr{
         public:
         Expr * expr1;
-        Op * op;
+        Op op;
         Expr * expr2;
     };
 

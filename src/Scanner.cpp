@@ -91,9 +91,16 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         i++;
                     }
                     else if(input[i] == '='){
-                        lex::OpSym* equ = new OpSym;
-                        equ->Sym = input[i];
-                        tokens.push(equ);
+                        if (input[i+1] == '='){
+                            lex::Symbol * equ = new lex::Symbol;
+                            equ->meta = "==";
+                            tokens << equ;
+                        }
+                        else{
+                            lex::OpSym* equ = new OpSym;
+                            equ->Sym = input[i];
+                            tokens.push(equ);
+                        }
                         i++;
                     }else if(input[i] == ','){
                         lex::OpSym* com = new OpSym;
