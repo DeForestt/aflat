@@ -54,6 +54,12 @@ namespace ASMC{
         std::string toString();
     };
 
+    class Je : public Instruction{
+        public:
+        std::string to;
+        std::string toString();
+    };
+
     class Lea : public Instruction{
         public:
         std::string to;

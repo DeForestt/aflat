@@ -202,6 +202,8 @@ AST::ConditionalExpr* parse::Parser::parseCondition(links::LinkedList<lex::Token
         lex::Symbol sym = *dynamic_cast<lex::Symbol *>(tokens.pop());
         if(sym.meta == "=="){
             output->op = AST::Equ;
+        }else if(sym.meta == "!="){
+            output->op = AST::NotEqu;
         }
     }else throw err::Exception("Condition with now conditional Oporator");
 

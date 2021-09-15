@@ -529,6 +529,23 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             OutputFile.text << lable1;
             break;
         }
+        case AST::NotEqu :
+        {
+            ASMC::Cmp * cmp = new ASMC::Cmp();
+            ASMC::Je * je = new ASMC::Je();
+
+            cmp->from = mov1->to;
+            cmp->to = mov2->to;
+            cmp->size = expr1.size;
+
+            je->to = lable1->lable;
+
+            OutputFile.text << cmp;
+            OutputFile.text << je;
+            OutputFile << this->GenSTMT(ifStmt.statment);
+            OutputFile.text << lable1;
+            break;
+        }
         
         default:
             break;

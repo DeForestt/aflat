@@ -84,6 +84,10 @@ std::string ASMC::Jne::toString(){
     return "\tjne\t" + this->to + "\n";
 }
 
+std::string ASMC::Je::toString(){
+    return "\tje\t" + this->to + "\n";
+}
+
 std::string ASMC::Movl::toString(){
     return "\tmovl\t" + this->from + ", " + this->to + "\n";
 }

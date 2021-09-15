@@ -103,6 +103,20 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                             tokens << equ;
                         }
                         i++;
+                    }
+                    else if(input[i] == '!'){
+                        if (input[i+1] == '='){
+                            lex::Symbol * equ = new lex::Symbol;
+                            equ->meta = "!=";
+                            i++;
+                            tokens << equ;
+                        }
+                        else{
+                            lex::OpSym* equ = new OpSym;
+                            equ->Sym = input[i];
+                            tokens << equ;
+                        }
+                        i++;
                     }else if(input[i] == ','){
                         lex::OpSym* com = new OpSym;
                         com->Sym = input[i];
