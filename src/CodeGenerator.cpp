@@ -455,7 +455,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
     {
         AST::If ifStmt = *dynamic_cast<AST::If *>(STMT);
 
-        ASMC::Lable * lable1;
+        ASMC::Lable * lable1 = new ASMC::Lable();
         lable1->lable = ".L" + std::to_string(this->lablecount);
         this->lablecount ++;
 
