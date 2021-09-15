@@ -476,6 +476,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             jne->to = lable1->lable;
 
             OutputFile.text << cmp;
+            OutputFile.text << jne;
             OutputFile << this->GenSTMT(ifStmt.statment);
             OutputFile.text << lable1;
             break;
