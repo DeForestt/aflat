@@ -135,7 +135,7 @@ T links::SLinkedList<T, Z>::at(int i){
     // node we're currently
     // looking at
     int count = 0;
-    while (current != NULL) {
+    while (current != nullprt) {
         if (count == index)
             return (current->data);
         count++;
