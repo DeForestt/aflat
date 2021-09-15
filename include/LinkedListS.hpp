@@ -6,7 +6,6 @@ manipulating the strings being built.*/
 #include "LinkedList.hpp"
 
 namespace links{
-
     template<typename T, typename Z>
     class SLinkedList{
         public:
@@ -43,6 +42,8 @@ namespace links{
 
             
             T* operator[](Z input);
+
+            T at(int i);
     };
 }
 
@@ -125,6 +126,21 @@ T links::SLinkedList<T, Z>::pop(){
 template<typename T, typename Z>
 T links::SLinkedList<T, Z>::peek(){
     return this->head->data;
+}
+
+template<typename T, typename Z>
+T links::SLinkedList<T, Z>::at(int i){
+     Node* current = this->head;
+    // the index of the
+    // node we're currently
+    // looking at
+    int count = 0;
+    while (current != NULL) {
+        if (count == index)
+            return (current->data);
+        count++;
+        current = current->next;
+    }
 }
 
 template<typename T, typename Z>

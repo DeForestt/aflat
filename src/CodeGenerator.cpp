@@ -466,11 +466,57 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         {
         case AST::Equ:
         {
+            ASMC::Mov * mov1 = new ASMC::Mov();
+            ASMC::Mov * mov2 = new ASMC::Mov();
+
+            mov1->size = expr1.size;
+            mov2->size = expr2.size;
+
+            mov1->from = expr1.access;
+            mov2->from = expr2.access;
+
+            switch (mov1->size)
+            {
+            case ASMC::Byte :
+                mov1->to = this->registers["%eax"]->byte;
+                break;
+            case ASMC::Word :
+                mov1->to = this->registers["%eax"]->word;
+                break;
+            case ASMC::DWord:
+                mov1->to = this->registers["%eax"]->dWord;
+                break;
+            case ASMC::QWord :
+                mov1->to = this->registers["%eax"]->qWord;
+                break;
+            default:
+                break;
+            }
+            
+            switch (mov2->size)
+            {
+            case ASMC::Byte :
+                mov2->to = this->registers["%ecx"]->byte;
+                break;
+            case ASMC::Word :
+                mov2->to = this->registers["%ecx"]->word;
+                break;
+            case ASMC::DWord:
+                mov2->to = this->registers["%ecx"]->dWord;
+                break;
+            case ASMC::QWord :
+                mov2->to = this->registers["%ecx"]->qWord;
+                break;
+            default:
+                break;
+            }
+            
+
             ASMC::Cmp * cmp = new ASMC::Cmp();
             ASMC::Jne * jne = new ASMC::Jne();
 
-            cmp->from = expr1.access;
-            cmp->to = expr2.access;
+            cmp->from = mov1->to;
+            cmp->to = mov2->to;
             cmp->size = expr1.size;
 
             jne->to = lable1->lable;
