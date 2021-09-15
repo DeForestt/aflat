@@ -464,7 +464,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::Mov * callnum = new ASMC::Mov;
         callnum->size = ASMC::QWord;
         callnum->to = this->registers["%rax"]->qWord;
-        callnum->from = "$3";
+        callnum->from = "$0";
         ASMC::Mov * rdi = new ASMC::Mov;
         rdi->size = ASMC::QWord;
         rdi->from = "$1";
