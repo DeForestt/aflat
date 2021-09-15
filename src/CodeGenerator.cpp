@@ -462,19 +462,28 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         gen::Expr expr1 =this->GenExpr(ifStmt.Condition->expr1, OutputFile);
         gen::Expr expr2 =this->GenExpr(ifStmt.Condition->expr2, OutputFile);
     
+        switch (ifStmt.Condition->op)
+        {
+        case AST::Equ:
+        {
+            ASMC::Cmp * cmp;
+            ASMC::Jne * jne;
 
-        ASMC::Cmp * cmp;
-        ASMC::Jne * jne;
+            cmp->from = expr1.access;
+            cmp->to = expr2.access;
+            cmp->size = expr1.size;
 
-        cmp->from = expr1.access;
-        cmp->to = expr2.access;
-        cmp->size = expr1.size;
+            jne->to = lable1->lable;
 
-        jne->to = lable1->lable;
-
-        OutputFile.text << cmp;
-        OutputFile << this->GenSTMT(ifStmt.statment);
-        OutputFile.text << lable1;
+            OutputFile.text << cmp;
+            OutputFile << this->GenSTMT(ifStmt.statment);
+            OutputFile.text << lable1;
+            break;
+        }
+        
+        default:
+            break;
+        }
     }
     
     else{
