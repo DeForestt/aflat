@@ -94,12 +94,13 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         if (input[i+1] == '='){
                             lex::Symbol * equ = new lex::Symbol;
                             equ->meta = "==";
+                            i++;
                             tokens << equ;
                         }
                         else{
                             lex::OpSym* equ = new OpSym;
                             equ->Sym = input[i];
-                            tokens.push(equ);
+                            tokens << equ;
                         }
                         i++;
                     }else if(input[i] == ','){
