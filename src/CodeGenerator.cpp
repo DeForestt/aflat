@@ -466,8 +466,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         {
         case AST::Equ:
         {
-            ASMC::Cmp * cmp;
-            ASMC::Jne * jne;
+            ASMC::Cmp * cmp = new ASMC::Cmp();
+            ASMC::Jne * jne = new ASMC::Jne();
 
             cmp->from = expr1.access;
             cmp->to = expr2.access;
