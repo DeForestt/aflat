@@ -462,12 +462,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         gen::Expr expr1 =this->GenExpr(ifStmt.Condition->expr1, OutputFile);
         gen::Expr expr2 =this->GenExpr(ifStmt.Condition->expr2, OutputFile);
     
-        switch (ifStmt.Condition->op)
-        {
-        case AST::Equ:
-        {
-            ASMC::Mov * mov1 = new ASMC::Mov();
-            ASMC::Mov * mov2 = new ASMC::Mov();
+        ASMC::Mov * mov1 = new ASMC::Mov();
+        ASMC::Mov * mov2 = new ASMC::Mov();
 
             mov1->size = expr1.size;
             mov2->size = expr2.size;
@@ -510,8 +506,14 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             default:
                 break;
             }
-            
 
+            OutputFile.text << mov1;
+            OutputFile.text << mov2;
+
+        switch (ifStmt.Condition->op)
+        {
+        case AST::Equ:
+        {
             ASMC::Cmp * cmp = new ASMC::Cmp();
             ASMC::Jne * jne = new ASMC::Jne();
 
