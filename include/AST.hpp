@@ -205,7 +205,7 @@ namespace AST{
         Op op;
         Expr * expr2;
     };
-
+    
     class Refrence : public Expr{
         public:
         std::string Ident;
@@ -215,6 +215,13 @@ namespace AST{
         public:
         std::string Ident;
         AST::Type type;
+    };
+
+    class ConditionalExpr{
+        public:
+        Expr * expr1;
+        Op * op;
+        Expr * expr2;
     };
 
 }
