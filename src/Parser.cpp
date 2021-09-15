@@ -71,7 +71,8 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 lex::OpSym sym = *dynamic_cast<lex::OpSym * >(tokens.pop());
                 if(sym.Sym == '{'){
                     ifstmt->statment = this->parseStmt(tokens);
-                }
+                    output = ifstmt;
+                }else throw err::Exception("Unopened If");
             }
         }
         
