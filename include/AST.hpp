@@ -177,6 +177,11 @@ namespace AST{
         public:
         Expr * expr;
     };
+
+    class Pull : public Statment{
+        public:
+        Expr * expr;
+    };
     
     class Return : public Statment{
         public:

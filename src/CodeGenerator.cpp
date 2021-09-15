@@ -450,6 +450,32 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text << callnum;
         
         OutputFile.text << new ASMC::SysCall;
+    }else if (dynamic_cast<AST::Pull *>(STMT) != nullptr)
+    {
+        AST::Pull * pull = dynamic_cast<AST::Pull *>(STMT);
+        ASMC::Mov * count = new ASMC::Mov;
+        count->size = ASMC::QWord;
+        count->to = this->registers["%rdx"]->qWord;
+        count->from = "$1";
+        ASMC::Mov * pointer = new ASMC::Mov;
+        pointer->size = ASMC::QWord;
+        pointer->to = this->registers["%rsi"]->qWord;
+        pointer->from = this->GenExpr(pull->expr, OutputFile).access;
+        ASMC::Mov * callnum = new ASMC::Mov;
+        callnum->size = ASMC::QWord;
+        callnum->to = this->registers["%rax"]->qWord;
+        callnum->from = "$3";
+        ASMC::Mov * rdi = new ASMC::Mov;
+        rdi->size = ASMC::QWord;
+        rdi->from = "$1";
+        rdi->to = this->registers["%rdi"]->qWord;
+
+        OutputFile.text << rdi;
+        OutputFile.text << pointer;
+        OutputFile.text << count;
+        OutputFile.text << callnum;
+        
+        OutputFile.text << new ASMC::SysCall;
     }
     else if (dynamic_cast<AST::If *>(STMT) != nullptr)
     {

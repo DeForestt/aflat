@@ -63,7 +63,11 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             AST::Push * push = new AST::Push;
             push->expr = this->parseExpr(tokens);
             output = push;
-        } else if (obj.meta == "if")
+        } else if(obj.meta == "pull"){
+            AST::Pull * pull = new AST::Pull;
+            pull->expr = this->parseExpr(tokens);
+            output = pull;
+        }else if (obj.meta == "if")
         {
             AST::If * ifstmt = new AST::If;
             ifstmt ->Condition = this->parseCondition(tokens);
