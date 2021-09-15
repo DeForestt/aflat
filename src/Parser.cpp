@@ -208,7 +208,7 @@ AST::ConditionalExpr* parse::Parser::parseCondition(links::LinkedList<lex::Token
 
     if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
         lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
-        if(sym.Sym != '(') throw err::Exception("unTerminated Condition.  Please terminate with: )");
+        if(sym.Sym != ')') throw err::Exception("unTerminated Condition.  Please terminate with: )");
     }else throw err::Exception("unTerminated Condition.  Please terminate with: )");
 
     return output;
