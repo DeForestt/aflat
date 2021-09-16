@@ -389,7 +389,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         pop->op = "%rbp";
         ASMC::Return * re = new ASMC::Return();
         
-        OutputFile.text.push(pop);
+        //OutputFile.text.push(pop);
         OutputFile.text.push(re);
     }else if (dynamic_cast<AST::Assign *>(STMT) != nullptr)
     {
