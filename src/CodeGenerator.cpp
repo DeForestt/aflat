@@ -597,9 +597,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
     }
     else if(dynamic_cast<AST::While *>(STMT) != nullptr){
-        AST::While * loop = new AST::While();
-
-        
+        AST::While * loop = dynamic_cast<AST::While *>(STMT);
 
         ASMC::Lable * lable1 = new ASMC::Lable();
         lable1->lable = ".L" + std::to_string(this->lablecount);
