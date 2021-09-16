@@ -208,6 +208,10 @@ AST::ConditionalExpr* parse::Parser::parseCondition(links::LinkedList<lex::Token
             output->op = AST::Equ;
         }else if(sym.meta == "!="){
             output->op = AST::NotEqu;
+        }else if(sym.meta == "<"){
+            output->op = AST::Less;
+        }else if(sym.meta == ">"){
+            output->op = AST::Great;
         }
     }else throw err::Exception("Condition with now conditional Oporator");
 
