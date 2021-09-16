@@ -148,6 +148,64 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 output.size = ASMC::DWord;
                 break;
             }
+            case AST::Minus:{
+                ASMC::Mov * mov1 = new ASMC::Mov();
+                ASMC::Mov * mov2 = new ASMC::Mov();
+                ASMC::Sub * sub = new ASMC::Sub();
+                gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
+                gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
+                mov1->size = expr1.size;
+                mov2->size = expr1.size;
+                switch (expr1.size)
+                {
+                case ASMC::Byte:
+                    mov1->to = this->registers["%edx"]->byte;
+                    break;
+                case ASMC::Word:
+                    mov1->to = this->registers["%edx"]->word;
+                    break;
+                case ASMC::DWord:
+                    mov1->to = this->registers["%edx"]->dWord;
+                    break;
+                case ASMC::QWord:
+                    mov1->to = this->registers["%edx"]->qWord;
+                    break;
+                default:
+                    mov1->to = this->registers["%edx"]->qWord;
+                    break;
+                }
+                
+                switch (expr1.size)
+                {
+                case ASMC::Byte:
+                    mov2->to = this->registers["%eax"]->byte;
+                    break;
+                case ASMC::Word:
+                    mov2->to = this->registers["%eax"]->word;
+                    break;
+                case ASMC::DWord:
+                    mov2->to = this->registers["%eax"]->dWord;
+                    break;
+                case ASMC::QWord:
+                    mov2->to = this->registers["%eax"]->qWord;
+                    break;
+                default:
+                    mov2->to = this->registers["%eax"]->qWord;
+                    break;
+                }
+                
+                mov2->to = "%eax";
+                mov1->from = expr1.access;
+                mov2->from = expr2.access;
+                sub->op2 = "%eax";
+                sub->op1 = "%edx";
+                OutputFile.text << mov1;
+                OutputFile.text << mov2;
+                OutputFile.text << sub;
+                output.access = "%eax";
+                output.size = ASMC::DWord;
+                break;
+            }
             default:{
                 throw err::Exception("Unhandled oporator");
                 break;

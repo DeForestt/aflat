@@ -303,6 +303,14 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             compound->expr2 = this->parseExpr(tokens);
             return compound;
         }
+        else if (sym.Sym == '-')
+        {
+            tokens.pop();
+            compound->op = AST::Minus;
+            compound->expr1 = output;
+            compound->expr2 = this->parseExpr(tokens);
+            return compound;
+        }
         
     }
 

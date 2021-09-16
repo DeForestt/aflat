@@ -19,14 +19,21 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                     }
                     else if (std::isdigit(input[i]) || input[i] == '-')
                     {
-                        lex::INT * IntLit = new lex::INT();
-                        IntLit->value = input[i];
-                        i++;
-                        while(std::isdigit(input[i])){
-                            IntLit->value += input[i];
+                        if (input[i] == '-' && !std::isdigit(input[i + 1])){
+                            lex::OpSym * sym = new lex::OpSym;
+                            sym->Sym = '-';
                             i++;
+                            tokens << sym;
+                        }else{
+                            lex::INT * IntLit = new lex::INT();
+                            IntLit->value = input[i];
+                            i++;
+                            while(std::isdigit(input[i])){
+                                IntLit->value += input[i];
+                                i++;
+                            }
+                            tokens.push(IntLit);
                         }
-                        tokens.push(IntLit);
 
                     }
                     else if(std::isspace(input[i]))
