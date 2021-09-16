@@ -679,7 +679,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text << mov2;
         OutputFile.text << cmp;
 
-        switch (loop.condition.op)
+        switch (loop->condition->op)
         {
         case AST::Equ:
         {
