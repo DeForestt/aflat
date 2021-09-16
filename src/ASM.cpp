@@ -109,7 +109,7 @@ std::string ASMC::Add::toString(){
 }
 
 std::string ASMC::Push::toString(){
-    return "\tpush\t" + this->op + "\n";
+    return "\tpushq\t" + this->op + "\n";
 }
 
 std::string ASMC::Pop::toString(){
