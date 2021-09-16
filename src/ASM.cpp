@@ -108,6 +108,10 @@ std::string ASMC::Add::toString(){
     return "\tadd\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
+std::string ASMC::Add::toString(){
+    return "\tsubq\t" + this->op1 + ", " + this->op2 + "\n";
+}
+
 std::string ASMC::Push::toString(){
     return "\tpushq\t" + this->op + "\n";
 }
