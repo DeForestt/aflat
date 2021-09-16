@@ -549,8 +549,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         {
         case AST::Equ:
         {
-
-
             jne->to = lable1->lable;
 
             
