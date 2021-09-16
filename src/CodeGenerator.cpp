@@ -597,7 +597,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
     }
     else if(dynamic_cast<AST::While *>(STMT) != nullptr){
-        AST::While loop = *new AST::While();
+        AST::While * loop = new AST::While();
 
         
 
@@ -614,12 +614,12 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         OutputFile.text << lable1;
 
-        OutputFile << this->GenSTMT(loop.stmt);
+        OutputFile << this->GenSTMT(loop->stmt);
 
         OutputFile.text << lable2;
 
-        gen::Expr expr1 =this->GenExpr(loop.condition.expr1, OutputFile);
-        gen::Expr expr2 =this->GenExpr(loop.condition.expr2, OutputFile);
+        gen::Expr expr1 =this->GenExpr(loop->condition->expr1, OutputFile);
+        gen::Expr expr2 =this->GenExpr(loop->condition->expr2, OutputFile);
     
         ASMC::Mov * mov1 = new ASMC::Mov();
         ASMC::Mov * mov2 = new ASMC::Mov();

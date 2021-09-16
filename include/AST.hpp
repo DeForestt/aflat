@@ -142,7 +142,7 @@ namespace AST{
 
     class While : public Statment{
         public:
-        ConditionalExpr condition;
+        ConditionalExpr * condition;
         Statment  * stmt;
     };
 
