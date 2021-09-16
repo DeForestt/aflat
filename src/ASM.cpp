@@ -93,7 +93,7 @@ std::string ASMC::Je::toString(){
 }
 
 std::string ASMC::Jl::toString(){
-    return "\tjl\t" + this->to + "\n";
+    return "\tjle\t" + this->to + "\n";
 }
 
 std::string ASMC::Jg::toString(){
