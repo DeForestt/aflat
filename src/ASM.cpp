@@ -121,7 +121,7 @@ std::string ASMC::Pop::toString(){
 }
 
 std::string ASMC::Return::toString(){
-    return "leave\n\tret\n";
+    return "\tleave\n\tret\n";
 }
 
 void ASMC::File::operator<<(ASMC::File file){
