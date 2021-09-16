@@ -235,7 +235,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 this->GenSTMT()
                 
         */
-       int AlignmentLoc = OutputFile.text.count;
        this->SymbolTable.clear();
 
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
@@ -250,7 +249,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text.push(lable);
         OutputFile.text.push(push);
         OutputFile.text.push(mov);
-        
+         int AlignmentLoc = OutputFile.text.count;
         this->intArgsCounter = 0;
         
 

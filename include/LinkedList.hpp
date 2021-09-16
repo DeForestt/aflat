@@ -127,7 +127,7 @@ void links::LinkedList<T>::insert(T value, int index){
     Node<T>* curr = this->head;
     int i = 0;
     while (curr != nullptr){
-        if(i == index){
+        if(i == this->count - index){
             Node<T>* New = new Node<T>();
             New->data = value;
             New->next = curr->next;
