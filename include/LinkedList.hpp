@@ -3,6 +3,8 @@ manipulating the strings being built.*/
 #ifndef LINKS
 #define LINKS
 
+#include "Exceptions.hpp"
+
 namespace links{
     
     /*The Node is a genaric class used to hold values
