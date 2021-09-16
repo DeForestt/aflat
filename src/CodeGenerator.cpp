@@ -250,7 +250,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text.push(lable);
         OutputFile.text.push(push);
         OutputFile.text.push(mov);
-        int AlignmentLoc= OutputFile.text.count;
+        int AlignmentLoc = OutputFile.text.count;
         
         this->intArgsCounter = 0;
         
