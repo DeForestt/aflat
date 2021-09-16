@@ -669,8 +669,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::Cmp * cmp = new ASMC::Cmp();
         ASMC::Jne * jne = new ASMC::Jne();
 
-        cmp->from = mov1->to;
-        cmp->to = mov2->to;
+        cmp->from = mov2->to;
+        cmp->to = mov1->to;
         cmp->size = expr1.size;
 
         
