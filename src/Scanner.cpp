@@ -104,6 +104,20 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         }
                         i++;
                     }
+                    else if (input[i] == '<')
+                    {
+                        lex::Symbol * sym = new lex::Symbol;
+                        sym->meta == "<";
+                        tokens << sym;
+                        i++;
+                    }
+                    else if (input[i] == '>')
+                    {
+                        lex::Symbol * sym = new lex::Symbol;
+                        sym->meta == ">";
+                        tokens << sym;
+                        i++;
+                    }
                     else if(input[i] == '!'){
                         if (input[i+1] == '='){
                             lex::Symbol * equ = new lex::Symbol;

@@ -32,7 +32,9 @@ namespace AST{
         Mul,
         Div,
         Equ,
-        NotEqu
+        NotEqu,
+        Less,
+        Great
     };
 
     class Expr{
