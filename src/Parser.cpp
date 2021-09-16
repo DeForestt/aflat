@@ -78,9 +78,20 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                     output = ifstmt;
                 }else throw err::Exception("Unopened If");
             }
+        }else if(obj.meta == "while"){
+            AST::While * loop = new AST::While;
+            loop->condition = *this->parseCondition(tokens);
+
+            if(dynamic_cast<lex::OpSym * >(tokens.peek()) != nullptr){
+                lex::OpSym sym = *dynamic_cast<lex::OpSym * >(tokens.pop());
+                if(sym.Sym == '{'){
+                        loop->stmt = this->parseStmt(tokens);
+                        output = loop;
+                    }else throw err::Exception("Unopened If");
+            }else throw err::Exception("Unopened If");
+            
         }
-        
-         else{
+        else{
             if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                 lex::OpSym * sym = dynamic_cast<lex::OpSym *> (tokens.pop());
                 if(sym->Sym == '='){
@@ -111,7 +122,6 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                  else throw err::Exception("expected assignment oporator");
             }else throw err::Exception("expected Asignment oporator after " + obj.meta);
         }
-        
     }
     
     if (tokens.head == nullptr){ 
@@ -133,7 +143,9 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             this->Output = *output;
             return output;
         }
-    } else{ if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr & tokens.head->next == nullptr){
+    } 
+    else{ 
+        if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr & tokens.head->next == nullptr){
             lex::OpSym obj = *dynamic_cast<lex::OpSym *>(tokens.peek());
             tokens.pop();
             if(obj.Sym == '}'){

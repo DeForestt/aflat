@@ -48,6 +48,12 @@ namespace ASMC{
         std::string toString();
     };
 
+    class Jmp : public Instruction{
+        public:
+        std::string to;
+        std::string toString();
+    };
+
     class Jne : public Instruction{
         public:
         std::string to;

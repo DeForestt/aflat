@@ -142,7 +142,8 @@ namespace AST{
 
     class While : public Statment{
         public:
-        ParenExpr parenExpr;
+        ConditionalExpr condition;
+        Statment  * stmt;
     };
 
     class For : public Statment{

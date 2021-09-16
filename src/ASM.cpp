@@ -80,6 +80,10 @@ std::string ASMC::Movq::toString(){
     return "\tmovq\t" + this->from + ", " + this->to + "\n";
 }
 
+std::string ASMC::Jmp::toString(){
+    return "\tjmp\t" + this->to + "\n";
+}
+
 std::string ASMC::Jne::toString(){
     return "\tjne\t" + this->to + "\n";
 }

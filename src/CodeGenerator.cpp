@@ -565,7 +565,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
             je->to = lable1->lable;
 
-            OutputFile.text << cmp;
             OutputFile.text << je;
             OutputFile << this->GenSTMT(ifStmt.statment);
             OutputFile.text << lable1;
@@ -577,7 +576,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
             jl->to = lable1->lable;
 
-            OutputFile.text << cmp;
             OutputFile.text << jl;
             OutputFile << this->GenSTMT(ifStmt.statment);
             OutputFile.text << lable1;
@@ -585,11 +583,11 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
         case AST::Less :
         {
-            ASMC::Jl * jg = new ASMC::Jl();
+            ASMC::Jg * jg = new ASMC::Jg();
 
             jg->to = lable1->lable;
 
-            OutputFile.text << cmp;
+
             OutputFile.text << jg;
             OutputFile << this->GenSTMT(ifStmt.statment);
             OutputFile.text << lable1;
@@ -600,7 +598,126 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             break;
         }
     }
+    else if(dynamic_cast<AST::While *>(STMT) != nullptr){
+        AST::While loop = *new AST::While();
+
+        
+
+        ASMC::Lable * lable1 = new ASMC::Lable();
+        lable1->lable = ".L" + std::to_string(this->lablecount);
+        this->lablecount++;
+
+        ASMC::Lable * lable2 = new ASMC::Lable();
+        lable2->lable = ".L" + std::to_string(this->lablecount);
+        this->lablecount++;
+
+        ASMC::Jmp * jmp = new ASMC::Jmp();
+        jmp->to = lable2->lable;
+
+        OutputFile.text << lable1;
+
+        OutputFile << this->GenSTMT(loop.stmt);
+
+        OutputFile.text << lable2;
+
+        gen::Expr expr1 =this->GenExpr(loop.condition.expr1, OutputFile);
+        gen::Expr expr2 =this->GenExpr(loop.condition.expr2, OutputFile);
     
+        ASMC::Mov * mov1 = new ASMC::Mov();
+        ASMC::Mov * mov2 = new ASMC::Mov();
+
+        mov1->size = expr1.size;
+        mov2->size = expr2.size;
+
+        mov1->from = expr1.access;
+        mov2->from = expr2.access;
+
+
+        switch (mov1->size)
+        {
+        case ASMC::Byte :
+            mov1->to = this->registers["%eax"]->byte;
+            break;
+        case ASMC::Word :
+            mov1->to = this->registers["%eax"]->word;
+            break;
+        case ASMC::DWord:
+            mov1->to = this->registers["%eax"]->dWord;
+            break;
+        case ASMC::QWord :
+            mov1->to = this->registers["%eax"]->qWord;
+            break;
+        default:
+            break;
+        }
+        
+        switch (mov2->size)
+        {
+        case ASMC::Byte :
+            mov2->to = this->registers["%ecx"]->byte;
+            break;
+        case ASMC::Word :
+            mov2->to = this->registers["%ecx"]->word;
+            break;
+        case ASMC::DWord:
+            mov2->to = this->registers["%ecx"]->dWord;
+            break;
+        case ASMC::QWord :
+            mov2->to = this->registers["%ecx"]->qWord;
+            break;
+        default:
+            break;
+        }
+
+        ASMC::Cmp * cmp = new ASMC::Cmp();
+        ASMC::Jne * jne = new ASMC::Jne();
+
+        cmp->from = mov1->to;
+        cmp->to = mov2->to;
+        cmp->size = expr1.size;
+
+        
+        OutputFile.text << mov1;
+        OutputFile.text << mov2;
+        OutputFile.text << cmp;
+
+        switch (loop.condition.op)
+        {
+        case AST::Equ:
+        {
+            ASMC::Je * je = new ASMC::Je();
+            jne->to = lable1->lable;
+            OutputFile.text << je;
+            break;
+        }
+        case AST::NotEqu :
+        {
+            ASMC::Jne * jne = new ASMC::Jne();
+
+            jne->to = lable1->lable;
+            OutputFile.text << jne;
+            break;
+        }
+        case AST::Great :
+        {
+            ASMC::Jg * jg = new ASMC::Jg();
+
+            jg->to = lable1->lable;
+
+            OutputFile.text << jg;
+            break;
+        }
+        case AST::Less :
+        {
+            ASMC::Jl * jl = new ASMC::Jl();
+
+            jl->to = lable1->lable;
+            OutputFile.text << jl;
+            break;
+        }
+        }
+        
+    }
     else{
         OutputFile.text.push(new ASMC::Instruction());
     }
