@@ -609,6 +609,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         ASMC::Jmp * jmp = new ASMC::Jmp();
         jmp->to = lable2->lable;
+        OutputFile.text << jmp;
 
         OutputFile.text << lable1;
 
