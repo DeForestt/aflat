@@ -267,7 +267,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::Sub * sub = new ASMC::Sub;
         sub->op1 = "$" + std::to_string(alligne);
         sub->op2 = this->registers["%rsp"]->qWord;
-
+        OutputFile.text.insert(sub, AlignmentLoc);
         delete(func);
 
     }else if (dynamic_cast<AST::Declare *>(STMT) != nullptr)
