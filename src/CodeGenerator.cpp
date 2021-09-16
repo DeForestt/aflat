@@ -249,7 +249,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text.push(lable);
         OutputFile.text.push(push);
         OutputFile.text.push(mov);
-         int AlignmentLoc = OutputFile.text.count;
+        int AlignmentLoc = OutputFile.text.count;
         this->intArgsCounter = 0;
         
 
@@ -265,7 +265,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::Sub * sub = new ASMC::Sub;
         sub->op1 = "$" + std::to_string(alligne);
         sub->op2 = this->registers["%rsp"]->qWord;
-        OutputFile.text.insert(sub, AlignmentLoc);
+        OutputFile.text.insert(sub, AlignmentLoc + 1);
         delete(func);
 
     }else if (dynamic_cast<AST::Declare *>(STMT) != nullptr)
