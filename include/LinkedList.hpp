@@ -27,8 +27,12 @@ namespace links{
 
             /*Push a new value to the top of the list*/
             void push(T value);
-
+            
+            /*push with oporator*/
             void operator<<(T value);
+
+            /*Insert at an index*/
+            void insert(T value, int index);
 
             /*Reverses the direction of the list*/
             void invert();
@@ -115,6 +119,26 @@ void links::LinkedList<T>::push(T value){
     push->data = value;
     this->head = push;
 }
+
+template <typename T>
+void links::LinkedList<T>::insert(T value, int index){
+    Node<T>* curr = this->head;
+    int i = 0;
+    while (curr != nullptr){
+        if(i == index){
+            Node<T>* New = new Node<T>();
+            New->data = value;
+            New->next = curr->next;
+            curr->next = New;
+            this->count++;
+            return;
+        }
+        curr = curr->next;
+        i++;
+    }
+    throw err::Exception("Index Out of Range");
+
+};
 
 template <typename T>
 void links::LinkedList<T>::operator<<(T value){
