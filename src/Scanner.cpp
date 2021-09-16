@@ -107,14 +107,14 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                     else if (input[i] == '<')
                     {
                         lex::Symbol * sym = new lex::Symbol;
-                        sym->meta == "<";
+                        sym->meta = "<";
                         tokens << sym;
                         i++;
                     }
                     else if (input[i] == '>')
                     {
                         lex::Symbol * sym = new lex::Symbol;
-                        sym->meta == ">";
+                        sym->meta = ">";
                         tokens << sym;
                         i++;
                     }
