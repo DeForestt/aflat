@@ -262,7 +262,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::File file = this->GenSTMT(func->statment);
         OutputFile << file;
         
-        int alligne = (this->SymbolTable.peek().byteMod / 16) * 16;
+        int alligne = ((this->SymbolTable.peek().byteMod + 15) / 16) * 16;
         ASMC::Sub * sub = new ASMC::Sub;
         sub->op1 = "$" + std::to_string(alligne);
         sub->op2 = this->registers["%rsp"]->qWord;
