@@ -571,6 +571,30 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             OutputFile.text << lable1;
             break;
         }
+        case AST::Great :
+        {
+            ASMC::Jl * jl = new ASMC::Jl();
+
+            jl->to = lable1->lable;
+
+            OutputFile.text << cmp;
+            OutputFile.text << jl;
+            OutputFile << this->GenSTMT(ifStmt.statment);
+            OutputFile.text << lable1;
+            break;
+        }
+        case AST::Less :
+        {
+            ASMC::Jl * jg = new ASMC::Jl();
+
+            jg->to = lable1->lable;
+
+            OutputFile.text << cmp;
+            OutputFile.text << jg;
+            OutputFile << this->GenSTMT(ifStmt.statment);
+            OutputFile.text << lable1;
+            break;
+        }
         
         default:
             break;
