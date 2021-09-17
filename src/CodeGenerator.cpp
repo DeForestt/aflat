@@ -53,8 +53,10 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         ASMC::StringLiteral * strlit = new ASMC::StringLiteral();
         ASMC::Lable * lable = new ASMC::Lable();
         lable->lable = ".str" + std::to_string(this->lablecount);
+        OutputFile.data << lable;
         OutputFile.data << strlit;
-
+        output.access = "$" + lable->lable;
+        output.size = ASMC::QWord;
     }
      else if(dynamic_cast<AST::DeRefence *>(expr)){
         AST::DeRefence deRef = *dynamic_cast<AST::DeRefence *>(expr);
