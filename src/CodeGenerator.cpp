@@ -749,7 +749,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         case AST::Equ:
         {
             ASMC::Je * je = new ASMC::Je();
-            jne->to = lable1->lable;
+            je->to = lable1->lable;
             OutputFile.text << je;
             break;
         }
