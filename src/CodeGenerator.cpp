@@ -53,6 +53,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         ASMC::StringLiteral * strlit = new ASMC::StringLiteral();
         ASMC::Lable * lable = new ASMC::Lable();
         lable->lable = ".str" + std::to_string(this->lablecount);
+        strlit->value = str.val;
         OutputFile.data << lable;
         OutputFile.data << strlit;
         output.access = "$" + lable->lable;
