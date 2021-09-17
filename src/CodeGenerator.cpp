@@ -47,7 +47,16 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         OutputFile.text << lea;
         output.access = registers["%rax"]->qWord;
         output.size = ASMC::QWord;
-    }else if(dynamic_cast<AST::DeRefence *>(expr)){
+    }
+    else if (dynamic_cast<AST::StringLiteral *>(expr) != nullptr){
+        AST::StringLiteral str = *dynamic_cast<AST::StringLiteral *>(expr);
+        ASMC::StringLiteral * strlit = new ASMC::StringLiteral();
+        ASMC::Lable * lable = new ASMC::Lable();
+        lable->lable = ".str" + std::to_string(this->lablecount);
+        OutputFile.data << strlit;
+
+    }
+     else if(dynamic_cast<AST::DeRefence *>(expr)){
         AST::DeRefence deRef = *dynamic_cast<AST::DeRefence *>(expr);
         gen::Symbol sym = *this->SymbolTable.search<std::string>(searchSymbol, deRef.Ident);
         ASMC::Mov * mov = new ASMC::Mov();

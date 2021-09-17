@@ -104,6 +104,10 @@ std::string ASMC::Movl::toString(){
     return "\tmovl\t" + this->from + ", " + this->to + "\n";
 }
 
+std::string ASMC::StringLiteral::toString(){
+    return "\t.string\t \"" + this->value + "\"\n";
+}
+
 std::string ASMC::Add::toString(){
     return "\tadd\t" + this->op1 + ", " + this->op2 + "\n";
 }
