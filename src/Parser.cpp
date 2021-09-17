@@ -118,7 +118,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                             if (symp->Sym != ')') throw err::Exception("Expected closed perenth got " + symp->Sym);
                         }
                     }
-                    tokens.pop();
+                    else tokens.pop();
                     output = call;
                 }
                  else throw err::Exception("expected assignment oporator");
