@@ -40,11 +40,13 @@ int main(int argc, char *argv[])
         std::cout << file.linker.pop()->toString();
     }
 
+
+
+    std::cout << "\n\n.text\n\n";
+
     while(file.data.head != nullptr){
         std::cout << file.data.pop()->toString();
     }
-
-    std::cout << "\n\n.text\n\n";
 
     while(file.text.head != nullptr){
         std::cout << file.text.pop()->toString();
