@@ -108,8 +108,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 ASMC::Add * add = new ASMC::Add();
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
-                mov1->size = expr1.size;
-                mov2->size = expr1.size;
+                mov1->size = ASMC::AUTO;
+                mov2->size = ASMC::AUTO;
                 switch (expr1.size)
                 {
                 case ASMC::Byte:
