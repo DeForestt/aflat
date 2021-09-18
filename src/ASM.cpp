@@ -105,7 +105,7 @@ std::string ASMC::Movl::toString(){
 }
 
 std::string ASMC::StringLiteral::toString(){
-    return "\t.string\t \"" + this->value + "\"\n";
+    return "\t.asciz\t \"" + this->value + "\"\n";
 }
 
 std::string ASMC::Add::toString(){
