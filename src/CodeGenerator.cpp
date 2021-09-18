@@ -480,7 +480,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::Call * call = dynamic_cast<AST::Call *>(STMT);
 
         this->intArgsCounter = 0;
-        call->Args.invert();
+        //call->Args.invert();
         while (call->Args.count > 0)
         {
             
