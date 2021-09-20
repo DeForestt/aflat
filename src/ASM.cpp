@@ -121,7 +121,7 @@ std::string ASMC::Mul::toString(){
 }
 
 std::string ASMC::Div::toString(){
-    return "\tcltd\n\tidiv\t" + this->op1 + ", " + this->op2 + "\n";
+    return "\tcltd\n\tidiv\t" + this->op1 + "\n";
 }
 
 std::string ASMC::Subq::toString(){

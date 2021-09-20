@@ -326,7 +326,6 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 mov2->to = "%eax";
                 mov1->from = expr1.access;
                 mov2->from = expr2.access;
-                div->op2 = "%eax";
                 div->op1 = "%edx";
                 OutputFile.text << mov1;
                 OutputFile.text << mov2;
