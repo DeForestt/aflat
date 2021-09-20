@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
                         (std::istreambuf_iterator<char>()    ) );
 
         try{
-            tokens = scanner.Scan(content);
+            tokens = scanner.Scan(preProcess(content));
         }catch (int x){
             std::cout << " unparsable Char at index " + x;
             return 0;
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
         ASMC::File file = genny.GenSTMT(Prog);
         file.text.invert();
 
-    file.data.invert();
+        file.data.invert();
         file.linker.invert();
 
     
@@ -58,4 +58,41 @@ int main(int argc, char *argv[])
         std::cout << std::endl << "Exception: " << e.errorMsg << std::endl << std::endl;
     }
     return 0;
+}
+
+std::string preProcess(string input){
+    std::string output = "";
+    std::stringstream input_stringstream(input);
+    std::string line;
+
+    while (getline(input_stringstream, line, '\n'))
+    {
+        line = trim(line);
+        if(!line._Starts_with("//")){
+            if(line._Starts_with("needs")){
+                int startPos = line.find_first_of('\"') + 1;
+                int endPos = line.find_last_of('\"');
+                std::ifstream ifs(line.substr(startPos, endPos - startPos));
+                std::string content( (std::istreambuf_iterator<char>(ifs) ),
+                                (std::istreambuf_iterator<char>()    ) );
+                ifs.close();
+                output += preProcess(content);
+            }
+            else{
+                output += line;
+            };
+        }
+    }
+    return input;
+};
+
+std::string trim( std::string str )
+{
+    // remove trailing white space
+    while( !str.empty() && std::isspace( str.back() ) ) str.pop_back() ;
+
+    // return residue after leading white space
+    std::size_t pos = 0 ;
+    while( pos < str.size() && std::isspace( str[pos] ) ) ++pos ;
+    return str.substr(pos) ;
 }
