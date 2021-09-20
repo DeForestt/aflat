@@ -60,7 +60,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         if(func.type == AST::Int){
             output.access = this->registers["%rax"]->dWord;
             output.size = ASMC::DWord;
-        } else         if(func.type == AST::Char){
+        } else if(func.type == AST::Char){
             output.access = this->registers["%rax"]->byte;
             output.size = ASMC::Byte;
         }else if(func.type == AST::IntPtr){
@@ -478,17 +478,22 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         mov->size = ASMC::QWord;
         mov->from =  "%rsp";
         mov->to = "%rbp";
-        OutputFile.text.push(lable);
-        OutputFile.text.push(push);
-        OutputFile.text.push(mov);
+        if (func->statment != nullptr){
+            OutputFile.text.push(lable);
+            OutputFile.text.push(push);
+            OutputFile.text.push(mov);
+        }
         int AlignmentLoc = OutputFile.text.count;
         this->intArgsCounter = 0;
         this->returnType = func->type;
         ASMC::LinkTask * link = new ASMC::LinkTask();
         link->command = "global";
         link->operand = func->ident.ident;
-        this->GenArgs(func->args, OutputFile);
-        OutputFile.linker.push(link);
+        if(func->statment != nullptr){
+            this->GenArgs(func->args, OutputFile);
+            OutputFile.linker.push(link);
+        }
+        
         ASMC::File file = this->GenSTMT(func->statment);
         OutputFile << file;
         
@@ -496,11 +501,12 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         if(this->SymbolTable.count  > 0){
             int alligne = ((this->SymbolTable.peek().byteMod + 15) / 16) * 16;
         }
-
-        ASMC::Subq * sub = new ASMC::Subq;
-        sub->op1 = "$" + std::to_string(alligne);
-        sub->op2 = this->registers["%rsp"]->qWord;
-        OutputFile.text.insert(sub, AlignmentLoc + 1);
+        if(func->statment != nullptr){
+            ASMC::Subq * sub = new ASMC::Subq;
+            sub->op1 = "$" + std::to_string(alligne);
+            sub->op2 = this->registers["%rsp"]->qWord;
+            OutputFile.text.insert(sub, AlignmentLoc + 1);
+        };
         delete(func);
     }else if (dynamic_cast<AST::Declare *>(STMT) != nullptr)
     {
