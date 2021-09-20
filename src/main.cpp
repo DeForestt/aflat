@@ -71,8 +71,8 @@ std::string preProcess(string input){
     while (getline(input_stringstream, line, '\n'))
     {
         line = trim(line);
-        if(!line._Starts_with("//")){
-            if(line._Starts_with("needs")){
+        if(line.substr(0, 2) != "//"){
+            if(line.substr(0, 6) != "#needs"){
                 int startPos = line.find_first_of('\"') + 1;
                 int endPos = line.find_last_of('\"');
                 std::ifstream ifs(line.substr(startPos, endPos - startPos));
