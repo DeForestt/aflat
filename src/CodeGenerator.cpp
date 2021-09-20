@@ -363,6 +363,8 @@ void gen::CodeGenerator::GenArgs(AST::Statment * STMT, ASMC::File &OutputFile){
         if (intArgsCounter > 6) throw err::Exception("AFlat compiler cannot handle more than 6 int arguments.");
         AST::Declare * arg =  dynamic_cast<AST::Declare *>(STMT);
         int offset = 0;
+        gen::Symbol symbol;
+        symbol.type = arg->type;
         switch(arg->type){
             case AST::Int:
                 offset = 4;
@@ -386,7 +388,6 @@ void gen::CodeGenerator::GenArgs(AST::Statment * STMT, ASMC::File &OutputFile){
 
         if(this->SymbolTable.search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined veriable:" + arg->Ident);
 
-        gen::Symbol symbol;
         if (this->SymbolTable.head == nullptr){
             symbol.byteMod = offset;
         }else{
