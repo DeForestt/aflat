@@ -208,8 +208,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 }
                 
                 mov2->to = "%eax";
-                mov1->from = expr1.access;
-                mov2->from = expr2.access;
+                mov1->from = expr2.access;
+                mov2->from = expr1.access;
                 sub->op2 = "%eax";
                 sub->op1 = "%edx";
                 OutputFile.text << mov1;
