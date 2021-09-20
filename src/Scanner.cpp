@@ -155,6 +155,13 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         tokens << mul;
                         i++;
                     }
+                    else if (input[i] == '/')
+                    {
+                        lex::OpSym* div = new OpSym;
+                        div->Sym = input[i];
+                        tokens << div;
+                        i++;
+                    }
                     
                     else{
                         throw err::Exception("unknown char: " + input[i]);
