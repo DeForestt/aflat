@@ -8,8 +8,8 @@
 #include "ASM.hpp"
 #include "Exceptions.hpp"
 
-std::string trim();
-std::string preProcess();
+std::string trim(std::string str);
+std::string preProcess(std::string input);
 
 int main(int argc, char *argv[])
 {
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-std::string preProcess(string input){
+std::string preProcess(std::string input){
     std::string output = "";
     std::stringstream input_stringstream(input);
     std::string line;
