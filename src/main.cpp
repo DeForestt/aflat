@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
         if (argc == 1) ofs.open("out.s"); else ofs.open(argv[2]);
 
         while(file.linker.head != nullptr){
-            std::cout << file.linker.pop()->toString();
+            ofs << file.linker.pop()->toString();
         }
 
         while(file.data.head != nullptr){
