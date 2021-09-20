@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
         while(file.text.head != nullptr){
             ofs << file.text.pop()->toString();
         }
-
+        ofs.close();
     }catch(err::Exception e){
         std::cout << std::endl << "Exception: " << e.errorMsg << std::endl << std::endl;
     }
