@@ -154,6 +154,21 @@ namespace ASMC{
         std::string toString();
     };
 
+    class Mul : public Instruction{
+        public:
+        std::string op1;
+        std::string op2;
+        std::string toString();
+    };
+
+    class Div : public Instruction{
+        public:
+        std::string op1;
+        std::string op2;
+        std::string toString();
+    };
+
+
     class Subq : public Instruction{
         public:
         std::string op1;
