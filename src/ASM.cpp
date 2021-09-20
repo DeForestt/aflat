@@ -113,6 +113,10 @@ std::string ASMC::Add::toString(){
 }
 
 std::string ASMC::Sub::toString(){
+    return "\tsub\t" + this->op1 + ", " + this->op2 + "\n";
+}
+
+std::string ASMC::Subq::toString(){
     return "\tsubq\t" + this->op1 + ", " + this->op2 + "\n";
 }
 

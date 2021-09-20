@@ -103,14 +103,13 @@ links::LinkedList<T>::LinkedList(){
 template <typename T>
 void links::LinkedList<T>::clear(){
     if (this->count > 0){
-        //this->head = nullptr;
         while (this->count > 0)
         {
             this->pop();
         }
-        
     }
-    
+    this->count = 0;
+    this->head = nullptr;
 }
 
 template <typename T>
