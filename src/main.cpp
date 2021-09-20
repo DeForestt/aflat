@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
     file.data.invert();
         file.linker.invert();
 
-        std::cout << "\n\n.text\n\n";
+    
 
         std::ofstream ofs;
 
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
         while(file.linker.head != nullptr){
             ofs << file.linker.pop()->toString();
         }
-
+        ofs << "\n\n.text\n\n";
         while(file.data.head != nullptr){
             ofs << file.data.pop()->toString();
         }
