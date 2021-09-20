@@ -230,6 +230,11 @@ namespace AST{
         AST::Type type;
     };
 
+    class CallExpr : public Expr{
+        public:
+        AST::Call * call;
+    };
+
 }
 
 #endif

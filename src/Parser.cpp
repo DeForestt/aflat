@@ -270,7 +270,42 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                     output = deRef;
                 }else throw err::Exception("No dereffrens type given with as");
             }
-        } else {
+        }else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr)
+        {
+            lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+            if (sym.Sym == '('){
+                tokens.pop();
+                AST::Call * call = new AST::Call();
+                call->ident = obj.meta;
+                bool pop = false;
+                if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr){
+                    do{
+                        if (pop) tokens.pop();
+                        call->Args.push(this->parseExpr(tokens));
+                        pop = true;
+                    }while(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr
+                    && dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',');
+
+                    if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                        lex::OpSym * symp = dynamic_cast<lex::OpSym *> (tokens.pop());
+                        if (symp->Sym != ')') throw err::Exception("Expected closed perenth got " + symp->Sym);
+                    }
+                }else{
+                    lex::OpSym * symp = dynamic_cast<lex::OpSym *> (tokens.pop());
+                    if (symp->Sym != ')') throw err::Exception("Expected closed perenth got " + symp->Sym);
+                }
+
+                AST::CallExpr * callExpr = new AST::CallExpr;
+                callExpr->call = call;
+
+                output = callExpr;
+            }else{
+                AST::Var * var = new AST::Var();
+                var->Ident = obj.meta;
+                output = var;
+            }
+        }
+         else {
             AST::Var * var = new AST::Var();
             var->Ident = obj.meta;
             output = var;
