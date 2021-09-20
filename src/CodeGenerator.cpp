@@ -5,6 +5,13 @@ bool searchSymbol(gen::Symbol sym, std::string str){
     if (sym.symbol == str) return true; else return false;
 }
 
+bool compairFunc(AST::Function F, std::string input){
+    if (input == F.ident.ident){
+        return true;
+    }
+        return false;
+}
+
 gen::CodeGenerator::CodeGenerator(){
     this->registers << ASMC::Register("rax", "eax", "ax", "al");
     this->registers << ASMC::Register("rcx", "ecx", "cx", "cl");
@@ -15,6 +22,7 @@ gen::CodeGenerator::CodeGenerator(){
     this->registers << ASMC::Register("rsp", "esp", "sp", "spl");
     this->registers << ASMC::Register("rbp", "ebp", "bp", "bpl");
     this->registers.foo = ASMC::Register::compair;
+    this->nameTale.foo = compairFunc;
 }
 
 gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
@@ -23,7 +31,43 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::IntLiteral * intlit = dynamic_cast<AST::IntLiteral *>(expr);
         output.access = '$' + std::to_string(intlit->val);
         output.size = ASMC::DWord;
-    } else if (dynamic_cast<AST::Var *>(expr) != nullptr){
+    }else if(dynamic_cast<AST::CallExpr *>(expr) != nullptr){
+        AST::CallExpr * exprCall = dynamic_cast<AST::CallExpr *>(expr);
+        AST::Call * call = exprCall->call;
+        AST::Function func = *this->nameTale[call->ident];
+        this->intArgsCounter = 0;
+        call->Args.invert();
+        while (call->Args.count > 0)
+        {
+            
+            ASMC::Mov * mov = new ASMC::Mov();
+            mov->size = ASMC::DWord;
+            mov->from = this->GenExpr(call->Args.pop(), OutputFile).access;
+            mov->to = "%eax";
+
+            ASMC::Mov * mov2 = new ASMC::Mov();
+            mov2->from = "%eax";
+            mov2->size = ASMC::DWord;
+            mov2->to = this->intArgs[intArgsCounter].dWord;
+            intArgsCounter++;
+            OutputFile.text << mov;
+            OutputFile.text << mov2;
+        }
+
+        ASMC::Call * calls = new ASMC::Call;
+        calls->function = call->ident;
+        OutputFile.text << calls;
+        if(func.type == AST::Int){
+            output.access = this->registers["%rax"]->dWord;
+            output.size = ASMC::DWord;
+        } else         if(func.type == AST::Char){
+            output.access = this->registers["%rax"]->byte;
+            output.size = ASMC::Byte;
+        }else if(func.type == AST::IntPtr){
+            output.access = this->registers["%rax"]->qWord;
+            output.size = ASMC::QWord;
+        };
+    }else if (dynamic_cast<AST::Var *>(expr) != nullptr){
         AST::Var var = *dynamic_cast<AST::Var *>(expr);
         gen::Symbol sym = *this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
         if(sym.type == AST::Int) output.size = ASMC::DWord;
@@ -425,6 +469,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         this->SymbolTable.clear();
 
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
+        this->nameTale << *func;
         ASMC::Lable * lable = new ASMC::Lable;
         lable->lable = func->ident.ident;
         ASMC::Push * push = new ASMC::Push();

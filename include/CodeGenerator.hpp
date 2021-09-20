@@ -24,6 +24,7 @@ namespace gen{
         private:
         links::SLinkedList<ASMC::Register, std::string> registers;
         links::LinkedList<Symbol> SymbolTable;
+        links::SLinkedList<AST::Function, std::string> nameTale;
         ASMC::Register intArgs[6] = { ASMC::Register("rdi", "edi", "di", "dil"),
                                     ASMC::Register("rsi", "esi", "si", "sil"),
                                     ASMC::Register("rdx", "edx", "dx", "dl"),
