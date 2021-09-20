@@ -36,7 +36,11 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                                 func->statment = this->parseStmt(tokens);
                                 output = func;
                                 delete(dec);
-                            }
+                            }else{
+                                func->statment = nullptr;
+                                output = func;
+                                delete(dec);
+                            };
                         }
                     }else if (sym.Sym == '='){
                         tokens.pop();
