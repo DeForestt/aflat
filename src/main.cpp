@@ -8,6 +8,9 @@
 #include "ASM.hpp"
 #include "Exceptions.hpp"
 
+std::string trim();
+std::string preProcess();
+
 int main(int argc, char *argv[])
 {
     try{
@@ -83,7 +86,7 @@ std::string preProcess(string input){
             };
         }
     }
-    return input;
+    return output;
 };
 
 std::string trim( std::string str )
