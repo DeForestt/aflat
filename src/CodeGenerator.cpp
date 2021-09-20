@@ -438,8 +438,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text.push(mov);
         int AlignmentLoc = OutputFile.text.count;
         this->intArgsCounter = 0;
-        
-
+        this->returnType = func->type;
         ASMC::LinkTask * link = new ASMC::LinkTask();
         link->command = "global";
         link->operand = func->ident.ident;
@@ -558,12 +557,26 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         AST::Return * ret = dynamic_cast<AST::Return *>(STMT);
 
-        if (dynamic_cast<AST::IntLiteral *>(ret->expr))
+        if (this->returnType == AST::Int)
         {
             ASMC::Mov * mov = new ASMC::Mov();
-            mov->size = ASMC::AUTO;
+            mov->size = ASMC::DWord;
             mov->from = this->GenExpr(ret->expr, OutputFile).access;
-            mov->to = "%rax";
+            mov->to = this->registers["%rax"]->dWord;
+            OutputFile.text.push(mov);   
+        } else if (this->returnType == AST::Char)
+        {
+            ASMC::Mov * mov = new ASMC::Mov();
+            mov->size = ASMC::Byte;
+            mov->from = this->GenExpr(ret->expr, OutputFile).access;
+            mov->to = this->registers["%rax"]->byte;
+            OutputFile.text.push(mov);   
+        }else if (this->returnType == AST::IntPtr)
+        {
+            ASMC::Mov * mov = new ASMC::Mov();
+            mov->size = ASMC::QWord;
+            mov->from = this->GenExpr(ret->expr, OutputFile).access;
+            mov->to = this->registers["%rax"]->qWord;
             OutputFile.text.push(mov);   
         }else{
             ASMC::Mov * mov = new ASMC::Mov();

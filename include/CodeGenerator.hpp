@@ -33,6 +33,7 @@ namespace gen{
         int lablecount = 0;
         int intArgsCounter;
         int selectReg = 0;
+        AST::Type returnType;
         void GenArgs(AST::Statment * STMT ,ASMC::File &OutputFile);
         Expr GenExpr(AST::Expr * expr, ASMC::File &OutputFile);
         public:
