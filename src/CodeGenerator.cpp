@@ -425,7 +425,7 @@ void gen::CodeGenerator::GenArgs(AST::Statment * STMT, ASMC::File &OutputFile){
                 offset = 4;
                 break;
             case AST::Char:
-                offset = 1;
+                offset = 4;
                 break;
         }
 
