@@ -96,7 +96,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::StringLiteral str = *dynamic_cast<AST::StringLiteral *>(expr);
         ASMC::StringLiteral * strlit = new ASMC::StringLiteral();
         ASMC::Lable * lable = new ASMC::Lable();
-        lable->lable = ".str" + std::to_string(this->lablecount);
+        lable->lable = ".str" + this->nameTale.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount++;
         strlit->value = str.val;
         OutputFile.data << lable;
@@ -532,7 +532,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 offset = 4;
                 break;
             case AST::Char:
-                offset = 1;
+                offset = 4;
                 break;
         }
 
@@ -574,7 +574,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 offset = 4;
                 break;
             case AST::Char:
-                offset = 1;
+                offset = 4;
                 break;
         }
 
