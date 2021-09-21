@@ -858,11 +858,11 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::While * loop = dynamic_cast<AST::While *>(STMT);
 
         ASMC::Lable * lable1 = new ASMC::Lable();
-        lable1->lable = this->nameTale.head->data.ident.ident + std::to_string(this->lablecount);
+        lable1->lable =".L" + this->nameTale.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount++;
 
         ASMC::Lable * lable2 = new ASMC::Lable();
-        lable2->lable = this->nameTale.head->data.ident.ident + std::to_string(this->lablecount);
+        lable2->lable = ".L" + this->nameTale.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount++;
 
         ASMC::Jmp * jmp = new ASMC::Jmp();
