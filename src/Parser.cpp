@@ -58,6 +58,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                     lex::LObj Ident = *dynamic_cast<lex::LObj *>(tokens.peek());
                     AST::DecArr * decA = new AST::DecArr();
                     decA->count = std::stoi(Int.value);
+                    decA->ident = Ident.meta;
                     if(obj.meta == "byte") dec->type = AST::Byte;
                     else if (obj.meta == "int") decA->type = AST::Int; 
                     else if (obj.meta == "char") decA->type = AST::Char;
