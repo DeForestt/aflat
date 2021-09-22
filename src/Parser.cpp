@@ -201,7 +201,7 @@ AST::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens){
         if(obj.Sym == ','){
         AST::Sequence * s = new AST::Sequence;
         s->Statment1 = output;
-        s->Statment2 = this->parseStmt(tokens);
+        s->Statment2 = this->parseArgs(tokens);
         return s;
         }
         else if(obj.Sym == ')'){
