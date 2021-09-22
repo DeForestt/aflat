@@ -22,9 +22,11 @@ Oporators:
         <: less than
 
 statments:
-    function call: type ident(args){statment;};
+    function declare: type ident(args){statment;};
     if: if(expr bool expr){statment;};
     while: if(expr bool expr){statment;};
     push: push pointer; (pushes a single char to the output buffer)
     pull: pull pointer; (reads a value from the input buffer);
     return: return value;
+
+Please see example progrma;
