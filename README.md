@@ -16,9 +16,9 @@ Please see example project<br>
         +: add
         -: subtract
         *: multiply
-        /: devide **Curently cannot devide with constants. Need to load int into a variable first**
-        ?: refrence eg: adr pointer = ?veriable
-        as: de-refrense eg char i = pointer as char
+        /: devide **Curently cannot divide with constants. Need to load int into a variable first**
+        ?: refrence eg: adr pointer = ?var
+        as: de-refrence eg char i = pointer as char
 
         boolean:
             ==: equals
