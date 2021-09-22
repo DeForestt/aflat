@@ -1,0 +1,10 @@
+.root "~/Repos/aflatProjects/print-int"
+.needs "/lib/head/io.gs"
+.needs "/headers/draw.gs";
+
+int main(){
+	grafLin(1, 0, 20);
+	//grafLin(2, 0, 20);
+	print("this is a print");
+	return 0;
+};
