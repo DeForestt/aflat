@@ -186,6 +186,13 @@ namespace AST{
         Expr * expr;
     };
     
+    class DecArr : public Statment{
+        public:
+        std::string ident;
+        AST::Type type;
+        int count;
+    };
+
     class Return : public Statment{
         public:
         Expr * expr;
