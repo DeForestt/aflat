@@ -1,5 +1,5 @@
-AFLAT compiles to GNU ASM <br>
-Please see example project
+AFLAT <BR>compiles to GNU ASM for LINUX<br>
+Please see example project<br>
 **Heap Access Coming Soon**
 
     Build:
