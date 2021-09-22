@@ -52,6 +52,18 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                     
                 }
                 
+            } else if(dynamic_cast<lex::INT *>(tokens.peek()) != nullptr){
+                lex::INT Int = *dynamic_cast<lex::INT *>(tokens.pop());
+                if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+                    lex::LObj Ident = *dynamic_cast<lex::LObj *>(tokens.peek());
+                    AST::DecArr * decA = new AST::DecArr();
+                    decA->count = std::stoi(Int.value);
+                    if(obj.meta == "byte") dec->type = AST::Byte;
+                    else if (obj.meta == "int") decA->type = AST::Int; 
+                    else if (obj.meta == "char") decA->type = AST::Char;
+                    else if (obj.meta == "adr")decA->type = AST::IntPtr;   
+                    output = decA;
+                }
             }
             else{
                 throw err::Exception("Unparsable token found");
