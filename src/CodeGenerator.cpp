@@ -71,9 +71,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::Var var = *dynamic_cast<AST::Var *>(expr);
         gen::Symbol sym = *this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
         if(sym.type == AST::Int) output.size = ASMC::DWord;
-            else if (sym.type == AST::Char)  output.size = ASMC::Byte;
-            else if (sym.type == AST::IntPtr) output.size = ASMC::QWord;
-            else if (sym.type == AST::CharPtr) output.size = ASMC::QWord;
+        else if (sym.type == AST::Char)  output.size = ASMC::Byte;
+        else if (sym.type == AST::IntPtr) output.size = ASMC::QWord;
+        else if (sym.type == AST::CharPtr) output.size = ASMC::QWord;
 
         output.access = '-' + std::to_string(sym.byteMod) + "(%rbp)";
     }else if (dynamic_cast<AST::CharLiteral *>(expr) != nullptr){
