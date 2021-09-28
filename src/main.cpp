@@ -76,7 +76,8 @@ std::string preProcess(std::string input){
             if(line.substr(0, 6) == ".needs"){
                 int startPos = line.find_first_of('\"') + 1;
                 int endPos = line.find_last_of('\"');
-                std::ifstream ifs(root + line.substr(startPos, endPos - startPos));
+                std::string relpath = line.substr(startPos, endPos - startPos);
+                std::ifstream ifs(root + relpath);
                 std::string content( (std::istreambuf_iterator<char>(ifs) ),
                                 (std::istreambuf_iterator<char>()    ) );
                 ifs.close();
