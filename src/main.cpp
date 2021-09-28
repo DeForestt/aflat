@@ -80,8 +80,8 @@ std::string preProcess(std::string input){
                 std::ifstream ifs(root + relpath);
                 std::string content( (std::istreambuf_iterator<char>(ifs) ),
                                 (std::istreambuf_iterator<char>()    ) );
-                ifs.close();
                 output += preProcess(content);
+                ifs.close();
             }else if(line.substr(0, 5) == ".root"){
                 int startPos = line.find_first_of('\"') + 1;
                 int endPos = line.find_last_of('\"');
