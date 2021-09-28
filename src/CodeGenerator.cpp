@@ -547,6 +547,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         Symbol.type = dec->type;
         Symbol.symbol = dec->Ident;
         this->SymbolTable.push(Symbol);
+        
     }else if(dynamic_cast<AST::DecArr *>(STMT) != nullptr){
          /*
             movl $0x0, -[SymbolT + size](rdp)
@@ -588,7 +589,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         Symbol.type = dec->type;
         Symbol.symbol = dec->ident;
         this->SymbolTable.push(Symbol);
-        
+
     }else if (dynamic_cast<AST::DecAssign *>(STMT) != nullptr)
     {
         /*
