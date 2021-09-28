@@ -78,7 +78,8 @@ std::string preProcess(std::string input){
                 int startPos = line.find_first_of('\"') + 1;
                 int endPos = line.find_last_of('\"');
                 std::string relpath = line.substr(startPos, endPos - startPos);
-                std::ifstream ifs(root + relpath);
+                std::string path = root + relpath;
+                std::ifstream ifs(path);
                 std::string content( (std::istreambuf_iterator<char>(ifs) ),
                                 (std::istreambuf_iterator<char>()    ) );
                                 ifs.close();
