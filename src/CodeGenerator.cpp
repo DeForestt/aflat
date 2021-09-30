@@ -34,7 +34,17 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     }else if(dynamic_cast<AST::CallExpr *>(expr) != nullptr){
         AST::CallExpr * exprCall = dynamic_cast<AST::CallExpr *>(expr);
         AST::Call * call = exprCall->call;
-        AST::Function func = *this->nameTale[call->ident];
+        AST::Function func;
+        try
+        {
+            func = *this->nameTale[call->ident];
+        }
+        catch(err::Exception e)
+        {
+            throw(new err::Exception(call->ident+ " " + e.errorMsg));
+        }
+        
+        
         this->intArgsCounter = 0;
         call->Args.invert();
         while (call->Args.count > 0)
