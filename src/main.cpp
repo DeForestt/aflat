@@ -15,9 +15,7 @@ void buildTemplate(std::string value);
 
 int main(int argc, char *argv[])
 {
-    std::cout << "this is a test";
     try{
-        std::cout << "This is a test";
         lex::Lexer scanner;
         links::LinkedList<lex::Token* > tokens;
 
@@ -25,7 +23,7 @@ int main(int argc, char *argv[])
         std::string content( (std::istreambuf_iterator<char>(ifs) ),
                         (std::istreambuf_iterator<char>()    ) );
         ifs.close();
-
+        std::cout << "this is a test";
         try{
             tokens = scanner.Scan(preProcess(content));
         }catch (int x){
