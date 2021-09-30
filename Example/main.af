@@ -1,9 +1,0 @@
-.root "print-int"
-.needs "/lib/head/io.gs"
-.needs "/headers/draw.gs";
-
-int main(){
-	print("this is a test \n");
-	graghLin(1, 0, 20);
-	return 0;
-};

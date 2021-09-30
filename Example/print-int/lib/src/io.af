@@ -1,0 +1,83 @@
+.root "/home/ubuntu/Repos/aflatProjects/print-int/lib/head/"
+.needs "math.gs"
+.needs "io.gs";
+int clearInput(){
+	char nl = 10;
+	char buffer = ' ';
+	while (buffer != nl){pull ?buffer};
+	return 0;	
+};
+
+int print(adr input){
+	char null = 0;
+	while(input as char != null ){
+		push input;
+		input = input + 1;
+	};
+	return 0;
+};
+
+char toChar(int input){
+	char output = '0';
+	if(input > 9){output = 'A'};
+	if(input == 0){output = '0'};
+	if(input == 1){output = '1'};
+	if(input == 2){output = '2'};
+	if(input == 3){output = '3'};
+	if(input == 4){output = '4'};
+	if(input == 5){output = '5'};
+	if(input == 6){output = '6'};
+	if(input == 7){output = '7'};
+	if(input == 8){output = '8'};
+	if(input == 9){output = '9'};
+	return output;
+};
+
+int toInt(char input){
+	if(input == '0'){return 0};
+	if(input == '1'){return 1};
+	if(input == '2'){return 2};
+	if(input == '3'){return 3};
+	if(input == '4'){return 4};
+	if(input == '5'){return 5};
+	if(input == '6'){return 6};
+	if(input == '7'){return 7};
+	if(input == '8'){return 8};
+	if(input == '9'){return 9};
+	return 0;
+};
+ 
+ int pullInt(int sigfigs){
+ 	int i = sigfigs - 1;
+	int value = 0;
+	int h = 0;
+	int factor = 0;
+	char input;
+ 	while (i > -1){
+		pull ?input;
+		h = toInt(input);
+		factor = exp(10, i);
+		h = factor * h;
+		value = value + h;
+		i = i - 1;	
+	};
+	clearInput();
+	return value;
+ };
+
+int printInt(int input, int sigfigs){
+	int i = sigfigs - 1;
+	int h = 0;
+	int factor = 0;
+	char out = 0;
+	while (i > -1){
+		factor = exp(10, i);
+		h = input / factor;
+		out = toChar(h);
+		push ?out;
+		h = h * factor;
+		input = input - h; 
+		i = i - 1;
+	};
+	return 0;
+};

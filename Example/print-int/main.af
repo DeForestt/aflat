@@ -1,0 +1,18 @@
+.root "/home/ubuntu/Repos/aflatProjects/print-int/lib/"
+.needs "head/io.gs"
+int main(){
+	int num1;
+	int num2;
+	int sigFigs;
+	print("How Many digits in each number?(2 digits): ");
+	sigFigs = pullInt(2);
+	print("Please input the first Number: ");
+	num1 = pullInt(sigFigs);
+	print("please intput the second Number: ");
+	num2 = pullInt(sigFigs);
+	print("Div Result: ");
+	int result = num1 / num2;
+	printInt(result, sigFigs);
+	print("\n");
+	return 0;
+};
