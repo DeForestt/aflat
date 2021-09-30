@@ -41,7 +41,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         }
         catch(err::Exception e)
         {
-            throw(new err::Exception(call->ident+ " " + e.errorMsg));
+            throw(new err::Exception("      " + call->ident + " " + e.errorMsg));
         }
         
         
