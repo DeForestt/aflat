@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
         std::string value = argv[1];
         if (value == "make"){
             std::cout << "creating " << argv[2] << '\n';
-            std::string ;
+            std::string pName = argv[2];
             return 0;
         }
         try{
