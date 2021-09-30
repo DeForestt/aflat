@@ -27,6 +27,7 @@ int main(int argc, char *argv[])
         if (value == "make"){
             std::cout << "creating " << argv[2] << '\n';
             std::string pName = argv[2];
+            buildTemplate(pName);
             return 0;
         }
         try{
