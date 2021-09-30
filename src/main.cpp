@@ -15,18 +15,9 @@ void buildTemplate(std::string value);
 
 int main(int argc, char *argv[])
 {
-    
-    if (argc == 3){
-        std::cout << argv[3];
-        if (argv[1] == "create"){
-            std::cout << "Creating template " << argv[2];
-            buildTemplate(argv[2]);
-            return 0;
-        };
-    };
-    std::cout << argc;
+    std::cout << "this is a test";
     try{
-        std::cout << argc;
+        std::cout << "This is a test";
         lex::Lexer scanner;
         links::LinkedList<lex::Token* > tokens;
 
