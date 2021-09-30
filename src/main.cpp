@@ -15,15 +15,18 @@ void buildTemplate(std::string value);
 
 int main(int argc, char *argv[])
 {
-    std::cout << argc;
+    
     if (argc == 3){
+        std::cout << argc;
         if (argv[1] == "create"){
             std::cout << "Creating template " << argv[2];
             buildTemplate(argv[2]);
             return 0;
         };
     };
+    std::cout << argc;
     try{
+        std::cout << argc;
         lex::Lexer scanner;
         links::LinkedList<lex::Token* > tokens;
 
