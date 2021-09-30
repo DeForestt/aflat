@@ -79,10 +79,9 @@ std::string preProcess(std::string input){
                 int endPos = line.find_last_of('\"');
                 std::string relpath = line.substr(startPos, endPos - startPos);
                 std::string path = root + relpath;
-                std::ifstream ifs(path);
-                std::string content( (std::istreambuf_iterator<char>(ifs) ),
-                                (std::istreambuf_iterator<char>()    ) );
-                                ifs.close();
+                std::fstream f(path, std::fstream::in);
+                string content;
+                std::getline( f, content, '\0');
                 output += preProcess(content);
             }else if(line.substr(0, 5) == ".root"){
                 int startPos = line.find_first_of('\"') + 1;
