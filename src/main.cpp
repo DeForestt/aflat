@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <filesystem>
 #include "Scanner.hpp"
 #include "LinkedList.hpp"
 #include "Parser.hpp"
@@ -13,6 +14,11 @@ std::string preProcess(std::string input);
 
 int main(int argc, char *argv[])
 {
+    if (argc == 3){
+        if (argv[1] == "create"){
+            buildTemplate(argv[2]);
+        };
+    };
     try{
         lex::Lexer scanner;
         links::LinkedList<lex::Token* > tokens;
@@ -96,6 +102,10 @@ std::string preProcess(std::string input){
     }
     return output;
 };
+
+void buildTemplate(std::string value){
+    std::filesystem::create_directories(value);
+}
 
 std::string trim( std::string str )
 {
