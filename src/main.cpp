@@ -11,7 +11,7 @@
 
 std::string trim(std::string str);
 std::string preProcess(std::string input);
-void buildTemplate();
+void buildTemplate(std::string value);
 
 int main(int argc, char *argv[])
 {
