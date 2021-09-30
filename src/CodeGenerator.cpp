@@ -35,17 +35,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::CallExpr * exprCall = dynamic_cast<AST::CallExpr *>(expr);
         AST::Call * call = exprCall->call;
         std::string errhold = call ->ident;
-        AST::Function func;
-        try
-        {
-            func = *this->nameTale[call->ident];
-        }
-        catch(err::Exception e)
-        {
-            throw(new err::Exception("      " + call->ident + " " + e.errorMsg + call->ident));
-        }
-        
-        
+        AST::Function * func = this->nameTale[call->ident];
+        if (func == nullptr) throw err::Exception("Cannot Find Function: " + call->ident);
         this->intArgsCounter = 0;
         call->Args.invert();
         while (call->Args.count > 0)
@@ -68,30 +59,26 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         ASMC::Call * calls = new ASMC::Call;
         calls->function = call->ident;
         OutputFile.text << calls;
-        if(func.type == AST::Int){
+        if(func->type == AST::Int){
             output.access = this->registers["%rax"]->dWord;
             output.size = ASMC::DWord;
-        } else if(func.type == AST::Char){
+        } else if(func->type == AST::Char){
             output.access = this->registers["%rax"]->byte;
             output.size = ASMC::Byte;
-        }else if(func.type == AST::IntPtr){
+        }else if(func->type == AST::IntPtr){
             output.access = this->registers["%rax"]->qWord;
             output.size = ASMC::QWord;
         };
     }else if (dynamic_cast<AST::Var *>(expr) != nullptr){
         AST::Var var = *dynamic_cast<AST::Var *>(expr);
-        gen::Symbol sym;
-        try{
-            sym = *this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
-        } catch(err::Exception e){
-            throw new err::Exception("Cannot find: " + var.Ident);
-        }
-        if(sym.type == AST::Int) output.size = ASMC::DWord;
-        else if (sym.type == AST::Char)  output.size = ASMC::Byte;
-        else if (sym.type == AST::IntPtr) output.size = ASMC::QWord;
-        else if (sym.type == AST::CharPtr) output.size = ASMC::QWord;
+        gen::Symbol * sym = this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
+        if (sym == nullptr) throw err::Exception("cannot find: " + var.Ident);
+        if(sym->type == AST::Int) output.size = ASMC::DWord;
+        else if (sym->type == AST::Char)  output.size = ASMC::Byte;
+        else if (sym->type == AST::IntPtr) output.size = ASMC::QWord;
+        else if (sym->type == AST::CharPtr) output.size = ASMC::QWord;
 
-        output.access = '-' + std::to_string(sym.byteMod) + "(%rbp)";
+        output.access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
     }else if (dynamic_cast<AST::CharLiteral *>(expr) != nullptr){
         AST::CharLiteral charlit = *dynamic_cast<AST::CharLiteral *>(expr);
         output.access = "$" + std::to_string(charlit.value);

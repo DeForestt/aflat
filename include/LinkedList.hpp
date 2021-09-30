@@ -77,7 +77,7 @@ T* links::LinkedList<T>::search(bool(* foo)(T, Z), Z input){
                 return &pointer->data;
             }
         }
-        throw(err::Exception("Not Found"));
+        return nullptr;
 }
 
 template <typename T>
