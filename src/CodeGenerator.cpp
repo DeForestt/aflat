@@ -34,6 +34,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     }else if(dynamic_cast<AST::CallExpr *>(expr) != nullptr){
         AST::CallExpr * exprCall = dynamic_cast<AST::CallExpr *>(expr);
         AST::Call * call = exprCall->call;
+        std::string errhold = call ->ident;
         AST::Function func;
         try
         {
@@ -41,7 +42,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         }
         catch(err::Exception e)
         {
-            throw(new err::Exception("      " + call->ident + " " + e.errorMsg + call->ident));
+            throw(new err::Exception(errhold));
         }
         
         
