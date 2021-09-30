@@ -17,7 +17,7 @@ std::string ASMC::LinkTask::toString(){
 }
 
 std::string ASMC::Call::toString(){
-    return "\tcall\t" + this->function + " wrt ..plt" "\n";
+    return "\tcall\t" + this->function + "\n";
 }
 
 std::string ASMC::Mov::toString(){
