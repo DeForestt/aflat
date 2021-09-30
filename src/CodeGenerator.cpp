@@ -42,7 +42,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         }
         catch(err::Exception e)
         {
-            throw(new err::Exception(errhold));
+            throw(new err::Exception("      " + call->ident + " " + e.errorMsg + call->ident));
         }
         
         
@@ -80,7 +80,12 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         };
     }else if (dynamic_cast<AST::Var *>(expr) != nullptr){
         AST::Var var = *dynamic_cast<AST::Var *>(expr);
-        gen::Symbol sym = *this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
+        gen::Symbol sym;
+        try{
+            sym = *this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
+        } catch(err::Exception e){
+            throw new err::Exception("Cannot find: " + var.Ident);
+        }
         if(sym.type == AST::Int) output.size = ASMC::DWord;
         else if (sym.type == AST::Char)  output.size = ASMC::Byte;
         else if (sym.type == AST::IntPtr) output.size = ASMC::QWord;
