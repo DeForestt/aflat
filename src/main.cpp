@@ -23,8 +23,8 @@ int main(int argc, char *argv[])
         std::string content( (std::istreambuf_iterator<char>(ifs) ),
                         (std::istreambuf_iterator<char>()    ) );
         ifs.close();
-        
-        if (argv[1] == "make"){
+        std::string value = argv[1];
+        if (value == "make"){
             std::cout << argv[2];
             return 0;
         }
