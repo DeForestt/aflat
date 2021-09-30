@@ -77,6 +77,7 @@ std::string preProcess(std::string input){
             if(line.substr(0, 6) == ".needs"){
                 int startPos = line.find_first_of('\"') + 1;
                 int endPos = line.find_last_of('\"');
+                
                 std::string relpath = line.substr(startPos, endPos - startPos);
                 std::string path = root + relpath;
                 std::fstream f(path, std::fstream::in);
