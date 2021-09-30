@@ -107,6 +107,13 @@ std::string preProcess(std::string input){
 
 void buildTemplate(std::string value){
     std::filesystem::create_directories(value);
+    std::filesystem::create_directories(value + "/src");
+    std::filesystem::create_directories(value + "/head");
+    std::filesystem::create_directories(value + "/std/head");
+    std::filesystem::create_directories(value + "/std/src");
+
+    std::ofstream outfile ("test.txt");
+
 }
 
 std::string trim( std::string str )
