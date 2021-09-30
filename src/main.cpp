@@ -15,6 +15,7 @@ void buildTemplate(std::string value);
 
 int main(int argc, char *argv[])
 {
+    std::cout << argc;
     if (argc == 3){
         if (argv[1] == "create"){
             std::cout << "Creating template " << argv[2];
