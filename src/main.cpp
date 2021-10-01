@@ -122,10 +122,10 @@ void buildTemplate(std::string value){
     std::filesystem::create_directories(value + "/src");
     std::filesystem::create_directories(value + "/head");
     
-    std::ifstream in(libPath);
-    std::ofstream out(value);
+    //std::ifstream in(libPath);
+    //std::ofstream out(value);
 
-    out << in.rdbuf();
+    //out << in.rdbuf();
 
     std::filesystem::path cwd = std::filesystem::current_path();
     std::string root =  cwd.string() + "/" + value;
