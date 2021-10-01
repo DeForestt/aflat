@@ -170,7 +170,7 @@ void buildTemplate(std::string value){
     std::ofstream outfile (value + "/src/main.af");
     outfile << ".root \"" << root << "\"\n";
     outfile << ".needs \"" << root << "/std/head/io.gs\n";
-    outfile << "int main(){\n\tprint(\"Hello, World!\");\n\treturn 0;\n};\n";
+    outfile << "int main(){\n\tprint(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
     outfile.close();
 }
 
