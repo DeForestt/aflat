@@ -134,6 +134,7 @@ void buildTemplate(std::string value){
     std::ofstream out(value);
 
     out << in.rdbuf();
+    
     std::string ip = libPath + "/head";
     std::string op = value + "/std/head";
     in = std::ifstream(ip);
