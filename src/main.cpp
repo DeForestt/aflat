@@ -118,6 +118,7 @@ void buildTemplate(std::string value){
     std::string filename = getExePath();
     std::string exepath = filename.substr(0, filename.find_last_of("/"));
     std::string libPath = exepath.substr(0, exepath.find_last_of("/")) + "/std";
+    std::cout << libPath;
     std::filesystem::create_directories(value);
     std::filesystem::create_directories(value + "/src");
     std::filesystem::create_directories(value + "/head");
