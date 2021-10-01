@@ -55,7 +55,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             } else if(dynamic_cast<lex::INT *>(tokens.peek()) != nullptr){
                 lex::INT Int = *dynamic_cast<lex::INT *>(tokens.pop());
                 if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
-                    lex::LObj Ident = *dynamic_cast<lex::LObj *>(tokens.peek());
+                    lex::LObj Ident = *dynamic_cast<lex::LObj *>(tokens.pop());
                     AST::DecArr * decA = new AST::DecArr();
                     decA->count = std::stoi(Int.value);
                     decA->ident = Ident.meta;
