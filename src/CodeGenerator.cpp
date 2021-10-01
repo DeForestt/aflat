@@ -715,6 +715,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             m1->size = ASMC::QWord;
             m1->to = this->registers["%eax"]->qWord;
             mov->to = "(" + this->registers["%eax"]->qWord + ")";
+            OutputFile.text << m1;
         }else mov->to = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
         OutputFile.text << mov;
     }else if (dynamic_cast<AST::Call *>(STMT) != nullptr)
