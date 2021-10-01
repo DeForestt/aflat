@@ -5,7 +5,6 @@ int clearInput(){
 	char buffer = ' ';
 	while (buffer != nl){pull ?buffer};
 	return 0;	
-};
 
 int print(adr input){
 	char null = 0;
