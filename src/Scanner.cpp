@@ -154,6 +154,12 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         mul->Sym = input[i];
                         tokens << mul;
                         i++;
+                    }else if (input[i] == ':')
+                    {
+                        lex::OpSym* mul = new OpSym;
+                        mul->Sym = input[i];
+                        tokens << mul;
+                        i++;
                     }
                     else if (input[i] == '/')
                     {

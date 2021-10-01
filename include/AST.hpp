@@ -137,6 +137,7 @@ namespace AST{
     class Assign : public Statment{
         public:
         std::string Ident;
+        bool refrence = false;
         Expr * expr;
     };
 

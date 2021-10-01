@@ -112,8 +112,17 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
         else{
             if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                 lex::OpSym * sym = dynamic_cast<lex::OpSym *> (tokens.pop());
+
                 if(sym->Sym == '='){
                     AST::Assign * assign = new AST::Assign();
+                    if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                        lex::OpSym * s2 = dynamic_cast<lex::OpSym *>(tokens.peek());
+                        if (s2->Sym == ':'){
+                            assign->refrence = true;
+                            tokens.pop();
+                        };
+                    };
+                    
                     assign->Ident = obj.meta;
                     assign->expr = this->parseExpr(tokens);
                     output = assign;
