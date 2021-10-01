@@ -115,7 +115,7 @@ std::string getExePath()
 }
 
 void buildTemplate(std::string value){
-    std::cout << getExePath();
+    std::cout << getExePath().substr(0, s1.find_last_of("\\/"));
     std::filesystem::create_directories(value);
     std::filesystem::create_directories(value + "/src");
     std::filesystem::create_directories(value + "/head");
