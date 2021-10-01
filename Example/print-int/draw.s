@@ -1,23 +1,23 @@
-.global	grafLin
+.global	graphLin
 
 
 .text
 
-.strgrafLin14:
+.strgraphLin14:
 	.asciz	 "\n"
-.strgrafLin13:
+.strgraphLin13:
 	.asciz	 "-"
-.strgrafLin10:
+.strgraphLin10:
 	.asciz	 "-"
-.strgrafLin9:
+.strgraphLin9:
 	.asciz	 "\n"
-.strgrafLin8:
+.strgraphLin8:
 	.asciz	 "-"
-.strgrafLin6:
+.strgraphLin6:
 	.asciz	 "*"
-.strgrafLin2:
+.strgraphLin2:
 	.asciz	 "|"
-grafLin:
+graphLin:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$32, %rsp
@@ -29,14 +29,14 @@ grafLin:
 	imul	%edx, %eax
 	movl	%eax, -16(%rbp)
 	movl	$0, -20(%rbp)
-	jmp	.LgrafLin1
-.LgrafLin0:
+	jmp	.LgraphLin1
+.LgraphLin0:
 	movl	$0, -20(%rbp)
-	movl	$.strgrafLin2, %eax
-	movl	%eax, %edi
+	movq	$.strgraphLin2, %rax
+	movq	%rax, %rdi
 	call	print
-	jmp	.LgrafLin4
-.LgrafLin3:
+	jmp	.LgraphLin4
+.LgraphLin3:
 	movl	-20(%rbp), %edx
 	movl	-4(%rbp), %eax
 	imul	%edx, %eax
@@ -48,60 +48,60 @@ grafLin:
 	movl	-16(%rbp), %eax
 	movl	-28(%rbp), %ecx
 	cmpl	%ecx, %eax
-	jne	.LgrafLin5
-	movl	$.strgrafLin6, %eax
-	movl	%eax, %edi
+	jne	.LgraphLin5
+	movq	$.strgraphLin6, %rax
+	movq	%rax, %rdi
 	call	print
-.LgrafLin5:
+.LgraphLin5:
 	movl	-16(%rbp), %eax
 	movl	-28(%rbp), %ecx
 	cmpl	%ecx, %eax
-	je	.LgrafLin7
-	movl	$.strgrafLin8, %eax
-	movl	%eax, %edi
+	je	.LgraphLin7
+	movq	$.strgraphLin8, %rax
+	movq	%rax, %rdi
 	call	print
-.LgrafLin7:
+.LgraphLin7:
 	mov	-20(%rbp), %edx
 	mov	$1, %eax
 	add	%edx, %eax
 	movl	%eax, -20(%rbp)
-.LgrafLin4:
+.LgraphLin4:
 	movl	-20(%rbp), %eax
 	movl	-12(%rbp), %ecx
 	cmpl	%ecx, %eax
-	jle	.LgrafLin3
+	jl	.LgraphLin3
 	movl	$1, %edx
 	movl	-16(%rbp), %eax
 	sub	%edx, %eax
 	movl	%eax, -16(%rbp)
-	movl	$.strgrafLin9, %eax
-	movl	%eax, %edi
+	movq	$.strgraphLin9, %rax
+	movq	%rax, %rdi
 	call	print
-.LgrafLin1:
+.LgraphLin1:
 	movl	-16(%rbp), %eax
 	movl	$-1, %ecx
 	cmpl	%ecx, %eax
-	jg	.LgrafLin0
+	jg	.LgraphLin0
 	movl	$0, -16(%rbp)
-	movl	$.strgrafLin10, %eax
-	movl	%eax, %edi
+	movq	$.strgraphLin10, %rax
+	movq	%rax, %rdi
 	call	print
-	jmp	.LgrafLin12
-.LgrafLin11:
-	movl	$.strgrafLin13, %eax
-	movl	%eax, %edi
+	jmp	.LgraphLin12
+.LgraphLin11:
+	movq	$.strgraphLin13, %rax
+	movq	%rax, %rdi
 	call	print
 	mov	-16(%rbp), %edx
 	mov	$1, %eax
 	add	%edx, %eax
 	movl	%eax, -16(%rbp)
-.LgrafLin12:
+.LgraphLin12:
 	movl	-16(%rbp), %eax
 	movl	-12(%rbp), %ecx
 	cmpl	%ecx, %eax
-	jle	.LgrafLin11
-	movl	$.strgrafLin14, %eax
-	movl	%eax, %edi
+	jl	.LgraphLin11
+	movq	$.strgraphLin14, %rax
+	movq	%rax, %rdi
 	call	print
 	movl	$0, %eax
 	leave

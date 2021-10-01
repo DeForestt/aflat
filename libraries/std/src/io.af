@@ -1,5 +1,5 @@
-.needs "/lib/head/math.gs"
-.needs "/lib/head/io.gs";
+.needs "/std/head/math.gs"
+.needs "/std/head/io.gs";
 int clearInput(){
 	char nl = 10;
 	char buffer = ' ';

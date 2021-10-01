@@ -1,5 +1,5 @@
 
-int grafLin(int m, int b, int scale){
+int graphLin(int m, int b, int scale){
 	int i = scale * 1;
 	int j = 0;
 	int mx;

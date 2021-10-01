@@ -117,19 +117,22 @@ std::string getExePath()
 void buildTemplate(std::string value){
     std::string filename = getExePath();
     std::string exepath = filename.substr(0, filename.find_last_of("/"));
-    std::string libPath = exepath.substr(0, exepath.find_last_of("/")) + "/std";
-    std::cout << libPath;
+    std::string libPath = exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std";
     std::filesystem::create_directories(value);
     std::filesystem::create_directories(value + "/src");
     std::filesystem::create_directories(value + "/head");
-    std::filesystem::create_directories(value + "/std/head");
-    std::filesystem::create_directories(value + "/std/src");
     
+    std::ifstream in(libPath);
+    std::ofstream out(value);
+
+    out << in.rdbuf();
+
     std::filesystem::path cwd = std::filesystem::current_path();
     std::string root =  cwd.string() + "/" + value;
     std::ofstream outfile (value + "/src/main.af");
     outfile << ".root \"" << root << "\"\n";
     outfile << ".needs \"" << root << "/std/head/io.gs\n";
+    outfile << "int main(){\n\tprint(\"Hello, World!\");\n\treturn 0;};";
     outfile.close();
 
 
