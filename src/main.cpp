@@ -121,19 +121,51 @@ void buildTemplate(std::string value){
     std::filesystem::create_directories(value);
     std::filesystem::create_directories(value + "/src");
     std::filesystem::create_directories(value + "/head");
-    
-    //std::ifstream in(libPath);
-    //std::ofstream out(value);
-
-    //out << in.rdbuf();
 
     std::filesystem::path cwd = std::filesystem::current_path();
     std::string root =  cwd.string() + "/" + value;
     std::ofstream outfile (value + "/src/main.af");
     outfile << ".root \"" << root << "\"\n";
     outfile << ".needs \"" << root << "/std/head/io.gs\n";
-    outfile << "int main(){\n\tprint(\"Hello, World!\");\n\treturn 0;};";
+    outfile << "int main(){\n\tprint(\"Hello, World!\");\n\treturn 0;\n};\n";
     outfile.close();
+
+    std::ifstream in(libPath);
+    std::ofstream out(value);
+
+    out << in.rdbuf();
+
+    in = std::ifstream(libPath + "/head");
+    out = std::ifstream(value + "/std/head");
+
+    out << in.rdbuf();
+
+    in = std::ifstream(libPath + "/head/io.gs");
+    out = std::ifstream(value + "/std/head/io.gs");
+
+    out << in.rdbuf();
+
+    in = std::ifstream(libPath + "/head/math.gs");
+    out = std::ifstream(value + "/std/head/math.gs");
+
+    out << in.rdbuf();
+
+    in = std::ifstream(libPath + "/src");
+    out = std::ifstream(value + "/std/src");
+
+    out << in.rdbuf();
+    
+    in = std::ifstream(libPath + "/src/io.af");
+    out = std::ifstream(value + "/std/src/io.af");
+
+    out << in.rdbuf();
+
+    in = std::ifstream(libPath + "/src/math.af");
+    out = std::ifstream(value + "/std/src/math.af");
+
+    out << in.rdbuf();
+
+
 
 
 
