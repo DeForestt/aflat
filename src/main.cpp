@@ -2,6 +2,7 @@
 #include <sstream>
 #include <fstream>
 #include <filesystem>
+#include <unistd.h>
 #include "Scanner.hpp"
 #include "LinkedList.hpp"
 #include "Parser.hpp"
@@ -106,7 +107,15 @@ std::string preProcess(std::string input){
     return output;
 };
 
+std::string getExePath()
+{
+  char result[ 200 ];
+  size_t count = readlink(result, 200 );
+  return std::string( result, (count > 0) ? count : 0 );
+}
+
 void buildTemplate(std::string value){
+    std::cout << getExePath();
     std::filesystem::create_directories(value);
     std::filesystem::create_directories(value + "/src");
     std::filesystem::create_directories(value + "/head");
