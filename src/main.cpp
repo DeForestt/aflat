@@ -122,19 +122,13 @@ void buildTemplate(std::string value){
     std::filesystem::create_directories(value + "/src");
     std::filesystem::create_directories(value + "/head");
 
-    std::filesystem::path cwd = std::filesystem::current_path();
-    std::string root =  cwd.string() + "/" + value;
-    std::ofstream outfile (value + "/src/main.af");
-    outfile << ".root \"" << root << "\"\n";
-    outfile << ".needs \"" << root << "/std/head/io.gs\n";
-    outfile << "int main(){\n\tprint(\"Hello, World!\");\n\treturn 0;\n};\n";
-    outfile.close();
+    std::cout << libPath << std::endl;
 
     std::ifstream in(libPath);
     std::ofstream out(value);
 
     out << in.rdbuf();
-    
+
     std::string ip = libPath + "/head";
     std::string op = value + "/std/head";
     in = std::ifstream(ip);
@@ -170,10 +164,13 @@ void buildTemplate(std::string value){
 
     out << in.rdbuf();
 
-
-
-
-
+    std::filesystem::path cwd = std::filesystem::current_path();
+    std::string root =  cwd.string() + "/" + value;
+    std::ofstream outfile (value + "/src/main.af");
+    outfile << ".root \"" << root << "\"\n";
+    outfile << ".needs \"" << root << "/std/head/io.gs\n";
+    outfile << "int main(){\n\tprint(\"Hello, World!\");\n\treturn 0;\n};\n";
+    outfile.close();
 }
 
 std::string trim( std::string str )
