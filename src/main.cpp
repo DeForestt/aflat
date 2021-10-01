@@ -121,12 +121,11 @@ void buildTemplate(std::string value){
     std::filesystem::create_directories(value);
     std::filesystem::create_directories(value + "/src");
     std::filesystem::create_directories(value + "/head");
-    //std::filesystem::create_directories(value + "/std");
+    std::filesystem::create_directories(value + "/std");
+    std::filesystem::create_directories(value + "/std/src");
+    std::filesystem::create_directories(value + "/std/head");
 
     std::cout << libPath << std::endl;
-
-    std::ifstream in(libPath);
-    std::ofstream out(value + "/std");
 
     out << in.rdbuf();
 
