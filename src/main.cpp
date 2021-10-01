@@ -112,7 +112,13 @@ void buildTemplate(std::string value){
     std::filesystem::create_directories(value + "/std/head");
     std::filesystem::create_directories(value + "/std/src");
 
-    std::ofstream outfile ("test.txt");
+    char tmp[256];
+    std::filesystem::path cwd = std::filesystem::current_path();
+    std::ofstream outfile (value + "/src/main.af");
+    outfile << ".root \"" + cwd.string() << "/" + value + "/\"" << "\n";
+    outfile.close();
+
+
 
 }
 
