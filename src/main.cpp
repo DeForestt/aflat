@@ -137,35 +137,35 @@ void buildTemplate(std::string value){
     std::string ip = libPath + "/head";
     std::string op = value + "/std/head";
     in = std::ifstream(ip);
-    out = std::ifstream(op);
+    out = std::ofstream(op);
 
     out << in.rdbuf();
 
     ip = libPath + "/head/io.gs";
     op = value + "/std/head/io.gs";
     in = std::ifstream(ip);
-    out = std::ifstream(op);
+    out = std::ofstream(op);
 
     out << in.rdbuf();
 
 
     in = std::ifstream(std::string(libPath + "/head/math.gs"));
-    out = std::ifstream(std::string(value + "/std/head/math.gs"));
+    out = std::ofstream(std::string(value + "/std/head/math.gs"));
 
     out << in.rdbuf();
 
     in = std::ifstream(std::string(libPath + "/src"));
-    out = std::ifstream(std::string(value + "/std/src"));
+    out = std::ofstream(std::string(value + "/std/src"));
 
     out << in.rdbuf();
     
     in = std::ifstream(std::string(libPath + "/src/io.af"));
-    out = std::ifstream(std::string(value + "/std/src/io.af"));
+    out = std::ofstream(std::string(value + "/std/src/io.af"));
 
     out << in.rdbuf();
 
     in = std::ifstream(std::string(libPath + "/src/math.af"));
-    out = std::ifstream(std::string(value + "/std/src/math.af"));
+    out = std::ofstream(std::string(value + "/std/src/math.af"));
 
     out << in.rdbuf();
 
