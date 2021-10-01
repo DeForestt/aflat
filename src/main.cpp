@@ -76,7 +76,8 @@ std::string preProcess(std::string input){
     std::string output = "";
     std::stringstream input_stringstream(input);
     std::string line;
-    std::string root = "~/";
+    std::filesystem::path cwd = std::filesystem::current_path();
+    std::string root = cwd.string();
 
     while (getline(input_stringstream, line, '\n'))
     {
@@ -111,11 +112,12 @@ void buildTemplate(std::string value){
     std::filesystem::create_directories(value + "/head");
     std::filesystem::create_directories(value + "/std/head");
     std::filesystem::create_directories(value + "/std/src");
-
-    char tmp[256];
+    
     std::filesystem::path cwd = std::filesystem::current_path();
+    std::string root =  cwd.string() + "/" + value;
     std::ofstream outfile (value + "/src/main.af");
-    outfile << ".root \"" + cwd.string() << "/" + value + "/\"" << "\n";
+    outfile << ".root \"" << root << "\"\n";
+    outfile << ".needs \"" << root << "/std/head/io.gs\n";
     outfile.close();
 
 
