@@ -171,6 +171,13 @@ void buildTemplate(std::string value){
     outfile << ".needs \"" <<"/std/head/io.gs\n";
     outfile << "int main(){\n\tprint(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
     outfile.close();
+
+    outfile = std::ofstream(value + "/build.sh");
+    outfile << "#!/bin/sh\n" << filename << "src/main.af out.s\n";
+    outfile <<filename << "std/src/io.af std/io.s\n";
+    outfile <<  filename << "std/src/math.af std/math.s\n";
+    outfile << "gcc -O0 -g -no-pie out.s std/io.s std/math.s";
+
 }
 
 std::string trim( std::string str )
