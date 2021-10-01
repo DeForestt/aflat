@@ -709,7 +709,13 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         gen::Expr expr = this->GenExpr(assign->expr, OutputFile);
         mov->size = expr.size;
         mov->from = expr.access;
-        if(assign->refrence == true) mov->to = "(-" + std::to_string(symbol->byteMod) + "(%rbp))"; else mov->to = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
+        if(assign->refrence == true){
+            ASMC::Mov * m1 = new ASMC::Mov;
+            m1->from = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
+            m1->size = ASMC::QWord;
+            m1->to = this->registers["%eax"]->qWord;
+            mov->to = "(" + this->registers["%eax"]->qWord + ")";
+        }else mov->to = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
         OutputFile.text << mov;
     }else if (dynamic_cast<AST::Call *>(STMT) != nullptr)
     {
