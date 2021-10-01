@@ -110,7 +110,7 @@ std::string preProcess(std::string input){
 std::string getExePath()
 {
   char result[ 200 ];
-  ssize_t count = readlink("", result, 200 );
+  ssize_t count = readlink("/proc/self/exe", result, 200 );
   return std::string( result, (count > 0) ? count : 0 );
 }
 
