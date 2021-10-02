@@ -2,7 +2,7 @@
 .needs "/std/head/io.gs";
 
 char ascii(int input){
-	adr caster = input;
+	adr caster = ?input;
 	return caster as char;
 };
 
