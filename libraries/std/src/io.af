@@ -1,13 +1,19 @@
 .needs "/std/head/math.gs"
 .needs "/std/head/io.gs";
+
+char ascii(int input){
+	adr caster = input;
+	return caster as char;
+};
+
 int clearInput(){
-	char nl = 10;
+	char nl = ascii(10);
 	char buffer = ' ';
 	while (buffer != nl){pull ?buffer};
 	return 0;	
 
 int print(adr input){
-	char null = 0;
+	char null = ascii(0);
 	while(input as char != null ){
 		push input;
 		input = input + 1;
@@ -67,7 +73,7 @@ int printInt(int input, int sigfigs){
 	int i = sigfigs - 1;
 	int h = 0;
 	int factor = 0;
-	char out = 0;
+	char out;
 	while (i > -1){
 		factor = exp(10, i);
 		h = input / factor;
