@@ -546,7 +546,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 offset = 4;
                 break;
             case AST::Char:
-                offset = 4;
+                offset = 1;
                 break;
         }
 
@@ -586,7 +586,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 offset = 4;
                 break;
             case AST::Char:
-                offset = 4;
+                offset = 1;
                 break;
         }
 
@@ -630,7 +630,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 offset = 4;
                 break;
             case AST::Char:
-                offset = 4;
+                offset = 1;
                 break;
         }
 
