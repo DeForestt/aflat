@@ -6,6 +6,19 @@ char ascii(int input){
 	return caster as char;
 };
 
+int readString(adr pointer){
+	char input = ' ';
+	char nl = ascii(10);
+	char null = '0';
+	while(input != nl){
+		pull ?input;
+		pointer =: input;
+		pointer = pointer + 1;
+	};
+	pointer =: null;
+	return	0;
+};
+
 int clearInput(){
 	char nl = ascii(10);
 	char buffer = ' ';
