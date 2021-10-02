@@ -714,7 +714,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         if(expr.size == ASMC::Byte) mov2->to = this->registers["%rbx"]->byte;
         if(expr.size == ASMC::Word) mov2->to = this->registers["%rbx"]->word;
         if(expr.size == ASMC::DWord) mov2->to = this->registers["%rbx"]->dWord;
-        if(expr.size == ASMC::QWord) mov2->to = this->registers["%rbx"]->QWord;
+        if(expr.size == ASMC::QWord) mov2->to = this->registers["%rbx"]->qWord;
         mov->from = mov2->to;
         if(assign->refrence == true){
             ASMC::Mov * m1 = new ASMC::Mov;
