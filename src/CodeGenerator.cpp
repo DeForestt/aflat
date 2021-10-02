@@ -72,12 +72,12 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     }else if (dynamic_cast<AST::Var *>(expr) != nullptr){
         AST::Var var = *dynamic_cast<AST::Var *>(expr);
         gen::Symbol * sym = this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
+        
         if (sym == nullptr) throw err::Exception("cannot find: " + var.Ident);
-        if(sym->type == AST::Int) output.size = ASMC::DWord;
-        else if (sym->type == AST::Char)  output.size = ASMC::Byte;
-        else if (sym->type == AST::IntPtr) output.size = ASMC::QWord;
-        else if (sym->type == AST::CharPtr) output.size = ASMC::QWord;
-
+        if(sym->type == AST::Int) {output.size = ASMC::DWord; }
+        else if (sym->type == AST::Char)  {output.size = ASMC::Byte; }
+        else if (sym->type == AST::IntPtr) {output.size = ASMC::QWord;}
+        else if (sym->type == AST::CharPtr) {output.size = ASMC::QWord;}
         output.access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
     }else if (dynamic_cast<AST::CharLiteral *>(expr) != nullptr){
         AST::CharLiteral charlit = *dynamic_cast<AST::CharLiteral *>(expr);
@@ -706,9 +706,16 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         Symbol * symbol = this->SymbolTable.search<std::string>(searchSymbol, assign->Ident);
         if(symbol == nullptr) throw err::Exception("unknown name: " + assign->Ident);
         ASMC::Mov * mov = new ASMC::Mov();
+        ASMC::Mov * mov2 = new ASMC::Mov();
         gen::Expr expr = this->GenExpr(assign->expr, OutputFile);
         mov->size = expr.size;
-        mov->from = expr.access;
+        mov2->size = expr.size;
+        mov2->from = expr.access;
+        if(expr.size == ASMC::Byte) mov2->to = this->registers["%rbx"]->byte;
+        if(expr.size == ASMC::Word) mov2->to = this->registers["%rbx"]->word;
+        if(expr.size == ASMC::DWord) mov2->to = this->registers["%rbx"]->dWord;
+        if(expr.size == ASMC::QWord) mov2->to = this->registers["%rbx"]->QWord;
+        mov->from = mov2->to;
         if(assign->refrence == true){
             ASMC::Mov * m1 = new ASMC::Mov;
             m1->from = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
@@ -717,6 +724,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             mov->to = "(" + this->registers["%eax"]->qWord + ")";
             OutputFile.text << m1;
         }else mov->to = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
+        OutputFile.text << mov2;
         OutputFile.text << mov;
     }else if (dynamic_cast<AST::Call *>(STMT) != nullptr)
     {
