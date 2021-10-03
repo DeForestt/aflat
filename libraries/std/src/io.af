@@ -13,6 +13,7 @@ int readString(adr pointer){
 	while(input != nl){
 		pull ?input;
 		pointer =: input;
+		if(input == nl){pointer =: null};
 		pointer = pointer + 1;
 	};
 	pointer =: null;
