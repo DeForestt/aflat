@@ -9,7 +9,7 @@ char ascii(int input){
 int readString(adr pointer){
 	char input = ' ';
 	char nl = ascii(10);
-	char null = '0';
+	char null = ascii(0);
 	while(input != nl){
 		pull ?input;
 		pointer =: input;
