@@ -1,0 +1,17 @@
+.needs "/std/head/io.gs"
+
+char ascii(int input){
+	adr caster = ?input;
+	return caster as char;
+};
+
+int len(adr str){
+    int i = 0;
+    char null = ascii(0);
+
+    while(str as char != null){
+        i = i + 1;
+        str = str + 1;
+    };
+    return i;
+};

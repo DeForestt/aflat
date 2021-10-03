@@ -1,10 +1,6 @@
 .needs "/std/head/math.gs"
 .needs "/std/head/io.gs";
-
-char ascii(int input){
-	adr caster = ?input;
-	return caster as char;
-};
+.needs "/std/head/strings.gs";
 
 int readString(adr pointer){
 	char input = ' ';
