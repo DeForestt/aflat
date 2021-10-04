@@ -10,7 +10,6 @@ int len(adr input){
     int i = 0;
 	while(input as char != null ){
         i - i + 1;
-		push input;
 		input = input + 1;
 	};
 	return i;
