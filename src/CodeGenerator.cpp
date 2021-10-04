@@ -468,7 +468,6 @@ void gen::CodeGenerator::GenArgs(AST::Statment * STMT, ASMC::File &OutputFile){
         ASMC::Size size;
         int offset = 0;
         gen::Symbol symbol;
-        symbol.type = arg->type;
         ASMC::Mov * mov = new ASMC::Mov();
         switch(arg->type){
             case AST::Int:
@@ -501,16 +500,15 @@ void gen::CodeGenerator::GenArgs(AST::Statment * STMT, ASMC::File &OutputFile){
                 mov->from = this->intArgs[intArgsCounter].byte;
                 break;
         }
-
         if(this->SymbolTable.search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined veriable:" + arg->Ident);
 
+        symbol.symbol = arg->Ident;
         if (this->SymbolTable.head == nullptr){
             symbol.byteMod = offset;
         }else{
             symbol.byteMod = this->SymbolTable.peek().byteMod + offset;
         }
-        symbol.symbol = arg->Ident;
-
+        symbol.type = arg->type;
         this->SymbolTable.push(symbol);
 
         mov->size = size;
