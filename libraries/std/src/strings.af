@@ -36,21 +36,17 @@ int str_comp(adr str1, adr str2){
 };
 
 int str_concat(adr str1, adr str2, adr pointer){
-    
-    while(str1 as char != ascii(0)){
-        pointer =: str1 as char;
+    char null = ascii(0);
+    char loader;
+    while(str1 as char != null){
+        loader = str1 as char;
+        pointer =: loader;
         str1 = str1 + 1;
         pointer = pointer + 1;
     };
 
     while(str2 as char != ascii(0)){
-        loader = str2 as char;
-        pointer =: loader;
-        str2 = str2 + 1;
-        pointer = pointer + 1;
-    };
-    pointer = pointer + -1;
-    pointer =: null;
+        loader =: str1 as char;
         pointer =: str2 as char;
         str2 = str2 + 1;
         pointer = pointer + 1;
