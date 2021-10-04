@@ -215,15 +215,15 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     break;
                 }
                 
-                mov2->to = "%eax";
+                //mov2->to = "%eax";
                 mov1->from = expr1.access;
                 mov2->from = expr2.access;
-                add->op2 = "%eax";
-                add->op1 = "%edx";
+                add->op2 = mov2->to;
+                add->op1 = mov1->to;
                 OutputFile.text << mov1;
                 OutputFile.text << mov2;
                 OutputFile.text << add;
-                output.access = "%eax";
+                output.access = mov->to;
                 output.size = ASMC::DWord;
                 break;
             }
@@ -233,8 +233,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 ASMC::Sub * sub = new ASMC::Sub();
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
-                mov1->size = expr1.size;
-                mov2->size = expr1.size;
+                mov1->size = ASMC::AUTO;
+                mov2->size = ASMC::AUTO;
                 switch (expr1.size)
                 {
                 case ASMC::Byte:
@@ -281,7 +281,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 OutputFile.text << mov1;
                 OutputFile.text << mov2;
                 OutputFile.text << sub;
-                output.access = "%eax";
+                output.access = move->to;
                 output.size = ASMC::DWord;
                 break;
             }
