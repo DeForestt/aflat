@@ -44,7 +44,10 @@ int str_concat(adr str1, adr str2, adr pointer){
     };
 
     while(str2 as char != ascii(0)){
+<<<<<<< HEAD
         loader =: str1 as char;
+=======
+>>>>>>> parent of 98b4c9e... Fixed errors with concat
         pointer =: str2 as char;
         str2 = str2 + 1;
         pointer = pointer + 1;
