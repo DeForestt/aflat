@@ -41,10 +41,10 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         call->Args.invert();
         while (call->Args.count > 0)
         {
-            
+            gen::Expr exp =  this->GenExpr(call->Args.pop(), OutputFile);
             ASMC::Mov * mov = new ASMC::Mov();
-            mov->size = ASMC::DWord;
-            mov->from = this->GenExpr(call->Args.pop(), OutputFile).access;
+            mov->size = exp.size;
+            mov->from = exp.access
 
             ASMC::Mov * mov2 = new ASMC::Mov();
              switch(exp.size){
