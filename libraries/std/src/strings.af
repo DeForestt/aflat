@@ -5,19 +5,19 @@ char ascii(int input){
 	return caster as char;
 };
 
-int len(adr input){
+int str_len(adr input){
 	char null = ascii(0);
     int i = 0;
 	while(input as char != null ){
-        i - i + 1;
-		input = input + 1;
+        i = i + 1;
+        input = input + 1;
 	};
 	return i;
 };
 
 int str_comp(adr str1, adr str2){
-        int len1 = len(str1);
-        int len2 = len(str2);
+        int len1 = str_len(str1);
+        int len2 = str_len(str2);
 
         if(len1 != len2){ return 0; };
 
@@ -33,4 +33,21 @@ int str_comp(adr str1, adr str2){
         };
 
         return 1;
+};
+
+int str_concat(adr str1, adr str2, adr pointer){
+    
+    while(str1 as char != ascii(0)){
+        pointer =: str1 as char;
+        str1 = str1 + 1;
+        pointer = pointer + 1;
+    };
+
+    while(str2 as char != ascii(0)){
+        pointer =: str2 as char;
+        str2 = str2 + 1;
+        pointer = pointer + 1;
+    };
+
+    return 0;
 };
