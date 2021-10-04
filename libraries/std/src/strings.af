@@ -45,13 +45,13 @@ int str_concat(adr str1, adr str2, adr pointer){
         pointer = pointer + 1;
     };
 
-    while(str2 as char != ascii(0)){
+    while(str2 as char != null){
         loader = str2 as char;
         pointer =: loader;
         str2 = str2 + 1;
         pointer = pointer + 1;
     };
-    pointer = pointer + -1;
+
     pointer =: null;
 
     return 0;
