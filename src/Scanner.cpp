@@ -28,10 +28,12 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                             lex::INT * IntLit = new lex::INT();
                             IntLit->value = input[i];
                             i++;
+
                             while(std::isdigit(input[i])){
                                 IntLit->value += input[i];
                                 i++;
                             }
+                            
                             tokens.push(IntLit);
                         }
 
@@ -150,6 +152,11 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         i++;
                     }else if (input[i] == '*')
                     {
+                        lex::OpSym* mul = new OpSym;
+                        mul->Sym = input[i];
+                        tokens << mul;
+                        i++;
+                    }else if (input[i] == '%'){
                         lex::OpSym* mul = new OpSym;
                         mul->Sym = input[i];
                         tokens << mul;

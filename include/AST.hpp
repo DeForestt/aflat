@@ -29,12 +29,13 @@ namespace AST{
     enum Op{
         Plus,
         Minus,
+        Mod,
         Mul,
         Div,
         Equ,
         NotEqu,
         Less,
-        Great
+        Great,
     };
 
     class Expr{
