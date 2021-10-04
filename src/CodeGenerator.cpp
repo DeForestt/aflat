@@ -281,7 +281,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 OutputFile.text << mov1;
                 OutputFile.text << mov2;
                 OutputFile.text << sub;
-                output.access = move->to;
+                output.access = mov2->to;
                 output.size = ASMC::DWord;
                 break;
             }
