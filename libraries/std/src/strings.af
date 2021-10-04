@@ -37,19 +37,29 @@ int str_comp(adr str1, adr str2){
 
 int str_concat(adr str1, adr str2, adr pointer){
     
+<<<<<<< HEAD
     char loader;
     char null = ascii(0);
 
     while(str1 as char != null){
         loader =: str1 as char;
         pointer =: loader;
+=======
+    while(str1 as char != ascii(0)){
+        pointer =: str1 as char;
+>>>>>>> parent of 98b4c9e... Fixed errors with concat
         str1 = str1 + 1;
         pointer = pointer + 1;
     };
 
+<<<<<<< HEAD
     while(str2 as char != null){
         loader = str1 as char;
         pointer =: loader;
+=======
+    while(str2 as char != ascii(0)){
+        pointer =: str2 as char;
+>>>>>>> parent of 98b4c9e... Fixed errors with concat
         str2 = str2 + 1;
         pointer = pointer + 1;
     };
