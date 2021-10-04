@@ -45,12 +45,30 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             ASMC::Mov * mov = new ASMC::Mov();
             mov->size = ASMC::DWord;
             mov->from = this->GenExpr(call->Args.pop(), OutputFile).access;
-            mov->to = "%eax";
 
             ASMC::Mov * mov2 = new ASMC::Mov();
-            mov2->from = "%eax";
+             switch(exp.size){
+                case ASMC::Byte:
+                    mov->to = this->registers["%eax"]->byte;
+                    mov2->from = this->registers["%eax"]->byte;
+                    mov2->to = this->intArgs[intArgsCounter].byte;
+                break;
+                case ASMC::Word:
+                    mov->to = this->registers["%eax"]->word;
+                    mov2->from = this->registers["%eax"]->word;
+                    mov2->to = this->intArgs[intArgsCounter].word;
+                break;
+                case ASMC::DWord:
+                    mov->to = this->registers["%eax"]->dWord;
+                    mov2->from = this->registers["%eax"]->dWord;
+                    mov2->to = this->intArgs[intArgsCounter].dWord;
+                break;
+                case ASMC::QWord:
+                    mov->to = this->registers["%eax"]->qWord;
+                    mov2->from = this->registers["%eax"]->qWord;
+                    mov2->to = this->intArgs[intArgsCounter].qWord;
+                break;
             mov2->size = ASMC::DWord;
-            mov2->to = this->intArgs[intArgsCounter].dWord;
             intArgsCounter++;
             OutputFile.text << mov;
             OutputFile.text << mov2;
