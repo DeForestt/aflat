@@ -5,15 +5,13 @@ char ascii(int input){
 	return caster as char;
 };
 
-int len(adr str){
-    int i = 0;
-    char null = ascii(0);
-
-    while(str as char != null){
-        i = i + 1;
-        str = str + 1;
-    };
-    return i;
+int len(adr inputr){
+	char null = ascii(0);
+	while(input as char != null ){
+		push input;
+		input = input + 1;
+	};
+	return 0;
 };
 
 int str_comp(adr str1, adr str2){
