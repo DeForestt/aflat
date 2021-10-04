@@ -10,7 +10,7 @@ int exp(int base, int pow){
 
 int longDiv(int int1, int int2){
 	int remainder = int1 % int2;
-	int remainder = remainder * 10;
-	int remainder = remainder / int2;
+	remainder = remainder * 10;
+	remainder = remainder / int2;
 	return remainder;
 };
