@@ -69,7 +69,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     mov2->to = this->intArgs[intArgsCounter].qWord;
                 break;
             }
-            mov2->size = ASMC::DWord;
+            mov2->size = exp->size;
             intArgsCounter++;
             OutputFile.text << mov;
             OutputFile.text << mov2;
