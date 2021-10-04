@@ -44,7 +44,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             gen::Expr exp =  this->GenExpr(call->Args.pop(), OutputFile);
             ASMC::Mov * mov = new ASMC::Mov();
             mov->size = exp.size;
-            mov->from = exp.access
+            mov->from = exp.access;
 
             ASMC::Mov * mov2 = new ASMC::Mov();
              switch(exp.size){
