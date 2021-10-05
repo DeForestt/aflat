@@ -1,4 +1,5 @@
 .needs "/std/head/io.gs"
+.needs "/std/head/math.gs"
 
 char ascii(int input){
 	adr caster = ?input;
@@ -55,4 +56,22 @@ int str_concat(adr str1, adr str2, adr pointer){
     pointer =: null;
 
     return 0;
+};
+
+int str_toInt(adr input){
+    char null = ascii(0);
+    int factor;
+    int size = len(input);
+    int result = 0;
+    int i = size - 1;
+    while(i > -1){
+        factor = exp(10, i);
+        factor = factor * toInt(input as char);
+        result = result + factor;
+        i = i - 1;
+        intput = input - 1;
+    };
+
+    return result;
+
 };
