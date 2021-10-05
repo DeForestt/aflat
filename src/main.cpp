@@ -178,7 +178,7 @@ void buildTemplate(std::string value){
     std::filesystem::path cwd = std::filesystem::current_path();
     std::string root =  cwd.string() + "/" + value;
     std::ofstream outfile (value + "/src/main.af");
-    outfile << ".needs \"" <<"/std/head/io.gs\n";
+    outfile << ".needs \"" <<"/std/head/io.gs\"\n";
     outfile << "int main(){\n\tprint(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
     outfile.close();
 
