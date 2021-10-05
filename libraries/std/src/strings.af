@@ -71,7 +71,6 @@ int str_toInt(adr input){
         i = i - 1;
         intput = input - 1;
     };
-
     return result;
 
 };
