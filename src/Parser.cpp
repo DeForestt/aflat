@@ -28,7 +28,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                         AST::Function * func = new AST::Function();
                         func->ident.ident = dec->Ident;
                         func->type = dec->type;
-                        func->args = this->parseArgs(tokens);
+                        func->args = this->parseArgs(tokens, ',', ')');
                         if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                             sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
                             if (sym.Sym == '{'){
@@ -108,6 +108,19 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                     }else throw err::Exception("Unopened If");
             }else throw err::Exception("Unopened If");
             
+        }
+        else if(obj.meta == "struct"){
+            AST::UDeffType * stc = new AST::UDeffType();
+            if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+                lex::LObj ident = *dynamic_cast<lex::LObj *>(tokens.pop());
+                stc->ident.ident = ident.meta;
+            }else throw err::Exception("struct needs Ident");
+            if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                lex::OpSym op = *dynamic_cast<lex::OpSym *>(tokens.pop());
+                if(op.Sym != '{')throw err::Exception("Unopened UDeffType");
+            }else throw err::Exception("Unopened UDeffType");
+            stc->statment = this->parseStmt(tokens);
+            output = stc;
         }
         else{
             if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
@@ -192,7 +205,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
     return output;
 }
 
-AST::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens){
+AST::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens, char delimn, char close){
     AST::Statment* output = new AST::Statment();
     if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
@@ -220,13 +233,13 @@ AST::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens){
         lex::OpSym obj = *dynamic_cast<lex::OpSym *>(tokens.peek());
         tokens.pop();
 
-        if(obj.Sym == ','){
+        if(obj.Sym == delimn){
         AST::Sequence * s = new AST::Sequence;
         s->Statment1 = output;
-        s->Statment2 = this->parseArgs(tokens);
+        s->Statment2 = this->parseArgs(tokens, delimn, close);
         return s;
         }
-        else if(obj.Sym == ')'){
+        else if(obj.Sym == close){
             return output;
         }
     }

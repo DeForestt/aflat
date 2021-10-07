@@ -470,6 +470,61 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     return output;
 };
 
+links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(AST::Statment * STMT, links::LinkedList<gen::Symbol> &table){
+    if(dynamic_cast<AST::Sequence *>(STMT) != nullptr){
+        AST::Sequence * sequence = dynamic_cast<AST::Sequence *>(STMT);
+        this->GenTable(sequence->Statment1, table);
+        this->GenTable(sequence->Statment2, table);
+    }else if (dynamic_cast<AST::Declare *>(STMT) != nullptr)
+    {
+        /*
+            movl $0x0, -[SymbolT + size](rdp)
+            **also needs to be added to symbol table**
+        */
+
+        if (intArgsCounter > 6) throw err::Exception("AFlat compiler cannot handle more than 6 int arguments.");
+        AST::Declare * arg =  dynamic_cast<AST::Declare *>(STMT);
+        ASMC::Size size;
+        int offset = 0;
+        gen::Symbol symbol;
+        ASMC::Mov * mov = new ASMC::Mov();
+        switch(arg->type){
+            case AST::Int:
+                offset = 4;
+                break;
+            case AST::IntPtr:
+                offset = 8;
+                break;
+            case AST::CharPtr:
+                offset = 8;
+                break;
+            case AST::Byte:
+                offset = 1;
+                break;
+            case AST::String:
+                offset = 4;
+                break;
+            case AST::Char:
+                offset = 4;
+                break;
+        }
+        if(table.search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined veriable:" + arg->Ident);
+
+        symbol.symbol = arg->Ident;
+        if (table.head == nullptr){
+            symbol.byteMod = offset;
+        }else{
+            symbol.byteMod = this->SymbolTable.peek().byteMod + offset;
+        }
+        symbol.type = arg->type;
+        table << symbol;
+
+        mov->size = size;
+        mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
+    }
+    return table;
+}
+
 void gen::CodeGenerator::GenArgs(AST::Statment * STMT, ASMC::File &OutputFile){
      if(dynamic_cast<AST::Sequence *>(STMT) != nullptr){
         AST::Sequence * sequence = dynamic_cast<AST::Sequence *>(STMT);
@@ -1137,6 +1192,13 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
         }
         
+    }
+    else if(dynamic_cast<AST::UDeffType *>(STMT) != nullptr){
+        AST::UDeffType * udef = dynamic_cast<AST::UDeffType *>(STMT);
+        gen::Type type = gen::Type();
+        type.Ident = udef->ident.ident;
+        type.SymbolTable  = this->GenTable(udef->statment, type.SymbolTable);
+        this->typeList << type;
     }
     else{
         OutputFile.text.push(new ASMC::Instruction());

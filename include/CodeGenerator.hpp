@@ -20,11 +20,21 @@ namespace gen{
         AST::Type type;
         int byteMod;
     };
+
+    class Type{
+        public:
+        std::string Ident;
+        links::LinkedList<Symbol> SymbolTable;
+        int size;
+    };
+
     class CodeGenerator{
         private:
+        links::SLinkedList<gen::Type, std::string> typeList;
         links::SLinkedList<ASMC::Register, std::string> registers;
         links::LinkedList<Symbol> SymbolTable;
         links::SLinkedList<AST::Function, std::string> nameTale;
+        
         ASMC::Register intArgs[6] = { ASMC::Register("rdi", "edi", "di", "dil"),
                                     ASMC::Register("rsi", "esi", "si", "sil"),
                                     ASMC::Register("rdx", "edx", "dx", "dl"),
@@ -39,6 +49,7 @@ namespace gen{
         Expr GenExpr(AST::Expr * expr, ASMC::File &OutputFile);
         public:
         ASMC::File GenSTMT(AST::Statment * stmt);
+        links::LinkedList<gen::Symbol> GenTable(AST::Statment * STMT, links::LinkedList<gen::Symbol> &table);
         CodeGenerator();
     };
 }

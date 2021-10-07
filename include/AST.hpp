@@ -54,7 +54,7 @@ namespace AST{
         Int, IntPtr,
         Float, FloatPtr,
         String, StringPtr,
-        Char, CharPtr,
+        Char, CharPtr, Structure,
         Byte, BytePtr
     };
 
@@ -62,7 +62,6 @@ namespace AST{
         public:
         virtual std::string toString(){return "";};
     };
-
 
     class Program{
         public:
@@ -91,11 +90,17 @@ namespace AST{
         std::string toString();
     };
 
+    class UDeffType : public Member, public Statment{
+        public:
+        Ident ident;
+        Statment * statment;
+    };
 
     class Declare : public Arg, public Statment{
         public:
         std::string toString();
         std::string Ident;
+        std::string TypeName;
         Type type;
     };
 
