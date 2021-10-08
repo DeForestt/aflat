@@ -487,7 +487,6 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(AST::Statment * STMT
         ASMC::Size size;
         int offset = 0;
         gen::Symbol symbol;
-        ASMC::Mov * mov = new ASMC::Mov();
         switch(arg->type){
             case AST::Int:
                 offset = 4;
@@ -518,10 +517,50 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(AST::Statment * STMT
         }
         symbol.type = arg->type;
         table << symbol;
+    }else if(dynamic_cast<AST::DecArr *>(STMT) != nullptr){
+         /*
+            movl $0x0, -[SymbolT + size](rdp)
+            **also needs to be added to symbol table**
+        */
+        AST::DecArr * dec =  dynamic_cast<AST::DecArr *>(STMT);
+        int offset = 0;
+        switch(dec->type){
+            case AST::Int:
+                offset = 4;
+                break;
+            case AST::IntPtr:
+                offset = 8;
+                break;
+            case AST::CharPtr:
+                offset = 8;
+                break;
+            case AST::Byte:
+                offset = 1;
+                break;
+            case AST::String:
+                offset = 4;
+                break;
+            case AST::Char:
+                offset = 1;
+                break;
+        }
 
-        mov->size = size;
-        mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
+        offset = offset * dec->count;
+
+        if(this->SymbolTable.search<std::string>(searchSymbol, dec->ident) != nullptr) throw err::Exception("redefined veriable:" + dec->ident);
+
+        gen::Symbol Symbol;
+        if (this->SymbolTable.head == nullptr){
+            Symbol.byteMod = offset;
+        }else{
+            Symbol.byteMod = this->SymbolTable.head->data.byteMod + offset;
+        }
+        Symbol.type = dec->type;
+        Symbol.symbol = dec->ident;
+        table << Symbol;
+
     }
+
     return table;
 }
 
