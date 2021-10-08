@@ -147,7 +147,7 @@ void buildTemplate(std::string value){
      in = std::ifstream(std::string(libPath + "/std.s"));
     out = std::ofstream(std::string(value + "/std/std.s"));
 
-    out << rebuf();
+    out << in.rebuf();
 
     in = std::ifstream(std::string(libPath + "/head/math.gs"));
     out = std::ofstream(std::string(value + "/std/head/math.gs"));
