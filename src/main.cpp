@@ -169,6 +169,7 @@ void buildTemplate(std::string value){
 
     out << in.rdbuf();
     
+    
     in = std::ifstream(std::string(libPath + "/src/io.af"));
     out = std::ofstream(std::string(value + "/std/src/io.af"));
 
