@@ -197,7 +197,7 @@ void buildTemplate(std::string value){
     outfile <<filename << " std/src/io.af std/io.s\n";
     outfile <<  filename << " std/src/math.af std/math.s\n";
     outfile <<  filename << " std/src/strings.af std/strings.s\n";
-    outfile << "gcc -O0 -g -no-pie out.s std/io.s std/math.s std/strings.s";
+    outfile << "gcc -O0 -g -no-pie out.s std/std.s std/io.s std/math.s std/strings.s";
 
 }
 
