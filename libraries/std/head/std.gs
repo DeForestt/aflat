@@ -1,1 +1,1 @@
-brk(adr size);
+adr brk(adr size);
