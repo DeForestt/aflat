@@ -2,6 +2,7 @@
 #define STRUCT
 
 #include <string>
+#include "ASM.hpp"
 #include "LinkedList.hpp"
 
 namespace AST{
@@ -50,12 +51,12 @@ namespace AST{
         Expr * expr2;
     };
     
-    enum Type{
-        Int, IntPtr,
-        Float, FloatPtr,
-        String, StringPtr,
-        Char, CharPtr, Structure,
-        Byte, BytePtr
+    class Type{
+        public:
+        std::string typeName;
+
+        ASMC::Size size;
+        static bool compair(Type t, std::string name);
     };
 
     class Arg{

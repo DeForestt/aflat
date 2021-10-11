@@ -185,13 +185,16 @@ namespace ASMC{
     };
 
     class Register{
-        public:
+        private:
         std::string qWord;
         std::string dWord;
         std::string word;
         std::string byte;
+
+        public:
         Register(std::string _qWord, std::string _dWord, std::string _word, std::string _byte);
         Register(){}
+        std::string get(ASMC::Size wants);
         static bool compair(Register R, std::string input){
             if (input == R.qWord || input == R.dWord || input == R.word || input == R.byte ){
                 return true;

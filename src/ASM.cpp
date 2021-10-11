@@ -152,3 +152,22 @@ ASMC::Register::Register(std::string _qWord, std::string _dWord, std::string _wo
     this->word = '%' + _word;
     this->byte = '%' + _byte;
 }
+
+std::string ASMC::Register::get(ASMC::Size wants){
+    switch(wants){
+        case ASMC::QWord:
+            return this->qWord;
+            break;
+        case ASMC::DWord:
+            return this->dWord;
+            break;
+        case ASMC::Word:
+            return this->word;
+            break;
+        case ASMC::Byte:
+            return this->byte;
+            break;
+        default:
+            throw err::Exception("Unknown register size");
+    };
+}

@@ -5,6 +5,7 @@
 #include <string>
 #include "AST.hpp"
 #include "LinkedList.hpp"
+#include "LinkedListS.hpp"
 #include "Scanner.hpp"
 
 namespace parse{
@@ -12,9 +13,10 @@ namespace parse{
         public:
         AST::Statment Output;
         AST::Statment* parseStmt(links::LinkedList<lex::Token *> &tokens);
-        
+        Parser();
         
         private:
+        links::SLinkedList<AST::Type, std::string> typeList;
         AST::Expr* parseExpr(links::LinkedList<lex::Token *> &tokens);
         AST::Statment* parseArgs(links::LinkedList<lex::Token *> &tokens, char delimn, char close);
         AST::ConditionalExpr* parseCondition(links::LinkedList<lex::Token *> &tokens);

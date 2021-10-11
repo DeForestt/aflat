@@ -1,6 +1,22 @@
 #include "Parser.hpp"
 #include "Exceptions.hpp"
+#include "AST.hpp"
 
+parse::Parser::Parser(){
+    this->typeList.foo = AST::Type::compair;
+    AST::Type Int = new AST::Type();
+    Int.typeName = "int";
+    Int.size = ASMC::DWord;
+    AST::Type Char = new AST::Type();
+    Char.typeName = "char";
+    Char.size = ASMC::Byte;
+    AST::Type Adr = new AST::Type();
+    Adr.typeName = "adr";
+    Adr.size = ASMC::QWord;
+    this->typeList << Int;
+    this->typeList << Char;
+    this->typeList << Adr;
+}
 
 AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
     AST::Statment* output = new AST::Statment;
@@ -8,17 +24,14 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
         tokens.pop();
         //Declare a byte;
-        if(obj.meta == "byte" | obj.meta == "int" | obj.meta == "char" | obj.meta == "adr"){
+        if(typeList[obj.meta] != nullptr){
             AST::Declare * dec = new AST::Declare();
             //ensures the the current token is an Ident
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                 lex::LObj Ident = *dynamic_cast<lex::LObj *>(tokens.peek());
                 tokens.pop();
                 dec->Ident = Ident.meta;
-                if(obj.meta == "byte") dec->type = AST::Byte;
-                else if (obj.meta == "int") dec->type = AST::Int; 
-                else if (obj.meta == "char") dec->type = AST::Char;
-                else if (obj.meta == "adr")dec->type = AST::IntPtr;
+                dec->type = typList[obj.meta];
                 output = dec;
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                     lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -120,6 +133,10 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 if(op.Sym != '{')throw err::Exception("Unopened UDeffType");
             }else throw err::Exception("Unopened UDeffType");
             stc->statment = this->parseStmt(tokens);
+            AST::Type t = AST::Type;
+            t.size = ASMC::QWord;
+            t.typeName = stc->ident;
+            this->typeList << t;
             output = stc;
         }
         else{
@@ -220,17 +237,14 @@ AST::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens, 
     if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
         tokens.pop();
-        if(obj.meta == "byte" | obj.meta == "int" | obj.meta == "char" | obj.meta == "adr"){
+        if(typeList[obj.meta] != nullptr){
             AST::Declare * dec = new AST::Declare();
             //ensures the the current token is an Ident
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                 lex::LObj Ident = *dynamic_cast<lex::LObj *>(tokens.peek());
                 tokens.pop();
                 dec->Ident = Ident.meta;
-                if(obj.meta == "byte") dec->type = AST::Byte;
-                else if (obj.meta == "int") dec->type = AST::Int; 
-                else if (obj.meta == "char") dec->type = AST::Char;
-                else if (obj.meta == "adr")dec->type = AST::IntPtr;
+                dec->type = typeList[obj.meta];
                 output = dec;
             }
         }

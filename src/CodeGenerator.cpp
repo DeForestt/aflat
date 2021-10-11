@@ -12,6 +12,25 @@ bool compairFunc(AST::Function F, std::string input){
         return false;
 }
 
+int gen::CodeGenerator::getBytes(ASMC::Size size){
+    switch(size){
+            case ASMC::QWord:
+                return 8;
+                break;
+            case ASMC::Word:
+                return 2;
+                break;
+            case ASMC::Byte:
+                return 1;
+                break;
+            case ASMC::DWord:
+                return 4;
+                break;
+            default:
+                throw err::Exception("Unknown Size");
+        }
+}
+
 gen::CodeGenerator::CodeGenerator(){
     this->registers << ASMC::Register("rax", "eax", "ax", "al");
     this->registers << ASMC::Register("rcx", "ecx", "cx", "cl");
@@ -22,7 +41,7 @@ gen::CodeGenerator::CodeGenerator(){
     this->registers << ASMC::Register("rsp", "esp", "sp", "spl");
     this->registers << ASMC::Register("rbp", "ebp", "bp", "bpl");
     this->registers.foo = ASMC::Register::compair;
-    this->nameTale.foo = compairFunc;
+    this->nameTable.foo = compairFunc;
 }
 
 gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
@@ -35,41 +54,26 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::CallExpr * exprCall = dynamic_cast<AST::CallExpr *>(expr);
         AST::Call * call = exprCall->call;
         std::string errhold = call ->ident;
-        AST::Function * func = this->nameTale[call->ident];
+        AST::Function * func = this->nameTable[call->ident];
         if (func == nullptr) throw err::Exception("Cannot Find Function: " + call->ident);
+        
         this->intArgsCounter = 0;
         call->Args.invert();
+        
         while (call->Args.count > 0)
         {
             gen::Expr exp =  this->GenExpr(call->Args.pop(), OutputFile);
             ASMC::Mov * mov = new ASMC::Mov();
-            mov->size = exp.size;
-            mov->from = exp.access;
-
             ASMC::Mov * mov2 = new ASMC::Mov();
-             switch(exp.size){
-                case ASMC::Byte:
-                    mov->to = this->registers["%eax"]->byte;
-                    mov2->from = this->registers["%eax"]->byte;
-                    mov2->to = this->intArgs[intArgsCounter].byte;
-                break;
-                case ASMC::Word:
-                    mov->to = this->registers["%eax"]->word;
-                    mov2->from = this->registers["%eax"]->word;
-                    mov2->to = this->intArgs[intArgsCounter].word;
-                break;
-                case ASMC::DWord:
-                    mov->to = this->registers["%eax"]->dWord;
-                    mov2->from = this->registers["%eax"]->dWord;
-                    mov2->to = this->intArgs[intArgsCounter].dWord;
-                break;
-                case ASMC::QWord:
-                    mov->to = this->registers["%eax"]->qWord;
-                    mov2->from = this->registers["%eax"]->qWord;
-                    mov2->to = this->intArgs[intArgsCounter].qWord;
-                break;
-            }
+
+            mov->size = exp.size;
             mov2->size = exp.size;
+            
+            mov->from = exp.access;
+            mov->to = this->registers["%eax"]->get(exp.size);
+            mov2->from = this->registers["%eax"]->get(exp.size);
+            mov2->to = this->intArgs[intArgsCounter].get(exp.size);
+
             intArgsCounter++;
             OutputFile.text << mov;
             OutputFile.text << mov2;
@@ -78,27 +82,17 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         ASMC::Call * calls = new ASMC::Call;
         calls->function = call->ident;
         OutputFile.text << calls;
-        if(func->type == AST::Int){
-            output.access = this->registers["%rax"]->dWord;
-            output.size = ASMC::DWord;
-        } else if(func->type == AST::Char){
-            output.access = this->registers["%rax"]->byte;
-            output.size = ASMC::Byte;
-        }else if(func->type == AST::IntPtr){
-            output.access = this->registers["%rax"]->qWord;
-            output.size = ASMC::QWord;
-        };
+        output.access = this->registers["%rax"]->get(func->type.size);
+        output.size = func->type.size;
+
     }else if (dynamic_cast<AST::Var *>(expr) != nullptr){
         AST::Var var = *dynamic_cast<AST::Var *>(expr);
         gen::Symbol * sym = this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
         
         if (sym == nullptr) throw err::Exception("cannot find: " + var.Ident);
-        if(sym->type == AST::Int) {output.size = ASMC::DWord; }
-        else if (sym->type == AST::Char)  {output.size = ASMC::Byte; }
-        else if (sym->type == AST::IntPtr) {output.size = ASMC::QWord;}
-        else if (sym->type == AST::CharPtr) {output.size = ASMC::QWord;}
-        output.access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
-    }else if (dynamic_cast<AST::CharLiteral *>(expr) != nullptr){
+
+        output.size = sym->type.size;
+
         AST::CharLiteral charlit = *dynamic_cast<AST::CharLiteral *>(expr);
         output.access = "$" + std::to_string(charlit.value);
         output.size = ASMC::Byte;
@@ -107,18 +101,18 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::Refrence ref = *dynamic_cast<AST::Refrence *>(expr);
         gen::Symbol sym = *this->SymbolTable.search<std::string>(searchSymbol, ref.Ident);
         ASMC::Lea * lea = new ASMC::Lea();
-        lea->to = this->registers["%rax"]->qWord;
+        lea->to = this->registers["%rax"]->get(ASMC::QWord);
         lea->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
         //ASMC::Mov * mov = new ASMC::Mov();
         OutputFile.text << lea;
-        output.access = registers["%rax"]->qWord;
+        output.access = registers["%rax"]->get(ASMC::QWord);
         output.size = ASMC::QWord;
     }
     else if (dynamic_cast<AST::StringLiteral *>(expr) != nullptr){
         AST::StringLiteral str = *dynamic_cast<AST::StringLiteral *>(expr);
         ASMC::StringLiteral * strlit = new ASMC::StringLiteral();
         ASMC::Lable * lable = new ASMC::Lable();
-        lable->lable = ".str" + this->nameTale.head->data.ident.ident + std::to_string(this->lablecount);
+        lable->lable = ".str" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount++;
         strlit->value = str.val;
         OutputFile.data << lable;
@@ -127,38 +121,23 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         output.size = ASMC::QWord;
     }
     else if(dynamic_cast<AST::DeRefence *>(expr)){
+
         AST::DeRefence deRef = *dynamic_cast<AST::DeRefence *>(expr);
         gen::Symbol sym = *this->SymbolTable.search<std::string>(searchSymbol, deRef.Ident);
+
         ASMC::Mov * mov = new ASMC::Mov();
         ASMC::Mov * mov2 = new ASMC::Mov();
+
         mov->size = ASMC::QWord;
         mov->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
-        mov->to = this->registers["%rax"]->qWord;
-        mov2->from = "(" + this->registers["%rax"]->qWord + ")";
-        switch (deRef.type)
-        {
-        case AST::Int:
-            mov2->size = ASMC::DWord;
-            mov2->to = this->registers["%rax"]->dWord;
-            output.size = ASMC::DWord;
-            output.access = this->registers["%rax"]->dWord;
-            break;
-        case AST::Char:
-            mov2->size = ASMC::Byte;
-            mov2->to = this->registers["%rax"]->byte;
-            output.size = ASMC::Byte;
-            output.access = this->registers["%rax"]->byte;
-            break;
-        case AST::IntPtr:
-            mov2->size = ASMC::QWord;
-            mov2->to = this->registers["%rax"]->qWord;
-            output.size = ASMC::QWord;
-            output.access = this->registers["%rax"]->qWord;
-            break;
-        default:
-            throw err::Exception("Cannot DeRefrence to this type");
-            break;
-        }
+        mov->to = this->registers["%rax"]->get(ASMC::QWord);
+
+        mov2->from = "(" + this->registers["%rax"]->get(ASMC::QWord) + ")";
+        mov2->size = deRef.type.size;
+        mov2->to = this->registers["%rax"]->get(deRef.type.size);
+
+        output.access = mov2->to;
+        output.size = mov2->size;
 
         OutputFile.text << mov;
         OutputFile.text << mov2;
@@ -177,43 +156,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
                 mov1->size = ASMC::AUTO;
                 mov2->size = ASMC::AUTO;
-                switch (expr1.size)
-                {
-                case ASMC::Byte:
-                    mov1->to = this->registers["%edx"]->byte;
-                    break;
-                case ASMC::Word:
-                    mov1->to = this->registers["%edx"]->word;
-                    break;
-                case ASMC::DWord:
-                    mov1->to = this->registers["%edx"]->dWord;
-                    break;
-                case ASMC::QWord:
-                    mov1->to = this->registers["%edx"]->qWord;
-                    break;
-                default:
-                    mov1->to = this->registers["%edx"]->qWord;
-                    break;
-                }
-                
-                switch (expr1.size)
-                {
-                case ASMC::Byte:
-                    mov2->to = this->registers["%eax"]->byte;
-                    break;
-                case ASMC::Word:
-                    mov2->to = this->registers["%eax"]->word;
-                    break;
-                case ASMC::DWord:
-                    mov2->to = this->registers["%eax"]->dWord;
-                    break;
-                case ASMC::QWord:
-                    mov2->to = this->registers["%eax"]->qWord;
-                    break;
-                default:
-                    mov2->to = this->registers["%eax"]->qWord;
-                    break;
-                }
+
+                mov1->to = this->registers["%edx"]->get(expr1.size);
+                mov2->to = this->registers["%eax"]->get(expr1.size);
                 
                 mov2->to = "%eax";
                 mov1->from = expr1.access;
@@ -235,43 +180,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
                 mov1->size = expr1.size;
                 mov2->size = expr1.size;
-                switch (expr1.size)
-                {
-                case ASMC::Byte:
-                    mov1->to = this->registers["%edx"]->byte;
-                    break;
-                case ASMC::Word:
-                    mov1->to = this->registers["%edx"]->word;
-                    break;
-                case ASMC::DWord:
-                    mov1->to = this->registers["%edx"]->dWord;
-                    break;
-                case ASMC::QWord:
-                    mov1->to = this->registers["%edx"]->qWord;
-                    break;
-                default:
-                    mov1->to = this->registers["%edx"]->qWord;
-                    break;
-                }
                 
-                switch (expr1.size)
-                {
-                case ASMC::Byte:
-                    mov2->to = this->registers["%eax"]->byte;
-                    break;
-                case ASMC::Word:
-                    mov2->to = this->registers["%eax"]->word;
-                    break;
-                case ASMC::DWord:
-                    mov2->to = this->registers["%eax"]->dWord;
-                    break;
-                case ASMC::QWord:
-                    mov2->to = this->registers["%eax"]->qWord;
-                    break;
-                default:
-                    mov2->to = this->registers["%eax"]->qWord;
-                    break;
-                }
+                mov1->to = this->registers["%edx"]->get(expr1.size);
+                mov2->to = this->registers["%eax"]->get(expr1.size);
                 
                 mov2->to = "%eax";
                 mov1->from = expr2.access;
@@ -286,50 +197,17 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 break;
             }
             case AST::Mul:{
-                                ASMC::Mov * mov1 = new ASMC::Mov();
+                ASMC::Mov * mov1 = new ASMC::Mov();
                 ASMC::Mov * mov2 = new ASMC::Mov();
                 ASMC::Mul * mul = new ASMC::Mul();
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
+                
                 mov1->size = expr1.size;
                 mov2->size = expr1.size;
-                switch (expr1.size)
-                {
-                case ASMC::Byte:
-                    mov1->to = this->registers["%edx"]->byte;
-                    break;
-                case ASMC::Word:
-                    mov1->to = this->registers["%edx"]->word;
-                    break;
-                case ASMC::DWord:
-                    mov1->to = this->registers["%edx"]->dWord;
-                    break;
-                case ASMC::QWord:
-                    mov1->to = this->registers["%edx"]->qWord;
-                    break;
-                default:
-                    mov1->to = this->registers["%edx"]->qWord;
-                    break;
-                }
                 
-                switch (expr1.size)
-                {
-                case ASMC::Byte:
-                    mov2->to = this->registers["%eax"]->byte;
-                    break;
-                case ASMC::Word:
-                    mov2->to = this->registers["%eax"]->word;
-                    break;
-                case ASMC::DWord:
-                    mov2->to = this->registers["%eax"]->dWord;
-                    break;
-                case ASMC::QWord:
-                    mov2->to = this->registers["%eax"]->qWord;
-                    break;
-                default:
-                    mov2->to = this->registers["%eax"]->qWord;
-                    break;
-                }
+                mov1->to = this->registers["%edx"]->get(expr1.size);
+                mov2->to = this->registers["%eax"]->get(expr1.size);
                 
                 mov2->to = "%eax";
                 mov1->from = expr1.access;
@@ -351,43 +229,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
                 mov1->size = expr1.size;
                 mov2->size = expr1.size;
-                switch (expr1.size)
-                {
-                case ASMC::Byte:
-                    mov1->to = this->registers["%edx"]->byte;
-                    break;
-                case ASMC::Word:
-                    mov1->to = this->registers["%edx"]->word;
-                    break;
-                case ASMC::DWord:
-                    mov1->to = this->registers["%edx"]->dWord;
-                    break;
-                case ASMC::QWord:
-                    mov1->to = this->registers["%edx"]->qWord;
-                    break;
-                default:
-                    mov1->to = this->registers["%edx"]->qWord;
-                    break;
-                }
                 
-                switch (expr1.size)
-                {
-                case ASMC::Byte:
-                    mov2->to = this->registers["%eax"]->byte;
-                    break;
-                case ASMC::Word:
-                    mov2->to = this->registers["%eax"]->word;
-                    break;
-                case ASMC::DWord:
-                    mov2->to = this->registers["%eax"]->dWord;
-                    break;
-                case ASMC::QWord:
-                    mov2->to = this->registers["%eax"]->qWord;
-                    break;
-                default:
-                    mov2->to = this->registers["%eax"]->qWord;
-                    break;
-                }
+                mov1->to = this->registers["%edx"]->get(expr1.size);
+                mov2->to = this->registers["%eax"]->get(expr1.size);
                 
                 mov2->to = "%eax";
                 //mov1->from = expr1.access;
@@ -406,45 +250,12 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 ASMC::Div * div = new ASMC::Div();
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
+                
                 mov1->size = expr1.size;
                 mov2->size = expr1.size;
-                switch (expr1.size)
-                {
-                case ASMC::Byte:
-                    mov1->to = this->registers["%edx"]->byte;
-                    break;
-                case ASMC::Word:
-                    mov1->to = this->registers["%edx"]->word;
-                    break;
-                case ASMC::DWord:
-                    mov1->to = this->registers["%edx"]->dWord;
-                    break;
-                case ASMC::QWord:
-                    mov1->to = this->registers["%edx"]->qWord;
-                    break;
-                default:
-                    mov1->to = this->registers["%edx"]->qWord;
-                    break;
-                }
                 
-                switch (expr1.size)
-                {
-                case ASMC::Byte:
-                    mov2->to = this->registers["%eax"]->byte;
-                    break;
-                case ASMC::Word:
-                    mov2->to = this->registers["%eax"]->word;
-                    break;
-                case ASMC::DWord:
-                    mov2->to = this->registers["%eax"]->dWord;
-                    break;
-                case ASMC::QWord:
-                    mov2->to = this->registers["%eax"]->qWord;
-                    break;
-                default:
-                    mov2->to = this->registers["%eax"]->qWord;
-                    break;
-                }
+                mov1->to = this->registers["%edx"]->get(expr1.size);
+                mov2->to = this->registers["%eax"]->get(expr1.size);
                 
                 mov2->to = "%eax";
                 //mov1->from = expr1.access;
@@ -460,7 +271,6 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             default:{
                 throw err::Exception("Unhandled oporator");
                 break;
-
             }
         }   
     }  
@@ -484,29 +294,10 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(AST::Statment * STMT
 
         if (intArgsCounter > 6) throw err::Exception("AFlat compiler cannot handle more than 6 int arguments.");
         AST::Declare * arg =  dynamic_cast<AST::Declare *>(STMT);
-        ASMC::Size size;
-        int offset = 0;
         gen::Symbol symbol;
-        switch(arg->type){
-            case AST::Int:
-                offset = 4;
-                break;
-            case AST::IntPtr:
-                offset = 8;
-                break;
-            case AST::CharPtr:
-                offset = 8;
-                break;
-            case AST::Byte:
-                offset = 1;
-                break;
-            case AST::String:
-                offset = 4;
-                break;
-            case AST::Char:
-                offset = 4;
-                break;
-        }
+        
+        int offset = this->getBytes(arg->type.size);
+
         if(table.search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined veriable:" + arg->Ident);
 
         symbol.symbol = arg->Ident;
@@ -524,26 +315,7 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(AST::Statment * STMT
         */
         AST::DecArr * dec =  dynamic_cast<AST::DecArr *>(STMT);
         int offset = 0;
-        switch(dec->type){
-            case AST::Int:
-                offset = 4;
-                break;
-            case AST::IntPtr:
-                offset = 8;
-                break;
-            case AST::CharPtr:
-                offset = 8;
-                break;
-            case AST::Byte:
-                offset = 1;
-                break;
-            case AST::String:
-                offset = 4;
-                break;
-            case AST::Char:
-                offset = 1;
-                break;
-        }
+        offset = this->getBytes(dec->type.size);
 
         offset = offset * dec->count;
 
@@ -582,47 +354,23 @@ void gen::CodeGenerator::GenArgs(AST::Statment * STMT, ASMC::File &OutputFile){
         int offset = 0;
         gen::Symbol symbol;
         ASMC::Mov * mov = new ASMC::Mov();
-        switch(arg->type){
-            case AST::Int:
-                offset = 4;
-                size = ASMC::DWord;
-                mov->from = this->intArgs[intArgsCounter].dWord;
-                break;
-            case AST::IntPtr:
-                offset = 8;
-                size = ASMC::QWord;
-                mov->from = this->intArgs[intArgsCounter].qWord;
-                break;
-            case AST::CharPtr:
-                offset = 8;
-                size = ASMC::QWord;
-                mov->from = this->intArgs[intArgsCounter].qWord;
-                break;
-            case AST::Byte:
-                offset = 1;
-                size = ASMC::Byte;
-                mov->from = this->intArgs[intArgsCounter].byte;
-                break;
-            case AST::String:
-                offset = 4;
-                mov->from = this->intArgs[intArgsCounter].dWord;
-                break;
-            case AST::Char:
-                offset = 4;
-                size = ASMC::Byte;
-                mov->from = this->intArgs[intArgsCounter].byte;
-                break;
-        }
+
+        offset = this->getBytes(arg->type.size);
+        size = arg->type.size;
+        mov->from = this->intArgs[intArgsCounter].get(arg->type.size);
+
         if(this->SymbolTable.search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined veriable:" + arg->Ident);
 
         symbol.symbol = arg->Ident;
+
         if (this->SymbolTable.head == nullptr){
             symbol.byteMod = offset;
         }else{
             symbol.byteMod = this->SymbolTable.peek().byteMod + offset;
         }
+
         symbol.type = arg->type;
-        this->SymbolTable.push(symbol);
+        this->SymbolTable << symbol;
 
         mov->size = size;
         mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
@@ -651,7 +399,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         this->SymbolTable.clear();
 
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
-        this->nameTale << *func;
+        this->nameTable << *func;
         if(func->statment != nullptr){
             ASMC::Lable * lable = new ASMC::Lable;
             lable->lable = func->ident.ident;
@@ -684,7 +432,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             }
             ASMC::Subq * sub = new ASMC::Subq;
             sub->op1 = "$" + std::to_string(alligne);
-            sub->op2 = this->registers["%rsp"]->qWord;
+            sub->op2 = this->registers["%rsp"]->get(ASMC::QWord);
             OutputFile.text.insert(sub, AlignmentLoc + 1);
 
         }
@@ -696,27 +444,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             **also needs to be added to symbol table**
         */
         AST::Declare * dec =  dynamic_cast<AST::Declare *>(STMT);
-        int offset = 0;
-        switch(dec->type){
-            case AST::Int:
-                offset = 4;
-                break;
-            case AST::IntPtr:
-                offset = 8;
-                break;
-            case AST::CharPtr:
-                offset = 8;
-                break;
-            case AST::Byte:
-                offset = 1;
-                break;
-            case AST::String:
-                offset = 4;
-                break;
-            case AST::Char:
-                offset = 1;
-                break;
-        }
+        int offset = this->getBytes(dec->type.size);
 
         if(this->SymbolTable.search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
 
@@ -736,27 +464,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             **also needs to be added to symbol table**
         */
         AST::DecArr * dec =  dynamic_cast<AST::DecArr *>(STMT);
-        int offset = 0;
-        switch(dec->type){
-            case AST::Int:
-                offset = 4;
-                break;
-            case AST::IntPtr:
-                offset = 8;
-                break;
-            case AST::CharPtr:
-                offset = 8;
-                break;
-            case AST::Byte:
-                offset = 1;
-                break;
-            case AST::String:
-                offset = 4;
-                break;
-            case AST::Char:
-                offset = 1;
-                break;
-        }
+        int offset = this->getBytes(dec->type.size);
 
         offset = offset * dec->count;
 
@@ -780,27 +488,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         */
         AST::DecAssign * decAssign =  dynamic_cast<AST::DecAssign *>(STMT);
         AST::Declare * dec = decAssign->declare;
-        int offset = 0;
-        switch(dec->type){
-            case AST::Int:
-                offset = 4;
-                break;
-            case AST::IntPtr:
-                offset = 8;
-                break;
-            case AST::CharPtr:
-                offset = 8;
-                break;
-            case AST::Byte:
-                offset = 1;
-                break;
-            case AST::String:
-                offset = 4;
-                break;
-            case AST::Char:
-                offset = 1;
-                break;
-        }
+        int offset = this->getBytes(dec->type.size);
 
         if(this->SymbolTable.search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
 
@@ -831,43 +519,15 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         AST::Return * ret = dynamic_cast<AST::Return *>(STMT);
 
-        if (this->returnType == AST::Int)
-        {
-            ASMC::Mov * mov = new ASMC::Mov();
-            mov->size = ASMC::DWord;
-            mov->from = this->GenExpr(ret->expr, OutputFile).access;
-            mov->to = this->registers["%rax"]->dWord;
-            OutputFile.text.push(mov);   
-        } else if (this->returnType == AST::Char)
-        {
-            ASMC::Mov * mov = new ASMC::Mov();
-            mov->size = ASMC::Byte;
-            mov->from = this->GenExpr(ret->expr, OutputFile).access;
-            mov->to = this->registers["%rax"]->byte;
-            OutputFile.text.push(mov);   
-        }else if (this->returnType == AST::IntPtr)
-        {
-            ASMC::Mov * mov = new ASMC::Mov();
-            mov->size = ASMC::QWord;
-            mov->from = this->GenExpr(ret->expr, OutputFile).access;
-            mov->to = this->registers["%rax"]->qWord;
-            OutputFile.text.push(mov);   
-        }else{
-            ASMC::Mov * mov = new ASMC::Mov();
-            mov->size = ASMC::AUTO;
-            mov->from = this->GenExpr(ret->expr, OutputFile).access;
-            mov->to = "%rax";
-            OutputFile.text.push(mov);
-        }
+        ASMC::Mov * mov = new ASMC::Mov();
+        mov->size = this->returnType.size;
+        mov->from = this->GenExpr(ret->expr, OutputFile).access;
+        mov->to = this->registers["%rax"]->get(this->returnType.size);
+        OutputFile.text << mov;
         
-
-        
-        ASMC::Pop * pop = new ASMC::Pop();
-        pop->op = "%rbp";
         ASMC::Return * re = new ASMC::Return();
-        
-        //OutputFile.text.push(pop);
-        OutputFile.text.push(re);
+        OutputFile.text << re;
+
     }else if (dynamic_cast<AST::Assign *>(STMT) != nullptr)
     {
         AST::Assign * assign = dynamic_cast<AST::Assign *>(STMT);
@@ -879,21 +539,21 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         mov->size = expr.size;
         mov2->size = expr.size;
         mov2->from = expr.access;
-        if(expr.size == ASMC::Byte) mov2->to = this->registers["%rbx"]->byte;
-        if(expr.size == ASMC::Word) mov2->to = this->registers["%rbx"]->word;
-        if(expr.size == ASMC::DWord) mov2->to = this->registers["%rbx"]->dWord;
-        if(expr.size == ASMC::QWord) mov2->to = this->registers["%rbx"]->qWord;
+        mov2->to = this->registers["rbx"]->get(expr.size);
         mov->from = mov2->to;
+
         if(assign->refrence == true){
             ASMC::Mov * m1 = new ASMC::Mov;
             m1->from = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
             m1->size = ASMC::QWord;
-            m1->to = this->registers["%eax"]->qWord;
-            mov->to = "(" + this->registers["%eax"]->qWord + ")";
+            m1->to = this->registers["%eax"]->get(ASMC::QWord);
+            mov->to = "(" + this->registers["%eax"]->get(ASMC::QWord) + ")";
             OutputFile.text << m1;
         }else mov->to = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
+
         OutputFile.text << mov2;
         OutputFile.text << mov;
+
     }else if (dynamic_cast<AST::Call *>(STMT) != nullptr)
     {
         AST::Call * call = dynamic_cast<AST::Call *>(STMT);
@@ -909,28 +569,10 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             mov->size = exp.size;
             mov2->size = exp.size;
             mov->from = exp.access;
-            switch(exp.size){
-                case ASMC::Byte:
-                    mov->to = this->registers["%eax"]->byte;
-                    mov2->from = this->registers["%eax"]->byte;
-                    mov2->to = this->intArgs[intArgsCounter].byte;
-                break;
-                case ASMC::Word:
-                    mov->to = this->registers["%eax"]->word;
-                    mov2->from = this->registers["%eax"]->word;
-                    mov2->to = this->intArgs[intArgsCounter].word;
-                break;
-                case ASMC::DWord:
-                    mov->to = this->registers["%eax"]->dWord;
-                    mov2->from = this->registers["%eax"]->dWord;
-                    mov2->to = this->intArgs[intArgsCounter].dWord;
-                break;
-                case ASMC::QWord:
-                    mov->to = this->registers["%eax"]->qWord;
-                    mov2->from = this->registers["%eax"]->qWord;
-                    mov2->to = this->intArgs[intArgsCounter].qWord;
-                break;
-            }
+
+            mov->to = this->registers["%eax"]->get(exp.size);
+            mov2->from = this->registers["%eax"]->get(exp.size);
+            mov2->to = this->intArgs[intArgsCounter].get(exp.size);
             
             intArgsCounter++;
             OutputFile.text << mov;
@@ -945,21 +587,24 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
     {
         AST::Push * push = dynamic_cast<AST::Push *>(STMT);
         ASMC::Mov * count = new ASMC::Mov;
+
         count->size = ASMC::QWord;
-        count->to = this->registers["%rdx"]->qWord;
+        count->to = this->registers["%rdx"]->get(count->size);
         count->from = "$1";
         ASMC::Mov * pointer = new ASMC::Mov;
         pointer->size = ASMC::QWord;
-        pointer->to = this->registers["%rsi"]->qWord;
+        pointer->to = this->registers["%rsi"]->get(pointer->size);
         pointer->from = this->GenExpr(push->expr, OutputFile).access;
+
         ASMC::Mov * callnum = new ASMC::Mov;
         callnum->size = ASMC::QWord;
-        callnum->to = this->registers["%rax"]->qWord;
+        callnum->to = this->registers["%rax"]->get(callnum->size);
         callnum->from = "$1";
+
         ASMC::Mov * rdi = new ASMC::Mov;
         rdi->size = ASMC::QWord;
         rdi->from = "$1";
-        rdi->to = this->registers["%rdi"]->qWord;
+        rdi->to = this->registers["%rdi"]->get(rdi->size);
 
         OutputFile.text << rdi;
         OutputFile.text << pointer;
@@ -972,20 +617,20 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::Pull * pull = dynamic_cast<AST::Pull *>(STMT);
         ASMC::Mov * count = new ASMC::Mov;
         count->size = ASMC::QWord;
-        count->to = this->registers["%rdx"]->qWord;
+        count->to = this->registers["%rdx"]->get(count->size);
         count->from = "$1";
         ASMC::Mov * pointer = new ASMC::Mov;
         pointer->size = ASMC::QWord;
-        pointer->to = this->registers["%rsi"]->qWord;
+        pointer->to = this->registers["%rsi"]->get(pointer->size);
         pointer->from = this->GenExpr(pull->expr, OutputFile).access;
         ASMC::Mov * callnum = new ASMC::Mov;
         callnum->size = ASMC::QWord;
-        callnum->to = this->registers["%rax"]->qWord;
+        callnum->to = this->registers["%rax"]->get(callnum->size);
         callnum->from = "$0";
         ASMC::Mov * rdi = new ASMC::Mov;
         rdi->size = ASMC::QWord;
         rdi->from = "$1";
-        rdi->to = this->registers["%rdi"]->qWord;
+        rdi->to = this->registers["%rdi"]->get(rdi->size);
 
         OutputFile.text << rdi;
         OutputFile.text << pointer;
@@ -999,7 +644,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::If ifStmt = *dynamic_cast<AST::If *>(STMT);
 
         ASMC::Lable * lable1 = new ASMC::Lable();
-        lable1->lable = ".L"+ this->nameTale.head->data.ident.ident + std::to_string(this->lablecount);
+        lable1->lable = ".L"+ this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount ++;
 
         gen::Expr expr1 =this->GenExpr(ifStmt.Condition->expr1, OutputFile);
@@ -1014,41 +659,9 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         mov1->from = expr1.access;
         mov2->from = expr2.access;
 
-        switch (mov1->size)
-        {
-        case ASMC::Byte :
-            mov1->to = this->registers["%eax"]->byte;
-            break;
-        case ASMC::Word :
-            mov1->to = this->registers["%eax"]->word;
-            break;
-        case ASMC::DWord:
-            mov1->to = this->registers["%eax"]->dWord;
-            break;
-        case ASMC::QWord :
-            mov1->to = this->registers["%eax"]->qWord;
-            break;
-        default:
-            break;
-        }
-        
-        switch (mov2->size)
-        {
-        case ASMC::Byte :
-            mov2->to = this->registers["%ecx"]->byte;
-            break;
-        case ASMC::Word :
-            mov2->to = this->registers["%ecx"]->word;
-            break;
-        case ASMC::DWord:
-            mov2->to = this->registers["%ecx"]->dWord;
-            break;
-        case ASMC::QWord :
-            mov2->to = this->registers["%ecx"]->qWord;
-            break;
-        default:
-            break;
-        }
+        mov1->to = this->registers["%eax"]->get(mov1->size);
+
+        mov2->size = mov2->size;
 
         ASMC::Cmp * cmp = new ASMC::Cmp();
         ASMC::Jne * jne = new ASMC::Jne();
@@ -1056,7 +669,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         cmp->from = mov2->to;
         cmp->to = mov1->to;
         cmp->size = expr1.size;
-
         
         OutputFile.text << mov1;
         OutputFile.text << mov2;
@@ -1067,7 +679,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         case AST::Equ:
         {
             jne->to = lable1->lable;
-
             
             OutputFile.text << jne;
             OutputFile << this->GenSTMT(ifStmt.statment);
@@ -1117,11 +728,11 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::While * loop = dynamic_cast<AST::While *>(STMT);
 
         ASMC::Lable * lable1 = new ASMC::Lable();
-        lable1->lable =".L" + this->nameTale.head->data.ident.ident + std::to_string(this->lablecount);
+        lable1->lable =".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount++;
 
         ASMC::Lable * lable2 = new ASMC::Lable();
-        lable2->lable = ".L" + this->nameTale.head->data.ident.ident + std::to_string(this->lablecount);
+        lable2->lable = ".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount++;
 
         ASMC::Jmp * jmp = new ASMC::Jmp();
@@ -1146,42 +757,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         mov1->from = expr1.access;
         mov2->from = expr2.access;
 
-
-        switch (mov1->size)
-        {
-        case ASMC::Byte :
-            mov1->to = this->registers["%eax"]->byte;
-            break;
-        case ASMC::Word :
-            mov1->to = this->registers["%eax"]->word;
-            break;
-        case ASMC::DWord:
-            mov1->to = this->registers["%eax"]->dWord;
-            break;
-        case ASMC::QWord :
-            mov1->to = this->registers["%eax"]->qWord;
-            break;
-        default:
-            break;
-        }
-        
-        switch (mov2->size)
-        {
-        case ASMC::Byte :
-            mov2->to = this->registers["%ecx"]->byte;
-            break;
-        case ASMC::Word :
-            mov2->to = this->registers["%ecx"]->word;
-            break;
-        case ASMC::DWord:
-            mov2->to = this->registers["%ecx"]->dWord;
-            break;
-        case ASMC::QWord :
-            mov2->to = this->registers["%ecx"]->qWord;
-            break;
-        default:
-            break;
-        }
+        mov1->to = this->registers["%eax"]->get(mov1->size);
+        mov2->to = this->registers["%ecx"]->get(mov2->size);
 
         ASMC::Cmp * cmp = new ASMC::Cmp();
         ASMC::Jne * jne = new ASMC::Jne();
