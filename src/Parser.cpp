@@ -4,13 +4,13 @@
 
 parse::Parser::Parser(){
     this->typeList.foo = AST::Type::compair;
-    AST::Type Int = new AST::Type();
+    AST::Type Int = AST::Type();
     Int.typeName = "int";
     Int.size = ASMC::DWord;
-    AST::Type Char = new AST::Type();
+    AST::Type Char = AST::Type();
     Char.typeName = "char";
     Char.size = ASMC::Byte;
-    AST::Type Adr = new AST::Type();
+    AST::Type Adr = AST::Type();
     Adr.typeName = "adr";
     Adr.size = ASMC::QWord;
     this->typeList << Int;
@@ -31,7 +31,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 lex::LObj Ident = *dynamic_cast<lex::LObj *>(tokens.peek());
                 tokens.pop();
                 dec->Ident = Ident.meta;
-                dec->type = typList[obj.meta];
+                dec->type = *this->typeList[obj.meta];
                 output = dec;
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                     lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -72,10 +72,8 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                     AST::DecArr * decA = new AST::DecArr();
                     decA->count = std::stoi(Int.value);
                     decA->ident = Ident.meta;
-                    if(obj.meta == "byte") dec->type = AST::Byte;
-                    else if (obj.meta == "int") decA->type = AST::Int; 
-                    else if (obj.meta == "char") decA->type = AST::Char;
-                    else if (obj.meta == "adr")decA->type = AST::IntPtr;   
+                    if(this->typeList[obj.meta] == nullptr) throw err::Exception("Unknown tyoe " + obj.meta);
+                    decA->type = *this->typeList[obj.meta];
                     output = decA;
                 }
             }
@@ -133,9 +131,9 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 if(op.Sym != '{')throw err::Exception("Unopened UDeffType");
             }else throw err::Exception("Unopened UDeffType");
             stc->statment = this->parseStmt(tokens);
-            AST::Type t = AST::Type;
+            AST::Type t = AST::Type();
             t.size = ASMC::QWord;
-            t.typeName = stc->ident;
+            t.typeName = stc->ident.ident;
             this->typeList << t;
             output = stc;
         }
@@ -244,7 +242,7 @@ AST::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens, 
                 lex::LObj Ident = *dynamic_cast<lex::LObj *>(tokens.peek());
                 tokens.pop();
                 dec->Ident = Ident.meta;
-                dec->type = typeList[obj.meta];
+                dec->type = *typeList[obj.meta];
                 output = dec;
             }
         }
@@ -342,9 +340,8 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                     lex::LObj view = * dynamic_cast<lex::LObj *>(tokens.pop());
                     deRef->Ident = obj.meta;
                     deRef->modList = modList;
-                    if (view.meta == "int") deRef->type = AST::Int;
-                    else if(view.meta == "char") deRef->type = AST::Char;
-                    else if(view.meta == "adr") deRef->type = AST::IntPtr;
+                    if(this->typeList[view.meta] == nullptr) throw err::Exception("Unknown Type " + view.meta);
+                    deRef->type = *this->typeList[view.meta];
                     output = deRef;
                 }else throw err::Exception("No dereffrens type given with as");
             }
