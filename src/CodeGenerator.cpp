@@ -661,6 +661,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         mov2->from = expr2.access;
 
         mov1->to = this->registers["%eax"]->get(mov1->size);
+        mov2->to = this->registers["%rcx"]->get(mov2->size);
 
         mov2->size = mov2->size;
 
