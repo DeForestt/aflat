@@ -116,7 +116,12 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             tbyte += modSym->byteMod;
         }
         if(tbyte > 0){
-            output.access = std::to_string(tbyte) + "(-" + std::to_string(sym->byteMod) + "(%rbp))";
+            ASMC::Mov * mov = new ASMC::Mov();
+            mov->size = ASMC::QWord;
+            mov->to = this->registers["%edx"]->get(ASMC::QWord);
+            mov->from =  "-" + std::to_string(sym->byteMod) + "(%rbp)";
+            OutputFile.text << mov;
+            output.access = std::to_string(tbyte) + '(' + mov->to + ')';
             output.size = last.size;
         }
 
@@ -581,7 +586,12 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
 
         if(tbyte > 0){
-            output =std::to_string(tbyte) + "(-" + std::to_string(symbol->byteMod) + "(%rbp))";
+            ASMC::Mov * mov7 = new ASMC::Mov();
+            mov7->size = ASMC::QWord;
+            mov7->to = this->registers["%edx"]->get(ASMC::QWord);
+            mov7->from =  "-" + std::to_string(symbol->byteMod) + "(%rbp)";
+            OutputFile.text << mov7;
+            output = std::to_string(tbyte) + '(' + mov->to + ')';
             size = last.size;
         }
 
