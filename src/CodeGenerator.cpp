@@ -321,7 +321,7 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(AST::Statment * STMT
         if (table.head == nullptr){
             symbol.byteMod = offset;
         }else{
-            symbol.byteMod = this->SymbolTable.peek().byteMod + offset;
+            symbol.byteMod = table.peek().byteMod + offset;
         }
         symbol.type = arg->type;
         table << symbol;
@@ -342,7 +342,7 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(AST::Statment * STMT
         if (this->SymbolTable.head == nullptr){
             Symbol.byteMod = offset;
         }else{
-            Symbol.byteMod = this->SymbolTable.head->data.byteMod + offset;
+            Symbol.byteMod = table.head->data.byteMod + offset;
         }
         Symbol.type = dec->type;
         Symbol.symbol = dec->ident;
