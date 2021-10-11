@@ -12,6 +12,11 @@ bool compairFunc(AST::Function F, std::string input){
         return false;
 }
 
+bool gen::Type::compair(gen::Type t, std::string ident){
+    if (ident == t.Ident) return true;
+    return false;
+}
+
 int gen::CodeGenerator::getBytes(ASMC::Size size){
     switch(size){
             case ASMC::QWord:
@@ -42,6 +47,7 @@ gen::CodeGenerator::CodeGenerator(){
     this->registers << ASMC::Register("rbp", "ebp", "bp", "bpl");
     this->registers.foo = ASMC::Register::compair;
     this->nameTable.foo = compairFunc;
+    this->typeList.foo = gen::Type::compair;
 }
 
 gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){

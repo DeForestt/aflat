@@ -25,6 +25,7 @@ namespace gen{
         public:
         std::string Ident;
         links::LinkedList<Symbol> SymbolTable;
+        static bool compair(Type t, std::string ident);
         int size;
     };
 
