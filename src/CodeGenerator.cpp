@@ -97,6 +97,23 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
 
         output.size = sym->type.size;
         output.access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
+
+        var.modList.invert();
+        int tbyte = 0;
+        
+        AST::Type last = sym->type;
+        while(var.modList.head != nullptr){
+            if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
+            gen::Type type = *this->typeList[last.typeName];
+            gen::Symbol * modSym = type.SymbolTable.search<std::string>(searchSymbol, var.modList.pop());
+            last = sym->type;
+            tbyte += modSym->byteMod;
+        }
+        if(tbyte > 0){
+            output.access = '+' + std::to_string(tbyte) + "(-" + std::to_string(sym->byteMod) + "(%rbp))";
+            output.size = last.size;
+        }
+
     }else if (dynamic_cast<AST::Refrence *>(expr) != nullptr)
     {
         AST::Refrence ref = *dynamic_cast<AST::Refrence *>(expr);
@@ -537,20 +554,41 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::Mov * mov = new ASMC::Mov();
         ASMC::Mov * mov2 = new ASMC::Mov();
         gen::Expr expr = this->GenExpr(assign->expr, OutputFile);
+
         mov->size = expr.size;
         mov2->size = expr.size;
         mov2->from = expr.access;
         mov2->to = this->registers["%rbx"]->get(expr.size);
         mov->from = mov2->to;
 
+        assign->modList.invert();
+        int tbyte = 0;
+        
+        AST::Type last = symbol->type;
+        ASMC::Size size;
+        std::string output = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
+        while(assign->modList.head != nullptr){
+            if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
+            gen::Type type = *this->typeList[last.typeName];
+            gen::Symbol * modSym = type.SymbolTable.search<std::string>(searchSymbol, assign->modList.pop());
+            last = modSym->type;
+            tbyte += modSym->byteMod;
+        }
+
+        if(tbyte > 0){
+            output = '+' + std::to_string(tbyte) + "(-" + std::to_string(symbol->byteMod) + "(%rbp))";
+            size = last.size;
+        }
+
+
         if(assign->refrence == true){
             ASMC::Mov * m1 = new ASMC::Mov;
-            m1->from = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
+            m1->from = output;
             m1->size = ASMC::QWord;
             m1->to = this->registers["%eax"]->get(ASMC::QWord);
             mov->to = "(" + this->registers["%eax"]->get(ASMC::QWord) + ")";
             OutputFile.text << m1;
-        }else mov->to = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
+        }else mov->to = output;
 
         OutputFile.text << mov2;
         OutputFile.text << mov;
