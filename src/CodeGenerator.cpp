@@ -116,7 +116,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             tbyte += modSym->byteMod;
         }
         if(tbyte > 0){
-            output.access = '+' + std::to_string(tbyte) + "(-" + std::to_string(sym->byteMod) + "(%rbp))";
+            output.access = std::to_string(tbyte) + "(-" + std::to_string(sym->byteMod) + "(%rbp))";
             output.size = last.size;
         }
 
@@ -581,7 +581,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
 
         if(tbyte > 0){
-            output = '+' + std::to_string(tbyte) + "(-" + std::to_string(symbol->byteMod) + "(%rbp))";
+            output =std::to_string(tbyte) + "(-" + std::to_string(symbol->byteMod) + "(%rbp))";
             size = last.size;
         }
 
