@@ -93,14 +93,10 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     }else if (dynamic_cast<AST::Var *>(expr) != nullptr){
         AST::Var var = *dynamic_cast<AST::Var *>(expr);
         gen::Symbol * sym = this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
-        
         if (sym == nullptr) throw err::Exception("cannot find: " + var.Ident);
 
         output.size = sym->type.size;
-
-        AST::CharLiteral charlit = *dynamic_cast<AST::CharLiteral *>(expr);
-        output.access = "$" + std::to_string(charlit.value);
-        output.size = ASMC::Byte;
+        output.access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
     }else if (dynamic_cast<AST::Refrence *>(expr) != nullptr)
     {
         AST::Refrence ref = *dynamic_cast<AST::Refrence *>(expr);
