@@ -88,7 +88,6 @@ namespace AST{
         Ident ident;
         Statment * args;
         Statment * statment;
-        std::string toString();
     };
 
     class UDeffType : public Member, public Statment{
@@ -99,7 +98,6 @@ namespace AST{
 
     class Declare : public Arg, public Statment{
         public:
-        std::string toString();
         std::string Ident;
         std::string TypeName;
         Type type;
@@ -173,7 +171,6 @@ namespace AST{
         public:
         Statment * Statment1;
         Statment * Statment2;
-        std::string toString();
     };
 
     class Iflush : public Statment{
@@ -182,7 +179,6 @@ namespace AST{
     class CWrite : public Statment{
         public:
         Expr * expr;
-        std::string toString();
     };
 
     class Push : public Statment{
@@ -205,7 +201,6 @@ namespace AST{
     class Return : public Statment{
         public:
         Expr * expr;
-        std::string toString();
     };
 
     class Var : public Expr{
