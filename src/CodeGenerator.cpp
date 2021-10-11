@@ -51,7 +51,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         output.access = '$' + std::to_string(intlit->val);
         output.size = ASMC::DWord;
     }
-    if(dynamic_cast<AST::CharLiteral *>(expr) != nullptr){
+    else if(dynamic_cast<AST::CharLiteral *>(expr) != nullptr){
         AST::CharLiteral * intlit = dynamic_cast<AST::CharLiteral *>(expr);
         output.access = '$' + std::to_string(intlit->value);
         output.size = ASMC::Byte;
