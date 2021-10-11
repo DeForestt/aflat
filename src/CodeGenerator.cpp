@@ -588,8 +588,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         if(tbyte > 0){
             ASMC::Mov * mov7 = new ASMC::Mov();
             mov7->size = ASMC::QWord;
-            mov7->to = this->registers["%edx"]->get(ASMC::QWord);
-            mov7->from =  "-" + std::to_string(symbol->byteMod) + "(%rbp)";
+            mov7->from = this->registers["%edx"]->get(ASMC::QWord);
+            mov7->to =  "-" + std::to_string(symbol->byteMod) + "(%rbp)";
             OutputFile.text << mov7;
             output = std::to_string(tbyte - getBytes(last.size)) + '(' + mov7->to + ')';
             size = last.size;
