@@ -124,9 +124,19 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
         }
         else{
             if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-                lex::OpSym * sym = dynamic_cast<lex::OpSym *> (tokens.pop());
-
-                if(sym->Sym == '='){
+                lex::OpSym sym = *dynamic_cast<lex::OpSym *> (tokens.pop());
+                links::LinkedList<std::string> modList;
+                while (sym.Sym == '.')
+                {
+                    if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+                        lex::LObj mod = *dynamic_cast<lex::LObj *>(tokens.pop());
+                        modList << mod.meta;
+                    }else throw err::Exception("Expected, Ident after dot.");
+                    if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                        sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
+                    }else throw err::Exception("expected assignment oporator");
+                }
+                if(sym.Sym == '='){
                     AST::Assign * assign = new AST::Assign();
                     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                         lex::OpSym * s2 = dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -137,9 +147,10 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                     };
                     
                     assign->Ident = obj.meta;
+                    assign->modList = modList;
                     assign->expr = this->parseExpr(tokens);
                     output = assign;
-                }else if (sym->Sym == '(')
+                }else if (sym.Sym == '(')
                 {
                     AST::Call * call = new AST::Call();
                     call->ident = obj.meta;
@@ -151,7 +162,6 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                             pop = true;
                         }while(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr
                         && dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',');
-
                         if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                             lex::OpSym * symp = dynamic_cast<lex::OpSym *> (tokens.pop());
                             if (symp->Sym != ')') throw err::Exception("Expected closed perenth got " + symp->Sym);
@@ -295,6 +305,20 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
         output = ilit;
     } else if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.pop());
+        links::LinkedList<std::string> modList;
+        if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
+            lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+            while(sym.Sym == '.'){
+                tokens.pop();
+                if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+                    lex::LObj mod = *dynamic_cast<lex::LObj *>(tokens.pop());
+                    modList << mod.meta;
+                }else throw err::Exception("Expected, Ident after dot.");
+                if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                    sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                }else throw err::Exception("expected assignment oporator");
+            }
+        }
         if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
             lex::LObj aobj = *dynamic_cast<lex::LObj *>(tokens.peek());
             if(aobj.meta == "as"){
@@ -303,6 +327,7 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                 if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                     lex::LObj view = * dynamic_cast<lex::LObj *>(tokens.pop());
                     deRef->Ident = obj.meta;
+                    deRef->modList = modList;
                     if (view.meta == "int") deRef->type = AST::Int;
                     else if(view.meta == "char") deRef->type = AST::Char;
                     else if(view.meta == "adr") deRef->type = AST::IntPtr;
@@ -347,6 +372,7 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
          else {
             AST::Var * var = new AST::Var();
             var->Ident = obj.meta;
+            var->modList = modList;
             output = var;
         }
     } else if (dynamic_cast<lex::CharObj *>(tokens.peek()) != nullptr){

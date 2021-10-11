@@ -145,6 +145,7 @@ namespace AST{
         std::string Ident;
         bool refrence = false;
         Expr * expr;
+        links::LinkedList<std::string> modList;
     };
 
     class While : public Statment{
@@ -209,6 +210,7 @@ namespace AST{
     class Var : public Expr{
         public:
         std::string Ident;
+        links::LinkedList<std::string> modList;
     };
 
     class StringLiteral : public Expr{
@@ -241,6 +243,7 @@ namespace AST{
     class DeRefence : public Expr{
         public:
         std::string Ident;
+        links::LinkedList<std::string> modList;
         AST::Type type;
     };
 
