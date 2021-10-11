@@ -310,7 +310,6 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(AST::Statment * STMT
             **also needs to be added to symbol table**
         */
 
-        if (intArgsCounter > 6) throw err::Exception("AFlat compiler cannot handle more than 6 int arguments.");
         AST::Declare * arg =  dynamic_cast<AST::Declare *>(STMT);
         gen::Symbol symbol;
         
