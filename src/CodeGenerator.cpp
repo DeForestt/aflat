@@ -50,6 +50,11 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::IntLiteral * intlit = dynamic_cast<AST::IntLiteral *>(expr);
         output.access = '$' + std::to_string(intlit->val);
         output.size = ASMC::DWord;
+    }
+    if(dynamic_cast<AST::CharLiteral *>(expr) != nullptr){
+        AST::CharLiteral * intlit = dynamic_cast<AST::CharLiteral *>(expr);
+        output.access = '$' + std::to_string(intlit->value);
+        output.size = ASMC::Byte;
     }else if(dynamic_cast<AST::CallExpr *>(expr) != nullptr){
         AST::CallExpr * exprCall = dynamic_cast<AST::CallExpr *>(expr);
         AST::Call * call = exprCall->call;
