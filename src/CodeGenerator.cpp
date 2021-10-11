@@ -539,7 +539,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         mov->size = expr.size;
         mov2->size = expr.size;
         mov2->from = expr.access;
-        mov2->to = this->registers["rbx"]->get(expr.size);
+        mov2->to = this->registers["%rbx"]->get(expr.size);
         mov->from = mov2->to;
 
         if(assign->refrence == true){
