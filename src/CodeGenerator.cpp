@@ -121,7 +121,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             mov->to = this->registers["%edx"]->get(ASMC::QWord);
             mov->from =  "-" + std::to_string(sym->byteMod) + "(%rbp)";
             OutputFile.text << mov;
-            output.access = std::to_string(tbyte) + '(' + mov->to + ')';
+            output.access = std::to_string(tbyte - last.size) + '(' + mov->to + ')';
             output.size = last.size;
         }
 
