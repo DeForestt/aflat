@@ -1,4 +1,6 @@
 .global brk
+.global sys_create
+.global sys_write
 
 .text
 
