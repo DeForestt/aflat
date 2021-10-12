@@ -377,6 +377,7 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             }else{
                 AST::Var * var = new AST::Var();
                 var->Ident = obj.meta;
+                var->modList = modList;
                 output = var;
             }
         }

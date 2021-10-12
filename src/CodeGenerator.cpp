@@ -115,6 +115,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             last = sym->type;
             tbyte += modSym->byteMod;
         }
+        
         if(tbyte > 0){
             ASMC::Mov * mov = new ASMC::Mov();
             mov->size = ASMC::QWord;
@@ -577,6 +578,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::Type last = symbol->type;
         ASMC::Size size;
         std::string output = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
+
         while(assign->modList.head != nullptr){
             if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
             gen::Type type = *this->typeList[last.typeName];
