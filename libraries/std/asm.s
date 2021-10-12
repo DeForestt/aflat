@@ -2,6 +2,8 @@
 .global sys_create
 .global sys_write
 .global sys_open
+.global sys_read
+.global sys_close
 
 .text
 
@@ -37,6 +39,24 @@ sys_open:
 	movq	%rsp, %rbp
 	subq	$16, %rsp
 	movq    $0x02, %rax
+	syscall
+	leave
+	ret
+
+sys_read:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $0x00, %rax
+	syscall
+	leave
+	ret
+
+sys_close:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $0x04, %rax
 	syscall
 	leave
 	ret

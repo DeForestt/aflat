@@ -112,10 +112,25 @@ int createFile(adr fileName){
 
 int openFile(adr fileName){
 	int file = sys_open(fileName, 777, 2);
+	return 0;
 };
 
 int writeTo(int file, adr text){
 	int length = len(text);
 	int ret = sys_write(file, text, length);
 	return ret;
+};
+
+int readFrom(int file, adr pointer, char delim){
+	char input = ' ';
+	char nl = ascii(10);
+	char null = ascii(0);
+	while(input != delim){
+		sys_read(file, ?input, 1);
+		pointer =: input;
+		if(input == nl){pointer =: null};
+		pointer = pointer + 1;
+	};
+	pointer =: null;
+	return	0;
 };
