@@ -127,7 +127,7 @@ int readFrom(int file, adr pointer, char delim){
 	while(input != delim){
 		sys_read(file, ?input, 1);
 		pointer =: input;
-		if(input == nl){pointer =: null};
+		if(input == delim){pointer =: null};
 		pointer = pointer + 1;
 	};
 	pointer =: null;
