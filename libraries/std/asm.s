@@ -26,7 +26,7 @@ sys_create:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp
-	movq    $0x55, %rax
+	movq    $0x02, %rax
 	syscall
 	leave
 	ret
