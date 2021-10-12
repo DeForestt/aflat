@@ -110,6 +110,10 @@ int createFile(adr fileName){
 	return file;
 };
 
+int openFile(adr fileName){
+	int file = sys_open(fileName, 777, 2);
+};
+
 int writeTo(int file, adr text){
 	int length = len(text);
 	int ret = sys_write(file, text, length);

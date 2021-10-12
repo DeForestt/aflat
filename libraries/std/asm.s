@@ -1,6 +1,7 @@
 .global brk
 .global sys_create
 .global sys_write
+.global sys_open
 
 .text
 
@@ -23,6 +24,15 @@ sys_write:
 	ret
 
 sys_create:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $0x55, %rax
+	syscall
+	leave
+	ret
+
+sys_open:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp
