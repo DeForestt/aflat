@@ -111,7 +111,8 @@ int createFile(adr fileName){
 };
 
 int openFile(adr fileName){
-	int file = sys_open(fileName, 2, 777);
+	adr falg = 2;
+	int file = sys_open(fileName, flag, 777);
 	return file;
 };
 
