@@ -1,1 +1,1 @@
-adr brk(adr size);
+malloc(int size);
