@@ -112,7 +112,7 @@ int createFile(adr fileName){
 
 int openFile(adr fileName){
 	int file = sys_open(fileName, 777, 2);
-	return 0;
+	return file;
 };
 
 int writeTo(int file, adr text){
@@ -123,7 +123,6 @@ int writeTo(int file, adr text){
 
 int readFrom(int file, adr pointer, char delim){
 	char input = ' ';
-	char nl = ascii(10);
 	char null = ascii(0);
 	while(input != delim){
 		sys_read(file, ?input, 1);
