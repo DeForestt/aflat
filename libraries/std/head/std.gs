@@ -1,1 +1,1 @@
-malloc(int size);
+adr malloc(int size);

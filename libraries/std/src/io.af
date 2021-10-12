@@ -1,6 +1,7 @@
 .needs "/std/head/math.gs"
 .needs "/std/head/io.gs";
 .needs "/std/head/strings.gs";
+.needs "/std/head/asm.gs";
 
 int readString(adr pointer){
 	char input = ' ';
@@ -102,4 +103,15 @@ int printInt(int input){
                 i = i - 1;
         };
         return 0;
+};
+
+int creatFile(adr fileName){
+	int file = sys_create(fileName, 0777);
+	return file;
+};
+
+int creatFile(int file, adr text){
+	int length = len(text);
+	int ret = sys_create(file, text, length);
+	return ret;
 };
