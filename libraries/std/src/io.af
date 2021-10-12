@@ -105,12 +105,12 @@ int printInt(int input){
         return 0;
 };
 
-int creatFile(adr fileName){
+int createFile(adr fileName){
 	int file = sys_create(fileName, 0777);
 	return file;
 };
 
-int creatFile(int file, adr text){
+int writeFile(int file, adr text){
 	int length = len(text);
 	int ret = sys_create(file, text, length);
 	return ret;
