@@ -112,7 +112,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
             gen::Type type = *this->typeList[last.typeName];
             gen::Symbol * modSym = type.SymbolTable.search<std::string>(searchSymbol, var.modList.pop());
-            last = sym->type;
+            last = modSym->type;
             tbyte += modSym->byteMod;
         }
 
