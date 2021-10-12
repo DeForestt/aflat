@@ -110,8 +110,8 @@ int createFile(adr fileName){
 	return file;
 };
 
-int writeFile(int file, adr text){
+int writeTo(int file, adr text){
 	int length = len(text);
-	int ret = sys_create(file, text, length);
+	int ret = sys_write(file, text, length);
 	return ret;
 };
