@@ -592,7 +592,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             mov7->to = this->registers["%edx"]->get(ASMC::QWord);
             mov7->from =  output;
             OutputFile.text << mov7;
-            output = std::to_string(tbyte - tbyte - this->getBytes(last.size)) + '(' + mov7->to + ')';
+            output = std::to_string(tbyte - this->getBytes(last.size)) + '(' + mov7->to + ')';
             size = last.size;
         }
 
