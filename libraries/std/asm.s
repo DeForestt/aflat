@@ -4,7 +4,7 @@
 .global sys_open
 .global sys_read
 .global sys_close
-.global fstat;
+.global sys_fstat;
 
 .text
 

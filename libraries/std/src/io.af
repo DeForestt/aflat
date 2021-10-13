@@ -2,6 +2,7 @@
 .needs "/std/head/io.gs";
 .needs "/std/head/strings.gs";
 .needs "/std/head/asm.gs";
+.needs "/std/head/std.gs"
 
 int readString(adr pointer){
 	char input = ' ';
@@ -111,7 +112,7 @@ int createFile(adr fileName){
 };
 
 File openFile(adr fileName){
-	File file = malloc(20);
+	File file = malloc(30);
 	adr flag = 2;
 	file.file = sys_open(fileName, flag, 777);
 	file.info = getFileInfo(file.file);
@@ -140,6 +141,6 @@ int readFrom(int file, adr pointer, char delim){
 
 FileInfo getFileInfo(int file){
 	FileInfo info = malloc(52);
-	sys_fstat(file, info)
+	sys_fstat(file, info);
 	return info;
 };
