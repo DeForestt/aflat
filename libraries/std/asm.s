@@ -4,6 +4,7 @@
 .global sys_open
 .global sys_read
 .global sys_close
+.global fstat;
 
 .text
 
@@ -53,6 +54,15 @@ sys_read:
 	ret
 
 sys_close:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $0x03, %rax
+	syscall
+	leave
+	ret
+
+sys_fstat:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp
