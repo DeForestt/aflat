@@ -113,17 +113,18 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             gen::Type type = *this->typeList[last.typeName];
             gen::Symbol * modSym = type.SymbolTable.search<std::string>(searchSymbol, var.modList.pop());
             last = modSym->type;
-            tbyte += modSym->byteMod;
-        }
-
-        if(tbyte > 0){
+            tbyte = modSym->byteMod;
             ASMC::Mov * mov = new ASMC::Mov();
             mov->size = ASMC::QWord;
             mov->to = this->registers["%edx"]->get(ASMC::QWord);
-            mov->from =  "-" + std::to_string(sym->byteMod) + "(%rbp)";
+            mov->from = output.access;
             OutputFile.text << mov;
             output.access = std::to_string(tbyte - this->getBytes(last.size)) + '(' + mov->to + ')';
             output.size = last.size;
+        }
+
+        if(tbyte > 0){
+
         }
 
     }else if (dynamic_cast<AST::Refrence *>(expr) != nullptr)
@@ -584,16 +585,14 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             gen::Type type = *this->typeList[last.typeName];
             gen::Symbol * modSym = type.SymbolTable.search<std::string>(searchSymbol, assign->modList.pop());
             last = modSym->type;
-            tbyte += modSym->byteMod;
-        }
+            tbyte = modSym->byteMod;
 
-        if(tbyte > 0){
             ASMC::Mov * mov7 = new ASMC::Mov();
             mov7->size = ASMC::QWord;
             mov7->to = this->registers["%edx"]->get(ASMC::QWord);
-            mov7->from =  "-" + std::to_string(symbol->byteMod) + "(%rbp)";
+            mov7->from =  output;
             OutputFile.text << mov7;
-            output = std::to_string(tbyte - getBytes(last.size)) + '(' + mov7->to + ')';
+            output = std::to_string(tbyte) + '(' + mov7->to + ')';
             size = last.size;
         }
 

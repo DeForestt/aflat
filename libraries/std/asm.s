@@ -66,7 +66,7 @@ sys_fstat:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp
-	movq    $0x04, %rax
+	movq    $0x05, %rax
 	syscall
 	leave
 	ret
