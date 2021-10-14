@@ -1,4 +1,4 @@
-.needs "/std/head/std.af"
+.needs "/std/head/std.gs"
 .needs "/std/head/asm.gs"
 
 adr malloc(int size){
