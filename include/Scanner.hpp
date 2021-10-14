@@ -47,6 +47,11 @@ namespace lex{
         string value;
     };
 
+    class HEX: public Token{
+        public:
+        string value;
+    };
+
     class FloatLit: public Token{
         public:
         string value;

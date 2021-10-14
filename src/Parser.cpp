@@ -13,6 +13,10 @@ parse::Parser::Parser(){
     AST::Type Adr = AST::Type();
     Adr.typeName = "adr";
     Adr.size = ASMC::QWord;
+
+    AST::Type Long = AST::Type();
+    Adr.typeName = "long";
+
     this->typeList << Int;
     this->typeList << Char;
     this->typeList << Adr;
