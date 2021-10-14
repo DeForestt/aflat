@@ -70,3 +70,21 @@ sys_fstat:
 	syscall
 	leave
 	ret
+
+sys_fork:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $57, %rax
+	syscall
+	leave
+	ret
+
+sys_pause:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $34, %rax
+	syscall
+	leave
+	ret
