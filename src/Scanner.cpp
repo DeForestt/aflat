@@ -38,6 +38,20 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         }
 
                     }
+                    else if (input[i] == '#')
+                    {
+                        
+                            lex::Long * IntLit = new lex::Long();
+                            i++;
+
+                            while(std::isdigit(input[i])){
+                                IntLit->value += input[i];
+                                i++;
+                            }
+                            
+                            tokens.push(IntLit);
+
+                    }
                     else if(std::isspace(input[i]))
                     {
                         i++;

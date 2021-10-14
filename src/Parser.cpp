@@ -320,6 +320,12 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
         AST::IntLiteral * ilit = new AST::IntLiteral();
         ilit->val = std::stoi(intObj.value);
         output = ilit;
+    }
+    else if(dynamic_cast<lex::Long *>(tokens.peek()) != nullptr){
+        lex::Long intObj = *dynamic_cast<lex::Long *>(tokens.pop());
+        AST::LongLiteral * ilit = new AST::LongLiteral();
+        ilit->val = std::stoi(intObj.value);
+        output = ilit;
     } else if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.pop());
         links::LinkedList<std::string> modList;

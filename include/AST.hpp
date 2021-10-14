@@ -224,6 +224,12 @@ namespace AST{
         int val;
     };
 
+    class LongLiteral : public Expr{
+        public:
+        int val;
+    };
+
+
     class Compound : public Expr{
         public:
         Expr * expr1;

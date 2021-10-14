@@ -47,7 +47,7 @@ namespace lex{
         string value;
     };
 
-    class HEX: public Token{
+    class Long: public Token{
         public:
         string value;
     };
