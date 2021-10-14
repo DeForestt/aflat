@@ -106,8 +106,12 @@ int printInt(int input){
         return 0;
 };
 
-int createFile(adr fileName){
-	int file = sys_create(fileName, 777);
+File createFile(adr fileName){
+	File file = malloc(30);
+	file.file = sys_create(fileName, 777);
+	if(file.file < 1){
+		return #0;
+	};
 	return file;
 };
 
@@ -115,23 +119,26 @@ File openFile(adr fileName){
 	File file = malloc(30);
 	adr flag = 2;
 	file.file = sys_open(fileName, flag, 777);
+	if(file.file < 0){
+		return #0;
+	};
 	file.info = getFileInfo(file.file);
 	file.fileName = fileName;
 	return file;
 };
 
-int writeTo(int file, adr text){
+int writeTo(File file, adr text){
 	int length = len(text);
-	int ret = sys_write(file, text, length);
+	int ret = sys_write(file.file, text, length);
 	return ret;
 };
 
-int readFrom(int file, adr pointer, char delim, char term){
+int readFrom(File file, adr pointer, char delim, char term){
 	char input = ' ';
 	char null = ascii(0);
 	while(input != delim){
-		sys_read(file, ?input, 1);
-		if(input == term){return 0;};
+		sys_read(file.file, ?input, 1);
+		if(input == term){return 1;};
 		pointer =: input;
 		if(input == delim){pointer =: null};
 		pointer = pointer + 1;

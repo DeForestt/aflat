@@ -21,14 +21,16 @@ struct File{
     adr fileName;
     int file;
 };
+File createFile(adr fileName);
+File openFile(adr fileName);
 
 
 int print(adr input);
 int readString(adr pointer);
 int pullInt(adr prompt, int sigfigs);
 int printInt(int input);
-int createFile(adr fileName);
-File openFile(adr fileName);
-int writeTo(int file, adr text);
+int writeTo(File file, adr text);
+int readFrom(File file, adr pointer, char delim, char term)
 int toInt(char input);
 char toChar(int input);
+
