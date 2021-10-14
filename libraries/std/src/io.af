@@ -127,6 +127,10 @@ File openFile(adr fileName){
 	return file;
 };
 
+int closFile(File file){
+	return sys_close(file.file);
+};
+
 int writeTo(File file, adr text){
 	int length = len(text);
 	int ret = sys_write(file.file, text, length);
