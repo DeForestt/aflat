@@ -4,3 +4,4 @@ struct Time {
 };
 
 adr malloc(int size);
+Time newTime(adr size);
