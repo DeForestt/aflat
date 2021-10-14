@@ -22,7 +22,8 @@ int clearInput(){
 	char nl = ascii(10);
 	char buffer = ' ';
 	while (buffer != nl){pull ?buffer};
-	return 0;	
+	return 0;
+};
 
 int print(adr input){
 	char null = ascii(0);
