@@ -16,6 +16,7 @@ parse::Parser::Parser(){
 
     AST::Type Long = AST::Type();
     Adr.typeName = "long";
+    Adr.size = ASMC::QWord;
 
     this->typeList << Int;
     this->typeList << Char;
