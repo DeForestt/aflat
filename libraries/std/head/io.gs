@@ -21,6 +21,7 @@ struct File{
     adr fileName;
     int file;
 };
+
 File createFile(adr fileName);
 File openFile(adr fileName);
 

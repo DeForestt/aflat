@@ -7,4 +7,4 @@ int sys_close(int file);
 int sys_fstat(int file, adr stat);
 int sys_fork();
 int sys_pause();
-int sys_sleep(Time t);
+int sys_sleep(adr t, adr t);
