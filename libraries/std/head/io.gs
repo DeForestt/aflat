@@ -30,7 +30,7 @@ int readString(adr pointer);
 int pullInt(adr prompt, int sigfigs);
 int printInt(int input);
 int writeTo(File file, adr text);
-int readFrom(File file, adr pointer, char delim, char term)
+int readFrom(File file, adr pointer, char delim, char term);
 int closFile(File file);
 int toInt(char input);
 char toChar(int input);
