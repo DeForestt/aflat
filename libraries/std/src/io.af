@@ -110,7 +110,7 @@ File createFile(adr fileName){
 	File file = malloc(30);
 	file.file = sys_create(fileName, 777);
 	int test = file.file * 1;
-	if(file.file < 1){
+	if(test < 1){
 		return #0;
 	};
 	return file;
@@ -121,7 +121,7 @@ File openFile(adr fileName){
 	adr flag = 2;
 	file.file = sys_open(fileName, flag, 777);
 	int test = file.file * 1;
-	if(test < 0){
+	if(test < 1){
 		return #0;
 	};
 	file.info = getFileInfo(file.file);
