@@ -126,11 +126,12 @@ int writeTo(int file, adr text){
 	return ret;
 };
 
-int readFrom(int file, adr pointer, char delim){
+int readFrom(int file, adr pointer, char delim, char term){
 	char input = ' ';
 	char null = ascii(0);
 	while(input != delim){
 		sys_read(file, ?input, 1);
+		if(input == term){return 0;};
 		pointer =: input;
 		if(input == delim){pointer =: null};
 		pointer = pointer + 1;
