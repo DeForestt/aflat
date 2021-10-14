@@ -4,7 +4,10 @@
 .global sys_open
 .global sys_read
 .global sys_close
-.global sys_fstat;
+.global sys_fstat
+.global sys_pause
+.global sys_fork
+.global sys_sleep
 
 .text
 
@@ -85,6 +88,15 @@ sys_pause:
 	movq	%rsp, %rbp
 	subq	$16, %rsp
 	movq    $34, %rax
+	syscall
+	leave
+	ret
+
+sys_sleep:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $35, %rax
 	syscall
 	leave
 	ret

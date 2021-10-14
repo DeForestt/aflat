@@ -6,3 +6,9 @@ adr malloc(int size){
     brk(out + size);
     return out;
 };
+
+Time newTime(adr count){
+    Time this = malloc(15);
+    this.amount = count;
+    return this;
+};
