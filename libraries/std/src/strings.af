@@ -79,5 +79,15 @@ int str_toInt(adr input){
         input = input + 1;
     };
     return result * mul;
+};
 
+int str_find(char find, adr in){
+    int i = 0;
+    int len = len(in);
+    while(i < len){
+        adr h = in + i;
+        if(h as char == find){return i};
+        i = i + 1;
+    };
+    return -1;
 };
