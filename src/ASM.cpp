@@ -96,8 +96,16 @@ std::string ASMC::Jl::toString(){
     return "\tjl\t" + this->to + "\n";
 }
 
+std::string ASMC::Jle::toString(){
+    return "\tjle\t" + this->to + "\n";
+}
+
 std::string ASMC::Jg::toString(){
     return "\tjg\t" + this->to + "\n";
+}
+
+std::string ASMC::Jge::toString(){
+    return "\tjge\t" + this->to + "\n";
 }
 
 std::string ASMC::Movl::toString(){

@@ -758,7 +758,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
         case AST::Great :
         {
-            ASMC::Jl * jl = new ASMC::Jl();
+            ASMC::Jle * jl = new ASMC::Jle();
 
             jl->to = lable1->lable;
 
@@ -769,7 +769,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
         case AST::Less :
         {
-            ASMC::Jg * jg = new ASMC::Jg();
+            ASMC::Jge * jg = new ASMC::Jge();
 
             jg->to = lable1->lable;
 

@@ -72,11 +72,24 @@ namespace ASMC{
         std::string toString();
     };
 
+    class Jle : public Instruction{
+        public:
+        std::string to;
+        std::string toString();
+    };
+
     class Jg : public Instruction{
         public:
         std::string to;
         std::string toString();
     };
+
+    class Jge : public Instruction{
+        public:
+        std::string to;
+        std::string toString();
+    };
+
 
     class StringLiteral : public Instruction{
         public:
