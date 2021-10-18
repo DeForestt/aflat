@@ -59,6 +59,13 @@ int str_concat(adr str1, adr str2, adr pointer){
 };
 
 int str_toInt(adr input){
+    int mul = 1;
+    char ch1 = input as char;
+    if(ch1 == '-'){
+        mul = -1;
+        input = input + #1;
+    };
+    
     char null = ascii(0);
     int factor;
     int size = len(input);
@@ -71,6 +78,6 @@ int str_toInt(adr input){
         i = i - 1;
         input = input + 1;
     };
-    return result;
+    return result * mul;
 
 };

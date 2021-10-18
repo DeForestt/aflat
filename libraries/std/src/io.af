@@ -83,6 +83,17 @@ int printInt(int input){
         int ten = 10;
         int factor = 0;
         int i = 0;
+
+        if (input == 0){
+                print("0");
+                return 0;
+        };
+
+        if (input < 0){
+                print("-");
+                input = input * -1;
+        };
+
         h = input * 1;
         while (h != 0){
                 h = h / ten;
