@@ -8,7 +8,7 @@ adr malloc(int size){
 };
 
 Time newTime(adr count){
-    Time this = malloc(15);
+    Time this = malloc(16);
     this.amount = count;
     return this;
 };

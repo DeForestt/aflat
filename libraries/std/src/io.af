@@ -25,11 +25,8 @@ int clearInput(){
         return 0;
 
 int print(adr input){
-        char null = ascii(0);
-        while(input as char != null ){
-                push input;
-                input = input + 1;
-        };
+        int len = len(input);
+        sys_write(1, input, len);
         return 0;
 };
 
