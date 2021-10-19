@@ -29,13 +29,21 @@ namespace gen{
         int size;
     };
 
+    class Class : public Type{
+        public:
+            links::SLinkedList<AST::Function, std::string> nameTable;
+    };
+
     class CodeGenerator{
         private:
+        gen::Class * scope;
+        int scopePop = 0;
         links::SLinkedList<gen::Type, std::string> typeList;
         links::SLinkedList<ASMC::Register, std::string> registers;
         links::LinkedList<Symbol> SymbolTable;
         links::SLinkedList<AST::Function, std::string> nameTable;
         links::SLinkedList<AST::Type, std::string> TypeList;
+
         int getBytes(ASMC::Size size);
         
         ASMC::Register intArgs[6] = { ASMC::Register("rdi", "edi", "di", "dil"),

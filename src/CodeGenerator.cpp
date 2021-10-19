@@ -48,6 +48,7 @@ gen::CodeGenerator::CodeGenerator(){
     this->registers.foo = ASMC::Register::compair;
     this->nameTable.foo = compairFunc;
     this->typeList.foo = gen::Type::compair;
+    this->scope = nullptr;
 }
 
 gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
@@ -430,13 +431,15 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 this->GenSTMT()
                 
         */
-        this->SymbolTable.clear();
 
+        if(this->scope == nullptr) this->SymbolTable.clear();
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
-        this->nameTable << *func;
+        if(this->scope == nullptr) this->nameTable << *func;
+        else this->scope->nameTable << * func;
         if(func->statment != nullptr){
             ASMC::Lable * lable = new ASMC::Lable;
-            lable->lable = func->ident.ident;
+            if(this->scope == nullptr) lable->lable = func->ident.ident;
+            else lable->lable = scope->Ident + "::" + func->ident.ident;
             ASMC::Push * push = new ASMC::Push();
             push->op = "%rbp";
             ASMC::Mov * mov = new ASMC::Mov();
@@ -468,6 +471,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             sub->op1 = "$" + std::to_string(alligne);
             sub->op2 = this->registers["%rsp"]->get(ASMC::QWord);
             OutputFile.text.insert(sub, AlignmentLoc + 1);
+            for(int i = 0; i  < this->scopePop; i++) this->scope->SymbolTable.pop();
+            this->scopePop = 0;
 
         }
         delete(func);
@@ -479,18 +484,22 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         */
         AST::Declare * dec =  dynamic_cast<AST::Declare *>(STMT);
         int offset = this->getBytes(dec->type.size);
+        links::LinkedList<gen::Symbol>  * Table;
+        if(this->scope == nullptr) Table = &this->SymbolTable;
+        else Table = &this->scope->SymbolTable;
 
-        if(this->SymbolTable.search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
+        if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
 
         gen::Symbol Symbol;
-        if (this->SymbolTable.head == nullptr){
+        if (Table->head == nullptr){
             Symbol.byteMod = offset;
         }else{
-            Symbol.byteMod = this->SymbolTable.head->data.byteMod + offset;
+            Symbol.byteMod = Table->head->data.byteMod + offset;
         }
         Symbol.type = dec->type;
         Symbol.symbol = dec->Ident;
-        this->SymbolTable.push(Symbol);
+        Table->push(Symbol);
+        this->scopePop += 1;
         
     }else if(dynamic_cast<AST::DecArr *>(STMT) != nullptr){
          /*
@@ -502,17 +511,22 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         offset = offset * dec->count;
 
-        if(this->SymbolTable.search<std::string>(searchSymbol, dec->ident) != nullptr) throw err::Exception("redefined veriable:" + dec->ident);
+        links::LinkedList<gen::Symbol>  * Table;
+        if(this->scope == nullptr) Table = &this->SymbolTable;
+        else Table = &this->scope->SymbolTable;
+
+        if(Table->search<std::string>(searchSymbol, dec->ident) != nullptr) throw err::Exception("redefined veriable:" + dec->ident);
 
         gen::Symbol Symbol;
-        if (this->SymbolTable.head == nullptr){
+        if (Table->head == nullptr){
             Symbol.byteMod = offset;
         }else{
-            Symbol.byteMod = this->SymbolTable.head->data.byteMod + offset;
+            Symbol.byteMod = Table->head->data.byteMod + offset;
         }
         Symbol.type = dec->type;
         Symbol.symbol = dec->ident;
-        this->SymbolTable.push(Symbol);
+        Table->push(Symbol);
+        this->scopePop += 1;
 
     }else if (dynamic_cast<AST::DecAssign *>(STMT) != nullptr)
     {
@@ -523,7 +537,11 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::DecAssign * decAssign =  dynamic_cast<AST::DecAssign *>(STMT);
         AST::Declare * dec = decAssign->declare;
         int offset = this->getBytes(dec->type.size);
-
+        
+        links::LinkedList<gen::Symbol>  * Table;
+        if(this->scope == nullptr) Table = &this->SymbolTable;
+        else Table = &this->scope->SymbolTable;
+        
         if(this->SymbolTable.search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
 
         gen::Symbol symbol;
@@ -542,6 +560,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         mov->from = expr.access;
         mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
         OutputFile.text << mov;
+        this->scopePop += 1;
 
     }else if (dynamic_cast<AST::Return *>(STMT) != nullptr)
     {
@@ -875,6 +894,16 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         type.Ident = udef->ident.ident;
         type.SymbolTable  = this->GenTable(udef->statment, type.SymbolTable);
         this->typeList << type;
+    }
+    else if(dynamic_cast<AST::Class *>(STMT) != nullptr){
+        AST::Class * deff = dynamic_cast<AST::Class *>(STMT);
+        gen::Class * type = new gen::Class();
+        type->Ident = deff->ident.ident;
+        ASMC::File file = this->GenSTMT(deff->statment);
+        this->scope = type;
+        OutputFile << file;
+        this->typeList << * type;
+        this->scope = nullptr;
     }
     else{
         OutputFile.text.push(new ASMC::Instruction());

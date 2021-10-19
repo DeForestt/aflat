@@ -69,17 +69,11 @@ namespace AST{
         ProgramMember members;
     };
 
-    class Class : public ProgramMember{
+    class Class : public Statment{
         public:
-        std::string Ident;
-        Member members;
+        Ident ident;
+        Statment * statment;
     };
-
-    class ClassList : public ProgramMember{
-        Class class1;
-        Class Class2;
-    };
-
 
 
     class Function : public Member, public Statment{

@@ -138,6 +138,22 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             t.typeName = stc->ident.ident;
             this->typeList << t;
             output = stc;
+        }else if(obj.meta == "class"){
+            AST::Class * item = new AST::Class();
+            if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+                lex::LObj ident = *dynamic_cast<lex::LObj *>(tokens.pop());
+                item->ident.ident = ident.meta;
+            }else throw err::Exception("struct needs Ident");
+            if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                lex::OpSym op = *dynamic_cast<lex::OpSym *>(tokens.pop());
+                if(op.Sym != '{')throw err::Exception("Unopened UDeffType");
+            }else throw err::Exception("Unopened UDeffType");
+            item->statment = this->parseStmt(tokens);
+            AST::Type t = AST::Type();
+            t.size = ASMC::QWord;
+            t.typeName = item->ident.ident;
+            this->typeList << t;
+            output = item;
         }
         else{
             if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
