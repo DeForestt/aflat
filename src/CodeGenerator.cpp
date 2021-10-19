@@ -471,7 +471,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             sub->op1 = "$" + std::to_string(alligne);
             sub->op2 = this->registers["%rsp"]->get(ASMC::QWord);
             OutputFile.text.insert(sub, AlignmentLoc + 1);
-            for(int i = 0; i  < this->scopePop; i++) this->scope->SymbolTable.pop();
+            if(this->scope != nullptr ) for(int i = 0; i  < this->scopePop; i++) this->scope->SymbolTable.pop();
             this->scopePop = 0;
 
         }
