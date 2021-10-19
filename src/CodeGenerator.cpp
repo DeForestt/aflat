@@ -439,7 +439,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         if(func->statment != nullptr){
             ASMC::Lable * lable = new ASMC::Lable;
             if(this->scope == nullptr) lable->lable = func->ident.ident;
-            else lable->lable = scope->Ident + "::" + func->ident.ident;
+            else lable->lable = scope->Ident + "@" + func->ident.ident;
             ASMC::Push * push = new ASMC::Push();
             push->op = "%rbp";
             ASMC::Mov * mov = new ASMC::Mov();
