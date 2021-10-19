@@ -899,8 +899,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::Class * deff = dynamic_cast<AST::Class *>(STMT);
         gen::Class * type = new gen::Class();
         type->Ident = deff->ident.ident;
-        ASMC::File file = this->GenSTMT(deff->statment);
         this->scope = type;
+        ASMC::File file = this->GenSTMT(deff->statment);
         OutputFile << file;
         this->typeList << * type;
         this->scope = nullptr;
