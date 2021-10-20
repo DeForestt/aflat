@@ -353,7 +353,7 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                 }else throw err::Exception("Expected, Ident after dot.");
                 if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                     sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                }else throw err::Exception("expected assignment oporator");
+                }else break;
             }
         }
         
