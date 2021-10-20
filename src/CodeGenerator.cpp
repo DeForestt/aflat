@@ -516,32 +516,32 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             link->operand = func->ident.ident;
 
             if(this->scope != nullptr){
-                    int offset = this->getBytes(ASMC::QWord);
-                    int size = ASMC::QWord;
-                    gen::Symbol symbol;
-                    ASMC::Mov * movy = new ASMC::Mov();
-                    movy->from = this->intArgs[intArgsCounter].get(ASMC::QWord);
+                int offset = this->getBytes(ASMC::QWord);
+                int size = ASMC::QWord;
+                gen::Symbol symbol;
+                ASMC::Mov * movy = new ASMC::Mov();
+                movy->from = this->intArgs[intArgsCounter].get(ASMC::QWord);
 
-                    if(scope->SymbolTable.search<std::string>(searchSymbol, "my") != nullptr) throw err::Exception("redefined veriable: my");
+                if(scope->SymbolTable.search<std::string>(searchSymbol, "my") != nullptr) throw err::Exception("redefined veriable: my");
 
-                    symbol.symbol = "my";
+                symbol.symbol = "my";
 
-                    if (scope->SymbolTable.head == nullptr){
-                        symbol.byteMod = offset;
-                    }else{
-                        symbol.byteMod = scope->SymbolTable.peek().byteMod + offset;
-                    }
-                    
-                    auto ty = AST::Type();
-                    ty.typeName = scope->Ident;
-                    symbol.type = ty;
-                    scope->SymbolTable.push(symbol);
+                if (scope->SymbolTable.head == nullptr){
+                    symbol.byteMod = offset;
+                }else{
+                    symbol.byteMod = scope->SymbolTable.peek().byteMod + offset;
+                }
+                
+                auto ty = AST::Type();
+                ty.typeName = scope->Ident;
+                symbol.type = ty;
+                scope->SymbolTable.push(symbol);
 
-                    movy->size = ASMC::QWord;
-                    movy->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
-                    OutputFile.text << movy;
-                    this->intArgsCounter++;
-                    this->scopePop++;
+                movy->size = ASMC::QWord;
+                movy->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
+                OutputFile.text << movy;
+                this->intArgsCounter++;
+                this->scopePop++;
             };
 
             this->GenArgs(func->args, OutputFile);
