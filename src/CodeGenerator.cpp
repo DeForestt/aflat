@@ -534,6 +534,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 
                 auto ty = AST::Type();
                 ty.typeName = scope->Ident;
+                ty.size = ASMC::QWord;
                 symbol.type = ty;
                 scope->SymbolTable.push(symbol);
 
