@@ -93,7 +93,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     if (dynamic_cast<gen::Class *>(type) != nullptr){
                         gen::Class * cl = dynamic_cast<gen::Class *>(type);
                         func = cl->nameTable[call->modList.pop()];
-                        mod = "pub_" + my + "_";
+                        mod = "pub_" + type->Ident + "_";
                         AST::Refrence * ref = new AST::Refrence();
                         ref->Ident = my;
 
@@ -744,31 +744,32 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             while(call->modList.head != nullptr){
                 sym = this->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
                 if (sym == nullptr) {
-                    if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
-                    gen::Type * type = *this->typeList[last.typeName];
-                    gen::Class * cl = dynamic_cast<gen::Class *>(type);
-                    if(cl == nullptr) throw err::Exception(type->Ident + " is not understud as a class");
-                    func = cl->nameTable[call->modList.pop()];
-                    AST::Refrence * ref = new AST::Refrence();
-                    ref->Ident = my;
-                    mod = "pub_" + my + "_";
-                    gen::Expr exp =  this->GenExpr(ref, OutputFile);
-                    ASMC::Mov * mov = new ASMC::Mov();
-                    ASMC::Mov * mov2 = new ASMC::Mov();
+                        if(this->typeList[last.typeName] =! nullptr){
+                        gen::Type * type = *this->typeList[last.typeName];
+                        gen::Class * cl = dynamic_cast<gen::Class *>(type);
+                        if(cl == nullptr) throw err::Exception(type->Ident + " is not understud as a class");
+                        func = cl->nameTable[call->modList.pop()];
+                        AST::Refrence * ref = new AST::Refrence();
+                        ref->Ident = my;
+                        mod = "pub_" + cl->Ident + "_";
+                        gen::Expr exp =  this->GenExpr(ref, OutputFile);
+                        ASMC::Mov * mov = new ASMC::Mov();
+                        ASMC::Mov * mov2 = new ASMC::Mov();
 
-                    mov->size = exp.size;
-                    mov2->size = exp.size;
-                    
-                    mov->from = '(' + exp.access + ')';
-                    mov->to = this->registers["%eax"]->get(exp.size);
-                    mov2->from = this->registers["%eax"]->get(exp.size);
-                    mov2->to = this->intArgs[intArgsCounter].get(exp.size);
+                        mov->size = exp.size;
+                        mov2->size = exp.size;
+                        
+                        mov->from = '(' + exp.access + ')';
+                        mov->to = this->registers["%eax"]->get(exp.size);
+                        mov2->from = this->registers["%eax"]->get(exp.size);
+                        mov2->to = this->intArgs[intArgsCounter].get(exp.size);
 
-                    intArgsCounter++;
-                    OutputFile.text << mov;
-                    OutputFile.text << mov2;
-                    break;
-                };
+                        intArgsCounter++;
+                        OutputFile.text << mov;
+                        OutputFile.text << mov2;
+                        break;
+                    }
+                }
                 call->modList.pop();
                 last = sym->type;
             };
