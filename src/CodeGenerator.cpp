@@ -489,9 +489,11 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         */
 
         if(this->scope == nullptr) this->SymbolTable.clear();
+
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
         if(this->scope == nullptr) this->nameTable << *func;
         else this->scope->nameTable << * func;
+        
         if(func->statment != nullptr){
             ASMC::Lable * lable = new ASMC::Lable;
             if(this->scope == nullptr) lable->lable = func->ident.ident;
@@ -516,6 +518,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             link->operand = func->ident.ident;
 
             if(this->scope != nullptr){
+                this->scopePop = 0;
                 int offset = this->getBytes(ASMC::QWord);
                 int size = ASMC::QWord;
                 gen::Symbol symbol;
@@ -552,9 +555,17 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             OutputFile << file;
             
             int alligne = 16;
-            if(this->SymbolTable.count  > 0){
-                alligne = ((this->SymbolTable.peek().byteMod + 15) / 16) * 16;
+            if (this->scope == nullptr){
+                if(this->SymbolTable.count  > 0){
+                    alligne = ((this->SymbolTable.peek().byteMod + 15) / 16) * 16;
+                }
             }
+            else{
+                if(this->scopePop > 0){
+                    alligne = ((scope->SymbolTable.peek().byteMod + 15) / 16) * 16;
+                }
+            }
+
             ASMC::Subq * sub = new ASMC::Subq;
             sub->op1 = "$" + std::to_string(alligne);
             sub->op2 = this->registers["%rsp"]->get(ASMC::QWord);
@@ -1045,6 +1056,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         type->Ident = deff->ident.ident;
         type->nameTable.foo = compairFunc;
         this->scope = type;
+        type->SymbolTable;
         this->typeList.push(type);
         ASMC::File file = this->GenSTMT(deff->statment);
         OutputFile << file;
