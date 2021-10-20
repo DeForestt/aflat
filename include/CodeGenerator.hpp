@@ -33,6 +33,7 @@ namespace gen{
     class Class : public Type{
         public:
             links::SLinkedList<AST::Function, std::string> nameTable;
+            static bool compair(Type * t, std::string ident);
     };
 
     class CodeGenerator{

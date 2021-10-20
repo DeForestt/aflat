@@ -1040,6 +1040,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::Class * deff = dynamic_cast<AST::Class *>(STMT);
         gen::Class * type = new gen::Class();
         type->Ident = deff->ident.ident;
+        type->nameTable.foo = compairFunc;
         this->scope = type;
         ASMC::File file = this->GenSTMT(deff->statment);
         OutputFile << file;
