@@ -25,7 +25,7 @@ namespace gen{
         public:
         std::string Ident;
         links::LinkedList<Symbol> SymbolTable;
-        static bool compair(Type t, std::string ident);
+        static bool compair(Type * t, std::string ident);
         virtual int poly(){return 0;};
         int size;
     };
@@ -39,7 +39,7 @@ namespace gen{
         private:
         gen::Class * scope;
         int scopePop = 0;
-        links::SLinkedList<gen::Type, std::string> typeList;
+        links::SLinkedList<gen::Type *, std::string> typeList;
         links::SLinkedList<ASMC::Register, std::string> registers;
         links::LinkedList<Symbol> SymbolTable;
         links::SLinkedList<AST::Function, std::string> nameTable;

@@ -12,8 +12,8 @@ bool compairFunc(AST::Function F, std::string input){
         return false;
 }
 
-bool gen::Type::compair(gen::Type t, std::string ident){
-    if (ident == t.Ident) return true;
+bool gen::Type::compair(gen::Type *  t, std::string ident){
+    if (ident == t->Ident) return true;
     return false;
 }
 
@@ -89,7 +89,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
 
                 if (sym == nullptr) {
                     if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
-                    gen::Type * type = this->typeList[last.typeName];
+                    gen::Type * type = *this->typeList[last.typeName];
                     if (dynamic_cast<gen::Class *>(type) != nullptr){
                         gen::Class * cl = dynamic_cast<gen::Class *>(type);
                         func = cl->nameTable[call->modList.pop()];
@@ -166,7 +166,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
 
         while(var.modList.head != nullptr){
             if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
-            gen::Type type = *this->typeList[last.typeName];
+            gen::Type type = **this->typeList[last.typeName];
             gen::Symbol * modSym = type.SymbolTable.search<std::string>(searchSymbol, var.modList.pop());
             last = modSym->type;
             tbyte = modSym->byteMod;
@@ -696,7 +696,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         while(assign->modList.head != nullptr){
             if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
-            gen::Type type = *this->typeList[last.typeName];
+            gen::Type type = **this->typeList[last.typeName];
             gen::Symbol * modSym = type.SymbolTable.search<std::string>(searchSymbol, assign->modList.pop());
             last = modSym->type;
             tbyte = modSym->byteMod;
@@ -745,7 +745,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 sym = this->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
                 if (sym == nullptr) {
                     if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
-                    gen::Type * type = this->typeList[last.typeName];
+                    gen::Type * type = *this->typeList[last.typeName];
                     if (dynamic_cast<gen::Class *>(type) != nullptr){
                         gen::Class * cl = dynamic_cast<gen::Class *>(type);
                         func = cl->nameTable[call->modList.pop()];
@@ -1032,10 +1032,10 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
     }
     else if(dynamic_cast<AST::UDeffType *>(STMT) != nullptr){
         AST::UDeffType * udef = dynamic_cast<AST::UDeffType *>(STMT);
-        gen::Type type = gen::Type();
-        type.Ident = udef->ident.ident;
-        type.SymbolTable  = this->GenTable(udef->statment, type.SymbolTable);
-        this->typeList << type;
+        gen::Type * type = new gen::Type();
+        type->Ident = udef->ident.ident;
+        type->SymbolTable  = this->GenTable(udef->statment, type->SymbolTable);
+        this->typeList.push(type);
     }
     else if(dynamic_cast<AST::Class *>(STMT) != nullptr){
         AST::Class * deff = dynamic_cast<AST::Class *>(STMT);
@@ -1044,7 +1044,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         this->scope = type;
         ASMC::File file = this->GenSTMT(deff->statment);
         OutputFile << file;
-        this->typeList << * type;
+        this->typeList.push(type);
         this->scope = nullptr;
     }
     else{
