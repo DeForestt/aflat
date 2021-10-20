@@ -26,6 +26,7 @@ namespace gen{
         std::string Ident;
         links::LinkedList<Symbol> SymbolTable;
         static bool compair(Type t, std::string ident);
+        virtual int poly(){return 0;};
         int size;
     };
 

@@ -70,12 +70,60 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::CallExpr * exprCall = dynamic_cast<AST::CallExpr *>(expr);
         AST::Call * call = exprCall->call;
         std::string errhold = call ->ident;
-        AST::Function * func = this->nameTable[call->ident];
+        std::string mod = "";
+
+        AST::Function * func;
+
+        if(call->modList.head == nullptr) func = this->nameTable[call->ident];
+        else{
+
+            gen::Symbol * sym = this->SymbolTable.search<std::string>(searchSymbol, call->ident);
+            if (sym == nullptr) throw err::Exception("cannot find type: " + call->ident);
+            
+            AST::Type last = sym->type;
+            std::string my = sym->symbol;
+
+            while(call->modList.head != nullptr){
+                if (this->scope == nullptr)sym = this->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
+                else sym = this->scope->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
+
+                if (sym == nullptr) {
+                    if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
+                    gen::Type * type = this->typeList[last.typeName];
+                    if (dynamic_cast<gen::Class *>(type) != nullptr){
+                        gen::Class * cl = dynamic_cast<gen::Class *>(type);
+                        func = cl->nameTable[call->modList.pop()];
+                        mod = "pub_" + my + "_";
+                        AST::Refrence * ref = new AST::Refrence();
+                        ref->Ident = my;
+
+                        gen::Expr exp =  this->GenExpr(ref, OutputFile);
+                        ASMC::Mov * mov = new ASMC::Mov();
+                        ASMC::Mov * mov2 = new ASMC::Mov();
+
+                        mov->size = exp.size;
+                        mov2->size = exp.size;
+                        
+                        mov->from = '(' + exp.access + ')';
+                        mov->to = this->registers["%eax"]->get(exp.size);
+                        mov2->from = this->registers["%eax"]->get(exp.size);
+                        mov2->to = this->intArgs[intArgsCounter].get(exp.size);
+
+                        intArgsCounter++;
+                        OutputFile.text << mov;
+                        OutputFile.text << mov2;
+                        break;
+                    }
+                    call->modList.pop();
+                    last = sym->type;
+                };
+            };
+        };
+
         if (func == nullptr) throw err::Exception("Cannot Find Function: " + call->ident);
         
         this->intArgsCounter = 0;
         call->Args.invert();
-        
         while (call->Args.count > 0)
         {
             gen::Expr exp =  this->GenExpr(call->Args.pop(), OutputFile);
@@ -96,14 +144,16 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         }
 
         ASMC::Call * calls = new ASMC::Call;
-        calls->function = call->ident;
+        calls->function = func->ident.ident;
         OutputFile.text << calls;
         output.access = this->registers["%rax"]->get(func->type.size);
         output.size = func->type.size;
 
     }else if (dynamic_cast<AST::Var *>(expr) != nullptr){
         AST::Var var = *dynamic_cast<AST::Var *>(expr);
-        gen::Symbol * sym = this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
+        gen::Symbol * sym;
+        if(this->scope == nullptr) sym = this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
+        else sym = scope->SymbolTable.search<std::string>(searchSymbol, var.Ident);
         if (sym == nullptr) throw err::Exception("cannot find: " + var.Ident);
 
         output.size = sym->type.size;
@@ -113,6 +163,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         int tbyte = 0;
         
         AST::Type last = sym->type;
+
         while(var.modList.head != nullptr){
             if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
             gen::Type type = *this->typeList[last.typeName];
@@ -128,14 +179,13 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             output.size = last.size;
         }
 
-        if(tbyte > 0){
-
-        }
-
     }else if (dynamic_cast<AST::Refrence *>(expr) != nullptr)
     {
+        links::LinkedList<gen::Symbol>  * Table;
+        if(this->scope == nullptr) Table = &this->SymbolTable;
+        else Table = &this->scope->SymbolTable;
         AST::Refrence ref = *dynamic_cast<AST::Refrence *>(expr);
-        gen::Symbol sym = *this->SymbolTable.search<std::string>(searchSymbol, ref.Ident);
+        gen::Symbol sym = *Table->search<std::string>(searchSymbol, ref.Ident);
         ASMC::Lea * lea = new ASMC::Lea();
         lea->to = this->registers["%rax"]->get(ASMC::QWord);
         lea->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
@@ -390,27 +440,32 @@ void gen::CodeGenerator::GenArgs(AST::Statment * STMT, ASMC::File &OutputFile){
         gen::Symbol symbol;
         ASMC::Mov * mov = new ASMC::Mov();
 
+        links::LinkedList<gen::Symbol>  * Table;
+        if(this->scope == nullptr) Table = &this->SymbolTable;
+        else Table = &this->scope->SymbolTable;
+
         offset = this->getBytes(arg->type.size);
         size = arg->type.size;
         mov->from = this->intArgs[intArgsCounter].get(arg->type.size);
 
-        if(this->SymbolTable.search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined veriable:" + arg->Ident);
+        if(Table->search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined veriable:" + arg->Ident);
 
         symbol.symbol = arg->Ident;
 
-        if (this->SymbolTable.head == nullptr){
+        if (Table->head == nullptr){
             symbol.byteMod = offset;
         }else{
-            symbol.byteMod = this->SymbolTable.peek().byteMod + offset;
+            symbol.byteMod = Table->peek().byteMod + offset;
         }
 
         symbol.type = arg->type;
-        this->SymbolTable << symbol;
+        Table->push(symbol);
 
         mov->size = size;
         mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
         OutputFile.text << mov;
         intArgsCounter++;
+        this->scopePop++;
     }
 }
 
@@ -440,6 +495,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             ASMC::Lable * lable = new ASMC::Lable;
             if(this->scope == nullptr) lable->lable = func->ident.ident;
             else lable->lable = "pub_" + scope->Ident + "_" + func->ident.ident;
+
             ASMC::Push * push = new ASMC::Push();
             push->op = "%rbp";
             ASMC::Mov * mov = new ASMC::Mov();
@@ -457,6 +513,36 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             ASMC::LinkTask * link = new ASMC::LinkTask();
             link->command = "global";
             link->operand = func->ident.ident;
+
+            if(this->scope != nullptr){
+                    int offset = this->getBytes(ASMC::QWord);
+                    int size = ASMC::QWord;
+                    gen::Symbol symbol;
+                    ASMC::Mov * movy = new ASMC::Mov();
+                    movy->from = this->intArgs[intArgsCounter].get(ASMC::QWord);
+
+                    if(scope->SymbolTable.search<std::string>(searchSymbol, "my") != nullptr) throw err::Exception("redefined veriable: my");
+
+                    symbol.symbol = "my";
+
+                    if (scope->SymbolTable.head == nullptr){
+                        symbol.byteMod = offset;
+                    }else{
+                        symbol.byteMod = scope->SymbolTable.peek().byteMod + offset;
+                    }
+                    
+                    auto ty = AST::Type();
+                    ty.typeName = scope->Ident;
+                    symbol.type = ty;
+                    scope->SymbolTable.push(symbol);
+
+                    movy->size = ASMC::QWord;
+                    movy->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
+                    OutputFile.text << mov;
+                    this->intArgsCounter++;
+                    this->scopePop++;
+            };
+
             this->GenArgs(func->args, OutputFile);
             OutputFile.linker.push(link);
 
@@ -542,17 +628,17 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         if(this->scope == nullptr) Table = &this->SymbolTable;
         else Table = &this->scope->SymbolTable;
         
-        if(this->SymbolTable.search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
+        if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
 
         gen::Symbol symbol;
-        if (this->SymbolTable.head == nullptr){
+        if (Table->head == nullptr){
             symbol.byteMod = offset;
         }else{
-            symbol.byteMod = this->SymbolTable.head->data.byteMod + offset;
+            symbol.byteMod = Table->head->data.byteMod + offset;
         }
         symbol.type = dec->type;
         symbol.symbol = dec->Ident;
-        this->SymbolTable.push(symbol);
+        Table->push(symbol);
 
         ASMC::Mov * mov = new ASMC::Mov();
         gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile);
@@ -584,7 +670,12 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
     }else if (dynamic_cast<AST::Assign *>(STMT) != nullptr)
     {
         AST::Assign * assign = dynamic_cast<AST::Assign *>(STMT);
-        Symbol * symbol = this->SymbolTable.search<std::string>(searchSymbol, assign->Ident);
+
+        links::LinkedList<gen::Symbol>  * Table;
+        if(this->scope == nullptr) Table = &this->SymbolTable;
+        else Table = &this->scope->SymbolTable;
+        
+        Symbol * symbol = Table->search<std::string>(searchSymbol, assign->Ident);
         if(symbol == nullptr) throw err::Exception("unknown name: " + assign->Ident);
         ASMC::Mov * mov = new ASMC::Mov();
         ASMC::Mov * mov2 = new ASMC::Mov();
@@ -635,31 +726,82 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
     }else if (dynamic_cast<AST::Call *>(STMT) != nullptr)
     {
         AST::Call * call = dynamic_cast<AST::Call *>(STMT);
+        std::string errhold = call ->ident;
+        std::string mod = "";
+
+        AST::Function * func;
 
         this->intArgsCounter = 0;
+        if(call->modList.head == nullptr) func = this->nameTable[call->ident];
+        else{
+
+            gen::Symbol * sym = this->SymbolTable.search<std::string>(searchSymbol, call->ident);
+            if (sym == nullptr) throw err::Exception("cannot find type: " + call->ident);
+            
+            AST::Type last = sym->type;
+            std::string my = sym->symbol;
+
+            while(call->modList.head != nullptr){
+                sym = this->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
+                if (sym == nullptr) {
+                    if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
+                    gen::Type * type = this->typeList[last.typeName];
+                    if (dynamic_cast<gen::Class *>(type) != nullptr){
+                        gen::Class * cl = dynamic_cast<gen::Class *>(type);
+                        func = cl->nameTable[call->modList.pop()];
+                        AST::Refrence * ref = new AST::Refrence();
+                        ref->Ident = my;
+                        mod = "pub_" + my + "_";
+                        gen::Expr exp =  this->GenExpr(ref, OutputFile);
+                        ASMC::Mov * mov = new ASMC::Mov();
+                        ASMC::Mov * mov2 = new ASMC::Mov();
+
+                        mov->size = exp.size;
+                        mov2->size = exp.size;
+                        
+                        mov->from = '(' + exp.access + ')';
+                        mov->to = this->registers["%eax"]->get(exp.size);
+                        mov2->from = this->registers["%eax"]->get(exp.size);
+                        mov2->to = this->intArgs[intArgsCounter].get(exp.size);
+
+                        intArgsCounter++;
+                        OutputFile.text << mov;
+                        OutputFile.text << mov2;
+                        break;
+                    }
+                    call->modList.pop();
+                    last = sym->type;
+                };
+            };
+        };
+
+        if (func == nullptr) throw err::Exception("Cannot Find Function: " + call->ident);
+        
+        
         call->Args.invert();
         while (call->Args.count > 0)
         {
-
             gen::Expr exp =  this->GenExpr(call->Args.pop(), OutputFile);
             ASMC::Mov * mov = new ASMC::Mov();
             ASMC::Mov * mov2 = new ASMC::Mov();
+
             mov->size = exp.size;
             mov2->size = exp.size;
+            
             mov->from = exp.access;
-
             mov->to = this->registers["%eax"]->get(exp.size);
             mov2->from = this->registers["%eax"]->get(exp.size);
             mov2->to = this->intArgs[intArgsCounter].get(exp.size);
-            
+
             intArgsCounter++;
             OutputFile.text << mov;
             OutputFile.text << mov2;
         }
 
         ASMC::Call * calls = new ASMC::Call;
-        calls->function = call->ident;
+        calls->function = mod + func->ident.ident;
         OutputFile.text << calls;
+
     }
     else if (dynamic_cast<AST::Push *>(STMT) != nullptr)
     {

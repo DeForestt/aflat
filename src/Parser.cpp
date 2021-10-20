@@ -187,6 +187,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 {
                     AST::Call * call = new AST::Call();
                     call->ident = obj.meta;
+                    call->modList = modList;
                     bool pop = false;
                     if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr){
                         do{
@@ -355,6 +356,7 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                 }else throw err::Exception("expected assignment oporator");
             }
         }
+        
         if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
             lex::LObj aobj = *dynamic_cast<lex::LObj *>(tokens.peek());
             if(aobj.meta == "as"){
@@ -376,6 +378,7 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                 tokens.pop();
                 AST::Call * call = new AST::Call();
                 call->ident = obj.meta;
+                call->modList = modList;
                 bool pop = false;
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr){
                     do{

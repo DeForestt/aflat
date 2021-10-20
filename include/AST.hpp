@@ -159,6 +159,7 @@ namespace AST{
         public:
         std::string ident;
         links::LinkedList<Expr *> Args;
+        links::LinkedList<std::string> modList;
     };
 
     class Sequence : public Statment{
