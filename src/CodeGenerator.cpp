@@ -539,7 +539,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
                     movy->size = ASMC::QWord;
                     movy->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
-                    OutputFile.text << mov;
+                    OutputFile.text << movy;
                     this->intArgsCounter++;
                     this->scopePop++;
             };
