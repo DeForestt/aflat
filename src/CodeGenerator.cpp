@@ -746,8 +746,9 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 if (sym == nullptr) {
                     if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
                     gen::Type * type = *this->typeList[last.typeName];
-                    if (dynamic_cast<gen::Class *>(type) != nullptr){
-                        gen::Class * cl = dynamic_cast<gen::Class *>(type);
+                    gen::Class * cl = dynamic_cast<gen::Class *>(type);
+                    if (cl != nullptr){
+                        
                         func = cl->nameTable[call->modList.pop()];
                         AST::Refrence * ref = new AST::Refrence();
                         ref->Ident = my;
