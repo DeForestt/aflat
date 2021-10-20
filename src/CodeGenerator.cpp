@@ -744,10 +744,10 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             while(call->modList.head != nullptr){
                 sym = this->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
                 if (sym == nullptr) {
-                        if(this->typeList[last.typeName] =! nullptr){
-                        gen::Type * type = *this->typeList[last.typeName];
-                        gen::Class * cl = dynamic_cast<gen::Class *>(type);
-                        if(cl == nullptr) throw err::Exception(type->Ident + " is not understud as a class");
+                    if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
+                    gen::Type * type = *this->typeList[last.typeName];
+                    gen::Class * cl = dynamic_cast<gen::Class *>(type);
+                    if(cl != nullptr) {
                         func = cl->nameTable[call->modList.pop()];
                         AST::Refrence * ref = new AST::Refrence();
                         ref->Ident = my;
