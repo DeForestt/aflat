@@ -198,7 +198,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::StringLiteral str = *dynamic_cast<AST::StringLiteral *>(expr);
         ASMC::StringLiteral * strlit = new ASMC::StringLiteral();
         ASMC::Lable * lable = new ASMC::Lable();
-        lable->lable = ".str" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
+        if(this->scope == nullptr)lable->lable = ".str" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
+        else lable->lable = ".str" + scope->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount++;
         strlit->value = str.val;
         OutputFile.data << lable;
