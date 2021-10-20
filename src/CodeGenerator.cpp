@@ -1045,9 +1045,10 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         type->Ident = deff->ident.ident;
         type->nameTable.foo = compairFunc;
         this->scope = type;
+        this->typeList.push(type);
         ASMC::File file = this->GenSTMT(deff->statment);
         OutputFile << file;
-        this->typeList.push(type);
+        
         this->scope = nullptr;
     }
     else{
