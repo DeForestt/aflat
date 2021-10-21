@@ -75,7 +75,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                                 output = func;
                                 delete(dec);
                             };
-                        }throw err::Exception("Need terminating symble or open symble");
+                        }else throw err::Exception("Need terminating symble or open symble");
                     }else if (sym.Sym == '='){
                         tokens.pop();
                         AST::DecAssign * assign = new AST::DecAssign;
