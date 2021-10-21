@@ -495,9 +495,18 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         else this->scope->nameTable << * func;
         
         if(func->statment != nullptr){
+
+            gen::Class * saveScope = this->scope;
             ASMC::Lable * lable = new ASMC::Lable;
             if(this->scope == nullptr) lable->lable = func->ident.ident;
             else lable->lable = "pub_" + scope->Ident + "_" + func->ident.ident;
+            if(func->scopeName != "global"){
+                lable->lable = "pub_" + func->scopeName + "_" + func->ident.ident;
+                gen::Type * tscope = *this->typeList[func->scopeName];
+                if(tscope == nullptr) throw err::Exception("Failed to locate function Scope");
+                if(dynamic_cast<gen::Class *>(tscope) == nullptr) throw err::Exception("Can only scope to  a class");
+                this->scope = dynamic_cast<gen::Class *>(tscope);
+            }
 
             ASMC::Push * push = new ASMC::Push();
             push->op = "%rbp";
@@ -572,6 +581,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             OutputFile.text.insert(sub, AlignmentLoc + 1);
             if(this->scope != nullptr ) for(int i = 0; i  < this->scopePop; i++) this->scope->SymbolTable.pop();
             this->scopePop = 0;
+            this->scope = saveScope;
 
         }
         delete(func);
