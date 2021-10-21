@@ -82,6 +82,7 @@ namespace AST{
         Ident ident;
         Statment * args;
         Statment * statment;
+        std::string scopeName;
     };
 
     class UDeffType : public Member, public Statment{

@@ -4,9 +4,11 @@
 
 parse::Parser::Parser(){
     this->typeList.foo = AST::Type::compair;
+
     AST::Type Int = AST::Type();
     Int.typeName = "int";
     Int.size = ASMC::DWord;
+
     AST::Type Char = AST::Type();
     Char.typeName = "char";
     Char.size = ASMC::Byte;
@@ -15,8 +17,13 @@ parse::Parser::Parser(){
     Adr.typeName = "adr";
     Adr.size = ASMC::QWord;
 
+    AST::Type Byte = AST::Type();
+    Char.typeName = "byte";
+    Char.size = ASMC::Byte;
+
     this->typeList << Int;
     this->typeList << Char;
+    this->typeList << Byte;
     this->typeList << Adr;
 }
 
@@ -37,6 +44,17 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 output = dec;
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                     lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                    std::string scopeName = "global";
+                    if (sym.Sym == '@'){
+                        tokens.pop();
+                        if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+                            lex::LObj scopeObj = *dynamic_cast<lex::LObj *>(tokens.pop());
+                            scopeName = scopeObj.meta;
+                        } else throw err::Exception("Expected Scope Name");
+                        if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Can Only Scope a Function");
+                        sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                        if (sym.Sym != '(')  throw err::Exception("Can Only Scope a Function");
+                    }
                     //Checking for Perenth to see if it is a function
                     if (sym.Sym == '('){
                         tokens.pop();
