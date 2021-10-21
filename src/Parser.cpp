@@ -18,8 +18,8 @@ parse::Parser::Parser(){
     Adr.size = ASMC::QWord;
 
     AST::Type Byte = AST::Type();
-    Char.typeName = "byte";
-    Char.size = ASMC::Byte;
+    Byte.typeName = "byte";
+    Byte.size = ASMC::Byte;
 
     this->typeList << Int;
     this->typeList << Char;
