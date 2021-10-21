@@ -61,6 +61,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                         AST::Function * func = new AST::Function();
                         func->ident.ident = dec->Ident;
                         func->type = dec->type;
+                        func->scopeName = scopeName;
                         func->args = this->parseArgs(tokens, ',', ')');
                         if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                             sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -92,7 +93,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                     AST::DecArr * decA = new AST::DecArr();
                     decA->count = std::stoi(Int.value);
                     decA->ident = Ident.meta;
-                    if(this->typeList[obj.meta] == nullptr) throw err::Exception("Unknown tyoe " + obj.meta);
+                    if(this->typeList[obj.meta] == nullptr) throw err::Exception("Unknown type " + obj.meta);
                     decA->type = *this->typeList[obj.meta];
                     output = decA;
                 }
