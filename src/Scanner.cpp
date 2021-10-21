@@ -177,9 +177,9 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         i++;
                     }else if (input[i] == ':')
                     {
-                        lex::OpSym* mul = new OpSym;
-                        mul->Sym = input[i];
-                        tokens << mul;
+                        lex::OpSym* col = new OpSym;
+                        col->Sym = input[i];
+                        tokens << col;
                         i++;
                     }else if (input[i] == '@')
                     {
