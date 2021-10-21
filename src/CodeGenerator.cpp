@@ -524,7 +524,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             this->returnType = func->type;
             ASMC::LinkTask * link = new ASMC::LinkTask();
             link->command = "global";
-            link->operand = func->ident.ident;
+            link->operand = lable->lable;
 
             if(this->scope != nullptr){
                 this->scopePop = 0;
