@@ -144,7 +144,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         }
 
         ASMC::Call * calls = new ASMC::Call;
-        calls->function = func->ident.ident;
+        calls->function = func->ident.ident + mod;
         OutputFile.text << calls;
         output.access = this->registers["%rax"]->get(func->type.size);
         output.size = func->type.size;
