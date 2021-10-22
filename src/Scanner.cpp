@@ -5,8 +5,8 @@
 
 LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                 LinkedList<lex::Token*> tokens = LinkedList<lex::Token*>();
-                int i = 1;
-                int lineCount = 0;
+                int i = 0;
+                int lineCount = 1;
                 while (i < input.length())
                 {
                     if (std::isalpha(input[i]) || input[i] == '_')

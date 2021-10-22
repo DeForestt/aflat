@@ -102,7 +102,7 @@ std::string preProcess(std::string input){
                 string content;
                 std::getline( f, content, '\0');
                 //str.erase(std::remove(str.begin(), str.end(), 'a'), str.end());
-                output += preProcess(content);
+                output += preProcess(remove_char(content, '\n'));
             }else if(line.substr(0, 5) == ".root"){
                 int startPos = line.find_first_of('\"') + 1;
                 int endPos = line.find_last_of('\"');
