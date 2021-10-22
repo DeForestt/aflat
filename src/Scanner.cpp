@@ -1,5 +1,6 @@
 #include "Scanner.hpp"
 #include "Exceptions.hpp"
+
 #include <ctype.h>
 
 LinkedList<lex::Token*> lex::Lexer::Scan(string input){
