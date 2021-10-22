@@ -88,7 +88,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 else sym = this->scope->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
 
                 if (sym == nullptr) {
-                    if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
+                    if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
                     gen::Type * type = *this->typeList[last.typeName];
                     if (dynamic_cast<gen::Class *>(type) != nullptr){
                         gen::Class * cl = dynamic_cast<gen::Class *>(type);
@@ -165,7 +165,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::Type last = sym->type;
 
         while(var.modList.head != nullptr){
-            if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
+            if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
             gen::Type type = **this->typeList[last.typeName];
             gen::Symbol * modSym = type.SymbolTable.search<std::string>(searchSymbol, var.modList.pop());
             last = modSym->type;
@@ -718,7 +718,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         std::string output = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
 
         while(assign->modList.head != nullptr){
-            if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
+            if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
             gen::Type type = **this->typeList[last.typeName];
             gen::Symbol * modSym = type.SymbolTable.search<std::string>(searchSymbol, assign->modList.pop());
             last = modSym->type;
@@ -767,7 +767,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             while(call->modList.head != nullptr){
                 sym = this->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
                 if (sym == nullptr) {
-                    if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found");
+                    if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
                     gen::Type * type = *this->typeList[last.typeName];
                     gen::Class * cl = dynamic_cast<gen::Class *>(type);
                     if(cl != nullptr) {
