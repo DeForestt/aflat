@@ -92,6 +92,24 @@ sys_pause:
 	leave
 	ret
 
+sys_wait4:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $61, %rax
+	syscall
+	leave
+	ret
+
+sys_exit:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $60, %rax
+	syscall
+	leave
+	ret
+
 sys_sleep:
 	pushq	%rbp
 	movq	%rsp, %rbp
