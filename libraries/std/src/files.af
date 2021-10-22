@@ -21,7 +21,7 @@ File openFile(adr fileName){
         if(test < 0){
                 return #0;
         };
-        file.info = getFileInfo(file.file);
+        file.info = file.getFileInfo(file.file);
         file.fileName = fileName;
         return file;
 };
