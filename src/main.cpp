@@ -164,6 +164,11 @@ void buildTemplate(std::string value){
 
     out << in.rdbuf();
 
+    in = std::ifstream(std::string(libPath + "/head/files.gs"));
+    out = std::ofstream(std::string(value + "/std/head/files.gs"));
+
+    out << in.rdbuf();
+
     in = std::ifstream(std::string(libPath + "/head/std.gs"));
     out = std::ofstream(std::string(value + "/std/head/std.gs"));
 
@@ -182,6 +187,11 @@ void buildTemplate(std::string value){
 
     in = std::ifstream(std::string(libPath + "/src/std.af"));
     out = std::ofstream(std::string(value + "/std/src/std.af"));
+
+    out << in.rdbuf();
+
+    in = std::ifstream(std::string(libPath + "/src/files.af"));
+    out = std::ofstream(std::string(value + "/std/src/files.af"));
 
     out << in.rdbuf();
 
@@ -209,8 +219,9 @@ void buildTemplate(std::string value){
     outfile <<filename << " std/src/io.af std/io.s\n";
     outfile <<  filename << " std/src/math.af std/math.s\n";
     outfile <<  filename << " std/src/strings.af std/strings.s\n";
+    outfile <<  filename << " std/src/files.af std/files.s\n";
     outfile <<  filename << " std/src/std.af std/std.s\n";
-    outfile << "gcc -O0 -g -no-pie out.s std/asm.s std/std.s std/io.s std/math.s std/strings.s";
+    outfile << "gcc -O0 -g -no-pie out.s std/asm.s std/std.s std/io.s std/math.s std/strings.s std/files.s";
 
 }
 
