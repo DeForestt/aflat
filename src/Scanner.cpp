@@ -58,7 +58,7 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                     }
                     else if(std::isspace(input[i]))
                     {
-                        if(input[i] == '\n'){lineCount++;};
+                        if(input[i] == '\n')lineCount++;
                         i++;
                     }
                     else if(input[i] == '\"'){
