@@ -22,7 +22,7 @@ File openFile(adr fileName){
         if(test < 0){
                 return #0;
         };
-        file.info = file.getFileInfo(file.file);
+        file.getFileInfo(file.file);
         file.fileName = fileName;
         return file;
 };
@@ -41,7 +41,7 @@ int readFrom@File(adr pointer, char delim, char term){
         char input = ' ';
         char null = ascii(0);
         while(input != delim){
-                sys_read(file.file, ?input, 1);
+                sys_read(my.file, ?input, 1);
                 if(input == term){return 1;};
                 pointer =: input;
                 if(input == delim){pointer =: null};
