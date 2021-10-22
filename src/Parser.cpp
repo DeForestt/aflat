@@ -50,10 +50,10 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                         if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                             lex::LObj scopeObj = *dynamic_cast<lex::LObj *>(tokens.pop());
                             scopeName = scopeObj.meta;
-                        } else throw err::Exception("Expected Scope Name");
-                        if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Can Only Scope a Function");
+                        } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Expected Scope Name");
+                        if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +" Can Only Scope a Function");
                         sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                        if (sym.Sym != '(')  throw err::Exception("Can Only Scope a Function");
+                        if (sym.Sym != '(')  throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Can Only Scope a Function");
                     }
                     //Checking for Perenth to see if it is a function
                     if (sym.Sym == '('){
@@ -75,7 +75,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                                 output = func;
                                 delete(dec);
                             };
-                        }else throw err::Exception("Need terminating symble or open symble");
+                        }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Need terminating symble or open symble");
                     }else if (sym.Sym == '='){
                         tokens.pop();
                         AST::DecAssign * assign = new AST::DecAssign;
@@ -93,13 +93,13 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                     AST::DecArr * decA = new AST::DecArr();
                     decA->count = std::stoi(Int.value);
                     decA->ident = Ident.meta;
-                    if(this->typeList[obj.meta] == nullptr) throw err::Exception("Unknown type " + obj.meta);
+                    if(this->typeList[obj.meta] == nullptr) throw err::Exception("Line: " + std::to_string(Ident.lineCount) +" Unknown type " + obj.meta);
                     decA->type = *this->typeList[obj.meta];
                     output = decA;
                 }
             }
             else{
-                throw err::Exception("Unparsable token found");
+                throw err::Exception("Line: " + std::to_string(obj.lineCount) + "Unparsable token found" );
             }
         }
         else if (obj.meta == "return")
@@ -125,7 +125,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 if(sym.Sym == '{'){
                     ifstmt->statment = this->parseStmt(tokens);
                     output = ifstmt;
-                }else throw err::Exception("Unopened If");
+                }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened If");
             }
         }else if(obj.meta == "while"){
             AST::While * loop = new AST::While;
@@ -137,8 +137,8 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 if(sym.Sym == '{'){
                         loop->stmt = this->parseStmt(tokens);
                         output = loop;
-                    }else throw err::Exception("Unopened If");
-            }else throw err::Exception("Unopened If");
+                    }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened loop");
+            }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened loop");
             
         }
         else if(obj.meta == "struct"){
@@ -146,11 +146,11 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                 lex::LObj ident = *dynamic_cast<lex::LObj *>(tokens.pop());
                 stc->ident.ident = ident.meta;
-            }else throw err::Exception("struct needs Ident");
+            }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " struct needs Ident");
             if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                 lex::OpSym op = *dynamic_cast<lex::OpSym *>(tokens.pop());
-                if(op.Sym != '{')throw err::Exception("Unopened UDeffType");
-            }else throw err::Exception("Unopened UDeffType");
+                if(op.Sym != '{')throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened UDeffType");
+            }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened UDeffType");
             stc->statment = this->parseStmt(tokens);
             AST::Type t = AST::Type();
             t.size = ASMC::QWord;
@@ -162,11 +162,11 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                 lex::LObj ident = *dynamic_cast<lex::LObj *>(tokens.pop());
                 item->ident.ident = ident.meta;
-            }else throw err::Exception("struct needs Ident");
+            }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " struct needs Ident");
             if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                 lex::OpSym op = *dynamic_cast<lex::OpSym *>(tokens.pop());
-                if(op.Sym != '{')throw err::Exception("Unopened UDeffType");
-            }else throw err::Exception("Unopened UDeffType");
+                if(op.Sym != '{')throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened UDeffType");
+            }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened UDeffType");
             item->statment = this->parseStmt(tokens);
             AST::Type t = AST::Type();
             t.size = ASMC::QWord;
@@ -226,7 +226,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                     output = call;
                 }
                  else throw err::Exception("expected assignment oporator");
-            }else throw err::Exception("expected Asignment oporator after " + obj.meta);
+            }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " expected Asignment oporator after " + obj.meta);
         }
     }
     
@@ -312,8 +312,8 @@ AST::ConditionalExpr* parse::Parser::parseCondition(links::LinkedList<lex::Token
 
     if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
         lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
-        if(sym.Sym != '(') throw err::Exception("unOpened Condition.  Please open with: (");
-    }else throw err::Exception("unOpened Condition.  Please open with: (");
+        if(sym.Sym != '(') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "unOpened Condition.  Please open with: (");
+    }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " unOpened Condition.  Please open with: (");
 
     output->expr1 = this->parseExpr(tokens);
 
@@ -328,14 +328,14 @@ AST::ConditionalExpr* parse::Parser::parseCondition(links::LinkedList<lex::Token
         }else if(sym.meta == ">"){
             output->op = AST::Great;
         }
-    }else throw err::Exception("Condition with now conditional Oporator");
+    }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Condition with now conditional Oporator");
 
     output->expr2 = this->parseExpr(tokens);
 
     if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
         lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
-        if(sym.Sym != ')') throw err::Exception("unTerminated Condition.  Please terminate with: )");
-    }else throw err::Exception("unTerminated Condition.  Please terminate with: )");
+        if(sym.Sym != ')') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " unTerminated Condition.  Please terminate with: )");
+    }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " unTerminated Condition.  Please terminate with: )");
 
     return output;
 }
@@ -369,7 +369,7 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                 if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                     lex::LObj mod = *dynamic_cast<lex::LObj *>(tokens.pop());
                     modList << mod.meta;
-                }else throw err::Exception("Expected, Ident after dot.");
+                }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Expected, Ident after dot.");
                 if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                     sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
                 }else break;
@@ -385,10 +385,10 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                     lex::LObj view = * dynamic_cast<lex::LObj *>(tokens.pop());
                     deRef->Ident = obj.meta;
                     deRef->modList = modList;
-                    if(this->typeList[view.meta] == nullptr) throw err::Exception("Unknown Type " + view.meta);
+                    if(this->typeList[view.meta] == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unknown Type " + view.meta);
                     deRef->type = *this->typeList[view.meta];
                     output = deRef;
-                }else throw err::Exception("No dereffrens type given with as");
+                }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " No dereffrens type given with as");
             }
         }else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr)
         {
@@ -445,11 +445,11 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             lex::LObj obj = * dynamic_cast<lex::LObj *>(tokens.pop());
             ref->Ident = obj.meta;
             output = ref;
-        }else throw err::Exception("No object given to refrece");
+        }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " No object given to refrece");
     }
     
     
-    else throw err::Exception("Unknown Expr");
+    else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unknown Expr");
 
     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
 

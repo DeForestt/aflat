@@ -12,6 +12,7 @@ namespace lex{
 
     class Token{
         public:
+        int lineCount;
         virtual ~Token() = default;
     };
 

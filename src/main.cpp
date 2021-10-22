@@ -93,6 +93,8 @@ std::string preProcess(std::string input){
                 std::fstream f(path, std::fstream::in);
                 string content;
                 std::getline( f, content, '\0');
+                //str.erase(std::remove(str.begin(), str.end(), 'a'), str.end());
+                content.erase(std::remove(content.begin(), content.end(), '\n'), content.end());
                 output += preProcess(content);
             }else if(line.substr(0, 5) == ".root"){
                 int startPos = line.find_first_of('\"') + 1;

@@ -5,6 +5,7 @@
 LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                 LinkedList<lex::Token*> tokens = LinkedList<lex::Token*>();
                 int i = 0;
+                int lineCount = 0;
                 while (i < input.length())
                 {
                     if (std::isalpha(input[i]) || input[i] == '_')
@@ -15,6 +16,7 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                             l_obj->meta += input[i];
                             i++;
                         }
+                        l_obj->lineCount = lineCount;
                         tokens.push(l_obj);
                     }
                     else if (std::isdigit(input[i]) || input[i] == '-')
@@ -23,6 +25,7 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                             lex::OpSym * sym = new lex::OpSym;
                             sym->Sym = '-';
                             i++;
+                            sym->lineCount = lineCount;
                             tokens << sym;
                         }else{
                             lex::INT * IntLit = new lex::INT();
@@ -33,7 +36,7 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                                 IntLit->value += input[i];
                                 i++;
                             }
-                            
+                            IntLit->lineCount = lineCount;
                             tokens.push(IntLit);
                         }
 
@@ -48,12 +51,13 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                                 IntLit->value += input[i];
                                 i++;
                             }
-                            
+                            IntLit->lineCount = lineCount;
                             tokens.push(IntLit);
 
                     }
                     else if(std::isspace(input[i]))
                     {
+                        if(input[i] == '\n'){lineCount++;};
                         i++;
                     }
                     else if(input[i] == '\"'){

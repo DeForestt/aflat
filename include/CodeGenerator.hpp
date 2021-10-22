@@ -43,6 +43,7 @@ namespace gen{
         links::SLinkedList<gen::Type *, std::string> typeList;
         links::SLinkedList<ASMC::Register, std::string> registers;
         links::LinkedList<Symbol> SymbolTable;
+        links::LinkedList<Symbol> GlobalSymbolTable;
         links::SLinkedList<AST::Function, std::string> nameTable;
         links::SLinkedList<AST::Type, std::string> TypeList;
 
