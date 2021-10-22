@@ -52,8 +52,8 @@ int readFrom@File(adr pointer, char delim, char term){
 };
 
 FileInfo getFileInfo@File(){
-        FileInfo info = malloc(52);
-        sys_fstat(my.file, info);
-        my.info = info;
+        FileInfo ninfo = malloc(52);
+        sys_fstat(my.file, ninfo);
+        my.info = ninfo;
         return info;
 };
