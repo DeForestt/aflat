@@ -74,6 +74,13 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+std::string remove_char( std::string str, char ch )
+{
+    // remove all occurrences of char ch from str
+    str.erase( std::remove( str.begin(), str.end(), ch ), str.end() ) ;
+    return str ;
+}
+
 std::string preProcess(std::string input){
     std::string output = "";
     std::stringstream input_stringstream(input);
@@ -95,8 +102,7 @@ std::string preProcess(std::string input){
                 string content;
                 std::getline( f, content, '\0');
                 //str.erase(std::remove(str.begin(), str.end(), 'a'), str.end());
-                content.erase(std::remove(content.begin(), content.end(), '\n'), content.end());
-                output += preProcess(content);
+                output += preProcess(remove_char(content, '\n'));
             }else if(line.substr(0, 5) == ".root"){
                 int startPos = line.find_first_of('\"') + 1;
                 int endPos = line.find_last_of('\"');
