@@ -9,7 +9,7 @@ File createFile(adr fileName){
         if(test < 1){
                 return #0;
         };
-        fule.getFileInfo();
+        file.getFileInfo();
         return file;
 };
 
