@@ -58,8 +58,11 @@ namespace gen{
         int intArgsCounter;
         int selectReg = 0;
         AST::Type returnType;
-        void GenArgs(AST::Statment * STMT ,ASMC::File &OutputFile);
+
+        void GenArgs(AST::Statment * STMT, ASMC::File &OutputFile);
+        AST::Function GenCall(AST::Call * call, ASMC::File &OutputFile);
         Expr GenExpr(AST::Expr * expr, ASMC::File &OutputFile);
+
         public:
         ASMC::File GenSTMT(AST::Statment * stmt);
         links::LinkedList<gen::Symbol> GenTable(AST::Statment * STMT, links::LinkedList<gen::Symbol> &table);
