@@ -37,7 +37,7 @@ int write@File(adr text){
         return ret;
 };
 
-int readFrom@File(adr pointer, char delim, char term){
+int read@File(adr pointer, char delim, char term){
         char input = ' ';
         char null = ascii(0);
         while(input != delim){
