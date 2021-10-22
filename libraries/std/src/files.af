@@ -1,5 +1,6 @@
 .needs "/std/head/std.gs"
 .needs "/std/head/asm.gs"
+.needs "/std/head/strings.gs"
 .needs "/std/head/files.gs"
 
 File createFile(adr fileName){
