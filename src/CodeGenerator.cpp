@@ -52,7 +52,6 @@ gen::CodeGenerator::CodeGenerator(){
 }
 
 
-
 gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     gen::Expr output;
     if(dynamic_cast<AST::IntLiteral *>(expr) != nullptr){

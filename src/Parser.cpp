@@ -447,8 +447,6 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             output = ref;
         }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " No object given to refrece");
     }
-    
-    
     else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unknown Expr");
 
     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
