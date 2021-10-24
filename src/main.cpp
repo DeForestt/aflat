@@ -178,6 +178,11 @@ void buildTemplate(std::string value){
 
     out << in.rdbuf();
 
+    in = std::ifstream(std::string(libPath + "/head/Collections.gs"));
+    out = std::ofstream(std::string(value + "/std/head/Collections.gs"));
+
+    out << in.rdbuf();
+
     in = std::ifstream(std::string(libPath + "/head/std.gs"));
     out = std::ofstream(std::string(value + "/std/head/std.gs"));
 
@@ -191,6 +196,11 @@ void buildTemplate(std::string value){
     
     in = std::ifstream(std::string(libPath + "/src/io.af"));
     out = std::ofstream(std::string(value + "/std/src/io.af"));
+
+    out << in.rdbuf();
+
+    in = std::ifstream(std::string(libPath + "/src/Collections.af"));
+    out = std::ofstream(std::string(value + "/std/src/Collections.af"));
 
     out << in.rdbuf();
 

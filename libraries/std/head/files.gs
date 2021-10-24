@@ -14,8 +14,6 @@ struct FileInfo{
     int ctime;
 };
 
-
-
 class File{
     FileInfo info;
     adr fileName;
