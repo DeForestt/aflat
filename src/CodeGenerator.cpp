@@ -725,7 +725,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 var->command = "quad";
             }
             var->operand = this->GenExpr(decAssign->expr, OutputFile).access;
-            gen::Symbol Symbol;
 
             OutputFile.data << lable;
             OutputFile.data << var;

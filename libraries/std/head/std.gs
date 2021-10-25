@@ -10,7 +10,7 @@ struct Block{
     adr next;
 };
 
-free();
+int free(adr ptr);
 
 Time newTime(adr size);
 adr malloc(int size);
