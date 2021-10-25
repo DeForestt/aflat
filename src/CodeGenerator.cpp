@@ -738,6 +738,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         
         Symbol * symbol = Table->search<std::string>(searchSymbol, assign->Ident);
         if(symbol == nullptr) {
+            Table = &this->GlobalSymbolTable;
             symbol = Table->search<std::string>(searchSymbol, assign->Ident);
             if(symbol == nullptr) throw err::Exception("unknown name: " + assign->Ident);
             global = true;
