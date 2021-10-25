@@ -630,9 +630,10 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         } else{
             Table = &this->GlobalSymbolTable;
             ASMC::LinkTask * var = new ASMC::LinkTask();
+            ASMC::Lable * lable = new ASMC::Lable();
             if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined global veriable: " + dec->Ident);
             
-            var->operand = dec->Ident;
+            lable->lable = dec->Ident;
             if (dec->type.size = ASMC::QWord){
                 var->command = "quad";
             };
