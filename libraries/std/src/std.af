@@ -51,6 +51,16 @@ Block getBlock(adr ptr){
 }
 
 //Interface
+int memcopy (adr from, adr to, int size){
+    int i = 0;
+    while(i < size){
+        to =: from as byte
+        to = to + #1;
+        from = from + #1;
+    };
+    return 0;
+};
+
 
 int free(adr ptr){
     if(ptr == #0){
@@ -81,4 +91,22 @@ adr malloc(int size){
         if(block == #0){return #0};
     };
     return block + 16;
+};
+
+adr realloc(adr ptr, int size){
+    if (ptr == #0){
+        return malloc(size);
+    };
+
+    Block block = getBlock(ptr);
+    int nsize = size - 1;
+    if(block.size > nsize){
+        return ptr;
+    };
+    
+    adr new_ptr = malloc(size);
+    if (new_ptr == #0){return #0;};
+    memcopy(ptr, new_ptr, block.size);
+    free(ptr);
+    return new_ptr;
 };
