@@ -19,6 +19,7 @@ namespace gen{
         public:
         std::string symbol;
         AST::Type type;
+        bool mask;
         int byteMod;
     };
 

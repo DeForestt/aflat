@@ -1,6 +1,13 @@
 .needs "/std/head/std.gs"
 .needs "/std/head/Collections.gs"
 
+DoubleNode newDoubleNode(){
+    DoubleNode new = malloc(24);
+    new.next = #0;
+    new.prev = #0;
+    new.next = #0;
+};
+
 ListNode newNode(){
     ListNode new = malloc(16);
     new.next = #0;
@@ -38,4 +45,55 @@ adr pop@Stack(){
     next = my.head.next;
     my.head = next;
     return out;
+};
+
+List newList(){
+    List new = malloc(16);
+    new.head = #0;
+    new.tail = #0;
+    return new;
+};
+
+int append@List(adr data){
+    DoubleNode new = newDoubleNode();
+    new.data = data;
+    
+    if (my.head == #0){
+        my.head == new;
+        my.tail == new;
+        return 0;
+    };
+
+    adr last = my.tail;
+    new.prev = last;
+    my.tail = new;
+    return 0;
+};
+
+adr at@List(int index){
+    int len = my.len() - 1;
+    
+    adr data;
+    DoubleNode curr;
+    curr = my.head;
+    int i = 0;
+    
+    while(i < index){
+        curr = curr.next;
+        i = i + 1;
+    };
+
+    return curr.data;
+};
+
+int len@List(){
+    int i = 0;
+    DoubleNode curr;
+    curr = my.head;
+    while (curr.next != #0){
+        curr = curr.next;
+        i = i + 1;
+    };
+
+    return i;
 };
