@@ -14,4 +14,3 @@ int free(adr ptr);
 
 Time newTime(adr size);
 adr malloc(int size);
-int init();

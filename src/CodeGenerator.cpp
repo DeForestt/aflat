@@ -724,7 +724,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             if (dec->type.size = ASMC::QWord){
                 var->command = "quad";
             }
-            var->operand = this->GenExpr(decAssign->expr, OutputFile).access;
+            var->operand = this->GenExpr(decAssign->expr, OutputFile).access.erase(0, 1);
 
             OutputFile.data << lable;
             OutputFile.data << var;
