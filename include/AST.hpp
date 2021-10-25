@@ -83,6 +83,7 @@ namespace AST{
         Statment * args;
         Statment * statment;
         std::string scopeName;
+        bool mask;
     };
 
     class UDeffType : public Member, public Statment{
@@ -95,6 +96,7 @@ namespace AST{
         public:
         std::string Ident;
         std::string TypeName;
+        bool mask;
         Type type;
     };
 

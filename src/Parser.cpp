@@ -31,7 +31,16 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
     AST::Statment* output = new AST::Statment;
     if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+        bool mask = false;
         tokens.pop();
+        
+        if(obj.meta == "mask"){
+            mask = true;
+            if(dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr) throw err::Exception("Expected statent after mask");
+            obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+            tokens.pop();
+        };
+
         //Declare a byte;
         if(typeList[obj.meta] != nullptr){
             AST::Declare * dec = new AST::Declare();
@@ -41,6 +50,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 tokens.pop();
                 dec->Ident = Ident.meta;
                 dec->type = *this->typeList[obj.meta];
+                dec->mask = mask;
                 output = dec;
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                     lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -62,6 +72,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                         func->ident.ident = dec->Ident;
                         func->type = dec->type;
                         func->scopeName = scopeName;
+                        func->mask = mask;
                         func->args = this->parseArgs(tokens, ',', ')');
                         if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                             sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
