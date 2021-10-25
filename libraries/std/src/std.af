@@ -3,12 +3,6 @@
 
 Block head = #0;
 
-int init(){
-    head = #0;
-    return 0;
-};
-
-
 //helpers
 
 Block findFreeBlock(Block last, int size) {
