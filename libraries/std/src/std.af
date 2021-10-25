@@ -1,10 +1,66 @@
 .needs "/std/head/std.gs"
 .needs "/std/head/asm.gs"
 
+Block head = #0;
+
+int init(){
+    head = #0;
+    return 0;
+};
+
 adr malloc(int size){
-    adr out = brk(0);
-    brk(out + size);
-    return out;
+
+    Block block;
+
+    if(size < 0){return #0};
+
+    if(head == #0){
+        block = requestSpace(#0, size);
+        return block + #16;
+    };
+    Block last;
+    last = head;
+    block = findFreeBlock(head, size);
+    if (block == #0){
+        block = requestSpace(last, size);
+        if(block == #0){return #0};
+    };
+    return block + 16;
+};
+
+Block findFreeBlock(Block last, int size) {
+  Block current;
+  current = head;
+  size = size - 1;
+  while (current != #0) {
+    last = current;
+    
+    if(current.free == 1){
+        if (current.size > size){return current};
+    };
+
+    current = current.next;
+    last = current;
+
+  }
+  return #0;
+};
+
+Block requestSpace(Block last, int size){
+    Block block = brk(0);
+    int nsize = size + 
+    adr i = brk(block + size);
+
+    if(i < #0){return #0};
+
+    if (last != #0){
+        last.next = block;
+    };
+    block.next = #0;
+    block.size = size;
+    block.free = 0;
+
+    return block;
 };
 
 Time newTime(adr count){

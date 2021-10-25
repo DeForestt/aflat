@@ -663,6 +663,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         if(Table->search<std::string>(searchSymbol, dec->ident) != nullptr) throw err::Exception("redefined veriable:" + dec->ident);
 
         gen::Symbol Symbol;
+
         if (Table->head == nullptr){
             Symbol.byteMod = offset;
         }else{
@@ -686,26 +687,51 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         links::LinkedList<gen::Symbol>  * Table;
         if(this->scope == nullptr) Table = &this->SymbolTable;
         else Table = &this->scope->SymbolTable;
+
+        if(!this->globalScope){
         
-        if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
+            if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
 
-        gen::Symbol symbol;
-        if (Table->head == nullptr){
-            symbol.byteMod = offset;
-        }else{
-            symbol.byteMod = Table->head->data.byteMod + offset;
+            gen::Symbol symbol;
+            if (Table->head == nullptr){
+                symbol.byteMod = offset;
+            }else{
+                symbol.byteMod = Table->head->data.byteMod + offset;
+            }
+            symbol.type = dec->type;
+            symbol.symbol = dec->Ident;
+            Table->push(symbol);
+
+            ASMC::Mov * mov = new ASMC::Mov();
+            gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile);
+            mov->size = expr.size;
+            mov->from = expr.access;
+            mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
+            OutputFile.text << mov;
+            this->scopePop += 1;
         }
-        symbol.type = dec->type;
-        symbol.symbol = dec->Ident;
-        Table->push(symbol);
+        else{
+            gen::Symbol Symbol;
 
-        ASMC::Mov * mov = new ASMC::Mov();
-        gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile);
-        mov->size = expr.size;
-        mov->from = expr.access;
-        mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
-        OutputFile.text << mov;
-        this->scopePop += 1;
+            Symbol.type = dec->type;
+            Symbol.symbol = dec->Ident;
+            Table = &this->GlobalSymbolTable;
+
+            ASMC::LinkTask * var = new ASMC::LinkTask();
+            ASMC::Lable * lable = new ASMC::Lable();
+
+            lable->lable = dec->Ident;
+            if (dec->type.size = ASMC::QWord){
+                var->command = "quad";
+            }
+            var->operand = this->GenExpr(decAssign->expr, OutputFile).access;
+            gen::Symbol Symbol;
+
+            OutputFile.data << lable;
+            OutputFile.data << var;
+            if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
+            Table->push(Symbol);
+        };
 
     }else if (dynamic_cast<AST::Return *>(STMT) != nullptr)
     {
