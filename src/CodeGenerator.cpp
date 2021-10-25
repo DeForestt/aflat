@@ -135,8 +135,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         else lable->lable = ".str" + scope->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount++;
         strlit->value = str.val;
-        OutputFile.bss << lable;
-        OutputFile.bss << strlit;
+        OutputFile.data << lable;
+        OutputFile.data << strlit;
         output.access = "$" + lable->lable;
         output.size = ASMC::QWord;
     }

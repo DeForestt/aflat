@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
 
         file.bss.invert();
         file.linker.invert();
+        file.data.invert();
 
     
 
@@ -59,11 +60,18 @@ int main(int argc, char *argv[])
         while(file.linker.head != nullptr){
             ofs << file.linker.pop()->toString();
         }
+
         ofs << "\n\n.text\n\n";
 
         while(file.text.head != nullptr){
             ofs << file.text.pop()->toString();
         }
+
+        ofs << "\n\n.data\n\n";
+        while(file.data.head != nullptr){
+            ofs << file.data.pop()->toString();
+        }
+
         ofs << "\n\n.bss\n\n";
         while(file.bss.head != nullptr){
             ofs << file.bss.pop()->toString();

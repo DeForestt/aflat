@@ -152,6 +152,7 @@ void ASMC::File::operator<<(ASMC::File file){
     this->linker.stitch(file.linker);
     this->text.istitch(file.text);
     this->bss.stitch(file.bss);
+    this->data.stitch(file.data);
 }
 
 ASMC::Register::Register(std::string _qWord, std::string _dWord, std::string _word, std::string _byte){
