@@ -611,7 +611,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         int offset = this->getBytes(dec->type.size);
         links::LinkedList<gen::Symbol>  * Table;
         
-        if (this->globalScope = false){
+        if (!this->globalScope){
             if(this->scope == nullptr) Table = &this->SymbolTable;
             else Table = &this->scope->SymbolTable;
 
