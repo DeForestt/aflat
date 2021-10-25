@@ -47,6 +47,7 @@ gen::CodeGenerator::CodeGenerator(){
     this->registers << ASMC::Register("rbp", "ebp", "bp", "bpl");
     this->registers.foo = ASMC::Register::compair;
     this->nameTable.foo = compairFunc;
+    this->globalScope = false;
     this->typeList.foo = gen::Type::compair;
     this->scope = nullptr;
 }
