@@ -641,7 +641,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
             Symbol.type = dec->type;
             Symbol.symbol = dec->Ident;
-
+            OutputFile.bss << lable;
             OutputFile.bss << var;
             Table->push(Symbol);
         }
