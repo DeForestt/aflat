@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
         ASMC::File file = genny.GenSTMT(Prog);
         file.text.invert();
 
-        file.data.invert();
+        file.bss.invert();
         file.linker.invert();
 
     
@@ -60,12 +60,13 @@ int main(int argc, char *argv[])
             ofs << file.linker.pop()->toString();
         }
         ofs << "\n\n.text\n\n";
-        while(file.data.head != nullptr){
-            ofs << file.data.pop()->toString();
-        }
 
         while(file.text.head != nullptr){
             ofs << file.text.pop()->toString();
+        }
+        ofs << "\n\n.bss\n\n";
+        while(file.bss.head != nullptr){
+            ofs << file.bss.pop()->toString();
         }
         ofs.close();
     }catch(err::Exception e){

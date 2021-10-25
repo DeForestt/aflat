@@ -14,6 +14,7 @@ namespace gen{
         std::string access;
         ASMC::Size size;
     };
+    
     class Symbol{
         public:
         std::string symbol;
@@ -38,14 +39,25 @@ namespace gen{
 
     class CodeGenerator{
         private:
-        gen::Class * scope;
-        int scopePop = 0;
-        links::SLinkedList<gen::Type *, std::string> typeList;
-        links::SLinkedList<ASMC::Register, std::string> registers;
-        links::LinkedList<Symbol> SymbolTable;
-        links::LinkedList<Symbol> GlobalSymbolTable;
-        links::SLinkedList<AST::Function, std::string> nameTable;
-        links::SLinkedList<AST::Type, std::string> TypeList;
+
+        #pragma region State Variables
+            gen::Class * scope;
+            AST::Type returnType;
+            int scopePop = 0;
+            int lablecount = 0;
+            int intArgsCounter;
+            int selectReg = 0;
+            bool globalScope = true;
+        #pragma endregion
+
+        #pragma region Item Lists
+            links::SLinkedList<gen::Type *, std::string> typeList;
+            links::SLinkedList<ASMC::Register, std::string> registers;
+            links::LinkedList<Symbol> SymbolTable;
+            links::LinkedList<Symbol> GlobalSymbolTable;
+            links::SLinkedList<AST::Function, std::string> nameTable;
+            links::SLinkedList<AST::Type, std::string> TypeList;
+        #pragma endregion
 
         int getBytes(ASMC::Size size);
         
@@ -55,10 +67,6 @@ namespace gen{
                                     ASMC::Register("rcx", "ecx", "cx", "cl"),
                                     ASMC::Register("r8", "r8d", "r8w", "r8b"),
                                     ASMC::Register("r9", "r9d", "r9w", "r9b")};
-        int lablecount = 0;
-        int intArgsCounter;
-        int selectReg = 0;
-        AST::Type returnType;
 
         void GenArgs(AST::Statment * STMT, ASMC::File &OutputFile);
         AST::Function GenCall(AST::Call * call, ASMC::File &OutputFile);
