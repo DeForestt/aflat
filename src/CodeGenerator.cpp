@@ -47,7 +47,7 @@ gen::CodeGenerator::CodeGenerator(){
     this->registers << ASMC::Register("rbp", "ebp", "bp", "bpl");
     this->registers.foo = ASMC::Register::compair;
     this->nameTable.foo = compairFunc;
-    this->globalScope = false;
+    this->globalScope = true;
     this->typeList.foo = gen::Type::compair;
     this->scope = nullptr;
 }
@@ -596,7 +596,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             if(this->scope != nullptr ) for(int i = 0; i  < this->scopePop; i++) this->scope->SymbolTable.pop();
             this->scopePop = 0;
             this->scope = saveScope;
-            this->globalScope = saveScope;
+            this->globalScope = saveGlobal;
 
         }
         delete(func);
