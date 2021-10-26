@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
         }
         try{
             PreProcessor pp;
-            tokens = scanner.Scan(preProcess(pp.PreProcess(content)));
+            tokens = scanner.Scan(pp.PreProcess(content));
         }catch (int x){
             std::cout << " unparsable Char at index " + x;
             return 0;
