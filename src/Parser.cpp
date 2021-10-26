@@ -197,7 +197,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                     }else throw err::Exception("Expected, Ident after dot.");
                     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                         sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
-                    }else throw err::Exception("expected assignment oporator");
+                    }else throw err::Exception("expected assignment oporator got " + sym.Sym);
                 }
                 if(sym.Sym == '='){
                     AST::Assign * assign = new AST::Assign();
@@ -236,7 +236,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                     }
                     output = call;
                 }
-                 else throw err::Exception("expected assignment oporator");
+                else throw err::Exception("expected assignment oporator after " + obj.meta);
             }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " expected Asignment oporator after " + obj.meta);
         }
     }
