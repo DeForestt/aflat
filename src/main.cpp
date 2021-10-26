@@ -90,6 +90,26 @@ std::string remove_char( std::string str, char ch )
     return str ;
 }
 
+/* Trim string after first index of '//'*/
+std::string slice(std::string &str) {
+    int index = str.find("//");
+    if (index != std::string::npos) {
+        str = str.substr(0, index);
+    }
+    return str;
+}
+
+std::string trim( std::string str )
+{
+    // remove trailing white space
+    while( !str.empty() && std::isspace( str.back() ) ) str.pop_back() ;
+
+    // return residue after leading white space
+    std::size_t pos = 0 ;
+    while( pos < str.size() && std::isspace( str[pos] ) ) ++pos ;
+    return str.substr(pos) ;
+}
+
 std::string preProcess(std::string input){
     std::string output = "";
     std::stringstream input_stringstream(input);
@@ -253,22 +273,3 @@ void buildTemplate(std::string value){
 
 }
 
-/* Trim string after first index of '//'*/
-std::string slice(std::string &str) {
-    int index = str.find("//");
-    if (index != std::string::npos) {
-        str = str.substr(0, index);
-    }
-    return str;
-}
-
-std::string trim( std::string str )
-{
-    // remove trailing white space
-    while( !str.empty() && std::isspace( str.back() ) ) str.pop_back() ;
-
-    // return residue after leading white space
-    std::size_t pos = 0 ;
-    while( pos < str.size() && std::isspace( str[pos] ) ) ++pos ;
-    return str.substr(pos) ;
-}
