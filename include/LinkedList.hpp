@@ -88,7 +88,7 @@ int links::LinkedList<T>::size(){
 template<typename T>
 T links::LinkedList<T>::get(int index){
     if(index < 0 || index > this->size()){
-        throw Exceptions::IndexOutOfBounds();
+        throw err::Exception("Index Out of Bounds");;
     }
     Node<T> * current = head;
     for(int i = 0; i < index; i++){
