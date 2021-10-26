@@ -10,6 +10,7 @@
 #include "CodeGenerator.hpp"
 #include "ASM.hpp"
 #include "Exceptions.hpp"
+#include "PreProcessor.hpp"
 
 std::string trim(std::string str);
 std::string preProcess(std::string input);
@@ -33,7 +34,8 @@ int main(int argc, char *argv[])
             return 0;
         }
         try{
-            tokens = scanner.Scan(preProcess(content));
+            PreProcessor pp;
+            tokens = scanner.Scan(preProcess(pp.PreProcess(content)));
         }catch (int x){
             std::cout << " unparsable Char at index " + x;
             return 0;
