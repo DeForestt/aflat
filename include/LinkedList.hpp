@@ -48,6 +48,12 @@ namespace links{
             /*clears the list and sets the head to nullptr*/
             void clear();
 
+            /*returns the value at the index*/
+            T get(int index);
+
+            /*returns the number of nodes in the list*/
+            int size();
+
             /*Pop removes the top eleent for the list
             Behaves likle a stack*/ 
             T pop();
@@ -60,10 +66,55 @@ namespace links{
             template <typename Z>
             T* search(bool(* foo)(T, Z), Z input);
             
+            /*search for a value*/
             T* operator[](T input);
+
+            /*appends a node to the end of the list*/
+            T* append(T input);
     };
 }
 
+template<typename T>
+int links::LinkedList<T>::size(){
+    int count = 0;
+    Node<T> * temp = head;
+    while(temp != nullptr){
+        count++;
+        temp = temp->next;
+    }
+    return count;
+}
+
+template<typename T>
+T links::LinkedList<T>::get(int index){
+    if(index < 0 || index > this->size()){
+        throw Exceptions::IndexOutOfBounds();
+    }
+    Node<T> * current = head;
+    for(int i = 0; i < index; i++){
+        current = current->next;
+    }
+    return current->data;
+}
+
+template<typename T>
+T* links::LinkedList<T>::append(T input){
+    Node<T> * temp = new Node<T>;
+    temp->data = input;
+    temp->next = nullptr;
+    if(head == nullptr){
+        head = temp;
+    }
+    else{
+        Node<T> * current = head;
+        while(current->next != nullptr){
+            current = current->next;
+        }
+        current->next = temp;
+    }
+    count++;
+    return &temp->data;
+}
 
 template <typename T>
 template <typename Z>

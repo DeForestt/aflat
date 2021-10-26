@@ -51,8 +51,6 @@ int main(int argc, char *argv[])
         file.linker.invert();
         file.data.invert();
 
-    
-
         std::ofstream ofs;
 
         if (argc == 1) ofs.open("out.s"); else ofs.open(argv[2]);
@@ -100,7 +98,7 @@ std::string preProcess(std::string input){
     while (getline(input_stringstream, line, '\n'))
     {
         line = trim(line);
-        if(line.substr(0, 2) != "//"){
+        slice(line);
             if(line.substr(0, 6) == ".needs"){
                 int startPos = line.find_first_of('\"') + 1;
                 int endPos = line.find_last_of('\"');
@@ -110,7 +108,6 @@ std::string preProcess(std::string input){
                 std::fstream f(path, std::fstream::in);
                 string content;
                 std::getline( f, content, '\0');
-                //str.erase(std::remove(str.begin(), str.end(), 'a'), str.end());
                 output += preProcess(remove_char(content, '\n'));
             }else if(line.substr(0, 5) == ".root"){
                 int startPos = line.find_first_of('\"') + 1;
@@ -119,8 +116,7 @@ std::string preProcess(std::string input){
             }
             else{
                 output += line;
-            };
-        }
+        };
     }
     return output;
 };
@@ -132,6 +128,7 @@ std::string getExePath()
   return std::string( result, (count > 0) ? count : 0 );
 }
 
+/* Creates a new Project */
 void buildTemplate(std::string value){
     std::string filename = getExePath();
     std::string exepath = filename.substr(0, filename.find_last_of("/"));
@@ -252,6 +249,15 @@ void buildTemplate(std::string value){
     outfile <<  filename << " std/src/std.af std/std.s\n";
     outfile << "gcc -O0 -g -no-pie out.s std/asm.s std/std.s std/io.s std/collections.s std/math.s std/strings.s std/files.s";
 
+}
+
+/* Trim string after first index of '//'*/
+std::string slice(std::string &str) {
+    int index = str.find("//");
+    if (index != std::string::npos) {
+        str = str.substr(0, index);
+    }
+    return str;
 }
 
 std::string trim( std::string str )
