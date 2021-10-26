@@ -90,58 +90,6 @@ std::string remove_char( std::string str, char ch )
     return str ;
 }
 
-/* Trim string after first index of '//'*/
-std::string slice(std::string &str) {
-    int index = str.find("//");
-    if (index != std::string::npos) {
-        str = str.substr(0, index);
-    }
-    return str;
-}
-
-std::string trim( std::string str )
-{
-    // remove trailing white space
-    while( !str.empty() && std::isspace( str.back() ) ) str.pop_back() ;
-
-    // return residue after leading white space
-    std::size_t pos = 0 ;
-    while( pos < str.size() && std::isspace( str[pos] ) ) ++pos ;
-    return str.substr(pos) ;
-}
-
-std::string preProcess(std::string input){
-    std::string output = "";
-    std::stringstream input_stringstream(input);
-    std::string line;
-    std::filesystem::path cwd = std::filesystem::current_path();
-    std::string root = cwd.string();
-
-    while (getline(input_stringstream, line, '\n'))
-    {
-        line = trim(line);
-        slice(line);
-            if(line.substr(0, 6) == ".needs"){
-                int startPos = line.find_first_of('\"') + 1;
-                int endPos = line.find_last_of('\"');
-                
-                std::string relpath = line.substr(startPos, endPos - startPos);
-                std::string path = root + relpath;
-                std::fstream f(path, std::fstream::in);
-                string content;
-                std::getline( f, content, '\0');
-                output += preProcess(remove_char(content, '\n'));
-            }else if(line.substr(0, 5) == ".root"){
-                int startPos = line.find_first_of('\"') + 1;
-                int endPos = line.find_last_of('\"');
-                root = line.substr(startPos, endPos - startPos);
-            }
-            else{
-                output += line;
-        };
-    }
-    return output;
-};
 
 std::string getExePath()
 {
