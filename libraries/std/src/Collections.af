@@ -71,7 +71,8 @@ int append@List(adr data){
 };
 
 adr at@List(int index){
-    int len = my.len() - 1;
+    int len = my.len();
+    len = len - 1;
     if (index > len){
         return #0;
     };
@@ -89,6 +90,32 @@ adr at@List(int index){
     return curr.data;
 };
 
+int insert@List(int index, adr data){
+    DoubleNode new = newDoubleNode();
+    new.data = data;
+    int len = my.len();
+    len = len - 1;
+    if (index > len){
+        return 0;
+    };
+    
+    adr data;
+    DoubleNode curr;
+    curr = my.head;
+    adr last = #0;
+    int i = 0;
+    
+    while(i < index){
+        last = curr;
+        curr = curr.next;
+        i = i + 1;
+    };
+    new.next = curr;
+    curr.prev = new;
+    new.prev = last;
+    last.next = new;
+    return i;
+};
 
 int len@List(){
     int i = 0;
