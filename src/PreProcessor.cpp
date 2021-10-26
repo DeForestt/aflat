@@ -118,8 +118,8 @@ void PreProcessor::Define(std::string line){
 
     //split line into two strings with the =
     int equalsPos = line.find_first_of('=');
-    std::string name = line.substr(0, equalsPos);
-    std::string value = line.substr(equalsPos + 1);
+    std::string name = trim(line.substr(0, equalsPos));
+    std::string value = trim(line.substr(equalsPos + 1));
 
     //Store in a Deffinition struct
     Definition def;
