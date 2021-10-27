@@ -87,7 +87,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     Type * t = *this->typeList[var.Ident];
                     if (t == nullptr) throw err::Exception("Variable not found");
                     output.size = ASMC::DWord;
-                    output.access = '$' + std::to_string(t->SymbolTable.head->data.byteMod + getBytes(t->SymbolTable.head->data.type.size));
+                    output.access = '$' + std::to_string(t->SymbolTable.head->data.byteMod);
                     handled = true;
                 };
             }
