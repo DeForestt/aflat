@@ -32,7 +32,6 @@ bool Definition::compair(Definition def, std::string str){
     return def.name == str;
 };
 
-
 // PreProcessor
 
 PreProcessor::PreProcessor(){
