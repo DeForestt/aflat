@@ -53,7 +53,16 @@ std::string PreProcessor::PreProcess(std::string code){
 
     while (getline(input_stringstream, line, '\n'))
     {
+        // Ignor multiline comments
+        if (line.find("/*") != std::string::npos) {
+            while (line.find("*/") == std::string::npos) {
+                getline(input_stringstream, line, '\n');
+            }
+            line = line.substr(line.find("*/") + 2);
+        }
+
         line = trim(line);
+        
         //Removes comments
         slice(line);
         
