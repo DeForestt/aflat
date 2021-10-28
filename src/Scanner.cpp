@@ -82,9 +82,9 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                             if (input[i] == '\\'){
                                 i++;
                                 if (input[i] == 'n'){
-                                    stringObj->value += '\n';
+                                    stringObj->value += '\\n';
                                 }else if (input[i] == 't'){
-                                    stringObj->value += '\t';
+                                    stringObj->value += '\\t';
                                 }else if (input[i] == '\\'){
                                     stringObj->value += '\\';
                                 }else if (input[i] == '\"'){
@@ -92,7 +92,7 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                                 }else if (input[i] == '\''){
                                     stringObj->value += '\'';
                                 }else if (input[i] == 'r'){
-                                    stringObj->value += '\r';
+                                    stringObj->value += '\\r';
                                 }else if (input[i] == '0'){
                                     stringObj->value += '\0';
                                 }else if (input[i] == '\\'){
