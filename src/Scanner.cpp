@@ -78,7 +78,7 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         stringObj->value = "";
                         i++;
                         while(input[i] != '\"'){
-                            if (input[i] == '\n') lineCount++;
+                            if (input[i] == '\n') {lineCount++; i++;}
                             if (input[i] == '\\'){
                                 i++;
                                 if (input[i] == 'n'){
