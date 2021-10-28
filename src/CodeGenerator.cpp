@@ -58,7 +58,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::IntLiteral * intlit = dynamic_cast<AST::IntLiteral *>(expr);
         output.access = '$' + std::to_string(intlit->val);
         output.size = ASMC::DWord;
-    } else if(dynamic_cast<AST::LongLiteral *>(expr) != nullptr){
+    }
+    else if(dynamic_cast<AST::LongLiteral *>(expr) != nullptr){
         AST::LongLiteral * intlit = dynamic_cast<AST::LongLiteral *>(expr);
         output.access = '$' + std::to_string(intlit->val);
         output.size = ASMC::QWord;
@@ -67,13 +68,15 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::CharLiteral * intlit = dynamic_cast<AST::CharLiteral *>(expr);
         output.access = '$' + std::to_string(intlit->value);
         output.size = ASMC::Byte;
-    }else if(dynamic_cast<AST::CallExpr *>(expr) != nullptr){
+    }
+    else if(dynamic_cast<AST::CallExpr *>(expr) != nullptr){
         AST::CallExpr * exprCall = dynamic_cast<AST::CallExpr *>(expr);
         AST::Call * call = exprCall->call;
         output.size = this->GenCall(call, OutputFile).type.size;
         output.access = this->registers["%rax"]->get(output.size);
 
-    }else if (dynamic_cast<AST::Var *>(expr) != nullptr){
+    }
+    else if (dynamic_cast<AST::Var *>(expr) != nullptr){
         AST::Var var = *dynamic_cast<AST::Var *>(expr);
         bool global = false;
         bool handled = false;
@@ -122,7 +125,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             }
         }
 
-    }else if (dynamic_cast<AST::Refrence *>(expr) != nullptr)
+    }
+    else if (dynamic_cast<AST::Refrence *>(expr) != nullptr)
     {
         links::LinkedList<gen::Symbol>  * Table;
         if(this->scope == nullptr) Table = &this->SymbolTable;
@@ -150,6 +154,11 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         output.access = "$" + lable->lable;
         output.size = ASMC::QWord;
     }
+    else if (dynamic_cast<AST::FloatLiteral *>(expr) != nullptr){
+        AST::FloatLiteral * floatlit = dynamic_cast<AST::FloatLiteral *>(expr);
+        output.access = '$' + std::to_string(floatlit->val);
+        output.size = ASMC::QWord;
+    }
     else if(dynamic_cast<AST::DeRefence *>(expr)){
 
         AST::DeRefence deRef = *dynamic_cast<AST::DeRefence *>(expr);
@@ -173,7 +182,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         OutputFile.text << mov2;
 
         
-    }else if (dynamic_cast<AST::Compound *>(expr) != nullptr)
+    }
+    else if (dynamic_cast<AST::Compound *>(expr) != nullptr)
     {
         AST::Compound comp = *dynamic_cast<AST::Compound *>(expr);
         switch (comp.op)

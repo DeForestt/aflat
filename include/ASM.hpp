@@ -97,6 +97,12 @@ namespace ASMC{
         std::string toString();
     };
 
+    class FloatLiteral : public Instruction{
+        public:
+        std::string value;
+        std::string toString();
+    };
+
     class Lea : public Instruction{
         public:
         std::string to;
