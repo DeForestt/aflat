@@ -1,9 +1,7 @@
 .needs "/std/head/std.gs"
 .needs "/std/head/asm.gs"
 
-.def NULL = #0
-
-Block head = NULL;
+Block head = #0;
 
 //helpers
 
