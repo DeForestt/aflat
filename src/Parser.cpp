@@ -28,7 +28,7 @@ parse::Parser::Parser(){
     // Float Type
     AST::Type Float = AST::Type();
     Float.typeName = "float";
-    Float.size = ASMC::DWord;
+    Float.size = ASMC::QWord;
 
     // Add Types to TypeList
     this->typeList << Int;
