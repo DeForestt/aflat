@@ -222,6 +222,11 @@ namespace AST{
         int val;
     };
 
+    class FloatLiteral : public Expr{
+        public:
+        float val;
+    };
+
     class LongLiteral : public Expr{
         public:
         int val;

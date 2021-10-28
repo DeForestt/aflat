@@ -365,12 +365,19 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
         ilit->val = std::stoi(intObj.value);
         output = ilit;
     }
+    else if(dynamic_cast<lex::FloatLit *>(tokens.peek()) != nullptr){
+        lex::FloatLit floatObj = *dynamic_cast<lex::FloatLit *>(tokens.pop());
+        AST::FloatLiteral * flit = new AST::FloatLiteral();
+        flit->val = std::stof(floatObj.value);
+        output = flit;
+    }
     else if(dynamic_cast<lex::Long *>(tokens.peek()) != nullptr){
         lex::Long intObj = *dynamic_cast<lex::Long *>(tokens.pop());
         AST::LongLiteral * ilit = new AST::LongLiteral();
         ilit->val = std::stoi(intObj.value);
         output = ilit;
-    } else if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+    }
+    else if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.pop());
         links::LinkedList<std::string> modList;
         if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
@@ -444,12 +451,14 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             var->modList = modList;
             output = var;
         }
-    } else if (dynamic_cast<lex::CharObj *>(tokens.peek()) != nullptr){
+    }
+    else if (dynamic_cast<lex::CharObj *>(tokens.peek()) != nullptr){
         lex::CharObj obj = *dynamic_cast<lex::CharObj *>(tokens.pop());
         AST::CharLiteral * charlit = new AST::CharLiteral();
         charlit->value = obj.value;
         output = charlit;
-    }else if (dynamic_cast<lex::Ref *>(tokens.peek()) != nullptr){
+    }
+    else if (dynamic_cast<lex::Ref *>(tokens.peek()) != nullptr){
         tokens.pop();
         AST::Refrence * ref = new AST::Refrence();
         if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
