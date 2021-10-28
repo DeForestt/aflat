@@ -736,7 +736,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
             ASMC::Mov * mov = new ASMC::Mov();
             gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile);
-            mov->op = expr.op;
+            //mov->op = expr.op;
             mov->size = expr.size;
             mov->from = expr.access;
             mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
