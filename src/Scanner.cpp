@@ -34,12 +34,24 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                             IntLit->value = input[i];
                             i++;
 
-                            while(std::isdigit(input[i])){
+                            while(std::isdigit(input[i]) || input[i] == '.'){
                                 IntLit->value += input[i];
                                 i++;
                             }
                             IntLit->lineCount = lineCount;
-                            tokens.push(IntLit);
+
+                            //Check if IntLit->value contains '.'
+                            if(IntLit->value.find('.') != string::npos){
+                                //Check if IntLit->value contains more than one '.'
+                                if(IntLit->value.find('.') != IntLit->value.rfind('.')){
+                                    throw err::Exception("Invalid token: " + IntLit->value + " on line " + std::to_string(lineCount));
+                                }
+
+                                lex::FloatLit * FloatLit = new lex::FloatLit();
+                                FloatLit->value = IntLit->value;
+                                FloatLit->lineCount = lineCount;
+                                tokens << FloatLit;
+                            }else tokens <<IntLit;
                         }
 
                     }
@@ -66,7 +78,31 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         stringObj->value = "";
                         i++;
                         while(input[i] != '\"'){
-                            stringObj->value += input[i];
+                            if (input[i] == '\n') lineCount++;
+                            if (input[i] == '\\'){
+                                i++;
+                                if (input[i] == 'n'){
+                                    stringObj->value += '\n';
+                                }else if (input[i] == 't'){
+                                    stringObj->value += '\t';
+                                }else if (input[i] == '\\'){
+                                    stringObj->value += '\\';
+                                }else if (input[i] == '\"'){
+                                    stringObj->value += '\"';
+                                }else if (input[i] == '\''){
+                                    stringObj->value += '\'';
+                                }else if (input[i] == 'r'){
+                                    stringObj->value += '\r';
+                                }else if (input[i] == '0'){
+                                    stringObj->value += '\0';
+                                }else if (input[i] == '\\'){
+                                    stringObj->value += '\\';
+                                }else{
+                                    throw err::Exception("Invalid token: " + stringObj->value + " on line " + std::to_string(lineCount));
+                                }
+                            }else if (input[i] != '\n'){
+                                stringObj->value += input[i];
+                            }
                             i++;
                         }
                         i++;
@@ -208,7 +244,8 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                     }
                     
                     else{
-                        throw err::Exception("unknown char: " + input[i]);
+                        ///Unknown token
+                        throw err::Exception("Unknown token on line " + std::to_string(lineCount));
                     }
                 }
                 return tokens;
