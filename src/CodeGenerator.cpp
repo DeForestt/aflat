@@ -169,7 +169,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         mov->size = ASMC::DWord;
         mov->op = ASMC::Float;
         mov->to = this->registers["%xmm0"]->get(ASMC::DWord);
-        mov->from = "$" + lable->lable;
+        mov->from = lable->lable;
 
         output.op = ASMC::Float;
         OutputFile.text << mov;
