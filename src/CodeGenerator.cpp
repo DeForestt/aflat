@@ -127,8 +127,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         }
 
     }
-    else if (dynamic_cast<AST::Refrence *>(expr) != nullptr)
-    {
+    else if (dynamic_cast<AST::Refrence *>(expr) != nullptr){
         links::LinkedList<gen::Symbol>  * Table;
         if(this->scope == nullptr) Table = &this->SymbolTable;
         else Table = &this->scope->SymbolTable;
@@ -202,8 +201,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
 
         
     }
-    else if (dynamic_cast<AST::Compound *>(expr) != nullptr)
-    {
+    else if (dynamic_cast<AST::Compound *>(expr) != nullptr){
         AST::Compound comp = *dynamic_cast<AST::Compound *>(expr);
         switch (comp.op)
         {
@@ -641,8 +639,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
         delete(func);
     }
-    else if (dynamic_cast<AST::Declare *>(STMT) != nullptr)
-    {
+    else if (dynamic_cast<AST::Declare *>(STMT) != nullptr){
         /*
             movl $0x0, -[SymbolT + size](rdp)
             **also needs to be added to symbol table**
@@ -717,8 +714,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         this->scopePop += 1;
 
     }
-    else if (dynamic_cast<AST::DecAssign *>(STMT) != nullptr)
-    {
+    else if (dynamic_cast<AST::DecAssign *>(STMT) != nullptr){
         /*
             movl $0x0, -[SymbolT + size](rdp)
             **also needs to be added to symbol table**
@@ -777,8 +773,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         };
 
     }
-    else if (dynamic_cast<AST::Return *>(STMT) != nullptr)
-    {
+    else if (dynamic_cast<AST::Return *>(STMT) != nullptr){
         /*
             mov [this.GenExpr(ret.value)]
             pop rbp
@@ -797,8 +792,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text << re;
 
     }
-    else if (dynamic_cast<AST::Assign *>(STMT) != nullptr)
-    {
+    else if (dynamic_cast<AST::Assign *>(STMT) != nullptr){
         AST::Assign * assign = dynamic_cast<AST::Assign *>(STMT);
         bool global = false;
 
@@ -864,13 +858,11 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
     
     }
-    else if (dynamic_cast<AST::Call *>(STMT) != nullptr)
-    {
+    else if (dynamic_cast<AST::Call *>(STMT) != nullptr){
         AST::Call * call = dynamic_cast<AST::Call *>(STMT);
         this->GenCall(call, OutputFile);
     }
-    else if (dynamic_cast<AST::Push *>(STMT) != nullptr)
-    {
+    else if (dynamic_cast<AST::Push *>(STMT) != nullptr){
         AST::Push * push = dynamic_cast<AST::Push *>(STMT);
         ASMC::Mov * count = new ASMC::Mov;
 
@@ -899,8 +891,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         
         OutputFile.text << new ASMC::SysCall;
     }
-    else if (dynamic_cast<AST::Pull *>(STMT) != nullptr)
-    {
+    else if (dynamic_cast<AST::Pull *>(STMT) != nullptr){
         AST::Pull * pull = dynamic_cast<AST::Pull *>(STMT);
         ASMC::Mov * count = new ASMC::Mov;
         count->size = ASMC::QWord;
@@ -926,8 +917,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         
         OutputFile.text << new ASMC::SysCall;
     }
-    else if (dynamic_cast<AST::If *>(STMT) != nullptr)
-    {
+    else if (dynamic_cast<AST::If *>(STMT) != nullptr){
         AST::If ifStmt = *dynamic_cast<AST::If *>(STMT);
 
         ASMC::Lable * lable1 = new ASMC::Lable();
