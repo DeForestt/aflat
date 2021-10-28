@@ -10,7 +10,6 @@ File createFile(adr fileName){
         if(test < 1){
                 return #0;
         };
-        file.getFileInfo();
         return file;
 };
 
@@ -22,7 +21,6 @@ File openFile(adr fileName){
         if(test < 0){
                 return #0;
         };
-        file.getFileInfo(file.file);
         file.fileName = fileName;
         return file;
 };
@@ -49,11 +47,4 @@ int read@File(adr pointer, char delim, char term){
         };
         pointer =: null;
         return  0;
-};
-
-FileInfo getFileInfo@File(){
-        FileInfo ninfo = malloc(FileInfo);
-        sys_fstat(my.file, ninfo);
-        my.info = ninfo;
-        return info;
 };
