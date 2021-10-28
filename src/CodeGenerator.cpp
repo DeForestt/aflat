@@ -811,7 +811,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::Mov * mov = new ASMC::Mov();
         ASMC::Mov * mov2 = new ASMC::Mov();
         gen::Expr expr = this->GenExpr(assign->expr, OutputFile);
-
+        mov->op = expr.op;
+        mov2.op = expr.op;
         mov->size = expr.size;
         mov2->size = expr.size;
         mov2->from = expr.access;
