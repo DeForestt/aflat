@@ -8,26 +8,31 @@ parse::Parser::Parser(){
     // Int Type
     AST::Type Int = AST::Type();
     Int.typeName = "int";
+    Int.opType = ASMC::Hard;
     Int.size = ASMC::DWord;
 
     // Char Type
     AST::Type Char = AST::Type();
     Char.typeName = "char";
+    Char.opType = ASMC::Hard;
     Char.size = ASMC::Byte;
     
     // Pointer Type
     AST::Type Adr = AST::Type();
     Adr.typeName = "adr";
+    Adr.opType = ASMC::Hard;
     Adr.size = ASMC::QWord;
 
     // Byte type
     AST::Type Byte = AST::Type();
     Byte.typeName = "byte";
+    Byte.opType = ASMC::Hard;
     Byte.size = ASMC::Byte;
 
     // Float Type
     AST::Type Float = AST::Type();
     Float.typeName = "float";
+    Float.opType = ASMC::Float;
     Float.size = ASMC::DWord;
 
     // Add Types to TypeList
