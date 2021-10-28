@@ -43,7 +43,7 @@ std::string ASMC::Mov::toString(){
         size = "";
         break;
     }
-    if(this->op == gen::Float) return "\tmovss" "\t" + this->from + ", " + this->to + "\n";
+    if(this->op == ASMC::Float) return "\tmovss" "\t" + this->from + ", " + this->to + "\n";
     return "\tmov" + size + "\t" + this->from + ", " + this->to + "\n";
 }
 
