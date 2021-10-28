@@ -224,7 +224,7 @@ namespace AST{
 
     class FloatLiteral : public Expr{
         public:
-        float val;
+        std::string val;
     };
 
     class LongLiteral : public Expr{

@@ -379,7 +379,7 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
     else if(dynamic_cast<lex::FloatLit *>(tokens.peek()) != nullptr){
         lex::FloatLit floatObj = *dynamic_cast<lex::FloatLit *>(tokens.pop());
         AST::FloatLiteral * flit = new AST::FloatLiteral();
-        flit->val = std::stof(floatObj.value);
+        flit->val = floatObj.value;
         output = flit;
     }
     else if(dynamic_cast<lex::Long *>(tokens.peek()) != nullptr){
