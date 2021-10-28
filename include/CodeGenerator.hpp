@@ -10,7 +10,7 @@ namespace gen{
 
     class Expr{
         public:
-        ASMC::OpType op;
+        ASMC::OpType op = ASMC::Hard;
         std::string access;
         ASMC::Size size;
     };
