@@ -42,7 +42,7 @@ namespace ASMC{
         std::string to;
         std::string from;
         Size size;
-        OpType op = gen::Hard;
+        OpType op = Hard;
         std::string toString();
     };
 
