@@ -3,10 +3,14 @@
 
 #include <string>
 #include "LinkedList.hpp"
-#include "CodeGenerator.hpp"
+
 
 namespace ASMC{
 
+    enum OpType{
+        Float,
+        Hard,
+    };
     enum Size{
         Byte,
         Word,
@@ -38,7 +42,7 @@ namespace ASMC{
         std::string to;
         std::string from;
         Size size;
-        gen::OpType op = gen::Hard;
+        OpType op = gen::Hard;
         std::string toString();
     };
 
