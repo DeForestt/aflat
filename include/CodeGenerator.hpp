@@ -54,6 +54,7 @@ namespace gen{
         #pragma region Item Lists
             links::SLinkedList<gen::Type *, std::string> typeList;
             links::SLinkedList<ASMC::Register, std::string> registers;
+            links::SLinkedList<ASMC::Register, std::string> floatRegisters;
             links::LinkedList<Symbol> SymbolTable;
             links::LinkedList<Symbol> GlobalSymbolTable;
             links::SLinkedList<AST::Function, std::string> nameTable;

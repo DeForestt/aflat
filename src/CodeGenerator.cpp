@@ -45,6 +45,7 @@ gen::CodeGenerator::CodeGenerator(){
     this->registers << ASMC::Register("rdi", "edi", "di", "dil");   
     this->registers << ASMC::Register("rsp", "esp", "sp", "spl");
     this->registers << ASMC::Register("rbp", "ebp", "bp", "bpl");
+    this->registers << ASMC::Register("xmm0", "xmm0", "xmm0", "xmm0");
     this->registers.foo = ASMC::Register::compair;
     this->nameTable.foo = compairFunc;
     this->globalScope = true;
@@ -164,8 +165,16 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         fltlit->value = floatlit->val;
         OutputFile.data << lable;
         OutputFile.data << fltlit;
-        output.access = "$" + lable->lable;
-        output.size = ASMC::QWord;
+
+        // Mov the label to the xxmm0 register
+        ASMC::Mov * mov = new ASMC::Mov();
+        mov->size = ASMC::DWord;
+        mov->to = this->registers["%xmm0"]->get(ASMC::DWord);
+        mov->from = "$" + lable->lable;
+        OutputFile.text << mov;
+
+        output.access = this->registers["%xmm0"]->get(ASMC::DWord);
+        output.size = ASMC::DWord;
     }
     else if(dynamic_cast<AST::DeRefence *>(expr)){
 
