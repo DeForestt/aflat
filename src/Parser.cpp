@@ -35,7 +35,7 @@ parse::Parser::Parser(){
     this->typeList << Char;
     this->typeList << Byte;
     this->typeList << Adr;
-    this->typeList << Float;
+    this->typeList << Float; 
 }
 
 AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
