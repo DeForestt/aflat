@@ -7,8 +7,8 @@
 #include "ASM.hpp"
 
 
-
 namespace gen{
+   
     enum OpType{
         Float,
         Hard
