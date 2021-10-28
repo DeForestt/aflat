@@ -116,6 +116,11 @@ std::string ASMC::StringLiteral::toString(){
     return "\t.asciz\t \"" + this->value + "\"\n";
 }
 
+std::string ASMC::FloatLiteral::toString(){
+    return "\t.float\t" + this->value + "\n";
+}
+
+
 std::string ASMC::Add::toString(){
     return "\tadd\t" + this->op1 + ", " + this->op2 + "\n";
 }

@@ -146,7 +146,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         ASMC::StringLiteral * strlit = new ASMC::StringLiteral();
         ASMC::Lable * lable = new ASMC::Lable();
         if(this->scope == nullptr)lable->lable = ".str" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-        else lable->lable = ".str" + scope->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
+        else lable->lable = ".str" + scope->Ident +'.'+ scope->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount++;
         strlit->value = str.val;
         OutputFile.data << lable;
@@ -156,7 +156,15 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     }
     else if (dynamic_cast<AST::FloatLiteral *>(expr) != nullptr){
         AST::FloatLiteral * floatlit = dynamic_cast<AST::FloatLiteral *>(expr);
-        output.access = '$' + std::to_string(floatlit->val);
+        ASMC::FloatLiteral * fltlit = new ASMC::FloatLiteral();
+        ASMC::Lable * lable = new ASMC::Lable();
+        if(this->scope == nullptr)lable->lable = ".str" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
+        else lable->lable = ".str" +scope->Ident +'.'+ scope->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
+        this->lablecount++;
+        fltlit->value = floatlit->val;
+        OutputFile.data << lable;
+        OutputFile.data << fltlit;
+        output.access = "$" + lable->lable;
         output.size = ASMC::QWord;
     }
     else if(dynamic_cast<AST::DeRefence *>(expr)){
