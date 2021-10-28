@@ -169,6 +169,7 @@ namespace ASMC{
         public:
         std::string op1;
         std::string op2;
+        ASMC::OpType opType = ASMC::Hard;
         std::string toString();
     };
 
@@ -176,6 +177,7 @@ namespace ASMC{
         public:
         std::string op1;
         std::string op2;
+        ASMC::OpType opType = ASMC::Hard;
         std::string toString();
     };
 
@@ -183,6 +185,7 @@ namespace ASMC{
         public:
         std::string op1;
         std::string op2;
+        ASMC::OpType opType = ASMC::Hard;
         std::string toString();
     };
 
@@ -190,6 +193,7 @@ namespace ASMC{
         public:
         std::string op1;
         std::string op2;
+        ASMC::OpType opType = ASMC::Hard;
         std::string toString();
     };
 

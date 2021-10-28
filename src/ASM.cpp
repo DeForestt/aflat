@@ -121,20 +121,23 @@ std::string ASMC::FloatLiteral::toString(){
     return "\t.float\t" + this->value + "\n";
 }
 
-
 std::string ASMC::Add::toString(){
+    if (this->opType == ASMC::Float) return "\taddss\t" + this->op1 + ", " + this->op2 + "\n";
     return "\tadd\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
 std::string ASMC::Sub::toString(){
+    if (this->opType == ASMC::Float) return "\tsubss\t" + this->op1 + ", " + this->op2 + "\n";
     return "\tsub\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
 std::string ASMC::Mul::toString(){
+    if (this->opType == ASMC::Float) return "\tmulss\t" + this->op1 + ", " + this->op2 + "\n";
     return "\timul\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
 std::string ASMC::Div::toString(){
+    if (this->opType == ASMC::Float) return "\tdivss\t" + this->op1 + ", " + this->op2 + "\n";
     return "\tcltd\n\tidivl\t" + this->op1 + "\n";
 }
 
