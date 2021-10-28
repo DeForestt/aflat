@@ -1,17 +1,16 @@
 #ifndef GEN
 #define GEN
 
-#include "AST.hpp"
 #include "LinkedList.hpp"
 #include "LinkedListS.hpp"
 #include "ASM.hpp"
-
+#include "AST.hpp"
 
 namespace gen{
    
     enum OpType{
         Float,
-        Hard
+        Hard,
     };
 
     class Expr{
