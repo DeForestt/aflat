@@ -158,8 +158,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::FloatLiteral * floatlit = dynamic_cast<AST::FloatLiteral *>(expr);
         ASMC::FloatLiteral * fltlit = new ASMC::FloatLiteral();
         ASMC::Lable * lable = new ASMC::Lable();
-        if(this->scope == nullptr)lable->lable = ".str" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-        else lable->lable = ".str" +scope->Ident +'.'+ scope->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
+        if(this->scope == nullptr)lable->lable = ".float" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
+        else lable->lable = ".float" +scope->Ident +'.'+ scope->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount++;
         fltlit->value = floatlit->val;
         OutputFile.data << lable;
