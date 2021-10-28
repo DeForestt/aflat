@@ -164,23 +164,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         fltlit->value = floatlit->val;
         OutputFile.data << lable;
         OutputFile.data << fltlit;
-<<<<<<< HEAD
-
-        // Mov the label to the xxmm0 register
-        ASMC::Mov * mov = new ASMC::Mov();
-        mov->size = ASMC::DWord;
-        mov->to = this->registers["%xmm0"]->get(ASMC::DWord);
-        mov->from = "$" + lable->lable;
-        mov->op = gen::Float;
-        OutputFile.text << mov;
-
-        output.op = gen::Float;
-        output.access = this->registers["%xmm0"]->get(ASMC::DWord);
-        output.size = ASMC::DWord;
-=======
         output.access = "$" + lable->lable;
         output.size = ASMC::QWord;
->>>>>>> parent of d61507c... pass as a float and not a string
     }
     else if(dynamic_cast<AST::DeRefence *>(expr)){
 
