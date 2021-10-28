@@ -9,8 +9,14 @@
 
 
 namespace gen{
+    enum OpType{
+        Float,
+        Hard
+    };
+
     class Expr{
         public:
+        gen::OpType op;
         std::string access;
         ASMC::Size size;
     };

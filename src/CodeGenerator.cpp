@@ -171,8 +171,10 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         mov->size = ASMC::DWord;
         mov->to = this->registers["%xmm0"]->get(ASMC::DWord);
         mov->from = "$" + lable->lable;
+        mov->op = gen::Float;
         OutputFile.text << mov;
 
+        output.op = gen::Float;
         output.access = this->registers["%xmm0"]->get(ASMC::DWord);
         output.size = ASMC::DWord;
     }
@@ -527,7 +529,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile << this->GenSTMT(sequence->Statment1);
         OutputFile << this->GenSTMT(sequence->Statment2);;
 
-    }else if(dynamic_cast<AST::Function *>(STMT)){
+    }
+    else if(dynamic_cast<AST::Function *>(STMT)){
         /*
             ident:
                 push rbp
@@ -637,7 +640,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         }
         delete(func);
-    }else if (dynamic_cast<AST::Declare *>(STMT) != nullptr)
+    }
+    else if (dynamic_cast<AST::Declare *>(STMT) != nullptr)
     {
         /*
             movl $0x0, -[SymbolT + size](rdp)
@@ -683,7 +687,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             Table->push(Symbol);
         }
         
-    }else if(dynamic_cast<AST::DecArr *>(STMT) != nullptr){
+    }
+    else if(dynamic_cast<AST::DecArr *>(STMT) != nullptr){
          /*
             movl $0x0, -[SymbolT + size](rdp)
             **also needs to be added to symbol table**
@@ -711,7 +716,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         Table->push(Symbol);
         this->scopePop += 1;
 
-    }else if (dynamic_cast<AST::DecAssign *>(STMT) != nullptr)
+    }
+    else if (dynamic_cast<AST::DecAssign *>(STMT) != nullptr)
     {
         /*
             movl $0x0, -[SymbolT + size](rdp)
@@ -741,6 +747,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
             ASMC::Mov * mov = new ASMC::Mov();
             gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile);
+            mov->op = expr.op;
             mov->size = expr.size;
             mov->from = expr.access;
             mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
@@ -769,7 +776,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             Table->push(Symbol);
         };
 
-    }else if (dynamic_cast<AST::Return *>(STMT) != nullptr)
+    }
+    else if (dynamic_cast<AST::Return *>(STMT) != nullptr)
     {
         /*
             mov [this.GenExpr(ret.value)]
@@ -788,7 +796,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::Return * re = new ASMC::Return();
         OutputFile.text << re;
 
-    }else if (dynamic_cast<AST::Assign *>(STMT) != nullptr)
+    }
+    else if (dynamic_cast<AST::Assign *>(STMT) != nullptr)
     {
         AST::Assign * assign = dynamic_cast<AST::Assign *>(STMT);
         bool global = false;
@@ -853,7 +862,9 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text << mov2;
         OutputFile.text << mov;
 
-    }else if (dynamic_cast<AST::Call *>(STMT) != nullptr)
+    
+    }
+    else if (dynamic_cast<AST::Call *>(STMT) != nullptr)
     {
         AST::Call * call = dynamic_cast<AST::Call *>(STMT);
         this->GenCall(call, OutputFile);
@@ -887,7 +898,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text << callnum;
         
         OutputFile.text << new ASMC::SysCall;
-    }else if (dynamic_cast<AST::Pull *>(STMT) != nullptr)
+    }
+    else if (dynamic_cast<AST::Pull *>(STMT) != nullptr)
     {
         AST::Pull * pull = dynamic_cast<AST::Pull *>(STMT);
         ASMC::Mov * count = new ASMC::Mov;

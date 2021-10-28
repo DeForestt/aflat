@@ -3,6 +3,7 @@
 
 #include <string>
 #include "LinkedList.hpp"
+#include "CodeGenerator.hpp"
 
 namespace ASMC{
 
@@ -37,6 +38,7 @@ namespace ASMC{
         std::string to;
         std::string from;
         Size size;
+        gen::OpType op = gen::Hard;
         std::string toString();
     };
 
