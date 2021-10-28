@@ -2,14 +2,14 @@
 .needs "/std/head/Collections.gs"
 
 ListNode newNode(){
-    ListNode new = malloc(16);
+    ListNode new = malloc(ListNode);
     new.next = #0;
     new.data = #0;
     return new;
 };
 
 Stack newStack(){
-    Stack new = malloc(12);
+    Stack new = malloc(Stack));
     new.head = #0;
     new.count = 0;
 

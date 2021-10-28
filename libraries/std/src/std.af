@@ -1,7 +1,9 @@
 .needs "/std/head/std.gs"
 .needs "/std/head/asm.gs"
 
-Block head = #0;
+.def NULL = #0
+
+Block head = NULL;
 
 //helpers
 
@@ -25,8 +27,8 @@ Block findFreeBlock(Block last, int size) {
 
 Block requestSpace(Block last, int size){
     Block block = brk(0);
-    int nsize = size + 
-    adr i = brk(block + size);
+    int nsize = size + Block;
+    adr i = brk(block + nsize);
 
     if(i < #0){return #0};
 
@@ -41,7 +43,7 @@ Block requestSpace(Block last, int size){
 };
 
 Time newTime(adr count){
-    Time this = malloc(16);
+    Time this = malloc(Time);
     this.amount = count;
     return this;
 };

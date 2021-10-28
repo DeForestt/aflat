@@ -4,7 +4,7 @@
 .needs "/std/head/files.gs"
 
 File createFile(adr fileName){
-        File file = malloc(30);
+        File file = malloc(File);
         file.file = sys_create(fileName, #511);
         int test = file.file * 1;
         if(test < 1){
@@ -15,7 +15,7 @@ File createFile(adr fileName){
 };
 
 File openFile(adr fileName){
-        File file = malloc(30);
+        File file = malloc(File);
         adr flag = #2;
         file.file = sys_open(fileName, flag, #777);
         int test = file.file * 1;
@@ -52,7 +52,7 @@ int read@File(adr pointer, char delim, char term){
 };
 
 FileInfo getFileInfo@File(){
-        FileInfo ninfo = malloc(52);
+        FileInfo ninfo = malloc(FileInfo);
         sys_fstat(my.file, ninfo);
         my.info = ninfo;
         return info;
