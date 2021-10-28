@@ -45,6 +45,7 @@ gen::CodeGenerator::CodeGenerator(){
     this->registers << ASMC::Register("rdi", "edi", "di", "dil");   
     this->registers << ASMC::Register("rsp", "esp", "sp", "spl");
     this->registers << ASMC::Register("rbp", "ebp", "bp", "bpl");
+    this->registers << ASMC::Register("xmm0", "xmm0", "xmm0", "xmm0");
     this->registers.foo = ASMC::Register::compair;
     this->nameTable.foo = compairFunc;
     this->globalScope = true;
@@ -162,10 +163,18 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         else lable->lable = ".float" +scope->Ident +'.'+ scope->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount++;
         fltlit->value = floatlit->val;
+
+        //move value to the xmm0 register
+        ASMC::Mov * mov = new ASMC::Mov();
+        mov->size = ASMC::DWord;
+        mov->to = this->registers["%xmm0"]->get(ASMC::DWord);
+        mov->from = "$" + lable->lable;
+
+        output.op = gen::Float;
         OutputFile.data << lable;
         OutputFile.data << fltlit;
-        output.access = "$" + lable->lable;
-        output.size = ASMC::QWord;
+        output.access = this->registers["%xmm0"]->get(ASMC::DWord);
+        output.size = ASMC::DWord;
     }
     else if(dynamic_cast<AST::DeRefence *>(expr)){
 
@@ -736,7 +745,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
             ASMC::Mov * mov = new ASMC::Mov();
             gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile);
-            //mov->op = expr.op;
+            if(expr.op == gen::Float) mov->op = ASMC::Float;
             mov->size = expr.size;
             mov->from = expr.access;
             mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
