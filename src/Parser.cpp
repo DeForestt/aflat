@@ -5,26 +5,37 @@
 parse::Parser::Parser(){
     this->typeList.foo = AST::Type::compair;
 
+    // Int Type
     AST::Type Int = AST::Type();
     Int.typeName = "int";
     Int.size = ASMC::DWord;
 
+    // Char Type
     AST::Type Char = AST::Type();
     Char.typeName = "char";
     Char.size = ASMC::Byte;
     
+    // Pointer Type
     AST::Type Adr = AST::Type();
     Adr.typeName = "adr";
     Adr.size = ASMC::QWord;
 
+    // Byte type
     AST::Type Byte = AST::Type();
     Byte.typeName = "byte";
     Byte.size = ASMC::Byte;
 
+    // Float Type
+    AST::Type Float = AST::Type();
+    Float.typeName = "float";
+    Float.size = ASMC::QWord;
+
+    // Add Types to TypeList
     this->typeList << Int;
     this->typeList << Char;
     this->typeList << Byte;
     this->typeList << Adr;
+    this->typeList << Float;
 }
 
 AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
