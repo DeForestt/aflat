@@ -167,10 +167,11 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         //move value to the xmm0 register
         ASMC::Mov * mov = new ASMC::Mov();
         mov->size = ASMC::DWord;
+        mov->op = ASMC::Float;
         mov->to = this->registers["%xmm0"]->get(ASMC::DWord);
         mov->from = "$" + lable->lable;
 
-        output.op = gen::Float;
+        output.op = ASMC::Float;
         OutputFile.text << mov;
         OutputFile.data << lable;
         OutputFile.data << fltlit;
@@ -746,7 +747,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
             ASMC::Mov * mov = new ASMC::Mov();
             gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile);
-            if(expr.op == gen::Float) mov->op = ASMC::Float;
+            mov->op = expr.op;
             mov->size = expr.size;
             mov->from = expr.access;
             mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";

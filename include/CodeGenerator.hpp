@@ -7,15 +7,10 @@
 #include "AST.hpp"
 
 namespace gen{
-   
-    enum OpType{
-        Float,
-        Hard,
-    };
 
     class Expr{
         public:
-        gen::OpType op;
+        ASMC::OpType op;
         std::string access;
         ASMC::Size size;
     };
