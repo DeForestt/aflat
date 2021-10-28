@@ -812,11 +812,13 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::Mov * mov2 = new ASMC::Mov();
         gen::Expr expr = this->GenExpr(assign->expr, OutputFile);
         mov->op = expr.op;
-        mov2.op = expr.op;
+        mov2->op = expr.op;
         mov->size = expr.size;
         mov2->size = expr.size;
         mov2->from = expr.access;
-        mov2->to = this->registers["%rbx"]->get(expr.size);
+
+        if(expr.op == ASMC::Float) mov2->to = this->registers["%xmm0"]->get(expr.size);
+        else mov2->to = this->registers["%rbx"]->get(expr.size);
         mov->from = mov2->to;
 
         assign->modList.invert();
