@@ -50,7 +50,7 @@ namespace gen{
             gen::Class * scope;
             AST::Type returnType;
             int scopePop = 0;
-            int lablecount = 0;
+            int lablecount = 0; 
             int intArgsCounter;
             int selectReg = 0;
             bool globalScope = true;
