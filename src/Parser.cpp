@@ -552,6 +552,6 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             compound->expr2 = this->parseExpr(tokens);
             return compound;
     }
-
+    }
     return output;
 }
