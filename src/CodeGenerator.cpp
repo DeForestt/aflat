@@ -198,7 +198,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         ASMC::Mov * mov = new ASMC::Mov();
         mov->size = ASMC::DWord;
         mov->op = ASMC::Float;
-        mov->to = this->registers["%xmm0"]->get(ASMC::DWord);
+        mov->to = this->registers["%xmm" + std::to_string(this->selectReg)]->get(ASMC::DWord);
         mov->from = lable->lable;
 
         output.op = ASMC::Float;
@@ -267,8 +267,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             }
             case AST::Minus:{
                 ASMC::Sub * sub = new ASMC::Sub();
-
+                this->selectReg = 0;
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
+                this->selectReg = 1;
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
 
                 this->prepareCompound(expr1, expr2, OutputFile);
@@ -295,8 +296,10 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             }
             case AST::Mul:{
                 ASMC::Mul * mul = new ASMC::Mul();
-
+                
+                this->selectReg = 0;
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
+                this->selectReg = 1;
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
                 
                 this->prepareCompound(expr1, expr2, OutputFile);
@@ -325,7 +328,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
 
                 ASMC::Div * div = new ASMC::Div();
 
+                this->selectReg = 0;
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
+                this->selectReg = 1;
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
 
                 div->op1 = expr2.access;
@@ -352,8 +357,10 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             }
             case AST::Mod:{
                 ASMC::Div * div = new ASMC::Div();
-
+                
+                this->selectReg = 0;
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
+                this->selectReg = 1;
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
 
                 div->op1 = expr1.access;
