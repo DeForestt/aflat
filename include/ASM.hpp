@@ -204,6 +204,15 @@ namespace ASMC{
         std::string toString();
     };
 
+    class And : public Instruction{
+        public:
+        std::string op1;
+        std::string op2;
+        ASMC::Size size;
+        std::string toString();
+    };
+
+
     class File{
         public:
         links::LinkedList<Instruction * > text;
