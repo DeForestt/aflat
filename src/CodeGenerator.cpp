@@ -56,31 +56,31 @@ gen::CodeGenerator::CodeGenerator(){
     this->scope = nullptr;
 }
 
-void gen::CodeGenerator::prepareCompound(gen::Expr expr1, gen::Expr expr2, ASMC::File &OutputFile, bool isDiv = false){
+void gen::CodeGenerator::prepareCompound(AST::Compound compound, ASMC::File &OutputFile, bool isDiv = false){
     ASMC::Mov * mov1 = new ASMC::Mov();
     ASMC::Mov * mov2 = new ASMC::Mov();
-
-    mov1->op = expr1.op;
-    mov2->op = expr2.op;
-
-
-    mov1->size = ASMC::AUTO;
-    mov2->size = ASMC::AUTO;
-
     std::string r1 = "%edx", r2 = "%eax";
-
     // if expr1 op is Float set to the float registers
+
+    gen::Expr expr2 = this->GenExpr(compound.expr2, OutputFile);
+    mov1->op = expr2.op;
+    mov1->to = this->registers[r1]->get(expr2.size);
+    mov1->from = expr2.access;
+    if (!isDiv) OutputFile.text << mov1;
+
+    gen::Expr expr1 = this->GenExpr(compound.expr1, OutputFile);
     if (expr1.op == ASMC::Float){
         r1 = "%xmm1";
         r2 = "%xmm0";
     }
-
-    mov1->to = this->registers[r1]->get(expr1.size);
+    mov2->op = expr1.op;
     mov2->to = this->registers[r2]->get(expr1.size);
-    mov1->from = expr2.access;
     mov2->from = expr1.access;
-    if (!isDiv) OutputFile.text << mov1;
     OutputFile.text << mov2;
+
+    mov1->size = ASMC::AUTO;
+    mov2->size = ASMC::AUTO;
+    
 }
 
 gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
@@ -198,14 +198,14 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         ASMC::Mov * mov = new ASMC::Mov();
         mov->size = ASMC::DWord;
         mov->op = ASMC::Float;
-        mov->to = this->registers["%xmm" + std::to_string(this->selectReg)]->get(ASMC::DWord);
+        mov->to = this->registers["%xmm0"]->get(ASMC::DWord);
         mov->from = lable->lable;
 
         output.op = ASMC::Float;
         OutputFile.text << mov;
         OutputFile.data << lable;
         OutputFile.data << fltlit;
-        output.access = this->registers["%xmm" + std::to_string(this->selectReg)]->get(ASMC::DWord);
+        output.access = this->registers["%xmm0"]->get(ASMC::DWord);
         output.size = ASMC::DWord;
     }
     else if(dynamic_cast<AST::DeRefence *>(expr)){
@@ -267,12 +267,10 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             }
             case AST::Minus:{
                 ASMC::Sub * sub = new ASMC::Sub();
-                this->selectReg = 0;
-                gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
-                this->selectReg = 1;
-                gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
+                gen::Expr expr1 = this->GenExpr(comp.expr1, ASMC::File());
+                gen::Expr expr2 = this->GenExpr(comp.expr2, ASMC::File());
 
-                this->prepareCompound(expr1, expr2, OutputFile);
+                this->prepareCompound(comp, OutputFile);
                 sub->opType = expr1.op;
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
@@ -298,11 +296,11 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 ASMC::Mul * mul = new ASMC::Mul();
                 
                 this->selectReg = 0;
-                gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
+                gen::Expr expr1 = this->GenExpr(comp.expr1, ASMC::File());
                 this->selectReg = 1;
-                gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
+                gen::Expr expr2 = this->GenExpr(comp.expr2, ASMC::File());
                 
-                this->prepareCompound(expr1, expr2, OutputFile);
+                this->prepareCompound(comp, OutputFile);
                 mul->opType = expr1.op;
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
@@ -329,9 +327,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 ASMC::Div * div = new ASMC::Div();
 
                 this->selectReg = 0;
-                gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
+                gen::Expr expr1 = this->GenExpr(comp.expr1, ASMC::File());
                 this->selectReg = 1;
-                gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
+                gen::Expr expr2 = this->GenExpr(comp.expr2, ASMC::File());
 
                 div->op1 = expr2.access;
 
@@ -345,9 +343,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     output.access = "%xmm0";
                     div->op1 = to1;
                     div->op2 = to2;
-                    this->prepareCompound(expr1, expr2, OutputFile);
+                    this->prepareCompound(comp, OutputFile);
                     output.op = ASMC::Float;
-                }else this->prepareCompound(expr1, expr2, OutputFile, true);
+                }else this->prepareCompound(comp, OutputFile, true);
                 
                 
 
