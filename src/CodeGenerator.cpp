@@ -239,9 +239,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         {
             case AST::Plus:{
                 ASMC::Add * add = new ASMC::Add();
-                gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
-                gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
-                this->prepareCompound(expr1, expr2, OutputFile);
+                gen::Expr expr1 = this->GenExpr(comp.expr1, ASMC::File());
+                gen::Expr expr2 = this->GenExpr(comp.expr2, ASMC::File());
+                this->prepareCompound(comp, OutputFile);
                 
                 add->opType = expr1.op;
                 
@@ -357,9 +357,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 ASMC::Div * div = new ASMC::Div();
                 
                 this->selectReg = 0;
-                gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
+                gen::Expr expr1 = this->GenExpr(comp.expr1, ASMC::File());
                 this->selectReg = 1;
-                gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
+                gen::Expr expr2 = this->GenExpr(comp.expr2, ASMC::File());
 
                 div->op1 = expr1.access;
 
@@ -374,8 +374,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     output.op = ASMC::Float;
                     div->op1 = to1;
                     div->op2 = to2;
-                    this->prepareCompound(expr1, expr2, OutputFile);
-                }else this->prepareCompound(expr1, expr2, OutputFile, true);
+                    this->prepareCompound(comp, OutputFile);
+                }else this->prepareCompound(comp, OutputFile, true);
                 
                 
 
