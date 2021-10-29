@@ -333,6 +333,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
 
                 div->op1 = expr2.access;
+                div->opType = expr1.op;
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
                 std::string to2 = this->registers["%rax"]->get(expr1.size);
