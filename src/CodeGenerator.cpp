@@ -66,7 +66,7 @@ void gen::CodeGenerator::prepareCompound(gen::Expr expr1, gen::Expr expr2, ASMC:
     std::string r1 = "%edx", r2 = "%eax";
 
     // if expr1 op is Float set to the float registers
-    if (expr1.type->type == ASMC::Float){
+    if (expr1.op == ASMC::Float){
         r1 = "%xmm1";
         r2 = "%xmm0";
     }
