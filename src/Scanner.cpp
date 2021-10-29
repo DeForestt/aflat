@@ -172,14 +172,24 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                     {
                         lex::Symbol * sym = new lex::Symbol;
                         sym->meta = "<";
-                        tokens << sym;
+                        if (input[i+1] == '<'){
+                            lex::OpSym * opSym = new lex::OpSym;
+                            opSym->Sym = '<';
+                            tokens << opSym;
+                            i++;
+                        } else tokens << sym;
                         i++;
                     }
                     else if (input[i] == '>')
                     {
                         lex::Symbol * sym = new lex::Symbol;
                         sym->meta = ">";
-                        tokens << sym;
+                        if (input[i+1] == '>'){
+                            lex::OpSym * opSym = new lex::OpSym;
+                            opSym->Sym = '>';
+                            tokens << opSym;
+                            i++;
+                        } else tokens << sym;
                         i++;
                     }
                     else if(input[i] == '!'){
