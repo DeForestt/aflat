@@ -72,6 +72,7 @@ namespace gen{
         void GenArgs(AST::Statment * STMT, ASMC::File &OutputFile);
         AST::Function GenCall(AST::Call * call, ASMC::File &OutputFile);
         Expr GenExpr(AST::Expr * expr, ASMC::File &OutputFile);
+        void prepareCompound(gen::Expr expr1, gen::Expr expr2, ASMC::File &OutputFile, bool isDiv = false);
 
         public:
         ASMC::File GenSTMT(AST::Statment * stmt);

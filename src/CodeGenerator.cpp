@@ -46,11 +46,37 @@ gen::CodeGenerator::CodeGenerator(){
     this->registers << ASMC::Register("rsp", "esp", "sp", "spl");
     this->registers << ASMC::Register("rbp", "ebp", "bp", "bpl");
     this->registers << ASMC::Register("xmm0", "xmm0", "xmm0", "xmm0");
+    this->registers << ASMC::Register("xmm1", "xmm1", "xmm1", "xmm1");
+    this->registers << ASMC::Register("xmm2", "xmm2", "xmm2", "xmm2");
+    this->registers << ASMC::Register("xmm3", "xmm3", "xmm3", "xmm3");
     this->registers.foo = ASMC::Register::compair;
     this->nameTable.foo = compairFunc;
     this->globalScope = true;
     this->typeList.foo = gen::Type::compair;
     this->scope = nullptr;
+}
+
+void gen::CodeGenerator::prepareCompound(gen::Expr expr1, gen::Expr expr2, ASMC::File &OutputFile, bool isDiv = false){
+    ASMC::Mov * mov1 = new ASMC::Mov();
+    ASMC::Mov * mov2 = new ASMC::Mov();
+
+    mov1->size = ASMC::AUTO;
+    mov2->size = ASMC::AUTO;
+
+    std::string r1 = "%edx", r2 = "%eax";
+
+    // if expr1 op is Float set to the float registers
+    if (expr1.type->type == ASMC::Float){
+        r1 = "%xmm1";
+        r2 = "%xmm0";
+    }
+
+    mov1->to = this->registers[r1]->get(expr1.size);
+    mov2->to = this->registers[r2]->get(expr1.size);
+    mov1->from = expr1.access;
+    mov2->from = expr2.access;
+    if (!isDiv) OutputFile.text << mov1;
+    OutputFile.text << mov2;
 }
 
 gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
@@ -206,122 +232,138 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         switch (comp.op)
         {
             case AST::Plus:{
-                ASMC::Mov * mov1 = new ASMC::Mov();
-                ASMC::Mov * mov2 = new ASMC::Mov();
                 ASMC::Add * add = new ASMC::Add();
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
-                mov1->size = ASMC::AUTO;
-                mov2->size = ASMC::AUTO;
-
-                mov1->to = this->registers["%edx"]->get(expr1.size);
-                mov2->to = this->registers["%eax"]->get(expr1.size);
+                this->prepareCompound(expr1, expr2, OutputFile);
                 
-                mov2->to = "%eax";
-                mov1->from = expr1.access;
-                mov2->from = expr2.access;
-                add->op2 = "%eax";
-                add->op1 = "%edx";
-                OutputFile.text << mov1;
-                OutputFile.text << mov2;
-                OutputFile.text << add;
+                add->opType = expr1.op;
+                
+
+                std::string to1 = this->registers["%rdx"]->get(expr1.size);
+                std::string to2 = this->registers["%rax"]->get(expr1.size);
                 output.access = "%eax";
+
+                if(expr1.op == ASMC::Float){
+                    to1 = this->registers["%xmm1"]->get(ASMC::DWord);
+                    to2 = this->registers["%xmm0"]->get(ASMC::DWord);
+                    output.access = "%xmm0";
+                }
+
+
+                add->op2 = to2;
+                add->op1 = to1;
+                OutputFile.text << add;
+                
                 output.size = ASMC::DWord;
                 break;
             }
             case AST::Minus:{
-                ASMC::Mov * mov1 = new ASMC::Mov();
-                ASMC::Mov * mov2 = new ASMC::Mov();
                 ASMC::Sub * sub = new ASMC::Sub();
+
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
-                mov1->size = expr1.size;
-                mov2->size = expr1.size;
-                
-                mov1->to = this->registers["%edx"]->get(expr1.size);
-                mov2->to = this->registers["%eax"]->get(expr1.size);
-                
-                mov2->to = "%eax";
-                mov1->from = expr2.access;
-                mov2->from = expr1.access;
-                sub->op2 = "%eax";
-                sub->op1 = "%edx";
-                OutputFile.text << mov1;
-                OutputFile.text << mov2;
-                OutputFile.text << sub;
+
+                this->prepareCompound(expr1, expr2, OutputFile);
+                sub->opType = expr1.op;
+
+                std::string to1 = this->registers["%rdx"]->get(expr1.size);
+                std::string to2 = this->registers["%rax"]->get(expr1.size);
                 output.access = "%eax";
+
+                if(expr1.op == ASMC::Float){
+                    to1 = this->registers["%xmm1"]->get(ASMC::DWord);
+                    to2 = this->registers["%xmm0"]->get(ASMC::DWord);
+                    output.access = "%xmm0";
+                }
+            
+                sub->op2 = to2;
+                sub->op1 = to1;
+
+                OutputFile.text << sub;
+
                 output.size = ASMC::DWord;
                 break;
             }
             case AST::Mul:{
-                ASMC::Mov * mov1 = new ASMC::Mov();
-                ASMC::Mov * mov2 = new ASMC::Mov();
                 ASMC::Mul * mul = new ASMC::Mul();
+
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
                 
-                mov1->size = expr1.size;
-                mov2->size = expr1.size;
-                
-                mov1->to = this->registers["%edx"]->get(expr1.size);
-                mov2->to = this->registers["%eax"]->get(expr1.size);
-                
-                mov2->to = "%eax";
-                mov1->from = expr1.access;
-                mov2->from = expr2.access;
-                mul->op2 = "%eax";
-                mul->op1 = "%edx";
-                OutputFile.text << mov1;
-                OutputFile.text << mov2;
-                OutputFile.text << mul;
+                this->prepareCompound(expr1, expr2, OutputFile);
+                mul->opType = expr1.op;
+
+                std::string to1 = this->registers["%rdx"]->get(expr1.size);
+                std::string to2 = this->registers["%rax"]->get(expr1.size);
                 output.access = "%eax";
+
+                if(expr1.op == ASMC::Float){
+                    to1 = this->registers["%xmm1"]->get(ASMC::DWord);
+                    to2 = this->registers["%xmm0"]->get(ASMC::DWord);
+                    output.access = "%xmm0";
+                }
+                
+                mul->op2 = to2;
+                mul->op1 = to1;
+
+                OutputFile.text << mul;
+                
                 output.size = ASMC::DWord;
                 break;
             }
             case AST::Div:{
-                ASMC::Mov * mov1 = new ASMC::Mov();
-                ASMC::Mov * mov2 = new ASMC::Mov();
+
                 ASMC::Div * div = new ASMC::Div();
+
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
-                mov1->size = expr1.size;
-                mov2->size = expr1.size;
-                
-                mov1->to = this->registers["%edx"]->get(expr1.size);
-                mov2->to = this->registers["%eax"]->get(expr1.size);
-                
-                mov2->to = "%eax";
-                //mov1->from = expr1.access;
-                mov2->from = expr1.access;
+
                 div->op1 = expr2.access;
-                //OutputFile.text << mov1;
-                OutputFile.text << mov2;
-                OutputFile.text << div;
+
+                std::string to1 = this->registers["%rdx"]->get(expr1.size);
+                std::string to2 = this->registers["%rax"]->get(expr1.size);
                 output.access = "%eax";
+
+                if(expr1.op == ASMC::Float){
+                    to1 = this->registers["%xmm1"]->get(ASMC::DWord);
+                    to2 = this->registers["%xmm0"]->get(ASMC::DWord);
+                    output.access = "%xmm0";
+                    div->op1 = to1;
+                    div->op2 = to2;
+                    this->prepareCompound(expr1, expr2, OutputFile);
+                }else this->prepareCompound(expr1, expr2, OutputFile, true);
+                
+                
+
+                OutputFile.text << div;
                 output.size = ASMC::DWord;
                 break;
             }
             case AST::Mod:{
-                ASMC::Mov * mov1 = new ASMC::Mov();
-                ASMC::Mov * mov2 = new ASMC::Mov();
                 ASMC::Div * div = new ASMC::Div();
+
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
-                
-                mov1->size = expr1.size;
-                mov2->size = expr1.size;
-                
-                mov1->to = this->registers["%edx"]->get(expr1.size);
-                mov2->to = this->registers["%eax"]->get(expr1.size);
-                
-                mov2->to = "%eax";
-                //mov1->from = expr1.access;
-                mov2->from = expr1.access;
+
                 div->op1 = expr2.access;
-                //OutputFile.text << mov1;
-                OutputFile.text << mov2;
-                OutputFile.text << div;
+
+                std::string to1 = this->registers["%rdx"]->get(expr1.size);
+                std::string to2 = this->registers["%rax"]->get(expr1.size);
                 output.access = "%edx";
+
+                if(expr1.op == ASMC::Float){
+                    to1 = this->registers["%xmm1"]->get(ASMC::DWord);
+                    to2 = this->registers["%xmm0"]->get(ASMC::DWord);
+                    output.access = "%xmm1";
+                    div->op1 = to1;
+                    div->op2 = to2;
+                    this->prepareCompound(expr1, expr2, OutputFile);
+                }else this->prepareCompound(expr1, expr2, OutputFile, true);
+                
+                
+
+                OutputFile.text << div;
                 output.size = ASMC::DWord;
                 break;
             }
