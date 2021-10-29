@@ -205,7 +205,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         OutputFile.text << mov;
         OutputFile.data << lable;
         OutputFile.data << fltlit;
-        output.access = this->registers["%xmm0"]->get(ASMC::DWord);
+        output.access = this->registers["%xmm" + std::to_string(this->selectReg)]->get(ASMC::DWord);
         output.size = ASMC::DWord;
     }
     else if(dynamic_cast<AST::DeRefence *>(expr)){
