@@ -173,7 +173,7 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         lex::Symbol * sym = new lex::Symbol;
                         sym->meta = "<";
                         if (input[i+1] == '<'){
-                            sym->meta += "<<";
+                            sym->meta = "<<";
                             i++;
                         }
                         tokens << sym;
