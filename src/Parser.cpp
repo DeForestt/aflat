@@ -538,6 +538,20 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             compound->expr2 = this->parseExpr(tokens);
             return compound;
         }
+        else if (sym.Sym == '>'){
+            tokens.pop();
+            compound->op = AST::Great;
+            compound->expr1 = output;
+            compound->expr2 = this->parseExpr(tokens);
+            return compound;
+        }
+        else if (sym.Sym == '<'){
+            tokens.pop();
+            compound->op = AST::Less;
+            compound->expr1 = output;
+            compound->expr2 = this->parseExpr(tokens);
+            return compound;
+        }
     }
     return output;
 }
