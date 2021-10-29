@@ -79,7 +79,7 @@ void gen::CodeGenerator::prepareCompound(gen::Expr expr1, gen::Expr expr2, ASMC:
     mov2->to = this->registers[r2]->get(expr1.size);
     mov1->from = expr1.access;
     mov2->from = expr2.access;
-    if (!isDiv){mov2->from = expr1.access; OutputFile.text << mov1;}
+    if (!isDiv) OutputFile.text << mov1; else mov2->from = expr1.access;
     OutputFile.text << mov2;
 }
 
