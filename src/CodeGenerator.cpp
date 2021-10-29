@@ -63,10 +63,12 @@ void gen::CodeGenerator::prepareCompound(AST::Compound compound, ASMC::File &Out
     // if expr1 op is Float set to the float registers
 
     gen::Expr expr2 = this->GenExpr(compound.expr2, OutputFile);
-     if (expr2.op == ASMC::Float){
+    
+    if (expr2.op == ASMC::Float){
         r1 = "%xmm1";
         r2 = "%xmm0";
     }
+
     mov1->op = expr2.op;
     mov1->to = this->registers[r1]->get(expr2.size);
     mov1->from = expr2.access;
@@ -289,6 +291,32 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 sub->op1 = to1;
 
                 OutputFile.text << sub;
+
+                output.size = ASMC::DWord;
+                break;
+            }
+            case AST::AndBit:{
+                ASMC::And * and = new ASMC::And();
+                gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
+                gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
+
+                this->prepareCompound(comp, OutputFile);
+
+                std::string to1 = this->registers["%rdx"]->get(expr1.size);
+                std::string to2 = this->registers["%rax"]->get(expr1.size);
+                output.access = "%eax";
+
+                if(expr1.op == ASMC::Float){
+                    to1 = this->registers["%xmm1"]->get(ASMC::DWord);
+                    to2 = this->registers["%xmm0"]->get(ASMC::DWord);
+                    output.access = "%xmm0";
+                    output.op = ASMC::Float;
+                }
+            
+                and->op2 = to2;
+                and->op1 = to1;
+
+                OutputFile.text << and;
 
                 output.size = ASMC::DWord;
                 break;
