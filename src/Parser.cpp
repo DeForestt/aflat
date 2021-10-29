@@ -556,13 +556,13 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
     else if (dynamic_cast<lex::Symbol *>(tokens.peek()) != nullptr){
         AST::Compound  * compound = new AST::Compound();
         lex::Symbol sym = *dynamic_cast<lex::Symbol *>(tokens.pop());
-        if (sym.meta == "<<"){
+        if (sym.meta == "<"){
             tokens.pop();
             compound->op = AST::Less;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
             return compound;
-        } else if (sym.meta == ">>"){
+        } else if (sym.meta == ">"){
             tokens.pop();
             compound->op = AST::Great;
             compound->expr1 = output;
