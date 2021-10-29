@@ -233,6 +233,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     }
     else if (dynamic_cast<AST::Compound *>(expr) != nullptr){
         AST::Compound comp = *dynamic_cast<AST::Compound *>(expr);
+        output.op = ASMC::Hard;
         switch (comp.op)
         {
             case AST::Plus:{
@@ -252,6 +253,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     to1 = this->registers["%xmm1"]->get(ASMC::DWord);
                     to2 = this->registers["%xmm0"]->get(ASMC::DWord);
                     output.access = "%xmm0";
+                    output.op = ASMC::Float;
                 }
 
 
@@ -279,6 +281,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     to1 = this->registers["%xmm1"]->get(ASMC::DWord);
                     to2 = this->registers["%xmm0"]->get(ASMC::DWord);
                     output.access = "%xmm0";
+                    output.op = ASMC::Float;
                 }
             
                 sub->op2 = to2;
@@ -306,6 +309,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     to1 = this->registers["%xmm1"]->get(ASMC::DWord);
                     to2 = this->registers["%xmm0"]->get(ASMC::DWord);
                     output.access = "%xmm0";
+                    output.op = ASMC::Float;
                 }
                 
                 mul->op2 = to2;
@@ -336,6 +340,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     div->op1 = to1;
                     div->op2 = to2;
                     this->prepareCompound(expr1, expr2, OutputFile);
+                    output.op = ASMC::Float;
                 }else this->prepareCompound(expr1, expr2, OutputFile, true);
                 
                 
@@ -360,6 +365,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     to1 = this->registers["%xmm1"]->get(ASMC::DWord);
                     to2 = this->registers["%xmm0"]->get(ASMC::DWord);
                     output.access = "%xmm1";
+                    output.op = ASMC::Float;
                     div->op1 = to1;
                     div->op2 = to2;
                     this->prepareCompound(expr1, expr2, OutputFile);
