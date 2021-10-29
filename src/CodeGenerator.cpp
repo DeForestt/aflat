@@ -60,6 +60,10 @@ void gen::CodeGenerator::prepareCompound(gen::Expr expr1, gen::Expr expr2, ASMC:
     ASMC::Mov * mov1 = new ASMC::Mov();
     ASMC::Mov * mov2 = new ASMC::Mov();
 
+    mov1->op = expr1.op;
+    mov2->op = expr2.op;
+
+
     mov1->size = ASMC::AUTO;
     mov2->size = ASMC::AUTO;
 
