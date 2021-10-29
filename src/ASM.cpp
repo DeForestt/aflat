@@ -140,6 +140,14 @@ std::string ASMC::And::toString(){
     return "\tandl\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
+std::string ASMC::Sal::toString(){
+    return "\tsall\t" + this->op1 + ", " + this->op2 + "\n";
+}
+
+std::string ASMC::Sar::toString(){
+    return "\tsarl\t" + this->op1 + ", " + this->op2 + "\n";
+}
+
 std::string ASMC::Div::toString(){
     if (this->opType == ASMC::Float) return "\tdivss\t" + this->op1 + ", " + this->op2 + "\n";
     return "\tcltd\n\tidivl\t" + this->op1 + "\n";

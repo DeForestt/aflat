@@ -212,6 +212,22 @@ namespace ASMC{
         std::string toString();
     };
 
+        class Sal : public Instruction{
+        public:
+        std::string op1;
+        std::string op2;
+        ASMC::Size size;
+        std::string toString();
+    };
+
+    class Sar : public Instruction{
+        public:
+        std::string op1;
+        std::string op2;
+        ASMC::Size size;
+        std::string toString();
+    };
+
 
     class File{
         public:
