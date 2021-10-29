@@ -329,7 +329,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 this->prepareCompound(comp, OutputFile);
 
                 std::string to1 = this->registers["%rdx"]->get(ASMC::Byte);
-                std::string to2 = this->registers["%rax"]->get(expr1.size);
+                std::string to2 = this->registers["%cl"]->get(expr1.size);
                 output.access = "%eax";
 
                 if(expr1.op == ASMC::Float){
@@ -341,6 +341,14 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             
                 andBit->op2 = to2;
                 andBit->op1 = to1;
+
+                                //Move the value from edx to ecx
+                ASMC::Mov * mov = new ASMC::Mov();
+                mov->to = to1;
+                mov->from = this->registers["%rdx"]->get(expr1.size);;
+                mov->size = expr1.size;
+
+                OutputFile.text << mov;
 
                 OutputFile.text << andBit;
 
@@ -354,7 +362,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
 
                 this->prepareCompound(comp, OutputFile);
 
-                std::string to1 = this->registers["%rdx"]->get(ASMC::Byte);
+                std::string to1 = this->registers["%cl"]->get(expr1.size);
                 std::string to2 = this->registers["%rax"]->get(expr1.size);
                 output.access = "%eax";
 
@@ -364,6 +372,14 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     output.access = "%xmm0";
                     output.op = ASMC::Float;
                 }
+
+                //Move the value from edx to ecx
+                ASMC::Mov * mov = new ASMC::Mov();
+                mov->to = to1;
+                mov->from = this->registers["%rdx"]->get(expr1.size);;
+                mov->size = expr1.size;
+
+                OutputFile.text << mov;
             
                 andBit->op2 = to2;
                 andBit->op1 = to1;
