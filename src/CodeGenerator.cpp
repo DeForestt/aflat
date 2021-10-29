@@ -296,7 +296,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 break;
             }
             case AST::AndBit:{
-                ASMC::And * and = new ASMC::And();
+                ASMC::And * andBit = new ASMC::And();
                 gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
 
@@ -313,10 +313,10 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     output.op = ASMC::Float;
                 }
             
-                and->op2 = to2;
-                and->op1 = to1;
+                andBit->op2 = to2;
+                andBit->op1 = to1;
 
-                OutputFile.text << and;
+                OutputFile.text << andBit;
 
                 output.size = ASMC::DWord;
                 break;
