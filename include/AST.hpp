@@ -37,6 +37,8 @@ namespace AST{
         NotEqu,
         Less,
         Great,
+        AndBit,
+        AndBool,
     };
 
     class Expr{
