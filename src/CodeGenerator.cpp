@@ -234,13 +234,14 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     }
     else if (dynamic_cast<AST::Compound *>(expr) != nullptr){
         AST::Compound comp = *dynamic_cast<AST::Compound *>(expr);
+        ASMC::File Dummby = ASMC::File();
         output.op = ASMC::Hard;
         switch (comp.op)
         {
             case AST::Plus:{
                 ASMC::Add * add = new ASMC::Add();
-                gen::Expr expr1 = this->GenExpr(comp.expr1, ASMC::File());
-                gen::Expr expr2 = this->GenExpr(comp.expr2, ASMC::File());
+                gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
+                gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
                 this->prepareCompound(comp, OutputFile);
                 
                 add->opType = expr1.op;
@@ -267,8 +268,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             }
             case AST::Minus:{
                 ASMC::Sub * sub = new ASMC::Sub();
-                gen::Expr expr1 = this->GenExpr(comp.expr1, ASMC::File());
-                gen::Expr expr2 = this->GenExpr(comp.expr2, ASMC::File());
+                gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
+                gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
 
                 this->prepareCompound(comp, OutputFile);
                 sub->opType = expr1.op;
@@ -296,9 +297,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 ASMC::Mul * mul = new ASMC::Mul();
                 
                 this->selectReg = 0;
-                gen::Expr expr1 = this->GenExpr(comp.expr1, ASMC::File());
+                gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
                 this->selectReg = 1;
-                gen::Expr expr2 = this->GenExpr(comp.expr2, ASMC::File());
+                gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
                 
                 this->prepareCompound(comp, OutputFile);
                 mul->opType = expr1.op;
@@ -327,9 +328,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 ASMC::Div * div = new ASMC::Div();
 
                 this->selectReg = 0;
-                gen::Expr expr1 = this->GenExpr(comp.expr1, ASMC::File());
+                gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
                 this->selectReg = 1;
-                gen::Expr expr2 = this->GenExpr(comp.expr2, ASMC::File());
+                gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
 
                 div->op1 = expr2.access;
 
@@ -357,9 +358,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 ASMC::Div * div = new ASMC::Div();
                 
                 this->selectReg = 0;
-                gen::Expr expr1 = this->GenExpr(comp.expr1, ASMC::File());
+                gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
                 this->selectReg = 1;
-                gen::Expr expr2 = this->GenExpr(comp.expr2, ASMC::File());
+                gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
 
                 div->op1 = expr1.access;
 
