@@ -328,7 +328,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
 
                 this->prepareCompound(comp, OutputFile);
 
-                std::string to1 = this->registers["%rdx"]->get(ASMC::Byte);
+                std::string to1 = this->registers["%rdx"]->get(expr1.size);
                 std::string to2 = this->registers["%cl"]->get(expr1.size);
                 output.access = "%eax";
 
@@ -340,7 +340,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 }
             
                 andBit->op2 = to2;
-                andBit->op1 = to1;
+                andBit->op1 = 'cl';
 
                                 //Move the value from edx to ecx
                 ASMC::Mov * mov = new ASMC::Mov();
@@ -382,7 +382,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 OutputFile.text << mov;
             
                 andBit->op2 = to2;
-                andBit->op1 = to1;
+                andBit->op1 = 'cl';
 
                 OutputFile.text << andBit;
 
