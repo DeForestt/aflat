@@ -85,6 +85,7 @@ void gen::CodeGenerator::prepareCompound(gen::Expr expr1, gen::Expr expr2, ASMC:
 
 gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     gen::Expr output;
+    output.op = ASMC::Hard;
     if(dynamic_cast<AST::IntLiteral *>(expr) != nullptr){
         AST::IntLiteral * intlit = dynamic_cast<AST::IntLiteral *>(expr);
         output.access = '$' + std::to_string(intlit->val);
@@ -327,7 +328,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
 
-                div->op1 = expr1.access;
+                div->op1 = expr2.access;
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
                 std::string to2 = this->registers["%rax"]->get(expr1.size);
