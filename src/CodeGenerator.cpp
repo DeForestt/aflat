@@ -63,16 +63,16 @@ void gen::CodeGenerator::prepareCompound(AST::Compound compound, ASMC::File &Out
     // if expr1 op is Float set to the float registers
 
     gen::Expr expr2 = this->GenExpr(compound.expr2, OutputFile);
+     if (expr2.op == ASMC::Float){
+        r1 = "%xmm1";
+        r2 = "%xmm0";
+    }
     mov1->op = expr2.op;
     mov1->to = this->registers[r1]->get(expr2.size);
     mov1->from = expr2.access;
     if (!isDiv) OutputFile.text << mov1;
 
     gen::Expr expr1 = this->GenExpr(compound.expr1, OutputFile);
-    if (expr1.op == ASMC::Float){
-        r1 = "%xmm1";
-        r2 = "%xmm0";
-    }
     mov2->op = expr1.op;
     mov2->to = this->registers[r2]->get(expr1.size);
     mov2->from = expr1.access;
