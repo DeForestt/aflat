@@ -328,8 +328,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
 
                 this->prepareCompound(comp, OutputFile);
 
-                std::string to1 = this->registers["%rdx"]->get(expr1.size);
-                std::string to2 = this->registers["%rax"]->get(ASMC::Byte);
+                std::string to1 = this->registers["%rdx"]->get(ASMC::Byte);
+                std::string to2 = this->registers["%rax"]->get(expr1.size);
                 output.access = "%eax";
 
                 if(expr1.op == ASMC::Float){
@@ -354,8 +354,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
 
                 this->prepareCompound(comp, OutputFile);
 
-                std::string to1 = this->registers["%rdx"]->get(expr1.size);
-                std::string to2 = this->registers["%rax"]->get(ASMC::Byte);
+                std::string to1 = this->registers["%rdx"]->get(ASMC::Byte);
+                std::string to2 = this->registers["%rax"]->get(expr1.size);
                 output.access = "%eax";
 
                 if(expr1.op == ASMC::Float){
