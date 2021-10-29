@@ -6,7 +6,8 @@
 File createFile(adr fileName){
         File file = malloc(File);
         file.file = sys_create(fileName, #511);
-        int test = file.file * 1;
+        int test;
+        test = file.file;
         if(test < 1){
                 return #0;
         };
@@ -17,7 +18,8 @@ File openFile(adr fileName){
         File file = malloc(File);
         adr flag = #2;
         file.file = sys_open(fileName, flag, #777);
-        int test = file.file * 1;
+        int test;
+        test = file.file;
         if(test < 0){
                 return #0;
         };
@@ -43,7 +45,7 @@ int read@File(adr pointer, char delim, char term){
                 if(input == term){return 1;};
                 pointer =: input;
                 if(input == delim){pointer =: null};
-                pointer = pointer + 1;
+                pointer = pointer + #1;
         };
         pointer =: null;
         return  0;
