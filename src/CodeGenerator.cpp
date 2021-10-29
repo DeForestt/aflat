@@ -328,7 +328,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 gen::Expr expr1 = this->GenExpr(comp.expr1, OutputFile);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, OutputFile);
 
-                div->op1 = expr1.access;
+                div->op1 = expr2.access;
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
                 std::string to2 = this->registers["%rax"]->get(expr1.size);
