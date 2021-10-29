@@ -340,7 +340,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 }
             
                 andBit->op2 = to2;
-                andBit->op1 = 'cl';
+                andBit->op1 = "cl";
 
                                 //Move the value from edx to ecx
                 ASMC::Mov * mov = new ASMC::Mov();
@@ -382,7 +382,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 OutputFile.text << mov;
             
                 andBit->op2 = to2;
-                andBit->op1 = 'cl';
+                andBit->op1 = "cl";
 
                 OutputFile.text << andBit;
 
