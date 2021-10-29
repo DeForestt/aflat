@@ -242,9 +242,9 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         tokens << div;
                         i++;
                     }else if(input[i] == '&'){
-                        lex::OpSym* and = new OpSym;
-                        and->Sym = input[i];
-                        tokens << and;
+                        lex::OpSym* andBit = new OpSym;
+                        andBit->Sym = input[i];
+                        tokens << andBit;
                         i++;
                     }
                     
