@@ -91,3 +91,37 @@ int str_find(char find, adr in){
     };
     return -1;
 };
+
+/*
+ * Function name: str_split
+ * Description:   Splits a string into an array of strings
+ * Arguments:     str - the string to split
+ *                sep - the separator
+ * 			      buff1 - buffer for the first part of the split
+ *                buff2 - buffer for the second part of the split
+ * Returns:       0 on success, -1 on failure
+ */
+int str_split(adr str, char sep, adr buff1, adr buff2){
+	char null = ascii(0);
+	char check = str as char;
+
+	while(check != sep){
+		if (check == null){
+			return -1;
+		};
+
+		if (check != sep){
+			buff1 =: check;
+		};
+		str = str + 1;
+		buff1 = buff1 + 1;
+		check = str as char;
+	};
+	
+	str = str + 1;
+	if (str as char == null){
+		return -1;
+	};
+	str_concat("", str, buff2);
+	return 0;
+};
