@@ -19,7 +19,7 @@ Block findFreeBlock(Block last, int size) {
     current = current.next;
     last = current;
 
-  }
+  };
   return #0;
 };
 
@@ -47,14 +47,15 @@ Time newTime(adr count){
 };
 
 Block getBlock(adr ptr){
-    return ptr - #16;
-}
+    ptr = ptr - Block;
+    return ptr;
+};
 
 //Interface
 int memcopy (adr from, adr to, int size){
     int i = 0;
     while(i < size){
-        to =: from as byte
+        to =: from as byte;
         to = to + #1;
         from = from + #1;
     };
@@ -81,7 +82,8 @@ adr malloc(int size){
 
     if(head == #0){
         block = requestSpace(#0, size);
-        return block + #16;
+        block = block + #16;
+        return block;
     };
     Block last;
     last = head;
@@ -90,7 +92,8 @@ adr malloc(int size){
         block = requestSpace(last, size);
         if(block == #0){return #0};
     };
-    return block + 16;
+    block = block + Block;
+    return block;
 };
 
 adr realloc(adr ptr, int size){
