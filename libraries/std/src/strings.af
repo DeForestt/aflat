@@ -73,12 +73,15 @@ int str_toInt(adr input){
     int i = size - 1;
     while(i > -1){
         factor = exp(10, i);
-        factor = factor * toInt(input as char);
+        char ch2 = input as char;
+        int num = toInt(ch2);
+        factor = factor * num;
         result = result + factor;
         i = i - 1;
         input = input + 1;
     };
-    return result * mul;
+    result = result * mul;
+    return result;
 };
 
 int str_find(char find, adr in){
@@ -117,6 +120,7 @@ int str_split(adr str, char sep, adr buff1, adr buff2){
 		buff1 = buff1 + 1;
 		check = str as char;
 	};
+    buff1 =: null;
 	
 	str = str + 1;
 	if (str as char == null){
