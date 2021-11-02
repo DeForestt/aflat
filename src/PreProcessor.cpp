@@ -23,8 +23,8 @@ std::string trim( std::string str )
     // return residue after leading white space
     std::size_t pos = 0 ;
     while( pos < str.size() && std::isspace( str[pos] ) ) ++pos ;
-    return str.substr(pos) ;
-}
+    return str.substr(pos);
+} 
 
 
 // Definition

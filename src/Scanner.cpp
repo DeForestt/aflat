@@ -264,4 +264,4 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                     }
                 }
                 return tokens;
-            }
+            } 

@@ -20,7 +20,7 @@ parse::Parser::Parser(){
     // Pointer Type
     AST::Type Adr = AST::Type();
     Adr.typeName = "adr";
-    Adr.opType = ASMC::Hard;
+    Adr.opType = ASMC::Hard; 
     Adr.size = ASMC::QWord;
 
     // Byte type

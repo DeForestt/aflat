@@ -2,4 +2,4 @@
 
 err::Exception::Exception(std::string msg){
     this->errorMsg = msg;
-}
+} 

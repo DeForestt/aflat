@@ -201,4 +201,4 @@ std::string ASMC::Register::get(ASMC::Size wants){
         default:
             throw err::Exception("Unknown register size");
     };
-}
+} 

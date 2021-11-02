@@ -18,7 +18,7 @@ bool gen::Type::compair(gen::Type *  t, std::string ident){
 }
 
 int gen::CodeGenerator::getBytes(ASMC::Size size){
-    switch(size){
+    switch(size){ 
             case ASMC::QWord:
                 return 8;
                 break;
