@@ -218,7 +218,7 @@ namespace ASMC{
         std::string op2;
         ASMC::Size size;
         std::string toString();
-    };
+    }; 
 
     class Sar : public Instruction{
         public:
