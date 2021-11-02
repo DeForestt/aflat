@@ -150,11 +150,13 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 last = modSym->type;
                 tbyte = modSym->byteMod;
                 ASMC::Mov * mov = new ASMC::Mov();
+                mov->op = modSym->type.opType;
                 mov->size = ASMC::QWord;
                 mov->to = this->registers["%edx"]->get(ASMC::QWord);
                 mov->from = output.access;
                 OutputFile.text << mov;
                 output.access = std::to_string(tbyte - this->getBytes(last.size)) + '(' + mov->to + ')';
+                output.op = modSym->type.opType;
                 output.size = last.size;
             }
         }
@@ -918,8 +920,9 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             if (dec->type.size = ASMC::QWord){
                 var->command = "quad";
             }
-            var->operand = this->GenExpr(decAssign->expr, OutputFile).access.erase(0, 1);
-
+            gen::Expr exp = this->GenExpr(decAssign->expr, OutputFile);
+            var->operand = exp.access.erase(0, 1);
+            Symbol.type.opType = exp.op;
             OutputFile.data << lable;
             OutputFile.data << var;
             if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
