@@ -459,7 +459,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 this->selectReg = 1;
                 gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
 
-                div->op1 = expr1.access;
+                div->op1 = expr2.access;
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
                 std::string to2 = this->registers["%rax"]->get(expr1.size);
@@ -474,8 +474,6 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     div->op2 = to2;
                     this->prepareCompound(comp, OutputFile);
                 }else this->prepareCompound(comp, OutputFile, true);
-                
-                
 
                 OutputFile.text << div;
                 output.size = ASMC::DWord;
