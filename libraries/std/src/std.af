@@ -113,3 +113,20 @@ adr realloc(adr ptr, int size){
     free(ptr);
     return new_ptr;
 };
+
+Bit newBit(int value){
+	Bit b = malloc(Bit);
+	b.value = value;
+	b.last = #0;
+	b.next = #0;
+	return b;
+};
+
+Times newTimes(){
+    Times t = malloc(Times);
+    t.tms_cstime = #0;
+    t.tms_cutime = #0;
+    t.tms_stime = #0;
+    t.tms_utime = #0;
+    return t;
+};

@@ -1,3 +1,20 @@
+.needs "/std/head/asm.gs"
+.needs "/std/head/std.gs"
+.needs "/std/head/math.gs"
+
+Random newRandom(){
+	Random r = malloc(Random);
+	Times times = newTimes();
+	sys_times(times);
+	int num;
+	num = times as int;
+	num = exp(num, 3);
+	int ten = 10;
+	//num = num % ten;
+	r.last = num % ten;
+	return r;
+};
+
 int exp(int base, int pow){
 	int i = 0;
 	int output = 1;
@@ -13,4 +30,38 @@ int longDiv(int int1, int int2){
 	remainder = remainder * 10;
 	remainder = remainder / int2;
 	return remainder;
+};
+
+/*
+ * function name:	abs
+ * description:		returns the absolute value of the input
+ * parameters:		int input
+ * return:			int absolute value of input
+ */
+int abs(int input){
+	if (input < 0){
+		return input * -1;
+	};
+	return input;
+};
+
+/*
+ * function name:	rand
+ * description:		returns a random number between 0 and a given max
+ * parameters:		int max between 1 and 9
+ * return:			int random number between 0 and max
+ */
+int next@Random(int max){
+	Times times = newTimes();
+	sys_times(times);
+	int random;
+	int i;
+	i = times.tms_utime;
+	random = my.last;
+	random = random + 1;
+	random = i + abs(random);
+	random = exp(random, random % max);
+	random = random % max;
+	my.last = random;
+	return abs(random);
 };

@@ -8,6 +8,8 @@
 .global sys_pause
 .global sys_fork
 .global sys_sleep
+.global sys_time
+.global sys_times
 
 .text
 
@@ -115,6 +117,24 @@ sys_sleep:
 	movq	%rsp, %rbp
 	subq	$16, %rsp
 	movq    $35, %rax
+	syscall
+	leave
+	ret
+
+sys_time:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $201, %rax
+	syscall
+	leave
+	ret
+
+sys_times:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $100, %rax
 	syscall
 	leave
 	ret

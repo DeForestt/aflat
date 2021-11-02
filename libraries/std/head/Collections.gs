@@ -1,17 +1,20 @@
-class ListNode{
+struct ListNode{
     adr next;
     adr data;
 };
 
 ListNode newNode();
 
-class Stack{
+
+class LinkedList{
     ListNode head;
     int count;
     
-    int push(adr data);
-    adr pop();
-    adr peek();
+    int append(adr data);
+    int insert(adr data, int index);
+    int delete(int index);
+    adr get(int index);
+    int size();
 };
 
-Stack newStack();
+LinkedList newList();

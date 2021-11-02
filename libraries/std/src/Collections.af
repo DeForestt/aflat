@@ -1,41 +1,117 @@
-.needs "/std/head/std.gs"
-.needs "/std/head/Collections.gs"
+ .needs "/std/head/Collections.gs"
+ .needs "/std/head/std.gs"
+
+/*
+ * function name: NewList
+ * description:   create a new list
+ * arguments:     none
+ * returns:       a new list
+  */
+ LinkedList newList(){
+    LinkedList list = malloc(LinkedList);
+    list.head = #0;
+    return list;
+ };
+
+/*
+ * function name: newNode
+ * description:   create a new node
+ * arguments:     none
+ * returns:       a new node
+ */
 
 ListNode newNode(){
-    ListNode new = malloc(ListNode);
-    new.next = #0;
-    new.data = #0;
-    return new;
+    ListNode node = malloc(ListNode);
+    node.data = #0;
+    return node;
 };
 
-Stack newStack(){
-    Stack new = malloc(Stack));
-    new.head = #0;
-    new.count = 0;
+/*
+ * function name: remove@LinkedList
+ * description: removes the node at the given index
+ * agruments: int index - the index of the node to remove
+ * return: int - 0 if successful, -1 if not
+ */
 
-    return new;
-};
+int delete@LinkedList(int index){
+    ListNode curr;
+    curr = my.head;
 
-int push@Stack(adr data){
-    ListNode new = newNode();
-    new.data = data;
-    ListNode myHead;
-    myHead = my.head;
-    new.next = myHead;
-    my.head = new;
-    my.count = my.count + 1;
+    int i = 0;
+    while(i < index){
+        curr = curr.next;
+        i = i + 1;
+    };
+    curr = curr.next;
     return 0;
 };
 
-adr peek@Stack(){
-    return my.head.data;
+/*
+ * function name: get@LinkedList
+ * description: returns the node at the given index
+ * agruments: int index - the index of the node to return
+ * return: adr - the node at the given index
+ */
+
+adr get@LinkedList(int index){
+    if (index < 0){
+        return #0;
+    };
+    ListNode myHead;
+    myHead = my.head;
+    ListNode myIndex;
+    myIndex = myHead;
+
+    int i = 0;
+    while(i < index){
+        myIndex = myIndex.next;
+        i = i + 1;
+    };
+
+    return myIndex.data;
 };
 
-adr pop@Stack(){
-    adr out;
-    out = my.head.data;
-    ListNode next;
-    next = my.head.next;
-    my.head = next;
-    return out;
+/*
+ * function name: append@LinkedList
+ * description: appends a node to the end of the list
+ * agruments: adr data - the data to be appended
+ * return: int - 0 if successful, -1 if not
+ */
+
+int append@LinkedList(adr data){
+    ListNode new = newNode();
+    new.data = data;
+
+    if(my.head == #0){
+        my.head = new;
+        return 0;
+    };
+
+    ListNode curr;
+    curr = my.head;
+    
+    while(curr.next != #0){
+        curr = curr.next;
+    };
+
+    curr.next = new;
+    return 0;
+};
+
+/*
+ * function name: size@LinkedList
+ * description: returns the size of the list
+ * agruments: none
+ * return: int - the size of the list
+ */
+
+int size@LinkedList(){
+    ListNode curr;
+    curr = my.head;
+    int i = 0;
+    while(curr != #0){
+        curr = curr.next;
+        i = i + 1;
+    };
+    return i;
 };
