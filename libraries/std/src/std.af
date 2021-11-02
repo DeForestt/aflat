@@ -110,11 +110,3 @@ adr realloc(adr ptr, int size){
     free(ptr);
     return new_ptr;
 };
-
-Bit newBit(int value){
-	Bit b = malloc(Bit);
-	b.value = value;
-	b.last = #0;
-	b.next = #0;
-	return b;
-};
