@@ -611,12 +611,14 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
             
             AST::Type last = sym->type;
             std::string my = sym->symbol;
+            // get the type of the original function
+            gen::Type * type = *this->typeList[last.typeName];
 
             while(call->modList.head != nullptr){
-                sym = this->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
+                sym = type->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
                 if (sym == nullptr) {
                     if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
-                    gen::Type * type = *this->typeList[last.typeName];
+                    type = *this->typeList[last.typeName];
                     gen::Class * cl = dynamic_cast<gen::Class *>(type);
                     if(cl != nullptr) {
                         func = cl->nameTable[call->modList.pop()];
