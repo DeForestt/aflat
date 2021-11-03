@@ -135,6 +135,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             if (sym == nullptr) throw err::Exception("cannot find: " + var.Ident);
 
             output.size = sym->type.size;
+            output.op = sym->type.opType;
             if (global) output.access = sym->symbol;
             else output.access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
 
