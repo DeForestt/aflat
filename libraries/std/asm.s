@@ -10,6 +10,9 @@
 .global sys_sleep
 .global sys_time
 .global sys_times
+.global sys_exit
+.global sys_wait
+.global sys_pipe
 
 .text
 
@@ -94,7 +97,7 @@ sys_pause:
 	leave
 	ret
 
-sys_wait4:
+sys_wait:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp
@@ -135,6 +138,15 @@ sys_times:
 	movq	%rsp, %rbp
 	subq	$16, %rsp
 	movq    $100, %rax
+	syscall
+	leave
+	ret
+
+sys_pipe:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $22, %rax
 	syscall
 	leave
 	ret

@@ -122,46 +122,61 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 global = true;
                 if(sym == nullptr){
                     Type * t = *this->typeList[var.Ident];
-                    if (t == nullptr) throw err::Exception("Variable not found");
-                    output.size = ASMC::DWord;
-                    output.access = '$' + std::to_string(t->SymbolTable.head->data.byteMod);
-                    handled = true;
+                    if (t != nullptr){
+                        output.size = ASMC::DWord;
+                        output.access = '$' + std::to_string(t->SymbolTable.head->data.byteMod);
+                        handled = true;
+                    }else if(this->nameTable[var.Ident] != nullptr){
+                        output.size = ASMC::QWord;
+                        output.access = '$' + this->nameTable[var.Ident]->ident.ident;
+                        handled = true;
+                    }
                 };
             }
         }
         else sym = scope->SymbolTable.search<std::string>(searchSymbol, var.Ident);
 
         if (!handled){
-            if (sym == nullptr) throw err::Exception("cannot find: " + var.Ident);
+            if (sym != nullptr){
+                output.size = sym->type.size;
+                output.op = sym->type.opType;
+                if (global) output.access = sym->symbol;
+                else output.access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
 
-            output.size = sym->type.size;
-            output.op = sym->type.opType;
-            if (global) output.access = sym->symbol;
-            else output.access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
+                var.modList.invert();
+                int tbyte = 0;
+                
+                AST::Type last = sym->type;
 
-            var.modList.invert();
-            int tbyte = 0;
-            
-            AST::Type last = sym->type;
-
-            while(var.modList.head != nullptr){
-                if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
-                gen::Type type = **this->typeList[last.typeName];
-                gen::Symbol * modSym = type.SymbolTable.search<std::string>(searchSymbol, var.modList.pop());
-                last = modSym->type;
-                tbyte = modSym->byteMod;
-                ASMC::Mov * mov = new ASMC::Mov();
-                mov->op = modSym->type.opType;
-                mov->size = ASMC::QWord;
-                mov->to = this->registers["%edx"]->get(ASMC::QWord);
-                mov->from = output.access;
-                OutputFile.text << mov;
-                output.access = std::to_string(tbyte - this->getBytes(last.size)) + '(' + mov->to + ')';
-                output.op = modSym->type.opType;
-                output.size = last.size;
+                while(var.modList.head != nullptr){
+                    if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
+                    gen::Type type = **this->typeList[last.typeName];
+                    gen::Symbol * modSym = type.SymbolTable.search<std::string>(searchSymbol, var.modList.pop());
+                    last = modSym->type;
+                    tbyte = modSym->byteMod;
+                    ASMC::Mov * mov = new ASMC::Mov();
+                    mov->op = modSym->type.opType;
+                    mov->size = ASMC::QWord;
+                    mov->to = this->registers["%edx"]->get(ASMC::QWord);
+                    mov->from = output.access;
+                    OutputFile.text << mov;
+                    output.access = std::to_string(tbyte - this->getBytes(last.size)) + '(' + mov->to + ')';
+                    output.op = modSym->type.opType;
+                    output.size = last.size;
+                }
+            }else{
+                Type * t = *this->typeList[var.Ident];
+                if (t != nullptr){
+                    output.size = ASMC::DWord;
+                    output.access = '$' + std::to_string(t->SymbolTable.head->data.byteMod);
+                    handled = true;
+                }else if(this->nameTable[var.Ident] != nullptr){
+                    output.size = ASMC::DWord;
+                    output.access = '$' + this->nameTable[var.Ident]->ident.ident;
+                    handled = true;
+                }  else throw err::Exception("variable not found " + var.Ident);
             }
         }
-
     }
     else if (dynamic_cast<AST::Refrence *>(expr) != nullptr){
         links::LinkedList<gen::Symbol>  * Table;
