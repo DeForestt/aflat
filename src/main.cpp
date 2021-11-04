@@ -22,6 +22,10 @@ int main(int argc, char *argv[])
         lex::Lexer scanner;
         links::LinkedList<lex::Token* > tokens;
 
+        std::string filename = getExePath();
+        std::string exepath = filename.substr(0, filename.find_last_of("/"));
+        std::string libPath = exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/head/";
+
         std::ifstream ifs(argv[1]);
         std::string content( (std::istreambuf_iterator<char>(ifs) ),
                         (std::istreambuf_iterator<char>()    ) );
@@ -35,7 +39,7 @@ int main(int argc, char *argv[])
         }
         try{
             PreProcessor pp;
-            tokens = scanner.Scan(pp.PreProcess(content));
+            tokens = scanner.Scan(pp.PreProcess(content, libPath));
         }catch (int x){
             std::cout << " unparsable Char at index " + x;
             return 0;
@@ -211,13 +215,7 @@ void buildTemplate(std::string value){
 
     outfile = std::ofstream(value + "/build.sh");
     outfile << "#!/bin/sh\n" << filename << " src/main.af out.s\n";
-    outfile <<filename << " std/src/io.af std/io.s\n";
-    outfile <<  filename << " std/src/math.af std/math.s\n";
-    outfile <<  filename << " std/src/strings.af std/strings.s\n";
-    outfile <<  filename << " std/src/Collections.af std/collections.s\n";
-    outfile <<  filename << " std/src/files.af std/files.s\n";
-    outfile <<  filename << " std/src/std.af std/std.s\n";
-    outfile << "gcc -O0 -g -no-pie out.s std/asm.s std/std.s std/io.s std/collections.s std/math.s std/strings.s std/files.s";
+    outfile << "gcc -O0 -g -no-pie out.s " << libPath << "/asm.s " << libPath << "/std.s " << libPath << "/io.s "
+    << libPath << "/collections.s " << libPath << "/math.s " << libPath << "/strings.s " << libPath << "/files.s ";
 
 }
-

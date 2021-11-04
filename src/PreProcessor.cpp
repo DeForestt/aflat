@@ -44,7 +44,7 @@ PreProcessor::~PreProcessor(){
     //dtor
 }
 
-std::string PreProcessor::PreProcess(std::string code){
+std::string PreProcessor::PreProcess(std::string code, std::string libPath){
     std::string output;
     
     // loop through each line of code
@@ -70,7 +70,7 @@ std::string PreProcessor::PreProcess(std::string code){
 
         if(line.substr(0, 6) == ".needs"){
             //include a file
-            output += this->Include(line);
+            output += this->Include(line, libPath);
         }else if(line.substr(0, 5) == ".root"){
             //changes the root directory
             int startPos = line.find_first_of('\"') + 1;
@@ -90,17 +90,28 @@ std::string PreProcessor::PreProcess(std::string code){
 }
 
 /* includes an external file */
-std::string PreProcessor::Include(std::string line){
+std::string PreProcessor::Include(std::string line, std::string libPath){
     std::string output;
-    int startPos = line.find_first_of('\"') + 1;
-    int endPos = line.find_last_of('\"');
-    std::string relpath = line.substr(startPos, endPos - startPos);
-    std::string path = this->root + relpath;
+    std::string path;
+    // check if the line has quotes
+    if (line.find("\"") != std::string::npos){
+        // get the file name
+        int startPos = line.find_first_of('\"') + 1;
+        int endPos = line.find_last_of('\"');
+        std::string relpath = line.substr(startPos, endPos - startPos);
+        path = this->root + relpath;
+    } else if(line.find("<") != std::string::npos){
+        // get the file name
+        int startPos = line.find_first_of('<') + 1;
+        int endPos = line.find_last_of('>');
+        std::string relpath = line.substr(startPos, endPos - startPos);
+        path = libPath + relpath;
+    }
     std::fstream f(path, std::fstream::in);
     std::string content;
     std::getline( f, content, '\0');
     output += content;
-    return this->PreProcess(output);
+    return this->PreProcess(output, libPath);
 };
 
 /*Replaced defined value with value*/

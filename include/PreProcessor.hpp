@@ -21,13 +21,13 @@ class PreProcessor{
     public:
         PreProcessor();
         ~PreProcessor();
-        std::string PreProcess(std::string code);
+        std::string PreProcess(std::string code, std::string exePath);
     private:
         std::string root;
         links::SLinkedList<Definition, std::string> definitions;
 
         /* incluse an external file */
-        std::string Include(std::string line);
+        std::string Include(std::string line, std::string exePath);
 
         /*Define a value*/
         void Define(std::string line);
