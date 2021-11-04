@@ -1,6 +1,6 @@
-.needs "/std/head/asm.gs"
-.needs "/std/head/std.gs"
-.needs "/std/head/math.gs"
+.needs <asm.gs>
+.needs <std.gs>
+.needs <math.gs>
 
 Random newRandom(){
 	Random r = malloc(Random);

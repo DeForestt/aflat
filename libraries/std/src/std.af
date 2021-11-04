@@ -1,5 +1,5 @@
-.needs "/std/head/std.gs"
-.needs "/std/head/asm.gs"
+.needs <std.gs>
+.needs <asm.gs>
 
 Block head = #0;
 

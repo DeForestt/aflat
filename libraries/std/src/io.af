@@ -1,8 +1,8 @@
-.needs "/std/head/math.gs"
-.needs "/std/head/io.gs"
-.needs "/std/head/strings.gs"
-.needs "/std/head/asm.gs"
-.needs "/std/head/std.gs"
+.needs <math.gs>
+.needs <io.gs>
+.needs <strings.gs>
+.needs <asm.gs>
+.needs <std.gs>
 
 int readString(adr pointer){
         char input = ' ';

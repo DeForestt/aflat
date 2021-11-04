@@ -1,5 +1,5 @@
-.needs "/std/head/io.gs"
-.needs "/std/head/math.gs"
+.needs <io.gs>
+.needs <math.gs>
 
 char ascii(int input){
 	adr caster = ?input;
