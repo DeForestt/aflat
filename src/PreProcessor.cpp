@@ -99,12 +99,20 @@ std::string PreProcessor::Include(std::string line, std::string libPath){
         int startPos = line.find_first_of('\"') + 1;
         int endPos = line.find_last_of('\"');
         std::string relpath = line.substr(startPos, endPos - startPos);
+        // check if relative path starts with a '/'
+        if (relpath[0] != '/'){
+            relpath = "/" + relpath;
+        }
         path = this->root + relpath;
     } else if(line.find("<") != std::string::npos){
         // get the file name
         int startPos = line.find_first_of('<') + 1;
         int endPos = line.find_last_of('>');
         std::string relpath = line.substr(startPos, endPos - startPos);
+        // check if the file ends with .gs
+        if(relpath.find(".gs") == std::string::npos){
+            relpath += ".gs";
+        }
         path = libPath + relpath;
     }
     std::fstream f(path, std::fstream::in);
