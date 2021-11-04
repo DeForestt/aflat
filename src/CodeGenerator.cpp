@@ -632,7 +632,7 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
                         mov->size = exp.size;
                         mov2->size = exp.size;
                         
-                        mov->from = '(' + exp.access + ')';
+                        mov->from = '(' + exp.access + ')'; 
                         mov->to = this->registers["%eax"]->get(exp.size);
                         mov2->from = this->registers["%eax"]->get(exp.size);
                         mov2->to = this->intArgs[intArgsCounter].get(exp.size);
