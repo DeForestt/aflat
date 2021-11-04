@@ -12,12 +12,11 @@
 #include "Exceptions.hpp" 
 #include "PreProcessor.hpp"
 
-std::string trim(std::string str);
 std::string preProcess(std::string input);
+std::string getExePath();
 void buildTemplate(std::string value);
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
     try{
         lex::Lexer scanner;
         links::LinkedList<lex::Token* > tokens;
@@ -87,14 +86,25 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-std::string remove_char( std::string str, char ch )
-{
+/*
+ * function name:   remove_char
+ * Description:     removes a character from a string
+ * Parameters:      std::string str - the string to remove from
+ *                 char ch - the character to remove
+ * Returns:         std::string - the string with the character removed
+ */
+std::string remove_char( std::string str, char ch ){
     // remove all occurrences of char ch from str
     str.erase( std::remove( str.begin(), str.end(), ch ), str.end() ) ;
     return str ;
 }
 
-
+/*
+ * function name:   getExePath
+ * description:     gets the path of the executable
+ * parameters:      none
+ * return value:    string - the path of the executable
+ */
 std::string getExePath()
 {
   char result[ 200 ];
@@ -102,7 +112,12 @@ std::string getExePath()
   return std::string( result, (count > 0) ? count : 0 );
 }
 
-/* Creates a new Project */
+/*
+ * function name:   buildTemplate
+ * description:     creates a template file for the user to write their program
+ * parameters:      std::string value - the name of the project to be created
+ * return value:    void
+ */
 void buildTemplate(std::string value){
     std::string filename = getExePath();
     std::string exepath = filename.substr(0, filename.find_last_of("/"));
@@ -115,7 +130,7 @@ void buildTemplate(std::string value){
     std::filesystem::path cwd = std::filesystem::current_path();
     std::string root =  cwd.string() + "/" + value;
     std::ofstream outfile (value + "/src/main.af");
-    outfile << ".needs \"" <<"/std/head/io.gs\"\n";
+    outfile << ".needs <io.gs>\n";
     outfile << "int main(){\n\tprint(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
     outfile.close();
 
