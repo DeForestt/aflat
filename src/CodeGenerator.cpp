@@ -651,9 +651,10 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
         if (func == nullptr) throw err::Exception("Cannot Find Function: " + call->ident);
         
         call->Args.invert();
-        gen::Expr expr;
+       
         while (call->Args.count > 0)
         {
+             gen::Expr exp;
             //check if args.pop is a callExpr
             if(dynamic_cast<AST::CallExpr *>(call->Args.peek()) != nullptr){
                 AST::CallExpr * callExpr = dynamic_cast<AST::CallExpr *>(call->Args.peek());
@@ -662,7 +663,7 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
                 // push all of the used int args to the stack
                 for(int i = 0; i < argc; i++){
                     ASMC::Push * push = new ASMC::Push();
-                    push->from = this->intArgs[intArgsCounter].get(ASMC::QWord);
+                    push->op = this->intArgs[intArgsCounter].get(ASMC::QWord);
                     OutputFile.text << push;
                 }
                 // genorate the expr
@@ -670,15 +671,14 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
                 // pop all of the used int args from the stack
                 for(int i = 0; i < argc; i++){
                     ASMC::Pop * pop = new ASMC::Pop();
-                    pop->to = this->intArgs[intArgsCounter].get(ASMC::QWord);
+                    pop->op = this->intArgs[intArgsCounter].get(ASMC::QWord);
                     OutputFile.text << pop;
                 };
-            } else{
-                exp =  this->GenExpr(call->Args.pop(), OutputFile);
-                ASMC::Mov * mov = new ASMC::Mov();
-                ASMC::Mov * mov2 = new ASMC::Mov();
-            }
-
+                // pop the args list
+                call->Args.pop();
+            } else exp =  this->GenExpr(call->Args.pop(), OutputFile);
+            ASMC::Mov * mov = new ASMC::Mov();
+            ASMC::Mov * mov2 = new ASMC::Mov();
             mov->size = exp.size;
             mov2->size = exp.size;
             
