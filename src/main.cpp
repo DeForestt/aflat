@@ -135,8 +135,9 @@ void buildTemplate(std::string value){
     outfile.close();
 
     outfile = std::ofstream(value + "/build.sh");
-    outfile << "#!/bin/sh\n" << filename << " src/main.af out.s\n";
-    outfile << "gcc -O0 -g -no-pie out.s " << libPath << "/asm.s " << libPath << "/std.s " << libPath << "/io.s "
-    << libPath << "/collections.s " << libPath << "/math.s " << libPath << "/strings.s " << libPath << "/files.s ";
+    outfile << "#!/bin/sh\n" << 
+    "libPath="<< libPath << "\n" << filename << " src/main.af out.s\n";
+    outfile << "gcc -O0 -g -no-pie out.s $libPath/asm.s $libPath/std.s $libPath/io.s "
+    << "$libPath/collections.s $libPath/math.s $libPath/strings.s $libPath/files.s\n";
 
 }

@@ -245,9 +245,12 @@ namespace ASMC{
         std::string word;
         std::string byte;
 
+
         public:
         Register(std::string _qWord, std::string _dWord, std::string _word, std::string _byte);
         Register(){}
+        // a linked list of int process id's that are using this register
+        links::LinkedList<int> users;
         std::string get(ASMC::Size wants);
         static bool compair(Register R, std::string input){
             if (input == R.qWord || input == R.dWord || input == R.word || input == R.byte ){

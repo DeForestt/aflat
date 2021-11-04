@@ -651,11 +651,35 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
         if (func == nullptr) throw err::Exception("Cannot Find Function: " + call->ident);
         
         call->Args.invert();
+
         while (call->Args.count > 0)
         {
-            gen::Expr exp =  this->GenExpr(call->Args.pop(), OutputFile);
-            ASMC::Mov * mov = new ASMC::Mov();
-            ASMC::Mov * mov2 = new ASMC::Mov();
+            //check if args.pop is a callExpr
+            if(dynamic_cast<AST::CallExpr *>(call->Args.peek()) != nullptr){
+                AST::CallExpr * callExpr = dynamic_cast<AST::CallExpr *>(call->Args.peek());
+                // get the number of args
+                int argc = callExpr->Args.count;
+                // push all of the used int args to the stack
+                for(int i = 0; i < argc; i++){
+                    ASMC::Push * push = new ASMC::Push();
+                    push->size = ASMC::QWord;
+                    push->from = this->intArgs[intArgsCounter].get(ASMC::QWord);
+                    OutputFile.text << push;
+                }
+                // genorate the expr
+                gen::Expr expr = this->GenExpr(callExpr, OutputFile);
+                // pop all of the used int args from the stack
+                for(int i = 0; i < argc; i++){
+                    ASMC::Pop * pop = new ASMC::Pop();
+                    pop->size = ASMC::QWord;
+                    pop->to = this->intArgs[intArgsCounter].get(ASMC::QWord);
+                    OutputFile.text << pop;
+                };
+            } else{
+                gen::Expr exp =  this->GenExpr(call->Args.pop(), OutputFile);
+                ASMC::Mov * mov = new ASMC::Mov();
+                ASMC::Mov * mov2 = new ASMC::Mov();
+            }
 
             mov->size = exp.size;
             mov2->size = exp.size;
