@@ -619,11 +619,15 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
 
         AST::Function * func;
 
+        links::LinkedList<gen::Symbol>  * Table;
+        if(this->scope == nullptr) Table = &this->SymbolTable;
+        else Table = &this->scope->SymbolTable;
+
         this->intArgsCounter = 0;
         if(call->modList.head == nullptr){
             func = this->nameTable[call->ident];
             if (func == nullptr){
-                gen::Symbol * smbl = this->SymbolTable.search<std::string>(searchSymbol, call->ident);
+                gen::Symbol * smbl = Table->search<std::string>(searchSymbol, call->ident);
                 if ( smbl != nullptr){
                                 AST::Function nfunc;
                                 AST::Var * var = new AST::Var();
@@ -680,7 +684,7 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
                                 mov->to = this->registers["%rcx"]->get(exp1.size);
                                 OutputFile.text << mov;
 
-                                func = &nfunc;
+                                func = new AST::Function();
                                 func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
                                 func->type = sym->type;
                                 func->type.size = ASMC::DWord;
