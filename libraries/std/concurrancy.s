@@ -87,14 +87,17 @@ pub_Pipe_init:
 	subq	$32, %rsp
 	movq	%rdi, -16(%rbp)
 	lea	-24(%rbp), %rax
-	movq	%rax, %rax
+	movq	%rax, -32(%rbp)
+	movq	-32(%rbp), %rax
 	movq	%rax, %rdi
 	call	sys_pipe
+	movq	-32(%rbp), %rdx
 	movq	-16(%rbp), %rdx
-	movl	-24(%rbp), %ebx
+	movl	0(%rdx), %ebx
 	movl	%ebx, 4(%rdx)
+	movq	-32(%rbp), %rdx
 	movq	-16(%rbp), %rdx
-	movl	-20(%rbp), %ebx
+	movl	4(%rdx), %ebx
 	movl	%ebx, 0(%rdx)
 	movl	$0, %eax
 	leave

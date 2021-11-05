@@ -58,11 +58,11 @@ Process newProcess(adr foo){
  * returns:         0 on success, 1 on failure
  */
 int init@Pipe(){
-    int i;
-    int o;
-    sys_pipe(?o);
-    my.out = o;
-    my.in = i;
+    int 2 alloc;
+    FD fd = ?alloc;
+    sys_pipe(fd);
+    my.out = fd.out;
+    my.in = fd.in;
     return 0;
 };
 
