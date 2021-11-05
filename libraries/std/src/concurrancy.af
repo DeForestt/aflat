@@ -1,0 +1,129 @@
+.needs <asm>
+.needs <std>
+.needs "/head/concurrancy.gs"
+
+struct FD{
+  int out;
+  int in;
+};
+
+/*
+ * function name:   init@Process
+ * description:     Process Class constructor
+ * arguments:       adr foo - function pointer to the function to be executed
+ * returns:         0 on success, 1 on failure
+ */
+int init@Process(adr bar){
+    my.foo = bar;
+    my.pid = 0;
+    return 0;
+};
+
+/*
+ * function name:   start@Process
+ * description:     starts the process
+ * arguments:       adr arg - pointer to the argument to be passed to the function
+ * returns:         0 on success, 1 on failure
+ */
+int start@Process(adr args){
+    my.pid = sys_fork();
+    adr bar;
+    bar = my.foo;
+    if(my.pid == 0){
+        bar(args);
+        sys_exit(0);
+    };
+    return 0;
+};
+
+/*
+ * function name:   newProcess
+ * description:     dinamically creates a new process
+ * arguments:       adr foo - function pointer to the function to be executed
+ * returns:         Process on success, NULL on failure
+ */
+Process newProcess(adr foo){
+    Process p = malloc(Process);
+    if(p == #0){
+        return #0;
+    };
+    p.init(foo);
+    return p;
+};
+
+/*
+ * function name:   init@Pipe
+ * description:     Pipe Class constructor
+ * arguments:       none
+ * returns:         0 on success, 1 on failure
+ */
+int init@Pipe(){
+    int i;
+    int o;
+    sys_pipe(?o);
+    my.out = o;
+    my.in = i;
+    return 0;
+};
+
+/*
+ * function name:   read@Pipe
+ * description:     reads from the pipe
+ * arguments:       adr buf - pointer to the buffer to be filled
+ *                  int size - size of the buffer
+ * returns:         0 on success, 1 on failure
+ */
+int read@Pipe(adr buf, int size){
+    int fd;
+    fd = my.out;
+    int ret = sys_read(fd, buf, size);
+    return ret;
+};
+
+/*
+ * function name:   write@Pipe
+ * description:     writes to the pipe
+ * arguments:       adr buf - pointer to the buffer to be written
+ *                  int size - size of the buffer
+ * returns:         0 on success, 1 on failure
+ */
+int write@Pipe(adr buf, int size){
+    int fd;
+    fd = my.in;
+    int ret = sys_write(fd, buf, size);
+    return ret;
+};
+
+/*
+ * function name:   newPipe
+ * description:     dinamically creates a new pipe
+ * arguments:       none
+ * returns:         Pipe on success, NULL on failure
+ */
+Pipe newPipe(){
+    Pipe p = malloc(Pipe);
+    p.init();
+    return p;
+};
+
+/*
+ * function name:   exit
+ * description:     terminates the process
+ * arguments:       int status - status to be returned to the parent process
+ * returns:         0 on success, 1 on failure
+ */
+int exit(int status){
+    sys_exit(status);
+    return 0;
+};
+
+/*
+ * function name:   wait
+ * description:     waits for a child process to terminate
+ * arguments:       Process p - the process to wait for
+ * returns:         0
+ */
+int wait(Process p){
+    sys_wait(p.pid, #0, #0, #0);
+    return 0;
+};
