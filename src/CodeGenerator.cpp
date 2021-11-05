@@ -121,17 +121,18 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, var.Ident);
                 global = true;
                 if(sym == nullptr){
-                    Type * t = *this->typeList[var.Ident];
+                    Type ** t = this->typeList[var.Ident];
                     if (t != nullptr){
+                        Type * type = *t;
                         output.size = ASMC::DWord;
-                        output.access = '$' + std::to_string(t->SymbolTable.head->data.byteMod);
+                        output.access = '$' + std::to_string(type->SymbolTable.head->data.byteMod);
                         handled = true;
                     }else if(this->nameTable[var.Ident] != nullptr){
                         output.size = ASMC::QWord;
                         output.access = '$' + this->nameTable[var.Ident]->ident.ident;
                         handled = true;
                     }
-                };
+                }else throw err::Exception("variable not found " + var.Ident);
             }
         }
         else sym = scope->SymbolTable.search<std::string>(searchSymbol, var.Ident);
@@ -165,10 +166,11 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     output.size = last.size;
                 }
             }else{
-                Type * t = *this->typeList[var.Ident];
+                Type ** t = this->typeList[var.Ident];
                 if (t != nullptr){
+                    Type * type = *t;
                     output.size = ASMC::DWord;
-                    output.access = '$' + std::to_string(t->SymbolTable.head->data.byteMod);
+                    output.access = '$' + std::to_string(type->SymbolTable.head->data.byteMod);
                     handled = true;
                 }else if(this->nameTable[var.Ident] != nullptr){
                     output.size = ASMC::DWord;
@@ -618,7 +620,31 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
         AST::Function * func;
 
         this->intArgsCounter = 0;
-        if(call->modList.head == nullptr) func = this->nameTable[call->ident];
+        if(call->modList.head == nullptr){
+            func = this->nameTable[call->ident];
+            if (func == nullptr){
+                gen::Symbol * smbl = this->SymbolTable.search<std::string>(searchSymbol, call->ident);
+                if ( smbl != nullptr){
+                                AST::Function nfunc;
+                                AST::Var * var = new AST::Var();
+                                var->Ident = smbl->symbol;
+                                var->modList = links::LinkedList<std::string>();
+
+                                gen::Expr exp1 = this->GenExpr(var, OutputFile);
+
+                                ASMC::Mov * mov = new ASMC::Mov();
+                                mov->size = exp1.size;
+                                mov->from = exp1.access;
+                                mov->to = this->registers["%rcx"]->get(exp1.size);
+                                OutputFile.text << mov;
+
+                                func = new AST::Function();
+                                func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
+                                func->type = smbl->type;
+                                func->type.size = ASMC::DWord;
+                };
+            };
+        }
         else{
 
             gen::Symbol * sym = this->SymbolTable.search<std::string>(searchSymbol, call->ident);
@@ -637,6 +663,29 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
                     gen::Class * cl = dynamic_cast<gen::Class *>(type);
                     if(cl != nullptr) {
                         func = cl->nameTable[call->modList.pop()];
+                        if (func == nullptr){
+                            // search the class symbol table for a pointer
+                            sym = cl->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
+                            if (sym != nullptr){
+                                AST::Function nfunc;
+                                AST::Var * var = new AST::Var();
+                                var->Ident = sym->symbol;
+                                var->modList = links::LinkedList<std::string>();
+
+                                gen::Expr exp1 = this->GenExpr(var, OutputFile);
+
+                                ASMC::Mov * mov = new ASMC::Mov();
+                                mov->size = exp1.size;
+                                mov->from = exp1.access;
+                                mov->to = this->registers["%rcx"]->get(exp1.size);
+                                OutputFile.text << mov;
+
+                                func = &nfunc;
+                                func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
+                                func->type = sym->type;
+                                func->type.size = ASMC::DWord;
+                            };
+                        };
                         AST::Refrence * ref = new AST::Refrence();
                         ref->Ident = my;
                         mod = "pub_" + cl->Ident + "_";
