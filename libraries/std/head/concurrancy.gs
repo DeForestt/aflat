@@ -5,7 +5,7 @@
 
 class Process{
     int pid;
-    adr foo;
+    private adr foo;
 
     int init(adr foo);
     int start(adr args);
