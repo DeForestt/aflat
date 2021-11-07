@@ -43,6 +43,12 @@ parse::Parser::Parser(){
     this->typeList << Float; 
 }
 
+/*
+ * function name: Parser::parseStmt
+ * description: Recursive function that parses a statement and returns the AST as a Statment
+ * parameters: LinkedList<Token> &tokens - the list of tokens to parse
+ * return: AST::Statement - the parsed statement
+ */
 AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
     AST::Statment* output = new AST::Statment;
     if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){

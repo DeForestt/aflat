@@ -84,7 +84,6 @@ namespace AST{
         Statment * statment;
     };
 
-
     class Function : public Member, public Statment{
         public:
         AST::ScopeMod scope;
