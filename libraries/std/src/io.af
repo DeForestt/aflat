@@ -57,7 +57,7 @@ int toInt(char input){
         if(input == '7'){return 7};
         if(input == '8'){return 8};
         if(input == '9'){return 9};
-        return 0;
+        return -1;
 };
 
  int pullInt(int sigfigs){
@@ -223,4 +223,9 @@ int printFloat(adr input, int signed){
 	push ?mySign; printInt(result); print("."); printInt(decimalPlacess);
 	
 	return 0;	
+};
+
+int clear(){
+        print("\\033[H\\033[J");
+        return 0;
 };

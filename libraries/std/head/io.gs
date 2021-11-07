@@ -4,4 +4,5 @@ int pullInt(adr prompt, int sigfigs);
 int printInt(int input);
 int toInt(char input);
 int printFloat(adr input);
+int clear();
 char toChar(int input);
