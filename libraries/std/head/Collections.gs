@@ -7,9 +7,9 @@ ListNode newNode();
 
 
 class LinkedList{
-    ListNode head;
-    int count;
+    private ListNode head;
     
+    int init();
     int append(adr data);
     int insert(adr data, int index);
     int delete(int index);

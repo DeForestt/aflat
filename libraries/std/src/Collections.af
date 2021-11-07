@@ -9,8 +9,20 @@
   */
  LinkedList newList(){
     LinkedList list = malloc(LinkedList);
-    list.head = #0;
+    list.init();
     return list;
+ };
+
+/*
+ * function name: init@LinkedList
+ * description:   initialize a list
+ * arguments:     none
+ * returns:       none
+ */
+
+ int init@LinkedList(){
+     my.head = #0;
+     return 0;
  };
 
 /*
