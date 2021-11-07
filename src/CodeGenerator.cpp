@@ -629,8 +629,7 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
         AST::Function * func;
 
         links::LinkedList<gen::Symbol>  * Table;
-        if(this->scope == nullptr) Table = &this->SymbolTable;
-        else Table = &this->scope->SymbolTable;
+        Table = &this->SymbolTable;
 
         this->intArgsCounter = 0;
         if(call->modList.head == nullptr){
@@ -659,7 +658,6 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
             };
         }
         else{
-
             gen::Symbol * sym = this->SymbolTable.search<std::string>(searchSymbol, call->ident);
             if (sym == nullptr) throw err::Exception("cannot find type: " + call->ident);
             
