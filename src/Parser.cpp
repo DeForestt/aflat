@@ -54,16 +54,26 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
     if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
         bool mask = false;
+        // the default access modifier is public
+        AST::ScopeMod scope = AST::Public;
         tokens.pop();
         
-        if(obj.meta == "mask"){
-            mask = true;
+        // check if the next token is a scope modifier
+        if(obj.meta == "public"){
+            // set the scope modifier to public
+            scope = AST::Public;
+            if(dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr) throw err::Exception("Expected statent after public");
+            obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+            tokens.pop();
+        } else if(obj.meta == "private"){
+            // set the scope modifier to private
+            scope = AST::Private;
             if(dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr) throw err::Exception("Expected statent after mask");
             obj = *dynamic_cast<lex::LObj *>(tokens.peek());
             tokens.pop();
-        };
+        }
 
-        //Declare a byte;
+        //Declare a variable
         if(typeList[obj.meta] != nullptr){
             AST::Declare * dec = new AST::Declare();
             //ensures the the current token is an Ident
@@ -73,6 +83,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 dec->Ident = Ident.meta;
                 dec->type = *this->typeList[obj.meta];
                 dec->mask = mask;
+                dec->scope = scope;
                 output = dec;
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                     lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());

@@ -103,7 +103,7 @@ namespace AST{
 
     class Declare : public Arg, public Statment{
         public:
-        AST::ScopeMod scopeMod;
+        AST::ScopeMod scope;
         std::string Ident;
         std::string TypeName;
         bool mask;
