@@ -152,7 +152,16 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 while(var.modList.head != nullptr){
                     if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
                     gen::Type type = **this->typeList[last.typeName];
-                    gen::Symbol * modSym = type.SymbolTable.search<std::string>(searchSymbol, var.modList.pop());
+                    gen::Symbol * modSym;
+                    if(this->scope == &type){
+                        *this->typeList[last.typeName];
+                        // if we are scoped to the type seache the symbol in the type symbol table
+                         modSym = type.SymbolTable.search<std::string>(searchSymbol, var.modList.pop());
+                    }else{
+                        // if we are not scoped to the type search the symbol in the public symbol table
+                        modSym = type.publicSymbols.search<std::string>(searchSymbol, var.modList.pop());
+                    };
+                   
                     last = modSym->type;
                     tbyte = modSym->byteMod;
                     ASMC::Mov * mov = new ASMC::Mov();
