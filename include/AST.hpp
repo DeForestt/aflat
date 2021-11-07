@@ -87,6 +87,7 @@ namespace AST{
 
     class Function : public Member, public Statment{
         public:
+        AST::ScopeMod scope;
         Type type;
         Ident ident;
         Statment * args;
