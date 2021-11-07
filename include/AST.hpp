@@ -39,6 +39,12 @@ namespace AST{
         Great,
         AndBit,
         AndBool,
+    };   
+
+    // Enum to represent the scope of a variable
+    enum ScopeMod{
+        Public,
+        Private,
     };
 
     class Expr{
@@ -97,6 +103,7 @@ namespace AST{
 
     class Declare : public Arg, public Statment{
         public:
+        AST::ScopeMod scopeMod;
         std::string Ident;
         std::string TypeName;
         bool mask;
