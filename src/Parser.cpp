@@ -106,6 +106,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                         func->type = dec->type;
                         func->scopeName = scopeName;
                         func->mask = mask;
+                        func->scope = scope;
                         func->args = this->parseArgs(tokens, ',', ')');
                         if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                             sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
