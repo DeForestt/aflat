@@ -61,6 +61,7 @@ namespace gen{
             int intArgsCounter;
             int selectReg = 0;
             bool globalScope = true;
+            bool inFunction = false;
         #pragma endregion
 
         #pragma region Item Lists
