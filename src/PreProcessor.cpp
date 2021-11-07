@@ -115,11 +115,16 @@ std::string PreProcessor::Include(std::string line, std::string libPath){
         }
         path = libPath + relpath;
     }
-    std::fstream f(path, std::fstream::in);
-    std::string content;
-    std::getline( f, content, '\0');
-    output += content;
-    return this->PreProcess(output, libPath);
+    // check if the file exists
+    if(std::filesystem::exists(path)){
+        std::fstream f(path, std::fstream::in);
+        std::string content;
+        std::getline( f, content, '\0');
+        output += content;
+        return this->PreProcess(output, libPath);
+    }else{
+        throw err::Exception("File name: " + path + "does not exist");
+    }
 };
 
 /*Replaced defined value with value*/
