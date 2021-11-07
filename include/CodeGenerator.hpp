@@ -41,6 +41,11 @@ namespace gen{
 
     class Class : public Type{
         public:
+            // The public Name table will hold all public functions
+            // This is to be used externally
+            links::SLinkedList<AST::Function, std::string> publicNameTable;
+            // The private Name table will hold all public and private functions
+            // This is used internally
             links::SLinkedList<AST::Function, std::string> nameTable;
             static bool compair(Type * t, std::string ident);
     };
