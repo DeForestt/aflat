@@ -115,27 +115,24 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         bool global = false;
         bool handled = false;
         gen::Symbol * sym;
-        if(this->scope == nullptr) {
-            sym = this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
-            if(sym == nullptr) {
-                sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, var.Ident);
-                global = true;
-                if(sym == nullptr){
-                    Type ** t = this->typeList[var.Ident];
-                    if (t != nullptr){
-                        Type * type = *t;
-                        output.size = ASMC::DWord;
-                        output.access = '$' + std::to_string(type->SymbolTable.head->data.byteMod);
-                        handled = true;
-                    }else if(this->nameTable[var.Ident] != nullptr){
-                        output.size = ASMC::QWord;
-                        output.access = '$' + this->nameTable[var.Ident]->ident.ident;
-                        handled = true;
-                    }
-                }else throw err::Exception("variable not found " + var.Ident);
-            }
+        sym = this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
+        if(sym == nullptr) {
+            sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, var.Ident);
+            global = true;
+            if(sym == nullptr){
+                Type ** t = this->typeList[var.Ident];
+                if (t != nullptr){
+                    Type * type = *t;
+                    output.size = ASMC::DWord;
+                    output.access = '$' + std::to_string(type->SymbolTable.head->data.byteMod);
+                    handled = true;
+                }else if(this->nameTable[var.Ident] != nullptr){
+                    output.size = ASMC::QWord;
+                    output.access = '$' + this->nameTable[var.Ident]->ident.ident;
+                    handled = true;
+                }
+            }else throw err::Exception("variable not found " + var.Ident);
         }
-        else sym = scope->SymbolTable.search<std::string>(searchSymbol, var.Ident);
 
         if (!handled){
             if (sym != nullptr){
@@ -153,15 +150,16 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
                     gen::Type type = **this->typeList[last.typeName];
                     gen::Symbol * modSym;
-                    if(this->scope == &type){
-                        *this->typeList[last.typeName];
+                    std::string sto = var.modList.peek();
+                    if(this->scope == *this->typeList[last.typeName]){
+                        
                         // if we are scoped to the type seache the symbol in the type symbol table
                          modSym = type.SymbolTable.search<std::string>(searchSymbol, var.modList.pop());
                     }else{
                         // if we are not scoped to the type search the symbol in the public symbol table
                         modSym = type.publicSymbols.search<std::string>(searchSymbol, var.modList.pop());
                     };
-                   
+                    if (modSym == nullptr) throw err::Exception("variable not found " + last.typeName + "." + sto);
                     last = modSym->type;
                     tbyte = modSym->byteMod;
                     ASMC::Mov * mov = new ASMC::Mov();
@@ -594,9 +592,7 @@ void gen::CodeGenerator::GenArgs(AST::Statment * STMT, ASMC::File &OutputFile){
         gen::Symbol symbol;
         ASMC::Mov * mov = new ASMC::Mov();
 
-        links::LinkedList<gen::Symbol>  * Table;
-        if(this->scope == nullptr) Table = &this->SymbolTable;
-        else Table = &this->scope->SymbolTable;
+        links::LinkedList<gen::Symbol>  * Table = &this->SymbolTable;
 
         offset = this->getBytes(arg->type.size);
         size = arg->type.size;
@@ -859,7 +855,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 ty.typeName = scope->Ident;
                 ty.size = ASMC::QWord;
                 symbol.type = ty;
-                scope->SymbolTable.push(symbol);
+                this->SymbolTable.push(symbol);
 
                 movy->size = ASMC::QWord;
                 movy->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
@@ -1051,9 +1047,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::Assign * assign = dynamic_cast<AST::Assign *>(STMT);
         bool global = false;
 
-        links::LinkedList<gen::Symbol>  * Table;
-        if(this->scope == nullptr) Table = &this->SymbolTable;
-        else Table = &this->scope->SymbolTable;
+        links::LinkedList<gen::Symbol>  * Table = &this->SymbolTable;
         
         
         Symbol * symbol = Table->search<std::string>(searchSymbol, assign->Ident);
@@ -1089,14 +1083,17 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
             gen::Type type = **this->typeList[last.typeName];
              gen::Symbol * modSym;
-                    if(this->scope == &type){
-                        *this->typeList[last.typeName];
+             // store the next dot mod in case of an error
+             std::string sto = assign->modList.peek();
+                    if(this->scope == *this->typeList[last.typeName]){
+                        
                         // if we are scoped to the type seache the symbol in the type symbol table
                          modSym = type.SymbolTable.search<std::string>(searchSymbol, assign->modList.pop());
                     }else{
                         // if we are not scoped to the type search the symbol in the public symbol table
                         modSym = type.publicSymbols.search<std::string>(searchSymbol, assign->modList.pop());
                     };
+                    if(modSym == nullptr) throw err::Exception("unknown name: " + last.typeName + "." + sto);
             last = modSym->type;
             tbyte = modSym->byteMod;
 
