@@ -845,11 +845,11 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 ASMC::Mov * movy = new ASMC::Mov();
                 movy->from = this->intArgs[intArgsCounter].get(ASMC::QWord);
 
-                if(scope->SymbolTable.search<std::string>(searchSymbol, "my") != nullptr) throw err::Exception("redefined veriable: my");
+                if(this->SymbolTable.search<std::string>(searchSymbol, "my") != nullptr) throw err::Exception("redefined veriable: my");
 
                 symbol.symbol = "my";
 
-                if (scope->SymbolTable.head == nullptr){
+                if (this->scope->SymbolTable.head == nullptr){
                     symbol.byteMod = offset;
                 }else{
                     symbol.byteMod = scope->SymbolTable.peek().byteMod + offset;
@@ -1087,7 +1087,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         while(assign->modList.head != nullptr){
             if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
-            gen::Symbol * modSym;
             gen::Type type = **this->typeList[last.typeName];
              gen::Symbol * modSym;
                     if(this->scope == &type){
