@@ -26,6 +26,13 @@ namespace gen{
     class Type{
         public:
         std::string Ident;
+        
+        // The public Symbol table will hold all public symbols
+        // This is to be used externally
+        links::LinkedList<Symbol> publicSymbols;
+
+        // The private Symbol table will hold all public and private symbols
+        // This is used internally
         links::LinkedList<Symbol> SymbolTable;
         static bool compair(Type * t, std::string ident);
         virtual int poly(){return 0;};
