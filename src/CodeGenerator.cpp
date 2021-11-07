@@ -831,7 +831,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             link->operand = lable->lable;
 
             if(this->scope != nullptr){
-                this->scopePop = 0;
+                // add the opject to the arguments of the function
                 int offset = this->getBytes(ASMC::QWord);
                 int size = ASMC::QWord;
                 gen::Symbol symbol;
@@ -858,7 +858,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 movy->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
                 OutputFile.text << movy;
                 this->intArgsCounter++;
-                this->scopePop++;
             };
 
             this->GenArgs(func->args, OutputFile);
@@ -867,24 +866,17 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             ASMC::File file = this->GenSTMT(func->statment);
             OutputFile << file;
             
-            int alligne = 16;
-            if (this->scope == nullptr){
-                if(this->SymbolTable.count  > 0){
-                    alligne = ((this->SymbolTable.peek().byteMod + 15) / 16) * 16;
-                }
-            }
-            else{
-                if(this->scopePop > 0){
-                    alligne = ((scope->SymbolTable.peek().byteMod + 15) / 16) * 16;
-                }
+            // align the stack
+            int align = 16;
+            if(this->SymbolTable.count  > 0){
+                align = ((this->SymbolTable.peek().byteMod + 15) / 16) * 16;
             }
 
             ASMC::Subq * sub = new ASMC::Subq;
-            sub->op1 = "$" + std::to_string(alligne);
+            sub->op1 = "$" + std::to_string(align);
             sub->op2 = this->registers["%rsp"]->get(ASMC::QWord);
             OutputFile.text.insert(sub, AlignmentLoc + 1);
-            if(this->scope != nullptr ) for(int i = 0; i  < this->scopePop; i++) this->scope->SymbolTable.pop();
-            this->scopePop = 0;
+            
             this->scope = saveScope;
             this->globalScope = saveGlobal;
             this->inFunction = false;
@@ -902,8 +894,14 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         links::LinkedList<gen::Symbol>  * Table;
         
         if (!this->globalScope){
-            if(this->scope == nullptr) Table = &this->SymbolTable;
-            else Table = &this->scope->SymbolTable;
+            // if the there  is no scope or in a function use the main SymbolTable
+            if(this->scope == nullptr || this->inFunction) Table = &this->SymbolTable;
+            else{
+                // add the symbol to the class symbol table
+                Table = &this->scope->SymbolTable;
+                // if the symbol is public add it to the public symbol table
+                if(dec->scope == AST::Public) Table = &this->scope->publicSymbols;
+            }
 
             if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable: " + dec->Ident);
 
@@ -916,7 +914,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             Symbol.type = dec->type;
             Symbol.symbol = dec->Ident;
             Table->push(Symbol);
-            this->scopePop += 1;
         } else{
             Table = &this->GlobalSymbolTable;
             ASMC::LinkTask * var = new ASMC::LinkTask();
@@ -976,8 +973,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         int offset = this->getBytes(dec->type.size);
         
         links::LinkedList<gen::Symbol>  * Table;
-        if(this->scope == nullptr) Table = &this->SymbolTable;
-        else Table = &this->scope->SymbolTable;
+        Table = &this->SymbolTable;
 
         if(!this->globalScope){
         
@@ -1000,7 +996,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             mov->from = expr.access;
             mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
             OutputFile.text << mov;
-            this->scopePop += 1;
         }
         else{
             gen::Symbol Symbol;
