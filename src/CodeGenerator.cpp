@@ -783,17 +783,20 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 push rbp
                 mov  rsp, rbp
                 this->GenSTMT()
-                
         */
-
         if(this->scope == nullptr) this->SymbolTable.clear();
 
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
         if(this->scope == nullptr) this->nameTable << *func;
-        else this->scope->nameTable << * func;
+        else{
+            // add the function to the class name table
+            this->scope->nameTable << * func;
+            // if the function is public add it to the public name table
+            if(func->scope == AST::Public) this->scope->publicNameTable << * func;
+        }
         
         if(func->statment != nullptr){
-
+            this->inFunction = true;
             gen::Class * saveScope = this->scope;
             bool saveGlobal = this->globalScope;
             this->globalScope = false;
@@ -884,7 +887,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             this->scopePop = 0;
             this->scope = saveScope;
             this->globalScope = saveGlobal;
-
+            this->inFunction = false;
         }
         delete(func);
     }
