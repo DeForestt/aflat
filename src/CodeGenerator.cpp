@@ -1087,8 +1087,17 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         while(assign->modList.head != nullptr){
             if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
+            gen::Symbol * modSym;
             gen::Type type = **this->typeList[last.typeName];
-            gen::Symbol * modSym = type.SymbolTable.search<std::string>(searchSymbol, assign->modList.pop());
+             gen::Symbol * modSym;
+                    if(this->scope == &type){
+                        *this->typeList[last.typeName];
+                        // if we are scoped to the type seache the symbol in the type symbol table
+                         modSym = type.SymbolTable.search<std::string>(searchSymbol, assign->modList.pop());
+                    }else{
+                        // if we are not scoped to the type search the symbol in the public symbol table
+                        modSym = type.publicSymbols.search<std::string>(searchSymbol, assign->modList.pop());
+                    };
             last = modSym->type;
             tbyte = modSym->byteMod;
 
