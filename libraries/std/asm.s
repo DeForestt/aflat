@@ -13,6 +13,7 @@
 .global sys_exit
 .global sys_wait
 .global sys_pipe
+.global sys_kill
 
 .text
 

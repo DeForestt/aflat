@@ -152,7 +152,6 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     gen::Symbol * modSym;
                     std::string sto = var.modList.peek();
                     if(this->scope == *this->typeList[last.typeName]){
-                        
                         // if we are scoped to the type seache the symbol in the type symbol table
                          modSym = type.SymbolTable.search<std::string>(searchSymbol, var.modList.pop());
                     }else{
@@ -535,7 +534,7 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(AST::Statment * STMT
         
         int offset = this->getBytes(arg->type.size);
 
-        if(table.search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined veriable:" + arg->Ident);
+        if(table.search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined variable:" + arg->Ident);
 
         symbol.symbol = arg->Ident;
         if (table.head == nullptr){

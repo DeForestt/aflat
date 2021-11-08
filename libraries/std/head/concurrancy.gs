@@ -9,6 +9,8 @@ class Process{
 
     int init(adr foo);
     int start(adr args);
+    int isRunning();
+    int getPid();
 };
 
 Process newProcess(adr foo);

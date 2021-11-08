@@ -2,9 +2,9 @@
 .needs <std>
 .needs "/head/concurrancy.gs"
 
-struct FD{
-  int out;
-  int in;
+class FD{
+  public int out;
+  public int in;
 };
 
 /*
@@ -37,22 +37,27 @@ int start@Process(adr args){
 };
 
 /*
+ * function name:   getPid@Process
+ * description:     returns the pid of the process
+ * arguments:       none
+ * returns:         pid of the process
+ */
+int getPid@Process(){
+    return my.pid;
+};
+
+/*
  * function name: isRunning@Process
  * description:     checks if a process is still running
  * arguments:       none
  * returns:         1 if the process is still running, 0 if it is not
  */
 int isRunning@Process(){
-    if(my.pid == 0){
+    int status = sys_kill(my.pid, 0); // 0 means no signal
+    if (status < 0){
         return 0;
-    }
-    else{
-        int status = sys_Kill(my.pid, 0); // 0 means no signal
-        if (status < 0){
-            return 0;
-        };
-        return 1;
     };
+    return 1;
 };
 /*
  * function name:   newProcess
@@ -142,7 +147,7 @@ int exit(int status){
  * returns:         0
  */
 int wait(Process p){
-    sys_wait(p.pid, #0, #0, #0);
+    sys_wait(p.getPid(), #0, #0, #0);
     return 0;
 };
 
