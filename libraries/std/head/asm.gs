@@ -13,3 +13,4 @@ int sys_times(adr t);
 int sys_exit(int err);
 int sys_wait(int proc, adr status, int options, adr t);
 int sys_pipe(adr fd);
+int sys_kill(int pid, int sig);

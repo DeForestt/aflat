@@ -917,6 +917,9 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             Symbol.type = dec->type;
             Symbol.symbol = dec->Ident;
             Table->push(Symbol);
+            if (Table == &this->scope->publicSymbols){
+                this->scope->SymbolTable.push(Symbol);
+            }
         } else{
             Table = &this->GlobalSymbolTable;
             ASMC::LinkTask * var = new ASMC::LinkTask();
@@ -1086,7 +1089,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
              // store the next dot mod in case of an error
              std::string sto = assign->modList.peek();
                     if(this->scope == *this->typeList[last.typeName]){
-                        
                         // if we are scoped to the type seache the symbol in the type symbol table
                          modSym = type.SymbolTable.search<std::string>(searchSymbol, assign->modList.pop());
                     }else{

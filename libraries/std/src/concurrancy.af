@@ -37,6 +37,24 @@ int start@Process(adr args){
 };
 
 /*
+ * function name: isRunning@Process
+ * description:     checks if a process is still running
+ * arguments:       none
+ * returns:         1 if the process is still running, 0 if it is not
+ */
+int isRunning@Process(){
+    if(my.pid == 0){
+        return 0;
+    }
+    else{
+        int status = sys_Kill(my.pid, 0); // 0 means no signal
+        if (status < 0){
+            return 0;
+        };
+        return 1;
+    };
+};
+/*
  * function name:   newProcess
  * description:     dinamically creates a new process
  * arguments:       adr foo - function pointer to the function to be executed
@@ -127,3 +145,4 @@ int wait(Process p){
     sys_wait(p.pid, #0, #0, #0);
     return 0;
 };
+

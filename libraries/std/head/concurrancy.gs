@@ -4,7 +4,7 @@
  */
 
 class Process{
-    int pid;
+    private int pid;
     private adr foo;
 
     int init(adr foo);

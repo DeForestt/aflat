@@ -150,4 +150,13 @@ sys_pipe:
 	syscall
 	leave
 	ret
+
+sys_kill:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $62, %rax
+	syscall
+	leave
+	ret
 	
