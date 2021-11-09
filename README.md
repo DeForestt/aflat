@@ -1,6 +1,5 @@
 AFLAT <BR>compiles to GNU ASM for LINUX<br>
 Please see example project<br>
-**Heap Access Coming Soon**
 
     Build:
         $git pull
