@@ -1,5 +1,6 @@
 .global	str_split
 .global	str_find
+.global	int_toString
 .global	str_toInt
 .global	str_concat
 .global	str_comp
@@ -267,6 +268,137 @@ str_toInt:
 	movl	-26(%rbp), %eax
 	leave
 	ret
+int_toString:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$32, %rsp
+	movl	%edi, -4(%rbp)
+	movq	%rsi, -12(%rbp)
+	movl	$0, -16(%rbp)
+	movl	$10, -20(%rbp)
+	movl	$0, -24(%rbp)
+	movl	$0, -28(%rbp)
+	movl	$0, %eax
+	movl	%eax, %edi
+	call	ascii
+	movb	%al, -29(%rbp)
+	movl	-4(%rbp), %eax
+	movl	$0, %ecx
+	cmpl	%ecx, %eax
+	jne	.Lint_toString13
+	movq	-12(%rbp), %rax
+	movb	$48, %bl
+	movb	%bl, (%rax)
+	movq	-12(%rbp), %rax
+	movb	-29(%rbp), %bl
+	movb	%bl, (%rax)
+	mov	$1, %rdx
+	mov	-12(%rbp), %rax
+	add	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -12(%rbp)
+	movl	$0, %eax
+	leave
+	ret
+.Lint_toString13:
+	movl	-4(%rbp), %eax
+	movl	$0, %ecx
+	cmpl	%ecx, %eax
+	jge	.Lint_toString14
+	movq	-12(%rbp), %rax
+	movb	$45, %bl
+	movb	%bl, (%rax)
+	mov	$1, %rdx
+	mov	-12(%rbp), %rax
+	add	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -12(%rbp)
+	mov	$-1, %edx
+	mov	-4(%rbp), %eax
+	imul	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -4(%rbp)
+.Lint_toString14:
+	mov	$1, %edx
+	mov	-4(%rbp), %eax
+	imul	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	jmp	.Lint_toString16
+.Lint_toString15:
+	mov	-16(%rbp), %eax
+	cltd
+	idivl	-20(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	mov	$1, %edx
+	mov	-28(%rbp), %eax
+	add	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -28(%rbp)
+.Lint_toString16:
+	movl	-16(%rbp), %eax
+	movl	$0, %ecx
+	cmpl	%ecx, %eax
+	jne	.Lint_toString15
+	mov	$1, %edx
+	mov	-28(%rbp), %eax
+	sub	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -28(%rbp)
+	jmp	.Lint_toString18
+.Lint_toString17:
+	movl	$10, %eax
+	movl	%eax, %edi
+	movl	-28(%rbp), %eax
+	movl	%eax, %esi
+	call	exp
+	movl	%eax, %ebx
+	movl	%ebx, -24(%rbp)
+	mov	-4(%rbp), %eax
+	cltd
+	idivl	-24(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	movl	-16(%rbp), %eax
+	movl	%eax, %edi
+	call	toChar
+	movb	%al, %bl
+	movb	%bl, -30(%rbp)
+	movq	-12(%rbp), %rax
+	movb	-30(%rbp), %bl
+	movb	%bl, (%rax)
+	mov	$1, %rdx
+	mov	-12(%rbp), %rax
+	add	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -12(%rbp)
+	mov	-24(%rbp), %edx
+	mov	-16(%rbp), %eax
+	imul	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	mov	-16(%rbp), %edx
+	mov	-4(%rbp), %eax
+	sub	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -4(%rbp)
+	mov	$1, %edx
+	mov	-28(%rbp), %eax
+	sub	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -28(%rbp)
+.Lint_toString18:
+	movl	-28(%rbp), %eax
+	movl	$-1, %ecx
+	cmpl	%ecx, %eax
+	jg	.Lint_toString17
+	movq	-12(%rbp), %rax
+	movb	-29(%rbp), %bl
+	movb	%bl, (%rax)
+	movl	$0, %eax
+	leave
+	ret
 str_find:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -278,8 +410,8 @@ str_find:
 	movq	%rax, %rdi
 	call	len
 	movl	%eax, -17(%rbp)
-	jmp	.Lstr_find14
-.Lstr_find13:
+	jmp	.Lstr_find20
+.Lstr_find19:
 	mov	-13(%rbp), %edx
 	mov	-9(%rbp), %rax
 	add	%rdx, %rax
@@ -289,21 +421,21 @@ str_find:
 	movb	%al, %al
 	movb	-1(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lstr_find15
+	jne	.Lstr_find21
 	movl	-13(%rbp), %eax
 	leave
 	ret
-.Lstr_find15:
+.Lstr_find21:
 	mov	$1, %edx
 	mov	-13(%rbp), %eax
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -13(%rbp)
-.Lstr_find14:
+.Lstr_find20:
 	movl	-13(%rbp), %eax
 	movl	-17(%rbp), %ecx
 	cmpl	%ecx, %eax
-	jl	.Lstr_find13
+	jl	.Lstr_find19
 	movl	$-1, %eax
 	leave
 	ret
@@ -322,24 +454,24 @@ str_split:
 	movq	-8(%rbp), %rax
 	movb	(%rax), %al
 	movb	%al, -27(%rbp)
-	jmp	.Lstr_split17
-.Lstr_split16:
+	jmp	.Lstr_split23
+.Lstr_split22:
 	movb	-27(%rbp), %al
 	movb	-26(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lstr_split18
+	jne	.Lstr_split24
 	movl	$-1, %eax
 	leave
 	ret
-.Lstr_split18:
+.Lstr_split24:
 	movb	-27(%rbp), %al
 	movb	-9(%rbp), %cl
 	cmpb	%cl, %al
-	je	.Lstr_split19
+	je	.Lstr_split25
 	movq	-17(%rbp), %rax
 	movb	-27(%rbp), %bl
 	movb	%bl, (%rax)
-.Lstr_split19:
+.Lstr_split25:
 	mov	$1, %edx
 	mov	-8(%rbp), %rax
 	add	%rdx, %rax
@@ -354,11 +486,11 @@ str_split:
 	movb	(%rax), %al
 	movb	%al, %bl
 	movb	%bl, -27(%rbp)
-.Lstr_split17:
+.Lstr_split23:
 	movb	-27(%rbp), %al
 	movb	-9(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lstr_split16
+	jne	.Lstr_split22
 	movq	-17(%rbp), %rax
 	movb	-26(%rbp), %bl
 	movb	%bl, (%rax)
@@ -372,12 +504,12 @@ str_split:
 	movb	%al, %al
 	movb	-26(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lstr_split20
+	jne	.Lstr_split26
 	movl	$-1, %eax
 	leave
 	ret
-.Lstr_split20:
-	movq	$.strstr_split21, %rax
+.Lstr_split26:
+	movq	$.strstr_split27, %rax
 	movq	%rax, %rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rsi
@@ -391,7 +523,7 @@ str_split:
 
 .data
 
-.strstr_split21:
+.strstr_split27:
 	.asciz	 ""
 
 
