@@ -18,6 +18,12 @@ void buildTemplate(std::string value);
 
 int main(int argc, char *argv[]){
     try{
+        // Usage error
+        if(argc < 2){
+            std::cout << "Usage: aflat <file> <output>\n";
+            return 1;
+        }
+
         lex::Lexer scanner;
         links::LinkedList<lex::Token* > tokens;
 
@@ -57,24 +63,31 @@ int main(int argc, char *argv[]){
         file.data.invert();
 
         std::ofstream ofs;
+        
+        // assembly file output
+        if (argc == 2) ofs.open("out.s"); else ofs.open(argv[2]);
 
-        if (argc == 1) ofs.open("out.s"); else ofs.open(argv[2]);
 
+        // output linker commands
         while(file.linker.head != nullptr){
             ofs << file.linker.pop()->toString();
         }
 
+        // text section output
         ofs << "\n\n.text\n\n";
 
         while(file.text.head != nullptr){
             ofs << file.text.pop()->toString();
         }
 
+        // data section output
         ofs << "\n\n.data\n\n";
         while(file.data.head != nullptr){
             ofs << file.data.pop()->toString();
         }
 
+
+        // bss section output
         ofs << "\n\n.bss\n\n";
         while(file.bss.head != nullptr){
             ofs << file.bss.pop()->toString();

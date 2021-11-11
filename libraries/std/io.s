@@ -1,3 +1,4 @@
+.global	clear
 .global	printFloat
 .global	printInt
 .global	pullInt
@@ -62,7 +63,7 @@ readString:
 clearInput:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$96, %rsp
+	subq	$16, %rsp
 	movl	$10, %eax
 	movl	%eax, %edi
 	call	ascii
@@ -274,7 +275,7 @@ toInt:
 	leave
 	ret
 .LtoInt25:
-	movl	$0, %eax
+	movl	$-1, %eax
 	leave
 	ret
 pullInt:
@@ -686,10 +687,22 @@ printFloat:
 	movl	$0, %eax
 	leave
 	ret
+clear:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq	$.strclear52, %rax
+	movq	%rax, %rdi
+	call	print
+	movl	$0, %eax
+	leave
+	ret
 
 
 .data
 
+.strclear52:
+	.asciz	 "\033[H\033[J"
 .strprintFloat51:
 	.asciz	 "."
 .strprintInt31:
