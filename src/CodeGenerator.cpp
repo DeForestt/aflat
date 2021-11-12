@@ -614,7 +614,6 @@ void gen::CodeGenerator::GenArgs(AST::Statment * STMT, ASMC::File &OutputFile){
         mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
         OutputFile.text << mov;
         intArgsCounter++;
-        this->scopePop++;
     }
 }
 
@@ -787,6 +786,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 this->GenSTMT()
         */
         this->SymbolTable.clear();
+        this->SymbolTable.head = nullptr;
 
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
         if(this->scope == nullptr) this->nameTable << *func;
@@ -884,6 +884,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             this->inFunction = false;
         }
         delete(func);
+        this->SymbolTable.clear();
+        this->SymbolTable.head = nullptr;
     }
     else if (dynamic_cast<AST::Declare *>(STMT) != nullptr){
         /*
