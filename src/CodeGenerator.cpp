@@ -786,7 +786,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 mov  rsp, rbp
                 this->GenSTMT()
         */
-        if(this->scope == nullptr) this->SymbolTable.clear();
+        this->SymbolTable.clear();
 
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
         if(this->scope == nullptr) this->nameTable << *func;
@@ -901,8 +901,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             else{
                 // add the symbol to the class symbol table
                 Table = &this->scope->SymbolTable;
-                // if the symbol is public add it to the public symbol table
-                if(dec->scope == AST::Public) Table = &this->scope->publicSymbols;
             }
 
             if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable: " + dec->Ident);
@@ -916,9 +914,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             Symbol.type = dec->type;
             Symbol.symbol = dec->Ident;
             Table->push(Symbol);
-            if (Table == &this->scope->publicSymbols){
-                this->scope->SymbolTable.push(Symbol);
-            }
+            // if the symbol is public add it to the public symbol table
+            if(dec->scope == AST::Public) this->scope->publicSymbols.push(Symbol);
         } else{
             Table = &this->GlobalSymbolTable;
             ASMC::LinkTask * var = new ASMC::LinkTask();
