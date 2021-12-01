@@ -67,7 +67,7 @@ int str_toInt(adr input){
     };
     
     char null = ascii(0);
-    int factor;
+    int factor = 0;
     int size = len(input);
     int result = 0;
     int i = size - 1;
@@ -118,7 +118,7 @@ int int_toString(int input, adr buffer){
 
         i = i - 1;
 
-        char out;
+        char out = ' ';
         while (i > -1){
                 factor = exp(10, i);
                 h = input / factor;
@@ -176,5 +176,70 @@ int str_split(adr str, char sep, adr buff1, adr buff2){
 		return -1;
 	};
 	str_concat("", str, buff2);
+	return 0;
+};
+
+float charToFloat(char a){
+    float result = 0.00;
+    if (a == '0'){result = 0.00;};
+    if (a == '1'){result = 1.00;};
+    if (a == '2'){result = 2.00;};
+    if (a == '3'){result = 3.00;};
+    if (a == '4'){result = 4.00;};
+    if (a == '5'){result = 5.00;};
+    if (a == '6'){result = 6.00;};
+    if (a == '7'){result = 7.00;};
+    if (a == '8'){result = 8.00;};
+    if (a == '9'){result = 9.00;};
+    return result;
+};
+
+int str_toFloat(adr input){
+	char 20 whole;
+	char 20 decimal;
+
+	str_split(input, '.', ?whole, ?decimal);
+	int len = len(?whole);
+	len = len - 1;
+
+	float result = 0.00;
+	int i = 0;
+	float factor = 1.0;
+	while (i < len){
+		factor = factor * 10.0;
+		i = i + 1;
+	};
+	i = 0;
+
+	float temp = 0.00;
+	char nullChar = ascii(0);
+	char inChar = input as char;
+	float ten = 10.0;
+	while (inChar!= nullChar){
+		if (inChar == '.'){
+			factor = 0.1;
+		};
+
+		if (inChar != '.'){
+			temp = charToFloat(inChar);
+			float adder = result + 0.00;
+			result = temp * factor;
+			result = result + adder;
+			factor = factor / ten;
+		};
+
+		input = input + 1;
+		inChar = input as char;
+		i = i + 1;
+	};
+	adr cast = ?result;
+	float cleas = 0.0;
+	cleas = cleas * cleas;
+	int ret = cast as int;
+	return ret;
+};
+
+int sPrintFloat(adr input){
+	printFloat(input);
 	return 0;
 };

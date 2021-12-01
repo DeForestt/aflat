@@ -1,3 +1,6 @@
+.global	sPrintFloat
+.global	str_toFloat
+.global	charToFloat
 .global	str_split
 .global	str_find
 .global	int_toString
@@ -210,6 +213,7 @@ str_toInt:
 	movl	%eax, %edi
 	call	ascii
 	movb	%al, -14(%rbp)
+	movl	$0, -18(%rbp)
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
 	call	len
@@ -346,6 +350,7 @@ int_toString:
 	sub	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
+	movb	$32, -30(%rbp)
 	jmp	.Lint_toString18
 .Lint_toString17:
 	movl	$10, %eax
@@ -519,10 +524,285 @@ str_split:
 	movl	$0, %eax
 	leave
 	ret
+charToFloat:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movb	%dil, -1(%rbp)
+	movss	.floatcharToFloat28, %xmm0
+	movss	%xmm0, -5(%rbp)
+	movb	-1(%rbp), %al
+	movb	$48, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat29
+	movss	.floatcharToFloat30, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat29:
+	movb	-1(%rbp), %al
+	movb	$49, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat31
+	movss	.floatcharToFloat32, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat31:
+	movb	-1(%rbp), %al
+	movb	$50, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat33
+	movss	.floatcharToFloat34, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat33:
+	movb	-1(%rbp), %al
+	movb	$51, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat35
+	movss	.floatcharToFloat36, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat35:
+	movb	-1(%rbp), %al
+	movb	$52, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat37
+	movss	.floatcharToFloat38, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat37:
+	movb	-1(%rbp), %al
+	movb	$53, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat39
+	movss	.floatcharToFloat40, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat39:
+	movb	-1(%rbp), %al
+	movb	$54, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat41
+	movss	.floatcharToFloat42, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat41:
+	movb	-1(%rbp), %al
+	movb	$55, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat43
+	movss	.floatcharToFloat44, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat43:
+	movb	-1(%rbp), %al
+	movb	$56, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat45
+	movss	.floatcharToFloat46, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat45:
+	movb	-1(%rbp), %al
+	movb	$57, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat47
+	movss	.floatcharToFloat48, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat47:
+	movl	-5(%rbp), %eax
+	leave
+	ret
+str_toFloat:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$96, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	-8(%rbp), %rax
+	movq	%rax, %rdi
+	movb	$46, %al
+	movb	%al, %sil
+	lea	-28(%rbp), %rax
+	movq	%rax, %rax
+	movq	%rax, %rdx
+	lea	-48(%rbp), %rax
+	movq	%rax, %rax
+	movq	%rax, %rcx
+	call	str_split
+	lea	-28(%rbp), %rax
+	movq	%rax, %rax
+	movq	%rax, %rdi
+	call	len
+	movl	%eax, -52(%rbp)
+	mov	$1, %edx
+	mov	-52(%rbp), %eax
+	sub	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -52(%rbp)
+	movss	.floatstr_toFloat49, %xmm0
+	movss	%xmm0, -56(%rbp)
+	movl	$0, -60(%rbp)
+	movss	.floatstr_toFloat50, %xmm0
+	movss	%xmm0, -64(%rbp)
+	jmp	.Lstr_toFloat52
+.Lstr_toFloat51:
+	movss	.floatstr_toFloat54, %xmm0
+	movss	%xmm0, %xmm1
+	movss	-64(%rbp), %xmm0
+	mulss	%xmm1, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -64(%rbp)
+	mov	$1, %edx
+	mov	-60(%rbp), %eax
+	add	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -60(%rbp)
+.Lstr_toFloat52:
+	movl	-60(%rbp), %eax
+	movl	-52(%rbp), %ecx
+	cmpl	%ecx, %eax
+	jl	.Lstr_toFloat51
+	movl	$0, %ebx
+	movl	%ebx, -60(%rbp)
+	movss	.floatstr_toFloat55, %xmm0
+	movss	%xmm0, -68(%rbp)
+	movl	$0, %eax
+	movl	%eax, %edi
+	call	ascii
+	movb	%al, -69(%rbp)
+	movq	-8(%rbp), %rax
+	movb	(%rax), %al
+	movb	%al, -70(%rbp)
+	movss	.floatstr_toFloat56, %xmm0
+	movss	%xmm0, -74(%rbp)
+	jmp	.Lstr_toFloat58
+.Lstr_toFloat57:
+	movb	-70(%rbp), %al
+	movb	$46, %cl
+	cmpb	%cl, %al
+	jne	.Lstr_toFloat59
+	movss	.floatstr_toFloat60, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -64(%rbp)
+.Lstr_toFloat59:
+	movb	-70(%rbp), %al
+	movb	$46, %cl
+	cmpb	%cl, %al
+	je	.Lstr_toFloat61
+	movb	-70(%rbp), %al
+	movb	%al, %dil
+	call	charToFloat
+	movl	%eax, %ebx
+	movl	%ebx, -68(%rbp)
+	movss	.floatstr_toFloat63, %xmm0
+	movss	%xmm0, %xmm1
+	movss	-56(%rbp), %xmm0
+	addss	%xmm1, %xmm0
+	movss	%xmm0, -78(%rbp)
+	movss	-64(%rbp), %xmm1
+	movss	-68(%rbp), %xmm0
+	mulss	%xmm1, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -56(%rbp)
+	movss	-78(%rbp), %xmm1
+	movss	-56(%rbp), %xmm0
+	addss	%xmm1, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -56(%rbp)
+	movss	-74(%rbp), %xmm1
+	movss	-64(%rbp), %xmm0
+	divss	%xmm1, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -64(%rbp)
+.Lstr_toFloat61:
+	mov	$1, %edx
+	mov	-8(%rbp), %rax
+	add	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -8(%rbp)
+	movq	-8(%rbp), %rax
+	movb	(%rax), %al
+	movb	%al, %bl
+	movb	%bl, -70(%rbp)
+	mov	$1, %edx
+	mov	-60(%rbp), %eax
+	add	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -60(%rbp)
+.Lstr_toFloat58:
+	movb	-70(%rbp), %al
+	movb	-69(%rbp), %cl
+	cmpb	%cl, %al
+	jne	.Lstr_toFloat57
+	lea	-56(%rbp), %rax
+	movq	%rax, -86(%rbp)
+	movss	.floatstr_toFloat64, %xmm0
+	movss	%xmm0, -90(%rbp)
+	movss	-90(%rbp), %xmm1
+	movss	-90(%rbp), %xmm0
+	mulss	%xmm1, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -90(%rbp)
+	movq	-86(%rbp), %rax
+	movl	(%rax), %eax
+	movl	%eax, -94(%rbp)
+	movl	-94(%rbp), %eax
+	leave
+	ret
+sPrintFloat:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	-8(%rbp), %rax
+	movq	%rax, %rdi
+	call	printFloat
+	movl	$0, %eax
+	leave
+	ret
 
 
 .data
 
+.floatstr_toFloat64:
+	.float	0.0
+.floatstr_toFloat63:
+	.float	0.00
+.floatstr_toFloat60:
+	.float	0.1
+.floatstr_toFloat56:
+	.float	10.0
+.floatstr_toFloat55:
+	.float	0.00
+.floatstr_toFloat54:
+	.float	10.0
+.floatstr_toFloat50:
+	.float	1.0
+.floatstr_toFloat49:
+	.float	0.00
+.floatcharToFloat48:
+	.float	9.00
+.floatcharToFloat46:
+	.float	8.00
+.floatcharToFloat44:
+	.float	7.00
+.floatcharToFloat42:
+	.float	6.00
+.floatcharToFloat40:
+	.float	5.00
+.floatcharToFloat38:
+	.float	4.00
+.floatcharToFloat36:
+	.float	3.00
+.floatcharToFloat34:
+	.float	2.00
+.floatcharToFloat32:
+	.float	1.00
+.floatcharToFloat30:
+	.float	0.00
+.floatcharToFloat28:
+	.float	0.00
 .strstr_split27:
 	.asciz	 ""
 

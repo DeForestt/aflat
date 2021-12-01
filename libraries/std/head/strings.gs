@@ -5,3 +5,6 @@ int str_toInt(adr input);
 int str_split(adr str, char sep, adr buff1, adr buff2);
 int int_toString(int input, adr buffer);
 char ascii(int input);
+float charToFloat(char a);
+int str_toFloat(adr input);
+int sPrintFloat(adr input);

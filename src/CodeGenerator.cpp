@@ -917,7 +917,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             Symbol.symbol = dec->Ident;
             Table->push(Symbol);
             // if the symbol is public add it to the public symbol table
-            if(dec->scope == AST::Public) this->scope->publicSymbols.push(Symbol);
+            if(dec->scope == AST::Public && this->scope != nullptr) this->scope->publicSymbols.push(Symbol);
         } else{
             Table = &this->GlobalSymbolTable;
             ASMC::LinkTask * var = new ASMC::LinkTask();
