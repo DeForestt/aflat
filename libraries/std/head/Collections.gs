@@ -1,4 +1,4 @@
-struct ListNode{
+class ListNode{
     adr next;
     adr data;
 };
@@ -18,3 +18,15 @@ class LinkedList{
 };
 
 LinkedList newList();
+
+class Array{
+    private int typeSize;
+    private adr head;
+    private int size;
+
+    public int init(int typeSize, int size);
+    public adr at(int index);
+    public int delete(int index);
+};
+
+Array newArray(int typeSize, int size);

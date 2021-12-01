@@ -127,3 +127,61 @@ int size@LinkedList(){
     };
     return i;
 };
+
+
+/*
+ * function name: init@Array
+ * description:   initialize an array
+ * arguments:     int typeSize - the size of the type
+ *                int size - the size of the array
+ * returns:       0 if successful, -1 if not
+ */
+int init@Array(int typeSize, int size){
+    my.size = size;
+    my.typeSize = typeSize;
+    
+    size = size * typeSize;
+    my.head = malloc(size);
+    return 0;
+};
+
+/*
+ * function name: at@Array
+ * description: returns the address of the element at the given index
+ * agruments: int index - the index of the element to return
+ * return: adr - the address of the element at the given index
+ */
+adr at@Array(int index){
+    int tSize;
+    tSize = my.typeSize;
+    int offset = index * tSize;
+    adr curr;
+    curr = my.head;
+    curr = curr + offset;
+    return curr;
+};
+
+/*
+  * function name: newArray
+  * description:   create a new array
+  * arguments:     int typeSize - the size of the type
+  *                int size - the size of the array
+  * returns:       a new array
+  */
+Array newArray(int typeSize, int size){
+    Array my = malloc(Array);
+    my.init(typeSize, size);
+    return my;
+};
+
+/*
+ * function name:   delete@Array
+ * description:     deletes the array and frees the memory
+ * arguments:       none
+ * returns:         none
+ */
+int delete@Array(){
+    free(my.head);
+    free(my);
+    return 0;
+};
