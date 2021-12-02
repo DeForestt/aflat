@@ -1,4 +1,5 @@
 .needs <io.gs>
+.needs <std>
 .needs <math.gs>
 
 char ascii(int input){
@@ -242,4 +243,114 @@ int str_toFloat(adr input){
 int sPrintFloat(adr input){
 	printFloat(input);
 	return 0;
+};
+
+int float_toString(adr input, adr obuff, int signed){
+
+	if(input == #0){
+		return -1;
+	};
+
+	int percision = 6;
+
+	adr mySign = "";
+	// as input into a new int
+	int inputInt = input as int;
+	if (inputInt == 0){
+		printInt(0);
+		return 0;
+	};
+
+	//get the sign bit of the float
+	
+	int sign = inputInt >> 31;
+	
+	//get the exponent of the float
+	
+	int exponent = inputInt >> 23;
+	exponent = exponent & 255;
+	exponent = exponent - 127;
+
+
+	//get the mantissa of the float
+	int mantissa = inputInt & 8388607;
+
+
+	//load the manissa bits into a linked list
+	Bit head = newBit(0);
+
+	//printInt(head.value);
+	Bit current;
+	current = head;
+	int j = 0;
+	while(j < 23){
+		Bit new = newBit(mantissa & 1);
+		//printInt(new.value);
+		current.next = new;
+		new.last = current;
+		current = new;
+		mantissa = mantissa >> 1;
+		j = j + 1;
+	};
+	
+	new = newBit(1);
+	current.next = new;
+	new.last = current;
+	current = new;
+
+	//find last element in the list
+	current = head;
+	while(current.next != #0){
+		current = current.next;
+	};
+
+
+	//print the sign bit
+	if(sign != 0){
+		mySign = "-";
+	};
+	if(signed == 1){
+		if(sign == 0){
+			mySign = "+";
+		};
+	};
+	//convert bits to an int
+	int factor;
+	int result;
+
+	factor = exponent;
+	int i = 0;
+	while(factor > -1){
+		if (current.value == 1){
+			int append = exp(2, factor);
+			result = result + append;
+		};
+		current = current.last;
+		factor = factor - 1;
+		i = i + 1;
+	};
+
+	factor = exp(10, percision);
+	factor = factor * 5;
+	int two = 2;
+	int decimalPlacess = 0;
+
+	while(i < 23){
+		if (current.value == 1){
+			decimalPlacess = decimalPlacess + factor;
+		};
+		current = current.last;
+		factor = factor / two;
+		i = i + 1;
+	};
+
+	push ?mySign; printInt(result); print("."); printInt(decimalPlacess);
+    char 10 rstring;
+    int_toString(result, ?rstring);
+    str_concat(mySign, ?rstring, obuff);
+    str_concat(obuff, ".", obuff);
+    int_toString(decimalPlacess, ?rstring);
+    str_concat(obuff, ?rstring, obuff);
+	
+	return 0;	
 };
