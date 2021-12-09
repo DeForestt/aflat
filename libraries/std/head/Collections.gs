@@ -22,7 +22,7 @@ LinkedList newList();
 class Array{
     private int typeSize;
     private adr head;
-    private int size;
+    int size;
 
     public int init(int typeSize, int size);
     public adr at(int index);

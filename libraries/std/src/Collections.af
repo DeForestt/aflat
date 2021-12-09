@@ -200,6 +200,7 @@ int extend@Array(int amount){
     tSize = my.typeSize;
     int currSize;
     currSize = my.size;
+    my.size = currSize + ammount;
     currSize = currSize * tSize;
 
     amount = amount * tSize;
