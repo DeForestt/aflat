@@ -1,3 +1,4 @@
+.global	pub_Array_extend
 .global	pub_Array_delete
 .global	newArray
 .global	pub_Array_at
@@ -278,6 +279,47 @@ pub_Array_delete:
 	movq	%rax, %rdi
 	call	free
 	movl	$0, %eax
+	leave
+	ret
+pub_Array_extend:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$48, %rsp
+	movq	%rdi, -24(%rbp)
+	movl	%esi, -28(%rbp)
+	movq	-24(%rbp), %rdx
+	movq	4(%rdx), %rbx
+	movq	%rbx, -36(%rbp)
+	movq	-24(%rbp), %rdx
+	movl	0(%rdx), %ebx
+	movl	%ebx, -40(%rbp)
+	movq	-24(%rbp), %rdx
+	movl	12(%rdx), %ebx
+	movl	%ebx, -44(%rbp)
+	mov	-40(%rbp), %edx
+	mov	-44(%rbp), %eax
+	imul	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -44(%rbp)
+	mov	-40(%rbp), %edx
+	mov	-28(%rbp), %eax
+	imul	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -28(%rbp)
+	mov	-28(%rbp), %edx
+	mov	-44(%rbp), %eax
+	add	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -28(%rbp)
+	movq	-36(%rbp), %rax
+	movq	%rax, %rdi
+	movl	-28(%rbp), %eax
+	movl	%eax, %esi
+	call	realloc
+	movq	-24(%rbp), %rdx
+	movq	%rax, %rbx
+	movq	%rbx, 4(%rdx)
+	movl	-28(%rbp), %eax
 	leave
 	ret
 

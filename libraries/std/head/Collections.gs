@@ -27,6 +27,7 @@ class Array{
     public int init(int typeSize, int size);
     public adr at(int index);
     public int delete(int index);
+    public int extend(int size);
 };
 
 Array newArray(int typeSize, int size);

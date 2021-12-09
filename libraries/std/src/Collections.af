@@ -185,3 +185,26 @@ int delete@Array(){
     free(my);
     return 0;
 };
+
+/*
+ * function name:   extend@Array
+ * description:     extends the array by the given amount
+ * arguments:       int amount - the amount to extend the array by
+ * returns:         int size - the new size of the array
+ */
+int extend@Array(int amount){
+    adr curr;
+    curr = my.head;
+
+    int tSize;
+    tSize = my.typeSize;
+    int currSize;
+    currSize = my.size;
+    currSize = currSize * tSize;
+
+    amount = amount * tSize;
+    amount = currSize + amount;
+
+    my.head = realloc(curr, amount);
+    return  amount;
+};
