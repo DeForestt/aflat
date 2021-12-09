@@ -9,8 +9,9 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                 int lineCount = 1;
                 while (i < input.length())
                 {
-                    if(input[i] == '\n') lineCount++;
-                    else if (std::isalpha(input[i]) || input[i] == '_')
+                    if(input[i] == '\n')
+                        lineCount++;
+                    if (std::isalpha(input[i]) || input[i] == '_')
                     {
                        lex::LObj * l_obj = new LObj();
                         l_obj->meta = "";

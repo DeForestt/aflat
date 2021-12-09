@@ -57,6 +57,7 @@ std::string PreProcessor::PreProcess(std::string code, std::string libPath){
         if (line.find("/*") != std::string::npos) {
             while (line.find("*/") == std::string::npos) {
                 getline(input_stringstream, line, '\n');
+                output += '\n';
             }
             line = line.substr(line.find("*/") + 2);
         }
@@ -82,6 +83,7 @@ std::string PreProcessor::PreProcess(std::string code, std::string libPath){
         }
         else{
             //do not change the line
+            line = line + '\n';
             output += line;
         };
     }
@@ -121,7 +123,12 @@ std::string PreProcessor::Include(std::string line, std::string libPath){
         std::string content;
         std::getline( f, content, '\0');
         output += content;
-        return this->PreProcess(output, libPath);
+        // remove all new lines from output
+        std::string cleanPut;
+        output.reserve(output.size()); // optional, avoids buffer reallocations in the loop
+            for(size_t i = 0; i < output.size(); ++i)
+            if(output[i] != '\n') cleanPut += output[i];
+        return this->PreProcess(cleanPut, libPath);
     }else{
         throw err::Exception("File name: " + path + "does not exist");
     }
