@@ -296,6 +296,12 @@ pub_Array_extend:
 	movq	-24(%rbp), %rdx
 	movl	12(%rdx), %ebx
 	movl	%ebx, -44(%rbp)
+	mov	-28(%rbp), %edx
+	mov	-44(%rbp), %eax
+	add	%edx, %eax
+	movq	-24(%rbp), %rdx
+	movl	%eax, %ebx
+	movl	%ebx, 12(%rdx)
 	mov	-40(%rbp), %edx
 	mov	-44(%rbp), %eax
 	imul	%edx, %eax
