@@ -291,30 +291,25 @@ pub_Array_extend:
 	movq	4(%rdx), %rbx
 	movq	%rbx, -36(%rbp)
 	movq	-24(%rbp), %rdx
-	movl	0(%rdx), %ebx
-	movl	%ebx, -40(%rbp)
-	movq	-24(%rbp), %rdx
 	movl	12(%rdx), %ebx
-	movl	%ebx, -44(%rbp)
+	movl	%ebx, -40(%rbp)
 	mov	-28(%rbp), %edx
-	mov	-44(%rbp), %eax
+	mov	-40(%rbp), %eax
 	add	%edx, %eax
 	movq	-24(%rbp), %rdx
 	movl	%eax, %ebx
 	movl	%ebx, 12(%rdx)
-	mov	-40(%rbp), %edx
-	mov	-44(%rbp), %eax
-	imul	%edx, %eax
-	movl	%eax, %ebx
+	movq	-24(%rbp), %rdx
+	movl	0(%rdx), %ebx
 	movl	%ebx, -44(%rbp)
 	mov	-40(%rbp), %edx
 	mov	-28(%rbp), %eax
-	imul	%edx, %eax
+	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
-	mov	-28(%rbp), %edx
-	mov	-44(%rbp), %eax
-	add	%edx, %eax
+	mov	-44(%rbp), %edx
+	mov	-28(%rbp), %eax
+	imul	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
 	movq	-36(%rbp), %rax

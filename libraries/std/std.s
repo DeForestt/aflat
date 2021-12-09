@@ -146,8 +146,9 @@ memcopy:
 .Lmemcopy6:
 	movq	-8(%rbp), %rax
 	movb	(%rax), %al
+	movb	%al, -25(%rbp)
 	movq	-16(%rbp), %rax
-	movb	%al, %bl
+	movb	-25(%rbp), %bl
 	movb	%bl, (%rax)
 	mov	$1, %rdx
 	mov	-16(%rbp), %rax
@@ -159,6 +160,11 @@ memcopy:
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -8(%rbp)
+	mov	$1, %edx
+	mov	-24(%rbp), %eax
+	add	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -24(%rbp)
 .Lmemcopy7:
 	movl	-24(%rbp), %eax
 	movl	-20(%rbp), %ecx
@@ -263,7 +269,7 @@ malloc:
 realloc:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$32, %rsp
+	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
 	movl	%esi, -12(%rbp)
 	movq	-8(%rbp), %rax
@@ -306,12 +312,14 @@ realloc:
 	leave
 	ret
 .Lrealloc15:
+	movq	-20(%rbp), %rdx
+	movl	0(%rdx), %ebx
+	movl	%ebx, -36(%rbp)
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
 	movq	-32(%rbp), %rax
 	movq	%rax, %rsi
-	movq	-20(%rbp), %rdx
-	movl	0(%rdx), %eax
+	movl	-36(%rbp), %eax
 	movl	%eax, %edx
 	call	memcopy
 	movq	-8(%rbp), %rax

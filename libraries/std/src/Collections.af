@@ -195,16 +195,15 @@ int delete@Array(){
 int extend@Array(int amount){
     adr curr;
     curr = my.head;
-
-    int tSize;
-    tSize = my.typeSize;
     int currSize;
     currSize = my.size;
     my.size = currSize + amount;
-    currSize = currSize * tSize;
 
+    int tSize;
+    tSize = my.typeSize;
+
+    amount = amount + currSize;
     amount = amount * tSize;
-    amount = currSize + amount;
 
     my.head = realloc(curr, amount);
     return  amount;

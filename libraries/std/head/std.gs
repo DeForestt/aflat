@@ -1,21 +1,21 @@
 
-struct Time {
-    adr amount;
+class Time {
+    public adr amount;
 };
 
-struct Times{
-    adr tms_utime;
-    adr tms_stime;
-    adr tms_cutime;
-    adr tms_cstime;
+class Times{
+    public adr tms_utime;
+    public adr tms_stime;
+    public adr tms_cutime;
+    public adr tms_cstime;
 };
 
 Times newTimes();
 
-struct Block{
-    int size; 
-    int free;
-    adr next;
+class Block{
+    public int size; 
+    public int free;
+    public adr next;
 };
 
 class Bit{
