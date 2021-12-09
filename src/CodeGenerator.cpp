@@ -126,6 +126,26 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     output.size = ASMC::DWord;
                     output.access = '$' + std::to_string(type->SymbolTable.head->data.byteMod);
                     handled = true;
+                }else if(var.Ident == "int"){
+                    output.size = ASMC::DWord;
+                    output.access = "$4";
+                    handled = true;
+                }else if(var.Ident == "char"){
+                    output.size = ASMC::DWord;
+                    output.access = "$1";
+                    handled = true;
+                }else if(var.Ident == "adr"){
+                    output.size = ASMC::DWord;
+                    output.access = "$8";
+                    handled = true;
+                }else if(var.Ident == "byte"){
+                    output.size = ASMC::DWord;
+                    output.access = "$1";
+                    handled = true;
+                }else if(var.Ident == "float"){
+                    output.size = ASMC::DWord;
+                    output.access = "$4";
+                    handled = true;
                 }else if(this->nameTable[var.Ident] != nullptr){
                     output.size = ASMC::QWord;
                     output.access = '$' + this->nameTable[var.Ident]->ident.ident;
