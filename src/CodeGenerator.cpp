@@ -130,8 +130,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     output.size = ASMC::QWord;
                     output.access = '$' + this->nameTable[var.Ident]->ident.ident;
                     handled = true;
-                }
-            }else throw err::Exception("variable not found " + var.Ident);
+                }else throw err::Exception("variable not found " + var.Ident);
+            }
         }
 
         if (!handled){
