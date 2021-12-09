@@ -409,23 +409,25 @@ str_find:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$32, %rsp
-	movb	%dil, -1(%rbp)
-	movq	%rsi, -9(%rbp)
+	movq	%rdi, -8(%rbp)
+	movb	%sil, -9(%rbp)
 	movl	$0, -13(%rbp)
-	movq	-9(%rbp), %rax
+	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
 	call	len
 	movl	%eax, -17(%rbp)
 	jmp	.Lstr_find20
 .Lstr_find19:
-	mov	-13(%rbp), %edx
-	mov	-9(%rbp), %rax
+	mov	$1, %edx
+	mov	-8(%rbp), %rax
 	add	%rdx, %rax
-	movl	%eax, -25(%rbp)
-	movq	-25(%rbp), %rax
+	movl	%eax, %ebx
+	movl	%ebx, -8(%rbp)
+	movq	-8(%rbp), %rax
 	movb	(%rax), %al
-	movb	%al, %al
-	movb	-1(%rbp), %cl
+	movb	%al, -18(%rbp)
+	movb	-18(%rbp), %al
+	movb	-9(%rbp), %cl
 	cmpb	%cl, %al
 	jne	.Lstr_find21
 	movl	-13(%rbp), %eax

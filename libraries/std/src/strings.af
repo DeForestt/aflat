@@ -134,12 +134,13 @@ int int_toString(int input, adr buffer){
         return 0;
 };
 
-int str_find(char find, adr in){
+int str_find(adr in, char find){
     int i = 0;
     int len = len(in);
     while(i < len){
-        adr h = in + i;
-        if(h as char == find){return i};
+        in = in + 1;
+		char b = in as char;
+        if(b == find){return i};
         i = i + 1;
     };
     return -1;
