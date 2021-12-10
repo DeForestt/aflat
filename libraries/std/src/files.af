@@ -2,7 +2,6 @@
 .needs <asm.gs>
 .needs <strings.gs>
 .needs <files.gs>
-
 File createFile(adr fileName){
         File file = malloc(File);
         file.file = sys_create(fileName, #511);
@@ -38,15 +37,18 @@ int write@File(adr text){
 };
 
 int read@File(adr pointer, char delim, char term){
-        char input = ' ';
-        char null = ascii(0);
-        while(input != delim){
-                sys_read(my.file, ?input, 1);
-                if(input == term){return 1;};
-                pointer =: input;
-                if(input == delim){pointer =: null};
+        adr input = malloc(char);
+        input =: '\0';
+        char null = '\0';
+        while(input as char != delim){
+                sys_read(my.file, input, 1);
+                char inp = input as char;
+                if(inp == term){return 1;};
+                pointer =: inp;
+                if(inp == delim){pointer =: null};
                 pointer = pointer + #1;
         };
         pointer =: null;
+        free(input);
         return  0;
 };

@@ -112,28 +112,33 @@ pub_File_write:
 pub_File_read:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$32, %rsp
+	subq	$48, %rsp
 	movq	%rdi, -20(%rbp)
 	movq	%rsi, -28(%rbp)
 	movb	%dl, -29(%rbp)
 	movb	%cl, -30(%rbp)
-	movb	$32, -31(%rbp)
-	movl	$0, %eax
+	movl	$1, %eax
 	movl	%eax, %edi
-	call	ascii
-	movb	%al, -32(%rbp)
+	call	malloc
+	movq	%rax, -38(%rbp)
+	movq	-38(%rbp), %rax
+	movb	$0, %bl
+	movb	%bl, (%rax)
+	movb	$0, -39(%rbp)
 	jmp	.Lread3
 .Lread2:
 	movq	-20(%rbp), %rdx
 	movl	8(%rdx), %eax
 	movl	%eax, %edi
-	lea	-31(%rbp), %rax
-	movq	%rax, %rax
+	movq	-38(%rbp), %rax
 	movq	%rax, %rsi
 	movl	$1, %eax
 	movl	%eax, %edx
 	call	sys_read
-	movb	-31(%rbp), %al
+	movq	-38(%rbp), %rax
+	movb	(%rax), %al
+	movb	%al, -40(%rbp)
+	movb	-40(%rbp), %al
 	movb	-30(%rbp), %cl
 	cmpb	%cl, %al
 	jne	.Lread4
@@ -142,14 +147,14 @@ pub_File_read:
 	ret
 .Lread4:
 	movq	-28(%rbp), %rax
-	movb	-31(%rbp), %bl
+	movb	-40(%rbp), %bl
 	movb	%bl, (%rax)
-	movb	-31(%rbp), %al
+	movb	-40(%rbp), %al
 	movb	-29(%rbp), %cl
 	cmpb	%cl, %al
 	jne	.Lread5
 	movq	-28(%rbp), %rax
-	movb	-32(%rbp), %bl
+	movb	-39(%rbp), %bl
 	movb	%bl, (%rax)
 .Lread5:
 	mov	$1, %rdx
@@ -158,13 +163,18 @@ pub_File_read:
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
 .Lread3:
-	movb	-31(%rbp), %al
+	movq	-38(%rbp), %rax
+	movb	(%rax), %al
+	movb	%al, %al
 	movb	-29(%rbp), %cl
 	cmpb	%cl, %al
 	jne	.Lread2
 	movq	-28(%rbp), %rax
-	movb	-32(%rbp), %bl
+	movb	-39(%rbp), %bl
 	movb	%bl, (%rax)
+	movq	-38(%rbp), %rax
+	movq	%rax, %rdi
+	call	free
 	movl	$0, %eax
 	leave
 	ret

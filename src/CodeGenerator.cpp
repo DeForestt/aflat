@@ -146,6 +146,10 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                     output.size = ASMC::DWord;
                     output.access = "$4";
                     handled = true;
+                }else if(var.Ident == "NULL"){
+                    output.size = ASMC::QWord;
+                    output.access = "$0";
+                    handled = true;
                 }else if(this->nameTable[var.Ident] != nullptr){
                     output.size = ASMC::QWord;
                     output.access = '$' + this->nameTable[var.Ident]->ident.ident;

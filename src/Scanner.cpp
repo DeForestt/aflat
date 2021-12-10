@@ -113,7 +113,28 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                     {
                         lex::CharObj* charobj = new CharObj();
                         i++;
-                        charobj->value = input[i];
+                        if (input[i] == '\\'){
+                                i++;
+                                if (input[i] == 'n'){
+                                    charobj->value = '\n';
+                                }else if (input[i] == 't'){
+                                    charobj->value = '\t';
+                                }else if (input[i] == '\\'){
+                                    charobj->value = '\\';
+                                }else if (input[i] == '\"'){
+                                    charobj->value = '\"';
+                                }else if (input[i] == '\''){
+                                    charobj->value = '\'';
+                                }else if (input[i] == 'r'){
+                                    charobj->value = '\r';
+                                }else if (input[i] == '0'){
+                                    charobj->value = '\0';
+                                }else if (input[i] == '\\'){
+                                    charobj->value = '\\';
+                                }else{
+                                    throw err::Exception("Invalid token: on line " + std::to_string(lineCount));
+                                }
+                        } else charobj->value = input[i];
                         i++;
                         if (input[i] != '\'') throw err::Exception("Unterminated Char Value");
                         tokens << charobj;
