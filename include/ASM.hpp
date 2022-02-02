@@ -212,7 +212,7 @@ namespace ASMC{
         std::string toString();
     };
 
-        class Sal : public Instruction{
+    class Sal : public Instruction{
         public:
         std::string op1;
         std::string op2;
@@ -249,6 +249,7 @@ namespace ASMC{
         public:
         Register(std::string _qWord, std::string _dWord, std::string _word, std::string _byte);
         Register(){}
+        bool inuse = false;
         // a linked list of int process id's that are using this register
         links::LinkedList<int> users;
         std::string get(ASMC::Size wants);

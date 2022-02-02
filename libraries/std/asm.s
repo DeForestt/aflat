@@ -160,4 +160,12 @@ sys_kill:
 	syscall
 	leave
 	ret
-	
+
+sys_socket:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $41, %rax
+	syscall
+	leave
+	ret
