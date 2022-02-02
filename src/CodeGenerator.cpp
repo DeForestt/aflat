@@ -1374,6 +1374,91 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
         
     }
+    else if (dynamic_cast<AST::For *>(STMT) != nullptr){
+        AST::For * loop = dynamic_cast<AST::For *>(STMT);
+
+        ASMC::Lable * lable1 = new ASMC::Lable();
+        lable1->lable =".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
+        this->lablecount++;
+
+        ASMC::Lable * lable2 = new ASMC::Lable();
+        lable2->lable = ".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
+        this->lablecount++;
+        OutputFile << this->GenSTMT(loop->declare);
+        ASMC::Jmp * jmp = new ASMC::Jmp();
+        jmp->to = lable2->lable;
+        OutputFile.text << jmp;
+
+        OutputFile.text << lable1;
+
+        OutputFile << this->GenSTMT(loop->Run);
+        OutputFile << this->GenSTMT(loop->increment);
+
+        OutputFile.text << lable2;
+
+        gen::Expr expr1 =this->GenExpr(loop->condition->expr1, OutputFile);
+        gen::Expr expr2 =this->GenExpr(loop->condition->expr2, OutputFile);
+    
+        ASMC::Mov * mov1 = new ASMC::Mov();
+        ASMC::Mov * mov2 = new ASMC::Mov();
+
+        mov1->size = expr1.size;
+        mov2->size = expr2.size;
+
+        mov1->from = expr1.access;
+        mov2->from = expr2.access;
+
+        mov1->to = this->registers["%eax"]->get(mov1->size);
+        mov2->to = this->registers["%ecx"]->get(mov2->size);
+
+        ASMC::Cmp * cmp = new ASMC::Cmp();
+        ASMC::Jne * jne = new ASMC::Jne();
+
+        cmp->from = mov2->to;
+        cmp->to = mov1->to;
+        cmp->size = expr1.size;
+
+        
+        OutputFile.text << mov1;
+        OutputFile.text << mov2;
+        OutputFile.text << cmp;
+
+        switch (loop->condition->op)
+        {
+        case AST::Equ:
+        {
+            ASMC::Je * je = new ASMC::Je();
+            je->to = lable1->lable;
+            OutputFile.text << je;
+            break;
+        }
+        case AST::NotEqu :
+        {
+            ASMC::Jne * jne = new ASMC::Jne();
+
+            jne->to = lable1->lable;
+            OutputFile.text << jne;
+            break;
+        }
+        case AST::Great :
+        {
+            ASMC::Jg * jg = new ASMC::Jg();
+
+            jg->to = lable1->lable;
+
+            OutputFile.text << jg;
+            break;
+        }
+        case AST::Less :
+        {
+            ASMC::Jl * jl = new ASMC::Jl();
+
+            jl->to = lable1->lable;
+            OutputFile.text << jl;
+            break;
+        }
+        }
+    }
     else if(dynamic_cast<AST::UDeffType *>(STMT) != nullptr){
         AST::UDeffType * udef = dynamic_cast<AST::UDeffType *>(STMT);
         gen::Type * type = new gen::Type();
