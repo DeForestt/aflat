@@ -162,10 +162,10 @@ namespace AST{
 
     class For : public Statment{
         public:
-        Declare declare;
-        Expr * expr;
-        Statment ReRun;
-        Statment Run;
+        Statment * declare;
+        ConditionalExpr * condition;
+        Statment * increment;
+        Statment * Run;
     };
 
     class Call : public Statment{

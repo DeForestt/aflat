@@ -186,6 +186,23 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened loop");
             
         }
+        else if(obj.meta == "for"){
+            AST::For * loop = new AST::For;
+            if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                if(sym.Sym != '(') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop header");
+                tokens.pop();
+                loop->declare = this->parseStmt(tokens);
+                loop->condition = this->parseCondition(tokens);
+                loop->increment = this->parseStmt(tokens);
+                if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop body");
+                sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                if(sym.Sym != '{') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop body");
+                tokens.pop();
+                loop->Run = this->parseStmt(tokens);
+                output = loop;
+            } throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop header");
+        }
         else if(obj.meta == "struct"){
             AST::UDeffType * stc = new AST::UDeffType();
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
