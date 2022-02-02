@@ -190,10 +190,16 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             AST::For * loop = new AST::For;
             if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                 lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                if(sym.Sym != '(') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop header");
+                // opening curly bracket for statment
+                if(sym.Sym != '{') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop body");
                 tokens.pop();
                 loop->declare = this->parseStmt(tokens);
+
                 loop->condition = this->parseCondition(tokens);
+                if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop body");
+                sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                if(sym.Sym != '{') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop body");
+                tokens.pop();
                 loop->increment = this->parseStmt(tokens);
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop body");
                 sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -201,7 +207,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                 tokens.pop();
                 loop->Run = this->parseStmt(tokens);
                 output = loop;
-            } throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop header");
+            } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop header");
         }
         else if(obj.meta == "struct"){
             AST::UDeffType * stc = new AST::UDeffType();
@@ -311,6 +317,10 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
             this->Output = *output;
             return output;
         }
+        else if(obj.Sym == '!'){
+            this->Output = *output;
+            return output;
+        }
     } 
     else{ 
         if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr & tokens.head->next == nullptr){
@@ -374,8 +384,8 @@ AST::ConditionalExpr* parse::Parser::parseCondition(links::LinkedList<lex::Token
 
     if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
         lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
-        if(sym.Sym != '(') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "unOpened Condition.  Please open with: (");
-    }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " unOpened Condition.  Please open with: (");
+        if(sym.Sym != '(') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +"\'" +sym.Sym+ "\"" + "unOpened Condition.  Please open with: (");
+    }else throw err::Exception("Line: " + '\'' + dynamic_cast<lex::LObj *>(tokens.peek())->meta + '\'' + " unOpened Condition.  Please open with: (");
 
     output->expr1 = this->parseExpr(tokens);
 
