@@ -131,13 +131,8 @@ namespace AST{
         public:
         ConditionalExpr * Condition;
         Statment * statment;
-    };
-
-    class ElIf : public Statment{
-        public:
-        ParenExpr parenExpr;
-        Statment tStatment;
-        Statment fStatment;
+        Statment * elseStatment;
+        Statment * elseIf;
     };
 
     class DecAssign : public Statment{
