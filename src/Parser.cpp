@@ -48,6 +48,7 @@ parse::Parser::Parser(){
     this->typeList << Byte;
     this->typeList << Adr;
     this->typeList << Float; 
+    this->typeList << Short;
 }
 
 /*
@@ -623,6 +624,13 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
         else if (sym.Sym == '<'){
             tokens.pop();
             compound->op = AST::Less;
+            compound->expr1 = output;
+            compound->expr2 = this->parseExpr(tokens);
+            return compound;
+        }
+        else if (sym.Sym == '|'){
+            tokens.pop();
+            compound->op = AST::OrBit;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
             return compound;

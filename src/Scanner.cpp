@@ -214,6 +214,18 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         } else tokens << sym;
                         i++;
                     }
+                    else if (input[i] == '|')
+                    {
+                        lex::Symbol * sym = new lex::Symbol;
+                        sym->meta = "|";
+                        if (input[i+1] == '|'){
+                            lex::OpSym * opSym = new lex::OpSym;
+                            opSym->Sym = '|';
+                            tokens << opSym;
+                            i++;
+                        } else tokens << sym;
+                        i++;
+                    }
                     else if(input[i] == '!'){
                         if (input[i+1] == '='){
                             lex::Symbol * equ = new lex::Symbol;

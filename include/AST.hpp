@@ -39,6 +39,7 @@ namespace AST{
         Great,
         AndBit,
         AndBool,
+        OrBit
     };   
 
     // Enum to represent the scope of a variable
