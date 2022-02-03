@@ -800,7 +800,6 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         AST::Sequence * sequence = dynamic_cast<AST::Sequence *>(STMT);
         OutputFile << this->GenSTMT(sequence->Statment1);
         OutputFile << this->GenSTMT(sequence->Statment2);
-
     }
     else if(dynamic_cast<AST::Function *>(STMT)){
         /*
@@ -1210,6 +1209,27 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         ASMC::Lable * lable1 = new ASMC::Lable();
         lable1->lable = ".L"+ this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount ++;
+        ASMC::Lable * lableElse = new ASMC::Lable();
+        lableElse->lable = ".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
+        this->lablecount ++;
+        ASMC::Lable * endElse = new ASMC::Lable();
+        endElse->lable = ".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
+        this->lablecount ++;
+
+        if(ifStmt.elseStatment != nullptr){
+            ASMC::Jmp * jmpStart = new ASMC::Jmp();
+            jmpStart->to = endElse->lable;
+            OutputFile.text << jmpStart;
+
+            // place the Else Lable
+            OutputFile.text << lableElse;
+            OutputFile << this->GenSTMT(ifStmt.elseStatment);
+            // jmp to lable 1
+            ASMC::Jmp * jmp = new ASMC::Jmp();
+            jmp->to = lable1->lable;
+            OutputFile.text << jmp;
+            OutputFile.text << endElse;
+        }
 
         gen::Expr expr1 =this->GenExpr(ifStmt.Condition->expr1, OutputFile);
         gen::Expr expr2 =this->GenExpr(ifStmt.Condition->expr2, OutputFile);
@@ -1243,10 +1263,15 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         {
         case AST::Equ:
         {
-            jne->to = lable1->lable;
+            if (ifStmt.elseStatment != nullptr) {jne->to = lableElse->lable;} else jne->to = lable1->lable;
             
             OutputFile.text << jne;
             OutputFile << this->GenSTMT(ifStmt.statment);
+            if (ifStmt.elseStatment != nullptr){
+                ASMC::Je * je = new ASMC::Je();
+                je->to = lableElse->lable;
+                OutputFile.text << je;
+            }
             OutputFile.text << lable1;
             break;
         }
@@ -1254,7 +1279,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         {
             ASMC::Je * je = new ASMC::Je();
 
-            je->to = lable1->lable;
+            if (ifStmt.elseStatment != nullptr) {je->to = lableElse->lable;} else je->to = lable1->lable;
 
             OutputFile.text << je;
             OutputFile << this->GenSTMT(ifStmt.statment);
@@ -1265,7 +1290,8 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         {
             ASMC::Jle * jl = new ASMC::Jle();
 
-            jl->to = lable1->lable;
+             if (ifStmt.elseStatment != nullptr) {jl->to = lableElse->lable;} else jl->to = lable1->lable;
+
 
             OutputFile.text << jl;
             OutputFile << this->GenSTMT(ifStmt.statment);
@@ -1276,7 +1302,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         {
             ASMC::Jge * jg = new ASMC::Jge();
 
-            jg->to = lable1->lable;
+            if (ifStmt.elseStatment != nullptr){jg->to = lableElse->lable;} else jg->to = lable1->lable;
 
 
             OutputFile.text << jg;
