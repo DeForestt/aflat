@@ -140,7 +140,7 @@ std::string ASMC::And::toString(){
     return "\tandl\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
-std::string ASMC::And::toString(){
+std::string ASMC::Or::toString(){
     return "\torl\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
