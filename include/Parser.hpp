@@ -12,7 +12,7 @@ namespace parse{
     class Parser{
         public:
         AST::Statment Output;
-        AST::Statment* parseStmt(links::LinkedList<lex::Token *> &tokens);
+        AST::Statment* parseStmt(links::LinkedList<lex::Token *> &tokens, bool singleStmt = false);
         Parser();
         
         private:

@@ -49,7 +49,7 @@ parse::Parser::Parser(){
  * parameters: LinkedList<Token> &tokens - the list of tokens to parse
  * return: AST::Statement - the parsed statement
  */
-AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
+AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, bool singleStmt = false){
     AST::Statment* output = new AST::Statment;
     if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
@@ -184,10 +184,17 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens){
                                 ifstmt->elseStatment = this->parseStmt(tokens);
                                 output = ifstmt;
                             } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened Else");
+                        } else if(dynamic_cast<lex::LObj *>(tokens.peek())){
+                            lex::LObj word = *dynamic_cast<lex::LObj *>(tokens.peek());
+                            if (word.meta == "if") {
+                                ifstmt->elseStatment = this->parseStmt(tokens, true);
+                                output = ifstmt;
+                            }
                         } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened Else");
                     } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unclosed if");
                 }
             }
+            if (singleStmt) return ifstmt;
         }else if(obj.meta == "while"){
             AST::While * loop = new AST::While;
             
