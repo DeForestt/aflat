@@ -14,6 +14,7 @@
 .global sys_wait
 .global sys_pipe
 .global sys_kill
+.global sys_socket
 
 .text
 
