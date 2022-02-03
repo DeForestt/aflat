@@ -140,6 +140,10 @@ std::string ASMC::And::toString(){
     return "\tandl\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
+std::string ASMC::And::toString(){
+    return "\torl\t" + this->op1 + ", " + this->op2 + "\n";
+}
+
 std::string ASMC::Sal::toString(){
     return "\tsall\t" + this->op1 + ", " + this->op2 + "\n";
 }
