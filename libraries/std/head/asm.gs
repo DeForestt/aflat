@@ -15,3 +15,4 @@ int sys_wait(int proc, adr status, int options, adr t);
 int sys_pipe(adr fd);
 int sys_kill(int pid, int sig);
 int sys_socket(int domain, int type, int protocol);
+int sys_setsockopt(int s, int level, int optname, adr optval, int optlen);
