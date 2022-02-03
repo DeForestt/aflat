@@ -372,7 +372,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
                 break;
             }
             case AST::OrBit:{
-                ASMC::or * orBit = new ASMC::And();
+                ASMC::Or * orBit = new ASMC::Or();
                 gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
 
