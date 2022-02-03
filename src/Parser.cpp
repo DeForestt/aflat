@@ -11,6 +11,13 @@ parse::Parser::Parser(){
     Int.opType = ASMC::Hard;
     Int.size = ASMC::DWord;
 
+    // Sort Type
+    AST::Type Short = AST::Type();
+    Short.typeName = "short";
+    Short.opType = ASMC::Hard;
+    Short.size = ASMC::Word;
+
+
     // Char Type
     AST::Type Char = AST::Type();
     Char.typeName = "char";
