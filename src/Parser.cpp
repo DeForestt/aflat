@@ -561,11 +561,11 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
     }
     else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
         lex::OpSym eq = *dynamic_cast<lex::OpSym *>(tokens.peek());
-        if(eq.Sym == '='){
+        if(eq.Sym == '['){
             tokens.pop();
             AST::Lambda * lambda = new AST::Lambda();
             lambda->function = new AST::Function();
-            lambda->function->args = this->parseArgs(tokens, ',', '=');
+            lambda->function->args = this->parseArgs(tokens, ',', ']');
             if ((dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Need an > to start lambda");
             if ((dynamic_cast<lex::OpSym *>(tokens.pop())->Sym != '>')) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Need an > to start lambda");
             if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr && dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '{'){

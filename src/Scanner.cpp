@@ -249,7 +249,20 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         add->Sym = input[i];
                         tokens.push(add);
                         i++;
-                    }else if (input[i] == '*')
+                    }
+                    else if(input[i] == '['){
+                        lex::OpSym* add = new OpSym;
+                        add->Sym = input[i];
+                        tokens.push(add);
+                        i++;
+                    }
+                    else if(input[i] == ']'){
+                        lex::OpSym* add = new OpSym;
+                        add->Sym = input[i];
+                        tokens.push(add);
+                        i++;
+                    }
+                    else if (input[i] == '*')
                     {
                         lex::OpSym* mul = new OpSym;
                         mul->Sym = input[i];
