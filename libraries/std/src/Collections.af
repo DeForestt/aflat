@@ -208,3 +208,27 @@ int extend@Array(int amount){
     my.head = realloc(curr, amount);
     return  amount;
 };
+
+/*
+ * function name:   forEach@Array
+ * description:     preforms a function for each element of the array passed by value
+ * arguments:       foo - a function pointer to call on the elements,
+                    arg - an argument pointer
+ * returns:         0 if sucssesfull, 1 on error
+ */
+int forEach@Array(adr foo, adr arg){
+    int size;
+    size  = my.size;
+    adr element;
+    int tSize;
+    tSize = my.typeSize;
+    adr curr;
+
+    for {int i = 0;}(i < size){i = i + 1}{
+        int offset = i * tSize;
+        curr = my.head;
+        curr = curr + offset;
+        foo(curr, arg);
+    };
+    return 0;
+};
