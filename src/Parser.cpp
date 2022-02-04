@@ -559,6 +559,20 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             output = ref;
         }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " No object given to refrece");
     }
+    else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+        lex::OpSym eq = *dynamic_cast<lex::OpSym *>(tokens.peek());
+        if(eq.Sym == '='){
+            tokens.pop();
+            AST::Lambda * lambda = new AST::Lambda();
+            lambda->function = new AST::Function();
+            lambda->function->args = this->parseArgs(tokens, ',', '=');
+            if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr and dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '{'){
+                tokens.pop();
+                lambda->function->statment = this->parseStmt(tokens);
+            } else this->parseStmt(tokens, true);
+            output = lambda;
+        }
+    }
     else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unknown Expr");
 
     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){

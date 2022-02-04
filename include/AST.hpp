@@ -263,6 +263,10 @@ namespace AST{
         AST::Call * call;
     };
 
+    class Lambda : public Expr{
+        public:
+        AST::Function * function;
+    };
 }
 
 #endif
