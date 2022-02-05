@@ -854,11 +854,14 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 mov  rsp, rbp
                 this->GenSTMT()
         */
-        this->SymbolTable.clear();
-        this->SymbolTable.head = nullptr;
 
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
-        bool clearSymbolTable = func->isLambda;
+        bool isLambda = func->isLambda;
+        if (!isLambda){
+            this->SymbolTable.clear();
+            this->SymbolTable.head = nullptr;
+        }
+
         if(this->scope == nullptr) this->nameTable << *func;
         else{
             // add the function to the class name table
@@ -955,7 +958,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
         delete(func);
 
-        if(!clearSymbolTable){
+        if(!isLambda){
             this->SymbolTable.clear();
             this->SymbolTable.head = nullptr;
         }
