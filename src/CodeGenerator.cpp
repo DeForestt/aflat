@@ -223,6 +223,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         OutputFile.text << lea;
         output.access = registers["%rax"]->get(ASMC::QWord);
         output.size = ASMC::QWord;
+        output.op = ASMC::OpType::Hard;
     }
     else if (dynamic_cast<AST::StringLiteral *>(expr) != nullptr){
         AST::StringLiteral str = *dynamic_cast<AST::StringLiteral *>(expr);
@@ -561,6 +562,25 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
             }
         }   
     }  
+    else if (dynamic_cast<AST::Lambda *>(expr) != nullptr){
+        AST::Lambda lambda = *dynamic_cast<AST::Lambda *>(expr);
+        AST::Function * func = lambda.function;
+        func->ident.ident = "lambda_" + std::to_string(lablecount);
+        func->scopeName = "global";
+        func->isLambda = true;
+        ASMC::Lable * pastLambda = new ASMC::Lable();
+        pastLambda->lable = func->ident.ident + '_';
+        ASMC::Jmp * jump = new ASMC::Jmp;
+        jump->to = func->ident.ident + '_';
+        OutputFile.text << jump;
+       
+        OutputFile << this->GenSTMT(func);
+
+        //OutputFile << this->GenSTMT(lambda.function);
+        OutputFile.text << pastLambda;
+        output.access = "$" + func->ident.ident;
+        output.size = ASMC::QWord;
+    }
     else{
         throw err::Exception("cannot gen expr");
     }
@@ -838,6 +858,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         this->SymbolTable.head = nullptr;
 
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
+        bool clearSymbolTable = func->isLambda;
         if(this->scope == nullptr) this->nameTable << *func;
         else{
             // add the function to the class name table
@@ -933,8 +954,11 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             this->inFunction = false;
         }
         delete(func);
-        this->SymbolTable.clear();
-        this->SymbolTable.head = nullptr;
+
+        if(!clearSymbolTable){
+            this->SymbolTable.clear();
+            this->SymbolTable.head = nullptr;
+        }
     }
     else if (dynamic_cast<AST::Declare *>(STMT) != nullptr){
         /*

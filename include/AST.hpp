@@ -93,6 +93,7 @@ namespace AST{
         Statment * args;
         Statment * statment;
         std::string scopeName;
+        bool isLambda = false;
         bool mask;
     };
 

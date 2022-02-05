@@ -566,8 +566,11 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             AST::Lambda * lambda = new AST::Lambda();
             lambda->function = new AST::Function();
             lambda->function->args = this->parseArgs(tokens, ',', ']');
-            if ((dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Need an > to start lambda");
-            if ((dynamic_cast<lex::OpSym *>(tokens.pop())->Sym != '>')) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Need an > to start lambda");
+            if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Need an > to start lambda not a symbol");
+            if ((dynamic_cast<lex::OpSym *>(tokens.pop())->Sym != '=')) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " GOT: " + dynamic_cast<lex::OpSym *>(tokens.pop())->Sym + " Need an > to start lambda");
+
+            if (dynamic_cast<lex::Symbol *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Need an > to start lambda not a symbol");
+            if ((dynamic_cast<lex::Symbol *>(tokens.pop())->meta != ">")) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " GOT: " + dynamic_cast<lex::OpSym *>(tokens.pop())->Sym + " Need an > to start lambda");
             if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr && dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '{'){
                 tokens.pop();
                 lambda->function->statment = this->parseStmt(tokens);
