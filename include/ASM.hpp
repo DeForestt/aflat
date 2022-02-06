@@ -243,7 +243,9 @@ namespace ASMC{
         links::LinkedList<Instruction * > bss;
         links::LinkedList<Instruction * > data;
         links::LinkedList<Instruction * > linker;
+        ASMC::File * lambdas;
         void operator<<(ASMC::File file);
+        void collect();
     };
 
     class Register{
