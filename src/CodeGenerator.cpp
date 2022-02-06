@@ -212,9 +212,10 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
     }
     else if (dynamic_cast<AST::Refrence *>(expr) != nullptr){
         links::LinkedList<gen::Symbol>  * Table;
-        if(this->scope == nullptr) Table = &this->SymbolTable;
-        else Table = &this->scope->SymbolTable;
         AST::Refrence ref = *dynamic_cast<AST::Refrence *>(expr);
+        if(this->scope == nullptr || ref.internal) Table = &this->SymbolTable;
+        else Table = &this->scope->SymbolTable;
+        
         gen::Symbol sym = *Table->search<std::string>(searchSymbol, ref.Ident);
         ASMC::Lea * lea = new ASMC::Lea();
         lea->to = this->registers["%rax"]->get(ASMC::QWord);
@@ -759,6 +760,7 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
                         };
                         AST::Refrence * ref = new AST::Refrence();
                         ref->Ident = my;
+                        ref->internal = true;
                         mod = "pub_" + cl->Ident + "_";
                         gen::Expr exp =  this->GenExpr(ref, OutputFile);
                         ASMC::Mov * mov = new ASMC::Mov();
@@ -913,17 +915,19 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 if(this->SymbolTable.search<std::string>(searchSymbol, "my") != nullptr) throw err::Exception("redefined veriable: my");
 
                 symbol.symbol = "my";
+                
+                                
+                auto ty = AST::Type();
+                ty.typeName = scope->Ident;
+                ty.size = ASMC::QWord;
+                symbol.type = ty;
+             
 
                 if (this->scope->SymbolTable.head == nullptr){
                     symbol.byteMod = offset;
                 }else{
                     symbol.byteMod = scope->SymbolTable.peek().byteMod + offset;
                 }
-                
-                auto ty = AST::Type();
-                ty.typeName = scope->Ident;
-                ty.size = ASMC::QWord;
-                symbol.type = ty;
                 this->SymbolTable.push(symbol);
 
                 movy->size = ASMC::QWord;

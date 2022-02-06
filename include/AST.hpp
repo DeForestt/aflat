@@ -250,6 +250,7 @@ namespace AST{
     class Refrence : public Expr{
         public:
         std::string Ident;
+        bool internal = false;
     };
 
     class DeRefence : public Expr{
