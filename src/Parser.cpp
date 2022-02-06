@@ -574,6 +574,11 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr && dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '{'){
                 tokens.pop();
                 lambda->function->statment = this->parseStmt(tokens);
+                AST::Type Adr = AST::Type();
+                Adr.typeName = "any";
+                Adr.opType = ASMC::Hard; 
+                Adr.size = ASMC::QWord;
+                lambda->function->type = Adr;
             } else this->parseStmt(tokens, true);
             output = lambda;
         }
