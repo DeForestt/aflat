@@ -56,8 +56,9 @@ int main(int argc, char *argv[]){
         
         gen::CodeGenerator genny;
         ASMC::File file = genny.GenSTMT(Prog);
+        file.collect();
+        
         file.text.invert();
-
         file.bss.invert();
         file.linker.invert();
         file.data.invert();

@@ -178,13 +178,37 @@ void ASMC::File::operator<<(ASMC::File file){
     this->text.istitch(file.text);
     this->bss.stitch(file.bss);
     this->data.stitch(file.data);
+    if (!this->hasLambda && file.hasLambda) {
+        this->hasLambda = true;
+        this->lambdas = new ASMC::File;
+    }
+    if (file.hasLambda) {
+        this->hasLambda = true;
+        *this->lambdas << *file.lambdas;
+    }
 }
 
 void ASMC::File::operator>>(ASMC::File file){
-    this->linker.istitch(file.linker);
-    this->text.istitch(file.text);
-    this->bss.istitch(file.bss);
-    this->data.istitch(file.data);
+    this->linker.stitch(file.linker);
+    this->text.stitch(file.text);
+    this->bss.stitch(file.bss);
+    this->data.stitch(file.data);
+    if (!this->hasLambda && file.hasLambda) {
+        this->hasLambda = true;
+        this->lambdas = new ASMC::File;
+    }
+    if (file.hasLambda) {
+        this->hasLambda = true;
+        *this->lambdas << *file.lambdas;
+    }
+}
+
+void ASMC::File::collect(){
+    if(this->hasLambda){
+        this->lambdas->collect();
+        this->operator<<(*this->lambdas);
+        delete this->lambdas;
+    }
 }
 
 ASMC::Register::Register(std::string _qWord, std::string _dWord, std::string _word, std::string _byte){

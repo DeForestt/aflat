@@ -239,12 +239,15 @@ namespace ASMC{
 
     class File{
         public:
-        links::LinkedList<Instruction * > text;
-        links::LinkedList<Instruction * > bss;
-        links::LinkedList<Instruction * > data;
-        links::LinkedList<Instruction * > linker;
+        links::LinkedList<Instruction * > text = links::LinkedList<Instruction * >();
+        links::LinkedList<Instruction * > bss = links::LinkedList<Instruction * >();
+        links::LinkedList<Instruction * > data = links::LinkedList<Instruction * >();
+        links::LinkedList<Instruction * > linker = links::LinkedList<Instruction * >();
+        bool hasLambda = false;
+        File * lambdas;
         void operator<<(ASMC::File file);
         void operator>>(ASMC::File file);
+        void collect();
     };
 
     class Register{

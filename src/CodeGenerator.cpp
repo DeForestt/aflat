@@ -570,7 +570,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         func->scopeName = "global";
         func->isLambda = true;
 
-        OutputFile >> this->GenSTMT(func);
+        if(OutputFile.lambdas == nullptr) OutputFile.lambdas = new ASMC::File;
+        OutputFile.hasLambda = true;
+        OutputFile.lambdas->operator<<(this->GenSTMT(func));
 
         output.access = "$" + func->ident.ident;
         output.size = ASMC::QWord;
@@ -828,13 +830,13 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, ASMC::File &OutputFi
         ASMC::Call * calls = new ASMC::Call;
         calls->function = mod + func->ident.ident;
         OutputFile.text << calls;
-
+        intArgsCounter = 0;
         return *func;
 };
 
 ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
-    ASMC::File OutputFile;
+    ASMC::File OutputFile = ASMC::File();
 
     if(dynamic_cast<AST::Sequence *>(STMT) != nullptr){
         AST::Sequence * sequence = dynamic_cast<AST::Sequence *>(STMT);
@@ -850,6 +852,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         */
 
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
+        int saveIntArgs = intArgsCounter;
         bool isLambda = func->isLambda;
         if (!isLambda){
             this->SymbolTable.clear();
@@ -956,6 +959,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             this->SymbolTable.clear();
             this->SymbolTable.head = nullptr;
         }
+        this->intArgsCounter = saveIntArgs;
     }
     else if (dynamic_cast<AST::Declare *>(STMT) != nullptr){
         /*
