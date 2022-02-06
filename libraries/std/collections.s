@@ -355,8 +355,10 @@ pub_Array_forEach:
 	movq	-32(%rbp), %rcx
 	movq	-64(%rbp), %rax
 	movq	%rax, %rdi
+	movl	-68(%rbp), %eax
+	movl	%eax, %esi
 	movq	-40(%rbp), %rax
-	movq	%rax, %rsi
+	movq	%rax, %rdx
 	call	*%rcx
 	mov	$1, %edx
 	mov	-68(%rbp), %eax

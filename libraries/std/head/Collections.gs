@@ -28,7 +28,7 @@ class Array{
     public adr at(int index);
     public int delete(int index);
     public int extend(int size);
-    public int forEach(adr foo);
+    public int forEach(adr foo, args);
 };
 
 Array newArray(int typeSize, int size);
