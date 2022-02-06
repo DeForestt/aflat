@@ -307,7 +307,10 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
                     call->ident = obj.meta;
                     call->modList = modList;
                     bool pop = false;
-                    if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr){
+                    if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr && dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ')'){
+                        lex::OpSym * symp = dynamic_cast<lex::OpSym *> (tokens.pop());
+                        if (symp->Sym != ')') throw err::Exception("Expected closed perenth got " + symp->Sym);
+                    }else{
                         do{
                             if (pop) tokens.pop();
                             call->Args.push(this->parseExpr(tokens));
@@ -318,9 +321,6 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
                             lex::OpSym * symp = dynamic_cast<lex::OpSym *> (tokens.pop());
                             if (symp->Sym != ')') throw err::Exception("Expected closed perenth got " + symp->Sym);
                         }
-                    }else{
-                        lex::OpSym * symp = dynamic_cast<lex::OpSym *> (tokens.pop());
-                        if (symp->Sym != ')') throw err::Exception("Expected closed perenth got " + symp->Sym);
                     }
                     output = call;
                 }
