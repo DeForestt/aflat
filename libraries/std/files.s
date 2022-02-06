@@ -1,3 +1,4 @@
+.global	pub_File_toArray
 .global	pub_File_read
 .global	pub_File_write
 .global	pub_File_close
@@ -64,11 +65,11 @@ openFile:
 	movl	-28(%rbp), %eax
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
-	jge	.LopenFile1
+	jge	.LopenFile3
 	movq	$0, %rax
 	leave
 	ret
-.LopenFile1:
+.LopenFile3:
 	movq	-16(%rbp), %rdx
 	movq	-8(%rbp), %rbx
 	movq	%rbx, 0(%rdx)
@@ -125,8 +126,8 @@ pub_File_read:
 	movb	$0, %bl
 	movb	%bl, (%rax)
 	movb	$0, -39(%rbp)
-	jmp	.Lread3
-.Lread2:
+	jmp	.Lread7
+.Lread6:
 	movq	-20(%rbp), %rdx
 	movl	8(%rdx), %eax
 	movl	%eax, %edi
@@ -141,34 +142,34 @@ pub_File_read:
 	movb	-40(%rbp), %al
 	movb	-30(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lread4
+	jne	.Lread8
 	movl	$1, %eax
 	leave
 	ret
-.Lread4:
+.Lread8:
 	movq	-28(%rbp), %rax
 	movb	-40(%rbp), %bl
 	movb	%bl, (%rax)
 	movb	-40(%rbp), %al
 	movb	-29(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lread5
+	jne	.Lread11
 	movq	-28(%rbp), %rax
 	movb	-39(%rbp), %bl
 	movb	%bl, (%rax)
-.Lread5:
+.Lread11:
 	mov	$1, %rdx
 	mov	-28(%rbp), %rax
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
-.Lread3:
+.Lread7:
 	movq	-38(%rbp), %rax
 	movb	(%rax), %al
 	movb	%al, %al
 	movb	-29(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lread2
+	jne	.Lread6
 	movq	-28(%rbp), %rax
 	movb	-39(%rbp), %bl
 	movb	%bl, (%rax)
@@ -176,6 +177,55 @@ pub_File_read:
 	movq	%rax, %rdi
 	call	free
 	movl	$0, %eax
+	leave
+	ret
+pub_File_toArray:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$48, %rsp
+	movq	%rdi, -20(%rbp)
+	movb	%sil, -21(%rbp)
+	movb	%dl, -22(%rbp)
+	movq	%rcx, -30(%rbp)
+	lea	-20(%rbp), %rax
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	lea	-268(%rbp), %rax
+	movq	%rax, %rax
+	movq	%rax, %rsi
+	movb	-21(%rbp), %al
+	movb	%al, %dl
+	movb	-22(%rbp), %al
+	movb	%al, %cl
+	call	pub_File_read
+	movl	%eax, -34(%rbp)
+	movl	$0, -38(%rbp)
+	jmp	.LtoArray15
+.LtoArray14:
+	lea	-20(%rbp), %rax
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	lea	-268(%rbp), %rax
+	movq	%rax, %rax
+	movq	%rax, %rsi
+	movb	-21(%rbp), %al
+	movb	%al, %dl
+	movb	-22(%rbp), %al
+	movb	%al, %cl
+	call	pub_File_read
+	movl	%eax, %ebx
+	movl	%ebx, -34(%rbp)
+	mov	$1, %edx
+	mov	-38(%rbp), %eax
+	add	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -38(%rbp)
+.LtoArray15:
+	movl	-34(%rbp), %eax
+	movl	$1, %ecx
+	cmpl	%ecx, %eax
+	jne	.LtoArray14
+	movq	-30(%rbp), %rax
 	leave
 	ret
 

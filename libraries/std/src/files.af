@@ -2,6 +2,8 @@
 .needs <asm.gs>
 .needs <strings.gs>
 .needs <files.gs>
+.needs <Collections>
+
 File createFile(adr fileName){
         File file = malloc(File);
         file.file = sys_create(fileName, #511);
@@ -51,4 +53,25 @@ int read@File(adr pointer, char delim, char term){
         pointer =: null;
         free(input);
         return  0;
+};
+
+adr toArray@File(char delim, char term, Array arr){
+        adr ibuff = malloc(256);
+        
+        int size = arr.size;
+
+        int eof = my.read(ibuff, delim, term);
+        int i = 0;
+        while(eof != 1){
+                if (i > arr.size)}{
+                        return #0;
+                };
+                adr pointer = arr.at(i);
+                pointer =: ibuff;
+                ibuff = malloc(256);
+                eof = my.read(ibuff, delim, term);
+                i = i + 1;
+        };
+        free(ibuff);
+        return arr;
 };
