@@ -180,11 +180,11 @@ void ASMC::File::operator<<(ASMC::File file){
     this->data.stitch(file.data);
 }
 
-void ASMC::File::collect(){
-    if(this->lambdas != nullptr){
-        this->lambdas->collect();
-        *this << *this->lambdas;
-    }
+void ASMC::File::operator>>(ASMC::File file){
+    this->linker.istitch(file.linker);
+    this->text.istitch(file.text);
+    this->bss.istitch(file.bss);
+    this->data.istitch(file.data);
 }
 
 ASMC::Register::Register(std::string _qWord, std::string _dWord, std::string _word, std::string _byte){

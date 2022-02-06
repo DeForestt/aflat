@@ -566,18 +566,12 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         AST::Lambda lambda = *dynamic_cast<AST::Lambda *>(expr);
         AST::Function * func = lambda.function;
         func->ident.ident = "lambda_" + std::to_string(lablecount);
+        lablecount++;
         func->scopeName = "global";
         func->isLambda = true;
-        ASMC::Lable * pastLambda = new ASMC::Lable();
-        pastLambda->lable = func->ident.ident + '_';
-        ASMC::Jmp * jump = new ASMC::Jmp;
-        jump->to = func->ident.ident + '_';
-        OutputFile.text << jump;
-       
-        OutputFile << this->GenSTMT(func);
 
-        //OutputFile << this->GenSTMT(lambda.function);
-        OutputFile.text << pastLambda;
+        OutputFile >> this->GenSTMT(func);
+
         output.access = "$" + func->ident.ident;
         output.size = ASMC::QWord;
     }
