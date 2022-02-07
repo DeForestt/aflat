@@ -228,7 +228,10 @@ int forEach@Array(adr foo, adr arg){
         int offset = i * tSize;
         curr = my.head;
         curr = curr + offset;
-        foo(curr, i, arg);
+        int brk = foo(curr, i, arg);
+        if (brk == 1){
+            return 0;
+        };
     };
     return 0;
 };
