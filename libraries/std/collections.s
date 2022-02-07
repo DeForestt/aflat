@@ -360,6 +360,15 @@ pub_Array_forEach:
 	movq	-40(%rbp), %rax
 	movq	%rax, %rdx
 	call	*%rcx
+	movl	%eax, -76(%rbp)
+	movl	-76(%rbp), %eax
+	movl	$1, %ecx
+	cmpl	%ecx, %eax
+	jne	.LforEach16
+	movl	$0, %eax
+	leave
+	ret
+.LforEach16:
 	mov	$1, %edx
 	mov	-68(%rbp), %eax
 	add	%edx, %eax
