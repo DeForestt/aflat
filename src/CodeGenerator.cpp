@@ -876,7 +876,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             this->globalScope = false;
 
             ASMC::Lable * lable = new ASMC::Lable;
-            if(this->scope == nullptr) lable->lable = func->ident.ident;
+            if(this->scope == nullptr || func->isLambda) lable->lable = func->ident.ident;
             else lable->lable = "pub_" + scope->Ident + "_" + func->ident.ident;
             if(func->scopeName != "global"){
                 lable->lable = "pub_" + func->scopeName + "_" + func->ident.ident;
