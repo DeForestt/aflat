@@ -214,7 +214,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, ASMC::File &OutputFile){
         links::LinkedList<gen::Symbol>  * Table;
         AST::Refrence ref = *dynamic_cast<AST::Refrence *>(expr);
         if(this->scope == nullptr || ref.internal) Table = &this->SymbolTable;
-        else Table = &this->scope->SymbolTable;
+        //else Table = &this->scope->SymbolTable;
         
         gen::Symbol sym = *Table->search<std::string>(searchSymbol, ref.Ident);
         ASMC::Lea * lea = new ASMC::Lea();
@@ -904,7 +904,7 @@ ASMC::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             link->command = "global";
             link->operand = lable->lable;
 
-            if(this->scope != nullptr){
+            if(this->scope != nullptr && !func->isLambda){
                 // add the opject to the arguments of the function
                 int offset = this->getBytes(ASMC::QWord);
                 int size = ASMC::QWord;
