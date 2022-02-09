@@ -1,8 +1,3 @@
-/*
- * class name:  Process
- * description: Create an asynchronous process
- */
-
 class Process{
     private int pid;
     private adr foo;
@@ -15,17 +10,12 @@ class Process{
 
 Process newProcess(adr foo);
 
-/*
- * class name: Pipe
- * description: Create a pipe
- */
-class Pipe{
+class Pipe {
     int in;
     int out;
-
-    int init();
     int write(adr buf, int len);
     int read(adr buf, int len);
+    int init();
 };
 
 Pipe newPipe();
