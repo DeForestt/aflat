@@ -23,6 +23,12 @@ parse::Parser::Parser(){
     Char.typeName = "char";
     Char.opType = ASMC::Hard;
     Char.size = ASMC::Byte;
+
+    // Long Type
+    AST::Type Long = AST::Type();
+    Long.typeName = "long";
+    Long.opType = ASMC::Hard;
+    Long.size = ASMC::QWord;
     
     // Pointer Type
     AST::Type Adr = AST::Type();
