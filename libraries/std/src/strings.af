@@ -356,7 +356,7 @@ int float_toString(adr input, adr obuff, int signed){
 	return 0;	
 };
 
-adr subString(int start, int length, adr str, adr buff) {
+adr str_subString(int start, int length, adr str, adr buff) {
 	adr cleanStart = #0;
 	cleanStart = ?start;
 	adr go = cleanStart as int;
