@@ -1,3 +1,4 @@
+.global	str_subString
 .global	float_toString
 .global	sPrintFloat
 .global	str_toFloat
@@ -81,8 +82,8 @@ str_comp:
 	ret
 .Lstr_comp2:
 	movl	$0, -28(%rbp)
-	jmp	.Lstr_comp4
-.Lstr_comp3:
+	jmp	.Lstr_comp6
+.Lstr_comp5:
 	mov	$1, %edx
 	mov	-28(%rbp), %eax
 	add	%edx, %eax
@@ -97,11 +98,11 @@ str_comp:
 	movb	-29(%rbp), %al
 	movb	-30(%rbp), %cl
 	cmpb	%cl, %al
-	je	.Lstr_comp5
+	je	.Lstr_comp7
 	movl	$0, %eax
 	leave
 	ret
-.Lstr_comp5:
+.Lstr_comp7:
 	mov	$1, %edx
 	mov	-16(%rbp), %rax
 	add	%rdx, %rax
@@ -112,11 +113,11 @@ str_comp:
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -8(%rbp)
-.Lstr_comp4:
+.Lstr_comp6:
 	movl	-28(%rbp), %eax
 	movl	-20(%rbp), %ecx
 	cmpl	%ecx, %eax
-	jl	.Lstr_comp3
+	jl	.Lstr_comp5
 	movl	$1, %eax
 	leave
 	ret
@@ -131,8 +132,8 @@ str_concat:
 	movl	%eax, %edi
 	call	ascii
 	movb	%al, -25(%rbp)
-	jmp	.Lstr_concat7
-.Lstr_concat6:
+	jmp	.Lstr_concat11
+.Lstr_concat10:
 	movq	-8(%rbp), %rax
 	movb	(%rax), %al
 	movb	%al, %bl
@@ -150,15 +151,15 @@ str_concat:
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -24(%rbp)
-.Lstr_concat7:
+.Lstr_concat11:
 	movq	-8(%rbp), %rax
 	movb	(%rax), %al
 	movb	%al, %al
 	movb	-25(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lstr_concat6
-	jmp	.Lstr_concat9
-.Lstr_concat8:
+	jne	.Lstr_concat10
+	jmp	.Lstr_concat13
+.Lstr_concat12:
 	movq	-16(%rbp), %rax
 	movb	(%rax), %al
 	movb	%al, %bl
@@ -176,13 +177,13 @@ str_concat:
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -24(%rbp)
-.Lstr_concat9:
+.Lstr_concat13:
 	movq	-16(%rbp), %rax
 	movb	(%rax), %al
 	movb	%al, %al
 	movb	-25(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lstr_concat8
+	jne	.Lstr_concat12
 	movq	-24(%rbp), %rax
 	movb	-25(%rbp), %bl
 	movb	%bl, (%rax)
@@ -201,7 +202,7 @@ str_toInt:
 	movb	-13(%rbp), %al
 	movb	$45, %cl
 	cmpb	%cl, %al
-	jne	.Lstr_toInt10
+	jne	.Lstr_toInt14
 	movl	$-1, %ebx
 	movl	%ebx, -12(%rbp)
 	mov	$1, %rdx
@@ -209,7 +210,7 @@ str_toInt:
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -8(%rbp)
-.Lstr_toInt10:
+.Lstr_toInt14:
 	movl	$0, %eax
 	movl	%eax, %edi
 	call	ascii
@@ -224,8 +225,8 @@ str_toInt:
 	mov	-22(%rbp), %eax
 	sub	%edx, %eax
 	movl	%eax, -30(%rbp)
-	jmp	.Lstr_toInt12
-.Lstr_toInt11:
+	jmp	.Lstr_toInt18
+.Lstr_toInt17:
 	movl	$10, %eax
 	movl	%eax, %edi
 	movl	-30(%rbp), %eax
@@ -260,11 +261,11 @@ str_toInt:
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -8(%rbp)
-.Lstr_toInt12:
+.Lstr_toInt18:
 	movl	-30(%rbp), %eax
 	movl	$-1, %ecx
 	cmpl	%ecx, %eax
-	jg	.Lstr_toInt11
+	jg	.Lstr_toInt17
 	mov	-12(%rbp), %edx
 	mov	-26(%rbp), %eax
 	imul	%edx, %eax
@@ -290,7 +291,7 @@ int_toString:
 	movl	-4(%rbp), %eax
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
-	jne	.Lint_toString13
+	jne	.Lint_toString19
 	movq	-12(%rbp), %rax
 	movb	$48, %bl
 	movb	%bl, (%rax)
@@ -305,11 +306,11 @@ int_toString:
 	movl	$0, %eax
 	leave
 	ret
-.Lint_toString13:
+.Lint_toString19:
 	movl	-4(%rbp), %eax
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
-	jge	.Lint_toString14
+	jge	.Lint_toString22
 	movq	-12(%rbp), %rax
 	movb	$45, %bl
 	movb	%bl, (%rax)
@@ -323,14 +324,14 @@ int_toString:
 	imul	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -4(%rbp)
-.Lint_toString14:
+.Lint_toString22:
 	mov	$1, %edx
 	mov	-4(%rbp), %eax
 	imul	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -16(%rbp)
-	jmp	.Lint_toString16
-.Lint_toString15:
+	jmp	.Lint_toString26
+.Lint_toString25:
 	mov	-16(%rbp), %eax
 	cltd
 	idivl	-20(%rbp)
@@ -341,19 +342,19 @@ int_toString:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
-.Lint_toString16:
+.Lint_toString26:
 	movl	-16(%rbp), %eax
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
-	jne	.Lint_toString15
+	jne	.Lint_toString25
 	mov	$1, %edx
 	mov	-28(%rbp), %eax
 	sub	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
 	movb	$32, -30(%rbp)
-	jmp	.Lint_toString18
-.Lint_toString17:
+	jmp	.Lint_toString28
+.Lint_toString27:
 	movl	$10, %eax
 	movl	%eax, %edi
 	movl	-28(%rbp), %eax
@@ -394,11 +395,11 @@ int_toString:
 	sub	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
-.Lint_toString18:
+.Lint_toString28:
 	movl	-28(%rbp), %eax
 	movl	$-1, %ecx
 	cmpl	%ecx, %eax
-	jg	.Lint_toString17
+	jg	.Lint_toString27
 	movq	-12(%rbp), %rax
 	movb	-29(%rbp), %bl
 	movb	%bl, (%rax)
@@ -416,8 +417,8 @@ str_find:
 	movq	%rax, %rdi
 	call	len
 	movl	%eax, -17(%rbp)
-	jmp	.Lstr_find20
-.Lstr_find19:
+	jmp	.Lstr_find30
+.Lstr_find29:
 	mov	$1, %edx
 	mov	-8(%rbp), %rax
 	add	%rdx, %rax
@@ -429,21 +430,21 @@ str_find:
 	movb	-18(%rbp), %al
 	movb	-9(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lstr_find21
+	jne	.Lstr_find31
 	movl	-13(%rbp), %eax
 	leave
 	ret
-.Lstr_find21:
+.Lstr_find31:
 	mov	$1, %edx
 	mov	-13(%rbp), %eax
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -13(%rbp)
-.Lstr_find20:
+.Lstr_find30:
 	movl	-13(%rbp), %eax
 	movl	-17(%rbp), %ecx
 	cmpl	%ecx, %eax
-	jl	.Lstr_find19
+	jl	.Lstr_find29
 	movl	$-1, %eax
 	leave
 	ret
@@ -462,24 +463,24 @@ str_split:
 	movq	-8(%rbp), %rax
 	movb	(%rax), %al
 	movb	%al, -27(%rbp)
-	jmp	.Lstr_split23
-.Lstr_split22:
+	jmp	.Lstr_split35
+.Lstr_split34:
 	movb	-27(%rbp), %al
 	movb	-26(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lstr_split24
+	jne	.Lstr_split36
 	movl	$-1, %eax
 	leave
 	ret
-.Lstr_split24:
+.Lstr_split36:
 	movb	-27(%rbp), %al
 	movb	-9(%rbp), %cl
 	cmpb	%cl, %al
-	je	.Lstr_split25
+	je	.Lstr_split39
 	movq	-17(%rbp), %rax
 	movb	-27(%rbp), %bl
 	movb	%bl, (%rax)
-.Lstr_split25:
+.Lstr_split39:
 	mov	$1, %edx
 	mov	-8(%rbp), %rax
 	add	%rdx, %rax
@@ -494,11 +495,11 @@ str_split:
 	movb	(%rax), %al
 	movb	%al, %bl
 	movb	%bl, -27(%rbp)
-.Lstr_split23:
+.Lstr_split35:
 	movb	-27(%rbp), %al
 	movb	-9(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lstr_split22
+	jne	.Lstr_split34
 	movq	-17(%rbp), %rax
 	movb	-26(%rbp), %bl
 	movb	%bl, (%rax)
@@ -512,12 +513,12 @@ str_split:
 	movb	%al, %al
 	movb	-26(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lstr_split26
+	jne	.Lstr_split42
 	movl	$-1, %eax
 	leave
 	ret
-.Lstr_split26:
-	movq	$.strstr_split27, %rax
+.Lstr_split42:
+	movq	$.strstr_split45, %rax
 	movq	%rax, %rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rsi
@@ -532,88 +533,88 @@ charToFloat:
 	movq	%rsp, %rbp
 	subq	$16, %rsp
 	movb	%dil, -1(%rbp)
-	movss	.floatcharToFloat28, %xmm0
+	movss	.floatcharToFloat46, %xmm0
 	movss	%xmm0, -5(%rbp)
 	movb	-1(%rbp), %al
 	movb	$48, %cl
 	cmpb	%cl, %al
-	jne	.LcharToFloat29
-	movss	.floatcharToFloat30, %xmm0
-	movss	%xmm0, %xmm0
-	movss	%xmm0, -5(%rbp)
-.LcharToFloat29:
-	movb	-1(%rbp), %al
-	movb	$49, %cl
-	cmpb	%cl, %al
-	jne	.LcharToFloat31
-	movss	.floatcharToFloat32, %xmm0
-	movss	%xmm0, %xmm0
-	movss	%xmm0, -5(%rbp)
-.LcharToFloat31:
-	movb	-1(%rbp), %al
-	movb	$50, %cl
-	cmpb	%cl, %al
-	jne	.LcharToFloat33
-	movss	.floatcharToFloat34, %xmm0
-	movss	%xmm0, %xmm0
-	movss	%xmm0, -5(%rbp)
-.LcharToFloat33:
-	movb	-1(%rbp), %al
-	movb	$51, %cl
-	cmpb	%cl, %al
-	jne	.LcharToFloat35
-	movss	.floatcharToFloat36, %xmm0
-	movss	%xmm0, %xmm0
-	movss	%xmm0, -5(%rbp)
-.LcharToFloat35:
-	movb	-1(%rbp), %al
-	movb	$52, %cl
-	cmpb	%cl, %al
-	jne	.LcharToFloat37
-	movss	.floatcharToFloat38, %xmm0
-	movss	%xmm0, %xmm0
-	movss	%xmm0, -5(%rbp)
-.LcharToFloat37:
-	movb	-1(%rbp), %al
-	movb	$53, %cl
-	cmpb	%cl, %al
-	jne	.LcharToFloat39
-	movss	.floatcharToFloat40, %xmm0
-	movss	%xmm0, %xmm0
-	movss	%xmm0, -5(%rbp)
-.LcharToFloat39:
-	movb	-1(%rbp), %al
-	movb	$54, %cl
-	cmpb	%cl, %al
-	jne	.LcharToFloat41
-	movss	.floatcharToFloat42, %xmm0
-	movss	%xmm0, %xmm0
-	movss	%xmm0, -5(%rbp)
-.LcharToFloat41:
-	movb	-1(%rbp), %al
-	movb	$55, %cl
-	cmpb	%cl, %al
-	jne	.LcharToFloat43
-	movss	.floatcharToFloat44, %xmm0
-	movss	%xmm0, %xmm0
-	movss	%xmm0, -5(%rbp)
-.LcharToFloat43:
-	movb	-1(%rbp), %al
-	movb	$56, %cl
-	cmpb	%cl, %al
-	jne	.LcharToFloat45
-	movss	.floatcharToFloat46, %xmm0
-	movss	%xmm0, %xmm0
-	movss	%xmm0, -5(%rbp)
-.LcharToFloat45:
-	movb	-1(%rbp), %al
-	movb	$57, %cl
-	cmpb	%cl, %al
 	jne	.LcharToFloat47
-	movss	.floatcharToFloat48, %xmm0
+	movss	.floatcharToFloat50, %xmm0
 	movss	%xmm0, %xmm0
 	movss	%xmm0, -5(%rbp)
 .LcharToFloat47:
+	movb	-1(%rbp), %al
+	movb	$49, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat51
+	movss	.floatcharToFloat54, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat51:
+	movb	-1(%rbp), %al
+	movb	$50, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat55
+	movss	.floatcharToFloat58, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat55:
+	movb	-1(%rbp), %al
+	movb	$51, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat59
+	movss	.floatcharToFloat62, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat59:
+	movb	-1(%rbp), %al
+	movb	$52, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat63
+	movss	.floatcharToFloat66, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat63:
+	movb	-1(%rbp), %al
+	movb	$53, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat67
+	movss	.floatcharToFloat70, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat67:
+	movb	-1(%rbp), %al
+	movb	$54, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat71
+	movss	.floatcharToFloat74, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat71:
+	movb	-1(%rbp), %al
+	movb	$55, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat75
+	movss	.floatcharToFloat78, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat75:
+	movb	-1(%rbp), %al
+	movb	$56, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat79
+	movss	.floatcharToFloat82, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat79:
+	movb	-1(%rbp), %al
+	movb	$57, %cl
+	cmpb	%cl, %al
+	jne	.LcharToFloat83
+	movss	.floatcharToFloat86, %xmm0
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
+.LcharToFloat83:
 	movl	-5(%rbp), %eax
 	leave
 	ret
@@ -643,14 +644,14 @@ str_toFloat:
 	sub	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -52(%rbp)
-	movss	.floatstr_toFloat49, %xmm0
+	movss	.floatstr_toFloat87, %xmm0
 	movss	%xmm0, -56(%rbp)
 	movl	$0, -60(%rbp)
-	movss	.floatstr_toFloat50, %xmm0
+	movss	.floatstr_toFloat88, %xmm0
 	movss	%xmm0, -64(%rbp)
-	jmp	.Lstr_toFloat52
-.Lstr_toFloat51:
-	movss	.floatstr_toFloat54, %xmm0
+	jmp	.Lstr_toFloat90
+.Lstr_toFloat89:
+	movss	.floatstr_toFloat92, %xmm0
 	movss	%xmm0, %xmm1
 	movss	-64(%rbp), %xmm0
 	mulss	%xmm1, %xmm0
@@ -661,14 +662,14 @@ str_toFloat:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -60(%rbp)
-.Lstr_toFloat52:
+.Lstr_toFloat90:
 	movl	-60(%rbp), %eax
 	movl	-52(%rbp), %ecx
 	cmpl	%ecx, %eax
-	jl	.Lstr_toFloat51
+	jl	.Lstr_toFloat89
 	movl	$0, %ebx
 	movl	%ebx, -60(%rbp)
-	movss	.floatstr_toFloat55, %xmm0
+	movss	.floatstr_toFloat93, %xmm0
 	movss	%xmm0, -68(%rbp)
 	movl	$0, %eax
 	movl	%eax, %edi
@@ -677,28 +678,28 @@ str_toFloat:
 	movq	-8(%rbp), %rax
 	movb	(%rax), %al
 	movb	%al, -70(%rbp)
-	movss	.floatstr_toFloat56, %xmm0
+	movss	.floatstr_toFloat94, %xmm0
 	movss	%xmm0, -74(%rbp)
-	jmp	.Lstr_toFloat58
-.Lstr_toFloat57:
+	jmp	.Lstr_toFloat96
+.Lstr_toFloat95:
 	movb	-70(%rbp), %al
 	movb	$46, %cl
 	cmpb	%cl, %al
-	jne	.Lstr_toFloat59
-	movss	.floatstr_toFloat60, %xmm0
+	jne	.Lstr_toFloat97
+	movss	.floatstr_toFloat100, %xmm0
 	movss	%xmm0, %xmm0
 	movss	%xmm0, -64(%rbp)
-.Lstr_toFloat59:
+.Lstr_toFloat97:
 	movb	-70(%rbp), %al
 	movb	$46, %cl
 	cmpb	%cl, %al
-	je	.Lstr_toFloat61
+	je	.Lstr_toFloat101
 	movb	-70(%rbp), %al
 	movb	%al, %dil
 	call	charToFloat
 	movl	%eax, %ebx
 	movl	%ebx, -68(%rbp)
-	movss	.floatstr_toFloat63, %xmm0
+	movss	.floatstr_toFloat105, %xmm0
 	movss	%xmm0, %xmm1
 	movss	-56(%rbp), %xmm0
 	addss	%xmm1, %xmm0
@@ -718,7 +719,7 @@ str_toFloat:
 	divss	%xmm1, %xmm0
 	movss	%xmm0, %xmm0
 	movss	%xmm0, -64(%rbp)
-.Lstr_toFloat61:
+.Lstr_toFloat101:
 	mov	$1, %edx
 	mov	-8(%rbp), %rax
 	add	%rdx, %rax
@@ -733,14 +734,14 @@ str_toFloat:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -60(%rbp)
-.Lstr_toFloat58:
+.Lstr_toFloat96:
 	movb	-70(%rbp), %al
 	movb	-69(%rbp), %cl
 	cmpb	%cl, %al
-	jne	.Lstr_toFloat57
+	jne	.Lstr_toFloat95
 	lea	-56(%rbp), %rax
 	movq	%rax, -86(%rbp)
-	movss	.floatstr_toFloat64, %xmm0
+	movss	.floatstr_toFloat106, %xmm0
 	movss	%xmm0, -90(%rbp)
 	movss	-90(%rbp), %xmm1
 	movss	-90(%rbp), %xmm0
@@ -774,27 +775,27 @@ float_toString:
 	movq	-8(%rbp), %rax
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
-	jne	.Lfloat_toString65
+	jne	.Lfloat_toString107
 	movl	$-1, %eax
 	leave
 	ret
-.Lfloat_toString65:
+.Lfloat_toString107:
 	movl	$6, -24(%rbp)
-	movq	$.strfloat_toString66, -32(%rbp)
+	movq	$.strfloat_toString110, -32(%rbp)
 	movq	-8(%rbp), %rax
 	movl	(%rax), %eax
 	movl	%eax, -36(%rbp)
 	movl	-36(%rbp), %eax
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
-	jne	.Lfloat_toString67
+	jne	.Lfloat_toString111
 	movl	$0, %eax
 	movl	%eax, %edi
 	call	printInt
 	movl	$0, %eax
 	leave
 	ret
-.Lfloat_toString67:
+.Lfloat_toString111:
 	mov	$31, %edx
 	mov	-36(%rbp), %eax
 	movl	%edx, %ecx
@@ -826,8 +827,8 @@ float_toString:
 	movq	-56(%rbp), %rbx
 	movq	%rbx, -64(%rbp)
 	movl	$0, -68(%rbp)
-	jmp	.Lfloat_toString69
-.Lfloat_toString68:
+	jmp	.Lfloat_toString115
+.Lfloat_toString114:
 	mov	$1, %edx
 	mov	-48(%rbp), %eax
 	andl	%edx, %eax
@@ -854,11 +855,11 @@ float_toString:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -68(%rbp)
-.Lfloat_toString69:
+.Lfloat_toString115:
 	movl	-68(%rbp), %eax
 	movl	$23, %ecx
 	cmpl	%ecx, %eax
-	jl	.Lfloat_toString68
+	jl	.Lfloat_toString114
 	movl	$1, %eax
 	movl	%eax, %edi
 	call	newBit
@@ -874,46 +875,46 @@ float_toString:
 	movq	%rbx, -64(%rbp)
 	movq	-56(%rbp), %rbx
 	movq	%rbx, -64(%rbp)
-	jmp	.Lfloat_toString71
-.Lfloat_toString70:
+	jmp	.Lfloat_toString117
+.Lfloat_toString116:
 	movq	-64(%rbp), %rdx
 	movq	12(%rdx), %rbx
 	movq	%rbx, -64(%rbp)
-.Lfloat_toString71:
+.Lfloat_toString117:
 	movq	-64(%rbp), %rdx
 	movq	12(%rdx), %rax
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
-	jne	.Lfloat_toString70
+	jne	.Lfloat_toString116
 	movl	-40(%rbp), %eax
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
-	je	.Lfloat_toString72
-	movq	$.strfloat_toString73, %rbx
+	je	.Lfloat_toString118
+	movq	$.strfloat_toString121, %rbx
 	movq	%rbx, -32(%rbp)
-.Lfloat_toString72:
+.Lfloat_toString118:
 	movl	-20(%rbp), %eax
 	movl	$1, %ecx
 	cmpl	%ecx, %eax
-	jne	.Lfloat_toString74
+	jne	.Lfloat_toString122
 	movl	-40(%rbp), %eax
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
-	jne	.Lfloat_toString75
-	movq	$.strfloat_toString76, %rbx
+	jne	.Lfloat_toString125
+	movq	$.strfloat_toString128, %rbx
 	movq	%rbx, -32(%rbp)
-.Lfloat_toString75:
-.Lfloat_toString74:
+.Lfloat_toString125:
+.Lfloat_toString122:
 	movl	-44(%rbp), %ebx
 	movl	%ebx, -80(%rbp)
 	movl	$0, -88(%rbp)
-	jmp	.Lfloat_toString78
-.Lfloat_toString77:
+	jmp	.Lfloat_toString130
+.Lfloat_toString129:
 	movq	-64(%rbp), %rdx
 	movl	0(%rdx), %eax
 	movl	$1, %ecx
 	cmpl	%ecx, %eax
-	jne	.Lfloat_toString79
+	jne	.Lfloat_toString131
 	movl	$2, %eax
 	movl	%eax, %edi
 	movl	-80(%rbp), %eax
@@ -925,7 +926,7 @@ float_toString:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -84(%rbp)
-.Lfloat_toString79:
+.Lfloat_toString131:
 	movq	-64(%rbp), %rdx
 	movq	4(%rdx), %rbx
 	movq	%rbx, -64(%rbp)
@@ -939,11 +940,11 @@ float_toString:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -88(%rbp)
-.Lfloat_toString78:
+.Lfloat_toString130:
 	movl	-80(%rbp), %eax
 	movl	$-1, %ecx
 	cmpl	%ecx, %eax
-	jg	.Lfloat_toString77
+	jg	.Lfloat_toString129
 	movl	$10, %eax
 	movl	%eax, %edi
 	movl	-24(%rbp), %eax
@@ -958,19 +959,19 @@ float_toString:
 	movl	%ebx, -80(%rbp)
 	movl	$2, -96(%rbp)
 	movl	$0, -100(%rbp)
-	jmp	.Lfloat_toString81
-.Lfloat_toString80:
+	jmp	.Lfloat_toString135
+.Lfloat_toString134:
 	movq	-64(%rbp), %rdx
 	movl	0(%rdx), %eax
 	movl	$1, %ecx
 	cmpl	%ecx, %eax
-	jne	.Lfloat_toString82
+	jne	.Lfloat_toString136
 	mov	-80(%rbp), %edx
 	mov	-100(%rbp), %eax
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -100(%rbp)
-.Lfloat_toString82:
+.Lfloat_toString136:
 	movq	-64(%rbp), %rdx
 	movq	4(%rdx), %rbx
 	movq	%rbx, -64(%rbp)
@@ -984,11 +985,11 @@ float_toString:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -88(%rbp)
-.Lfloat_toString81:
+.Lfloat_toString135:
 	movl	-88(%rbp), %eax
 	movl	$23, %ecx
 	cmpl	%ecx, %eax
-	jl	.Lfloat_toString80
+	jl	.Lfloat_toString134
 	lea	-32(%rbp), %rax
 	movq	$1, %rdi
 	movq	%rax, %rsi
@@ -998,7 +999,7 @@ float_toString:
 	movl	-84(%rbp), %eax
 	movl	%eax, %edi
 	call	printInt
-	movq	$.strfloat_toString83, %rax
+	movq	$.strfloat_toString139, %rax
 	movq	%rax, %rdi
 	call	print
 	movl	-100(%rbp), %eax
@@ -1020,7 +1021,7 @@ float_toString:
 	call	str_concat
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
-	movq	$.strfloat_toString84, %rax
+	movq	$.strfloat_toString140, %rax
 	movq	%rax, %rsi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdx
@@ -1042,59 +1043,116 @@ float_toString:
 	movl	$0, %eax
 	leave
 	ret
+str_subString:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$64, %rsp
+	movl	%edi, -4(%rbp)
+	movl	%esi, -8(%rbp)
+	movq	%rdx, -16(%rbp)
+	movq	%rcx, -24(%rbp)
+	movq	$0, -32(%rbp)
+	lea	-4(%rbp), %rax
+	movq	%rax, %rbx
+	movq	%rbx, -32(%rbp)
+	movq	-32(%rbp), %rax
+	movl	(%rax), %eax
+	movl	%eax, -40(%rbp)
+	mov	-40(%rbp), %rdx
+	mov	-16(%rbp), %rax
+	add	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	movq	-24(%rbp), %rbx
+	movq	%rbx, -48(%rbp)
+	movl	$0, -52(%rbp)
+	jmp	.Lstr_subString142
+.Lstr_subString141:
+	movq	-16(%rbp), %rax
+	movb	(%rax), %al
+	movb	%al, -53(%rbp)
+	movq	-48(%rbp), %rax
+	movb	-53(%rbp), %bl
+	movb	%bl, (%rax)
+	mov	$1, %rdx
+	mov	-48(%rbp), %rax
+	add	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -48(%rbp)
+	mov	$1, %rdx
+	mov	-16(%rbp), %rax
+	add	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	mov	$1, %edx
+	mov	-52(%rbp), %eax
+	add	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -52(%rbp)
+.Lstr_subString142:
+	movl	-52(%rbp), %eax
+	movl	-8(%rbp), %ecx
+	cmpl	%ecx, %eax
+	jl	.Lstr_subString141
+	movq	-48(%rbp), %rax
+	movb	$0, %bl
+	movb	%bl, (%rax)
+	movq	-24(%rbp), %rax
+	leave
+	ret
 
 
 .data
 
-.strfloat_toString84:
+.strfloat_toString140:
 	.asciz	 "."
-.strfloat_toString83:
+.strfloat_toString139:
 	.asciz	 "."
-.strfloat_toString76:
+.strfloat_toString128:
 	.asciz	 "+"
-.strfloat_toString73:
+.strfloat_toString121:
 	.asciz	 "-"
-.strfloat_toString66:
+.strfloat_toString110:
 	.asciz	 ""
-.floatstr_toFloat64:
+.floatstr_toFloat106:
 	.float	0.0
-.floatstr_toFloat63:
+.floatstr_toFloat105:
 	.float	0.00
-.floatstr_toFloat60:
+.floatstr_toFloat100:
 	.float	0.1
-.floatstr_toFloat56:
+.floatstr_toFloat94:
 	.float	10.0
-.floatstr_toFloat55:
+.floatstr_toFloat93:
 	.float	0.00
-.floatstr_toFloat54:
+.floatstr_toFloat92:
 	.float	10.0
-.floatstr_toFloat50:
+.floatstr_toFloat88:
 	.float	1.0
-.floatstr_toFloat49:
+.floatstr_toFloat87:
 	.float	0.00
-.floatcharToFloat48:
+.floatcharToFloat86:
 	.float	9.00
-.floatcharToFloat46:
+.floatcharToFloat82:
 	.float	8.00
-.floatcharToFloat44:
+.floatcharToFloat78:
 	.float	7.00
-.floatcharToFloat42:
+.floatcharToFloat74:
 	.float	6.00
-.floatcharToFloat40:
+.floatcharToFloat70:
 	.float	5.00
-.floatcharToFloat38:
+.floatcharToFloat66:
 	.float	4.00
-.floatcharToFloat36:
+.floatcharToFloat62:
 	.float	3.00
-.floatcharToFloat34:
+.floatcharToFloat58:
 	.float	2.00
-.floatcharToFloat32:
+.floatcharToFloat54:
 	.float	1.00
-.floatcharToFloat30:
+.floatcharToFloat50:
 	.float	0.00
-.floatcharToFloat28:
+.floatcharToFloat46:
 	.float	0.00
-.strstr_split27:
+.strstr_split45:
 	.asciz	 ""
 
 
