@@ -55,6 +55,7 @@ parse::Parser::Parser(){
     this->typeList << Adr;
     this->typeList << Float; 
     this->typeList << Short;
+    this->typeList << Long;
 }
 
 /*
