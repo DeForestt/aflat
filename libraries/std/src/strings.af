@@ -378,3 +378,22 @@ adr str_subString(int start, int length, adr str, adr buff) {
 
 	return buff;
 };
+
+adr str_reverse(adr in, adr buff){
+	int length = len(in);
+	adr buffPtr; buffPtr = buff;
+	
+	
+	for {int i = length - 1;}
+		(i > -1)
+		{i = i - 1;}{
+		
+		adr pointer = in + i;
+		
+		char ch = pointer as char;
+		buff =: ch;
+		buff = buff + 1;
+	};
+
+	return buffPtr;
+};
