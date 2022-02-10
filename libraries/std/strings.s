@@ -1,3 +1,4 @@
+.global	str_reverse
 .global	str_subString
 .global	float_toString
 .global	sPrintFloat
@@ -1098,6 +1099,52 @@ str_subString:
 	movb	$0, %bl
 	movb	%bl, (%rax)
 	movq	-24(%rbp), %rax
+	leave
+	ret
+str_reverse:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$48, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	%rsi, -16(%rbp)
+	movq	-8(%rbp), %rax
+	movq	%rax, %rdi
+	call	len
+	movl	%eax, -20(%rbp)
+	movq	-16(%rbp), %rbx
+	movq	%rbx, -28(%rbp)
+	mov	$1, %edx
+	mov	-20(%rbp), %eax
+	sub	%edx, %eax
+	movl	%eax, -32(%rbp)
+	jmp	.Lstr_reverse144
+.Lstr_reverse143:
+	mov	-32(%rbp), %edx
+	mov	-8(%rbp), %rax
+	add	%rdx, %rax
+	movl	%eax, -40(%rbp)
+	movq	-40(%rbp), %rax
+	movb	(%rax), %al
+	movb	%al, -41(%rbp)
+	movq	-16(%rbp), %rax
+	movb	-41(%rbp), %bl
+	movb	%bl, (%rax)
+	mov	$1, %edx
+	mov	-16(%rbp), %rax
+	add	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	mov	$1, %edx
+	mov	-32(%rbp), %eax
+	sub	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -32(%rbp)
+.Lstr_reverse144:
+	movl	-32(%rbp), %eax
+	movl	$-1, %ecx
+	cmpl	%ecx, %eax
+	jg	.Lstr_reverse143
+	movq	-28(%rbp), %rax
 	leave
 	ret
 
