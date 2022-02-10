@@ -395,5 +395,7 @@ adr str_reverse(adr in, adr buff){
 		buff = buff + 1;
 	};
 
+	buff =: '\0';
+
 	return buffPtr;
 };

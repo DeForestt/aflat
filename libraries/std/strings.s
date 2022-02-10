@@ -1144,6 +1144,9 @@ str_reverse:
 	movl	$-1, %ecx
 	cmpl	%ecx, %eax
 	jg	.Lstr_reverse143
+	movq	-16(%rbp), %rax
+	movb	$0, %bl
+	movb	%bl, (%rax)
 	movq	-28(%rbp), %rax
 	leave
 	ret
