@@ -206,19 +206,22 @@ pub_LinkedList_forEach:
 	movq	-16(%rbp), %rdx
 	movq	0(%rdx), %rbx
 	movq	%rbx, -40(%rbp)
+	movl	$0, -44(%rbp)
 	jmp	.LforEach15
 .LforEach14:
 	movq	-40(%rbp), %rdx
 	movq	8(%rdx), %rbx
-	movq	%rbx, -48(%rbp)
+	movq	%rbx, -52(%rbp)
 	movq	-24(%rbp), %rcx
-	movq	-48(%rbp), %rax
+	movq	-52(%rbp), %rax
 	movq	%rax, %rdi
+	movl	-44(%rbp), %eax
+	movl	%eax, %esi
 	movq	-32(%rbp), %rax
-	movq	%rax, %rsi
+	movq	%rax, %rdx
 	call	*%rcx
-	movl	%eax, -52(%rbp)
-	movl	-52(%rbp), %eax
+	movl	%eax, -56(%rbp)
+	movl	-56(%rbp), %eax
 	movl	$1, %ecx
 	cmpl	%ecx, %eax
 	jne	.LforEach16
@@ -229,6 +232,11 @@ pub_LinkedList_forEach:
 	movq	-40(%rbp), %rdx
 	movq	0(%rdx), %rbx
 	movq	%rbx, -40(%rbp)
+	mov	$1, %edx
+	mov	-44(%rbp), %eax
+	add	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -44(%rbp)
 .LforEach15:
 	movq	-40(%rbp), %rax
 	movq	$0, %rcx
