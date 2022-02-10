@@ -7,7 +7,7 @@
 #include "Scanner.hpp"
 #include "LinkedList.hpp"
 #include "Parser.hpp"
-#include "CodeGenerator.hpp"
+#include "CodeGenerator/CodeGenerator.hpp"
 #include "ASM.hpp"
 #include "Exceptions.hpp" 
 #include "PreProcessor.hpp"

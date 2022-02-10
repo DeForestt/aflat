@@ -1,4 +1,4 @@
-#include "CodeGenerator.hpp"
+#include "CodeGenerator/CodeGenerator.hpp"
 #include "Exceptions.hpp"
 
 bool searchSymbol(gen::Symbol sym, std::string str){
