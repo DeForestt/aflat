@@ -59,10 +59,10 @@ int delete@LinkedList(int index){
 };
 
 /*
- * function name: get@LinkedList
- * description: returns the node at the given index
- * agruments: int index : the index of the node to return
- * returns: adr : the node at the given index
+ * function name: get@LinkedList;
+ * description: returns the node at the given index;
+ * agruments: int index : the index of the node to return;
+ * returns: adr : the node at the given index;
  */
 
 adr get@LinkedList(int index){
