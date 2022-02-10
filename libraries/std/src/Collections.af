@@ -6,7 +6,7 @@
  * description:   create a new list;
  * arguments:     none;
  * returns:       a new list;
-  */
+ */
  LinkedList newList(){
     LinkedList list = malloc(LinkedList);
     list.init();
