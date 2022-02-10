@@ -2,10 +2,10 @@
  .needs <std.gs>
 
 /*
- * function name: NewList
- * description:   create a new list
- * arguments:     none
- * returns:       a new list
+ * function name: NewList;
+ * description:   create a new list;
+ * arguments:     none;
+ * returns:       a new list;
   */
  LinkedList newList(){
     LinkedList list = malloc(LinkedList);
@@ -14,10 +14,10 @@
  };
 
 /*
- * function name: init@LinkedList
- * description:   initialize a list
- * arguments:     none
- * returns:       none
+ * function name: init@LinkedList;
+ * description:   initialize a list;
+ * arguments:     none;
+ * returns:       none;
  */
 
  int init@LinkedList(){
@@ -26,10 +26,10 @@
  };
 
 /*
- * function name: newNode
- * description:   create a new node
- * arguments:     none
- * returns:       a new node
+ * function name: newNode;
+ * description:   create a new node;
+ * arguments:     none;
+ * returns:       a new node;
  */
 
 ListNode newNode(){
@@ -39,10 +39,10 @@ ListNode newNode(){
 };
 
 /*
- * function name: remove@LinkedList
- * description: removes the node at the given index
- * agruments: int index - the index of the node to remove
- * return: int - 0 if successful, -1 if not
+ * function name: remove@LinkedList;
+ * description: removes the node at the given index;
+ * agruments: int index : the index of the node to remove;
+ * returns: int : 0 if successful, -1 if not;
  */
 
 int delete@LinkedList(int index){
@@ -61,8 +61,8 @@ int delete@LinkedList(int index){
 /*
  * function name: get@LinkedList
  * description: returns the node at the given index
- * agruments: int index - the index of the node to return
- * return: adr - the node at the given index
+ * agruments: int index : the index of the node to return
+ * returns: adr : the node at the given index
  */
 
 adr get@LinkedList(int index){
@@ -84,10 +84,10 @@ adr get@LinkedList(int index){
 };
 
 /*
- * function name: append@LinkedList
- * description: appends a node to the end of the list
- * agruments: adr data - the data to be appended
- * return: int - 0 if successful, -1 if not
+ * function name: append@LinkedList;
+ * description: appends a node to the end of the list;
+ * agruments: adr data : the data to be appended;
+ * returns: int : 0 if successful, -1 if not;
  */
 
 int append@LinkedList(adr data){
@@ -111,10 +111,10 @@ int append@LinkedList(adr data){
 };
 
 /*
- * function name: size@LinkedList
- * description: returns the size of the list
+ * function name: size@LinkedList;
+ * description: returns the size of the list;
  * agruments: none
- * return: int - the size of the list
+ * returns: int : the size of the list;
  */
 
 int size@LinkedList(){
@@ -128,13 +128,35 @@ int size@LinkedList(){
     return i;
 };
 
+/*
+ * function name: forEach@LinkedList;
+ * description: iterates through the list and calls the given function on each node
+                it will break if the function returns 1;
+ * agruments: adr foo : the function to be called on each node
+ *            adr arg : the argument to be passed to the function;
+ * returns: int : 0 if successful, -1 if not;
+ */
+int forEach@LinkedList(adr foo, adr arg){
+    ListNode curr;
+    curr = my.head;
+    while(curr != #0){
+        adr data = curr.data;
+        int cont = foo(data, arg);
+        if(cont == 1){
+            return 1;
+        };
+        curr = curr.next;
+    };
+    return 0;
+};
+
 
 /*
- * function name: init@Array
- * description:   initialize an array
- * arguments:     int typeSize - the size of the type
- *                int size - the size of the array
- * returns:       0 if successful, -1 if not
+ * function name: init@Array;
+ * description:   initialize an array;
+ * arguments:     int typeSize : the size of the type
+ *                int size : the size of the array;
+ * returns:       0 if successful, -1 if not;
  */
 int init@Array(int typeSize, int size){
     my.size = size;
@@ -146,10 +168,10 @@ int init@Array(int typeSize, int size){
 };
 
 /*
- * function name: at@Array
- * description: returns the address of the element at the given index
- * agruments: int index - the index of the element to return
- * return: adr - the address of the element at the given index
+ * function name: at@Array;
+ * description: returns the address of the element at the given index;
+ * agruments: int index : the index of the element to return;
+ * returns: adr : the address of the element at the given index;
  */
 adr at@Array(int index){
     int tSize;
@@ -162,11 +184,11 @@ adr at@Array(int index){
 };
 
 /*
-  * function name: newArray
-  * description:   create a new array
-  * arguments:     int typeSize - the size of the type
-  *                int size - the size of the array
-  * returns:       a new array
+  * function name: newArray;
+  * description:   create a new array;
+  * arguments:     int typeSize : the size of the type
+  *                int size : the size of the array;
+  * returns:       Array : a new array
   */
 Array newArray(int typeSize, int size){
     Array my = malloc(Array);
@@ -175,10 +197,10 @@ Array newArray(int typeSize, int size){
 };
 
 /*
- * function name:   delete@Array
- * description:     deletes the array and frees the memory
- * arguments:       none
- * returns:         none
+ * function name:   delete@Array;
+ * description:     deletes the array and frees the memory;
+ * arguments:       none;
+ * returns:         int :  0;
  */
 int delete@Array(){
     free(my.head);
@@ -187,10 +209,10 @@ int delete@Array(){
 };
 
 /*
- * function name:   extend@Array
- * description:     extends the array by the given amount
- * arguments:       int amount - the amount to extend the array by
- * returns:         int size - the new size of the array
+ * function name:   extend@Array;
+ * description:     extends the array by the given amount;
+ * arguments:       int amount : the amount to extend the array by;
+ * returns:         int size : the new size of the array;
  */
 int extend@Array(int amount){
     adr curr;
@@ -210,11 +232,12 @@ int extend@Array(int amount){
 };
 
 /*
- * function name:   forEach@Array
+ * function name:   forEach@Array;
  * description:     preforms a function for each element of the array passed by value
- * arguments:       foo - a function pointer to call on the elements,
-                    arg - an argument pointer
- * returns:         0 if sucssesfull, 1 on error
+ *                  it will break if the function returns 1;
+ * arguments:       foo : a function pointer to call on the elements
+                    arg : an argument pointer;
+ * returns:         int: 0 if sucssesfull, 1 on error
  */
 int forEach@Array(adr foo, adr arg){
     int size;
