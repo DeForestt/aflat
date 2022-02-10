@@ -140,7 +140,8 @@ int forEach@LinkedList(adr foo, adr arg){
     ListNode curr;
     curr = my.head;
     while(curr != #0){
-        adr data = curr.data;
+        adr data;
+        data = curr.data;
         int cont = foo(data, arg);
         if(cont == 1){
             return 1;

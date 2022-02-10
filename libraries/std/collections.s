@@ -209,7 +209,8 @@ pub_LinkedList_forEach:
 	jmp	.LforEach15
 .LforEach14:
 	movq	-40(%rbp), %rdx
-	movq	8(%rdx), -48(%rbp)
+	movq	8(%rdx), %rbx
+	movq	%rbx, -48(%rbp)
 	movq	-24(%rbp), %rcx
 	movq	-48(%rbp), %rax
 	movq	%rax, %rdi
