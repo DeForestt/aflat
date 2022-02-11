@@ -23,6 +23,7 @@ int sizeToInt(asmc::Size size){
 
 gen::scope::ScopeManager::ScopeManager(){
     this->stackPos = 0;
+    this->scopeStack.push_back(0);
 }
 
 int gen::scope::ScopeManager::assign(std::string symbol, AST::Type type, bool mask){
@@ -41,6 +42,22 @@ int gen::scope::ScopeManager::assign(std::string symbol, AST::Type type, bool ma
     sym.mask = mask;
     this->stack.push_back(sym);
     this->stackPos += sizeToInt(type.size);
+
+    this->scopeStack.back()++;
+
     return sym.byteMod;
 }
+
+void gen::scope::ScopeManager::pushScope(){
+    this->scopeStack.push_back(0);
+};
+
+void gen::scope::ScopeManager::popScope(){
+    int size = this->scopeStack.back();
+    for (int i = 0; i < size; i++){
+        this->stack.pop_back();
+    }
+
+    this->scopeStack.pop_back();
+};
 
