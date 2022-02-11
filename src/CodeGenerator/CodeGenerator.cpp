@@ -1465,6 +1465,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         
     }
     else if (dynamic_cast<ast::For *>(STMT) != nullptr){
+        gen::scope::ScopeManager::getInstance().pushScope();
         ast::For * loop = dynamic_cast<ast::For *>(STMT);
 
         asmc::Lable * lable1 = new asmc::Lable();
@@ -1548,6 +1549,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             break;
         }
         }
+        gen::scope::ScopeManager::getInstance().popScope();
     }
     else if(dynamic_cast<ast::UDeffType *>(STMT) != nullptr){
         ast::UDeffType * udef = dynamic_cast<ast::UDeffType *>(STMT);
