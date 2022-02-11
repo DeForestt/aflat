@@ -66,6 +66,7 @@ namespace ast{
 
         asmc::Size size;
         asmc::OpType opType = asmc::Hard;
+        int arraySize = 1;
         static bool compair(Type t, std::string name);
     };
 
