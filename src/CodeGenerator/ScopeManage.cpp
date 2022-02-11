@@ -41,7 +41,7 @@ int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type, bool ma
     sym.type = type;
     sym.mask = mask;
     this->stack.push_back(sym);
-    this->stackPos += sizeToInt(type.size);
+    this->stackPos += sizeToInt(type.size) * type.arraySize;
 
     this->scopeStack.back()++;
 
