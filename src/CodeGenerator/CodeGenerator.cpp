@@ -1267,6 +1267,8 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text << new asmc::SysCall;
     }
     else if (dynamic_cast<AST::If *>(STMT) != nullptr){
+        // push a new scope
+        gen::scope::ScopeManager::getInstance().pushScope();
         AST::If ifStmt = *dynamic_cast<AST::If *>(STMT);
 
         asmc::Lable * lable1 = new asmc::Lable();
@@ -1321,6 +1323,7 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text << mov1;
         OutputFile.text << mov2;
         OutputFile.text << cmp;
+
 
         switch (ifStmt.Condition->op)
         {
@@ -1377,8 +1380,10 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         default:
             break;
         }
+        gen::scope::ScopeManager::getInstance().popScope();
     }
     else if(dynamic_cast<AST::While *>(STMT) != nullptr){
+        gen::scope::ScopeManager::getInstance().pushScope();
         AST::While * loop = dynamic_cast<AST::While *>(STMT);
 
         asmc::Lable * lable1 = new asmc::Lable();
@@ -1425,6 +1430,7 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text << mov1;
         OutputFile.text << mov2;
         OutputFile.text << cmp;
+        gen::scope::ScopeManager::getInstance().popScope();
 
         switch (loop->condition->op)
         {
