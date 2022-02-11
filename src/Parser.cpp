@@ -8,45 +8,45 @@ parse::Parser::Parser(){
     // Int Type
     AST::Type Int = AST::Type();
     Int.typeName = "int";
-    Int.opType = ASMC::Hard;
-    Int.size = ASMC::DWord;
+    Int.opType = asmc::Hard;
+    Int.size = asmc::DWord;
 
     // Sort Type
     AST::Type Short = AST::Type();
     Short.typeName = "short";
-    Short.opType = ASMC::Hard;
-    Short.size = ASMC::Word;
+    Short.opType = asmc::Hard;
+    Short.size = asmc::Word;
 
 
     // Char Type
     AST::Type Char = AST::Type();
     Char.typeName = "char";
-    Char.opType = ASMC::Hard;
-    Char.size = ASMC::Byte;
+    Char.opType = asmc::Hard;
+    Char.size = asmc::Byte;
 
     // Long Type
     AST::Type Long = AST::Type();
     Long.typeName = "long";
-    Long.opType = ASMC::Hard;
-    Long.size = ASMC::QWord;
+    Long.opType = asmc::Hard;
+    Long.size = asmc::QWord;
     
     // Pointer Type
     AST::Type Adr = AST::Type();
     Adr.typeName = "adr";
-    Adr.opType = ASMC::Hard; 
-    Adr.size = ASMC::QWord;
+    Adr.opType = asmc::Hard; 
+    Adr.size = asmc::QWord;
 
     // Byte type
     AST::Type Byte = AST::Type();
     Byte.typeName = "byte";
-    Byte.opType = ASMC::Hard;
-    Byte.size = ASMC::Byte;
+    Byte.opType = asmc::Hard;
+    Byte.size = asmc::Byte;
 
     // Float Type
     AST::Type Float = AST::Type();
     Float.typeName = "float";
-    Float.opType = ASMC::Float;
-    Float.size = ASMC::DWord;
+    Float.opType = asmc::Float;
+    Float.size = asmc::DWord;
 
     // Add Types to TypeList
     this->typeList << Int;
@@ -259,7 +259,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
             }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened UDeffType");
             stc->statment = this->parseStmt(tokens);
             AST::Type t = AST::Type();
-            t.size = ASMC::QWord;
+            t.size = asmc::QWord;
             t.typeName = stc->ident.ident;
             this->typeList << t;
             output = stc;
@@ -275,7 +275,7 @@ AST::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
             }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened UDeffType");
             item->statment = this->parseStmt(tokens);
             AST::Type t = AST::Type();
-            t.size = ASMC::QWord;
+            t.size = asmc::QWord;
             t.typeName = item->ident.ident;
             this->typeList << t;
             output = item;
@@ -583,8 +583,8 @@ AST::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                 lambda->function->statment = this->parseStmt(tokens);
                 AST::Type Adr = AST::Type();
                 Adr.typeName = "any";
-                Adr.opType = ASMC::Hard; 
-                Adr.size = ASMC::QWord;
+                Adr.opType = asmc::Hard; 
+                Adr.size = asmc::QWord;
                 lambda->function->type = Adr;
             } else this->parseStmt(tokens, true);
             output = lambda;

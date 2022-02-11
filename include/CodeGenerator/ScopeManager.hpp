@@ -48,7 +48,7 @@ namespace gen{
                 std::vector<int> scopeStack;
 
                 // AST::Type to asmc::Size
-                ASMC::Size typeToSize(AST::Type type);
+                asmc::Size typeToSize(AST::Type type);
         };
 
     }

@@ -64,8 +64,8 @@ namespace AST{
         public:
         std::string typeName;
 
-        ASMC::Size size;
-        ASMC::OpType opType = ASMC::Hard;
+        asmc::Size size;
+        asmc::OpType opType = asmc::Hard;
         static bool compair(Type t, std::string name);
     };
 

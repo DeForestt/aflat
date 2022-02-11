@@ -1,69 +1,69 @@
 #include "ASM.hpp"
 
-std::string ASMC::Instruction::toString(){
+std::string asmc::Instruction::toString(){
     return("");
 }
 
-std::string ASMC::SysCall::toString(){
+std::string asmc::SysCall::toString(){
     return "\tsyscall\t\n";
 }
 
-std::string ASMC::Lable::toString(){
+std::string asmc::Lable::toString(){
     return this->lable + ":\n";
 }
 
-std::string ASMC::LinkTask::toString(){
+std::string asmc::LinkTask::toString(){
     return  "." + this->command + "\t" + this->operand + "\n";
 }
 
-std::string ASMC::Call::toString(){
+std::string asmc::Call::toString(){
     return "\tcall\t" + this->function + "\n";
 }
 
-std::string ASMC::Mov::toString(){
+std::string asmc::Mov::toString(){
     std::string size = "";
     switch (this->size)
     {
-    case ASMC::Byte:
+    case asmc::Byte:
         size = "b";
         break;
-    case ASMC::Word:
+    case asmc::Word:
         size = "s";
         break;
-    case ASMC::DWord:
+    case asmc::DWord:
         size = "l";
         break;
-    case ASMC::QWord:
+    case asmc::QWord:
         size = "q";
         break;
-    case ASMC::AUTO:
+    case asmc::AUTO:
         size = "";
         break;
     default:
         size = "";
         break;
     }
-    if(this->op == ASMC::Float) return "\tmovss" "\t" + this->from + ", " + this->to + "\n";
+    if(this->op == asmc::Float) return "\tmovss" "\t" + this->from + ", " + this->to + "\n";
     return "\tmov" + size + "\t" + this->from + ", " + this->to + "\n";
 }
 
-std::string ASMC::Cmp::toString(){
+std::string asmc::Cmp::toString(){
     std::string size = "";
     switch (this->size)
     {
-    case ASMC::Byte:
+    case asmc::Byte:
         size = "b";
         break;
-    case ASMC::Word:
+    case asmc::Word:
         size = "s";
         break;
-    case ASMC::DWord:
+    case asmc::DWord:
         size = "l";
         break;
-    case ASMC::QWord:
+    case asmc::QWord:
         size = "q";
         break;
-    case ASMC::AUTO:
+    case asmc::AUTO:
         size = "";
         break;
     default:
@@ -73,114 +73,114 @@ std::string ASMC::Cmp::toString(){
     return "\tcmp" + size + "\t" + this->from + ", " + this->to + "\n";
 }
 
-std::string ASMC::Lea::toString(){
+std::string asmc::Lea::toString(){
     return "\tlea\t" + this->from + ", " + this->to + "\n"; 
 }
 
-std::string ASMC::Movq::toString(){
+std::string asmc::Movq::toString(){
     return "\tmovq\t" + this->from + ", " + this->to + "\n";
 }
 
-std::string ASMC::Jmp::toString(){
+std::string asmc::Jmp::toString(){
     return "\tjmp\t" + this->to + "\n";
 }
 
-std::string ASMC::Jne::toString(){
+std::string asmc::Jne::toString(){
     return "\tjne\t" + this->to + "\n";
 }
 
-std::string ASMC::Je::toString(){
+std::string asmc::Je::toString(){
     return "\tje\t" + this->to + "\n";
 }
 
-std::string ASMC::Jl::toString(){
+std::string asmc::Jl::toString(){
     return "\tjl\t" + this->to + "\n";
 }
 
-std::string ASMC::Jle::toString(){
+std::string asmc::Jle::toString(){
     return "\tjle\t" + this->to + "\n";
 }
 
-std::string ASMC::Jg::toString(){
+std::string asmc::Jg::toString(){
     return "\tjg\t" + this->to + "\n";
 }
 
-std::string ASMC::Jge::toString(){
+std::string asmc::Jge::toString(){
     return "\tjge\t" + this->to + "\n";
 }
 
-std::string ASMC::Movl::toString(){
+std::string asmc::Movl::toString(){
     return "\tmovl\t" + this->from + ", " + this->to + "\n";
 }
 
-std::string ASMC::StringLiteral::toString(){
+std::string asmc::StringLiteral::toString(){
     return "\t.asciz\t \"" + this->value + "\"\n";
 }
 
-std::string ASMC::FloatLiteral::toString(){
+std::string asmc::FloatLiteral::toString(){
     return "\t.float\t" + this->value + "\n";
 }
 
-std::string ASMC::Add::toString(){
-    if (this->opType == ASMC::Float) return "\taddss\t" + this->op1 + ", " + this->op2 + "\n";
+std::string asmc::Add::toString(){
+    if (this->opType == asmc::Float) return "\taddss\t" + this->op1 + ", " + this->op2 + "\n";
     return "\tadd\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
-std::string ASMC::Sub::toString(){
-    if (this->opType == ASMC::Float) return "\tsubss\t" + this->op1 + ", " + this->op2 + "\n";
+std::string asmc::Sub::toString(){
+    if (this->opType == asmc::Float) return "\tsubss\t" + this->op1 + ", " + this->op2 + "\n";
     return "\tsub\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
-std::string ASMC::Mul::toString(){
-    if (this->opType == ASMC::Float) return "\tmulss\t" + this->op1 + ", " + this->op2 + "\n";
+std::string asmc::Mul::toString(){
+    if (this->opType == asmc::Float) return "\tmulss\t" + this->op1 + ", " + this->op2 + "\n";
     return "\timul\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
-std::string ASMC::And::toString(){
+std::string asmc::And::toString(){
     return "\tandl\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
-std::string ASMC::Or::toString(){
+std::string asmc::Or::toString(){
     return "\torl\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
-std::string ASMC::Sal::toString(){
+std::string asmc::Sal::toString(){
     return "\tsall\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
-std::string ASMC::Sar::toString(){
+std::string asmc::Sar::toString(){
     return "\tsarl\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
-std::string ASMC::Div::toString(){
-    if (this->opType == ASMC::Float) return "\tdivss\t" + this->op1 + ", " + this->op2 + "\n";
+std::string asmc::Div::toString(){
+    if (this->opType == asmc::Float) return "\tdivss\t" + this->op1 + ", " + this->op2 + "\n";
     return "\tcltd\n\tidivl\t" + this->op1 + "\n";
 }
 
-std::string ASMC::Subq::toString(){
+std::string asmc::Subq::toString(){
     return "\tsubq\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
-std::string ASMC::Push::toString(){
+std::string asmc::Push::toString(){
     return "\tpushq\t" + this->op + "\n";
 }
 
-std::string ASMC::Pop::toString(){
+std::string asmc::Pop::toString(){
     return "\tpop\t" + this->op + "\n";
 }
 
-std::string ASMC::Return::toString(){
+std::string asmc::Return::toString(){
     return "\tleave\n\tret\n";
 }
 
-void ASMC::File::operator<<(ASMC::File file){
+void asmc::File::operator<<(asmc::File file){
     this->linker.stitch(file.linker);
     this->text.istitch(file.text);
     this->bss.stitch(file.bss);
     this->data.stitch(file.data);
     if (!this->hasLambda && file.hasLambda) {
         this->hasLambda = true;
-        this->lambdas = new ASMC::File;
+        this->lambdas = new asmc::File;
     }
     if (file.hasLambda) {
         this->hasLambda = true;
@@ -188,14 +188,14 @@ void ASMC::File::operator<<(ASMC::File file){
     }
 }
 
-void ASMC::File::operator>>(ASMC::File file){
+void asmc::File::operator>>(asmc::File file){
     this->linker.stitch(file.linker);
     this->text.stitch(file.text);
     this->bss.stitch(file.bss);
     this->data.stitch(file.data);
     if (!this->hasLambda && file.hasLambda) {
         this->hasLambda = true;
-        this->lambdas = new ASMC::File;
+        this->lambdas = new asmc::File;
     }
     if (file.hasLambda) {
         this->hasLambda = true;
@@ -203,7 +203,7 @@ void ASMC::File::operator>>(ASMC::File file){
     }
 }
 
-void ASMC::File::collect(){
+void asmc::File::collect(){
     if(this->hasLambda){
         this->lambdas->collect();
         this->operator<<(*this->lambdas);
@@ -211,25 +211,25 @@ void ASMC::File::collect(){
     }
 }
 
-ASMC::Register::Register(std::string _qWord, std::string _dWord, std::string _word, std::string _byte){
+asmc::Register::Register(std::string _qWord, std::string _dWord, std::string _word, std::string _byte){
     this->qWord = '%' + _qWord;
     this->dWord = '%' + _dWord;
     this->word = '%' + _word;
     this->byte = '%' + _byte;
 }
 
-std::string ASMC::Register::get(ASMC::Size wants){
+std::string asmc::Register::get(asmc::Size wants){
     switch(wants){
-        case ASMC::QWord:
+        case asmc::QWord:
             return this->qWord;
             break;
-        case ASMC::DWord:
+        case asmc::DWord:
             return this->dWord;
             break;
-        case ASMC::Word:
+        case asmc::Word:
             return this->word;
             break;
-        case ASMC::Byte:
+        case asmc::Byte:
             return this->byte;
             break;
         default:

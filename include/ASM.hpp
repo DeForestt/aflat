@@ -5,7 +5,7 @@
 #include "LinkedList.hpp"
 
 
-namespace ASMC{
+namespace asmc{
 
     enum OpType{
         Float,
@@ -169,7 +169,7 @@ namespace ASMC{
         public:
         std::string op1;
         std::string op2;
-        ASMC::OpType opType = ASMC::Hard;
+        asmc::OpType opType = asmc::Hard;
         std::string toString();
     };
 
@@ -177,7 +177,7 @@ namespace ASMC{
         public:
         std::string op1;
         std::string op2;
-        ASMC::OpType opType = ASMC::Hard;
+        asmc::OpType opType = asmc::Hard;
         std::string toString();
     };
 
@@ -185,7 +185,7 @@ namespace ASMC{
         public:
         std::string op1;
         std::string op2;
-        ASMC::OpType opType = ASMC::Hard;
+        asmc::OpType opType = asmc::Hard;
         std::string toString();
     };
 
@@ -193,7 +193,7 @@ namespace ASMC{
         public:
         std::string op1;
         std::string op2;
-        ASMC::OpType opType = ASMC::Hard;
+        asmc::OpType opType = asmc::Hard;
         std::string toString();
     };
 
@@ -208,7 +208,7 @@ namespace ASMC{
         public:
         std::string op1;
         std::string op2;
-        ASMC::Size size;
+        asmc::Size size;
         std::string toString();
     };
 
@@ -216,7 +216,7 @@ namespace ASMC{
         public:
         std::string op1;
         std::string op2;
-        ASMC::Size size;
+        asmc::Size size;
         std::string toString();
     };
 
@@ -224,7 +224,7 @@ namespace ASMC{
         public:
         std::string op1;
         std::string op2;
-        ASMC::Size size;
+        asmc::Size size;
         std::string toString();
     }; 
 
@@ -232,7 +232,7 @@ namespace ASMC{
         public:
         std::string op1;
         std::string op2;
-        ASMC::Size size;
+        asmc::Size size;
         std::string toString();
     };
 
@@ -245,8 +245,8 @@ namespace ASMC{
         links::LinkedList<Instruction * > linker = links::LinkedList<Instruction * >();
         bool hasLambda = false;
         File * lambdas;
-        void operator<<(ASMC::File file);
-        void operator>>(ASMC::File file);
+        void operator<<(asmc::File file);
+        void operator>>(asmc::File file);
         void collect();
     };
 
@@ -264,7 +264,7 @@ namespace ASMC{
         bool inuse = false;
         // a linked list of int process id's that are using this register
         links::LinkedList<int> users;
-        std::string get(ASMC::Size wants);
+        std::string get(asmc::Size wants);
         static bool compair(Register R, std::string input){
             if (input == R.qWord || input == R.dWord || input == R.word || input == R.byte ){
                 return true;

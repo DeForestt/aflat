@@ -55,7 +55,7 @@ int main(int argc, char *argv[]){
         AST::Statment * Prog = parser.parseStmt(tokens);
         
         gen::CodeGenerator genny;
-        ASMC::File file = genny.GenSTMT(Prog);
+        asmc::File file = genny.GenSTMT(Prog);
         file.collect();
         
         file.text.invert();
