@@ -1051,7 +1051,6 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         Symbol.type = dec->type;
         Symbol.symbol = dec->ident;
         Table->push(Symbol);
-        this->scopePop += 1;
 
     }
     else if (dynamic_cast<AST::DecAssign *>(STMT) != nullptr){
