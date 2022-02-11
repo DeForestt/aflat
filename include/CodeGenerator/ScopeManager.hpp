@@ -21,8 +21,8 @@ namespace gen{
                 // cannot be assigned
                 void operator=(ScopeManager const&) = delete;
 
-                // Assign a new symbol
-                void assign(std::string symbol, AST::Type type, bool mask, int byteMod);
+                // Assign a new symbol and return the byteMod
+                int assign(std::string symbol, AST::Type type, bool mask);
 
                 // Get a symbol
                 Symbol* get(std::string symbol);
@@ -34,16 +34,21 @@ namespace gen{
                 void popScope();
 
             private:
-                ScopeManager() = default;
+                ScopeManager();
                 ~ScopeManager() = default;
                 static ScopeManager* instance;
 
                 // Stack
                 std::vector<gen::Symbol> stack;
 
+                // hold the current memory location relative to the rbp
+                int stackPos;
+
                 // scopeStack holds the number of symbols in the current scope
                 std::vector<int> scopeStack;
 
+                // AST::Type to asmc::Size
+                ASMC::Size typeToSize(AST::Type type);
         };
 
     }
