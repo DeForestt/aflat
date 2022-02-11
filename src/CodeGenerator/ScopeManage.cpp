@@ -1,4 +1,5 @@
 #include "CodeGenerator/ScopeManager.hpp"
+#include "Exceptions.hpp"
 
 
 #pragma region Helper Functions
@@ -26,11 +27,20 @@ gen::scope::ScopeManager::ScopeManager(){
 
 int gen::scope::ScopeManager::assign(std::string symbol, AST::Type type, bool mask){
     gen::Symbol sym = gen::Symbol();
+
+    // if the symbol is already in the stack, throw an error
+    for(int i = 0; i < this->stack.size(); i++){
+        if(this->stack[i].symbol == symbol){
+            throw err::Exception("Redefinition of symbol: " + symbol);
+        }
+    }
+
     sym.byteMod = this->stackPos;
     sym.symbol = symbol;
     sym.type = type;
     sym.mask = mask;
     this->stack.push_back(sym);
-
-    return 0;
+    this->stackPos += sizeToInt(type.size);
+    return sym.byteMod;
 }
+
