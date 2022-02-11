@@ -1,6 +1,9 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "Exceptions.hpp"
 
+#pragma region helper functions
+
+
 bool searchSymbol(gen::Symbol sym, std::string str){
     if (sym.symbol == str) return true; else return false;
 }
@@ -16,6 +19,8 @@ bool gen::Type::compair(gen::Type *  t, std::string ident){
     if (ident == t->Ident) return true;
     return false;
 }
+
+#pragma endregion
 
 int gen::CodeGenerator::getBytes(asmc::Size size){
     switch(size){ 
