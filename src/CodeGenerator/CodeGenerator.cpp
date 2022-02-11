@@ -858,6 +858,8 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 this->GenSTMT()
         */
 
+        gen::scope::ScopeManager::getInstance().pushScope();
+
         AST::Function * func = dynamic_cast<AST::Function *>(STMT);
         int saveIntArgs = intArgsCounter;
         bool isLambda = func->isLambda;
@@ -969,6 +971,7 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             this->SymbolTable.head = nullptr;
         }
         this->intArgsCounter = saveIntArgs;
+        gen::scope::ScopeManager::getInstance().popScope();
     }
     else if (dynamic_cast<AST::Declare *>(STMT) != nullptr){
         /*

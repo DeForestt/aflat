@@ -5,7 +5,7 @@
 #include "LinkedListS.hpp"
 #include "ASM.hpp"
 #include "AST.hpp"
-
+#include "CodeGenerator/ScopeManager.hpp"
 namespace gen{
 
     class Expr{
