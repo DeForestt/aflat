@@ -22,10 +22,10 @@ namespace gen{
                 void operator=(ScopeManager const&) = delete;
 
                 // Assign a new symbol and return the byteMod
-                int assign(std::string symbol, AST::Type type, bool mask);
+                int assign(std::string symbol, AST::Type type, bool mask, bool isGlobal = false);
 
                 // Get a symbol
-                Symbol* get(std::string symbol);
+                Symbol get(std::string symbol);
 
                 // push a new scope
                 void pushScope();
@@ -40,6 +40,9 @@ namespace gen{
 
                 // Stack
                 std::vector<gen::Symbol> stack;
+
+                // Global Scope
+                std::vector<gen::Symbol> globalStack;
 
                 // hold the current memory location relative to the rbp
                 int stackPos;

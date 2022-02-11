@@ -26,7 +26,7 @@ gen::scope::ScopeManager::ScopeManager(){
     this->scopeStack.push_back(0);
 }
 
-int gen::scope::ScopeManager::assign(std::string symbol, AST::Type type, bool mask){
+int gen::scope::ScopeManager::assign(std::string symbol, AST::Type type, bool mask, bool isGlobal = false){
     gen::Symbol sym = gen::Symbol();
 
     // if the symbol is already in the stack, throw an error
@@ -61,3 +61,20 @@ void gen::scope::ScopeManager::popScope(){
     this->scopeStack.pop_back();
 };
 
+gen::Symbol gen::scope::ScopeManager::get(std::string symbol){
+    for(int i = 0; i < this->stack.size(); i++){
+        if(this->stack[i].symbol == symbol){
+            return this->stack[i];
+        }
+    }
+
+    // search global stack
+    for(int i = 0; i < this->globalStack.size(); i++){
+        if(this->globalStack[i].symbol == symbol){
+            return this->globalStack[i];
+        }
+    }
+    
+    throw err::Exception("Symbol not found: " + symbol);
+
+};
