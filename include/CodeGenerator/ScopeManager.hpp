@@ -33,6 +33,9 @@ namespace gen{
                 // pop a scope
                 void popScope();
 
+                // Get stack alignment value
+                int getStackAlignment();
+
             private:
                 ScopeManager();
                 ~ScopeManager() = default;
