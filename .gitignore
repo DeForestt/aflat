@@ -1,3 +1,4 @@
 /.vscode/**
 /KeyPair.pem
 /aflat-doc/**
+/bin/**
