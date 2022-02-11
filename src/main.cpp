@@ -52,7 +52,7 @@ int main(int argc, char *argv[]){
         tokens.invert();
         parse::Parser parser;
 
-        AST::Statment * Prog = parser.parseStmt(tokens);
+        ast::Statment * Prog = parser.parseStmt(tokens);
         
         gen::CodeGenerator genny;
         asmc::File file = genny.GenSTMT(Prog);

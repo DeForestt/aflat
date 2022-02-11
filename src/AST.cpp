@@ -2,7 +2,7 @@
 #include <string>
 
 
-bool AST::Type::compair(AST::Type t, std::string name){
+bool ast::Type::compair(ast::Type t, std::string name){
     if(t.typeName == name) return true;
     return false;
 }

@@ -26,7 +26,7 @@ gen::scope::ScopeManager::ScopeManager(){
     this->scopeStack.push_back(0);
 }
 
-int gen::scope::ScopeManager::assign(std::string symbol, AST::Type type, bool mask, bool isGlobal = false){
+int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type, bool mask, bool isGlobal = false){
     gen::Symbol sym = gen::Symbol();
 
     // if the symbol is already in the stack, throw an error

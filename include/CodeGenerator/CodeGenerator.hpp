@@ -18,7 +18,7 @@ namespace gen{
     class Symbol{
         public:
         std::string symbol;
-        AST::Type type;
+        ast::Type type;
         bool mask;
         int byteMod;
     };
@@ -43,10 +43,10 @@ namespace gen{
         public:
             // The public Name table will hold all public functions
             // This is to be used externally
-            links::SLinkedList<AST::Function, std::string> publicNameTable;
+            links::SLinkedList<ast::Function, std::string> publicNameTable;
             // The private Name table will hold all public and private functions
             // This is used internally
-            links::SLinkedList<AST::Function, std::string> nameTable;
+            links::SLinkedList<ast::Function, std::string> nameTable;
             static bool compair(Type * t, std::string ident);
     };
 
@@ -55,7 +55,7 @@ namespace gen{
 
         #pragma region State Variables
             gen::Class * scope;
-            AST::Type returnType;
+            ast::Type returnType;
             int scopePop = 0;
             int lablecount = 0; 
             int intArgsCounter;
@@ -69,8 +69,8 @@ namespace gen{
             links::SLinkedList<asmc::Register, std::string> registers;
             links::LinkedList<Symbol> SymbolTable;
             links::LinkedList<Symbol> GlobalSymbolTable;
-            links::SLinkedList<AST::Function, std::string> nameTable;
-            links::SLinkedList<AST::Type, std::string> TypeList;
+            links::SLinkedList<ast::Function, std::string> nameTable;
+            links::SLinkedList<ast::Type, std::string> TypeList;
         #pragma endregion
 
         int getBytes(asmc::Size size);
@@ -82,14 +82,14 @@ namespace gen{
                                     asmc::Register("r8", "r8d", "r8w", "r8b"),
                                     asmc::Register("r9", "r9d", "r9w", "r9b")};
 
-        void GenArgs(AST::Statment * STMT, asmc::File &OutputFile);
-        AST::Function GenCall(AST::Call * call, asmc::File &OutputFile);
-        Expr GenExpr(AST::Expr * expr, asmc::File &OutputFile);
-        void prepareCompound(AST::Compound compound, asmc::File &OutputFile, bool isDiv = false);
+        void GenArgs(ast::Statment * STMT, asmc::File &OutputFile);
+        ast::Function GenCall(ast::Call * call, asmc::File &OutputFile);
+        Expr GenExpr(ast::Expr * expr, asmc::File &OutputFile);
+        void prepareCompound(ast::Compound compound, asmc::File &OutputFile, bool isDiv = false);
 
         public:
-        asmc::File GenSTMT(AST::Statment * stmt);
-        links::LinkedList<gen::Symbol> GenTable(AST::Statment * STMT, links::LinkedList<gen::Symbol> &table);
+        asmc::File GenSTMT(ast::Statment * stmt);
+        links::LinkedList<gen::Symbol> GenTable(ast::Statment * STMT, links::LinkedList<gen::Symbol> &table);
         CodeGenerator();
     };
 }
