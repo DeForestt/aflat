@@ -2,6 +2,22 @@
 
 
 #pragma region Helper Functions
+
+int sizeToInt(asmc::Size size){
+    switch(size){
+        case asmc::Size::Byte:
+            return 1;
+        case asmc::Size::Word:
+            return 2;
+        case asmc::Size::DWord:
+            return 4;
+        case asmc::Size::QWord:
+            return 8;
+        default:
+            return 0;
+    }
+}
+
 #pragma endregion
 
 gen::scope::ScopeManager::ScopeManager(){
