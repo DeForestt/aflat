@@ -984,26 +984,27 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         links::LinkedList<gen::Symbol>  * Table;
         
         if (!this->globalScope){
-            // if the there  is no scope or in a function use the main SymbolTable
-            if(this->scope == nullptr || this->inFunction) Table = &this->SymbolTable;
+            // if the there  is no scope use the scope manager otherwise use the scope
+            if(this->scope == nullptr || this->inFunction){
+                gen::scope::ScopeManager::getInstance().assign(dec->Ident, dec->type, dec->mask);
+            }
             else{
                 // add the symbol to the class symbol table
                 Table = &this->scope->SymbolTable;
-            }
 
-            if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable: " + dec->Ident);
-
-            gen::Symbol Symbol;
-            if (Table->head == nullptr){
-                Symbol.byteMod = offset;
-            }else{
-                Symbol.byteMod = Table->head->data.byteMod + offset;
-            }
-            Symbol.type = dec->type;
-            Symbol.symbol = dec->Ident;
-            Table->push(Symbol);
-            // if the symbol is public add it to the public symbol table
-            if(dec->scope == AST::Public && this->scope != nullptr) this->scope->publicSymbols.push(Symbol);
+                if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable: " + dec->Ident);
+                gen::Symbol Symbol;
+                if (Table->head == nullptr){
+                    Symbol.byteMod = offset;
+                }else{
+                    Symbol.byteMod = Table->head->data.byteMod + offset;
+                }
+                Symbol.type = dec->type;
+                Symbol.symbol = dec->Ident;
+                Table->push(Symbol);
+                // if the symbol is public add it to the public symbol table
+                if(dec->scope == AST::Public && this->scope != nullptr) this->scope->publicSymbols.push(Symbol);
+            };
         } else{
             Table = &this->GlobalSymbolTable;
             asmc::LinkTask * var = new asmc::LinkTask();
