@@ -1,4 +1,3 @@
-\.vscode\
-\bin\libraries
-\Connections\
-\KeyPair.pem
+/.vscode/**
+/KeyPair.pem
+/aflat-doc/**
