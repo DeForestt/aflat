@@ -1026,31 +1026,35 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         
     }
     else if(dynamic_cast<ast::DecArr *>(STMT) != nullptr){
-         /*
+            /*
             movl $0x0, -[SymbolT + size](rdp)
             **also needs to be added to symbol table**
-        */
-        ast::DecArr * dec =  dynamic_cast<ast::DecArr *>(STMT);
-        int offset = this->getBytes(dec->type.size);
+            */
+            ast::DecArr * dec =  dynamic_cast<ast::DecArr *>(STMT);
+            int offset = this->getBytes(dec->type.size);
 
-        offset = offset * dec->count;
+            offset = offset * dec->count;
 
-        links::LinkedList<gen::Symbol>  * Table;
-        if(this->scope == nullptr) Table = &this->SymbolTable;
-        else Table = &this->scope->SymbolTable;
+            links::LinkedList<gen::Symbol>  * Table;
+            if(this->scope == nullptr){
+                dec->type.arraySize = dec->count;
+                gen::scope::ScopeManager::getInstance().assign(dec->ident, dec->type, false);
+            }
+            else{Table = &this->scope->SymbolTable;
 
-        if(Table->search<std::string>(searchSymbol, dec->ident) != nullptr) throw err::Exception("redefined veriable:" + dec->ident);
+            if(Table->search<std::string>(searchSymbol, dec->ident) != nullptr) throw err::Exception("redefined veriable:" + dec->ident);
 
-        gen::Symbol Symbol;
+            gen::Symbol Symbol;
 
-        if (Table->head == nullptr){
-            Symbol.byteMod = offset;
-        }else{
-            Symbol.byteMod = Table->head->data.byteMod + offset;
+            if (Table->head == nullptr){
+                Symbol.byteMod = offset;
+            }else{
+                Symbol.byteMod = Table->head->data.byteMod + offset;
+            }
+            Symbol.type = dec->type;
+            Symbol.symbol = dec->ident;
+            Table->push(Symbol);
         }
-        Symbol.type = dec->type;
-        Symbol.symbol = dec->ident;
-        Table->push(Symbol);
 
     }
     else if (dynamic_cast<ast::DecAssign *>(STMT) != nullptr){
@@ -1067,24 +1071,14 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
         if(!this->globalScope){
         
-            if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
-
-            gen::Symbol symbol;
-            if (Table->head == nullptr){
-                symbol.byteMod = offset;
-            }else{
-                symbol.byteMod = Table->head->data.byteMod + offset;
-            }
-            symbol.type = dec->type;
-            symbol.symbol = dec->Ident;
-            Table->push(symbol);
+            int byteMod = gen::scope::ScopeManager::getInstance().assign(dec->Ident, dec->type, dec->mask);
 
             asmc::Mov * mov = new asmc::Mov();
             gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile);
             mov->op = expr.op;
             mov->size = expr.size;
             mov->from = expr.access;
-            mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
+            mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
             OutputFile.text << mov;
         }
         else{
