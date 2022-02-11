@@ -47,4 +47,24 @@ bash build.sh
 ### Running the project
 Run the project with the command `./a.out`
 
+### Array Loop Example
+```c
+.needs <io>
+.needs <Collections>
+
+int main(){
+    Array a = newArray(int, 10);
+    for{int i = 0;}(i < 10){i = i + 1;}{
+        adr pointer = a.at(i);              // adr - is the pointer 'address' key word
+        pointer =: i;                       // the =: operator is used to load a value to a pointer
+    };
+
+    a.forEach([adr value]=>{
+        printInt(value as int);             // the as operator is used to assume the type of a pointer
+        return 0;
+    });
+    return 0;
+};
+```
+
 ## Have fun!
