@@ -1131,11 +1131,12 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         links::LinkedList<gen::Symbol>  * Table = &this->SymbolTable;
         
         
-        Symbol * symbol = Table->search<std::string>(searchSymbol, assign->Ident);
-        if(symbol == nullptr) {
+        Symbol symbol = gen::scope::ScopeManager::getInstance().get(assign->Ident);
+        if(symbol.symbol == "") {
             Table = &this->GlobalSymbolTable;
-            symbol = Table->search<std::string>(searchSymbol, assign->Ident);
-            if(symbol == nullptr) throw err::Exception("unknown name: " + assign->Ident);
+            auto symPtr = Table->search<std::string>(searchSymbol, assign->Ident);
+            if(symPtr == nullptr) throw err::Exception("unknown name: " + assign->Ident);
+            symbol = *symPtr;
             global = true;
         };
         asmc::Mov * mov = new asmc::Mov();
@@ -1154,11 +1155,11 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         assign->modList.invert();
         int tbyte = 0;
         
-        ast::Type last = symbol->type;
+        ast::Type last = symbol.type;
         asmc::Size size;
         std::string output;
-        if(global) output = symbol->symbol; 
-        else output = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
+        if(global) output = symbol.symbol; 
+        else output = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
 
         while(assign->modList.head != nullptr){
             if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
