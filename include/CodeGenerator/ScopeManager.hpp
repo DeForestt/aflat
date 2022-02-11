@@ -46,9 +46,6 @@ namespace gen{
 
                 // scopeStack holds the number of symbols in the current scope
                 std::vector<int> scopeStack;
-
-                // AST::Type to asmc::Size
-                asmc::Size typeToSize(AST::Type type);
         };
 
     }

@@ -1,5 +1,9 @@
 #include "CodeGenerator/ScopeManager.hpp"
 
+
+#pragma region Helper Functions
+#pragma endregion
+
 gen::scope::ScopeManager::ScopeManager(){
     this->stackPos = 0;
 }
