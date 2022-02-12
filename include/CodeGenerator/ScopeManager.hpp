@@ -30,9 +30,9 @@ namespace gen{
             
                         public:
                 // Singleton Access
-                static ScopeManager& getInstance(){
-                    if (!instance) instance = new ScopeManager;
-                    return *instance;
+                static ScopeManager *getInstance(){
+                    if (!ScopeManager::instance) ScopeManager::instance = new ScopeManager;
+                    return ScopeManager::instance;
                 };
 
                 // cannot be copied

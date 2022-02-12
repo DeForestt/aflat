@@ -1,6 +1,6 @@
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Exceptions.hpp"
-
+gen::scope::ScopeManager* gen::scope::ScopeManager::instance = nullptr;
 
 #pragma region Helper Functions
 

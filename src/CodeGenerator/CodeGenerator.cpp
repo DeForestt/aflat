@@ -119,7 +119,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile){
         bool global = false;
         bool handled = false;
         gen::Symbol * sym;
-        sym = gen::scope::ScopeManager::getInstance().get(var.Ident);
+        sym = gen::scope::ScopeManager::getInstance()->get(var.Ident);
         if(sym == nullptr) {
             sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, var.Ident);
             global = true;
@@ -218,7 +218,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile){
         links::LinkedList<gen::Symbol>  * Table;
         ast::Refrence ref = *dynamic_cast<ast::Refrence *>(expr);
         
-        gen::Symbol * sym = gen::scope::ScopeManager::getInstance().get(ref.Ident);
+        gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(ref.Ident);
         asmc::Lea * lea = new asmc::Lea();
         lea->to = this->registers["%rax"]->get(asmc::QWord);
         lea->from = '-' + std::to_string(sym->byteMod) + "(%rbp)";
@@ -267,7 +267,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile){
     else if(dynamic_cast<ast::DeRefence *>(expr)){
 
         ast::DeRefence deRef = *dynamic_cast<ast::DeRefence *>(expr);
-        gen::Symbol * sym = gen::scope::ScopeManager::getInstance().get(deRef.Ident);
+        gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(deRef.Ident);
 
         asmc::Mov * mov = new asmc::Mov();
         asmc::Mov * mov2 = new asmc::Mov();
@@ -666,7 +666,7 @@ void gen::CodeGenerator::GenArgs(ast::Statment * STMT, asmc::File &OutputFile){
         size = arg->type.size;
         mov->from = this->intArgs[intArgsCounter].get(arg->type.size);
 
-        gen::scope::ScopeManager::getInstance().assign(arg->Ident, arg->type, false);
+        gen::scope::ScopeManager::getInstance()->assign(arg->Ident, arg->type, false);
 
         mov->size = size;
         mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
@@ -687,7 +687,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         if(call->modList.head == nullptr){
             func = this->nameTable[call->ident];
             if (func == nullptr){
-                gen::Symbol * smbl = gen::scope::ScopeManager::getInstance().get(call->ident);
+                gen::Symbol * smbl = gen::scope::ScopeManager::getInstance()->get(call->ident);
                 if ( smbl != nullptr){
                                 ast::Function nfunc;
                                 ast::Var * var = new ast::Var();
@@ -710,7 +710,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
             };
         }
         else{
-            gen::Symbol * sym = gen::scope::ScopeManager::getInstance().get(call->ident);
+            gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(call->ident);
             if (sym == nullptr) throw err::Exception("cannot find object: " + call->ident);
             
             ast::Type last = sym->type;
@@ -719,7 +719,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
             gen::Type * type = *this->typeList[last.typeName];
 
             while(call->modList.head != nullptr){
-                sym = gen::scope::ScopeManager::getInstance().get(call->modList.peek());
+                sym = gen::scope::ScopeManager::getInstance()->get(call->modList.peek());
                 if (sym->symbol == "") {
                     if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
                     type = *this->typeList[last.typeName];
@@ -844,7 +844,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
                 this->GenSTMT()
         */
 
-        gen::scope::ScopeManager::getInstance().pushScope();
+        gen::scope::ScopeManager::getInstance()->pushScope();
 
         ast::Function * func = dynamic_cast<ast::Function *>(STMT);
         int saveIntArgs = intArgsCounter;
@@ -957,7 +957,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             this->SymbolTable.head = nullptr;
         }
         this->intArgsCounter = saveIntArgs;
-        gen::scope::ScopeManager::getInstance().popScope();
+        gen::scope::ScopeManager::getInstance()->popScope();
     }
     else if (dynamic_cast<ast::Declare *>(STMT) != nullptr){
         /*
@@ -972,7 +972,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         if (!this->globalScope){
             // if the there  is no scope use the scope manager otherwise use the scope
             if(this->scope == nullptr || this->inFunction){
-                gen::scope::ScopeManager::getInstance().assign(dec->Ident, dec->type, dec->mask);
+                gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type, dec->mask);
             }
             else{
                 // add the symbol to the class symbol table
@@ -1024,7 +1024,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             links::LinkedList<gen::Symbol>  * Table;
             if(this->scope == nullptr){
                 dec->type.arraySize = dec->count;
-                gen::scope::ScopeManager::getInstance().assign(dec->ident, dec->type, false);
+                gen::scope::ScopeManager::getInstance()->assign(dec->ident, dec->type, false);
             }
             else{Table = &this->scope->SymbolTable;
 
@@ -1057,7 +1057,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
         if(!this->globalScope){
         
-            int byteMod = gen::scope::ScopeManager::getInstance().assign(dec->Ident, dec->type, dec->mask);
+            int byteMod = gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type, dec->mask);
 
             asmc::Mov * mov = new asmc::Mov();
             gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile);
@@ -1117,7 +1117,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         links::LinkedList<gen::Symbol>  * Table = &this->SymbolTable;
         
         
-        Symbol * symbol = gen::scope::ScopeManager::getInstance().get(assign->Ident);
+        Symbol * symbol = gen::scope::ScopeManager::getInstance()->get(assign->Ident);
         if(symbol == nullptr) {
             Table = &this->GlobalSymbolTable;
             symbol = Table->search<std::string>(searchSymbol, assign->Ident);
@@ -1248,7 +1248,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
     }
     else if (dynamic_cast<ast::If *>(STMT) != nullptr){
         // push a new scope
-        gen::scope::ScopeManager::getInstance().pushScope();
+        gen::scope::ScopeManager::getInstance()->pushScope();
         ast::If ifStmt = *dynamic_cast<ast::If *>(STMT);
 
         asmc::Lable * lable1 = new asmc::Lable();
@@ -1360,10 +1360,10 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         default:
             break;
         }
-        gen::scope::ScopeManager::getInstance().popScope();
+        gen::scope::ScopeManager::getInstance()->popScope();
     }
     else if(dynamic_cast<ast::While *>(STMT) != nullptr){
-        gen::scope::ScopeManager::getInstance().pushScope();
+        gen::scope::ScopeManager::getInstance()->pushScope();
         ast::While * loop = dynamic_cast<ast::While *>(STMT);
 
         asmc::Lable * lable1 = new asmc::Lable();
@@ -1410,7 +1410,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         OutputFile.text << mov1;
         OutputFile.text << mov2;
         OutputFile.text << cmp;
-        gen::scope::ScopeManager::getInstance().popScope();
+        gen::scope::ScopeManager::getInstance()->popScope();
 
         switch (loop->condition->op)
         {
@@ -1450,7 +1450,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         
     }
     else if (dynamic_cast<ast::For *>(STMT) != nullptr){
-        gen::scope::ScopeManager::getInstance().pushScope();
+        gen::scope::ScopeManager::getInstance()->pushScope();
         ast::For * loop = dynamic_cast<ast::For *>(STMT);
 
         asmc::Lable * lable1 = new asmc::Lable();
@@ -1534,7 +1534,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             break;
         }
         }
-        gen::scope::ScopeManager::getInstance().popScope();
+        gen::scope::ScopeManager::getInstance()->popScope();
     }
     else if(dynamic_cast<ast::UDeffType *>(STMT) != nullptr){
         ast::UDeffType * udef = dynamic_cast<ast::UDeffType *>(STMT);

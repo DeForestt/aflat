@@ -11,6 +11,7 @@
 #include "ASM.hpp"
 #include "Exceptions.hpp" 
 #include "PreProcessor.hpp"
+#include "CodeGenerator/ScopeManager.hpp"
 
 std::string preProcess(std::string input);
 std::string getExePath();
