@@ -701,11 +701,11 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         if(call->modList.head == nullptr){
             func = this->nameTable[call->ident];
             if (func == nullptr){
-                gen::Symbol smbl = gen::scope::ScopeManager::getInstance().get(call->ident);
-                if ( smbl.symbol != ""){
+                gen::Symbol * smbl = gen::scope::ScopeManager::getInstance().get(call->ident);
+                if ( smbl != nullptr){
                                 ast::Function nfunc;
                                 ast::Var * var = new ast::Var();
-                                var->Ident = smbl.symbol;
+                                var->Ident = smbl->symbol;
                                 var->modList = links::LinkedList<std::string>();
 
                                 gen::Expr exp1 = this->GenExpr(var, OutputFile);
@@ -718,23 +718,23 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
 
                                 func = new ast::Function();
                                 func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
-                                func->type = smbl.type;
+                                func->type = smbl->type;
                                 func->type.size = asmc::DWord;
                 };
             };
         }
         else{
-            gen::Symbol sym = gen::scope::ScopeManager::getInstance().get(call->ident);
-            if (sym.symbol == "") throw err::Exception("cannot find object: " + call->ident);
+            gen::Symbol * sym = gen::scope::ScopeManager::getInstance().get(call->ident);
+            if (sym == nullptr) throw err::Exception("cannot find object: " + call->ident);
             
-            ast::Type last = sym.type;
-            std::string my = sym.symbol;
+            ast::Type last = sym->type;
+            std::string my = sym->symbol;
             // get the type of the original function
             gen::Type * type = *this->typeList[last.typeName];
 
             while(call->modList.head != nullptr){
                 sym = gen::scope::ScopeManager::getInstance().get(call->modList.peek());
-                if (sym.symbol == "") {
+                if (sym->symbol == "") {
                     if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
                     type = *this->typeList[last.typeName];
                     gen::Class * cl = dynamic_cast<gen::Class *>(type);
@@ -1131,12 +1131,11 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         links::LinkedList<gen::Symbol>  * Table = &this->SymbolTable;
         
         
-        Symbol symbol = gen::scope::ScopeManager::getInstance().get(assign->Ident);
-        if(symbol.symbol == "") {
+        Symbol * symbol = gen::scope::ScopeManager::getInstance().get(assign->Ident);
+        if(symbol == nullptr) {
             Table = &this->GlobalSymbolTable;
-            auto symPtr = Table->search<std::string>(searchSymbol, assign->Ident);
-            if(symPtr == nullptr) throw err::Exception("unknown name: " + assign->Ident);
-            symbol = *symPtr;
+            symbol = Table->search<std::string>(searchSymbol, assign->Ident);
+            if(symbol == nullptr) throw err::Exception("unknown name: " + assign->Ident);
             global = true;
         };
         asmc::Mov * mov = new asmc::Mov();
@@ -1155,11 +1154,11 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         assign->modList.invert();
         int tbyte = 0;
         
-        ast::Type last = symbol.type;
+        ast::Type last = symbol->type;
         asmc::Size size;
         std::string output;
-        if(global) output = symbol.symbol; 
-        else output = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
+        if(global) output = symbol->symbol; 
+        else output = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
 
         while(assign->modList.head != nullptr){
             if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
