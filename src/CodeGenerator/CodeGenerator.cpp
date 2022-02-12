@@ -120,7 +120,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile){
         bool global = false;
         bool handled = false;
         gen::Symbol * sym;
-        sym = this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
+        sym = gen::scope::ScopeManager::getInstance().get(var.Ident);
         if(sym == nullptr) {
             sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, var.Ident);
             global = true;
@@ -218,13 +218,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile){
     else if (dynamic_cast<ast::Refrence *>(expr) != nullptr){
         links::LinkedList<gen::Symbol>  * Table;
         ast::Refrence ref = *dynamic_cast<ast::Refrence *>(expr);
-        if(this->scope == nullptr || ref.internal) Table = &this->SymbolTable;
-        //else Table = &this->scope->SymbolTable;
         
-        gen::Symbol sym = *Table->search<std::string>(searchSymbol, ref.Ident);
+        gen::Symbol * sym = gen::scope::ScopeManager::getInstance().get(ref.Ident);
         asmc::Lea * lea = new asmc::Lea();
         lea->to = this->registers["%rax"]->get(asmc::QWord);
-        lea->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
+        lea->from = '-' + std::to_string(sym->byteMod) + "(%rbp)";
         //ASMC::Mov * mov = new ASMC::Mov();
         OutputFile.text << lea;
         output.access = registers["%rax"]->get(asmc::QWord);
@@ -270,13 +268,13 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile){
     else if(dynamic_cast<ast::DeRefence *>(expr)){
 
         ast::DeRefence deRef = *dynamic_cast<ast::DeRefence *>(expr);
-        gen::Symbol sym = *this->SymbolTable.search<std::string>(searchSymbol, deRef.Ident);
+        gen::Symbol * sym = gen::scope::ScopeManager::getInstance().get(deRef.Ident);
 
         asmc::Mov * mov = new asmc::Mov();
         asmc::Mov * mov2 = new asmc::Mov();
 
         mov->size = asmc::QWord;
-        mov->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
+        mov->from = '-' + std::to_string(sym->byteMod) + "(%rbp)";
         mov->to = this->registers["%rax"]->get(asmc::QWord);
 
         mov2->from = "(" + this->registers["%rax"]->get(asmc::QWord) + ")";
