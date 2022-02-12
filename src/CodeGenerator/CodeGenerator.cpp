@@ -669,18 +669,7 @@ void gen::CodeGenerator::GenArgs(ast::Statment * STMT, asmc::File &OutputFile){
         size = arg->type.size;
         mov->from = this->intArgs[intArgsCounter].get(arg->type.size);
 
-        if(Table->search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined veriable:" + arg->Ident);
-
-        symbol.symbol = arg->Ident;
-
-        if (Table->head == nullptr){
-            symbol.byteMod = offset;
-        }else{
-            symbol.byteMod = Table->peek().byteMod + offset;
-        }
-
-        symbol.type = arg->type;
-        Table->push(symbol);
+        gen::scope::ScopeManager::getInstance().assign(arg->Ident, arg->type, false);
 
         mov->size = size;
         mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
