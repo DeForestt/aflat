@@ -701,11 +701,11 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         if(call->modList.head == nullptr){
             func = this->nameTable[call->ident];
             if (func == nullptr){
-                gen::Symbol * smbl = Table->search<std::string>(searchSymbol, call->ident);
-                if ( smbl != nullptr){
+                gen::Symbol smbl = gen::scope::ScopeManager::getInstance().get(call->ident);
+                if ( smbl.symbol != ""){
                                 ast::Function nfunc;
                                 ast::Var * var = new ast::Var();
-                                var->Ident = smbl->symbol;
+                                var->Ident = smbl.symbol;
                                 var->modList = links::LinkedList<std::string>();
 
                                 gen::Expr exp1 = this->GenExpr(var, OutputFile);
@@ -718,23 +718,23 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
 
                                 func = new ast::Function();
                                 func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
-                                func->type = smbl->type;
+                                func->type = smbl.type;
                                 func->type.size = asmc::DWord;
                 };
             };
         }
         else{
-            gen::Symbol * sym = this->SymbolTable.search<std::string>(searchSymbol, call->ident);
-            if (sym == nullptr) throw err::Exception("cannot find type: " + call->ident);
+            gen::Symbol sym = gen::scope::ScopeManager::getInstance().get(call->ident);
+            if (sym.symbol == "") throw err::Exception("cannot find object: " + call->ident);
             
-            ast::Type last = sym->type;
-            std::string my = sym->symbol;
+            ast::Type last = sym.type;
+            std::string my = sym.symbol;
             // get the type of the original function
             gen::Type * type = *this->typeList[last.typeName];
 
             while(call->modList.head != nullptr){
-                sym = type->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
-                if (sym == nullptr) {
+                sym = gen::scope::ScopeManager::getInstance().get(call->modList.peek());
+                if (sym.symbol == "") {
                     if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
                     type = *this->typeList[last.typeName];
                     gen::Class * cl = dynamic_cast<gen::Class *>(type);

@@ -61,17 +61,17 @@ void gen::scope::ScopeManager::popScope(){
     this->scopeStack.pop_back();
 };
 
-gen::Symbol gen::scope::ScopeManager::get(std::string symbol){
+gen::Symbol * gen::scope::ScopeManager::get(std::string symbol){
     for(int i = 0; i < this->stack.size(); i++){
         if(this->stack[i].symbol == symbol){
-            return this->stack[i];
+            return &this->stack[i];
         }
     }
 
     // search global stack
     for(int i = 0; i < this->globalStack.size(); i++){
         if(this->globalStack[i].symbol == symbol){
-            return this->globalStack[i];
+            return &this->globalStack[i];
         }
     }
     
