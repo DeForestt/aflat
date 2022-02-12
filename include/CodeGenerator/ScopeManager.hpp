@@ -10,7 +10,25 @@ namespace gen{
     namespace scope{
 
         class ScopeManager{
-            public:
+
+            private:
+                ScopeManager();
+                ~ScopeManager() = default;
+                static ScopeManager* instance;
+
+                // Stack
+                std::vector<gen::Symbol> stack;
+
+                // Global Scope
+                std::vector<gen::Symbol> globalStack;
+
+                // hold the current memory location relative to the rbp
+                int stackPos;
+
+                // scopeStack holds the number of symbols in the current scope
+                std::vector<int> scopeStack;
+            
+                        public:
                 // Singleton Access
                 static ScopeManager& getInstance(){
                     if (!instance) instance = new ScopeManager;
@@ -37,23 +55,6 @@ namespace gen{
 
                 // Get stack alignment value
                 int getStackAlignment();
-
-            private:
-                ScopeManager();
-                ~ScopeManager() = default;
-                static ScopeManager* instance;
-
-                // Stack
-                std::vector<gen::Symbol> stack;
-
-                // Global Scope
-                std::vector<gen::Symbol> globalStack;
-
-                // hold the current memory location relative to the rbp
-                int stackPos;
-
-                // scopeStack holds the number of symbols in the current scope
-                std::vector<int> scopeStack;
         };
 
     }
