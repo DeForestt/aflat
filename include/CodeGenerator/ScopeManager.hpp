@@ -25,7 +25,7 @@ namespace gen{
                 int assign(std::string symbol, ast::Type type, bool mask, bool isGlobal = false);
 
                 // Get a symbol
-                Symbol get(std::string symbol);
+                Symbol * get(std::string symbol);
 
                 // push a new scope
                 void pushScope();
