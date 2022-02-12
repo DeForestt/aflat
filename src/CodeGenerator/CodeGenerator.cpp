@@ -1,6 +1,5 @@
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "Exceptions.hpp"
-
+#include "CodeGenerator/ScopeManager.hpp"
 #pragma region helper functions
 
 
