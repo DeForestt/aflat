@@ -1,4 +1,6 @@
-#pragma once
+#ifndef Scope
+#define Scope
+
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "ASM.hpp"
 #include <vector>
@@ -25,7 +27,7 @@ namespace gen{
                 int assign(std::string symbol, ast::Type type, bool mask, bool isGlobal = false);
 
                 // Get a symbol
-                Symbol * get(std::string symbol);
+                gen::Symbol* get(std::string symbol);
 
                 // push a new scope
                 void pushScope();
@@ -57,3 +59,4 @@ namespace gen{
     }
 
 }
+#endif
