@@ -75,6 +75,6 @@ gen::Symbol * gen::scope::ScopeManager::get(std::string symbol){
         }
     }
     
-    throw err::Exception("Symbol not found: " + symbol);
+    return nullptr;
 
 };
