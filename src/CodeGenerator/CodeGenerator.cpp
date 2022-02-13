@@ -664,12 +664,13 @@ void gen::CodeGenerator::GenArgs(ast::Statment * STMT, asmc::File &OutputFile){
 
         offset = this->getBytes(arg->type.size);
         size = arg->type.size;
+        arg->type.arraySize = 1;
         mov->from = this->intArgs[intArgsCounter].get(arg->type.size);
 
-        gen::scope::ScopeManager::getInstance()->assign(arg->Ident, arg->type, false);
+        int mod = gen::scope::ScopeManager::getInstance()->assign(arg->Ident, arg->type, false);
 
         mov->size = size;
-        mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
+        mov->to = "-" + std::to_string(mod) + + "(%rbp)";
         OutputFile.text << mov;
         intArgsCounter++;
     }
@@ -849,10 +850,6 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         ast::Function * func = dynamic_cast<ast::Function *>(STMT);
         int saveIntArgs = intArgsCounter;
         bool isLambda = func->isLambda;
-        if (!isLambda){
-            this->SymbolTable.clear();
-            this->SymbolTable.head = nullptr;
-        }
 
         if(this->scope == nullptr) this->nameTable << *func;
         else{
