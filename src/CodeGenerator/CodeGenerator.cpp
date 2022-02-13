@@ -931,15 +931,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
             asmc::File file = this->GenSTMT(func->statment);
             OutputFile << file;
-            
-            // align the stack
-            int align = 16;
-            if(this->SymbolTable.count  > 0){
-                align = ((this->SymbolTable.peek().byteMod + 15) / 16) * 16;
-            }
 
             asmc::Subq * sub = new asmc::Subq;
-            sub->op1 = "$" + std::to_string(align);
+            sub->op1 = "$" + std::to_string(gen::scope::ScopeManager::getInstance()->getStackAlignment());
             sub->op2 = this->registers["%rsp"]->get(asmc::QWord);
             OutputFile.text.insert(sub, AlignmentLoc + 1);
             
@@ -949,10 +943,6 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         }
         delete(func);
 
-        if(!isLambda){
-            this->SymbolTable.clear();
-            this->SymbolTable.head = nullptr;
-        }
         this->intArgsCounter = saveIntArgs;
         gen::scope::ScopeManager::getInstance()->popScope();
     }

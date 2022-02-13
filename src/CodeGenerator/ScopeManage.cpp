@@ -61,6 +61,15 @@ void gen::scope::ScopeManager::popScope(){
     this->scopeStack.pop_back();
 };
 
+int gen::scope::ScopeManager::getStackAlignment(){
+                // align the stack
+    int align = 16;
+    if(this->stack.size()  > 0){
+        align = ((this->stackPos + 15) / 16) * 16;
+    }
+    return stackPos;
+};
+
 gen::Symbol * gen::scope::ScopeManager::get(std::string symbol){
     for(int i = 0; i < this->stack.size(); i++){
         if(this->stack[i].symbol == symbol){
