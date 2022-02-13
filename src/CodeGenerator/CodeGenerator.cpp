@@ -720,7 +720,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
 
             while(call->modList.head != nullptr){
                 sym = gen::scope::ScopeManager::getInstance()->get(call->modList.peek());
-                if (sym->symbol == "") {
+                if (sym == nullptr) {
                     if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
                     type = *this->typeList[last.typeName];
                     gen::Class * cl = dynamic_cast<gen::Class *>(type);
