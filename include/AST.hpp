@@ -5,7 +5,7 @@
 #include "ASM.hpp"
 #include "LinkedList.hpp"
 
-namespace AST{
+namespace ast{
     class ProgramMember{
         public:
         virtual std::string toString(){return "";};
@@ -66,6 +66,7 @@ namespace AST{
 
         asmc::Size size;
         asmc::OpType opType = asmc::Hard;
+        int arraySize = 1;
         static bool compair(Type t, std::string name);
     };
 
@@ -87,7 +88,7 @@ namespace AST{
 
     class Function : public Member, public Statment{
         public:
-        AST::ScopeMod scope;
+        ast::ScopeMod scope;
         Type type;
         Ident ident;
         Statment * args;
@@ -105,7 +106,7 @@ namespace AST{
 
     class Declare : public Arg, public Statment{
         public:
-        AST::ScopeMod scope;
+        ast::ScopeMod scope;
         std::string Ident;
         std::string TypeName;
         bool mask;
@@ -199,7 +200,7 @@ namespace AST{
     class DecArr : public Statment{
         public:
         std::string ident;
-        AST::Type type;
+        ast::Type type;
         int count;
     };
 
@@ -252,17 +253,17 @@ namespace AST{
         public:
         std::string Ident;
         links::LinkedList<std::string> modList;
-        AST::Type type;
+        ast::Type type;
     };
 
     class CallExpr : public Expr{
         public:
-        AST::Call * call;
+        ast::Call * call;
     };
 
     class Lambda : public Expr{
         public:
-        AST::Function * function;
+        ast::Function * function;
     };
 }
 

@@ -11,6 +11,7 @@
 #include "ASM.hpp"
 #include "Exceptions.hpp" 
 #include "PreProcessor.hpp"
+#include "CodeGenerator/ScopeManager.hpp"
 
 std::string preProcess(std::string input);
 std::string getExePath();
@@ -52,7 +53,7 @@ int main(int argc, char *argv[]){
         tokens.invert();
         parse::Parser parser;
 
-        AST::Statment * Prog = parser.parseStmt(tokens);
+        ast::Statment * Prog = parser.parseStmt(tokens);
         
         gen::CodeGenerator genny;
         asmc::File file = genny.GenSTMT(Prog);

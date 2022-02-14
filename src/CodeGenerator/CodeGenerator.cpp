@@ -1,11 +1,13 @@
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "Exceptions.hpp"
+#include "CodeGenerator/ScopeManager.hpp"
+#pragma region helper functions
+
 
 bool searchSymbol(gen::Symbol sym, std::string str){
     if (sym.symbol == str) return true; else return false;
 }
 
-bool compairFunc(AST::Function F, std::string input){
+bool compairFunc(ast::Function F, std::string input){
     if (input == F.ident.ident){
         return true;
     }
@@ -16,6 +18,8 @@ bool gen::Type::compair(gen::Type *  t, std::string ident){
     if (ident == t->Ident) return true;
     return false;
 }
+
+#pragma endregion
 
 int gen::CodeGenerator::getBytes(asmc::Size size){
     switch(size){ 
@@ -56,7 +60,7 @@ gen::CodeGenerator::CodeGenerator(){
     this->scope = nullptr;
 }
 
-void gen::CodeGenerator::prepareCompound(AST::Compound compound, asmc::File &OutputFile, bool isDiv = false){
+void gen::CodeGenerator::prepareCompound(ast::Compound compound, asmc::File &OutputFile, bool isDiv = false){
     asmc::Mov * mov1 = new asmc::Mov();
     asmc::Mov * mov2 = new asmc::Mov();
     std::string r1 = "%edx", r2 = "%eax";
@@ -85,37 +89,37 @@ void gen::CodeGenerator::prepareCompound(AST::Compound compound, asmc::File &Out
     
 }
 
-gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
+gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile){
     gen::Expr output;
     output.op = asmc::Hard;
-    if(dynamic_cast<AST::IntLiteral *>(expr) != nullptr){
-        AST::IntLiteral * intlit = dynamic_cast<AST::IntLiteral *>(expr);
+    if(dynamic_cast<ast::IntLiteral *>(expr) != nullptr){
+        ast::IntLiteral * intlit = dynamic_cast<ast::IntLiteral *>(expr);
         output.access = '$' + std::to_string(intlit->val);
         output.size = asmc::DWord;
     }
-    else if(dynamic_cast<AST::LongLiteral *>(expr) != nullptr){
-        AST::LongLiteral * intlit = dynamic_cast<AST::LongLiteral *>(expr);
+    else if(dynamic_cast<ast::LongLiteral *>(expr) != nullptr){
+        ast::LongLiteral * intlit = dynamic_cast<ast::LongLiteral *>(expr);
         output.access = '$' + std::to_string(intlit->val);
         output.size = asmc::QWord;
     }
-    else if(dynamic_cast<AST::CharLiteral *>(expr) != nullptr){
-        AST::CharLiteral * intlit = dynamic_cast<AST::CharLiteral *>(expr);
+    else if(dynamic_cast<ast::CharLiteral *>(expr) != nullptr){
+        ast::CharLiteral * intlit = dynamic_cast<ast::CharLiteral *>(expr);
         output.access = '$' + std::to_string(intlit->value);
         output.size = asmc::Byte;
     }
-    else if(dynamic_cast<AST::CallExpr *>(expr) != nullptr){
-        AST::CallExpr * exprCall = dynamic_cast<AST::CallExpr *>(expr);
-        AST::Call * call = exprCall->call;
+    else if(dynamic_cast<ast::CallExpr *>(expr) != nullptr){
+        ast::CallExpr * exprCall = dynamic_cast<ast::CallExpr *>(expr);
+        ast::Call * call = exprCall->call;
         output.size = this->GenCall(call, OutputFile).type.size;
         output.access = this->registers["%rax"]->get(output.size);
 
     }
-    else if (dynamic_cast<AST::Var *>(expr) != nullptr){
-        AST::Var var = *dynamic_cast<AST::Var *>(expr);
+    else if (dynamic_cast<ast::Var *>(expr) != nullptr){
+        ast::Var var = *dynamic_cast<ast::Var *>(expr);
         bool global = false;
         bool handled = false;
         gen::Symbol * sym;
-        sym = this->SymbolTable.search<std::string>(searchSymbol, var.Ident);
+        sym = gen::scope::ScopeManager::getInstance()->get(var.Ident);
         if(sym == nullptr) {
             sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, var.Ident);
             global = true;
@@ -168,7 +172,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
                 var.modList.invert();
                 int tbyte = 0;
                 
-                AST::Type last = sym->type;
+                ast::Type last = sym->type;
 
                 while(var.modList.head != nullptr){
                     if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
@@ -210,24 +214,22 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
             }
         }
     }
-    else if (dynamic_cast<AST::Refrence *>(expr) != nullptr){
+    else if (dynamic_cast<ast::Refrence *>(expr) != nullptr){
         links::LinkedList<gen::Symbol>  * Table;
-        AST::Refrence ref = *dynamic_cast<AST::Refrence *>(expr);
-        if(this->scope == nullptr || ref.internal) Table = &this->SymbolTable;
-        //else Table = &this->scope->SymbolTable;
+        ast::Refrence ref = *dynamic_cast<ast::Refrence *>(expr);
         
-        gen::Symbol sym = *Table->search<std::string>(searchSymbol, ref.Ident);
+        gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(ref.Ident);
         asmc::Lea * lea = new asmc::Lea();
         lea->to = this->registers["%rax"]->get(asmc::QWord);
-        lea->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
+        lea->from = '-' + std::to_string(sym->byteMod) + "(%rbp)";
         //ASMC::Mov * mov = new ASMC::Mov();
         OutputFile.text << lea;
         output.access = registers["%rax"]->get(asmc::QWord);
         output.size = asmc::QWord;
         output.op = asmc::OpType::Hard;
     }
-    else if (dynamic_cast<AST::StringLiteral *>(expr) != nullptr){
-        AST::StringLiteral str = *dynamic_cast<AST::StringLiteral *>(expr);
+    else if (dynamic_cast<ast::StringLiteral *>(expr) != nullptr){
+        ast::StringLiteral str = *dynamic_cast<ast::StringLiteral *>(expr);
         asmc::StringLiteral * strlit = new asmc::StringLiteral();
         asmc::Lable * lable = new asmc::Lable();
         if(this->scope == nullptr)lable->lable = ".str" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
@@ -239,8 +241,8 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
         output.access = "$" + lable->lable;
         output.size = asmc::QWord;
     }
-    else if (dynamic_cast<AST::FloatLiteral *>(expr) != nullptr){
-        AST::FloatLiteral * floatlit = dynamic_cast<AST::FloatLiteral *>(expr);
+    else if (dynamic_cast<ast::FloatLiteral *>(expr) != nullptr){
+        ast::FloatLiteral * floatlit = dynamic_cast<ast::FloatLiteral *>(expr);
         asmc::FloatLiteral * fltlit = new asmc::FloatLiteral();
         asmc::Lable * lable = new asmc::Lable();
         if(this->scope == nullptr)lable->lable = ".float" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
@@ -262,16 +264,16 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
         output.access = this->registers["%xmm0"]->get(asmc::DWord);
         output.size = asmc::DWord;
     }
-    else if(dynamic_cast<AST::DeRefence *>(expr)){
+    else if(dynamic_cast<ast::DeRefence *>(expr)){
 
-        AST::DeRefence deRef = *dynamic_cast<AST::DeRefence *>(expr);
-        gen::Symbol sym = *this->SymbolTable.search<std::string>(searchSymbol, deRef.Ident);
+        ast::DeRefence deRef = *dynamic_cast<ast::DeRefence *>(expr);
+        gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(deRef.Ident);
 
         asmc::Mov * mov = new asmc::Mov();
         asmc::Mov * mov2 = new asmc::Mov();
 
         mov->size = asmc::QWord;
-        mov->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
+        mov->from = '-' + std::to_string(sym->byteMod) + "(%rbp)";
         mov->to = this->registers["%rax"]->get(asmc::QWord);
 
         mov2->from = "(" + this->registers["%rax"]->get(asmc::QWord) + ")";
@@ -286,13 +288,13 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
 
         
     }
-    else if (dynamic_cast<AST::Compound *>(expr) != nullptr){
-        AST::Compound comp = *dynamic_cast<AST::Compound *>(expr);
+    else if (dynamic_cast<ast::Compound *>(expr) != nullptr){
+        ast::Compound comp = *dynamic_cast<ast::Compound *>(expr);
         asmc::File Dummby = asmc::File();
         output.op = asmc::Hard;
         switch (comp.op)
         {
-            case AST::Plus:{
+            case ast::Plus:{
                 asmc::Add * add = new asmc::Add();
                 gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
@@ -320,7 +322,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
                 output.size = asmc::DWord;
                 break;
             }
-            case AST::Minus:{
+            case ast::Minus:{
                 asmc::Sub * sub = new asmc::Sub();
                 gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
@@ -347,7 +349,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
                 output.size = asmc::DWord;
                 break;
             }
-            case AST::AndBit:{
+            case ast::AndBit:{
                 asmc::And * andBit = new asmc::And();
                 gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
@@ -373,7 +375,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
                 output.size = asmc::DWord;
                 break;
             }
-            case AST::OrBit:{
+            case ast::OrBit:{
                 asmc::Or * orBit = new asmc::Or();
                 gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
@@ -399,7 +401,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
                 output.size = asmc::DWord;
                 break;
             }
-            case AST::Less:{
+            case ast::Less:{
                 asmc::Sal * andBit = new asmc::Sal();
                 gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
@@ -433,7 +435,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
                 output.size = asmc::DWord;
                 break;
             }
-            case AST::Great:{
+            case ast::Great:{
                 asmc::Sar * andBit = new asmc::Sar();
                 gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
                 gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
@@ -467,7 +469,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
                 output.size = asmc::DWord;
                 break;
             }
-            case AST::Mul:{
+            case ast::Mul:{
                 asmc::Mul * mul = new asmc::Mul();
                 
                 this->selectReg = 0;
@@ -497,7 +499,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
                 output.size = asmc::DWord;
                 break;
             }
-            case AST::Div:{
+            case ast::Div:{
 
                 asmc::Div * div = new asmc::Div();
 
@@ -529,7 +531,7 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
                 output.size = asmc::DWord;
                 break;
             }
-            case AST::Mod:{
+            case ast::Mod:{
                 asmc::Div * div = new asmc::Div();
                 
                 this->selectReg = 0;
@@ -563,9 +565,9 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
             }
         }   
     }  
-    else if (dynamic_cast<AST::Lambda *>(expr) != nullptr){
-        AST::Lambda lambda = *dynamic_cast<AST::Lambda *>(expr);
-        AST::Function * func = lambda.function;
+    else if (dynamic_cast<ast::Lambda *>(expr) != nullptr){
+        ast::Lambda lambda = *dynamic_cast<ast::Lambda *>(expr);
+        ast::Function * func = lambda.function;
         func->ident.ident = "lambda_" + std::to_string(lablecount);
         lablecount++;
         func->scopeName = "global";
@@ -584,19 +586,19 @@ gen::Expr gen::CodeGenerator::GenExpr(AST::Expr * expr, asmc::File &OutputFile){
     return output;
 };
 
-links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(AST::Statment * STMT, links::LinkedList<gen::Symbol> &table){
-    if(dynamic_cast<AST::Sequence *>(STMT) != nullptr){
-        AST::Sequence * sequence = dynamic_cast<AST::Sequence *>(STMT);
+links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(ast::Statment * STMT, links::LinkedList<gen::Symbol> &table){
+    if(dynamic_cast<ast::Sequence *>(STMT) != nullptr){
+        ast::Sequence * sequence = dynamic_cast<ast::Sequence *>(STMT);
         this->GenTable(sequence->Statment1, table);
         this->GenTable(sequence->Statment2, table);
-    }else if (dynamic_cast<AST::Declare *>(STMT) != nullptr)
+    }else if (dynamic_cast<ast::Declare *>(STMT) != nullptr)
     {
         /*
             movl $0x0, -[SymbolT + size](rdp)
             **also needs to be added to symbol table**
         */
 
-        AST::Declare * arg =  dynamic_cast<AST::Declare *>(STMT);
+        ast::Declare * arg =  dynamic_cast<ast::Declare *>(STMT);
         gen::Symbol symbol;
         
         int offset = this->getBytes(arg->type.size);
@@ -611,12 +613,12 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(AST::Statment * STMT
         }
         symbol.type = arg->type;
         table << symbol;
-    }else if(dynamic_cast<AST::DecArr *>(STMT) != nullptr){
+    }else if(dynamic_cast<ast::DecArr *>(STMT) != nullptr){
          /*
             movl $0x0, -[SymbolT + size](rdp)
             **also needs to be added to symbol table**
         */
-        AST::DecArr * dec =  dynamic_cast<AST::DecArr *>(STMT);
+        ast::DecArr * dec =  dynamic_cast<ast::DecArr *>(STMT);
         int offset = 0;
         offset = this->getBytes(dec->type.size);
 
@@ -639,12 +641,12 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(AST::Statment * STMT
     return table;
 }
 
-void gen::CodeGenerator::GenArgs(AST::Statment * STMT, asmc::File &OutputFile){
-     if(dynamic_cast<AST::Sequence *>(STMT) != nullptr){
-        AST::Sequence * sequence = dynamic_cast<AST::Sequence *>(STMT);
+void gen::CodeGenerator::GenArgs(ast::Statment * STMT, asmc::File &OutputFile){
+     if(dynamic_cast<ast::Sequence *>(STMT) != nullptr){
+        ast::Sequence * sequence = dynamic_cast<ast::Sequence *>(STMT);
         this->GenArgs(sequence->Statment1, OutputFile);
         this->GenArgs(sequence->Statment2, OutputFile);
-    }else if (dynamic_cast<AST::Declare *>(STMT) != nullptr)
+    }else if (dynamic_cast<ast::Declare *>(STMT) != nullptr)
     {
         /*
             movl $0x0, -[SymbolT + size](rdp)
@@ -652,7 +654,7 @@ void gen::CodeGenerator::GenArgs(AST::Statment * STMT, asmc::File &OutputFile){
         */
 
         if (intArgsCounter > 6) throw err::Exception("AFlat compiler cannot handle more than 6 int arguments.");
-        AST::Declare * arg =  dynamic_cast<AST::Declare *>(STMT);
+        ast::Declare * arg =  dynamic_cast<ast::Declare *>(STMT);
         asmc::Size size;
         int offset = 0;
         gen::Symbol symbol;
@@ -662,32 +664,22 @@ void gen::CodeGenerator::GenArgs(AST::Statment * STMT, asmc::File &OutputFile){
 
         offset = this->getBytes(arg->type.size);
         size = arg->type.size;
+        arg->type.arraySize = 1;
         mov->from = this->intArgs[intArgsCounter].get(arg->type.size);
 
-        if(Table->search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined veriable:" + arg->Ident);
-
-        symbol.symbol = arg->Ident;
-
-        if (Table->head == nullptr){
-            symbol.byteMod = offset;
-        }else{
-            symbol.byteMod = Table->peek().byteMod + offset;
-        }
-
-        symbol.type = arg->type;
-        Table->push(symbol);
+        int mod = gen::scope::ScopeManager::getInstance()->assign(arg->Ident, arg->type, false);
 
         mov->size = size;
-        mov->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
+        mov->to = "-" + std::to_string(mod) + + "(%rbp)";
         OutputFile.text << mov;
         intArgsCounter++;
     }
 }
 
-AST::Function gen::CodeGenerator::GenCall(AST::Call * call, asmc::File &OutputFile){
+ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFile){
     std::string mod = "";
 
-        AST::Function * func;
+        ast::Function * func;
 
         links::LinkedList<gen::Symbol>  * Table;
         Table = &this->SymbolTable;
@@ -696,10 +688,10 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, asmc::File &OutputFi
         if(call->modList.head == nullptr){
             func = this->nameTable[call->ident];
             if (func == nullptr){
-                gen::Symbol * smbl = Table->search<std::string>(searchSymbol, call->ident);
+                gen::Symbol * smbl = gen::scope::ScopeManager::getInstance()->get(call->ident);
                 if ( smbl != nullptr){
-                                AST::Function nfunc;
-                                AST::Var * var = new AST::Var();
+                                ast::Function nfunc;
+                                ast::Var * var = new ast::Var();
                                 var->Ident = smbl->symbol;
                                 var->modList = links::LinkedList<std::string>();
 
@@ -711,7 +703,7 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, asmc::File &OutputFi
                                 mov->to = this->registers["%rcx"]->get(exp1.size);
                                 OutputFile.text << mov;
 
-                                func = new AST::Function();
+                                func = new ast::Function();
                                 func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
                                 func->type = smbl->type;
                                 func->type.size = asmc::DWord;
@@ -719,16 +711,16 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, asmc::File &OutputFi
             };
         }
         else{
-            gen::Symbol * sym = this->SymbolTable.search<std::string>(searchSymbol, call->ident);
-            if (sym == nullptr) throw err::Exception("cannot find type: " + call->ident);
+            gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(call->ident);
+            if (sym == nullptr) throw err::Exception("cannot find object: " + call->ident);
             
-            AST::Type last = sym->type;
+            ast::Type last = sym->type;
             std::string my = sym->symbol;
             // get the type of the original function
             gen::Type * type = *this->typeList[last.typeName];
 
             while(call->modList.head != nullptr){
-                sym = type->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
+                sym = gen::scope::ScopeManager::getInstance()->get(call->modList.peek());
                 if (sym == nullptr) {
                     if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
                     type = *this->typeList[last.typeName];
@@ -739,8 +731,8 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, asmc::File &OutputFi
                             // search the class symbol table for a pointer
                             sym = cl->SymbolTable.search<std::string>(searchSymbol, call->modList.peek());
                             if (sym != nullptr){
-                                AST::Function nfunc;
-                                AST::Var * var = new AST::Var();
+                                ast::Function nfunc;
+                                ast::Var * var = new ast::Var();
                                 var->Ident = sym->symbol;
                                 var->modList = links::LinkedList<std::string>();
 
@@ -752,13 +744,13 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, asmc::File &OutputFi
                                 mov->to = this->registers["%rcx"]->get(exp1.size);
                                 OutputFile.text << mov;
 
-                                func = new AST::Function();
+                                func = new ast::Function();
                                 func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
                                 func->type = sym->type;
                                 func->type.size = asmc::DWord;
                             };
                         };
-                        AST::Refrence * ref = new AST::Refrence();
+                        ast::Refrence * ref = new ast::Refrence();
                         ref->Ident = my;
                         ref->internal = true;
                         mod = "pub_" + cl->Ident + "_";
@@ -793,8 +785,8 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, asmc::File &OutputFi
         {
              gen::Expr exp;
             //check if args.pop is a callExpr
-            if(dynamic_cast<AST::CallExpr *>(call->Args.peek()) != nullptr){
-                AST::CallExpr * callExpr = dynamic_cast<AST::CallExpr *>(call->Args.peek());
+            if(dynamic_cast<ast::CallExpr *>(call->Args.peek()) != nullptr){
+                ast::CallExpr * callExpr = dynamic_cast<ast::CallExpr *>(call->Args.peek());
                 // get the number of args
                 int argc = callExpr->call->Args.count;
                 // push all of the used int args to the stack
@@ -836,16 +828,16 @@ AST::Function gen::CodeGenerator::GenCall(AST::Call * call, asmc::File &OutputFi
         return *func;
 };
 
-asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
+asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
     asmc::File OutputFile = asmc::File();
 
-    if(dynamic_cast<AST::Sequence *>(STMT) != nullptr){
-        AST::Sequence * sequence = dynamic_cast<AST::Sequence *>(STMT);
+    if(dynamic_cast<ast::Sequence *>(STMT) != nullptr){
+        ast::Sequence * sequence = dynamic_cast<ast::Sequence *>(STMT);
         OutputFile << this->GenSTMT(sequence->Statment1);
         OutputFile << this->GenSTMT(sequence->Statment2);
     }
-    else if(dynamic_cast<AST::Function *>(STMT)){
+    else if(dynamic_cast<ast::Function *>(STMT)){
         /*
             ident:
                 push rbp
@@ -853,20 +845,18 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 this->GenSTMT()
         */
 
-        AST::Function * func = dynamic_cast<AST::Function *>(STMT);
+        gen::scope::ScopeManager::getInstance()->pushScope();
+
+        ast::Function * func = dynamic_cast<ast::Function *>(STMT);
         int saveIntArgs = intArgsCounter;
         bool isLambda = func->isLambda;
-        if (!isLambda){
-            this->SymbolTable.clear();
-            this->SymbolTable.head = nullptr;
-        }
 
         if(this->scope == nullptr) this->nameTable << *func;
         else{
             // add the function to the class name table
             this->scope->nameTable << * func;
             // if the function is public add it to the public name table
-            if(func->scope == AST::Public) this->scope->publicNameTable << * func;
+            if(func->scope == ast::Public) this->scope->publicNameTable << * func;
         }
         
         if(func->statment != nullptr){
@@ -917,7 +907,7 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
                 symbol.symbol = "my";
                 
                                 
-                auto ty = AST::Type();
+                auto ty = ast::Type();
                 ty.typeName = scope->Ident;
                 ty.size = asmc::QWord;
                 symbol.type = ty;
@@ -941,15 +931,9 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
             asmc::File file = this->GenSTMT(func->statment);
             OutputFile << file;
-            
-            // align the stack
-            int align = 16;
-            if(this->SymbolTable.count  > 0){
-                align = ((this->SymbolTable.peek().byteMod + 15) / 16) * 16;
-            }
 
             asmc::Subq * sub = new asmc::Subq;
-            sub->op1 = "$" + std::to_string(align);
+            sub->op1 = "$" + std::to_string(gen::scope::ScopeManager::getInstance()->getStackAlignment());
             sub->op2 = this->registers["%rsp"]->get(asmc::QWord);
             OutputFile.text.insert(sub, AlignmentLoc + 1);
             
@@ -959,43 +943,41 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
         delete(func);
 
-        if(!isLambda){
-            this->SymbolTable.clear();
-            this->SymbolTable.head = nullptr;
-        }
         this->intArgsCounter = saveIntArgs;
+        gen::scope::ScopeManager::getInstance()->popScope();
     }
-    else if (dynamic_cast<AST::Declare *>(STMT) != nullptr){
+    else if (dynamic_cast<ast::Declare *>(STMT) != nullptr){
         /*
             movl $0x0, -[SymbolT + size](rdp)
             **also needs to be added to symbol table**
         */
         
-        AST::Declare * dec =  dynamic_cast<AST::Declare *>(STMT);
+        ast::Declare * dec =  dynamic_cast<ast::Declare *>(STMT);
         int offset = this->getBytes(dec->type.size);
         links::LinkedList<gen::Symbol>  * Table;
         
         if (!this->globalScope){
-            // if the there  is no scope or in a function use the main SymbolTable
-            if(this->scope == nullptr || this->inFunction) Table = &this->SymbolTable;
+            // if the there  is no scope use the scope manager otherwise use the scope
+            if(this->scope == nullptr || this->inFunction){
+                gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type, dec->mask);
+            }
             else{
                 // add the symbol to the class symbol table
                 Table = &this->scope->SymbolTable;
-            }
 
-            if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable: " + dec->Ident);
-
-            gen::Symbol Symbol;
-            if (Table->head == nullptr){
-                Symbol.byteMod = offset;
-            }else{
-                Symbol.byteMod = Table->head->data.byteMod + offset;
-            }
-            Symbol.type = dec->type;
-            Symbol.symbol = dec->Ident;
-            Table->push(Symbol);
-            // if the symbol is public add it to the public symbol table
-            if(dec->scope == AST::Public && this->scope != nullptr) this->scope->publicSymbols.push(Symbol);
+                if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable: " + dec->Ident);
+                gen::Symbol Symbol;
+                if (Table->head == nullptr){
+                    Symbol.byteMod = offset;
+                }else{
+                    Symbol.byteMod = Table->head->data.byteMod + offset;
+                }
+                Symbol.type = dec->type;
+                Symbol.symbol = dec->Ident;
+                Table->push(Symbol);
+                // if the symbol is public add it to the public symbol table
+                if(dec->scope == ast::Public && this->scope != nullptr) this->scope->publicSymbols.push(Symbol);
+            };
         } else{
             Table = &this->GlobalSymbolTable;
             asmc::LinkTask * var = new asmc::LinkTask();
@@ -1016,42 +998,45 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
         
     }
-    else if(dynamic_cast<AST::DecArr *>(STMT) != nullptr){
-         /*
+    else if(dynamic_cast<ast::DecArr *>(STMT) != nullptr){
+            /*
             movl $0x0, -[SymbolT + size](rdp)
             **also needs to be added to symbol table**
-        */
-        AST::DecArr * dec =  dynamic_cast<AST::DecArr *>(STMT);
-        int offset = this->getBytes(dec->type.size);
+            */
+            ast::DecArr * dec =  dynamic_cast<ast::DecArr *>(STMT);
+            int offset = this->getBytes(dec->type.size);
 
-        offset = offset * dec->count;
+            offset = offset * dec->count;
 
-        links::LinkedList<gen::Symbol>  * Table;
-        if(this->scope == nullptr) Table = &this->SymbolTable;
-        else Table = &this->scope->SymbolTable;
+            links::LinkedList<gen::Symbol>  * Table;
+            if(this->scope == nullptr){
+                dec->type.arraySize = dec->count;
+                gen::scope::ScopeManager::getInstance()->assign(dec->ident, dec->type, false);
+            }
+            else{Table = &this->scope->SymbolTable;
 
-        if(Table->search<std::string>(searchSymbol, dec->ident) != nullptr) throw err::Exception("redefined veriable:" + dec->ident);
+            if(Table->search<std::string>(searchSymbol, dec->ident) != nullptr) throw err::Exception("redefined veriable:" + dec->ident);
 
-        gen::Symbol Symbol;
+            gen::Symbol Symbol;
 
-        if (Table->head == nullptr){
-            Symbol.byteMod = offset;
-        }else{
-            Symbol.byteMod = Table->head->data.byteMod + offset;
+            if (Table->head == nullptr){
+                Symbol.byteMod = offset;
+            }else{
+                Symbol.byteMod = Table->head->data.byteMod + offset;
+            }
+            Symbol.type = dec->type;
+            Symbol.symbol = dec->ident;
+            Table->push(Symbol);
         }
-        Symbol.type = dec->type;
-        Symbol.symbol = dec->ident;
-        Table->push(Symbol);
-        this->scopePop += 1;
 
     }
-    else if (dynamic_cast<AST::DecAssign *>(STMT) != nullptr){
+    else if (dynamic_cast<ast::DecAssign *>(STMT) != nullptr){
         /*
             movl $0x0, -[SymbolT + size](rdp)
             **also needs to be added to symbol table**
         */
-        AST::DecAssign * decAssign =  dynamic_cast<AST::DecAssign *>(STMT);
-        AST::Declare * dec = decAssign->declare;
+        ast::DecAssign * decAssign =  dynamic_cast<ast::DecAssign *>(STMT);
+        ast::Declare * dec = decAssign->declare;
         int offset = this->getBytes(dec->type.size);
         
         links::LinkedList<gen::Symbol>  * Table;
@@ -1059,24 +1044,14 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         if(!this->globalScope){
         
-            if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
-
-            gen::Symbol symbol;
-            if (Table->head == nullptr){
-                symbol.byteMod = offset;
-            }else{
-                symbol.byteMod = Table->head->data.byteMod + offset;
-            }
-            symbol.type = dec->type;
-            symbol.symbol = dec->Ident;
-            Table->push(symbol);
+            int byteMod = gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type, dec->mask);
 
             asmc::Mov * mov = new asmc::Mov();
             gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile);
             mov->op = expr.op;
             mov->size = expr.size;
             mov->from = expr.access;
-            mov->to = "-" + std::to_string(symbol.byteMod) + "(%rbp)";
+            mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
             OutputFile.text << mov;
         }
         else{
@@ -1103,14 +1078,14 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         };
 
     }
-    else if (dynamic_cast<AST::Return *>(STMT) != nullptr){
+    else if (dynamic_cast<ast::Return *>(STMT) != nullptr){
         /*
             mov [this.GenExpr(ret.value)]
             pop rbp
             ret
         */
 
-        AST::Return * ret = dynamic_cast<AST::Return *>(STMT);
+        ast::Return * ret = dynamic_cast<ast::Return *>(STMT);
 
         asmc::Mov * mov = new asmc::Mov();
         mov->size = this->returnType.size;
@@ -1122,14 +1097,14 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text << re;
 
     }
-    else if (dynamic_cast<AST::Assign *>(STMT) != nullptr){
-        AST::Assign * assign = dynamic_cast<AST::Assign *>(STMT);
+    else if (dynamic_cast<ast::Assign *>(STMT) != nullptr){
+        ast::Assign * assign = dynamic_cast<ast::Assign *>(STMT);
         bool global = false;
 
         links::LinkedList<gen::Symbol>  * Table = &this->SymbolTable;
         
         
-        Symbol * symbol = Table->search<std::string>(searchSymbol, assign->Ident);
+        Symbol * symbol = gen::scope::ScopeManager::getInstance()->get(assign->Ident);
         if(symbol == nullptr) {
             Table = &this->GlobalSymbolTable;
             symbol = Table->search<std::string>(searchSymbol, assign->Ident);
@@ -1152,7 +1127,7 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         assign->modList.invert();
         int tbyte = 0;
         
-        AST::Type last = symbol->type;
+        ast::Type last = symbol->type;
         asmc::Size size;
         std::string output;
         if(global) output = symbol->symbol; 
@@ -1199,12 +1174,12 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
     
     }
-    else if (dynamic_cast<AST::Call *>(STMT) != nullptr){
-        AST::Call * call = dynamic_cast<AST::Call *>(STMT);
+    else if (dynamic_cast<ast::Call *>(STMT) != nullptr){
+        ast::Call * call = dynamic_cast<ast::Call *>(STMT);
         this->GenCall(call, OutputFile);
     }
-    else if (dynamic_cast<AST::Push *>(STMT) != nullptr){
-        AST::Push * push = dynamic_cast<AST::Push *>(STMT);
+    else if (dynamic_cast<ast::Push *>(STMT) != nullptr){
+        ast::Push * push = dynamic_cast<ast::Push *>(STMT);
         asmc::Mov * count = new asmc::Mov;
 
         count->size = asmc::QWord;
@@ -1232,8 +1207,8 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         
         OutputFile.text << new asmc::SysCall;
     }
-    else if (dynamic_cast<AST::Pull *>(STMT) != nullptr){
-        AST::Pull * pull = dynamic_cast<AST::Pull *>(STMT);
+    else if (dynamic_cast<ast::Pull *>(STMT) != nullptr){
+        ast::Pull * pull = dynamic_cast<ast::Pull *>(STMT);
         asmc::Mov * count = new asmc::Mov;
         count->size = asmc::QWord;
         count->to = this->registers["%rdx"]->get(count->size);
@@ -1258,8 +1233,10 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         
         OutputFile.text << new asmc::SysCall;
     }
-    else if (dynamic_cast<AST::If *>(STMT) != nullptr){
-        AST::If ifStmt = *dynamic_cast<AST::If *>(STMT);
+    else if (dynamic_cast<ast::If *>(STMT) != nullptr){
+        // push a new scope
+        gen::scope::ScopeManager::getInstance()->pushScope();
+        ast::If ifStmt = *dynamic_cast<ast::If *>(STMT);
 
         asmc::Lable * lable1 = new asmc::Lable();
         lable1->lable = ".L"+ this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
@@ -1314,9 +1291,10 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text << mov2;
         OutputFile.text << cmp;
 
+
         switch (ifStmt.Condition->op)
         {
-        case AST::Equ:
+        case ast::Equ:
         {
             if (ifStmt.elseStatment != nullptr) {jne->to = lableElse->lable;} else jne->to = lable1->lable;
             
@@ -1330,7 +1308,7 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             OutputFile.text << lable1;
             break;
         }
-        case AST::NotEqu :
+        case ast::NotEqu :
         {
             asmc::Je * je = new asmc::Je();
 
@@ -1341,7 +1319,7 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             OutputFile.text << lable1;
             break;
         }
-        case AST::Great :
+        case ast::Great :
         {
             asmc::Jle * jl = new asmc::Jle();
 
@@ -1353,7 +1331,7 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             OutputFile.text << lable1;
             break;
         }
-        case AST::Less :
+        case ast::Less :
         {
             asmc::Jge * jg = new asmc::Jge();
 
@@ -1369,9 +1347,11 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         default:
             break;
         }
+        gen::scope::ScopeManager::getInstance()->popScope();
     }
-    else if(dynamic_cast<AST::While *>(STMT) != nullptr){
-        AST::While * loop = dynamic_cast<AST::While *>(STMT);
+    else if(dynamic_cast<ast::While *>(STMT) != nullptr){
+        gen::scope::ScopeManager::getInstance()->pushScope();
+        ast::While * loop = dynamic_cast<ast::While *>(STMT);
 
         asmc::Lable * lable1 = new asmc::Lable();
         lable1->lable =".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
@@ -1417,17 +1397,18 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         OutputFile.text << mov1;
         OutputFile.text << mov2;
         OutputFile.text << cmp;
+        gen::scope::ScopeManager::getInstance()->popScope();
 
         switch (loop->condition->op)
         {
-        case AST::Equ:
+        case ast::Equ:
         {
             asmc::Je * je = new asmc::Je();
             je->to = lable1->lable;
             OutputFile.text << je;
             break;
         }
-        case AST::NotEqu :
+        case ast::NotEqu :
         {
             asmc::Jne * jne = new asmc::Jne();
 
@@ -1435,7 +1416,7 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             OutputFile.text << jne;
             break;
         }
-        case AST::Great :
+        case ast::Great :
         {
             asmc::Jg * jg = new asmc::Jg();
 
@@ -1444,7 +1425,7 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             OutputFile.text << jg;
             break;
         }
-        case AST::Less :
+        case ast::Less :
         {
             asmc::Jl * jl = new asmc::Jl();
 
@@ -1455,8 +1436,9 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         }
         
     }
-    else if (dynamic_cast<AST::For *>(STMT) != nullptr){
-        AST::For * loop = dynamic_cast<AST::For *>(STMT);
+    else if (dynamic_cast<ast::For *>(STMT) != nullptr){
+        gen::scope::ScopeManager::getInstance()->pushScope();
+        ast::For * loop = dynamic_cast<ast::For *>(STMT);
 
         asmc::Lable * lable1 = new asmc::Lable();
         lable1->lable =".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
@@ -1506,14 +1488,14 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
 
         switch (loop->condition->op)
         {
-        case AST::Equ:
+        case ast::Equ:
         {
             asmc::Je * je = new asmc::Je();
             je->to = lable1->lable;
             OutputFile.text << je;
             break;
         }
-        case AST::NotEqu :
+        case ast::NotEqu :
         {
             asmc::Jne * jne = new asmc::Jne();
 
@@ -1521,7 +1503,7 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             OutputFile.text << jne;
             break;
         }
-        case AST::Great :
+        case ast::Great :
         {
             asmc::Jg * jg = new asmc::Jg();
 
@@ -1530,7 +1512,7 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             OutputFile.text << jg;
             break;
         }
-        case AST::Less :
+        case ast::Less :
         {
             asmc::Jl * jl = new asmc::Jl();
 
@@ -1539,9 +1521,10 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
             break;
         }
         }
+        gen::scope::ScopeManager::getInstance()->popScope();
     }
-    else if(dynamic_cast<AST::UDeffType *>(STMT) != nullptr){
-        AST::UDeffType * udef = dynamic_cast<AST::UDeffType *>(STMT);
+    else if(dynamic_cast<ast::UDeffType *>(STMT) != nullptr){
+        ast::UDeffType * udef = dynamic_cast<ast::UDeffType *>(STMT);
         gen::Type * type = new gen::Type();
         bool saveScope = this->globalScope;
         this->globalScope = false;
@@ -1550,8 +1533,8 @@ asmc::File gen::CodeGenerator::GenSTMT(AST::Statment * STMT){
         this->typeList.push(type);
         this->globalScope = saveScope;
     }
-    else if(dynamic_cast<AST::Class *>(STMT) != nullptr){
-        AST::Class * deff = dynamic_cast<AST::Class *>(STMT);
+    else if(dynamic_cast<ast::Class *>(STMT) != nullptr){
+        ast::Class * deff = dynamic_cast<ast::Class *>(STMT);
         gen::Class * type = new gen::Class();
         bool saveScope = this->globalScope;
         this->globalScope = false;

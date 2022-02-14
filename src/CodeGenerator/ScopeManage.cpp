@@ -1,6 +1,6 @@
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Exceptions.hpp"
-
+gen::scope::ScopeManager* gen::scope::ScopeManager::instance = nullptr;
 
 #pragma region Helper Functions
 
@@ -26,7 +26,7 @@ gen::scope::ScopeManager::ScopeManager(){
     this->scopeStack.push_back(0);
 }
 
-int gen::scope::ScopeManager::assign(std::string symbol, AST::Type type, bool mask, bool isGlobal = false){
+int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type, bool mask, bool isGlobal = false){
     gen::Symbol sym = gen::Symbol();
 
     // if the symbol is already in the stack, throw an error
@@ -41,7 +41,7 @@ int gen::scope::ScopeManager::assign(std::string symbol, AST::Type type, bool ma
     sym.type = type;
     sym.mask = mask;
     this->stack.push_back(sym);
-    this->stackPos += sizeToInt(type.size);
+    this->stackPos += sizeToInt(type.size) * type.arraySize;
 
     this->scopeStack.back()++;
 
@@ -61,20 +61,29 @@ void gen::scope::ScopeManager::popScope(){
     this->scopeStack.pop_back();
 };
 
-gen::Symbol gen::scope::ScopeManager::get(std::string symbol){
+int gen::scope::ScopeManager::getStackAlignment(){
+                // align the stack
+    int align = 16;
+    if(this->stack.size()  > 0){
+        align = ((this->stackPos + 15) / 16) * 16;
+    }
+    return stackPos;
+};
+
+gen::Symbol * gen::scope::ScopeManager::get(std::string symbol){
     for(int i = 0; i < this->stack.size(); i++){
         if(this->stack[i].symbol == symbol){
-            return this->stack[i];
+            return &this->stack[i];
         }
     }
 
     // search global stack
     for(int i = 0; i < this->globalStack.size(); i++){
         if(this->globalStack[i].symbol == symbol){
-            return this->globalStack[i];
+            return &this->globalStack[i];
         }
     }
     
-    throw err::Exception("Symbol not found: " + symbol);
+    return nullptr;
 
 };
