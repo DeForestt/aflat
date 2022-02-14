@@ -55,23 +55,21 @@ int read@File(adr pointer, char delim, char term){
         return  0;
 };
 
-adr toArray@File(char delim, char term, Array arr){
-        adr ibuff = malloc(256);
-        
-        int size = arr.size;
-
-        int eof = my.read(ibuff, delim, term);
-        int i = 0;
-        while(eof != 1){
-                if (i > arr.size)}{
-                        return #0;
-                };
-                adr pointer = arr.at(i);
-                pointer =: ibuff;
-                ibuff = malloc(256);
-                eof = my.read(ibuff, delim, term);
-                i = i + 1;
-        };
-        free(ibuff);
-        return arr;
+adr toArray@File(char delim, char term){
+	Array a = newArray(adr, 0);
+	adr ibuff = malloc(256);
+	
+	int eof = my.read(ibuff, delim, term);
+	while (eof != 1){
+		int size;
+		size = a.size;
+		a.extend(1);
+		adr pointer = a.at(size);
+		if (eof != 1){
+			pointer =: ibuff;
+			ibuff = malloc(256);
+		};
+		eof = my.read(ibuff, delim, term);
+	};
+        return a;
 };

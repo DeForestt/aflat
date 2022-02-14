@@ -902,8 +902,6 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
                 asmc::Mov * movy = new asmc::Mov();
                 movy->from = this->intArgs[intArgsCounter].get(asmc::QWord);
 
-                if(this->SymbolTable.search<std::string>(searchSymbol, "my") != nullptr) throw err::Exception("redefined veriable: my");
-
                 symbol.symbol = "my";
                 
                                 
@@ -911,17 +909,12 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
                 ty.typeName = scope->Ident;
                 ty.size = asmc::QWord;
                 symbol.type = ty;
-             
 
-                if (this->scope->SymbolTable.head == nullptr){
-                    symbol.byteMod = offset;
-                }else{
-                    symbol.byteMod = scope->SymbolTable.peek().byteMod + offset;
-                }
-                this->SymbolTable.push(symbol);
+                int byteMod = gen::scope::ScopeManager::getInstance()->assign("my", ty, false);
+        
 
                 movy->size = asmc::QWord;
-                movy->to = "-" + std::to_string(symbol.byteMod) + + "(%rbp)";
+                movy->to = "-" + std::to_string(byteMod) + + "(%rbp)";
                 OutputFile.text << movy;
                 this->intArgsCounter++;
             };
