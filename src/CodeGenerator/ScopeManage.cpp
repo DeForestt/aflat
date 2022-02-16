@@ -36,12 +36,14 @@ int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type, bool ma
         }
     }
 
-    sym.byteMod = this->stackPos;
-    sym.symbol = symbol;
-    sym.type = type;
-    sym.mask = mask;
-    this->stack.push_back(sym);
+    
+    
     this->stackPos += sizeToInt(type.size) * type.arraySize;
+    sym.symbol = symbol;
+    sym.mask = mask;
+    sym.type = type;
+    sym.byteMod = this->stackPos;
+    this->stack.push_back(sym);
 
     this->scopeStack.back()++;
 
