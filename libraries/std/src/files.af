@@ -55,11 +55,12 @@ int read@File(adr pointer, char delim, char term){
         return  0;
 };
 
-adr toArray@File(char delim, char term){
+Array toArray@File(char delim, char term){
 	Array a = newArray(adr, 0);
 	adr ibuff = malloc(256);
 	
 	int eof = my.read(ibuff, delim, term);
+
 	while (eof != 1){
 		int size;
 		size = a.size;
@@ -71,5 +72,6 @@ adr toArray@File(char delim, char term){
 		};
 		eof = my.read(ibuff, delim, term);
 	};
+
         return a;
 };

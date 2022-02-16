@@ -4,7 +4,7 @@ class File{
 
     int write(adr text);
     int read(adr pointer, char delim, char term);
-    int toArray(char delim, char term);
+    adr toArray(char delim, char term);
     int close();
 };
 
