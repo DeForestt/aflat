@@ -294,7 +294,7 @@ int float_toString(adr input, adr obuff, int signed){
 		j = j + 1;
 	};
 	
-	new = newBit(1);
+	Bit new = newBit(1);
 	current.next = new;
 	new.last = current;
 	current = new;
@@ -398,4 +398,9 @@ adr str_reverse(adr in, adr buff){
 	buff =: '\0';
 
 	return buffPtr;
+};
+
+char str_at(adr str, int i){
+	adr point = str + i;
+	return point as char;
 };

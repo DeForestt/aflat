@@ -12,3 +12,4 @@ int str_toFloat(adr input);
 int sPrintFloat(adr input);
 int float_toString(adr input, adr obuff, int signed);
 adr str_reverse(adr in, adr buff);
+char str_at(adr str, int i);
