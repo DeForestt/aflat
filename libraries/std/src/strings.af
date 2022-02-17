@@ -404,3 +404,15 @@ char str_at(adr str, int i){
 	adr point = str + i;
 	return point as char;
 };
+
+int str_forEach(adr s, adr foo, adr args){
+	int len = len(s);
+	for {int i = 0;}(i < len){i = i + 1;}{
+		char c = str_at(s, i);
+		int break = foo(c, i, args);
+		if (break == 1) {
+			return break;
+		};
+	};
+	return 0;
+};

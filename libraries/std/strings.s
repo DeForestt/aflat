@@ -1,3 +1,4 @@
+.global	str_forEach
 .global	str_at
 .global	str_reverse
 .global	str_subString
@@ -1163,6 +1164,56 @@ str_at:
 	movq	-530(%rbp), %rax
 	movb	(%rax), %al
 	movb	%al, %al
+	leave
+	ret
+str_forEach:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$567, %rsp
+	movq	%rdi, -538(%rbp)
+	movq	%rsi, -546(%rbp)
+	movq	%rdx, -554(%rbp)
+	movq	-538(%rbp), %rax
+	movq	%rax, %rdi
+	call	len
+	movl	%eax, -558(%rbp)
+	movl	$0, -562(%rbp)
+	jmp	.Lstr_forEach146
+.Lstr_forEach145:
+	movq	-538(%rbp), %rax
+	movq	%rax, %rdi
+	movl	-562(%rbp), %eax
+	movl	%eax, %esi
+	call	str_at
+	movb	%al, -563(%rbp)
+	movq	-546(%rbp), %rcx
+	movb	-563(%rbp), %al
+	movb	%al, %dil
+	movl	-562(%rbp), %eax
+	movl	%eax, %esi
+	movq	-554(%rbp), %rax
+	movq	%rax, %rdx
+	call	*%rcx
+	movl	%eax, -567(%rbp)
+	movl	-567(%rbp), %eax
+	movl	$1, %ecx
+	cmpl	%ecx, %eax
+	jne	.Lstr_forEach147
+	movl	-567(%rbp), %eax
+	leave
+	ret
+.Lstr_forEach147:
+	mov	$1, %edx
+	mov	-562(%rbp), %eax
+	add	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -562(%rbp)
+.Lstr_forEach146:
+	movl	-562(%rbp), %eax
+	movl	-558(%rbp), %ecx
+	cmpl	%ecx, %eax
+	jl	.Lstr_forEach145
+	movl	$0, %eax
 	leave
 	ret
 
