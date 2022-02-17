@@ -517,7 +517,7 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                 call->modList = modList;
                 bool pop = false;
                 lex::OpSym * testSym = dynamic_cast<lex::OpSym *>(tokens.peek());
-                if( testSym != nullptr && !(testSym->Sym == '[' || testSym->Sym == ')')){
+                if( testSym != nullptr && testSym->Sym != '['){
                     lex::OpSym * symp = dynamic_cast<lex::OpSym *> (tokens.pop());
                     if (symp->Sym != ')') throw err::Exception("Expected closed perenth got " + symp->Sym);
                 }else{
