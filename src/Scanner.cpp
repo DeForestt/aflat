@@ -216,11 +216,11 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                     }
                     else if (input[i] == '|')
                     {
-                        lex::Symbol * sym = new lex::Symbol;
-                        sym->meta = "|";
+                        lex::OpSym * sym = new lex::OpSym;
+                        sym->Sym = '|';
                         if (input[i+1] == '|'){
-                            lex::OpSym * opSym = new lex::OpSym;
-                            opSym->Sym = '|';
+                            lex::Symbol * opSym = new lex::Symbol;
+                            opSym->meta = "||";
                             tokens << opSym;
                             i++;
                         } else tokens << sym;
