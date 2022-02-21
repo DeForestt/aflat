@@ -39,10 +39,10 @@ ListNode newNode(){
 };
 
 /*
- * function name: remove@LinkedList;
- * description: removes the node at the given index;
- * agruments: int index : the index of the node to remove;
- * returns: int : 0 if successful, -1 if not;
+ * function name:   remove@LinkedList;
+ * description:     removes the node at the given index;
+ * agruments:       int index : the index of the node to remove;
+ * returns:         int : 0 if successful, -1 if not;
  */
 
 int delete@LinkedList(int index){
@@ -59,10 +59,10 @@ int delete@LinkedList(int index){
 };
 
 /*
- * function name: get@LinkedList;
- * description: returns the node at the given index;
- * agruments: int index : the index of the node to return;
- * returns: adr : the node at the given index;
+ * function name:   get@LinkedList;
+ * description:     returns the node at the given index;
+ * agruments:       int index : the index of the node to return;
+ * returns:         adr : the node at the given index;
  */
 
 adr get@LinkedList(int index){
@@ -84,10 +84,10 @@ adr get@LinkedList(int index){
 };
 
 /*
- * function name: append@LinkedList;
- * description: appends a node to the end of the list;
- * agruments: adr data : the data to be appended;
- * returns: int : 0 if successful, -1 if not;
+ * function name:   append@LinkedList;
+ * description:     appends a node to the end of the list;
+ * agruments:       adr data : the data to be appended;
+ * returns:         int : 0 if successful, -1 if not;
  */
 
 int append@LinkedList(adr data){
@@ -111,10 +111,10 @@ int append@LinkedList(adr data){
 };
 
 /*
- * function name: size@LinkedList;
- * description: returns the size of the list;
- * agruments: none
- * returns: int : the size of the list;
+ * function name:   size@LinkedList;
+ * description:     returns the size of the list;
+ * agruments:       none
+ * returns:         int : the size of the list;
  */
 
 int size@LinkedList(){
@@ -129,12 +129,12 @@ int size@LinkedList(){
 };
 
 /*
- * function name: forEach@LinkedList;
- * description: iterates through the list and calls the given function on each node
-                it will break if the function returns 1;
- * agruments: adr foo : the function to be called on each node
- *            adr arg : the argument to be passed to the function;
- * returns: int : 0 if successful, -1 if not;
+ * function name:   forEach@LinkedList;
+ * description:     iterates through the list and calls the given function on each node
+                    it will break if the function returns 1;
+ * agruments:       adr foo : the function to be called on each node
+ *                  adr arg : the argument to be passed to the function;
+ * returns:         int : 0 if successful, -1 if not;
  */
 int forEach@LinkedList(adr foo, adr arg){
     ListNode curr;
@@ -171,10 +171,10 @@ int init@Array(int typeSize, int size){
 };
 
 /*
- * function name: at@Array;
- * description: returns the address of the element at the given index;
- * agruments: int index : the index of the element to return;
- * returns: adr : the address of the element at the given index;
+ * function name:   at@Array;
+ * description:     returns the address of the element at the given index;
+ * agruments:       int index : the index of the element to return;
+ * returns:         adr : the address of the element at the given index;
  */
 adr at@Array(int index){
     int tSize;
