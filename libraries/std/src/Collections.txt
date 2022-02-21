@@ -1,0 +1,101 @@
+Function: NewList
+	Description:   create a new list
+	Parameters: 
+	Returns:  : 
+
+
+Function: init@LinkedList
+	Description:   initialize a list
+	Parameters: 
+	Returns:  : 
+
+
+Function: newNode
+	Description:   create a new node
+	Parameters: 
+	Returns:  : 
+
+
+Function: remove@LinkedList
+	Description: removes the node at the given index
+	Parameters: 
+		- ion name : remove@LinkedList
+	Returns: nt : 0 if successful, -1 if not
+
+
+Function: get@LinkedList
+	Description: returns the node at the given index
+	Parameters: 
+		- ion name : get@LinkedList
+	Returns: dr : the node at the given index
+
+
+Function: append@LinkedList
+	Description: appends a node to the end of the list
+	Parameters: 
+		- ion name : append@LinkedList
+	Returns: nt : 0 if successful, -1 if not
+
+
+Function: size@LinkedList
+	Description: returns the size of the list
+	Parameters: 
+		- ion name : size@LinkedList
+	Returns: nt : the size of the list
+
+
+Function: forEach@LinkedList
+	Description: iterates through the list and calls the given function on each node
+                it will break if the function returns 1
+	Parameters: 
+		- ion name : forEach@LinkedList
+	Returns: nt : 0 if successful, -1 if not
+
+
+Function: init@Array
+	Description:   initialize an array
+	Parameters: 
+		- int typeSize : the size of the type
+		- int size : the size of the array
+	Returns:  : 
+
+
+Function: at@Array
+	Description: returns the address of the element at the given index
+	Parameters: 
+		- ion name : at@Array
+	Returns: dr : the address of the element at the given index
+
+
+Function: newArray
+	Description:   create a new array
+	Parameters: 
+		- int typeSize : the size of the type
+		- int size : the size of the array
+	Returns: Array : a new array
+  */
+
+
+Function:   delete@Array
+	Description:     deletes the array and frees the memory
+	Parameters: 
+	Returns: int : 0
+
+
+Function:   extend@Array
+	Description:     extends the array by the given amount
+	Parameters: 
+		- int amount : the amount to extend the array by
+	Returns: int size : the new size of the array
+
+
+Function:   forEach@Array
+	Description:     preforms a function for each element of the array passed by value
+                    it will break if the function returns 1
+	Parameters: 
+		- foo : a function pointer to call on the elements
+		- arg : an argument pointer
+	Returns: int : 0 if sucssesfull, 1 on error
+ */
+
+
