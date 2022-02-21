@@ -38,7 +38,7 @@ int str_comp(adr str1, adr str2){
 };
 
 int str_concat(adr str1, adr str2, adr pointer){
-    char null = ascii(0);
+    char null = '\0';
     char loader;
     while(str1 as char != null){
         loader = str1 as char;
@@ -401,13 +401,16 @@ adr str_reverse(adr in, adr buff){
 };
 
 char str_at(adr str, int i){
-	adr point = str + i;
-	return point as char;
+	for {int j = 0;}(j < i){j = j + 1;}{
+		str = str + 1;
+	};
+	char ch = str as char;
+	return ch;
 };
 
 int str_forEach(adr s, adr foo, adr args){
-	int len = len(s);
-	for {int i = 0;}(i < len){i = i + 1;}{
+	int in = len(s);
+	for {int i = 0;}(i < in){i = i + 1;}{
 		char c = str_at(s, i);
 		int break = foo(c, i, args);
 		if (break == 1) {

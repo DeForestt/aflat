@@ -57,6 +57,7 @@ void gen::scope::ScopeManager::pushScope(){
 void gen::scope::ScopeManager::popScope(){
     int size = this->scopeStack.back();
     for (int i = 0; i < size; i++){
+        this->stackPos -= sizeToInt(this->stack.back().type.size) * this->stack.back().type.arraySize;
         this->stack.pop_back();
     }
 
@@ -69,7 +70,11 @@ int gen::scope::ScopeManager::getStackAlignment(){
     if(this->stack.size()  > 0){
         align = ((this->stackPos + 15) / 16) * 16;
     }
-    return stackPos;
+
+    // if (align < 16){
+    //     align = 16;
+    // }
+    return align;
 };
 
 gen::Symbol * gen::scope::ScopeManager::get(std::string symbol){

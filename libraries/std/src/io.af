@@ -6,8 +6,8 @@
 
 int readString(adr pointer){
         char input = ' ';
-        char nl = ascii(10);
-        char null = ascii(0);
+        char nl = '\n';
+        char null = '\0';
         while(input != nl){
                 pull ?input;
                 pointer =: input;
@@ -23,6 +23,7 @@ int clearInput(){
         char buffer = ' ';
         while (buffer != nl){pull ?buffer};
         return 0;
+};
 
 int print(adr input){
         int len = len(input);
@@ -169,7 +170,7 @@ int printFloat(adr input, int signed){
 		j = j + 1;
 	};
 	
-	new = newBit(1);
+	Bit new = newBit(1);
 	current.next = new;
 	new.last = current;
 	current = new;

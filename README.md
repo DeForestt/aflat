@@ -1,5 +1,5 @@
 # AFlat
-AFlat is a simple, low-leval, programming language.  It is designed to give as much freedom as possible to the programmer, and yet at the same time be easy to read and understand.
+AFlat is a simple, low-level, programming language.  It is designed to give as much freedom as possible to the programmer, and yet at the same time be easy to read and understand.
 <br>
 
 ## Trust the programmer philosophy
@@ -11,7 +11,7 @@ AFlat aims to trust that developers know what they are doing.  It allows and enc
 
 ### Cloning the repository
 ```bash
-git clone https://github.com/Tenoqu-Inc/protobot
+git clone https://github.com/DeForestt/aflat
 ```
 
 ### Building the project
