@@ -237,7 +237,7 @@ int extend@Array(int amount){
 /*
  * function name:   forEach@Array;
  * description:     preforms a function for each element of the array passed by value
- *                  it will break if the function returns 1;
+                    it will break if the function returns 1;
  * arguments:       foo : a function pointer to call on the elements
                     arg : an argument pointer;
  * returns:         int: 0 if sucssesfull, 1 on error
