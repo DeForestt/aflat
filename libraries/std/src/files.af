@@ -6,10 +6,10 @@
 
 
 /*
- * function name: createFile;
- * description: creates a file with the given name, if it already exists it will be overwritten; 
- * arguments: adr fileName : the name of the file to be created;
- * returns: File : the file object for the created file;
+ * function name:       createFile;
+ * description:         creates a file with the given name, if it already exists it will be overwritten; 
+ * arguments:           adr fileName : the name of the file to be created;
+ * returns:             File : the file object for the created file;
  */
 File createFile(adr fileName){
         File file = malloc(File);
@@ -42,20 +42,20 @@ File openFile(adr fileName){
 };
 
 /*
- * function name: close@File
- * description: closes the file;
- * arguments: none;
- * returns: 0 : if the file was closed successfully;
+ * function name:       close@File
+ * description:         closes the file;
+ * arguments:           none;
+ * returns:             0 : if the file was closed successfully;
  */
 int close@File(){
         return sys_close(my.file);
 };
 
 /*
- * function name: write@File
- * description: writes the given string to the file;
- * arguments: adr string : the string to be written to the file;
- * returns: 0 : if the string was written successfully;
+ * function name:       write@File
+ * description:         writes the given string to the file;
+ * arguments:           adr string : the string to be written to the file;
+ * returns:             0 : if the string was written successfully;
  */
 int write@File(adr text){
         int length = len(text);
@@ -64,12 +64,12 @@ int write@File(adr text){
 };
 
 /*
- * function name: read@File
- * description: reads the file into a pointer using until the given delimiter is found;
- * arguments:   adr pointer : the pointer to the string to be written to
- *              char delim : the delimiter to be used to determine when to stop reading
- *              char term : the terminator used to denote the end of the file;
- * returns: int : 0 if not EOF, 1 if EOF;
+ * function name:       read@File
+ * description:         reads the file into a pointer using until the given delimiter is found;
+ * arguments:           adr pointer : the pointer to the string to be written to
+ *                      char delim : the delimiter to be used to determine when to stop reading
+ *                      char term : the terminator used to denote the end of the file;
+ * returns:             int : 0 if not EOF, 1 if EOF;
  */
 int read@File(adr pointer, char delim, char term){
         char input;
@@ -89,11 +89,11 @@ int read@File(adr pointer, char delim, char term){
 };
 
 /*
- * function name: toArray@File;
- * description: reads file to end to an Array split by delimiter;
- * arguments:  char delim : the delimiter to be used to determine when to stop reading
- *             char term  : the terminator used to denote the end of the file;
- * returns: Array : the array of strings;
+ * function name:       toArray@File;
+ * description:         reads file to end to an Array split by delimiter;
+ * arguments:           char delim : the delimiter to be used to determine when to stop reading
+ *                      char term  : the terminator used to denote the end of the file;
+ * returns:             Array : the array of strings;
  */
 Array toArray@File(char delim, char term){
 	Array a = newArray(adr, 0);
@@ -117,11 +117,11 @@ Array toArray@File(char delim, char term){
 };
 
 /*
- * function name: toList@File;
- * description: reads file to end to an LinkedList split by delimiter;
- * arguments:  char delim : the delimiter to be used to determine when to stop reading
- *             char term : the terminator used to denote the end of the file;
- * returns: LinkedList : the LinkedList of strings;
+ * function name:       toList@File;
+ * description:         reads file to end to an LinkedList split by delimiter;
+ * arguments:           char delim : the delimiter to be used to determine when to stop reading
+ *                      char term : the terminator used to denote the end of the file;
+ * returns:             LinkedList : the LinkedList of strings;
  */
 
 LinkedList toList@File(char delim, char term){

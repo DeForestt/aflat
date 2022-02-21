@@ -1,8 +1,8 @@
-Function: createFile
-	Description: creates a file with the given name, if it already exists it will be overwritten
+Function:       createFile
+	Description:         creates a file with the given name, if it already exists it will be overwritten
 	Parameters: 
-		- dr fileName : the name of the file to be created
-	Returns: ile : the file object for the created file
+		- adr fileName : the name of the file to be created
+	Returns: File : the file object for the created file
 
 
 Function: openFile
@@ -11,44 +11,44 @@ Function: openFile
 	Returns:  : 
 
 
-Function: close@File
- * description: closes the file
-	Description: closes the file
+Function:       close@File
+ * description:         closes the file
+	Description:         closes the file
 	Parameters: 
-	Returns:  : if the file was closed successfully
+	Returns: 0 : if the file was closed successfully
 
 
-Function: write@File
- * description: writes the given string to the file
-	Description: writes the given string to the file
+Function:       write@File
+ * description:         writes the given string to the file
+	Description:         writes the given string to the file
 	Parameters: 
-		- dr string : the string to be written to the file
-	Returns:  : if the string was written successfully
+		- adr string : the string to be written to the file
+	Returns: 0 : if the string was written successfully
 
 
-Function: read@File
- * description: reads the file into a pointer using until the given delimiter is found
-	Description: reads the file into a pointer using until the given delimiter is found
+Function:       read@File
+ * description:         reads the file into a pointer using until the given delimiter is found
+	Description:         reads the file into a pointer using until the given delimiter is found
 	Parameters: 
 		- adr pointer : the pointer to the string to be written to
 		- char delim : the delimiter to be used to determine when to stop reading
 		- char term : the terminator used to denote the end of the file
-	Returns: nt : 0 if not EOF, 1 if EOF
+	Returns: int : 0 if not EOF, 1 if EOF
 
 
-Function: toArray@File
-	Description: reads file to end to an Array split by delimiter
+Function:       toArray@File
+	Description:         reads file to end to an Array split by delimiter
 	Parameters: 
 		- char delim : the delimiter to be used to determine when to stop reading
 		- char term : the terminator used to denote the end of the file
-	Returns: rray : the array of strings
+	Returns: Array : the array of strings
 
 
-Function: toList@File
-	Description: reads file to end to an LinkedList split by delimiter
+Function:       toList@File
+	Description:         reads file to end to an LinkedList split by delimiter
 	Parameters: 
 		- char delim : the delimiter to be used to determine when to stop reading
 		- char term : the terminator used to denote the end of the file
-	Returns: inkedList : the LinkedList of strings
+	Returns: LinkedList : the LinkedList of strings
 
 
