@@ -75,3 +75,19 @@ Array toArray@File(char delim, char term){
 
         return a;
 };
+
+LinkedList toList@File(char delim, char term){
+        LinkedList l = newList(adr);
+        adr ibuff = malloc(256);
+        
+        int eof = my.read(ibuff, delim, term);
+
+        while (eof != 1){
+                l.append(ibuff);
+                ibuff = malloc(256);
+                eof = my.read(ibuff, delim, term);
+        };
+
+        return l;
+};
+};
