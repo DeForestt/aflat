@@ -90,4 +90,3 @@ LinkedList toList@File(char delim, char term){
 
         return l;
 };
-};
