@@ -15,7 +15,7 @@
 .global sys_pipe
 .global sys_kill
 .global sys_socket
-.global sys_setsocketopt
+.global sys_setsockopt
 
 .text
 
@@ -172,7 +172,7 @@ sys_socket:
 	leave
 	ret
 
-sys_setsocketopt:
+sys_setsockopt:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp
