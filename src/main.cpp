@@ -181,7 +181,7 @@ void buildTemplate(std::string value){
     
     // Write the standard Config file
     outfile << "; Aflat Config File\n";
-    outfile << "s io\n" << "m main\n";
+    outfile << "m main\n";
     outfile.close();
 }
 
@@ -196,6 +196,15 @@ void runConfig(std::string path, std::string libPath){
     // loop through the config file line by line
     std::stringstream ss(content);
     std::string line;
+
+    linker.push_back("io.s");
+    linker.push_back("collections.s");
+    linker.push_back("math.s");
+    linker.push_back("string.s");
+    linker.push_back("std.s");
+    linker.push_back("concurrancy.s");
+    linker.push_back("files.s");
+
     while(std::getline(ss, line)){
         line = remove_char(line, '\t');
 
@@ -207,8 +216,6 @@ void runConfig(std::string path, std::string libPath){
 
         // if the line is a comment, skip it
         if(line[0] == ';') continue;
-
-        if(line[0] == 's') linker.push_back(libPath + lowerCaseCopy + ".s");
 
         // if the line is a dependency, build it and add it to the linker
         if(line[0] == 'm'){
