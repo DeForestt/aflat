@@ -197,13 +197,13 @@ void runConfig(std::string path, std::string libPath){
     std::stringstream ss(content);
     std::string line;
 
-    linker.push_back("io.s");
-    linker.push_back("collections.s");
-    linker.push_back("math.s");
-    linker.push_back("string.s");
-    linker.push_back("std.s");
-    linker.push_back("concurrancy.s");
-    linker.push_back("files.s");
+    linker.push_back(libPath + "io.s");
+    linker.push_back(libPath + "collections.s");
+    linker.push_back(libPath + "math.s");
+    linker.push_back(libPath + "strings.s");
+    linker.push_back(libPath + "std.s");
+    linker.push_back(libPath + "concurrancy.s");
+    linker.push_back(libPath + "files.s");
 
     while(std::getline(ss, line)){
         line = remove_char(line, '\t');
@@ -246,6 +246,9 @@ void runConfig(std::string path, std::string libPath){
     }
     std::string gcc = "gcc -O0 -g -no-pie -o bin/a.out " + linkerList;
     system(gcc.c_str());
+
+    // remove first 7 elements from the linker list
+    linker.erase(linker.begin(), linker.begin() + 7);
 
     // delete the linkerList files
     for(auto& s : linker){
