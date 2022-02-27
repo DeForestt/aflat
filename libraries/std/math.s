@@ -115,49 +115,49 @@ pub_Random_next:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$32, %rsp
-	movq	%rdi, -12(%rbp)
-	movl	%esi, -16(%rbp)
+	movq	%rdi, -8(%rbp)
+	movl	%esi, -12(%rbp)
 	call	newTimes
-	movq	%rax, -24(%rbp)
-	movq	-24(%rbp), %rax
+	movq	%rax, -20(%rbp)
+	movq	-20(%rbp), %rax
 	movq	%rax, %rdi
 	call	sys_times
-	movq	-24(%rbp), %rdx
+	movq	-20(%rbp), %rdx
 	movq	0(%rdx), %rbx
-	movq	%rbx, -32(%rbp)
-	movq	-12(%rbp), %rdx
+	movq	%rbx, -28(%rbp)
+	movq	-8(%rbp), %rdx
 	movl	0(%rdx), %ebx
-	movl	%ebx, -28(%rbp)
+	movl	%ebx, -24(%rbp)
 	mov	$1, %edx
-	mov	-28(%rbp), %eax
+	mov	-24(%rbp), %eax
 	add	%edx, %eax
 	movl	%eax, %ebx
-	movl	%ebx, -28(%rbp)
+	movl	%ebx, -24(%rbp)
 	call	abs
 	mov	%eax, %edx
-	mov	-32(%rbp), %eax
+	mov	-28(%rbp), %eax
 	add	%edx, %eax
 	movl	%eax, %ebx
-	movl	%ebx, -28(%rbp)
-	movl	-28(%rbp), %eax
+	movl	%ebx, -24(%rbp)
+	movl	-24(%rbp), %eax
 	movl	%eax, %edi
-	mov	-28(%rbp), %eax
+	mov	-24(%rbp), %eax
 	cltd
-	idivl	-16(%rbp)
+	idivl	-12(%rbp)
 	movl	%edx, %eax
 	movl	%eax, %esi
 	call	exp
 	movl	%eax, %ebx
-	movl	%ebx, -28(%rbp)
-	mov	-28(%rbp), %eax
+	movl	%ebx, -24(%rbp)
+	mov	-24(%rbp), %eax
 	cltd
-	idivl	-16(%rbp)
+	idivl	-12(%rbp)
 	movl	%edx, %ebx
-	movl	%ebx, -28(%rbp)
-	movq	-12(%rbp), %rdx
-	movl	-28(%rbp), %ebx
+	movl	%ebx, -24(%rbp)
+	movq	-8(%rbp), %rdx
+	movl	-24(%rbp), %ebx
 	movl	%ebx, 0(%rdx)
-	movl	-28(%rbp), %eax
+	movl	-24(%rbp), %eax
 	movl	%eax, %edi
 	call	abs
 	movl	%eax, %eax
