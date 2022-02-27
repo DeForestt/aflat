@@ -1,6 +1,6 @@
 .needs <asm>
 .needs <std>
-.needs "/head/concurrancy.gs"
+.needs <concurrancy>
 
 class FD{
   public int out;
