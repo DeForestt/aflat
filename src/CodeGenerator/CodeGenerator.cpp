@@ -923,6 +923,17 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             OutputFile.linker.push(link);
 
             asmc::File file = this->GenSTMT(func->statment);
+            // check if the last statement is a return statement
+            if(file.text.count > 0){
+                asmc::Instruction * last = file.text.peek();
+                if(dynamic_cast<asmc::Return *>(last) == nullptr){
+                    asmc::Return * ret = new asmc::Return();
+                    file.text.push(ret);
+                }
+            } else {
+                asmc::Return * ret = new asmc::Return();
+                file.text.push(ret);
+            }
             OutputFile << file;
 
             asmc::Subq * sub = new asmc::Subq;
@@ -937,6 +948,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         delete(func);
 
         this->intArgsCounter = saveIntArgs;
+
         gen::scope::ScopeManager::getInstance()->popScope();
     }
     else if (dynamic_cast<ast::Declare *>(STMT) != nullptr){
