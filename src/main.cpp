@@ -34,7 +34,6 @@ int main(int argc, char *argv[]){
     std::string filename = getExePath();
     std::string exepath = filename.substr(0, filename.find_last_of("/"));
     std::string libPathA = exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/";
-    std::string libPath = exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/head/";
 
     std::ifstream ifs(argv[1]);
     std::string content( (std::istreambuf_iterator<char>(ifs) ),
@@ -50,6 +49,11 @@ int main(int argc, char *argv[]){
     }
     if (value == "build"){
         runConfig("./aflat.cfg", libPathA);
+        return 0;
+    }
+    if (value == "run"){
+        runConfig("./aflat.cfg", libPathA);
+        system("./bin/a.out");
         return 0;
     }
 
