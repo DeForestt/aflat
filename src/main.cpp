@@ -50,6 +50,7 @@ int main(int argc, char *argv[]){
     }
     if (value == "build"){
         runConfig("./aflat.cfg", libPathA);
+        return 0;
     }
 
     std::string outputFile;
@@ -204,6 +205,7 @@ void runConfig(std::string path, std::string libPath){
     linker.push_back(libPath + "std.s");
     linker.push_back(libPath + "concurrancy.s");
     linker.push_back(libPath + "files.s");
+    linker.push_back(libPath + "asm.s");
 
     while(std::getline(ss, line)){
         line = remove_char(line, '\t');
@@ -247,8 +249,8 @@ void runConfig(std::string path, std::string libPath){
     std::string gcc = "gcc -O0 -g -no-pie -o bin/a.out " + linkerList;
     system(gcc.c_str());
 
-    // remove first 7 elements from the linker list
-    linker.erase(linker.begin(), linker.begin() + 7);
+    // remove first 8 elements from the linker list
+    linker.erase(linker.begin(), linker.begin() + 8);
 
     // delete the linkerList files
     for(auto& s : linker){
