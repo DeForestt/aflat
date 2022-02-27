@@ -265,14 +265,14 @@ void runConfig(std::string path, std::string libPath){
         linkerList += s + " ";
     }
     std::string gcc = "gcc -O0 -g -no-pie -o bin/a.out " + linkerList;
-    std::cout << gcc << std::endl;
+
     system(gcc.c_str());
 
     // remove first 8 elements from the linker list
     linker.erase(linker.begin(), linker.begin() + 8);
 
     // delete the linkerList files
-    //for(auto& s : linker){
-    //    std::filesystem::remove(s);
-    //}
+    for(auto& s : linker){
+       std::filesystem::remove(s);
+    }
 }
