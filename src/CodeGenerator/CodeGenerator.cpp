@@ -569,8 +569,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile){
     else if (dynamic_cast<ast::Lambda *>(expr) != nullptr){
         ast::Lambda lambda = *dynamic_cast<ast::Lambda *>(expr);
         ast::Function * func = lambda.function;
-        auto milis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        func->ident.ident = "lambda_" + std::to_string(lablecount) + "_" + std::to_string(milis);
+        auto millies = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        std::string id = "lambda_"+ std::to_string(millies) +"_"+ std::to_string(lablecount);
+        func->ident.ident = id;
         lablecount++;
         func->scopeName = "global";
         func->isLambda = true;
@@ -579,7 +580,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile){
         OutputFile.hasLambda = true;
         OutputFile.lambdas->operator<<(this->GenSTMT(func));
 
-        output.access = "$" + func->ident.ident;
+        output.access = "$" + id;
         output.size = asmc::QWord;
     }
     else{
