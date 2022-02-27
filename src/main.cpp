@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 #include <sstream>
 #include <fstream>
 #include <filesystem>
@@ -12,44 +13,69 @@
 #include "Exceptions.hpp" 
 #include "PreProcessor.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include <thread>
 
 std::string preProcess(std::string input);
 std::string getExePath();
 void buildTemplate(std::string value);
-void linkDependancies(std::string value);
+void build(std::string path, std::string output);
+void runConfig(std::string path, std::string libPath);
 
 int main(int argc, char *argv[]){
+    // Usage error
+    if(argc < 2){
+        std::cout << "Usage: aflat <file> <output>\n";
+        return 1;
+    }
+
+    lex::Lexer scanner;
+    links::LinkedList<lex::Token* > tokens;
+
+    std::string filename = getExePath();
+    std::string exepath = filename.substr(0, filename.find_last_of("/"));
+    std::string libPathA = exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/";
+    std::string libPath = exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/head/";
+
+    std::ifstream ifs(argv[1]);
+    std::string content( (std::istreambuf_iterator<char>(ifs) ),
+                    (std::istreambuf_iterator<char>()    ) );
+    ifs.close();
+    std::string value = argv[1];
+
+    if (value == "make"){
+        std::cout << "creating " << argv[2] << '\n';
+        std::string pName = argv[2];
+        buildTemplate(pName);
+        return 0;
+    }
+    if (value == "build"){
+        runConfig("./aflat.cfg", libPathA);
+    }
+
+    std::string outputFile;
+    if (argc == 2) outputFile = "out.s"; else outputFile = argv[2];
+    build(value, outputFile);
+    return 0;
+}
+
+void build(std::string path, std::string output){
+    lex::Lexer scanner;
+    links::LinkedList<lex::Token* > tokens;
+
+    std::string filename = getExePath();
+    std::string exepath = filename.substr(0, filename.find_last_of("/"));
+    std::string libPath = exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/head/";
+    std::ifstream ifs(path);
+    std::string content( (std::istreambuf_iterator<char>(ifs) ),
+                    (std::istreambuf_iterator<char>()    ) );
+    ifs.close();
     try{
-        // Usage error
-        if(argc < 2){
-            std::cout << "Usage: aflat <file> <output>\n";
-            return 1;
-        }
-
-        lex::Lexer scanner;
-        links::LinkedList<lex::Token* > tokens;
-
-        std::string filename = getExePath();
-        std::string exepath = filename.substr(0, filename.find_last_of("/"));
-        std::string libPath = exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/head/";
-
-        std::ifstream ifs(argv[1]);
-        std::string content( (std::istreambuf_iterator<char>(ifs) ),
-                        (std::istreambuf_iterator<char>()    ) );
-        ifs.close();
-        std::string value = argv[1];
-        if (value == "make"){
-            std::cout << "creating " << argv[2] << '\n';
-            std::string pName = argv[2];
-            buildTemplate(pName);
-            return 0;
-        }
         try{
             PreProcessor pp;
             tokens = scanner.Scan(pp.PreProcess(content, libPath));
         }catch (int x){
             std::cout << " unparsable Char at index " + x;
-            return 0;
+            return;
         }
         tokens.invert();
         parse::Parser parser;
@@ -68,7 +94,7 @@ int main(int argc, char *argv[]){
         std::ofstream ofs;
         
         // assembly file output
-        if (argc == 2) ofs.open("out.s"); else ofs.open(argv[2]);
+        ofs.open(output);
 
 
         // output linker commands
@@ -99,8 +125,8 @@ int main(int argc, char *argv[]){
     }catch(err::Exception e){
         std::cout << std::endl << "Exception: " << e.errorMsg << std::endl << std::endl;
     }
-    return 0;
-}
+    return;
+};
 
 /*
  * function name:   remove_char
@@ -141,19 +167,81 @@ void buildTemplate(std::string value){
     std::filesystem::create_directories(value);
     std::filesystem::create_directories(value + "/src");
     std::filesystem::create_directories(value + "/head");
+    std::filesystem::create_directories(value + "/bin");
 
 
     std::filesystem::path cwd = std::filesystem::current_path();
     std::string root =  cwd.string() + "/" + value;
     std::ofstream outfile (value + "/src/main.af");
-    outfile << ".needs <io.gs>\n";
+    outfile << ".needs <io>\n";
     outfile << "int main(){\n\tprint(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
     outfile.close();
 
-    outfile = std::ofstream(value + "/build.sh");
-    outfile << "#!/bin/sh\n" << 
-    "libPath="<< libPath << "\n" << filename << " src/main.af out.s\n";
-    outfile << "gcc -O0 -g -no-pie out.s $libPath/asm.s $libPath/std.s $libPath/io.s "
-    << "$libPath/collections.s $libPath/math.s $libPath/strings.s $libPath/files.s $libPath/concurrancy.s\n";
+    outfile = std::ofstream(value + "/aflat.cfg");
+    
+    // Write the standard Config file
+    outfile << "; Aflat Config File\n";
+    outfile << "s io\n" << "m main\n";
+    outfile.close();
+}
 
+void runConfig(std::string path, std::string libPath){
+    std::vector<std::string> linker;
+    std::vector<std::thread> threads;
+    // open the config file
+    std::ifstream ifs(path);
+    std::string content( (std::istreambuf_iterator<char>(ifs) ),
+                    (std::istreambuf_iterator<char>()    ) );
+
+    // loop through the config file line by line
+    std::stringstream ss(content);
+    std::string line;
+    while(std::getline(ss, line)){
+        line = remove_char(line, '\t');
+
+        // get a copy of the line after the first char
+        std::string copy = line.substr(1);
+        copy = remove_char(copy, ' ');
+        std::string lowerCaseCopy = copy;
+        std::transform(lowerCaseCopy.begin(), lowerCaseCopy.end(), lowerCaseCopy.begin(), ::tolower);
+
+        // if the line is a comment, skip it
+        if(line[0] == ';') continue;
+
+        if(line[0] == 's') linker.push_back(libPath + lowerCaseCopy + ".s");
+
+        // if the line is a dependency, build it and add it to the linker
+        if(line[0] == 'm'){
+            std::string path = getExePath();
+            std::string exepath = path.substr(0, path.find_last_of("/"));
+            std::string libPath = exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std";
+
+            // add the thread to the vector of threads
+            threads.push_back(std::thread([libPath, copy](){
+                build("./src/" + copy + ".af", "./bin/" + copy + ".s");;
+            }));
+
+            // add the library to the linker
+            linker.push_back("./bin/" + copy + ".s");
+        }
+
+    }
+
+    // join all the threads
+    for(auto& t : threads){
+        t.join();
+    }
+
+    // run gcc on the linkerList
+    std::string linkerList = "";
+    for(auto& s : linker){
+        linkerList += s + " ";
+    }
+    std::string gcc = "gcc -O0 -g -no-pie -o bin/a.out " + linkerList;
+    system(gcc.c_str());
+
+    // delete the linkerList files
+    for(auto& s : linker){
+        std::filesystem::remove(s);
+    }
 }
