@@ -67,7 +67,7 @@ int main(int argc, char *argv[]){
 
         // add the modual to the config file
         std::fstream configFile("./aflat.cfg", std::ios::app | std::ios::in);
-        configFile << modualName << ".gs\n";
+        configFile << "m "<< modualName << "\n";
         return 0;
     }
 
