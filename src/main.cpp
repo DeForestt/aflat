@@ -28,17 +28,10 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
-    lex::Lexer scanner;
-    links::LinkedList<lex::Token* > tokens;
-
     std::string filename = getExePath();
     std::string exepath = filename.substr(0, filename.find_last_of("/"));
     std::string libPathA = exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/";
 
-    std::ifstream ifs(argv[1]);
-    std::string content( (std::istreambuf_iterator<char>(ifs) ),
-                    (std::istreambuf_iterator<char>()    ) );
-    ifs.close();
     std::string value = argv[1];
 
     if (value == "make"){
@@ -54,6 +47,27 @@ int main(int argc, char *argv[]){
     if (value == "run"){
         runConfig("./aflat.cfg", libPathA);
         system("./bin/a.out");
+        return 0;
+    }
+    if (value == "add"){
+        if (argc < 3){
+            std::cout << "Usage: aflat add <modual name>\n";
+            return 1;
+        }
+        std::string modualName = argv[2];
+        std::string srcName = "./src/" + modualName + ".af";
+        std::string headerName = "./head/" + modualName + ".gs";
+        // create the files
+        std::ofstream srcFile(srcName);
+        std::ofstream headerFile(headerName);
+        srcFile << ".root \"head\"\n";
+        srcFile << ".needs \"" << modualName << ".gs\"\n";
+        srcFile.close();
+        headerFile.close();
+
+        // add the modual to the config file
+        std::fstream configFile("./aflat.cfg", std::ios::app | std::ios::in);
+        configFile << modualName << ".gs\n";
         return 0;
     }
 
@@ -251,13 +265,14 @@ void runConfig(std::string path, std::string libPath){
         linkerList += s + " ";
     }
     std::string gcc = "gcc -O0 -g -no-pie -o bin/a.out " + linkerList;
+    std::cout << gcc << std::endl;
     system(gcc.c_str());
 
     // remove first 8 elements from the linker list
     linker.erase(linker.begin(), linker.begin() + 8);
 
     // delete the linkerList files
-    for(auto& s : linker){
-        std::filesystem::remove(s);
-    }
+    //for(auto& s : linker){
+    //    std::filesystem::remove(s);
+    //}
 }
