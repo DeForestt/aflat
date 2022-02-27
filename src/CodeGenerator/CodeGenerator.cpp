@@ -1,5 +1,6 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include <chrono>
 #pragma region helper functions
 
 
@@ -568,7 +569,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile){
     else if (dynamic_cast<ast::Lambda *>(expr) != nullptr){
         ast::Lambda lambda = *dynamic_cast<ast::Lambda *>(expr);
         ast::Function * func = lambda.function;
-        func->ident.ident = "lambda_" + std::to_string(lablecount);
+        auto milis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        func->ident.ident = "lambda_" + std::to_string(lablecount) + "_" + std::to_string(milis);
         lablecount++;
         func->scopeName = "global";
         func->isLambda = true;
