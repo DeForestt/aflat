@@ -16,6 +16,7 @@
 std::string preProcess(std::string input);
 std::string getExePath();
 void buildTemplate(std::string value);
+void linkDependancies(std::string value);
 
 int main(int argc, char *argv[]){
     try{
