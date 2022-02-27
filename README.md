@@ -16,15 +16,23 @@ git clone https://github.com/DeForestt/aflat
 
 ### Building the project
 All that is required to build the project is to run the `make` command.
+please make sure that you have the `make` command installed. `sudo apt install make`
 ```bash
 cd aflat
 make
 ```
+I suggest creating an alias for main in your bashrc file.
+```bash
+alias aflat="<aflat bin dir>/main"
+```
+Or adding the aflat bin to your path.
+
+This readme assumes that the aflat bin directory is in your path or an alias is set.
 
 ### Creating a new project
 Creating a new aflat progect is as simple as running the binary with the command 'make'
 ```bash
-./main make <project_name>
+aflat make <project_name>
 ```
 
 ### Hello World
@@ -39,13 +47,13 @@ int main(){
 ```
 
 ### Building a project
-The aflat `make` command will have generated a `build.sh` script that can be run to build the project.
+The aflat `make` command will have generated an `aflat.cfg` configuration file that tells the built in pacage manager what to build and link the file.
 ```bash
-bash build.sh
+aflat build
 ```
 
 ### Running the project
-Run the project with the command `./a.out`
+Build and run the project with the `aflat run` command.
 
 ### Array Loop Example
 ```c
