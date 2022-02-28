@@ -86,6 +86,11 @@ namespace ast{
         Statment * statment;
     };
 
+    class Contract : public Statment{
+        public:
+        Statment * statment;
+    };
+
     class Function : public Member, public Statment{
         public:
         ast::ScopeMod scope;
