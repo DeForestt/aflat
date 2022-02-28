@@ -83,6 +83,7 @@ namespace ast{
     class Class : public Statment{
         public:
         Ident ident;
+        Ident base;
         Statment * contract;
         Statment * statment;
     };
