@@ -280,7 +280,15 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
             this->typeList << t;
             output = item;
         }
-        else{
+        else if(obj.meta == "contract"){
+            if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                lex::OpSym op = *dynamic_cast<lex::OpSym *>(tokens.pop());
+                if(op.Sym != '{')throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened Contract");
+            }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened Contract");
+            ast::Contract * item = new ast::Contract();
+            item->statment = this->parseStmt(tokens);
+            output = item;
+        }else{
             if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                 lex::OpSym sym = *dynamic_cast<lex::OpSym *> (tokens.pop());
                 links::LinkedList<std::string> modList;
