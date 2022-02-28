@@ -265,6 +265,21 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
             output = stc;
         }else if(obj.meta == "class"){
             ast::Class * item = new ast::Class();
+
+            // check for the word signs
+            if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+                lex::LObj sig = *dynamic_cast<lex::LObj *>(tokens.pop());
+                if(sig.meta == "signs"){
+                    ast::Ident i = ast::Ident();
+                    lex::LObj * ident = dynamic_cast<lex::LObj *>(tokens.pop());
+                    if (ident != nullptr) {
+                        if (typeList[ident->meta] == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Type " + ident->meta + " not found");
+                        i.ident = ident->meta;
+                        item->ident = i;
+                    } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " class needs Ident");
+                }
+            }
+
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                 lex::LObj ident = *dynamic_cast<lex::LObj *>(tokens.pop());
                 item->ident.ident = ident.meta;
