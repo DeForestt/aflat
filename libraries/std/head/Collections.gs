@@ -14,6 +14,7 @@ class LinkedList{
     int insert(adr data, int index);
     int delete(int index);
     adr get(int index);
+    adr stitch(adr new);
     public int forEach(adr foo, args);
     int size();
 };

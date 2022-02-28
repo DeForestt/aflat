@@ -578,6 +578,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile){
 
         if(OutputFile.lambdas == nullptr) OutputFile.lambdas = new asmc::File;
         OutputFile.hasLambda = true;
+
+        ast::Type Adr = ast::Type();
+        Adr.typeName = "adr";
+        Adr.opType = asmc::Hard; 
+        Adr.size = asmc::QWord;
+
+        func->type = Adr;
+
         OutputFile.lambdas->operator<<(this->GenSTMT(func));
 
         output.access = "$" + id;
@@ -709,7 +717,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                                 func = new ast::Function();
                                 func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
                                 func->type = smbl->type;
-                                func->type.size = asmc::DWord;
+                                func->type.size = asmc::QWord;
                 };
             };
         }

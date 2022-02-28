@@ -58,6 +58,16 @@ int delete@LinkedList(int index){
     return 0;
 };
 
+int stitch@LinkedList(LinkedList new){
+    ListNode curr;
+    curr = my.head;
+    while(curr.next != #0){
+        curr = curr.next;
+    };
+    curr.next = new.head;
+    return 0;
+};
+
 /*
  * function name:   get@LinkedList;
  * description:     returns the node at the given index;
