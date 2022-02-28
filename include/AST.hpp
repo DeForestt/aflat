@@ -83,7 +83,7 @@ namespace ast{
     class Class : public Statment{
         public:
         Ident ident;
-        Ident base;
+        std::string base;
         Statment * contract;
         Statment * statment;
     };
