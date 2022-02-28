@@ -1560,9 +1560,37 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         this->scope = type;
         type->SymbolTable;
         this->typeList.push(type);
-        asmc::File contractFile = this->GenSTMT(deff->contract);
+        // write any signed contracts
+        if (deff->base != ""){
+            gen::Type ** T = this->typeList[deff->base];
+            if (T != nullptr){
+                gen::Class * base = dynamic_cast<gen::Class *>(*T);
+                asmc::File contractFile;
+                if (base != nullptr){
+                    // check if the base class has a contract
+                    if (base->contract == nullptr) err::Exception("Base class does not have a contract");
+                    // if my contact is not nullptr stitch it with the base
+                    if (deff->contract != nullptr){
+                        ast::Sequence * seq = new ast::Sequence();
+                        seq->Statment1 = deff->contract;
+                        seq->Statment2 = base->contract;
+                        type->contract = seq;
+                        contractFile = this->GenSTMT(seq);
+                        OutputFile << contractFile;
+                    } else {
+                        type->contract = base->contract;
+                        contractFile = this->GenSTMT(deff->contract);
+                        OutputFile << contractFile;
+                        type->contract = deff->contract;
+                    }
+                } else throw err::Exception("Base class is not a class");
+            } else throw err::Exception("Base class not found");
+        }else if (deff->contract != nullptr){
+            asmc::File contractFile = this->GenSTMT(deff->contract);
+            OutputFile << contractFile;
+            type->contract = deff->contract;
+        }
         asmc::File file = this->GenSTMT(deff->statment);
-        OutputFile << contractFile;
         OutputFile << file;
         this->globalScope = saveScope;
         this->scope = nullptr;
