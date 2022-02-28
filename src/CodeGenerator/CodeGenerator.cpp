@@ -871,6 +871,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         }
         
         if(func->statment != nullptr){
+            bool saveIn = this->inFunction;
             this->inFunction = true;
             gen::Class * saveScope = this->scope;
             bool saveGlobal = this->globalScope;
@@ -954,7 +955,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             
             this->scope = saveScope;
             this->globalScope = saveGlobal;
-            this->inFunction = false;
+            this->inFunction = saveIn;
         }
         delete(func);
 
@@ -1559,7 +1560,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         this->scope = type;
         type->SymbolTable;
         this->typeList.push(type);
+        asmc::File contractFile = this->GenSTMT(deff->contract);
         asmc::File file = this->GenSTMT(deff->statment);
+        OutputFile << contractFile;
         OutputFile << file;
         this->globalScope = saveScope;
         this->scope = nullptr;
