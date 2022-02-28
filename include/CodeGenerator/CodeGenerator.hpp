@@ -46,6 +46,7 @@ namespace gen{
             // The private Name table will hold all public and private functions
             // This is used internally
             links::SLinkedList<ast::Function, std::string> nameTable;
+            ast::Contract * contract = nullptr;
             static bool compair(Type * t, std::string ident);
     };
 
