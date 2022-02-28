@@ -266,6 +266,11 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
         }else if(obj.meta == "class"){
             ast::Class * item = new ast::Class();
 
+            if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+                lex::LObj ident = *dynamic_cast<lex::LObj *>(tokens.pop());
+                item->ident.ident = ident.meta;
+            }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " class needs Ident");
+            
             // check for the word signs
             if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
                 lex::LObj sig = *dynamic_cast<lex::LObj *>(tokens.pop());
@@ -274,16 +279,12 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
                     if (ident != nullptr) {
                         if (typeList[ident->meta] == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Type " + ident->meta + " not found");
                         item->base = ident->meta;
-                    } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " class needs Ident");
+                    } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " signs needs Ident");
                 }
             } else {
                 item->base = "";
             };
-
-            if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
-                lex::LObj ident = *dynamic_cast<lex::LObj *>(tokens.pop());
-                item->ident.ident = ident.meta;
-            }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " struct needs Ident");
+            
             if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                 lex::OpSym op = *dynamic_cast<lex::OpSym *>(tokens.pop());
                 if(op.Sym != '{')throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened UDeffType");
@@ -294,11 +295,11 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
                 lex::LObj contract = *dynamic_cast<lex::LObj *>(tokens.peek());
                 if(contract.meta == "contract"){
                     tokens.pop();
-                }
-                lex::OpSym * sy = dynamic_cast<lex::OpSym *>(tokens.peek());
-                if (sy == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened Contract");
-                if (sy->Sym != '{') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened Contract");
-                item->contract = this->parseStmt(tokens);
+                    lex::OpSym * sy = dynamic_cast<lex::OpSym *>(tokens.pop());
+                    if (sy == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened Contract");
+                    if (sy->Sym != '{') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened Contract");
+                    item->contract = this->parseStmt(tokens);
+                } else item->contract = nullptr;
             } else item->contract = nullptr;
             item->statment = this->parseStmt(tokens);
             ast::Type t = ast::Type();
