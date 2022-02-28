@@ -1579,7 +1579,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
                         OutputFile << contractFile;
                     } else {
                         type->contract = base->contract;
-                        contractFile = this->GenSTMT(deff->contract);
+                        contractFile = this->GenSTMT(base->contract);
                         OutputFile << contractFile;
                         type->contract = deff->contract;
                     }
