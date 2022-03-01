@@ -250,6 +250,27 @@ int forEachArray(Array my, adr foo, adr arg){
     return 0;
 };
 
+Array whereArray(Array my, adr foo, adr arg){
+    Array a = newArray(adr, 0);
+        int i;
+    for {i = 0;}(i < size){i = i + 1}{
+        int offset = i * tSize;
+        curr = my.head;
+        curr = curr + offset;
+        int boo = foo(curr, i, arg);
+        if (boo == 1){
+            a.extend(1);
+            int size;
+            size = a.size;
+            size = size - 1;
+            adr point;
+            point = a.at(size);
+            point =: curr;
+        };
+    };
+    return a;
+};
+
 /*
  * function name: init@Array;
  * description:   initialize an array;
