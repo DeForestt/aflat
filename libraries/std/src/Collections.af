@@ -252,21 +252,25 @@ int forEachArray(Array my, adr foo, adr arg){
 
 Array whereArray(Array my, adr foo, adr arg){
     Array a = newArray(adr, 0);
-        int i;
+    int size;
+    adr tSize;
+    tSize = my.typeSize;
+    size = my.size;
+    int i;
     for {i = 0;}(i < size){i = i + 1}{
-        int offset = i * adr;
+        int offset = i * tSize;
         adr curr;
         curr = my.head;
         curr = curr + offset;
+        adr save; save = curr;
         int boo = foo(curr, i, arg);
         if (boo == 1){
             a.extend(1);
-            int size;
-            size = a.size;
-            size = size - 1;
-            adr point;
-            point = a.at(size);
-            point =: curr;
+            int msize;
+            msize = a.size;
+            msize = msize - 1;
+            adr point = a.at(msize);
+            point =: save;
         };
     };
     return a;
@@ -286,6 +290,7 @@ int init@Array(int typeSize, int size){
     size = size * typeSize;
     my.head = malloc(size);
     my.forEach = forEachArray;
+    my.where = whereArray;
     return 0;
 };
 

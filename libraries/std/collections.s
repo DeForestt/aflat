@@ -496,7 +496,7 @@ forEachArray:
 whereArray:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$64, %rsp
+	subq	$96, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movq	%rdx, -24(%rbp)
@@ -506,32 +506,40 @@ whereArray:
 	movl	%eax, %esi
 	call	newArray
 	movq	%rax, -32(%rbp)
-	movl	$0, %ebx
+	movq	-8(%rbp), %rdx
+	movl	24(%rdx), %ebx
+	movl	%ebx, -44(%rbp)
+	movq	-8(%rbp), %rdx
+	movl	36(%rdx), %ebx
 	movl	%ebx, -36(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -48(%rbp)
 	jmp	.LwhereArray37
 .LwhereArray36:
-	mov	$8, %edx
-	mov	-36(%rbp), %eax
+	mov	-44(%rbp), %rdx
+	mov	-48(%rbp), %eax
 	imul	%edx, %eax
-	movl	%eax, -40(%rbp)
+	movl	%eax, -52(%rbp)
 	movq	-8(%rbp), %rdx
 	movq	28(%rdx), %rbx
-	movq	%rbx, -48(%rbp)
-	mov	-40(%rbp), %edx
-	mov	-48(%rbp), %rax
+	movq	%rbx, -60(%rbp)
+	mov	-52(%rbp), %edx
+	mov	-60(%rbp), %rax
 	add	%rdx, %rax
 	movl	%eax, %ebx
-	movl	%ebx, -48(%rbp)
+	movl	%ebx, -60(%rbp)
+	movq	-60(%rbp), %rbx
+	movq	%rbx, -68(%rbp)
 	movq	-16(%rbp), %rcx
-	movq	-48(%rbp), %rax
+	movq	-60(%rbp), %rax
 	movq	%rax, %rdi
-	movl	-36(%rbp), %eax
+	movl	-48(%rbp), %eax
 	movl	%eax, %esi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdx
 	call	*%rcx
-	movl	%eax, -52(%rbp)
-	movl	-52(%rbp), %eax
+	movl	%eax, -72(%rbp)
+	movl	-72(%rbp), %eax
 	movl	$1, %ecx
 	cmpl	%ecx, %eax
 	jne	.LwhereArray38
@@ -543,33 +551,32 @@ whereArray:
 	call	pub_Array_extend
 	movq	-32(%rbp), %rdx
 	movl	36(%rdx), %ebx
-	movl	%ebx, -56(%rbp)
+	movl	%ebx, -76(%rbp)
 	mov	$1, %edx
-	mov	-56(%rbp), %eax
+	mov	-76(%rbp), %eax
 	sub	%edx, %eax
 	movl	%eax, %ebx
-	movl	%ebx, -56(%rbp)
+	movl	%ebx, -76(%rbp)
 	lea	-32(%rbp), %rax
 	movq	(%rax), %rax
 	movq	%rax, %rdi
-	movl	-56(%rbp), %eax
+	movl	-76(%rbp), %eax
 	movl	%eax, %esi
 	call	pub_Array_at
-	movq	%rax, %rbx
-	movq	%rbx, -64(%rbp)
-	movq	-64(%rbp), %rax
-	movq	-48(%rbp), %rbx
+	movq	%rax, -84(%rbp)
+	movq	-84(%rbp), %rax
+	movq	-68(%rbp), %rbx
 	movq	%rbx, (%rax)
 .LwhereArray38:
 	mov	$1, %edx
-	mov	-36(%rbp), %eax
+	mov	-48(%rbp), %eax
 	add	%edx, %eax
 	movl	%eax, %ebx
-	movl	%ebx, -36(%rbp)
+	movl	%ebx, -48(%rbp)
 .LwhereArray37:
-	movl	-36(%rbp), %eax
-	movq	$size, %rcx
-	cmpl	%rcx, %eax
+	movl	-48(%rbp), %eax
+	movl	-36(%rbp), %ecx
+	cmpl	%ecx, %eax
 	jl	.LwhereArray36
 	movq	-32(%rbp), %rax
 	leave
@@ -603,6 +610,9 @@ pub_Array_init:
 	movq	-8(%rbp), %rdx
 	movq	$forEachArray, %rbx
 	movq	%rbx, 0(%rdx)
+	movq	-8(%rbp), %rdx
+	movq	$whereArray, %rbx
+	movq	%rbx, 8(%rdx)
 	movl	$0, %eax
 	leave
 	ret
