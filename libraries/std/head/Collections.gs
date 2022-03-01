@@ -2,7 +2,6 @@ class ICollection{
     contract {
         adr forEach;
         adr where;
-        adr count;
     };
 };
 
