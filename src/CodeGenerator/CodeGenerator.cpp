@@ -846,7 +846,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         OutputFile.text << calls;
         intArgsCounter = 0;
         ast::Function ret = *func;
-        delete(func);
+        //if(func != nullptr) delete(func);
         return ret;
 };
 
