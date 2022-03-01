@@ -2,7 +2,7 @@
 .needs <std>
 .needs <concurrancy>
 
-class FD{
+class FD {
   public int out;
   public int in;
 };

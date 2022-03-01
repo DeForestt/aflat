@@ -1037,7 +1037,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             offset = offset * dec->count;
 
             links::LinkedList<gen::Symbol>  * Table;
-            if(this->scope == nullptr){
+            if(this->scope == nullptr || this->inFunction){
                 dec->type.arraySize = dec->count;
                 gen::scope::ScopeManager::getInstance()->assign(dec->ident, dec->type, false);
             }
