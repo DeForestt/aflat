@@ -265,7 +265,7 @@ void runConfig(std::string path, std::string libPath){
     linker.erase(linker.begin(), linker.begin() + 8);
 
     // delete the linkerList files
-    for(auto& s : linker){
-       std::filesystem::remove(s);
-    }
+    // for(auto& s : linker){
+    //    std::filesystem::remove(s);
+    // }
 }
