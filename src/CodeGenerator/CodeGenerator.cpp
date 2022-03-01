@@ -1070,10 +1070,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             int byteMod = gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type, dec->mask);
 
             asmc::Mov * mov = new asmc::Mov();
-            gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile);
-            if (expr.size == asmc::AUTO){
-                expr.size = dec->type.size;
-            }
+            gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile, dec->type.size);
             mov->op = expr.op;
             mov->size = dec->type.size;
             mov->from = expr.access;
@@ -1139,10 +1136,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         };
         asmc::Mov * mov = new asmc::Mov();
         asmc::Mov * mov2 = new asmc::Mov();
-        gen::Expr expr = this->GenExpr(assign->expr, OutputFile);
-        if(expr.size == asmc::AUTO){
-            expr.size = symbol->type.size;
-        };
+        gen::Expr expr = this->GenExpr(assign->expr, OutputFile, symbol->type.size);
         mov->op = expr.op;
         mov2->op = expr.op;
         mov->size = expr.size;
