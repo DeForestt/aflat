@@ -972,7 +972,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
         this->intArgsCounter = saveIntArgs;
 
-        gen::scope::ScopeManager::getInstance()->popScope();
+        gen::scope::ScopeManager::getInstance()->popScope(true);
     }
     else if (dynamic_cast<ast::Declare *>(STMT) != nullptr){
         /*

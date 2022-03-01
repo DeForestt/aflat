@@ -25,6 +25,8 @@ namespace gen{
                 // hold the current memory location relative to the rbp
                 int stackPos;
 
+                int maxStackPos;
+
                 // scopeStack holds the number of symbols in the current scope
                 std::vector<int> scopeStack;
             
@@ -51,7 +53,7 @@ namespace gen{
                 void pushScope();
 
                 // pop a scope
-                void popScope();
+                void popScope(bool fPop = false);
 
                 // Get stack alignment value
                 int getStackAlignment();

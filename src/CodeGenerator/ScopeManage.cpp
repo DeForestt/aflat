@@ -23,6 +23,7 @@ int sizeToInt(asmc::Size size){
 
 gen::scope::ScopeManager::ScopeManager(){
     this->stackPos = 0;
+    this->maxStackPos = 0;
     this->scopeStack.push_back(0);
 }
 
@@ -39,6 +40,9 @@ int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type, bool ma
     
     
     this->stackPos += sizeToInt(type.size) * type.arraySize;
+    if(this->stackPos > this->maxStackPos){
+        this->maxStackPos = this->stackPos;
+    }
     sym.symbol = symbol;
     sym.mask = mask;
     sym.type = type;
@@ -54,21 +58,22 @@ void gen::scope::ScopeManager::pushScope(){
     this->scopeStack.push_back(0);
 };
 
-void gen::scope::ScopeManager::popScope(){
+void gen::scope::ScopeManager::popScope(bool fPop = false){
     int size = this->scopeStack.back();
     for (int i = 0; i < size; i++){
         this->stackPos -= sizeToInt(this->stack.back().type.size) * this->stack.back().type.arraySize;
         this->stack.pop_back();
     }
-
+    if (fPop) this->maxStackPos = 0;
     this->scopeStack.pop_back();
 };
 
 int gen::scope::ScopeManager::getStackAlignment(){
                 // align the stack
+    if(this->maxStackPos < this->stackPos) this->maxStackPos = this->stackPos;
     int align = 16;
     if(this->stack.size()  > 0){
-        align = ((this->stackPos + 15) / 16) * 16;
+        align = ((this->maxStackPos + 15) / 16) * 16;
     }
 
     // if (align < 16){
