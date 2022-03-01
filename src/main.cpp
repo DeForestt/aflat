@@ -244,19 +244,12 @@ void runConfig(std::string path, std::string libPath){
             std::string libPath = exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std";
 
             // add the thread to the vector of threads
-            threads.push_back(std::thread([libPath, copy](){
-                build("./src/" + copy + ".af", "./bin/" + copy + ".s");;
-            }));
+            build("./src/" + copy + ".af", "./bin/" + copy + ".s");
 
             // add the library to the linker
             linker.push_back("./bin/" + copy + ".s");
         }
 
-    }
-
-    // join all the threads
-    for(auto& t : threads){
-        t.join();
     }
 
     // run gcc on the linkerList
