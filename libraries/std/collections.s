@@ -3,6 +3,7 @@
 .global	newArray
 .global	pub_Array_at
 .global	pub_Array_init
+.global	whereArray
 .global	forEachArray
 .global	pub_LinkedList_size
 .global	pub_LinkedList_insert
@@ -492,6 +493,89 @@ forEachArray:
 	ret
 	leave
 	ret
+whereArray:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$64, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	%rsi, -16(%rbp)
+	movq	%rdx, -24(%rbp)
+	movl	$8, %eax
+	movl	%eax, %edi
+	movl	$0, %eax
+	movl	%eax, %esi
+	call	newArray
+	movq	%rax, -32(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -36(%rbp)
+	jmp	.LwhereArray37
+.LwhereArray36:
+	mov	$8, %edx
+	mov	-36(%rbp), %eax
+	imul	%edx, %eax
+	movl	%eax, -40(%rbp)
+	movq	-8(%rbp), %rdx
+	movq	28(%rdx), %rbx
+	movq	%rbx, -48(%rbp)
+	mov	-40(%rbp), %edx
+	mov	-48(%rbp), %rax
+	add	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -48(%rbp)
+	movq	-16(%rbp), %rcx
+	movq	-48(%rbp), %rax
+	movq	%rax, %rdi
+	movl	-36(%rbp), %eax
+	movl	%eax, %esi
+	movq	-24(%rbp), %rax
+	movq	%rax, %rdx
+	call	*%rcx
+	movl	%eax, -52(%rbp)
+	movl	-52(%rbp), %eax
+	movl	$1, %ecx
+	cmpl	%ecx, %eax
+	jne	.LwhereArray38
+	lea	-32(%rbp), %rax
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	movl	$1, %eax
+	movl	%eax, %esi
+	call	pub_Array_extend
+	movq	-32(%rbp), %rdx
+	movl	36(%rdx), %ebx
+	movl	%ebx, -56(%rbp)
+	mov	$1, %edx
+	mov	-56(%rbp), %eax
+	sub	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -56(%rbp)
+	lea	-32(%rbp), %rax
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	movl	-56(%rbp), %eax
+	movl	%eax, %esi
+	call	pub_Array_at
+	movq	%rax, %rbx
+	movq	%rbx, -64(%rbp)
+	movq	-64(%rbp), %rax
+	movq	-48(%rbp), %rbx
+	movq	%rbx, (%rax)
+.LwhereArray38:
+	mov	$1, %edx
+	mov	-36(%rbp), %eax
+	add	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -36(%rbp)
+.LwhereArray37:
+	movl	-36(%rbp), %eax
+	movq	$size, %rcx
+	cmpl	%rcx, %eax
+	jl	.LwhereArray36
+	movq	-32(%rbp), %rax
+	leave
+	ret
+	leave
+	ret
 pub_Array_init:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -633,11 +717,11 @@ pub_Array_extend:
 	movq	28(%rdx), %rax
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
-	jne	.Lextend36
-	movq	$.strArray.extend39, %rax
+	jne	.Lextend41
+	movq	$.strArray.extend44, %rax
 	movq	%rax, %rdi
 	call	print
-.Lextend36:
+.Lextend41:
 	movl	-12(%rbp), %eax
 	leave
 	ret
@@ -647,7 +731,7 @@ pub_Array_extend:
 
 .data
 
-.strArray.extend39:
+.strArray.extend44:
 	.asciz	 "badrealloc"
 
 

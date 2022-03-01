@@ -255,6 +255,7 @@ Array whereArray(Array my, adr foo, adr arg){
         int i;
     for {i = 0;}(i < size){i = i + 1}{
         int offset = i * adr;
+        adr curr;
         curr = my.head;
         curr = curr + offset;
         int boo = foo(curr, i, arg);
