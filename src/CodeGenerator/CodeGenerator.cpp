@@ -111,8 +111,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
     else if(dynamic_cast<ast::CallExpr *>(expr) != nullptr){
         ast::CallExpr * exprCall = dynamic_cast<ast::CallExpr *>(expr);
         ast::Call * call = exprCall->call;
-        output.size = this->GenCall(call, OutputFile).type.size;
-        if (size != asmc::AUTO) output.size = size;
+        ast::Function func = this->GenCall(call, OutputFile);
+        output.size = func.type.size;
+        if (size != asmc::AUTO && func.flex) output.size = size;
         output.access = this->registers["%rax"]->get(output.size);
     }
     else if (dynamic_cast<ast::Var *>(expr) != nullptr){
@@ -718,6 +719,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                                 func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
                                 func->type = smbl->type;
                                 func->type.size = asmc::QWord;
+                                func->flex = true;
                 };
             };
         }
@@ -762,6 +764,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                                 func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
                                 func->type = sym->type;
                                 func->type.size = asmc::QWord;
+                                func->flex = true;
                                 addpub = false;
                             };
                         } else call->modList.pop();
@@ -842,7 +845,9 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         calls->function = mod + func->ident.ident;
         OutputFile.text << calls;
         intArgsCounter = 0;
-        return *func;
+        ast::Function ret = *func;
+        delete(func);
+        return ret;
 };
 
 asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
