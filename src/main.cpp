@@ -205,6 +205,7 @@ void buildTemplate(std::string value){
 }
 
 void runConfig(std::string path, std::string libPath){
+    bool debug = false;
     std::vector<std::string> linker;
     std::vector<std::thread> threads;
     // open the config file
@@ -250,6 +251,14 @@ void runConfig(std::string path, std::string libPath){
             linker.push_back("./bin/" + copy + ".s");
         }
 
+        // check if line starts with 'settings'
+        if(line.substr(0, 3) == "set"){
+            std::string setting = line.substr(4);
+            if (setting == "debug"){
+                debug = true;
+            };
+        }
+
     }
 
     // run gcc on the linkerList
@@ -257,7 +266,10 @@ void runConfig(std::string path, std::string libPath){
     for(auto& s : linker){
         linkerList += s + " ";
     }
-    std::string gcc = "gcc -O0 -g -no-pie -o bin/a.out " + linkerList;
+    std::string gcc = "gcc -O0 -no-pie -o bin/a.out " + linkerList;
+    if (debug){
+        gcc = "gcc -O0 -g -no-pie -o bin/a.out " + linkerList;
+    }
 
     system(gcc.c_str());
 
@@ -265,7 +277,7 @@ void runConfig(std::string path, std::string libPath){
     linker.erase(linker.begin(), linker.begin() + 8);
 
     // delete the linkerList files
-    // for(auto& s : linker){
-    //    std::filesystem::remove(s);
-    // }
+    if (!debug) for(auto& s : linker){
+       std::filesystem::remove(s);
+    }
 }

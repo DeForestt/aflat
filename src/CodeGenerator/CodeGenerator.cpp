@@ -90,7 +90,7 @@ void gen::CodeGenerator::prepareCompound(ast::Compound compound, asmc::File &Out
     
 }
 
-gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile){
+gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, asmc::Size size = asmc::AUTO){
     gen::Expr output;
     output.op = asmc::Hard;
     if(dynamic_cast<ast::IntLiteral *>(expr) != nullptr){
@@ -112,8 +112,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile){
         ast::CallExpr * exprCall = dynamic_cast<ast::CallExpr *>(expr);
         ast::Call * call = exprCall->call;
         output.size = this->GenCall(call, OutputFile).type.size;
+        if (size != asmc::AUTO) output.size = size;
         output.access = this->registers["%rax"]->get(output.size);
-
     }
     else if (dynamic_cast<ast::Var *>(expr) != nullptr){
         ast::Var var = *dynamic_cast<ast::Var *>(expr);
@@ -761,7 +761,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                                 func = new ast::Function();
                                 func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
                                 func->type = sym->type;
-                                func->type.size = asmc::DWord;
+                                func->type.size = asmc::QWord;
                                 addpub = false;
                             };
                         } else call->modList.pop();
@@ -1071,8 +1071,11 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
             asmc::Mov * mov = new asmc::Mov();
             gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile);
+            if (expr.size == asmc::AUTO){
+                expr.size = dec->type.size;
+            }
             mov->op = expr.op;
-            mov->size = expr.size;
+            mov->size = dec->type.size;
             mov->from = expr.access;
             mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
             OutputFile.text << mov;
@@ -1137,6 +1140,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         asmc::Mov * mov = new asmc::Mov();
         asmc::Mov * mov2 = new asmc::Mov();
         gen::Expr expr = this->GenExpr(assign->expr, OutputFile);
+        if(expr.size == asmc::AUTO){
+            expr.size = symbol->type.size;
+        };
         mov->op = expr.op;
         mov2->op = expr.op;
         mov->size = expr.size;
