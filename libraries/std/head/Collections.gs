@@ -1,10 +1,17 @@
+class ICollection{
+    contract {
+        adr forEach;
+        adr where;
+        adr size;
+    };
+};
+
 class ListNode{
     adr next;
     adr data;
 };
 
 ListNode newNode();
-
 
 class LinkedList{
     private ListNode head;
