@@ -104,6 +104,9 @@ std::string PreProcessor::Include(std::string line, std::string libPath){
         if (relpath[0] != '/'){
             relpath = "/" + relpath;
         }
+        if(relpath.find(".gs") == std::string::npos){
+            relpath += ".gs";
+        }
         path = this->root + relpath;
     } else if(line.find("<") != std::string::npos){
         // get the file name
