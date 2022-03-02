@@ -1,5 +1,6 @@
 .global	clear
 .global	printFloat
+.global	printChar
 .global	printInt
 .global	pullInt
 .global	toInt
@@ -54,6 +55,8 @@ readString:
 	movl	$0, %eax
 	leave
 	ret
+	leave
+	ret
 clearInput:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -79,6 +82,8 @@ clearInput:
 	movl	$0, %eax
 	leave
 	ret
+	leave
+	ret
 print:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -96,6 +101,8 @@ print:
 	movl	%eax, %edx
 	call	sys_write
 	movl	$0, %eax
+	leave
+	ret
 	leave
 	ret
 toChar:
@@ -182,6 +189,8 @@ toChar:
 	movb	%bl, -5(%rbp)
 .LtoChar37:
 	movb	-5(%rbp), %al
+	leave
+	ret
 	leave
 	ret
 toInt:
@@ -272,6 +281,8 @@ toInt:
 	movl	$-1, %eax
 	leave
 	ret
+	leave
+	ret
 pullInt:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -326,6 +337,8 @@ pullInt:
 	jg	.LpullInt70
 	call	clearInput
 	movl	-12(%rbp), %eax
+	leave
+	ret
 	leave
 	ret
 printInt:
@@ -434,6 +447,26 @@ printInt:
 	cmpl	%ecx, %eax
 	jg	.LprintInt82
 	movl	$0, %eax
+	leave
+	ret
+	leave
+	ret
+printChar:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movb	%dil, -1(%rbp)
+	movl	$1, %eax
+	movl	%eax, %edi
+	lea	-1(%rbp), %rax
+	movq	%rax, %rax
+	movq	%rax, %rsi
+	movl	$1, %eax
+	movl	%eax, %edx
+	call	sys_write
+	movl	$0, %eax
+	leave
+	ret
 	leave
 	ret
 printFloat:
@@ -680,6 +713,8 @@ printFloat:
 	movl	$0, %eax
 	leave
 	ret
+	leave
+	ret
 clear:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -688,6 +723,8 @@ clear:
 	movq	%rax, %rdi
 	call	print
 	movl	$0, %eax
+	leave
+	ret
 	leave
 	ret
 
