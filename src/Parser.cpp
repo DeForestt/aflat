@@ -305,6 +305,8 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
             ast::Type t = ast::Type();
             t.size = asmc::QWord;
             t.typeName = item->ident.ident;
+            //Check if the class is in the typeList
+            if(typeList[item->ident.ident] != nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Class " + item->ident.ident + " already exists");
             this->typeList << t;
             output = item;
         }
