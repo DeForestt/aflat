@@ -210,12 +210,109 @@ Classes in aflat are effectively structs that can implement functions and suppor
 ```c
 class <class name> signs <parent class>{
     <contract>
-    <class variables>
+    <class variable declarations>
     <class functions>
 };
 ```
+### Class Functions
+Class functions are functions that are declared with the following syntax:
+```c++
+class <class name>{
+    <return type> <function name>([<paramiters>]); // this is the function declaration it can be defined here with the regular 
+                                                   // function syntax. Or it can be defined outside of the class via function
+                                                   // scoping. 
+};
+``` 
+- Function scoping allows functions to be defined outside of the class.  This is useful for separating implementation from declaration. syntax:
+```c++
+// scoped function
+<return type> <function name>@<class name>([<paramiters>]){
+    <function body>
+};
+```
+- A class function automaticly creates a pointer to the object that called it.  It is stored in the my variable.  This is useful for functions that need to access the class variables.
 
+## Contracts
+Contracts are used to create OO interfaces. The allows classes that sign them to behave as the parent class.  The syntax is:
+```c++
+contract {
+    <contract var declarations>
+};
+```
+the contract veriables are automatically included in any class that signs the contract.
+signing a contract is done with the following syntax:
+```c++
+class <class name> signs <contract name>{
+    <contract var declarations>
+    <class functions>
+};
 
+here is an example of the intended use of a contract:
+```c++
+.needs <io>
+.needs <std>
+
+.needs <io>
+.needs <std>
+
+class IWorker{
+    contract{
+        adr work;
+    };
+};
+
+class Plumber signs IWorker{
+    // the init function should be the first function called to bootstrap the class
+    int init(){
+        my.work = []=>{ // this is the implementation of the work function as defined in the contract.  It can also be done using
+                        // function pointer
+            print("I am tightening the pipes\n");
+        };
+    };
+};
+
+Plumber newPlumber(){
+    Plumber plumber = malloc(Plumber);
+    plumber.init();
+    return plumber;
+};
+
+class Carpenter signs IWorker{
+    // the init function should be the first function called to bootstrap the class
+    int init(){
+        my.work = []=>{ // this is the implementation of the work function as defined in the contract.  It can also be done using
+                        // function pointer
+            print("I am building a house\n");
+        };
+    };
+};
+
+Carpenter newCarpenter(){
+    Carpenter carpenter = malloc(Carpenter);
+    carpenter.init();
+    return carpenter;
+};
+
+int doWork(IWorker worker){
+    worker.work();
+};
+
+int main(){
+    Plumber plumber = newPlumber();
+    Carpenter carpenter = newCarpenter();
+
+    plumber.init();
+    carpenter.init();
+
+    plumber.work();
+    carpenter.work();
+
+    doWork(plumber);
+    doWork(carpenter);
+
+    return 0;
+};
+```
 
 ## Including modules
 Much like in c or c++, aflat modules are made up of header and source files.  The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
