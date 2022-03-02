@@ -3,6 +3,7 @@
 
 #include <string>
 #include "LinkedListS.hpp"
+#include <vector>
 
 /*A class to PreProcess The input Code*/
 
@@ -25,6 +26,7 @@ class PreProcessor{
     private:
         std::string root;
         links::SLinkedList<Definition, std::string> definitions;
+        std::vector<std::string> includes;
 
         /* incluse an external file */
         std::string Include(std::string line, std::string exePath);
@@ -34,7 +36,6 @@ class PreProcessor{
 
         /*Replaced defined value with value*/
         void ReplaceDefined(std::string &code);
-
                 
 };
 

@@ -82,7 +82,6 @@ std::string PreProcessor::PreProcess(std::string code, std::string libPath){
             this->Define(line);
         }
         else{
-            //do not change the line
             line = line + '\n';
             output += line;
         };
@@ -128,7 +127,12 @@ std::string PreProcessor::Include(std::string line, std::string libPath){
         output.reserve(output.size()); // optional, avoids buffer reallocations in the loop
             for(size_t i = 0; i < output.size(); ++i)
             if(output[i] != '\n') cleanPut += output[i];
-        return this->PreProcess(cleanPut, libPath);
+        // check if the file is in the list of includes
+        if(std::find(this->includes.begin(), this->includes.end(), path) == this->includes.end()){
+            this->includes.push_back(path);
+            return this->PreProcess(cleanPut, libPath);
+        }
+        return "";
     }else{
         throw err::Exception("File name: " + path + "does not exist");
     }
