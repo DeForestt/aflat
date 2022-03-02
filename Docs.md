@@ -111,7 +111,7 @@ Functions can be defined without a name.  This is useful for passing functions a
 example:
 ```c
 int main(){
-    
+
     adr add = [int a, int b]=>{
         return a + b;
     };
@@ -261,3 +261,34 @@ int main(){
     return 0;
 };
 ```
+
+## Package Manager
+The Aflat package manager is built into the compiler.
+
+### Bootstrapping a Project
+The package manager is used to create a project.  The syntax is:
+```bash
+aflat make <project name>
+```
+The project name is will be the name of the directory that will be created. It will create a head, src, and bin directory.  The head directory will contain the header files for the project.  The src directory will contain the source files for the project.  The bin directory will contain the compiled object files for the project.  It will also create an aflat.cfg file wich will contain settings for the compiler.
+
+## Building a Project
+The project can be built with the following syntax:
+```bash
+aflat build
+```
+This will compile all of the source files in the src directory and call gcc to link them into an executable.  The executable will be placed in the bin directory.
+
+## Running a Project
+The project can be run with the following syntax:
+```bash
+aflat run
+```
+This will compile all of the source files in the src directory and call gcc to link them into an executable.  The executable will be placed in the bin directory.  The executable will then be run.
+
+## Bootstrapping a Module
+The package manager is used to create a module.  The syntax is:
+```bash
+aflat add <module name>
+```
+This will create a header and source file in their respective directories.  It will also create and entry in the aflat.cfg file telling the compiler to compile the new source file.
