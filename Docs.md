@@ -102,7 +102,36 @@ int main(){
 };
 ```
 
-### Including modules
+
+
+## Control Flow
+
+### If Statements
+If statements are used to execute code based on a condition.  The syntax is:
+```c
+if(<condition>){
+    <code to execute if condition is true>
+};
+```
+- The condition is evaluated before the code is executed.  If the condition is true, the code is executed.
+
+Condition syntax is as follows:
+```bnf
+<condition> ::= (<expression> <relational operator> <expression>)
+<relational operator> ::= == | != | < | >
+```
+- Aflat does not support logical operators at this time.
+
+if statments can be used with else statements.  The syntax is:
+```c
+if(<condition>){
+    <code to execute if condition is true>
+}else{
+    <code to execute if condition is false>
+};
+```
+
+## Including modules
 Much like in c or c++, aflat modules are made up of header and source files.  The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
 
 Modules from the aflat standard library are included with the following syntax:
@@ -112,8 +141,7 @@ Modules from the aflat standard library are included with the following syntax:
 
 All other modules must be included with the following syntax:
 ```c
-.needs "path/to/module/header.gs" // aflat will assume the .gs if it is left out
-```
+.needs "path/to/module/header.gs"
 A root directory for header files can be specified with the following syntax:
 ```c
 .root "path/to/root/directory"
