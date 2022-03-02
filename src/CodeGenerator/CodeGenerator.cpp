@@ -702,6 +702,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
             func = this->nameTable[call->ident];
             if (func == nullptr){
                 gen::Symbol * smbl = gen::scope::ScopeManager::getInstance()->get(call->ident);
+                if (smbl == nullptr) smbl = this->GlobalSymbolTable.search<std::string>(searchSymbol, call->ident);
                 if ( smbl != nullptr){
                                 ast::Var * var = new ast::Var();
                                 var->Ident = smbl->symbol;
