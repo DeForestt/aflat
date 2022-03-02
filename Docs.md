@@ -252,9 +252,6 @@ here is an example of the intended use of a contract:
 .needs <io>
 .needs <std>
 
-.needs <io>
-.needs <std>
-
 class IWorker{
     contract{
         adr work;
@@ -268,6 +265,10 @@ class Plumber signs IWorker{
                         // function pointer
             print("I am tightening the pipes\n");
         };
+    };
+
+    int getClients(){
+        print("I am getting clients\n");
     };
 };
 
@@ -284,6 +285,10 @@ class Carpenter signs IWorker{
                         // function pointer
             print("I am building a house\n");
         };
+    };
+
+    int buyTools(){
+        print("I am buying tools\n");
     };
 };
 
@@ -304,6 +309,9 @@ int main(){
     plumber.init();
     carpenter.init();
 
+    plumber.getClients();
+    carpenter.buyTools();
+
     plumber.work();
     carpenter.work();
 
@@ -313,6 +321,17 @@ int main(){
     return 0;
 };
 ```
+output:
+```c
+I am tightening the pipes
+I am building a house
+I am getting clients
+I am buying tools
+I am tightening the pipes
+I am building a house
+```
+
+- Keep in mind that when calling function pointer that are a part of a class, the first parameter is the pointer to the object. The function can be created with a veriable named my or self.
 
 ## Including modules
 Much like in c or c++, aflat modules are made up of header and source files.  The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
