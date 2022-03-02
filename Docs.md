@@ -103,19 +103,47 @@ int main(){
 ```
 
 ### Including modules
-Mutch like in c or c++, aflat modules are made up of header and source files.  The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
+Much like in c or c++, aflat modules are made up of header and source files.  The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
 
-modules from the aflat standard library are included with the following syntax:
+Modules from the aflat standard library are included with the following syntax:
 ```c
 .needs <module name>
 ```
 
-all other modules must be included with the following syntax:
+All other modules must be included with the following syntax:
 ```c
-.needs "path/to/module"
+.needs "path/to/module/header.gs"
 ```
-a rood directory for header files can be specified with the following syntax:
+A root directory for header files can be specified with the following syntax:
 ```c
-.root "path/to/root"
+.root "path/to/root/directory"
 ```
-if a root directory is not specified, the current directory is used.
+If a root directory is not specified, the current directory is used.
+
+The list of standard modules is as follows:
+- Collections
+    - Handles arrays and list and the ICollection interface
+- concurrency
+    - Handles threads and pipes defines the Process class
+- files
+    - Handles file IO and defines the File class
+- io
+    - Handles input and output to the console
+- math
+    - Handles math functions
+- std
+    - Deals with mempry managment
+- strings
+    - Functions to deal with strings and convert between other types and strings
+- asm
+    - a repository of syscall wrappers
+
+example of using the io module:
+```c
+.needs <io>
+
+int main(){
+    print("Hello World!\n");
+    return 0;
+};
+```
