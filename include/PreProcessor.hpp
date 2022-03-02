@@ -23,6 +23,7 @@ class PreProcessor{
         PreProcessor();
         ~PreProcessor();
         std::string PreProcess(std::string code, std::string exePath);
+        bool debug = false;
     private:
         std::string root;
         links::SLinkedList<Definition, std::string> definitions;
@@ -35,8 +36,7 @@ class PreProcessor{
         void Define(std::string line);
 
         /*Replaced defined value with value*/
-        void ReplaceDefined(std::string &code);
-                
+        void ReplaceDefined(std::string &code); 
 };
 
 #endif

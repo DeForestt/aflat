@@ -91,6 +91,7 @@ void build(std::string path, std::string output){
     try{
         try{
             PreProcessor pp;
+            //pp.debug = true;
             tokens = scanner.Scan(pp.PreProcess(content, libPath));
         }catch (int x){
             std::cout << " unparsable Char at index " + x;

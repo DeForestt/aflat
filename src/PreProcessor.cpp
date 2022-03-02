@@ -86,7 +86,14 @@ std::string PreProcessor::PreProcess(std::string code, std::string libPath){
             output += line;
         };
     }
-
+    
+    // write the output to a file
+    if (this->debug) {
+        std::ofstream outfile;
+        outfile.open("output.af");
+        outfile << output;
+        outfile.close();
+    }
     return output;
 }
 
@@ -127,12 +134,17 @@ std::string PreProcessor::Include(std::string line, std::string libPath){
         output += content;
         // remove all new lines from output
         std::string cleanPut;
-        output.reserve(output.size()); // optional, avoids buffer reallocations in the loop
-            for(size_t i = 0; i < output.size(); ++i)
-            if(output[i] != '\n') cleanPut += output[i];
+        // output.reserve(output.size()); // optional, avoids buffer reallocations in the loop
+        //     for(size_t i = 0; i < output.size(); ++i)
+        //     if(output[i] != '\n') cleanPut += output[i];
         // check if the file is in the list of includes
         if(std::find(this->includes.begin(), this->includes.end(), path) == this->includes.end()){
             this->includes.push_back(path);
+            if (this->debug) return this->PreProcess(output, libPath);
+            output = this->PreProcess(output, libPath);
+            output.reserve(output.size()); // optional, avoids buffer reallocations in the loop
+            for(size_t i = 0; i < output.size(); ++i)
+            if(output[i] != '\n') cleanPut += output[i];
             return this->PreProcess(cleanPut, libPath);
         }
         return "";
