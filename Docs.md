@@ -101,8 +101,55 @@ int main(){
     return 0;
 };
 ```
+### Annonymous Functions
+Functions can be defined without a name.  This is useful for passing functions as arguments to other functions.
+```c
+[<parameters>]=>{
+    <function body>
+};
+```
+example:
+```c
+int main(){
+    
+    adr add = [int a, int b]=>{
+        return a + b;
+    };
 
+    return add(1, 2);
+};
+```
 
+## Statements
+
+### Declarations
+Declarations are used to define variables.  They are used to define variables and functions.
+```bnf
+<declaration> ::= <type> <identifier>;
+```
+### Declare and assign
+```bnf
+<declaration> ::= <type> <identifier> = <expression>;
+```
+### Assign
+```bnf
+<assignment> ::= <identifier> = <expression>;
+```
+### Return
+```bnf
+<return> ::= return <expression>;
+```
+### reference
+```bnf
+<reference> ::= ?<identifier>;
+```
+- returns the address of the variable
+
+### Load
+```bnf
+<load> ::= <identifier> := <expression>;
+```
+- Loads the value of the expression into the memory address held in the identifier.
 
 ## Control Flow
 
@@ -130,6 +177,45 @@ if(<condition>){
     <code to execute if condition is false>
 };
 ```
+### While Loops
+While loops are used to execute code while a condition is true.  The syntax is:
+```c
+while(<condition>){
+    <code to execute>
+};
+```
+### For Loops
+For loops are used to execute code a set number of times.  The syntax is:
+```c
+for{<code to run once>}(<condition>){<code to run at end of each iteration>}{
+    <Internal loop code>
+};
+```
+This syntax is designed to make for loops more flexible than while loops.  The code to run once is executed before the loop starts.  The condition is checked at the start of each iteration.  The code to run at the end of each iteration is executed at the end of each iteration.  The internal loop code is executed between the start and end of each iteration.
+
+example:
+```c
+.needs <io>
+
+int main(){
+    for {int i = 0;}(i < 10){i = i + 1;}{
+        printInt(i);
+    };
+    return 0;
+};
+```
+
+## Classes
+Classes in aflat are effectively structs that can implement functions and support encapsulation and rudimentary inheritance.  The syntax is:
+```c
+class <class name> signs <parent class>{
+    <contract>
+    <class variables>
+    <class functions>
+};
+```
+
+
 
 ## Including modules
 Much like in c or c++, aflat modules are made up of header and source files.  The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
