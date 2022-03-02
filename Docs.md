@@ -1,7 +1,7 @@
 # Documentation For AFlat Programming Language
 
 ## Trust the programmer philosophy
-AFlat aims to trust that developers know what they are doing.  It allows and encurages things that many other modern languages do not such as pointer arythmatic, memory managment, and so on.
+AFlat aims to trust that developers know what they are doing.  It allows and encourages things that many other modern languages do not, such as pointer arythmatic, memory managment, and so on.
 <br>
 
 ## Types
@@ -53,7 +53,7 @@ int add(int a, int b){
 };
 ```
 ### The main Function
-The main function is the entry point for aflat.  It is the first function called when aflat is run. It can take optionak arguments int argc and adr argv.
+The main function is the entry point for aflat.  It is the first function called when aflat is run. It can take optional arguments int argc and adr argv.
 ```c
 int main(int argc, adr argv){
     // do stuff
