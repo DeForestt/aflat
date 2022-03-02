@@ -944,7 +944,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             };
 
             this->GenArgs(func->args, OutputFile);
-            OutputFile.linker.push(link);
+            if(!isLambda) OutputFile.linker.push(link);
 
             asmc::File file = this->GenSTMT(func->statment);
             // check if the last statement is a return statement

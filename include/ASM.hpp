@@ -247,7 +247,9 @@ namespace asmc{
         File * lambdas;
         void operator<<(asmc::File file);
         void operator>>(asmc::File file);
+        void cstitch(asmc::File file);
         void collect();
+        File();
     };
 
     class Register{

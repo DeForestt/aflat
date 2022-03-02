@@ -188,6 +188,13 @@ void asmc::File::operator<<(asmc::File file){
     }
 }
 
+void asmc::File::cstitch(asmc::File file){
+    this->linker.stitch(file.linker);
+    this->text.istitch(file.text);
+    this->bss.stitch(file.bss);
+    this->data.stitch(file.data);
+}
+
 void asmc::File::operator>>(asmc::File file){
     this->linker.stitch(file.linker);
     this->text.stitch(file.text);
@@ -195,21 +202,29 @@ void asmc::File::operator>>(asmc::File file){
     this->data.stitch(file.data);
     if (!this->hasLambda && file.hasLambda) {
         this->hasLambda = true;
-        this->lambdas = new asmc::File;
+        this->lambdas = new asmc::File();
     }
-    if (file.hasLambda) {
+    if (file.hasLambda && file.lambdas != nullptr) {
         this->hasLambda = true;
-        *this->lambdas << *file.lambdas;
+        this->lambdas->operator<<(*file.lambdas);
     }
 }
 
 void asmc::File::collect(){
-    if(this->hasLambda){
+    if(this->hasLambda && this->lambdas != nullptr){
         this->lambdas->collect();
-        this->operator<<(*this->lambdas);
+        this->cstitch(*this->lambdas);
         delete this->lambdas;
     }
 }
+
+asmc::File::File(){
+    this->hasLambda = false;
+    this->lambdas = nullptr;
+    this->linker = links::LinkedList<asmc::Instruction *>();
+    this->text = links::LinkedList<asmc::Instruction *>();
+    this->bss = links::LinkedList<asmc::Instruction *>();
+};
 
 asmc::Register::Register(std::string _qWord, std::string _dWord, std::string _word, std::string _byte){
     this->qWord = '%' + _qWord;
