@@ -81,3 +81,41 @@ int main(){
     return 0;
 };
 ```
+### Calling Functions
+Functions can be called with the following syntax:
+```c
+<function name>(<arguments>);
+```
+- The aflat compiler will not check for the type or number of arguments.  It will simply call the function with the arguments passed. This allows functions to have optional arguments.  It also makes it easier to define function pointers.
+    - Strict functions with type checking will be added in the future. They will use the keyword `strict` in the definition.
+- Pointers can be called with the same syntax.
+
+example:
+```c
+int add(int a, int b){
+    return a + b;
+};
+
+int main(){
+    int i = add(1, 2);
+    return 0;
+};
+```
+
+### Including modules
+Mutch like in c or c++, aflat modules are made up of header and source files.  The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
+
+modules from the aflat standard library are included with the following syntax:
+```c
+.needs <module name>
+```
+
+all other modules must be included with the following syntax:
+```c
+.needs "path/to/module"
+```
+a rood directory for header files can be specified with the following syntax:
+```c
+.root "path/to/root"
+```
+if a root directory is not specified, the current directory is used.
