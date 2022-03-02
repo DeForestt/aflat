@@ -112,7 +112,7 @@ Modules from the aflat standard library are included with the following syntax:
 
 All other modules must be included with the following syntax:
 ```c
-.needs "path/to/module/header.gs"
+.needs "path/to/module/header.gs" // aflat will assume the .gs if it is left out
 ```
 A root directory for header files can be specified with the following syntax:
 ```c
@@ -140,10 +140,10 @@ The list of standard modules is as follows:
 
 example of using the io module:
 ```c
-.needs <io>
+.needs <io> // the io module is included
 
 int main(){
-    print("Hello World!\n");
+    print("Hello World!\n"); // the io module contains the print function
     return 0;
 };
 ```
