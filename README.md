@@ -1,5 +1,5 @@
 # AFlat
-AFlat is a simple, low-level, programming language.  It is designed to give as much freedom as possible to the programmer, and yet at the same time be easy to read and understand.
+AFlat is a simple, low-level, programming language.  It is designed to give as much freedom as possible to the programmer, and yet at the same time be easy to read and understand. Please see the [documentation](Docs.md) for the full documentation.
 <br>
 
 ## Trust the programmer philosophy
