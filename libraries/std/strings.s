@@ -21,7 +21,7 @@
 ascii:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$12, %rsp
+	subq	$16, %rsp
 	movl	%edi, -4(%rbp)
 	lea	-4(%rbp), %rax
 	movq	%rax, -12(%rbp)
@@ -30,10 +30,12 @@ ascii:
 	movb	%al, %al
 	leave
 	ret
+	leave
+	ret
 len:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$13, %rsp
+	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movl	$0, %eax
 	movl	%eax, %edi
@@ -62,10 +64,12 @@ len:
 	movl	-13(%rbp), %eax
 	leave
 	ret
+	leave
+	ret
 str_comp:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$28, %rsp
+	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movq	-8(%rbp), %rax
@@ -124,17 +128,16 @@ str_comp:
 	movl	$1, %eax
 	leave
 	ret
+	leave
+	ret
 str_concat:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$26, %rsp
+	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movq	%rdx, -24(%rbp)
-	movl	$0, %eax
-	movl	%eax, %edi
-	call	ascii
-	movb	%al, -25(%rbp)
+	movb	$0, -25(%rbp)
 	jmp	.Lstr_concat11
 .Lstr_concat10:
 	movq	-8(%rbp), %rax
@@ -193,10 +196,12 @@ str_concat:
 	movl	$0, %eax
 	leave
 	ret
+	leave
+	ret
 str_toInt:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$30, %rsp
+	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
 	movl	$1, -12(%rbp)
 	movq	-8(%rbp), %rax
@@ -277,10 +282,12 @@ str_toInt:
 	movl	-26(%rbp), %eax
 	leave
 	ret
+	leave
+	ret
 int_toString:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$30, %rsp
+	subq	$32, %rsp
 	movl	%edi, -4(%rbp)
 	movq	%rsi, -12(%rbp)
 	movl	$0, -16(%rbp)
@@ -409,10 +416,12 @@ int_toString:
 	movl	$0, %eax
 	leave
 	ret
+	leave
+	ret
 str_find:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$17, %rsp
+	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movb	%sil, -9(%rbp)
 	movl	$0, -13(%rbp)
@@ -451,10 +460,12 @@ str_find:
 	movl	$-1, %eax
 	leave
 	ret
+	leave
+	ret
 str_split:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$27, %rsp
+	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movb	%sil, -9(%rbp)
 	movq	%rdx, -17(%rbp)
@@ -531,10 +542,12 @@ str_split:
 	movl	$0, %eax
 	leave
 	ret
+	leave
+	ret
 charToFloat:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$5, %rsp
+	subq	$16, %rsp
 	movb	%dil, -1(%rbp)
 	movss	.floatcharToFloat46, %xmm0
 	movss	%xmm0, -5(%rbp)
@@ -621,10 +634,12 @@ charToFloat:
 	movl	-5(%rbp), %eax
 	leave
 	ret
+	leave
+	ret
 str_toFloat:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$90, %rsp
+	subq	$96, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
@@ -757,10 +772,12 @@ str_toFloat:
 	movl	-90(%rbp), %eax
 	leave
 	ret
+	leave
+	ret
 sPrintFloat:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$8, %rsp
+	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
@@ -768,10 +785,12 @@ sPrintFloat:
 	movl	$0, %eax
 	leave
 	ret
+	leave
+	ret
 float_toString:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$106, %rsp
+	subq	$112, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movl	%edx, -20(%rbp)
@@ -1045,10 +1064,12 @@ float_toString:
 	movl	$0, %eax
 	leave
 	ret
+	leave
+	ret
 str_subString:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$52, %rsp
+	subq	$64, %rsp
 	movl	%edi, -4(%rbp)
 	movl	%esi, -8(%rbp)
 	movq	%rdx, -16(%rbp)
@@ -1059,53 +1080,55 @@ str_subString:
 	movq	%rbx, -32(%rbp)
 	movq	-32(%rbp), %rax
 	movl	(%rax), %eax
-	movl	%eax, -40(%rbp)
-	mov	-40(%rbp), %rdx
+	movl	%eax, -36(%rbp)
+	mov	-36(%rbp), %edx
 	mov	-16(%rbp), %rax
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -16(%rbp)
 	movq	-24(%rbp), %rbx
-	movq	%rbx, -48(%rbp)
-	movl	$0, -52(%rbp)
+	movq	%rbx, -44(%rbp)
+	movl	$0, -48(%rbp)
 	jmp	.Lstr_subString142
 .Lstr_subString141:
 	movq	-16(%rbp), %rax
 	movb	(%rax), %al
-	movb	%al, -53(%rbp)
-	movq	-48(%rbp), %rax
-	movb	-53(%rbp), %bl
+	movb	%al, -49(%rbp)
+	movq	-44(%rbp), %rax
+	movb	-49(%rbp), %bl
 	movb	%bl, (%rax)
 	mov	$1, %rdx
-	mov	-48(%rbp), %rax
+	mov	-44(%rbp), %rax
 	add	%rdx, %rax
 	movl	%eax, %ebx
-	movl	%ebx, -48(%rbp)
+	movl	%ebx, -44(%rbp)
 	mov	$1, %rdx
 	mov	-16(%rbp), %rax
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -16(%rbp)
 	mov	$1, %edx
-	mov	-52(%rbp), %eax
+	mov	-48(%rbp), %eax
 	add	%edx, %eax
 	movl	%eax, %ebx
-	movl	%ebx, -52(%rbp)
+	movl	%ebx, -48(%rbp)
 .Lstr_subString142:
-	movl	-52(%rbp), %eax
+	movl	-48(%rbp), %eax
 	movl	-8(%rbp), %ecx
 	cmpl	%ecx, %eax
 	jl	.Lstr_subString141
-	movq	-48(%rbp), %rax
+	movq	-44(%rbp), %rax
 	movb	$0, %bl
 	movb	%bl, (%rax)
 	movq	-24(%rbp), %rax
 	leave
 	ret
+	leave
+	ret
 str_reverse:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$28, %rsp
+	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movq	-8(%rbp), %rax
@@ -1123,7 +1146,8 @@ str_reverse:
 	mov	-32(%rbp), %edx
 	mov	-8(%rbp), %rax
 	add	%rdx, %rax
-	movl	%eax, -40(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -40(%rbp)
 	movq	-40(%rbp), %rax
 	movb	(%rax), %al
 	movb	%al, -41(%rbp)
@@ -1151,16 +1175,18 @@ str_reverse:
 	movq	-28(%rbp), %rax
 	leave
 	ret
+	leave
+	ret
 str_at:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$13, %rsp
+	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movl	%esi, -12(%rbp)
 	movl	$0, -16(%rbp)
 	jmp	.Lstr_at146
 .Lstr_at145:
-	mov	$1, %edx
+	mov	$1, %rdx
 	mov	-8(%rbp), %rax
 	add	%rdx, %rax
 	movl	%eax, %ebx
@@ -1181,10 +1207,12 @@ str_at:
 	movb	-13(%rbp), %al
 	leave
 	ret
+	leave
+	ret
 str_forEach:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$28, %rsp
+	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movq	%rdx, -24(%rbp)
@@ -1192,7 +1220,8 @@ str_forEach:
 	movq	%rax, %rdi
 	call	len
 	movl	%eax, -28(%rbp)
-	movl	$0, -32(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -32(%rbp)
 	jmp	.Lstr_forEach148
 .Lstr_forEach147:
 	movq	-8(%rbp), %rax
@@ -1229,6 +1258,8 @@ str_forEach:
 	cmpl	%ecx, %eax
 	jl	.Lstr_forEach147
 	movl	$0, %eax
+	leave
+	ret
 	leave
 	ret
 
