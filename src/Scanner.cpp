@@ -79,7 +79,7 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                         stringObj->value = "";
                         i++;
                         while(input[i] != '\"'){
-                            if (input[i] == '\n') {lineCount++; i++;}
+                            if (input[i] == '\n' || input[i] == '\t' || input[i] == '\r') {lineCount++; i++;}
                             if (input[i] == '\\'){
                                 i++;
                                 if (input[i] == 'n'){
@@ -87,9 +87,9 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                                 }else if (input[i] == 't'){
                                     stringObj->value += "\\t";
                                 }else if (input[i] == '\\'){
-                                    stringObj->value += '\\';
+                                    stringObj->value += "\\\\";
                                 }else if (input[i] == '\"'){
-                                    stringObj->value += '\"';
+                                    stringObj->value += "\\\"";
                                 }else if (input[i] == '\''){
                                     stringObj->value += '\'';
                                 }else if (input[i] == 'r'){
@@ -101,7 +101,7 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                                 }else{
                                     throw err::Exception("Invalid token: " + stringObj->value + " on line " + std::to_string(lineCount));
                                 }
-                            }else if (input[i] != '\n'){
+                            }else if (input[i] != '\n' && input[i] != '\t' && input[i] != '\r'){
                                 stringObj->value += input[i];
                             }
                             i++;
