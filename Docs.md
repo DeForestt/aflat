@@ -246,8 +246,8 @@ class <class name> signs <contract name>{
     <contract var declarations>
     <class functions>
 };
-
-here is an example of the intended use of a contract:
+```
+Here is an example of the intended use of a contract:
 ```c++
 .needs <io>
 .needs <std>
