@@ -268,6 +268,12 @@ namespace ast{
         public:
         ast::Function * function;
     };
+
+    class newExpr : public Expr{
+        public:
+        ast::Type type;
+        links::LinkedList<Expr *> Args;
+    };
 }
 
 #endif
