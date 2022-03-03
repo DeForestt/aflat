@@ -38,9 +38,26 @@ int gen::CodeGenerator::getBytes(asmc::Size size){
                 return 4;
                 break;
             default:
-                throw err::Exception("Unknown Size");
+                alert("Unknown Size");
         }
+    return 0;
 }
+
+void gen::CodeGenerator::alert(std::string message, bool error = true){
+    if (error){
+        std::cout << "Error: ";
+        if (this->scope != nullptr){
+            std::cout << "in class " << this->scope->Ident << ": ";
+        }
+        if (!this->globalScope && this->nameTable.head != nullptr){
+            std::cout << "in function " << this->nameTable.peek().ident.ident << ": ";
+        }
+        std::cout << message << std::endl;
+        exit(1);
+    } else {
+        std::cout << "Warning: " << message << std::endl;
+    }
+};
 
 gen::CodeGenerator::CodeGenerator(){
     this->registers << asmc::Register("rax", "eax", "ax", "al");
@@ -70,19 +87,21 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName, bool st
     if (type.size == asmc::QWord && typeName == "adr") return true;
     if (strict && type.typeName == "adr") return true;
     // search the type list for the type
-    auto udef = this->typeList[typeName];
+    gen::Type** udef = this->typeList[typeName];
     if (udef != nullptr){
         // if the type is a class
         gen::Class * cl = dynamic_cast<gen::Class *>(*udef);
         if (cl != nullptr){
             gen::Class * parent = cl->parent;
+            
             if (parent != nullptr){
                 if (parent->Ident == type.typeName) return true;
             };
         };
     };
-    if (!strict) throw err::Exception("Cannot assign type " + type.typeName + " to " + typeName);
-    throw err::Exception("Cannot return type " + typeName + " from " + type.typeName);
+    if (!strict) alert("Cannot assign type " + type.typeName + " to " + typeName);
+    alert("Cannot return type " + typeName + " from " + type.typeName);
+    return false;
 }
 
 void gen::CodeGenerator::prepareCompound(ast::Compound compound, asmc::File &OutputFile, bool isDiv = false){
@@ -197,7 +216,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                     output.access = '$' + this->nameTable[var.Ident]->ident.ident;
                     output.type = "adr";
                     handled = true;
-                }else throw err::Exception("variable not found " + var.Ident);
+                }else alert("variable not found " + var.Ident);
             }
         }
 
@@ -215,7 +234,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 ast::Type last = sym->type;
 
                 while(var.modList.head != nullptr){
-                    if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
+                    if(this->typeList[last.typeName] == nullptr) alert("type not found " + last.typeName);
                     gen::Type type = **this->typeList[last.typeName];
                     gen::Symbol * modSym;
                     std::string sto = var.modList.peek();
@@ -226,7 +245,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                         // if we are not scoped to the type search the symbol in the public symbol table
                         modSym = type.publicSymbols.search<std::string>(searchSymbol, var.modList.pop());
                     };
-                    if (modSym == nullptr) throw err::Exception("variable not found " + last.typeName + "." + sto);
+                    if (modSym == nullptr) alert("variable not found " + last.typeName + "." + sto);
                     last = modSym->type;
                     tbyte = modSym->byteMod;
                     asmc::Mov * mov = new asmc::Mov();
@@ -251,7 +270,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                     output.size = asmc::DWord;
                     output.access = '$' + this->nameTable[var.Ident]->ident.ident;
                     handled = true;
-                }  else throw err::Exception("variable not found " + var.Ident);
+                }  else alert("variable not found " + var.Ident);
             }
         }
     }
@@ -605,7 +624,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 break;
             }
             default:{
-                throw err::Exception("Unhandled oporator");
+                alert("Unhandled oporator");
                 break;
             }
         }   
@@ -637,7 +656,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
         output.type = "adr";
     }
     else{
-        throw err::Exception("cannot gen expr");
+        this->alert("Unhandled expression");
     }
     return output;
 };
@@ -659,7 +678,7 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(ast::Statment * STMT
         
         int offset = this->getBytes(arg->type.size);
 
-        if(table.search<std::string>(searchSymbol, arg->Ident) != nullptr) throw err::Exception("redefined variable:" + arg->Ident);
+        if(table.search<std::string>(searchSymbol, arg->Ident) != nullptr) alert("redefined variable:" + arg->Ident);
 
         symbol.symbol = arg->Ident;
         if (table.head == nullptr){
@@ -680,7 +699,7 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(ast::Statment * STMT
 
         offset = offset * dec->count;
 
-        if(this->SymbolTable.search<std::string>(searchSymbol, dec->ident) != nullptr) throw err::Exception("redefined veriable:" + dec->ident);
+        if(this->SymbolTable.search<std::string>(searchSymbol, dec->ident) != nullptr) alert("redefined veriable:" + dec->ident);
 
         gen::Symbol Symbol;
         if (this->SymbolTable.head == nullptr){
@@ -709,7 +728,7 @@ void gen::CodeGenerator::GenArgs(ast::Statment * STMT, asmc::File &OutputFile){
             **also needs to be added to symbol table**
         */
 
-        if (intArgsCounter > 6) throw err::Exception("AFlat compiler cannot handle more than 6 int arguments.");
+        if (intArgsCounter > 6) alert("AFlat compiler cannot handle more than 6 int arguments.");
         ast::Declare * arg =  dynamic_cast<ast::Declare *>(STMT);
         asmc::Size size;
         int offset = 0;
@@ -771,7 +790,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         }
         else{
             gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(call->ident);
-            if (sym == nullptr) throw err::Exception("cannot find object: " + call->ident);
+            if (sym == nullptr) alert("cannot find object: " + call->ident);
             
             ast::Type last = sym->type;
             std::string my = sym->symbol;
@@ -782,7 +801,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                 sym = gen::scope::ScopeManager::getInstance()->get(call->modList.peek());
                 if (sym == nullptr) {
                     bool addpub = true;
-                    if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
+                    if(this->typeList[last.typeName] == nullptr) alert("type not found " + last.typeName);
                     type = *this->typeList[last.typeName];
                     gen::Class * cl = dynamic_cast<gen::Class *>(type);
                     if(cl != nullptr) {
@@ -843,7 +862,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
             };
         };
 
-        if (func == nullptr) throw err::Exception("Cannot Find Function: " + call->ident);
+        if (func == nullptr) alert("Cannot Find Function: " + call->ident);
         
         call->Args.invert();
        
@@ -940,8 +959,8 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             if(func->scopeName != "global"){
                 lable->lable = "pub_" + func->scopeName + "_" + func->ident.ident;
                 gen::Type * tscope = *this->typeList[func->scopeName];
-                if(tscope == nullptr) throw err::Exception("Failed to locate function Scope");
-                if(dynamic_cast<gen::Class *>(tscope) == nullptr) throw err::Exception("Can only scope to  a class");
+                if(tscope == nullptr) alert("Failed to locate function Scope");
+                if(dynamic_cast<gen::Class *>(tscope) == nullptr) alert("Can only scope to  a class");
                 this->scope = dynamic_cast<gen::Class *>(tscope);
             }
 
@@ -1039,7 +1058,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
                 // add the symbol to the class symbol table
                 Table = &this->scope->SymbolTable;
 
-                if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable: " + dec->Ident);
+                if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) alert("redefined veriable: " + dec->Ident);
                 gen::Symbol Symbol;
                 if (Table->head == nullptr){
                     Symbol.byteMod = offset;
@@ -1056,7 +1075,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             Table = &this->GlobalSymbolTable;
             asmc::LinkTask * var = new asmc::LinkTask();
             asmc::Lable * lable = new asmc::Lable();
-            if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined global veriable: " + dec->Ident);
+            if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) alert("redefined global veriable: " + dec->Ident);
             
             lable->lable = dec->Ident;
             if (dec->type.size = asmc::QWord){
@@ -1089,7 +1108,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             }
             else{Table = &this->scope->SymbolTable;
 
-            if(Table->search<std::string>(searchSymbol, dec->ident) != nullptr) throw err::Exception("redefined veriable:" + dec->ident);
+            if(Table->search<std::string>(searchSymbol, dec->ident) != nullptr) alert("redefined veriable:" + dec->ident);
 
             gen::Symbol Symbol;
 
@@ -1153,7 +1172,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             Symbol.type.opType = exp.op;
             OutputFile.data << lable;
             OutputFile.data << var;
-            if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) throw err::Exception("redefined veriable:" + dec->Ident);
+            if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) alert("redefined veriable:" + dec->Ident);
             Table->push(Symbol);
         };
 
@@ -1189,7 +1208,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         if(symbol == nullptr) {
             Table = &this->GlobalSymbolTable;
             symbol = Table->search<std::string>(searchSymbol, assign->Ident);
-            if(symbol == nullptr) throw err::Exception("unknown name: " + assign->Ident);
+            if(symbol == nullptr) alert("unknown name: " + assign->Ident);
             global = true;
         };
         asmc::Mov * mov = new asmc::Mov();
@@ -1215,7 +1234,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         else output = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
 
         while(assign->modList.head != nullptr){
-            if(this->typeList[last.typeName] == nullptr) throw err::Exception("type not found " + last.typeName);
+            if(this->typeList[last.typeName] == nullptr) alert("type not found " + last.typeName);
             gen::Type type = **this->typeList[last.typeName];
              gen::Symbol * modSym;
              // store the next dot mod in case of an error
@@ -1227,7 +1246,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
                         // if we are not scoped to the type search the symbol in the public symbol table
                         modSym = type.publicSymbols.search<std::string>(searchSymbol, assign->modList.pop());
                     };
-                    if(modSym == nullptr) throw err::Exception("unknown name: " + last.typeName + "." + sto);
+                    if(modSym == nullptr) alert("unknown name: " + last.typeName + "." + sto);
             last = modSym->type;
             tbyte = modSym->byteMod;
 
@@ -1644,6 +1663,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
                         seq->Statment1 = deff->contract;
                         seq->Statment2 = base->contract;
                         type->contract = seq;
+                        type->parent = base;
                         contractFile = this->GenSTMT(seq);
                         OutputFile << contractFile;
                     } else {
@@ -1652,8 +1672,8 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
                         OutputFile << contractFile;
                         type->contract = deff->contract;
                     }
-                } else throw err::Exception("Base class is not a class");
-            } else throw err::Exception("Base class not found");
+                } else alert("Base class is not a class");
+            } else alert("Base class not found");
         }else if (deff->contract != nullptr){
             asmc::File contractFile = this->GenSTMT(deff->contract);
             OutputFile << contractFile;

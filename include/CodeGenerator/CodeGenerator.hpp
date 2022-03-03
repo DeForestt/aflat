@@ -92,6 +92,8 @@ namespace gen{
         public:
         asmc::File GenSTMT(ast::Statment * stmt);
         links::LinkedList<gen::Symbol> GenTable(ast::Statment * STMT, links::LinkedList<gen::Symbol> &table);
+        // a function for warnings or errors
+        void alert(std::string message, bool error = true);
         CodeGenerator();
     };
 }
