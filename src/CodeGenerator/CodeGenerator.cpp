@@ -915,6 +915,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         int saveIntArgs = intArgsCounter;
         bool isLambda = func->isLambda;
 
+        std::cout << "Generating Function: " << func->ident.ident << " type " << func->type.typeName << std::endl;
         if(this->scope == nullptr) this->nameTable << *func;
         else{
             // add the function to the class name table
