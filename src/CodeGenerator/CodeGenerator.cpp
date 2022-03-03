@@ -81,7 +81,8 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName, bool st
             };
         };
     };
-    throw err::Exception("Cannot assign type " + type.typeName + " to " + typeName);
+    if (!strict) throw err::Exception("Cannot assign type " + type.typeName + " to " + typeName);
+    throw err::Exception("Cannot return type " + typeName + " from " + type.typeName);
 }
 
 void gen::CodeGenerator::prepareCompound(ast::Compound compound, asmc::File &OutputFile, bool isDiv = false){
