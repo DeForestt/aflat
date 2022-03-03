@@ -11,6 +11,7 @@ namespace gen{
         public:
         asmc::OpType op = asmc::Hard;
         std::string access;
+        std::string type = "any";
         asmc::Size size;
     };
     
