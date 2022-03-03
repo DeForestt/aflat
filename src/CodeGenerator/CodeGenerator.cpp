@@ -64,9 +64,11 @@ gen::CodeGenerator::CodeGenerator(){
 
 bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName, bool strict = false){
     if (type.typeName == typeName) return true;
+    if (typeName == "--std--flex--function") return true;
     if (type.typeName == "int" && typeName == "float") return true;
     if (type.typeName == "float" && typeName == "int") return true;
     if (type.size == asmc::QWord && typeName == "adr") return true;
+    if (strict && type.typeName == "adr") return true;
     // search the type list for the type
     auto udef = this->typeList[typeName];
     if (udef != nullptr){
@@ -915,7 +917,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         int saveIntArgs = intArgsCounter;
         bool isLambda = func->isLambda;
 
-        std::cout << "Generating Function: " << func->ident.ident << " type " << func->type.typeName << std::endl;
+        //std::cout << "Generating Function: " << func->ident.ident << " type " << func->type.typeName << std::endl;
         if(this->scope == nullptr) this->nameTable << *func;
         else{
             // add the function to the class name table
@@ -1119,7 +1121,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
             asmc::Mov * mov = new asmc::Mov();
             gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile, dec->type.size);
-            this->canAssign(dec->type, dec->TypeName);
+            //std::cout << "Atempting to assign " << dec->Ident << " " << dec->type.typeName << " to " << expr.type << std::endl;
+            this->canAssign(dec->type, expr.type);
+            //std::cout << "Assigned " << dec->Ident << " " << dec->type.typeName << " to " << expr.type << std::endl;
             mov->op = expr.op;
             mov->size = dec->type.size;
             mov->from = expr.access;
@@ -1141,7 +1145,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
                 var->command = "quad";
             }
             gen::Expr exp = this->GenExpr(decAssign->expr, OutputFile);
-            this->canAssign(dec->type, dec->TypeName);
+            //std::cout << "Atempting to assign global " << dec->Ident << " " << dec->type.typeName << " to " << exp.type << std::endl;
+            this->canAssign(dec->type, exp.type);
+            //std::cout << "Assigned " << dec->Ident << " " << dec->type.typeName << " to " << exp.type << std::endl;
             var->operand = exp.access.erase(0, 1);
             Symbol.type.opType = exp.op;
             OutputFile.data << lable;
@@ -1162,10 +1168,11 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
         asmc::Mov * mov = new asmc::Mov();
         mov->size = this->returnType.size;
-        mov->from = this->GenExpr(ret->expr, OutputFile).access;
+        gen::Expr from = this->GenExpr(ret->expr, OutputFile);
+        mov->from = from.access;
         mov->to = this->registers["%rax"]->get(this->returnType.size);
         OutputFile.text << mov;
-        
+        this->canAssign(this->returnType, from.type, true);
         asmc::Return * re = new asmc::Return();
         OutputFile.text << re;
 
@@ -1241,7 +1248,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             mov->to = "(" + this->registers["%eax"]->get(asmc::QWord) + ")";
             OutputFile.text << m1;
         }else {
+            //std::cout << "Atempting to assign not dec " << symbol->symbol << " " << last.typeName << " to " << expr.type << std::endl;
             this->canAssign(last, expr.type);
+            //std::cout << "Assigned not dec " << symbol->symbol << " " << last.typeName << " to " << expr.type << std::endl;
             mov->to = output;
         };
 
