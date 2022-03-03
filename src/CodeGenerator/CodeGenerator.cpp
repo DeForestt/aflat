@@ -356,6 +356,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
         ast::Compound comp = *dynamic_cast<ast::Compound *>(expr);
         asmc::File Dummby = asmc::File();
         output.op = asmc::Hard;
+        output.type = "--std--flex--function";
         switch (comp.op)
         {
             case ast::Plus:{
