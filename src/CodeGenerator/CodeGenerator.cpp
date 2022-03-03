@@ -1,5 +1,6 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include <iostream>
 #include <chrono>
 #pragma region helper functions
 
@@ -61,6 +62,26 @@ gen::CodeGenerator::CodeGenerator(){
     this->scope = nullptr;
 }
 
+bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName, bool strict = false){
+    if (type.typeName == typeName) return true;
+    if (type.typeName == "int" && typeName == "float") return true;
+    if (type.typeName == "float" && typeName == "int") return true;
+    if (type.size == asmc::QWord && typeName == "adr") return true;
+    // search the type list for the type
+    auto udef = this->typeList[typeName];
+    if (udef != nullptr){
+        // if the type is a class
+        gen::Class * cl = dynamic_cast<gen::Class *>(*udef);
+        if (cl != nullptr){
+            gen::Class * parent = cl->parent;
+            if (parent != nullptr){
+                if (parent->Ident == type.typeName) return true;
+            };
+        };
+    };
+    throw err::Exception("Cannot assign type " + type.typeName + " to " + typeName);
+}
+
 void gen::CodeGenerator::prepareCompound(ast::Compound compound, asmc::File &OutputFile, bool isDiv = false){
     asmc::Mov * mov1 = new asmc::Mov();
     asmc::Mov * mov2 = new asmc::Mov();
@@ -95,16 +116,20 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
     output.op = asmc::Hard;
     if(dynamic_cast<ast::IntLiteral *>(expr) != nullptr){
         ast::IntLiteral * intlit = dynamic_cast<ast::IntLiteral *>(expr);
+
         output.access = '$' + std::to_string(intlit->val);
         output.size = asmc::DWord;
+        output.type = "int";
     }
     else if(dynamic_cast<ast::LongLiteral *>(expr) != nullptr){
         ast::LongLiteral * intlit = dynamic_cast<ast::LongLiteral *>(expr);
+        output.type = "long";
         output.access = '$' + std::to_string(intlit->val);
         output.size = asmc::QWord;
     }
     else if(dynamic_cast<ast::CharLiteral *>(expr) != nullptr){
         ast::CharLiteral * intlit = dynamic_cast<ast::CharLiteral *>(expr);
+        output.type = "char";
         output.access = '$' + std::to_string(intlit->value);
         output.size = asmc::Byte;
     }
@@ -112,6 +137,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
         ast::CallExpr * exprCall = dynamic_cast<ast::CallExpr *>(expr);
         ast::Call * call = exprCall->call;
         ast::Function func = this->GenCall(call, OutputFile);
+        output.type = func.type.typeName;
         output.size = func.type.size;
         if (size != asmc::AUTO && func.flex) output.size = size;
         output.access = this->registers["%rax"]->get(output.size);
@@ -131,34 +157,42 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                     Type * type = *t;
                     output.size = asmc::DWord;
                     output.access = '$' + std::to_string(type->SymbolTable.head->data.byteMod);
+                    output.type = "int";
                     handled = true;
                 }else if(var.Ident == "int"){
                     output.size = asmc::DWord;
                     output.access = "$4";
+                    output.type = "int";
                     handled = true;
                 }else if(var.Ident == "char"){
                     output.size = asmc::DWord;
                     output.access = "$1";
+                    output.type = "int";
                     handled = true;
                 }else if(var.Ident == "adr"){
                     output.size = asmc::DWord;
                     output.access = "$8";
+                    output.type = "int";
                     handled = true;
                 }else if(var.Ident == "byte"){
                     output.size = asmc::DWord;
                     output.access = "$1";
+                    output.type = "int";
                     handled = true;
                 }else if(var.Ident == "float"){
                     output.size = asmc::DWord;
                     output.access = "$4";
+                    output.type = "int";
                     handled = true;
                 }else if(var.Ident == "NULL"){
                     output.size = asmc::QWord;
                     output.access = "$0";
+                    output.type = "adr";
                     handled = true;
                 }else if(this->nameTable[var.Ident] != nullptr){
                     output.size = asmc::QWord;
                     output.access = '$' + this->nameTable[var.Ident]->ident.ident;
+                    output.type = "adr";
                     handled = true;
                 }else throw err::Exception("variable not found " + var.Ident);
             }
@@ -168,6 +202,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
             if (sym != nullptr){
                 output.size = sym->type.size;
                 output.op = sym->type.opType;
+                output.type = sym->type.typeName;
                 if (global) output.access = sym->symbol;
                 else output.access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
 
@@ -200,6 +235,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                     output.access = std::to_string(tbyte - this->getBytes(last.size)) + '(' + mov->to + ')';
                     output.op = modSym->type.opType;
                     output.size = last.size;
+                    output.type = last.typeName;
                 }
             }else{
                 Type ** t = this->typeList[var.Ident];
@@ -229,6 +265,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
         output.access = registers["%rax"]->get(asmc::QWord);
         output.size = asmc::QWord;
         output.op = asmc::OpType::Hard;
+        output.type = "adr";
     }
     else if (dynamic_cast<ast::StringLiteral *>(expr) != nullptr){
         ast::StringLiteral str = *dynamic_cast<ast::StringLiteral *>(expr);
@@ -242,6 +279,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
         OutputFile.data << strlit;
         output.access = "$" + lable->lable;
         output.size = asmc::QWord;
+        output.type = "adr";
     }
     else if (dynamic_cast<ast::FloatLiteral *>(expr) != nullptr){
         ast::FloatLiteral * floatlit = dynamic_cast<ast::FloatLiteral *>(expr);
@@ -265,6 +303,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
         OutputFile.data << fltlit;
         output.access = this->registers["%xmm0"]->get(asmc::DWord);
         output.size = asmc::DWord;
+        output.type = "int";
     }
     else if(dynamic_cast<ast::DeRefence *>(expr)){
 
@@ -284,6 +323,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
         output.access = mov2->to;
         output.size = mov2->size;
+        output.type = deRef.type.typeName;
 
         OutputFile.text << mov;
         OutputFile.text << mov2;
@@ -591,6 +631,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
         output.access = "$" + id;
         output.size = asmc::QWord;
+        output.type = "adr";
     }
     else{
         throw err::Exception("cannot gen expr");
@@ -718,8 +759,9 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
 
                                 func = new ast::Function();
                                 func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
-                                func->type = smbl->type;
+                                func->type.arraySize = 0;
                                 func->type.size = asmc::QWord;
+                                func->type.typeName = "--std--flex--function";
                                 func->flex = true;
                 };
             };
@@ -847,7 +889,6 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         OutputFile.text << calls;
         intArgsCounter = 0;
         ast::Function ret = *func;
-        //if(func != nullptr) delete(func);
         return ret;
 };
 
@@ -1077,6 +1118,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
             asmc::Mov * mov = new asmc::Mov();
             gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile, dec->type.size);
+            this->canAssign(dec->type, dec->TypeName);
             mov->op = expr.op;
             mov->size = dec->type.size;
             mov->from = expr.access;
@@ -1098,6 +1140,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
                 var->command = "quad";
             }
             gen::Expr exp = this->GenExpr(decAssign->expr, OutputFile);
+            this->canAssign(dec->type, dec->TypeName);
             var->operand = exp.access.erase(0, 1);
             Symbol.type.opType = exp.op;
             OutputFile.data << lable;
@@ -1196,7 +1239,10 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             m1->to = this->registers["%eax"]->get(asmc::QWord);
             mov->to = "(" + this->registers["%eax"]->get(asmc::QWord) + ")";
             OutputFile.text << m1;
-        }else mov->to = output;
+        }else {
+            this->canAssign(last, expr.type);
+            mov->to = output;
+        };
 
         OutputFile.text << mov2;
         OutputFile.text << mov;

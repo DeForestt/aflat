@@ -11,7 +11,7 @@ namespace gen{
         public:
         asmc::OpType op = asmc::Hard;
         std::string access;
-        std::string type = "any";
+        std::string type = "";
         asmc::Size size;
     };
     
@@ -49,6 +49,7 @@ namespace gen{
             links::SLinkedList<ast::Function, std::string> nameTable;
             ast::Statment * contract;
             static bool compair(Type * t, std::string ident);
+            gen::Class * parent = nullptr;
     };
 
     class CodeGenerator{
@@ -87,7 +88,7 @@ namespace gen{
         ast::Function GenCall(ast::Call * call, asmc::File &OutputFile);
         Expr GenExpr(ast::Expr * expr, asmc::File &OutputFile, asmc::Size size = asmc::AUTO);
         void prepareCompound(ast::Compound compound, asmc::File &OutputFile, bool isDiv = false);
-
+        bool canAssign(ast::Type type, std::string typeName, bool strict = false);
         public:
         asmc::File GenSTMT(ast::Statment * stmt);
         links::LinkedList<gen::Symbol> GenTable(ast::Statment * STMT, links::LinkedList<gen::Symbol> &table);
