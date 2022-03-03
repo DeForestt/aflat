@@ -4,10 +4,10 @@ class Time {
 };
 
 class Times{
-    public adr tms_utime;
-    public adr tms_stime;
-    public adr tms_cutime;
-    public adr tms_cstime;
+    public int tms_utime;
+    public int tms_stime;
+    public int tms_cutime;
+    public int tms_cstime;
 };
 
 Times newTimes();

@@ -1,3 +1,22 @@
+.needs <std>
+
+class fstat{
+    long st_dev;
+    long st_ino;
+    int st_mode;
+    char 4 alligner;
+    long st_nlink;
+    int st_uid;
+    int st_gid;
+    long st_rdev;
+    long st_size;
+    long st_blksize;
+    long st_blocks;
+    Times st_atime;
+    Times st_mtime;
+    Times st_ctime;
+};
+
 class File{
     adr fileName;
     int file;

@@ -71,17 +71,17 @@ int write@File(adr text){
  *                      char term : the terminator used to denote the end of the file;
  * returns:             int : 0 if not EOF, 1 if EOF;
  */
-int read@File(adr pointer, char delim, char term){
+int read@File(adr pointer, char delim){
         char input;
         input = '\0';
         char null = '\0';
         while(input != delim){
-                sys_read(my.file, ?input, 1);
+                int eof = sys_read(my.file, ?input, 1);
                 char inp;
                 inp = input;
-                if(inp == term){return 1;};
                 pointer =: inp;
                 if(inp == delim){pointer =: null};
+                if(eof == 0){pointer =: null; return 1};
                 pointer = pointer + #1;
         };
         pointer =: null;
@@ -95,23 +95,27 @@ int read@File(adr pointer, char delim, char term){
  *                      char term  : the terminator used to denote the end of the file;
  * returns:             Array : the array of strings;
  */
-Array toArray@File(char delim, char term){
+Array toArray@File(char delim){
 	Array a = newArray(adr, 0);
 	adr ibuff = malloc(256);
 	
-	int eof = my.read(ibuff, delim, term);
-
-	while (eof != 1){
-		int size;
+	int eof = my.read(ibuff, delim);
+        int size;
+	
+        while (eof != 1){
 		size = a.size;
 		a.extend(1);
 		adr pointer = a.at(size);
-		if (eof != 1){
-			pointer =: ibuff;
-			ibuff = malloc(256);
-		};
-		eof = my.read(ibuff, delim, term);
+                pointer =: ibuff;
+                ibuff = malloc(256);
+		eof = my.read(ibuff, delim);
 	};
+
+        size = a.size;
+        a.extend(1);
+        adr pointer = a.at(size);
+        pointer =: ibuff;
+        ibuff = malloc(256);
 
         return a;
 };
@@ -124,17 +128,20 @@ Array toArray@File(char delim, char term){
  * returns:             LinkedList : the LinkedList of strings;
  */
 
-LinkedList toList@File(char delim, char term){
+LinkedList toList@File(char delim){
         LinkedList l = newList(adr);
         adr ibuff = malloc(256);
         
-        int eof = my.read(ibuff, delim, term);
+        int eof = my.read(ibuff, delim);
 
         while (eof != 1){
                 l.append(ibuff);
                 ibuff = malloc(256);
-                eof = my.read(ibuff, delim, term);
+                eof = my.read(ibuff, delim);
         };
+
+        l.append(ibuff);
+
 
         return l;
 };
