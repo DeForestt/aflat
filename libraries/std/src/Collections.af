@@ -40,7 +40,7 @@ int forEachLinkedList(LinkedList my, adr foo, adr arg){
 };
 
 Array whereLinkedList(LinkedList my, adr foo, adr arg){
-    Array a = newArray(adr, 0);
+    Array a = new Array(adr, 0);
 
     ListNode curr;
     curr = my.head;
@@ -154,7 +154,7 @@ adr get@LinkedList(int index){
  */
 
 int append@LinkedList(adr data){
-    ListNode ln = newNode();
+    ListNode ln = new ListNode();
     ln.data = data;
 
     if(my.head == NULL){
@@ -185,8 +185,8 @@ int insert@LinkedList(int index, adr data){
         return -1;
     };
 
-    ListNode ln = newNode();
-    new.data = data;
+    ListNode ln = new ListNode();
+    ln.data = data;
 
     ListNode curr;
     curr = my.head;
@@ -251,9 +251,9 @@ int forEachArray(Array my, adr foo, adr arg){
 };
 
 Array whereArray(Array my, adr foo, adr arg){
-    Array a = newArray(adr, 0);
+    Array a = new Array(adr, 0);
     int size;
-    adr tSize;
+    int tSize;
     tSize = my.typeSize;
     size = my.size;
     int i;
