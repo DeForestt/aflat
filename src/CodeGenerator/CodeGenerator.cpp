@@ -89,6 +89,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName, bool st
     // search the type list for the type
     gen::Type** udef = this->typeList[typeName];
     if (udef != nullptr){
+        if (type.typeName == "adr") return true;
         // if the type is a class
         gen::Class * cl = dynamic_cast<gen::Class *>(*udef);
         if (cl != nullptr){

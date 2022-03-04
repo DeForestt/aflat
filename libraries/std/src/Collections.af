@@ -26,7 +26,7 @@ int forEachLinkedList(LinkedList my, adr foo, adr arg){
     ListNode curr;
     curr = my.head;
     int i = 0;
-    while(curr != #0){
+    while(curr != NULL){
         adr data;
         data = curr.data;
         int cont = foo(data, i, arg);
@@ -45,7 +45,7 @@ Array whereLinkedList(LinkedList my, adr foo, adr arg){
     ListNode curr;
     curr = my.head;
     int i = 0;
-    while(curr != #0){
+    while(curr != NULL){
         adr data;
         data = curr.data;
         int boo = foo(data, i, arg);
@@ -71,11 +71,11 @@ Array whereLinkedList(LinkedList my, adr foo, adr arg){
  * returns:       none;
  */
 
-int init@LinkedList(){
-    my.head = #0;
+LinkedList init@LinkedList(){
+    my.head = NULL;
     my.forEach = forEachLinkedList;
     my.where = whereLinkedList;
-    return 0;
+    return my;
 };
 
 /*
@@ -87,7 +87,7 @@ int init@LinkedList(){
 
 ListNode newNode(){
     ListNode node = malloc(ListNode);
-    node.data = #0;
+    node.data = NULL;
     return node;
 };
 
@@ -111,13 +111,13 @@ int delete@LinkedList(int index){
     return 0;
 };
 
-int stitch@LinkedList(LinkedList new){
+int stitch@LinkedList(LinkedList ln){
     ListNode curr;
     curr = my.head;
-    while(curr.next != #0){
+    while(curr.next != NULL){
         curr = curr.next;
     };
-    curr.next = new.head;
+    curr.next = ln.head;
     return 0;
 };
 
@@ -130,7 +130,7 @@ int stitch@LinkedList(LinkedList new){
 
 adr get@LinkedList(int index){
     if (index < 0){
-        return #0;
+        return NULL;
     };
     ListNode myHead;
     myHead = my.head;
@@ -154,22 +154,22 @@ adr get@LinkedList(int index){
  */
 
 int append@LinkedList(adr data){
-    ListNode new = newNode();
-    new.data = data;
+    ListNode ln = newNode();
+    ln.data = data;
 
-    if(my.head == #0){
-        my.head = new;
+    if(my.head == NULL){
+        my.head = ln;
         return 0;
     };
 
     ListNode curr;
     curr = my.head;
     
-    while(curr.next != #0){
+    while(curr.next != NULL){
         curr = curr.next;
     };
 
-    curr.next = new;
+    curr.next = ln;
     return 0;
 };
 
@@ -185,7 +185,7 @@ int insert@LinkedList(int index, adr data){
         return -1;
     };
 
-    ListNode new = newNode();
+    ListNode ln = newNode();
     new.data = data;
 
     ListNode curr;
@@ -197,8 +197,8 @@ int insert@LinkedList(int index, adr data){
 
     adr temp;
     temp = curr.next;
-    new.next = temp;
-    curr.next = new;
+    ln.next = temp;
+    curr.next = ln;
     return 0;
 };
 
@@ -213,7 +213,7 @@ int size@LinkedList(){
     ListNode curr;
     curr = my.head;
     int i = 0;
-    while(curr != #0){
+    while(curr != NULL){
         curr = curr.next;
         i = i + 1;
     };
@@ -283,7 +283,7 @@ Array whereArray(Array my, adr foo, adr arg){
  *                int size : the size of the array;
  * returns:       0 if successful, -1 if not;
  */
-int init@Array(int typeSize, int size){
+Array init@Array(int typeSize, int size){
     my.size = size;
     my.typeSize = typeSize;
     
@@ -291,7 +291,7 @@ int init@Array(int typeSize, int size){
     my.head = malloc(size);
     my.forEach = forEachArray;
     my.where = whereArray;
-    return 0;
+    return my;
 };
 
 /*
@@ -355,7 +355,7 @@ int extend@Array(int amount){
     amount = amount * tSize;
 
     my.head = realloc(curr, amount);
-    if(my.head == #0){
+    if(my.head == NULL){
         print("badrealloc");
     };
     return  amount;
