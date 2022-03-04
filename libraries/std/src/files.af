@@ -17,7 +17,7 @@ File createFile(adr fileName){
         int test;
         test = file.file;
         if(test < 1){
-                return #0;
+                return NULL;
         };
         return file;
 };
@@ -30,12 +30,12 @@ File createFile(adr fileName){
  */
 File openFile(adr fileName){
         File file = malloc(File);
-        adr flag = #2;
+        long flag = #2;
         file.file = sys_open(fileName, flag, #777);
         int test;
         test = file.file;
         if(test < 0){
-                return #0;
+                return NULL;
         };
         file.fileName = fileName;
         return file;
@@ -96,7 +96,7 @@ int read@File(adr pointer, char delim){
  * returns:             Array : the array of strings;
  */
 Array toArray@File(char delim){
-	Array a = newArray(adr, 0);
+	Array a = new Array(adr, 0);
 	adr ibuff = malloc(256);
 	
 	int eof = my.read(ibuff, delim);
@@ -129,7 +129,7 @@ Array toArray@File(char delim){
  */
 
 LinkedList toList@File(char delim){
-        LinkedList l = newList(adr);
+        LinkedList l = new LinkedList;
         adr ibuff = malloc(256);
         
         int eof = my.read(ibuff, delim);

@@ -189,11 +189,15 @@ pub_File_toArray:
 	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
 	movb	%sil, -9(%rbp)
-	movl	$8, %eax
+	movl	$32, %eax
 	movl	%eax, %edi
-	movl	$0, %eax
+	call	malloc
+	movq	%rax, %rdi
+	movl	$8, %eax
 	movl	%eax, %esi
-	call	newArray
+	movl	$0, %eax
+	movl	%eax, %edx
+	call	pub_Array_init
 	movq	%rax, -17(%rbp)
 	movl	$256, %eax
 	movl	%eax, %edi
@@ -284,9 +288,11 @@ pub_File_toList:
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movb	%sil, -9(%rbp)
-	movl	$8, %eax
+	movl	$24, %eax
 	movl	%eax, %edi
-	call	newList
+	call	malloc
+	movq	%rax, %rdi
+	call	pub_LinkedList_init
 	movq	%rax, -17(%rbp)
 	movl	$256, %eax
 	movl	%eax, %edi
