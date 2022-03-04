@@ -523,7 +523,40 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             }
         }
         
-        if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
+        if(obj.meta == "new"){
+            ast::NewExpr * newExpr = new ast::NewExpr();
+            lex::LObj * typeName = dynamic_cast<lex::LObj *>(tokens.pop());
+            if (typeName == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Expected, Ident after new.");
+            ast::Type * nType = this->typeList[typeName->meta];
+            if(nType == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + ": " + typeName->meta + " is not a valid type.");
+            newExpr->type = *nType;
+            lex::OpSym * sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+            if(sym != nullptr && sym->Sym == '('){
+                tokens.pop();
+                lex::OpSym * testSym = dynamic_cast<lex::OpSym *>(tokens.peek());
+                bool pop = false;
+                if(testSym != nullptr && testSym->Sym == ')'){
+                    tokens.pop();
+                    newExpr->args = links::LinkedList<ast::Expr*>();
+                    lex::OpSym * symp = dynamic_cast<lex::OpSym *> (tokens.pop());
+                    if (symp->Sym != ')') throw err::Exception("Expected closed perenth got " + symp->Sym);
+                }else{
+                    do{
+                        if (pop) tokens.pop();
+                        newExpr->args.push(this->parseExpr(tokens));
+                        pop = true;
+                    }while(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr
+                    && dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',');
+
+                    if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
+                        lex::OpSym * symp = dynamic_cast<lex::OpSym *> (tokens.pop());
+                        if (symp->Sym != ')') throw err::Exception("Expected closed perenth got " + symp->Sym);
+                    }
+                    output = newExpr;
+                }
+            }
+        }
+        else if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
             lex::LObj aobj = *dynamic_cast<lex::LObj *>(tokens.peek());
             if(aobj.meta == "as"){
                 ast::DeRefence * deRef = new ast::DeRefence();
