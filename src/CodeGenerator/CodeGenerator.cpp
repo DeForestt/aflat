@@ -874,6 +874,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                                 func = new ast::Function();
                                 func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
                                 func->type = sym->type;
+                                func->type.typeName = "--std--flex--function";
                                 func->type.size = asmc::QWord;
                                 func->flex = true;
                                 addpub = false;
