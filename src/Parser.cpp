@@ -535,9 +535,8 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                 tokens.pop();
                 lex::OpSym * testSym = dynamic_cast<lex::OpSym *>(tokens.peek());
                 bool pop = false;
-                if(testSym != nullptr && testSym->Sym == ')'){
-                    tokens.pop();
-                    newExpr->args = links::LinkedList<ast::Expr*>();
+                newExpr->args = links::LinkedList<ast::Expr*>();
+                if(testSym != nullptr && testSym->Sym != '['){
                     lex::OpSym * symp = dynamic_cast<lex::OpSym *> (tokens.pop());
                     if (symp->Sym != ')') throw err::Exception("Expected closed perenth got " + symp->Sym);
                 }else{
@@ -555,6 +554,7 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                     output = newExpr;
                 }
             }
+            output = newExpr;
         }
         else if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
             lex::LObj aobj = *dynamic_cast<lex::LObj *>(tokens.peek());
