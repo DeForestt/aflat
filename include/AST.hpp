@@ -174,6 +174,7 @@ namespace ast{
         std::string ident;
         links::LinkedList<Expr *> Args;
         links::LinkedList<std::string> modList;
+        std::string publify = "";
     };
 
     class Sequence : public Statment{

@@ -656,7 +656,51 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
         output.size = asmc::QWord;
         output.type = "adr";
     }
-    else{
+    else if(dynamic_cast<ast::NewExpr *>(expr) != nullptr){
+        ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);
+        ast::Function * malloc = this->nameTable["malloc"];
+        if (malloc == nullptr) alert("Please import std library in order to use new operator.\n\n -> .needs <std> \n\n");
+        gen::Type **type = this->typeList[newExpr.type.typeName];
+        if(type == nullptr) alert("Type" + newExpr.type.typeName + " not found");
+        // check if the function is a class
+        gen::Class * cl = dynamic_cast<gen::Class *>(*type);
+        if(cl == nullptr) alert("The new operator can only be used with classes. Type " + newExpr.type.typeName + " is not a class");
+        // check if the class has a constructor
+        ast::Function * init = cl->nameTable["init"];
+
+        // first call malloc with the size of the class
+        ast::CallExpr * callMalloc = new ast::CallExpr();
+        callMalloc->call = new ast::Call;
+        callMalloc->call->ident = malloc->ident.ident;
+        callMalloc->call->Args = links::LinkedList<ast::Expr *>();
+        ast::IntLiteral * size = new ast::IntLiteral();
+        size->val = cl->SymbolTable.head->data.byteMod;
+        callMalloc->call->Args.push(size);
+        gen::Expr afterMalloc = this->GenExpr(callMalloc, OutputFile);
+        
+        if (init == nullptr){
+            output.access = afterMalloc.access;
+            output.size = asmc::QWord;
+            output.type = newExpr.type.typeName;
+        } else {
+            // creat the call STMT
+            ast::CallExpr * callInit = new ast::CallExpr();
+            callInit->call = new ast::Call;
+            callInit->call->ident = cl->Ident;
+            callInit->call->Args = newExpr.args;
+            callInit->call->modList = links::LinkedList<std::string>();
+            callInit->call->publify = cl->Ident;
+            asmc::Mov * mov = new asmc::Mov();
+            mov->size = asmc::QWord;
+            mov->from = this->registers["%eax"]->get(asmc::QWord);
+            mov->to = this->intArgs[intArgsCounter].get(asmc::QWord);
+            OutputFile.text << mov;
+            gen::Expr afterInit = this->GenExpr(callInit, OutputFile);
+            output.access = afterInit.access;
+            output.size = asmc::QWord;
+            output.type = newExpr.type.typeName;
+        };
+    }else{
         this->alert("Unhandled expression");
     }
     return output;
@@ -863,6 +907,15 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
             };
         };
 
+        if (call->publify != ""){
+            func = new ast::Function();
+            func->ident.ident = "pub_" + call->publify + "_init";
+            func->type.typeName = call->publify;
+            func->type.size = asmc::QWord;
+            mod = "";
+            this->intArgsCounter++;
+        }
+
         if (func == nullptr) alert("Cannot Find Function: " + call->ident);
         
         call->Args.invert();
@@ -908,6 +961,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         }
 
         asmc::Call * calls = new asmc::Call;
+
         calls->function = mod + func->ident.ident;
         OutputFile.text << calls;
         intArgsCounter = 0;
