@@ -68,6 +68,7 @@ gen::CodeGenerator::CodeGenerator(){
     this->registers << asmc::Register("rdi", "edi", "di", "dil");   
     this->registers << asmc::Register("rsp", "esp", "sp", "spl");
     this->registers << asmc::Register("rbp", "ebp", "bp", "bpl");
+    this->registers << asmc::Register("r15", "r15d", "r15w", "r15b");
     this->registers << asmc::Register("xmm0", "xmm0", "xmm0", "xmm0");
     this->registers << asmc::Register("xmm1", "xmm1", "xmm1", "xmm1");
     this->registers << asmc::Register("xmm2", "xmm2", "xmm2", "xmm2");
@@ -822,11 +823,11 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                                 asmc::Mov * mov = new asmc::Mov();
                                 mov->size = exp1.size;
                                 mov->from = exp1.access;
-                                mov->to = this->registers["%rcx"]->get(exp1.size);
+                                mov->to = this->registers["%r15"]->get(exp1.size);
                                 OutputFile.text << mov;
 
                                 func = new ast::Function();
-                                func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
+                                func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
                                 func->type.arraySize = 0;
                                 func->type.size = asmc::QWord;
                                 func->type.typeName = "--std--flex--function";
@@ -868,11 +869,11 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                                 asmc::Mov * mov = new asmc::Mov();
                                 mov->size = exp1.size;
                                 mov->from = exp1.access;
-                                mov->to = this->registers["%rcx"]->get(exp1.size);
+                                mov->to = this->registers["%r15"]->get(exp1.size);
                                 OutputFile.text << mov;
 
                                 func = new ast::Function();
-                                func->ident.ident = '*' + this->registers["%rcx"]->get(exp1.size);
+                                func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
                                 func->type = sym->type;
                                 func->type.typeName = "--std--flex--function";
                                 func->type.size = asmc::QWord;
