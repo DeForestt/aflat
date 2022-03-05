@@ -88,6 +88,7 @@ void build(std::string path, std::string output){
     std::string content( (std::istreambuf_iterator<char>(ifs) ),
                     (std::istreambuf_iterator<char>()    ) );
     ifs.close();
+    gen::scope::ScopeManager::getInstance()->reset();
     try{
         try{
             PreProcessor pp;
