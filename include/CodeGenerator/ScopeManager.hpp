@@ -57,6 +57,9 @@ namespace gen{
 
                 // Get stack alignment value
                 int getStackAlignment();
+
+                // reset everything
+                void reset();
         };
 
     }

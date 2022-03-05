@@ -27,6 +27,13 @@ gen::scope::ScopeManager::ScopeManager(){
     this->scopeStack.push_back(0);
 }
 
+void gen::scope::ScopeManager::reset(){
+    this->stackPos = 0;
+    this->maxStackPos = 0;
+    this->scopeStack.clear();
+    this->scopeStack.push_back(0);
+}
+
 int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type, bool mask, bool isGlobal = false){
     gen::Symbol sym = gen::Symbol();
 
