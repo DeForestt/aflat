@@ -57,6 +57,23 @@ int main(int argc, char *argv[]){
         std::string modualName = argv[2];
         std::string srcName = "./src/" + modualName + ".af";
         std::string headerName = "./head/" + modualName + ".gs";
+
+        std::string path = "";
+
+        //Check if the modual name has a path
+        if (modualName.find("/") != std::string::npos){
+            path = modualName.substr(0, modualName.find_last_of("/"));
+        }
+
+        //Check if the modual path exists
+        if (path != ""){
+            if (!std::filesystem::exists(path)){
+                //Create the paths
+                std::filesystem::create_directories("./src/" + path);
+                std::filesystem::create_directories("./head/" + path);
+            }
+        }
+
         // create the files
         std::ofstream srcFile(srcName);
         std::ofstream headerFile(headerName);
@@ -65,8 +82,21 @@ int main(int argc, char *argv[]){
         srcFile.close();
         headerFile.close();
 
+        //Read the last line of the config file
+        std::ifstream cFile("./aflat.cfg");
+        std::string line;
+        std::string lastLine = "";
+        while (std::getline(cFile, line)){
+            lastLine = line;
+        };
+        cFile.close();
+
         // add the modual to the config file
         std::fstream configFile("./aflat.cfg", std::ios::app | std::ios::in);
+        // if the last line is not a newline add a newline
+        if (lastLine != ""){
+            configFile << "\n";
+        }
         configFile << "m "<< modualName << "\n";
         return 0;
     }
@@ -144,7 +174,7 @@ void build(std::string path, std::string output){
         }
         ofs.close();
     }catch(err::Exception e){
-        std::cout << std::endl << "Exception: " << e.errorMsg << std::endl << std::endl;
+        std::cout << std::endl << "Exception in " << path << ": " << e.errorMsg << std::endl << std::endl;
     }
     return;
 };
@@ -209,6 +239,7 @@ void buildTemplate(std::string value){
 void runConfig(std::string path, std::string libPath){
     bool debug = false;
     std::vector<std::string> linker;
+    std::vector<std::string> pathList;
     std::vector<std::thread> threads;
     // open the config file
     std::ifstream ifs(path);
@@ -242,9 +273,27 @@ void runConfig(std::string path, std::string libPath){
 
         // if the line is a dependency, build it and add it to the linker
         if(line[0] == 'm'){
-            std::string path = getExePath();
-            std::string exepath = path.substr(0, path.find_last_of("/"));
-            std::string libPath = exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std";
+
+            std::string addPath = "";
+
+            //Check if the modual name has a path
+            if (copy.find("/") != std::string::npos){
+                addPath = copy.substr(0, copy.find_last_of("/"));
+            }
+
+            // Check if path is in the pathList
+            bool found = false;
+            for(int i = 0; i < pathList.size(); i++){
+                if(pathList[i] == addPath){
+                    found = true;
+                    break;
+                }
+            }
+
+            if(!found && addPath != ""){
+                std::filesystem::create_directories("./bin/" + addPath);
+                pathList.push_back(addPath);
+            }
 
             // add the thread to the vector of threads
             build("./src/" + copy + ".af", "./bin/" + copy + ".s");
@@ -263,6 +312,11 @@ void runConfig(std::string path, std::string libPath){
 
     }
 
+    // join all the threads
+    for(int i = 0; i < threads.size(); i++){
+        threads[i].join();
+    }  
+
     // run gcc on the linkerList
     std::string linkerList = "";
     for(auto& s : linker){
@@ -279,7 +333,14 @@ void runConfig(std::string path, std::string libPath){
     linker.erase(linker.begin(), linker.begin() + 8);
 
     // delete the linkerList files
-    if (!debug) for(auto& s : linker){
-       std::filesystem::remove(s);
-    }
+    if (!debug){
+        for(auto& s : linker){
+            std::filesystem::remove(s);
+        }
+
+        // remove the paths from the pathList
+        for(auto& s : pathList){
+            std::filesystem::remove_all("./bin/" + s);
+        }
+    };
 }
