@@ -1208,13 +1208,19 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
             asmc::Mov * mov = new asmc::Mov();
             gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile, dec->type.size);
-            //std::cout << "Atempting to assign " << dec->Ident << " " << dec->type.typeName << " to " << expr.type << std::endl;
+
             this->canAssign(dec->type, expr.type);
-            //std::cout << "Assigned " << dec->Ident << " " << dec->type.typeName << " to " << expr.type << std::endl;
+            
+            asmc::Mov * mov2 = new asmc::Mov();
+            mov2->size = dec->type.size;
+            mov2->from = expr.access;
+            mov2->to = this->registers["%rbx"]->get(dec->type.size);
+
             mov->op = expr.op;
             mov->size = dec->type.size;
-            mov->from = expr.access;
+            mov->from = this->registers["%rbx"]->get(dec->type.size);
             mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
+            OutputFile.text << mov2;
             OutputFile.text << mov;
         }
         else{
