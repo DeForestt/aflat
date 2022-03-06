@@ -1073,6 +1073,15 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             if(file.text.count > 0){
                 asmc::Instruction * last = file.text.peek();
                 if(dynamic_cast<asmc::Return *>(last) == nullptr){
+                    // if the function name is init then we need to alert to return 'my'
+                    if(func->ident.ident == "init"){
+                        gen::Symbol * my = gen::scope::ScopeManager::getInstance()->get("my");
+                        asmc::Mov * mov = new asmc::Mov();
+                        mov->size = asmc::QWord;
+                        mov->from = '-' + std::to_string(my->byteMod) + "(%rbp)";;
+                        mov->to = this->registers["%rax"]->get(asmc::QWord);
+                        file.text.push(mov);
+                    }
                     asmc::Return * ret = new asmc::Return();
                     file.text.push(ret);
                 }
