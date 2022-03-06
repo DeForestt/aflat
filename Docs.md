@@ -1,5 +1,5 @@
 # Documentation For AFlat Programming Language
-
+Please see the Example [chess program](https://github.com/DeForestt/aflat-chess.git).
 ## Trust the programmer philosophy
 AFlat aims to trust that developers know what they are doing.  It allows and encourages things that many other modern languages do not, such as pointer arythmatic, memory managment, and so on.
 <br>
