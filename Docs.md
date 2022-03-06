@@ -135,6 +135,11 @@ Declarations are used to define variables.  They are used to define variables an
 ```bnf
 <assignment> ::= <identifier> = <expression>;
 ```
+### Store
+```bnf
+<load> ::= <identifier> =: <expression>;
+```
+Stores the value of an expression into the address pointed to by an identifier.
 ### Return
 ```bnf
 <return> ::= return <expression>;
@@ -143,14 +148,96 @@ Declarations are used to define variables.  They are used to define variables an
 ```bnf
 <reference> ::= ?<identifier>;
 ```
-- returns the address of the variable
-
-### Load
+Returns the address of the variable
+## Expressions
+### Int Literal
 ```bnf
-<load> ::= <identifier> := <expression>;
+<int literal> ::= *<int>
 ```
-- Loads the value of the expression into the memory address held in the identifier.
+eg: `123`
+### Float Literal
+```bnf
+<float literal> ::= *<int>.*<int>
+```
+eg: `123.456`
+### String Literal
+```bnf
+<string literal> ::= "*<char>"
+```
+eg: `"hello"`
 
+### Char Literal
+```bnf
+<char literal> ::= '<char>'
+```
+eg: `'a'`
+
+### Long Literal
+```bnf
+<long literal> ::= #<int literal>
+```
+eg: `#123`
+
+### Identifier
+```bnf
+<identifier> ::= *<char>
+```
+eg: `foo`
+
+### Compund Expression
+```bnf
+<compound expression> ::= <expression> <operator> <expression>
+```
+eg: `1 + 2 * 3`
+Please note that compound expressions are evaluated recursively as follows.
+`1 + 2 * 3 + 4 + 5` -> `1 + (2 * (3 + (4 * 5)))`
+
+### Parenthetical Expression
+```bnf
+<parenthetical expression> ::= ( <expression> )
+```
+eg: `(1 + 2) * 3`
+
+This can be used to override the recursion of compound expressions.
+
+### Function Call
+```bnf
+<function call> ::= <identifier> ( <arguments> )
+```
+eg: `foo(1, 2)`
+
+### Lambda Expression
+```bnf
+<lambda expression> ::= [<parameters>]=>{<function body>}
+```
+eg: `[int a, int b]=>{return a + b;}`
+
+### Reference
+```bnf
+<reference> ::= ?<identifier>
+```
+eg: `?foo`
+Returns the address of the identifier.
+
+### Dereference
+```bnf
+<dereference> ::= <identifier> as <type>
+```
+eg: `foo as int`
+Returns the value stored at the address. Casts the value to the type specified.
+
+### Variable
+```bnf
+<variable> ::= <identifier>
+```
+eg: `foo`
+
+### New
+```bnf
+<new> ::= new <type> ( <arguments> )
+```
+eg: `new OBJECT(1, 2)`
+Dynamically allocates memory for an object of the specified type and calls the constructor with the arguments passed.  The parenthesis are optional. The type must be a class. The constructor must be a function with the name `init`.  The value returned is the address of the object.
 ## Control Flow
 
 ### If Statements
