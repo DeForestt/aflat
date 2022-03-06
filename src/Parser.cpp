@@ -652,7 +652,14 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                 lambda->function->type = Adr;
             } else this->parseStmt(tokens, true);
             output = lambda;
-        }
+        } else if(eq.Sym == '('){
+            tokens.pop();
+            ast::ParenExpr * paren = new ast::ParenExpr();
+            paren->expr = this->parseExpr(tokens);
+            if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Need an ) to end parenth not a symbol");
+            if ((dynamic_cast<lex::OpSym *>(tokens.pop())->Sym != ')')) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " GOT: " + dynamic_cast<lex::OpSym *>(tokens.pop())->Sym + " Need an ) to end parenth");
+            output = paren;
+        };
     }
     else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unknown Expr");
 

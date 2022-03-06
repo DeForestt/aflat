@@ -265,6 +265,11 @@ namespace ast{
         ast::Call * call;
     };
 
+    class parenExpr : public Expr{
+        public:
+        Expr * expr;
+    };
+
     class Lambda : public Expr{
         public:
         ast::Function * function;
