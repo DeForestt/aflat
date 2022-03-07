@@ -48,6 +48,52 @@ Block getBlock(adr ptr){
     return ptr;
 };
 
+int splitBlock(Block block, int size){
+    int test = size + Block;
+    int currSize = block.size;
+    if (block.size > test){
+        Block nBlock = block;
+        nBlock = block + size;
+        nBlock = nBlock + #16;
+        currSize = currSize - 16;
+        nBlock.size = currSize - size;
+        nBlock.free = 1;
+        Block next = block.next;
+        nBlock.next = next;
+        block.next = nBlock;
+        block.size = size;
+    };
+};
+
+int defragment(Block block){
+    Block next = block.next;
+    if (block.next == NULL){return 0};
+    if (block.free != 1){
+        return 0;
+    };
+    if (next.free == 1){
+        int nextSize = next.size;
+        int currSize = block.size;
+        Block newNext = next.next;
+        block.size = currSize + nextSize + Block;
+        block.next = newNext;
+        return 1;
+    };
+    return 0;
+};
+
+int deFragAll(Block head){
+    Block current = head;
+    while (current != NULL){
+        int check = defragment(current);
+        while (check == 1){
+            check = defragment(current);
+        };
+        current = current.next;
+    };
+    return 0;
+};
+
 //Interface
 int memcopy (adr from, adr to, int size){
     int i = 0;
@@ -61,7 +107,6 @@ int memcopy (adr from, adr to, int size){
     return 0;
 };
 
-
 int free(adr ptr){
     if(ptr == NULL){
         return 0;
@@ -69,7 +114,7 @@ int free(adr ptr){
     
     Block block = getBlock(ptr);
     block.free = 1;
-
+    deFragAll(head);
     return 0;
 };
 
@@ -99,6 +144,7 @@ adr malloc(int size){
         if(block == #0){return #0};
     };
     block.free = 0;
+    splitBlock(block, size);
     block = block + Block;
     return block;
 };
@@ -131,7 +177,8 @@ int inspectHeap(){
     while (current != NULL){
         printHex(current); print(": status: ");
         printInt(current.free); print(" size: ");
-        printInt(current.size); print("\n");
+        printInt(current.size); print(" overhead: ");
+        printInt(16); print("\n");
         current = current.next;
         print("         ");
     };
