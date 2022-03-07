@@ -1030,7 +1030,7 @@ clear:
 .data
 
 .strclear156:
-	.asciz	 "\\033[H\\033[J"
+	.asciz	 "[1;1H[2J"
 .strprintFloat155:
 	.asciz	 "."
 .strprintLong121:

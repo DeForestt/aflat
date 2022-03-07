@@ -311,6 +311,6 @@ int printFloat(adr input, int signed){
 };
 
 int clear(){
-        print("\\033[H\\033[J");
+        print("\e[1;1H\e[2J");
         return 0;
 };
