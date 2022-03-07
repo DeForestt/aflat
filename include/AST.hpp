@@ -39,7 +39,8 @@ namespace ast{
         Great,
         AndBit,
         AndBool,
-        OrBit
+        OrBit,
+        None,
     };   
 
     // Enum to represent the scope of a variable
@@ -96,7 +97,7 @@ namespace ast{
         Statment * args;
         Statment * statment;
         std::string scopeName;
-        ast::Op * op;
+        ast::Op op;
         bool isLambda = false;
         bool flex = false;
         bool mask;

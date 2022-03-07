@@ -83,21 +83,21 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                             if (input[i] == '\\'){
                                 i++;
                                 if (input[i] == 'n'){
-                                    stringObj->value += "\\n";
+                                    stringObj->value += 0x0A;
                                 }else if (input[i] == 't'){
-                                    stringObj->value += "\\t";
+                                    stringObj->value += 0x09;
                                 }else if (input[i] == '\\'){
-                                    stringObj->value += "\\\\";
+                                    stringObj->value += 0x5C;
                                 }else if (input[i] == '\"'){
-                                    stringObj->value += "\\\"";
+                                    stringObj->value += 0x22;
                                 }else if (input[i] == '\''){
-                                    stringObj->value += '\'';
+                                    stringObj->value += 0x27;
                                 }else if (input[i] == 'r'){
-                                    stringObj->value += "\\r";
+                                    stringObj->value += 0x0D;
                                 }else if (input[i] == '0'){
                                     stringObj->value += '\0';
-                                }else if (input[i] == '\\'){
-                                    stringObj->value += '\\';
+                                }else if (input[i] == 'e'){
+                                    stringObj->value += 0x1B;
                                 }else{
                                     throw err::Exception("Invalid token: " + stringObj->value + " on line " + std::to_string(lineCount));
                                 }

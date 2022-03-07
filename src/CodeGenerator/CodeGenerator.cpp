@@ -357,6 +357,40 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
     else if (dynamic_cast<ast::Compound *>(expr) != nullptr){
         ast::Compound comp = *dynamic_cast<ast::Compound *>(expr);
         asmc::File Dummby = asmc::File();
+        ast::Function * opor = nullptr;
+        gen::Symbol * sym = nullptr;
+        // check if expr 1 is a var
+        ast::Var * var = dynamic_cast<ast::Var *>(comp.expr1);
+        if (var != nullptr){
+            if(var->modList.count == 0){
+                sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
+                if (sym != nullptr){
+                    gen::Type** type = this->typeList[sym->type.typeName];
+                    if (type != nullptr){
+                        gen::Class * cls = dynamic_cast<gen::Class *>(*type);
+                        if(cls != nullptr){
+                            opor = cls->overloadTable[comp.op];
+                        }
+                    }
+                }
+            }
+        }
+
+        if (opor != nullptr){
+            ast::CallExpr * call = new ast::CallExpr();
+            call->call = new ast::Call;
+            call->call->ident = opor->ident.ident;
+            call->call->Args = links::LinkedList<ast::Expr *>();
+            call->call->Args.push(comp.expr1);
+            call->call->Args.push(comp.expr2);
+            call->call->publify = sym->type.typeName;
+
+            gen::Expr aftercall = this->GenExpr(call, OutputFile);
+            output.access = aftercall.access;
+            output.size = aftercall.size;
+            output.type = opor->type.typeName;
+
+        } else {
         output.op = asmc::Hard;
         output.type = "--std--flex--function";
         switch (comp.op)
@@ -631,6 +665,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 break;
             }
         }   
+        }
     }  
     else if (dynamic_cast<ast::Lambda *>(expr) != nullptr){
         ast::Lambda lambda = *dynamic_cast<ast::Lambda *>(expr);
@@ -688,7 +723,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
             // creat the call STMT
             ast::CallExpr * callInit = new ast::CallExpr();
             callInit->call = new ast::Call;
-            callInit->call->ident = cl->Ident;
+            callInit->call->ident = "init";
             callInit->call->Args = newExpr.args;
             callInit->call->modList = links::LinkedList<std::string>();
             callInit->call->publify = cl->Ident;
@@ -915,11 +950,21 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
 
         if (call->publify != ""){
             func = new ast::Function();
-            func->ident.ident = "pub_" + call->publify + "_init";
+            func->ident.ident = "pub_" + call->publify + "_" + call->ident;
             func->type.typeName = call->publify;
             func->type.size = asmc::QWord;
+            if (call->ident != "init"){
+                // find the function in the class
+                gen::Class * cl = dynamic_cast<gen::Class *>(*this->typeList[call->publify]);
+                if (cl != nullptr){
+                    ast::Function * f = cl->nameTable[call->ident];
+                    if (f == nullptr){
+                        alert("cannot find function: " + call->ident);
+                    };
+                    func->type = f->type;
+                };
+            }else this->intArgsCounter++;
             mod = "";
-            this->intArgsCounter++;
         }
 
         if (func == nullptr) alert("Cannot Find Function: " + call->ident);
@@ -1003,6 +1048,8 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         else{
             // add the function to the class name table
             this->scope->nameTable << * func;
+            // if the function has an overload opperator, add it to the overload table
+            if (func->op != ast::None) this->scope->overloadTable << *func;
             // if the function is public add it to the public name table
             if(func->scope == ast::Public) this->scope->publicNameTable << * func;
         }
@@ -1722,6 +1769,12 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         type->Ident = deff->ident.ident;
         type->nameTable.foo = compairFunc;
         this->scope = type;
+        type->overloadTable.foo = [](ast::Function func, ast::Op op){
+            if(func.op == op){
+                return true;
+            }
+            return false;
+        };
         type->SymbolTable;
         this->typeList.push(type);
         // write any signed contracts

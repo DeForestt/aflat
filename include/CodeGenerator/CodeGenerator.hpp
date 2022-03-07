@@ -44,12 +44,15 @@ namespace gen{
             // The public Name table will hold all public functions
             // This is to be used externally
             links::SLinkedList<ast::Function, std::string> publicNameTable;
+            //overload table
+            links::SLinkedList<ast::Function, ast::Op> overloadTable;
             // The private Name table will hold all public and private functions
             // This is used internally
             links::SLinkedList<ast::Function, std::string> nameTable;
             ast::Statment * contract;
             static bool compair(Type * t, std::string ident);
             gen::Class * parent = nullptr;
+            
     };
 
     class CodeGenerator{

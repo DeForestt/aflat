@@ -100,9 +100,44 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
                 dec->mask = mask;
                 dec->scope = scope;
                 output = dec;
+                ast::Op overload = ast::Op::None;
                 if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                     lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
                     std::string scopeName = "global";
+                    if (sym.Sym == '<'){
+                        tokens.pop();
+                        lex::OpSym * next = dynamic_cast<lex::OpSym *>(tokens.pop());
+                        if(next == nullptr) throw err::Exception("Expected and overloade operator on line " + std::to_string(obj.lineCount));
+                        if(next->Sym == '>'){
+                            overload = ast::Op::Less;
+                        } else if(next->Sym == '<'){
+                            overload = ast::Op::Great;
+                        } else if(next->Sym == '+'){
+                            overload = ast::Op::Plus;
+                        } else if(next->Sym == '-'){
+                            overload = ast::Op::Minus;
+                        } else if(next->Sym == '*'){
+                            overload = ast::Op::Mul;
+                        } else if(next->Sym == '/'){
+                            overload = ast::Op::Div;
+                        } else if(next->Sym == '%'){
+                            overload = ast::Op::Mod;
+                        } else if(next->Sym == '!'){
+                            overload = ast::Op::NotEqu;
+                        } else if(next->Sym == '&'){
+                            overload = ast::Op::AndBit;
+                        } else if(next->Sym == '|'){
+                            overload = ast::Op::OrBit;
+                        } else{
+                            throw err::Exception("Expected and overloade operator on line " + std::to_string(obj.lineCount));
+                        }
+
+                        next = dynamic_cast<lex::OpSym *>(tokens.pop());
+                        if (next == nullptr) throw err::Exception("Expected a close oporator " + std::to_string(obj.lineCount));
+                        if(next->Sym != '>') throw err::Exception("Expected a close oporator  " + std::to_string(obj.lineCount) +  + " got " + next->Sym);
+                        if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Expected a symbol on line " + std::to_string(obj.lineCount));
+                        sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                    }
                     if (sym.Sym == '@'){
                         tokens.pop();
                         if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
@@ -122,6 +157,7 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
                         func->scopeName = scopeName;
                         func->mask = mask;
                         func->scope = scope;
+                        func->op = overload;
                         func->args = this->parseArgs(tokens, ',', ')');
                         if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                             sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
