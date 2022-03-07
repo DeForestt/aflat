@@ -1,7 +1,7 @@
 .needs <std.gs>
 .needs <asm.gs>
 
-Block head = #0;
+Block head = NULL;
 
 //helpers
 
@@ -9,18 +9,14 @@ Block findFreeBlock(Block last, int size) {
   Block current;
   current = head;
   size = size - 1;
-  while (current != #0) {
-    last = current;
-    
+  while (current != NULL) {
     if(current.free == 1){
         if (current.size > size){return current};
     };
 
     current = current.next;
-    last = current;
-
   };
-  return #0;
+  return NULL;
 };
 
 Block requestSpace(Block last, int size){
@@ -28,12 +24,12 @@ Block requestSpace(Block last, int size){
     int nsize = size + Block;
     adr i = brk(block + nsize);
 
-    if(i < #0){return #0};
+    if(i < #0){return NULL};
 
-    if (last != #0){
+    if (last != NULL){
         last.next = block;
     };
-    block.next = #0;
+    block.next = NULL;
     block.size = size;
     block.free = 0;
 
@@ -66,7 +62,7 @@ int memcopy (adr from, adr to, int size){
 
 
 int free(adr ptr){
-    if(ptr == #0){
+    if(ptr == NULL){
         return 0;
     };
     
@@ -80,20 +76,29 @@ adr malloc(int size){
 
     Block block;
 
-    if(size < 0){return #0};
+    if(size < 0){return NULL};
 
     if(head == #0){
         block = requestSpace(#0, size);
+        head = block;
         block = block + #16;
         return block;
     };
     Block last;
     last = head;
+
+    // loop through the list to the last block
+    while(last.next != NULL){
+        last = last.next;
+    };
+
     block = findFreeBlock(head, size);
     if (block == #0){
         block = requestSpace(last, size);
         if(block == #0){return #0};
+        head = block;
     };
+    block.free = 0;
     block = block + Block;
     return block;
 };
@@ -121,16 +126,16 @@ adr realloc(adr ptr, int size){
 Bit newBit(int value){
 	Bit b = malloc(Bit);
 	b.value = value;
-	b.last = #0;
-	b.next = #0;
+	b.last = NULL;
+	b.next = NULL;
 	return b;
 };
 
 Times newTimes(){
     Times t = malloc(Times);
-    t.tms_cstime = #0;
-    t.tms_cutime = #0;
-    t.tms_stime = #0;
-    t.tms_utime = #0;
+    t.tms_cstime = 0;
+    t.tms_cutime = 0;
+    t.tms_stime = 0;
+    t.tms_utime = 0;
     return t;
 };

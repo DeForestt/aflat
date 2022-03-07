@@ -27,8 +27,6 @@ findFreeBlock:
 	movl	%ebx, -12(%rbp)
 	jmp	.LfindFreeBlock1
 .LfindFreeBlock0:
-	movq	-20(%rbp), %rbx
-	movq	%rbx, -8(%rbp)
 	movq	-20(%rbp), %rdx
 	movl	4(%rdx), %eax
 	movl	$1, %ecx
@@ -47,14 +45,14 @@ findFreeBlock:
 	movq	-20(%rbp), %rdx
 	movq	8(%rdx), %rbx
 	movq	%rbx, -20(%rbp)
-	movq	-20(%rbp), %rbx
-	movq	%rbx, -8(%rbp)
 .LfindFreeBlock1:
 	movq	-20(%rbp), %rax
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
 	jne	.LfindFreeBlock0
 	movq	$0, %rax
+	leave
+	ret
 	leave
 	ret
 requestSpace:
@@ -66,18 +64,21 @@ requestSpace:
 	movl	$0, %eax
 	movl	%eax, %edi
 	call	brk
-	movq	%rax, -20(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -20(%rbp)
 	mov	$16, %edx
 	mov	-12(%rbp), %eax
 	add	%edx, %eax
-	movl	%eax, -24(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -24(%rbp)
 	mov	-24(%rbp), %edx
 	mov	-20(%rbp), %rax
 	add	%rdx, %rax
 	movl	%eax, %eax
 	movl	%eax, %edi
 	call	brk
-	movq	%rax, -32(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -32(%rbp)
 	movq	-32(%rbp), %rax
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
@@ -106,6 +107,8 @@ requestSpace:
 	movq	-20(%rbp), %rax
 	leave
 	ret
+	leave
+	ret
 newTime:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -114,11 +117,14 @@ newTime:
 	movl	$8, %eax
 	movl	%eax, %edi
 	call	malloc
-	movq	%rax, -16(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -16(%rbp)
 	movq	-16(%rbp), %rdx
 	movq	-8(%rbp), %rbx
 	movq	%rbx, 0(%rdx)
 	movq	-16(%rbp), %rax
+	leave
+	ret
 	leave
 	ret
 getBlock:
@@ -134,6 +140,8 @@ getBlock:
 	movq	-8(%rbp), %rax
 	leave
 	ret
+	leave
+	ret
 memcopy:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -141,12 +149,14 @@ memcopy:
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movl	%edx, -20(%rbp)
-	movl	$0, -24(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -24(%rbp)
 	jmp	.Lmemcopy15
 .Lmemcopy14:
 	movq	-8(%rbp), %rax
 	movb	(%rax), %al
-	movb	%al, -25(%rbp)
+	movb	%al, %bl
+	movb	%bl, -25(%rbp)
 	movq	-16(%rbp), %rax
 	movb	-25(%rbp), %bl
 	movb	%bl, (%rax)
@@ -173,6 +183,8 @@ memcopy:
 	movl	$0, %eax
 	leave
 	ret
+	leave
+	ret
 free:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -189,11 +201,14 @@ free:
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
 	call	getBlock
-	movq	%rax, -16(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -16(%rbp)
 	movq	-16(%rbp), %rdx
 	movl	$1, %ebx
 	movl	%ebx, 4(%rdx)
 	movl	$0, %eax
+	leave
+	ret
 	leave
 	ret
 malloc:
@@ -220,6 +235,8 @@ malloc:
 	call	requestSpace
 	movq	%rax, %rbx
 	movq	%rbx, -12(%rbp)
+	movq	-12(%rbp), %rbx
+	movq	%rbx, head
 	mov	$16, %rdx
 	mov	-12(%rbp), %rax
 	add	%rdx, %rax
@@ -231,6 +248,17 @@ malloc:
 .Lmalloc22:
 	movq	head, %rbx
 	movq	%rbx, -20(%rbp)
+	jmp	.Lmalloc26
+.Lmalloc25:
+	movq	-20(%rbp), %rdx
+	movq	8(%rdx), %rbx
+	movq	%rbx, -20(%rbp)
+.Lmalloc26:
+	movq	-20(%rbp), %rdx
+	movq	8(%rdx), %rax
+	movq	$0, %rcx
+	cmpq	%rcx, %rax
+	jne	.Lmalloc25
 	movq	head, %rax
 	movq	%rax, %rdi
 	movl	-4(%rbp), %eax
@@ -241,7 +269,7 @@ malloc:
 	movq	-12(%rbp), %rax
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
-	jne	.Lmalloc25
+	jne	.Lmalloc27
 	movq	-20(%rbp), %rax
 	movq	%rax, %rdi
 	movl	-4(%rbp), %eax
@@ -252,18 +280,25 @@ malloc:
 	movq	-12(%rbp), %rax
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
-	jne	.Lmalloc28
+	jne	.Lmalloc30
 	movq	$0, %rax
 	leave
 	ret
-.Lmalloc28:
-.Lmalloc25:
+.Lmalloc30:
+	movq	-12(%rbp), %rbx
+	movq	%rbx, head
+.Lmalloc27:
+	movq	-12(%rbp), %rdx
+	movl	$0, %ebx
+	movl	%ebx, 4(%rdx)
 	mov	$16, %edx
 	mov	-12(%rbp), %rax
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -12(%rbp)
 	movq	-12(%rbp), %rax
+	leave
+	ret
 	leave
 	ret
 realloc:
@@ -275,43 +310,46 @@ realloc:
 	movq	-8(%rbp), %rax
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
-	jne	.Lrealloc31
+	jne	.Lrealloc33
 	movl	-12(%rbp), %eax
 	movl	%eax, %edi
 	call	malloc
 	movq	%rax, %rax
 	leave
 	ret
-.Lrealloc31:
+.Lrealloc33:
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
 	call	getBlock
-	movq	%rax, -20(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -20(%rbp)
 	mov	$1, %edx
 	mov	-12(%rbp), %eax
 	sub	%edx, %eax
-	movl	%eax, -24(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -24(%rbp)
 	movq	-20(%rbp), %rdx
 	movl	0(%rdx), %eax
 	movl	-24(%rbp), %ecx
 	cmpl	%ecx, %eax
-	jle	.Lrealloc34
+	jle	.Lrealloc36
 	movq	-8(%rbp), %rax
 	leave
 	ret
-.Lrealloc34:
+.Lrealloc36:
 	movl	-12(%rbp), %eax
 	movl	%eax, %edi
 	call	malloc
-	movq	%rax, -32(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -32(%rbp)
 	movq	-32(%rbp), %rax
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
-	jne	.Lrealloc37
+	jne	.Lrealloc39
 	movq	$0, %rax
 	leave
 	ret
-.Lrealloc37:
+.Lrealloc39:
 	movq	-20(%rbp), %rdx
 	movl	0(%rdx), %ebx
 	movl	%ebx, -36(%rbp)
@@ -328,6 +366,8 @@ realloc:
 	movq	-32(%rbp), %rax
 	leave
 	ret
+	leave
+	ret
 newBit:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -336,7 +376,8 @@ newBit:
 	movl	$20, %eax
 	movl	%eax, %edi
 	call	malloc
-	movq	%rax, -12(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -12(%rbp)
 	movq	-12(%rbp), %rdx
 	movl	-4(%rbp), %ebx
 	movl	%ebx, 0(%rdx)
@@ -349,27 +390,32 @@ newBit:
 	movq	-12(%rbp), %rax
 	leave
 	ret
+	leave
+	ret
 newTimes:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp
-	movl	$32, %eax
+	movl	$16, %eax
 	movl	%eax, %edi
 	call	malloc
-	movq	%rax, -8(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -8(%rbp)
 	movq	-8(%rbp), %rdx
-	movq	$0, %rbx
-	movq	%rbx, 24(%rdx)
+	movl	$0, %ebx
+	movl	%ebx, 12(%rdx)
 	movq	-8(%rbp), %rdx
-	movq	$0, %rbx
-	movq	%rbx, 16(%rdx)
+	movl	$0, %ebx
+	movl	%ebx, 8(%rdx)
 	movq	-8(%rbp), %rdx
-	movq	$0, %rbx
-	movq	%rbx, 8(%rdx)
+	movl	$0, %ebx
+	movl	%ebx, 4(%rdx)
 	movq	-8(%rbp), %rdx
-	movq	$0, %rbx
-	movq	%rbx, 0(%rdx)
+	movl	$0, %ebx
+	movl	%ebx, 0(%rdx)
 	movq	-8(%rbp), %rax
+	leave
+	ret
 	leave
 	ret
 
