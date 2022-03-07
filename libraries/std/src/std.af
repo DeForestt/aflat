@@ -1,5 +1,6 @@
 .needs <std.gs>
 .needs <asm.gs>
+.needs <io>
 
 Block head = NULL;
 
@@ -96,7 +97,6 @@ adr malloc(int size){
     if (block == #0){
         block = requestSpace(last, size);
         if(block == #0){return #0};
-        head = block;
     };
     block.free = 0;
     block = block + Block;
@@ -121,6 +121,22 @@ adr realloc(adr ptr, int size){
     memcopy(ptr, new_ptr, bsize);
     free(ptr);
     return new_ptr;
+};
+
+int inspectHeap(){
+    Block current;
+    current = head;
+    print("Heap:\n");
+    print("HEAD --> ");
+    while (current != NULL){
+        printHex(current); print(": status: ");
+        printInt(current.free); print(" size: ");
+        printInt(current.size); print("\n");
+        current = current.next;
+        print("         ");
+    };
+    print("NULL\n");
+    return 0;
 };
 
 Bit newBit(int value){

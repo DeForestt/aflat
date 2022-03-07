@@ -1,5 +1,6 @@
 .global	newTimes
 .global	newBit
+.global	inspectHeap
 .global	realloc
 .global	malloc
 .global	free
@@ -285,8 +286,6 @@ malloc:
 	leave
 	ret
 .Lmalloc30:
-	movq	-12(%rbp), %rbx
-	movq	%rbx, head
 .Lmalloc27:
 	movq	-12(%rbp), %rdx
 	movl	$0, %ebx
@@ -368,6 +367,59 @@ realloc:
 	ret
 	leave
 	ret
+inspectHeap:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq	head, %rbx
+	movq	%rbx, -8(%rbp)
+	movq	$.strinspectHeap42, %rax
+	movq	%rax, %rdi
+	call	print
+	movq	$.strinspectHeap43, %rax
+	movq	%rax, %rdi
+	call	print
+	jmp	.LinspectHeap45
+.LinspectHeap44:
+	movq	-8(%rbp), %rax
+	movq	%rax, %rdi
+	call	printHex
+	movq	$.strinspectHeap46, %rax
+	movq	%rax, %rdi
+	call	print
+	movq	-8(%rbp), %rdx
+	movl	4(%rdx), %eax
+	movl	%eax, %edi
+	call	printInt
+	movq	$.strinspectHeap47, %rax
+	movq	%rax, %rdi
+	call	print
+	movq	-8(%rbp), %rdx
+	movl	0(%rdx), %eax
+	movl	%eax, %edi
+	call	printInt
+	movq	$.strinspectHeap48, %rax
+	movq	%rax, %rdi
+	call	print
+	movq	-8(%rbp), %rdx
+	movq	8(%rdx), %rbx
+	movq	%rbx, -8(%rbp)
+	movq	$.strinspectHeap49, %rax
+	movq	%rax, %rdi
+	call	print
+.LinspectHeap45:
+	movq	-8(%rbp), %rax
+	movq	$0, %rcx
+	cmpq	%rcx, %rax
+	jne	.LinspectHeap44
+	movq	$.strinspectHeap50, %rax
+	movq	%rax, %rdi
+	call	print
+	movl	$0, %eax
+	leave
+	ret
+	leave
+	ret
 newBit:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -422,6 +474,20 @@ newTimes:
 
 .data
 
+.strinspectHeap50:
+	.asciz	 "NULL\n"
+.strinspectHeap49:
+	.asciz	 "         "
+.strinspectHeap48:
+	.asciz	 "\n"
+.strinspectHeap47:
+	.asciz	 " size: "
+.strinspectHeap46:
+	.asciz	 ": status: "
+.strinspectHeap43:
+	.asciz	 "HEAD --> "
+.strinspectHeap42:
+	.asciz	 "Heap:\n"
 head:
 .quad	0
 

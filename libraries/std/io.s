@@ -514,18 +514,18 @@ printHex:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$32, %rsp
-	movl	%edi, -4(%rbp)
-	movl	$0, %ebx
-	movl	%ebx, -8(%rbp)
+	movq	%rdi, -8(%rbp)
+	movq	$0, %rbx
+	movq	%rbx, -16(%rbp)
 	movl	$16, %ebx
-	movl	%ebx, -12(%rbp)
-	movl	$0, %ebx
-	movl	%ebx, -16(%rbp)
-	movl	$0, %ebx
 	movl	%ebx, -20(%rbp)
-	movl	-4(%rbp), %eax
-	movl	$0, %ecx
-	cmpl	%ecx, %eax
+	movl	$0, %ebx
+	movl	%ebx, -24(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -28(%rbp)
+	movq	-8(%rbp), %rax
+	movq	$0, %rcx
+	cmpq	%rcx, %rax
 	jne	.LprintHex102
 	movq	$.strprintHex105, %rax
 	movq	%rax, %rdi
@@ -534,85 +534,85 @@ printHex:
 	leave
 	ret
 .LprintHex102:
-	movl	-4(%rbp), %eax
-	movl	$0, %ecx
-	cmpl	%ecx, %eax
+	movq	-8(%rbp), %rax
+	movq	$0, %rcx
+	cmpq	%rcx, %rax
 	jge	.LprintHex106
 	movq	$.strprintHex109, %rax
 	movq	%rax, %rdi
 	call	print
 	mov	$-1, %edx
-	mov	-4(%rbp), %eax
-	imul	%edx, %eax
+	mov	-8(%rbp), %rax
+	imul	%rdx, %rax
 	movl	%eax, %ebx
-	movl	%ebx, -4(%rbp)
-.LprintHex106:
-	movl	-4(%rbp), %ebx
 	movl	%ebx, -8(%rbp)
+.LprintHex106:
+	movq	-8(%rbp), %rbx
+	movq	%rbx, -16(%rbp)
 	jmp	.LprintHex111
 .LprintHex110:
-	mov	-8(%rbp), %eax
+	mov	-16(%rbp), %rax
 	cltd
-	idivl	-12(%rbp)
+	idivl	-20(%rbp)
 	movl	%eax, %ebx
-	movl	%ebx, -8(%rbp)
+	movl	%ebx, -16(%rbp)
 	mov	$1, %edx
-	mov	-20(%rbp), %eax
+	mov	-28(%rbp), %eax
 	add	%edx, %eax
 	movl	%eax, %ebx
-	movl	%ebx, -20(%rbp)
+	movl	%ebx, -28(%rbp)
 .LprintHex111:
-	movl	-8(%rbp), %eax
-	movl	$0, %ecx
-	cmpl	%ecx, %eax
+	movq	-16(%rbp), %rax
+	movq	$0, %rcx
+	cmpq	%rcx, %rax
 	jne	.LprintHex110
 	mov	$1, %edx
-	mov	-20(%rbp), %eax
+	mov	-28(%rbp), %eax
 	sub	%edx, %eax
 	movl	%eax, %ebx
-	movl	%ebx, -20(%rbp)
+	movl	%ebx, -28(%rbp)
 	jmp	.LprintHex113
 .LprintHex112:
 	movl	$16, %eax
 	movl	%eax, %edi
-	movl	-20(%rbp), %eax
+	movl	-28(%rbp), %eax
 	movl	%eax, %esi
 	call	exp
 	movl	%eax, %ebx
-	movl	%ebx, -16(%rbp)
-	mov	-4(%rbp), %eax
+	movl	%ebx, -24(%rbp)
+	mov	-8(%rbp), %rax
 	cltd
-	idivl	-16(%rbp)
+	idivl	-24(%rbp)
 	movl	%eax, %ebx
-	movl	%ebx, -8(%rbp)
-	movl	-8(%rbp), %eax
-	movl	%eax, %edi
+	movl	%ebx, -16(%rbp)
+	movq	-16(%rbp), %rax
+	movq	%rax, %rdi
 	call	toChar
 	movb	%al, %bl
-	movb	%bl, -21(%rbp)
-	lea	-21(%rbp), %rax
+	movb	%bl, -29(%rbp)
+	lea	-29(%rbp), %rax
 	movq	$1, %rdi
 	movq	%rax, %rsi
 	movq	$1, %rdx
 	movq	$1, %rax
 	syscall	
-	mov	-16(%rbp), %edx
-	mov	-8(%rbp), %eax
-	imul	%edx, %eax
+	mov	-24(%rbp), %edx
+	mov	-16(%rbp), %rax
+	imul	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	mov	-16(%rbp), %rdx
+	mov	-8(%rbp), %rax
+	sub	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -8(%rbp)
-	mov	-8(%rbp), %edx
-	mov	-4(%rbp), %eax
-	sub	%edx, %eax
-	movl	%eax, %ebx
-	movl	%ebx, -4(%rbp)
 	mov	$1, %edx
-	mov	-20(%rbp), %eax
+	mov	-28(%rbp), %eax
 	sub	%edx, %eax
 	movl	%eax, %ebx
-	movl	%ebx, -20(%rbp)
+	movl	%ebx, -28(%rbp)
 .LprintHex113:
-	movl	-20(%rbp), %eax
+	movl	-28(%rbp), %eax
 	movl	$-1, %ecx
 	cmpl	%ecx, %eax
 	jg	.LprintHex112

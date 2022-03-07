@@ -122,24 +122,24 @@ int printInt(int input){
         return 0;
 };
 
-int printHex(int input){
-        int h = 0;
+int printHex(long input){
+        long h = #0;
         int ten = 16;
         int factor = 0;
         int i = 0;
 
-        if (input == 0){
+        if (input == #0){
                 print("0");
                 return 0;
         };
 
-        if (input < 0){
+        if (input < #0){
                 print("-");
                 input = input * -1;
         };
 
         h = input;
-        while (h != 0){
+        while (h != #0){
                 h = h / ten;
                 i = i + 1;
         }
