@@ -1,6 +1,8 @@
 .global	clear
 .global	printFloat
 .global	printChar
+.global	printLong
+.global	printHex
 .global	printInt
 .global	pullInt
 .global	toInt
@@ -17,9 +19,12 @@ readString:
 	movq	%rsp, %rbp
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
-	movb	$32, -9(%rbp)
-	movb	$10, -10(%rbp)
-	movb	$0, -11(%rbp)
+	movb	$32, %bl
+	movb	%bl, -9(%rbp)
+	movb	$10, %bl
+	movb	%bl, -10(%rbp)
+	movb	$0, %bl
+	movb	%bl, -11(%rbp)
 	jmp	.LreadString1
 .LreadString0:
 	lea	-9(%rbp), %rax
@@ -64,8 +69,10 @@ clearInput:
 	movl	$10, %eax
 	movl	%eax, %edi
 	call	ascii
-	movb	%al, -1(%rbp)
-	movb	$32, -2(%rbp)
+	movb	%al, %bl
+	movb	%bl, -1(%rbp)
+	movb	$32, %bl
+	movb	%bl, -2(%rbp)
 	jmp	.LclearInput6
 .LclearInput5:
 	lea	-2(%rbp), %rax
@@ -92,7 +99,8 @@ print:
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
 	call	len
-	movl	%eax, -12(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -12(%rbp)
 	movl	$1, %eax
 	movl	%eax, %edi
 	movq	-8(%rbp), %rax
@@ -110,12 +118,13 @@ toChar:
 	movq	%rsp, %rbp
 	subq	$16, %rsp
 	movl	%edi, -4(%rbp)
-	movb	$48, -5(%rbp)
+	movb	$48, %bl
+	movb	%bl, -5(%rbp)
 	movl	-4(%rbp), %eax
 	movl	$9, %ecx
 	cmpl	%ecx, %eax
 	jle	.LtoChar7
-	movb	$65, %bl
+	movb	$88, %bl
 	movb	%bl, -5(%rbp)
 .LtoChar7:
 	movl	-4(%rbp), %eax
@@ -188,6 +197,48 @@ toChar:
 	movb	$57, %bl
 	movb	%bl, -5(%rbp)
 .LtoChar37:
+	movl	-4(%rbp), %eax
+	movl	$10, %ecx
+	cmpl	%ecx, %eax
+	jne	.LtoChar40
+	movb	$65, %bl
+	movb	%bl, -5(%rbp)
+.LtoChar40:
+	movl	-4(%rbp), %eax
+	movl	$11, %ecx
+	cmpl	%ecx, %eax
+	jne	.LtoChar43
+	movb	$66, %bl
+	movb	%bl, -5(%rbp)
+.LtoChar43:
+	movl	-4(%rbp), %eax
+	movl	$12, %ecx
+	cmpl	%ecx, %eax
+	jne	.LtoChar46
+	movb	$67, %bl
+	movb	%bl, -5(%rbp)
+.LtoChar46:
+	movl	-4(%rbp), %eax
+	movl	$13, %ecx
+	cmpl	%ecx, %eax
+	jne	.LtoChar49
+	movb	$68, %bl
+	movb	%bl, -5(%rbp)
+.LtoChar49:
+	movl	-4(%rbp), %eax
+	movl	$14, %ecx
+	cmpl	%ecx, %eax
+	jne	.LtoChar52
+	movb	$69, %bl
+	movb	%bl, -5(%rbp)
+.LtoChar52:
+	movl	-4(%rbp), %eax
+	movl	$15, %ecx
+	cmpl	%ecx, %eax
+	jne	.LtoChar55
+	movb	$70, %bl
+	movb	%bl, -5(%rbp)
+.LtoChar55:
 	movb	-5(%rbp), %al
 	leave
 	ret
@@ -201,83 +252,83 @@ toInt:
 	movb	-1(%rbp), %al
 	movb	$48, %cl
 	cmpb	%cl, %al
-	jne	.LtoInt40
-	movl	$0, %eax
-	leave
-	ret
-.LtoInt40:
-	movb	-1(%rbp), %al
-	movb	$49, %cl
-	cmpb	%cl, %al
-	jne	.LtoInt43
-	movl	$1, %eax
-	leave
-	ret
-.LtoInt43:
-	movb	-1(%rbp), %al
-	movb	$50, %cl
-	cmpb	%cl, %al
-	jne	.LtoInt46
-	movl	$2, %eax
-	leave
-	ret
-.LtoInt46:
-	movb	-1(%rbp), %al
-	movb	$51, %cl
-	cmpb	%cl, %al
-	jne	.LtoInt49
-	movl	$3, %eax
-	leave
-	ret
-.LtoInt49:
-	movb	-1(%rbp), %al
-	movb	$52, %cl
-	cmpb	%cl, %al
-	jne	.LtoInt52
-	movl	$4, %eax
-	leave
-	ret
-.LtoInt52:
-	movb	-1(%rbp), %al
-	movb	$53, %cl
-	cmpb	%cl, %al
-	jne	.LtoInt55
-	movl	$5, %eax
-	leave
-	ret
-.LtoInt55:
-	movb	-1(%rbp), %al
-	movb	$54, %cl
-	cmpb	%cl, %al
 	jne	.LtoInt58
-	movl	$6, %eax
+	movl	$0, %eax
 	leave
 	ret
 .LtoInt58:
 	movb	-1(%rbp), %al
-	movb	$55, %cl
+	movb	$49, %cl
 	cmpb	%cl, %al
 	jne	.LtoInt61
-	movl	$7, %eax
+	movl	$1, %eax
 	leave
 	ret
 .LtoInt61:
 	movb	-1(%rbp), %al
-	movb	$56, %cl
+	movb	$50, %cl
 	cmpb	%cl, %al
 	jne	.LtoInt64
-	movl	$8, %eax
+	movl	$2, %eax
 	leave
 	ret
 .LtoInt64:
 	movb	-1(%rbp), %al
-	movb	$57, %cl
+	movb	$51, %cl
 	cmpb	%cl, %al
 	jne	.LtoInt67
-	movl	$9, %eax
+	movl	$3, %eax
 	leave
 	ret
 .LtoInt67:
+	movb	-1(%rbp), %al
+	movb	$52, %cl
+	cmpb	%cl, %al
+	jne	.LtoInt70
+	movl	$4, %eax
+	leave
+	ret
+.LtoInt70:
+	movb	-1(%rbp), %al
+	movb	$53, %cl
+	cmpb	%cl, %al
+	jne	.LtoInt73
+	movl	$5, %eax
+	leave
+	ret
+.LtoInt73:
+	movb	-1(%rbp), %al
+	movb	$54, %cl
+	cmpb	%cl, %al
+	jne	.LtoInt76
+	movl	$6, %eax
+	leave
+	ret
+.LtoInt76:
+	movb	-1(%rbp), %al
+	movb	$55, %cl
+	cmpb	%cl, %al
+	jne	.LtoInt79
+	movl	$7, %eax
+	leave
+	ret
+.LtoInt79:
+	movb	-1(%rbp), %al
+	movb	$56, %cl
+	cmpb	%cl, %al
+	jne	.LtoInt82
+	movl	$8, %eax
+	leave
+	ret
+.LtoInt82:
+	movb	-1(%rbp), %al
+	movb	$57, %cl
+	cmpb	%cl, %al
+	jne	.LtoInt85
+	movl	$9, %eax
+	leave
+	ret
+.LtoInt85:
 	movl	$-1, %eax
 	leave
 	ret
@@ -291,12 +342,16 @@ pullInt:
 	mov	$1, %edx
 	mov	-4(%rbp), %eax
 	sub	%edx, %eax
-	movl	%eax, -8(%rbp)
-	movl	$0, -12(%rbp)
-	movl	$0, -16(%rbp)
-	movl	$0, -20(%rbp)
-	jmp	.LpullInt71
-.LpullInt70:
+	movl	%eax, %ebx
+	movl	%ebx, -8(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -12(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -16(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -20(%rbp)
+	jmp	.LpullInt89
+.LpullInt88:
 	lea	-21(%rbp), %rax
 	movq	$1, %rdi
 	movq	%rax, %rsi
@@ -330,11 +385,11 @@ pullInt:
 	sub	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -8(%rbp)
-.LpullInt71:
+.LpullInt89:
 	movl	-8(%rbp), %eax
 	movl	$-1, %ecx
 	cmpl	%ecx, %eax
-	jg	.LpullInt70
+	jg	.LpullInt88
 	call	clearInput
 	movl	-12(%rbp), %eax
 	leave
@@ -346,26 +401,30 @@ printInt:
 	movq	%rsp, %rbp
 	subq	$32, %rsp
 	movl	%edi, -4(%rbp)
-	movl	$0, -8(%rbp)
-	movl	$10, -12(%rbp)
-	movl	$0, -16(%rbp)
-	movl	$0, -20(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -8(%rbp)
+	movl	$10, %ebx
+	movl	%ebx, -12(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -16(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -20(%rbp)
 	movl	-4(%rbp), %eax
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
-	jne	.LprintInt72
-	movq	$.strprintInt75, %rax
+	jne	.LprintInt90
+	movq	$.strprintInt93, %rax
 	movq	%rax, %rdi
 	call	print
 	movl	$0, %eax
 	leave
 	ret
-.LprintInt72:
+.LprintInt90:
 	movl	-4(%rbp), %eax
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
-	jge	.LprintInt76
-	movq	$.strprintInt79, %rax
+	jge	.LprintInt94
+	movq	$.strprintInt97, %rax
 	movq	%rax, %rdi
 	call	print
 	mov	$-1, %edx
@@ -373,14 +432,14 @@ printInt:
 	imul	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -4(%rbp)
-.LprintInt76:
+.LprintInt94:
 	mov	$1, %edx
 	mov	-4(%rbp), %eax
 	imul	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -8(%rbp)
-	jmp	.LprintInt81
-.LprintInt80:
+	jmp	.LprintInt99
+.LprintInt98:
 	mov	-8(%rbp), %eax
 	cltd
 	idivl	-12(%rbp)
@@ -391,18 +450,18 @@ printInt:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
-.LprintInt81:
+.LprintInt99:
 	movl	-8(%rbp), %eax
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
-	jne	.LprintInt80
+	jne	.LprintInt98
 	mov	$1, %edx
 	mov	-20(%rbp), %eax
 	sub	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
-	jmp	.LprintInt83
-.LprintInt82:
+	jmp	.LprintInt101
+.LprintInt100:
 	movl	$10, %eax
 	movl	%eax, %edi
 	movl	-20(%rbp), %eax
@@ -441,11 +500,236 @@ printInt:
 	sub	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
-.LprintInt83:
+.LprintInt101:
 	movl	-20(%rbp), %eax
 	movl	$-1, %ecx
 	cmpl	%ecx, %eax
-	jg	.LprintInt82
+	jg	.LprintInt100
+	movl	$0, %eax
+	leave
+	ret
+	leave
+	ret
+printHex:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$32, %rsp
+	movl	%edi, -4(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -8(%rbp)
+	movl	$16, %ebx
+	movl	%ebx, -12(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -16(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -20(%rbp)
+	movl	-4(%rbp), %eax
+	movl	$0, %ecx
+	cmpl	%ecx, %eax
+	jne	.LprintHex102
+	movq	$.strprintHex105, %rax
+	movq	%rax, %rdi
+	call	print
+	movl	$0, %eax
+	leave
+	ret
+.LprintHex102:
+	movl	-4(%rbp), %eax
+	movl	$0, %ecx
+	cmpl	%ecx, %eax
+	jge	.LprintHex106
+	movq	$.strprintHex109, %rax
+	movq	%rax, %rdi
+	call	print
+	mov	$-1, %edx
+	mov	-4(%rbp), %eax
+	imul	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -4(%rbp)
+.LprintHex106:
+	movl	-4(%rbp), %ebx
+	movl	%ebx, -8(%rbp)
+	jmp	.LprintHex111
+.LprintHex110:
+	mov	-8(%rbp), %eax
+	cltd
+	idivl	-12(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -8(%rbp)
+	mov	$1, %edx
+	mov	-20(%rbp), %eax
+	add	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -20(%rbp)
+.LprintHex111:
+	movl	-8(%rbp), %eax
+	movl	$0, %ecx
+	cmpl	%ecx, %eax
+	jne	.LprintHex110
+	mov	$1, %edx
+	mov	-20(%rbp), %eax
+	sub	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -20(%rbp)
+	jmp	.LprintHex113
+.LprintHex112:
+	movl	$16, %eax
+	movl	%eax, %edi
+	movl	-20(%rbp), %eax
+	movl	%eax, %esi
+	call	exp
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	mov	-4(%rbp), %eax
+	cltd
+	idivl	-16(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -8(%rbp)
+	movl	-8(%rbp), %eax
+	movl	%eax, %edi
+	call	toChar
+	movb	%al, %bl
+	movb	%bl, -21(%rbp)
+	lea	-21(%rbp), %rax
+	movq	$1, %rdi
+	movq	%rax, %rsi
+	movq	$1, %rdx
+	movq	$1, %rax
+	syscall	
+	mov	-16(%rbp), %edx
+	mov	-8(%rbp), %eax
+	imul	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -8(%rbp)
+	mov	-8(%rbp), %edx
+	mov	-4(%rbp), %eax
+	sub	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -4(%rbp)
+	mov	$1, %edx
+	mov	-20(%rbp), %eax
+	sub	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -20(%rbp)
+.LprintHex113:
+	movl	-20(%rbp), %eax
+	movl	$-1, %ecx
+	cmpl	%ecx, %eax
+	jg	.LprintHex112
+	movl	$0, %eax
+	leave
+	ret
+	leave
+	ret
+printLong:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$48, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	$0, %rbx
+	movq	%rbx, -16(%rbp)
+	movq	$10, %rbx
+	movq	%rbx, -24(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -28(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -32(%rbp)
+	movq	-8(%rbp), %rax
+	movq	$0, %rcx
+	cmpq	%rcx, %rax
+	jne	.LprintLong114
+	movq	$.strprintLong117, %rax
+	movq	%rax, %rdi
+	call	print
+	movl	$0, %eax
+	leave
+	ret
+.LprintLong114:
+	movq	-8(%rbp), %rax
+	movq	$0, %rcx
+	cmpq	%rcx, %rax
+	jge	.LprintLong118
+	movq	$.strprintLong121, %rax
+	movq	%rax, %rdi
+	call	print
+	mov	$-1, %edx
+	mov	-8(%rbp), %rax
+	imul	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -8(%rbp)
+.LprintLong118:
+	mov	$1, %edx
+	mov	-8(%rbp), %rax
+	imul	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	jmp	.LprintLong123
+.LprintLong122:
+	mov	-16(%rbp), %rax
+	cltd
+	idivl	-24(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	mov	$1, %edx
+	mov	-32(%rbp), %eax
+	add	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -32(%rbp)
+.LprintLong123:
+	movq	-16(%rbp), %rax
+	movq	$0, %rcx
+	cmpq	%rcx, %rax
+	jne	.LprintLong122
+	mov	$1, %edx
+	mov	-32(%rbp), %eax
+	sub	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -32(%rbp)
+	jmp	.LprintLong125
+.LprintLong124:
+	movl	$10, %eax
+	movl	%eax, %edi
+	movl	-32(%rbp), %eax
+	movl	%eax, %esi
+	call	exp
+	movl	%eax, %ebx
+	movl	%ebx, -28(%rbp)
+	mov	-8(%rbp), %rax
+	cltd
+	idivl	-28(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	movq	-16(%rbp), %rax
+	movq	%rax, %rdi
+	call	toChar
+	movb	%al, %bl
+	movb	%bl, -33(%rbp)
+	lea	-33(%rbp), %rax
+	movq	$1, %rdi
+	movq	%rax, %rsi
+	movq	$1, %rdx
+	movq	$1, %rax
+	syscall	
+	mov	-28(%rbp), %edx
+	mov	-16(%rbp), %rax
+	imul	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	mov	-16(%rbp), %rdx
+	mov	-8(%rbp), %rax
+	sub	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -8(%rbp)
+	mov	$1, %edx
+	mov	-32(%rbp), %eax
+	sub	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -32(%rbp)
+.LprintLong125:
+	movl	-32(%rbp), %eax
+	movl	$-1, %ecx
+	cmpl	%ecx, %eax
+	jg	.LprintLong124
 	movl	$0, %eax
 	leave
 	ret
@@ -478,40 +762,45 @@ printFloat:
 	movq	-8(%rbp), %rax
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
-	jne	.LprintFloat84
+	jne	.LprintFloat126
 	movl	$-1, %eax
 	leave
 	ret
-.LprintFloat84:
-	movl	$6, -16(%rbp)
+.LprintFloat126:
+	movl	$6, %ebx
+	movl	%ebx, -16(%rbp)
 	movl	$0, %eax
 	movl	%eax, %edi
 	call	ascii
-	movb	%al, -17(%rbp)
+	movb	%al, %bl
+	movb	%bl, -17(%rbp)
 	movq	-8(%rbp), %rax
 	movl	(%rax), %eax
-	movl	%eax, -21(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -21(%rbp)
 	movl	-21(%rbp), %eax
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
-	jne	.LprintFloat87
+	jne	.LprintFloat129
 	movl	$0, %eax
 	movl	%eax, %edi
 	call	printInt
 	movl	$0, %eax
 	leave
 	ret
-.LprintFloat87:
+.LprintFloat129:
 	mov	$31, %edx
 	mov	-21(%rbp), %eax
 	movl	%edx, %ecx
 	sarl	%cl, %eax
-	movl	%eax, -25(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -25(%rbp)
 	mov	$23, %edx
 	mov	-21(%rbp), %eax
 	movl	%edx, %ecx
 	sarl	%cl, %eax
-	movl	%eax, -29(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -29(%rbp)
 	mov	$255, %edx
 	mov	-29(%rbp), %eax
 	andl	%edx, %eax
@@ -525,23 +814,27 @@ printFloat:
 	mov	$8388607, %edx
 	mov	-21(%rbp), %eax
 	andl	%edx, %eax
-	movl	%eax, -33(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -33(%rbp)
 	movl	$0, %eax
 	movl	%eax, %edi
 	call	newBit
-	movq	%rax, -41(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -41(%rbp)
 	movq	-41(%rbp), %rbx
 	movq	%rbx, -49(%rbp)
-	movl	$0, -53(%rbp)
-	jmp	.LprintFloat91
-.LprintFloat90:
+	movl	$0, %ebx
+	movl	%ebx, -53(%rbp)
+	jmp	.LprintFloat133
+.LprintFloat132:
 	mov	$1, %edx
 	mov	-33(%rbp), %eax
 	andl	%edx, %eax
 	movl	%eax, %eax
 	movl	%eax, %edi
 	call	newBit
-	movq	%rax, -61(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -61(%rbp)
 	movq	-49(%rbp), %rdx
 	movq	-61(%rbp), %rbx
 	movq	%rbx, 12(%rdx)
@@ -561,15 +854,16 @@ printFloat:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -53(%rbp)
-.LprintFloat91:
+.LprintFloat133:
 	movl	-53(%rbp), %eax
 	movl	$23, %ecx
 	cmpl	%ecx, %eax
-	jl	.LprintFloat90
+	jl	.LprintFloat132
 	movl	$1, %eax
 	movl	%eax, %edi
 	call	newBit
-	movq	%rax, -61(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -61(%rbp)
 	movq	-49(%rbp), %rdx
 	movq	-61(%rbp), %rbx
 	movq	%rbx, 12(%rdx)
@@ -580,58 +874,60 @@ printFloat:
 	movq	%rbx, -49(%rbp)
 	movq	-41(%rbp), %rbx
 	movq	%rbx, -49(%rbp)
-	jmp	.LprintFloat93
-.LprintFloat92:
+	jmp	.LprintFloat135
+.LprintFloat134:
 	movq	-49(%rbp), %rdx
 	movq	12(%rdx), %rbx
 	movq	%rbx, -49(%rbp)
-.LprintFloat93:
+.LprintFloat135:
 	movq	-49(%rbp), %rdx
 	movq	12(%rdx), %rax
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
-	jne	.LprintFloat92
+	jne	.LprintFloat134
 	movl	-25(%rbp), %eax
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
-	je	.LprintFloat94
+	je	.LprintFloat136
 	movb	$45, %bl
 	movb	%bl, -17(%rbp)
-.LprintFloat94:
+.LprintFloat136:
 	movl	-12(%rbp), %eax
 	movl	$1, %ecx
 	cmpl	%ecx, %eax
-	jne	.LprintFloat97
+	jne	.LprintFloat139
 	movl	-25(%rbp), %eax
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
-	jne	.LprintFloat100
+	jne	.LprintFloat142
 	movb	$43, %bl
 	movb	%bl, -17(%rbp)
-.LprintFloat100:
-.LprintFloat97:
+.LprintFloat142:
+.LprintFloat139:
 	movl	-29(%rbp), %ebx
 	movl	%ebx, -65(%rbp)
-	movl	$0, -73(%rbp)
-	jmp	.LprintFloat104
-.LprintFloat103:
+	movl	$0, %ebx
+	movl	%ebx, -73(%rbp)
+	jmp	.LprintFloat146
+.LprintFloat145:
 	movq	-49(%rbp), %rdx
 	movl	0(%rdx), %eax
 	movl	$1, %ecx
 	cmpl	%ecx, %eax
-	jne	.LprintFloat105
+	jne	.LprintFloat147
 	movl	$2, %eax
 	movl	%eax, %edi
 	movl	-65(%rbp), %eax
 	movl	%eax, %esi
 	call	exp
-	movl	%eax, -77(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -77(%rbp)
 	mov	-77(%rbp), %edx
 	mov	-69(%rbp), %eax
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -69(%rbp)
-.LprintFloat105:
+.LprintFloat147:
 	movq	-49(%rbp), %rdx
 	movq	4(%rdx), %rbx
 	movq	%rbx, -49(%rbp)
@@ -645,11 +941,11 @@ printFloat:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -73(%rbp)
-.LprintFloat104:
+.LprintFloat146:
 	movl	-65(%rbp), %eax
 	movl	$-1, %ecx
 	cmpl	%ecx, %eax
-	jg	.LprintFloat103
+	jg	.LprintFloat145
 	movl	$10, %eax
 	movl	%eax, %edi
 	movl	-16(%rbp), %eax
@@ -662,21 +958,23 @@ printFloat:
 	imul	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -65(%rbp)
-	movl	$2, -77(%rbp)
-	movl	$0, -81(%rbp)
-	jmp	.LprintFloat109
-.LprintFloat108:
+	movl	$2, %ebx
+	movl	%ebx, -77(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -81(%rbp)
+	jmp	.LprintFloat151
+.LprintFloat150:
 	movq	-49(%rbp), %rdx
 	movl	0(%rdx), %eax
 	movl	$1, %ecx
 	cmpl	%ecx, %eax
-	jne	.LprintFloat110
+	jne	.LprintFloat152
 	mov	-65(%rbp), %edx
 	mov	-81(%rbp), %eax
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -81(%rbp)
-.LprintFloat110:
+.LprintFloat152:
 	movq	-49(%rbp), %rdx
 	movq	4(%rdx), %rbx
 	movq	%rbx, -49(%rbp)
@@ -690,11 +988,11 @@ printFloat:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -73(%rbp)
-.LprintFloat109:
+.LprintFloat151:
 	movl	-73(%rbp), %eax
 	movl	$23, %ecx
 	cmpl	%ecx, %eax
-	jl	.LprintFloat108
+	jl	.LprintFloat150
 	lea	-17(%rbp), %rax
 	movq	$1, %rdi
 	movq	%rax, %rsi
@@ -704,7 +1002,7 @@ printFloat:
 	movl	-69(%rbp), %eax
 	movl	%eax, %edi
 	call	printInt
-	movq	$.strprintFloat113, %rax
+	movq	$.strprintFloat155, %rax
 	movq	%rax, %rdi
 	call	print
 	movl	-81(%rbp), %eax
@@ -719,7 +1017,7 @@ clear:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp
-	movq	$.strclear114, %rax
+	movq	$.strclear156, %rax
 	movq	%rax, %rdi
 	call	print
 	movl	$0, %eax
@@ -731,13 +1029,21 @@ clear:
 
 .data
 
-.strclear114:
-	.asciz	 "\033[H\033[J"
-.strprintFloat113:
+.strclear156:
+	.asciz	 "\\033[H\\033[J"
+.strprintFloat155:
 	.asciz	 "."
-.strprintInt79:
+.strprintLong121:
 	.asciz	 "-"
-.strprintInt75:
+.strprintLong117:
+	.asciz	 "0"
+.strprintHex109:
+	.asciz	 "-"
+.strprintHex105:
+	.asciz	 "0"
+.strprintInt97:
+	.asciz	 "-"
+.strprintInt93:
 	.asciz	 "0"
 
 
