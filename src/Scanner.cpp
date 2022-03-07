@@ -83,17 +83,17 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                             if (input[i] == '\\'){
                                 i++;
                                 if (input[i] == 'n'){
-                                    stringObj->value += 0x0A;
+                                    stringObj->value += "\\n";
                                 }else if (input[i] == 't'){
-                                    stringObj->value += 0x09;
+                                    stringObj->value += '\t';
                                 }else if (input[i] == '\\'){
                                     stringObj->value += 0x5C;
                                 }else if (input[i] == '\"'){
                                     stringObj->value += 0x22;
                                 }else if (input[i] == '\''){
-                                    stringObj->value += 0x27;
+                                    stringObj->value += '\'';
                                 }else if (input[i] == 'r'){
-                                    stringObj->value += 0x0D;
+                                    stringObj->value += '\r';
                                 }else if (input[i] == '0'){
                                     stringObj->value += '\0';
                                 }else if (input[i] == 'e'){

@@ -267,6 +267,7 @@ void runConfig(std::string path, std::string libPath){
     linker.push_back(libPath + "concurrancy.s");
     linker.push_back(libPath + "files.s");
     linker.push_back(libPath + "asm.s");
+    linker.push_back(libPath + "string.s");
 
     while(std::getline(ss, line)){
         line = remove_char(line, '\t');
@@ -339,7 +340,7 @@ void runConfig(std::string path, std::string libPath){
     system(gcc.c_str());
 
     // remove first 8 elements from the linker list
-    linker.erase(linker.begin(), linker.begin() + 8);
+    linker.erase(linker.begin(), linker.begin() + 9);
 
     // delete the linkerList files
     if (!debug){
