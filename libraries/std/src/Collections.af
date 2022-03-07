@@ -336,6 +336,25 @@ int delete@Array(){
 };
 
 /*
+ * function name:   free@LinkedList;
+ * description:     frees the memory of the list;
+ * arguments:       none;
+ * returns:         int :  0;
+ */
+int free@LinkedList(){
+    ListNode curr;
+    curr = my.head;
+    while(curr != NULL){
+        ListNode temp;
+        temp = curr.next;
+        free(curr);
+        curr = temp;
+    };
+    free(my);
+    return 0;
+};
+
+/*
  * function name:   extend@Array;
  * description:     extends the array by the given amount;
  * arguments:       int amount : the amount to extend the array by;

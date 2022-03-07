@@ -1,4 +1,5 @@
 .global	pub_Array_extend
+.global	pub_LinkedList_free
 .global	pub_Array_delete
 .global	newArray
 .global	pub_Array_at
@@ -27,7 +28,8 @@ newList:
 	movl	$24, %eax
 	movl	%eax, %edi
 	call	malloc
-	movq	%rax, -8(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -8(%rbp)
 	lea	-8(%rbp), %rax
 	movq	(%rax), %rax
 	movq	%rax, %rdi
@@ -47,21 +49,23 @@ forEachLinkedList:
 	movq	-8(%rbp), %rdx
 	movq	16(%rdx), %rbx
 	movq	%rbx, -32(%rbp)
-	movl	$0, -36(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -36(%rbp)
 	jmp	.LforEachLinkedList1
 .LforEachLinkedList0:
 	movq	-32(%rbp), %rdx
 	movq	8(%rdx), %rbx
 	movq	%rbx, -44(%rbp)
-	movq	-16(%rbp), %rcx
+	movq	-16(%rbp), %r15
 	movq	-44(%rbp), %rax
 	movq	%rax, %rdi
 	movl	-36(%rbp), %eax
 	movl	%eax, %esi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdx
-	call	*%rcx
-	movl	%eax, -48(%rbp)
+	call	*%r15
+	movl	%eax, %ebx
+	movl	%ebx, -48(%rbp)
 	movl	-48(%rbp), %eax
 	movl	$1, %ecx
 	cmpl	%ecx, %eax
@@ -104,25 +108,28 @@ whereLinkedList:
 	movl	$0, %eax
 	movl	%eax, %edx
 	call	pub_Array_init
-	movq	%rax, -32(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -32(%rbp)
 	movq	-8(%rbp), %rdx
 	movq	16(%rdx), %rbx
 	movq	%rbx, -40(%rbp)
-	movl	$0, -44(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -44(%rbp)
 	jmp	.LwhereLinkedList6
 .LwhereLinkedList5:
 	movq	-40(%rbp), %rdx
 	movq	8(%rdx), %rbx
 	movq	%rbx, -52(%rbp)
-	movq	-16(%rbp), %rcx
+	movq	-16(%rbp), %r15
 	movq	-52(%rbp), %rax
 	movq	%rax, %rdi
 	movl	-44(%rbp), %eax
 	movl	%eax, %esi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdx
-	call	*%rcx
-	movl	%eax, -56(%rbp)
+	call	*%r15
+	movl	%eax, %ebx
+	movl	%ebx, -56(%rbp)
 	movl	-56(%rbp), %eax
 	movl	$1, %ecx
 	cmpl	%ecx, %eax
@@ -188,6 +195,7 @@ pub_LinkedList_init:
 	movq	-8(%rbp), %rax
 	leave
 	ret
+	movq	-8(%rbp), %rax
 	leave
 	ret
 newNode:
@@ -197,7 +205,8 @@ newNode:
 	movl	$16, %eax
 	movl	%eax, %edi
 	call	malloc
-	movq	%rax, -8(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -8(%rbp)
 	movq	-8(%rbp), %rdx
 	movq	$0, %rbx
 	movq	%rbx, 8(%rdx)
@@ -215,7 +224,8 @@ pub_LinkedList_delete:
 	movq	-8(%rbp), %rdx
 	movq	16(%rdx), %rbx
 	movq	%rbx, -20(%rbp)
-	movl	$0, -24(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -24(%rbp)
 	jmp	.Ldelete11
 .Ldelete10:
 	movq	-20(%rbp), %rdx
@@ -287,7 +297,8 @@ pub_LinkedList_get:
 	movq	%rbx, -20(%rbp)
 	movq	-20(%rbp), %rbx
 	movq	%rbx, -28(%rbp)
-	movl	$0, -32(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -32(%rbp)
 	jmp	.Lget18
 .Lget17:
 	movq	-28(%rbp), %rdx
@@ -318,7 +329,8 @@ pub_LinkedList_append:
 	movl	$16, %eax
 	movl	%eax, %edi
 	call	malloc
-	movq	%rax, -24(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -24(%rbp)
 	movq	-24(%rbp), %rdx
 	movq	-16(%rbp), %rbx
 	movq	%rbx, 8(%rdx)
@@ -374,14 +386,16 @@ pub_LinkedList_insert:
 	movl	$16, %eax
 	movl	%eax, %edi
 	call	malloc
-	movq	%rax, -28(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -28(%rbp)
 	movq	-28(%rbp), %rdx
 	movq	-20(%rbp), %rbx
 	movq	%rbx, 8(%rdx)
 	movq	-8(%rbp), %rdx
 	movq	16(%rdx), %rbx
 	movq	%rbx, -36(%rbp)
-	movl	$0, -40(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -40(%rbp)
 	jmp	.Linsert28
 .Linsert27:
 	movq	-36(%rbp), %rdx
@@ -419,7 +433,8 @@ pub_LinkedList_size:
 	movq	-8(%rbp), %rdx
 	movq	16(%rdx), %rbx
 	movq	%rbx, -16(%rbp)
-	movl	$0, -20(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -20(%rbp)
 	jmp	.Lsize30
 .Lsize29:
 	movq	-16(%rbp), %rdx
@@ -460,7 +475,8 @@ forEachArray:
 	mov	-40(%rbp), %edx
 	mov	-52(%rbp), %eax
 	imul	%edx, %eax
-	movl	%eax, -56(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -56(%rbp)
 	movq	-8(%rbp), %rdx
 	movq	20(%rdx), %rbx
 	movq	%rbx, -48(%rbp)
@@ -469,15 +485,16 @@ forEachArray:
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -48(%rbp)
-	movq	-16(%rbp), %rcx
+	movq	-16(%rbp), %r15
 	movq	-48(%rbp), %rax
 	movq	%rax, %rdi
 	movl	-52(%rbp), %eax
 	movl	%eax, %esi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdx
-	call	*%rcx
-	movl	%eax, -60(%rbp)
+	call	*%r15
+	movl	%eax, %ebx
+	movl	%ebx, -60(%rbp)
 	movl	-60(%rbp), %eax
 	movl	$1, %ecx
 	cmpl	%ecx, %eax
@@ -517,7 +534,8 @@ whereArray:
 	movl	$0, %eax
 	movl	%eax, %edx
 	call	pub_Array_init
-	movq	%rax, -32(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -32(%rbp)
 	movq	-8(%rbp), %rdx
 	movl	16(%rdx), %ebx
 	movl	%ebx, -40(%rbp)
@@ -531,7 +549,8 @@ whereArray:
 	mov	-40(%rbp), %edx
 	mov	-44(%rbp), %eax
 	imul	%edx, %eax
-	movl	%eax, -48(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -48(%rbp)
 	movq	-8(%rbp), %rdx
 	movq	20(%rdx), %rbx
 	movq	%rbx, -56(%rbp)
@@ -542,15 +561,16 @@ whereArray:
 	movl	%ebx, -56(%rbp)
 	movq	-56(%rbp), %rbx
 	movq	%rbx, -64(%rbp)
-	movq	-16(%rbp), %rcx
+	movq	-16(%rbp), %r15
 	movq	-56(%rbp), %rax
 	movq	%rax, %rdi
 	movl	-44(%rbp), %eax
 	movl	%eax, %esi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdx
-	call	*%rcx
-	movl	%eax, -68(%rbp)
+	call	*%r15
+	movl	%eax, %ebx
+	movl	%ebx, -68(%rbp)
 	movl	-68(%rbp), %eax
 	movl	$1, %ecx
 	cmpl	%ecx, %eax
@@ -575,7 +595,8 @@ whereArray:
 	movl	-72(%rbp), %eax
 	movl	%eax, %esi
 	call	pub_Array_at
-	movq	%rax, -80(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -80(%rbp)
 	movq	-80(%rbp), %rax
 	movq	-64(%rbp), %rbx
 	movq	%rbx, (%rax)
@@ -628,6 +649,7 @@ pub_Array_init:
 	movq	-8(%rbp), %rax
 	leave
 	ret
+	movq	-8(%rbp), %rax
 	leave
 	ret
 pub_Array_at:
@@ -642,7 +664,8 @@ pub_Array_at:
 	mov	-16(%rbp), %edx
 	mov	-12(%rbp), %eax
 	imul	%edx, %eax
-	movl	%eax, -20(%rbp)
+	movl	%eax, %ebx
+	movl	%ebx, -20(%rbp)
 	movq	-8(%rbp), %rdx
 	movq	20(%rdx), %rbx
 	movq	%rbx, -28(%rbp)
@@ -665,7 +688,8 @@ newArray:
 	movl	$32, %eax
 	movl	%eax, %edi
 	call	malloc
-	movq	%rax, -16(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -16(%rbp)
 	lea	-16(%rbp), %rax
 	movq	(%rax), %rax
 	movq	%rax, %rdi
@@ -688,6 +712,37 @@ pub_Array_delete:
 	movq	20(%rdx), %rax
 	movq	%rax, %rdi
 	call	free
+	movq	-8(%rbp), %rax
+	movq	%rax, %rdi
+	call	free
+	movl	$0, %eax
+	leave
+	ret
+	leave
+	ret
+pub_LinkedList_free:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$32, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	-8(%rbp), %rdx
+	movq	16(%rdx), %rbx
+	movq	%rbx, -16(%rbp)
+	jmp	.Lfree42
+.Lfree41:
+	movq	-16(%rbp), %rdx
+	movq	0(%rdx), %rbx
+	movq	%rbx, -24(%rbp)
+	movq	-16(%rbp), %rax
+	movq	%rax, %rdi
+	call	free
+	movq	-24(%rbp), %rbx
+	movq	%rbx, -16(%rbp)
+.Lfree42:
+	movq	-16(%rbp), %rax
+	movq	$0, %rcx
+	cmpq	%rcx, %rax
+	jne	.Lfree41
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
 	call	free
@@ -739,11 +794,11 @@ pub_Array_extend:
 	movq	20(%rdx), %rax
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
-	jne	.Lextend41
-	movq	$.strArray.extend44, %rax
+	jne	.Lextend43
+	movq	$.strArray.extend46, %rax
 	movq	%rax, %rdi
 	call	print
-.Lextend41:
+.Lextend43:
 	movl	-12(%rbp), %eax
 	leave
 	ret
@@ -753,7 +808,7 @@ pub_Array_extend:
 
 .data
 
-.strArray.extend44:
+.strArray.extend46:
 	.asciz	 "badrealloc"
 
 

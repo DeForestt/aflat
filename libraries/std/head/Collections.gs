@@ -22,6 +22,7 @@ class LinkedList signs ICollection{
     adr get(int index);
     adr stitch(adr new);
     int size();
+    int free();
 };
 
 LinkedList newList();
