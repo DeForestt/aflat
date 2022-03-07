@@ -1,5 +1,5 @@
 .root "head"
-.needs "String.gs"
+.needs <String>
 .needs <std>
 .needs <strings>
 .needs <io>
