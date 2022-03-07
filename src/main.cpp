@@ -35,6 +35,10 @@ int main(int argc, char *argv[]){
     std::string value = argv[1];
 
     if (value == "make"){
+        if (argc != 3) {
+            std::cout << "Usage: aflat <make> <project name>\n";
+            return 1;
+        }
         std::cout << "creating " << argv[2] << '\n';
         std::string pName = argv[2];
         buildTemplate(pName);
@@ -103,7 +107,12 @@ int main(int argc, char *argv[]){
 
     std::string outputFile;
     if (argc == 2) outputFile = "out.s"; else outputFile = argv[2];
-    build(value, outputFile);
+    if (std::filesystem::exists(value)){
+        build(value, outputFile);
+    } else {
+        std::cout << "File " << value << " does not exist\n";
+        return 1;
+    }
     return 0;
 }
 
