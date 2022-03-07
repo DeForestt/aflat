@@ -96,6 +96,7 @@ namespace ast{
         Statment * args;
         Statment * statment;
         std::string scopeName;
+        ast::Op * op;
         bool isLambda = false;
         bool flex = false;
         bool mask;
