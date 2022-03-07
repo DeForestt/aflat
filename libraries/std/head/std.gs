@@ -31,4 +31,5 @@ Time newTime(adr size);
 adr malloc(int size);
 adr realloc(adr ptr, int size);
 int inspectHeap();
+int memcopy(adr src, adr dst, int size);
 
