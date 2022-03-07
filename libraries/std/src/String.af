@@ -1,0 +1,112 @@
+.root "head"
+.needs "String.gs"
+.needs <std>
+.needs <strings>
+.needs <io>
+
+String init@String(adr value){
+    int length = len(value);
+    length = length + 1;
+    my.head = malloc(length);
+    adr head = my.head;
+    memcopy(value, head, length);
+};
+
+String concat@String(String s){
+    int mylen = len(my.head);
+    int slen = len(s.head);
+    slen = slen + 1;
+    int length = mylen + slen;
+    adr newhead = malloc(length);
+    adr ret = newhead;
+    memcopy(my.head, newhead, mylen);
+    newhead = newhead + mylen;
+    memcopy(s.head, newhead, slen);
+    String newString = new String(ret);
+    free(ret);
+    return newString;
+};
+
+String stitch@String(adr value){
+    int mylen = len(my.head);
+    int slen = len(value);
+    slen = slen + 1;
+    int length = mylen + slen;
+    adr newhead = malloc(length);
+    adr ret = newhead;
+    memcopy(my.head, newhead, mylen);
+    newhead = newhead + mylen;
+    memcopy(value, newhead, slen);
+    String newString = new String(ret);
+    free(ret);
+    return newString;
+};
+
+String subString@String(int start, int end){
+    adr head = my.head;
+    int mylen = len(head);
+    int length = end - start;
+    adr newhead = malloc(length);
+    adr ret = newhead;
+    head = head + start;
+    memcopy(head, newhead, length);
+    String newString = new String(ret);
+    free(ret);
+    return newString;
+};
+
+int compare@String(String s){
+    adr string = s.head;
+    adr mystring = my.head;
+    int comp = str_comp(string, mystring);
+    return comp;
+};
+
+int equal@String(adr s){
+    int comp = str_comp(my.head, s);
+    return comp;
+};
+
+char at@String(int index){
+    char ch = str_at(my.head, index);
+    return ch;
+};
+
+int indexOf@String(char ch){
+    int index = str_find(my.head, ch);
+    return index;
+};
+
+int delete@String(){
+    adr head = my.head;
+    free(head);
+    free(my);
+};
+
+int printString(String s){
+    print(s.head);
+};
+
+String getString(){
+    adr buff = malloc(1);
+    adr save = buff;
+    int buffSize = 1;
+    adr pointer;
+    char input = ' ';
+    char nl = '\n';
+    char null = '\0';
+    int i = 0;
+    while(input != nl){
+        pull ?input;
+        buff = buff + i;
+        buff =: input;
+        if(input == nl){buff =: null};
+        buffSize = buffSize + 1;
+        save = realloc(save, buffSize);
+        buff = save;
+        i = i + 1;
+    };
+    String s = new String(save);
+    free(save);
+    return s;
+};
