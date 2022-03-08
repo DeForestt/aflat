@@ -1260,7 +1260,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             else mov2->to = this->registers["%rbx"]->get(dec->type.size);
 
             mov->op = expr.op;
-            
+
             mov2->op = expr.op;
             mov->size = dec->type.size;
             mov->from = this->registers["%rbx"]->get(dec->type.size);
