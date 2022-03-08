@@ -18,7 +18,7 @@ namespace parse{
         private:
         links::SLinkedList<ast::Type, std::string> typeList;
         ast::Expr* parseExpr(links::LinkedList<lex::Token *> &tokens);
-        ast::Statment* parseArgs(links::LinkedList<lex::Token *> &tokens, char delimn, char close);
+        ast::Statment* parseArgs(links::LinkedList<lex::Token *> &tokens, char delimn, char close, links::LinkedList<ast::Type> &types);
         ast::ConditionalExpr* parseCondition(links::LinkedList<lex::Token *> &tokens);
     };
 };

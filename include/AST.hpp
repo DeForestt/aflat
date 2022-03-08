@@ -98,6 +98,7 @@ namespace ast{
         Statment * statment;
         std::string scopeName;
         ast::Op op;
+        links::LinkedList<ast::Type> argTypes;
         bool isLambda = false;
         bool flex = false;
         bool mask;
@@ -240,7 +241,6 @@ namespace ast{
         public:
         int val;
     };
-
 
     class Compound : public Expr{
         public:

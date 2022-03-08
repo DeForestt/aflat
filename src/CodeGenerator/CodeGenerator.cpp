@@ -844,6 +844,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
     std::string mod = "";
 
         ast::Function * func;
+        bool checkArgs = true;
 
         links::LinkedList<gen::Symbol>  * Table;
         Table = &this->SymbolTable;
@@ -876,6 +877,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                                 func->type.size = asmc::QWord;
                                 func->type.typeName = "--std--flex--function";
                                 func->flex = true;
+                                checkArgs = false;
                 };
             };
         }
@@ -920,6 +922,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                                 func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
                                 func->type = sym->type;
                                 func->type.typeName = "--std--flex--function";
+                                checkArgs = false;
                                 func->type.size = asmc::QWord;
                                 func->flex = true;
                                 addpub = false;
@@ -947,6 +950,13 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                         push->op = this->intArgs[argsCounter].get(asmc::QWord);
                         stack << this->intArgs[argsCounter].get(asmc::QWord);
 
+                        ast::Type t;
+                        t.typeName = cl->Ident;
+                        t.size = asmc::QWord;
+                        func->argTypes.invert();
+                        func->argTypes.push(t);
+                        func->argTypes.invert();
+
                         argsCounter++;
                         OutputFile.text << push;
                         OutputFile.text << mov;
@@ -964,6 +974,9 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
             func->ident.ident = "pub_" + call->publify + "_" + call->ident;
             func->type.typeName = call->publify;
             func->type.size = asmc::QWord;
+            func->argTypes.invert();
+            func->argTypes.push(func->type);
+            func->argTypes.invert();
             if (call->ident != "init"){
                 // find the function in the class
                 gen::Class * cl = dynamic_cast<gen::Class *>(*this->typeList[call->publify]);
@@ -973,6 +986,12 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                         alert("cannot find function: " + call->ident);
                     };
                     func->type = f->type;
+                    ast::Type t;
+                    t.typeName = cl->Ident;
+                    t.size = asmc::QWord;
+                    func->argTypes.invert();
+                    func->argTypes.push(t);
+                    func->argTypes.invert();
                 };
             }else{
                 argsCounter++;
@@ -984,10 +1003,20 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         if (func == nullptr) alert("Cannot Find Function: " + call->ident);
         
         call->Args.invert();
+        func->argTypes.invert();
+        
+        int i = 0;
 
         while (call->Args.count > 0)
         {
             gen::Expr exp =  this->GenExpr(call->Args.pop(), OutputFile);
+            if('checkargs'){
+                if(i > func->argTypes.count){
+                    alert("Too many arguments for function: " + call->ident);
+                };
+            };
+            canAssign(func->argTypes.get(i), exp.type);
+            i++;
             asmc::Mov * mov = new asmc::Mov();
             asmc::Mov * mov2 = new asmc::Mov();
             asmc::Push * push = new asmc::Push();

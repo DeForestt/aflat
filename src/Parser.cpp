@@ -160,7 +160,7 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
                         func->mask = mask;
                         func->scope = scope;
                         func->op = overload;
-                        func->args = this->parseArgs(tokens, ',', ')');
+                        func->args = this->parseArgs(tokens, ',', ')', func->argTypes);
                         if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
                             sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
                             if (sym.Sym == '{'){
@@ -447,7 +447,7 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
     return output;
 }
 
-ast::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens, char delimn, char close){
+ast::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens, char delimn, char close, links::LinkedList<ast::Type> &types){
     ast::Statment* output = new ast::Statment();
     if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
@@ -461,8 +461,9 @@ ast::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens, 
                 dec->Ident = Ident.meta;
                 dec->type = *typeList[obj.meta];
                 output = dec;
+                types << dec->type;
             }
-        }
+        } else throw err::Exception("Line: " + std::to_string(obj.lineCount) + " expected type got " + obj.meta);
     }
 
     if (tokens.head == nullptr){
@@ -475,7 +476,7 @@ ast::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens, 
         if(obj.Sym == delimn){
         ast::Sequence * s = new ast::Sequence;
         s->Statment1 = output;
-        s->Statment2 = this->parseArgs(tokens, delimn, close);
+        s->Statment2 = this->parseArgs(tokens, delimn, close, types);
         return s;
         }
         else if(obj.Sym == close){
@@ -675,7 +676,7 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             tokens.pop();
             ast::Lambda * lambda = new ast::Lambda();
             lambda->function = new ast::Function();
-            lambda->function->args = this->parseArgs(tokens, ',', ']');
+            lambda->function->args = this->parseArgs(tokens, ',', ']', lambda->function->argTypes);
             if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Need an > to start lambda not a symbol");
             if ((dynamic_cast<lex::OpSym *>(tokens.pop())->Sym != '=')) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " GOT: " + dynamic_cast<lex::OpSym *>(tokens.pop())->Sym + " Need an > to start lambda");
 
