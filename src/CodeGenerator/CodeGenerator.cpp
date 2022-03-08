@@ -1256,12 +1256,19 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             asmc::Mov * mov2 = new asmc::Mov();
             mov2->size = dec->type.size;
             mov2->from = expr.access;
-            mov2->to = this->registers["%rbx"]->get(dec->type.size);
+            if(expr.op == asmc::Float) mov2->to = this->registers["%xmm0"]->get(expr.size);
+            else mov2->to = this->registers["%rbx"]->get(dec->type.size);
 
             mov->op = expr.op;
+            
+            mov2->op = expr.op;
             mov->size = dec->type.size;
             mov->from = this->registers["%rbx"]->get(dec->type.size);
             mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
+
+ 
+            mov->from = mov2->to;
+
             OutputFile.text << mov2;
             OutputFile.text << mov;
         }

@@ -613,8 +613,8 @@ charToFloat:
 	subq	$16, %rsp
 	movb	%dil, -1(%rbp)
 	movss	.floatcharToFloat46, %xmm0
-	movl	%xmm0, %ebx
-	movss	%ebx, -5(%rbp)
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -5(%rbp)
 	movb	-1(%rbp), %al
 	movb	$48, %cl
 	cmpb	%cl, %al
@@ -738,13 +738,13 @@ str_toFloat:
 	movl	%eax, %ebx
 	movl	%ebx, -52(%rbp)
 	movss	.floatstr_toFloat87, %xmm0
-	movl	%xmm0, %ebx
-	movss	%ebx, -56(%rbp)
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -56(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -60(%rbp)
 	movss	.floatstr_toFloat88, %xmm0
-	movl	%xmm0, %ebx
-	movss	%ebx, -64(%rbp)
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -64(%rbp)
 	jmp	.Lstr_toFloat90
 .Lstr_toFloat89:
 	movss	.floatstr_toFloat92, %xmm0
@@ -766,8 +766,8 @@ str_toFloat:
 	movl	$0, %ebx
 	movl	%ebx, -60(%rbp)
 	movss	.floatstr_toFloat93, %xmm0
-	movl	%xmm0, %ebx
-	movss	%ebx, -68(%rbp)
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -68(%rbp)
 	pushq	%rdi
 	movl	$0, %eax
 	movl	%eax, %edi
@@ -780,8 +780,8 @@ str_toFloat:
 	movb	%al, %bl
 	movb	%bl, -70(%rbp)
 	movss	.floatstr_toFloat94, %xmm0
-	movl	%xmm0, %ebx
-	movss	%ebx, -74(%rbp)
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -74(%rbp)
 	jmp	.Lstr_toFloat96
 .Lstr_toFloat95:
 	movb	-70(%rbp), %al
@@ -807,8 +807,8 @@ str_toFloat:
 	movss	%xmm0, %xmm1
 	movss	-56(%rbp), %xmm0
 	addss	%xmm1, %xmm0
-	movl	%xmm0, %ebx
-	movss	%ebx, -78(%rbp)
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -78(%rbp)
 	movss	-64(%rbp), %xmm1
 	movss	-68(%rbp), %xmm0
 	mulss	%xmm1, %xmm0
@@ -848,8 +848,8 @@ str_toFloat:
 	movq	%rax, %rbx
 	movq	%rbx, -82(%rbp)
 	movss	.floatstr_toFloat106, %xmm0
-	movl	%xmm0, %ebx
-	movss	%ebx, -86(%rbp)
+	movss	%xmm0, %xmm0
+	movss	%xmm0, -86(%rbp)
 	movss	-86(%rbp), %xmm1
 	movss	-86(%rbp), %xmm0
 	mulss	%xmm1, %xmm0
