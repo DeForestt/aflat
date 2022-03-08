@@ -953,9 +953,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                         ast::Type t;
                         t.typeName = cl->Ident;
                         t.size = asmc::QWord;
-                        func->argTypes.invert();
                         func->argTypes.push(t);
-                        func->argTypes.invert();
 
                         argsCounter++;
                         OutputFile.text << push;
@@ -974,9 +972,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
             func->ident.ident = "pub_" + call->publify + "_" + call->ident;
             func->type.typeName = call->publify;
             func->type.size = asmc::QWord;
-            func->argTypes.invert();
             func->argTypes.push(func->type);
-            func->argTypes.invert();
             if (call->ident != "init"){
                 // find the function in the class
                 gen::Class * cl = dynamic_cast<gen::Class *>(*this->typeList[call->publify]);
@@ -989,9 +985,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                     ast::Type t;
                     t.typeName = cl->Ident;
                     t.size = asmc::QWord;
-                    func->argTypes.invert();
                     func->argTypes.push(t);
-                    func->argTypes.invert();
                 };
             }else{
                 argsCounter++;
