@@ -1,9 +1,9 @@
 int len(adr str);
-int str_comp(adr str1, str2);
+int str_comp(adr str1, adr str2);
 int str_concat(adr str1, adr str2, adr pointer);
 int str_toInt(adr input);
 int str_split(adr str, char sep, adr buff1, adr buff2);
-int str_find(char find, adr in);
+int str_find(adr in, char find);
 int str_subString(int start, int end, adr str, adr buff);
 int int_toString(int input, adr buffer);
 char ascii(int input);

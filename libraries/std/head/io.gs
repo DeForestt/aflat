@@ -8,4 +8,4 @@ int printChar(char input);
 int clear();
 char toChar(int input);
 int printLong(long input);
-int printHex(long input);
+int printHex(adr input);

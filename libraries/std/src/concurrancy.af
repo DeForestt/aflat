@@ -147,7 +147,7 @@ int exit(int status){
  * returns:         0
  */
 int wait(Process p){
-    sys_wait(p.getPid(), #0, #0, #0);
+    sys_wait(p.getPid(), NULL, 0, NULL);
     return 0;
 };
 

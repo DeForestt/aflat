@@ -21,7 +21,7 @@ Block findFreeBlock(Block last, int size) {
 };
 
 Block requestSpace(Block last, int size){
-    Block block = brk(0);
+    Block block = brk(#0);
     int nsize = size + Block;
     adr i = brk(block + nsize);
 
@@ -125,7 +125,7 @@ adr malloc(int size){
     if(size < 0){return NULL};
 
     if(head == #0){
-        block = requestSpace(#0, size);
+        block = requestSpace(NULL, size);
         head = block;
         block = block + #16;
         return block;

@@ -239,7 +239,7 @@ LinkedList map@LinkedList(adr foo, adr arg){
 };
 
 LinkedList copy@LinkedList(LinkedList list){
-    my.free();
+    my.erace();
     return list;
 };
 
@@ -364,7 +364,7 @@ int delete@Array(){
  * arguments:       none;
  * returns:         int :  0;
  */
-int free@LinkedList(){
+int erace@LinkedList(){
     ListNode curr;
     curr = my.head;
     while(curr != NULL){

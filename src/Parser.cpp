@@ -447,7 +447,7 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
     return output;
 }
 
-ast::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens, char delimn, char close, links::LinkedList<ast::Type> &types){
+ast::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens, char delimn, char close, std::vector<ast::Type> &types){
     ast::Statment* output = new ast::Statment();
     if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
@@ -461,7 +461,7 @@ ast::Statment* parse::Parser::parseArgs(links::LinkedList<lex::Token*> &tokens, 
                 dec->Ident = Ident.meta;
                 dec->type = *typeList[obj.meta];
                 output = dec;
-                types << dec->type;
+                types.push_back(dec->type);
             }
         } else throw err::Exception("Line: " + std::to_string(obj.lineCount) + " expected type got " + obj.meta);
     }

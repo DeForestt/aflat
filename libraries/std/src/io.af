@@ -149,7 +149,11 @@ int printHex(long input){
         while (i > -1){
                 factor = exp(16, i);
                 h = input / factor;
-                char out = toChar(h);
+                char 8 alloc;
+                adr pointer = ?alloc;
+                pointer =: h;
+                int k = pointer as int;
+                char out = toChar(k);
                 push ?out;
                 h = h * factor;
                 input = input - h;
@@ -185,7 +189,11 @@ int printLong(long input){
         while (i > -1){
                 factor = exp(10, i);
                 h = input / factor;
-                out = toChar(h);
+                char 8 alloc;
+                adr pointer = ?alloc;
+                pointer =: h;
+                int k = pointer as int;
+                out = toChar(k);
                 push ?out;
                 h = h * factor;
                 input = input - h;

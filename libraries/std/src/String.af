@@ -203,7 +203,14 @@ String toUpper@String(){
 };
 
 int len@String(){
-    return len(my.head);
+    // loop through the head and count the number of characters
+    int length = 0;
+    adr head = my.head;
+    while(head as char != '\0'){
+        head = head + 1;
+        length = length + 1;
+    };
+    return length;
 };
 
 char lower(char c){

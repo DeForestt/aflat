@@ -4,6 +4,7 @@
 #include <string>
 #include "ASM.hpp"
 #include "LinkedList.hpp"
+#include <vector>
 
 namespace ast{
     class ProgramMember{
@@ -98,7 +99,7 @@ namespace ast{
         Statment * statment;
         std::string scopeName;
         ast::Op op;
-        links::LinkedList<ast::Type> argTypes;
+        std::vector<ast::Type> argTypes;
         bool isLambda = false;
         bool flex = false;
         bool mask;

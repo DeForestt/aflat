@@ -23,7 +23,7 @@ class LinkedList signs ICollection{
     adr stitch(adr new);
     adr map(adr foo);
     int size();
-    int free();
+    int erace();
     adr copy<<=>>(adr list);
 };
 
@@ -34,7 +34,7 @@ class Array signs ICollection{
     public adr head;
     int size;
 
-    public adr init(int typeSize, int size);
+    Array init(int typeSize, int size);
     public adr at(int index);
     public int delete(int index);
     public int extend(int size);
