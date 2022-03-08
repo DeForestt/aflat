@@ -238,6 +238,11 @@ LinkedList map@LinkedList(adr foo, adr arg){
     return newList;
 };
 
+LinkedList copy@LinkedList(LinkedList list){
+    my.free();
+    return list;
+};
+
 
 /*
  * function name:   forEach@Array;
@@ -365,6 +370,7 @@ int free@LinkedList(){
     while(curr != NULL){
         ListNode temp;
         temp = curr.next;
+        free(curr.data);
         free(curr);
         curr = temp;
     };

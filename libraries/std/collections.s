@@ -6,6 +6,7 @@
 .global	pub_Array_init
 .global	whereArray
 .global	forEachArray
+.global	pub_LinkedList_copy
 .global	pub_LinkedList_map
 .global	pub_LinkedList_size
 .global	pub_LinkedList_insert
@@ -554,6 +555,21 @@ pub_LinkedList_map:
 	ret
 	leave
 	ret
+pub_LinkedList_copy:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	%rsi, -16(%rbp)
+	lea	-8(%rbp), %rax
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_LinkedList_free
+	movq	-16(%rbp), %rax
+	leave
+	ret
+	leave
+	ret
 forEachArray:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -866,6 +882,12 @@ pub_LinkedList_free:
 	movq	-16(%rbp), %rdx
 	movq	0(%rdx), %rbx
 	movq	%rbx, -24(%rbp)
+	movq	-16(%rbp), %rdx
+	pushq	%rdi
+	movq	8(%rdx), %rax
+	movq	%rax, %rdi
+	call	free
+	popq	%rdi
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
