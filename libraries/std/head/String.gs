@@ -5,6 +5,8 @@ class String{
     String stitch<<+>>(adr s);
     String copy<<=>>(adr s);
     String replace(char o, char n);
+    String toLower();
+    String toUpper();
     String trim();
     char at(int i);
 

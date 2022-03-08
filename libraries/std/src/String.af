@@ -3,6 +3,9 @@
 .needs <std>
 .needs <strings>
 .needs <io>
+char lower(char c);
+char upper(char c);
+
 
 String init@String(adr value){
     int length = len(value);
@@ -161,6 +164,72 @@ String replace@String(char o, char n){
     return newString;
 };
 
+String toLower@String(){
+    adr newhead = malloc(my.len());
+    adr save = newhead;
+    int length = my.len();
+    length = length + 1;
+    adr head = my.head;
+    int i = 0;
+    while(i < length){
+        char c = my.at(i);
+        c = lower(c);
+        newhead =: c;
+        newhead = newhead + 1;
+        i = i + 1;
+    };
+    String newString = new String(save);
+    free(save);
+    return newString;
+};
+
+String toUpper@String(){
+    adr newhead = malloc(my.len());
+    adr save = newhead;
+    int length = my.len();
+    length = length + 1;
+    adr head = my.head;
+    int i = 0;
+    while(i < length){
+        char c = my.at(i);
+        c = upper(c);
+        newhead =: c;
+        newhead = newhead + 1;
+        i = i + 1;
+    };
+    String newString = new String(save);
+    free(save);
+    return newString;
+};
+
 int len@String(){
     return len(my.head);
+};
+
+char lower(char c){
+    char 4 buff;
+    adr cast = ?buff;
+    cast =: 0;
+    if (c > '@'){
+        if (c < '['){
+            int r = c + 32;
+            cast =: r;
+            c = cast as char;
+        };
+    };
+    return c;
+};
+
+char upper(char c){
+    char 4 buff;
+    adr cast = ?buff;
+    cast =: 0;
+    if (c > '`'){
+        if (c < '{'){
+            int r = c - 32;
+            cast =: r;
+            c = cast as char;
+        };
+    };
+    return c;
 };
