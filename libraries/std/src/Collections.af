@@ -221,6 +221,24 @@ int size@LinkedList(){
 };
 
 
+LinkedList map@LinkedList(adr foo, adr arg){
+    LinkedList newList = new LinkedList();
+    ListNode curr;
+    curr = my.head;
+    int i = 0;
+    while(curr != NULL){
+        adr data;
+        data = curr.data;
+        adr newData;
+        newData = foo(data, i, arg);
+        newList.append(newData);
+        curr = curr.next;
+        i = i + 1;
+    };
+    return newList;
+};
+
+
 /*
  * function name:   forEach@Array;
  * description:     preforms a function for each element of the array passed by value
