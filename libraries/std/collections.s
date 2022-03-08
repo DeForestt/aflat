@@ -35,9 +35,11 @@ newList:
 	movq	%rax, %rbx
 	movq	%rbx, -8(%rbp)
 	lea	-8(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_LinkedList_init
+	popq	%rdi
 	movq	-8(%rbp), %rax
 	leave
 	ret
@@ -159,6 +161,7 @@ whereLinkedList:
 	cmpl	%ecx, %eax
 	jne	.LwhereLinkedList7
 	lea	-32(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -166,6 +169,7 @@ whereLinkedList:
 	movl	%eax, %esi
 	call	pub_Array_extend
 	popq	%rsi
+	popq	%rdi
 	movq	-32(%rbp), %rdx
 	movl	28(%rdx), %ebx
 	movl	%ebx, -60(%rbp)
@@ -175,6 +179,7 @@ whereLinkedList:
 	movl	%eax, %ebx
 	movl	%ebx, -60(%rbp)
 	lea	-32(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -182,6 +187,7 @@ whereLinkedList:
 	movl	%eax, %esi
 	call	pub_Array_at
 	popq	%rsi
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -68(%rbp)
 	movq	-68(%rbp), %rax
@@ -534,6 +540,7 @@ pub_LinkedList_map:
 	movq	%rax, %rbx
 	movq	%rbx, -60(%rbp)
 	lea	-32(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -541,6 +548,7 @@ pub_LinkedList_map:
 	movq	%rax, %rsi
 	call	pub_LinkedList_append
 	popq	%rsi
+	popq	%rdi
 	movq	-40(%rbp), %rdx
 	movq	0(%rdx), %rbx
 	movq	%rbx, -40(%rbp)
@@ -566,9 +574,11 @@ pub_LinkedList_copy:
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	lea	-8(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_LinkedList_free
+	popq	%rdi
 	movq	-16(%rbp), %rax
 	leave
 	ret
@@ -715,6 +725,7 @@ whereArray:
 	cmpl	%ecx, %eax
 	jne	.LwhereArray40
 	lea	-32(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -722,6 +733,7 @@ whereArray:
 	movl	%eax, %esi
 	call	pub_Array_extend
 	popq	%rsi
+	popq	%rdi
 	movq	-32(%rbp), %rdx
 	movl	28(%rdx), %ebx
 	movl	%ebx, -72(%rbp)
@@ -731,6 +743,7 @@ whereArray:
 	movl	%eax, %ebx
 	movl	%ebx, -72(%rbp)
 	lea	-32(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -738,6 +751,7 @@ whereArray:
 	movl	%eax, %esi
 	call	pub_Array_at
 	popq	%rsi
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -80(%rbp)
 	movq	-80(%rbp), %rax
@@ -838,6 +852,7 @@ newArray:
 	movq	%rax, %rbx
 	movq	%rbx, -16(%rbp)
 	lea	-16(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -849,6 +864,7 @@ newArray:
 	call	pub_Array_init
 	popq	%rdx
 	popq	%rsi
+	popq	%rdi
 	movq	-16(%rbp), %rax
 	leave
 	ret

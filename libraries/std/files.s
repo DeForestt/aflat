@@ -253,6 +253,7 @@ pub_File_toArray:
 	movq	%rax, %rbx
 	movq	%rbx, -25(%rbp)
 	lea	-8(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -264,6 +265,7 @@ pub_File_toArray:
 	call	pub_File_read
 	popq	%rdx
 	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -29(%rbp)
 	jmp	.LtoArray15
@@ -272,6 +274,7 @@ pub_File_toArray:
 	movl	28(%rdx), %ebx
 	movl	%ebx, -33(%rbp)
 	lea	-17(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -279,7 +282,9 @@ pub_File_toArray:
 	movl	%eax, %esi
 	call	pub_Array_extend
 	popq	%rsi
+	popq	%rdi
 	lea	-17(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -287,6 +292,7 @@ pub_File_toArray:
 	movl	%eax, %esi
 	call	pub_Array_at
 	popq	%rsi
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -41(%rbp)
 	movq	-41(%rbp), %rax
@@ -300,6 +306,7 @@ pub_File_toArray:
 	movq	%rax, %rbx
 	movq	%rbx, -25(%rbp)
 	lea	-8(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -311,6 +318,7 @@ pub_File_toArray:
 	call	pub_File_read
 	popq	%rdx
 	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -29(%rbp)
 .LtoArray15:
@@ -322,6 +330,7 @@ pub_File_toArray:
 	movl	28(%rdx), %ebx
 	movl	%ebx, -33(%rbp)
 	lea	-17(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -329,7 +338,9 @@ pub_File_toArray:
 	movl	%eax, %esi
 	call	pub_Array_extend
 	popq	%rsi
+	popq	%rdi
 	lea	-17(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -337,6 +348,7 @@ pub_File_toArray:
 	movl	%eax, %esi
 	call	pub_Array_at
 	popq	%rsi
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -41(%rbp)
 	movq	-41(%rbp), %rax
@@ -379,6 +391,7 @@ pub_File_toList:
 	movq	%rax, %rbx
 	movq	%rbx, -25(%rbp)
 	lea	-8(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -390,11 +403,13 @@ pub_File_toList:
 	call	pub_File_read
 	popq	%rdx
 	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -29(%rbp)
 	jmp	.LtoList17
 .LtoList16:
 	lea	-17(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -402,6 +417,7 @@ pub_File_toList:
 	movq	%rax, %rsi
 	call	pub_LinkedList_append
 	popq	%rsi
+	popq	%rdi
 	pushq	%rdi
 	movl	$256, %eax
 	movl	%eax, %edi
@@ -410,6 +426,7 @@ pub_File_toList:
 	movq	%rax, %rbx
 	movq	%rbx, -25(%rbp)
 	lea	-8(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -421,6 +438,7 @@ pub_File_toList:
 	call	pub_File_read
 	popq	%rdx
 	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -29(%rbp)
 .LtoList17:
@@ -429,6 +447,7 @@ pub_File_toList:
 	cmpl	%ecx, %eax
 	jne	.LtoList16
 	lea	-17(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -436,6 +455,7 @@ pub_File_toList:
 	movq	%rax, %rsi
 	call	pub_LinkedList_append
 	popq	%rsi
+	popq	%rdi
 	movq	-17(%rbp), %rax
 	leave
 	ret

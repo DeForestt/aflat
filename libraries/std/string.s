@@ -570,9 +570,11 @@ pub_String_copy:
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	lea	-8(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_String_delete
+	popq	%rdi
 	movq	-16(%rbp), %rax
 	leave
 	ret

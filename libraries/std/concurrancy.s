@@ -128,6 +128,7 @@ newProcess:
 	ret
 .LnewProcess6:
 	lea	-16(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
@@ -135,6 +136,7 @@ newProcess:
 	movq	%rax, %rsi
 	call	pub_Process_init
 	popq	%rsi
+	popq	%rdi
 	movq	-16(%rbp), %rax
 	leave
 	ret
@@ -239,9 +241,11 @@ newPipe:
 	movq	%rax, %rbx
 	movq	%rbx, -8(%rbp)
 	lea	-8(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_Pipe_init
+	popq	%rdi
 	movq	-8(%rbp), %rax
 	leave
 	ret
@@ -268,9 +272,11 @@ wait:
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	lea	-8(%rbp), %rax
+	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_Process_getPid
+	popq	%rdi
 	pushq	%rdi
 	movl	%eax, %eax
 	movl	%eax, %edi

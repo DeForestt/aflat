@@ -934,7 +934,9 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                         exp =  this->GenExpr(ref, OutputFile);
                         asmc::Mov * mov = new asmc::Mov();
                         asmc::Mov * mov2 = new asmc::Mov();
+                        asmc::Push * push = new asmc::Push();
 
+                        
                         mov->size = exp.size;
                         mov2->size = exp.size;
                         
@@ -942,8 +944,11 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                         mov->to = this->registers["%eax"]->get(exp.size);
                         mov2->from = this->registers["%eax"]->get(exp.size);
                         mov2->to = this->intArgs[argsCounter].get(exp.size);
+                        push->op = this->intArgs[argsCounter].get(asmc::QWord);
+                        stack << this->intArgs[argsCounter].get(asmc::QWord);
 
                         argsCounter++;
+                        OutputFile.text << push;
                         OutputFile.text << mov;
                         OutputFile.text << mov2;
                         break;
