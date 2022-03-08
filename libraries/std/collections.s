@@ -114,6 +114,7 @@ whereLinkedList:
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	pushq	%rdi
 	movq	%rax, %rdi
 	pushq	%rsi
 	movl	$8, %eax
@@ -124,6 +125,7 @@ whereLinkedList:
 	call	pub_Array_init
 	popq	%rdx
 	popq	%rsi
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -32(%rbp)
 	movq	-8(%rbp), %rdx
@@ -499,8 +501,10 @@ pub_LinkedList_map:
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	pushq	%rdi
 	movq	%rax, %rdi
 	call	pub_LinkedList_init
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -32(%rbp)
 	movq	-8(%rbp), %rdx
@@ -651,6 +655,7 @@ whereArray:
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	pushq	%rdi
 	movq	%rax, %rdi
 	pushq	%rsi
 	movl	$8, %eax
@@ -661,6 +666,7 @@ whereArray:
 	call	pub_Array_init
 	popq	%rdx
 	popq	%rsi
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -32(%rbp)
 	movq	-8(%rbp), %rdx

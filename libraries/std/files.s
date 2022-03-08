@@ -231,6 +231,7 @@ pub_File_toArray:
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	pushq	%rdi
 	movq	%rax, %rdi
 	pushq	%rsi
 	movl	$8, %eax
@@ -241,6 +242,7 @@ pub_File_toArray:
 	call	pub_Array_init
 	popq	%rdx
 	popq	%rsi
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -17(%rbp)
 	pushq	%rdi
@@ -363,8 +365,10 @@ pub_File_toList:
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	pushq	%rdi
 	movq	%rax, %rdi
 	call	pub_LinkedList_init
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -17(%rbp)
 	pushq	%rdi

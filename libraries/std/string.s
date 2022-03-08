@@ -139,12 +139,14 @@ pub_String_concat:
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	pushq	%rdi
 	movq	%rax, %rdi
 	pushq	%rsi
 	movq	-44(%rbp), %rax
 	movq	%rax, %rsi
 	call	pub_String_init
 	popq	%rsi
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -52(%rbp)
 	pushq	%rdi
@@ -234,12 +236,14 @@ pub_String_stitch:
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	pushq	%rdi
 	movq	%rax, %rdi
 	pushq	%rsi
 	movq	-44(%rbp), %rax
 	movq	%rax, %rsi
 	call	pub_String_init
 	popq	%rsi
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -52(%rbp)
 	pushq	%rdi
@@ -306,12 +310,14 @@ pub_String_subString:
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	pushq	%rdi
 	movq	%rax, %rdi
 	pushq	%rsi
 	movq	-48(%rbp), %rax
 	movq	%rax, %rsi
 	call	pub_String_init
 	popq	%rsi
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -56(%rbp)
 	pushq	%rdi
@@ -537,12 +543,14 @@ getString:
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	pushq	%rdi
 	movq	%rax, %rdi
 	pushq	%rsi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rsi
 	call	pub_String_init
 	popq	%rsi
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -43(%rbp)
 	pushq	%rdi

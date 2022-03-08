@@ -728,9 +728,13 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
             callInit->call->modList = links::LinkedList<std::string>();
             callInit->call->publify = cl->Ident;
             asmc::Mov * mov = new asmc::Mov();
+
+            asmc::Push * push = new asmc::Push();
+            push->op = mov->to = this->intArgs[0].get(asmc::QWord);
+            OutputFile.text << push;
             mov->size = asmc::QWord;
             mov->from = this->registers["%eax"]->get(asmc::QWord);
-            mov->to = this->intArgs[intArgsCounter].get(asmc::QWord);
+            mov->to = this->intArgs[0].get(asmc::QWord);
             OutputFile.text << mov;
             gen::Expr afterInit = this->GenExpr(callInit, OutputFile);
             output.access = afterInit.access;
@@ -845,6 +849,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         Table = &this->SymbolTable;
         links::LinkedList<std::string> mods = links::LinkedList<std::string>();
 
+        links::LinkedList<std::string> stack;
         this->intArgsCounter = 0;
         int argsCounter = 0;
         if(call->modList.head == nullptr){
@@ -964,15 +969,16 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                     };
                     func->type = f->type;
                 };
-            }else argsCounter++;
+            }else{
+                argsCounter++;
+                stack.push("%rdi");
+            }
             mod = "";
         }
 
         if (func == nullptr) alert("Cannot Find Function: " + call->ident);
         
         call->Args.invert();
-
-        links::LinkedList<std::string> stack;
 
         while (call->Args.count > 0)
         {
