@@ -84,7 +84,8 @@ int delete@String(){
 };
 
 String printString(String s){
-    print(s.head);
+    adr head = s.head;
+    print(head);
     return s;
 };
 
@@ -115,6 +116,49 @@ String getString(){
 String copy@String(String s){
     my.delete();
     return s;
+};
+
+String trim@String(char ch){
+    int length = my.len();
+    int i = 0;
+    char test = my.at(i);
+    while(test == ch){
+        i = i + 1;
+        test = my.at(i);
+    };
+
+    int j = length - 1;
+    test = my.at(j);
+
+    while(test == ch){
+        j = j - 1;
+        test = my.at(j);
+    };
+    j = j + 1;
+    
+    String newString = my.subString(i, j);
+
+    return newString;
+};
+
+String replace@String(char o, char n){
+    adr newhead = malloc(my.len());
+    adr save = newhead;
+    int length = my.len();
+    length = length + 1;
+    adr head = my.head;
+    memcopy(head, newhead, length);
+    int i = 0;
+    while(i < length){
+        if(my.at(i) == o){
+            newhead = newhead + i;
+            newhead =: n;
+        };
+        i = i + 1;
+    };
+    String newString = new String(save);
+    free(save);
+    return newString;
 };
 
 int len@String(){

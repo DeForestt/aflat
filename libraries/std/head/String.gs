@@ -1,12 +1,14 @@
 class String{
     adr head;
-    adr init(adr value);
-    adr concat<<&>>(adr s);
-    adr stitch<<+>>(adr s);
-    adr copy<<=>>(adr s);
+    String init(adr value);
+    String concat<<&>>(adr s);
+    String stitch<<+>>(adr s);
+    String copy<<=>>(adr s);
+    String replace(char o, char n);
+    String trim();
     char at(int i);
 
-    adr subString(int start, int end);
+    String subString(int start, int end);
 
     // compare is for compairing to another string object
     int compare(adr s);
