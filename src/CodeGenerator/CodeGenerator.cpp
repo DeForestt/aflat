@@ -950,11 +950,6 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                         push->op = this->intArgs[argsCounter].get(asmc::QWord);
                         stack << this->intArgs[argsCounter].get(asmc::QWord);
 
-                        ast::Type t;
-                        t.typeName = cl->Ident;
-                        t.size = asmc::QWord;
-                        func->argTypes.push_back(t);
-
                         argsCounter++;
                         OutputFile.text << push;
                         OutputFile.text << mov;
@@ -985,6 +980,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                     ast::Type t;
                     t.typeName = cl->Ident;
                     t.size = asmc::QWord;
+                    func->argTypes = f->argTypes;
                     func->argTypes.push_back(t);
                 };
             }else{
