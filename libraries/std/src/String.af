@@ -112,12 +112,9 @@ String getString(){
     return s;
 };
 
-int copy@String(String s){
-    printString(s);
-    print(" ");
-    printString(my);
+String copy@String(String s){
     my.delete();
-    return 0;
+    return s;
 };
 
 int len@String(){

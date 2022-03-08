@@ -1337,16 +1337,18 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
                 ast::Function * func = cl->overloadTable[ast::Equ];
                 if (func != nullptr){
                     // call the overloaded operator = 
-                    ast::Var v = ast::Var();
-                    v.Ident = assign->Ident;
-                    v.modList = assign->modList;
+                    ast::Var * v = new ast::Var();
+                    v->Ident = assign->Ident;
+                    v->modList = assign->modList;
                     ast::Call * call = new ast::Call();
                     call->ident = func->ident.ident;
                     call->modList = assign->modList;
-                    call->Args.push(&v);
+                    call->Args.push(v);
                     call->Args.push(assign->expr);
                     call->publify = cl->Ident;
-                    OutputFile << this->GenSTMT(call);
+                    ast::CallExpr * callExpr = new ast::CallExpr();
+                    callExpr->call = call;
+                    assign->expr = callExpr;
                 };
             }
         }
