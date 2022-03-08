@@ -4,7 +4,6 @@ class String{
     adr concat<<&>>(adr s);
     adr stitch<<+>>(adr s);
     char at(int i);
-    int say(int n);
 
     adr subString(int start, int end);
 
@@ -14,9 +13,10 @@ class String{
     int equal(adr s);
 
     int find(char c);
+    int len();
 
     int delete();
 };
 
-int printString(String s); 
+String printString(String s); 
 String getString();

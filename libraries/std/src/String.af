@@ -83,8 +83,9 @@ int delete@String(){
     free(my);
 };
 
-int printString(String s){
+String printString(String s){
     print(s.head);
+    return s;
 };
 
 String getString(){
@@ -109,4 +110,8 @@ String getString(){
     String s = new String(save);
     free(save);
     return s;
+};
+
+int len@String(){
+    return len(my.head);
 };

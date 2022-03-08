@@ -1,3 +1,4 @@
+.global	pub_String_len
 .global	getString
 .global	printString
 .global	pub_String_delete
@@ -354,6 +355,9 @@ printString:
 	movq	0(%rdx), %rax
 	movq	%rax, %rdi
 	call	print
+	movq	-8(%rbp), %rax
+	leave
+	ret
 	leave
 	ret
 getString:
@@ -438,6 +442,20 @@ getString:
 	movq	%rax, %rdi
 	call	free
 	movq	-43(%rbp), %rax
+	leave
+	ret
+	leave
+	ret
+pub_String_len:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	-8(%rbp), %rdx
+	movq	0(%rdx), %rax
+	movq	%rax, %rdi
+	call	len
+	movl	%eax, %eax
 	leave
 	ret
 	leave
