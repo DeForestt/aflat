@@ -3,6 +3,7 @@ class String{
     adr init(adr value);
     adr concat<<&>>(adr s);
     adr stitch<<+>>(adr s);
+    int copy<<=>>(adr s);
     char at(int i);
 
     adr subString(int start, int end);

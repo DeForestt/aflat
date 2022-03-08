@@ -128,7 +128,9 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
                             overload = ast::Op::AndBit;
                         } else if(next->Sym == '|'){
                             overload = ast::Op::OrBit;
-                        } else{
+                        } else if(next->Sym == '='){
+                            overload = ast::Op::Equ;
+                        }else{
                             throw err::Exception("Expected and overloade operator on line " + std::to_string(obj.lineCount));
                         }
 

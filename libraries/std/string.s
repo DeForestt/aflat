@@ -1,4 +1,5 @@
 .global	pub_String_len
+.global	pub_String_copy
 .global	getString
 .global	printString
 .global	pub_String_delete
@@ -446,6 +447,30 @@ getString:
 	ret
 	leave
 	ret
+pub_String_copy:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	%rsi, -16(%rbp)
+	movq	-16(%rbp), %rax
+	movq	%rax, %rdi
+	call	printString
+	movq	$.strString.delete5, %rax
+	movq	%rax, %rdi
+	call	print
+	movq	-8(%rbp), %rax
+	movq	%rax, %rdi
+	call	printString
+	lea	-8(%rbp), %rax
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_String_delete
+	movl	$0, %eax
+	leave
+	ret
+	leave
+	ret
 pub_String_len:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -464,6 +489,8 @@ pub_String_len:
 
 .data
 
+.strString.delete5:
+	.asciz	 " "
 
 
 .bss

@@ -1328,12 +1328,36 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         
         
         Symbol * symbol = gen::scope::ScopeManager::getInstance()->get(assign->Ident);
+
         if(symbol == nullptr) {
             Table = &this->GlobalSymbolTable;
             symbol = Table->search<std::string>(searchSymbol, assign->Ident);
             if(symbol == nullptr) alert("unknown name: " + assign->Ident);
             global = true;
         };
+
+        // check if the symbol is a class
+        gen::Type ** t = this->typeList[symbol->type.typeName];
+        if (t != nullptr && assign->modList.count == 0){
+            gen::Class * cl = dynamic_cast<gen::Class *>(*t);
+            if (cl != nullptr){
+                // check if the class has an overloaded operator =
+                ast::Function * func = cl->overloadTable[ast::Equ];
+                if (func != nullptr){
+                    // call the overloaded operator = 
+                    ast::Var v = ast::Var();
+                    v.Ident = assign->Ident;
+                    v.modList = assign->modList;
+                    ast::Call * call = new ast::Call();
+                    call->ident = func->ident.ident;
+                    call->modList = assign->modList;
+                    call->Args.push(&v);
+                    call->Args.push(assign->expr);
+                    call->publify = cl->Ident;
+                    OutputFile << this->GenSTMT(call);
+                };
+            }
+        }
         asmc::Mov * mov = new asmc::Mov();
         asmc::Mov * mov2 = new asmc::Mov();
         gen::Expr expr = this->GenExpr(assign->expr, OutputFile, symbol->type.size);
@@ -1399,8 +1423,6 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
         OutputFile.text << mov2;
         OutputFile.text << mov;
-
-    
     }
     else if (dynamic_cast<ast::Call *>(STMT) != nullptr){
         ast::Call * call = dynamic_cast<ast::Call *>(STMT);

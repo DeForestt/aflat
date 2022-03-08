@@ -112,6 +112,14 @@ String getString(){
     return s;
 };
 
+int copy@String(String s){
+    printString(s);
+    print(" ");
+    printString(my);
+    my.delete();
+    return 0;
+};
+
 int len@String(){
     return len(my.head);
 };
