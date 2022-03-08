@@ -136,6 +136,10 @@ std::string asmc::Mul::toString(){
     return "\timul\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
+std::string asmc::Xor::toString(){
+    return "\txor\t" + this->op1 + ", " + this->op2 + "\n";
+}
+
 std::string asmc::And::toString(){
     return "\tandl\t" + this->op1 + ", " + this->op2 + "\n";
 }
@@ -166,7 +170,7 @@ std::string asmc::Push::toString(){
 }
 
 std::string asmc::Pop::toString(){
-    return "\tpop\t" + this->op + "\n";
+    return "\tpopq\t" + this->op + "\n";
 }
 
 std::string asmc::Return::toString(){

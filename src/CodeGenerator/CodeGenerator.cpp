@@ -846,6 +846,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         links::LinkedList<std::string> mods = links::LinkedList<std::string>();
 
         this->intArgsCounter = 0;
+        int argsCounter = 0;
         if(call->modList.head == nullptr){
             func = this->nameTable[call->ident];
             if (func == nullptr){
@@ -935,9 +936,9 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                         mov->from = '(' + exp.access + ')'; 
                         mov->to = this->registers["%eax"]->get(exp.size);
                         mov2->from = this->registers["%eax"]->get(exp.size);
-                        mov2->to = this->intArgs[intArgsCounter].get(exp.size);
+                        mov2->to = this->intArgs[argsCounter].get(exp.size);
 
-                        intArgsCounter++;
+                        argsCounter++;
                         OutputFile.text << mov;
                         OutputFile.text << mov2;
                         break;
@@ -963,50 +964,35 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                     };
                     func->type = f->type;
                 };
-            }else this->intArgsCounter++;
+            }else argsCounter++;
             mod = "";
         }
 
         if (func == nullptr) alert("Cannot Find Function: " + call->ident);
         
         call->Args.invert();
-       
+
+        links::LinkedList<std::string> stack;
+
         while (call->Args.count > 0)
         {
-             gen::Expr exp;
-            //check if args.pop is a callExpr
-            if(dynamic_cast<ast::CallExpr *>(call->Args.peek()) != nullptr){
-                ast::CallExpr * callExpr = dynamic_cast<ast::CallExpr *>(call->Args.peek());
-                // get the number of args
-                int argc = callExpr->call->Args.count;
-                // push all of the used int args to the stack
-                for(int i = 0; i < argc; i++){
-                    asmc::Push * push = new asmc::Push();
-                    push->op = this->intArgs[intArgsCounter].get(asmc::QWord);
-                    OutputFile.text << push;
-                }
-                // genorate the expr
-                exp = this->GenExpr(callExpr, OutputFile);
-                // pop all of the used int args from the stack
-                for(int i = 0; i < argc; i++){
-                    asmc::Pop * pop = new asmc::Pop();
-                    pop->op = this->intArgs[intArgsCounter].get(asmc::QWord);
-                    OutputFile.text << pop;
-                };
-                // pop the args list
-                call->Args.pop();
-            } else exp =  this->GenExpr(call->Args.pop(), OutputFile);
+            gen::Expr exp =  this->GenExpr(call->Args.pop(), OutputFile);
             asmc::Mov * mov = new asmc::Mov();
             asmc::Mov * mov2 = new asmc::Mov();
+            asmc::Push * push = new asmc::Push();
             mov->size = exp.size;
             mov2->size = exp.size;
             
             mov->from = exp.access;
             mov->to = this->registers["%eax"]->get(exp.size);
             mov2->from = this->registers["%eax"]->get(exp.size);
-            mov2->to = this->intArgs[intArgsCounter].get(exp.size);
+            mov2->to = this->intArgs[argsCounter].get(exp.size);
+            push->op = this->intArgs[argsCounter].get(asmc::QWord);
+            stack << this->intArgs[argsCounter].get(asmc::QWord);
+            
 
-            intArgsCounter++;
+            argsCounter++;
+            OutputFile.text << push;
             OutputFile.text << mov;
             OutputFile.text << mov2;
         }
@@ -1015,6 +1001,12 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
 
         calls->function = mod + func->ident.ident;
         OutputFile.text << calls;
+        // push everything back on the stack
+        while(stack.count > 0){
+            asmc::Pop * pop = new asmc::Pop();
+            pop->op = stack.pop();
+            OutputFile.text << pop;
+        }
         intArgsCounter = 0;
         ast::Function ret = *func;
         return ret;

@@ -220,6 +220,14 @@ namespace asmc{
         std::string toString();
     };
 
+    class Xor : public Instruction{
+        public:
+        std::string op1;
+        std::string op2;
+        asmc::Size size;
+        std::string toString();
+    };
+
     class Sal : public Instruction{
         public:
         std::string op1;
