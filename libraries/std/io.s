@@ -66,9 +66,11 @@ clearInput:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp
+	pushq	%rdi
 	movl	$10, %eax
 	movl	%eax, %edi
 	call	ascii
+	popq	%rdi
 	movb	%al, %bl
 	movb	%bl, -1(%rbp)
 	movb	$32, %bl
@@ -96,18 +98,26 @@ print:
 	movq	%rsp, %rbp
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
 	call	len
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -12(%rbp)
+	pushq	%rdi
 	movl	$1, %eax
 	movl	%eax, %edi
+	pushq	%rsi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rsi
+	pushq	%rdx
 	movl	-12(%rbp), %eax
 	movl	%eax, %edx
 	call	sys_write
+	popq	%rdx
+	popq	%rsi
+	popq	%rdi
 	movl	$0, %eax
 	leave
 	ret
@@ -358,16 +368,22 @@ pullInt:
 	movq	$1, %rdx
 	movq	$0, %rax
 	syscall	
+	pushq	%rdi
 	movb	-21(%rbp), %al
 	movb	%al, %dil
 	call	toInt
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -16(%rbp)
+	pushq	%rdi
 	movl	$10, %eax
 	movl	%eax, %edi
+	pushq	%rsi
 	movl	-8(%rbp), %eax
 	movl	%eax, %esi
 	call	exp
+	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
 	mov	-16(%rbp), %edx
@@ -413,9 +429,11 @@ printInt:
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
 	jne	.LprintInt90
+	pushq	%rdi
 	movq	$.strprintInt93, %rax
 	movq	%rax, %rdi
 	call	print
+	popq	%rdi
 	movl	$0, %eax
 	leave
 	ret
@@ -424,9 +442,11 @@ printInt:
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
 	jge	.LprintInt94
+	pushq	%rdi
 	movq	$.strprintInt97, %rax
 	movq	%rax, %rdi
 	call	print
+	popq	%rdi
 	mov	$-1, %edx
 	mov	-4(%rbp), %eax
 	imul	%edx, %eax
@@ -462,11 +482,15 @@ printInt:
 	movl	%ebx, -20(%rbp)
 	jmp	.LprintInt101
 .LprintInt100:
+	pushq	%rdi
 	movl	$10, %eax
 	movl	%eax, %edi
+	pushq	%rsi
 	movl	-20(%rbp), %eax
 	movl	%eax, %esi
 	call	exp
+	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -16(%rbp)
 	mov	-4(%rbp), %eax
@@ -474,9 +498,11 @@ printInt:
 	idivl	-16(%rbp)
 	movl	%eax, %ebx
 	movl	%ebx, -8(%rbp)
+	pushq	%rdi
 	movl	-8(%rbp), %eax
 	movl	%eax, %edi
 	call	toChar
+	popq	%rdi
 	movb	%al, %bl
 	movb	%bl, -21(%rbp)
 	lea	-21(%rbp), %rax
@@ -527,9 +553,11 @@ printHex:
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
 	jne	.LprintHex102
+	pushq	%rdi
 	movq	$.strprintHex105, %rax
 	movq	%rax, %rdi
 	call	print
+	popq	%rdi
 	movl	$0, %eax
 	leave
 	ret
@@ -538,9 +566,11 @@ printHex:
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
 	jge	.LprintHex106
+	pushq	%rdi
 	movq	$.strprintHex109, %rax
 	movq	%rax, %rdi
 	call	print
+	popq	%rdi
 	mov	$-1, %edx
 	mov	-8(%rbp), %rax
 	imul	%rdx, %rax
@@ -573,11 +603,15 @@ printHex:
 	movl	%ebx, -28(%rbp)
 	jmp	.LprintHex113
 .LprintHex112:
+	pushq	%rdi
 	movl	$16, %eax
 	movl	%eax, %edi
+	pushq	%rsi
 	movl	-28(%rbp), %eax
 	movl	%eax, %esi
 	call	exp
+	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -24(%rbp)
 	mov	-8(%rbp), %rax
@@ -585,9 +619,11 @@ printHex:
 	idivl	-24(%rbp)
 	movl	%eax, %ebx
 	movl	%ebx, -16(%rbp)
+	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
 	call	toChar
+	popq	%rdi
 	movb	%al, %bl
 	movb	%bl, -29(%rbp)
 	lea	-29(%rbp), %rax
@@ -638,9 +674,11 @@ printLong:
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
 	jne	.LprintLong114
+	pushq	%rdi
 	movq	$.strprintLong117, %rax
 	movq	%rax, %rdi
 	call	print
+	popq	%rdi
 	movl	$0, %eax
 	leave
 	ret
@@ -649,9 +687,11 @@ printLong:
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
 	jge	.LprintLong118
+	pushq	%rdi
 	movq	$.strprintLong121, %rax
 	movq	%rax, %rdi
 	call	print
+	popq	%rdi
 	mov	$-1, %edx
 	mov	-8(%rbp), %rax
 	imul	%rdx, %rax
@@ -687,11 +727,15 @@ printLong:
 	movl	%ebx, -32(%rbp)
 	jmp	.LprintLong125
 .LprintLong124:
+	pushq	%rdi
 	movl	$10, %eax
 	movl	%eax, %edi
+	pushq	%rsi
 	movl	-32(%rbp), %eax
 	movl	%eax, %esi
 	call	exp
+	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
 	mov	-8(%rbp), %rax
@@ -699,9 +743,11 @@ printLong:
 	idivl	-28(%rbp)
 	movl	%eax, %ebx
 	movl	%ebx, -16(%rbp)
+	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
 	call	toChar
+	popq	%rdi
 	movb	%al, %bl
 	movb	%bl, -33(%rbp)
 	lea	-33(%rbp), %rax
@@ -740,14 +786,20 @@ printChar:
 	movq	%rsp, %rbp
 	subq	$16, %rsp
 	movb	%dil, -1(%rbp)
+	pushq	%rdi
 	movl	$1, %eax
 	movl	%eax, %edi
 	lea	-1(%rbp), %rax
+	pushq	%rsi
 	movq	%rax, %rax
 	movq	%rax, %rsi
+	pushq	%rdx
 	movl	$1, %eax
 	movl	%eax, %edx
 	call	sys_write
+	popq	%rdx
+	popq	%rsi
+	popq	%rdi
 	movl	$0, %eax
 	leave
 	ret
@@ -769,9 +821,11 @@ printFloat:
 .LprintFloat126:
 	movl	$6, %ebx
 	movl	%ebx, -16(%rbp)
+	pushq	%rdi
 	movl	$0, %eax
 	movl	%eax, %edi
 	call	ascii
+	popq	%rdi
 	movb	%al, %bl
 	movb	%bl, -17(%rbp)
 	movq	-8(%rbp), %rax
@@ -782,9 +836,11 @@ printFloat:
 	movl	$0, %ecx
 	cmpl	%ecx, %eax
 	jne	.LprintFloat129
+	pushq	%rdi
 	movl	$0, %eax
 	movl	%eax, %edi
 	call	printInt
+	popq	%rdi
 	movl	$0, %eax
 	leave
 	ret
@@ -816,9 +872,11 @@ printFloat:
 	andl	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -33(%rbp)
+	pushq	%rdi
 	movl	$0, %eax
 	movl	%eax, %edi
 	call	newBit
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -41(%rbp)
 	movq	-41(%rbp), %rbx
@@ -830,9 +888,11 @@ printFloat:
 	mov	$1, %edx
 	mov	-33(%rbp), %eax
 	andl	%edx, %eax
+	pushq	%rdi
 	movl	%eax, %eax
 	movl	%eax, %edi
 	call	newBit
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -61(%rbp)
 	movq	-49(%rbp), %rdx
@@ -859,9 +919,11 @@ printFloat:
 	movl	$23, %ecx
 	cmpl	%ecx, %eax
 	jl	.LprintFloat132
+	pushq	%rdi
 	movl	$1, %eax
 	movl	%eax, %edi
 	call	newBit
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -61(%rbp)
 	movq	-49(%rbp), %rdx
@@ -915,11 +977,15 @@ printFloat:
 	movl	$1, %ecx
 	cmpl	%ecx, %eax
 	jne	.LprintFloat147
+	pushq	%rdi
 	movl	$2, %eax
 	movl	%eax, %edi
+	pushq	%rsi
 	movl	-65(%rbp), %eax
 	movl	%eax, %esi
 	call	exp
+	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -77(%rbp)
 	mov	-77(%rbp), %edx
@@ -946,11 +1012,15 @@ printFloat:
 	movl	$-1, %ecx
 	cmpl	%ecx, %eax
 	jg	.LprintFloat145
+	pushq	%rdi
 	movl	$10, %eax
 	movl	%eax, %edi
+	pushq	%rsi
 	movl	-16(%rbp), %eax
 	movl	%eax, %esi
 	call	exp
+	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -65(%rbp)
 	mov	$5, %edx
@@ -999,15 +1069,21 @@ printFloat:
 	movq	$1, %rdx
 	movq	$1, %rax
 	syscall	
+	pushq	%rdi
 	movl	-69(%rbp), %eax
 	movl	%eax, %edi
 	call	printInt
+	popq	%rdi
+	pushq	%rdi
 	movq	$.strprintFloat155, %rax
 	movq	%rax, %rdi
 	call	print
+	popq	%rdi
+	pushq	%rdi
 	movl	-81(%rbp), %eax
 	movl	%eax, %edi
 	call	printInt
+	popq	%rdi
 	movl	$0, %eax
 	leave
 	ret
@@ -1017,9 +1093,11 @@ clear:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp
+	pushq	%rdi
 	movq	$.strclear156, %rax
 	movq	%rax, %rdi
 	call	print
+	popq	%rdi
 	movl	$0, %eax
 	leave
 	ret

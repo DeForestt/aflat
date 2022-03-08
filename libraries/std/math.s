@@ -11,27 +11,38 @@ newRandom:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$32, %rsp
+	pushq	%rdi
 	movl	$4, %eax
 	movl	%eax, %edi
 	call	malloc
-	movq	%rax, -8(%rbp)
+	popq	%rdi
+	movq	%rax, %rbx
+	movq	%rbx, -8(%rbp)
 	call	newTimes
-	movq	%rax, -16(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -16(%rbp)
+	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
 	call	sys_times
+	popq	%rdi
 	movq	-16(%rbp), %rax
 	movl	(%rax), %eax
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
+	pushq	%rdi
 	movl	-20(%rbp), %eax
 	movl	%eax, %edi
+	pushq	%rsi
 	movl	$3, %eax
 	movl	%eax, %esi
 	call	exp
+	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
-	movl	$10, -24(%rbp)
+	movl	$10, %ebx
+	movl	%ebx, -24(%rbp)
 	mov	-20(%rbp), %eax
 	cltd
 	idivl	-24(%rbp)
@@ -41,14 +52,18 @@ newRandom:
 	movq	-8(%rbp), %rax
 	leave
 	ret
+	leave
+	ret
 exp:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp
 	movl	%edi, -4(%rbp)
 	movl	%esi, -8(%rbp)
-	movl	$0, -12(%rbp)
-	movl	$1, -16(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -12(%rbp)
+	movl	$1, %ebx
+	movl	%ebx, -16(%rbp)
 	jmp	.Lexp1
 .Lexp0:
 	mov	-4(%rbp), %edx
@@ -69,6 +84,8 @@ exp:
 	movl	-16(%rbp), %eax
 	leave
 	ret
+	leave
+	ret
 longDiv:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -78,7 +95,8 @@ longDiv:
 	mov	-4(%rbp), %eax
 	cltd
 	idivl	-8(%rbp)
-	movl	%edx, -12(%rbp)
+	movl	%edx, %ebx
+	movl	%ebx, -12(%rbp)
 	mov	$10, %edx
 	mov	-12(%rbp), %eax
 	imul	%edx, %eax
@@ -90,6 +108,8 @@ longDiv:
 	movl	%eax, %ebx
 	movl	%ebx, -12(%rbp)
 	movl	-12(%rbp), %eax
+	leave
+	ret
 	leave
 	ret
 abs:
@@ -111,6 +131,8 @@ abs:
 	movl	-4(%rbp), %eax
 	leave
 	ret
+	leave
+	ret
 pub_Random_next:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -118,13 +140,16 @@ pub_Random_next:
 	movq	%rdi, -8(%rbp)
 	movl	%esi, -12(%rbp)
 	call	newTimes
-	movq	%rax, -20(%rbp)
+	movq	%rax, %rbx
+	movq	%rbx, -20(%rbp)
+	pushq	%rdi
 	movq	-20(%rbp), %rax
 	movq	%rax, %rdi
 	call	sys_times
+	popq	%rdi
 	movq	-20(%rbp), %rdx
-	movq	0(%rdx), %rbx
-	movq	%rbx, -28(%rbp)
+	movl	0(%rdx), %ebx
+	movl	%ebx, -28(%rbp)
 	movq	-8(%rbp), %rdx
 	movl	0(%rdx), %ebx
 	movl	%ebx, -24(%rbp)
@@ -139,14 +164,18 @@ pub_Random_next:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -24(%rbp)
+	pushq	%rdi
 	movl	-24(%rbp), %eax
 	movl	%eax, %edi
 	mov	-24(%rbp), %eax
 	cltd
 	idivl	-12(%rbp)
+	pushq	%rsi
 	movl	%edx, %eax
 	movl	%eax, %esi
 	call	exp
+	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -24(%rbp)
 	mov	-24(%rbp), %eax
@@ -157,10 +186,14 @@ pub_Random_next:
 	movq	-8(%rbp), %rdx
 	movl	-24(%rbp), %ebx
 	movl	%ebx, 0(%rdx)
+	pushq	%rdi
 	movl	-24(%rbp), %eax
 	movl	%eax, %edi
 	call	abs
+	popq	%rdi
 	movl	%eax, %eax
+	leave
+	ret
 	leave
 	ret
 

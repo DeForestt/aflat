@@ -25,9 +25,11 @@ newList:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp
+	pushq	%rdi
 	movl	$24, %eax
 	movl	%eax, %edi
 	call	malloc
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -8(%rbp)
 	lea	-8(%rbp), %rax
@@ -57,13 +59,19 @@ forEachLinkedList:
 	movq	8(%rdx), %rbx
 	movq	%rbx, -44(%rbp)
 	movq	-16(%rbp), %r15
+	pushq	%rdi
 	movq	-44(%rbp), %rax
 	movq	%rax, %rdi
+	pushq	%rsi
 	movl	-36(%rbp), %eax
 	movl	%eax, %esi
+	pushq	%rdx
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdx
 	call	*%r15
+	popq	%rdx
+	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -48(%rbp)
 	movl	-48(%rbp), %eax
@@ -99,15 +107,21 @@ whereLinkedList:
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movq	%rdx, -24(%rbp)
+	pushq	%rdi
 	movl	$32, %eax
 	movl	%eax, %edi
 	call	malloc
+	popq	%rdi
 	movq	%rax, %rdi
+	pushq	%rsi
 	movl	$8, %eax
 	movl	%eax, %esi
+	pushq	%rdx
 	movl	$0, %eax
 	movl	%eax, %edx
 	call	pub_Array_init
+	popq	%rdx
+	popq	%rsi
 	movq	%rax, %rbx
 	movq	%rbx, -32(%rbp)
 	movq	-8(%rbp), %rdx
@@ -121,13 +135,19 @@ whereLinkedList:
 	movq	8(%rdx), %rbx
 	movq	%rbx, -52(%rbp)
 	movq	-16(%rbp), %r15
+	pushq	%rdi
 	movq	-52(%rbp), %rax
 	movq	%rax, %rdi
+	pushq	%rsi
 	movl	-44(%rbp), %eax
 	movl	%eax, %esi
+	pushq	%rdx
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdx
 	call	*%r15
+	popq	%rdx
+	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -56(%rbp)
 	movl	-56(%rbp), %eax
@@ -137,9 +157,11 @@ whereLinkedList:
 	lea	-32(%rbp), %rax
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	pushq	%rsi
 	movl	$1, %eax
 	movl	%eax, %esi
 	call	pub_Array_extend
+	popq	%rsi
 	movq	-32(%rbp), %rdx
 	movl	28(%rdx), %ebx
 	movl	%ebx, -60(%rbp)
@@ -151,9 +173,11 @@ whereLinkedList:
 	lea	-32(%rbp), %rax
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	pushq	%rsi
 	movl	-60(%rbp), %eax
 	movl	%eax, %esi
 	call	pub_Array_at
+	popq	%rsi
 	movq	%rax, %rbx
 	movq	%rbx, -68(%rbp)
 	movq	-68(%rbp), %rax
@@ -202,9 +226,11 @@ newNode:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp
+	pushq	%rdi
 	movl	$16, %eax
 	movl	%eax, %edi
 	call	malloc
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -8(%rbp)
 	movq	-8(%rbp), %rdx
@@ -326,9 +352,11 @@ pub_LinkedList_append:
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
+	pushq	%rdi
 	movl	$16, %eax
 	movl	%eax, %edi
 	call	malloc
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -24(%rbp)
 	movq	-24(%rbp), %rdx
@@ -383,9 +411,11 @@ pub_LinkedList_insert:
 	leave
 	ret
 .Linsert24:
+	pushq	%rdi
 	movl	$16, %eax
 	movl	%eax, %edi
 	call	malloc
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -28(%rbp)
 	movq	-28(%rbp), %rdx
@@ -486,13 +516,19 @@ forEachArray:
 	movl	%eax, %ebx
 	movl	%ebx, -48(%rbp)
 	movq	-16(%rbp), %r15
+	pushq	%rdi
 	movq	-48(%rbp), %rax
 	movq	%rax, %rdi
+	pushq	%rsi
 	movl	-52(%rbp), %eax
 	movl	%eax, %esi
+	pushq	%rdx
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdx
 	call	*%r15
+	popq	%rdx
+	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -60(%rbp)
 	movl	-60(%rbp), %eax
@@ -525,15 +561,21 @@ whereArray:
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movq	%rdx, -24(%rbp)
+	pushq	%rdi
 	movl	$32, %eax
 	movl	%eax, %edi
 	call	malloc
+	popq	%rdi
 	movq	%rax, %rdi
+	pushq	%rsi
 	movl	$8, %eax
 	movl	%eax, %esi
+	pushq	%rdx
 	movl	$0, %eax
 	movl	%eax, %edx
 	call	pub_Array_init
+	popq	%rdx
+	popq	%rsi
 	movq	%rax, %rbx
 	movq	%rbx, -32(%rbp)
 	movq	-8(%rbp), %rdx
@@ -562,13 +604,19 @@ whereArray:
 	movq	-56(%rbp), %rbx
 	movq	%rbx, -64(%rbp)
 	movq	-16(%rbp), %r15
+	pushq	%rdi
 	movq	-56(%rbp), %rax
 	movq	%rax, %rdi
+	pushq	%rsi
 	movl	-44(%rbp), %eax
 	movl	%eax, %esi
+	pushq	%rdx
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdx
 	call	*%r15
+	popq	%rdx
+	popq	%rsi
+	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -68(%rbp)
 	movl	-68(%rbp), %eax
@@ -578,9 +626,11 @@ whereArray:
 	lea	-32(%rbp), %rax
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	pushq	%rsi
 	movl	$1, %eax
 	movl	%eax, %esi
 	call	pub_Array_extend
+	popq	%rsi
 	movq	-32(%rbp), %rdx
 	movl	28(%rdx), %ebx
 	movl	%ebx, -72(%rbp)
@@ -592,9 +642,11 @@ whereArray:
 	lea	-32(%rbp), %rax
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	pushq	%rsi
 	movl	-72(%rbp), %eax
 	movl	%eax, %esi
 	call	pub_Array_at
+	popq	%rsi
 	movq	%rax, %rbx
 	movq	%rbx, -80(%rbp)
 	movq	-80(%rbp), %rax
@@ -634,9 +686,11 @@ pub_Array_init:
 	imul	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -16(%rbp)
+	pushq	%rdi
 	movl	-16(%rbp), %eax
 	movl	%eax, %edi
 	call	malloc
+	popq	%rdi
 	movq	-8(%rbp), %rdx
 	movq	%rax, %rbx
 	movq	%rbx, 20(%rdx)
@@ -685,19 +739,25 @@ newArray:
 	subq	$16, %rsp
 	movl	%edi, -4(%rbp)
 	movl	%esi, -8(%rbp)
+	pushq	%rdi
 	movl	$32, %eax
 	movl	%eax, %edi
 	call	malloc
+	popq	%rdi
 	movq	%rax, %rbx
 	movq	%rbx, -16(%rbp)
 	lea	-16(%rbp), %rax
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	pushq	%rsi
 	movl	-4(%rbp), %eax
 	movl	%eax, %esi
+	pushq	%rdx
 	movl	-8(%rbp), %eax
 	movl	%eax, %edx
 	call	pub_Array_init
+	popq	%rdx
+	popq	%rsi
 	movq	-16(%rbp), %rax
 	leave
 	ret
@@ -709,12 +769,16 @@ pub_Array_delete:
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	-8(%rbp), %rdx
+	pushq	%rdi
 	movq	20(%rdx), %rax
 	movq	%rax, %rdi
 	call	free
+	popq	%rdi
+	pushq	%rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
 	call	free
+	popq	%rdi
 	movl	$0, %eax
 	leave
 	ret
@@ -733,9 +797,11 @@ pub_LinkedList_free:
 	movq	-16(%rbp), %rdx
 	movq	0(%rdx), %rbx
 	movq	%rbx, -24(%rbp)
+	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
 	call	free
+	popq	%rdi
 	movq	-24(%rbp), %rbx
 	movq	%rbx, -16(%rbp)
 .Lfree42:
@@ -743,9 +809,11 @@ pub_LinkedList_free:
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
 	jne	.Lfree41
+	pushq	%rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
 	call	free
+	popq	%rdi
 	movl	$0, %eax
 	leave
 	ret
@@ -782,11 +850,15 @@ pub_Array_extend:
 	imul	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -12(%rbp)
+	pushq	%rdi
 	movq	-20(%rbp), %rax
 	movq	%rax, %rdi
+	pushq	%rsi
 	movl	-12(%rbp), %eax
 	movl	%eax, %esi
 	call	realloc
+	popq	%rsi
+	popq	%rdi
 	movq	-8(%rbp), %rdx
 	movq	%rax, %rbx
 	movq	%rbx, 20(%rdx)
@@ -795,9 +867,11 @@ pub_Array_extend:
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
 	jne	.Lextend43
+	pushq	%rdi
 	movq	$.strArray.extend46, %rax
 	movq	%rax, %rdi
 	call	print
+	popq	%rdi
 .Lextend43:
 	movl	-12(%rbp), %eax
 	leave

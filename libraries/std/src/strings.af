@@ -255,7 +255,7 @@ int float_toString(adr input, adr obuff, int signed){
 	int percision = 6;
 
 	adr mySign = "";
-	// as input into a new int
+	// as input into a newBitint
 	int inputInt = input as int;
 	if (inputInt == 0){
 		printInt(0);
@@ -285,19 +285,19 @@ int float_toString(adr input, adr obuff, int signed){
 	current = head;
 	int j = 0;
 	while(j < 23){
-		Bit new = newBit(mantissa & 1);
-		//printInt(new.value);
-		current.next = new;
-		new.last = current;
-		current = new;
+		Bit newBit= newBit(mantissa & 1);
+		//printInt(newBit.value);
+		current.next = newBit;
+		newBit.last = current;
+		current = newBit;
 		mantissa = mantissa >> 1;
 		j = j + 1;
 	};
 	
-	Bit new = newBit(1);
-	current.next = new;
-	new.last = current;
-	current = new;
+	Bit newBit= newBit(1);
+	current.next = newBit;
+	newBit.last = current;
+	current = newBit;
 
 	//find last element in the list
 	current = head;
@@ -357,7 +357,7 @@ int float_toString(adr input, adr obuff, int signed){
 };
 
 adr str_subString(int start, int length, adr str, adr buff) {
-	adr cleanStart = #0;
+	adr cleanStart = NULL;
 	cleanStart = ?start;
 	int go = cleanStart as int;
 	str = str + go;

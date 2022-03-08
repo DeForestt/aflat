@@ -68,7 +68,7 @@ int isRunning@Process(){
 Process newProcess(adr foo){
     Process p = malloc(Process);
     if(p == #0){
-        return #0;
+        return NULL;
     };
     p.init(foo);
     return p;
