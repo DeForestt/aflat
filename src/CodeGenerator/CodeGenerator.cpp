@@ -879,7 +879,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                                 func->flex = true;
                                 checkArgs = false;
                 };
-            };
+            }
         }
         else{
             gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(call->ident);
@@ -953,7 +953,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                         ast::Type t;
                         t.typeName = cl->Ident;
                         t.size = asmc::QWord;
-                        func->argTypes.push(t);
+                        func->argTypes.push_back(t);
 
                         argsCounter++;
                         OutputFile.text << push;
@@ -968,11 +968,11 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         };
 
         if (call->publify != ""){
+
             func = new ast::Function();
             func->ident.ident = "pub_" + call->publify + "_" + call->ident;
             func->type.typeName = call->publify;
             func->type.size = asmc::QWord;
-            func->argTypes.push(func->type);
             if (call->ident != "init"){
                 // find the function in the class
                 gen::Class * cl = dynamic_cast<gen::Class *>(*this->typeList[call->publify]);
@@ -985,11 +985,19 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
                     ast::Type t;
                     t.typeName = cl->Ident;
                     t.size = asmc::QWord;
-                    func->argTypes.push(t);
+                    func->argTypes.push_back(t);
                 };
             }else{
                 argsCounter++;
                 stack.push("%rdi");
+                // find the class
+                gen::Type * type = *this->typeList[call->publify];
+                if (type == nullptr) alert("type not found " + call->publify);
+                gen::Class * cl = dynamic_cast<gen::Class *>(type);
+                if (cl == nullptr) alert("not a class: " + call->publify);
+                ast::Function * f = cl->nameTable["init"];
+                if (f == nullptr) alert("cannot find function: init");
+                func->argTypes = f->argTypes;
             }
             mod = "";
         }
@@ -997,19 +1005,18 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         if (func == nullptr) alert("Cannot Find Function: " + call->ident);
         
         call->Args.invert();
-        func->argTypes.invert();
         
         int i = 0;
 
-        while (call->Args.count > 0)
+        while (call->Args.size() > 0)
         {
             gen::Expr exp =  this->GenExpr(call->Args.pop(), OutputFile);
-            if('checkargs'){
-                if(i > func->argTypes.count){
-                    alert("Too many arguments for function: " + call->ident);
+            if(checkArgs){
+                if(i >= func->argTypes.size()){
+                    alert("Too many arguments for function: " + call->ident + " expected: " + std::to_string(func->argTypes.size()) + " got: " + std::to_string(i + 1));
                 };
+                canAssign(func->argTypes.at(i), exp.type);
             };
-            canAssign(func->argTypes.get(i), exp.type);
             i++;
             asmc::Mov * mov = new asmc::Mov();
             asmc::Mov * mov2 = new asmc::Mov();
