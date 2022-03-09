@@ -39,9 +39,8 @@ int forEachLinkedList(LinkedList my, adr foo, adr arg){
     return 0;
 };
 
-Array whereLinkedList(LinkedList my, adr foo, adr arg){
-    Array a = new Array(adr, 0);
-
+LinkedList whereLinkedList(LinkedList my, adr foo, adr arg){
+    LinkedList newList = new LinkedList();
     ListNode curr;
     curr = my.head;
     int i = 0;
@@ -50,18 +49,12 @@ Array whereLinkedList(LinkedList my, adr foo, adr arg){
         data = curr.data;
         int boo = foo(data, i, arg);
         if(boo == 1){
-            a.extend(1);
-            int size;
-            size = a.size;
-            size = size - 1;
-            adr point;
-            point = a.at(size);
-            point =: data;
+            newList.append(data);
         };
         curr = curr.next;
         i = i + 1;
     };
-    return a;
+    return newList;
 };
 
 /*
@@ -223,8 +216,7 @@ int size@LinkedList(){
 
 LinkedList map@LinkedList(adr foo, adr arg){
     LinkedList newList = new LinkedList();
-    ListNode curr;
-    curr = my.head;
+    ListNode curr = my.head;
     int i = 0;
     while(curr != NULL){
         adr data;
@@ -236,23 +228,6 @@ LinkedList map@LinkedList(adr foo, adr arg){
         i = i + 1;
     };
     return newList;
-};
-
-int find@LinkedList(adr foo, adr args){
-    ListNode curr;
-    curr = my.head;
-    int i = 0;
-    while(curr != NULL){
-        adr data;
-        data = curr.data;
-        int boo = foo(data, i, args);
-        if(boo == 1){
-            return i;
-        };
-        curr = curr.next;
-        i = i + 1;
-    };
-    return -1;
 };
 
 LinkedList copy@LinkedList(LinkedList list){
@@ -288,6 +263,23 @@ int forEachArray(Array my, adr foo, adr arg){
         };
     };
     return 0;
+};
+
+int find@LinkedList(adr foo, adr arg){
+    ListNode curr;
+    curr = my.head;
+    int i = 0;
+    while(curr != NULL){
+        adr data;
+        data = curr.data;
+        int brk = foo(data, i, arg);
+        if (brk == 1){
+            return i;
+        };
+        curr = curr.next;
+        i = i + 1;
+    };
+    return -1;
 };
 
 Array whereArray(Array my, adr foo, adr arg){
