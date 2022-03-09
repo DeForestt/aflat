@@ -1,5 +1,5 @@
 .global	pub_Array_extend
-.global	pub_LinkedList_free
+.global	pub_LinkedList_erace
 .global	pub_Array_delete
 .global	newArray
 .global	pub_Array_at
@@ -577,7 +577,7 @@ pub_LinkedList_copy:
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
-	call	pub_LinkedList_free
+	call	pub_LinkedList_erace
 	popq	%rdi
 	movq	-16(%rbp), %rax
 	leave
@@ -891,7 +891,7 @@ pub_Array_delete:
 	ret
 	leave
 	ret
-pub_LinkedList_free:
+pub_LinkedList_erace:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$32, %rsp
@@ -899,8 +899,8 @@ pub_LinkedList_free:
 	movq	-8(%rbp), %rdx
 	movq	16(%rdx), %rbx
 	movq	%rbx, -16(%rbp)
-	jmp	.Lfree44
-.Lfree43:
+	jmp	.Lerace44
+.Lerace43:
 	movq	-16(%rbp), %rdx
 	movq	0(%rdx), %rbx
 	movq	%rbx, -24(%rbp)
@@ -917,11 +917,11 @@ pub_LinkedList_free:
 	popq	%rdi
 	movq	-24(%rbp), %rbx
 	movq	%rbx, -16(%rbp)
-.Lfree44:
+.Lerace44:
 	movq	-16(%rbp), %rax
 	movq	$0, %rcx
 	cmpq	%rcx, %rax
-	jne	.Lfree43
+	jne	.Lerace43
 	pushq	%rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi

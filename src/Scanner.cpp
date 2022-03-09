@@ -89,9 +89,9 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                                 }else if (input[i] == '\\'){
                                     stringObj->value += 0x5C;
                                 }else if (input[i] == '\"'){
-                                    stringObj->value += 0x22;
+                                    stringObj->value += "\\\"";
                                 }else if (input[i] == '\''){
-                                    stringObj->value += '\'';
+                                    stringObj->value += "\\'";
                                 }else if (input[i] == 'r'){
                                     stringObj->value += '\r';
                                 }else if (input[i] == '0'){
