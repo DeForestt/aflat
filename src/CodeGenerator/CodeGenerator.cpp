@@ -849,10 +849,17 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFi
         links::LinkedList<gen::Symbol>  * Table;
         Table = &this->SymbolTable;
         links::LinkedList<std::string> mods = links::LinkedList<std::string>();
-
+        // first push rdx
         links::LinkedList<std::string> stack;
+        asmc::Push * push = new asmc::Push();
+        push->op = this->registers["%rdx"]->get(asmc::QWord);
+        stack << push->op;
+        OutputFile.text << push;
+
+        
         this->intArgsCounter = 0;
         int argsCounter = 0;
+
         if(call->modList.head == nullptr){
             func = this->nameTable[call->ident];
             if (func == nullptr){
@@ -1111,6 +1118,12 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             OutputFile.text.push(lable);
             OutputFile.text.push(push);
             OutputFile.text.push(mov);
+            // push the callee preserved registers
+            asmc::Push * push2 = new asmc::Push();
+            push2->op = "%rbx";
+            OutputFile.text.push(push2);
+            asmc::Push * push3 = new asmc::Push();
+
 
             int AlignmentLoc = OutputFile.text.count;
             this->intArgsCounter = 0;
@@ -1159,12 +1172,19 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
                         mov->size = asmc::QWord;
                         mov->from = '-' + std::to_string(my->byteMod) + "(%rbp)";;
                         mov->to = this->registers["%rax"]->get(asmc::QWord);
+                        // pop rbx
+                        asmc::Pop * pop = new asmc::Pop();
+                        pop->op = "%rbx";
+                        file.text.push(pop);
                         file.text.push(mov);
                     }
                     asmc::Return * ret = new asmc::Return();
                     file.text.push(ret);
                 }
             } else {
+                asmc::Pop * pop = new asmc::Pop();
+                pop->op = "%rbx";
+                file.text.push(pop);
                 asmc::Return * ret = new asmc::Return();
                 file.text.push(ret);
             }
