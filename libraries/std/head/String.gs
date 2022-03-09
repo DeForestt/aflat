@@ -18,6 +18,7 @@ class String{
     int equal(adr s);
 
     int find(char c);
+    int toInt();
     int len();
 
     int delete();

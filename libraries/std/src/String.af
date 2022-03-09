@@ -205,6 +205,10 @@ String toUpper@String(){
     return newString;
 };
 
+int toInt@String(){
+    return str_toInt(my.head);
+};
+
 int len@String(){
     // loop through the head and count the number of characters
     int length = 0;

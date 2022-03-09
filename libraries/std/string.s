@@ -1,6 +1,7 @@
 .global	upper
 .global	lower
 .global	pub_String_len
+.global	pub_String_toInt
 .global	pub_String_toUpper
 .global	pub_String_toLower
 .global	pub_String_replace
@@ -1186,6 +1187,25 @@ pub_String_toUpper:
 	popq	%rdi
 	popq	%rdx
 	movq	-48(%rbp), %rax
+	leave
+	ret
+	leave
+	ret
+pub_String_toInt:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$16, %rsp
+	movq	%rdi, -8(%rbp)
+	pushq	%rdx
+	movq	-8(%rbp), %rdx
+	pushq	%rdi
+	movq	0(%rdx), %rax
+	movq	%rax, %rdi
+	call	str_toInt
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %eax
 	leave
 	ret
 	leave

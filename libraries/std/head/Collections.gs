@@ -22,7 +22,8 @@ class LinkedList signs ICollection{
     adr get(int index);
     adr stitch(adr New);
     LinkedList reverse();
-    adr map(adr foo);
+    int find(adr foo, adr args);
+    adr map(adr foo, adr args);
     int size();
     int erace();
     adr copy<<=>>(adr list);

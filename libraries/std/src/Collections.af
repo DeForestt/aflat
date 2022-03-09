@@ -238,6 +238,23 @@ LinkedList map@LinkedList(adr foo, adr arg){
     return newList;
 };
 
+int find@LinkedList(adr foo, adr args){
+    ListNode curr;
+    curr = my.head;
+    int i = 0;
+    while(curr != NULL){
+        adr data;
+        data = curr.data;
+        int boo = foo(data, i, args);
+        if(boo == 1){
+            return i;
+        };
+        curr = curr.next;
+        i = i + 1;
+    };
+    return -1;
+};
+
 LinkedList copy@LinkedList(LinkedList list){
     my.erace();
     return list;
