@@ -49,10 +49,13 @@ String subString@String(int start, int end){
     adr head = my.head;
     int mylen = len(head);
     int length = end - start;
-    adr newhead = malloc(length);
+    length = length;
+    adr newhead = malloc(length + 1);
     adr ret = newhead;
     head = head + start;
     memcopy(head, newhead, length);
+    newhead = newhead + length;
+    newhead =: '\0';
     String newString = new String(ret);
     free(ret);
     return newString;

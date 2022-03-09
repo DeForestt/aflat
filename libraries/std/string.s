@@ -24,14 +24,17 @@
 pub_String_init:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
 	call	len
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
 	mov	$1, %edx
@@ -39,17 +42,20 @@ pub_String_init:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movl	-20(%rbp), %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	-8(%rbp), %rdx
 	movq	%rax, %rbx
 	movq	%rbx, 0(%rdx)
 	movq	-8(%rbp), %rdx
 	movq	0(%rdx), %rbx
 	movq	%rbx, -28(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
@@ -63,29 +69,36 @@ pub_String_init:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
+	popq	%rbx
 	movq	-8(%rbp), %rax
 	leave
 	ret
 pub_String_concat:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$64, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
+	pushq	%rdx
 	movq	-8(%rbp), %rdx
 	pushq	%rdi
 	movq	0(%rdx), %rax
 	movq	%rax, %rdi
 	call	len
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
+	pushq	%rdx
 	movq	-16(%rbp), %rdx
 	pushq	%rdi
 	movq	0(%rdx), %rax
 	movq	%rax, %rdi
 	call	len
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -24(%rbp)
 	mov	$1, %edx
@@ -98,15 +111,18 @@ pub_String_concat:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movl	-28(%rbp), %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -36(%rbp)
 	movq	-36(%rbp), %rbx
 	movq	%rbx, -44(%rbp)
+	pushq	%rdx
 	movq	-8(%rbp), %rdx
 	pushq	%rdi
 	movq	0(%rdx), %rax
@@ -121,11 +137,13 @@ pub_String_concat:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	mov	-20(%rbp), %edx
 	mov	-36(%rbp), %rax
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -36(%rbp)
+	pushq	%rdx
 	movq	-16(%rbp), %rdx
 	pushq	%rdi
 	movq	0(%rdx), %rax
@@ -140,26 +158,33 @@ pub_String_concat:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	movq	%rax, %rdi
+	pushq	%rdx
 	pushq	%rsi
 	movq	-44(%rbp), %rax
 	movq	%rax, %rsi
 	call	pub_String_init
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -52(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-44(%rbp), %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
+	popq	%rdx
 	movq	-52(%rbp), %rax
 	leave
 	ret
@@ -168,22 +193,27 @@ pub_String_concat:
 pub_String_stitch:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$64, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
+	pushq	%rdx
 	movq	-8(%rbp), %rdx
 	pushq	%rdi
 	movq	0(%rdx), %rax
 	movq	%rax, %rdi
 	call	len
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
 	call	len
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -24(%rbp)
 	mov	$1, %edx
@@ -196,15 +226,18 @@ pub_String_stitch:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movl	-28(%rbp), %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -36(%rbp)
 	movq	-36(%rbp), %rbx
 	movq	%rbx, -44(%rbp)
+	pushq	%rdx
 	movq	-8(%rbp), %rdx
 	pushq	%rdi
 	movq	0(%rdx), %rax
@@ -219,11 +252,13 @@ pub_String_stitch:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	mov	-20(%rbp), %edx
 	mov	-36(%rbp), %rax
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -36(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
@@ -237,26 +272,33 @@ pub_String_stitch:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	movq	%rax, %rdi
+	pushq	%rdx
 	pushq	%rsi
 	movq	-44(%rbp), %rax
 	movq	%rax, %rsi
 	call	pub_String_init
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -52(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-44(%rbp), %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
+	popq	%rdx
 	movq	-52(%rbp), %rax
 	leave
 	ret
@@ -265,6 +307,7 @@ pub_String_stitch:
 pub_String_subString:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$64, %rsp
 	movq	%rdi, -8(%rbp)
 	movl	%esi, -12(%rbp)
@@ -272,11 +315,13 @@ pub_String_subString:
 	movq	-8(%rbp), %rdx
 	movq	0(%rdx), %rbx
 	movq	%rbx, -24(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdi
 	call	len
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
 	mov	-12(%rbp), %edx
@@ -284,11 +329,18 @@ pub_String_subString:
 	sub	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -32(%rbp)
+	movl	-32(%rbp), %ebx
+	movl	%ebx, -32(%rbp)
+	pushq	%rdx
+	mov	$1, %edx
+	mov	-32(%rbp), %eax
+	add	%edx, %eax
 	pushq	%rdi
-	movl	-32(%rbp), %eax
+	movl	%eax, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -40(%rbp)
 	movq	-40(%rbp), %rbx
@@ -298,6 +350,7 @@ pub_String_subString:
 	add	%rdx, %rax
 	movl	%eax, %ebx
 	movl	%ebx, -24(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdi
@@ -311,26 +364,41 @@ pub_String_subString:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
+	mov	-32(%rbp), %edx
+	mov	-40(%rbp), %rax
+	add	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -40(%rbp)
+	movq	-40(%rbp), %rax
+	movb	$0, %bl
+	movb	%bl, (%rax)
+	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	movq	%rax, %rdi
+	pushq	%rdx
 	pushq	%rsi
 	movq	-48(%rbp), %rax
 	movq	%rax, %rsi
 	call	pub_String_init
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -56(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-48(%rbp), %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
+	popq	%rdx
 	movq	-56(%rbp), %rax
 	leave
 	ret
@@ -339,6 +407,7 @@ pub_String_subString:
 pub_String_compare:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
@@ -348,6 +417,7 @@ pub_String_compare:
 	movq	-8(%rbp), %rdx
 	movq	0(%rdx), %rbx
 	movq	%rbx, -32(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdi
@@ -357,6 +427,7 @@ pub_String_compare:
 	call	str_comp
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -36(%rbp)
 	movl	-36(%rbp), %eax
@@ -367,9 +438,11 @@ pub_String_compare:
 pub_String_equal:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
+	pushq	%rdx
 	movq	-8(%rbp), %rdx
 	pushq	%rdi
 	movq	0(%rdx), %rax
@@ -380,6 +453,7 @@ pub_String_equal:
 	call	str_comp
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
 	movl	-20(%rbp), %eax
@@ -390,9 +464,11 @@ pub_String_equal:
 pub_String_at:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movl	%esi, -12(%rbp)
+	pushq	%rdx
 	movq	-8(%rbp), %rdx
 	pushq	%rdi
 	movq	0(%rdx), %rax
@@ -403,6 +479,7 @@ pub_String_at:
 	call	str_at
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movb	%al, %bl
 	movb	%bl, -13(%rbp)
 	movb	-13(%rbp), %al
@@ -413,9 +490,11 @@ pub_String_at:
 pub_String_indexOf:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movb	%sil, -9(%rbp)
+	pushq	%rdx
 	movq	-8(%rbp), %rdx
 	pushq	%rdi
 	movq	0(%rdx), %rax
@@ -426,6 +505,7 @@ pub_String_indexOf:
 	call	str_find
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -13(%rbp)
 	movl	-13(%rbp), %eax
@@ -436,36 +516,44 @@ pub_String_indexOf:
 pub_String_delete:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	-8(%rbp), %rdx
 	movq	0(%rdx), %rbx
 	movq	%rbx, -16(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
 	pushq	%rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
+	popq	%rdx
 	leave
 	ret
 printString:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	-8(%rbp), %rdx
 	movq	0(%rdx), %rbx
 	movq	%rbx, -16(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
 	call	print
 	popq	%rdi
+	popq	%rdx
 	movq	-8(%rbp), %rax
 	leave
 	ret
@@ -474,12 +562,15 @@ printString:
 getString:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$48, %rsp
+	pushq	%rdx
 	pushq	%rdi
 	movl	$1, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -8(%rbp)
 	movq	-8(%rbp), %rbx
@@ -523,6 +614,7 @@ getString:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
@@ -532,6 +624,7 @@ getString:
 	call	realloc
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -16(%rbp)
 	movq	-16(%rbp), %rbx
@@ -546,26 +639,32 @@ getString:
 	movb	-30(%rbp), %cl
 	cmpb	%cl, %al
 	jne	.LgetString0
+	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	movq	%rax, %rdi
+	pushq	%rdx
 	pushq	%rsi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rsi
 	call	pub_String_init
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -43(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
+	popq	%rdx
 	movq	-43(%rbp), %rax
 	leave
 	ret
@@ -574,15 +673,18 @@ getString:
 pub_String_copy:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_String_delete
 	popq	%rdi
+	popq	%rdx
 	movq	-16(%rbp), %rax
 	leave
 	ret
@@ -591,19 +693,23 @@ pub_String_copy:
 pub_String_trim:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movb	%sil, -9(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_String_len
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -13(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -17(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -614,6 +720,7 @@ pub_String_trim:
 	call	pub_String_at
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movb	%al, %bl
 	movb	%bl, -18(%rbp)
 	jmp	.Ltrim6
@@ -623,6 +730,7 @@ pub_String_trim:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -17(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -633,6 +741,7 @@ pub_String_trim:
 	call	pub_String_at
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movb	%al, %bl
 	movb	%bl, -18(%rbp)
 .Ltrim6:
@@ -645,6 +754,7 @@ pub_String_trim:
 	sub	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -22(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -655,6 +765,7 @@ pub_String_trim:
 	call	pub_String_at
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movb	%al, %bl
 	movb	%bl, -18(%rbp)
 	jmp	.Ltrim8
@@ -664,6 +775,7 @@ pub_String_trim:
 	sub	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -22(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -674,6 +786,7 @@ pub_String_trim:
 	call	pub_String_at
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movb	%al, %bl
 	movb	%bl, -18(%rbp)
 .Ltrim8:
@@ -686,6 +799,7 @@ pub_String_trim:
 	add	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -22(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -700,6 +814,7 @@ pub_String_trim:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -30(%rbp)
 	movq	-30(%rbp), %rax
@@ -710,31 +825,38 @@ pub_String_trim:
 pub_String_replace:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$64, %rsp
 	movq	%rdi, -8(%rbp)
 	movb	%sil, -9(%rbp)
 	movb	%dl, -10(%rbp)
+	pushq	%rdx
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_String_len
 	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	movl	%eax, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -18(%rbp)
 	movq	-18(%rbp), %rbx
 	movq	%rbx, -26(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_String_len
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -30(%rbp)
 	mov	$1, %edx
@@ -745,6 +867,7 @@ pub_String_replace:
 	movq	-8(%rbp), %rdx
 	movq	0(%rdx), %rbx
 	movq	%rbx, -38(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-38(%rbp), %rax
 	movq	%rax, %rdi
@@ -758,10 +881,12 @@ pub_String_replace:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	$0, %ebx
 	movl	%ebx, -42(%rbp)
 	jmp	.Lreplace10
 .Lreplace9:
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -772,6 +897,7 @@ pub_String_replace:
 	call	pub_String_at
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movb	%al, %al
 	movb	-9(%rbp), %cl
 	cmpb	%cl, %al
@@ -795,26 +921,32 @@ pub_String_replace:
 	movl	-30(%rbp), %ecx
 	cmpl	%ecx, %eax
 	jl	.Lreplace9
+	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	movq	%rax, %rdi
+	pushq	%rdx
 	pushq	%rsi
 	movq	-26(%rbp), %rax
 	movq	%rax, %rsi
 	call	pub_String_init
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -50(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-26(%rbp), %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
+	popq	%rdx
 	movq	-50(%rbp), %rax
 	leave
 	ret
@@ -823,29 +955,36 @@ pub_String_replace:
 pub_String_toLower:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%rdx
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_String_len
 	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	movl	%eax, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -16(%rbp)
 	movq	-16(%rbp), %rbx
 	movq	%rbx, -24(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_String_len
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
 	mov	$1, %edx
@@ -860,6 +999,7 @@ pub_String_toLower:
 	movl	%ebx, -40(%rbp)
 	jmp	.LtoLower15
 .LtoLower14:
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -870,13 +1010,16 @@ pub_String_toLower:
 	call	pub_String_at
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movb	%al, %bl
 	movb	%bl, -41(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movb	-41(%rbp), %al
 	movb	%al, %dil
 	call	lower
 	popq	%rdi
+	popq	%rdx
 	movb	%al, %bl
 	movb	%bl, -41(%rbp)
 	movq	-16(%rbp), %rax
@@ -897,26 +1040,32 @@ pub_String_toLower:
 	movl	-28(%rbp), %ecx
 	cmpl	%ecx, %eax
 	jl	.LtoLower14
+	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	movq	%rax, %rdi
+	pushq	%rdx
 	pushq	%rsi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rsi
 	call	pub_String_init
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -48(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
+	popq	%rdx
 	movq	-48(%rbp), %rax
 	leave
 	ret
@@ -925,29 +1074,36 @@ pub_String_toLower:
 pub_String_toUpper:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%rdx
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_String_len
 	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	movl	%eax, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -16(%rbp)
 	movq	-16(%rbp), %rbx
 	movq	%rbx, -24(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_String_len
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
 	mov	$1, %edx
@@ -962,6 +1118,7 @@ pub_String_toUpper:
 	movl	%ebx, -40(%rbp)
 	jmp	.LtoUpper17
 .LtoUpper16:
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -972,13 +1129,16 @@ pub_String_toUpper:
 	call	pub_String_at
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movb	%al, %bl
 	movb	%bl, -41(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movb	-41(%rbp), %al
 	movb	%al, %dil
 	call	upper
 	popq	%rdi
+	popq	%rdx
 	movb	%al, %bl
 	movb	%bl, -41(%rbp)
 	movq	-16(%rbp), %rax
@@ -999,26 +1159,32 @@ pub_String_toUpper:
 	movl	-28(%rbp), %ecx
 	cmpl	%ecx, %eax
 	jl	.LtoUpper16
+	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	movq	%rax, %rdi
+	pushq	%rdx
 	pushq	%rsi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rsi
 	call	pub_String_init
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -48(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
+	popq	%rdx
 	movq	-48(%rbp), %rax
 	leave
 	ret
@@ -1027,15 +1193,34 @@ pub_String_toUpper:
 pub_String_len:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	subq	$16, %rsp
+	pushq	%rbx
+	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -12(%rbp)
 	movq	-8(%rbp), %rdx
-	pushq	%rdi
-	movq	0(%rdx), %rax
-	movq	%rax, %rdi
-	call	len
-	popq	%rdi
-	movl	%eax, %eax
+	movq	0(%rdx), %rbx
+	movq	%rbx, -20(%rbp)
+	jmp	.Llen19
+.Llen18:
+	mov	$1, %edx
+	mov	-20(%rbp), %rax
+	add	%rdx, %rax
+	movl	%eax, %ebx
+	movl	%ebx, -20(%rbp)
+	mov	$1, %edx
+	mov	-12(%rbp), %eax
+	add	%edx, %eax
+	movl	%eax, %ebx
+	movl	%ebx, -12(%rbp)
+.Llen19:
+	movq	-20(%rbp), %rax
+	movb	(%rax), %al
+	movb	%al, %al
+	movb	$0, %cl
+	cmpb	%cl, %al
+	jne	.Llen18
+	movl	-12(%rbp), %eax
 	leave
 	ret
 	leave
@@ -1043,6 +1228,7 @@ pub_String_len:
 lower:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movb	%dil, -1(%rbp)
 	lea	-5(%rbp), %rax
@@ -1054,11 +1240,11 @@ lower:
 	movb	-1(%rbp), %al
 	movb	$64, %cl
 	cmpb	%cl, %al
-	jle	.Llower18
+	jle	.Llower20
 	movb	-1(%rbp), %al
 	movb	$91, %cl
 	cmpb	%cl, %al
-	jge	.Llower21
+	jge	.Llower23
 	mov	$32, %edx
 	mov	-1(%rbp), %al
 	add	%dl, %al
@@ -1071,8 +1257,8 @@ lower:
 	movb	(%rax), %al
 	movb	%al, %bl
 	movb	%bl, -1(%rbp)
-.Llower21:
-.Llower18:
+.Llower23:
+.Llower20:
 	movb	-1(%rbp), %al
 	leave
 	ret
@@ -1081,6 +1267,7 @@ lower:
 upper:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movb	%dil, -1(%rbp)
 	lea	-5(%rbp), %rax
@@ -1092,11 +1279,11 @@ upper:
 	movb	-1(%rbp), %al
 	movb	$96, %cl
 	cmpb	%cl, %al
-	jle	.Lupper24
+	jle	.Lupper26
 	movb	-1(%rbp), %al
 	movb	$123, %cl
 	cmpb	%cl, %al
-	jge	.Lupper27
+	jge	.Lupper29
 	mov	$32, %edx
 	mov	-1(%rbp), %al
 	sub	%dl, %al
@@ -1109,8 +1296,8 @@ upper:
 	movb	(%rax), %al
 	movb	%al, %bl
 	movb	%bl, -1(%rbp)
-.Lupper27:
-.Lupper24:
+.Lupper29:
+.Lupper26:
 	movb	-1(%rbp), %al
 	leave
 	ret

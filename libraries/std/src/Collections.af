@@ -378,6 +378,23 @@ int erace@LinkedList(){
     return 0;
 };
 
+LinkedList reverse@LinkedList(){
+    // flip all of the node pointers
+    ListNode curr;
+    curr = my.head;
+    ListNode prev;
+    prev = NULL;
+    while(curr != NULL){
+        ListNode temp;
+        temp = curr.next;
+        curr.next = prev;
+        prev = curr;
+        curr = temp;
+    };
+    my.head = prev;
+    return my;
+};
+
 /*
  * function name:   extend@Array;
  * description:     extends the array by the given amount;

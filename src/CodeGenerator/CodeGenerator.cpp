@@ -744,7 +744,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
     }else if(dynamic_cast<ast::ParenExpr *>(expr) != nullptr){
         ast::ParenExpr parenExpr = *dynamic_cast<ast::ParenExpr *>(expr);
         output = this->GenExpr(parenExpr.expr, OutputFile);
-    } else{
+    } else {
         this->alert("Unhandled expression");
     }
     return output;
