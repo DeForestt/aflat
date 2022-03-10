@@ -48,6 +48,12 @@ parse::Parser::Parser(){
     Float.opType = asmc::Float;
     Float.size = asmc::DWord;
 
+    // Bool Type
+    ast::Type Bool = ast::Type();
+    Bool.typeName = "bool";
+    Bool.opType = asmc::Hard;
+    Bool.size = asmc::Byte;
+
     // Add Types to TypeList
     this->typeList << Int;
     this->typeList << Char;
@@ -56,6 +62,7 @@ parse::Parser::Parser(){
     this->typeList << Float; 
     this->typeList << Short;
     this->typeList << Long;
+    this->typeList << Bool;
 }
 
 /*
