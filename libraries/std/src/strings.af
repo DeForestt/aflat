@@ -384,9 +384,7 @@ adr str_reverse(adr in, adr buff){
 	adr buffPtr; buffPtr = buff;
 	
 	
-	for {int i = length - 1;}
-		(i > -1)
-		{i = i - 1;}{
+	for int i = length - 1; i > -1; i = i - 1 {
 		
 		adr pointer;
 		pointer = in + i;
@@ -402,7 +400,7 @@ adr str_reverse(adr in, adr buff){
 };
 
 char str_at(adr str, int i){
-	for {int j = 0;}(j < i){j = j + 1;}{
+	for int j = 0; j < i; j = j + 1; {
 		str = str + #1;
 	};
 	char ch = str as char;
@@ -412,7 +410,7 @@ char str_at(adr str, int i){
 int str_forEach(adr s, adr foo, adr args){
 	int in = len(s);
 	int i;
-	for {i = 0;}(i < in){i = i + 1;}{
+	for i = 0; i < in; i = i + 1; {
 		char c = str_at(s, i);
 		int break = foo(c, i, args);
 		if (break == 1) {
