@@ -47,8 +47,8 @@ LinkedList whereLinkedList(LinkedList my, adr foo, adr arg){
     while(curr != NULL){
         adr data;
         data = curr.data;
-        int boo = foo(data, i, arg);
-        if(boo == 1){
+        bool boo = foo(data, i, arg);
+        if(boo == true){
             newList.append(data);
         };
         curr = curr.next;
@@ -271,8 +271,8 @@ int find@LinkedList(adr foo, adr arg){
     while(curr != NULL){
         adr data;
         data = curr.data;
-        int brk = foo(data, i, arg);
-        if (brk == 1){
+        bool brk = foo(data, i, arg);
+        if (brk == true){
             return i;
         };
         curr = curr.next;
@@ -294,8 +294,8 @@ Array whereArray(Array my, adr foo, adr arg){
         curr = my.head;
         curr = curr + offset;
         adr save; save = curr;
-        int boo = foo(curr, i, arg);
-        if (boo == 1){
+        bool boo = foo(curr, i, arg);
+        if (boo == true){
             a.extend(1);
             int msize;
             msize = a.size;

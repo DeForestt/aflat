@@ -169,11 +169,11 @@ whereLinkedList:
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
-	movl	%eax, %ebx
-	movl	%ebx, -56(%rbp)
-	movl	$1, %edx
-	movl	-56(%rbp), %eax
-	cmpl	%edx, %eax
+	movb	%al, %bl
+	movb	%bl, -53(%rbp)
+	movb	$1, %dl
+	movb	-53(%rbp), %al
+	cmpb	%dl, %al
 	sete	%al
 	movb	%al, %al
 	cmpb	$0, %al
@@ -753,11 +753,11 @@ pub_LinkedList_find:
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
-	movl	%eax, %ebx
-	movl	%ebx, -48(%rbp)
-	movl	$1, %edx
-	movl	-48(%rbp), %eax
-	cmpl	%edx, %eax
+	movb	%al, %bl
+	movb	%bl, -45(%rbp)
+	movb	$1, %dl
+	movb	-45(%rbp), %al
+	cmpb	%dl, %al
 	sete	%al
 	movb	%al, %al
 	cmpb	$0, %al
@@ -859,11 +859,11 @@ whereArray:
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
-	movl	%eax, %ebx
-	movl	%ebx, -68(%rbp)
-	movl	$1, %edx
-	movl	-68(%rbp), %eax
-	cmpl	%edx, %eax
+	movb	%al, %bl
+	movb	%bl, -65(%rbp)
+	movb	$1, %dl
+	movb	-65(%rbp), %al
+	cmpb	%dl, %al
 	sete	%al
 	movb	%al, %al
 	cmpb	$0, %al
@@ -882,27 +882,27 @@ whereArray:
 	popq	%rdx
 	movq	-32(%rbp), %rdx
 	movl	28(%rdx), %ebx
-	movl	%ebx, -72(%rbp)
+	movl	%ebx, -69(%rbp)
 	movl	$1, %edx
-	movl	-72(%rbp), %eax
+	movl	-69(%rbp), %eax
 	sub	%edx, %eax
 	movl	%eax, %ebx
-	movl	%ebx, -72(%rbp)
+	movl	%ebx, -69(%rbp)
 	pushq	%rdx
 	lea	-32(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
-	movl	-72(%rbp), %eax
+	movl	-69(%rbp), %eax
 	movl	%eax, %esi
 	call	pub_Array_at
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
 	movq	%rax, %rbx
-	movq	%rbx, -80(%rbp)
-	movq	-80(%rbp), %rax
+	movq	%rbx, -77(%rbp)
+	movq	-77(%rbp), %rax
 	movq	-64(%rbp), %rbx
 	movq	%rbx, (%rax)
 .LwhereArray31:
