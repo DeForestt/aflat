@@ -221,53 +221,49 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
             ast::Pull * pull = new ast::Pull;
             pull->expr = this->parseExpr(tokens);
             output = pull;
-        }else if (obj.meta == "if")
-        {
+            if (singleStmt) return output;
+        }else if (obj.meta == "if"){
             ast::If * ifstmt = new ast::If;
             ifstmt->elseIf = nullptr;
             ifstmt->elseStatment = nullptr;
             ifstmt->expr = this->parseExpr(tokens);
-            if(dynamic_cast<lex::OpSym * >(tokens.peek()) != nullptr){
-                lex::OpSym sym = *dynamic_cast<lex::OpSym * >(tokens.pop());
-                if(sym.Sym == '{'){
+            lex::OpSym * sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+            if(sym != nullptr){
+                if(sym->Sym == '{'){
+                    tokens.pop();
                     ifstmt->statment = this->parseStmt(tokens);
                     output = ifstmt;
                 }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened If");
+            } else ifstmt->statment = this->parseStmt(tokens, true);
                 // check for else
-                if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
-                    lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
-                    if (obj.meta == "else") {
-                        tokens.pop();
-                        if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
-                            sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
-                            if (sym.Sym == '{') {
-                                ifstmt->elseStatment = this->parseStmt(tokens);
-                                output = ifstmt;
-                            } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened Else");
-                        } else if(dynamic_cast<lex::LObj *>(tokens.peek())){
-                            lex::LObj word = *dynamic_cast<lex::LObj *>(tokens.peek());
-                            if (word.meta == "if") {
-                                ifstmt->elseStatment = this->parseStmt(tokens, true);
-                                output = ifstmt;
-                            }
+            if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+                lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+                if (obj.meta == "else") {
+                    tokens.pop();
+                    if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
+                        sym = dynamic_cast<lex::OpSym *>(tokens.pop());
+                        if (sym->Sym == '{') {
+                            ifstmt->elseStatment = this->parseStmt(tokens);
+                            output = ifstmt;
                         } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened Else");
-                    } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unclosed if");
-                }
+                    } else if(dynamic_cast<lex::LObj *>(tokens.peek())){
+                        ifstmt->elseStatment = this->parseStmt(tokens, true);
+                        output = ifstmt;
+                    } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened Else");
+                } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unclosed if");
             }
             if (singleStmt) return ifstmt;
         }else if(obj.meta == "while"){
             ast::While * loop = new ast::While;
             
             loop->expr = this->parseExpr(tokens);
-
-            if(dynamic_cast<lex::OpSym * >(tokens.peek()) != nullptr){
-                lex::OpSym sym = *dynamic_cast<lex::OpSym * >(tokens.pop());
-                if(sym.Sym == '{'){
+            lex::OpSym * sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+            if(sym != nullptr){
+                if(sym->Sym == '{'){
                         loop->stmt = this->parseStmt(tokens);
                         output = loop;
                     }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened loop");
-            }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened loop");
-            
+            }else loop->stmt = this->parseStmt(tokens, true);
         }
         else if(obj.meta == "for"){
             ast::For * loop = new ast::For;
@@ -411,7 +407,8 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
             }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " expected Asignment oporator after " + obj.meta);
         }
     }
-    
+
+    if (singleStmt) return output;
     if (tokens.head == nullptr){ 
         this->Output = *output;
         return output;
