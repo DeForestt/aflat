@@ -149,19 +149,107 @@ std::string asmc::Mul::toString(){
 }
 
 std::string asmc::And::toString(){
-    return "\tandl\t" + this->op1 + ", " + this->op2 + "\n";
+    std::string size = "";
+    switch (this->size)
+    {
+    case asmc::Byte:
+        size = "b";
+        break;
+    case asmc::Word:
+        size = "s";
+        break;
+    case asmc::DWord:
+        size = "l";
+        break;
+    case asmc::QWord:
+        size = "q";
+        break;
+    case asmc::AUTO:
+        size = "q";
+        break;
+    default:
+        size = "l";
+        break;
+    }
+    return "\tand"+ size + "\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
 std::string asmc::Or::toString(){
-    return "\torl\t" + this->op1 + ", " + this->op2 + "\n";
+        std::string size = "";
+    switch (this->size)
+    {
+    case asmc::Byte:
+        size = "b";
+        break;
+    case asmc::Word:
+        size = "s";
+        break;
+    case asmc::DWord:
+        size = "l";
+        break;
+    case asmc::QWord:
+        size = "q";
+        break;
+    case asmc::AUTO:
+        size = "q";
+        break;
+    default:
+        size = "l";
+        break;
+    }
+    return "\tor" + size + "\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
 std::string asmc::Sal::toString(){
-    return "\tsall\t" + this->op1 + ", " + this->op2 + "\n";
+        std::string size = "";
+    switch (this->size)
+    {
+    case asmc::Byte:
+        size = "b";
+        break;
+    case asmc::Word:
+        size = "s";
+        break;
+    case asmc::DWord:
+        size = "l";
+        break;
+    case asmc::QWord:
+        size = "q";
+        break;
+    case asmc::AUTO:
+        size = "q";
+        break;
+    default:
+        size = "l";
+        break;
+    }
+    return "\tsal"+ size +"\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
 std::string asmc::Sar::toString(){
-    return "\tsarl\t" + this->op1 + ", " + this->op2 + "\n";
+        std::string size = "";
+    switch (this->size)
+    {
+    case asmc::Byte:
+        size = "b";
+        break;
+    case asmc::Word:
+        size = "s";
+        break;
+    case asmc::DWord:
+        size = "l";
+        break;
+    case asmc::QWord:
+        size = "q";
+        break;
+    case asmc::AUTO:
+        size = "q";
+        break;
+    default:
+        size = "l";
+        break;
+    }
+    return "\tsar"+ size +"\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
 std::string asmc::Div::toString(){
