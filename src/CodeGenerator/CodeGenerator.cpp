@@ -1829,68 +1829,34 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
         OutputFile.text << lable2;
 
-        gen::Expr expr1 =this->GenExpr(loop->condition->expr1, OutputFile);
-        gen::Expr expr2 =this->GenExpr(loop->condition->expr2, OutputFile);
+        gen::Expr expr = this->GenExpr(loop->expr, OutputFile);
+
+        ast::Type t = ast::Type();
+        t.typeName = "bool";
+        t.size = asmc::Byte;
+        this->canAssign(t, expr.type);
     
-        asmc::Mov * mov1 = new asmc::Mov();
-        asmc::Mov * mov2 = new asmc::Mov();
+        asmc::Mov * mov = new asmc::Mov();
 
-        mov1->size = expr1.size;
-        mov2->size = expr2.size;
+        mov->size = expr.size;
 
-        mov1->from = expr1.access;
-        mov2->from = expr2.access;
+        mov->from = expr.access;
 
-        mov1->to = this->registers["%eax"]->get(mov1->size);
-        mov2->to = this->registers["%ecx"]->get(mov2->size);
+        mov->to = this->registers["%eax"]->get(mov->size);
 
         asmc::Cmp * cmp = new asmc::Cmp();
-        asmc::Jne * jne = new asmc::Jne();
+        asmc::Je * je = new asmc::Je();
+        je->to = lable1->lable;
 
-        cmp->from = mov2->to;
-        cmp->to = mov1->to;
-        cmp->size = expr1.size;
+        cmp->from = "$1";
+        cmp->to = mov->to;
+        cmp->size = expr.size;
 
         
-        OutputFile.text << mov1;
-        OutputFile.text << mov2;
+        OutputFile.text << mov;
         OutputFile.text << cmp;
+        OutputFile.text << je;
 
-        switch (loop->condition->op)
-        {
-        case ast::Equ:
-        {
-            asmc::Je * je = new asmc::Je();
-            je->to = lable1->lable;
-            OutputFile.text << je;
-            break;
-        }
-        case ast::NotEqu :
-        {
-            asmc::Jne * jne = new asmc::Jne();
-
-            jne->to = lable1->lable;
-            OutputFile.text << jne;
-            break;
-        }
-        case ast::Great :
-        {
-            asmc::Jg * jg = new asmc::Jg();
-
-            jg->to = lable1->lable;
-
-            OutputFile.text << jg;
-            break;
-        }
-        case ast::Less :
-        {
-            asmc::Jl * jl = new asmc::Jl();
-
-            jl->to = lable1->lable;
-            OutputFile.text << jl;
-            break;
-        }
-        }
         gen::scope::ScopeManager::getInstance()->popScope();
     }
     else if(dynamic_cast<ast::UDeffType *>(STMT) != nullptr){

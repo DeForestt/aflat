@@ -172,7 +172,7 @@ namespace ast{
     class For : public Statment{
         public:
         Statment * declare;
-        ConditionalExpr * condition;
+        ast::Expr * expr;
         Statment * increment;
         Statment * Run;
     };

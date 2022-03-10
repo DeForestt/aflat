@@ -271,26 +271,38 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
         }
         else if(obj.meta == "for"){
             ast::For * loop = new ast::For;
-            if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-                lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                // opening curly bracket for statment
-                if(sym.Sym != '{') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop body");
-                tokens.pop();
-                loop->declare = this->parseStmt(tokens);
+            loop->declare = this->parseStmt(tokens, true);
 
-                loop->condition = this->parseCondition(tokens);
-                if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop body");
-                sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                if(sym.Sym != '{') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop body");
-                tokens.pop();
-                loop->increment = this->parseStmt(tokens);
-                if(dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop body");
-                sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                if(sym.Sym != '{') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop body");
-                tokens.pop();
-                loop->Run = this->parseStmt(tokens);
-                output = loop;
-            } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "Un opened for loop header");
+            lex::OpSym * sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+            
+            if (sym == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unterminated forloop initializer");
+            if(sym->Sym != ';') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "unterminated forloop initializer");
+
+            tokens.pop();
+
+            loop->expr = this->parseExpr(tokens);
+
+            sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+            if(sym == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unterminated forloop condition");
+            if(sym->Sym != ';') throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + "unterminated forloop condition");
+            tokens.pop();
+
+            loop->increment = this->parseStmt(tokens, true);
+
+            sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+            if(sym != nullptr){
+                if (sym->Sym == ';'){
+                    tokens.pop();
+                };
+                sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+                if(sym != nullptr){
+                    if(sym->Sym == '{'){
+                        tokens.pop();
+                        loop->Run = this->parseStmt(tokens);
+                    }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unopened forloop body");
+                }
+            } else loop->Run = this->parseStmt(tokens, true);
+            output = loop;
         }
         else if(obj.meta == "struct"){
             ast::UDeffType * stc = new ast::UDeffType();
