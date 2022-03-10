@@ -714,11 +714,9 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
         }
     }
     else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unknown Expr");
-
+    ast::Compound  * compound;
     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
-
-        ast::Compound  * compound = new ast::Compound();
-
+        compound = new ast::Compound();
         lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
         if (sym.Sym == '+')
         {
@@ -785,6 +783,22 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
         else if (sym.Sym == '|'){
             tokens.pop();
             compound->op = ast::OrBit;
+            compound->expr1 = output;
+            compound->expr2 = this->parseExpr(tokens);
+            return compound;
+        }
+    } else if(dynamic_cast<lex::Symbol *>(tokens.peek()) != nullptr){
+        compound = new ast::Compound();
+        lex::Symbol sym = *dynamic_cast<lex::Symbol *>(tokens.peek());
+        if (sym.meta == "=="){
+            tokens.pop();
+            compound->op = ast::Equ;
+            compound->expr1 = output;
+            compound->expr2 = this->parseExpr(tokens);
+            return compound;
+        } else if (sym.meta == "!="){
+            tokens.pop();
+            compound->op = ast::NotEqu;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
             return compound;
