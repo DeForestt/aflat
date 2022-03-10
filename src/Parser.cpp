@@ -258,7 +258,7 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
         }else if(obj.meta == "while"){
             ast::While * loop = new ast::While;
             
-            loop->condition = this->parseCondition(tokens);
+            loop->expr = this->parseExpr(tokens);
 
             if(dynamic_cast<lex::OpSym * >(tokens.peek()) != nullptr){
                 lex::OpSym sym = *dynamic_cast<lex::OpSym * >(tokens.pop());
