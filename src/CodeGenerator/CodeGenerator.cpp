@@ -416,7 +416,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
                 std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = "%eax";
+                output.access = this->registers["%rax"]->get(expr1.size);
 
                 if(expr1.op == asmc::Float){
                     to1 = this->registers["%xmm1"]->get(asmc::DWord);
@@ -1612,112 +1612,51 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         asmc::Lable * lable1 = new asmc::Lable();
         lable1->lable = ".L"+ this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
         this->lablecount ++;
-        asmc::Lable * lableElse = new asmc::Lable();
-        lableElse->lable = ".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-        this->lablecount ++;
-        asmc::Lable * endElse = new asmc::Lable();
-        endElse->lable = ".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-        this->lablecount ++;
 
-        if(ifStmt.elseStatment != nullptr){
-            asmc::Jmp * jmpStart = new asmc::Jmp();
-            jmpStart->to = endElse->lable;
-            OutputFile.text << jmpStart;
 
-            // place the Else Lable
-            OutputFile.text << lableElse;
-            OutputFile << this->GenSTMT(ifStmt.elseStatment);
-            // jmp to lable 1
-            asmc::Jmp * jmp = new asmc::Jmp();
-            jmp->to = lable1->lable;
-            OutputFile.text << jmp;
-            OutputFile.text << endElse;
-        }
+        gen::Expr expr = this->GenExpr(ifStmt.expr, OutputFile);
 
-        gen::Expr expr1 =this->GenExpr(ifStmt.Condition->expr1, OutputFile);
-        gen::Expr expr2 =this->GenExpr(ifStmt.Condition->expr2, OutputFile);
-    
+        ast::Type t = ast::Type();
+        t.typeName = "bool";
+        t.size = asmc::Byte;
+        this->canAssign(t, expr.type);
+
+
         asmc::Mov * mov1 = new asmc::Mov();
-        asmc::Mov * mov2 = new asmc::Mov();
 
-        mov1->size = expr1.size;
-        mov2->size = expr2.size;
 
-        mov1->from = expr1.access;
-        mov2->from = expr2.access;
+        mov1->size = asmc::Byte;
 
-        mov1->to = this->registers["%eax"]->get(mov1->size);
-        mov2->to = this->registers["%rcx"]->get(mov2->size);
+        mov1->from = expr.access;;
 
-        mov2->size = mov2->size;
+        mov1->to = this->registers["%rax"]->get(mov1->size);
+
 
         asmc::Cmp * cmp = new asmc::Cmp();
-        asmc::Jne * jne = new asmc::Jne();
+        asmc::Je * je = new asmc::Je();
 
-        cmp->from = mov2->to;
+        cmp->from = "$0";
         cmp->to = mov1->to;
-        cmp->size = expr1.size;
+        cmp->size = expr.size;
+
+        je->to = lable1->lable;
         
         OutputFile.text << mov1;
-        OutputFile.text << mov2;
         OutputFile.text << cmp;
-
-
-        switch (ifStmt.Condition->op)
-        {
-        case ast::Equ:
-        {
-            if (ifStmt.elseStatment != nullptr) {jne->to = lableElse->lable;} else jne->to = lable1->lable;
-            
-            OutputFile.text << jne;
-            OutputFile << this->GenSTMT(ifStmt.statment);
-            if (ifStmt.elseStatment != nullptr){
-                asmc::Je * je = new asmc::Je();
-                je->to = lableElse->lable;
-                OutputFile.text << je;
-            }
+        OutputFile.text << je;
+        OutputFile << this->GenSTMT(ifStmt.statment);
+        if (ifStmt.elseStatment != nullptr){
+            asmc::Lable * end = new asmc::Lable();
+            end->lable = ".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
+            this->lablecount ++;
+            asmc::Jmp * jmp = new asmc::Jmp();
+            jmp->to = end->lable;
+            OutputFile.text << jmp;
             OutputFile.text << lable1;
-            break;
-        }
-        case ast::NotEqu :
-        {
-            asmc::Je * je = new asmc::Je();
+            OutputFile << this->GenSTMT(ifStmt.elseStatment);
+            OutputFile.text << end;
+        } else OutputFile.text << lable1;
 
-            if (ifStmt.elseStatment != nullptr) {je->to = lableElse->lable;} else je->to = lable1->lable;
-
-            OutputFile.text << je;
-            OutputFile << this->GenSTMT(ifStmt.statment);
-            OutputFile.text << lable1;
-            break;
-        }
-        case ast::Great :
-        {
-            asmc::Jle * jl = new asmc::Jle();
-
-             if (ifStmt.elseStatment != nullptr) {jl->to = lableElse->lable;} else jl->to = lable1->lable;
-
-
-            OutputFile.text << jl;
-            OutputFile << this->GenSTMT(ifStmt.statment);
-            OutputFile.text << lable1;
-            break;
-        }
-        case ast::Less :
-        {
-            asmc::Jge * jg = new asmc::Jge();
-
-            if (ifStmt.elseStatment != nullptr){jg->to = lableElse->lable;} else jg->to = lable1->lable;
-
-
-            OutputFile.text << jg;
-            OutputFile << this->GenSTMT(ifStmt.statment);
-            OutputFile.text << lable1;
-            break;
-        }
-        
-        default:
-            break;
-        }
         gen::scope::ScopeManager::getInstance()->popScope();
     }
     else if(dynamic_cast<ast::While *>(STMT) != nullptr){

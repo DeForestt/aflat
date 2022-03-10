@@ -226,7 +226,7 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
             ast::If * ifstmt = new ast::If;
             ifstmt->elseIf = nullptr;
             ifstmt->elseStatment = nullptr;
-            ifstmt ->Condition = this->parseCondition(tokens);
+            ifstmt->expr = this->parseExpr(tokens);
             if(dynamic_cast<lex::OpSym * >(tokens.peek()) != nullptr){
                 lex::OpSym sym = *dynamic_cast<lex::OpSym * >(tokens.pop());
                 if(sym.Sym == '{'){

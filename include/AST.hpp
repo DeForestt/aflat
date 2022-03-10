@@ -139,7 +139,7 @@ namespace ast{
 
     class If : public Statment{
         public:
-        ConditionalExpr * Condition;
+        Expr * expr;
         Statment * statment;
         Statment * elseStatment;
         Statment * elseIf;
