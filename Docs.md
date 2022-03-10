@@ -25,7 +25,8 @@ A 2 byte integer
 ```c
 short s = 1;
 ```
-
+### bool
+A 1 byte bool
 ### adr
 An 8 bit memory address.  In aflat, pointers point to any type
 ```c
@@ -166,6 +167,12 @@ eg: `123.456`
 ```
 eg: `"hello"`
 
+### Not expr
+```bnf
+<not Expr> ::= !<expr>
+```
+eg: `!(a == b)`
+
 ### Char Literal
 ```bnf
 <char literal> ::= '<char>'
@@ -239,26 +246,33 @@ eg: `foo`
 eg: `new OBJECT(1, 2)`
 Dynamically allocates memory for an object of the specified type and calls the constructor with the arguments passed.  The parenthesis are optional. The type must be a class. The constructor must be a function with the name `init`.  The value returned is the address of the object.
 ## Control Flow
-
+### Notes
+Note that currly braces are optional when the body is a singal statment;
 ### If Statements
 If statements are used to execute code based on a condition.  The syntax is:
 ```c
-if(<condition>){
+if <expression> {
     <code to execute if condition is true>
 };
 ```
-- The condition is evaluated before the code is executed.  If the condition is true, the code is executed.
+- The condition is evaluated before the code is executed.  If the condition is true, the code is executed. Condition must be a bool
 
-Condition syntax is as follows:
-```bnf
-<condition> ::= (<expression> <relational operator> <expression>)
-<relational operator> ::= == | != | < | >
-```
-- Aflat does not support logical operators at this time.
+- Boolian conditional oporators are
+    - `==`
+    - `!=`
+    - `>`
+    - `>=`
+    - `<`
+    - `<=`
+
+
+- Logical oporators are.  all logical oporators are handled bitwize
+    - | or
+    - & and
 
 if statments can be used with else statements.  The syntax is:
 ```c
-if(<condition>){
+if <expr> {
     <code to execute if condition is true>
 }else{
     <code to execute if condition is false>
@@ -267,18 +281,17 @@ if(<condition>){
 ### While Loops
 While loops are used to execute code while a condition is true.  The syntax is:
 ```c
-while(<condition>){
+while <expr> {
     <code to execute>
 };
 ```
 ### For Loops
 For loops are used to execute code a set number of times.  The syntax is:
 ```c
-for{<code to run once>}(<condition>){<code to run at end of each iteration>}{
-    <Internal loop code>
+for <initializer> <boolean expr> <iterator>{
+    <body>
 };
 ```
-This syntax is designed to make for loops more flexible than while loops.  The code to run once is executed before the loop starts.  The condition is checked at the start of each iteration.  The code to run at the end of each iteration is executed at the end of each iteration.  The internal loop code is executed between the start and end of each iteration.
 
 example:
 ```c
