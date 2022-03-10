@@ -775,6 +775,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
         OutputFile.text << movzbl;
         OutputFile.text << xr;
+        output.size = asmc::Byte;
+        output.type = boolType.typeName;
         output.access = this->registers["%eax"]->get(asmc::Byte);
 
     } else {
