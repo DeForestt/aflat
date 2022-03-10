@@ -62,7 +62,7 @@ Build and run the project with the `aflat run` command.
 
 int main(){
     Array a = newArray(int, 10);
-    for{int i = 0;}(i < 10){i = i + 1;}{
+    for int i = 0; i < 10; i = i + 1 {
         adr pointer = a.at(i);              // adr - is the pointer 'address' key word
         pointer =: i;                       // the =: operator is used to load a value to a pointer
     };
