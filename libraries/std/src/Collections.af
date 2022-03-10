@@ -149,17 +149,20 @@ adr get@LinkedList(int index){
 int append@LinkedList(adr data){
     ListNode ln = new ListNode();
     ln.data = data;
+    ln.next = NULL;
 
-    if(my.head == NULL){
+    ListNode head = my.head;
+
+    if(head == NULL){
         my.head = ln;
         return 0;
     };
 
-    ListNode curr;
-    curr = my.head;
-    
-    while(curr.next != NULL){
-        curr = curr.next;
+    ListNode curr = my.head;
+    ListNode next = curr.next;
+    while(next != NULL){
+        curr = next;
+        next = curr.next;
     };
 
     curr.next = ln;

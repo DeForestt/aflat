@@ -1070,18 +1070,18 @@ float_toString:
 	movl	$31, %edx
 	movl	-36(%rbp), %eax
 	movl	%edx, %ecx
-	sarb	%cl, %eax
+	sarl	%cl, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -40(%rbp)
 	movl	$23, %edx
 	movl	-36(%rbp), %eax
 	movl	%edx, %ecx
-	sarb	%cl, %eax
+	sarl	%cl, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -44(%rbp)
 	movl	$255, %edx
 	movl	-44(%rbp), %eax
-	andb	%edx, %eax
+	andl	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -44(%rbp)
 	movl	$127, %edx
@@ -1091,7 +1091,7 @@ float_toString:
 	movl	%ebx, -44(%rbp)
 	movl	$8388607, %edx
 	movl	-36(%rbp), %eax
-	andb	%edx, %eax
+	andl	%edx, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -48(%rbp)
 	pushq	%rdx
@@ -1112,7 +1112,7 @@ float_toString:
 	pushq	%rdx
 	movl	$1, %edx
 	movl	-48(%rbp), %eax
-	andb	%edx, %eax
+	andl	%edx, %eax
 	pushq	%rdi
 	movl	%eax, %eax
 	movl	%eax, %edi
@@ -1132,7 +1132,7 @@ float_toString:
 	movl	$1, %edx
 	movl	-48(%rbp), %eax
 	movl	%edx, %ecx
-	sarb	%cl, %eax
+	sarl	%cl, %eax
 	movl	%eax, %ebx
 	movl	%ebx, -48(%rbp)
 	movl	$1, %edx

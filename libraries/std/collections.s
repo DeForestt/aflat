@@ -380,7 +380,7 @@ pub_LinkedList_append:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
-	subq	$32, %rsp
+	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	pushq	%rdx
@@ -395,9 +395,14 @@ pub_LinkedList_append:
 	movq	-24(%rbp), %rdx
 	movq	-16(%rbp), %rbx
 	movq	%rbx, 8(%rdx)
-	movq	$0, %rdx
+	movq	-24(%rbp), %rdx
+	movq	$0, %rbx
+	movq	%rbx, 0(%rdx)
 	movq	-8(%rbp), %rdx
-	movq	16(%rdx), %rax
+	movq	16(%rdx), %rbx
+	movq	%rbx, -32(%rbp)
+	movq	$0, %rdx
+	movq	-32(%rbp), %rax
 	cmpq	%rdx, %rax
 	sete	%al
 	movb	%al, %al
@@ -412,22 +417,26 @@ pub_LinkedList_append:
 .Lappend13:
 	movq	-8(%rbp), %rdx
 	movq	16(%rdx), %rbx
-	movq	%rbx, -32(%rbp)
+	movq	%rbx, -40(%rbp)
+	movq	-40(%rbp), %rdx
+	movq	0(%rdx), %rbx
+	movq	%rbx, -48(%rbp)
 	jmp	.Lappend15
 .Lappend14:
-	movq	-32(%rbp), %rdx
+	movq	-48(%rbp), %rbx
+	movq	%rbx, -40(%rbp)
+	movq	-40(%rbp), %rdx
 	movq	0(%rdx), %rbx
-	movq	%rbx, -32(%rbp)
+	movq	%rbx, -48(%rbp)
 .Lappend15:
 	movq	$0, %rdx
-	movq	-32(%rbp), %rdx
-	movq	0(%rdx), %rax
+	movq	-48(%rbp), %rax
 	cmpq	%rdx, %rax
 	setne	%al
 	movb	%al, %al
 	cmpb	$1, %al
 	je	.Lappend14
-	movq	-32(%rbp), %rdx
+	movq	-40(%rbp), %rdx
 	movq	-24(%rbp), %rbx
 	movq	%rbx, 0(%rdx)
 	movl	$0, %eax

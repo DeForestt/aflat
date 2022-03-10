@@ -482,6 +482,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
             
                 andBit->op2 = to2;
                 andBit->op1 = to1;
+                andBit->size = expr1.size;
 
                 OutputFile.text << andBit;
 
@@ -509,6 +510,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
             
                 orBit->op2 = to2;
                 orBit->op1 = to1;
+                orBit->size = expr1.size;
 
                 OutputFile.text << orBit;
 
@@ -536,6 +538,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
             
                 andBit->op2 = to2;
                 andBit->op1 = "%cl";
+                andBit->size = expr1.size;
 
                                 //Move the value from edx to ecx
                 asmc::Mov * mov = new asmc::Mov();
@@ -572,13 +575,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 //Move the value from edx to ecx
                 asmc::Mov * mov = new asmc::Mov();
                 mov->to = to1;
-                mov->from = this->registers["%rdx"]->get(expr1.size);;
+                mov->from = this->registers["%rdx"]->get(expr1.size);
                 mov->size = expr1.size;
 
                 OutputFile.text << mov;
             
                 andBit->op2 = to2;
                 andBit->op1 = "%cl";
+                andBit->size = expr1.size;
 
                 OutputFile.text << andBit;
 
