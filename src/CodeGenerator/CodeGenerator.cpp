@@ -106,7 +106,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName, bool st
     return false;
 }
 
-void gen::CodeGenerator::prepareCompound(ast::Compound compound, asmc::File &OutputFile, bool isDiv = false){
+gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound, asmc::File &OutputFile, bool isDiv = false){
     asmc::Mov * mov1 = new asmc::Mov();
     asmc::Mov * mov2 = new asmc::Mov();
     std::string r1 = "%edx", r2 = "%eax";
@@ -122,17 +122,17 @@ void gen::CodeGenerator::prepareCompound(ast::Compound compound, asmc::File &Out
     mov1->op = expr2.op;
     mov1->to = this->registers[r1]->get(expr2.size);
     mov1->from = expr2.access;
+    mov1->size = expr2.size;
     if (!isDiv) OutputFile.text << mov1;
 
     gen::Expr expr1 = this->GenExpr(compound.expr1, OutputFile);
     mov2->op = expr1.op;
     mov2->to = this->registers[r2]->get(expr1.size);
     mov2->from = expr1.access;
+    mov2->size = expr1.size;
     OutputFile.text << mov2;
 
-    mov1->size = asmc::AUTO;
-    mov2->size = asmc::AUTO;
-    
+    return expr1;
 }
 
 gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, asmc::Size size = asmc::AUTO){
@@ -430,7 +430,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 add->op1 = to1;
                 OutputFile.text << add;
                 
-                output.size = asmc::DWord;
+                output.size = expr1.size;
+                output.type = expr1.type;
                 break;
             }
             case ast::Minus:{
@@ -457,7 +458,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 OutputFile.text << sub;
 
-                output.size = asmc::DWord;
+                output.size = expr1.size;
+                output.type = expr1.type;
                 break;
             }
             case ast::AndBit:{
@@ -483,7 +485,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 OutputFile.text << andBit;
 
-                output.size = asmc::DWord;
+                output.size = expr1.size;
+                output.type = expr1.type;
                 break;
             }
             case ast::OrBit:{
@@ -509,7 +512,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 OutputFile.text << orBit;
 
-                output.size = asmc::DWord;
+                output.size = expr1.size;
+                output.type = expr1.type;
                 break;
             }
             case ast::Less:{
@@ -543,7 +547,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 OutputFile.text << andBit;
 
-                output.size = asmc::DWord;
+                output.size = expr1.size;
+                output.type = expr1.type;
                 break;
             }
             case ast::Great:{
@@ -577,7 +582,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 OutputFile.text << andBit;
 
-                output.size = asmc::DWord;
+                output.size = expr1.size;
+                output.type = expr1.type;
                 break;
             }
             case ast::Mul:{
@@ -607,7 +613,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 OutputFile.text << mul;
                 
-                output.size = asmc::DWord;
+                output.size = expr1.size;
+                output.type = expr1.type;
                 break;
             }
             case ast::Div:{
@@ -639,7 +646,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 
 
                 OutputFile.text << div;
-                output.size = asmc::DWord;
+                output.size = expr1.size;
+                output.type = expr1.type;
                 break;
             }
             case ast::Mod:{
@@ -668,6 +676,26 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 OutputFile.text << div;
                 output.size = asmc::DWord;
+                output.type = "int";
+                break;
+            }
+            case ast::Equ:{
+                asmc::Cmp * cmp = new asmc::Cmp();
+                gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
+
+                cmp->size = expr1.size;
+                cmp->to = this->registers["%rax"]->get(expr1.size);
+                cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+                asmc::Sete * sete = new asmc::Sete();
+                sete->op = this->registers["%rax"]->get(asmc::Byte);
+
+                OutputFile.text << cmp;
+                OutputFile.text << sete;
+
+                output.size = asmc::Byte;
+                output.type = "bool";
+                output.access = "%al";
                 break;
             }
             default:{
