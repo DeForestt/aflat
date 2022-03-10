@@ -754,6 +754,29 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
     }else if(dynamic_cast<ast::ParenExpr *>(expr) != nullptr){
         ast::ParenExpr parenExpr = *dynamic_cast<ast::ParenExpr *>(expr);
         output = this->GenExpr(parenExpr.expr, OutputFile);
+    }else if(dynamic_cast<ast::Not *>(expr) != nullptr){
+        ast::Not no = *dynamic_cast<ast::Not *>(expr);
+        gen::Expr expr = this->GenExpr(no.expr, OutputFile);
+        
+        asmc::Movzbl * movzbl = new asmc::Movzbl();
+        movzbl->from = expr.access;
+        movzbl->to = this->registers["%eax"]->get(asmc::DWord);
+
+        asmc::Xor * xr = new asmc::Xor();
+        xr->op1 = "$1";
+        xr->op2 = this->registers["%eax"]->get(asmc::DWord);
+
+        ast::Type boolType = ast::Type();
+        
+        boolType.typeName = "bool";
+        boolType.opType = asmc::Hard;
+        boolType.size = asmc::Byte;
+        this->canAssign(boolType, expr.type);
+
+        OutputFile.text << movzbl;
+        OutputFile.text << xr;
+        output.access = this->registers["%eax"]->get(asmc::Byte);
+
     } else {
         this->alert("Unhandled expression");
     }

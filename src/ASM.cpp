@@ -47,6 +47,10 @@ std::string asmc::Mov::toString(){
     return "\tmov" + size + "\t" + this->from + ", " + this->to + "\n";
 }
 
+std::string asmc::Xor::toString(){
+    return "\txor\t" + this->op1 + ", " + this->op2 + "\n";
+}
+
 std::string asmc::Movzbl::toString(){
     return "\tmovzbl\t" + this->from + ", " + this->to + "\n";
 }
@@ -138,10 +142,6 @@ std::string asmc::Sub::toString(){
 std::string asmc::Mul::toString(){
     if (this->opType == asmc::Float) return "\tmulss\t" + this->op1 + ", " + this->op2 + "\n";
     return "\timul\t" + this->op1 + ", " + this->op2 + "\n";
-}
-
-std::string asmc::Xor::toString(){
-    return "\txor\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
 std::string asmc::And::toString(){
