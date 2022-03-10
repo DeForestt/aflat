@@ -213,6 +213,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                     output.access = "$0";
                     output.type = "adr";
                     handled = true;
+                }else if(var.Ident == "true"){
+                    output.size = asmc::Byte;
+                    output.access = "$1";
+                    output.type = "bool";
+                    handled = true;
+                }else if(var.Ident == "false"){
+                    output.size = asmc::Byte;
+                    output.access = "$0";
+                    output.type = "bool";
+                    handled = true;
                 }else if(this->nameTable[var.Ident] != nullptr){
                     output.size = asmc::QWord;
                     output.access = '$' + this->nameTable[var.Ident]->ident.ident;
