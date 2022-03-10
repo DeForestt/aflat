@@ -283,6 +283,11 @@ namespace ast{
         ast::Type type;
         links::LinkedList<Expr *> args;
     };
+
+    class Not : public Expr{
+        public:
+        Expr * expr;
+    };
 }
 
 #endif
