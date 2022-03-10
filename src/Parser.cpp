@@ -706,7 +706,12 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Need an ) to end parenth not a symbol");
             if ((dynamic_cast<lex::OpSym *>(tokens.pop())->Sym != ')')) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " GOT: " + dynamic_cast<lex::OpSym *>(tokens.pop())->Sym + " Need an ) to end parenth");
             output = paren;
-        };
+        } else if(eq.Sym == '!'){
+            tokens.pop();
+            ast::Not * notExpr = new ast::Not();
+            notExpr->expr = this->parseExpr(tokens);
+            output = notExpr;
+        }
     }
     else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unknown Expr");
 
