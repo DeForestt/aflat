@@ -47,6 +47,10 @@ std::string asmc::Mov::toString(){
     return "\tmov" + size + "\t" + this->from + ", " + this->to + "\n";
 }
 
+std::string asmc::Movzbl::toString(){
+    return "\tmovzbl\t" + this->from + ", " + this->to + "\n";
+}
+
 std::string asmc::Cmp::toString(){
     std::string size = "";
     switch (this->size)

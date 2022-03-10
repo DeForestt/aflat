@@ -46,6 +46,13 @@ namespace asmc{
         std::string toString();
     };
 
+    class Movzbl : public Instruction{
+        public:
+        std::string to;
+        std::string from;
+        std::string toString();
+    };
+
     class Cmp : public Instruction{
         public:
         std::string to;
