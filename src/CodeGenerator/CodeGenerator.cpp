@@ -220,7 +220,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                     handled = true;
                 }else if(var.Ident == "false"){
                     output.size = asmc::Byte;
-                    output.access = "$0";
+                    output.access = "$1";
                     output.type = "bool";
                     handled = true;
                 }else if(this->nameTable[var.Ident] != nullptr){
