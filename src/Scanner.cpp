@@ -199,6 +199,10 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                             opSym->Sym = '<';
                             tokens << opSym;
                             i++;
+                        } else if(input[i+1] == '='){
+                            sym->meta = "<=";
+                            tokens << sym;
+                            i++;
                         } else tokens << sym;
                         i++;
                     }
@@ -210,6 +214,10 @@ LinkedList<lex::Token*> lex::Lexer::Scan(string input){
                             lex::OpSym * opSym = new lex::OpSym;
                             opSym->Sym = '>';
                             tokens << opSym;
+                            i++;
+                        } else if(input[i+1] == '='){
+                            sym->meta = ">=";
+                            tokens << sym;
                             i++;
                         } else tokens << sym;
                         i++;
