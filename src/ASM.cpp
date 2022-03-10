@@ -12,6 +12,10 @@ std::string asmc::Lable::toString(){
     return this->lable + ":\n";
 }
 
+std::string asmc::Sete::toString(){
+    return "\tsete\t" + this->op + "\n";
+}
+
 std::string asmc::LinkTask::toString(){
     return  "." + this->command + "\t" + this->operand + "\n";
 }

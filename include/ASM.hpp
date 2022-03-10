@@ -147,7 +147,13 @@ namespace asmc{
         public:
         std::string op1;
         std::string op2;
-        virtual std::string toString();
+        std::string toString();
+    };
+
+    class Sete : public Instruction{
+        public:
+        std::string op;
+        std::string toString();
     };
 
     class Push : public Instruction{
