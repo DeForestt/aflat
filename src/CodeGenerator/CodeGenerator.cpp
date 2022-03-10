@@ -444,7 +444,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
                 std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = "%eax";
+                output.access = this->registers["%rax"]->get(expr1.size);
 
                 if(expr1.op == asmc::Float){
                     to1 = this->registers["%xmm1"]->get(asmc::DWord);
@@ -471,7 +471,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
                 std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = "%eax";
+                output.access = this->registers["%rax"]->get(expr1.size);
 
                 if(expr1.op == asmc::Float){
                     to1 = this->registers["%xmm1"]->get(asmc::DWord);
@@ -498,7 +498,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
                 std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = "%eax";
+                output.access = this->registers["%rax"]->get(expr1.size);
 
                 if(expr1.op == asmc::Float){
                     to1 = this->registers["%xmm1"]->get(asmc::DWord);
@@ -525,7 +525,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
                 std::string to2 = this->registers["%cl"]->get(expr1.size);
-                output.access = "%eax";
+                output.access = this->registers["%rax"]->get(expr1.size);
 
                 if(expr1.op == asmc::Float){
                     to1 = this->registers["%xmm1"]->get(asmc::DWord);
@@ -560,7 +560,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 std::string to1 = this->registers["%cl"]->get(expr1.size);
                 std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = "%eax";
+                output.access = this->registers["%rax"]->get(expr1.size);
 
                 if(expr1.op == asmc::Float){
                     to1 = this->registers["%xmm1"]->get(asmc::DWord);
@@ -599,7 +599,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
                 std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = "%eax";
+                output.access = this->registers["%rax"]->get(expr1.size);
 
                 if(expr1.op == asmc::Float){
                     to1 = this->registers["%xmm1"]->get(asmc::DWord);
@@ -631,7 +631,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
                 std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = "%eax";
+                output.access = this->registers["%rax"]->get(expr1.size);
 
                 if(expr1.op == asmc::Float){
                     to1 = this->registers["%xmm1"]->get(asmc::DWord);
@@ -662,7 +662,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
 
                 std::string to1 = this->registers["%rdx"]->get(expr1.size);
                 std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = "%edx";
+                output.access = this->registers["%rdx"]->get(expr1.size);
 
                 if(expr1.op == asmc::Float){
                     to1 = this->registers["%xmm1"]->get(asmc::DWord);
