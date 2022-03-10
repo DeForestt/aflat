@@ -184,9 +184,8 @@ int insert@LinkedList(int index, adr data){
     ListNode curr;
     curr = my.head;
     
-    for{int i = 0}(i < index){i = i + 1}{
+    for int i = 0; i < index ; i = i + 1
         curr = curr.next;
-    };
 
     adr temp;
     temp = curr.next;
@@ -206,7 +205,7 @@ int size@LinkedList(){
     ListNode curr;
     curr = my.head;
     int i = 0;
-    while(curr != NULL){
+    while (curr != NULL) {
         curr = curr.next;
         i = i + 1;
     };
@@ -253,7 +252,7 @@ int forEachArray(Array my, adr foo, adr arg){
     adr curr;
 
     int i;
-    for {i = 0;}(i < size){i = i + 1}{
+    for i = 0; i < size; i = i + 1 {
         int offset = i * tSize;
         curr = my.head;
         curr = curr + offset;
@@ -289,7 +288,7 @@ Array whereArray(Array my, adr foo, adr arg){
     tSize = my.typeSize;
     size = my.size;
     int i;
-    for {i = 0;}(i < size){i = i + 1}{
+    for i = 0; i < size; i = i + 1 {
         int offset = i * tSize;
         adr curr;
         curr = my.head;
