@@ -802,6 +802,30 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
             return compound;
+        } else if (sym.meta == ">"){
+            tokens.pop();
+            compound->op = ast::GreatCmp;
+            compound->expr1 = output;
+            compound->expr2 = this->parseExpr(tokens);
+            return compound;
+        } else if (sym.meta == "<"){
+            tokens.pop();
+            compound->op = ast::LessCmp;
+            compound->expr1 = output;
+            compound->expr2 = this->parseExpr(tokens);
+            return compound;
+        } else if (sym.meta == ">="){
+            tokens.pop();
+            compound->op = ast::Geq;
+            compound->expr1 = output;
+            compound->expr2 = this->parseExpr(tokens);
+            return compound;
+        } else if (sym.meta == "<="){
+            tokens.pop();
+            compound->op = ast::Leq;
+            compound->expr1 = output;
+            compound->expr2 = this->parseExpr(tokens);
+            return compound;
         }
     }
     return output;

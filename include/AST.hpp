@@ -41,6 +41,10 @@ namespace ast{
         AndBit,
         AndBool,
         OrBit,
+        LessCmp,
+        GreatCmp,
+        Leq,
+        Geq,
         None,
     };   
 

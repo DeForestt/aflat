@@ -16,6 +16,26 @@ std::string asmc::Sete::toString(){
     return "\tsete\t" + this->op + "\n";
 }
 
+std::string asmc::Setne::toString(){
+    return "\tsetne\t" + this->op + "\n";
+}
+
+std::string asmc::Setg::toString(){
+    return "\tsetg\t" + this->op + "\n";
+}
+
+std::string asmc::Setge::toString(){
+    return "\tsetge\t" + this->op + "\n";
+}
+
+std::string asmc::Setl::toString(){
+    return "\tsetl\t" + this->op + "\n";
+}
+
+std::string asmc::Setle::toString(){
+    return "\tsetle\t" + this->op + "\n";
+}
+
 std::string asmc::LinkTask::toString(){
     return  "." + this->command + "\t" + this->operand + "\n";
 }

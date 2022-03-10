@@ -156,6 +156,36 @@ namespace asmc{
         std::string toString();
     };
 
+    class Setne : public Instruction{
+        public:
+        std::string op;
+        std::string toString();
+    };
+
+    class Setl : public Instruction{
+        public:
+        std::string op;
+        std::string toString();
+    };
+
+    class Setle : public Instruction{
+        public:
+        std::string op;
+        std::string toString();
+    };
+
+    class Setg : public Instruction{
+        public:
+        std::string op;
+        std::string toString();
+    };
+
+    class Setge : public Instruction{
+        public:
+        std::string op;
+        std::string toString();
+    };
+
     class Push : public Instruction{
         public:
         std::string op;

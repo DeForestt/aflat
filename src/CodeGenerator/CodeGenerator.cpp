@@ -698,6 +698,101 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 output.access = "%al";
                 break;
             }
+            case ast::LessCmp:{
+                asmc::Cmp * cmp = new asmc::Cmp();
+                gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
+
+                cmp->size = expr1.size;
+                cmp->to = this->registers["%rax"]->get(expr1.size);
+                cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+                asmc::Setl * setl = new asmc::Setl();
+                setl->op = this->registers["%rax"]->get(asmc::Byte);
+
+                OutputFile.text << cmp;
+                OutputFile.text << setl;
+
+                output.size = asmc::Byte;
+                output.type = "bool";
+                output.access = "%al";
+                break;
+            }
+            case ast::GreatCmp:{
+                asmc::Cmp * cmp = new asmc::Cmp();
+                gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
+
+                cmp->size = expr1.size;
+                cmp->to = this->registers["%rax"]->get(expr1.size);
+                cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+                asmc::Setg * setg = new asmc::Setg();
+                setg->op = this->registers["%rax"]->get(asmc::Byte);
+
+                OutputFile.text << cmp;
+                OutputFile.text << setg;
+
+                output.size = asmc::Byte;
+                output.type = "bool";
+                output.access = "%al";
+                break;
+            }
+            case ast::Leq:{
+                asmc::Cmp * cmp = new asmc::Cmp();
+                gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
+
+                cmp->size = expr1.size;
+                cmp->to = this->registers["%rax"]->get(expr1.size);
+                cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+                asmc::Setle * setle = new asmc::Setle();
+                setle->op = this->registers["%rax"]->get(asmc::Byte);
+
+                OutputFile.text << cmp;
+                OutputFile.text << setle;
+
+                output.size = asmc::Byte;
+                output.type = "bool";
+                output.access = "%al";
+                break;
+            }
+            case ast::Geq:{
+                asmc::Cmp * cmp = new asmc::Cmp();
+                gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
+
+                cmp->size = expr1.size;
+                cmp->to = this->registers["%rax"]->get(expr1.size);
+                cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+                asmc::Setge * setge = new asmc::Setge();
+                setge->op = this->registers["%rax"]->get(asmc::Byte);
+
+                OutputFile.text << cmp;
+                OutputFile.text << setge;
+
+                output.size = asmc::Byte;
+                output.type = "bool";
+                output.access = "%al";
+                break;
+            }
+            case ast::NotEqu:{
+                asmc::Cmp * cmp = new asmc::Cmp();
+                gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
+
+                cmp->size = expr1.size;
+                cmp->to = this->registers["%rax"]->get(expr1.size);
+                cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+                asmc::Setne * setne = new asmc::Setne();
+                setne->op = this->registers["%rax"]->get(asmc::Byte);
+
+                OutputFile.text << cmp;
+                OutputFile.text << setne;
+
+                output.size = asmc::Byte;
+                output.type = "bool";
+                output.access = "%al";
+                break;
+            }
             default:{
                 alert("Unhandled oporator");
                 break;
