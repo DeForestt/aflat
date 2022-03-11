@@ -68,6 +68,7 @@ gen::CodeGenerator::CodeGenerator(){
     this->registers << asmc::Register("rdi", "edi", "di", "dil");   
     this->registers << asmc::Register("rsp", "esp", "sp", "spl");
     this->registers << asmc::Register("rbp", "ebp", "bp", "bpl");
+    this->registers << asmc::Register("r14", "r14d", "r14w", "r14b");
     this->registers << asmc::Register("r15", "r15d", "r15w", "r15b");
     this->registers << asmc::Register("xmm0", "xmm0", "xmm0", "xmm0");
     this->registers << asmc::Register("xmm1", "xmm1", "xmm1", "xmm1");
@@ -308,7 +309,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                     asmc::Mov * mov = new asmc::Mov();
                     mov->op = modSym->type.opType;
                     mov->size = asmc::QWord;
-                    mov->to = this->registers["%edx"]->get(asmc::QWord);
+                    mov->to = this->registers["%r14"]->get(asmc::QWord);
                     mov->from = output.access;
                     OutputFile.text << mov;
                     output.access = std::to_string(tbyte - this->getBytes(last.size)) + '(' + mov->to + ')';
