@@ -208,35 +208,31 @@ namespace asmc{
         std::string toString();
     };
 
-    class Add : public Instruction{
+    class ArithInst : public Instruction{
         public:
         std::string op1;
         std::string op2;
+        asmc::Size size;
         asmc::OpType opType = asmc::Hard;
+    };
+
+    class Add : public ArithInst{
+        public:
         std::string toString();
     };
 
-    class Sub : public Instruction{
+    class Sub : public ArithInst{
         public:
-        std::string op1;
-        std::string op2;
-        asmc::OpType opType = asmc::Hard;
         std::string toString();
     };
 
-    class Mul : public Instruction{
+    class Mul : public ArithInst{
         public:
-        std::string op1;
-        std::string op2;
-        asmc::OpType opType = asmc::Hard;
         std::string toString();
     };
 
-    class Div : public Instruction{
+    class Div : public ArithInst{
         public:
-        std::string op1;
-        std::string op2;
-        asmc::OpType opType = asmc::Hard;
         std::string toString();
     };
 
@@ -247,35 +243,23 @@ namespace asmc{
         std::string toString();
     };
 
-    class And : public Instruction{
+    class And : public ArithInst{
         public:
-        std::string op1;
-        std::string op2;
-        asmc::Size size;
         std::string toString();
     };
 
-    class Or : public Instruction{
+    class Or : public ArithInst{
         public:
-        std::string op1;
-        std::string op2;
-        asmc::Size size;
         std::string toString();
     };
 
-    class Sal : public Instruction{
+    class Sal : public ArithInst{
         public:
-        std::string op1;
-        std::string op2;
-        asmc::Size size;
         std::string toString();
     }; 
 
-    class Sar : public Instruction{
+    class Sar : public ArithInst{
         public:
-        std::string op1;
-        std::string op2;
-        asmc::Size size;
         std::string toString();
     };
 

@@ -91,6 +91,7 @@ namespace gen{
         ast::Function GenCall(ast::Call * call, asmc::File &OutputFile);
         Expr GenExpr(ast::Expr * expr, asmc::File &OutputFile, asmc::Size size = asmc::AUTO);
         gen::Expr prepareCompound(ast::Compound compound, asmc::File &OutputFile, bool isDiv = false);
+        gen::Expr genArithmatic(asmc::ArithInst *, ast::Compound compound, asmc::File &OutputFile);
         bool canAssign(ast::Type type, std::string typeName, bool strict = false);
         public:
         asmc::File GenSTMT(ast::Statment * stmt);

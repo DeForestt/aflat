@@ -2,6 +2,8 @@
 #include "Exceptions.hpp"
 #include "AST.hpp"
 
+ast::Expr * prioritizeExpr(ast::Expr * expr);
+
 parse::Parser::Parser(){
     this->typeList.foo = ast::Type::compair;
 
@@ -87,6 +89,8 @@ int getOpPriority(ast::Op op){
             return 4;
         case ast::Mod:
             return 5;
+        default:
+            throw err::Exception("Unknown operator");
     }
 };
 
@@ -762,7 +766,7 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             compound->op = ast::Plus;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         }
         else if (sym.Sym == '-')
         {
@@ -770,7 +774,7 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             compound->op = ast::Minus;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         }
         else if (sym.Sym == '*')
         {
@@ -778,7 +782,7 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             compound->op = ast::Mul;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         }
         else if (sym.Sym == '/')
         {
@@ -786,7 +790,7 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             compound->op = ast::Div;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         }
         else if (sym.Sym == '%')
         {
@@ -794,7 +798,7 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             compound->op = ast::Mod;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         }
         else if (sym.Sym == '&')
         {
@@ -802,28 +806,28 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             compound->op = ast::AndBit;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         }
         else if (sym.Sym == '>'){
             tokens.pop();
             compound->op = ast::Great;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         }
         else if (sym.Sym == '<'){
             tokens.pop();
             compound->op = ast::Less;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         }
         else if (sym.Sym == '|'){
             tokens.pop();
             compound->op = ast::OrBit;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         }
     } else if(dynamic_cast<lex::Symbol *>(tokens.peek()) != nullptr){
         compound = new ast::Compound();
@@ -833,38 +837,60 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             compound->op = ast::Equ;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         } else if (sym.meta == "!="){
             tokens.pop();
             compound->op = ast::NotEqu;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         } else if (sym.meta == ">"){
             tokens.pop();
             compound->op = ast::GreatCmp;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         } else if (sym.meta == "<"){
             tokens.pop();
             compound->op = ast::LessCmp;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         } else if (sym.meta == ">="){
             tokens.pop();
             compound->op = ast::Geq;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         } else if (sym.meta == "<="){
             tokens.pop();
             compound->op = ast::Leq;
             compound->expr1 = output;
             compound->expr2 = this->parseExpr(tokens);
-            return compound;
+            return prioritizeExpr(compound);
         }
     }
     return output;
 }
+
+ast::Expr * prioritizeExpr(ast::Expr * expr){
+    ast::Compound * compound = dynamic_cast<ast::Compound *>(expr);
+
+    ast::Compound * root = compound;
+
+    if (compound != nullptr){
+        ast::Compound * right = dynamic_cast<ast::Compound *>(compound->expr2);
+        int i = 0;
+        while (right != nullptr){
+            if (getOpPriority(compound->op) >= getOpPriority(right->op)){
+                compound->expr2 = right->expr1;
+                right->expr1 = compound;
+                if (i == 0) root = right;
+                compound = right;
+                right = dynamic_cast<ast::Compound *>(compound->expr2);
+            } else break;
+            i++;
+        }
+    }
+    return root;
+};

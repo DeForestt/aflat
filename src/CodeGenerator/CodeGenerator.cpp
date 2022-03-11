@@ -109,7 +109,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName, bool st
 gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound, asmc::File &OutputFile, bool isDiv = false){
     asmc::Mov * mov1 = new asmc::Mov();
     asmc::Mov * mov2 = new asmc::Mov();
-    std::string r1 = "%edx", r2 = "%eax";
+    std::string r1 = "%edx", r2 = "%rdi";
     // if expr1 op is Float set to the float registers
 
     gen::Expr expr2 = this->GenExpr(compound.expr2, OutputFile);
@@ -118,7 +118,7 @@ gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound, asmc::File
         r1 = "%xmm1";
         r2 = "%xmm0";
     }
-
+    
     mov1->op = expr2.op;
     mov1->to = this->registers[r1]->get(expr2.size);
     mov1->from = expr2.access;
@@ -135,9 +135,54 @@ gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound, asmc::File
     return expr1;
 }
 
+gen::Expr gen::CodeGenerator::genArithmatic(asmc::ArithInst * inst, ast::Compound compound, asmc::File &OutputFile){
+    gen::Expr expr = this->prepareCompound(compound, OutputFile);
+    gen::Expr output;
+                
+    inst->opType = expr.op;
+    inst->size = expr.size;
+
+
+    std::string to1 = this->registers["%rdx"]->get(expr.size);
+    std::string to2 = this->registers["%rdi"]->get(expr.size);
+
+    output.access = this->registers["%rax"]->get(expr.size);
+    std::string retTo = this->registers["%rdi"]->get(expr.size);
+
+    if(expr.op == asmc::Float){
+        to1 = this->registers["%xmm1"]->get(asmc::DWord);
+        to2 = this->registers["%xmm0"]->get(asmc::DWord);
+        output.access = "%xmm2";
+        output.op = asmc::Float;
+    }
+
+    asmc::Mov * mov = new asmc::Mov();
+    mov->from = to2;
+    mov->to = output.access;
+    mov->op = output.op;
+    mov->size = expr.size;
+
+    asmc::Pop * pop1 = new asmc::Pop();
+    pop1->op = this->registers[to1]->get(asmc::QWord); 
+
+    asmc::Pop * pop2 = new asmc::Pop();
+    pop2->op = this->registers[to2]->get(asmc::QWord);
+
+
+    inst->op2 = to2;
+    inst->op1 = to1;
+    OutputFile.text << inst;
+    OutputFile.text << mov;
+    output.size = expr.size;
+    output.type = expr.type;
+    return output;
+}
+
 gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, asmc::Size size = asmc::AUTO){
     gen::Expr output;
     output.op = asmc::Hard;
+    
+
     if(dynamic_cast<ast::IntLiteral *>(expr) != nullptr){
         ast::IntLiteral * intlit = dynamic_cast<ast::IntLiteral *>(expr);
 
@@ -401,121 +446,36 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
             output.type = opor->type.typeName;
 
         } else {
+
+        // push rdi and rdx to stack
+        asmc::Push * push1 = new asmc::Push();
+        push1->op = this->registers["%rdi"]->get(asmc::QWord);
+        OutputFile.text << push1;
+        asmc::Push * push2 = new asmc::Push();
+        push2->op = this->registers["%rdx"]->get(asmc::QWord);
+        OutputFile.text << push2;
         output.op = asmc::Hard;
         output.type = "--std--flex--function";
         switch (comp.op)
-        {
+        { 
             case ast::Plus:{
                 asmc::Add * add = new asmc::Add();
-                gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
-                gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
-                this->prepareCompound(comp, OutputFile);
-                
-                add->opType = expr1.op;
-                
-
-                std::string to1 = this->registers["%rdx"]->get(expr1.size);
-                std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = this->registers["%rax"]->get(expr1.size);
-
-                if(expr1.op == asmc::Float){
-                    to1 = this->registers["%xmm1"]->get(asmc::DWord);
-                    to2 = this->registers["%xmm0"]->get(asmc::DWord);
-                    output.access = "%xmm0";
-                    output.op = asmc::Float;
-                }
-
-
-                add->op2 = to2;
-                add->op1 = to1;
-                OutputFile.text << add;
-                
-                output.size = expr1.size;
-                output.type = expr1.type;
+                output = this->genArithmatic(add, comp, OutputFile);
                 break;
             }
             case ast::Minus:{
                 asmc::Sub * sub = new asmc::Sub();
-                gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
-                gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
-
-                this->prepareCompound(comp, OutputFile);
-                sub->opType = expr1.op;
-
-                std::string to1 = this->registers["%rdx"]->get(expr1.size);
-                std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = this->registers["%rax"]->get(expr1.size);
-
-                if(expr1.op == asmc::Float){
-                    to1 = this->registers["%xmm1"]->get(asmc::DWord);
-                    to2 = this->registers["%xmm0"]->get(asmc::DWord);
-                    output.access = "%xmm0";
-                    output.op = asmc::Float;
-                }
-            
-                sub->op2 = to2;
-                sub->op1 = to1;
-
-                OutputFile.text << sub;
-
-                output.size = expr1.size;
-                output.type = expr1.type;
+                output = this->genArithmatic(sub, comp, OutputFile);
                 break;
             }
             case ast::AndBit:{
                 asmc::And * andBit = new asmc::And();
-                gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
-                gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
-
-                this->prepareCompound(comp, OutputFile);
-
-                std::string to1 = this->registers["%rdx"]->get(expr1.size);
-                std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = this->registers["%rax"]->get(expr1.size);
-
-                if(expr1.op == asmc::Float){
-                    to1 = this->registers["%xmm1"]->get(asmc::DWord);
-                    to2 = this->registers["%xmm0"]->get(asmc::DWord);
-                    output.access = "%xmm0";
-                    output.op = asmc::Float;
-                }
-            
-                andBit->op2 = to2;
-                andBit->op1 = to1;
-                andBit->size = expr1.size;
-
-                OutputFile.text << andBit;
-
-                output.size = expr1.size;
-                output.type = expr1.type;
+                output = this->genArithmatic(andBit, comp, OutputFile);
                 break;
             }
             case ast::OrBit:{
                 asmc::Or * orBit = new asmc::Or();
-                gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
-                gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
-
-                this->prepareCompound(comp, OutputFile);
-
-                std::string to1 = this->registers["%rdx"]->get(expr1.size);
-                std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = this->registers["%rax"]->get(expr1.size);
-
-                if(expr1.op == asmc::Float){
-                    to1 = this->registers["%xmm1"]->get(asmc::DWord);
-                    to2 = this->registers["%xmm0"]->get(asmc::DWord);
-                    output.access = "%xmm0";
-                    output.op = asmc::Float;
-                }
-            
-                orBit->op2 = to2;
-                orBit->op1 = to1;
-                orBit->size = expr1.size;
-
-                OutputFile.text << orBit;
-
-                output.size = expr1.size;
-                output.type = expr1.type;
+                output = this->genArithmatic(orBit, comp, OutputFile);
                 break;
             }
             case ast::Less:{
@@ -562,8 +522,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 this->prepareCompound(comp, OutputFile);
 
                 std::string to1 = this->registers["%cl"]->get(expr1.size);
-                std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = this->registers["%rax"]->get(expr1.size);
+                std::string to2 = this->registers["%rdi"]->get(expr1.size);
+                output.access = this->registers["%rdi"]->get(expr1.size);
 
                 if(expr1.op == asmc::Float){
                     to1 = this->registers["%xmm1"]->get(asmc::DWord);
@@ -575,7 +535,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 //Move the value from edx to ecx
                 asmc::Mov * mov = new asmc::Mov();
                 mov->to = to1;
-                mov->from = this->registers["%rdx"]->get(expr1.size);
+                mov->from = this->registers["%rdi"]->get(expr1.size);
                 mov->size = expr1.size;
 
                 OutputFile.text << mov;
@@ -592,33 +552,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
             }
             case ast::Mul:{
                 asmc::Mul * mul = new asmc::Mul();
-                
-                this->selectReg = 0;
-                gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
-                this->selectReg = 1;
-                gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
-                
-                this->prepareCompound(comp, OutputFile);
-                mul->opType = expr1.op;
-
-                std::string to1 = this->registers["%rdx"]->get(expr1.size);
-                std::string to2 = this->registers["%rax"]->get(expr1.size);
-                output.access = this->registers["%rax"]->get(expr1.size);
-
-                if(expr1.op == asmc::Float){
-                    to1 = this->registers["%xmm1"]->get(asmc::DWord);
-                    to2 = this->registers["%xmm0"]->get(asmc::DWord);
-                    output.access = "%xmm0";
-                    output.op = asmc::Float;
-                }
-                
-                mul->op2 = to2;
-                mul->op1 = to1;
-
-                OutputFile.text << mul;
-                
-                output.size = expr1.size;
-                output.type = expr1.type;
+                output = this->genArithmatic(mul, comp, OutputFile);
                 break;
             }
             case ast::Div:{
@@ -688,7 +622,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
                 cmp->size = expr1.size;
-                cmp->to = this->registers["%rax"]->get(expr1.size);
+                cmp->to = this->registers["%rdi"]->get(expr1.size);
                 cmp->from = this->registers["%rdx"]->get(expr1.size);
 
                 asmc::Sete * sete = new asmc::Sete();
@@ -707,7 +641,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
                 cmp->size = expr1.size;
-                cmp->to = this->registers["%rax"]->get(expr1.size);
+                cmp->to = this->registers["%rdi"]->get(expr1.size);
                 cmp->from = this->registers["%rdx"]->get(expr1.size);
 
                 asmc::Setl * setl = new asmc::Setl();
@@ -726,7 +660,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
                 cmp->size = expr1.size;
-                cmp->to = this->registers["%rax"]->get(expr1.size);
+                cmp->to = this->registers["%rdi"]->get(expr1.size);
                 cmp->from = this->registers["%rdx"]->get(expr1.size);
 
                 asmc::Setg * setg = new asmc::Setg();
@@ -745,7 +679,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
                 cmp->size = expr1.size;
-                cmp->to = this->registers["%rax"]->get(expr1.size);
+                cmp->to = this->registers["%rdi"]->get(expr1.size);
                 cmp->from = this->registers["%rdx"]->get(expr1.size);
 
                 asmc::Setle * setle = new asmc::Setle();
@@ -764,7 +698,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
                 cmp->size = expr1.size;
-                cmp->to = this->registers["%rax"]->get(expr1.size);
+                cmp->to = this->registers["%rdi"]->get(expr1.size);
                 cmp->from = this->registers["%rdx"]->get(expr1.size);
 
                 asmc::Setge * setge = new asmc::Setge();
@@ -783,7 +717,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
                 cmp->size = expr1.size;
-                cmp->to = this->registers["%rax"]->get(expr1.size);
+                cmp->to = this->registers["%rdi"]->get(expr1.size);
                 cmp->from = this->registers["%rdx"]->get(expr1.size);
 
                 asmc::Setne * setne = new asmc::Setne();
@@ -801,7 +735,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                 alert("Unhandled oporator");
                 break;
             }
-        }   
+        }
+            // pop rdx and rdi
+            asmc::Pop * pop = new asmc::Pop();
+            pop->op = this->registers["%rdx"]->get(asmc::QWord);
+            OutputFile.text << pop;
+            asmc::Pop * pop2 = new asmc::Pop();
+            pop2->op = this->registers["%rdi"]->get(asmc::QWord);
+            OutputFile.text << pop2;   
         }
     }  
     else if (dynamic_cast<ast::Lambda *>(expr) != nullptr){
@@ -978,7 +919,6 @@ void gen::CodeGenerator::GenArgs(ast::Statment * STMT, asmc::File &OutputFile){
             movl $0x0, -[SymbolT + size](rdp)
             **also needs to be added to symbol table**
         */
-
         if (intArgsCounter > 6) alert("AFlat compiler cannot handle more than 6 int arguments.");
         ast::Declare * arg =  dynamic_cast<ast::Declare *>(STMT);
         asmc::Size size;
