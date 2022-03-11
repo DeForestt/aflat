@@ -731,15 +731,18 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
 
             if (dynamic_cast<lex::Symbol *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Need an > to start lambda not a symbol");
             if ((dynamic_cast<lex::Symbol *>(tokens.pop())->meta != ">")) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " GOT: " + dynamic_cast<lex::OpSym *>(tokens.pop())->Sym + " Need an > to start lambda");
+            lex::OpSym * symp = dynamic_cast<lex::OpSym *> (tokens.peek());
             if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr && dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '{'){
                 tokens.pop();
                 lambda->function->statment = this->parseStmt(tokens);
-                ast::Type Adr = ast::Type();
-                Adr.typeName = "any";
-                Adr.opType = asmc::Hard; 
-                Adr.size = asmc::QWord;
-                lambda->function->type = Adr;
-            } else this->parseStmt(tokens, true);
+            } else lambda->function->statment =  this->parseStmt(tokens, true);
+
+            ast::Type Adr = ast::Type();
+            Adr.typeName = "any";
+            Adr.opType = asmc::Hard; 
+            Adr.size = asmc::QWord;
+            lambda->function->type = Adr;
+            
             output = lambda;
         } else if(eq.Sym == '('){
             tokens.pop();
