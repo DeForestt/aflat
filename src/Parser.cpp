@@ -65,6 +65,31 @@ parse::Parser::Parser(){
     this->typeList << Bool;
 }
 
+int getOpPriority(ast::Op op){
+    switch(op){
+        case ast::AndBit:
+        case ast::OrBit:
+        case ast::Great:
+        case ast::Less:
+            return 1;
+        case ast::Equ:
+        case ast::NotEqu:
+        case ast::LessCmp:
+        case ast::GreatCmp:
+        case ast::Leq:
+        case ast::Geq:
+            return 2;
+        case ast::Plus:
+        case ast::Minus:
+            return 3;
+        case ast::Mul:
+        case ast::Div:
+            return 4;
+        case ast::Mod:
+            return 5;
+    }
+};
+
 /*
  * function name: Parser::parseStmt
  * description: Recursive function that parses a statement and returns the AST as a Statment
