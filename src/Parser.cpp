@@ -742,7 +742,7 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             Adr.opType = asmc::Hard; 
             Adr.size = asmc::QWord;
             lambda->function->type = Adr;
-            
+
             output = lambda;
         } else if(eq.Sym == '('){
             tokens.pop();
@@ -757,8 +757,8 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
             notExpr->expr = this->parseExpr(tokens);
             output = notExpr;
         }
-    }
-    else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unknown Expr");
+    } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " Unknown Expr");
+    
     ast::Compound  * compound;
     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr){
         compound = new ast::Compound();
