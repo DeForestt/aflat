@@ -1528,10 +1528,11 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         ast::Return * ret = dynamic_cast<ast::Return *>(STMT);
 
         asmc::Mov * mov = new asmc::Mov();
-        mov->size = this->returnType.size;
+        
         gen::Expr from = this->GenExpr(ret->expr, OutputFile);
         mov->from = from.access;
-        mov->to = this->registers["%rax"]->get(this->returnType.size);
+        mov->to = this->registers["%rax"]->get(from.size);
+        mov->size = from.size;
         OutputFile.text << mov;
         this->canAssign(this->returnType, from.type, true);
         asmc::Return * re = new asmc::Return();
@@ -1752,6 +1753,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
             jmp->to = end->lable;
             OutputFile.text << jmp;
             OutputFile.text << lable1;
+            
+            gen::scope::ScopeManager::getInstance()->popScope();
+            gen::scope::ScopeManager::getInstance()->pushScope();
             OutputFile << this->GenSTMT(ifStmt.elseStatment);
             OutputFile.text << end;
         } else OutputFile.text << lable1;
