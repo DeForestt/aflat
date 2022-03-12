@@ -216,6 +216,17 @@ namespace ast{
         int count;
     };
 
+    class Inc : public Statment{
+        public:
+        std::string ident;
+        
+    };
+
+    class Dec : public Statment{
+        public:
+        std::string ident;
+    };
+    
     class Return : public Statment{
         public:
         Expr * expr;

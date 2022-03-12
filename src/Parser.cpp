@@ -425,8 +425,7 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
                     assign->modList = modList;
                     assign->expr = this->parseExpr(tokens);
                     output = assign;
-                }else if (sym.Sym == '(')
-                {
+                }else if (sym.Sym == '('){
                     ast::Call * call = new ast::Call();
                     call->ident = obj.meta;
                     call->modList = modList;
@@ -447,6 +446,22 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
                         }
                     }
                     output = call;
+                } else if (sym.Sym == '+'){
+                    lex::OpSym * s = dynamic_cast<lex::OpSym *>(tokens.peek());
+                    if(s != nullptr && s->Sym == '+'){
+                        tokens.pop();
+                        ast::Inc * inc = new ast::Inc();
+                        inc->ident = obj.meta;
+                        output = inc;
+                    } else throw err::Exception("Expected ++ on line " + std::to_string(sym.lineCount));
+                } else if (sym.Sym == '-'){
+                    lex::OpSym * s = dynamic_cast<lex::OpSym *>(tokens.peek());
+                    if(s != nullptr && s->Sym == '-'){
+                        tokens.pop();
+                        ast::Dec * inc = new ast::Dec();
+                        inc->ident = obj.meta;
+                        output = inc;
+                    } else throw err::Exception("Expected -- on line " + std::to_string(sym.lineCount));
                 }
                 else throw err::Exception("Line: " + std::to_string(obj.lineCount) + " expected assignment oporator after " + obj.meta);
             }else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " expected Asignment oporator after " + obj.meta);

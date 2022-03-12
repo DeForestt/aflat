@@ -853,10 +853,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
             output.size = asmc::QWord;
             output.type = newExpr.type.typeName;
         };
-    }else if(dynamic_cast<ast::ParenExpr *>(expr) != nullptr){
+    }
+    else if(dynamic_cast<ast::ParenExpr *>(expr) != nullptr){
         ast::ParenExpr parenExpr = *dynamic_cast<ast::ParenExpr *>(expr);
         output = this->GenExpr(parenExpr.expr, OutputFile);
-    }else if(dynamic_cast<ast::Not *>(expr) != nullptr){
+    }
+    else if(dynamic_cast<ast::Not *>(expr) != nullptr){
         ast::Not no = *dynamic_cast<ast::Not *>(expr);
         gen::Expr expr = this->GenExpr(no.expr, OutputFile);
         
@@ -1201,7 +1203,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         OutputFile << this->GenSTMT(sequence->Statment1);
         OutputFile << this->GenSTMT(sequence->Statment2);
     }
-    else if(dynamic_cast<ast::Function *>(STMT)){
+    else if (dynamic_cast<ast::Function *>(STMT)){
         /*
             ident:
                 push rbp
@@ -1393,7 +1395,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         }
         
     }
-    else if(dynamic_cast<ast::DecArr *>(STMT) != nullptr){
+    else if (dynamic_cast<ast::DecArr *>(STMT) != nullptr){
             /*
             movl $0x0, -[SymbolT + size](rdp)
             **also needs to be added to symbol table**
@@ -1736,7 +1738,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
         gen::scope::ScopeManager::getInstance()->popScope();
     }
-    else if(dynamic_cast<ast::While *>(STMT) != nullptr){
+    else if (dynamic_cast<ast::While *>(STMT) != nullptr){
         gen::scope::ScopeManager::getInstance()->pushScope();
         ast::While * loop = dynamic_cast<ast::While *>(STMT);
 
@@ -1841,7 +1843,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
 
         gen::scope::ScopeManager::getInstance()->popScope();
     }
-    else if(dynamic_cast<ast::UDeffType *>(STMT) != nullptr){
+    else if (dynamic_cast<ast::UDeffType *>(STMT) != nullptr){
         ast::UDeffType * udef = dynamic_cast<ast::UDeffType *>(STMT);
         gen::Type * type = new gen::Type();
         bool saveScope = this->globalScope;
@@ -1851,7 +1853,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         this->typeList.push(type);
         this->globalScope = saveScope;
     }
-    else if(dynamic_cast<ast::Class *>(STMT) != nullptr){
+    else if (dynamic_cast<ast::Class *>(STMT) != nullptr){
         ast::Class * deff = dynamic_cast<ast::Class *>(STMT);
         gen::Class * type = new gen::Class();
         bool saveScope = this->globalScope;
@@ -1903,6 +1905,28 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
         OutputFile << file;
         this->globalScope = saveScope;
         this->scope = nullptr;
+    }
+    else if (dynamic_cast<ast::Inc *>(STMT) != nullptr){
+        ast::Inc * inc = dynamic_cast<ast::Inc *>(STMT);
+        gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);
+        if (sym == nullptr) this->alert("Identifier not found to increment");
+        this->canAssign(sym->type, "int");
+
+        asmc::Add * add = new asmc::Add();
+        add->op1 = "$1";
+        add->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
+        OutputFile.text << add;
+    }
+    else if (dynamic_cast<ast::Dec *>(STMT) != nullptr){
+        ast::Dec * inc = dynamic_cast<ast::Dec *>(STMT);
+        gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);
+        if (sym == nullptr) this->alert("Identifier not found to increment");
+        this->canAssign(sym->type, "int");
+
+        asmc::Sub * sub = new asmc::Sub();
+        sub->op1 = "$-1";
+        sub->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
+        OutputFile.text << sub;
     }
     else{
         OutputFile.text.push(new asmc::Instruction());
