@@ -613,6 +613,7 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
     else if(dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr){
         lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.pop());
         links::LinkedList<std::string> modList;
+
         if(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
             lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
             while(sym.Sym == '.'){
@@ -626,7 +627,10 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                 }else break;
             }
         }
-        
+        ast::Var * var = new ast::Var();
+        var->Ident = obj.meta;
+        var->modList = modList;
+        output = var;
         if(obj.meta == "new"){
             ast::NewExpr * newExpr = new ast::NewExpr();
             lex::LObj * typeName = dynamic_cast<lex::LObj *>(tokens.pop());
@@ -711,8 +715,7 @@ ast::Expr* parse::Parser::parseExpr(links::LinkedList<lex::Token*> &tokens){
                 var->modList = modList;
                 output = var;
             }
-        }
-         else {
+        } else {
             ast::Var * var = new ast::Var();
             var->Ident = obj.meta;
             var->modList = modList;
