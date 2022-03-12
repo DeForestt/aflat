@@ -634,12 +634,19 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, 
                         mov->size = expr1.size;
                         mov->op = expr1.op;
                         div->op1 = mov->to;
-                        output.access = this->registers["%rdx"]->get(expr1.size);
+                        output.access = this->registers["%rax"]->get(expr1.size);
                         OutputFile.text << eax;
                         OutputFile.text << mov;
                     }
 
+                    //Move the value from edx to eax
+                    asmc::Mov * mov = new asmc::Mov();
+                    mov->to = output.access;
+                    mov->from = this->registers["%rdx"]->get(expr1.size);
+                    mov->size = expr1.size;
+
                     OutputFile.text << div;
+                    if (expr1.op != asmc::Float) OutputFile.text << mov;
                     output.size = asmc::DWord;
                     output.type = "int";
                     break;

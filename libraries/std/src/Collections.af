@@ -215,6 +215,27 @@ int size@LinkedList(){
     return i;
 };
 
+LinkedList sort@LinkedList(adr foo, adr arg){
+    ListNode curr = my.head;
+    ListNode next = curr.next;
+    while next != NULL {
+        adr data = curr.data;
+        adr data2 = next.data;
+        bool boo = foo(data, data2, arg);
+        if boo {
+            curr.next = next.next;
+            next.next = curr;
+            my.head = next;
+            curr = next;
+            next = curr.next;
+        } else {
+            curr = next;
+            next = curr.next;
+        };
+    };
+    return my;
+};
+
 
 LinkedList map@LinkedList(adr foo, adr arg){
     LinkedList newList = new LinkedList();
