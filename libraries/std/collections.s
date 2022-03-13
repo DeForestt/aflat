@@ -290,13 +290,69 @@ pub_LinkedList_delete:
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movl	%esi, -12(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	$0, %edx
+	movl	-12(%rbp), %edi
+	cmpl	%edx, %edi
+	setl	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Ldelete6
+	movl	$-1, %eax
+	leave
+	ret
+.Ldelete6:
 	movq	-8(%rbp), %r14
 	movq	16(%r14), %rbx
 	movq	%rbx, -20(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -24(%rbp)
-	jmp	.Ldelete7
-.Ldelete6:
+	jmp	.Ldelete8
+.Ldelete7:
+	pushq	%rdi
+	pushq	%rdx
+	movl	-12(%rbp), %edx
+	movl	-24(%rbp), %edi
+	cmpl	%edx, %edi
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Ldelete9
+	pushq	%rdi
+	pushq	%rdx
+	movq	-8(%rbp), %r14
+	movq	16(%r14), %rdx
+	movq	-20(%rbp), %rdi
+	cmpq	%rdx, %rdi
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Ldelete10
+	movq	-20(%rbp), %r14
+	movq	-8(%rbp), %rdx
+	movq	0(%r14), %rbx
+	movq	%rbx, 16(%rdx)
+	jmp	.Ldelete11
+.Ldelete10:
+	movq	-20(%rbp), %r14
+	movq	0(%r14), %rbx
+	movq	%rbx, -32(%rbp)
+	movq	-32(%rbp), %r14
+	movq	-20(%rbp), %rdx
+	movq	0(%r14), %rbx
+	movq	%rbx, 0(%rdx)
+.Ldelete11:
+	movl	$0, %eax
+	leave
+	ret
+.Ldelete9:
 	movq	-20(%rbp), %r14
 	movq	0(%r14), %rbx
 	movq	%rbx, -20(%rbp)
@@ -310,21 +366,18 @@ pub_LinkedList_delete:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -24(%rbp)
-.Ldelete7:
+.Ldelete8:
 	pushq	%rdi
 	pushq	%rdx
-	movl	-12(%rbp), %edx
-	movl	-24(%rbp), %edi
-	cmpl	%edx, %edi
-	setl	%al
+	movq	$0, %rdx
+	movq	-20(%rbp), %rdi
+	cmpq	%rdx, %rdi
+	setne	%al
 	popq	%rdx
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Ldelete6
-	movq	-20(%rbp), %r14
-	movq	0(%r14), %rbx
-	movq	%rbx, -20(%rbp)
+	je	.Ldelete7
 	movl	$0, %eax
 	leave
 	ret
@@ -340,12 +393,12 @@ pub_LinkedList_stitch:
 	movq	-8(%rbp), %r14
 	movq	16(%r14), %rbx
 	movq	%rbx, -24(%rbp)
-	jmp	.Lstitch9
-.Lstitch8:
+	jmp	.Lstitch13
+.Lstitch12:
 	movq	-24(%rbp), %r14
 	movq	0(%r14), %rbx
 	movq	%rbx, -24(%rbp)
-.Lstitch9:
+.Lstitch13:
 	pushq	%rdi
 	pushq	%rdx
 	movq	$0, %rdx
@@ -357,7 +410,7 @@ pub_LinkedList_stitch:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lstitch8
+	je	.Lstitch12
 	movq	-16(%rbp), %r14
 	movq	-24(%rbp), %rdx
 	movq	16(%r14), %rbx
@@ -384,11 +437,11 @@ pub_LinkedList_get:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Lget10
+	je	.Lget14
 	movq	$0, %rax
 	leave
 	ret
-.Lget10:
+.Lget14:
 	movq	-8(%rbp), %r14
 	movq	16(%r14), %rbx
 	movq	%rbx, -20(%rbp)
@@ -396,8 +449,8 @@ pub_LinkedList_get:
 	movq	%rbx, -28(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -32(%rbp)
-	jmp	.Lget12
-.Lget11:
+	jmp	.Lget16
+.Lget15:
 	movq	-28(%rbp), %r14
 	movq	0(%r14), %rbx
 	movq	%rbx, -28(%rbp)
@@ -411,7 +464,7 @@ pub_LinkedList_get:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -32(%rbp)
-.Lget12:
+.Lget16:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-12(%rbp), %edx
@@ -422,7 +475,7 @@ pub_LinkedList_get:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lget11
+	je	.Lget15
 	movq	-28(%rbp), %r14
 	movq	8(%r14), %rax
 	leave
@@ -464,28 +517,28 @@ pub_LinkedList_append:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Lappend13
+	je	.Lappend17
 	movq	-8(%rbp), %rdx
 	movq	-24(%rbp), %rbx
 	movq	%rbx, 16(%rdx)
 	movl	$0, %eax
 	leave
 	ret
-.Lappend13:
+.Lappend17:
 	movq	-8(%rbp), %r14
 	movq	16(%r14), %rbx
 	movq	%rbx, -40(%rbp)
 	movq	-40(%rbp), %r14
 	movq	0(%r14), %rbx
 	movq	%rbx, -48(%rbp)
-	jmp	.Lappend15
-.Lappend14:
+	jmp	.Lappend19
+.Lappend18:
 	movq	-48(%rbp), %rbx
 	movq	%rbx, -40(%rbp)
 	movq	-40(%rbp), %r14
 	movq	0(%r14), %rbx
 	movq	%rbx, -48(%rbp)
-.Lappend15:
+.Lappend19:
 	pushq	%rdi
 	pushq	%rdx
 	movq	$0, %rdx
@@ -496,7 +549,7 @@ pub_LinkedList_append:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lappend14
+	je	.Lappend18
 	movq	-40(%rbp), %rdx
 	movq	-24(%rbp), %rbx
 	movq	%rbx, 0(%rdx)
@@ -511,23 +564,47 @@ pub_LinkedList_insert:
 	pushq	%rbx
 	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
-	movl	%esi, -12(%rbp)
-	movq	%rdx, -20(%rbp)
+	movq	%rsi, -16(%rbp)
+	movl	%edx, -20(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdx
+	lea	-8(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_LinkedList_size
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %edx
+	movl	-20(%rbp), %edi
+	cmpl	%edx, %edi
+	setg	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
 	pushq	%rdi
 	pushq	%rdx
 	movl	$0, %edx
-	movl	-12(%rbp), %edi
+	movl	-20(%rbp), %edi
 	cmpl	%edx, %edi
 	setl	%al
 	popq	%rdx
 	popq	%rdi
+	movb	%al, %dil
+	orb	%dl, %dil
+	movb	%dil, %al
+	popq	%rdx
+	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Linsert16
+	je	.Linsert20
 	movl	$-1, %eax
 	leave
 	ret
-.Linsert16:
+.Linsert20:
 	pushq	%rdx
 	pushq	%rdi
 	movl	$16, %eax
@@ -538,15 +615,40 @@ pub_LinkedList_insert:
 	movq	%rax, %rbx
 	movq	%rbx, -28(%rbp)
 	movq	-28(%rbp), %rdx
-	movq	-20(%rbp), %rbx
+	movq	-16(%rbp), %rbx
 	movq	%rbx, 8(%rdx)
+	movq	-28(%rbp), %rdx
+	movq	$0, %rbx
+	movq	%rbx, 0(%rdx)
+	pushq	%rdi
+	pushq	%rdx
+	movl	$0, %edx
+	movl	-20(%rbp), %edi
+	cmpl	%edx, %edi
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Linsert21
+	movq	-8(%rbp), %r14
+	movq	-28(%rbp), %rdx
+	movq	16(%r14), %rbx
+	movq	%rbx, 0(%rdx)
+	movq	-8(%rbp), %rdx
+	movq	-28(%rbp), %rbx
+	movq	%rbx, 16(%rdx)
+	movl	$0, %eax
+	leave
+	ret
+.Linsert21:
 	movq	-8(%rbp), %r14
 	movq	16(%r14), %rbx
 	movq	%rbx, -36(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -40(%rbp)
-	jmp	.Linsert18
-.Linsert17:
+	jmp	.Linsert23
+.Linsert22:
 	movq	-36(%rbp), %r14
 	movq	0(%r14), %rbx
 	movq	%rbx, -36(%rbp)
@@ -560,10 +662,18 @@ pub_LinkedList_insert:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -40(%rbp)
-.Linsert18:
+.Linsert23:
 	pushq	%rdi
 	pushq	%rdx
-	movl	-12(%rbp), %edx
+	pushq	%rdi
+	pushq	%rdx
+	movl	$1, %edx
+	movl	-20(%rbp), %edi
+	sub	%edx, %edi
+	movl	%edi, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %edx
 	movl	-40(%rbp), %edi
 	cmpl	%edx, %edi
 	setl	%al
@@ -571,15 +681,15 @@ pub_LinkedList_insert:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Linsert17
+	je	.Linsert22
 	movq	-36(%rbp), %r14
 	movq	0(%r14), %rbx
 	movq	%rbx, -44(%rbp)
-	movq	-28(%rbp), %rdx
-	movq	-44(%rbp), %rbx
-	movq	%rbx, 0(%rdx)
 	movq	-36(%rbp), %rdx
 	movq	-28(%rbp), %rbx
+	movq	%rbx, 0(%rdx)
+	movq	-28(%rbp), %rdx
+	movq	-44(%rbp), %rbx
 	movq	%rbx, 0(%rdx)
 	movl	$0, %eax
 	leave
@@ -597,8 +707,8 @@ pub_LinkedList_size:
 	movq	%rbx, -16(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -20(%rbp)
-	jmp	.Lsize20
-.Lsize19:
+	jmp	.Lsize25
+.Lsize24:
 	movq	-16(%rbp), %r14
 	movq	0(%r14), %rbx
 	movq	%rbx, -16(%rbp)
@@ -612,7 +722,7 @@ pub_LinkedList_size:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
-.Lsize20:
+.Lsize25:
 	pushq	%rdi
 	pushq	%rdx
 	movq	$0, %rdx
@@ -623,7 +733,7 @@ pub_LinkedList_size:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lsize19
+	je	.Lsize24
 	movl	-20(%rbp), %eax
 	leave
 	ret
@@ -637,27 +747,56 @@ pub_LinkedList_sort:
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movq	%rdx, -24(%rbp)
+	pushq	%rdx
+	pushq	%rdi
+	movl	$24, %eax
+	movl	%eax, %edi
+	call	malloc
+	popq	%rdi
+	popq	%rdx
+	pushq	%rdi
+	movq	%rax, %rdi
+	pushq	%rdx
+	call	pub_LinkedList_init
+	popq	%rdi
+	popq	%rdx
+	movq	%rax, %rbx
+	movq	%rbx, -32(%rbp)
 	movq	-8(%rbp), %r14
 	movq	16(%r14), %rbx
-	movq	%rbx, -32(%rbp)
-	movq	-32(%rbp), %r14
-	movq	0(%r14), %rbx
 	movq	%rbx, -40(%rbp)
-	jmp	.Lsort22
-.Lsort21:
-	movq	-32(%rbp), %r14
-	movq	8(%r14), %rbx
-	movq	%rbx, -48(%rbp)
+	jmp	.Lsort27
+.Lsort26:
 	movq	-40(%rbp), %r14
 	movq	8(%r14), %rbx
-	movq	%rbx, -56(%rbp)
+	movq	%rbx, -48(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -52(%rbp)
+	movb	$1, %bl
+	movb	%bl, -53(%rbp)
+	jmp	.Lsort29
+.Lsort28:
+	pushq	%rdx
+	lea	-32(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	pushq	%rsi
+	movl	-52(%rbp), %eax
+	movl	%eax, %esi
+	call	pub_LinkedList_get
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movq	%rax, %rbx
+	movq	%rbx, -61(%rbp)
 	pushq	%rdx
 	movq	-16(%rbp), %r15
 	pushq	%rdi
 	movq	-48(%rbp), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
-	movq	-56(%rbp), %rax
+	movq	-61(%rbp), %rax
 	movq	%rax, %rsi
 	pushq	%rdx
 	movq	-24(%rbp), %rax
@@ -668,34 +807,111 @@ pub_LinkedList_sort:
 	popq	%rdi
 	popq	%rdx
 	movb	%al, %bl
-	movb	%bl, -57(%rbp)
-	movb	-57(%rbp), %al
+	movb	%bl, -62(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movb	$1, %dl
+	movb	-62(%rbp), %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
 	cmpb	$0, %al
-	je	.Lsort23
+	je	.Lsort30
+	pushq	%rdx
+	lea	-32(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	pushq	%rsi
+	movq	-48(%rbp), %rax
+	movq	%rax, %rsi
+	pushq	%rdx
+	movl	-52(%rbp), %eax
+	movl	%eax, %edx
+	call	pub_LinkedList_insert
+	popq	%rdx
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movb	$0, %bl
+	movb	%bl, -53(%rbp)
+.Lsort30:
+	pushq	%rdi
+	pushq	%rdx
+	movl	$1, %edx
+	movl	-52(%rbp), %edi
+	add	%edx, %edi
+	movl	%edi, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %ebx
+	movl	%ebx, -52(%rbp)
+.Lsort29:
+	pushq	%rdi
+	pushq	%rdx
+	movb	-53(%rbp), %dl
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdx
+	lea	-32(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_LinkedList_size
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %edx
+	movl	-52(%rbp), %edi
+	cmpl	%edx, %edi
+	setl	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dil
+	andb	%dl, %dil
+	movb	%dil, %al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$1, %al
+	je	.Lsort28
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdx
+	lea	-32(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_LinkedList_size
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %edx
+	movl	-52(%rbp), %edi
+	cmpl	%edx, %edi
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lsort31
+	pushq	%rdx
+	lea	-32(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	pushq	%rsi
+	movq	-48(%rbp), %rax
+	movq	%rax, %rsi
+	call	pub_LinkedList_append
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+.Lsort31:
 	movq	-40(%rbp), %r14
-	movq	-32(%rbp), %rdx
-	movq	0(%r14), %rbx
-	movq	%rbx, 0(%rdx)
-	movq	-40(%rbp), %rdx
-	movq	-32(%rbp), %rbx
-	movq	%rbx, 0(%rdx)
-	movq	-8(%rbp), %rdx
-	movq	-40(%rbp), %rbx
-	movq	%rbx, 16(%rdx)
-	movq	-40(%rbp), %rbx
-	movq	%rbx, -32(%rbp)
-	movq	-32(%rbp), %r14
 	movq	0(%r14), %rbx
 	movq	%rbx, -40(%rbp)
-	jmp	.Lsort24
-.Lsort23:
-	movq	-40(%rbp), %rbx
-	movq	%rbx, -32(%rbp)
-	movq	-32(%rbp), %r14
-	movq	0(%r14), %rbx
-	movq	%rbx, -40(%rbp)
-.Lsort24:
-.Lsort22:
+.Lsort27:
 	pushq	%rdi
 	pushq	%rdx
 	movq	$0, %rdx
@@ -706,8 +922,8 @@ pub_LinkedList_sort:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lsort21
-	movq	-8(%rbp), %rax
+	je	.Lsort26
+	movq	-32(%rbp), %rax
 	leave
 	ret
 	leave
@@ -740,8 +956,8 @@ pub_LinkedList_map:
 	movq	%rbx, -40(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -44(%rbp)
-	jmp	.Lmap26
-.Lmap25:
+	jmp	.Lmap33
+.Lmap32:
 	movq	-40(%rbp), %r14
 	movq	8(%r14), %rbx
 	movq	%rbx, -52(%rbp)
@@ -788,7 +1004,7 @@ pub_LinkedList_map:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -44(%rbp)
-.Lmap26:
+.Lmap33:
 	pushq	%rdi
 	pushq	%rdx
 	movq	$0, %rdx
@@ -799,7 +1015,7 @@ pub_LinkedList_map:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lmap25
+	je	.Lmap32
 	movq	-32(%rbp), %rax
 	leave
 	ret
@@ -841,8 +1057,8 @@ forEachArray:
 	movl	%ebx, -40(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -52(%rbp)
-	jmp	.LforEachArray28
-.LforEachArray27:
+	jmp	.LforEachArray35
+.LforEachArray34:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-40(%rbp), %edx
@@ -894,11 +1110,11 @@ forEachArray:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LforEachArray29
+	je	.LforEachArray36
 	movl	$0, %eax
 	leave
 	ret
-.LforEachArray29:
+.LforEachArray36:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
@@ -909,7 +1125,7 @@ forEachArray:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -52(%rbp)
-.LforEachArray28:
+.LforEachArray35:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-28(%rbp), %edx
@@ -920,7 +1136,7 @@ forEachArray:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.LforEachArray27
+	je	.LforEachArray34
 	movl	$0, %eax
 	leave
 	ret
@@ -939,8 +1155,8 @@ pub_LinkedList_find:
 	movq	%rbx, -32(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -36(%rbp)
-	jmp	.Lfind31
-.Lfind30:
+	jmp	.Lfind38
+.Lfind37:
 	movq	-32(%rbp), %r14
 	movq	8(%r14), %rbx
 	movq	%rbx, -44(%rbp)
@@ -972,11 +1188,11 @@ pub_LinkedList_find:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Lfind32
+	je	.Lfind39
 	movl	-36(%rbp), %eax
 	leave
 	ret
-.Lfind32:
+.Lfind39:
 	movq	-32(%rbp), %r14
 	movq	0(%r14), %rbx
 	movq	%rbx, -32(%rbp)
@@ -990,7 +1206,7 @@ pub_LinkedList_find:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -36(%rbp)
-.Lfind31:
+.Lfind38:
 	pushq	%rdi
 	pushq	%rdx
 	movq	$0, %rdx
@@ -1001,7 +1217,7 @@ pub_LinkedList_find:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lfind30
+	je	.Lfind37
 	movl	$-1, %eax
 	leave
 	ret
@@ -1046,8 +1262,8 @@ whereArray:
 	movl	%ebx, -36(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -44(%rbp)
-	jmp	.LwhereArray34
-.LwhereArray33:
+	jmp	.LwhereArray41
+.LwhereArray40:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-40(%rbp), %edx
@@ -1101,7 +1317,7 @@ whereArray:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LwhereArray35
+	je	.LwhereArray42
 	pushq	%rdx
 	lea	-32(%rbp), %rax
 	pushq	%rdi
@@ -1144,7 +1360,7 @@ whereArray:
 	movq	-77(%rbp), %rax
 	movq	-64(%rbp), %rbx
 	movq	%rbx, (%rax)
-.LwhereArray35:
+.LwhereArray42:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
@@ -1155,7 +1371,7 @@ whereArray:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -44(%rbp)
-.LwhereArray34:
+.LwhereArray41:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-36(%rbp), %edx
@@ -1166,7 +1382,7 @@ whereArray:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.LwhereArray33
+	je	.LwhereArray40
 	movq	-32(%rbp), %rax
 	leave
 	ret
@@ -1329,8 +1545,8 @@ pub_LinkedList_erace:
 	movq	-8(%rbp), %r14
 	movq	16(%r14), %rbx
 	movq	%rbx, -16(%rbp)
-	jmp	.Lerace37
-.Lerace36:
+	jmp	.Lerace44
+.Lerace43:
 	movq	-16(%rbp), %r14
 	movq	0(%r14), %rbx
 	movq	%rbx, -24(%rbp)
@@ -1351,7 +1567,7 @@ pub_LinkedList_erace:
 	popq	%rdx
 	movq	-24(%rbp), %rbx
 	movq	%rbx, -16(%rbp)
-.Lerace37:
+.Lerace44:
 	pushq	%rdi
 	pushq	%rdx
 	movq	$0, %rdx
@@ -1362,7 +1578,7 @@ pub_LinkedList_erace:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lerace36
+	je	.Lerace43
 	pushq	%rdx
 	pushq	%rdi
 	movq	-8(%rbp), %rax
@@ -1386,8 +1602,8 @@ pub_LinkedList_reverse:
 	movq	%rbx, -16(%rbp)
 	movq	$0, %rbx
 	movq	%rbx, -24(%rbp)
-	jmp	.Lreverse39
-.Lreverse38:
+	jmp	.Lreverse46
+.Lreverse45:
 	movq	-16(%rbp), %r14
 	movq	0(%r14), %rbx
 	movq	%rbx, -32(%rbp)
@@ -1398,7 +1614,7 @@ pub_LinkedList_reverse:
 	movq	%rbx, -24(%rbp)
 	movq	-32(%rbp), %rbx
 	movq	%rbx, -16(%rbp)
-.Lreverse39:
+.Lreverse46:
 	pushq	%rdi
 	pushq	%rdx
 	movq	$0, %rdx
@@ -1409,7 +1625,7 @@ pub_LinkedList_reverse:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lreverse38
+	je	.Lreverse45
 	movq	-8(%rbp), %rdx
 	movq	-24(%rbp), %rbx
 	movq	%rbx, 16(%rdx)
@@ -1490,15 +1706,15 @@ pub_Array_extend:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Lextend40
+	je	.Lextend47
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strArray.extend41, %rax
+	movq	$.strArray.extend48, %rax
 	movq	%rax, %rdi
 	call	print
 	popq	%rdi
 	popq	%rdx
-.Lextend40:
+.Lextend47:
 	movl	-12(%rbp), %eax
 	leave
 	ret
@@ -1508,7 +1724,7 @@ pub_Array_extend:
 
 .data
 
-.strArray.extend41:
+.strArray.extend48:
 	.asciz	 "badrealloc"
 
 

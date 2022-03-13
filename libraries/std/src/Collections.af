@@ -92,15 +92,24 @@ ListNode newNode(){
  */
 
 int delete@LinkedList(int index){
-    ListNode curr;
-    curr = my.head;
-
+    if(index < 0){
+        return -1;
+    };
+    ListNode curr = my.head;
     int i = 0;
-    while(i < index){
+    while(curr != NULL){
+        if(i == index){
+            if curr == my.head
+                my.head = curr.next
+            else {
+                ListNode next = curr.next;
+                curr.next = next.next;
+            };
+            return 0;
+        };
         curr = curr.next;
         i = i + 1;
     };
-    curr = curr.next;
     return 0;
 };
 
@@ -176,24 +185,31 @@ int append@LinkedList(adr data){
  *                  adr data : the data to be inserted;
  * returns:         int : 0 if successful, -1 if not;
  */
-int insert@LinkedList(int index, adr data){
-    if (index < 0){
+int insert@LinkedList(adr data, int index){
+    if (index < 0 | index > my.size()){
         return -1;
     };
 
     ListNode ln = new ListNode();
     ln.data = data;
+    ln.next = NULL;
+
+
+    if (index == 0){
+        ln.next = my.head;
+        my.head = ln;
+        return 0;
+    };
 
     ListNode curr;
     curr = my.head;
     
-    for int i = 0; i < index ; i = i + 1
+    for int i = 0; i < index - 1 ; i = i + 1
         curr = curr.next;
-
-    adr temp;
-    temp = curr.next;
-    ln.next = temp;
+    
+    ListNode next = curr.next;
     curr.next = ln;
+    ln.next = next;
     return 0;
 };
 
@@ -216,24 +232,27 @@ int size@LinkedList(){
 };
 
 LinkedList sort@LinkedList(adr foo, adr arg){
+    LinkedList n = new LinkedList();
     ListNode curr = my.head;
-    ListNode next = curr.next;
-    while next != NULL {
+    while(curr != NULL){
         adr data = curr.data;
-        adr data2 = next.data;
-        bool boo = foo(data, data2, arg);
-        if boo {
-            curr.next = next.next;
-            next.next = curr;
-            my.head = next;
-            curr = next;
-            next = curr.next;
-        } else {
-            curr = next;
-            next = curr.next;
+        int i = 0;
+        bool loop = true;
+        while(i < n.size() & loop){
+            adr data2 = n.get(i);
+            bool cmp = foo(data, data2, arg);
+            if(cmp == true){
+                n.insert(data, i);
+                loop = false;
+            };
+            i = i + 1;
         };
+        if(i == n.size()){
+            n.append(data);
+        };
+        curr = curr.next;
     };
-    return my;
+    return n;
 };
 
 
