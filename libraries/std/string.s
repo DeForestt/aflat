@@ -21,12 +21,12 @@
 .global	pub_String_stitch
 .global	pub_String_concat
 .global	pub_String_init
-.global	isNumeric
+.global	pub_String_isNumeric
 
 
 .text
 
-isNumeric:
+pub_String_isNumeric:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
@@ -40,7 +40,7 @@ isNumeric:
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
-	movq	$lambda_1647170736746_0, %rax
+	movq	$lambda_1647171939763_0, %rax
 	movq	%rax, %rsi
 	lea	-9(%rbp), %rax
 	pushq	%rdx
@@ -1715,10 +1715,11 @@ pub_String_toInt:
 	pushq	%rdx
 	movb	$0, %dl
 	pushq	%rdx
+	lea	-8(%rbp), %rax
 	pushq	%rdi
-	movq	-8(%rbp), %rax
+	movq	(%rax), %rax
 	movq	%rax, %rdi
-	call	isNumeric
+	call	pub_String_isNumeric
 	popq	%rdi
 	popq	%rdx
 	movb	%al, %dil
@@ -1731,7 +1732,7 @@ pub_String_toInt:
 	je	.LtoInt22
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strString.delete23, %rax
+	movq	$.strString.lambda_1647171939763_023, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
@@ -1904,7 +1905,7 @@ upper:
 	ret
 	leave
 	ret
-lambda_1647170736746_0:
+lambda_1647171939763_0:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
@@ -1929,14 +1930,14 @@ lambda_1647170736746_0:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Llambda_1647170736746_01
+	je	.LisNumeric1
 	movq	-22(%rbp), %rax
 	movb	$0, %bl
 	movb	%bl, (%rax)
 	movl	$1, %eax
 	leave
 	ret
-.Llambda_1647170736746_01:
+.LisNumeric1:
 	movl	$0, %eax
 	leave
 	ret
@@ -1946,7 +1947,7 @@ lambda_1647170736746_0:
 
 .data
 
-.strString.delete23:
+.strString.lambda_1647171939763_023:
 	.asciz	 "Attempt to convert non-numeric string to int"
 
 

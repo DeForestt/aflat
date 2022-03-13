@@ -7,10 +7,10 @@ char lower(char c);
 char upper(char c);
 
 
-bool isNumeric(String s){
+bool isNumeric@String(){
 	bool isNumeric = true;
 
-	s.loop([char c, int index, adr isNum]=>{
+	my.loop([char c, int index, adr isNum]=>{
 		if char_isDigit(c) == false {
 			isNum =: false;
 			return 1;
@@ -258,7 +258,7 @@ LinkedList split@String(char c){
 };
 
 int toInt@String(){
-    if (isNumeric(my) == false){
+    if my.isNumeric() == false {
         panic("Attempt to convert non-numeric string to int");
     };
     return str_toInt(my.head);

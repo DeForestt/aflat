@@ -21,6 +21,8 @@ class String{
     // equal is for compairing to a string literal or a char array
     bool equal(adr s);
 
+    bool isNumeric();
+
     int find(char c);
     int toInt();
     int len();
