@@ -52,6 +52,7 @@ namespace ast{
     enum ScopeMod{
         Public,
         Private,
+        Static
     };
 
     class Expr{

@@ -122,6 +122,12 @@ ast::Statment* parse::Parser::parseStmt(links::LinkedList<lex::Token*> &tokens, 
             if(dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr) throw err::Exception("Expected statent after private one line " + std::to_string(obj.lineCount));
             obj = *dynamic_cast<lex::LObj *>(tokens.peek());
             tokens.pop();
+        } else if(obj.meta == "static"){
+            // set the scope modifier to static
+            scope = ast::Static;
+            if(dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr) throw err::Exception("Expected statent after static on line " + std::to_string(obj.lineCount));
+            obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+            tokens.pop();
         }
 
         //Declare a variable
