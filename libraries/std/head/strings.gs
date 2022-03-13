@@ -14,3 +14,4 @@ int float_toString(adr input, adr obuff, int signed);
 adr str_reverse(adr in, adr buff);
 char str_at(adr str, int i);
 int str_forEach(adr s, adr foo, adr args);
+bool char_isDigit(char c);

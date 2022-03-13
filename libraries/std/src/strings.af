@@ -419,3 +419,7 @@ int str_forEach(adr s, adr foo, adr args){
 	};
 	return 0;
 };
+
+bool char_isDigit(char c) {
+  return c >= '0' & c <= '9';
+};
