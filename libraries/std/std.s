@@ -1041,6 +1041,13 @@ panic:
 	movq	%rdi, -8(%rbp)
 	pushq	%rdx
 	pushq	%rdi
+	movq	$.strpanic36, %rax
+	movq	%rax, %rdi
+	call	print
+	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
+	pushq	%rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
 	call	print
@@ -1048,7 +1055,7 @@ panic:
 	popq	%rdx
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strpanic36, %rax
+	movq	$.strpanic37, %rax
 	movq	%rax, %rdi
 	call	print
 	popq	%rdi
@@ -1066,8 +1073,10 @@ panic:
 
 .data
 
-.strpanic36:
+.strpanic37:
 	.asciz	 "\n"
+.strpanic36:
+	.asciz	 "Panic: "
 .strinspectHeap35:
 	.asciz	 "NULL\n"
 .strinspectHeap34:

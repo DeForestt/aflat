@@ -204,7 +204,7 @@ Times newTimes(){
 };
 
 int panic(adr msg){
-    print(msg);
+    print("Panic: "); print(msg);
     print("\n");
     sys_exit(1);
 };
