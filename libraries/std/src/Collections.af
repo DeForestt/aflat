@@ -92,25 +92,28 @@ ListNode newNode(){
  */
 
 int delete@LinkedList(int index){
-    if(index < 0){
+    if index < 0 | index > my.size() {
         return -1;
     };
+
     ListNode curr = my.head;
+
+    if index == 0 {
+        my.head = curr.next;
+        return 0;
+    };
+
     int i = 0;
     while(curr != NULL){
-        if(i == index){
-            if curr == my.head
-                my.head = curr.next
-            else {
-                ListNode next = curr.next;
-                curr.next = next.next;
-            };
+        if i == index - 1 {
+            ListNode next = curr.next;
+            curr.next = next.next;
             return 0;
         };
         curr = curr.next;
         i = i + 1;
     };
-    return 0;
+    return -1;
 };
 
 int stitch@LinkedList(LinkedList ln){
