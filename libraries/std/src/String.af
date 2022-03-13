@@ -61,16 +61,20 @@ String subString@String(int start, int end){
     return newString;
 };
 
-int compare@String(String s){
+bool compare@String(String s){
     adr string = s.head;
     adr mystring = my.head;
     int comp = str_comp(string, mystring);
-    return comp;
+    return comp == 1;
 };
 
-int equal@String(adr s){
+bool equal@String(adr s){
     int comp = str_comp(my.head, s);
-    return comp;
+    return comp == 1;
+};
+
+adr getPrimitive@String(){
+    return my.head;
 };
 
 char at@String(int index){
@@ -90,7 +94,7 @@ int delete@String(){
 };
 
 String printString(String s){
-    adr head = s.head;
+    adr head = s.getPrimitive();
     print(head);
     return s;
 };
@@ -205,6 +209,25 @@ String toUpper@String(){
     return newString;
 };
 
+LinkedList split@String(char c){
+    LinkedList list = new LinkedList();
+    adr head = my.head;
+    int length = my.len();
+    int newStringStart = 0;
+    for int i = 0; i < length; i++ {
+        char ch = my.at(i);
+        if ch == c {
+            int newStringEnd = i;
+            String newString = my.subString(newStringStart, newStringEnd);
+            list.append(newString);
+            newStringStart = newStringEnd + 1;
+        };
+    };
+    String newString = my.subString(newStringStart, length);
+    list.append(newString);
+    return list;
+};
+
 int toInt@String(){
     return str_toInt(my.head);
 };
@@ -226,9 +249,7 @@ char lower(char c){
     cast =: 0;
     if (c > '@'){
         if (c < '['){
-            int r = c + 32;
-            cast =: r;
-            c = cast as char;
+            c = c + 32;
         };
     };
     return c;
@@ -240,9 +261,7 @@ char upper(char c){
     cast =: 0;
     if (c > '`'){
         if (c < '{'){
-            int r = c - 32;
-            cast =: r;
-            c = cast as char;
+            c = c - 32;
         };
     };
     return c;
