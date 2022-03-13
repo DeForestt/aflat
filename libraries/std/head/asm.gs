@@ -1,4 +1,4 @@
-adr brk(long size);
+adr brk(adr size);
 int sys_write(int file, adr text, int bytes);
 int sys_create(adr path, long mode);
 int sys_open(adr path, long flags, long mode);

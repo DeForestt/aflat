@@ -21,7 +21,7 @@ Block findFreeBlock(Block last, int size) {
 };
 
 Block requestSpace(Block last, int size){
-    Block block = brk(#0);
+    Block block = brk(NULL);
     int nsize = size + Block;
     adr i = brk(block + nsize);
 
@@ -201,4 +201,10 @@ Times newTimes(){
     t.tms_stime = 0;
     t.tms_utime = 0;
     return t;
+};
+
+int panic(adr msg){
+    print(msg);
+    print("\n");
+    sys_exit(1);
 };

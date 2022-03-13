@@ -32,4 +32,4 @@ adr malloc(int size);
 adr realloc(adr ptr, int size);
 int inspectHeap();
 int memcopy(adr src, adr dst, int size);
-
+int panic(adr msg);
