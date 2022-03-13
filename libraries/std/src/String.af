@@ -93,6 +93,21 @@ int delete@String(){
     free(my);
 };
 
+int loop@String(adr foo, adr args){
+    adr head = my.head;
+    int length = len(head);
+    int i = 0;
+    while(i < length){
+        char ch = str_at(head, i);
+        int brk = foo(ch, i, args);
+        i = i + 1;
+        if(brk == 1){
+            return 0;
+        };
+    };
+    return 0;
+};
+
 String printString(String s){
     adr head = s.getPrimitive();
     print(head);

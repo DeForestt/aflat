@@ -14,6 +14,7 @@ class String{
     adr getPrimitive();
 
     String subString(int start, int end);
+    int loop(adr foo, adr args);
 
     // compare is for compairing to another string object
     bool compare(adr s);
