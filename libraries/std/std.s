@@ -1103,7 +1103,6 @@ assert:
 	call	print
 	popq	%rdi
 	popq	%rdx
-.Lassert38:
 	pushq	%rdx
 	pushq	%rdi
 	movl	$1, %eax
@@ -1111,6 +1110,7 @@ assert:
 	call	sys_exit
 	popq	%rdi
 	popq	%rdx
+.Lassert38:
 	movl	$0, %eax
 	leave
 	ret

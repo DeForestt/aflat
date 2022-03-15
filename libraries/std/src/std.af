@@ -214,7 +214,7 @@ int assert(bool cond, adr message){
         print("Failed assert: ");
         print(message);
         print("\n");
+        sys_exit(1);
     };
-    sys_exit(1);
     return 0;
 };
