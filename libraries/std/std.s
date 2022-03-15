@@ -1123,7 +1123,7 @@ assert:
 .strassert40:
 	.asciz	 "\n"
 .strassert39:
-	.asciz	 "Failed asseert, "
+	.asciz	 "Failed asseert: "
 .strpanic37:
 	.asciz	 "\n"
 .strpanic36:

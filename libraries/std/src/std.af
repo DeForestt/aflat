@@ -211,7 +211,7 @@ int panic(adr msg){
 
 int assert(bool cond, adr message){
     if !cond {
-        print("Failed asseert, ");
+        print("Failed asseert: ");
         print(message);
         print("\n");
     };
