@@ -1084,12 +1084,33 @@ assert:
 	je	.Lassert38
 	pushq	%rdx
 	pushq	%rdi
+	movq	$.strassert39, %rax
+	movq	%rax, %rdi
+	call	print
+	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
+	pushq	%rdi
 	movq	-9(%rbp), %rax
 	movq	%rax, %rdi
-	call	panic
+	call	print
+	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
+	pushq	%rdi
+	movq	$.strassert40, %rax
+	movq	%rax, %rdi
+	call	print
 	popq	%rdi
 	popq	%rdx
 .Lassert38:
+	pushq	%rdx
+	pushq	%rdi
+	movl	$1, %eax
+	movl	%eax, %edi
+	call	sys_exit
+	popq	%rdi
+	popq	%rdx
 	movl	$0, %eax
 	leave
 	ret
@@ -1099,6 +1120,10 @@ assert:
 
 .data
 
+.strassert40:
+	.asciz	 "\n"
+.strassert39:
+	.asciz	 "Failed asseert, "
 .strpanic37:
 	.asciz	 "\n"
 .strpanic36:
