@@ -19,7 +19,7 @@ std::string preProcess(std::string input);
 std::string getExePath();
 void buildTemplate(std::string value);
 void build(std::string path, std::string output);
-void runConfig(std::string path, std::string libPath);
+void runConfig(std::string path, std::string libPath, char pmode = 'e');
 
 int main(int argc, char *argv[]){
     // Usage error
@@ -51,6 +51,11 @@ int main(int argc, char *argv[]){
     if (value == "run"){
         runConfig("./aflat.cfg", libPathA);
         system("./bin/a.out");
+        return 0;
+    }
+    if (value == "test"){
+        runConfig("./aflat.cfg", libPathA, 't');
+        system("./bin/a.test");
         return 0;
     }
     if (value == "add"){
@@ -225,6 +230,7 @@ void buildTemplate(std::string value){
     std::string libPath = exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std";
     std::filesystem::create_directories(value);
     std::filesystem::create_directories(value + "/src");
+    std::filesystem::create_directories(value + "/src/test");
     std::filesystem::create_directories(value + "/head");
     std::filesystem::create_directories(value + "/bin");
 
@@ -236,15 +242,21 @@ void buildTemplate(std::string value){
     outfile << "int main(){\n\tprint(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
     outfile.close();
 
+    outfile = std::ofstream(value + "/src/test/test.af");
+    outfile << ".needs <io>\n";
+    outfile << "int main(){\n\tassert(1 == 1, \"Failed 1 == 1 assert\");\n\treturn 0;\n};\n";
+    outfile.close();
+
     outfile = std::ofstream(value + "/aflat.cfg");
     
     // Write the standard Config file
     outfile << "; Aflat Config File\n";
-    outfile << "m main\n";
+    outfile << "e main\n";
+    outfile << "t test/test\n";
     outfile.close();
 }
 
-void runConfig(std::string path, std::string libPath){
+void runConfig(std::string path, std::string libPath, char pmode = 'e'){
     bool debug = false;
     std::vector<std::string> linker;
     std::vector<std::string> pathList;
@@ -281,8 +293,7 @@ void runConfig(std::string path, std::string libPath){
         if(line[0] == ';') continue;
 
         // if the line is a dependency, build it and add it to the linker
-        if(line[0] == 'm'){
-
+        if(line[0] == 'm' | line[0] == pmode){
             std::string addPath = "";
 
             //Check if the modual name has a path
@@ -331,9 +342,15 @@ void runConfig(std::string path, std::string libPath){
     for(auto& s : linker){
         linkerList += s + " ";
     }
-    std::string gcc = "gcc -O0 -no-pie -o bin/a.out " + linkerList;
+
+    std::string ofile = "./bin/a.out ";
+    if (pmode == 't'){
+        ofile = "./bin/a.test ";
+    };
+
+    std::string gcc = "gcc -O0 -no-pie -o " + ofile + linkerList;
     if (debug){
-        gcc = "gcc -O0 -g -no-pie -o bin/a.out " + linkerList;
+        gcc = "gcc -O0 -g -no-pie -o " + ofile + linkerList;
     }
 
     system(gcc.c_str());
