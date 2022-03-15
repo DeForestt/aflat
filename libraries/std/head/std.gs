@@ -33,4 +33,4 @@ adr realloc(adr ptr, int size);
 int inspectHeap();
 int memcopy(adr src, adr dst, int size);
 int panic(adr msg);
-int assert(bool cond);
+int assert(bool cond, adr message);
