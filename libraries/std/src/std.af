@@ -208,3 +208,8 @@ int panic(adr msg){
     print("\n");
     sys_exit(1);
 };
+
+int assert(bool cond, adr message){
+    if !cond panic(message);
+    return 0;
+};

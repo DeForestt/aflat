@@ -1,3 +1,4 @@
+.global	assert
 .global	panic
 .global	newTimes
 .global	newBit
@@ -1067,6 +1068,31 @@ panic:
 	call	sys_exit
 	popq	%rdi
 	popq	%rdx
+	leave
+	ret
+assert:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$16, %rsp
+	movb	%dil, -1(%rbp)
+	movq	%rsi, -9(%rbp)
+	movzbl	-1(%rbp), %eax
+	xor	$1, %eax
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lassert38
+	pushq	%rdx
+	pushq	%rdi
+	movq	-9(%rbp), %rax
+	movq	%rax, %rdi
+	call	panic
+	popq	%rdi
+	popq	%rdx
+.Lassert38:
+	movl	$0, %eax
+	leave
+	ret
 	leave
 	ret
 
