@@ -87,20 +87,19 @@ int main(int argc, char *argv[]){
         headerFile.close();
 
         //Read the last line of the config file
-        std::ifstream cFile("./aflat.cfg");
-        std::string line;
-        std::string lastLine = "";
-        while (std::getline(cFile, line)){
-            lastLine = line;
-        };
+        std::fstream cFile("./aflat.cfg", std::fstream::in | std::fstream::out);
+        cFile.seekg(-1,cFile.end); // move the the end
+        char c;
+        cFile.get(c);
         cFile.close();
 
         // add the modual to the config file
         std::fstream configFile("./aflat.cfg", std::ios::app | std::ios::in);
         // if the last line is not a newline add a newline
-        if (lastLine != ""){
-            configFile << "\n";
+        if (c != '\n'){
+            configFile << '\n';
         }
+
         configFile << "m "<< modualName << "\n";
         return 0;
     }
