@@ -23,7 +23,7 @@ class String{
 
     bool isNumeric();
 
-    int find(char c);
+    int indexOf(char c);
     int toInt();
     int len();
 
