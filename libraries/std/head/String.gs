@@ -1,10 +1,11 @@
 .needs <Collections>
 class String{
     private adr head;
+
     String init(adr value);
     String concat<<&>>(adr s);
     String stitch<<+>>(adr s);
-    private String copy<<=>>(adr s);
+    String copy<<=>>(adr s);
     String replace(char o, char n);
     LinkedList split(char c);
     String toLower();
