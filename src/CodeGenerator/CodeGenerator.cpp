@@ -1,1936 +1,2012 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
-#include <iostream>
 #include <chrono>
+#include <iostream>
 #pragma region helper functions
 
-
-bool searchSymbol(gen::Symbol sym, std::string str){
-    if (sym.symbol == str) return true; else return false;
-}
-
-bool compairFunc(ast::Function F, std::string input){
-    if (input == F.ident.ident){
-        return true;
-    }
-        return false;
-}
-
-bool gen::Type::compair(gen::Type *  t, std::string ident){
-    if (ident == t->Ident) return true;
+bool searchSymbol(gen::Symbol sym, std::string str) {
+  if (sym.symbol == str)
+    return true;
+  else
     return false;
+}
+
+bool compairFunc(ast::Function F, std::string input) {
+  if (input == F.ident.ident) {
+    return true;
+  }
+  return false;
+}
+
+bool gen::Type::compair(gen::Type *t, std::string ident) {
+  if (ident == t->Ident)
+    return true;
+  return false;
 }
 
 #pragma endregion
 
-int gen::CodeGenerator::getBytes(asmc::Size size){
-    switch(size){ 
-            case asmc::QWord:
-                return 8;
-                break;
-            case asmc::Word:
-                return 2;
-                break;
-            case asmc::Byte:
-                return 1;
-                break;
-            case asmc::DWord:
-                return 4;
-                break;
-            default:
-                alert("Unknown Size");
-        }
-    return 0;
+int gen::CodeGenerator::getBytes(asmc::Size size) {
+  switch (size) {
+  case asmc::QWord:
+    return 8;
+    break;
+  case asmc::Word:
+    return 2;
+    break;
+  case asmc::Byte:
+    return 1;
+    break;
+  case asmc::DWord:
+    return 4;
+    break;
+  default:
+    alert("Unknown Size");
+  }
+  return 0;
 }
 
-void gen::CodeGenerator::alert(std::string message, bool error = true){
-    if (error){
-        std::cout << "Error: ";
-        if (this->scope != nullptr){
-            std::cout << "in class " << this->scope->Ident << ": ";
-        }
-        if (!this->globalScope && this->nameTable.head != nullptr){
-            std::cout << "in function " << this->nameTable.peek().ident.ident << ": ";
-        }
-        std::cout << message << std::endl;
-        exit(1);
-    } else {
-        std::cout << "Warning: " << message << std::endl;
+void gen::CodeGenerator::alert(std::string message, bool error = true) {
+  if (error) {
+    std::cout << "Error: ";
+    if (this->scope != nullptr) {
+      std::cout << "in class " << this->scope->Ident << ": ";
     }
+    if (!this->globalScope && this->nameTable.head != nullptr) {
+      std::cout << "in function " << this->nameTable.peek().ident.ident << ": ";
+    }
+    std::cout << message << std::endl;
+    exit(1);
+  } else {
+    std::cout << "Warning: " << message << std::endl;
+  }
 };
 
-gen::CodeGenerator::CodeGenerator(){
-    this->registers << asmc::Register("rax", "eax", "ax", "al");
-    this->registers << asmc::Register("rcx", "ecx", "cx", "cl");
-    this->registers << asmc::Register("rdx", "edx", "dx", "dl");
-    this->registers << asmc::Register("rbx", "ebx", "bx", "bl");
-    this->registers << asmc::Register("rsi", "esi", "si", "sil");
-    this->registers << asmc::Register("rdi", "edi", "di", "dil");   
-    this->registers << asmc::Register("rsp", "esp", "sp", "spl");
-    this->registers << asmc::Register("rbp", "ebp", "bp", "bpl");
-    this->registers << asmc::Register("r14", "r14d", "r14w", "r14b");
-    this->registers << asmc::Register("r15", "r15d", "r15w", "r15b");
-    this->registers << asmc::Register("xmm0", "xmm0", "xmm0", "xmm0");
-    this->registers << asmc::Register("xmm1", "xmm1", "xmm1", "xmm1");
-    this->registers << asmc::Register("xmm2", "xmm2", "xmm2", "xmm2");
-    this->registers << asmc::Register("xmm3", "xmm3", "xmm3", "xmm3");
-    this->registers.foo = asmc::Register::compair;
-    this->nameTable.foo = compairFunc;
-    this->globalScope = true;
-    this->typeList.foo = gen::Type::compair;
-    this->scope = nullptr;
+gen::CodeGenerator::CodeGenerator() {
+  this->registers << asmc::Register("rax", "eax", "ax", "al");
+  this->registers << asmc::Register("rcx", "ecx", "cx", "cl");
+  this->registers << asmc::Register("rdx", "edx", "dx", "dl");
+  this->registers << asmc::Register("rbx", "ebx", "bx", "bl");
+  this->registers << asmc::Register("rsi", "esi", "si", "sil");
+  this->registers << asmc::Register("rdi", "edi", "di", "dil");
+  this->registers << asmc::Register("rsp", "esp", "sp", "spl");
+  this->registers << asmc::Register("rbp", "ebp", "bp", "bpl");
+  this->registers << asmc::Register("r14", "r14d", "r14w", "r14b");
+  this->registers << asmc::Register("r15", "r15d", "r15w", "r15b");
+  this->registers << asmc::Register("xmm0", "xmm0", "xmm0", "xmm0");
+  this->registers << asmc::Register("xmm1", "xmm1", "xmm1", "xmm1");
+  this->registers << asmc::Register("xmm2", "xmm2", "xmm2", "xmm2");
+  this->registers << asmc::Register("xmm3", "xmm3", "xmm3", "xmm3");
+  this->registers.foo = asmc::Register::compair;
+  this->nameTable.foo = compairFunc;
+  this->globalScope = true;
+  this->typeList.foo = gen::Type::compair;
+  this->scope = nullptr;
 }
 
-bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName, bool strict = false){
-    if (type.typeName == typeName) return true;
-    if (typeName == "--std--flex--function") return true;
-    if (type.typeName == "int" && typeName == "float") return true;
-    if (type.typeName == "float" && typeName == "int") return true;
-    if (type.size == asmc::QWord && typeName == "adr") return true;
-    if (strict && type.typeName == "adr") return true;
-    // search the type list for the type
-    gen::Type** udef = this->typeList[typeName];
-    if (udef != nullptr){
-        if (type.typeName == "adr") return true;
-        // if the type is a class
-        gen::Class * cl = dynamic_cast<gen::Class *>(*udef);
-        if (cl != nullptr){
-            gen::Class * parent = cl->parent;
-            
-            if (parent != nullptr){
-                if (parent->Ident == type.typeName) return true;
-            };
-        };
+bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
+                                   bool strict = false) {
+  if (type.typeName == typeName)
+    return true;
+  if (typeName == "--std--flex--function")
+    return true;
+  if (type.typeName == "int" && typeName == "float")
+    return true;
+  if (type.typeName == "float" && typeName == "int")
+    return true;
+  if (type.size == asmc::QWord && typeName == "adr")
+    return true;
+  if (strict && type.typeName == "adr")
+    return true;
+  // search the type list for the type
+  gen::Type **udef = this->typeList[typeName];
+  if (udef != nullptr) {
+    if (type.typeName == "adr")
+      return true;
+    // if the type is a class
+    gen::Class *cl = dynamic_cast<gen::Class *>(*udef);
+    if (cl != nullptr) {
+      gen::Class *parent = cl->parent;
+
+      if (parent != nullptr) {
+        if (parent->Ident == type.typeName)
+          return true;
+      };
     };
-    if (!strict) alert("Cannot assign type " + type.typeName + " to " + typeName);
-    alert("Cannot return type " + typeName + " from " + type.typeName);
-    return false;
+  };
+  if (!strict)
+    alert("Cannot assign type " + type.typeName + " to " + typeName);
+  alert("Cannot return type " + typeName + " from " + type.typeName);
+  return false;
 }
 
-gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound, asmc::File &OutputFile, bool isDiv = false){
-    asmc::Mov * mov1 = new asmc::Mov();
-    asmc::Mov * mov2 = new asmc::Mov();
-    std::string r1 = "%edx", r2 = "%rdi";
-    // if expr1 op is Float set to the float registers
+gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound,
+                                              asmc::File &OutputFile,
+                                              bool isDiv = false) {
+  asmc::Mov *mov1 = new asmc::Mov();
+  asmc::Mov *mov2 = new asmc::Mov();
+  std::string r1 = "%edx", r2 = "%rdi";
+  // if expr1 op is Float set to the float registers
 
-    gen::Expr expr2 = this->GenExpr(compound.expr2, OutputFile);
-    
-    if (expr2.op == asmc::Float){
-        r1 = "%xmm1";
-        r2 = "%xmm0";
+  gen::Expr expr2 = this->GenExpr(compound.expr2, OutputFile);
+
+  if (expr2.op == asmc::Float) {
+    r1 = "%xmm1";
+    r2 = "%xmm0";
+  }
+
+  mov1->op = expr2.op;
+  mov1->to = this->registers[r1]->get(expr2.size);
+  mov1->from = expr2.access;
+  mov1->size = expr2.size;
+  if (!isDiv)
+    OutputFile.text << mov1;
+
+  gen::Expr expr1 = this->GenExpr(compound.expr1, OutputFile);
+  mov2->op = expr1.op;
+  mov2->to = this->registers[r2]->get(expr1.size);
+  mov2->from = expr1.access;
+  mov2->size = expr1.size;
+  OutputFile.text << mov2;
+
+  return expr1;
+}
+
+gen::Expr gen::CodeGenerator::genArithmatic(asmc::ArithInst *inst,
+                                            ast::Compound compound,
+                                            asmc::File &OutputFile) {
+  gen::Expr expr = this->prepareCompound(compound, OutputFile);
+  gen::Expr output;
+
+  inst->opType = expr.op;
+  inst->size = expr.size;
+
+  std::string to1 = this->registers["%rdx"]->get(expr.size);
+  std::string to2 = this->registers["%rdi"]->get(expr.size);
+
+  output.access = this->registers["%rax"]->get(expr.size);
+  std::string retTo = this->registers["%rdi"]->get(expr.size);
+
+  if (expr.op == asmc::Float) {
+    to1 = this->registers["%xmm1"]->get(asmc::DWord);
+    to2 = this->registers["%xmm0"]->get(asmc::DWord);
+    output.access = "%xmm2";
+    output.op = asmc::Float;
+  }
+
+  asmc::Mov *mov = new asmc::Mov();
+  mov->from = to2;
+  mov->to = output.access;
+  mov->op = output.op;
+  mov->size = expr.size;
+
+  asmc::Pop *pop1 = new asmc::Pop();
+  pop1->op = this->registers[to1]->get(asmc::QWord);
+
+  asmc::Pop *pop2 = new asmc::Pop();
+  pop2->op = this->registers[to2]->get(asmc::QWord);
+
+  inst->op2 = to2;
+  inst->op1 = to1;
+  OutputFile.text << inst;
+  OutputFile.text << mov;
+  output.size = expr.size;
+  output.type = expr.type;
+  return output;
+}
+
+gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
+                                      asmc::Size size = asmc::AUTO) {
+  gen::Expr output;
+  output.op = asmc::Hard;
+
+  if (dynamic_cast<ast::IntLiteral *>(expr) != nullptr) {
+    ast::IntLiteral *intlit = dynamic_cast<ast::IntLiteral *>(expr);
+
+    output.access = '$' + std::to_string(intlit->val);
+    output.size = asmc::DWord;
+    output.type = "int";
+  } else if (dynamic_cast<ast::LongLiteral *>(expr) != nullptr) {
+    ast::LongLiteral *intlit = dynamic_cast<ast::LongLiteral *>(expr);
+    output.type = "long";
+    output.access = '$' + std::to_string(intlit->val);
+    output.size = asmc::QWord;
+  } else if (dynamic_cast<ast::CharLiteral *>(expr) != nullptr) {
+    ast::CharLiteral *intlit = dynamic_cast<ast::CharLiteral *>(expr);
+    output.type = "char";
+    output.access = '$' + std::to_string(intlit->value);
+    output.size = asmc::Byte;
+  } else if (dynamic_cast<ast::CallExpr *>(expr) != nullptr) {
+    ast::CallExpr *exprCall = dynamic_cast<ast::CallExpr *>(expr);
+    ast::Call *call = exprCall->call;
+    ast::Function func = this->GenCall(call, OutputFile);
+    output.type = func.type.typeName;
+    output.size = func.type.size;
+    if (size != asmc::AUTO && func.flex)
+      output.size = size;
+    output.access = this->registers["%rax"]->get(output.size);
+  } else if (dynamic_cast<ast::Var *>(expr) != nullptr) {
+    ast::Var var = *dynamic_cast<ast::Var *>(expr);
+    bool global = false;
+    bool handled = false;
+    gen::Symbol *sym;
+    sym = gen::scope::ScopeManager::getInstance()->get(var.Ident);
+    if (sym == nullptr) {
+      sym =
+          this->GlobalSymbolTable.search<std::string>(searchSymbol, var.Ident);
+      global = true;
+      if (sym == nullptr) {
+        Type **t = this->typeList[var.Ident];
+        if (t != nullptr) {
+          Type *type = *t;
+          output.size = asmc::DWord;
+          output.access =
+              '$' + std::to_string(type->SymbolTable.head->data.byteMod);
+          output.type = "int";
+          handled = true;
+        } else if (var.Ident == "int") {
+          output.size = asmc::DWord;
+          output.access = "$4";
+          output.type = "int";
+          handled = true;
+        } else if (var.Ident == "char") {
+          output.size = asmc::DWord;
+          output.access = "$1";
+          output.type = "int";
+          handled = true;
+        } else if (var.Ident == "adr") {
+          output.size = asmc::DWord;
+          output.access = "$8";
+          output.type = "int";
+          handled = true;
+        } else if (var.Ident == "byte") {
+          output.size = asmc::DWord;
+          output.access = "$1";
+          output.type = "int";
+          handled = true;
+        } else if (var.Ident == "float") {
+          output.size = asmc::DWord;
+          output.access = "$4";
+          output.type = "int";
+          handled = true;
+        } else if (var.Ident == "NULL") {
+          output.size = asmc::QWord;
+          output.access = "$0";
+          output.type = "adr";
+          handled = true;
+        } else if (var.Ident == "true") {
+          output.size = asmc::Byte;
+          output.access = "$1";
+          output.type = "bool";
+          handled = true;
+        } else if (var.Ident == "false") {
+          output.size = asmc::Byte;
+          output.access = "$0";
+          output.type = "bool";
+          handled = true;
+        } else if (this->nameTable[var.Ident] != nullptr) {
+          output.size = asmc::QWord;
+          output.access = '$' + this->nameTable[var.Ident]->ident.ident;
+          output.type = "adr";
+          handled = true;
+        } else
+          alert("variable not found " + var.Ident);
+      }
     }
-    
-    mov1->op = expr2.op;
-    mov1->to = this->registers[r1]->get(expr2.size);
-    mov1->from = expr2.access;
-    mov1->size = expr2.size;
-    if (!isDiv) OutputFile.text << mov1;
 
-    gen::Expr expr1 = this->GenExpr(compound.expr1, OutputFile);
-    mov2->op = expr1.op;
-    mov2->to = this->registers[r2]->get(expr1.size);
-    mov2->from = expr1.access;
-    mov2->size = expr1.size;
+    if (!handled) {
+      if (sym != nullptr) {
+        output.size = sym->type.size;
+        output.op = sym->type.opType;
+        output.type = sym->type.typeName;
+        if (global)
+          output.access = sym->symbol;
+        else
+          output.access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
+
+        var.modList.invert();
+        int tbyte = 0;
+
+        ast::Type last = sym->type;
+
+        while (var.modList.head != nullptr) {
+          if (this->typeList[last.typeName] == nullptr)
+            alert("type not found " + last.typeName);
+          gen::Type type = **this->typeList[last.typeName];
+          gen::Symbol *modSym;
+          std::string sto = var.modList.peek();
+          if (this->scope == *this->typeList[last.typeName]) {
+            // if we are scoped to the type seache the symbol in the type symbol
+            // table
+            modSym = type.SymbolTable.search<std::string>(searchSymbol,
+                                                          var.modList.pop());
+          } else {
+            // if we are not scoped to the type search the symbol in the public
+            // symbol table
+            modSym = type.publicSymbols.search<std::string>(searchSymbol,
+                                                            var.modList.pop());
+          };
+          if (modSym == nullptr)
+            alert("variable not found " + last.typeName + "." + sto);
+          last = modSym->type;
+          tbyte = modSym->byteMod;
+          asmc::Mov *mov = new asmc::Mov();
+          mov->op = modSym->type.opType;
+          mov->size = asmc::QWord;
+          mov->to = this->registers["%r14"]->get(asmc::QWord);
+          mov->from = output.access;
+          OutputFile.text << mov;
+          output.access = std::to_string(tbyte - this->getBytes(last.size)) +
+                          '(' + mov->to + ')';
+          output.op = modSym->type.opType;
+          output.size = last.size;
+          output.type = last.typeName;
+        }
+      } else {
+        Type **t = this->typeList[var.Ident];
+        if (t != nullptr) {
+          Type *type = *t;
+          output.size = asmc::DWord;
+          output.access =
+              '$' + std::to_string(type->SymbolTable.head->data.byteMod);
+          handled = true;
+        } else if (this->nameTable[var.Ident] != nullptr) {
+          output.size = asmc::DWord;
+          output.access = '$' + this->nameTable[var.Ident]->ident.ident;
+          handled = true;
+        } else
+          alert("variable not found " + var.Ident);
+      }
+    }
+  } else if (dynamic_cast<ast::Refrence *>(expr) != nullptr) {
+    links::LinkedList<gen::Symbol> *Table;
+    ast::Refrence ref = *dynamic_cast<ast::Refrence *>(expr);
+
+    gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(ref.Ident);
+    asmc::Lea *lea = new asmc::Lea();
+    lea->to = this->registers["%rax"]->get(asmc::QWord);
+    lea->from = '-' + std::to_string(sym->byteMod) + "(%rbp)";
+    // ASMC::Mov * mov = new ASMC::Mov();
+    OutputFile.text << lea;
+    output.access = registers["%rax"]->get(asmc::QWord);
+    output.size = asmc::QWord;
+    output.op = asmc::OpType::Hard;
+    output.type = "adr";
+  } else if (dynamic_cast<ast::StringLiteral *>(expr) != nullptr) {
+    ast::StringLiteral str = *dynamic_cast<ast::StringLiteral *>(expr);
+    asmc::StringLiteral *strlit = new asmc::StringLiteral();
+    asmc::Lable *lable = new asmc::Lable();
+    if (this->scope == nullptr)
+      lable->lable = ".str" + this->nameTable.head->data.ident.ident +
+                     std::to_string(this->lablecount);
+    else
+      lable->lable = ".str" + scope->Ident + '.' +
+                     scope->nameTable.head->data.ident.ident +
+                     std::to_string(this->lablecount);
+    this->lablecount++;
+    strlit->value = str.val;
+    OutputFile.data << lable;
+    OutputFile.data << strlit;
+    output.access = "$" + lable->lable;
+    output.size = asmc::QWord;
+    output.type = "adr";
+  } else if (dynamic_cast<ast::FloatLiteral *>(expr) != nullptr) {
+    ast::FloatLiteral *floatlit = dynamic_cast<ast::FloatLiteral *>(expr);
+    asmc::FloatLiteral *fltlit = new asmc::FloatLiteral();
+    asmc::Lable *lable = new asmc::Lable();
+    if (this->scope == nullptr)
+      lable->lable = ".float" + this->nameTable.head->data.ident.ident +
+                     std::to_string(this->lablecount);
+    else
+      lable->lable = ".float" + scope->Ident + '.' +
+                     scope->nameTable.head->data.ident.ident +
+                     std::to_string(this->lablecount);
+    this->lablecount++;
+    fltlit->value = floatlit->val;
+
+    // move value to the xmm0 register
+    asmc::Mov *mov = new asmc::Mov();
+    mov->size = asmc::DWord;
+    mov->op = asmc::Float;
+    mov->to = this->registers["%xmm0"]->get(asmc::DWord);
+    mov->from = lable->lable;
+
+    output.op = asmc::Float;
+    OutputFile.text << mov;
+    OutputFile.data << lable;
+    OutputFile.data << fltlit;
+    output.access = this->registers["%xmm0"]->get(asmc::DWord);
+    output.size = asmc::DWord;
+    output.type = "int";
+  } else if (dynamic_cast<ast::DeRefence *>(expr)) {
+
+    ast::DeRefence deRef = *dynamic_cast<ast::DeRefence *>(expr);
+    gen::Symbol *sym =
+        gen::scope::ScopeManager::getInstance()->get(deRef.Ident);
+
+    asmc::Mov *mov = new asmc::Mov();
+    asmc::Mov *mov2 = new asmc::Mov();
+
+    mov->size = asmc::QWord;
+    mov->from = '-' + std::to_string(sym->byteMod) + "(%rbp)";
+    mov->to = this->registers["%rax"]->get(asmc::QWord);
+
+    mov2->from = "(" + this->registers["%rax"]->get(asmc::QWord) + ")";
+    mov2->size = deRef.type.size;
+    mov2->to = this->registers["%rax"]->get(deRef.type.size);
+
+    output.access = mov2->to;
+    output.size = mov2->size;
+    output.type = deRef.type.typeName;
+
+    OutputFile.text << mov;
     OutputFile.text << mov2;
 
-    return expr1;
-}
-
-gen::Expr gen::CodeGenerator::genArithmatic(asmc::ArithInst * inst, ast::Compound compound, asmc::File &OutputFile){
-    gen::Expr expr = this->prepareCompound(compound, OutputFile);
-    gen::Expr output;
-                
-    inst->opType = expr.op;
-    inst->size = expr.size;
-
-
-    std::string to1 = this->registers["%rdx"]->get(expr.size);
-    std::string to2 = this->registers["%rdi"]->get(expr.size);
-
-    output.access = this->registers["%rax"]->get(expr.size);
-    std::string retTo = this->registers["%rdi"]->get(expr.size);
-
-    if(expr.op == asmc::Float){
-        to1 = this->registers["%xmm1"]->get(asmc::DWord);
-        to2 = this->registers["%xmm0"]->get(asmc::DWord);
-        output.access = "%xmm2";
-        output.op = asmc::Float;
-    }
-
-    asmc::Mov * mov = new asmc::Mov();
-    mov->from = to2;
-    mov->to = output.access;
-    mov->op = output.op;
-    mov->size = expr.size;
-
-    asmc::Pop * pop1 = new asmc::Pop();
-    pop1->op = this->registers[to1]->get(asmc::QWord); 
-
-    asmc::Pop * pop2 = new asmc::Pop();
-    pop2->op = this->registers[to2]->get(asmc::QWord);
-
-
-    inst->op2 = to2;
-    inst->op1 = to1;
-    OutputFile.text << inst;
-    OutputFile.text << mov;
-    output.size = expr.size;
-    output.type = expr.type;
-    return output;
-}
-
-gen::Expr gen::CodeGenerator::GenExpr(ast::Expr * expr, asmc::File &OutputFile, asmc::Size size = asmc::AUTO){
-    gen::Expr output;
-    output.op = asmc::Hard;
-    
-
-    if(dynamic_cast<ast::IntLiteral *>(expr) != nullptr){
-        ast::IntLiteral * intlit = dynamic_cast<ast::IntLiteral *>(expr);
-
-        output.access = '$' + std::to_string(intlit->val);
-        output.size = asmc::DWord;
-        output.type = "int";
-    }
-    else if(dynamic_cast<ast::LongLiteral *>(expr) != nullptr){
-        ast::LongLiteral * intlit = dynamic_cast<ast::LongLiteral *>(expr);
-        output.type = "long";
-        output.access = '$' + std::to_string(intlit->val);
-        output.size = asmc::QWord;
-    }
-    else if(dynamic_cast<ast::CharLiteral *>(expr) != nullptr){
-        ast::CharLiteral * intlit = dynamic_cast<ast::CharLiteral *>(expr);
-        output.type = "char";
-        output.access = '$' + std::to_string(intlit->value);
-        output.size = asmc::Byte;
-    }
-    else if(dynamic_cast<ast::CallExpr *>(expr) != nullptr){
-        ast::CallExpr * exprCall = dynamic_cast<ast::CallExpr *>(expr);
-        ast::Call * call = exprCall->call;
-        ast::Function func = this->GenCall(call, OutputFile);
-        output.type = func.type.typeName;
-        output.size = func.type.size;
-        if (size != asmc::AUTO && func.flex) output.size = size;
-        output.access = this->registers["%rax"]->get(output.size);
-    }
-    else if (dynamic_cast<ast::Var *>(expr) != nullptr){
-        ast::Var var = *dynamic_cast<ast::Var *>(expr);
-        bool global = false;
-        bool handled = false;
-        gen::Symbol * sym;
-        sym = gen::scope::ScopeManager::getInstance()->get(var.Ident);
-        if(sym == nullptr) {
-            sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, var.Ident);
-            global = true;
-            if(sym == nullptr){
-                Type ** t = this->typeList[var.Ident];
-                if (t != nullptr){
-                    Type * type = *t;
-                    output.size = asmc::DWord;
-                    output.access = '$' + std::to_string(type->SymbolTable.head->data.byteMod);
-                    output.type = "int";
-                    handled = true;
-                }else if(var.Ident == "int"){
-                    output.size = asmc::DWord;
-                    output.access = "$4";
-                    output.type = "int";
-                    handled = true;
-                }else if(var.Ident == "char"){
-                    output.size = asmc::DWord;
-                    output.access = "$1";
-                    output.type = "int";
-                    handled = true;
-                }else if(var.Ident == "adr"){
-                    output.size = asmc::DWord;
-                    output.access = "$8";
-                    output.type = "int";
-                    handled = true;
-                }else if(var.Ident == "byte"){
-                    output.size = asmc::DWord;
-                    output.access = "$1";
-                    output.type = "int";
-                    handled = true;
-                }else if(var.Ident == "float"){
-                    output.size = asmc::DWord;
-                    output.access = "$4";
-                    output.type = "int";
-                    handled = true;
-                }else if(var.Ident == "NULL"){
-                    output.size = asmc::QWord;
-                    output.access = "$0";
-                    output.type = "adr";
-                    handled = true;
-                }else if(var.Ident == "true"){
-                    output.size = asmc::Byte;
-                    output.access = "$1";
-                    output.type = "bool";
-                    handled = true;
-                }else if(var.Ident == "false"){
-                    output.size = asmc::Byte;
-                    output.access = "$0";
-                    output.type = "bool";
-                    handled = true;
-                }else if(this->nameTable[var.Ident] != nullptr){
-                    output.size = asmc::QWord;
-                    output.access = '$' + this->nameTable[var.Ident]->ident.ident;
-                    output.type = "adr";
-                    handled = true;
-                }else alert("variable not found " + var.Ident);
+  } else if (dynamic_cast<ast::Compound *>(expr) != nullptr) {
+    ast::Compound comp = *dynamic_cast<ast::Compound *>(expr);
+    asmc::File Dummby = asmc::File();
+    ast::Function *opor = nullptr;
+    gen::Symbol *sym = nullptr;
+    // check if expr 1 is a var
+    ast::Var *var = dynamic_cast<ast::Var *>(comp.expr1);
+    if (var != nullptr) {
+      if (var->modList.count == 0) {
+        sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
+        if (sym != nullptr) {
+          gen::Type **type = this->typeList[sym->type.typeName];
+          if (type != nullptr) {
+            gen::Class *cls = dynamic_cast<gen::Class *>(*type);
+            if (cls != nullptr) {
+              opor = cls->overloadTable[comp.op];
             }
+          }
         }
-
-        if (!handled){
-            if (sym != nullptr){
-                output.size = sym->type.size;
-                output.op = sym->type.opType;
-                output.type = sym->type.typeName;
-                if (global) output.access = sym->symbol;
-                else output.access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
-
-                var.modList.invert();
-                int tbyte = 0;
-                
-                ast::Type last = sym->type;
-
-                while(var.modList.head != nullptr){
-                    if(this->typeList[last.typeName] == nullptr) alert("type not found " + last.typeName);
-                    gen::Type type = **this->typeList[last.typeName];
-                    gen::Symbol * modSym;
-                    std::string sto = var.modList.peek();
-                    if(this->scope == *this->typeList[last.typeName]){
-                        // if we are scoped to the type seache the symbol in the type symbol table
-                         modSym = type.SymbolTable.search<std::string>(searchSymbol, var.modList.pop());
-                    }else{
-                        // if we are not scoped to the type search the symbol in the public symbol table
-                        modSym = type.publicSymbols.search<std::string>(searchSymbol, var.modList.pop());
-                    };
-                    if (modSym == nullptr) alert("variable not found " + last.typeName + "." + sto);
-                    last = modSym->type;
-                    tbyte = modSym->byteMod;
-                    asmc::Mov * mov = new asmc::Mov();
-                    mov->op = modSym->type.opType;
-                    mov->size = asmc::QWord;
-                    mov->to = this->registers["%r14"]->get(asmc::QWord);
-                    mov->from = output.access;
-                    OutputFile.text << mov;
-                    output.access = std::to_string(tbyte - this->getBytes(last.size)) + '(' + mov->to + ')';
-                    output.op = modSym->type.opType;
-                    output.size = last.size;
-                    output.type = last.typeName;
-                }
-            }else{
-                Type ** t = this->typeList[var.Ident];
-                if (t != nullptr){
-                    Type * type = *t;
-                    output.size = asmc::DWord;
-                    output.access = '$' + std::to_string(type->SymbolTable.head->data.byteMod);
-                    handled = true;
-                }else if(this->nameTable[var.Ident] != nullptr){
-                    output.size = asmc::DWord;
-                    output.access = '$' + this->nameTable[var.Ident]->ident.ident;
-                    handled = true;
-                }  else alert("variable not found " + var.Ident);
-            }
-        }
+      }
     }
-    else if (dynamic_cast<ast::Refrence *>(expr) != nullptr){
-        links::LinkedList<gen::Symbol>  * Table;
-        ast::Refrence ref = *dynamic_cast<ast::Refrence *>(expr);
-        
-        gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(ref.Ident);
-        asmc::Lea * lea = new asmc::Lea();
-        lea->to = this->registers["%rax"]->get(asmc::QWord);
-        lea->from = '-' + std::to_string(sym->byteMod) + "(%rbp)";
-        //ASMC::Mov * mov = new ASMC::Mov();
-        OutputFile.text << lea;
-        output.access = registers["%rax"]->get(asmc::QWord);
-        output.size = asmc::QWord;
-        output.op = asmc::OpType::Hard;
-        output.type = "adr";
-    }
-    else if (dynamic_cast<ast::StringLiteral *>(expr) != nullptr){
-        ast::StringLiteral str = *dynamic_cast<ast::StringLiteral *>(expr);
-        asmc::StringLiteral * strlit = new asmc::StringLiteral();
-        asmc::Lable * lable = new asmc::Lable();
-        if(this->scope == nullptr)lable->lable = ".str" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-        else lable->lable = ".str" + scope->Ident +'.'+ scope->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-        this->lablecount++;
-        strlit->value = str.val;
-        OutputFile.data << lable;
-        OutputFile.data << strlit;
-        output.access = "$" + lable->lable;
-        output.size = asmc::QWord;
-        output.type = "adr";
-    }
-    else if (dynamic_cast<ast::FloatLiteral *>(expr) != nullptr){
-        ast::FloatLiteral * floatlit = dynamic_cast<ast::FloatLiteral *>(expr);
-        asmc::FloatLiteral * fltlit = new asmc::FloatLiteral();
-        asmc::Lable * lable = new asmc::Lable();
-        if(this->scope == nullptr)lable->lable = ".float" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-        else lable->lable = ".float" +scope->Ident +'.'+ scope->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-        this->lablecount++;
-        fltlit->value = floatlit->val;
 
-        //move value to the xmm0 register
-        asmc::Mov * mov = new asmc::Mov();
-        mov->size = asmc::DWord;
-        mov->op = asmc::Float;
-        mov->to = this->registers["%xmm0"]->get(asmc::DWord);
-        mov->from = lable->lable;
-
-        output.op = asmc::Float;
-        OutputFile.text << mov;
-        OutputFile.data << lable;
-        OutputFile.data << fltlit;
-        output.access = this->registers["%xmm0"]->get(asmc::DWord);
-        output.size = asmc::DWord;
-        output.type = "int";
-    }
-    else if(dynamic_cast<ast::DeRefence *>(expr)){
-
-        ast::DeRefence deRef = *dynamic_cast<ast::DeRefence *>(expr);
-        gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(deRef.Ident);
-
-        asmc::Mov * mov = new asmc::Mov();
-        asmc::Mov * mov2 = new asmc::Mov();
-
-        mov->size = asmc::QWord;
-        mov->from = '-' + std::to_string(sym->byteMod) + "(%rbp)";
-        mov->to = this->registers["%rax"]->get(asmc::QWord);
-
-        mov2->from = "(" + this->registers["%rax"]->get(asmc::QWord) + ")";
-        mov2->size = deRef.type.size;
-        mov2->to = this->registers["%rax"]->get(deRef.type.size);
-
-        output.access = mov2->to;
-        output.size = mov2->size;
-        output.type = deRef.type.typeName;
-
-        OutputFile.text << mov;
-        OutputFile.text << mov2;
-
-        
-    }
-    else if (dynamic_cast<ast::Compound *>(expr) != nullptr){
-        ast::Compound comp = *dynamic_cast<ast::Compound *>(expr);
-        asmc::File Dummby = asmc::File();
-        ast::Function * opor = nullptr;
-        gen::Symbol * sym = nullptr;
-        // check if expr 1 is a var
-        ast::Var * var = dynamic_cast<ast::Var *>(comp.expr1);
-        if (var != nullptr){
-            if(var->modList.count == 0){
-                sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
-                if (sym != nullptr){
-                    gen::Type** type = this->typeList[sym->type.typeName];
-                    if (type != nullptr){
-                        gen::Class * cls = dynamic_cast<gen::Class *>(*type);
-                        if(cls != nullptr){
-                            opor = cls->overloadTable[comp.op];
-                        }
-                    }
-                }
-            }
-        }
-
-        if (opor != nullptr){
-            ast::CallExpr * call = new ast::CallExpr();
-            call->call = new ast::Call;
-            call->call->ident = opor->ident.ident;
-            call->call->Args = links::LinkedList<ast::Expr *>();
-            call->call->Args.push(comp.expr1);
-            call->call->Args.push(comp.expr2);
-            call->call->publify = sym->type.typeName;
-
-            gen::Expr aftercall = this->GenExpr(call, OutputFile);
-            output.access = aftercall.access;
-            output.size = aftercall.size;
-            output.type = opor->type.typeName;
-
-        } else {
-            // push rdi and rdx to stack
-            asmc::Push * push1 = new asmc::Push();
-            push1->op = this->registers["%rdi"]->get(asmc::QWord);
-            OutputFile.text << push1;
-            asmc::Push * push2 = new asmc::Push();
-            push2->op = this->registers["%rdx"]->get(asmc::QWord);
-            OutputFile.text << push2;
-            output.op = asmc::Hard;
-            output.type = "--std--flex--function";
-            switch (comp.op)
-            { 
-                case ast::Plus:{
-                    asmc::Add * add = new asmc::Add();
-                    output = this->genArithmatic(add, comp, OutputFile);
-                    break;
-                }
-                case ast::Minus:{
-                    asmc::Sub * sub = new asmc::Sub();
-                    output = this->genArithmatic(sub, comp, OutputFile);
-                    break;
-                }
-                case ast::AndBit:{
-                    asmc::And * andBit = new asmc::And();
-                    output = this->genArithmatic(andBit, comp, OutputFile);
-                    break;
-                }
-                case ast::OrBit:{
-                    asmc::Or * orBit = new asmc::Or();
-                    output = this->genArithmatic(orBit, comp, OutputFile);
-                    break;
-                }
-                case ast::Less:{
-                    asmc::Sal * andBit = new asmc::Sal();
-                    gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
-                    gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
-
-                    this->prepareCompound(comp, OutputFile);
-
-                    std::string to1 = this->registers["%rdx"]->get(expr1.size);
-                    std::string to2 = this->registers["%cl"]->get(expr1.size);
-                    output.access = this->registers["%rax"]->get(expr1.size);
-
-                    if(expr1.op == asmc::Float){
-                        to1 = this->registers["%xmm1"]->get(asmc::DWord);
-                        to2 = this->registers["%xmm0"]->get(asmc::DWord);
-                        output.access = "%xmm0";
-                        output.op = asmc::Float;
-                    }
-                
-                    andBit->op2 = to2;
-                    andBit->op1 = "%cl";
-                    andBit->size = expr1.size;
-
-                                    //Move the value from edx to ecx
-                    asmc::Mov * mov = new asmc::Mov();
-                    mov->to = to1;
-                    mov->from = this->registers["%rdx"]->get(expr1.size);;
-                    mov->size = expr1.size;
-
-                    OutputFile.text << mov;
-
-                    OutputFile.text << andBit;
-
-                    output.size = expr1.size;
-                    output.type = expr1.type;
-                    break;
-                }
-                case ast::Great:{
-                    asmc::Sar * andBit = new asmc::Sar();
-                    gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
-                    gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
-
-                    this->prepareCompound(comp, OutputFile);
-
-                    std::string to1 = this->registers["%cl"]->get(expr1.size);
-                    std::string to2 = this->registers["%rdi"]->get(expr1.size);
-                    output.access = this->registers["%rdi"]->get(expr1.size);
-
-                    if(expr1.op == asmc::Float){
-                        to1 = this->registers["%xmm1"]->get(asmc::DWord);
-                        to2 = this->registers["%xmm0"]->get(asmc::DWord);
-                        output.access = "%xmm0";
-                        output.op = asmc::Float;
-                    }
-
-                    //Move the value from edx to ecx
-                    asmc::Mov * mov = new asmc::Mov();
-                    mov->to = to1;
-                    mov->from = this->registers["%rdi"]->get(expr1.size);
-                    mov->size = expr1.size;
-
-                    OutputFile.text << mov;
-                
-                    andBit->op2 = to2;
-                    andBit->op1 = "%cl";
-                    andBit->size = expr1.size;
-
-                    OutputFile.text << andBit;
-
-                    output.size = expr1.size;
-                    output.type = expr1.type;
-                    break;
-                }
-                case ast::Mul:{
-                    asmc::Mul * mul = new asmc::Mul();
-                    output = this->genArithmatic(mul, comp, OutputFile);
-                    break;
-                }
-                case ast::Div:{
-
-                    asmc::Div * div = new asmc::Div();
-
-                    gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
-                    gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
-
-                    div->op1 = expr2.access;
-                    div->opType = expr1.op;
-
-                    std::string to1 = this->registers["%rdx"]->get(expr1.size);
-                    std::string to2 = this->registers["%rax"]->get(expr1.size);
-                    output.access = this->registers["%rax"]->get(expr1.size);
-
-                    if(expr1.op == asmc::Float){
-                        to1 = this->registers["%xmm1"]->get(asmc::DWord);
-                        to2 = this->registers["%xmm0"]->get(asmc::DWord);
-                        output.access = "%xmm0";
-                        div->op1 = to1;
-                        div->op2 = to2;
-                        this->prepareCompound(comp, OutputFile);
-                        output.op = asmc::Float;
-                    }else {
-                        asmc::Mov * mov = new asmc::Mov;
-                        asmc::Mov * eax = new asmc::Mov;
-                        eax->from = expr1.access;
-                        eax->to = this->registers["%rax"]->get(expr1.size);
-                        eax->size = expr1.size;
-                        mov->op = expr1.op;
-
-                        mov->from = expr2.access;
-                        mov->to = this->registers["%rcx"]->get(expr1.size);
-                        mov->size = expr1.size;
-                        mov->op = expr1.op;
-                        div->op1 = mov->to;
-                        output.access = this->registers["%rax"]->get(expr1.size);
-                        OutputFile.text << eax;
-                        OutputFile.text << mov;
-                    }
-                    
-                    
-
-                    OutputFile.text << div;
-                    output.size = expr1.size;
-                    output.type = expr1.type;
-                    break;
-                }
-                case ast::Mod:{
-                    asmc::Div * div = new asmc::Div();
-                    
-                    this->selectReg = 0;
-                    gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
-                    this->selectReg = 1;
-                    gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
-
-                    div->op1 = expr2.access;
-
-
-                    if(expr1.op == asmc::Float){
-                        std::string to1 = this->registers["%xmm1"]->get(asmc::DWord);
-                        std::string to2 = this->registers["%xmm0"]->get(asmc::DWord);
-                        output.access = "%xmm1";
-                        output.op = asmc::Float;
-                        div->op1 = to1;
-                        div->op2 = to2;
-                        this->prepareCompound(comp, OutputFile);
-                    } else {
-                        asmc::Mov * mov = new asmc::Mov;
-                        asmc::Mov * eax = new asmc::Mov;
-                        eax->from = expr1.access;
-                        eax->to = this->registers["%rax"]->get(expr1.size);
-                        eax->size = expr1.size;
-                        mov->op = expr1.op;
-
-                        mov->from = expr2.access;
-                        mov->to = this->registers["%rcx"]->get(expr1.size);
-                        mov->size = expr1.size;
-                        mov->op = expr1.op;
-                        div->op1 = mov->to;
-                        output.access = this->registers["%rax"]->get(expr1.size);
-                        OutputFile.text << eax;
-                        OutputFile.text << mov;
-                    }
-
-                    //Move the value from edx to eax
-                    asmc::Mov * mov = new asmc::Mov();
-                    mov->to = output.access;
-                    mov->from = this->registers["%rdx"]->get(expr1.size);
-                    mov->size = expr1.size;
-
-                    OutputFile.text << div;
-                    if (expr1.op != asmc::Float) OutputFile.text << mov;
-                    output.size = asmc::DWord;
-                    output.type = "int";
-                    break;
-                }
-                case ast::Equ:{
-                    asmc::Cmp * cmp = new asmc::Cmp();
-                    gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
-
-                    cmp->size = expr1.size;
-                    cmp->to = this->registers["%rdi"]->get(expr1.size);
-                    cmp->from = this->registers["%rdx"]->get(expr1.size);
-
-                    asmc::Sete * sete = new asmc::Sete();
-                    sete->op = this->registers["%rax"]->get(asmc::Byte);
-
-                    OutputFile.text << cmp;
-                    OutputFile.text << sete;
-
-                    output.size = asmc::Byte;
-                    output.type = "bool";
-                    output.access = "%al";
-                    break;
-                }
-                case ast::LessCmp:{
-                    asmc::Cmp * cmp = new asmc::Cmp();
-                    gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
-
-                    cmp->size = expr1.size;
-                    cmp->to = this->registers["%rdi"]->get(expr1.size);
-                    cmp->from = this->registers["%rdx"]->get(expr1.size);
-
-                    asmc::Setl * setl = new asmc::Setl();
-                    setl->op = this->registers["%rax"]->get(asmc::Byte);
-
-                    OutputFile.text << cmp;
-                    OutputFile.text << setl;
-
-                    output.size = asmc::Byte;
-                    output.type = "bool";
-                    output.access = "%al";
-                    break;
-                }
-                case ast::GreatCmp:{
-                    asmc::Cmp * cmp = new asmc::Cmp();
-                    gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
-
-                    cmp->size = expr1.size;
-                    cmp->to = this->registers["%rdi"]->get(expr1.size);
-                    cmp->from = this->registers["%rdx"]->get(expr1.size);
-
-                    asmc::Setg * setg = new asmc::Setg();
-                    setg->op = this->registers["%rax"]->get(asmc::Byte);
-
-                    OutputFile.text << cmp;
-                    OutputFile.text << setg;
-
-                    output.size = asmc::Byte;
-                    output.type = "bool";
-                    output.access = "%al";
-                    break;
-                }
-                case ast::Leq:{
-                    asmc::Cmp * cmp = new asmc::Cmp();
-                    gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
-
-                    cmp->size = expr1.size;
-                    cmp->to = this->registers["%rdi"]->get(expr1.size);
-                    cmp->from = this->registers["%rdx"]->get(expr1.size);
-
-                    asmc::Setle * setle = new asmc::Setle();
-                    setle->op = this->registers["%rax"]->get(asmc::Byte);
-
-                    OutputFile.text << cmp;
-                    OutputFile.text << setle;
-
-                    output.size = asmc::Byte;
-                    output.type = "bool";
-                    output.access = "%al";
-                    break;
-                }
-                case ast::Geq:{
-                    asmc::Cmp * cmp = new asmc::Cmp();
-                    gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
-
-                    cmp->size = expr1.size;
-                    cmp->to = this->registers["%rdi"]->get(expr1.size);
-                    cmp->from = this->registers["%rdx"]->get(expr1.size);
-
-                    asmc::Setge * setge = new asmc::Setge();
-                    setge->op = this->registers["%rax"]->get(asmc::Byte);
-
-                    OutputFile.text << cmp;
-                    OutputFile.text << setge;
-
-                    output.size = asmc::Byte;
-                    output.type = "bool";
-                    output.access = "%al";
-                    break;
-                }
-                case ast::NotEqu:{
-                    asmc::Cmp * cmp = new asmc::Cmp();
-                    gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
-
-                    cmp->size = expr1.size;
-                    cmp->to = this->registers["%rdi"]->get(expr1.size);
-                    cmp->from = this->registers["%rdx"]->get(expr1.size);
-
-                    asmc::Setne * setne = new asmc::Setne();
-                    setne->op = this->registers["%rax"]->get(asmc::Byte);
-
-                    OutputFile.text << cmp;
-                    OutputFile.text << setne;
-
-                    output.size = asmc::Byte;
-                    output.type = "bool";
-                    output.access = "%al";
-                    break;
-                }
-                default:{
-                    alert("Unhandled oporator");
-                    break;
-                }
-            }
-                // pop rdx and rdi
-            asmc::Pop * pop = new asmc::Pop();
-            pop->op = this->registers["%rdx"]->get(asmc::QWord);
-            OutputFile.text << pop;
-            asmc::Pop * pop2 = new asmc::Pop();
-            pop2->op = this->registers["%rdi"]->get(asmc::QWord);
-            OutputFile.text << pop2;   
-        }
-    }  
-    else if (dynamic_cast<ast::Lambda *>(expr) != nullptr){
-        ast::Lambda lambda = *dynamic_cast<ast::Lambda *>(expr);
-        ast::Function * func = lambda.function;
-        auto millies = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        std::string id = "lambda_"+ std::to_string(millies) +"_"+ std::to_string(lablecount);
-        func->ident.ident = id;
-        lablecount++;
-        func->scopeName = "global";
-        func->isLambda = true;
-
-        if(OutputFile.lambdas == nullptr) OutputFile.lambdas = new asmc::File;
-        OutputFile.hasLambda = true;
-
-        ast::Type Adr = ast::Type();
-        Adr.typeName = "adr";
-        Adr.opType = asmc::Hard; 
-        Adr.size = asmc::QWord;
-
-        func->type = Adr;
-
-        OutputFile.lambdas->operator<<(this->GenSTMT(func));
-
-        output.access = "$" + id;
-        output.size = asmc::QWord;
-        output.type = "adr";
-    }
-    else if(dynamic_cast<ast::NewExpr *>(expr) != nullptr){
-        ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);
-        ast::Function * malloc = this->nameTable["malloc"];
-        if (malloc == nullptr) alert("Please import std library in order to use new operator.\n\n -> .needs <std> \n\n");
-        gen::Type **type = this->typeList[newExpr.type.typeName];
-        if(type == nullptr) alert("Type" + newExpr.type.typeName + " not found");
-        // check if the function is a class
-        gen::Class * cl = dynamic_cast<gen::Class *>(*type);
-        if(cl == nullptr) alert("The new operator can only be used with classes. Type " + newExpr.type.typeName + " is not a class");
-        // check if the class has a constructor
-        ast::Function * init = cl->nameTable["init"];
-
-        // first call malloc with the size of the class
-        ast::CallExpr * callMalloc = new ast::CallExpr();
-        callMalloc->call = new ast::Call;
-        callMalloc->call->ident = malloc->ident.ident;
-        callMalloc->call->Args = links::LinkedList<ast::Expr *>();
-        ast::IntLiteral * size = new ast::IntLiteral();
-        size->val = cl->SymbolTable.head->data.byteMod;
-        callMalloc->call->Args.push(size);
-        gen::Expr afterMalloc = this->GenExpr(callMalloc, OutputFile);
-        
-        if (init == nullptr){
-            output.access = afterMalloc.access;
-            output.size = asmc::QWord;
-            output.type = newExpr.type.typeName;
-        } else {
-            // creat the call STMT
-            ast::CallExpr * callInit = new ast::CallExpr();
-            callInit->call = new ast::Call;
-            callInit->call->ident = "init";
-            callInit->call->Args = newExpr.args;
-            callInit->call->modList = links::LinkedList<std::string>();
-            callInit->call->publify = cl->Ident;
-            asmc::Mov * mov = new asmc::Mov();
-
-            asmc::Push * push = new asmc::Push();
-            push->op = mov->to = this->intArgs[0].get(asmc::QWord);
-            OutputFile.text << push;
-            mov->size = asmc::QWord;
-            mov->from = this->registers["%eax"]->get(asmc::QWord);
-            mov->to = this->intArgs[0].get(asmc::QWord);
-            OutputFile.text << mov;
-            gen::Expr afterInit = this->GenExpr(callInit, OutputFile);
-            output.access = afterInit.access;
-            output.size = asmc::QWord;
-            output.type = newExpr.type.typeName;
-        };
-    }
-    else if(dynamic_cast<ast::ParenExpr *>(expr) != nullptr){
-        ast::ParenExpr parenExpr = *dynamic_cast<ast::ParenExpr *>(expr);
-        output = this->GenExpr(parenExpr.expr, OutputFile);
-    }
-    else if(dynamic_cast<ast::Not *>(expr) != nullptr){
-        ast::Not no = *dynamic_cast<ast::Not *>(expr);
-        gen::Expr expr = this->GenExpr(no.expr, OutputFile);
-        
-        asmc::Movzbl * movzbl = new asmc::Movzbl();
-        movzbl->from = expr.access;
-        movzbl->to = this->registers["%eax"]->get(asmc::DWord);
-
-        asmc::Xor * xr = new asmc::Xor();
-        xr->op1 = "$1";
-        xr->op2 = this->registers["%eax"]->get(asmc::DWord);
-
-        ast::Type boolType = ast::Type();
-        
-        boolType.typeName = "bool";
-        boolType.opType = asmc::Hard;
-        boolType.size = asmc::Byte;
-        this->canAssign(boolType, expr.type);
-
-        OutputFile.text << movzbl;
-        OutputFile.text << xr;
-        output.size = asmc::Byte;
-        output.type = boolType.typeName;
-        output.access = this->registers["%eax"]->get(asmc::Byte);
+    if (opor != nullptr) {
+      ast::CallExpr *call = new ast::CallExpr();
+      call->call = new ast::Call;
+      call->call->ident = opor->ident.ident;
+      call->call->Args = links::LinkedList<ast::Expr *>();
+      call->call->Args.push(comp.expr1);
+      call->call->Args.push(comp.expr2);
+      call->call->publify = sym->type.typeName;
+
+      gen::Expr aftercall = this->GenExpr(call, OutputFile);
+      output.access = aftercall.access;
+      output.size = aftercall.size;
+      output.type = opor->type.typeName;
 
     } else {
-        this->alert("Unhandled expression");
+      // push rdi and rdx to stack
+      asmc::Push *push1 = new asmc::Push();
+      push1->op = this->registers["%rdi"]->get(asmc::QWord);
+      OutputFile.text << push1;
+      asmc::Push *push2 = new asmc::Push();
+      push2->op = this->registers["%rdx"]->get(asmc::QWord);
+      OutputFile.text << push2;
+      output.op = asmc::Hard;
+      output.type = "--std--flex--function";
+      switch (comp.op) {
+      case ast::Plus: {
+        asmc::Add *add = new asmc::Add();
+        output = this->genArithmatic(add, comp, OutputFile);
+        break;
+      }
+      case ast::Minus: {
+        asmc::Sub *sub = new asmc::Sub();
+        output = this->genArithmatic(sub, comp, OutputFile);
+        break;
+      }
+      case ast::AndBit: {
+        asmc::And *andBit = new asmc::And();
+        output = this->genArithmatic(andBit, comp, OutputFile);
+        break;
+      }
+      case ast::OrBit: {
+        asmc::Or *orBit = new asmc::Or();
+        output = this->genArithmatic(orBit, comp, OutputFile);
+        break;
+      }
+      case ast::Less: {
+        asmc::Sal *andBit = new asmc::Sal();
+        gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
+        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
+
+        this->prepareCompound(comp, OutputFile);
+
+        std::string to1 = this->registers["%rdx"]->get(expr1.size);
+        std::string to2 = this->registers["%cl"]->get(expr1.size);
+        output.access = this->registers["%rax"]->get(expr1.size);
+
+        if (expr1.op == asmc::Float) {
+          to1 = this->registers["%xmm1"]->get(asmc::DWord);
+          to2 = this->registers["%xmm0"]->get(asmc::DWord);
+          output.access = "%xmm0";
+          output.op = asmc::Float;
+        }
+
+        andBit->op2 = to2;
+        andBit->op1 = "%cl";
+        andBit->size = expr1.size;
+
+        // Move the value from edx to ecx
+        asmc::Mov *mov = new asmc::Mov();
+        mov->to = to1;
+        mov->from = this->registers["%rdx"]->get(expr1.size);
+        ;
+        mov->size = expr1.size;
+
+        OutputFile.text << mov;
+
+        OutputFile.text << andBit;
+
+        output.size = expr1.size;
+        output.type = expr1.type;
+        break;
+      }
+      case ast::Great: {
+        asmc::Sar *andBit = new asmc::Sar();
+        gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
+        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
+
+        this->prepareCompound(comp, OutputFile);
+
+        std::string to1 = this->registers["%cl"]->get(expr1.size);
+        std::string to2 = this->registers["%rdi"]->get(expr1.size);
+        output.access = this->registers["%rdi"]->get(expr1.size);
+
+        if (expr1.op == asmc::Float) {
+          to1 = this->registers["%xmm1"]->get(asmc::DWord);
+          to2 = this->registers["%xmm0"]->get(asmc::DWord);
+          output.access = "%xmm0";
+          output.op = asmc::Float;
+        }
+
+        // Move the value from edx to ecx
+        asmc::Mov *mov = new asmc::Mov();
+        mov->to = to1;
+        mov->from = this->registers["%rdi"]->get(expr1.size);
+        mov->size = expr1.size;
+
+        OutputFile.text << mov;
+
+        andBit->op2 = to2;
+        andBit->op1 = "%cl";
+        andBit->size = expr1.size;
+
+        OutputFile.text << andBit;
+
+        output.size = expr1.size;
+        output.type = expr1.type;
+        break;
+      }
+      case ast::Mul: {
+        asmc::Mul *mul = new asmc::Mul();
+        output = this->genArithmatic(mul, comp, OutputFile);
+        break;
+      }
+      case ast::Div: {
+
+        asmc::Div *div = new asmc::Div();
+
+        gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
+        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
+
+        div->op1 = expr2.access;
+        div->opType = expr1.op;
+
+        std::string to1 = this->registers["%rdx"]->get(expr1.size);
+        std::string to2 = this->registers["%rax"]->get(expr1.size);
+        output.access = this->registers["%rax"]->get(expr1.size);
+
+        if (expr1.op == asmc::Float) {
+          to1 = this->registers["%xmm1"]->get(asmc::DWord);
+          to2 = this->registers["%xmm0"]->get(asmc::DWord);
+          output.access = "%xmm0";
+          div->op1 = to1;
+          div->op2 = to2;
+          this->prepareCompound(comp, OutputFile);
+          output.op = asmc::Float;
+        } else {
+          asmc::Mov *mov = new asmc::Mov;
+          asmc::Mov *eax = new asmc::Mov;
+          eax->from = expr1.access;
+          eax->to = this->registers["%rax"]->get(expr1.size);
+          eax->size = expr1.size;
+          mov->op = expr1.op;
+
+          mov->from = expr2.access;
+          mov->to = this->registers["%rcx"]->get(expr1.size);
+          mov->size = expr1.size;
+          mov->op = expr1.op;
+          div->op1 = mov->to;
+          output.access = this->registers["%rax"]->get(expr1.size);
+          OutputFile.text << eax;
+          OutputFile.text << mov;
+        }
+
+        OutputFile.text << div;
+        output.size = expr1.size;
+        output.type = expr1.type;
+        break;
+      }
+      case ast::Mod: {
+        asmc::Div *div = new asmc::Div();
+
+        this->selectReg = 0;
+        gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
+        this->selectReg = 1;
+        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
+
+        div->op1 = expr2.access;
+
+        if (expr1.op == asmc::Float) {
+          std::string to1 = this->registers["%xmm1"]->get(asmc::DWord);
+          std::string to2 = this->registers["%xmm0"]->get(asmc::DWord);
+          output.access = "%xmm1";
+          output.op = asmc::Float;
+          div->op1 = to1;
+          div->op2 = to2;
+          this->prepareCompound(comp, OutputFile);
+        } else {
+          asmc::Mov *mov = new asmc::Mov;
+          asmc::Mov *eax = new asmc::Mov;
+          eax->from = expr1.access;
+          eax->to = this->registers["%rax"]->get(expr1.size);
+          eax->size = expr1.size;
+          mov->op = expr1.op;
+
+          mov->from = expr2.access;
+          mov->to = this->registers["%rcx"]->get(expr1.size);
+          mov->size = expr1.size;
+          mov->op = expr1.op;
+          div->op1 = mov->to;
+          output.access = this->registers["%rax"]->get(expr1.size);
+          OutputFile.text << eax;
+          OutputFile.text << mov;
+        }
+
+        // Move the value from edx to eax
+        asmc::Mov *mov = new asmc::Mov();
+        mov->to = output.access;
+        mov->from = this->registers["%rdx"]->get(expr1.size);
+        mov->size = expr1.size;
+
+        OutputFile.text << div;
+        if (expr1.op != asmc::Float)
+          OutputFile.text << mov;
+        output.size = asmc::DWord;
+        output.type = "int";
+        break;
+      }
+      case ast::Equ: {
+        asmc::Cmp *cmp = new asmc::Cmp();
+        gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
+
+        cmp->size = expr1.size;
+        cmp->to = this->registers["%rdi"]->get(expr1.size);
+        cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+        asmc::Sete *sete = new asmc::Sete();
+        sete->op = this->registers["%rax"]->get(asmc::Byte);
+
+        OutputFile.text << cmp;
+        OutputFile.text << sete;
+
+        output.size = asmc::Byte;
+        output.type = "bool";
+        output.access = "%al";
+        break;
+      }
+      case ast::LessCmp: {
+        asmc::Cmp *cmp = new asmc::Cmp();
+        gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
+
+        cmp->size = expr1.size;
+        cmp->to = this->registers["%rdi"]->get(expr1.size);
+        cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+        asmc::Setl *setl = new asmc::Setl();
+        setl->op = this->registers["%rax"]->get(asmc::Byte);
+
+        OutputFile.text << cmp;
+        OutputFile.text << setl;
+
+        output.size = asmc::Byte;
+        output.type = "bool";
+        output.access = "%al";
+        break;
+      }
+      case ast::GreatCmp: {
+        asmc::Cmp *cmp = new asmc::Cmp();
+        gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
+
+        cmp->size = expr1.size;
+        cmp->to = this->registers["%rdi"]->get(expr1.size);
+        cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+        asmc::Setg *setg = new asmc::Setg();
+        setg->op = this->registers["%rax"]->get(asmc::Byte);
+
+        OutputFile.text << cmp;
+        OutputFile.text << setg;
+
+        output.size = asmc::Byte;
+        output.type = "bool";
+        output.access = "%al";
+        break;
+      }
+      case ast::Leq: {
+        asmc::Cmp *cmp = new asmc::Cmp();
+        gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
+
+        cmp->size = expr1.size;
+        cmp->to = this->registers["%rdi"]->get(expr1.size);
+        cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+        asmc::Setle *setle = new asmc::Setle();
+        setle->op = this->registers["%rax"]->get(asmc::Byte);
+
+        OutputFile.text << cmp;
+        OutputFile.text << setle;
+
+        output.size = asmc::Byte;
+        output.type = "bool";
+        output.access = "%al";
+        break;
+      }
+      case ast::Geq: {
+        asmc::Cmp *cmp = new asmc::Cmp();
+        gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
+
+        cmp->size = expr1.size;
+        cmp->to = this->registers["%rdi"]->get(expr1.size);
+        cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+        asmc::Setge *setge = new asmc::Setge();
+        setge->op = this->registers["%rax"]->get(asmc::Byte);
+
+        OutputFile.text << cmp;
+        OutputFile.text << setge;
+
+        output.size = asmc::Byte;
+        output.type = "bool";
+        output.access = "%al";
+        break;
+      }
+      case ast::NotEqu: {
+        asmc::Cmp *cmp = new asmc::Cmp();
+        gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
+
+        cmp->size = expr1.size;
+        cmp->to = this->registers["%rdi"]->get(expr1.size);
+        cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+        asmc::Setne *setne = new asmc::Setne();
+        setne->op = this->registers["%rax"]->get(asmc::Byte);
+
+        OutputFile.text << cmp;
+        OutputFile.text << setne;
+
+        output.size = asmc::Byte;
+        output.type = "bool";
+        output.access = "%al";
+        break;
+      }
+      default: {
+        alert("Unhandled oporator");
+        break;
+      }
+      }
+      // pop rdx and rdi
+      asmc::Pop *pop = new asmc::Pop();
+      pop->op = this->registers["%rdx"]->get(asmc::QWord);
+      OutputFile.text << pop;
+      asmc::Pop *pop2 = new asmc::Pop();
+      pop2->op = this->registers["%rdi"]->get(asmc::QWord);
+      OutputFile.text << pop2;
     }
-    return output;
+  } else if (dynamic_cast<ast::Lambda *>(expr) != nullptr) {
+    ast::Lambda lambda = *dynamic_cast<ast::Lambda *>(expr);
+    ast::Function *func = lambda.function;
+    auto millies = std::chrono::duration_cast<std::chrono::milliseconds>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+    std::string id =
+        "lambda_" + std::to_string(millies) + "_" + std::to_string(lablecount);
+    func->ident.ident = id;
+    lablecount++;
+    func->scopeName = "global";
+    func->isLambda = true;
+
+    if (OutputFile.lambdas == nullptr)
+      OutputFile.lambdas = new asmc::File;
+    OutputFile.hasLambda = true;
+
+    ast::Type Adr = ast::Type();
+    Adr.typeName = "adr";
+    Adr.opType = asmc::Hard;
+    Adr.size = asmc::QWord;
+
+    func->type = Adr;
+
+    OutputFile.lambdas->operator<<(this->GenSTMT(func));
+
+    output.access = "$" + id;
+    output.size = asmc::QWord;
+    output.type = "adr";
+  } else if (dynamic_cast<ast::NewExpr *>(expr) != nullptr) {
+    ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);
+    ast::Function *malloc = this->nameTable["malloc"];
+    if (malloc == nullptr)
+      alert("Please import std library in order to use new operator.\n\n -> "
+            ".needs <std> \n\n");
+    gen::Type **type = this->typeList[newExpr.type.typeName];
+    if (type == nullptr)
+      alert("Type" + newExpr.type.typeName + " not found");
+    // check if the function is a class
+    gen::Class *cl = dynamic_cast<gen::Class *>(*type);
+    if (cl == nullptr)
+      alert("The new operator can only be used with classes. Type " +
+            newExpr.type.typeName + " is not a class");
+    // check if the class has a constructor
+    ast::Function *init = cl->nameTable["init"];
+
+    // first call malloc with the size of the class
+    ast::CallExpr *callMalloc = new ast::CallExpr();
+    callMalloc->call = new ast::Call;
+    callMalloc->call->ident = malloc->ident.ident;
+    callMalloc->call->Args = links::LinkedList<ast::Expr *>();
+    ast::IntLiteral *size = new ast::IntLiteral();
+    size->val = cl->SymbolTable.head->data.byteMod;
+    callMalloc->call->Args.push(size);
+    gen::Expr afterMalloc = this->GenExpr(callMalloc, OutputFile);
+
+    if (init == nullptr) {
+      output.access = afterMalloc.access;
+      output.size = asmc::QWord;
+      output.type = newExpr.type.typeName;
+    } else {
+      // creat the call STMT
+      ast::CallExpr *callInit = new ast::CallExpr();
+      callInit->call = new ast::Call;
+      callInit->call->ident = "init";
+      callInit->call->Args = newExpr.args;
+      callInit->call->modList = links::LinkedList<std::string>();
+      callInit->call->publify = cl->Ident;
+      asmc::Mov *mov = new asmc::Mov();
+
+      asmc::Push *push = new asmc::Push();
+      push->op = mov->to = this->intArgs[0].get(asmc::QWord);
+      OutputFile.text << push;
+      mov->size = asmc::QWord;
+      mov->from = this->registers["%eax"]->get(asmc::QWord);
+      mov->to = this->intArgs[0].get(asmc::QWord);
+      OutputFile.text << mov;
+      gen::Expr afterInit = this->GenExpr(callInit, OutputFile);
+      output.access = afterInit.access;
+      output.size = asmc::QWord;
+      output.type = newExpr.type.typeName;
+    };
+  } else if (dynamic_cast<ast::ParenExpr *>(expr) != nullptr) {
+    ast::ParenExpr parenExpr = *dynamic_cast<ast::ParenExpr *>(expr);
+    output = this->GenExpr(parenExpr.expr, OutputFile);
+  } else if (dynamic_cast<ast::Not *>(expr) != nullptr) {
+    ast::Not no = *dynamic_cast<ast::Not *>(expr);
+    gen::Expr expr = this->GenExpr(no.expr, OutputFile);
+
+    asmc::Movzbl *movzbl = new asmc::Movzbl();
+    movzbl->from = expr.access;
+    movzbl->to = this->registers["%eax"]->get(asmc::DWord);
+
+    asmc::Xor *xr = new asmc::Xor();
+    xr->op1 = "$1";
+    xr->op2 = this->registers["%eax"]->get(asmc::DWord);
+
+    ast::Type boolType = ast::Type();
+
+    boolType.typeName = "bool";
+    boolType.opType = asmc::Hard;
+    boolType.size = asmc::Byte;
+    this->canAssign(boolType, expr.type);
+
+    OutputFile.text << movzbl;
+    OutputFile.text << xr;
+    output.size = asmc::Byte;
+    output.type = boolType.typeName;
+    output.access = this->registers["%eax"]->get(asmc::Byte);
+
+  } else {
+    this->alert("Unhandled expression");
+  }
+  return output;
 };
 
-links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(ast::Statment * STMT, links::LinkedList<gen::Symbol> &table){
-    if(dynamic_cast<ast::Sequence *>(STMT) != nullptr){
-        ast::Sequence * sequence = dynamic_cast<ast::Sequence *>(STMT);
-        this->GenTable(sequence->Statment1, table);
-        this->GenTable(sequence->Statment2, table);
-    }else if (dynamic_cast<ast::Declare *>(STMT) != nullptr)
-    {
-        /*
-            movl $0x0, -[SymbolT + size](rdp)
-            **also needs to be added to symbol table**
-        */
+links::LinkedList<gen::Symbol>
+gen::CodeGenerator::GenTable(ast::Statment *STMT,
+                             links::LinkedList<gen::Symbol> &table) {
+  if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
+    ast::Sequence *sequence = dynamic_cast<ast::Sequence *>(STMT);
+    this->GenTable(sequence->Statment1, table);
+    this->GenTable(sequence->Statment2, table);
+  } else if (dynamic_cast<ast::Declare *>(STMT) != nullptr) {
+    /*
+        movl $0x0, -[SymbolT + size](rdp)
+        **also needs to be added to symbol table**
+    */
 
-        ast::Declare * arg =  dynamic_cast<ast::Declare *>(STMT);
-        gen::Symbol symbol;
-        
-        int offset = this->getBytes(arg->type.size);
+    ast::Declare *arg = dynamic_cast<ast::Declare *>(STMT);
+    gen::Symbol symbol;
 
-        if(table.search<std::string>(searchSymbol, arg->Ident) != nullptr) alert("redefined variable:" + arg->Ident);
+    int offset = this->getBytes(arg->type.size);
 
-        symbol.symbol = arg->Ident;
-        if (table.head == nullptr){
-            symbol.byteMod = offset;
-        }else{
-            symbol.byteMod = table.peek().byteMod + offset;
+    if (table.search<std::string>(searchSymbol, arg->Ident) != nullptr)
+      alert("redefined variable:" + arg->Ident);
+
+    symbol.symbol = arg->Ident;
+    if (table.head == nullptr) {
+      symbol.byteMod = offset;
+    } else {
+      symbol.byteMod = table.peek().byteMod + offset;
+    }
+    symbol.type = arg->type;
+    table << symbol;
+  } else if (dynamic_cast<ast::DecArr *>(STMT) != nullptr) {
+    /*
+       movl $0x0, -[SymbolT + size](rdp)
+       **also needs to be added to symbol table**
+   */
+    ast::DecArr *dec = dynamic_cast<ast::DecArr *>(STMT);
+    int offset = 0;
+    offset = this->getBytes(dec->type.size);
+
+    offset = offset * dec->count;
+
+    if (this->SymbolTable.search<std::string>(searchSymbol, dec->ident) !=
+        nullptr)
+      alert("redefined veriable:" + dec->ident);
+
+    gen::Symbol Symbol;
+    if (this->SymbolTable.head == nullptr) {
+      Symbol.byteMod = offset;
+    } else {
+      Symbol.byteMod = table.head->data.byteMod + offset;
+    }
+    Symbol.type = dec->type;
+    Symbol.symbol = dec->ident;
+    table << Symbol;
+  }
+
+  return table;
+}
+
+void gen::CodeGenerator::GenArgs(ast::Statment *STMT, asmc::File &OutputFile) {
+  if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
+    ast::Sequence *sequence = dynamic_cast<ast::Sequence *>(STMT);
+    this->GenArgs(sequence->Statment1, OutputFile);
+    this->GenArgs(sequence->Statment2, OutputFile);
+  } else if (dynamic_cast<ast::Declare *>(STMT) != nullptr) {
+    /*
+        movl $0x0, -[SymbolT + size](rdp)
+        **also needs to be added to symbol table**
+    */
+    if (intArgsCounter > 6)
+      alert("AFlat compiler cannot handle more than 6 int arguments.");
+    ast::Declare *arg = dynamic_cast<ast::Declare *>(STMT);
+    asmc::Size size;
+    int offset = 0;
+    gen::Symbol symbol;
+    asmc::Mov *mov = new asmc::Mov();
+
+    links::LinkedList<gen::Symbol> *Table = &this->SymbolTable;
+
+    offset = this->getBytes(arg->type.size);
+    size = arg->type.size;
+    arg->type.arraySize = 1;
+    mov->from = this->intArgs[intArgsCounter].get(arg->type.size);
+
+    int mod = gen::scope::ScopeManager::getInstance()->assign(arg->Ident,
+                                                              arg->type, false);
+
+    mov->size = size;
+    mov->to = "-" + std::to_string(mod) + +"(%rbp)";
+    OutputFile.text << mov;
+    intArgsCounter++;
+  }
+}
+
+ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
+                                          asmc::File &OutputFile) {
+  std::string mod = "";
+
+  ast::Function *func;
+  bool checkArgs = true;
+
+  links::LinkedList<gen::Symbol> *Table;
+  Table = &this->SymbolTable;
+  links::LinkedList<std::string> mods = links::LinkedList<std::string>();
+  // first push rdx
+  links::LinkedList<std::string> stack;
+  asmc::Push *push = new asmc::Push();
+  push->op = this->registers["%rdx"]->get(asmc::QWord);
+  stack << push->op;
+  OutputFile.text << push;
+
+  this->intArgsCounter = 0;
+  int argsCounter = 0;
+
+  if (call->modList.head == nullptr) {
+    func = this->nameTable[call->ident];
+    if (func == nullptr) {
+      gen::Symbol *smbl =
+          gen::scope::ScopeManager::getInstance()->get(call->ident);
+      if (smbl == nullptr)
+        smbl = this->GlobalSymbolTable.search<std::string>(searchSymbol,
+                                                           call->ident);
+      if (smbl != nullptr) {
+        ast::Var *var = new ast::Var();
+        var->Ident = smbl->symbol;
+        var->modList = links::LinkedList<std::string>();
+
+        gen::Expr exp1 = this->GenExpr(var, OutputFile);
+
+        asmc::Mov *mov = new asmc::Mov();
+        mov->size = exp1.size;
+        mov->from = exp1.access;
+        mov->to = this->registers["%r15"]->get(exp1.size);
+        OutputFile.text << mov;
+
+        func = new ast::Function();
+        func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
+        func->type.arraySize = 0;
+        func->type.size = asmc::QWord;
+        func->type.typeName = "--std--flex--function";
+        func->flex = true;
+        checkArgs = false;
+      };
+    }
+  } else {
+    gen::Symbol *sym =
+        gen::scope::ScopeManager::getInstance()->get(call->ident);
+    if (sym == nullptr)
+      alert("cannot find object: " + call->ident);
+
+    ast::Type last = sym->type;
+    std::string my = sym->symbol;
+    // get the type of the original function
+    gen::Type *type = *this->typeList[last.typeName];
+
+    while (call->modList.head != nullptr) {
+      sym = gen::scope::ScopeManager::getInstance()->get(call->modList.peek());
+      if (sym == nullptr) {
+        bool addpub = true;
+        if (this->typeList[last.typeName] == nullptr)
+          alert("type not found " + last.typeName);
+        type = *this->typeList[last.typeName];
+        gen::Class *cl = dynamic_cast<gen::Class *>(type);
+        if (cl != nullptr) {
+          func = cl->nameTable[call->modList.peek()];
+          if (func == nullptr) {
+            // search the class symbol table for a pointer
+            std::string id = call->modList.peek();
+            mods.push(id);
+            sym = cl->SymbolTable.search<std::string>(searchSymbol,
+                                                      call->modList.pop());
+            if (sym != nullptr) {
+              ast::Var *var = new ast::Var();
+              var->Ident = call->ident;
+              mods.invert();
+              var->modList = mods;
+
+              gen::Expr exp1 = this->GenExpr(var, OutputFile);
+
+              asmc::Mov *mov = new asmc::Mov();
+              mov->size = exp1.size;
+              mov->from = exp1.access;
+              mov->to = this->registers["%r15"]->get(exp1.size);
+              OutputFile.text << mov;
+
+              func = new ast::Function();
+              func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
+              func->type = sym->type;
+              func->type.typeName = "--std--flex--function";
+              checkArgs = false;
+              func->type.size = asmc::QWord;
+              func->flex = true;
+              addpub = false;
+            };
+          } else
+            call->modList.pop();
+          ast::Refrence *ref = new ast::Refrence();
+          ref->Ident = my;
+          ref->internal = true;
+          mod = "pub_" + cl->Ident + "_";
+          if (!addpub)
+            mod = "";
+          gen::Expr exp;
+          exp = this->GenExpr(ref, OutputFile);
+          asmc::Mov *mov = new asmc::Mov();
+          asmc::Mov *mov2 = new asmc::Mov();
+          asmc::Push *push = new asmc::Push();
+
+          mov->size = exp.size;
+          mov2->size = exp.size;
+
+          mov->from = '(' + exp.access + ')';
+          mov->to = this->registers["%eax"]->get(exp.size);
+          mov2->from = this->registers["%eax"]->get(exp.size);
+          mov2->to = this->intArgs[argsCounter].get(exp.size);
+          push->op = this->intArgs[argsCounter].get(asmc::QWord);
+          stack << this->intArgs[argsCounter].get(asmc::QWord);
+
+          argsCounter++;
+          OutputFile.text << push;
+          OutputFile.text << mov;
+          OutputFile.text << mov2;
+          break;
         }
-        symbol.type = arg->type;
-        table << symbol;
-    }else if(dynamic_cast<ast::DecArr *>(STMT) != nullptr){
-         /*
-            movl $0x0, -[SymbolT + size](rdp)
-            **also needs to be added to symbol table**
-        */
-        ast::DecArr * dec =  dynamic_cast<ast::DecArr *>(STMT);
-        int offset = 0;
-        offset = this->getBytes(dec->type.size);
+      }
+      mods.push(call->modList.pop());
+      last = sym->type;
+    };
+  };
 
-        offset = offset * dec->count;
+  if (call->publify != "") {
 
-        if(this->SymbolTable.search<std::string>(searchSymbol, dec->ident) != nullptr) alert("redefined veriable:" + dec->ident);
+    func = new ast::Function();
+    func->ident.ident = "pub_" + call->publify + "_" + call->ident;
+    func->type.typeName = call->publify;
+    func->type.size = asmc::QWord;
+    if (call->ident != "init") {
+      // find the function in the class
+      gen::Class *cl =
+          dynamic_cast<gen::Class *>(*this->typeList[call->publify]);
+      if (cl != nullptr) {
+        ast::Function *f = cl->nameTable[call->ident];
+        if (f == nullptr) {
+          alert("cannot find function: " + call->ident);
+        };
+        func->type = f->type;
+        ast::Type t;
+        t.typeName = cl->Ident;
+        t.size = asmc::QWord;
+        func->argTypes = f->argTypes;
+        func->argTypes.push_back(t);
+      };
+    } else {
+      argsCounter++;
+      stack.push("%rdi");
+      // find the class
+      gen::Type *type = *this->typeList[call->publify];
+      if (type == nullptr)
+        alert("type not found " + call->publify);
+      gen::Class *cl = dynamic_cast<gen::Class *>(type);
+      if (cl == nullptr)
+        alert("not a class: " + call->publify);
+      ast::Function *f = cl->nameTable["init"];
+      if (f == nullptr)
+        alert("cannot find function: init");
+      func->argTypes = f->argTypes;
+    }
+    mod = "";
+  }
 
+  if (func == nullptr)
+    alert("Cannot Find Function: " + call->ident);
+
+  call->Args.invert();
+
+  int i = 0;
+
+  while (call->Args.size() > 0) {
+    gen::Expr exp = this->GenExpr(call->Args.pop(), OutputFile);
+    if (checkArgs) {
+      if (i >= func->argTypes.size()) {
+        alert("Too many arguments for function: " + call->ident +
+              " expected: " + std::to_string(func->argTypes.size()) +
+              " got: " + std::to_string(i + 1));
+      };
+      canAssign(func->argTypes.at(i), exp.type);
+    };
+    i++;
+    asmc::Mov *mov = new asmc::Mov();
+    asmc::Mov *mov2 = new asmc::Mov();
+    asmc::Push *push = new asmc::Push();
+    mov->size = exp.size;
+    mov2->size = exp.size;
+
+    mov->from = exp.access;
+    mov->to = this->registers["%eax"]->get(exp.size);
+    mov2->from = this->registers["%eax"]->get(exp.size);
+    mov2->to = this->intArgs[argsCounter].get(exp.size);
+    push->op = this->intArgs[argsCounter].get(asmc::QWord);
+    stack << this->intArgs[argsCounter].get(asmc::QWord);
+
+    argsCounter++;
+    OutputFile.text << push;
+    OutputFile.text << mov;
+    OutputFile.text << mov2;
+  }
+
+  asmc::Call *calls = new asmc::Call;
+
+  calls->function = mod + func->ident.ident;
+  OutputFile.text << calls;
+  // push everything back on the stack
+  while (stack.count > 0) {
+    asmc::Pop *pop = new asmc::Pop();
+    pop->op = stack.pop();
+    OutputFile.text << pop;
+  }
+  intArgsCounter = 0;
+  ast::Function ret = *func;
+  return ret;
+};
+
+asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
+
+  asmc::File OutputFile = asmc::File();
+
+  if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
+    ast::Sequence *sequence = dynamic_cast<ast::Sequence *>(STMT);
+    OutputFile << this->GenSTMT(sequence->Statment1);
+    OutputFile << this->GenSTMT(sequence->Statment2);
+  } else if (dynamic_cast<ast::Function *>(STMT)) {
+    /*
+        ident:
+            push rbp
+            mov  rsp, rbp
+            this->GenSTMT()
+    */
+
+    gen::scope::ScopeManager::getInstance()->pushScope();
+
+    ast::Function *func = dynamic_cast<ast::Function *>(STMT);
+    int saveIntArgs = intArgsCounter;
+    bool isLambda = func->isLambda;
+
+    // std::cout << "Generating Function: " << func->ident.ident << " type " <<
+    // func->type.typeName << std::endl;
+    if (this->scope == nullptr)
+      this->nameTable << *func;
+    else {
+      // add the function to the class name table
+      this->scope->nameTable << *func;
+      // if the function has an overload opperator, add it to the overload table
+      if (func->op != ast::None)
+        this->scope->overloadTable << *func;
+      // if the function is public add it to the public name table
+      if (func->scope == ast::Public)
+        this->scope->publicNameTable << *func;
+    }
+
+    if (func->statment != nullptr) {
+      bool saveIn = this->inFunction;
+      this->inFunction = true;
+      gen::Class *saveScope = this->scope;
+      bool saveGlobal = this->globalScope;
+      this->globalScope = false;
+
+      asmc::Lable *lable = new asmc::Lable;
+      if (this->scope == nullptr || func->isLambda)
+        lable->lable = func->ident.ident;
+      else
+        lable->lable = "pub_" + scope->Ident + "_" + func->ident.ident;
+      if (func->scopeName != "global") {
+        lable->lable = "pub_" + func->scopeName + "_" + func->ident.ident;
+        gen::Type *tscope = *this->typeList[func->scopeName];
+        if (tscope == nullptr)
+          alert("Failed to locate function Scope");
+        if (dynamic_cast<gen::Class *>(tscope) == nullptr)
+          alert("Can only scope to  a class");
+        this->scope = dynamic_cast<gen::Class *>(tscope);
+      }
+
+      asmc::Push *push = new asmc::Push();
+      push->op = "%rbp";
+      asmc::Mov *mov = new asmc::Mov();
+      mov->size = asmc::QWord;
+      mov->from = "%rsp";
+      mov->to = "%rbp";
+
+      OutputFile.text.push(lable);
+      OutputFile.text.push(push);
+      OutputFile.text.push(mov);
+      // push the callee preserved registers
+      asmc::Push *push2 = new asmc::Push();
+      push2->op = "%rbx";
+      OutputFile.text.push(push2);
+      asmc::Push *push3 = new asmc::Push();
+
+      int AlignmentLoc = OutputFile.text.count;
+      this->intArgsCounter = 0;
+      this->returnType = func->type;
+      asmc::LinkTask *link = new asmc::LinkTask();
+      link->command = "global";
+      link->operand = lable->lable;
+
+      if (this->scope != nullptr && !func->isLambda) {
+        // add the opject to the arguments of the function
+        int offset = this->getBytes(asmc::QWord);
+        int size = asmc::QWord;
+        gen::Symbol symbol;
+        asmc::Mov *movy = new asmc::Mov();
+        movy->from = this->intArgs[intArgsCounter].get(asmc::QWord);
+
+        symbol.symbol = "my";
+
+        auto ty = ast::Type();
+        ty.typeName = scope->Ident;
+        ty.size = asmc::QWord;
+        symbol.type = ty;
+
+        int byteMod =
+            gen::scope::ScopeManager::getInstance()->assign("my", ty, false);
+
+        movy->size = asmc::QWord;
+        movy->to = "-" + std::to_string(byteMod) + +"(%rbp)";
+        OutputFile.text << movy;
+        this->intArgsCounter++;
+      };
+
+      this->GenArgs(func->args, OutputFile);
+      if (!isLambda)
+        OutputFile.linker.push(link);
+
+      asmc::File file = this->GenSTMT(func->statment);
+      // check if the last statement is a return statement
+      if (file.text.count > 0) {
+        asmc::Instruction *last = file.text.peek();
+        if (dynamic_cast<asmc::Return *>(last) == nullptr) {
+          // if the function name is init then we need to alert to return 'my'
+          if (func->ident.ident == "init") {
+            gen::Symbol *my =
+                gen::scope::ScopeManager::getInstance()->get("my");
+            asmc::Mov *mov = new asmc::Mov();
+            mov->size = asmc::QWord;
+            mov->from = '-' + std::to_string(my->byteMod) + "(%rbp)";
+            ;
+            mov->to = this->registers["%rax"]->get(asmc::QWord);
+            // pop rbx
+            asmc::Pop *pop = new asmc::Pop();
+            pop->op = "%rbx";
+            file.text.push(pop);
+            file.text.push(mov);
+          }
+          asmc::Return *ret = new asmc::Return();
+          file.text.push(ret);
+        }
+      } else {
+        asmc::Pop *pop = new asmc::Pop();
+        pop->op = "%rbx";
+        file.text.push(pop);
+        asmc::Return *ret = new asmc::Return();
+        file.text.push(ret);
+      }
+      OutputFile << file;
+
+      asmc::Subq *sub = new asmc::Subq;
+      sub->op1 =
+          "$" +
+          std::to_string(
+              gen::scope::ScopeManager::getInstance()->getStackAlignment());
+      sub->op2 = this->registers["%rsp"]->get(asmc::QWord);
+      OutputFile.text.insert(sub, AlignmentLoc + 1);
+
+      this->scope = saveScope;
+      this->globalScope = saveGlobal;
+      this->inFunction = saveIn;
+    }
+    delete (func);
+
+    this->intArgsCounter = saveIntArgs;
+
+    gen::scope::ScopeManager::getInstance()->popScope(true);
+  } else if (dynamic_cast<ast::Declare *>(STMT) != nullptr) {
+    /*
+        movl $0x0, -[SymbolT + size](rdp)
+        **also needs to be added to symbol table**
+    */
+
+    ast::Declare *dec = dynamic_cast<ast::Declare *>(STMT);
+    int offset = this->getBytes(dec->type.size);
+    links::LinkedList<gen::Symbol> *Table;
+
+    if (!this->globalScope) {
+      // if the there  is no scope use the scope manager otherwise use the scope
+      if (this->scope == nullptr || this->inFunction) {
+        gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type,
+                                                        dec->mask);
+      } else {
+        // add the symbol to the class symbol table
+        Table = &this->scope->SymbolTable;
+
+        if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
+          alert("redefined veriable: " + dec->Ident);
         gen::Symbol Symbol;
-        if (this->SymbolTable.head == nullptr){
-            Symbol.byteMod = offset;
-        }else{
-            Symbol.byteMod = table.head->data.byteMod + offset;
+        if (Table->head == nullptr) {
+          Symbol.byteMod = offset;
+        } else {
+          Symbol.byteMod = Table->head->data.byteMod + offset;
         }
         Symbol.type = dec->type;
-        Symbol.symbol = dec->ident;
-        table << Symbol;
+        Symbol.symbol = dec->Ident;
+        Table->push(Symbol);
+        // if the symbol is public add it to the public symbol table
+        if (dec->scope == ast::Public && this->scope != nullptr)
+          this->scope->publicSymbols.push(Symbol);
+      };
+    } else {
+      Table = &this->GlobalSymbolTable;
+      asmc::LinkTask *var = new asmc::LinkTask();
+      asmc::Lable *lable = new asmc::Lable();
+      if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
+        alert("redefined global veriable: " + dec->Ident);
 
+      lable->lable = dec->Ident;
+      if (dec->type.size = asmc::QWord) {
+        var->command = "quad";
+      };
+      gen::Symbol Symbol;
+
+      Symbol.type = dec->type;
+      Symbol.symbol = dec->Ident;
+      OutputFile.bss << lable;
+      OutputFile.bss << var;
+      Table->push(Symbol);
     }
 
-    return table;
-}
+  } else if (dynamic_cast<ast::DecArr *>(STMT) != nullptr) {
+    /*
+    movl $0x0, -[SymbolT + size](rdp)
+    **also needs to be added to symbol table**
+    */
+    ast::DecArr *dec = dynamic_cast<ast::DecArr *>(STMT);
+    int offset = this->getBytes(dec->type.size);
 
-void gen::CodeGenerator::GenArgs(ast::Statment * STMT, asmc::File &OutputFile){
-     if(dynamic_cast<ast::Sequence *>(STMT) != nullptr){
-        ast::Sequence * sequence = dynamic_cast<ast::Sequence *>(STMT);
-        this->GenArgs(sequence->Statment1, OutputFile);
-        this->GenArgs(sequence->Statment2, OutputFile);
-    }else if (dynamic_cast<ast::Declare *>(STMT) != nullptr)
-    {
-        /*
-            movl $0x0, -[SymbolT + size](rdp)
-            **also needs to be added to symbol table**
-        */
-        if (intArgsCounter > 6) alert("AFlat compiler cannot handle more than 6 int arguments.");
-        ast::Declare * arg =  dynamic_cast<ast::Declare *>(STMT);
-        asmc::Size size;
-        int offset = 0;
-        gen::Symbol symbol;
-        asmc::Mov * mov = new asmc::Mov();
+    offset = offset * dec->count;
 
-        links::LinkedList<gen::Symbol>  * Table = &this->SymbolTable;
+    links::LinkedList<gen::Symbol> *Table;
+    if (this->scope == nullptr || this->inFunction) {
+      dec->type.arraySize = dec->count;
+      gen::scope::ScopeManager::getInstance()->assign(dec->ident, dec->type,
+                                                      false);
+    } else {
+      Table = &this->scope->SymbolTable;
 
-        offset = this->getBytes(arg->type.size);
-        size = arg->type.size;
-        arg->type.arraySize = 1;
-        mov->from = this->intArgs[intArgsCounter].get(arg->type.size);
+      if (Table->search<std::string>(searchSymbol, dec->ident) != nullptr)
+        alert("redefined veriable:" + dec->ident);
 
-        int mod = gen::scope::ScopeManager::getInstance()->assign(arg->Ident, arg->type, false);
+      gen::Symbol Symbol;
 
-        mov->size = size;
-        mov->to = "-" + std::to_string(mod) + + "(%rbp)";
-        OutputFile.text << mov;
-        intArgsCounter++;
+      if (Table->head == nullptr) {
+        Symbol.byteMod = offset;
+      } else {
+        Symbol.byteMod = Table->head->data.byteMod + offset;
+      }
+      Symbol.type = dec->type;
+      Symbol.symbol = dec->ident;
+      Table->push(Symbol);
     }
-}
 
-ast::Function gen::CodeGenerator::GenCall(ast::Call * call, asmc::File &OutputFile){
-    std::string mod = "";
+  } else if (dynamic_cast<ast::DecAssign *>(STMT) != nullptr) {
+    /*
+        movl $0x0, -[SymbolT + size](rdp)
+        **also needs to be added to symbol table**
+    */
+    ast::DecAssign *decAssign = dynamic_cast<ast::DecAssign *>(STMT);
+    ast::Declare *dec = decAssign->declare;
+    int offset = this->getBytes(dec->type.size);
 
-        ast::Function * func;
-        bool checkArgs = true;
+    links::LinkedList<gen::Symbol> *Table;
+    Table = &this->SymbolTable;
 
-        links::LinkedList<gen::Symbol>  * Table;
-        Table = &this->SymbolTable;
-        links::LinkedList<std::string> mods = links::LinkedList<std::string>();
-        // first push rdx
-        links::LinkedList<std::string> stack;
-        asmc::Push * push = new asmc::Push();
-        push->op = this->registers["%rdx"]->get(asmc::QWord);
-        stack << push->op;
-        OutputFile.text << push;
+    if (!this->globalScope) {
 
-        
-        this->intArgsCounter = 0;
-        int argsCounter = 0;
+      int byteMod = gen::scope::ScopeManager::getInstance()->assign(
+          dec->Ident, dec->type, dec->mask);
 
-        if(call->modList.head == nullptr){
-            func = this->nameTable[call->ident];
-            if (func == nullptr){
-                gen::Symbol * smbl = gen::scope::ScopeManager::getInstance()->get(call->ident);
-                if (smbl == nullptr) smbl = this->GlobalSymbolTable.search<std::string>(searchSymbol, call->ident);
-                if ( smbl != nullptr){
-                                ast::Var * var = new ast::Var();
-                                var->Ident = smbl->symbol;
-                                var->modList = links::LinkedList<std::string>();
+      asmc::Mov *mov = new asmc::Mov();
+      gen::Expr expr =
+          this->GenExpr(decAssign->expr, OutputFile, dec->type.size);
 
-                                gen::Expr exp1 = this->GenExpr(var, OutputFile);
+      this->canAssign(dec->type, expr.type);
 
-                                asmc::Mov * mov = new asmc::Mov();
-                                mov->size = exp1.size;
-                                mov->from = exp1.access;
-                                mov->to = this->registers["%r15"]->get(exp1.size);
-                                OutputFile.text << mov;
+      asmc::Mov *mov2 = new asmc::Mov();
+      mov2->size = dec->type.size;
+      mov2->from = expr.access;
+      if (expr.op == asmc::Float)
+        mov2->to = this->registers["%xmm0"]->get(expr.size);
+      else
+        mov2->to = this->registers["%rbx"]->get(dec->type.size);
 
-                                func = new ast::Function();
-                                func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
-                                func->type.arraySize = 0;
-                                func->type.size = asmc::QWord;
-                                func->type.typeName = "--std--flex--function";
-                                func->flex = true;
-                                checkArgs = false;
-                };
-            }
-        }
-        else{
-            gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(call->ident);
-            if (sym == nullptr) alert("cannot find object: " + call->ident);
-            
-            ast::Type last = sym->type;
-            std::string my = sym->symbol;
-            // get the type of the original function
-            gen::Type * type = *this->typeList[last.typeName];
+      mov->op = expr.op;
 
-            while(call->modList.head != nullptr){
-                sym = gen::scope::ScopeManager::getInstance()->get(call->modList.peek());
-                if (sym == nullptr) {
-                    bool addpub = true;
-                    if(this->typeList[last.typeName] == nullptr) alert("type not found " + last.typeName);
-                    type = *this->typeList[last.typeName];
-                    gen::Class * cl = dynamic_cast<gen::Class *>(type);
-                    if(cl != nullptr) {
-                        func = cl->nameTable[call->modList.peek()];
-                        if (func == nullptr){
-                            // search the class symbol table for a pointer
-                            std::string id = call->modList.peek();
-                            mods.push(id);
-                            sym = cl->SymbolTable.search<std::string>(searchSymbol, call->modList.pop());
-                            if (sym != nullptr){
-                                ast::Var * var = new ast::Var();
-                                var->Ident = call->ident;
-                                mods.invert();
-                                var->modList = mods;
+      mov2->op = expr.op;
+      mov->size = dec->type.size;
+      mov->from = this->registers["%rbx"]->get(dec->type.size);
+      mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
 
-                                gen::Expr exp1 = this->GenExpr(var, OutputFile);
+      mov->from = mov2->to;
 
-                                asmc::Mov * mov = new asmc::Mov();
-                                mov->size = exp1.size;
-                                mov->from = exp1.access;
-                                mov->to = this->registers["%r15"]->get(exp1.size);
-                                OutputFile.text << mov;
+      OutputFile.text << mov2;
+      OutputFile.text << mov;
+    } else {
+      gen::Symbol Symbol;
 
-                                func = new ast::Function();
-                                func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
-                                func->type = sym->type;
-                                func->type.typeName = "--std--flex--function";
-                                checkArgs = false;
-                                func->type.size = asmc::QWord;
-                                func->flex = true;
-                                addpub = false;
-                            };
-                        } else call->modList.pop();
-                        ast::Refrence * ref = new ast::Refrence();
-                        ref->Ident = my;
-                        ref->internal = true;
-                        mod = "pub_" + cl->Ident + "_";
-                        if (!addpub) mod = "";
-                        gen::Expr exp;
-                        exp =  this->GenExpr(ref, OutputFile);
-                        asmc::Mov * mov = new asmc::Mov();
-                        asmc::Mov * mov2 = new asmc::Mov();
-                        asmc::Push * push = new asmc::Push();
+      Symbol.type = dec->type;
+      Symbol.symbol = dec->Ident;
+      Table = &this->GlobalSymbolTable;
 
-                        
-                        mov->size = exp.size;
-                        mov2->size = exp.size;
-                        
-                        mov->from = '(' + exp.access + ')'; 
-                        mov->to = this->registers["%eax"]->get(exp.size);
-                        mov2->from = this->registers["%eax"]->get(exp.size);
-                        mov2->to = this->intArgs[argsCounter].get(exp.size);
-                        push->op = this->intArgs[argsCounter].get(asmc::QWord);
-                        stack << this->intArgs[argsCounter].get(asmc::QWord);
+      asmc::LinkTask *var = new asmc::LinkTask();
+      asmc::Lable *lable = new asmc::Lable();
 
-                        argsCounter++;
-                        OutputFile.text << push;
-                        OutputFile.text << mov;
-                        OutputFile.text << mov2;
-                        break;
-                    }
-                }
-                mods.push(call->modList.pop());
-                last = sym->type;
-            };
+      lable->lable = dec->Ident;
+      if (dec->type.size = asmc::QWord) {
+        var->command = "quad";
+      }
+      gen::Expr exp = this->GenExpr(decAssign->expr, OutputFile);
+      // std::cout << "Atempting to assign global " << dec->Ident << " " <<
+      // dec->type.typeName << " to " << exp.type << std::endl;
+      this->canAssign(dec->type, exp.type);
+      // std::cout << "Assigned " << dec->Ident << " " << dec->type.typeName <<
+      // " to " << exp.type << std::endl;
+      var->operand = exp.access.erase(0, 1);
+      Symbol.type.opType = exp.op;
+      OutputFile.data << lable;
+      OutputFile.data << var;
+      if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
+        alert("redefined veriable:" + dec->Ident);
+      Table->push(Symbol);
+    };
+
+  } else if (dynamic_cast<ast::Return *>(STMT) != nullptr) {
+    /*
+        mov [this.GenExpr(ret.value)]
+        pop rbp
+        ret
+    */
+
+    ast::Return *ret = dynamic_cast<ast::Return *>(STMT);
+
+    asmc::Mov *mov = new asmc::Mov();
+
+    gen::Expr from = this->GenExpr(ret->expr, OutputFile);
+    mov->from = from.access;
+    mov->to = this->registers["%rax"]->get(from.size);
+    mov->size = from.size;
+    OutputFile.text << mov;
+    this->canAssign(this->returnType, from.type, true);
+    asmc::Return *re = new asmc::Return();
+    OutputFile.text << re;
+
+  } else if (dynamic_cast<ast::Assign *>(STMT) != nullptr) {
+    ast::Assign *assign = dynamic_cast<ast::Assign *>(STMT);
+    bool global = false;
+
+    links::LinkedList<gen::Symbol> *Table = &this->SymbolTable;
+
+    Symbol *symbol =
+        gen::scope::ScopeManager::getInstance()->get(assign->Ident);
+
+    if (symbol == nullptr) {
+      Table = &this->GlobalSymbolTable;
+      symbol = Table->search<std::string>(searchSymbol, assign->Ident);
+      if (symbol == nullptr)
+        alert("unknown name: " + assign->Ident);
+      global = true;
+    };
+
+    // check if the symbol is a class
+    gen::Type **t = this->typeList[symbol->type.typeName];
+    if (t != nullptr && assign->modList.count == 0) {
+      gen::Class *cl = dynamic_cast<gen::Class *>(*t);
+      if (cl != nullptr) {
+        // check if the class has an overloaded operator =
+        ast::Function *func = cl->overloadTable[ast::Equ];
+        if (func != nullptr) {
+          // call the overloaded operator =
+          ast::Var *v = new ast::Var();
+          v->Ident = assign->Ident;
+          v->modList = assign->modList;
+          ast::Call *call = new ast::Call();
+          call->ident = func->ident.ident;
+          call->modList = assign->modList;
+          call->Args.push(v);
+          call->Args.push(assign->expr);
+          call->publify = cl->Ident;
+          ast::CallExpr *callExpr = new ast::CallExpr();
+          callExpr->call = call;
+          assign->expr = callExpr;
         };
-
-        if (call->publify != ""){
-
-            func = new ast::Function();
-            func->ident.ident = "pub_" + call->publify + "_" + call->ident;
-            func->type.typeName = call->publify;
-            func->type.size = asmc::QWord;
-            if (call->ident != "init"){
-                // find the function in the class
-                gen::Class * cl = dynamic_cast<gen::Class *>(*this->typeList[call->publify]);
-                if (cl != nullptr){
-                    ast::Function * f = cl->nameTable[call->ident];
-                    if (f == nullptr){
-                        alert("cannot find function: " + call->ident);
-                    };
-                    func->type = f->type;
-                    ast::Type t;
-                    t.typeName = cl->Ident;
-                    t.size = asmc::QWord;
-                    func->argTypes = f->argTypes;
-                    func->argTypes.push_back(t);
-                };
-            }else{
-                argsCounter++;
-                stack.push("%rdi");
-                // find the class
-                gen::Type * type = *this->typeList[call->publify];
-                if (type == nullptr) alert("type not found " + call->publify);
-                gen::Class * cl = dynamic_cast<gen::Class *>(type);
-                if (cl == nullptr) alert("not a class: " + call->publify);
-                ast::Function * f = cl->nameTable["init"];
-                if (f == nullptr) alert("cannot find function: init");
-                func->argTypes = f->argTypes;
-            }
-            mod = "";
-        }
-
-        if (func == nullptr) alert("Cannot Find Function: " + call->ident);
-        
-        call->Args.invert();
-        
-        int i = 0;
-
-        while (call->Args.size() > 0)
-        {
-            gen::Expr exp =  this->GenExpr(call->Args.pop(), OutputFile);
-            if(checkArgs){
-                if(i >= func->argTypes.size()){
-                    alert("Too many arguments for function: " + call->ident + " expected: " + std::to_string(func->argTypes.size()) + " got: " + std::to_string(i + 1));
-                };
-                canAssign(func->argTypes.at(i), exp.type);
-            };
-            i++;
-            asmc::Mov * mov = new asmc::Mov();
-            asmc::Mov * mov2 = new asmc::Mov();
-            asmc::Push * push = new asmc::Push();
-            mov->size = exp.size;
-            mov2->size = exp.size;
-            
-            mov->from = exp.access;
-            mov->to = this->registers["%eax"]->get(exp.size);
-            mov2->from = this->registers["%eax"]->get(exp.size);
-            mov2->to = this->intArgs[argsCounter].get(exp.size);
-            push->op = this->intArgs[argsCounter].get(asmc::QWord);
-            stack << this->intArgs[argsCounter].get(asmc::QWord);
-            
-
-            argsCounter++;
-            OutputFile.text << push;
-            OutputFile.text << mov;
-            OutputFile.text << mov2;
-        }
-
-        asmc::Call * calls = new asmc::Call;
-
-        calls->function = mod + func->ident.ident;
-        OutputFile.text << calls;
-        // push everything back on the stack
-        while(stack.count > 0){
-            asmc::Pop * pop = new asmc::Pop();
-            pop->op = stack.pop();
-            OutputFile.text << pop;
-        }
-        intArgsCounter = 0;
-        ast::Function ret = *func;
-        return ret;
-};
-
-asmc::File gen::CodeGenerator::GenSTMT(ast::Statment * STMT){
-
-    asmc::File OutputFile = asmc::File();
-
-    if(dynamic_cast<ast::Sequence *>(STMT) != nullptr){
-        ast::Sequence * sequence = dynamic_cast<ast::Sequence *>(STMT);
-        OutputFile << this->GenSTMT(sequence->Statment1);
-        OutputFile << this->GenSTMT(sequence->Statment2);
+      }
     }
-    else if (dynamic_cast<ast::Function *>(STMT)){
-        /*
-            ident:
-                push rbp
-                mov  rsp, rbp
-                this->GenSTMT()
-        */
+    asmc::Mov *mov = new asmc::Mov();
+    asmc::Mov *mov2 = new asmc::Mov();
+    gen::Expr expr = this->GenExpr(assign->expr, OutputFile, symbol->type.size);
+    mov->op = expr.op;
+    mov2->op = expr.op;
+    mov->size = expr.size;
+    mov2->size = expr.size;
+    mov2->from = expr.access;
 
-        gen::scope::ScopeManager::getInstance()->pushScope();
+    if (expr.op == asmc::Float)
+      mov2->to = this->registers["%xmm0"]->get(expr.size);
+    else
+      mov2->to = this->registers["%rbx"]->get(expr.size);
+    mov->from = mov2->to;
 
-        ast::Function * func = dynamic_cast<ast::Function *>(STMT);
-        int saveIntArgs = intArgsCounter;
-        bool isLambda = func->isLambda;
+    assign->modList.invert();
+    int tbyte = 0;
 
-        //std::cout << "Generating Function: " << func->ident.ident << " type " << func->type.typeName << std::endl;
-        if(this->scope == nullptr) this->nameTable << *func;
-        else{
-            // add the function to the class name table
-            this->scope->nameTable << * func;
-            // if the function has an overload opperator, add it to the overload table
-            if (func->op != ast::None) this->scope->overloadTable << *func;
-            // if the function is public add it to the public name table
-            if(func->scope == ast::Public) this->scope->publicNameTable << * func;
-        }
-        
-        if(func->statment != nullptr){
-            bool saveIn = this->inFunction;
-            this->inFunction = true;
-            gen::Class * saveScope = this->scope;
-            bool saveGlobal = this->globalScope;
-            this->globalScope = false;
+    ast::Type last = symbol->type;
+    asmc::Size size;
+    std::string output;
+    if (global)
+      output = symbol->symbol;
+    else
+      output = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
 
-            asmc::Lable * lable = new asmc::Lable;
-            if(this->scope == nullptr || func->isLambda) lable->lable = func->ident.ident;
-            else lable->lable = "pub_" + scope->Ident + "_" + func->ident.ident;
-            if(func->scopeName != "global"){
-                lable->lable = "pub_" + func->scopeName + "_" + func->ident.ident;
-                gen::Type * tscope = *this->typeList[func->scopeName];
-                if(tscope == nullptr) alert("Failed to locate function Scope");
-                if(dynamic_cast<gen::Class *>(tscope) == nullptr) alert("Can only scope to  a class");
-                this->scope = dynamic_cast<gen::Class *>(tscope);
-            }
+    while (assign->modList.head != nullptr) {
+      if (this->typeList[last.typeName] == nullptr)
+        alert("type not found " + last.typeName);
+      gen::Type type = **this->typeList[last.typeName];
+      gen::Symbol *modSym;
+      // store the next dot mod in case of an error
+      std::string sto = assign->modList.peek();
+      if (this->scope == *this->typeList[last.typeName]) {
+        // if we are scoped to the type seache the symbol in the type symbol
+        // table
+        modSym = type.SymbolTable.search<std::string>(searchSymbol,
+                                                      assign->modList.pop());
+      } else {
+        // if we are not scoped to the type search the symbol in the public
+        // symbol table
+        modSym = type.publicSymbols.search<std::string>(searchSymbol,
+                                                        assign->modList.pop());
+      };
+      if (modSym == nullptr)
+        alert("unknown name: " + last.typeName + "." + sto);
+      last = modSym->type;
+      tbyte = modSym->byteMod;
 
-            asmc::Push * push = new asmc::Push();
-            push->op = "%rbp";
-            asmc::Mov * mov = new asmc::Mov();
-            mov->size = asmc::QWord;
-            mov->from =  "%rsp";
-            mov->to = "%rbp";
-
-            OutputFile.text.push(lable);
-            OutputFile.text.push(push);
-            OutputFile.text.push(mov);
-            // push the callee preserved registers
-            asmc::Push * push2 = new asmc::Push();
-            push2->op = "%rbx";
-            OutputFile.text.push(push2);
-            asmc::Push * push3 = new asmc::Push();
-
-
-            int AlignmentLoc = OutputFile.text.count;
-            this->intArgsCounter = 0;
-            this->returnType = func->type;
-            asmc::LinkTask * link = new asmc::LinkTask();
-            link->command = "global";
-            link->operand = lable->lable;
-
-            if(this->scope != nullptr && !func->isLambda){
-                // add the opject to the arguments of the function
-                int offset = this->getBytes(asmc::QWord);
-                int size = asmc::QWord;
-                gen::Symbol symbol;
-                asmc::Mov * movy = new asmc::Mov();
-                movy->from = this->intArgs[intArgsCounter].get(asmc::QWord);
-
-                symbol.symbol = "my";
-                
-                                
-                auto ty = ast::Type();
-                ty.typeName = scope->Ident;
-                ty.size = asmc::QWord;
-                symbol.type = ty;
-
-                int byteMod = gen::scope::ScopeManager::getInstance()->assign("my", ty, false);
-        
-
-                movy->size = asmc::QWord;
-                movy->to = "-" + std::to_string(byteMod) + + "(%rbp)";
-                OutputFile.text << movy;
-                this->intArgsCounter++;
-            };
-
-            this->GenArgs(func->args, OutputFile);
-            if(!isLambda) OutputFile.linker.push(link);
-
-            asmc::File file = this->GenSTMT(func->statment);
-            // check if the last statement is a return statement
-            if(file.text.count > 0){
-                asmc::Instruction * last = file.text.peek();
-                if(dynamic_cast<asmc::Return *>(last) == nullptr){
-                    // if the function name is init then we need to alert to return 'my'
-                    if(func->ident.ident == "init"){
-                        gen::Symbol * my = gen::scope::ScopeManager::getInstance()->get("my");
-                        asmc::Mov * mov = new asmc::Mov();
-                        mov->size = asmc::QWord;
-                        mov->from = '-' + std::to_string(my->byteMod) + "(%rbp)";;
-                        mov->to = this->registers["%rax"]->get(asmc::QWord);
-                        // pop rbx
-                        asmc::Pop * pop = new asmc::Pop();
-                        pop->op = "%rbx";
-                        file.text.push(pop);
-                        file.text.push(mov);
-                    }
-                    asmc::Return * ret = new asmc::Return();
-                    file.text.push(ret);
-                }
-            } else {
-                asmc::Pop * pop = new asmc::Pop();
-                pop->op = "%rbx";
-                file.text.push(pop);
-                asmc::Return * ret = new asmc::Return();
-                file.text.push(ret);
-            }
-            OutputFile << file;
-
-            asmc::Subq * sub = new asmc::Subq;
-            sub->op1 = "$" + std::to_string(gen::scope::ScopeManager::getInstance()->getStackAlignment());
-            sub->op2 = this->registers["%rsp"]->get(asmc::QWord);
-            OutputFile.text.insert(sub, AlignmentLoc + 1);
-            
-            this->scope = saveScope;
-            this->globalScope = saveGlobal;
-            this->inFunction = saveIn;
-        }
-        delete(func);
-
-        this->intArgsCounter = saveIntArgs;
-
-        gen::scope::ScopeManager::getInstance()->popScope(true);
+      asmc::Mov *mov7 = new asmc::Mov();
+      mov7->size = asmc::QWord;
+      mov7->to = this->registers["%edx"]->get(asmc::QWord);
+      mov7->from = output;
+      OutputFile.text << mov7;
+      output = std::to_string(tbyte - this->getBytes(last.size)) + '(' +
+               mov7->to + ')';
+      size = last.size;
     }
-    else if (dynamic_cast<ast::Declare *>(STMT) != nullptr){
-        /*
-            movl $0x0, -[SymbolT + size](rdp)
-            **also needs to be added to symbol table**
-        */
-        
-        ast::Declare * dec =  dynamic_cast<ast::Declare *>(STMT);
-        int offset = this->getBytes(dec->type.size);
-        links::LinkedList<gen::Symbol>  * Table;
-        
-        if (!this->globalScope){
-            // if the there  is no scope use the scope manager otherwise use the scope
-            if(this->scope == nullptr || this->inFunction){
-                gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type, dec->mask);
-            }
-            else{
-                // add the symbol to the class symbol table
-                Table = &this->scope->SymbolTable;
-
-                if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) alert("redefined veriable: " + dec->Ident);
-                gen::Symbol Symbol;
-                if (Table->head == nullptr){
-                    Symbol.byteMod = offset;
-                }else{
-                    Symbol.byteMod = Table->head->data.byteMod + offset;
-                }
-                Symbol.type = dec->type;
-                Symbol.symbol = dec->Ident;
-                Table->push(Symbol);
-                // if the symbol is public add it to the public symbol table
-                if(dec->scope == ast::Public && this->scope != nullptr) this->scope->publicSymbols.push(Symbol);
-            };
-        } else{
-            Table = &this->GlobalSymbolTable;
-            asmc::LinkTask * var = new asmc::LinkTask();
-            asmc::Lable * lable = new asmc::Lable();
-            if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) alert("redefined global veriable: " + dec->Ident);
-            
-            lable->lable = dec->Ident;
-            if (dec->type.size = asmc::QWord){
-                var->command = "quad";
-            };
-            gen::Symbol Symbol;
-
-            Symbol.type = dec->type;
-            Symbol.symbol = dec->Ident;
-            OutputFile.bss << lable;
-            OutputFile.bss << var;
-            Table->push(Symbol);
-        }
-        
-    }
-    else if (dynamic_cast<ast::DecArr *>(STMT) != nullptr){
-            /*
-            movl $0x0, -[SymbolT + size](rdp)
-            **also needs to be added to symbol table**
-            */
-            ast::DecArr * dec =  dynamic_cast<ast::DecArr *>(STMT);
-            int offset = this->getBytes(dec->type.size);
-
-            offset = offset * dec->count;
-
-            links::LinkedList<gen::Symbol>  * Table;
-            if(this->scope == nullptr || this->inFunction){
-                dec->type.arraySize = dec->count;
-                gen::scope::ScopeManager::getInstance()->assign(dec->ident, dec->type, false);
-            }
-            else{Table = &this->scope->SymbolTable;
-
-            if(Table->search<std::string>(searchSymbol, dec->ident) != nullptr) alert("redefined veriable:" + dec->ident);
-
-            gen::Symbol Symbol;
-
-            if (Table->head == nullptr){
-                Symbol.byteMod = offset;
-            }else{
-                Symbol.byteMod = Table->head->data.byteMod + offset;
-            }
-            Symbol.type = dec->type;
-            Symbol.symbol = dec->ident;
-            Table->push(Symbol);
-        }
-
-    }
-    else if (dynamic_cast<ast::DecAssign *>(STMT) != nullptr){
-        /*
-            movl $0x0, -[SymbolT + size](rdp)
-            **also needs to be added to symbol table**
-        */
-        ast::DecAssign * decAssign =  dynamic_cast<ast::DecAssign *>(STMT);
-        ast::Declare * dec = decAssign->declare;
-        int offset = this->getBytes(dec->type.size);
-        
-        links::LinkedList<gen::Symbol>  * Table;
-        Table = &this->SymbolTable;
-
-        if(!this->globalScope){
-        
-            int byteMod = gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type, dec->mask);
-
-            asmc::Mov * mov = new asmc::Mov();
-            gen::Expr expr = this->GenExpr(decAssign->expr, OutputFile, dec->type.size);
-
-            this->canAssign(dec->type, expr.type);
-            
-            asmc::Mov * mov2 = new asmc::Mov();
-            mov2->size = dec->type.size;
-            mov2->from = expr.access;
-            if(expr.op == asmc::Float) mov2->to = this->registers["%xmm0"]->get(expr.size);
-            else mov2->to = this->registers["%rbx"]->get(dec->type.size);
-
-            mov->op = expr.op;
-
-            mov2->op = expr.op;
-            mov->size = dec->type.size;
-            mov->from = this->registers["%rbx"]->get(dec->type.size);
-            mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
-
- 
-            mov->from = mov2->to;
-
-            OutputFile.text << mov2;
-            OutputFile.text << mov;
-        }
-        else{
-            gen::Symbol Symbol;
-
-            Symbol.type = dec->type;
-            Symbol.symbol = dec->Ident;
-            Table = &this->GlobalSymbolTable;
-
-            asmc::LinkTask * var = new asmc::LinkTask();
-            asmc::Lable * lable = new asmc::Lable();
-
-            lable->lable = dec->Ident;
-            if (dec->type.size = asmc::QWord){
-                var->command = "quad";
-            }
-            gen::Expr exp = this->GenExpr(decAssign->expr, OutputFile);
-            //std::cout << "Atempting to assign global " << dec->Ident << " " << dec->type.typeName << " to " << exp.type << std::endl;
-            this->canAssign(dec->type, exp.type);
-            //std::cout << "Assigned " << dec->Ident << " " << dec->type.typeName << " to " << exp.type << std::endl;
-            var->operand = exp.access.erase(0, 1);
-            Symbol.type.opType = exp.op;
-            OutputFile.data << lable;
-            OutputFile.data << var;
-            if(Table->search<std::string>(searchSymbol, dec->Ident) != nullptr) alert("redefined veriable:" + dec->Ident);
-            Table->push(Symbol);
-        };
-
-    }
-    else if (dynamic_cast<ast::Return *>(STMT) != nullptr){
-        /*
-            mov [this.GenExpr(ret.value)]
-            pop rbp
-            ret
-        */
-
-        ast::Return * ret = dynamic_cast<ast::Return *>(STMT);
-
-        asmc::Mov * mov = new asmc::Mov();
-        
-        gen::Expr from = this->GenExpr(ret->expr, OutputFile);
-        mov->from = from.access;
-        mov->to = this->registers["%rax"]->get(from.size);
-        mov->size = from.size;
-        OutputFile.text << mov;
-        this->canAssign(this->returnType, from.type, true);
-        asmc::Return * re = new asmc::Return();
-        OutputFile.text << re;
-
-    }
-    else if (dynamic_cast<ast::Assign *>(STMT) != nullptr){
-        ast::Assign * assign = dynamic_cast<ast::Assign *>(STMT);
-        bool global = false;
-
-        links::LinkedList<gen::Symbol>  * Table = &this->SymbolTable;
-        
-        
-        Symbol * symbol = gen::scope::ScopeManager::getInstance()->get(assign->Ident);
-
-        if(symbol == nullptr) {
-            Table = &this->GlobalSymbolTable;
-            symbol = Table->search<std::string>(searchSymbol, assign->Ident);
-            if(symbol == nullptr) alert("unknown name: " + assign->Ident);
-            global = true;
-        };
-
-        // check if the symbol is a class
-        gen::Type ** t = this->typeList[symbol->type.typeName];
-        if (t != nullptr && assign->modList.count == 0){
-            gen::Class * cl = dynamic_cast<gen::Class *>(*t);
-            if (cl != nullptr){
-                // check if the class has an overloaded operator =
-                ast::Function * func = cl->overloadTable[ast::Equ];
-                if (func != nullptr){
-                    // call the overloaded operator = 
-                    ast::Var * v = new ast::Var();
-                    v->Ident = assign->Ident;
-                    v->modList = assign->modList;
-                    ast::Call * call = new ast::Call();
-                    call->ident = func->ident.ident;
-                    call->modList = assign->modList;
-                    call->Args.push(v);
-                    call->Args.push(assign->expr);
-                    call->publify = cl->Ident;
-                    ast::CallExpr * callExpr = new ast::CallExpr();
-                    callExpr->call = call;
-                    assign->expr = callExpr;
-                };
-            }
-        }
-        asmc::Mov * mov = new asmc::Mov();
-        asmc::Mov * mov2 = new asmc::Mov();
-        gen::Expr expr = this->GenExpr(assign->expr, OutputFile, symbol->type.size);
-        mov->op = expr.op;
-        mov2->op = expr.op;
-        mov->size = expr.size;
-        mov2->size = expr.size;
-        mov2->from = expr.access;
-
-        if(expr.op == asmc::Float) mov2->to = this->registers["%xmm0"]->get(expr.size);
-        else mov2->to = this->registers["%rbx"]->get(expr.size);
-        mov->from = mov2->to;
-
-        assign->modList.invert();
-        int tbyte = 0;
-        
-        ast::Type last = symbol->type;
-        asmc::Size size;
-        std::string output;
-        if(global) output = symbol->symbol; 
-        else output = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
-
-        while(assign->modList.head != nullptr){
-            if(this->typeList[last.typeName] == nullptr) alert("type not found " + last.typeName);
-            gen::Type type = **this->typeList[last.typeName];
-             gen::Symbol * modSym;
-             // store the next dot mod in case of an error
-             std::string sto = assign->modList.peek();
-                    if(this->scope == *this->typeList[last.typeName]){
-                        // if we are scoped to the type seache the symbol in the type symbol table
-                         modSym = type.SymbolTable.search<std::string>(searchSymbol, assign->modList.pop());
-                    }else{
-                        // if we are not scoped to the type search the symbol in the public symbol table
-                        modSym = type.publicSymbols.search<std::string>(searchSymbol, assign->modList.pop());
-                    };
-                    if(modSym == nullptr) alert("unknown name: " + last.typeName + "." + sto);
-            last = modSym->type;
-            tbyte = modSym->byteMod;
-
-            asmc::Mov * mov7 = new asmc::Mov();
-            mov7->size = asmc::QWord;
-            mov7->to = this->registers["%edx"]->get(asmc::QWord);
-            mov7->from =  output;
-            OutputFile.text << mov7;
-            output = std::to_string(tbyte - this->getBytes(last.size)) + '(' + mov7->to + ')';
-            size = last.size;
-        }
-
-
-        if(assign->refrence == true){
-            asmc::Mov * m1 = new asmc::Mov;
-            m1->from = output;
-            m1->size = asmc::QWord;
-            m1->to = this->registers["%eax"]->get(asmc::QWord);
-            mov->to = "(" + this->registers["%eax"]->get(asmc::QWord) + ")";
-            OutputFile.text << m1;
-        }else {
-            //std::cout << "Atempting to assign not dec " << symbol->symbol << " " << last.typeName << " to " << expr.type << std::endl;
-            this->canAssign(last, expr.type);
-            //std::cout << "Assigned not dec " << symbol->symbol << " " << last.typeName << " to " << expr.type << std::endl;
-            mov->to = output;
-        };
-
-        OutputFile.text << mov2;
-        OutputFile.text << mov;
-    }
-    else if (dynamic_cast<ast::Call *>(STMT) != nullptr){
-        ast::Call * call = dynamic_cast<ast::Call *>(STMT);
-        this->GenCall(call, OutputFile);
-    }
-    else if (dynamic_cast<ast::Push *>(STMT) != nullptr){
-        ast::Push * push = dynamic_cast<ast::Push *>(STMT);
-        asmc::Mov * count = new asmc::Mov;
-
-        count->size = asmc::QWord;
-        count->to = this->registers["%rdx"]->get(count->size);
-        count->from = "$1";
-        asmc::Mov * pointer = new asmc::Mov;
-        pointer->size = asmc::QWord;
-        pointer->to = this->registers["%rsi"]->get(pointer->size);
-        pointer->from = this->GenExpr(push->expr, OutputFile).access;
-
-        asmc::Mov * callnum = new asmc::Mov;
-        callnum->size = asmc::QWord;
-        callnum->to = this->registers["%rax"]->get(callnum->size);
-        callnum->from = "$1";
-
-        asmc::Mov * rdi = new asmc::Mov;
-        rdi->size = asmc::QWord;
-        rdi->from = "$1";
-        rdi->to = this->registers["%rdi"]->get(rdi->size);
-
-        OutputFile.text << rdi;
-        OutputFile.text << pointer;
-        OutputFile.text << count;
-        OutputFile.text << callnum;
-        
-        OutputFile.text << new asmc::SysCall;
-    }
-    else if (dynamic_cast<ast::Pull *>(STMT) != nullptr){
-        ast::Pull * pull = dynamic_cast<ast::Pull *>(STMT);
-        asmc::Mov * count = new asmc::Mov;
-        count->size = asmc::QWord;
-        count->to = this->registers["%rdx"]->get(count->size);
-        count->from = "$1";
-        asmc::Mov * pointer = new asmc::Mov;
-        pointer->size = asmc::QWord;
-        pointer->to = this->registers["%rsi"]->get(pointer->size);
-        pointer->from = this->GenExpr(pull->expr, OutputFile).access;
-        asmc::Mov * callnum = new asmc::Mov;
-        callnum->size = asmc::QWord;
-        callnum->to = this->registers["%rax"]->get(callnum->size);
-        callnum->from = "$0";
-        asmc::Mov * rdi = new asmc::Mov;
-        rdi->size = asmc::QWord;
-        rdi->from = "$1";
-        rdi->to = this->registers["%rdi"]->get(rdi->size);
-
-        OutputFile.text << rdi;
-        OutputFile.text << pointer;
-        OutputFile.text << count;
-        OutputFile.text << callnum;
-        
-        OutputFile.text << new asmc::SysCall;
-    }
-    else if (dynamic_cast<ast::If *>(STMT) != nullptr){
-        // push a new scope
-        gen::scope::ScopeManager::getInstance()->pushScope();
-        ast::If ifStmt = *dynamic_cast<ast::If *>(STMT);
-
-        asmc::Lable * lable1 = new asmc::Lable();
-        lable1->lable = ".L"+ this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-        this->lablecount ++;
-
-
-        gen::Expr expr = this->GenExpr(ifStmt.expr, OutputFile);
-
-        ast::Type t = ast::Type();
-        t.typeName = "bool";
-        t.size = asmc::Byte;
-        this->canAssign(t, expr.type);
-
-
-        asmc::Mov * mov1 = new asmc::Mov();
-
-
-        mov1->size = asmc::Byte;
-
-        mov1->from = expr.access;;
-
-        mov1->to = this->registers["%rax"]->get(mov1->size);
-
-
-        asmc::Cmp * cmp = new asmc::Cmp();
-        asmc::Je * je = new asmc::Je();
-
-        cmp->from = "$0";
-        cmp->to = mov1->to;
-        cmp->size = expr.size;
-
-        je->to = lable1->lable;
-        
-        OutputFile.text << mov1;
-        OutputFile.text << cmp;
-        OutputFile.text << je;
-        OutputFile << this->GenSTMT(ifStmt.statment);
-        if (ifStmt.elseStatment != nullptr){
-            asmc::Lable * end = new asmc::Lable();
-            end->lable = ".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-            this->lablecount ++;
-            asmc::Jmp * jmp = new asmc::Jmp();
-            jmp->to = end->lable;
-            OutputFile.text << jmp;
-            OutputFile.text << lable1;
-            
-            gen::scope::ScopeManager::getInstance()->popScope();
-            gen::scope::ScopeManager::getInstance()->pushScope();
-            OutputFile << this->GenSTMT(ifStmt.elseStatment);
-            OutputFile.text << end;
-        } else OutputFile.text << lable1;
-
-        gen::scope::ScopeManager::getInstance()->popScope();
-    }
-    else if (dynamic_cast<ast::While *>(STMT) != nullptr){
-        gen::scope::ScopeManager::getInstance()->pushScope();
-        ast::While * loop = dynamic_cast<ast::While *>(STMT);
-
-        asmc::Lable * lable1 = new asmc::Lable();
-        lable1->lable =".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-        this->lablecount++;
-
-        asmc::Lable * lable2 = new asmc::Lable();
-        lable2->lable = ".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-        this->lablecount++;
-
-        asmc::Jmp * jmp = new asmc::Jmp();
-        jmp->to = lable2->lable;
-        OutputFile.text << jmp;
-
-        OutputFile.text << lable1;
-
-        OutputFile << this->GenSTMT(loop->stmt);
-
-        OutputFile.text << lable2;
-
-        gen::Expr expr =this->GenExpr(loop->expr, OutputFile);
-
-        ast::Type t = ast::Type();
-        t.typeName = "bool";
-        t.size = asmc::Byte;
-        this->canAssign(t, expr.type);
-    
-        asmc::Mov * mov = new asmc::Mov();
-
-        mov->size = expr.size;
-
-        mov->from = expr.access;
-
-        mov->to = this->registers["%eax"]->get(mov->size);
-
-        asmc::Cmp * cmp = new asmc::Cmp();
-        asmc::Je * je = new asmc::Je();
-        
-
-        cmp->from = "$1";
-        cmp->to = mov->to;
-        cmp->size = expr.size;
-        je->to = lable1->lable;
-        
-        OutputFile.text << mov;
-        OutputFile.text << cmp;
-        gen::scope::ScopeManager::getInstance()->popScope();
-        OutputFile.text << je;
-        
-    }
-    else if (dynamic_cast<ast::For *>(STMT) != nullptr){
-        gen::scope::ScopeManager::getInstance()->pushScope();
-        ast::For * loop = dynamic_cast<ast::For *>(STMT);
-
-        asmc::Lable * lable1 = new asmc::Lable();
-        lable1->lable =".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-        this->lablecount++;
-
-        asmc::Lable * lable2 = new asmc::Lable();
-        lable2->lable = ".L" + this->nameTable.head->data.ident.ident + std::to_string(this->lablecount);
-        this->lablecount++;
-        OutputFile << this->GenSTMT(loop->declare);
-        asmc::Jmp * jmp = new asmc::Jmp();
-        jmp->to = lable2->lable;
-        OutputFile.text << jmp;
-
-        OutputFile.text << lable1;
-
-        OutputFile << this->GenSTMT(loop->Run);
-        OutputFile << this->GenSTMT(loop->increment);
-
-        OutputFile.text << lable2;
-
-        gen::Expr expr = this->GenExpr(loop->expr, OutputFile);
-
-        ast::Type t = ast::Type();
-        t.typeName = "bool";
-        t.size = asmc::Byte;
-        this->canAssign(t, expr.type);
-    
-        asmc::Mov * mov = new asmc::Mov();
-
-        mov->size = expr.size;
-
-        mov->from = expr.access;
-
-        mov->to = this->registers["%eax"]->get(mov->size);
-
-        asmc::Cmp * cmp = new asmc::Cmp();
-        asmc::Je * je = new asmc::Je();
-        je->to = lable1->lable;
-
-        cmp->from = "$1";
-        cmp->to = mov->to;
-        cmp->size = expr.size;
-
-        
-        OutputFile.text << mov;
-        OutputFile.text << cmp;
-        OutputFile.text << je;
-
-        gen::scope::ScopeManager::getInstance()->popScope();
-    }
-    else if (dynamic_cast<ast::UDeffType *>(STMT) != nullptr){
-        ast::UDeffType * udef = dynamic_cast<ast::UDeffType *>(STMT);
-        gen::Type * type = new gen::Type();
-        bool saveScope = this->globalScope;
-        this->globalScope = false;
-        type->Ident = udef->ident.ident;
-        type->SymbolTable  = this->GenTable(udef->statment, type->SymbolTable);
-        this->typeList.push(type);
-        this->globalScope = saveScope;
-    }
-    else if (dynamic_cast<ast::Class *>(STMT) != nullptr){
-        ast::Class * deff = dynamic_cast<ast::Class *>(STMT);
-        gen::Class * type = new gen::Class();
-        bool saveScope = this->globalScope;
-        this->globalScope = false;
-        type->Ident = deff->ident.ident;
-        type->nameTable.foo = compairFunc;
-        this->scope = type;
-        type->overloadTable.foo = [](ast::Function func, ast::Op op){
-            if(func.op == op){
-                return true;
-            }
-            return false;
-        };
-        type->SymbolTable;
-        this->typeList.push(type);
-        // write any signed contracts
-        if (deff->base != ""){
-            gen::Type ** T = this->typeList[deff->base];
-            if (T != nullptr){
-                gen::Class * base = dynamic_cast<gen::Class *>(*T);
-                asmc::File contractFile;
-                if (base != nullptr){
-                    // check if the base class has a contract
-                    if (base->contract == nullptr) err::Exception("Base class does not have a contract");
-                    // if my contact is not nullptr stitch it with the base
-                    if (deff->contract != nullptr){
-                        ast::Sequence * seq = new ast::Sequence();
-                        seq->Statment1 = deff->contract;
-                        seq->Statment2 = base->contract;
-                        type->contract = seq;
-                        type->parent = base;
-                        contractFile = this->GenSTMT(seq);
-                        OutputFile << contractFile;
-                    } else {
-                        type->contract = base->contract;
-                        type->parent = base;
-                        contractFile = this->GenSTMT(base->contract);
-                        OutputFile << contractFile;
-                        type->contract = deff->contract;
-                    }
-                } else alert("Base class is not a class");
-            } else alert("Base class not found");
-        }else if (deff->contract != nullptr){
-            asmc::File contractFile = this->GenSTMT(deff->contract);
+
+    if (assign->refrence == true) {
+      asmc::Mov *m1 = new asmc::Mov;
+      m1->from = output;
+      m1->size = asmc::QWord;
+      m1->to = this->registers["%eax"]->get(asmc::QWord);
+      mov->to = "(" + this->registers["%eax"]->get(asmc::QWord) + ")";
+      OutputFile.text << m1;
+    } else {
+      // std::cout << "Atempting to assign not dec " << symbol->symbol << " " <<
+      // last.typeName << " to " << expr.type << std::endl;
+      this->canAssign(last, expr.type);
+      // std::cout << "Assigned not dec " << symbol->symbol << " " <<
+      // last.typeName << " to " << expr.type << std::endl;
+      mov->to = output;
+    };
+
+    OutputFile.text << mov2;
+    OutputFile.text << mov;
+  } else if (dynamic_cast<ast::Call *>(STMT) != nullptr) {
+    ast::Call *call = dynamic_cast<ast::Call *>(STMT);
+    this->GenCall(call, OutputFile);
+  } else if (dynamic_cast<ast::Push *>(STMT) != nullptr) {
+    ast::Push *push = dynamic_cast<ast::Push *>(STMT);
+    asmc::Mov *count = new asmc::Mov;
+
+    count->size = asmc::QWord;
+    count->to = this->registers["%rdx"]->get(count->size);
+    count->from = "$1";
+    asmc::Mov *pointer = new asmc::Mov;
+    pointer->size = asmc::QWord;
+    pointer->to = this->registers["%rsi"]->get(pointer->size);
+    pointer->from = this->GenExpr(push->expr, OutputFile).access;
+
+    asmc::Mov *callnum = new asmc::Mov;
+    callnum->size = asmc::QWord;
+    callnum->to = this->registers["%rax"]->get(callnum->size);
+    callnum->from = "$1";
+
+    asmc::Mov *rdi = new asmc::Mov;
+    rdi->size = asmc::QWord;
+    rdi->from = "$1";
+    rdi->to = this->registers["%rdi"]->get(rdi->size);
+
+    OutputFile.text << rdi;
+    OutputFile.text << pointer;
+    OutputFile.text << count;
+    OutputFile.text << callnum;
+
+    OutputFile.text << new asmc::SysCall;
+  } else if (dynamic_cast<ast::Pull *>(STMT) != nullptr) {
+    ast::Pull *pull = dynamic_cast<ast::Pull *>(STMT);
+    asmc::Mov *count = new asmc::Mov;
+    count->size = asmc::QWord;
+    count->to = this->registers["%rdx"]->get(count->size);
+    count->from = "$1";
+    asmc::Mov *pointer = new asmc::Mov;
+    pointer->size = asmc::QWord;
+    pointer->to = this->registers["%rsi"]->get(pointer->size);
+    pointer->from = this->GenExpr(pull->expr, OutputFile).access;
+    asmc::Mov *callnum = new asmc::Mov;
+    callnum->size = asmc::QWord;
+    callnum->to = this->registers["%rax"]->get(callnum->size);
+    callnum->from = "$0";
+    asmc::Mov *rdi = new asmc::Mov;
+    rdi->size = asmc::QWord;
+    rdi->from = "$1";
+    rdi->to = this->registers["%rdi"]->get(rdi->size);
+
+    OutputFile.text << rdi;
+    OutputFile.text << pointer;
+    OutputFile.text << count;
+    OutputFile.text << callnum;
+
+    OutputFile.text << new asmc::SysCall;
+  } else if (dynamic_cast<ast::If *>(STMT) != nullptr) {
+    // push a new scope
+    gen::scope::ScopeManager::getInstance()->pushScope();
+    ast::If ifStmt = *dynamic_cast<ast::If *>(STMT);
+
+    asmc::Lable *lable1 = new asmc::Lable();
+    lable1->lable = ".L" + this->nameTable.head->data.ident.ident +
+                    std::to_string(this->lablecount);
+    this->lablecount++;
+
+    gen::Expr expr = this->GenExpr(ifStmt.expr, OutputFile);
+
+    ast::Type t = ast::Type();
+    t.typeName = "bool";
+    t.size = asmc::Byte;
+    this->canAssign(t, expr.type);
+
+    asmc::Mov *mov1 = new asmc::Mov();
+
+    mov1->size = asmc::Byte;
+
+    mov1->from = expr.access;
+    ;
+
+    mov1->to = this->registers["%rax"]->get(mov1->size);
+
+    asmc::Cmp *cmp = new asmc::Cmp();
+    asmc::Je *je = new asmc::Je();
+
+    cmp->from = "$0";
+    cmp->to = mov1->to;
+    cmp->size = expr.size;
+
+    je->to = lable1->lable;
+
+    OutputFile.text << mov1;
+    OutputFile.text << cmp;
+    OutputFile.text << je;
+    OutputFile << this->GenSTMT(ifStmt.statment);
+    if (ifStmt.elseStatment != nullptr) {
+      asmc::Lable *end = new asmc::Lable();
+      end->lable = ".L" + this->nameTable.head->data.ident.ident +
+                   std::to_string(this->lablecount);
+      this->lablecount++;
+      asmc::Jmp *jmp = new asmc::Jmp();
+      jmp->to = end->lable;
+      OutputFile.text << jmp;
+      OutputFile.text << lable1;
+
+      gen::scope::ScopeManager::getInstance()->popScope();
+      gen::scope::ScopeManager::getInstance()->pushScope();
+      OutputFile << this->GenSTMT(ifStmt.elseStatment);
+      OutputFile.text << end;
+    } else
+      OutputFile.text << lable1;
+
+    gen::scope::ScopeManager::getInstance()->popScope();
+  } else if (dynamic_cast<ast::While *>(STMT) != nullptr) {
+    gen::scope::ScopeManager::getInstance()->pushScope();
+    ast::While *loop = dynamic_cast<ast::While *>(STMT);
+
+    asmc::Lable *lable1 = new asmc::Lable();
+    lable1->lable = ".L" + this->nameTable.head->data.ident.ident +
+                    std::to_string(this->lablecount);
+    this->lablecount++;
+
+    asmc::Lable *lable2 = new asmc::Lable();
+    lable2->lable = ".L" + this->nameTable.head->data.ident.ident +
+                    std::to_string(this->lablecount);
+    this->lablecount++;
+
+    asmc::Jmp *jmp = new asmc::Jmp();
+    jmp->to = lable2->lable;
+    OutputFile.text << jmp;
+
+    OutputFile.text << lable1;
+
+    OutputFile << this->GenSTMT(loop->stmt);
+
+    OutputFile.text << lable2;
+
+    gen::Expr expr = this->GenExpr(loop->expr, OutputFile);
+
+    ast::Type t = ast::Type();
+    t.typeName = "bool";
+    t.size = asmc::Byte;
+    this->canAssign(t, expr.type);
+
+    asmc::Mov *mov = new asmc::Mov();
+
+    mov->size = expr.size;
+
+    mov->from = expr.access;
+
+    mov->to = this->registers["%eax"]->get(mov->size);
+
+    asmc::Cmp *cmp = new asmc::Cmp();
+    asmc::Je *je = new asmc::Je();
+
+    cmp->from = "$1";
+    cmp->to = mov->to;
+    cmp->size = expr.size;
+    je->to = lable1->lable;
+
+    OutputFile.text << mov;
+    OutputFile.text << cmp;
+    gen::scope::ScopeManager::getInstance()->popScope();
+    OutputFile.text << je;
+
+  } else if (dynamic_cast<ast::For *>(STMT) != nullptr) {
+    gen::scope::ScopeManager::getInstance()->pushScope();
+    ast::For *loop = dynamic_cast<ast::For *>(STMT);
+
+    asmc::Lable *lable1 = new asmc::Lable();
+    lable1->lable = ".L" + this->nameTable.head->data.ident.ident +
+                    std::to_string(this->lablecount);
+    this->lablecount++;
+
+    asmc::Lable *lable2 = new asmc::Lable();
+    lable2->lable = ".L" + this->nameTable.head->data.ident.ident +
+                    std::to_string(this->lablecount);
+    this->lablecount++;
+    OutputFile << this->GenSTMT(loop->declare);
+    asmc::Jmp *jmp = new asmc::Jmp();
+    jmp->to = lable2->lable;
+    OutputFile.text << jmp;
+
+    OutputFile.text << lable1;
+
+    OutputFile << this->GenSTMT(loop->Run);
+    OutputFile << this->GenSTMT(loop->increment);
+
+    OutputFile.text << lable2;
+
+    gen::Expr expr = this->GenExpr(loop->expr, OutputFile);
+
+    ast::Type t = ast::Type();
+    t.typeName = "bool";
+    t.size = asmc::Byte;
+    this->canAssign(t, expr.type);
+
+    asmc::Mov *mov = new asmc::Mov();
+
+    mov->size = expr.size;
+
+    mov->from = expr.access;
+
+    mov->to = this->registers["%eax"]->get(mov->size);
+
+    asmc::Cmp *cmp = new asmc::Cmp();
+    asmc::Je *je = new asmc::Je();
+    je->to = lable1->lable;
+
+    cmp->from = "$1";
+    cmp->to = mov->to;
+    cmp->size = expr.size;
+
+    OutputFile.text << mov;
+    OutputFile.text << cmp;
+    OutputFile.text << je;
+
+    gen::scope::ScopeManager::getInstance()->popScope();
+  } else if (dynamic_cast<ast::UDeffType *>(STMT) != nullptr) {
+    ast::UDeffType *udef = dynamic_cast<ast::UDeffType *>(STMT);
+    gen::Type *type = new gen::Type();
+    bool saveScope = this->globalScope;
+    this->globalScope = false;
+    type->Ident = udef->ident.ident;
+    type->SymbolTable = this->GenTable(udef->statment, type->SymbolTable);
+    this->typeList.push(type);
+    this->globalScope = saveScope;
+  } else if (dynamic_cast<ast::Class *>(STMT) != nullptr) {
+    ast::Class *deff = dynamic_cast<ast::Class *>(STMT);
+    gen::Class *type = new gen::Class();
+    bool saveScope = this->globalScope;
+    this->globalScope = false;
+    type->Ident = deff->ident.ident;
+    type->nameTable.foo = compairFunc;
+    this->scope = type;
+    type->overloadTable.foo = [](ast::Function func, ast::Op op) {
+      if (func.op == op) {
+        return true;
+      }
+      return false;
+    };
+    type->SymbolTable;
+    this->typeList.push(type);
+    // write any signed contracts
+    if (deff->base != "") {
+      gen::Type **T = this->typeList[deff->base];
+      if (T != nullptr) {
+        gen::Class *base = dynamic_cast<gen::Class *>(*T);
+        asmc::File contractFile;
+        if (base != nullptr) {
+          // check if the base class has a contract
+          if (base->contract == nullptr)
+            err::Exception("Base class does not have a contract");
+          // if my contact is not nullptr stitch it with the base
+          if (deff->contract != nullptr) {
+            ast::Sequence *seq = new ast::Sequence();
+            seq->Statment1 = deff->contract;
+            seq->Statment2 = base->contract;
+            type->contract = seq;
+            type->parent = base;
+            contractFile = this->GenSTMT(seq);
+            OutputFile << contractFile;
+          } else {
+            type->contract = base->contract;
+            type->parent = base;
+            contractFile = this->GenSTMT(base->contract);
             OutputFile << contractFile;
             type->contract = deff->contract;
-        }
-        asmc::File file = this->GenSTMT(deff->statment);
-        OutputFile << file;
-        this->globalScope = saveScope;
-        this->scope = nullptr;
+          }
+        } else
+          alert("Base class is not a class");
+      } else
+        alert("Base class not found");
+    } else if (deff->contract != nullptr) {
+      asmc::File contractFile = this->GenSTMT(deff->contract);
+      OutputFile << contractFile;
+      type->contract = deff->contract;
     }
-    else if (dynamic_cast<ast::Inc *>(STMT) != nullptr){
-        ast::Inc * inc = dynamic_cast<ast::Inc *>(STMT);
-        gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);
-        if (sym == nullptr) this->alert("Identifier not found to increment");
-        this->canAssign(sym->type, "int");
+    asmc::File file = this->GenSTMT(deff->statment);
+    OutputFile << file;
+    this->globalScope = saveScope;
+    this->scope = nullptr;
+  } else if (dynamic_cast<ast::Inc *>(STMT) != nullptr) {
+    ast::Inc *inc = dynamic_cast<ast::Inc *>(STMT);
+    gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);
+    if (sym == nullptr)
+      this->alert("Identifier not found to increment");
+    this->canAssign(sym->type, "int");
 
-        asmc::Add * add = new asmc::Add();
-        add->op1 = "$1";
-        add->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
-        OutputFile.text << add;
-    }
-    else if (dynamic_cast<ast::Dec *>(STMT) != nullptr){
-        ast::Dec * inc = dynamic_cast<ast::Dec *>(STMT);
-        gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);
-        if (sym == nullptr) this->alert("Identifier not found to increment");
-        this->canAssign(sym->type, "int");
+    asmc::Add *add = new asmc::Add();
+    add->op1 = "$1";
+    add->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
+    OutputFile.text << add;
+  } else if (dynamic_cast<ast::Dec *>(STMT) != nullptr) {
+    ast::Dec *inc = dynamic_cast<ast::Dec *>(STMT);
+    gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);
+    if (sym == nullptr)
+      this->alert("Identifier not found to increment");
+    this->canAssign(sym->type, "int");
 
-        asmc::Sub * sub = new asmc::Sub();
-        sub->op1 = "$-1";
-        sub->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
-        OutputFile.text << sub;
-    }
-    else{
-        OutputFile.text.push(new asmc::Instruction());
-    }
+    asmc::Sub *sub = new asmc::Sub();
+    sub->op1 = "$-1";
+    sub->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
+    OutputFile.text << sub;
+  } else {
+    OutputFile.text.push(new asmc::Instruction());
+  }
 
-    return OutputFile;
+  return OutputFile;
 }
