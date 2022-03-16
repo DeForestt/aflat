@@ -1,42 +1,42 @@
 #ifndef PrePro
 #define PrePro
 
-#include <string>
 #include "LinkedListS.hpp"
+#include <string>
 #include <vector>
 
 /*A class to PreProcess The input Code*/
 
 /* A class to store a Definition */
-class Definition
-{
-    public:
-    std::string name;
-    std::string value;
+class Definition {
+public:
+  std::string name;
+  std::string value;
 
-    // Compair a definition and a string
-    static bool compair(Definition def, std::string str);
+  // Compair a definition and a string
+  static bool compair(Definition def, std::string str);
 };
 
-class PreProcessor{
-    public:
-        PreProcessor();
-        ~PreProcessor();
-        std::string PreProcess(std::string code, std::string exePath);
-        bool debug = false;
-    private:
-        std::string root;
-        links::SLinkedList<Definition, std::string> definitions;
-        std::vector<std::string> includes;
+class PreProcessor {
+public:
+  PreProcessor();
+  ~PreProcessor();
+  std::string PreProcess(std::string code, std::string exePath);
+  bool debug = false;
 
-        /* incluse an external file */
-        std::string Include(std::string line, std::string exePath);
+private:
+  std::string root;
+  links::SLinkedList<Definition, std::string> definitions;
+  std::vector<std::string> includes;
 
-        /*Define a value*/
-        void Define(std::string line);
+  /* incluse an external file */
+  std::string Include(std::string line, std::string exePath);
 
-        /*Replaced defined value with value*/
-        void ReplaceDefined(std::string &code); 
+  /*Define a value*/
+  void Define(std::string line);
+
+  /*Replaced defined value with value*/
+  void ReplaceDefined(std::string &code);
 };
 
 #endif
