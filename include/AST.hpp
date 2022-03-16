@@ -98,7 +98,6 @@ public:
   Ident ident;
   Statment *args;
   Statment *statment;
-  std::string scopeName;
   ast::Op op;
   std::vector<ast::Type> argTypes;
   bool isLambda = false;

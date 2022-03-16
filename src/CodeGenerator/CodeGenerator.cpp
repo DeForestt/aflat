@@ -1036,7 +1036,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
 
   this->intArgsCounter = 0;
   int argsCounter = 0;
-
+  std::string allMods = "";
   if (call->modList.head == nullptr) {
     func = this->nameTable[call->ident];
     if (func == nullptr) {
@@ -1072,6 +1072,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
         gen::scope::ScopeManager::getInstance()->get(call->ident);
     if (sym == nullptr)
       alert("cannot find object: " + call->ident);
+    allMods += sym->symbol + ".";
 
     ast::Type last = sym->type;
     std::string my = sym->symbol;
@@ -1150,6 +1151,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
       }
       mods.push(call->modList.pop());
       last = sym->type;
+      allMods += sym->symbol + ".";
     };
   };
 
@@ -1169,6 +1171,8 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
           alert("cannot find function: " + call->ident);
         };
         func->type = f->type;
+        func->scope = f->scope;
+        func->scopeName = f->scopeName;
         ast::Type t;
         t.typeName = cl->Ident;
         t.size = asmc::QWord;
@@ -1194,7 +1198,14 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
   }
 
   if (func == nullptr)
-    alert("Cannot Find Function: " + call->ident);
+    alert("Cannot Find Function: " + allMods + func->ident.ident);
+
+  if (func->scope == ast::Private) {
+    if (this->scope == nullptr)
+      alert("attempt to call private function: "+ allMods + func->ident.ident +" from global scope");
+    if (func->scopeName != this->scope->Ident)
+      alert("attempt to call private function " + allMods + func->ident.ident +" from wrong scope");
+  }
 
   call->Args.invert();
 
