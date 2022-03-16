@@ -1274,6 +1274,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     else {
       // add the function to the class name table
       this->scope->nameTable << *func;
+      func->scopeName = this->scope->Ident;
       // if the function has an overload opperator, add it to the overload table
       if (func->op != ast::None)
         this->scope->overloadTable << *func;

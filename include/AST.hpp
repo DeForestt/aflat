@@ -94,6 +94,7 @@ class Function : public Member, public Statment {
 public:
   ast::ScopeMod scope;
   Type type;
+  std::string scopeName = "";
   Ident ident;
   Statment *args;
   Statment *statment;
