@@ -42,6 +42,7 @@ enum Op {
   OrBit,
   LessCmp,
   GreatCmp,
+  CompEqu,
   Leq,
   Geq,
   None,

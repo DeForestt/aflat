@@ -681,7 +681,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.type = "int";
         break;
       }
-      case ast::Equ: {
+      case ast::CompEqu: {
         asmc::Cmp *cmp = new asmc::Cmp();
         gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 

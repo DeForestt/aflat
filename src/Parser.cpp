@@ -155,36 +155,52 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
           if (sym.Sym == '<') {
             tokens.pop();
             lex::OpSym *next = dynamic_cast<lex::OpSym *>(tokens.pop());
-            if (next == nullptr)
+            if (next != nullptr){
+              if (next->Sym == '>') {
+                overload = ast::Op::Less;
+              } else if (next->Sym == '<') {
+                overload = ast::Op::Great;
+              } else if (next->Sym == '+') {
+                overload = ast::Op::Plus;
+              } else if (next->Sym == '-') {
+                overload = ast::Op::Minus;
+              } else if (next->Sym == '*') {
+                overload = ast::Op::Mul;
+              } else if (next->Sym == '/') {
+                overload = ast::Op::Div;
+              } else if (next->Sym == '%') {
+                overload = ast::Op::Mod;
+              } else if (next->Sym == '!') {
+                overload = ast::Op::NotEqu;
+              } else if (next->Sym == '&') {
+                overload = ast::Op::AndBit;
+              } else if (next->Sym == '|') {
+                overload = ast::Op::OrBit;
+              } else if (next->Sym == '=') {
+                overload = ast::Op::Equ;
+              } else {
               throw err::Exception("Expected and overloade operator on line " +
                                    std::to_string(obj.lineCount));
-            if (next->Sym == '>') {
-              overload = ast::Op::Less;
-            } else if (next->Sym == '<') {
-              overload = ast::Op::Great;
-            } else if (next->Sym == '+') {
-              overload = ast::Op::Plus;
-            } else if (next->Sym == '-') {
-              overload = ast::Op::Minus;
-            } else if (next->Sym == '*') {
-              overload = ast::Op::Mul;
-            } else if (next->Sym == '/') {
-              overload = ast::Op::Div;
-            } else if (next->Sym == '%') {
-              overload = ast::Op::Mod;
-            } else if (next->Sym == '!') {
-              overload = ast::Op::NotEqu;
-            } else if (next->Sym == '&') {
-              overload = ast::Op::AndBit;
-            } else if (next->Sym == '|') {
-              overload = ast::Op::OrBit;
-            } else if (next->Sym == '=') {
-              overload = ast::Op::Equ;
+              }
             } else {
-              throw err::Exception("Expected and overloade operator on line " +
-                                   std::to_string(obj.lineCount));
+              lex::Symbol *next = dynamic_cast<lex::Symbol *>(tokens.pop());
+              if (next->meta == "=="){
+                overload = ast::Op::CompEqu;
+              } else if (next->meta == "!="){
+                overload = ast::Op::NotEqu;
+              } else if (next->meta == ">="){
+                overload = ast::Op::Geq;
+              } else if (next->meta == "<="){
+                overload = ast::Op::Leq;
+              } else if (next->meta == ">"){
+                overload = ast::Op::GreatCmp;
+              } else if (next->meta == "<"){
+                overload = ast::Op::LessCmp;
+              } else {
+                throw err::Exception("Expected and overloade operator on line " +
+                                     std::to_string(obj.lineCount));
+              }
             }
-
             next = dynamic_cast<lex::OpSym *>(tokens.pop());
             if (next == nullptr)
               throw err::Exception("Expected a close oporator " +
@@ -1015,7 +1031,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     lex::Symbol sym = *dynamic_cast<lex::Symbol *>(tokens.peek());
     if (sym.meta == "==") {
       tokens.pop();
-      compound->op = ast::Equ;
+      compound->op = ast::CompEqu;
       compound->expr1 = output;
       compound->expr2 = this->parseExpr(tokens);
       return prioritizeExpr(compound);

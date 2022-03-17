@@ -20,7 +20,7 @@ class String{
     // compare is for compairing to another string object
     bool compare(adr s);
     // equal is for compairing to a string literal or a char array
-    bool equal(adr s);
+    bool equal<<==>>(adr s);
 
     bool isNumeric();
 
