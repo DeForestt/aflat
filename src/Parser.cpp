@@ -154,7 +154,7 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
           std::string scopeName = "global";
           if (sym.Sym == '<') {
             tokens.pop();
-            lex::OpSym *next = dynamic_cast<lex::OpSym *>(tokens.pop());
+            lex::OpSym *next = dynamic_cast<lex::OpSym *>(tokens.peek());
             if (next != nullptr){
               if (next->Sym == '>') {
                 overload = ast::Op::Less;
@@ -183,24 +183,28 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
                                    std::to_string(obj.lineCount));
               }
             } else {
-              lex::Symbol *next = dynamic_cast<lex::Symbol *>(tokens.pop());
-              if (next->meta == "=="){
+              lex::Symbol *nextSym = dynamic_cast<lex::Symbol *>(tokens.peek());
+              if (nextSym == nullptr)
+                throw err::Exception("Expected and overloade operator on line " +
+                                     std::to_string(obj.lineCount));
+              if (nextSym->meta == "=="){
                 overload = ast::Op::CompEqu;
-              } else if (next->meta == "!="){
+              } else if (nextSym->meta == "!="){
                 overload = ast::Op::NotEqu;
-              } else if (next->meta == ">="){
+              } else if (nextSym->meta == ">="){
                 overload = ast::Op::Geq;
-              } else if (next->meta == "<="){
+              } else if (nextSym->meta == "<="){
                 overload = ast::Op::Leq;
-              } else if (next->meta == ">"){
+              } else if (nextSym->meta == ">"){
                 overload = ast::Op::GreatCmp;
-              } else if (next->meta == "<"){
+              } else if (nextSym->meta == "<"){
                 overload = ast::Op::LessCmp;
               } else {
                 throw err::Exception("Expected and overloade operator on line " +
                                      std::to_string(obj.lineCount));
               }
             }
+            tokens.pop();
             next = dynamic_cast<lex::OpSym *>(tokens.pop());
             if (next == nullptr)
               throw err::Exception("Expected a close oporator " +
