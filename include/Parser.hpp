@@ -20,7 +20,7 @@ private:
   links::SLinkedList<ast::Type, std::string> typeList;
   ast::Expr *parseExpr(links::LinkedList<lex::Token *> &tokens);
   ast::Statment *parseArgs(links::LinkedList<lex::Token *> &tokens, char delimn,
-                           char close, std::vector<ast::Type> &types);
+                           char close, std::vector<ast::Type> &types, int &requiered);
   ast::ConditionalExpr *parseCondition(links::LinkedList<lex::Token *> &tokens);
 };
 }; // namespace parse

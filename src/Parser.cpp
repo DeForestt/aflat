@@ -247,7 +247,8 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
             func->mask = mask;
             func->scope = scope;
             func->op = overload;
-            func->args = this->parseArgs(tokens, ',', ')', func->argTypes);
+            func->req = 0;
+            func->args = this->parseArgs(tokens, ',', ')', func->argTypes, func->req);
             if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
               sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
               if (sym.Sym == '{') {
@@ -648,8 +649,13 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
 
 ast::Statment *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens,
                                         char delimn, char close,
-                                        std::vector<ast::Type> &types) {
+                                        std::vector<ast::Type> &types, int &requiered) {
   ast::Statment *output = new ast::Statment();
+  lex::OpSym * sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+  if (sym == nullptr){
+    requiered++;
+  } else if (sym->Sym == '*') tokens.pop();
+  
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
     tokens.pop();
@@ -679,7 +685,7 @@ ast::Statment *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens,
     if (obj.Sym == delimn) {
       ast::Sequence *s = new ast::Sequence;
       s->Statment1 = output;
-      s->Statment2 = this->parseArgs(tokens, delimn, close, types);
+      s->Statment2 = this->parseArgs(tokens, delimn, close, types, requiered);
       return s;
     } else if (obj.Sym == close) {
       return output;
@@ -911,8 +917,9 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       tokens.pop();
       ast::Lambda *lambda = new ast::Lambda();
       lambda->function = new ast::Function();
+      lambda->function->req = 0;
       lambda->function->args =
-          this->parseArgs(tokens, ',', ']', lambda->function->argTypes);
+          this->parseArgs(tokens, ',', ']', lambda->function->argTypes, lambda->function->req);
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)
         throw err::Exception(
             "Line: " + std::to_string(tokens.peek()->lineCount) +

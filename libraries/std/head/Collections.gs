@@ -14,7 +14,7 @@ ListNode newNode();
 
 class LinkedList signs ICollection{
     public ListNode head;
-    
+
     adr init();
     int append(adr data);
     int insert(adr data, int index);

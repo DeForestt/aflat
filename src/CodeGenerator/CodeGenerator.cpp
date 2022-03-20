@@ -1210,6 +1210,9 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
   call->Args.invert();
 
   int i = 0;
+  if (call->Args.size() < func->req) alert("Too few arguments for function: " + call->ident +
+              " expected: " + std::to_string(func->argTypes.size()) +
+              " got: " + std::to_string(i + 1));
 
   while (call->Args.size() > 0) {
     gen::Expr exp = this->GenExpr(call->Args.pop(), OutputFile);

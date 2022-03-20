@@ -100,6 +100,7 @@ public:
   Statment *args;
   Statment *statment;
   ast::Op op;
+  int req;
   std::vector<ast::Type> argTypes;
   bool isLambda = false;
   bool flex = false;
