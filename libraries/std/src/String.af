@@ -238,8 +238,10 @@ String toUpper@String(){
     return newString;
 };
 
-LinkedList split@String(char c){
+LinkedList split@String(* char c){
     LinkedList list = new LinkedList();
+    if c == '\0'
+        c = ' ';
     adr head = my.head;
     int length = my.len();
     int newStringStart = 0;

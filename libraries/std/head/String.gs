@@ -7,7 +7,7 @@ class String{
     String stitch<<+>>(adr s);
     String copy<<=>>(adr s);
     String replace(char o, char n);
-    LinkedList split(char c);
+    LinkedList split(* char c);
     String toLower();
     String toUpper();
     String trim(char ch);
