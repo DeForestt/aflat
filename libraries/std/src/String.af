@@ -157,7 +157,9 @@ String copy@String(String s){
     return s;
 };
 
-String trim@String(char ch){
+String trim@String( * char ch){
+    if ch = '\0'
+        ch = ' ';
     int length = my.len();
     int i = 0;
     char test = my.at(i);
