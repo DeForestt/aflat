@@ -10,7 +10,7 @@ class String{
     LinkedList split(* char c);
     String toLower();
     String toUpper();
-    String trim(char ch);
+    String trim(* char ch);
     char at(int i);
     adr getPrimitive();
 
