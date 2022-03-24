@@ -1089,6 +1089,17 @@ assert:
 	call	print
 	popq	%rdi
 	popq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	movq	$0, %rdx
+	movq	-9(%rbp), %rdi
+	cmpq	%rdx, %rdi
+	setne	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lassert40
 	pushq	%rdx
 	pushq	%rdi
 	movq	-9(%rbp), %rax
@@ -1096,9 +1107,10 @@ assert:
 	call	print
 	popq	%rdi
 	popq	%rdx
+.Lassert40:
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strassert40, %rax
+	movq	$.strassert41, %rax
 	movq	%rax, %rdi
 	call	print
 	popq	%rdi
@@ -1120,7 +1132,7 @@ assert:
 
 .data
 
-.strassert40:
+.strassert41:
 	.asciz	 "\n"
 .strassert39:
 	.asciz	 "Failed assert: "

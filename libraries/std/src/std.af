@@ -209,10 +209,11 @@ int panic(adr msg){
     sys_exit(1);
 };
 
-int assert(bool cond, adr message){
+int assert(bool cond, * adr message){
     if !cond {
         print("Failed assert: ");
-        print(message);
+        if message != NULL
+            print(message);
         print("\n");
         sys_exit(1);
     };
