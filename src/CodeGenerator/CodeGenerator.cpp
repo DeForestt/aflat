@@ -1243,6 +1243,15 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
     OutputFile.text << mov;
     OutputFile.text << mov2;
   }
+  
+  while (argsCounter < func->argTypes.size()) {
+    asmc::Mov * move = new asmc::Mov();
+    move->size = asmc::QWord;
+    move->from = "$0";
+    move->to = this->intArgs[argsCounter].get(asmc::QWord);
+    argsCounter++;
+    OutputFile.text << move;
+  }
 
   asmc::Call *calls = new asmc::Call;
 
