@@ -22,10 +22,10 @@ class LinkedList signs ICollection{
     adr get(int index);
     adr stitch(adr New);
     LinkedList reverse();
-    LinkedList sort(adr compare, adr args);
-    int find(adr foo, adr args);
-    adr apply(adr foo, adr args);
-    adr map(adr foo, adr args);
+    LinkedList sort(adr compare, * adr args);
+    int find(adr foo, * adr args);
+    adr apply(adr foo, * adr args);
+    adr map(adr foo, * adr args);
     int size();
     int erace();
     private LinkedList copy<<=>>(adr list);
