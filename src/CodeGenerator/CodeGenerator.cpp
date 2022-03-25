@@ -1198,7 +1198,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
   }
 
   if (func == nullptr)
-    alert("Cannot Find Function: " + allMods + func->ident.ident);
+    alert("Cannot Find Function: " + allMods);
 
   if (func->scope == ast::Private) {
     if (this->scope == nullptr)

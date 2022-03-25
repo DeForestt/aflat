@@ -73,7 +73,7 @@ int getOpPriority(ast::Op op) {
   case ast::Great:
   case ast::Less:
     return 1;
-  case ast::Equ:
+  case ast::CompEqu:
   case ast::NotEqu:
   case ast::LessCmp:
   case ast::GreatCmp:
