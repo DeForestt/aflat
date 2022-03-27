@@ -1204,7 +1204,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
     if (this->scope == nullptr)
       alert("attempt to call private function: "+ allMods + func->ident.ident +" from global scope");
     if (func->scopeName != this->scope->Ident)
-      alert("attempt to call private function " + allMods + func->ident.ident +" from wrong scope");
+      alert("Attempt to call private function "+ allMods + func->ident.ident + " from wrong scope: " + this->scope->Ident + " != " + func->scopeName);
   }
 
   call->Args.invert();
