@@ -1201,7 +1201,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
   if (func == nullptr)
     alert("Cannot Find Function: " + allMods);
 
-  if (func->scope == ast::Private) {
+  if (func->scope == ast::Private && func->scopeName != "global") {
     if (this->scope == nullptr)
       alert("attempt to call private function: "+ allMods + func->ident.ident +" from global scope");
     if (func->scopeName != this->scope->Ident)

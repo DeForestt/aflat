@@ -7,13 +7,6 @@
 .global	pub_DateTime_getMinutes
 .global	pub_DateTime_getSeconds
 .global	pub_DateTime_init
-.global	dowToString
-.global	dayOfWeek
-.global	pub_DateTime_epochToDate
-.global	dateRelativeTo
-.global	daysSinceJan1
-.global	daysInYear
-.global	daysInMonth
 
 
 .text
