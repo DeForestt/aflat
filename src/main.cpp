@@ -284,6 +284,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   linker.push_back(libPath + "files.s");
   linker.push_back(libPath + "asm.s");
   linker.push_back(libPath + "string.s");
+  linker.push_back(libPath + "datetime.s");
 
   while (std::getline(ss, line)) {
     line = remove_char(line, '\t');
@@ -362,7 +363,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   system(gcc.c_str());
 
   // remove first 8 elements from the linker list
-  linker.erase(linker.begin(), linker.begin() + 9);
+  linker.erase(linker.begin(), linker.begin() + 10);
 
   // delete the linkerList files
   if (!debug) {

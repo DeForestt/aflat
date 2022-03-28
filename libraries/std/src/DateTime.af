@@ -1,0 +1,137 @@
+.needs <DateTime>
+.needs <asm>
+.needs <std>
+
+int daysInMonth(int month, int year){
+    if month == 2 {
+        if year % 4 == 0 {
+            if year % 100 == 0 {
+                if year % 400 == 0 {
+                    return 29;
+                };
+                return 28;
+            };
+            return 29;
+        };
+        return 28;
+    };
+
+    if (month == 4) | (month == 6) | (month == 9) | (month == 11) {
+        return 30;
+    };
+
+    return 31;
+};
+
+int daysInYear(int year){
+    if year % 4 == 0 {
+        if year % 100 == 0 {
+            if year % 400 == 0 {
+                return 366;
+            };
+            return 365;
+        };
+        return 366;
+    };
+    return 365;
+};
+
+int daysSinceJan1(int month, int day, int year){
+    int days = 0;
+    for int i = 1; i < month; i++
+        days = days + daysInMonth(i, year);
+    
+    days = days + day - 1;
+    return days;
+};
+
+int dateRelativeTo(int month, int day, int year, int relYear){
+    int days = daysSinceJan1(month, day, year);
+    for int i = relYear; i < year; i++
+        days = days + daysInYear(i);
+    return days;
+};
+
+int epochToDate@DateTime(){
+    int epoch = my.seconds;
+    int days = epoch / 86400;
+    int year = 1970;
+    int month = 1;
+    int day = 1;
+    while days > daysInYear(year) {
+        days = days - daysInYear(year);
+        year = year + 1;
+    };
+    while days > daysInMonth(month, year) {
+        days = days - daysInMonth(month, year);
+        month = month + 1;
+    };
+    day = day + days;
+    my.year = year;
+    my.month = month;
+    my.day = day;
+    return 0;
+};
+
+
+int dayOfWeek(int month, int day, int year){
+    int days = dateRelativeTo(month, day, year, 1) + 1;
+    return days % 7;
+};
+
+adr dowToString(int dow){
+    if dow == 0
+        return "Sunday";
+    if dow == 1
+        return "Monday";
+    if dow == 2
+        return "Tuesday";
+    if dow == 3
+        return "Wednesday";
+    if dow == 4
+        return "Thursday";
+    if dow == 5
+        return "Friday";
+    if dow == 6
+        return "Saturday";
+    panic("Invalid day of week");
+};
+
+
+DateTime init@DateTime(int seconds){
+    my.seconds = seconds;
+    my.epochToDate();
+};
+
+int getSeconds@DateTime(){
+    return my.seconds;
+};
+
+int getMinutes@DateTime(){
+    return my.seconds / 60;
+};
+
+int getHours@DateTime(){
+    return my.seconds / 3600;
+};
+
+int getDays@DateTime(){
+    return my.seconds / 86400;
+};
+
+int getDay@DateTime(){
+    return my.day;
+};
+
+int getMonth@DateTime(){
+    return my.month;
+};
+
+int getYear@DateTime(){
+    return my.year;
+};
+
+DateTime Now(){
+    int seconds = sys_time();
+    return new DateTime(seconds);
+};
