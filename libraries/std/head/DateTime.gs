@@ -12,6 +12,8 @@ class DateTime{
     public int getDay();
     public int getMonth();
     public int getYear();
+
+    private int Copy<<=>>(DateTime);
     
     private int epochToDate();
 };
