@@ -1,3 +1,4 @@
+.global	sleep
 .global	assert
 .global	panic
 .global	newTimes
@@ -1123,6 +1124,68 @@ assert:
 	popq	%rdi
 	popq	%rdx
 .Lassert38:
+	movl	$0, %eax
+	leave
+	ret
+	leave
+	ret
+sleep:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$32, %rsp
+	movl	%edi, -4(%rbp)
+	movl	%esi, -8(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	-4(%rbp), %edx
+	movq	$0, %rdi
+	add	%rdx, %rdi
+	movq	%rdi, %rax
+	popq	%rdx
+	popq	%rdi
+	movq	%rax, %rbx
+	movq	%rbx, -16(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	-8(%rbp), %edx
+	movq	$0, %rdi
+	add	%rdx, %rdi
+	movq	%rdi, %rax
+	popq	%rdx
+	popq	%rdi
+	movq	%rax, %rbx
+	movq	%rbx, -24(%rbp)
+	pushq	%rdx
+	pushq	%rdi
+	movl	$16, %eax
+	movl	%eax, %edi
+	call	malloc
+	popq	%rdi
+	popq	%rdx
+	movq	%rax, %rbx
+	movq	%rbx, -32(%rbp)
+	movq	-32(%rbp), %rdx
+	movq	-16(%rbp), %rbx
+	movq	%rbx, 0(%rdx)
+	movq	-32(%rbp), %rdx
+	movq	-24(%rbp), %rbx
+	movq	%rbx, 8(%rdx)
+	pushq	%rdx
+	pushq	%rdi
+	movq	-32(%rbp), %rax
+	movq	%rax, %rdi
+	movq	$0, %rsi
+	call	sys_nsleep
+	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
+	pushq	%rdi
+	movq	-32(%rbp), %rax
+	movq	%rax, %rdi
+	call	free
+	popq	%rdi
+	popq	%rdx
 	movl	$0, %eax
 	leave
 	ret

@@ -7,7 +7,7 @@ int sys_close(int file);
 int sys_fstat(int file, adr stat);
 int sys_fork();
 int sys_pause();
-int sys_sleep(adr t, adr t);
+int sys_nsleep(adr req, * adr rem);
 int sys_time(* adr t);
 int sys_times(adr t);
 int sys_exit(int err);

@@ -3,6 +3,11 @@ class Time {
     public adr amount;
 };
 
+class TimeSpec{
+    long tv_sec;
+    long tv_nsec;
+};
+
 class Times{
     public int tms_utime;
     public int tms_stime;
@@ -34,3 +39,4 @@ int inspectHeap();
 int memcopy(adr src, adr dst, int size);
 int panic(adr msg);
 int assert(bool cond, * adr message);
+int sleep(int seconds, * int nanoseconds);

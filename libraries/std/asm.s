@@ -7,7 +7,7 @@
 .global sys_fstat
 .global sys_pause
 .global sys_fork
-.global sys_sleep
+.global sys_nsleep
 .global sys_time
 .global sys_times
 .global sys_exit
@@ -118,7 +118,7 @@ sys_exit:
 	leave
 	ret
 
-sys_sleep:
+sys_nsleep:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	subq	$16, %rsp

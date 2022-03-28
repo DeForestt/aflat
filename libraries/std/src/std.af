@@ -219,3 +219,14 @@ int assert(bool cond, * adr message){
     };
     return 0;
 };
+
+int sleep(int seconds, * int nanoseconds){
+    long sec = #0 + seconds;
+    long nsec = #0 + nanoseconds;
+    TimeSpec t = new TimeSpec();
+    t.tv_sec = sec;
+    t.tv_nsec = nsec;
+    sys_nsleep(t);
+    free(t);
+    return 0;
+};
