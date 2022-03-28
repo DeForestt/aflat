@@ -1161,6 +1161,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
     func->ident.ident = "pub_" + call->publify + "_" + call->ident;
     func->type.typeName = call->publify;
     func->type.size = asmc::QWord;
+    func->scopeName = call->publify;
     if (call->ident != "init") {
       // find the function in the class
       gen::Class *cl =
@@ -1296,10 +1297,11 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       this->nameTable << *func;
     else {
       // add the function to the class name table
+      if (!func->isLambda) func->scopeName = this->scope->Ident;
       this->scope->nameTable << *func;
-      func->scopeName = this->scope->Ident;
       // if the function has an overload opperator, add it to the overload table
       if (func->op != ast::None)
+        if (!func->isLambda) func->scopeName = this->scope->Ident;
         this->scope->overloadTable << *func;
       // if the function is public add it to the public name table
       if (func->scope == ast::Public)
