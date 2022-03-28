@@ -1378,7 +1378,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       };
 
       this->GenArgs(func->args, OutputFile);
-      if (!isLambda)
+      if (!isLambda && func->scope == ast::Public)
         OutputFile.linker.push(link);
 
       asmc::File file = this->GenSTMT(func->statment);
