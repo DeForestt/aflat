@@ -3,6 +3,9 @@ class DateTime{
     private int day;
     private int month;
     private int year;
+    private int hour;
+    private int minute;
+    private int second;
 
     public DateTime init(int seconds);
     public int getSeconds();
@@ -12,6 +15,9 @@ class DateTime{
     public int getDay();
     public int getMonth();
     public int getYear();
+    public int getSecond();
+    public int getHour();
+    public int getMinute();
 
     private int Copy<<=>>(DateTime);
     

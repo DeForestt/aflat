@@ -1,4 +1,7 @@
 .global	Now
+.global	pub_DateTime_getHour
+.global	pub_DateTime_getMinute
+.global	pub_DateTime_getSecond
 .global	pub_DateTime_getYear
 .global	pub_DateTime_getMonth
 .global	pub_DateTime_getDay
@@ -396,7 +399,7 @@ pub_DateTime_epochToDate:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
-	subq	$32, %rsp
+	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	-8(%rbp), %r14
 	movl	0(%r14), %ebx
@@ -540,6 +543,68 @@ pub_DateTime_epochToDate:
 	movq	-8(%rbp), %rdx
 	movl	-28(%rbp), %ebx
 	movl	%ebx, 4(%rdx)
+	pushq	%rdi
+	pushq	%rdx
+	movl	-12(%rbp), %eax
+	movl	$86400, %ecx
+	cltd
+	idivl	%ecx
+	movl	%edx, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %ebx
+	movl	%ebx, -32(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	-32(%rbp), %eax
+	movl	$3600, %ecx
+	cltd
+	idivl	%ecx
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %ebx
+	movl	%ebx, -36(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	-32(%rbp), %eax
+	movl	$3600, %ecx
+	cltd
+	idivl	%ecx
+	movl	%edx, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %ebx
+	movl	%ebx, -32(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	-32(%rbp), %eax
+	movl	$60, %ecx
+	cltd
+	idivl	%ecx
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %ebx
+	movl	%ebx, -40(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	-32(%rbp), %eax
+	movl	$60, %ecx
+	cltd
+	idivl	%ecx
+	movl	%edx, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %ebx
+	movl	%ebx, -44(%rbp)
+	movq	-8(%rbp), %rdx
+	movl	-36(%rbp), %ebx
+	movl	%ebx, 16(%rdx)
+	movq	-8(%rbp), %rdx
+	movl	-40(%rbp), %ebx
+	movl	%ebx, 20(%rdx)
+	movq	-8(%rbp), %rdx
+	movl	-44(%rbp), %ebx
+	movl	%ebx, 24(%rdx)
 	movl	$0, %eax
 	leave
 	ret
@@ -843,6 +908,42 @@ pub_DateTime_getYear:
 	ret
 	leave
 	ret
+pub_DateTime_getSecond:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$16, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	-8(%rbp), %r14
+	movl	24(%r14), %eax
+	leave
+	ret
+	leave
+	ret
+pub_DateTime_getMinute:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$16, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	-8(%rbp), %r14
+	movl	20(%r14), %eax
+	leave
+	ret
+	leave
+	ret
+pub_DateTime_getHour:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$16, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	-8(%rbp), %r14
+	movl	16(%r14), %eax
+	leave
+	ret
+	leave
+	ret
 Now:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -856,7 +957,7 @@ Now:
 	movl	%ebx, -4(%rbp)
 	pushq	%rdx
 	pushq	%rdi
-	movl	$16, %eax
+	movl	$28, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
