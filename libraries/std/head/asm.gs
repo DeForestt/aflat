@@ -8,7 +8,7 @@ int sys_fstat(int file, adr stat);
 int sys_fork();
 int sys_pause();
 int sys_sleep(adr t, adr t);
-int sys_time(adr t);
+int sys_time(* adr t);
 int sys_times(adr t);
 int sys_exit(int err);
 int sys_wait(int proc, adr status, int options, adr t);
