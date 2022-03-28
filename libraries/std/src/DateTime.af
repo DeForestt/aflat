@@ -2,7 +2,7 @@
 .needs <asm>
 .needs <std>
 
-int daysInMonth(int month, int year){
+private int daysInMonth(int month, int year){
     if month == 2 {
         if year % 4 == 0 {
             if year % 100 == 0 {
@@ -23,7 +23,7 @@ int daysInMonth(int month, int year){
     return 31;
 };
 
-int daysInYear(int year){
+private int daysInYear(int year){
     if year % 4 == 0 {
         if year % 100 == 0 {
             if year % 400 == 0 {
@@ -36,7 +36,7 @@ int daysInYear(int year){
     return 365;
 };
 
-int daysSinceJan1(int month, int day, int year){
+private int daysSinceJan1(int month, int day, int year){
     int days = 0;
     for int i = 1; i < month; i++
         days = days + daysInMonth(i, year);
@@ -45,14 +45,14 @@ int daysSinceJan1(int month, int day, int year){
     return days;
 };
 
-int dateRelativeTo(int month, int day, int year, int relYear){
+private int dateRelativeTo(int month, int day, int year, int relYear){
     int days = daysSinceJan1(month, day, year);
     for int i = relYear; i < year; i++
         days = days + daysInYear(i);
     return days;
 };
 
-int epochToDate@DateTime(){
+private int epochToDate@DateTime(){
     int epoch = my.seconds;
     int days = epoch / 86400;
     int year = 1970;
@@ -74,12 +74,12 @@ int epochToDate@DateTime(){
 };
 
 
-int dayOfWeek(int month, int day, int year){
+private int dayOfWeek(int month, int day, int year){
     int days = dateRelativeTo(month, day, year, 1) + 1;
     return days % 7;
 };
 
-adr dowToString(int dow){
+private adr dowToString(int dow){
     if dow == 0
         return "Sunday";
     if dow == 1
