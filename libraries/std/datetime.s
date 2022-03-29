@@ -966,11 +966,18 @@ Now:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -4(%rbp)
+	pushq	%rdx
+	pushq	%rdi
+	movl	-4(%rbp), %eax
+	movl	%eax, %edi
+	call	printInt
+	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	pushq	%rdx
 	movl	-4(%rbp), %edx
 	movl	-8(%rbp), %edi
-	sub	%edx, %edi
+	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
