@@ -519,7 +519,73 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
       this->typeList << t;
       item->statment = this->parseStmt(tokens);
       output = item;
-    } else {
+    } else if (obj.meta == "import"){
+      ast::Import *imp = new ast::Import();
+
+      lex::OpSym * sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (sym != nullptr){
+        if (sym->Sym == '{'){
+          do {
+            tokens.pop();
+            lex::LObj *obj = dynamic_cast<lex::LObj *>(tokens.pop());
+            if (obj != nullptr){
+              imp->imports.push_back(obj->meta);
+            } else {
+              throw err::Exception(
+                  "Line: " + std::to_string(tokens.peek()->lineCount) +
+                  " Expected Ident");
+            }
+          } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+                   dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',');
+          if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+              dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '}'){
+            tokens.pop();
+          } else {
+            throw err::Exception(
+                "Line: " + std::to_string(tokens.peek()->lineCount) +
+                " Expected }");
+          }
+        } else throw err::Exception(
+            "Line: " + std::to_string(tokens.peek()->lineCount) +
+            " Unexpected Token");
+
+        // check from from keyword
+        lex::LObj *from = dynamic_cast<lex::LObj *>(tokens.pop());
+        if (from == nullptr || from->meta != "from"){
+          throw err::Exception(
+              "Line: " + std::to_string(tokens.peek()->lineCount) +
+              " Expected from");
+        };
+      }
+      
+      ast::StringLiteral * str = dynamic_cast<ast::StringLiteral *>(this->parseExpr(tokens));
+      if (str != nullptr){
+        imp->path = str->val;
+      } else {
+        throw err::Exception(
+            "Line: " + std::to_string(tokens.peek()->lineCount) +
+            " Expected StringLiteral");
+      }
+      
+      // check for under keyword
+      lex::LObj * under = dynamic_cast<lex::LObj *>(tokens.peek());
+      if (under != nullptr){
+        if (under->meta == "under"){
+          tokens.pop();
+          lex::LObj * ident = dynamic_cast<lex::LObj *>(tokens.peek());
+          if (ident != nullptr){
+            imp->nameSpace = ident->meta;
+            tokens.pop();
+          } else {
+            throw err::Exception(
+                "Line: " + std::to_string(tokens.peek()->lineCount) +
+                " Expected Ident");
+          }
+        }
+      }
+      
+      output = imp;
+    }else {
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
         lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
         links::LinkedList<std::string> modList;

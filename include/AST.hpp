@@ -227,6 +227,13 @@ public:
   Expr *expr;
 };
 
+class Import : public Statment {
+  public:
+    std::vector<std::string> imports;
+    std::string path;
+    std::string nameSpace;
+};
+
 class Var : public Expr {
 public:
   std::string Ident;
