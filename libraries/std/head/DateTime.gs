@@ -24,4 +24,4 @@ class DateTime{
     private int epochToDate();
 };
 
-DateTime Now();
+DateTime Now(* int timeZone);

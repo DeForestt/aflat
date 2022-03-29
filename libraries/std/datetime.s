@@ -949,12 +949,33 @@ Now:
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
+	movl	%edi, -4(%rbp)
 	pushq	%rdx
 	movq	$0, %rdi
 	call	sys_time
 	popq	%rdx
 	movl	%eax, %ebx
+	movl	%ebx, -8(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	$3600, %edx
+	movl	-4(%rbp), %edi
+	imul	%edx, %edi
+	movl	%edi, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %ebx
 	movl	%ebx, -4(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	-4(%rbp), %edx
+	movl	-8(%rbp), %edi
+	sub	%edx, %edi
+	movl	%edi, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %ebx
+	movl	%ebx, -8(%rbp)
 	pushq	%rdx
 	pushq	%rdi
 	movl	$28, %eax
@@ -966,7 +987,7 @@ Now:
 	movq	%rax, %rdi
 	pushq	%rdx
 	pushq	%rsi
-	movl	-4(%rbp), %eax
+	movl	-8(%rbp), %eax
 	movl	%eax, %esi
 	call	pub_DateTime_init
 	popq	%rsi
