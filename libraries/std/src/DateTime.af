@@ -153,11 +153,9 @@ int getHour@DateTime(){
     return my.hour;
 };
 
-.needs <io>
 DateTime Now(* int timeZone){
     int seconds = sys_time();
     timeZone = timeZone * 3600;
-    printInt(timeZone);
     seconds = seconds + timeZone;
     return new DateTime(seconds);
 };
