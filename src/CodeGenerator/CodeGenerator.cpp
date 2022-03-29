@@ -15,6 +15,16 @@ bool searchSymbol(gen::Symbol sym, std::string str) {
     return false;
 }
 
+std::string getLibPath() {
+  char result[200];
+  ssize_t count = readlink("/proc/self/exe", result, 200);
+  std::string filename = std::string(result, (count > 0) ? count : 0);
+  std::string exepath = filename.substr(0, filename.find_last_of("/"));
+  std::string libPath =
+      exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/head/";
+  return libPath;
+}
+
 bool compairFunc(ast::Function F, std::string input) {
   if (input == F.ident.ident) {
     return true;
@@ -2069,7 +2079,8 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       std::string text = std::string((std::istreambuf_iterator<char>(file)),
                          std::istreambuf_iterator<char>());
       lex::Lexer l = lex::Lexer();
-      auto tokens = l.Scan(text);
+      PreProcessor pp = PreProcessor();
+      auto tokens = l.Scan(pp.PreProcess(text, getLibPath()));
       tokens.invert();
       // parse the file
       parse::Parser p = parse::Parser();

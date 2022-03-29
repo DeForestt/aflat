@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
     system("./bin/a.test");
     return 0;
   }
-  if (value == "add") {
+  if (value == "add" || value == "module") {
     if (argc < 3) {
       std::cout << "Usage: aflat add <modual name>\n";
       return 1;
@@ -80,17 +80,21 @@ int main(int argc, char *argv[]) {
       if (!std::filesystem::exists(path)) {
         // Create the paths
         std::filesystem::create_directories("./src/" + path);
-        std::filesystem::create_directories("./head/" + path);
+        if (value == "add") std::filesystem::create_directories("./head/" + path);
       }
     }
 
     // create the files
     std::ofstream srcFile(srcName);
-    std::ofstream headerFile(headerName);
-    srcFile << ".root \"head\"\n";
-    srcFile << ".needs \"" << modualName << ".gs\"\n";
+    
+    if (value == "add"){
+      std::ofstream headerFile(headerName);
+      srcFile << ".root \"head\"\n";
+      srcFile << ".needs \"" << modualName << ".gs\"\n";
+      headerFile.close();
+    }
     srcFile.close();
-    headerFile.close();
+    
 
     // Read the last line of the config file
     std::fstream cFile("./aflat.cfg", std::fstream::in | std::fstream::out);
