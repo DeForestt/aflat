@@ -16,6 +16,7 @@
 pub_Process_init:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
@@ -25,41 +26,53 @@ pub_Process_init:
 	movq	-8(%rbp), %rdx
 	movl	$0, %ebx
 	movl	%ebx, 0(%rdx)
-	movl	$0, %eax
-	leave
-	ret
+	popq	%rbx
 	movq	-8(%rbp), %rax
 	leave
 	ret
 pub_Process_start:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
+	pushq	%rdx
 	call	sys_fork
+	popq	%rdx
 	movq	-8(%rbp), %rdx
 	movl	%eax, %ebx
 	movl	%ebx, 0(%rdx)
-	movq	-8(%rbp), %rdx
-	movq	4(%rdx), %rbx
+	movq	-8(%rbp), %r14
+	movq	4(%r14), %rbx
 	movq	%rbx, -24(%rbp)
-	movq	-8(%rbp), %rdx
-	movl	0(%rdx), %eax
-	movl	$0, %ecx
-	cmpl	%ecx, %eax
-	jne	.Lstart0
+	pushq	%rdi
+	pushq	%rdx
+	movl	$0, %edx
+	movq	-8(%rbp), %r14
+	movl	0(%r14), %edi
+	cmpl	%edx, %edi
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lstart0
+	pushq	%rdx
 	movq	-24(%rbp), %r15
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
 	call	*%r15
 	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
 	pushq	%rdi
 	movl	$0, %eax
 	movl	%eax, %edi
 	call	sys_exit
 	popq	%rdi
+	popq	%rdx
 .Lstart0:
 	movl	$0, %eax
 	leave
@@ -69,10 +82,11 @@ pub_Process_start:
 pub_Process_getPid:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rdx
-	movl	0(%rdx), %eax
+	movq	-8(%rbp), %r14
+	movl	0(%r14), %eax
 	leave
 	ret
 	leave
@@ -80,11 +94,13 @@ pub_Process_getPid:
 pub_Process_isRunning:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rdx
+	pushq	%rdx
+	movq	-8(%rbp), %r14
 	pushq	%rdi
-	movl	0(%rdx), %eax
+	movl	0(%r14), %eax
 	movl	%eax, %edi
 	pushq	%rsi
 	movl	$0, %eax
@@ -92,17 +108,25 @@ pub_Process_isRunning:
 	call	sys_kill
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -12(%rbp)
-	movl	-12(%rbp), %eax
-	movl	$0, %ecx
-	cmpl	%ecx, %eax
-	jge	.LisRunning3
-	movl	$0, %eax
+	pushq	%rdi
+	pushq	%rdx
+	movl	$0, %edx
+	movl	-12(%rbp), %edi
+	cmpl	%edx, %edi
+	setl	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.LisRunning1
+	movb	$1, %al
 	leave
 	ret
-.LisRunning3:
-	movl	$1, %eax
+.LisRunning1:
+	movb	$0, %al
 	leave
 	ret
 	leave
@@ -110,23 +134,34 @@ pub_Process_isRunning:
 newProcess:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movl	$12, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -16(%rbp)
-	movq	-16(%rbp), %rax
-	movq	$0, %rcx
-	cmpq	%rcx, %rax
-	jne	.LnewProcess6
+	pushq	%rdi
+	pushq	%rdx
+	movq	$0, %rdx
+	movq	-16(%rbp), %rdi
+	cmpq	%rdx, %rdi
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.LnewProcess2
 	movq	$0, %rax
 	leave
 	ret
-.LnewProcess6:
+.LnewProcess2:
+	pushq	%rdx
 	lea	-16(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -137,6 +172,7 @@ newProcess:
 	call	pub_Process_init
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	-16(%rbp), %rax
 	leave
 	ret
@@ -145,40 +181,43 @@ newProcess:
 pub_Pipe_init:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	lea	-16(%rbp), %rax
 	movq	%rax, %rbx
 	movq	%rbx, -24(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdi
 	call	sys_pipe
 	popq	%rdi
-	movq	-24(%rbp), %rdx
+	popq	%rdx
+	movq	-24(%rbp), %r14
 	movq	-8(%rbp), %rdx
-	movl	0(%rdx), %ebx
+	movl	0(%r14), %ebx
 	movl	%ebx, 4(%rdx)
-	movq	-24(%rbp), %rdx
+	movq	-24(%rbp), %r14
 	movq	-8(%rbp), %rdx
-	movl	4(%rdx), %ebx
+	movl	4(%r14), %ebx
 	movl	%ebx, 0(%rdx)
-	movl	$0, %eax
-	leave
-	ret
+	popq	%rbx
 	movq	-8(%rbp), %rax
 	leave
 	ret
 pub_Pipe_read:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movl	%edx, -20(%rbp)
-	movq	-8(%rbp), %rdx
-	movl	4(%rdx), %ebx
+	movq	-8(%rbp), %r14
+	movl	4(%r14), %ebx
 	movl	%ebx, -24(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movl	-24(%rbp), %eax
 	movl	%eax, %edi
@@ -192,6 +231,7 @@ pub_Pipe_read:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
 	movl	-28(%rbp), %eax
@@ -202,13 +242,15 @@ pub_Pipe_read:
 pub_Pipe_write:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movl	%edx, -20(%rbp)
-	movq	-8(%rbp), %rdx
-	movl	0(%rdx), %ebx
+	movq	-8(%rbp), %r14
+	movl	0(%r14), %ebx
 	movl	%ebx, -24(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movl	-24(%rbp), %eax
 	movl	%eax, %edi
@@ -222,6 +264,7 @@ pub_Pipe_write:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
 	movl	-28(%rbp), %eax
@@ -232,20 +275,25 @@ pub_Pipe_write:
 newPipe:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$16, %rsp
+	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -8(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_Pipe_init
 	popq	%rdi
+	popq	%rdx
 	movq	-8(%rbp), %rax
 	leave
 	ret
@@ -254,13 +302,16 @@ newPipe:
 exit:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$16, %rsp
 	movl	%edi, -4(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movl	-4(%rbp), %eax
 	movl	%eax, %edi
 	call	sys_exit
 	popq	%rdi
+	popq	%rdx
 	movl	$0, %eax
 	leave
 	ret
@@ -269,14 +320,18 @@ exit:
 wait:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%rdx
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	call	pub_Process_getPid
 	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	movl	%eax, %eax
 	movl	%eax, %edi
@@ -284,8 +339,8 @@ wait:
 	movq	$0, %rax
 	movq	%rax, %rsi
 	pushq	%rdx
-	movq	$0, %rax
-	movq	%rax, %rdx
+	movl	$0, %eax
+	movl	%eax, %edx
 	pushq	%rcx
 	movq	$0, %rax
 	movq	%rax, %rcx
@@ -294,6 +349,7 @@ wait:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	$0, %eax
 	leave
 	ret

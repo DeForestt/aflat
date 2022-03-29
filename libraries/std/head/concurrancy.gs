@@ -2,9 +2,9 @@ class Process{
     private int pid;
     private adr foo;
 
-    int init(adr foo);
-    int start(adr args);
-    int isRunning();
+    Process init(adr foo);
+    int start(* adr args);
+    bool isRunning();
     int getPid();
 };
 
@@ -15,7 +15,7 @@ class Pipe {
     int out;
     int write(adr buf, int len);
     int read(adr buf, int len);
-    int init();
+    Pipe init();
 };
 
 Pipe newPipe();

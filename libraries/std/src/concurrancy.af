@@ -13,10 +13,9 @@ class FD {
  * arguments:       adr foo - function pointer to the function to be executed
  * returns:         0 on success, 1 on failure
  */
-int init@Process(adr bar){
+Process init@Process(adr bar){
     my.foo = bar;
     my.pid = 0;
-    return 0;
 };
 
 /*
@@ -27,8 +26,7 @@ int init@Process(adr bar){
  */
 int start@Process(adr args){
     my.pid = sys_fork();
-    adr bar;
-    bar = my.foo;
+    adr bar = my.foo;
     if(my.pid == 0){
         bar(args);
         sys_exit(0);
@@ -52,12 +50,12 @@ int getPid@Process(){
  * arguments:       none
  * returns:         1 if the process is still running, 0 if it is not
  */
-int isRunning@Process(){
+ bool isRunning@Process(){
     int status = sys_kill(my.pid, 0); // 0 means no signal
     if (status < 0){
-        return 0;
+        return true;
     };
-    return 1;
+    return false;
 };
 /*
  * function name:   newProcess
@@ -80,13 +78,12 @@ Process newProcess(adr foo){
  * arguments:       none
  * returns:         0 on success, 1 on failure
  */
-int init@Pipe(){
+Pipe init@Pipe(){
     int 2 alloc;
     FD fd = ?alloc;
     sys_pipe(fd);
     my.out = fd.out;
     my.in = fd.in;
-    return 0;
 };
 
 /*
