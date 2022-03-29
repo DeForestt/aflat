@@ -2,7 +2,7 @@
 #define GEN
 
 #include "ASM.hpp"
-#include "AST.hpp"
+#include "Parser/AST.hpp"
 #include "LinkedList.hpp"
 #include "LinkedListS.hpp"
 namespace gen {

@@ -1,5 +1,5 @@
-#include "Parser.hpp"
-#include "AST.hpp"
+#include "Parser/Parser.hpp"
+#include "Parser/AST.hpp"
 #include "Exceptions.hpp"
 
 ast::Expr *prioritizeExpr(ast::Expr *expr);

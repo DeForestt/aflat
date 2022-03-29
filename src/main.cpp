@@ -3,7 +3,7 @@
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Exceptions.hpp"
 #include "LinkedList.hpp"
-#include "Parser.hpp"
+#include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
 #include <algorithm>

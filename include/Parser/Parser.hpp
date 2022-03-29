@@ -1,7 +1,7 @@
 #ifndef PARSE
 #define PARSE
 
-#include "AST.hpp"
+#include "Parser/AST.hpp"
 #include "LinkedList.hpp"
 #include "LinkedListS.hpp"
 #include "Scanner.hpp"
