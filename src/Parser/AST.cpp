@@ -1,4 +1,4 @@
-#include <AST.hpp>
+#include "Parser/AST.hpp"
 #include <string>
 
 bool ast::Type::compair(ast::Type t, std::string name) {

@@ -2,6 +2,10 @@
 #include "CodeGenerator/ScopeManager.hpp"
 #include <chrono>
 #include <iostream>
+#include <unistd.h>
+#include <fstream>
+#include "Scanner.hpp"
+#include "PreProcessor.hpp"
 #pragma region helper functions
 
 bool searchSymbol(gen::Symbol sym, std::string str) {
@@ -24,6 +28,31 @@ bool gen::Type::compair(gen::Type *t, std::string ident) {
   return false;
 }
 
+ast::Statment * extract(std::string ident, ast::Statment * stmt){
+  // traverse the statment tree and return the statment with the ident
+  if (stmt == nullptr)
+    return nullptr;
+  if(dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
+    ast::Sequence * seq = dynamic_cast<ast::Sequence *>(stmt);
+    ast::Statment * temp = extract(ident, seq->Statment1);
+    if(temp != nullptr){
+      return temp;}
+    else
+      return extract(ident, seq->Statment2);
+  }else if (dynamic_cast<ast::Class *>(stmt)){
+    ast::Class * cls = dynamic_cast<ast::Class *>(stmt);
+    if (cls->ident.ident == ident){
+      return stmt;
+    }
+  } else if (dynamic_cast<ast::Function *>(stmt)){
+    ast::Function * func = dynamic_cast<ast::Function *>(stmt);
+    if (func->ident.ident == ident){
+      func->statment = nullptr;
+      return func;
+    }
+  }
+  return nullptr;
+}
 #pragma endregion
 
 int gen::CodeGenerator::getBytes(asmc::Size size) {
@@ -79,6 +108,7 @@ gen::CodeGenerator::CodeGenerator() {
   this->registers << asmc::Register("xmm3", "xmm3", "xmm3", "xmm3");
   this->registers.foo = asmc::Register::compair;
   this->nameTable.foo = compairFunc;
+  this->includedMemo = HashMap<ast::Statment *>();
   this->globalScope = true;
   this->typeList.foo = gen::Type::compair;
   this->scope = nullptr;
@@ -1425,7 +1455,6 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       this->globalScope = saveGlobal;
       this->inFunction = saveIn;
     }
-    delete (func);
 
     this->intArgsCounter = saveIntArgs;
 
@@ -2030,6 +2059,29 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     sub->op1 = "$-1";
     sub->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
     OutputFile.text << sub;
+  } else if (dynamic_cast<ast::Import *>(STMT) != nullptr){
+    ast::Import *imp = dynamic_cast<ast::Import *>(STMT);
+    ast::Statment * added;
+    if (this->includedMemo.contains(imp->path)) added = this->includedMemo.get(imp->path);
+    else {
+      // scan the file 
+      std::ifstream file(imp->path);
+      std::string text = std::string((std::istreambuf_iterator<char>(file)),
+                         std::istreambuf_iterator<char>());
+      lex::Lexer l = lex::Lexer();
+      auto tokens = l.Scan(text);
+      tokens.invert();
+      // parse the file
+      parse::Parser p = parse::Parser();
+      ast::Statment *statment = p.parseStmt(tokens);
+      added = statment;
+    }
+    for (std::string ident : imp->imports){
+      ast::Statment * statment = extract(ident, added);
+      if (statment == nullptr)
+        this->alert("Identifier " + ident +" not found to import");
+      OutputFile << this->GenSTMT(statment);
+    }
   } else {
     OutputFile.text.push(new asmc::Instruction());
   }

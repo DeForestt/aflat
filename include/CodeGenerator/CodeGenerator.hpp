@@ -4,7 +4,9 @@
 #include "ASM.hpp"
 #include "Parser/AST.hpp"
 #include "LinkedList.hpp"
+#include "HashMap.hpp"
 #include "LinkedListS.hpp"
+#include "Parser/Parser.hpp"
 namespace gen {
 
 class Expr {
@@ -65,6 +67,7 @@ private:
   int selectReg = 0;
   bool globalScope = true;
   bool inFunction = false;
+  HashMap <ast::Statment *> includedMemo;
 #pragma endregion
 
 #pragma region Item Lists
