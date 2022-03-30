@@ -607,7 +607,7 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
         }
       } else {
         std::string id = imp->path.substr(imp->path.find_last_of('/') + 1, imp->path.find_last_of('.'));
-        imp->nameSpace = "";
+        imp->nameSpace = id;
       }
       
       output = imp;
