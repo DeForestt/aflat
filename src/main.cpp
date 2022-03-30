@@ -155,7 +155,12 @@ void build(std::string path, std::string output) {
 
     ast::Statment *Prog = parser.parseStmt(tokens);
 
-    gen::CodeGenerator genny;
+    std::string outputID = output.substr(0, output.find_last_of("."));
+    if (outputID.find("/") != std::string::npos) {
+      outputID = outputID.substr(outputID.find_last_of("/") + 1);
+    }
+
+    gen::CodeGenerator genny(outputID);
     asmc::File file = genny.GenSTMT(Prog);
     file.collect();
 

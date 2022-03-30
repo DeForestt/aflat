@@ -68,6 +68,7 @@ private:
   bool globalScope = true;
   bool inFunction = false;
   HashMap <ast::Statment *> includedMemo;
+  HashMap <std::string> nameSpaceTable;
 #pragma endregion
 
 #pragma region Item Lists
@@ -97,6 +98,7 @@ private:
   gen::Expr genArithmatic(asmc::ArithInst *, ast::Compound compound,
                           asmc::File &OutputFile);
   bool canAssign(ast::Type type, std::string typeName, bool strict = false);
+  std::string moduleId;
 
 public:
   asmc::File GenSTMT(ast::Statment *stmt);
@@ -104,7 +106,7 @@ public:
   GenTable(ast::Statment *STMT, links::LinkedList<gen::Symbol> &table);
   // a function for warnings or errors
   void alert(std::string message, bool error = true);
-  CodeGenerator();
+  CodeGenerator(std::string moduleId);
 };
 } // namespace gen
 

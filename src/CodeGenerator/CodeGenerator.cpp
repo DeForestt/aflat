@@ -38,17 +38,17 @@ bool gen::Type::compair(gen::Type *t, std::string ident) {
   return false;
 }
 
-ast::Statment * extract(std::string ident, ast::Statment * stmt){
+ast::Statment * extract(std::string ident, ast::Statment * stmt, std::string id = "") {
   // traverse the statment tree and return the statment with the ident
   if (stmt == nullptr)
     return nullptr;
   if(dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
     ast::Sequence * seq = dynamic_cast<ast::Sequence *>(stmt);
-    ast::Statment * temp = extract(ident, seq->Statment1);
+    ast::Statment * temp = extract(ident, seq->Statment1, id);
     if(temp != nullptr){
       return temp;}
     else
-      return extract(ident, seq->Statment2);
+      return extract(ident, seq->Statment2, id);
   }else if (dynamic_cast<ast::Class *>(stmt)){
     ast::Class * cls = dynamic_cast<ast::Class *>(stmt);
     if (cls->ident.ident == ident){
@@ -57,6 +57,7 @@ ast::Statment * extract(std::string ident, ast::Statment * stmt){
   } else if (dynamic_cast<ast::Function *>(stmt)){
     ast::Function * func = dynamic_cast<ast::Function *>(stmt);
     if (func->ident.ident == ident){
+      func->ident.ident = id + '.' + ident;
       func->statment = nullptr;
       return func;
     }
@@ -101,7 +102,7 @@ void gen::CodeGenerator::alert(std::string message, bool error = true) {
   }
 };
 
-gen::CodeGenerator::CodeGenerator() {
+gen::CodeGenerator::CodeGenerator(std::string moduleId) {
   this->registers << asmc::Register("rax", "eax", "ax", "al");
   this->registers << asmc::Register("rcx", "ecx", "cx", "cl");
   this->registers << asmc::Register("rdx", "edx", "dx", "dl");
@@ -119,8 +120,10 @@ gen::CodeGenerator::CodeGenerator() {
   this->registers.foo = asmc::Register::compair;
   this->nameTable.foo = compairFunc;
   this->includedMemo = HashMap<ast::Statment *>();
+  this->nameSpaceTable = HashMap<std::string>();
   this->globalScope = true;
   this->typeList.foo = gen::Type::compair;
+  this->moduleId = moduleId;
   this->scope = nullptr;
 }
 
@@ -1064,6 +1067,12 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
   ast::Function *func;
   bool checkArgs = true;
 
+  std::string nsp = "";
+  if (this->nameSpaceTable.contains(call->ident)) {
+    nsp = this->nameSpaceTable.get(call->ident) + ".";
+    call->ident = nsp + call->modList.pop();
+  };
+
   links::LinkedList<gen::Symbol> *Table;
   Table = &this->SymbolTable;
   links::LinkedList<std::string> mods = links::LinkedList<std::string>();
@@ -1239,7 +1248,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
   }
 
   if (func == nullptr)
-    alert("Cannot Find Function: " + allMods);
+    alert("Cannot Find Function: " + call->ident + allMods);
 
   if (func->scope == ast::Private && func->scopeName != "global") {
     if (this->scope == nullptr)
@@ -1377,6 +1386,16 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       mov->from = "%rsp";
       mov->to = "%rbp";
 
+      if (func->scope == ast::Export) {
+        asmc::LinkTask *link = new asmc::LinkTask();
+        link->command = "global";
+        link->operand = this->moduleId + '.' + lable->lable;
+        OutputFile.linker.push(link);
+        asmc::Lable *lable2 = new asmc::Lable();
+        lable2->lable = this->moduleId + '.' + lable->lable;
+        OutputFile.text << lable2;
+      }
+
       OutputFile.text.push(lable);
       OutputFile.text.push(push);
       OutputFile.text.push(mov);
@@ -1416,7 +1435,6 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
         OutputFile.text << movy;
         this->intArgsCounter++;
       };
-
       this->GenArgs(func->args, OutputFile);
       if (!isLambda && func->scope == ast::Public)
         OutputFile.linker.push(link);
@@ -2071,6 +2089,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     OutputFile.text << sub;
   } else if (dynamic_cast<ast::Import *>(STMT) != nullptr){
     ast::Import *imp = dynamic_cast<ast::Import *>(STMT);
+    std::string id = imp->path.substr(imp->path.find_last_of("/") + 1);
+    // remove the .af extension
+    id = id.substr(0, id.find_last_of("."));
     ast::Statment * added;
     if (this->includedMemo.contains(imp->path)) added = this->includedMemo.get(imp->path);
     else {
@@ -2088,11 +2109,12 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       added = statment;
     }
     for (std::string ident : imp->imports){
-      ast::Statment * statment = extract(ident, added);
+      ast::Statment * statment = extract(ident, added, id);
       if (statment == nullptr)
         this->alert("Identifier " + ident +" not found to import");
       OutputFile << this->GenSTMT(statment);
     }
+    this->nameSpaceTable.insert(imp->nameSpace, id);
   } else {
     OutputFile.text.push(new asmc::Instruction());
   }

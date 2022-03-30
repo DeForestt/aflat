@@ -49,7 +49,7 @@ enum Op {
 };
 
 // Enum to represent the scope of a variable
-enum ScopeMod { Public, Private, Static };
+enum ScopeMod { Public, Private, Static, Export };
 
 class Expr {
 public:

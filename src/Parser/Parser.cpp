@@ -134,6 +134,14 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
                              std::to_string(obj.lineCount));
       obj = *dynamic_cast<lex::LObj *>(tokens.peek());
       tokens.pop();
+    } else if (obj.meta == "export"){
+            // set the scope modifier to static
+      scope = ast::Export;
+      if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
+        throw err::Exception("Expected statent after static on line " +
+                             std::to_string(obj.lineCount));
+      obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+      tokens.pop();
     }
 
     // Declare a variable
