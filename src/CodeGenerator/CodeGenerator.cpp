@@ -270,6 +270,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.access = this->registers["%rax"]->get(output.size);
   } else if (dynamic_cast<ast::Var *>(expr) != nullptr) {
     ast::Var var = *dynamic_cast<ast::Var *>(expr);
+
+    std::string nsp = "";
+    if (this->nameSpaceTable.contains(var.Ident)) {
+      nsp = this->nameSpaceTable.get(var.Ident) + ".";
+      var.Ident = nsp + var.modList.pop();
+    };
     bool global = false;
     bool handled = false;
     gen::Symbol *sym;

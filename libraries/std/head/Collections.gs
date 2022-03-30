@@ -28,7 +28,7 @@ class LinkedList signs ICollection{
     adr map(adr foo, * adr args);
     int size();
     int erace();
-    private LinkedList copy<<=>>(adr list);
+    public LinkedList copy<<=>>(adr list);
 };
 
 LinkedList newList();
