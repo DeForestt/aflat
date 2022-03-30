@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <iostream>
 
 template <typename Z> class HashMap {
     public:
@@ -99,6 +100,11 @@ template <typename Z> int HashMap<Z>::size() {
 
 template <typename Z> bool HashMap<Z>::contains(std::string key) {
     int index = this->hash(key);
+    if (index < 0 || index >= this->tableSize) {
+        std::cout << "Warning: " << key  << " returns " << index << " which is out of bounds." << std::endl;
+        return false;
+    };
+
     Node *curr = this->table[index];
     while (curr != nullptr) {
         if (curr->key == key) {
@@ -114,5 +120,5 @@ template <typename Z> int HashMap<Z>::hash(std::string key) {
     for (int i = 0; i < key.length(); i++) {
         hash += key[i];
     }
-    return hash % this->tableSize - 1;
+    return hash % (this->tableSize - 1);
 }
