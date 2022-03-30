@@ -556,15 +556,30 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
         } else throw err::Exception(
             "Line: " + std::to_string(tokens.peek()->lineCount) +
             " Unexpected Token");
-
-        // check from from keyword
-        lex::LObj *from = dynamic_cast<lex::LObj *>(tokens.pop());
-        if (from == nullptr || from->meta != "from"){
+      } else {
+        lex::LObj * nt = dynamic_cast<lex::LObj *>(tokens.peek());
+        if (nt != nullptr){
+          imp->imports.push_back(nt->meta);
+          ast::Type t = ast::Type();
+          t.size = asmc::QWord;
+          t.typeName = nt->meta;
+          t.opType = asmc::Hard;
+          this->typeList << t;
+          tokens.pop();
+        } else {
           throw err::Exception(
               "Line: " + std::to_string(tokens.peek()->lineCount) +
-              " Expected from");
-        };
+              " Expected Ident");
+        }
       }
+
+      // check from from keyword
+      lex::LObj *from = dynamic_cast<lex::LObj *>(tokens.pop());
+      if (from == nullptr || from->meta != "from"){
+        throw err::Exception(
+            "Line: " + std::to_string(tokens.peek()->lineCount) +
+            " Expected from");
+      };
       
       ast::StringLiteral * str = dynamic_cast<ast::StringLiteral *>(this->parseExpr(tokens));
       if (str != nullptr){
@@ -590,6 +605,9 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
                 " Expected Ident");
           }
         }
+      } else {
+        std::string id = imp->path.substr(imp->path.find_last_of('/') + 1, imp->path.find_last_of('.'));
+        imp->nameSpace = "";
       }
       
       output = imp;
