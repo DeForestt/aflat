@@ -1,3 +1,5 @@
+.needs <String>
+
 class DateTime{
     private int seconds;
     private int day;
@@ -25,3 +27,4 @@ class DateTime{
 };
 
 DateTime Now(* int timeZone);
+DateTime mmddyyyyToDate(String input, * char splitChar);

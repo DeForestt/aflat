@@ -1,3 +1,4 @@
+.global	mmddyyyyToDate
 .global	Now
 .global	pub_DateTime_getHour
 .global	pub_DateTime_getMinute
@@ -998,10 +999,199 @@ Now:
 	ret
 	leave
 	ret
+mmddyyyyToDate:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$64, %rsp
+	movq	%rdi, -8(%rbp)
+	movb	%sil, -9(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movb	$0, %dl
+	movb	-9(%rbp), %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.LmmddyyyyToDate31
+	movb	$45, %bl
+	movb	%bl, -9(%rbp)
+.LmmddyyyyToDate31:
+	pushq	%rdx
+	lea	-8(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	pushq	%rsi
+	movb	-9(%rbp), %al
+	movb	%al, %sil
+	call	pub_String_split
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movq	%rax, %rbx
+	movq	%rbx, -17(%rbp)
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	movl	$3, %edx
+	pushq	%rdx
+	lea	-17(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_LinkedList_size
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %edi
+	cmpl	%edx, %edi
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	pushq	%rdi
+	movb	%al, %al
+	movb	%al, %dil
+	pushq	%rsi
+	movq	$.strmmddyyyyToDate32, %rax
+	movq	%rax, %rsi
+	call	assert
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
+	lea	-17(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	pushq	%rsi
+	movl	$0, %eax
+	movl	%eax, %esi
+	call	pub_LinkedList_get
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movq	%rax, %rbx
+	movq	%rbx, -25(%rbp)
+	pushq	%rdx
+	lea	-17(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	pushq	%rsi
+	movl	$1, %eax
+	movl	%eax, %esi
+	call	pub_LinkedList_get
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movq	%rax, %rbx
+	movq	%rbx, -33(%rbp)
+	pushq	%rdx
+	lea	-17(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	pushq	%rsi
+	movl	$2, %eax
+	movl	%eax, %esi
+	call	pub_LinkedList_get
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movq	%rax, %rbx
+	movq	%rbx, -41(%rbp)
+	pushq	%rdx
+	lea	-25(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_String_toInt
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %ebx
+	movl	%ebx, -45(%rbp)
+	pushq	%rdx
+	lea	-33(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_String_toInt
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %ebx
+	movl	%ebx, -49(%rbp)
+	pushq	%rdx
+	lea	-41(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_String_toInt
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %ebx
+	movl	%ebx, -53(%rbp)
+	pushq	%rdx
+	pushq	%rdi
+	movl	-45(%rbp), %eax
+	movl	%eax, %edi
+	pushq	%rsi
+	movl	-49(%rbp), %eax
+	movl	%eax, %esi
+	pushq	%rdx
+	movl	-53(%rbp), %eax
+	movl	%eax, %edx
+	pushq	%rcx
+	movl	$1970, %eax
+	movl	%eax, %ecx
+	call	dateRelativeTo
+	popq	%rcx
+	popq	%rdx
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %ebx
+	movl	%ebx, -57(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	$86400, %edx
+	movl	-57(%rbp), %edi
+	imul	%edx, %edi
+	movl	%edi, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %ebx
+	movl	%ebx, -61(%rbp)
+	pushq	%rdx
+	pushq	%rdi
+	movl	$28, %eax
+	movl	%eax, %edi
+	call	malloc
+	popq	%rdi
+	popq	%rdx
+	pushq	%rdi
+	movq	%rax, %rdi
+	pushq	%rdx
+	pushq	%rsi
+	movl	-61(%rbp), %eax
+	movl	%eax, %esi
+	call	pub_DateTime_init
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movq	%rax, %rax
+	leave
+	ret
+	leave
+	ret
 
 
 .data
 
+.strmmddyyyyToDate32:
+	.asciz	 "Invalid date format passed to mmddyyyyToDate"
 .strdowToString30:
 	.asciz	 "Invalid day of week"
 .strdowToString29:

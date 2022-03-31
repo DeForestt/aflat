@@ -159,3 +159,22 @@ DateTime Now(* int timeZone){
     seconds = seconds + timeZone;
     return new DateTime(seconds);
 };
+
+DateTime mmddyyyyToDate(String input, * char splitChar){
+    if splitChar == '\0'
+        splitChar = '-';
+    LinkedList l = input.split(splitChar);
+    assert(l.size() == 3, "Invalid date format passed to mmddyyyyToDate");
+
+    String monthString = l.get(0);
+    String dayString = l.get(1);
+    String yearString = l.get(2);
+
+    int month = monthString.toInt();
+    int day = dayString.toInt();
+    int year = yearString.toInt();
+
+    int relDays = dateRelativeTo(month, day, year, 1970);
+    int seconds = relDays * 86400;
+    return new DateTime(seconds);
+}; 
