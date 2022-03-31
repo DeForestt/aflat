@@ -2,10 +2,12 @@
 .needs <strings>
 .needs <io>
 
-char lower(char c);
-char upper(char c);
+import ICollection from "Collections";
+import LinkedList from "Collections";
 
-.needs <Collections>
+private char lower(char c);
+private char upper(char c);
+
 class String{
     private adr head;
 

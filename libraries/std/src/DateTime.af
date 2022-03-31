@@ -1,6 +1,9 @@
 .needs <asm>
 .needs <std>
-.needs <String>
+
+import String from "String";
+import ICollection from "Collections";
+import LinkedList from "Collections";
 
 class DateTime{
     private int seconds;

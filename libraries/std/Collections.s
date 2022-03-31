@@ -51,8 +51,6 @@ newList:
 	movq	-8(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
 forEachLinkedList:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -130,8 +128,6 @@ forEachLinkedList:
 	cmpb	$1, %al
 	je	.LforEachLinkedList0
 	movl	$0, %eax
-	leave
-	ret
 	leave
 	ret
 whereLinkedList:
@@ -237,8 +233,6 @@ whereLinkedList:
 	movq	-32(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
 pub_LinkedList_init:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -254,10 +248,6 @@ pub_LinkedList_init:
 	movq	-8(%rbp), %rdx
 	movq	$whereLinkedList, %rbx
 	movq	%rbx, 8(%rdx)
-	movq	-8(%rbp), %rax
-	leave
-	ret
-	popq	%rbx
 	movq	-8(%rbp), %rax
 	leave
 	ret
@@ -279,8 +269,6 @@ newNode:
 	movq	$0, %rbx
 	movq	%rbx, 8(%rdx)
 	movq	-8(%rbp), %rax
-	leave
-	ret
 	leave
 	ret
 pub_LinkedList_delete:
@@ -413,8 +401,6 @@ pub_LinkedList_delete:
 	movl	$-1, %eax
 	leave
 	ret
-	leave
-	ret
 pub_LinkedList_stitch:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -448,8 +434,6 @@ pub_LinkedList_stitch:
 	movq	16(%r14), %rbx
 	movq	%rbx, 0(%rdx)
 	movl	$0, %eax
-	leave
-	ret
 	leave
 	ret
 pub_LinkedList_get:
@@ -510,8 +494,6 @@ pub_LinkedList_get:
 	je	.Lget14
 	movq	-28(%rbp), %r14
 	movq	8(%r14), %rax
-	leave
-	ret
 	leave
 	ret
 pub_LinkedList_append:
@@ -586,8 +568,6 @@ pub_LinkedList_append:
 	movq	-24(%rbp), %rbx
 	movq	%rbx, 0(%rdx)
 	movl	$0, %eax
-	leave
-	ret
 	leave
 	ret
 pub_LinkedList_insert:
@@ -726,8 +706,6 @@ pub_LinkedList_insert:
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
 pub_LinkedList_size:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -767,8 +745,6 @@ pub_LinkedList_size:
 	cmpb	$1, %al
 	je	.Lsize23
 	movl	-20(%rbp), %eax
-	leave
-	ret
 	leave
 	ret
 pub_LinkedList_sort:
@@ -958,8 +934,6 @@ pub_LinkedList_sort:
 	movq	-32(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
 pub_LinkedList_map:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1051,8 +1025,6 @@ pub_LinkedList_map:
 	movq	-32(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
 pub_LinkedList_copy:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1069,8 +1041,6 @@ pub_LinkedList_copy:
 	popq	%rdi
 	popq	%rdx
 	movq	-16(%rbp), %rax
-	leave
-	ret
 	leave
 	ret
 forEachArray:
@@ -1172,8 +1142,6 @@ forEachArray:
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
 pub_LinkedList_find:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1251,8 +1219,6 @@ pub_LinkedList_find:
 	cmpb	$1, %al
 	je	.Lfind36
 	movl	$-1, %eax
-	leave
-	ret
 	leave
 	ret
 whereArray:
@@ -1418,8 +1384,6 @@ whereArray:
 	movq	-32(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
 pub_Array_init:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1463,10 +1427,6 @@ pub_Array_init:
 	movq	-8(%rbp), %rax
 	leave
 	ret
-	popq	%rbx
-	movq	-8(%rbp), %rax
-	leave
-	ret
 pub_Array_at:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1501,8 +1461,6 @@ pub_Array_at:
 	movq	%rax, %rbx
 	movq	%rbx, -28(%rbp)
 	movq	-28(%rbp), %rax
-	leave
-	ret
 	leave
 	ret
 newArray:
@@ -1540,8 +1498,6 @@ newArray:
 	movq	-16(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
 pub_Array_delete:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1564,8 +1520,6 @@ pub_Array_delete:
 	popq	%rdi
 	popq	%rdx
 	movl	$0, %eax
-	leave
-	ret
 	leave
 	ret
 pub_LinkedList_erace:
@@ -1621,8 +1575,6 @@ pub_LinkedList_erace:
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
 pub_LinkedList_reverse:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1662,8 +1614,6 @@ pub_LinkedList_reverse:
 	movq	-24(%rbp), %rbx
 	movq	%rbx, 16(%rdx)
 	movq	-8(%rbp), %rax
-	leave
-	ret
 	leave
 	ret
 pub_Array_extend:
@@ -1748,8 +1698,6 @@ pub_Array_extend:
 	popq	%rdx
 .Lextend46:
 	movl	-12(%rbp), %eax
-	leave
-	ret
 	leave
 	ret
 

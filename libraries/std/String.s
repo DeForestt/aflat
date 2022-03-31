@@ -1,5 +1,3 @@
-.global	upper
-.global	lower
 .global	pub_String_len
 .global	pub_String_toInt
 .global	pub_String_split
@@ -8,8 +6,8 @@
 .global	pub_String_replace
 .global	pub_String_trim
 .global	pub_String_copy
-.global	getString
-.global	printString
+.global	String.getString
+.global	String.printString
 .global	pub_String_loop
 .global	pub_String_delete
 .global	pub_String_indexOf
@@ -40,7 +38,7 @@ pub_String_isNumeric:
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
-	movq	$lambda_1648749998915_0, %rax
+	movq	$lambda_1648751882708_0, %rax
 	movq	%rax, %rsi
 	lea	-9(%rbp), %rax
 	pushq	%rdx
@@ -733,6 +731,7 @@ pub_String_loop:
 	movl	$0, %eax
 	leave
 	ret
+String.printString:
 printString:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -759,6 +758,7 @@ printString:
 	movq	-8(%rbp), %rax
 	leave
 	ret
+String.getString:
 getString:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1724,7 +1724,7 @@ pub_String_toInt:
 	je	.LtoInt24
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strString.lambda_1648749998915_025, %rax
+	movq	$.strString.lambda_1648751882708_025, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
@@ -1889,7 +1889,7 @@ upper:
 	movb	-1(%rbp), %al
 	leave
 	ret
-lambda_1648749998915_0:
+lambda_1648751882708_0:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
@@ -1929,7 +1929,7 @@ lambda_1648749998915_0:
 
 .data
 
-.strString.lambda_1648749998915_025:
+.strString.lambda_1648751882708_025:
 	.asciz	 "Attempt to convert non-numeric string to int"
 
 

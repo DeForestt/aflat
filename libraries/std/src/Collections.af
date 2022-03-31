@@ -1,28 +1,50 @@
- .needs <Collections.gs>
- .needs <std.gs>
- .needs <io>
+.needs <std.gs>
+.needs <io>
 
-/*
- * function name: NewList;
- * description:   create a new list;
- * arguments:     none;
- * returns:       a new list;
- */
- LinkedList newList(){
-    LinkedList list = malloc(LinkedList);
-    list.init();
-    return list;
- };
+class ICollection{
+    contract {
+        adr forEach;
+        adr where;
+    };
+};
 
- /*
- * function name:   forEach@LinkedList;
- * description:     iterates through the list and calls the given function on each node
-                    it will break if the function returns 1;
- * agruments:       adr foo : the function to be called on each node
- *                  adr arg : the argument to be passed to the function;
- * returns:         int : 0 if successful, -1 if not;
- */
-int forEachLinkedList(LinkedList my, adr foo, adr arg){
+class ListNode{
+    adr next;
+    adr data;
+};
+
+class LinkedList signs ICollection{
+    public ListNode head;
+
+    adr init();
+    int append(adr data);
+    int insert(adr data, int index);
+    int delete(int index);
+    adr get(int index);
+    adr stitch(adr New);
+    LinkedList reverse();
+    LinkedList sort(adr compare, * adr args);
+    int find(adr foo, * adr args);
+    adr apply(adr foo, * adr args);
+    adr map(adr foo, * adr args);
+    int size();
+    int erace();
+    public LinkedList copy<<=>>(adr list);
+};
+
+class Array signs ICollection{
+    public int typeSize;
+    public adr head;
+    int size;
+
+    Array init(int typeSize, int size);
+    public adr at(int index);
+    public int delete(int index);
+    public int extend(int size);
+};
+
+
+private int forEachLinkedList(LinkedList my, adr foo, adr arg){
     ListNode curr;
     curr = my.head;
     int i = 0;
@@ -39,7 +61,7 @@ int forEachLinkedList(LinkedList my, adr foo, adr arg){
     return 0;
 };
 
-LinkedList whereLinkedList(LinkedList my, adr foo, adr arg){
+private LinkedList whereLinkedList(LinkedList my, adr foo, adr arg){
     LinkedList newList = new LinkedList();
     ListNode curr;
     curr = my.head;
@@ -57,39 +79,12 @@ LinkedList whereLinkedList(LinkedList my, adr foo, adr arg){
     return newList;
 };
 
-/*
- * function name: init@LinkedList;
- * description:   initialize a list;
- * arguments:     none;
- * returns:       none;
- */
-
 LinkedList init@LinkedList(){
     my.head = NULL;
     my.forEach = forEachLinkedList;
     my.where = whereLinkedList;
     return my;
 };
-
-/*
- * function name: newNode;
- * description:   create a new node;
- * arguments:     none;
- * returns:       a new node;
- */
-
-ListNode newNode(){
-    ListNode node = malloc(ListNode);
-    node.data = NULL;
-    return node;
-};
-
-/*
- * function name:   remove@LinkedList;
- * description:     removes the node at the given index;
- * agruments:       int index : the index of the node to remove;
- * returns:         int : 0 if successful, -1 if not;
- */
 
 int delete@LinkedList(int index){
     if index < 0 | index > my.size() {
@@ -126,13 +121,6 @@ int stitch@LinkedList(LinkedList ln){
     return 0;
 };
 
-/*
- * function name:   get@LinkedList;
- * description:     returns the node at the given index;
- * agruments:       int index : the index of the node to return;
- * returns:         adr : the node at the given index;
- */
-
 adr get@LinkedList(int index){
     if (index < 0){
         return NULL;
@@ -150,13 +138,6 @@ adr get@LinkedList(int index){
 
     return myIndex.data;
 };
-
-/*
- * function name:   append@LinkedList;
- * description:     appends a node to the end of the list;
- * agruments:       adr data : the data to be appended;
- * returns:         int : 0 if successful, -1 if not;
- */
 
 int append@LinkedList(adr data){
     ListNode ln = new ListNode();
@@ -181,13 +162,6 @@ int append@LinkedList(adr data){
     return 0;
 };
 
-/*
- * function name:   insert@LinkedList;
- * description:     inserts a node at the given index;
- * agruments:       int index : the index to insert the node at
- *                  adr data : the data to be inserted;
- * returns:         int : 0 if successful, -1 if not;
- */
 int insert@LinkedList(adr data, int index){
     if (index < 0 | index > my.size()){
         return -1;
@@ -215,13 +189,6 @@ int insert@LinkedList(adr data, int index){
     ln.next = next;
     return 0;
 };
-
-/*
- * function name:   size@LinkedList;
- * description:     returns the size of the list;
- * agruments:       none
- * returns:         int : the size of the list;
- */
 
 int size@LinkedList(){
     ListNode curr;
@@ -258,7 +225,6 @@ LinkedList sort@LinkedList(adr foo, adr arg){
     return n;
 };
 
-
 LinkedList map@LinkedList(adr foo, adr arg){
     LinkedList newList = new LinkedList();
     ListNode curr = my.head;
@@ -280,16 +246,7 @@ LinkedList copy@LinkedList(LinkedList list){
     return list;
 };
 
-
-/*
- * function name:   forEach@Array;
- * description:     preforms a function for each element of the array passed by value
-                    it will break if the function returns 1;
- * arguments:       foo : a function pointer to call on the elements
-                    arg : an argument pointer;
- * returns:         int: 0 if sucssesfull, 1 on error
- */
-int forEachArray(Array my, adr foo, adr arg){
+private int forEachArray(Array my, adr foo, adr arg){
     int size;
     size = my.size;
     adr element;
@@ -327,7 +284,7 @@ int find@LinkedList(adr foo, adr arg){
     return -1;
 };
 
-Array whereArray(Array my, adr foo, adr arg){
+private Array whereArray(Array my, adr foo, adr arg){
     Array a = new Array(adr, 0);
     int size;
     int tSize;
@@ -353,13 +310,6 @@ Array whereArray(Array my, adr foo, adr arg){
     return a;
 };
 
-/*
- * function name: init@Array;
- * description:   initialize an array;
- * arguments:     int typeSize : the size of the type
- *                int size : the size of the array;
- * returns:       0 if successful, -1 if not;
- */
 Array init@Array(int typeSize, int size){
     my.size = size;
     my.typeSize = typeSize;
@@ -371,12 +321,6 @@ Array init@Array(int typeSize, int size){
     return my;
 };
 
-/*
- * function name:   at@Array;
- * description:     returns the address of the element at the given index;
- * agruments:       int index : the index of the element to return;
- * returns:         adr : the address of the element at the given index;
- */
 adr at@Array(int index){
     int tSize;
     tSize = my.typeSize;
@@ -387,37 +331,12 @@ adr at@Array(int index){
     return curr;
 };
 
-/*
-  * function name: newArray;
-  * description:   create a new array;
-  * arguments:     int typeSize : the size of the type
-  *                int size : the size of the array;
-  * returns:       Array : a new array
-  */
-Array newArray(int typeSize, int size){
-    Array my = malloc(Array);
-    my.init(typeSize, size);
-    return my;
-};
-
-/*
- * function name:   delete@Array;
- * description:     deletes the array and frees the memory;
- * arguments:       none;
- * returns:         int :  0;
- */
 int delete@Array(){
     free(my.head);
     free(my);
     return 0;
 };
 
-/*
- * function name:   free@LinkedList;
- * description:     frees the memory of the list;
- * arguments:       none;
- * returns:         int :  0;
- */
 int erace@LinkedList(){
     ListNode curr;
     curr = my.head;
@@ -449,12 +368,6 @@ LinkedList reverse@LinkedList(){
     return my;
 };
 
-/*
- * function name:   extend@Array;
- * description:     extends the array by the given amount;
- * arguments:       int amount : the amount to extend the array by;
- * returns:         int size : the new size of the array;
- */
 int extend@Array(int amount){
     adr curr;
     curr = my.head;
