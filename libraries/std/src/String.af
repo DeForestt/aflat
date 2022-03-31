@@ -1,11 +1,42 @@
-.root "head"
-.needs <String>
 .needs <std>
 .needs <strings>
 .needs <io>
 
 char lower(char c);
 char upper(char c);
+
+.needs <Collections>
+class String{
+    private adr head;
+
+    String init(adr value);
+    String concat<<&>>(adr s);
+    String stitch<<+>>(adr s);
+    String copy<<=>>(adr s);
+    String replace(char o, char n);
+    LinkedList split(* char c);
+    String toLower();
+    String toUpper();
+    String trim(* char ch);
+    char at(int i);
+    adr getPrimitive();
+
+    String subString(int start, int end);
+    int loop(adr foo, *adr args);
+
+    // compare is for compairing to another string object
+    bool compare(adr s);
+    // equal is for compairing to a string literal or a char array
+    bool equal<<==>>(adr s);
+
+    bool isNumeric();
+
+    int indexOf(char c);
+    int toInt();
+    int len();
+
+    int delete();
+};
 
 
 bool isNumeric@String(){
@@ -123,13 +154,13 @@ int loop@String(adr foo, adr args){
     return 0;
 };
 
-String printString(String s){
+export String printString(String s){
     adr head = s.getPrimitive();
     print(head);
     return s;
 };
 
-String getString(){
+export String getString(){
     adr buff = malloc(1);
     adr save = buff;
     int buffSize = 1;
@@ -159,7 +190,7 @@ String copy@String(String s){
 };
 
 String trim@String( * char ch){
-    if ch = '\0'
+    if ch == '\0'
         ch = ' ';
     int length = my.len();
     int i = 0;
@@ -280,7 +311,7 @@ int len@String(){
     return length;
 };
 
-char lower(char c){
+private char lower(char c){
     char 4 buff;
     adr cast = ?buff;
     cast =: 0;
@@ -292,7 +323,7 @@ char lower(char c){
     return c;
 };
 
-char upper(char c){
+private char upper(char c){
     char 4 buff;
     adr cast = ?buff;
     cast =: 0;

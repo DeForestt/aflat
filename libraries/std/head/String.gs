@@ -30,6 +30,3 @@ class String{
 
     int delete();
 };
-
-String printString(String s); 
-String getString();
