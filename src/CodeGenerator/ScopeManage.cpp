@@ -40,7 +40,7 @@ int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type,
 
   // if the symbol is already in the stack, throw an error
   for (int i = 0; i < this->stack.size(); i++) {
-    if (this->stack[i].symbol == symbol) {
+    if (this->stack[i].symbol == symbol && symbol != "") {
       throw err::Exception("Redefinition of symbol: " + symbol);
     }
   }

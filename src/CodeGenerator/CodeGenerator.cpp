@@ -262,12 +262,67 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   } else if (dynamic_cast<ast::CallExpr *>(expr) != nullptr) {
     ast::CallExpr *exprCall = dynamic_cast<ast::CallExpr *>(expr);
     ast::Call *call = exprCall->call;
-    ast::Function func = this->GenCall(call, OutputFile);
-    output.type = func.type.typeName;
-    output.size = func.type.size;
-    if (size != asmc::AUTO && func.flex)
-      output.size = size;
-    output.access = this->registers["%rax"]->get(output.size);
+
+    // check if the call ident is a class name
+    Type **t = this->typeList[call->ident];
+    if (t != nullptr) {
+      gen::Class *cl = dynamic_cast<gen::Class *>(*t);
+      if (cl != nullptr) {
+        // allocate space for the object
+        ast::Type type = ast::Type();
+        type.typeName = cl->Ident;
+        type.size = asmc::Byte;
+        type.arraySize = cl->SymbolTable.head->data.byteMod;
+        int bMod = gen::scope::ScopeManager::getInstance()->assign("", type, false);
+        
+        //
+        asmc::Lea *lea = new asmc::Lea();
+        lea->to = this->registers["%rax"]->get(asmc::QWord);
+        lea->from = '-' + std::to_string(bMod) + "(%rbp)";
+        // ASMC::Mov * mov = new ASMC::Mov();
+        OutputFile.text << lea;
+        std::string pointer = registers["%rax"]->get(asmc::QWord);
+
+        // check if the class has a constructor
+        ast::Function *init = cl->nameTable["init"];
+
+        if (init == nullptr) {
+          output.access = pointer;
+          output.size = asmc::QWord;
+          output.type = cl->Ident;
+        } else {
+          // creat the call STMT
+          ast::CallExpr *callInit = new ast::CallExpr();
+          callInit->call = new ast::Call;
+          callInit->call->ident = "init";
+          callInit->call->Args = call->Args;
+          callInit->call->modList = links::LinkedList<std::string>();
+          callInit->call->publify = cl->Ident;
+          asmc::Mov *mov = new asmc::Mov();
+
+          asmc::Push *push = new asmc::Push();
+          push->op = mov->to = this->intArgs[0].get(asmc::QWord);
+          OutputFile.text << push;
+          mov->size = asmc::QWord;
+          mov->from = this->registers["%eax"]->get(asmc::QWord);
+          mov->to = this->intArgs[0].get(asmc::QWord);
+          OutputFile.text << mov;
+          gen::Expr afterInit = this->GenExpr(callInit, OutputFile);
+          output.access = afterInit.access;
+          output.size = asmc::QWord;
+          output.type = cl->Ident;
+        }
+      } else {
+        alert("Class " + call->ident + " not found");
+      }
+    } else {
+      ast::Function func = this->GenCall(call, OutputFile);
+      output.type = func.type.typeName;
+      output.size = func.type.size;
+      if (size != asmc::AUTO && func.flex)
+        output.size = size;
+      output.access = this->registers["%rax"]->get(output.size);
+    }
   } else if (dynamic_cast<ast::Var *>(expr) != nullptr) {
     ast::Var var = *dynamic_cast<ast::Var *>(expr);
 
