@@ -1,6 +1,32 @@
-.needs <DateTime>
 .needs <asm>
 .needs <std>
+.needs <String>
+
+class DateTime{
+    private int seconds;
+    private int day;
+    private int month;
+    private int year;
+    private int hour;
+    private int minute;
+    private int second;
+
+    public DateTime init(int seconds);
+    public int getSeconds();
+    public int getMinutes();
+    public int getHours();
+    public int getDays();
+    public int getDay();
+    public int getMonth();
+    public int getYear();
+    public int getSecond();
+    public int getHour();
+    public int getMinute();
+
+    private int Copy<<=>>(DateTime);
+    
+    private int epochToDate();
+};
 
 private int daysInMonth(int month, int year){
     if month == 2 {
@@ -153,14 +179,14 @@ int getHour@DateTime(){
     return my.hour;
 };
 
-DateTime Now(* int timeZone){
+export DateTime Now(* int timeZone){
     int seconds = sys_time();
     timeZone = timeZone * 3600;
     seconds = seconds + timeZone;
     return new DateTime(seconds);
 };
 
-DateTime mmddyyyyToDate(String input, * char splitChar){
+export DateTime mmddyyyyToDate(String input, * char splitChar){
     if splitChar == '\0'
         splitChar = '-';
     LinkedList l = input.split(splitChar);

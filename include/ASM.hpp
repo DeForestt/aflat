@@ -39,6 +39,11 @@ public:
   std::string toString();
 };
 
+class nop : public Instruction {
+public:
+  std::string toString() { return ""; };
+};
+
 class Movzbl : public Instruction {
 public:
   std::string to;

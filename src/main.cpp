@@ -285,15 +285,15 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   std::string line;
 
   linker.push_back(libPath + "io.s");
-  linker.push_back(libPath + "collections.s");
+  linker.push_back(libPath + "Collections.s");
   linker.push_back(libPath + "math.s");
   linker.push_back(libPath + "strings.s");
   linker.push_back(libPath + "std.s");
   linker.push_back(libPath + "concurrancy.s");
   linker.push_back(libPath + "files.s");
   linker.push_back(libPath + "asm.s");
-  linker.push_back(libPath + "string.s");
-  linker.push_back(libPath + "datetime.s");
+  linker.push_back(libPath + "String.s");
+  linker.push_back(libPath + "DateTime.s");
 
   while (std::getline(ss, line)) {
     line = remove_char(line, '\t');

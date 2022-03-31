@@ -15,13 +15,13 @@ bool searchSymbol(gen::Symbol sym, std::string str) {
     return false;
 }
 
-std::string getLibPath() {
+std::string getLibPath(std::string lib) {
   char result[200];
   ssize_t count = readlink("/proc/self/exe", result, 200);
   std::string filename = std::string(result, (count > 0) ? count : 0);
   std::string exepath = filename.substr(0, filename.find_last_of("/"));
   std::string libPath =
-      exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/head/";
+      exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/" + lib + "/";
   return libPath;
 }
 
@@ -1505,6 +1505,10 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       // check if the last statement is a return statement
       if (file.text.count > 0) {
         asmc::Instruction *last = file.text.peek();
+        while(dynamic_cast<asmc::nop *>(last) != nullptr){
+          file.text.pop();
+          last = file.text.peek();
+        };
         if (dynamic_cast<asmc::Return *>(last) == nullptr) {
           // if the function name is init then we need to alert to return 'my'
           if (func->ident.ident == "init") {
@@ -2151,6 +2155,15 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     OutputFile.text << sub;
   } else if (dynamic_cast<ast::Import *>(STMT) != nullptr){
     ast::Import *imp = dynamic_cast<ast::Import *>(STMT);
+    bool standard = false;
+    if (imp->path.find("./") == std::string::npos) {
+      imp->path = getLibPath("src") + imp->path;
+    };
+
+    if (imp->path.find(".af") == std::string::npos){
+      imp->path = imp->path + ".af";
+    };
+
     std::string id = imp->path.substr(imp->path.find_last_of("/") + 1);
     // remove the .af extension
     id = id.substr(0, id.find_last_of("."));
@@ -2163,7 +2176,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
                          std::istreambuf_iterator<char>());
       lex::Lexer l = lex::Lexer();
       PreProcessor pp = PreProcessor();
-      auto tokens = l.Scan(pp.PreProcess(text, getLibPath()));
+      auto tokens = l.Scan(pp.PreProcess(text, getLibPath("head")));
       tokens.invert();
       // parse the file
       parse::Parser p = parse::Parser();
@@ -2221,7 +2234,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     freeCall->Args.push(var);
     OutputFile << this->GenSTMT(freeCall);
   } else {
-    OutputFile.text.push(new asmc::Instruction());
+    OutputFile.text.push(new asmc::nop());
   }
 
   return OutputFile;
