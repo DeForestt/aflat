@@ -1,5 +1,7 @@
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Exceptions.hpp"
+#include "Parser/AST.hpp"
+
 gen::scope::ScopeManager *gen::scope::ScopeManager::instance = nullptr;
 
 #pragma region Helper Functions
@@ -62,11 +64,15 @@ int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type,
 
 void gen::scope::ScopeManager::pushScope() { this->scopeStack.push_back(0); };
 
-void gen::scope::ScopeManager::popScope(bool fPop = false) {
+void gen::scope::ScopeManager::popScope(CodeGenerator * callback, asmc::File &OutputFile, bool fPop = false) {
   int size = this->scopeStack.back();
   for (int i = 0; i < size; i++) {
     this->stackPos -= sizeToInt(this->stack.back().type.size) *
                       this->stack.back().type.arraySize;
+    gen::Symbol sym = this->stack.back();
+    if (sym.symbol == ""){
+      //OutputFile << callback->deScope(sym);
+    }
     this->stack.pop_back();
   }
   if (fPop)

@@ -1272,14 +1272,15 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
     func->type.typeName = call->publify;
     func->type.size = asmc::QWord;
     func->scopeName = call->publify;
-    if (call->ident != "init") {
+    if (call->ident != "init" && call->ident != "del") {
       // find the function in the class
       gen::Class *cl =
           dynamic_cast<gen::Class *>(*this->typeList[call->publify]);
       if (cl != nullptr) {
         ast::Function *f = cl->nameTable[call->ident];
         if (f == nullptr) {
-          alert("cannot find function: " + call->ident);
+          alert("cannot find function: " + call->ident + " in class " +
+                call->publify);
         };
         func->type = f->type;
         func->scope = f->scope;
@@ -1300,9 +1301,9 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
       gen::Class *cl = dynamic_cast<gen::Class *>(type);
       if (cl == nullptr)
         alert("not a class: " + call->publify);
-      ast::Function *f = cl->nameTable["init"];
+      ast::Function *f = cl->nameTable[call->ident];
       if (f == nullptr)
-        alert("cannot find function: init");
+        alert("cannot find function: " + call->ident + " in " + cl->Ident);
       func->argTypes = f->argTypes;
     }
     mod = "";
@@ -1547,7 +1548,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
 
     this->intArgsCounter = saveIntArgs;
 
-    gen::scope::ScopeManager::getInstance()->popScope(true);
+    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile, true);
   } else if (dynamic_cast<ast::Declare *>(STMT) != nullptr) {
     /*
         movl $0x0, -[SymbolT + size](rdp)
@@ -1949,14 +1950,14 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       OutputFile.text << jmp;
       OutputFile.text << lable1;
 
-      gen::scope::ScopeManager::getInstance()->popScope();
+      gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
       gen::scope::ScopeManager::getInstance()->pushScope();
       OutputFile << this->GenSTMT(ifStmt.elseStatment);
       OutputFile.text << end;
     } else
       OutputFile.text << lable1;
 
-    gen::scope::ScopeManager::getInstance()->popScope();
+    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
   } else if (dynamic_cast<ast::While *>(STMT) != nullptr) {
     gen::scope::ScopeManager::getInstance()->pushScope();
     ast::While *loop = dynamic_cast<ast::While *>(STMT);
@@ -2006,7 +2007,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
 
     OutputFile.text << mov;
     OutputFile.text << cmp;
-    gen::scope::ScopeManager::getInstance()->popScope();
+    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
     OutputFile.text << je;
 
   } else if (dynamic_cast<ast::For *>(STMT) != nullptr) {
@@ -2061,7 +2062,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     OutputFile.text << cmp;
     OutputFile.text << je;
 
-    gen::scope::ScopeManager::getInstance()->popScope();
+    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
   } else if (dynamic_cast<ast::UDeffType *>(STMT) != nullptr) {
     ast::UDeffType *udef = dynamic_cast<ast::UDeffType *>(STMT);
     gen::Type *type = new gen::Type();
@@ -2219,13 +2220,52 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     freeCall->Args = LinkedList<ast::Expr*>();
     freeCall->Args.push(var);
     OutputFile << this->GenSTMT(freeCall);
-    
-
-    
-
   } else {
     OutputFile.text.push(new asmc::Instruction());
   }
 
   return OutputFile;
+}
+
+asmc::File gen::CodeGenerator::deScope(gen::Symbol sym){
+  asmc::File file;
+  gen::Type **type = this->typeList[sym.type.typeName];
+  if (type == nullptr)
+    this->alert("Type" + sym.type.typeName + " not found to delete");
+  
+  gen::Class *classType = dynamic_cast<gen::Class *>(*type);
+  if (classType == nullptr)
+    this->alert("Type" + sym.type.typeName + " is not a class");
+  
+  // check if the class has a destructor
+  ast::Function *destructor = classType->nameTable["del"];
+
+    // get the address of the object to delete
+    asmc::Lea *lea = new asmc::Lea();
+    lea->to = this->registers["%rax"]->get(asmc::QWord);
+    lea->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
+    // ASMC::Mov * mov = new ASMC::Mov();
+    file.text << lea;
+    std::string pointer = registers["%rax"]->get(asmc::QWord);
+
+    // call the destructor
+    if (destructor != nullptr){
+      ast::Call *callDel = new ast::Call();
+          callDel->ident = "del";
+          callDel->Args = LinkedList<ast::Expr*>();
+          callDel->modList = links::LinkedList<std::string>();
+          callDel->publify = classType->Ident;
+          asmc::Mov *mov = new asmc::Mov();
+
+          asmc::Push *push = new asmc::Push();
+          push->op = mov->to = this->intArgs[0].get(asmc::QWord);
+          file.text << push;
+          mov->size = asmc::QWord;
+          mov->from = this->registers["%eax"]->get(asmc::QWord);
+          mov->to = this->intArgs[0].get(asmc::QWord);
+          file.text << mov;
+          file << this->GenSTMT(callDel);
+    };
+
+    return file;
 }

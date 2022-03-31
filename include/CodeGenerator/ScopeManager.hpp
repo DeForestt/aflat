@@ -55,7 +55,7 @@ public:
   void pushScope();
 
   // pop a scope
-  void popScope(bool fPop = false);
+  void popScope(gen::CodeGenerator * callback, asmc::File &OutputFile, bool fPop = false);
 
   // Get stack alignment value
   int getStackAlignment();
