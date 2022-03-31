@@ -1,13 +1,14 @@
-.needs <io.gs>
 .needs <std>
 .needs <math.gs>
 
-char ascii(int input){
+import {toInt, toChar, printFloat, printInt, print} from "io" under io;
+
+export char ascii(int input){
 	adr caster = ?input;
 	return caster as char;
 };
 
-int len(adr input){
+export int len(adr input){
 	char null = ascii(0);
     int i = 0;
 	while(input as char != null ){
@@ -17,7 +18,7 @@ int len(adr input){
 	return i;
 };
 
-int str_comp(adr str1, adr str2){
+export int str_comp(adr str1, adr str2){
         int len1 = len(str1);
         int len2 = len(str2);
 
@@ -37,7 +38,7 @@ int str_comp(adr str1, adr str2){
         return 1;
 };
 
-int str_concat(adr str1, adr str2, adr pointer){
+export int str_concat(adr str1, adr str2, adr pointer){
     char null = '\0';
     char loader;
     while(str1 as char != null){
@@ -59,7 +60,7 @@ int str_concat(adr str1, adr str2, adr pointer){
     return 0;
 };
 
-int str_toInt(adr input){
+export int str_toInt(adr input){
     int mul = 1;
     char ch1 = input as char;
     if(ch1 == '-'){
@@ -75,7 +76,7 @@ int str_toInt(adr input){
     while(i > -1){
         factor = exp(10, i);
         char ch2 = input as char;
-        int num = toInt(ch2);
+        int num = io.toInt(ch2);
         factor = factor * num;
         result = result + factor;
         i = i - 1;
@@ -85,13 +86,7 @@ int str_toInt(adr input){
     return result;
 };
 
-/*
- * functionName: int_toStr
- * description: converts an integer to a string
- * arguments: int input, adr buffer
- * returns: 0;
- */
-int int_toString(int input, adr buffer){
+export int int_toString(int input, adr buffer){
         int h = 0;
         int ten = 10;
         int factor = 0;
@@ -123,7 +118,7 @@ int int_toString(int input, adr buffer){
         while (i > -1){
                 factor = exp(10, i);
                 h = input / factor;
-                out = toChar(h);
+                out = io.toChar(h);
                 buffer =: out;
                 buffer = buffer + #1;
                 h = h * factor;
@@ -134,7 +129,7 @@ int int_toString(int input, adr buffer){
         return 0;
 };
 
-int str_find(adr in, char find){
+export int str_find(adr in, char find){
     int i = 0;
     int len = len(in);
     while(i < len){
@@ -146,16 +141,7 @@ int str_find(adr in, char find){
     return -1;
 };
 
-/*
- * Function name: str_split
- * Description:   Splits a string into an array of strings
- * Arguments:     str - the string to split
- *                sep - the separator
- * 			      buff1 - buffer for the first part of the split
- *                buff2 - buffer for the second part of the split
- * Returns:       0 on success, -1 on failure
- */
-int str_split(adr str, char sep, adr buff1, adr buff2){
+export int str_split(adr str, char sep, adr buff1, adr buff2){
 	char null = ascii(0);
 	char check = str as char;
 
@@ -181,7 +167,7 @@ int str_split(adr str, char sep, adr buff1, adr buff2){
 	return 0;
 };
 
-float charToFloat(char a){
+export float charToFloat(char a){
     float result = 0.00;
     if (a == '0'){result = 0.00;};
     if (a == '1'){result = 1.00;};
@@ -196,7 +182,7 @@ float charToFloat(char a){
     return result;
 };
 
-int str_toFloat(adr input){
+export int str_toFloat(adr input){
 	char 20 whole;
 	char 20 decimal;
 
@@ -241,12 +227,12 @@ int str_toFloat(adr input){
 	return ret;
 };
 
-int sPrintFloat(adr input){
-	printFloat(input);
+export int sPrintFloat(adr input){
+	io.printFloat(input);
 	return 0;
 };
 
-int float_toString(adr input, adr obuff, int signed){
+export int float_toString(adr input, adr obuff, int signed){
 
 	if(input == #0){
 		return -1;
@@ -258,7 +244,7 @@ int float_toString(adr input, adr obuff, int signed){
 	// as input into a newBitint
 	int inputInt = input as int;
 	if (inputInt == 0){
-		printInt(0);
+		io.printInt(0);
 		return 0;
 	};
 
@@ -345,7 +331,7 @@ int float_toString(adr input, adr obuff, int signed){
 		i = i + 1;
 	};
 
-	push ?mySign; printInt(result); print("."); printInt(decimalPlacess);
+	push ?mySign; io.printInt(result); io.print("."); io.printInt(decimalPlacess);
     char 10 rstring;
     int_toString(result, ?rstring);
     str_concat(mySign, ?rstring, obuff);
@@ -356,7 +342,7 @@ int float_toString(adr input, adr obuff, int signed){
 	return 0;	
 };
 
-adr str_subString(int start, int length, adr str, adr buff) {
+export adr str_subString(int start, int length, adr str, adr buff) {
 	adr cleanStart = NULL;
 	cleanStart = ?start;
 	int go = cleanStart as int;
@@ -379,7 +365,7 @@ adr str_subString(int start, int length, adr str, adr buff) {
 	return buff;
 };
 
-adr str_reverse(adr in, adr buff){
+export adr str_reverse(adr in, adr buff){
 	int length = len(in);
 	adr buffPtr; buffPtr = buff;
 	
@@ -399,7 +385,7 @@ adr str_reverse(adr in, adr buff){
 	return buffPtr;
 };
 
-char str_at(adr str, int i){
+export char str_at(adr str, int i){
 	for int j = 0; j < i; j = j + 1; {
 		str = str + #1;
 	};
@@ -407,7 +393,7 @@ char str_at(adr str, int i){
 	return ch;
 };
 
-int str_forEach(adr s, adr foo, adr args){
+export int str_forEach(adr s, adr foo, adr args){
 	int in = len(s);
 	int i;
 	for i = 0; i < in; i = i + 1; {
@@ -420,6 +406,6 @@ int str_forEach(adr s, adr foo, adr args){
 	return 0;
 };
 
-bool char_isDigit(char c) {
+export bool char_isDigit(char c) {
   return c >= '0' & c <= '9';
 };

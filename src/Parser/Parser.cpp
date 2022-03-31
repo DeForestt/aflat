@@ -553,6 +553,9 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
                 "Line: " + std::to_string(tokens.peek()->lineCount) +
                 " Expected }");
           }
+        } else if (sym->Sym == '*'){
+          tokens.pop();
+          imp->imports.push_back("*");
         } else throw err::Exception(
             "Line: " + std::to_string(tokens.peek()->lineCount) +
             " Unexpected Token");

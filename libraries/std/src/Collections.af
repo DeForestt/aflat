@@ -1,5 +1,4 @@
-.needs <std.gs>
-.needs <io>
+.needs <std>
 
 class ICollection{
     contract {
@@ -383,7 +382,7 @@ int extend@Array(int amount){
 
     my.head = realloc(curr, amount);
     if(my.head == NULL){
-        print("badrealloc");
+        panic("bad realloc\n");
     };
     return  amount;
 };

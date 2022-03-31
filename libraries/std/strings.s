@@ -1,24 +1,25 @@
-.global	char_isDigit
-.global	str_forEach
-.global	str_at
-.global	str_reverse
-.global	str_subString
-.global	float_toString
-.global	sPrintFloat
-.global	str_toFloat
-.global	charToFloat
-.global	str_split
-.global	str_find
-.global	int_toString
-.global	str_toInt
-.global	str_concat
-.global	str_comp
-.global	len
-.global	ascii
+.global	strings.char_isDigit
+.global	strings.str_forEach
+.global	strings.str_at
+.global	strings.str_reverse
+.global	strings.str_subString
+.global	strings.float_toString
+.global	strings.sPrintFloat
+.global	strings.str_toFloat
+.global	strings.charToFloat
+.global	strings.str_split
+.global	strings.str_find
+.global	strings.int_toString
+.global	strings.str_toInt
+.global	strings.str_concat
+.global	strings.str_comp
+.global	strings.len
+.global	strings.ascii
 
 
 .text
 
+strings.ascii:
 ascii:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -33,8 +34,7 @@ ascii:
 	movb	%al, %al
 	leave
 	ret
-	leave
-	ret
+strings.len:
 len:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -91,8 +91,7 @@ len:
 	movl	-13(%rbp), %eax
 	leave
 	ret
-	leave
-	ret
+strings.str_comp:
 str_comp:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -205,8 +204,7 @@ str_comp:
 	movl	$1, %eax
 	leave
 	ret
-	leave
-	ret
+strings.str_concat:
 str_concat:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -309,8 +307,7 @@ str_concat:
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
+strings.str_toInt:
 str_toInt:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -402,7 +399,7 @@ str_toInt:
 	pushq	%rdi
 	movb	-31(%rbp), %al
 	movb	%al, %dil
-	call	toInt
+	call	io.toInt
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %ebx
@@ -472,8 +469,7 @@ str_toInt:
 	movl	-26(%rbp), %eax
 	leave
 	ret
-	leave
-	ret
+strings.int_toString:
 int_toString:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -649,7 +645,7 @@ int_toString:
 	pushq	%rdi
 	movl	-16(%rbp), %eax
 	movl	%eax, %edi
-	call	toChar
+	call	io.toChar
 	popq	%rdi
 	popq	%rdx
 	movb	%al, %bl
@@ -715,8 +711,7 @@ int_toString:
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
+strings.str_find:
 str_find:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -791,8 +786,7 @@ str_find:
 	movl	$-1, %eax
 	leave
 	ret
-	leave
-	ret
+strings.str_split:
 str_split:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -931,8 +925,7 @@ str_split:
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
+strings.charToFloat:
 charToFloat:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1095,8 +1088,7 @@ charToFloat:
 	movl	-5(%rbp), %eax
 	leave
 	ret
-	leave
-	ret
+strings.str_toFloat:
 str_toFloat:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1345,8 +1337,7 @@ str_toFloat:
 	movl	-90(%rbp), %eax
 	leave
 	ret
-	leave
-	ret
+strings.sPrintFloat:
 sPrintFloat:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1357,14 +1348,14 @@ sPrintFloat:
 	pushq	%rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
-	call	printFloat
+	movq	$0, %rsi
+	call	io.printFloat
 	popq	%rdi
 	popq	%rdx
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
+strings.float_toString:
 float_toString:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1411,7 +1402,7 @@ float_toString:
 	pushq	%rdi
 	movl	$0, %eax
 	movl	%eax, %edi
-	call	printInt
+	call	io.printInt
 	popq	%rdi
 	popq	%rdx
 	movl	$0, %eax
@@ -1791,21 +1782,21 @@ float_toString:
 	pushq	%rdi
 	movl	-84(%rbp), %eax
 	movl	%eax, %edi
-	call	printInt
+	call	io.printInt
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
 	pushq	%rdi
 	movq	$.strfloat_toString81, %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
 	pushq	%rdi
 	movl	-96(%rbp), %eax
 	movl	%eax, %edi
-	call	printInt
+	call	io.printInt
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
@@ -1882,8 +1873,7 @@ float_toString:
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
+strings.str_subString:
 str_subString:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1973,8 +1963,7 @@ str_subString:
 	movq	-24(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
+strings.str_reverse:
 str_reverse:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -2060,8 +2049,7 @@ str_reverse:
 	movq	-28(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
+strings.str_at:
 str_at:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -2112,8 +2100,7 @@ str_at:
 	movb	-13(%rbp), %al
 	leave
 	ret
-	leave
-	ret
+strings.str_forEach:
 str_forEach:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -2206,8 +2193,7 @@ str_forEach:
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
+strings.char_isDigit:
 char_isDigit:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -2239,8 +2225,6 @@ char_isDigit:
 	popq	%rdx
 	popq	%rdi
 	movb	%al, %al
-	leave
-	ret
 	leave
 	ret
 

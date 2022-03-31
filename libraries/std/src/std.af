@@ -1,6 +1,7 @@
-.needs <std.gs>
-.needs <asm.gs>
-.needs <io>
+.needs <std>
+.needs <asm>
+
+import * from "io" under io;
 
 Block head = NULL;
 
@@ -172,17 +173,17 @@ adr realloc(adr ptr, int size){
 int inspectHeap(){
     Block current;
     current = head;
-    print("Heap:\n");
-    print("HEAD --> ");
+    io.print("Heap:\n");
+    io.print("HEAD --> ");
     while (current != NULL){
-        printHex(current); print(": status: ");
-        printInt(current.free); print(" size: ");
-        printInt(current.size); print(" overhead: ");
-        printInt(16); print("\n");
+        io.printHex(current); io.print(": status: ");
+        io.printInt(current.free); io.print(" size: ");
+        io.printInt(current.size); io.print(" overhead: ");
+        io.printInt(16); print("\n");
         current = current.next;
-        print("         ");
+        io.print("         ");
     };
-    print("NULL\n");
+    io.print("NULL\n");
     return 0;
 };
 
@@ -204,17 +205,17 @@ Times newTimes(){
 };
 
 int panic(adr msg){
-    print("Panic: "); print(msg);
-    print("\n");
+    io.print("Panic: "); print(msg);
+    io.print("\n");
     sys_exit(1);
 };
 
 int assert(bool cond, * adr message){
     if !cond {
-        print("Failed assert: ");
+        io.print("Failed assert: ");
         if message != NULL
-            print(message);
-        print("\n");
+            io.print(message);
+        io.print("\n");
         sys_exit(1);
     };
     return 0;

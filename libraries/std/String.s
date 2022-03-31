@@ -38,7 +38,7 @@ pub_String_isNumeric:
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
-	movq	$lambda_1648751882708_0, %rax
+	movq	$lambda_1648763042742_0, %rax
 	movq	%rax, %rsi
 	lea	-9(%rbp), %rax
 	pushq	%rdx
@@ -63,7 +63,7 @@ pub_String_init:
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
-	call	len
+	call	strings.len
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %ebx
@@ -122,7 +122,7 @@ pub_String_concat:
 	pushq	%rdi
 	movq	0(%r14), %rax
 	movq	%rax, %rdi
-	call	len
+	call	strings.len
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %ebx
@@ -132,7 +132,7 @@ pub_String_concat:
 	pushq	%rdi
 	movq	0(%r14), %rax
 	movq	%rax, %rdi
-	call	len
+	call	strings.len
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %ebx
@@ -251,7 +251,7 @@ pub_String_stitch:
 	pushq	%rdi
 	movq	0(%r14), %rax
 	movq	%rax, %rdi
-	call	len
+	call	strings.len
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %ebx
@@ -260,7 +260,7 @@ pub_String_stitch:
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
-	call	len
+	call	strings.len
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %ebx
@@ -381,7 +381,7 @@ pub_String_subString:
 	pushq	%rdi
 	movq	-24(%rbp), %rax
 	movq	%rax, %rdi
-	call	len
+	call	strings.len
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %ebx
@@ -504,7 +504,7 @@ pub_String_compare:
 	pushq	%rsi
 	movq	-32(%rbp), %rax
 	movq	%rax, %rsi
-	call	str_comp
+	call	strings.str_comp
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
@@ -536,7 +536,7 @@ pub_String_equal:
 	pushq	%rsi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rsi
-	call	str_comp
+	call	strings.str_comp
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
@@ -578,7 +578,7 @@ pub_String_at:
 	pushq	%rsi
 	movl	-12(%rbp), %eax
 	movl	%eax, %esi
-	call	str_at
+	call	strings.str_at
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
@@ -602,7 +602,7 @@ pub_String_indexOf:
 	pushq	%rsi
 	movb	-9(%rbp), %al
 	movb	%al, %sil
-	call	str_find
+	call	strings.str_find
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
@@ -651,7 +651,7 @@ pub_String_loop:
 	pushq	%rdi
 	movq	-32(%rbp), %rax
 	movq	%rax, %rdi
-	call	len
+	call	strings.len
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %ebx
@@ -667,7 +667,7 @@ pub_String_loop:
 	pushq	%rsi
 	movl	-40(%rbp), %eax
 	movl	%eax, %esi
-	call	str_at
+	call	strings.str_at
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
@@ -752,7 +752,7 @@ printString:
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	movq	-8(%rbp), %rax
@@ -1724,7 +1724,7 @@ pub_String_toInt:
 	je	.LtoInt24
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strString.lambda_1648751882708_025, %rax
+	movq	$.strString.lambda_1648763042742_025, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
@@ -1735,7 +1735,7 @@ pub_String_toInt:
 	pushq	%rdi
 	movq	0(%r14), %rax
 	movq	%rax, %rdi
-	call	str_toInt
+	call	strings.str_toInt
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %eax
@@ -1889,7 +1889,7 @@ upper:
 	movb	-1(%rbp), %al
 	leave
 	ret
-lambda_1648751882708_0:
+lambda_1648763042742_0:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
@@ -1904,7 +1904,7 @@ lambda_1648751882708_0:
 	pushq	%rdi
 	movb	-10(%rbp), %al
 	movb	%al, %dil
-	call	char_isDigit
+	call	strings.char_isDigit
 	popq	%rdi
 	popq	%rdx
 	movb	%al, %dil
@@ -1929,7 +1929,7 @@ lambda_1648751882708_0:
 
 .data
 
-.strString.lambda_1648751882708_025:
+.strString.lambda_1648763042742_025:
 	.asciz	 "Attempt to convert non-numeric string to int"
 
 

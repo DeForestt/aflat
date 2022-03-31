@@ -45,23 +45,29 @@ ast::Statment * extract(std::string ident, ast::Statment * stmt, std::string id 
   if(dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
     ast::Sequence * seq = dynamic_cast<ast::Sequence *>(stmt);
     ast::Statment * temp = extract(ident, seq->Statment1, id);
-    if(temp != nullptr){
-      return temp;}
-    else
+    if (ident != "*" & temp != nullptr){
+      return temp;
+    } else if (ident != "*") {
       return extract(ident, seq->Statment2, id);
+    } else {
+      extract(ident, seq->Statment2, id);
+    }
   }else if (dynamic_cast<ast::Class *>(stmt)){
     ast::Class * cls = dynamic_cast<ast::Class *>(stmt);
-    if (cls->ident.ident == ident){
+    if (cls->ident.ident == ident || ident == "*") {
       return stmt;
     }
   } else if (dynamic_cast<ast::Function *>(stmt)){
     ast::Function * func = dynamic_cast<ast::Function *>(stmt);
-    if (func->ident.ident == ident){
-      func->ident.ident = id + '.' + ident;
+    if (func->ident.ident == ident || ident == "*"){
+      func->ident.ident = id + '.' + func->ident.ident;
       func->statment = nullptr;
       return func;
     }
   }
+  if (ident == "*"){
+    return stmt;
+  };
   return nullptr;
 }
 #pragma endregion
@@ -329,7 +335,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     std::string nsp = "";
     if (this->nameSpaceTable.contains(var.Ident)) {
       nsp = this->nameSpaceTable.get(var.Ident) + ".";
-      if (var.modList.count == 0) alert("NameSpace " + var.Ident + " cannot be used as a variable");
+      if (var.modList.count == 0) alert("NameSpace " + var.Ident + " cannot be used as");
       var.Ident = nsp + var.modList.pop();
     };
     bool global = false;
