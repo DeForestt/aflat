@@ -1,17 +1,42 @@
 .needs <std.gs>
 .needs <asm.gs>
 .needs <strings.gs>
-.needs <files.gs>
-.needs <Collections>
 
 
-/*
- * function name:       createFile;
- * description:         creates a file with the given name, if it already exists it will be overwritten; 
- * arguments:           adr fileName : the name of the file to be created;
- * returns:             File : the file object for the created file;
- */
-File createFile(adr fileName){
+.needs <std>
+import ICollection from "Collections";
+import Array from "Collections";
+import LinkedList from "Collections";
+
+class fstat{
+    long st_dev;
+    long st_ino;
+    int st_mode;
+    char 4 alligner;
+    long st_nlink;
+    int st_uid;
+    int st_gid;
+    long st_rdev;
+    long st_size;
+    long st_blksize;
+    long st_blocks;
+    Times st_atime;
+    Times st_mtime;
+    Times st_ctime;
+};
+
+class File{
+    adr fileName;
+    int file;
+
+    int write(adr text);
+    int read(adr pointer, char delim);
+    Array toArray(char delim);
+    LinkedList toList(char delim);
+    int close();
+};
+
+export File createFile(adr fileName){
         File file = malloc(File);
         file.file = sys_create(fileName, #511);
         int test;
@@ -22,13 +47,7 @@ File createFile(adr fileName){
         return file;
 };
 
-/*
- * function name: openFile;
- * description: opens a file with the given name;
- * arguments: adr fileName - the name of the file to be opened;
- * returns: File - the file object for the opened file;
- */
-File openFile(adr fileName){
+export File openFile(adr fileName){
         File file = malloc(File);
         long flag = #2;
         file.file = sys_open(fileName, flag, #777);
@@ -41,36 +60,16 @@ File openFile(adr fileName){
         return file;
 };
 
-/*
- * function name:       close@File
- * description:         closes the file;
- * arguments:           none;
- * returns:             0 : if the file was closed successfully;
- */
 int close@File(){
         return sys_close(my.file);
 };
 
-/*
- * function name:       write@File
- * description:         writes the given string to the file;
- * arguments:           adr string : the string to be written to the file;
- * returns:             0 : if the string was written successfully;
- */
 int write@File(adr text){
         int length = len(text);
         int ret = sys_write(my.file, text, length);
         return ret;
 };
 
-/*
- * function name:       read@File
- * description:         reads the file into a pointer using until the given delimiter is found;
- * arguments:           adr pointer : the pointer to the string to be written to
- *                      char delim : the delimiter to be used to determine when to stop reading
- *                      char term : the terminator used to denote the end of the file;
- * returns:             int : 0 if not EOF, 1 if EOF;
- */
 int read@File(adr pointer, char delim){
         char input;
         input = '\0';
@@ -88,13 +87,6 @@ int read@File(adr pointer, char delim){
         return  0;
 };
 
-/*
- * function name:       toArray@File;
- * description:         reads file to end to an Array split by delimiter;
- * arguments:           char delim : the delimiter to be used to determine when to stop reading
- *                      char term  : the terminator used to denote the end of the file;
- * returns:             Array : the array of strings;
- */
 Array toArray@File(char delim){
 	Array a = new Array(adr, 0);
 	adr ibuff = malloc(256);
@@ -119,14 +111,6 @@ Array toArray@File(char delim){
 
         return a;
 };
-
-/*
- * function name:       toList@File;
- * description:         reads file to end to an LinkedList split by delimiter;
- * arguments:           char delim : the delimiter to be used to determine when to stop reading
- *                      char term : the terminator used to denote the end of the file;
- * returns:             LinkedList : the LinkedList of strings;
- */
 
 LinkedList toList@File(char delim){
         LinkedList l = new LinkedList;

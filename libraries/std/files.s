@@ -3,24 +3,29 @@
 .global	pub_File_read
 .global	pub_File_write
 .global	pub_File_close
-.global	openFile
-.global	createFile
+.global	files.openFile
+.global	files.createFile
 
 
 .text
 
+files.createFile:
 createFile:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movl	$12, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -16(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
@@ -30,16 +35,24 @@ createFile:
 	call	sys_create
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	-16(%rbp), %rdx
 	movl	%eax, %ebx
 	movl	%ebx, 8(%rdx)
-	movq	-16(%rbp), %rdx
-	movl	8(%rdx), %ebx
+	movq	-16(%rbp), %r14
+	movl	8(%r14), %ebx
 	movl	%ebx, -20(%rbp)
-	movl	-20(%rbp), %eax
-	movl	$1, %ecx
-	cmpl	%ecx, %eax
-	jge	.LcreateFile0
+	pushq	%rdi
+	pushq	%rdx
+	movl	$1, %edx
+	movl	-20(%rbp), %edi
+	cmpl	%edx, %edi
+	setl	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.LcreateFile0
 	movq	$0, %rax
 	leave
 	ret
@@ -47,22 +60,25 @@ createFile:
 	movq	-16(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
+files.openFile:
 openFile:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movl	$12, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -16(%rbp)
 	movq	$2, %rbx
 	movq	%rbx, -24(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
@@ -76,60 +92,71 @@ openFile:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	-16(%rbp), %rdx
 	movl	%eax, %ebx
 	movl	%ebx, 8(%rdx)
-	movq	-16(%rbp), %rdx
-	movl	8(%rdx), %ebx
+	movq	-16(%rbp), %r14
+	movl	8(%r14), %ebx
 	movl	%ebx, -28(%rbp)
-	movl	-28(%rbp), %eax
-	movl	$0, %ecx
-	cmpl	%ecx, %eax
-	jge	.LopenFile3
+	pushq	%rdi
+	pushq	%rdx
+	movl	$0, %edx
+	movl	-28(%rbp), %edi
+	cmpl	%edx, %edi
+	setl	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.LopenFile1
 	movq	$0, %rax
 	leave
 	ret
-.LopenFile3:
+.LopenFile1:
 	movq	-16(%rbp), %rdx
 	movq	-8(%rbp), %rbx
 	movq	%rbx, 0(%rdx)
 	movq	-16(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
 pub_File_close:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %rdx
+	pushq	%rdx
+	movq	-8(%rbp), %r14
 	pushq	%rdi
-	movl	8(%rdx), %eax
+	movl	8(%r14), %eax
 	movl	%eax, %edi
 	call	sys_close
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %eax
-	leave
-	ret
 	leave
 	ret
 pub_File_write:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
 	call	len
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
-	movq	-8(%rbp), %rdx
+	pushq	%rdx
+	movq	-8(%rbp), %r14
 	pushq	%rdi
-	movl	8(%rdx), %eax
+	movl	8(%r14), %eax
 	movl	%eax, %edi
 	pushq	%rsi
 	movq	-16(%rbp), %rax
@@ -141,16 +168,16 @@ pub_File_write:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -24(%rbp)
 	movl	-24(%rbp), %eax
 	leave
 	ret
-	leave
-	ret
 pub_File_read:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
@@ -159,11 +186,12 @@ pub_File_read:
 	movb	%bl, -18(%rbp)
 	movb	$0, %bl
 	movb	%bl, -19(%rbp)
-	jmp	.Lread7
-.Lread6:
-	movq	-8(%rbp), %rdx
+	jmp	.Lread3
+.Lread2:
+	pushq	%rdx
+	movq	-8(%rbp), %r14
 	pushq	%rdi
-	movl	8(%rdx), %eax
+	movl	8(%r14), %eax
 	movl	%eax, %edi
 	lea	-18(%rbp), %rax
 	pushq	%rsi
@@ -176,6 +204,7 @@ pub_File_read:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -23(%rbp)
 	movb	-18(%rbp), %bl
@@ -183,56 +212,84 @@ pub_File_read:
 	movq	-16(%rbp), %rax
 	movb	-24(%rbp), %bl
 	movb	%bl, (%rax)
-	movb	-24(%rbp), %al
-	movb	-17(%rbp), %cl
-	cmpb	%cl, %al
-	jne	.Lread8
+	pushq	%rdi
+	pushq	%rdx
+	movb	-17(%rbp), %dl
+	movb	-24(%rbp), %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lread4
 	movq	-16(%rbp), %rax
 	movb	-19(%rbp), %bl
 	movb	%bl, (%rax)
-.Lread8:
-	movl	-23(%rbp), %eax
-	movl	$0, %ecx
-	cmpl	%ecx, %eax
-	jne	.Lread11
+.Lread4:
+	pushq	%rdi
+	pushq	%rdx
+	movl	$0, %edx
+	movl	-23(%rbp), %edi
+	cmpl	%edx, %edi
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lread5
 	movq	-16(%rbp), %rax
 	movb	-19(%rbp), %bl
 	movb	%bl, (%rax)
 	movl	$1, %eax
 	leave
 	ret
-.Lread11:
-	mov	$1, %rdx
-	mov	-16(%rbp), %rax
-	add	%rdx, %rax
-	movl	%eax, %ebx
-	movl	%ebx, -16(%rbp)
-.Lread7:
-	movb	-18(%rbp), %al
-	movb	-17(%rbp), %cl
-	cmpb	%cl, %al
-	jne	.Lread6
+.Lread5:
+	pushq	%rdi
+	pushq	%rdx
+	movq	$1, %rdx
+	movq	-16(%rbp), %rdi
+	add	%rdx, %rdi
+	movq	%rdi, %rax
+	popq	%rdx
+	popq	%rdi
+	movq	%rax, %rbx
+	movq	%rbx, -16(%rbp)
+.Lread3:
+	pushq	%rdi
+	pushq	%rdx
+	movb	-17(%rbp), %dl
+	movb	-18(%rbp), %dil
+	cmpb	%dl, %dil
+	setne	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$1, %al
+	je	.Lread2
 	movq	-16(%rbp), %rax
 	movb	-19(%rbp), %bl
 	movb	%bl, (%rax)
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
 pub_File_toArray:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
 	movb	%sil, -9(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movl	$32, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	movq	%rax, %rdi
+	pushq	%rdx
 	pushq	%rsi
 	movl	$8, %eax
 	movl	%eax, %esi
@@ -243,15 +300,19 @@ pub_File_toArray:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -17(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movl	$256, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -25(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -266,13 +327,15 @@ pub_File_toArray:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -29(%rbp)
-	jmp	.LtoArray15
-.LtoArray14:
-	movq	-17(%rbp), %rdx
-	movl	28(%rdx), %ebx
+	jmp	.LtoArray7
+.LtoArray6:
+	movq	-17(%rbp), %r14
+	movl	28(%r14), %ebx
 	movl	%ebx, -33(%rbp)
+	pushq	%rdx
 	lea	-17(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -283,6 +346,8 @@ pub_File_toArray:
 	call	pub_Array_extend
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
 	lea	-17(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -293,18 +358,22 @@ pub_File_toArray:
 	call	pub_Array_at
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -41(%rbp)
 	movq	-41(%rbp), %rax
 	movq	-25(%rbp), %rbx
 	movq	%rbx, (%rax)
+	pushq	%rdx
 	pushq	%rdi
 	movl	$256, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -25(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -319,16 +388,25 @@ pub_File_toArray:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -29(%rbp)
-.LtoArray15:
-	movl	-29(%rbp), %eax
-	movl	$1, %ecx
-	cmpl	%ecx, %eax
-	jne	.LtoArray14
-	movq	-17(%rbp), %rdx
-	movl	28(%rdx), %ebx
+.LtoArray7:
+	pushq	%rdi
+	pushq	%rdx
+	movl	$1, %edx
+	movl	-29(%rbp), %edi
+	cmpl	%edx, %edi
+	setne	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$1, %al
+	je	.LtoArray6
+	movq	-17(%rbp), %r14
+	movl	28(%r14), %ebx
 	movl	%ebx, -33(%rbp)
+	pushq	%rdx
 	lea	-17(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -339,6 +417,8 @@ pub_File_toArray:
 	call	pub_Array_extend
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
 	lea	-17(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -349,47 +429,56 @@ pub_File_toArray:
 	call	pub_Array_at
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -41(%rbp)
 	movq	-41(%rbp), %rax
 	movq	-25(%rbp), %rbx
 	movq	%rbx, (%rax)
+	pushq	%rdx
 	pushq	%rdi
 	movl	$256, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -25(%rbp)
 	movq	-17(%rbp), %rax
-	leave
-	ret
 	leave
 	ret
 pub_File_toList:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	pushq	%rbx
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movb	%sil, -9(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movl	$24, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	pushq	%rdi
 	movq	%rax, %rdi
+	pushq	%rdx
 	call	pub_LinkedList_init
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -17(%rbp)
+	pushq	%rdx
 	pushq	%rdi
 	movl	$256, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -25(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -404,10 +493,12 @@ pub_File_toList:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -29(%rbp)
-	jmp	.LtoList17
-.LtoList16:
+	jmp	.LtoList9
+.LtoList8:
+	pushq	%rdx
 	lea	-17(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -418,13 +509,17 @@ pub_File_toList:
 	call	pub_LinkedList_append
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
 	pushq	%rdi
 	movl	$256, %eax
 	movl	%eax, %edi
 	call	malloc
 	popq	%rdi
+	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -25(%rbp)
+	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -439,13 +534,22 @@ pub_File_toList:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -29(%rbp)
-.LtoList17:
-	movl	-29(%rbp), %eax
-	movl	$1, %ecx
-	cmpl	%ecx, %eax
-	jne	.LtoList16
+.LtoList9:
+	pushq	%rdi
+	pushq	%rdx
+	movl	$1, %edx
+	movl	-29(%rbp), %edi
+	cmpl	%edx, %edi
+	setne	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$1, %al
+	je	.LtoList8
+	pushq	%rdx
 	lea	-17(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
@@ -456,9 +560,8 @@ pub_File_toList:
 	call	pub_LinkedList_append
 	popq	%rsi
 	popq	%rdi
+	popq	%rdx
 	movq	-17(%rbp), %rax
-	leave
-	ret
 	leave
 	ret
 

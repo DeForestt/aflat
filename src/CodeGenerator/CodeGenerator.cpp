@@ -329,6 +329,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     std::string nsp = "";
     if (this->nameSpaceTable.contains(var.Ident)) {
       nsp = this->nameSpaceTable.get(var.Ident) + ".";
+      if (var.modList.count == 0) alert("NameSpace " + var.Ident + " cannot be used as a variable");
       var.Ident = nsp + var.modList.pop();
     };
     bool global = false;
