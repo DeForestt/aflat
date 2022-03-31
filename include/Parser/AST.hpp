@@ -182,6 +182,11 @@ public:
   std::string publify = "";
 };
 
+class Delete : public Statment {
+public:
+  std::string ident;
+};
+
 class Sequence : public Statment {
 public:
   Statment *Statment1;

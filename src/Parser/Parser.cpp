@@ -611,6 +611,15 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
       }
       
       output = imp;
+    } else if (obj.meta == "delete"){
+      ast::Delete *del = new ast::Delete();
+      lex::LObj * ident = dynamic_cast<lex::LObj *>(tokens.pop());
+      if (ident == nullptr) throw err::Exception(
+            "Line: " + std::to_string(tokens.peek()->lineCount) +
+            " Expected Ident");
+      
+      del->ident = ident->meta;
+      output = del;
     }else {
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
         lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.pop());

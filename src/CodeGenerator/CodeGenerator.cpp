@@ -2176,6 +2176,53 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       OutputFile << this->GenSTMT(statment);
     }
     this->nameSpaceTable.insert(imp->nameSpace, id);
+  } else if (dynamic_cast<ast::Delete *>(STMT) != nullptr){
+    ast::Delete *del = dynamic_cast<ast::Delete *>(STMT);
+    gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(del->ident);
+
+    ast::Function *free = this->nameTable["free"];
+    if (free == nullptr)
+      alert("Please import std library in order to use delete operator.\n\n -> "
+            ".needs <std> \n\n");
+
+    if (sym == nullptr)
+      this->alert("Identifier not found to delete");
+    gen::Type **type = this->typeList[sym->type.typeName];
+    if (type == nullptr)
+      this->alert("Type" + sym->type.typeName + " not found to delete");
+    
+    gen::Class *classType = dynamic_cast<gen::Class *>(*type);
+    if (classType == nullptr)
+      this->alert("Type" + sym->type.typeName + " is not a class");
+    
+    // check if the class has a destructor
+    ast::Function *destructor = classType->nameTable["del"];
+
+    if (destructor != nullptr){
+      ast::Call *call = new ast::Call();
+      call->ident = del->ident;
+      call->modList = LinkedList<std::string>();
+      call->modList.push("del");
+      call->Args = LinkedList<ast::Expr*>();
+
+      OutputFile << this->GenSTMT(call);
+    };
+
+    // call free
+    ast::Var *var = new ast::Var();
+    var->Ident = del->ident;
+    var->modList = LinkedList<std::string>();
+    
+    ast::Call *freeCall = new ast::Call();
+    freeCall->ident = "free";
+    freeCall->modList = LinkedList<std::string>();
+    freeCall->Args = LinkedList<ast::Expr*>();
+    freeCall->Args.push(var);
+    OutputFile << this->GenSTMT(freeCall);
+    
+
+    
+
   } else {
     OutputFile.text.push(new asmc::Instruction());
   }
