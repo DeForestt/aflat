@@ -112,17 +112,10 @@ pub_Process_isRunning:
 	movl	$0, %edx
 	movl	-12(%rbp), %edi
 	cmpl	%edx, %edi
-	setl	%al
+	setge	%al
 	popq	%rdx
 	popq	%rdi
 	movb	%al, %al
-	cmpb	$0, %al
-	je	.LisRunning1
-	movb	$1, %al
-	leave
-	ret
-.LisRunning1:
-	movb	$0, %al
 	leave
 	ret
 newProcess:
@@ -150,11 +143,11 @@ newProcess:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LnewProcess2
+	je	.LnewProcess1
 	movq	$0, %rax
 	leave
 	ret
-.LnewProcess2:
+.LnewProcess1:
 	pushq	%rdx
 	lea	-16(%rbp), %rax
 	pushq	%rdi

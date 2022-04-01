@@ -44,12 +44,9 @@ int getPid@Process(){
 };
 
 
- bool isRunning@Process(){
+bool isRunning@Process(){
     int status = sys_kill(my.pid, 0); // 0 means no signal
-    if (status < 0){
-        return true;
-    };
-    return false;
+    return status >= 0;
 };
 
 Process newProcess(adr foo){
