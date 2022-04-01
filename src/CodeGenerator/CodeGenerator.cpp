@@ -62,6 +62,7 @@ ast::Statment * extract(std::string ident, ast::Statment * stmt, std::string id 
     if (func->ident.ident == ident || ident == "*"){
       func->ident.ident = id + '.' + func->ident.ident;
       func->statment = nullptr;
+      if (func->scope != ast::Export) func->locked = true;
       return func;
     }
   } else stmt->locked = true;
