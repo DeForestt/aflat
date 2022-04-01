@@ -87,8 +87,6 @@ findFreeBlock:
 	movq	$0, %rax
 	leave
 	ret
-	leave
-	ret
 requestSpace:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -174,8 +172,6 @@ requestSpace:
 	movq	-20(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
 newTime:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -197,8 +193,6 @@ newTime:
 	movq	-16(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
 getBlock:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -216,8 +210,6 @@ getBlock:
 	movq	%rax, %rbx
 	movq	%rbx, -8(%rbp)
 	movq	-8(%rbp), %rax
-	leave
-	ret
 	leave
 	ret
 splitBlock:
@@ -404,8 +396,6 @@ defragment:
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
 deFragAll:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -464,8 +454,6 @@ deFragAll:
 	cmpb	$1, %al
 	je	.LdeFragAll10
 	movl	$0, %eax
-	leave
-	ret
 	leave
 	ret
 memcopy:
@@ -532,8 +520,6 @@ memcopy:
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
 free:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -575,8 +561,6 @@ free:
 	popq	%rdi
 	popq	%rdx
 	movl	$0, %eax
-	leave
-	ret
 	leave
 	ret
 malloc:
@@ -740,8 +724,6 @@ malloc:
 	movq	-12(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
 realloc:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -858,8 +840,6 @@ realloc:
 	movq	-32(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
 inspectHeap:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -871,30 +851,38 @@ inspectHeap:
 	pushq	%rdi
 	movq	$.strinspectHeap26, %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
 	pushq	%rdi
 	movq	$.strinspectHeap27, %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	jmp	.LinspectHeap29
 .LinspectHeap28:
 	pushq	%rdx
 	pushq	%rdi
-	movq	-8(%rbp), %rax
+	pushq	%rdx
+	movq	-8(%rbp), %rdx
+	movq	$1, %rdi
+	imul	%rdx, %rdi
+	movq	%rdi, %rax
+	popq	%rdx
+	popq	%rdi
+	pushq	%rdi
+	movq	%rax, %rax
 	movq	%rax, %rdi
-	call	printHex
+	call	io.printHex
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
 	pushq	%rdi
 	movq	$.strinspectHeap30, %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
@@ -902,14 +890,14 @@ inspectHeap:
 	pushq	%rdi
 	movl	4(%r14), %eax
 	movl	%eax, %edi
-	call	printInt
+	call	io.printInt
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
 	pushq	%rdi
 	movq	$.strinspectHeap31, %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
@@ -917,28 +905,28 @@ inspectHeap:
 	pushq	%rdi
 	movl	0(%r14), %eax
 	movl	%eax, %edi
-	call	printInt
+	call	io.printInt
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
 	pushq	%rdi
 	movq	$.strinspectHeap32, %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
 	pushq	%rdi
 	movl	$16, %eax
 	movl	%eax, %edi
-	call	printInt
+	call	io.printInt
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
 	pushq	%rdi
 	movq	$.strinspectHeap33, %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	movq	-8(%rbp), %r14
@@ -948,7 +936,7 @@ inspectHeap:
 	pushq	%rdi
 	movq	$.strinspectHeap34, %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 .LinspectHeap29:
@@ -967,12 +955,10 @@ inspectHeap:
 	pushq	%rdi
 	movq	$.strinspectHeap35, %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	movl	$0, %eax
-	leave
-	ret
 	leave
 	ret
 newBit:
@@ -1000,8 +986,6 @@ newBit:
 	movq	$0, %rbx
 	movq	%rbx, 12(%rdx)
 	movq	-12(%rbp), %rax
-	leave
-	ret
 	leave
 	ret
 newTimes:
@@ -1033,8 +1017,6 @@ newTimes:
 	movq	-8(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
 panic:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1045,21 +1027,21 @@ panic:
 	pushq	%rdi
 	movq	$.strpanic36, %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
 	pushq	%rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
 	pushq	%rdi
 	movq	$.strpanic37, %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
@@ -1087,7 +1069,7 @@ assert:
 	pushq	%rdi
 	movq	$.strassert39, %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdi
@@ -1105,7 +1087,7 @@ assert:
 	pushq	%rdi
 	movq	-9(%rbp), %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 .Lassert40:
@@ -1113,7 +1095,7 @@ assert:
 	pushq	%rdi
 	movq	$.strassert41, %rax
 	movq	%rax, %rdi
-	call	print
+	call	io.print
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
@@ -1125,8 +1107,6 @@ assert:
 	popq	%rdx
 .Lassert38:
 	movl	$0, %eax
-	leave
-	ret
 	leave
 	ret
 sleep:
@@ -1187,8 +1167,6 @@ sleep:
 	popq	%rdi
 	popq	%rdx
 	movl	$0, %eax
-	leave
-	ret
 	leave
 	ret
 

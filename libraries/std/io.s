@@ -127,11 +127,10 @@ print:
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	pushq	%rdx
-	movl	-12(%rbp), %r15d
 	pushq	%rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
-	call	*%r15d
+	call	strings.len
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %ebx
@@ -748,7 +747,7 @@ printInt:
 	movl	-8(%rbp), %eax
 	movl	-12(%rbp), %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %ebx
@@ -805,7 +804,7 @@ printInt:
 	movl	-4(%rbp), %eax
 	movl	-16(%rbp), %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %ebx
@@ -945,7 +944,7 @@ printHex:
 	movq	-16(%rbp), %rax
 	movq	-20(%rbp), %rcx
 	cltd
-	idivl	%rcx
+	idiv	%rcx
 	popq	%rdx
 	popq	%rdi
 	movq	%rax, %rbx
@@ -1002,7 +1001,7 @@ printHex:
 	movq	-8(%rbp), %rax
 	movq	-24(%rbp), %rcx
 	cltd
-	idivl	%rcx
+	idiv	%rcx
 	popq	%rdx
 	popq	%rdi
 	movq	%rax, %rbx
@@ -1160,7 +1159,7 @@ printLong:
 	movq	-16(%rbp), %rax
 	movq	-24(%rbp), %rcx
 	cltd
-	idivl	%rcx
+	idiv	%rcx
 	popq	%rdx
 	popq	%rdi
 	movq	%rax, %rbx
@@ -1217,7 +1216,7 @@ printLong:
 	movq	-8(%rbp), %rax
 	movq	-28(%rbp), %rcx
 	cltd
-	idivl	%rcx
+	idiv	%rcx
 	popq	%rdx
 	popq	%rdi
 	movq	%rax, %rbx
@@ -1714,7 +1713,7 @@ printFloat:
 	movl	-65(%rbp), %eax
 	movl	-77(%rbp), %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %ebx

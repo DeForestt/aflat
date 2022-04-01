@@ -148,7 +148,7 @@ pub_File_write:
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
-	call	len
+	call	strings.len
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %ebx

@@ -64,7 +64,7 @@ ast::Statment * extract(std::string ident, ast::Statment * stmt, std::string id 
       func->statment = nullptr;
       return func;
     }
-  }
+  } else stmt->locked = true;
   if (ident == "*"){
     return stmt;
   };
@@ -707,6 +707,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
         div->op1 = expr2.access;
         div->opType = expr1.op;
+        div->size = expr1.size;
 
         std::string to1 = this->registers["%rdx"]->get(expr1.size);
         std::string to2 = this->registers["%rax"]->get(expr1.size);
@@ -1391,7 +1392,8 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
 
   asmc::File OutputFile = asmc::File();
 
-  if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
+  if (STMT->locked) OutputFile.text.push(new asmc::nop());
+    else if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
     ast::Sequence *sequence = dynamic_cast<ast::Sequence *>(STMT);
     OutputFile << this->GenSTMT(sequence->Statment1);
     OutputFile << this->GenSTMT(sequence->Statment2);

@@ -1,12 +1,12 @@
 .needs <std.gs>
 .needs <asm.gs>
-.needs <strings.gs>
 
 
 .needs <std>
 import ICollection from "Collections";
 import Array from "Collections";
 import LinkedList from "Collections";
+import len from "strings" under str;
 
 class fstat{
     long st_dev;
@@ -65,7 +65,7 @@ int close@File(){
 };
 
 int write@File(adr text){
-        int length = len(text);
+        int length = str.len(text);
         int ret = sys_write(my.file, text, length);
         return ret;
 };

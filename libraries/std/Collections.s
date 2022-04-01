@@ -2,12 +2,9 @@
 .global	pub_LinkedList_reverse
 .global	pub_LinkedList_erace
 .global	pub_Array_delete
-.global	newArray
 .global	pub_Array_at
 .global	pub_Array_init
-.global	whereArray
 .global	pub_LinkedList_find
-.global	forEachArray
 .global	pub_LinkedList_copy
 .global	pub_LinkedList_map
 .global	pub_LinkedList_sort
@@ -17,40 +14,11 @@
 .global	pub_LinkedList_get
 .global	pub_LinkedList_stitch
 .global	pub_LinkedList_delete
-.global	newNode
 .global	pub_LinkedList_init
-.global	whereLinkedList
-.global	forEachLinkedList
-.global	newList
 
 
 .text
 
-newList:
-	pushq	%rbp
-	movq	%rsp, %rbp
-	pushq	%rbx
-	subq	$16, %rsp
-	pushq	%rdx
-	pushq	%rdi
-	movl	$24, %eax
-	movl	%eax, %edi
-	call	malloc
-	popq	%rdi
-	popq	%rdx
-	movq	%rax, %rbx
-	movq	%rbx, -8(%rbp)
-	pushq	%rdx
-	lea	-8(%rbp), %rax
-	pushq	%rdi
-	movq	(%rax), %rax
-	movq	%rax, %rdi
-	call	pub_LinkedList_init
-	popq	%rdi
-	popq	%rdx
-	movq	-8(%rbp), %rax
-	leave
-	ret
 forEachLinkedList:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -247,26 +215,6 @@ pub_LinkedList_init:
 	movq	%rbx, 0(%rdx)
 	movq	-8(%rbp), %rdx
 	movq	$whereLinkedList, %rbx
-	movq	%rbx, 8(%rdx)
-	movq	-8(%rbp), %rax
-	leave
-	ret
-newNode:
-	pushq	%rbp
-	movq	%rsp, %rbp
-	pushq	%rbx
-	subq	$16, %rsp
-	pushq	%rdx
-	pushq	%rdi
-	movl	$16, %eax
-	movl	%eax, %edi
-	call	malloc
-	popq	%rdi
-	popq	%rdx
-	movq	%rax, %rbx
-	movq	%rbx, -8(%rbp)
-	movq	-8(%rbp), %rdx
-	movq	$0, %rbx
 	movq	%rbx, 8(%rdx)
 	movq	-8(%rbp), %rax
 	leave
@@ -1463,41 +1411,6 @@ pub_Array_at:
 	movq	-28(%rbp), %rax
 	leave
 	ret
-newArray:
-	pushq	%rbp
-	movq	%rsp, %rbp
-	pushq	%rbx
-	subq	$16, %rsp
-	movl	%edi, -4(%rbp)
-	movl	%esi, -8(%rbp)
-	pushq	%rdx
-	pushq	%rdi
-	movl	$32, %eax
-	movl	%eax, %edi
-	call	malloc
-	popq	%rdi
-	popq	%rdx
-	movq	%rax, %rbx
-	movq	%rbx, -16(%rbp)
-	pushq	%rdx
-	lea	-16(%rbp), %rax
-	pushq	%rdi
-	movq	(%rax), %rax
-	movq	%rax, %rdi
-	pushq	%rsi
-	movl	-4(%rbp), %eax
-	movl	%eax, %esi
-	pushq	%rdx
-	movl	-8(%rbp), %eax
-	movl	%eax, %edx
-	call	pub_Array_init
-	popq	%rdx
-	popq	%rsi
-	popq	%rdi
-	popq	%rdx
-	movq	-16(%rbp), %rax
-	leave
-	ret
 pub_Array_delete:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -1693,7 +1606,7 @@ pub_Array_extend:
 	pushq	%rdi
 	movq	$.strArray.extend47, %rax
 	movq	%rax, %rdi
-	call	print
+	call	panic
 	popq	%rdi
 	popq	%rdx
 .Lextend46:
@@ -1705,7 +1618,7 @@ pub_Array_extend:
 .data
 
 .strArray.extend47:
-	.asciz	 "badrealloc"
+	.asciz	 "bad realloc\n"
 
 
 .bss

@@ -19,6 +19,7 @@ public:
 
 class Statment {
 public:
+  bool locked = false;
   virtual std::string toString() { return ""; };
 };
 

@@ -2,7 +2,7 @@
 .needs <asm>
 .needs <std>
 
-import ascii from "strings" under str;
+import {ascii, len} from "strings" under str;
 
 export int readString(adr pointer){
         char input = ' ';
@@ -26,7 +26,7 @@ private int clearInput(){
 };
 
 export int print(adr input){
-        int len = len(input);
+        int len = str.len(input);
         sys_write(1, input, len);
         return 0;
 };

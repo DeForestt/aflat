@@ -176,10 +176,10 @@ int inspectHeap(){
     io.print("Heap:\n");
     io.print("HEAD --> ");
     while (current != NULL){
-        io.printHex(current); io.print(": status: ");
+        io.printHex(#1 * current); io.print(": status: ");
         io.printInt(current.free); io.print(" size: ");
         io.printInt(current.size); io.print(" overhead: ");
-        io.printInt(16); print("\n");
+        io.printInt(16); io.print("\n");
         current = current.next;
         io.print("         ");
     };
@@ -205,7 +205,7 @@ Times newTimes(){
 };
 
 int panic(adr msg){
-    io.print("Panic: "); print(msg);
+    io.print("Panic: "); io.print(msg);
     io.print("\n");
     sys_exit(1);
 };
