@@ -6,6 +6,7 @@ export int str_split(adr str, char sep, adr buff1, adr buff2);
 export int str_find(adr in, char find);
 export int str_subString(int start, int end, adr str, adr buff);
 export int int_toString(int input, adr buffer);
+export int int_toStringL0(int input, adr buffer);
 export char ascii(int input);
 export float charToFloat(char a);
 export int str_toFloat(adr input);
