@@ -4,7 +4,7 @@
 
 import {ascii, len} from "strings" under str;
 
-private int printInt(int i);
+export int printInt(int i);
 
 private int charToColor(char c){
         if c == 'B' return 30;
