@@ -1,6 +1,23 @@
 .needs <asm>
 .needs <std>
-.needs <concurrancy>
+
+class Process{
+    private int pid;
+    private adr foo;
+
+    Process init(adr foo);
+    int start(* adr args);
+    bool isRunning();
+    int getPid();
+};
+
+class Pipe {
+    int in;
+    int out;
+    int write(adr buf, int len);
+    int read(adr buf, int len);
+    Pipe init();
+};
 
 class FD {
   public int out;
@@ -71,12 +88,12 @@ Pipe newPipe(){
     return p;
 };
 
-int exit(int status){
+export int exit(int status){
     sys_exit(status);
     return 0;
 };
 
-int wait(Process p){
+export int wait(Process p){
     sys_wait(p.getPid(), NULL, 0, NULL);
     return 0;
 };

@@ -1,5 +1,5 @@
-.global	wait
-.global	exit
+.global	concurrancy.wait
+.global	concurrancy.exit
 .global	newPipe
 .global	pub_Pipe_write
 .global	pub_Pipe_read
@@ -77,8 +77,6 @@ pub_Process_start:
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
 pub_Process_getPid:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -87,8 +85,6 @@ pub_Process_getPid:
 	movq	%rdi, -8(%rbp)
 	movq	-8(%rbp), %r14
 	movl	0(%r14), %eax
-	leave
-	ret
 	leave
 	ret
 pub_Process_isRunning:
@@ -127,8 +123,6 @@ pub_Process_isRunning:
 	ret
 .LisRunning1:
 	movb	$0, %al
-	leave
-	ret
 	leave
 	ret
 newProcess:
@@ -176,29 +170,27 @@ newProcess:
 	movq	-16(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
 pub_Pipe_init:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
-	lea	-16(%rbp), %rax
+	lea	-24(%rbp), %rax
 	movq	%rax, %rbx
-	movq	%rbx, -24(%rbp)
+	movq	%rbx, -16(%rbp)
 	pushq	%rdx
 	pushq	%rdi
-	movq	-24(%rbp), %rax
+	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
 	call	sys_pipe
 	popq	%rdi
 	popq	%rdx
-	movq	-24(%rbp), %r14
+	movq	-16(%rbp), %r14
 	movq	-8(%rbp), %rdx
 	movl	0(%r14), %ebx
 	movl	%ebx, 4(%rdx)
-	movq	-24(%rbp), %r14
+	movq	-16(%rbp), %r14
 	movq	-8(%rbp), %rdx
 	movl	4(%r14), %ebx
 	movl	%ebx, 0(%rdx)
@@ -237,8 +229,6 @@ pub_Pipe_read:
 	movl	-28(%rbp), %eax
 	leave
 	ret
-	leave
-	ret
 pub_Pipe_write:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -270,8 +260,6 @@ pub_Pipe_write:
 	movl	-28(%rbp), %eax
 	leave
 	ret
-	leave
-	ret
 newPipe:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -297,8 +285,7 @@ newPipe:
 	movq	-8(%rbp), %rax
 	leave
 	ret
-	leave
-	ret
+concurrancy.exit:
 exit:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -315,8 +302,7 @@ exit:
 	movl	$0, %eax
 	leave
 	ret
-	leave
-	ret
+concurrancy.wait:
 wait:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -351,8 +337,6 @@ wait:
 	popq	%rdi
 	popq	%rdx
 	movl	$0, %eax
-	leave
-	ret
 	leave
 	ret
 
