@@ -851,6 +851,7 @@ inspectHeap:
 	pushq	%rdi
 	movq	$.strinspectHeap26, %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx
@@ -858,6 +859,7 @@ inspectHeap:
 	pushq	%rdi
 	movq	$.strinspectHeap27, %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx
@@ -882,6 +884,7 @@ inspectHeap:
 	pushq	%rdi
 	movq	$.strinspectHeap30, %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx
@@ -897,6 +900,7 @@ inspectHeap:
 	pushq	%rdi
 	movq	$.strinspectHeap31, %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx
@@ -912,6 +916,7 @@ inspectHeap:
 	pushq	%rdi
 	movq	$.strinspectHeap32, %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx
@@ -926,6 +931,7 @@ inspectHeap:
 	pushq	%rdi
 	movq	$.strinspectHeap33, %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx
@@ -936,6 +942,7 @@ inspectHeap:
 	pushq	%rdi
 	movq	$.strinspectHeap34, %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx
@@ -955,6 +962,7 @@ inspectHeap:
 	pushq	%rdi
 	movq	$.strinspectHeap35, %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx
@@ -1027,13 +1035,18 @@ panic:
 	pushq	%rdi
 	movq	$.strpanic36, %rax
 	movq	%rax, %rdi
+	pushq	%rsi
+	movb	$114, %al
+	movb	%al, %sil
 	call	io.print
+	popq	%rsi
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
 	pushq	%rdi
 	movq	-8(%rbp), %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx
@@ -1041,6 +1054,7 @@ panic:
 	pushq	%rdi
 	movq	$.strpanic37, %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx
@@ -1069,6 +1083,7 @@ assert:
 	pushq	%rdi
 	movq	$.strassert39, %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx
@@ -1087,6 +1102,7 @@ assert:
 	pushq	%rdi
 	movq	-9(%rbp), %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx
@@ -1095,6 +1111,7 @@ assert:
 	pushq	%rdi
 	movq	$.strassert41, %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx

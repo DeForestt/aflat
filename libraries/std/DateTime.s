@@ -41,7 +41,7 @@ daysInMonth:
 	movl	-8(%rbp), %eax
 	movl	$4, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	movl	%edx, %eax
 	popq	%rdx
 	popq	%rdi
@@ -61,7 +61,7 @@ daysInMonth:
 	movl	-8(%rbp), %eax
 	movl	$100, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	movl	%edx, %eax
 	popq	%rdx
 	popq	%rdi
@@ -81,7 +81,7 @@ daysInMonth:
 	movl	-8(%rbp), %eax
 	movl	$400, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	movl	%edx, %eax
 	popq	%rdx
 	popq	%rdi
@@ -189,7 +189,7 @@ daysInYear:
 	movl	-4(%rbp), %eax
 	movl	$4, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	movl	%edx, %eax
 	popq	%rdx
 	popq	%rdi
@@ -209,7 +209,7 @@ daysInYear:
 	movl	-4(%rbp), %eax
 	movl	$100, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	movl	%edx, %eax
 	popq	%rdx
 	popq	%rdi
@@ -229,7 +229,7 @@ daysInYear:
 	movl	-4(%rbp), %eax
 	movl	$400, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	movl	%edx, %eax
 	popq	%rdx
 	popq	%rdi
@@ -402,7 +402,7 @@ pub_DateTime_epochToDate:
 	movl	-12(%rbp), %eax
 	movl	$86400, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %ebx
@@ -455,7 +455,7 @@ pub_DateTime_epochToDate:
 	movl	%eax, %edx
 	movl	-16(%rbp), %edi
 	cmpl	%edx, %edi
-	setg	%al
+	setge	%al
 	popq	%rdx
 	popq	%rdi
 	movb	%al, %al
@@ -511,7 +511,7 @@ pub_DateTime_epochToDate:
 	movl	%eax, %edx
 	movl	-16(%rbp), %edi
 	cmpl	%edx, %edi
-	setg	%al
+	setge	%al
 	popq	%rdx
 	popq	%rdi
 	movb	%al, %al
@@ -541,7 +541,7 @@ pub_DateTime_epochToDate:
 	movl	-12(%rbp), %eax
 	movl	$86400, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	movl	%edx, %eax
 	popq	%rdx
 	popq	%rdi
@@ -552,7 +552,7 @@ pub_DateTime_epochToDate:
 	movl	-32(%rbp), %eax
 	movl	$3600, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %ebx
@@ -562,7 +562,7 @@ pub_DateTime_epochToDate:
 	movl	-32(%rbp), %eax
 	movl	$3600, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	movl	%edx, %eax
 	popq	%rdx
 	popq	%rdi
@@ -573,7 +573,7 @@ pub_DateTime_epochToDate:
 	movl	-32(%rbp), %eax
 	movl	$60, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %ebx
@@ -583,7 +583,7 @@ pub_DateTime_epochToDate:
 	movl	-32(%rbp), %eax
 	movl	$60, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	movl	%edx, %eax
 	popq	%rdx
 	popq	%rdi
@@ -643,7 +643,7 @@ dayOfWeek:
 	movl	-16(%rbp), %eax
 	movl	$7, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	movl	%edx, %eax
 	popq	%rdx
 	popq	%rdi
@@ -813,7 +813,7 @@ pub_DateTime_getMinutes:
 	movl	0(%r14), %eax
 	movl	$60, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %eax
@@ -830,7 +830,7 @@ pub_DateTime_getHours:
 	movl	0(%r14), %eax
 	movl	$3600, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %eax
@@ -847,7 +847,7 @@ pub_DateTime_getDays:
 	movl	0(%r14), %eax
 	movl	$86400, %ecx
 	cltd
-	idivl	%ecx
+	idiv	%ecx
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %eax

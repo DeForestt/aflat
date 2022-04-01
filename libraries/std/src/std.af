@@ -205,7 +205,7 @@ Times newTimes(){
 };
 
 int panic(adr msg){
-    io.print("Panic: "); io.print(msg);
+    io.print("Panic: ", 'r'); io.print(msg);
     io.print("\n");
     sys_exit(1);
 };

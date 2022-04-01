@@ -87,11 +87,12 @@ private int epochToDate@DateTime(){
     int year = 1970;
     int month = 1;
     int day = 1;
-    while days > daysInYear(year) {
+    while days >= daysInYear(year) {
         days = days - daysInYear(year);
         year = year + 1;
     };
-    while days > daysInMonth(month, year) {
+
+    while days >= daysInMonth(month, year) {
         days = days - daysInMonth(month, year);
         month = month + 1;
     };
