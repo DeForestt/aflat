@@ -251,12 +251,14 @@ void buildTemplate(std::string value) {
   std::filesystem::path cwd = std::filesystem::current_path();
   std::string root = cwd.string() + "/" + value;
   std::ofstream outfile(value + "/src/main.af");
-  outfile << ".needs <io>\n";
+  outfile << ".needs <std>\n";
+  
+  outfile << "import * from \"io\" under io\n\n";
   outfile << "int main(){\n\tprint(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
   outfile.close();
 
   outfile = std::ofstream(value + "/src/test/test.af");
-  outfile << ".needs <io>\n";
+  outfile << ".needs <std>\n\n";
   outfile << "int main(){\n\tassert(1 == 1, \"Failed 1 == 1 "
              "assert\");\n\treturn 0;\n};\n";
   outfile.close();
