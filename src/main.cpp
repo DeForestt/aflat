@@ -254,7 +254,7 @@ void buildTemplate(std::string value) {
   outfile << ".needs <std>\n";
   
   outfile << "import * from \"io\" under io\n\n";
-  outfile << "int main(){\n\tprint(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
+  outfile << "int main(){\n\tio.print(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
   outfile.close();
 
   outfile = std::ofstream(value + "/src/test/test.af");
