@@ -2196,7 +2196,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     for (std::string ident : imp->imports){
       ast::Statment * statment = extract(ident, added, id);
       if (statment == nullptr)
-        this->alert("Identifier " + ident +" not found to import");
+        this->alert("Identifier " + ident + " not found to import");
       OutputFile << this->GenSTMT(statment);
     }
     this->nameSpaceTable.insert(imp->nameSpace, id);
