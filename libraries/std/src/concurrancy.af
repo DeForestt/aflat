@@ -4,14 +4,19 @@
 import {len, int_toStringL0, str_toInt} from "strings" under str;
 import String from "String.af";
 
-class Process{
-    private int pid;
+class Thread {
+    contract {
+        private int pid;
+    };
+    int getPid();
+};
+
+class Process signs Thread {
     private adr foo;
 
     Process init(adr foo);
     int start(* adr args);
     bool isRunning();
-    int getPid();
 };
 
 class Pipe {
@@ -31,15 +36,13 @@ class Message{
     private Message copy<<=>>(Message msg);
 };
 
-class MProcess{
-    private int pid;
+class MProcess signs Thread {
     private adr foo;
     private Pipe inbox;
     private Pipe outbox;
 
     public MProcess init(adr foo);
     int start(* adr args);
-    int getPid();
     private Process copy<<=>>();
     public bool input(adr message);
     public adr output();
@@ -87,11 +90,7 @@ int start@MProcess(adr args){
     return 0;
 };
 
-int getPid@Process(){
-    return my.pid;
-};
-
-int getPid@MProcess(){
+int getPid@Thread(){
     return my.pid;
 };
 
@@ -181,7 +180,7 @@ export int exit(int status){
     return 0;
 };
 
-export int wait(Process p){
+export int wait(Thread p){
     sys_wait(p.getPid(), NULL, 0, NULL);
     return 0;
 };

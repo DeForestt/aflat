@@ -8,8 +8,7 @@
 .global	pub_MProcess_output
 .global	pub_MProcess_input
 .global	pub_Process_isRunning
-.global	pub_MProcess_getPid
-.global	pub_Process_getPid
+.global	pub_Thread_getPid
 .global	pub_MProcess_start
 .global	pub_Process_start
 .global	pub_MProcess_init
@@ -213,17 +212,7 @@ pub_MProcess_start:
 	movl	$0, %eax
 	leave
 	ret
-pub_Process_getPid:
-	pushq	%rbp
-	movq	%rsp, %rbp
-	pushq	%rbx
-	subq	$16, %rsp
-	movq	%rdi, -8(%rbp)
-	movq	-8(%rbp), %r14
-	movl	0(%r14), %eax
-	leave
-	ret
-pub_MProcess_getPid:
+pub_Thread_getPid:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
@@ -769,7 +758,7 @@ wait:
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
-	call	pub_Process_getPid
+	call	pub_Thread_getPid
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdi
