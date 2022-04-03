@@ -144,6 +144,8 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     return true;
   if (type.typeName == "float" && typeName == "int")
     return true;
+  if (type.typeName == "short" && typeName == "int")
+    return true;
   if (type.size == asmc::QWord && typeName == "adr")
     return true;
   if (strict && type.typeName == "adr")
@@ -361,7 +363,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.access = "$4";
           output.type = "int";
           handled = true;
-        } else if (var.Ident == "char") {
+        } else if (var.Ident == "char" || var.Ident == "bool" || var.Ident == "byte") {
           output.size = asmc::DWord;
           output.access = "$1";
           output.type = "int";

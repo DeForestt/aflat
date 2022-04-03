@@ -33,7 +33,7 @@ std::string asmc::Mov::toString() {
     size = "b";
     break;
   case asmc::Word:
-    size = "s";
+    size = "w";
     break;
   case asmc::DWord:
     size = "l";
@@ -70,7 +70,7 @@ std::string asmc::Cmp::toString() {
     size = "b";
     break;
   case asmc::Word:
-    size = "s";
+    size = "w";
     break;
   case asmc::DWord:
     size = "l";
@@ -147,7 +147,7 @@ std::string asmc::And::toString() {
     size = "b";
     break;
   case asmc::Word:
-    size = "s";
+    size = "w";
     break;
   case asmc::DWord:
     size = "l";
@@ -172,7 +172,7 @@ std::string asmc::Or::toString() {
     size = "b";
     break;
   case asmc::Word:
-    size = "s";
+    size = "w";
     break;
   case asmc::DWord:
     size = "l";
@@ -197,7 +197,7 @@ std::string asmc::Sal::toString() {
     size = "b";
     break;
   case asmc::Word:
-    size = "s";
+    size = "w";
     break;
   case asmc::DWord:
     size = "l";
@@ -222,7 +222,7 @@ std::string asmc::Sar::toString() {
     size = "b";
     break;
   case asmc::Word:
-    size = "s";
+    size = "w";
     break;
   case asmc::DWord:
     size = "l";
