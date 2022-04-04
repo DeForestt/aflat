@@ -16,6 +16,10 @@
 .global sys_kill
 .global sys_socket
 .global sys_setsockopt
+.global sys_bind
+.global sys_listen
+.global sys_accept
+.global sys_sendto
 
 .text
 
@@ -177,6 +181,42 @@ sys_setsockopt:
 	movq	%rsp, %rbp
 	subq	$16, %rsp
 	movq    $54, %rax
+	syscall
+	leave
+	ret
+
+sys_bind:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $49, %rax
+	syscall
+	leave
+	ret
+
+sys_listen:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $50, %rax
+	syscall
+	leave
+	ret
+
+sys_accept:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $51, %rax
+	syscall
+	leave
+	ret
+
+sys_sendto:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $40, %rax
 	syscall
 	leave
 	ret

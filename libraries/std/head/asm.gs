@@ -16,3 +16,7 @@ int sys_pipe(adr fd);
 int sys_kill(int pid, int sig);
 int sys_socket(int domain, int type, int protocol);
 int sys_setsockopt(int s, int level, int optname, adr optval, int optlen);
+int sys_bind(int s, adr name, int namelen);
+int sys_listen(int s, int backlog);
+int sys_accept(int s, adr upeer_sockaddr, adr upeer_addrlen);
+int sys_sendto(int s, adr buf, int len, int flags, adr to, int tolen);

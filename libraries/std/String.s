@@ -38,7 +38,7 @@ pub_String_isNumeric:
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
-	movq	$lambda_1648763042742_0, %rax
+	movq	$lambda_1649090706959_0, %rax
 	movq	%rax, %rsi
 	lea	-9(%rbp), %rax
 	pushq	%rdx
@@ -627,13 +627,6 @@ pub_String_delete:
 	call	free
 	popq	%rdi
 	popq	%rdx
-	pushq	%rdx
-	pushq	%rdi
-	movq	-8(%rbp), %rax
-	movq	%rax, %rdi
-	call	free
-	popq	%rdi
-	popq	%rdx
 	leave
 	ret
 pub_String_loop:
@@ -752,6 +745,7 @@ printString:
 	pushq	%rdi
 	movq	-16(%rbp), %rax
 	movq	%rax, %rdi
+	movq	$0, %rsi
 	call	io.print
 	popq	%rdi
 	popq	%rdx
@@ -1724,7 +1718,7 @@ pub_String_toInt:
 	je	.LtoInt24
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strString.lambda_1648763042742_025, %rax
+	movq	$.strString.lambda_1649090706959_025, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
@@ -1889,7 +1883,7 @@ upper:
 	movb	-1(%rbp), %al
 	leave
 	ret
-lambda_1648763042742_0:
+lambda_1649090706959_0:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
@@ -1929,7 +1923,7 @@ lambda_1648763042742_0:
 
 .data
 
-.strString.lambda_1648763042742_025:
+.strString.lambda_1649090706959_025:
 	.asciz	 "Attempt to convert non-numeric string to int"
 
 
