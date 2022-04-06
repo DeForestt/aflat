@@ -62,7 +62,7 @@ Build and run the project with the `aflat run` command.
 ```js
 .needs <std>
 
-import * from "io" under io;
+import {printInt, printChar} from "io" under io;
 import ICollection, Array from "Collections";
 
 int main(){
