@@ -342,7 +342,8 @@ class <class name> signs <parent class>{
 Class functions are functions that are declared with the following syntax:
 ```js
 class <class name>{
-    <return type> <function name>([<paramiters>]); // this is the function declaration it can be defined here with the regular 
+    <return type> <function name>([<paramiters>]); // this is the function declaration it can be defined
+                                                   //with the regular 
                                                    // function syntax. Or it can be defined outside of the class via function
                                                    // scoping. 
 };
