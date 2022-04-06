@@ -25,6 +25,16 @@ int exp(int base, int pow){
 	return output;
 };
 
+long longExp(long base, int pow){
+	int i = 0;
+	long output = 1;
+	while (i < pow){
+		output = output * base;
+		i = i + 1;
+	};
+	return output;
+};
+
 int longDiv(int int1, int int2){
 	int remainder = int1 % int2;
 	remainder = remainder * 10;

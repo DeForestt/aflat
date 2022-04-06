@@ -144,7 +144,11 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     return true;
   if (type.typeName == "float" && typeName == "int")
     return true;
-  if (type.typeName == "short" && typeName == "int")
+  if (type.typeName == "short" && typeName == "number")
+    return true;
+  if (type.typeName == "int" && typeName == "number")
+    return true;
+  if (type.typeName == "long" && typeName == "number")
     return true;
   if (type.size == asmc::QWord && typeName == "adr")
     return true;
@@ -257,7 +261,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     output.access = '$' + std::to_string(intlit->val);
     output.size = asmc::DWord;
-    output.type = "int";
+    if (size != asmc::AUTO)
+      output.size = size;
+
+    output.type = "number";
   } else if (dynamic_cast<ast::LongLiteral *>(expr) != nullptr) {
     ast::LongLiteral *intlit = dynamic_cast<ast::LongLiteral *>(expr);
     output.type = "long";
@@ -706,7 +713,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         asmc::Div *div = new asmc::Div();
 
         gen::Expr expr1 = this->GenExpr(comp.expr1, Dummby);
-        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby);
+        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummby, expr1.size);
 
         div->op1 = expr2.access;
         div->opType = expr1.op;
