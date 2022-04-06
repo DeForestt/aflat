@@ -1,4 +1,5 @@
 .needs <std>
+.needs <asm>
 
 import ICollection from "Collections";
 import LinkedList from "Collections";
@@ -38,7 +39,7 @@ class String{
     int toInt();
     int len();
 
-    int delete();
+    int del();
 };
 
 
@@ -136,7 +137,7 @@ int indexOf@String(char ch){
     return index;
 };
 
-int delete@String(){
+int del@String(){
     adr head = my.head;
     free(head);
 };
@@ -172,7 +173,7 @@ export String getString(){
     char null = '\0';
     int i = 0;
     while(input != nl){
-        pull ?input;
+        sys_read(0, ?input, 1);
         buff = buff + i;
         buff =: input;
         if(input == nl){buff =: null};
@@ -187,7 +188,7 @@ export String getString(){
 };
 
 String copy@String(String s){
-    my.delete();
+    delete my;
     return s;
 };
 
