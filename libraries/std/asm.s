@@ -20,6 +20,7 @@
 .global sys_listen
 .global sys_accept
 .global sys_sendto
+.global sys_connect
 
 .text
 
@@ -217,6 +218,15 @@ sys_sendto:
 	movq	%rsp, %rbp
 	subq	$16, %rsp
 	movq    $40, %rax
+	syscall
+	leave
+	ret
+
+sys_connect:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	subq	$16, %rsp
+	movq    $42, %rax
 	syscall
 	leave
 	ret

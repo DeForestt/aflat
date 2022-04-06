@@ -20,3 +20,4 @@ int sys_bind(int s, adr name, int namelen);
 int sys_listen(int s, int backlog);
 int sys_accept(int s, adr upeer_sockaddr, adr upeer_addrlen);
 int sys_sendto(int s, adr buf, int len, int flags, adr to, int tolen);
+int sys_connect(int s, adr name, int namelen);
