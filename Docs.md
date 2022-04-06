@@ -1,5 +1,4 @@
 # Documentation For AFlat Programming Language
-Please see the Example [chess program](https://github.com/DeForestt/aflat-chess.git).
 ## Trust the programmer philosophy
 AFlat aims to trust that developers know what they are doing.  It allows and encourages things that many other modern languages do not, such as pointer arythmatic, memory managment, and so on.
 <br>
@@ -7,30 +6,33 @@ AFlat aims to trust that developers know what they are doing.  It allows and enc
 ## Types
 ### int
 A 4 byte signed int
-```c
+```js
 int i = 0;
 ```
 ### float
 A 4 byte signed floating point value
-```c
+```js
 float f = 0.3;
 ```
 ### long
 An 8 byte signed int any long litteral must begin with a #
-```c
+```js
 long l = #12;
 ```
 ### short
 A 2 byte integer
-```c
+```js
 short s = 1;
 ```
 ### bool
 A 1 byte bool
+```js
+bool b = false;
+```
 ### adr
 An 8 bit memory address.  In aflat, pointers point to any type
-```c
-adr a = #0;
+```js
+adr a = NULL;
 ```
 
 ## Functions
@@ -38,24 +40,33 @@ adr a = #0;
 ### Syntax
 Functions in aflat are defined with the following syntax:
 ```c
-<return Type> <function name>(<arguments>){
+<access> <return Type> <function name>(<arguments>){
     <function body>
 };
 ```
 - Functions can be defined with a return type of any of the above types.  Note that there is no return type for void functions.
 - If a function does not return a value with the `return` keyword, a return statement with no value is implied. *
     - Keep in mind that this is unsafe as the function will 'return' whatever value is currently in the EAX register.
-- For now cunctions can only have up to 6 arguments.  This is due to not passing arguments on the stack and only using the registers.
+- For now functions can only have up to 6 arguments.  This is due to not passing arguments on the stack and only using the registers.
 
 Example:
-```c
+```js
 int add(int a, int b){
     return a + b;
 };
 ```
+
+- A function can have an Optional argument by using the * opporator before. If the argument is not given, it will be passed as 'NULL'
+
+Example:
+```js
+int add(int a, * int b){
+    return a + b; // b will have the value 0 if no argument is passed there
+};
+```
 ### The main Function
-The main function is the entry point for aflat.  It is the first function called when aflat is run. It can take optional arguments int argc and adr argv.
-```c
+The main function is the entry point for aflat.  It is the first function called when aflat is run. It can take optional arguments int argc and adr argv for commandline arguments.
+```js
 int main(int argc, adr argv){
     // do stuff
     return 0;
@@ -63,7 +74,7 @@ int main(int argc, adr argv){
 ```
 
 It can also be implemented as follows if you do not need to pass command line arguments:
-```c
+```js
 int main(){
     // do stuff
     return 0;
@@ -71,7 +82,7 @@ int main(){
 ```
 ### Function Pointers
 The name of a function without parenthesis returns a pointer to the function.  This is useful for passing functions as arguments to other functions.
-```c
+```js
 int add(int a, int b){
     return a + b;
 };
@@ -87,12 +98,11 @@ Functions can be called with the following syntax:
 ```c
 <function name>(<arguments>);
 ```
-- The aflat compiler will not check for the type or number of arguments.  It will simply call the function with the arguments passed. This allows functions to have optional arguments.  It also makes it easier to define function pointers.
-    - Strict functions with type checking will be added in the future. They will use the keyword `strict` in the definition.
-- Pointers can be called with the same syntax.
+- The aflat compiler will check the number and type of arguments for functions when called, but not for function pointers.
+- Function Pointers can be called with the same syntax.
 
 example:
-```c
+```js
 int add(int a, int b){
     return a + b;
 };
@@ -103,23 +113,30 @@ int main(){
 };
 ```
 ### Annonymous Functions
-Functions can be defined without a name.  This is useful for passing functions as arguments to other functions.
-```c
+Functions can be defined without a name. Annonymous functions.If the unction body only has one statment, the curly braces are not requiered.
+```js
 [<parameters>]=>{
     <function body>
 };
 ```
 example:
-```c
+```js
 int main(){
 
     adr add = [int a, int b]=>{
         return a + b;
     };
 
-    return add(1, 2);
+    int i = add(1, 2);
+
+    return 0;
 };
 ```
+### Function Access
+Functions under the global scope can be public(default), private, or export.
+    - Public functions are globaly accessable to the linker. This is necissary if using a header file.
+    - Private functions are only accessable within the Module to avoid naming conflicts with other modules.
+    - Export can be explicetly imported for use in another module and avoid naming conflicts during linking.
 
 ## Statements
 
@@ -150,6 +167,14 @@ Stores the value of an expression into the address pointed to by an identifier.
 <reference> ::= ?<identifier>;
 ```
 Returns the address of the variable
+
+### import
+```bnf
+<import> ::= import {<function>, <function>} from "path" under <ident>
+            | import <Class>, <Class> from "path";
+            | import * from "path" under <ident>;
+```
+Import functions or classes from modules;
 ## Expressions
 ### Int Literal
 ```bnf
@@ -307,7 +332,7 @@ int main(){
 
 ## Classes
 Classes in aflat are effectively structs that can implement functions and support encapsulation and rudimentary inheritance.  The syntax is:
-```c
+```js
 class <class name> signs <parent class>{
     <contract>
     <class variable declarations>
@@ -316,7 +341,7 @@ class <class name> signs <parent class>{
 ```
 ### Class Functions
 Class functions are functions that are declared with the following syntax:
-```c++
+```js
 class <class name>{
     <return type> <function name>([<paramiters>]); // this is the function declaration it can be defined here with the regular 
                                                    // function syntax. Or it can be defined outside of the class via function
@@ -324,7 +349,7 @@ class <class name>{
 };
 ``` 
 - Function scoping allows functions to be defined outside of the class.  This is useful for separating implementation from declaration. syntax:
-```c++
+```js
 // scoped function
 <return type> <function name>@<class name>([<paramiters>]){
     <function body>
@@ -334,23 +359,25 @@ class <class name>{
 
 ## Contracts
 Contracts are used to create OO interfaces. The allows classes that sign them to behave as the parent class.  The syntax is:
-```c++
+```js
 contract {
     <contract var declarations>
 };
 ```
 the contract veriables are automatically included in any class that signs the contract.
 signing a contract is done with the following syntax:
-```c++
+```js
 class <class name> signs <contract name>{
     <contract var declarations>
     <class functions>
 };
 ```
 Here is an example of the intended use of a contract:
-```c++
-.needs <io>
+```js
 .needs <std>
+
+import {print} from "io" under io;
+
 
 class IWorker{
     contract{
@@ -363,12 +390,12 @@ class Plumber signs IWorker{
     int init(){
         my.work = []=>{ // this is the implementation of the work function as defined in the contract.  It can also be done using
                         // function pointer
-            print("I am tightening the pipes\n");
+            io.print("I am tightening the pipes\n");
         };
     };
 
     int getClients(){
-        print("I am getting clients\n");
+        io.print("I am getting clients\n");
     };
 };
 
@@ -383,12 +410,12 @@ class Carpenter signs IWorker{
     int init(){
         my.work = []=>{ // this is the implementation of the work function as defined in the contract.  It can also be done using
                         // function pointer
-            print("I am building a house\n");
+            io.print("I am building a house\n");
         };
     };
 
     int buyTools(){
-        print("I am buying tools\n");
+        io.print("I am buying tools\n");
     };
 };
 
@@ -422,7 +449,7 @@ int main(){
 };
 ```
 output:
-```c
+```
 I am tightening the pipes
 I am building a house
 I am getting clients
@@ -433,8 +460,8 @@ I am building a house
 
 - Keep in mind that when calling function pointer that are a part of a class, the first parameter is the pointer to the object. The function can be created with a veriable named my or self.
 
-## Including modules
-Much like in c or c++, aflat modules are made up of header and source files.  The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
+## Working with header files
+Much like in c or c++, aflat supports a header and source file interface; The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
 
 Modules from the aflat standard library are included with the following syntax:
 ```c
@@ -450,6 +477,28 @@ A root directory for header files can be specified with the following syntax:
 ```
 If a root directory is not specified, the current directory is used.
 
+The list of standard headers are as follows:
+- math
+    - Handles math functions
+- std
+    - Deals with memory managment and time. Also carries the assert function
+- asm
+    - a repository of syscall wrappers
+
+
+example of using the std header file:
+```js
+.needs <std> // the std module is included
+
+int main(){
+    assert(1==1, "failed common assert"); // the std module contains the assert function
+    return 0;
+};
+```
+
+## Working with Modules
+
+
 The list of standard modules is as follows:
 - Collections
     - Handles arrays and list and the ICollection interface
@@ -459,24 +508,10 @@ The list of standard modules is as follows:
     - Handles file IO and defines the File class
 - io
     - Handles input and output to the console
-- math
-    - Handles math functions
-- std
-    - Deals with mempry managment
 - strings
     - Functions to deal with strings and convert between other types and strings
-- asm
-    - a repository of syscall wrappers
 
-example of using the io module:
-```c
-.needs <io> // the io module is included
 
-int main(){
-    print("Hello World!\n"); // the io module contains the print function
-    return 0;
-};
-```
 
 ## Package Manager
 The Aflat package manager is built into the compiler.
