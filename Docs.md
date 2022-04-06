@@ -497,22 +497,82 @@ int main(){
 ```
 
 ## Working with Modules
+Modules are the prefered method of sharing code over header files.
+
+### Creating a Module
+A module is only a .af source file with no header.  The module can export functions and classes that can be used by other modules.
+#### Exporting a function
+A function is exported using the `export` modifier once a function is exported it cannot be accessed via header file.
+
+Example:
+```js
+export int add(int a, int b){
+    return a + b;
+};
+```
+
+#### Exporting a Class
+Classes are automaticaly exported by a module.
+
+### Importing from a module
+Importing is done with the import statment.  If there is no "./" in the path given, aflat searches in the standard library directory for the statment.  Otherwise the aflat searches the working directory. .af is automaticly appened to modual names if it is not there.
+
+#### Importing functions
+Functions are imported inside of curly braces. All functions can be imported using the * oporator. Functions are imported under a namespace defined using the `under` keyword.  The namespace must be used to access the function.
+
+example:
+```js
+import {add, sub} from "./src/Mod" under mod;
+
+int foo(){
+    int a = mod.sub(5, 6);
+    return mod.add(a, 3);
+};
+```
+
+#### Importing classes
+Classes are imported outside of curly braces. No namespace is needed for classes.
+example:
+```js
+import Player from "./src/GameEngin";
+
+int game(){
+    Player p1 = Player();
+};
+```
+note -- if a class signs a contract, the base class must be imported before the child.
 
 
 The list of standard modules is as follows:
 - Collections
     - Handles arrays and list and the ICollection interface
 - concurrency
-    - Handles threads and pipes defines the Process class
+    - Handles threads and pipes defines the Process and MProcess classes
+- DateTime
+    - Provides the DateTime class
 - files
     - Handles file IO and defines the File class
 - io
     - Handles input and output to the console
 - strings
     - Functions to deal with strings and convert between other types and strings
+- String
+    - provides the Standard String objec
 
 
 
+
+Example:
+```js
+.needs <std>
+
+import {print} from "io" under io;
+
+int main(){
+    io.print("Hello World!\n");
+};
+
+```
 ## Package Manager
 The Aflat package manager is built into the compiler.
 
