@@ -390,19 +390,13 @@ class Plumber signs IWorker{
     int init(){
         my.work = []=>{ // this is the implementation of the work function as defined in the contract.  It can also be done using
                         // function pointer
-            io.print("I am tightening the pipes\n");
+            io.print("Plumber: I am tightening the pipes\n");
         };
     };
 
     int getClients(){
-        io.print("I am getting clients\n");
+        io.print("Plumber: I am getting clients\n");
     };
-};
-
-Plumber newPlumber(){
-    Plumber plumber = malloc(Plumber);
-    plumber.init();
-    return plumber;
 };
 
 class Carpenter signs IWorker{
@@ -410,19 +404,13 @@ class Carpenter signs IWorker{
     int init(){
         my.work = []=>{ // this is the implementation of the work function as defined in the contract.  It can also be done using
                         // function pointer
-            io.print("I am building a house\n");
+            io.print("Carpenter: I am building a house\n");
         };
     };
 
     int buyTools(){
-        io.print("I am buying tools\n");
+        io.print("Carpenter: I am buying tools\n");
     };
-};
-
-Carpenter newCarpenter(){
-    Carpenter carpenter = malloc(Carpenter);
-    carpenter.init();
-    return carpenter;
 };
 
 int doWork(IWorker worker){
@@ -430,8 +418,8 @@ int doWork(IWorker worker){
 };
 
 int main(){
-    Plumber plumber = newPlumber();
-    Carpenter carpenter = newCarpenter();
+    Plumber plumber = Plumber();
+    Carpenter carpenter = Carpenter();
 
     plumber.init();
     carpenter.init();
@@ -450,12 +438,12 @@ int main(){
 ```
 output:
 ```
-I am tightening the pipes
-I am building a house
-I am getting clients
-I am buying tools
-I am tightening the pipes
-I am building a house
+Plumber: I am getting clients
+Carpenter: I am buying tools
+Plumber: I am tightening the pipes
+Carpenter: I am building a house
+Plumber: I am tightening the pipes
+Carpenter: I am building a house
 ```
 
 - Keep in mind that when calling function pointer that are a part of a class, the first parameter is the pointer to the object. The function can be created with a veriable named my or self.
