@@ -17,7 +17,7 @@ Open up the `main.af` file in your favorite text editor.  The file will look som
 import * from "io" under io;
 
 int main() {
-    io.print("Hello, world!");
+    io.print("Hello, world!\n");
     return 0;
 };
 ```
@@ -32,3 +32,74 @@ Lets walk through the program line by line.
 Now type `aflat run` in the terminal to run the program.  The program will print `Hello, world!` to the standard output.
 
 ## Making it your own
+Now we will make a few edits to the project.  First, it would be nice for the would to know who the "Hello" is from.  We do this by adding a new call to the `io.print` function. Give it a try and then look at our implementation below. Remember that \n represents a newline.
+
+```js
+.needs <std>
+import * from "io" under io;
+
+int main() {
+    io.print("Hello, world!");
+    io.print("From, The aflat Team\n");
+    return 0;
+};
+```
+
+## Working with strings
+When you show your program to your friends, it will be nice to have the program print out their name. Take a look at the code below.
+
+```js
+.needs <std>
+import * from "io" under io;
+import String from "String";
+import * from "String" under str;
+
+int main(){
+	io.print("Please enter your name: ");
+	String name = str.getString();
+	io.print("Hello, ");
+	str.printString(name);
+	io.print("!\n");
+	io.print("From, The aflat Team\n");
+	return 0;
+};
+```
+
+Lets walk take a look at the new lines.
+- The thrid line, imports the 'String' object from the 'String' library.  The 'String' object makes it easy to deal with text. When importing everything '*' from a module, only functions are imported. Objects must be imported explicitly.
+- The fourth line, imports all of the functions from the 'String' library.
+- Line eight creats a new String object and assigns it to the variable `name`.  The `getString` function is used to get the string that the user enters in the standard input.
+- Line ten uses the `printString` function to print the name that the user entered to the standard input.
+
+run the program with `aflat run` and see what happens.
+
+## If else statements
+I take it back.  We don't want other people to see our program... in fact, we want to make sure that the program is only run if the user enters the correct name.  We can do this by adding an if else statement.
+
+```js
+.needs <std>
+import * from "io" under io;
+import String from "String";
+import * from "String" under str;
+
+int main(){
+	io.print("Please enter your name: ");
+	String name = str.getString();
+
+	if name == "Name"{
+		io.print("Hello, ");
+		str.printString(name);
+		io.print("!\n");
+		io.print("From, The aflat Team\n");
+	} else {
+		io.print("I don't know you... \nGo away!\n");
+	};
+
+	return 0;
+};
+```
+
+The if statment will check if the two strings are equal. If they are equal, then the program statment will be executed.  If they are not equal, then the else statement will be executed.  Keep in mind that the else statement is optional.
+
+## Done So Soon?
+Don't worry, more tutorial to come...
