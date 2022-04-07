@@ -1533,6 +1533,19 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       if (!isLambda && func->scope == ast::Public)
         OutputFile.linker.push(link);
 
+      // if the function is 'init' and scope is a class, add the default value
+      if (func->ident.ident == "init" && this->scope != nullptr) {
+        // add all of the default values from the scopes list
+        for (ast::DecAssign it : this->scope->defaultValues){
+          ast::Assign assign = ast::Assign();
+          assign.Ident = ("my");
+          assign.expr = it.expr;
+          assign.modList = LinkedList<std::string>();
+          assign.modList.push(it.declare->Ident);
+          OutputFile << this->GenSTMT(&assign);
+        }
+      }
+
       asmc::File file = this->GenSTMT(func->statment);
       // check if the last statement is a return statement
       if (file.text.count > 0) {
