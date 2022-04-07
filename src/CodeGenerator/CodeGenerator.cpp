@@ -2179,8 +2179,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       type->contract = deff->contract;
     }
     asmc::File file = this->GenSTMT(deff->statment);
-    if (extract("init", deff->statment) == nullptr) {
-      std::cout << "No init function found" << std::endl;
+    if (extract("init", deff->statment) == nullptr && this->scope->defaultValues.size() > 0) {
       ast::Function *func = new ast::Function();
       ast::Return * ret = new ast::Return();
       ast::Var *var = new ast::Var();
@@ -2188,7 +2187,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       var->modList = links::LinkedList<std::string>();
       ret->expr = var;
       func->ident.ident = "init";
-      func->scope = ast::Public;
+      func->scope = ast::Private;
       func->statment = ret;
       func->args = nullptr;
       ast::Type t;
