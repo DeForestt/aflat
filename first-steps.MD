@@ -1,7 +1,7 @@
 # First Steps with AFlat
 
 ## Installation
-Please see the [installation instructions](README.md) for the steps to done.  If aflat is already installed, then you can move on the the next section.
+Please see the [installation instructions](README.md) for the steps to download and build.  If aflat is already installed, then you can move on the the next section.
 
 ## First Project
 To create the tutorial project, run the following command in your project directory.
