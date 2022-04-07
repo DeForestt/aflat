@@ -52,6 +52,7 @@ public:
   // This is used internally
   links::SLinkedList<ast::Function, std::string> nameTable;
   ast::Statment *contract;
+  std::vector<ast::DecAssign> defaultValues;
   static bool compair(Type *t, std::string ident);
   gen::Class *parent = nullptr;
 };

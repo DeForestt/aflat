@@ -1685,35 +1685,41 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     Table = &this->SymbolTable;
 
     if (!this->globalScope) {
+      if (this->scope == nullptr || this->inFunction){
+        int byteMod = gen::scope::ScopeManager::getInstance()->assign(
+            dec->Ident, dec->type, dec->mask);
 
-      int byteMod = gen::scope::ScopeManager::getInstance()->assign(
-          dec->Ident, dec->type, dec->mask);
+        asmc::Mov *mov = new asmc::Mov();
+        gen::Expr expr =
+            this->GenExpr(decAssign->expr, OutputFile, dec->type.size);
 
-      asmc::Mov *mov = new asmc::Mov();
-      gen::Expr expr =
-          this->GenExpr(decAssign->expr, OutputFile, dec->type.size);
+        this->canAssign(dec->type, expr.type);
 
-      this->canAssign(dec->type, expr.type);
+        asmc::Mov *mov2 = new asmc::Mov();
+        mov2->size = dec->type.size;
+        mov2->from = expr.access;
+        if (expr.op == asmc::Float)
+          mov2->to = this->registers["%xmm0"]->get(expr.size);
+        else
+          mov2->to = this->registers["%rbx"]->get(dec->type.size);
 
-      asmc::Mov *mov2 = new asmc::Mov();
-      mov2->size = dec->type.size;
-      mov2->from = expr.access;
-      if (expr.op == asmc::Float)
-        mov2->to = this->registers["%xmm0"]->get(expr.size);
-      else
-        mov2->to = this->registers["%rbx"]->get(dec->type.size);
+        mov->op = expr.op;
 
-      mov->op = expr.op;
+        mov2->op = expr.op;
+        mov->size = dec->type.size;
+        mov->from = this->registers["%rbx"]->get(dec->type.size);
+        mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
 
-      mov2->op = expr.op;
-      mov->size = dec->type.size;
-      mov->from = this->registers["%rbx"]->get(dec->type.size);
-      mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
+        mov->from = mov2->to;
 
-      mov->from = mov2->to;
-
-      OutputFile.text << mov2;
-      OutputFile.text << mov;
+        OutputFile.text << mov2;
+        OutputFile.text << mov;
+      } else {
+        // add the decAssign to the class default list
+        this->scope->defaultValues.push_back(*decAssign);
+        // genorate the declare
+        OutputFile << this->GenSTMT(dec);
+      }
     } else {
       gen::Symbol Symbol;
 
