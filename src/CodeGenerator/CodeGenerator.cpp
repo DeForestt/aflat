@@ -2179,7 +2179,6 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       type->contract = deff->contract;
     }
     asmc::File file = this->GenSTMT(deff->statment);
-    // check if the class has an init function
     if (extract("init", deff->statment) == nullptr) {
       std::cout << "No init function found" << std::endl;
       ast::Function *func = new ast::Function();
