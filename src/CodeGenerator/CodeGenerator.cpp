@@ -946,6 +946,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   } else if (dynamic_cast<ast::Lambda *>(expr) != nullptr) {
     ast::Lambda lambda = *dynamic_cast<ast::Lambda *>(expr);
     ast::Function *func = lambda.function;
+    bool inFunc = this->inFunction;
+    bool gscop = this->globalScope;
+
     auto millies = std::chrono::duration_cast<std::chrono::milliseconds>(
                        std::chrono::system_clock::now().time_since_epoch())
                        .count();
@@ -968,6 +971,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     func->type = Adr;
 
     OutputFile.lambdas->operator<<(this->GenSTMT(func));
+
+    this->inFunction = inFunc;
+    this->globalScope = gscop;
 
     output.access = "$" + id;
     output.size = asmc::QWord;
@@ -1233,8 +1239,8 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
           func = cl->nameTable[call->modList.peek()];
           if (func == nullptr) {
               gen::Class *parent = cl->parent;
-              pubname = parent->Ident;
               if (parent){
+                pubname = parent->Ident;
                 // search the parent class for the function
                 func = parent->nameTable[call->modList.peek()];
                 if(func != nullptr){
@@ -1449,7 +1455,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
 
     // std::cout << "Generating Function: " << func->ident.ident << " type " <<
     // func->type.typeName << std::endl;
-    if (this->scope == nullptr)
+    if (this->scope == nullptr && !func->isLambda)
       this->nameTable << *func;
     else {
       // add the function to the class name table
@@ -1461,7 +1467,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
         this->scope->overloadTable << *func;
       // if the function is public add it to the public name table
       if (func->scope == ast::Public)
-        this->scope->publicNameTable << *func;
+        if (!func->isLambda) this->scope->publicNameTable << *func;
     }
 
     if (func->statment != nullptr) {
