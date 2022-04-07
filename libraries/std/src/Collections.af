@@ -2,8 +2,8 @@
 
 class ICollection{
     contract {
-        adr forEach;
-        adr where;
+        adr forEach = [] => panic("Function (forEach) not implemented on this instance");
+        adr where = [] => panic("Function (where) not implemented on this instance");
     };
 };
 
@@ -44,8 +44,7 @@ class Array signs ICollection{
 
 
 private int forEachLinkedList(LinkedList my, adr foo, adr arg){
-    ListNode curr;
-    curr = my.head;
+    ListNode curr = my.head;
     int i = 0;
     while(curr != NULL){
         adr data;
@@ -62,8 +61,7 @@ private int forEachLinkedList(LinkedList my, adr foo, adr arg){
 
 private LinkedList whereLinkedList(LinkedList my, adr foo, adr arg){
     LinkedList newList = new LinkedList();
-    ListNode curr;
-    curr = my.head;
+    ListNode curr = my.head;
     int i = 0;
     while(curr != NULL){
         adr data;
