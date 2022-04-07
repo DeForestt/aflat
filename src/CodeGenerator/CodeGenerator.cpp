@@ -1142,7 +1142,6 @@ void gen::CodeGenerator::GenArgs(ast::Statment *STMT, asmc::File &OutputFile) {
 ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
                                           asmc::File &OutputFile) {
   std::string mod = "";
-
   ast::Function *func;
   bool checkArgs = true;
 
@@ -1196,6 +1195,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
       };
     }
   } else {
+    std::string pubname;
     gen::Symbol *sym =
         gen::scope::ScopeManager::getInstance()->get(call->ident);
     if (sym == nullptr)
@@ -1216,42 +1216,55 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
         type = *this->typeList[last.typeName];
         gen::Class *cl = dynamic_cast<gen::Class *>(type);
         if (cl != nullptr) {
+          pubname = cl->Ident;
           func = cl->nameTable[call->modList.peek()];
           if (func == nullptr) {
-            // search the class symbol table for a pointer
-            std::string id = call->modList.peek();
-            mods.push(id);
-            sym = cl->SymbolTable.search<std::string>(searchSymbol,
-                                                      call->modList.pop());
-            if (sym != nullptr) {
-              ast::Var *var = new ast::Var();
-              var->Ident = call->ident;
-              mods.invert();
-              var->modList = mods;
+              gen::Class *parent = cl->parent;
+              pubname = parent->Ident;
+              if (parent){
+                // search the parent class for the function
+                func = parent->nameTable[call->modList.peek()];
+                if(func != nullptr){
+                  call->modList.pop();
+                }
+              }
+              if (func == nullptr){
+                // search the class symbol table for a pointer
+                std::string id = call->modList.peek();
+                mods.push(id);
+                sym = cl->SymbolTable.search<std::string>(searchSymbol,
+                                                          call->modList.peek());
+                if (sym != nullptr) {
+                  call->modList.pop();
+                  ast::Var *var = new ast::Var();
+                  var->Ident = call->ident;
+                  mods.invert();
+                  var->modList = mods;
 
-              gen::Expr exp1 = this->GenExpr(var, OutputFile);
+                  gen::Expr exp1 = this->GenExpr(var, OutputFile);
 
-              asmc::Mov *mov = new asmc::Mov();
-              mov->size = exp1.size;
-              mov->from = exp1.access;
-              mov->to = this->registers["%r15"]->get(exp1.size);
-              OutputFile.text << mov;
+                  asmc::Mov *mov = new asmc::Mov();
+                  mov->size = exp1.size;
+                  mov->from = exp1.access;
+                  mov->to = this->registers["%r15"]->get(exp1.size);
+                  OutputFile.text << mov;
 
-              func = new ast::Function();
-              func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
-              func->type = sym->type;
-              func->type.typeName = "--std--flex--function";
-              checkArgs = false;
-              func->type.size = asmc::QWord;
-              func->flex = true;
-              addpub = false;
-            };
+                  func = new ast::Function();
+                  func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
+                  func->type = sym->type;
+                  func->type.typeName = "--std--flex--function";
+                  checkArgs = false;
+                  func->type.size = asmc::QWord;
+                  func->flex = true;
+                  addpub = false;
+                }
+            }
           } else
             call->modList.pop();
           ast::Refrence *ref = new ast::Refrence();
           ref->Ident = my;
           ref->internal = true;
-          mod = "pub_" + cl->Ident + "_";
+          mod = "pub_" + pubname + "_";
           if (!addpub)
             mod = "";
           gen::Expr exp;
