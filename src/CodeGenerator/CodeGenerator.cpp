@@ -1370,13 +1370,14 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
   }
 
   call->Args.invert();
-
+  links::LinkedList<ast::Expr *> args;
   int i = 0;
   if (call->Args.size() < func->req) alert("Too few arguments for function: " + call->ident +
               " expected: " + std::to_string(func->argTypes.size()) +
               " got: " + std::to_string(i + 1));
 
   while (call->Args.size() > 0) {
+    args.push(call->Args.peek());
     gen::Expr exp = this->GenExpr(call->Args.pop(), OutputFile);
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
@@ -1404,7 +1405,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
     OutputFile.text << push;
     OutputFile.text << mov;
     OutputFile.text << mov2;
-  }
+  };
   
   while (argsCounter < func->argTypes.size()) {
     asmc::Mov * move = new asmc::Mov();
@@ -1415,6 +1416,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
     OutputFile.text << move;
   }
 
+  call->Args = args;
   asmc::Call *calls = new asmc::Call;
 
   calls->function = mod + func->ident.ident;
