@@ -38,6 +38,18 @@ bool gen::Type::compair(gen::Type *t, std::string ident) {
   return false;
 }
 
+void shellStatment(ast::Statment * stmt){
+  if (dynamic_cast<ast::Sequence *>(stmt)){
+    ast::Sequence * seq = dynamic_cast<ast::Sequence *>(stmt);
+    shellStatment(seq->Statment1);
+    shellStatment(seq->Statment2);
+  } else if (dynamic_cast<ast::Function *>(stmt)){
+    ast::Function * func = dynamic_cast<ast::Function *>(stmt);
+    delete func->statment;
+    func->statment = nullptr;
+  }
+}
+
 ast::Statment * extract(std::string ident, ast::Statment * stmt, std::string id = "") {
   // traverse the statment tree and return the statment with the ident
   if (stmt == nullptr)
@@ -54,7 +66,8 @@ ast::Statment * extract(std::string ident, ast::Statment * stmt, std::string id 
     }
   }else if (dynamic_cast<ast::Class *>(stmt)){
     ast::Class * cls = dynamic_cast<ast::Class *>(stmt);
-    if (cls->ident.ident == ident || ident == "*") {
+    if (cls->ident.ident == ident) {
+      shellStatment(cls->statment);
       return stmt;
     }
   } else if (dynamic_cast<ast::Function *>(stmt)){
