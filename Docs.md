@@ -380,8 +380,8 @@ import {print} from "io" under io;
 
 
 class IWorker{
-    contract{
-        adr work;
+    contract {
+        adr work = [] => io.print("Generic worker working...\n");
     };
 };
 
@@ -420,19 +420,18 @@ int doWork(IWorker worker){
 int main(){
     Plumber plumber = Plumber();
     Carpenter carpenter = Carpenter();
-
-    plumber.init();
-    carpenter.init();
+    IWorker generic = IWorker();
 
     plumber.getClients();
     carpenter.buyTools();
 
     plumber.work();
     carpenter.work();
+    generic.work();
 
     doWork(plumber);
     doWork(carpenter);
-
+    doWork(generic);
     return 0;
 };
 ```
@@ -442,8 +441,10 @@ Plumber: I am getting clients
 Carpenter: I am buying tools
 Plumber: I am tightening the pipes
 Carpenter: I am building a house
+Generic worker working...
 Plumber: I am tightening the pipes
 Carpenter: I am building a house
+Generic worker working...
 ```
 
 - Keep in mind that when calling function pointer that are a part of a class, the first parameter is the pointer to the object. The function can be created with a veriable named my or self.
