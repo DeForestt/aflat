@@ -1,9 +1,9 @@
 # First Steps with AFlat
 
-### Installation
+## Installation
 Please see the [installation instructions](README.md) for the steps to done.  If aflat is already installed, then you can move on the the next section.
 
-### First Project
+## First Project
 To create the tutorial project, run the following command in your project directory.
 ```bash
 aflat make tutorial
@@ -28,3 +28,7 @@ Lets walk through the program line by line.
 - the fourth line defines the main function.  This is the function that is called when the program is run.
 - The fifth line calls the `io.print` function.  This function prints the string `Hello, world!` to the standard output.
 - The sixth line returns 0.  This is the value that is returned to the operating system when the program is run.
+
+Now type `aflat run` in the terminal to run the program.  The program will print `Hello, world!` to the standard output.
+
+## Making it your own
