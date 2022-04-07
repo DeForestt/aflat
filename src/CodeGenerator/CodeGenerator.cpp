@@ -2179,6 +2179,24 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       type->contract = deff->contract;
     }
     asmc::File file = this->GenSTMT(deff->statment);
+    // check if the class has an init function
+    if (extract("init", deff->statment) == nullptr) {
+      ast::Function *func = new ast::Function();
+      ast::Return * ret = new ast::Return();
+      ast::Var *var = new ast::Var();
+      var->Ident = "my";
+      var->modList = links::LinkedList<std::string>();
+      ret->expr = var;
+      func->ident.ident = "init";
+      func->scope = ast::Public;
+      func->statment = ret;
+      func->args = nullptr;
+      ast::Type t;
+      t.typeName = "adr";
+      t.size = asmc::QWord;
+      func->type = t;
+      file << this->GenSTMT(func);
+    }
     OutputFile << file;
     this->globalScope = saveScope;
     this->scope = nullptr;
