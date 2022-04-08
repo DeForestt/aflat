@@ -20,6 +20,8 @@ class Random {
 	Random init(){
 		DateTime now = dt.Now();
 		my.seed = now.getSeconds();
+
+		delete now;
 		for int i = 0; i < my.nextInt(10); i++
 			my.nextInt(100);
 	};

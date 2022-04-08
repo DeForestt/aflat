@@ -87,6 +87,13 @@ pub_Random_init:
 	movq	-8(%rbp), %rdx
 	movl	%eax, %ebx
 	movl	%ebx, 0(%rdx)
+	pushq	%rdx
+	pushq	%rdi
+	movq	-16(%rbp), %rax
+	movq	%rax, %rdi
+	call	free
+	popq	%rdi
+	popq	%rdx
 	movl	$0, %ebx
 	movl	%ebx, -20(%rbp)
 	jmp	.Lexp2
