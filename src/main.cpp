@@ -291,7 +291,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   linker.push_back(libPath + "math.s");
   linker.push_back(libPath + "strings.s");
   linker.push_back(libPath + "std.s");
-  linker.push_back(libPath + "concurrancy.s");
+  linker.push_back(libPath + "concurrency.s");
   linker.push_back(libPath + "files.s");
   linker.push_back(libPath + "asm.s");
   linker.push_back(libPath + "String.s");
