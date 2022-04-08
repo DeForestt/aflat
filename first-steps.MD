@@ -1,7 +1,17 @@
 # First Steps with AFlat
 
 ## Installation
+***Reamember!!! If you already Insalled aflat, remember to update the repository on your system***
 Please see the [installation instructions](README.md) for the steps to download and build.  If aflat is already installed, then you can move on the the next section.
+
+To update the repository, run the following commands:
+
+```bash
+cd aflat # Change to the aflat directory
+git pull
+make
+```
+You should see a bunch of output
 
 ## First Project
 To create the tutorial project, run the following command in your project directory.
