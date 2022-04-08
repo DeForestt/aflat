@@ -1,9 +1,8 @@
-.needs <math>
 .needs <asm>
 .needs <std>
 
 import {ascii, len} from "strings" under str;
-
+import {exp, longExp} from "math" under math;
 export int printInt(int i);
 
 private int charToColor(char c){
@@ -112,6 +111,12 @@ export int toInt(char input){
         if(input == '7'){return 7};
         if(input == '8'){return 8};
         if(input == '9'){return 9};
+        if(input == 'A'){return 10};
+        if(input == 'B'){return 11};
+        if(input == 'C'){return 12};
+        if(input == 'D'){return 13};
+        if(input == 'E'){return 14};
+        if(input == 'F'){return 15};
         return -1;
 };
 
@@ -124,7 +129,7 @@ export int pullInt(int sigfigs){
         while (i > -1){
                 sys_read(0, ?input, 1);
                 h = toInt(input);
-                factor = exp(10, i);
+                factor = math.exp(10, i);
                 h = factor * h;
                 value = value + h;
                 i = i - 1;
@@ -158,7 +163,7 @@ export int printInt(int input){
 
         char out;
         while (i > -1){
-                factor = exp(10, i);
+                factor = math.exp(10, i);
                 h = input / factor;
                 out = toChar(h);
                 printChar(out);
@@ -192,7 +197,7 @@ export int printHex(adr input){
         i = i - 1;
 
         while (i > -1){
-                factor = longExp(16, i);
+                factor = math.longExp(16, i);
                 h = input / factor;
                 char out = longtoChar(h);
                 printChar(out);
@@ -227,7 +232,7 @@ export int printLong(long input){
         i = i - 1;
 
         while (i > -1){
-                factor = longExp(10, i);
+                factor = math.longExp(10, i);
                 h = input / factor;
                 char out = longtoChar(h);
                 printChar(out);
@@ -315,7 +320,7 @@ export int printFloat(adr input, * int signed){
 	int i = 0;
 	while(factor > -1){
 		if (current.value == 1){
-			int append = exp(2, factor);
+			int append = math.exp(2, factor);
 			result = result + append;
 		};
 		current = current.last;
@@ -323,7 +328,7 @@ export int printFloat(adr input, * int signed){
 		i = i + 1;
 	};
 
-	factor = exp(10, percision);
+	factor = math.exp(10, percision);
 	factor = factor * 5;
 	int two = 2;
 	int decimalPlacess = 0;

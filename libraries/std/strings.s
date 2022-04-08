@@ -1,3 +1,4 @@
+.global	strings.hex_toInt
 .global	strings.char_isDigit
 .global	strings.str_forEach
 .global	strings.str_at
@@ -386,7 +387,7 @@ str_toInt:
 	pushq	%rsi
 	movl	-30(%rbp), %eax
 	movl	%eax, %esi
-	call	exp
+	call	math.exp
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
@@ -626,7 +627,7 @@ int_toString:
 	pushq	%rsi
 	movl	-28(%rbp), %eax
 	movl	%eax, %esi
-	call	exp
+	call	math.exp
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
@@ -978,7 +979,7 @@ int_toStringL0:
 	pushq	%rsi
 	movl	-32(%rbp), %eax
 	movl	%eax, %esi
-	call	exp
+	call	math.exp
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
@@ -1985,7 +1986,7 @@ float_toString:
 	pushq	%rsi
 	movl	-80(%rbp), %eax
 	movl	%eax, %esi
-	call	exp
+	call	math.exp
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
@@ -2044,7 +2045,7 @@ float_toString:
 	pushq	%rsi
 	movl	-24(%rbp), %eax
 	movl	%eax, %esi
-	call	exp
+	call	math.exp
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
@@ -2578,6 +2579,91 @@ char_isDigit:
 	popq	%rdx
 	popq	%rdi
 	movb	%al, %al
+	leave
+	ret
+strings.hex_toInt:
+hex_toInt:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$32, %rsp
+	movq	%rdi, -8(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -12(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -16(%rbp)
+	movq	-8(%rbp), %rax
+	movb	(%rax), %al
+	movb	%al, %bl
+	movb	%bl, -17(%rbp)
+	jmp	.Lhex_toInt104
+.Lhex_toInt103:
+	pushq	%rdx
+	pushq	%rdi
+	movb	-17(%rbp), %al
+	movb	%al, %dil
+	call	io.toInt
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %ebx
+	movl	%ebx, -21(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	$16, %edx
+	movl	-12(%rbp), %edi
+	imul	%edx, %edi
+	movl	%edi, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %ebx
+	movl	%ebx, -25(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	-25(%rbp), %edx
+	movl	-21(%rbp), %edi
+	add	%edx, %edi
+	movl	%edi, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %ebx
+	movl	%ebx, -12(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	$1, %edx
+	movq	-8(%rbp), %rdi
+	add	%rdx, %rdi
+	movq	%rdi, %rax
+	popq	%rdx
+	popq	%rdi
+	movq	%rax, %rbx
+	movq	%rbx, -8(%rbp)
+	movq	-8(%rbp), %rax
+	movb	(%rax), %al
+	movb	%al, %bl
+	movb	%bl, -17(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	$1, %edx
+	movl	-16(%rbp), %edi
+	add	%edx, %edi
+	movl	%edi, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+.Lhex_toInt104:
+	pushq	%rdi
+	pushq	%rdx
+	movb	$0, %dl
+	movb	-17(%rbp), %dil
+	cmpb	%dl, %dil
+	setne	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$1, %al
+	je	.Lhex_toInt103
+	movl	-12(%rbp), %eax
 	leave
 	ret
 

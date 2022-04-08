@@ -1,7 +1,7 @@
 .needs <std>
-.needs <math.gs>
 
 import {toInt, toChar, printFloat, printInt, print} from "io" under io;
+import {exp} from "math" under math;
 
 export char ascii(int input){
 	adr caster = ?input;
@@ -74,7 +74,7 @@ export int str_toInt(adr input){
     int result = 0;
     int i = size - 1;
     while(i > -1){
-        factor = exp(10, i);
+        factor = math.exp(10, i);
         char ch2 = input as char;
         int num = io.toInt(ch2);
         factor = factor * num;
@@ -116,7 +116,7 @@ export int int_toString(int input, adr buffer){
 
         char out = ' ';
         while (i > -1){
-                factor = exp(10, i);
+                factor = math.exp(10, i);
                 h = input / factor;
                 out = io.toChar(h);
                 buffer =: out;
@@ -186,7 +186,7 @@ export int int_toStringL0(int input, adr buffer, int size){
 
 
 	while (i > -1){
-		factor = exp(10, i);
+		factor = math.exp(10, i);
 		h = input / factor;
 		out = io.toChar(h);
 		buffer =: out;
@@ -379,7 +379,7 @@ export int float_toString(adr input, adr obuff, int signed){
 	int i = 0;
 	while(factor > -1){
 		if (current.value == 1){
-			int append = exp(2, factor);
+			int append = math.exp(2, factor);
 			result = result + append;
 		};
 		current = current.last;
@@ -387,7 +387,7 @@ export int float_toString(adr input, adr obuff, int signed){
 		i = i + 1;
 	};
 
-	factor = exp(10, percision);
+	factor = math.exp(10, percision);
 	factor = factor * 5;
 	int two = 2;
 	int decimalPlacess = 0;
@@ -478,4 +478,19 @@ export int str_forEach(adr s, adr foo, adr args){
 
 export bool char_isDigit(char c) {
   return c >= '0' & c <= '9';
+};
+
+export int hex_toInt(adr hex){
+	int result = 0;
+	int i = 0;
+	char ch = hex as char;
+	while (ch != '\0'){
+		int temp = io.toInt(ch);
+		int adder = result * 16;
+		result = temp + adder;
+		hex = hex + 1;
+		ch = hex as char;
+		i = i + 1;
+	};
+	return result;
 };

@@ -1,62 +1,59 @@
-.global	pub_Random_next
-.global	abs
-.global	longDiv
-.global	longExp
-.global	exp
-.global	newRandom
+.global	math.abs
+.global	math.longDiv
+.global	math.longExp
+.global	math.exp
+.global	pub_Random_nextInt
+.global	pub_Random_init
 
 
 .text
 
-newRandom:
+pub_Random_init:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
-	subq	$32, %rsp
+	subq	$16, %rsp
+	movq	%rdi, -8(%rbp)
 	pushq	%rdx
-	pushq	%rdi
-	movl	$4, %eax
-	movl	%eax, %edi
-	call	malloc
-	popq	%rdi
-	popq	%rdx
-	movq	%rax, %rbx
-	movq	%rbx, -8(%rbp)
-	pushq	%rdx
-	call	newTimes
+	movq	$0, %rdi
+	call	DateTime.Now
 	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -16(%rbp)
 	pushq	%rdx
+	lea	-16(%rbp), %rax
 	pushq	%rdi
-	movq	-16(%rbp), %rax
+	movq	(%rax), %rax
 	movq	%rax, %rdi
-	call	sys_times
+	call	pub_DateTime_getSeconds
 	popq	%rdi
 	popq	%rdx
-	movq	-16(%rbp), %rax
-	movl	(%rax), %eax
+	movq	-8(%rbp), %rdx
 	movl	%eax, %ebx
-	movl	%ebx, -20(%rbp)
+	movl	%ebx, 0(%rdx)
+	popq	%rbx
+	movq	-8(%rbp), %rax
+	leave
+	ret
+pub_Random_nextInt:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$16, %rsp
+	movq	%rdi, -8(%rbp)
+	movl	%esi, -12(%rbp)
 	pushq	%rdx
+	movq	-8(%rbp), %r14
 	pushq	%rdi
-	movl	-20(%rbp), %eax
+	movl	0(%r14), %eax
 	movl	%eax, %edi
-	pushq	%rsi
-	movl	$3, %eax
-	movl	%eax, %esi
-	call	exp
-	popq	%rsi
+	call	io.printInt
 	popq	%rdi
 	popq	%rdx
-	movl	%eax, %ebx
-	movl	%ebx, -20(%rbp)
-	movl	$10, %ebx
-	movl	%ebx, -24(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-20(%rbp), %eax
-	movl	-24(%rbp), %ecx
+	movl	%eax, %eax
+	movl	$2147483647, %ecx
 	cltd
 	idiv	%ecx
 	movl	%edx, %eax
@@ -65,9 +62,40 @@ newRandom:
 	movq	-8(%rbp), %rdx
 	movl	%eax, %ebx
 	movl	%ebx, 0(%rdx)
-	movq	-8(%rbp), %rax
+	pushq	%rdx
+	movq	-8(%rbp), %r14
+	pushq	%rdi
+	movl	0(%r14), %eax
+	movl	%eax, %edi
+	call	io.printInt
+	popq	%rdi
+	popq	%rdx
+	movq	-8(%rbp), %r14
+	movl	0(%r14), %ebx
+	movl	%ebx, -16(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	-16(%rbp), %eax
+	movl	-12(%rbp), %ecx
+	cltd
+	idiv	%ecx
+	movl	%edx, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %ebx
+	movl	%ebx, -16(%rbp)
+	pushq	%rdx
+	movq	-8(%rbp), %r14
+	pushq	%rdi
+	movl	0(%r14), %eax
+	movl	%eax, %edi
+	call	io.printInt
+	popq	%rdi
+	popq	%rdx
+	movl	-16(%rbp), %eax
 	leave
 	ret
+math.exp:
 exp:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -116,6 +144,7 @@ exp:
 	movl	-16(%rbp), %eax
 	leave
 	ret
+math.longExp:
 longExp:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -164,6 +193,7 @@ longExp:
 	movq	-24(%rbp), %rax
 	leave
 	ret
+math.longDiv:
 longDiv:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -205,6 +235,7 @@ longDiv:
 	movl	-12(%rbp), %eax
 	leave
 	ret
+math.abs:
 abs:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -235,104 +266,6 @@ abs:
 	ret
 .Labs4:
 	movl	-4(%rbp), %eax
-	leave
-	ret
-pub_Random_next:
-	pushq	%rbp
-	movq	%rsp, %rbp
-	pushq	%rbx
-	subq	$32, %rsp
-	movq	%rdi, -8(%rbp)
-	movl	%esi, -12(%rbp)
-	pushq	%rdx
-	call	newTimes
-	popq	%rdx
-	movq	%rax, %rbx
-	movq	%rbx, -20(%rbp)
-	pushq	%rdx
-	pushq	%rdi
-	movq	-20(%rbp), %rax
-	movq	%rax, %rdi
-	call	sys_times
-	popq	%rdi
-	popq	%rdx
-	movq	-20(%rbp), %r14
-	movl	0(%r14), %ebx
-	movl	%ebx, -28(%rbp)
-	movq	-8(%rbp), %r14
-	movl	0(%r14), %ebx
-	movl	%ebx, -24(%rbp)
-	pushq	%rdi
-	pushq	%rdx
-	movl	$1, %edx
-	movl	-24(%rbp), %edi
-	add	%edx, %edi
-	movl	%edi, %eax
-	popq	%rdx
-	popq	%rdi
-	movl	%eax, %ebx
-	movl	%ebx, -24(%rbp)
-	pushq	%rdi
-	pushq	%rdx
-	pushq	%rdx
-	pushq	%rdi
-	movl	-24(%rbp), %eax
-	movl	%eax, %edi
-	call	abs
-	popq	%rdi
-	popq	%rdx
-	movl	%eax, %edx
-	movl	-28(%rbp), %edi
-	add	%edx, %edi
-	movl	%edi, %eax
-	popq	%rdx
-	popq	%rdi
-	movl	%eax, %ebx
-	movl	%ebx, -24(%rbp)
-	pushq	%rdx
-	pushq	%rdi
-	movl	-24(%rbp), %eax
-	movl	%eax, %edi
-	pushq	%rdi
-	pushq	%rdx
-	movl	-24(%rbp), %eax
-	movl	-12(%rbp), %ecx
-	cltd
-	idiv	%ecx
-	movl	%edx, %eax
-	popq	%rdx
-	popq	%rdi
-	pushq	%rsi
-	movl	%eax, %eax
-	movl	%eax, %esi
-	call	exp
-	popq	%rsi
-	popq	%rdi
-	popq	%rdx
-	movl	%eax, %ebx
-	movl	%ebx, -24(%rbp)
-	pushq	%rdi
-	pushq	%rdx
-	movl	-24(%rbp), %eax
-	movl	-12(%rbp), %ecx
-	cltd
-	idiv	%ecx
-	movl	%edx, %eax
-	popq	%rdx
-	popq	%rdi
-	movl	%eax, %ebx
-	movl	%ebx, -24(%rbp)
-	movq	-8(%rbp), %rdx
-	movl	-24(%rbp), %ebx
-	movl	%ebx, 0(%rdx)
-	pushq	%rdx
-	pushq	%rdi
-	movl	-24(%rbp), %eax
-	movl	%eax, %edi
-	call	abs
-	popq	%rdi
-	popq	%rdx
-	movl	%eax, %eax
 	leave
 	ret
 
