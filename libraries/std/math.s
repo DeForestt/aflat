@@ -2,39 +2,12 @@
 .global	math.longDiv
 .global	math.longExp
 .global	math.exp
-.global	pub_Random_nextInt
 .global	pub_Random_init
+.global	pub_Random_nextInt
 
 
 .text
 
-pub_Random_init:
-	pushq	%rbp
-	movq	%rsp, %rbp
-	pushq	%rbx
-	subq	$16, %rsp
-	movq	%rdi, -8(%rbp)
-	pushq	%rdx
-	movq	$0, %rdi
-	call	DateTime.Now
-	popq	%rdx
-	movq	%rax, %rbx
-	movq	%rbx, -16(%rbp)
-	pushq	%rdx
-	lea	-16(%rbp), %rax
-	pushq	%rdi
-	movq	(%rax), %rax
-	movq	%rax, %rdi
-	call	pub_DateTime_getSeconds
-	popq	%rdi
-	popq	%rdx
-	movq	-8(%rbp), %rdx
-	movl	%eax, %ebx
-	movl	%ebx, 0(%rdx)
-	popq	%rbx
-	movq	-8(%rbp), %rax
-	leave
-	ret
 pub_Random_nextInt:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -89,6 +62,45 @@ pub_Random_nextInt:
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %eax
+	leave
+	ret
+pub_Random_init:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$16, %rsp
+	movq	%rdi, -8(%rbp)
+	pushq	%rdx
+	movq	$0, %rdi
+	call	DateTime.Now
+	popq	%rdx
+	movq	%rax, %rbx
+	movq	%rbx, -16(%rbp)
+	pushq	%rdx
+	lea	-16(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_DateTime_getSeconds
+	popq	%rdi
+	popq	%rdx
+	movq	-8(%rbp), %rdx
+	movl	%eax, %ebx
+	movl	%ebx, 0(%rdx)
+	pushq	%rdx
+	lea	-8(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	pushq	%rsi
+	movl	$100, %eax
+	movl	%eax, %esi
+	call	pub_Random_nextInt
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	popq	%rbx
+	movq	-8(%rbp), %rax
 	leave
 	ret
 math.exp:
