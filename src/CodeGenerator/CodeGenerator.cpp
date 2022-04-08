@@ -1228,55 +1228,54 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
 
     while (call->modList.head != nullptr) {
       sym = gen::scope::ScopeManager::getInstance()->get(call->modList.peek());
-      if (sym == nullptr) {
-        bool addpub = true;
-        if (this->typeList[last.typeName] == nullptr)
-          alert("type not found " + last.typeName);
-        type = *this->typeList[last.typeName];
-        gen::Class *cl = dynamic_cast<gen::Class *>(type);
-        if (cl != nullptr) {
-          pubname = cl->Ident;
-          func = cl->nameTable[call->modList.peek()];
-          if (func == nullptr) {
-              gen::Class *parent = cl->parent;
-              if (parent){
-                pubname = parent->Ident;
-                // search the parent class for the function
-                func = parent->nameTable[call->modList.peek()];
-                if(func != nullptr){
-                  call->modList.pop();
-                }
+      bool addpub = true;
+      if (this->typeList[last.typeName] == nullptr)
+        alert("type not found " + last.typeName);
+      type = *this->typeList[last.typeName];
+      gen::Class *cl = dynamic_cast<gen::Class *>(type);
+      if (cl != nullptr) {
+        pubname = cl->Ident;
+        func = cl->nameTable[call->modList.peek()];
+        if (func == nullptr) {
+            gen::Class *parent = cl->parent;
+            if (parent){
+              pubname = parent->Ident;
+              // search the parent class for the function
+              func = parent->nameTable[call->modList.peek()];
+              if(func != nullptr){
+                call->modList.pop();
               }
-              if (func == nullptr){
-                // search the class symbol table for a pointer
-                std::string id = call->modList.peek();
-                mods.push(id);
-                sym = cl->SymbolTable.search<std::string>(searchSymbol,
-                                                          call->modList.peek());
-                if (sym != nullptr) {
-                  call->modList.pop();
-                  ast::Var *var = new ast::Var();
-                  var->Ident = call->ident;
-                  mods.invert();
-                  var->modList = mods;
+            }
+            if (func == nullptr){
+              // search the class symbol table for a pointer
+              std::string id = call->modList.peek();
+              mods.push(id);
+              sym = cl->SymbolTable.search<std::string>(searchSymbol,
+                                                        call->modList.peek());
+              if (sym != nullptr) {
+                call->modList.pop();
+                ast::Var *var = new ast::Var();
+                var->Ident = call->ident;
+                mods.invert();
+                var->modList = mods;
 
-                  gen::Expr exp1 = this->GenExpr(var, OutputFile);
+                gen::Expr exp1 = this->GenExpr(var, OutputFile);
 
-                  asmc::Mov *mov = new asmc::Mov();
-                  mov->size = exp1.size;
-                  mov->from = exp1.access;
-                  mov->to = this->registers["%r15"]->get(exp1.size);
-                  OutputFile.text << mov;
+                asmc::Mov *mov = new asmc::Mov();
+                mov->size = exp1.size;
+                mov->from = exp1.access;
+                mov->to = this->registers["%r15"]->get(exp1.size);
+                OutputFile.text << mov;
 
-                  func = new ast::Function();
-                  func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
-                  func->type = sym->type;
-                  func->type.typeName = "--std--flex--function";
-                  checkArgs = false;
-                  func->type.size = asmc::QWord;
-                  func->flex = true;
-                  addpub = false;
-                }
+                func = new ast::Function();
+                func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
+                func->type = sym->type;
+                func->type.typeName = "--std--flex--function";
+                checkArgs = false;
+                func->type.size = asmc::QWord;
+                func->flex = true;
+                addpub = false;
+              }
             }
           } else
             call->modList.pop();
@@ -1308,7 +1307,6 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
           OutputFile.text << mov2;
           break;
         }
-      }
       mods.push(call->modList.pop());
       last = sym->type;
       allMods += sym->symbol + ".";
