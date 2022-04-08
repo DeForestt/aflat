@@ -1,7 +1,7 @@
 # First Steps with AFlat
 
 ## Installation
-***Reamember!!! If you already Insalled aflat, remember to update the repository on your system***
+***Reamember!!! If you already Insalled aflat, remember to update the repository on your system***<br>
 Please see the [installation instructions](README.md) for the steps to download and build.  If aflat is already installed, then you can move on the the next section.
 
 To update the repository, run the following commands:
