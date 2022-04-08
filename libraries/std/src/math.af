@@ -4,6 +4,8 @@ import DateTime from "DateTime.af";
 import {Now} from "DateTime" under dt;
 import {hex_toInt} from "strings" under str;
 
+export int exp(int base, int pow);
+
 class Random {
 	int seed;
 
@@ -13,7 +15,7 @@ class Random {
 	};
 
 	int nextInt(int n){
-		my.seed = ((my.seed * 1103515245) +  12345 ) % 2147483648;
+		my.seed = (my.seed + 910230123) * -1;
 		return my.seed % n;
 	};
 };

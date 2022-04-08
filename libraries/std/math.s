@@ -44,11 +44,19 @@ pub_Random_nextInt:
 	movl	%esi, -12(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	%eax, %eax
-	movl	$2147483647, %ecx
-	cltd
-	idiv	%ecx
-	movl	%edx, %eax
+	movl	$-1, %edx
+	pushq	%rdi
+	pushq	%rdx
+	movl	$910230123, %edx
+	movq	-8(%rbp), %r14
+	movl	0(%r14), %edi
+	add	%edx, %edi
+	movl	%edi, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %edi
+	imul	%edx, %edi
+	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
 	movq	-8(%rbp), %rdx
