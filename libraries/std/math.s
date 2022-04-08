@@ -44,9 +44,6 @@ pub_Random_nextInt:
 	movl	%esi, -12(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	$-1, %edx
-	pushq	%rdi
-	pushq	%rdx
 	movl	$910230123, %edx
 	movq	-8(%rbp), %r14
 	movl	0(%r14), %edi
@@ -54,17 +51,37 @@ pub_Random_nextInt:
 	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
-	movl	%eax, %edi
+	movq	-8(%rbp), %rdx
+	movl	%eax, %ebx
+	movl	%ebx, 0(%rdx)
+	movq	-8(%rbp), %r14
+	movl	0(%r14), %ebx
+	movl	%ebx, -16(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	$0, %edx
+	movl	-16(%rbp), %edi
+	cmpl	%edx, %edi
+	setl	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lexp0
+	pushq	%rdi
+	pushq	%rdx
+	movl	$-1, %edx
+	movl	-16(%rbp), %edi
 	imul	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
-	movq	-8(%rbp), %rdx
 	movl	%eax, %ebx
-	movl	%ebx, 0(%rdx)
+	movl	%ebx, -16(%rbp)
+.Lexp0:
 	pushq	%rdi
 	pushq	%rdx
-	movl	0(%r14), %eax
+	movl	-16(%rbp), %eax
 	movl	-12(%rbp), %ecx
 	cltd
 	idiv	%ecx
@@ -86,8 +103,8 @@ exp:
 	movl	%ebx, -12(%rbp)
 	movl	$1, %ebx
 	movl	%ebx, -16(%rbp)
-	jmp	.Lexp1
-.Lexp0:
+	jmp	.Lexp2
+.Lexp1:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-4(%rbp), %edx
@@ -108,7 +125,7 @@ exp:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -12(%rbp)
-.Lexp1:
+.Lexp2:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-8(%rbp), %edx
@@ -119,7 +136,7 @@ exp:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lexp0
+	je	.Lexp1
 	movl	-16(%rbp), %eax
 	leave
 	ret
@@ -135,8 +152,8 @@ longExp:
 	movl	%ebx, -16(%rbp)
 	movq	$1, %rbx
 	movq	%rbx, -24(%rbp)
-	jmp	.LlongExp3
-.LlongExp2:
+	jmp	.LlongExp4
+.LlongExp3:
 	pushq	%rdi
 	pushq	%rdx
 	movq	-8(%rbp), %rdx
@@ -157,7 +174,7 @@ longExp:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -16(%rbp)
-.LlongExp3:
+.LlongExp4:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-12(%rbp), %edx
@@ -168,7 +185,7 @@ longExp:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.LlongExp2
+	je	.LlongExp3
 	movq	-24(%rbp), %rax
 	leave
 	ret
@@ -231,7 +248,7 @@ abs:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Labs4
+	je	.Labs5
 	pushq	%rdi
 	pushq	%rdx
 	movl	$-1, %edx
@@ -243,7 +260,7 @@ abs:
 	movl	%eax, %eax
 	leave
 	ret
-.Labs4:
+.Labs5:
 	movl	-4(%rbp), %eax
 	leave
 	ret

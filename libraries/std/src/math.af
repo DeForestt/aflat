@@ -7,7 +7,7 @@ import {hex_toInt} from "strings" under str;
 export int exp(int base, int pow);
 
 class Random {
-	int seed;
+	private int seed;
 
 	Random init(){
 		DateTime now = dt.Now();
@@ -15,8 +15,11 @@ class Random {
 	};
 
 	int nextInt(int n){
-		my.seed = (my.seed + 910230123) * -1;
-		return my.seed % n;
+		my.seed = (my.seed + 910230123);
+		int result = my.seed;
+		if result < 0
+		 	result = result  * -1;
+		return result % n;
 	};
 };
 
