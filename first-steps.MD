@@ -39,7 +39,7 @@ Now we will make a few edits to the project.  First, it would be nice for the wo
 import * from "io" under io;
 
 int main() {
-    io.print("Hello, world!");
+    io.print("Hello, world!\n");
     io.print("From, The aflat Team\n");
     return 0;
 };
