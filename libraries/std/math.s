@@ -42,14 +42,6 @@ pub_Random_nextInt:
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movl	%esi, -12(%rbp)
-	pushq	%rdx
-	movq	-8(%rbp), %r14
-	pushq	%rdi
-	movl	0(%r14), %eax
-	movl	%eax, %edi
-	call	io.printInt
-	popq	%rdi
-	popq	%rdx
 	pushq	%rdi
 	pushq	%rdx
 	movl	%eax, %eax
@@ -62,37 +54,16 @@ pub_Random_nextInt:
 	movq	-8(%rbp), %rdx
 	movl	%eax, %ebx
 	movl	%ebx, 0(%rdx)
-	pushq	%rdx
-	movq	-8(%rbp), %r14
 	pushq	%rdi
+	pushq	%rdx
 	movl	0(%r14), %eax
-	movl	%eax, %edi
-	call	io.printInt
-	popq	%rdi
-	popq	%rdx
-	movq	-8(%rbp), %r14
-	movl	0(%r14), %ebx
-	movl	%ebx, -16(%rbp)
-	pushq	%rdi
-	pushq	%rdx
-	movl	-16(%rbp), %eax
 	movl	-12(%rbp), %ecx
 	cltd
 	idiv	%ecx
 	movl	%edx, %eax
 	popq	%rdx
 	popq	%rdi
-	movl	%eax, %ebx
-	movl	%ebx, -16(%rbp)
-	pushq	%rdx
-	movq	-8(%rbp), %r14
-	pushq	%rdi
-	movl	0(%r14), %eax
-	movl	%eax, %edi
-	call	io.printInt
-	popq	%rdi
-	popq	%rdx
-	movl	-16(%rbp), %eax
+	movl	%eax, %eax
 	leave
 	ret
 math.exp:

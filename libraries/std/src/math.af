@@ -3,7 +3,6 @@
 import DateTime from "DateTime.af";
 import {Now} from "DateTime" under dt;
 import {hex_toInt} from "strings" under str;
-import {printInt} from "io" under io;
 
 class Random {
 	int seed;
