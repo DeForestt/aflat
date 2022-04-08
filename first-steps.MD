@@ -131,5 +131,35 @@ int main(){
 };
 ```
 
+## Loops
+This game is a bit too hard.  We cannot expect to guess the number in just one try.  We need to keep track of how many guesses the user has made.  We can do this by using a loop.
+
+```js
+.needs <std>
+import * from "io" under io;
+import String from "String";
+import * from "String" under str;
+
+int main(){
+	int secret = 42;
+	io.print("Please enter a guess: ");
+	
+
+	for int i = 0; i < 10; i++ {
+		String guess = str.getString();
+		int guessInt = guess.toInt();
+
+		if guessInt == secret {
+			io.print("You guessed it!\n");
+			return 0;	// return causes the program to exit
+		} else if guessInt < secret
+			io.print("Too low!")
+		else
+			io.print("Too high!");
+	};
+	
+	return 0;
+};
+```
 ## Done So Soon?
 Don't worry, more tutorial to come...
