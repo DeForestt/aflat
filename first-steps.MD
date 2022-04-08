@@ -182,5 +182,41 @@ for int i = 0; i < 10; i++ {
 
 The first section creats a variable called `i` and sets it to 0.  The second section is the condition.  The condition is checked every time the loop runs.  The condition is checked to see if the loop should continue.  The third section is the increment.  The increment is executed every time the loop runs.  The increment is used to increase the value of the variable `i`.  The loop will continue until the condition is false.
 
+## Random numbers
+This game gets boring quickly.  We need to make sure that the program doesn't always guess the same number.  We can do this by using a random number generator.
+
+```js
+.needs <std>
+
+import * from "io" under io;
+import String from "String";
+import * from "String" under str;
+import Random from "math";
+
+int main(){
+	Random r = Random();
+	io.printChar('\n');
+	int secret = r.nextInt(100);
+
+	for int i = 0; i < 10; i++ {
+		io.print("Please enter a guess: ");
+		String guess = str.getString();
+		int guessInt = guess.toInt();
+
+		if guessInt == secret {
+			io.print("You guessed it!\n");
+			return 0;	// return causes the program to exit
+		} else if guessInt < secret
+			io.print("Too low!\n")
+		else
+			io.print("Too high!\n");
+	};
+	
+	return 0;
+};
+```
+
+Now we have imported the Random object from the math library.  The random object has a nextInt(int n) function that returns a random number between 0 and n.
+
 ## Done So Soon?
 Don't worry, more tutorial to come...
