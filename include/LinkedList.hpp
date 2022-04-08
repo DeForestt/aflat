@@ -23,6 +23,7 @@ public:
   int count;
 
   Node<T> *head;
+  Node<T> *pos;
   LinkedList();
 
   /*Push a new value to the top of the list*/
@@ -34,6 +35,8 @@ public:
   /*Insert at an index*/
   void insert(T value, int index);
 
+  /*void insert from top*/
+  void insert_top(T value, int index);
   /*Reverses the direction of the list*/
   void invert();
 
@@ -69,6 +72,19 @@ public:
 
   /*appends a node to the end of the list*/
   T *append(T input);
+
+  /*A list of functions to use without mutating the List */
+  
+  /*Return the element pointed to by the pos Pointer and shifts the pos pointer by one*/
+  T shift();
+
+  /*Return the element pointed to by the pos pointer without shifting*/
+  T touch();
+
+  /*insert at the position of the pos pointer*/
+  void place(T);
+
+  void reset();
 };
 } // namespace links
 
@@ -109,6 +125,10 @@ template <typename T> T *links::LinkedList<T>::append(T input) {
   }
   count++;
   return &temp->data;
+}
+
+template <typename T> void links::LinkedList<T>::reset(){
+  this->pos = this->head;
 }
 
 template <typename T>
@@ -156,6 +176,7 @@ template <typename T> void links::LinkedList<T>::clear() {
   }
   this->count = 0;
   this->head = nullptr;
+  this->pos = nullptr;
 }
 
 template <typename T> void links::LinkedList<T>::push(T value) {
@@ -164,13 +185,15 @@ template <typename T> void links::LinkedList<T>::push(T value) {
   push->next = this->head;
   push->data = value;
   this->head = push;
+  this->pos = this->head;
 }
 
 template <typename T> void links::LinkedList<T>::insert(T value, int index) {
   Node<T> *curr = this->head;
   int i = 0;
+  int count = this->size();
   while (curr != nullptr) {
-    if (i == this->count - index) {
+    if (i == count - index) {
       Node<T> *New = new Node<T>();
       New->data = value;
       New->next = curr->next;
@@ -183,6 +206,26 @@ template <typename T> void links::LinkedList<T>::insert(T value, int index) {
   }
   throw err::Exception("Index Out of Range");
 };
+
+template <typename T> void links::LinkedList<T>::insert_top(T value, int index){
+  Node<T> *curr = this->head;
+  int i = 0;
+  int count = this->size();
+  while (curr != nullptr) {
+    if (i == index) {
+      Node<T> *New = new Node<T>();
+      New->data = value;
+      New->next = curr;
+      this->head = New;
+      this->count++;
+      this->pos = New;
+      return;
+    }
+    curr = curr->next;
+    i++;
+  }
+  throw err::Exception("Index Out of Range");
+}
 
 template <typename T> void links::LinkedList<T>::operator<<(T value) {
   this->count += 1;
@@ -211,13 +254,39 @@ template <typename T> T links::LinkedList<T>::pop() {
   T data = this->head->data;
   Node<T> *poper = this->head;
   this->head = this->head->next;
+  this->pos = this->head;
   delete poper;
+  return data;
+}
+
+template <typename T> T links::LinkedList<T>::shift(){
+  if (this->pos == nullptr)
+    throw err::Exception("Position Pointer is null");
+
+  T data = this->pos->head();
+  this->pos = this->pos->next;
   return data;
 }
 
 template <typename T> T links::LinkedList<T>::peek() {
   return this->head->data;
 }
+
+template <typename T> T links::LinkedList<T>::touch() {
+  return this->pos->data;
+};
+
+template <typename T> void links::LinkedList<T>::place(T value) {
+  // get the index of pos
+  int index = 0;
+  Node<T> *curr = this->head;
+  while (curr != this->pos) {
+    curr = curr->next;
+    index++;
+  }
+  // insert at the index
+  this->insert_top(value, index);
+};
 
 template <typename T> void links::LinkedList<T>::stitch(LinkedList<T> l) {
   links::Node<T> *pointer = head;
