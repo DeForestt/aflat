@@ -101,5 +101,35 @@ int main(){
 
 The if statment will check if the two strings are equal. If they are equal, then the program statment will be executed.  If they are not equal, then the else statement will be executed.  Keep in mind that the else statement is optional.
 
+
+## Guessing Game
+Now we will make a simple guessing game.  The program will ask the user to guess a number.  If the user guesses the number, the program will tell them they won.  If the user guesses the wrong number, the program will tell them  too high or too low. Explinations will be found in the comments.
+
+```js
+.needs <std>
+import * from "io" under io;
+import String from "String";
+import * from "String" under str;
+
+int main(){
+	int secret = 42;	// one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
+	io.print("Please enter a guess: ");  // ask the user to guess the number
+	
+	String guess = str.getString(); // get the string that the user entered
+	int guessInt = guess.toInt(); // the String object provides a toInt() function that converts the string to an integer.
+
+	if guessInt == secret // now that we have the same type we can compare them with the '==' operator
+		io.print("You guessed it!\n")
+	else if guessInt < secret // we can check if the guess is too low with the '<' operator
+		io.print("Too low!")
+	else
+		io.print("Too high!");
+	
+	// notice that the curly braces are not needed in the if statement.  The curly braces are only needed when there is a block of code to be executed.
+
+	return 0;
+};
+```
+
 ## Done So Soon?
 Don't worry, more tutorial to come...
