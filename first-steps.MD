@@ -157,9 +157,20 @@ int main(){
 		else
 			io.print("Too high!");
 	};
-	
+	io.print("You ran out of guesses!\n");
 	return 0;
 };
 ```
+
+The for loop looks like this:
+
+```js
+for int i = 0; i < 10; i++ {
+	// do something
+};
+```
+
+The first section creats a variable called `i` and sets it to 0.  The second section is the condition.  The condition is checked every time the loop runs.  The condition is checked to see if the loop should continue.  The third section is the increment.  The increment is executed every time the loop runs.  The increment is used to increase the value of the variable `i`.  The loop will continue until the condition is false.
+
 ## Done So Soon?
 Don't worry, more tutorial to come...
