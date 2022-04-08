@@ -56,6 +56,9 @@ public:
   /*returns the number of nodes in the list*/
   int size();
 
+  /*like size but from the pos*/
+  int trail();
+
   /*Pop removes the top eleent for the list
   Behaves likle a stack*/
   T pop();
@@ -91,6 +94,16 @@ public:
 template <typename T> int links::LinkedList<T>::size() {
   int count = 0;
   Node<T> *temp = head;
+  while (temp != nullptr) {
+    count++;
+    temp = temp->next;
+  }
+  return count;
+}
+
+template <typename T> int links::LinkedList<T>::trail() {
+  int count = 0;
+  Node<T> *temp = pos;
   while (temp != nullptr) {
     count++;
     temp = temp->next;
@@ -247,6 +260,7 @@ template <typename T> void links::LinkedList<T>::invert() {
     curr = next;
   }
   this->head = prev;
+  this->pos = this->head;
 }
 
 template <typename T> T links::LinkedList<T>::pop() {
@@ -263,7 +277,7 @@ template <typename T> T links::LinkedList<T>::shift(){
   if (this->pos == nullptr)
     throw err::Exception("Position Pointer is null");
 
-  T data = this->pos->head();
+  T data = this->pos->data;
   this->pos = this->pos->next;
   return data;
 }
@@ -273,6 +287,8 @@ template <typename T> T links::LinkedList<T>::peek() {
 }
 
 template <typename T> T links::LinkedList<T>::touch() {
+  if (this->pos == nullptr)
+    throw err::Exception("Position Pointer is null cannot touch");
   return this->pos->data;
 };
 
