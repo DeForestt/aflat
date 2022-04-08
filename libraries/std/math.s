@@ -68,7 +68,7 @@ pub_Random_init:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
-	subq	$16, %rsp
+	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	pushq	%rdx
 	movq	$0, %rdi
@@ -87,6 +87,10 @@ pub_Random_init:
 	movq	-8(%rbp), %rdx
 	movl	%eax, %ebx
 	movl	%ebx, 0(%rdx)
+	movl	$0, %ebx
+	movl	%ebx, -20(%rbp)
+	jmp	.Lexp2
+.Lexp1:
 	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
@@ -99,6 +103,31 @@ pub_Random_init:
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
+	add	$1, -20(%rbp)
+.Lexp2:
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdx
+	lea	-8(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	pushq	%rsi
+	movl	$10, %eax
+	movl	%eax, %esi
+	call	pub_Random_nextInt
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %edx
+	movl	-20(%rbp), %edi
+	cmpl	%edx, %edi
+	setl	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$1, %al
+	je	.Lexp1
 	popq	%rbx
 	movq	-8(%rbp), %rax
 	leave
@@ -115,8 +144,8 @@ exp:
 	movl	%ebx, -12(%rbp)
 	movl	$1, %ebx
 	movl	%ebx, -16(%rbp)
-	jmp	.Lexp2
-.Lexp1:
+	jmp	.Lexp4
+.Lexp3:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-4(%rbp), %edx
@@ -137,7 +166,7 @@ exp:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -12(%rbp)
-.Lexp2:
+.Lexp4:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-8(%rbp), %edx
@@ -148,7 +177,7 @@ exp:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lexp1
+	je	.Lexp3
 	movl	-16(%rbp), %eax
 	leave
 	ret
@@ -164,8 +193,8 @@ longExp:
 	movl	%ebx, -16(%rbp)
 	movq	$1, %rbx
 	movq	%rbx, -24(%rbp)
-	jmp	.LlongExp4
-.LlongExp3:
+	jmp	.LlongExp6
+.LlongExp5:
 	pushq	%rdi
 	pushq	%rdx
 	movq	-8(%rbp), %rdx
@@ -186,7 +215,7 @@ longExp:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -16(%rbp)
-.LlongExp4:
+.LlongExp6:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-12(%rbp), %edx
@@ -197,7 +226,7 @@ longExp:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.LlongExp3
+	je	.LlongExp5
 	movq	-24(%rbp), %rax
 	leave
 	ret
@@ -260,7 +289,7 @@ abs:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Labs5
+	je	.Labs7
 	pushq	%rdi
 	pushq	%rdx
 	movl	$-1, %edx
@@ -272,7 +301,7 @@ abs:
 	movl	%eax, %eax
 	leave
 	ret
-.Labs5:
+.Labs7:
 	movl	-4(%rbp), %eax
 	leave
 	ret
