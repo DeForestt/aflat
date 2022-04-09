@@ -1281,47 +1281,42 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
       if (cl != nullptr) {
         pubname = cl->Ident;
         func = cl->nameTable[call->modList.touch()];
+        gen::Class *parent = cl->parent;
+        if (func == nullptr && parent){
+          func = parent->nameTable[call->modList.touch()];
+          if (func != nullptr)
+            pubname = parent->Ident;
+        }
         if (func == nullptr) {
-            gen::Class *parent = cl->parent;
-            if (parent){
-              pubname = parent->Ident;
-              // search the parent class for the function
-              func = parent->nameTable[call->modList.touch()];
-              if(func != nullptr){
-                call->modList.shift();
-              }
-            }
-            if (func == nullptr){
-              // search the class symbol table for a pointer
-              std::string id = call->modList.touch();
-              mods.push(id);
-              sym = cl->SymbolTable.search<std::string>(searchSymbol,
-                                                        call->modList.touch());
-              if (sym != nullptr && sym->type.typeName == "adr") {
-                call->modList.shift();
-                ast::Var *var = new ast::Var();
-                var->Ident = ident;
-                mods.invert();
-                var->modList = mods;
+          // search the class symbol table for a pointer
+          std::string id = call->modList.touch();
+          mods.push(id);
+          sym = cl->SymbolTable.search<std::string>(searchSymbol,
+                                                    call->modList.touch());
+          if (sym != nullptr && sym->type.typeName == "adr") {
+            call->modList.shift();
+            ast::Var *var = new ast::Var();
+            var->Ident = ident;
+            mods.invert();
+            var->modList = mods;
 
-                gen::Expr exp1 = this->GenExpr(var, OutputFile);
+            gen::Expr exp1 = this->GenExpr(var, OutputFile);
 
-                asmc::Mov *mov = new asmc::Mov();
-                mov->size = exp1.size;
-                mov->from = exp1.access;
-                mov->to = this->registers["%r15"]->get(exp1.size);
-                OutputFile.text << mov;
+            asmc::Mov *mov = new asmc::Mov();
+            mov->size = exp1.size;
+            mov->from = exp1.access;
+            mov->to = this->registers["%r15"]->get(exp1.size);
+            OutputFile.text << mov;
 
-                func = new ast::Function();
-                func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
-                func->type = sym->type;
-                func->type.typeName = "--std--flex--function";
-                checkArgs = false;
-                func->type.size = asmc::QWord;
-                func->flex = true;
-                addpub = false;
-              }
-            }
+            func = new ast::Function();
+            func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
+            func->type = sym->type;
+            func->type.typeName = "--std--flex--function";
+            checkArgs = false;
+            func->type.size = asmc::QWord;
+            func->flex = true;
+            addpub = false;
+          }
           } else {
             call->modList.shift();
             call->modList.invert();
