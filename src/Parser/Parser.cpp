@@ -1113,8 +1113,9 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
 
   ast::Compound *compound;
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
-    compound = new ast::Compound();
     lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+
+    compound = new ast::Compound();
     if (sym.Sym == '+') {
       tokens.pop();
       compound->op = ast::Plus;
