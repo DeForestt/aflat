@@ -500,12 +500,54 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     asmc::Lea *lea = new asmc::Lea();
     lea->to = this->registers["%rax"]->get(asmc::QWord);
     lea->from = '-' + std::to_string(sym->byteMod) + "(%rbp)";
-    // ASMC::Mov * mov = new ASMC::Mov();
-    OutputFile.text << lea;
+
+    
+    output.access = registers["%rax"]->get(asmc::QWord);
     output.access = registers["%rax"]->get(asmc::QWord);
     output.size = asmc::QWord;
     output.op = asmc::OpType::Hard;
     output.type = "adr";
+
+    ast::Type last = sym->type;
+    int checkTo = 0;
+    if (ref.internal == true) checkTo = 1;
+    ref.modList.invert();
+    ref.modList.reset();
+
+    while (ref.modList.trail() > checkTo) {
+      gen::Symbol * modSym;
+      std::string sto = ref.modList.touch();
+      if (this->typeList[last.typeName] == nullptr)
+        alert("type not found " + last.typeName);
+      gen::Type type = **this->typeList[last.typeName];
+
+          if (this->scope == *this->typeList[last.typeName]) {
+            // if we are scoped to the type seache the symbol in the type symbol
+            // table
+            modSym = type.SymbolTable.search<std::string>(searchSymbol,
+                                                          ref.modList.shift());
+          } else {
+            // if we are not scoped to the type search the symbol in the public
+            // symbol table
+            modSym = type.publicSymbols.search<std::string>(searchSymbol,
+                                                            ref.modList.shift());
+          };
+          if (modSym == nullptr)
+            alert("variable not found " + last.typeName + "." + sto);
+      
+                asmc::Mov *mov = new asmc::Mov();
+          mov->op = modSym->type.opType;
+          mov->size = asmc::QWord;
+          mov->to = this->registers["%r14"]->get(asmc::QWord);
+          mov->from = lea->from;
+          OutputFile.text << mov;
+          lea->from = std::to_string(modSym->byteMod - this->getBytes(modSym->type.size)) +
+                          '(' + mov->to + ')';
+      last = modSym->type;
+    }
+    OutputFile.text << lea;
+    ref.modList.invert();
+    ref.modList.reset();
   } else if (dynamic_cast<ast::StringLiteral *>(expr) != nullptr) {
     ast::StringLiteral str = *dynamic_cast<ast::StringLiteral *>(expr);
     asmc::StringLiteral *strlit = new asmc::StringLiteral();
@@ -1163,6 +1205,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
   std::string mod = "";
   ast::Function *func;
   bool checkArgs = true;
+  call->modList.invert();
   call->modList.reset();
   std::string ident = call->ident;
 
@@ -1254,7 +1297,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
               mods.push(id);
               sym = cl->SymbolTable.search<std::string>(searchSymbol,
                                                         call->modList.touch());
-              if (sym != nullptr) {
+              if (sym != nullptr && sym->type.typeName == "adr") {
                 call->modList.shift();
                 ast::Var *var = new ast::Var();
                 var->Ident = ident;
@@ -1279,35 +1322,39 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
                 addpub = false;
               }
             }
-          } else
+          } else {
             call->modList.shift();
-          ast::Refrence *ref = new ast::Refrence();
-          ref->Ident = my;
-          ref->internal = true;
-          mod = "pub_" + pubname + "_";
-          if (!addpub)
-            mod = "";
-          gen::Expr exp;
-          exp = this->GenExpr(ref, OutputFile);
-          asmc::Mov *mov = new asmc::Mov();
-          asmc::Mov *mov2 = new asmc::Mov();
-          asmc::Push *push = new asmc::Push();
+            call->modList.invert();
+            call->modList.reset();
+            ast::Refrence *ref = new ast::Refrence();
+            ref->Ident = my;
+            ref->modList = call->modList;
+            ref->internal = true;
+            mod = "pub_" + pubname + "_";
+            if (!addpub)
+              mod = "";
+            gen::Expr exp;
+            exp = this->GenExpr(ref, OutputFile);
+            asmc::Mov *mov = new asmc::Mov();
+            asmc::Mov *mov2 = new asmc::Mov();
+            asmc::Push *push = new asmc::Push();
 
-          mov->size = exp.size;
-          mov2->size = exp.size;
+            mov->size = exp.size;
+            mov2->size = exp.size;
 
-          mov->from = '(' + exp.access + ')';
-          mov->to = this->registers["%eax"]->get(exp.size);
-          mov2->from = this->registers["%eax"]->get(exp.size);
-          mov2->to = this->intArgs[argsCounter].get(exp.size);
-          push->op = this->intArgs[argsCounter].get(asmc::QWord);
-          stack << this->intArgs[argsCounter].get(asmc::QWord);
+            mov->from = '(' + exp.access + ')';
+            mov->to = this->registers["%eax"]->get(exp.size);
+            mov2->from = this->registers["%eax"]->get(exp.size);
+            mov2->to = this->intArgs[argsCounter].get(exp.size);
+            push->op = this->intArgs[argsCounter].get(asmc::QWord);
+            stack << this->intArgs[argsCounter].get(asmc::QWord);
 
-          argsCounter++;
-          OutputFile.text << push;
-          OutputFile.text << mov;
-          OutputFile.text << mov2;
-          break;
+            argsCounter++;
+            OutputFile.text << push;
+            OutputFile.text << mov;
+            OutputFile.text << mov2;
+            break;
+          }
         }
       mods.push(call->modList.shift());
       last = sym->type;
