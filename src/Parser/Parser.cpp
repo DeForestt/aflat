@@ -1019,6 +1019,27 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
       lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.pop());
       ref->Ident = obj.meta;
+
+      if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
+        lex::OpSym *sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+        while (sym->Sym == '.') {
+          tokens.pop();
+          if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+            lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.pop());
+            ref->modList.push(obj.meta);
+          } else
+            throw err::Exception(
+                "Line: " + std::to_string(tokens.peek()->lineCount) +
+                " Expected identifier after dot");
+          if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
+            sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+          } else
+            throw err::Exception(
+                "Line: " + std::to_string(tokens.peek()->lineCount) +
+                " Expected identifier after dot");
+        }
+      }
+
       output = ref;
     } else
       throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +

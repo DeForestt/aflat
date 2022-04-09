@@ -276,6 +276,7 @@ public:
 class Refrence : public Expr {
 public:
   std::string Ident;
+  links::LinkedList<std::string> modList;
   bool internal = false;
 };
 
