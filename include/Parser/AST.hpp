@@ -158,6 +158,7 @@ class Assign : public Statment {
 public:
   std::string Ident;
   bool refrence = false;
+  bool override = false;
   Expr *expr;
   links::LinkedList<std::string> modList;
 };

@@ -1604,6 +1604,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
         for (ast::DecAssign it : this->scope->defaultValues){
           ast::Assign assign = ast::Assign();
           assign.Ident = ("my");
+          assign.override = true;
           assign.expr = it.expr;
           assign.modList = LinkedList<std::string>();
           assign.modList.push(it.declare->Ident);
@@ -1963,7 +1964,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       mov->to = output;
     };
 
-    if (!assign->refrence && !fin->mutable_){
+    if (!assign->refrence && !fin->mutable_ && !assign->override){
       alert("cannot assign to const " + fin->symbol);
     }
 
