@@ -18,7 +18,7 @@ class LinkedList signs ICollection{
     adr init();
     int append(adr data);
     int insert(adr data, int index);
-    int delete(int index);
+    int del(int index);
     adr get(int index);
     adr stitch(adr New);
     LinkedList reverse();
@@ -38,7 +38,7 @@ class Array signs ICollection{
 
     Array init(int typeSize, int size);
     public adr at(int index);
-    public int delete(int index);
+    public int del(int index);
     public int extend(int size);
 };
 
@@ -83,7 +83,7 @@ LinkedList init@LinkedList(){
     return my;
 };
 
-int delete@LinkedList(int index){
+int del@LinkedList(int index){
     if index < 0 | index > my.size() {
         return -1;
     };
@@ -328,9 +328,8 @@ adr at@Array(int index){
     return curr;
 };
 
-int delete@Array(){
+int del@Array(){
     free(my.head);
-    free(my);
     return 0;
 };
 
