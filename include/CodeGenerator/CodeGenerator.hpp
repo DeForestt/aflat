@@ -21,6 +21,7 @@ class Symbol {
 public:
   std::string symbol;
   ast::Type type;
+  bool mutable_ = true;
   bool mask;
   int byteMod;
 };

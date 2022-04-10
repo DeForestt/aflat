@@ -36,8 +36,7 @@ void gen::scope::ScopeManager::reset() {
   this->scopeStack.push_back(0);
 }
 
-int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type,
-                                     bool mask, bool isGlobal = false) {
+int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type, bool mask, bool mut = true) {
   gen::Symbol sym = gen::Symbol();
 
   // if the symbol is already in the stack, throw an error
@@ -55,6 +54,7 @@ int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type,
   sym.mask = mask;
   sym.type = type;
   sym.byteMod = this->stackPos;
+  sym.mutable_ = mut;
   this->stack.push_back(sym);
 
   this->scopeStack.back()++;

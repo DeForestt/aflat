@@ -1765,7 +1765,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     if (!this->globalScope) {
       if (this->scope == nullptr || this->inFunction){
         int byteMod = gen::scope::ScopeManager::getInstance()->assign(
-            dec->Ident, dec->type, dec->mask);
+            dec->Ident, dec->type, dec->mask, decAssign->mute);
 
         asmc::Mov *mov = new asmc::Mov();
         gen::Expr expr =
@@ -1803,6 +1803,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
 
       Symbol.type = dec->type;
       Symbol.symbol = dec->Ident;
+      Symbol.mutable_ = decAssign->mute;
       Table = &this->GlobalSymbolTable;
 
       asmc::LinkTask *var = new asmc::LinkTask();
@@ -1813,11 +1814,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
         var->command = "quad";
       }
       gen::Expr exp = this->GenExpr(decAssign->expr, OutputFile);
-      // std::cout << "Atempting to assign global " << dec->Ident << " " <<
-      // dec->type.typeName << " to " << exp.type << std::endl;
       this->canAssign(dec->type, exp.type);
-      // std::cout << "Assigned " << dec->Ident << " " << dec->type.typeName <<
-      // " to " << exp.type << std::endl;
       var->operand = exp.access.erase(0, 1);
       Symbol.type.opType = exp.op;
       OutputFile.data << lable;
@@ -1863,6 +1860,8 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
         alert("unknown name: " + assign->Ident);
       global = true;
     };
+
+    Symbol *fin = symbol;
 
     // check if the symbol is a class
     gen::Type **t = this->typeList[symbol->type.typeName];
@@ -1936,6 +1935,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
         alert("unknown name: " + last.typeName + "." + sto);
       last = modSym->type;
       tbyte = modSym->byteMod;
+      fin = modSym;
 
       asmc::Mov *mov7 = new asmc::Mov();
       mov7->size = asmc::QWord;
@@ -1962,6 +1962,10 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       // last.typeName << " to " << expr.type << std::endl;
       mov->to = output;
     };
+
+    if (!assign->refrence && !fin->mutable_){
+      alert("cannot assign to const " + fin->symbol);
+    }
 
     OutputFile.text << mov2;
     OutputFile.text << mov;

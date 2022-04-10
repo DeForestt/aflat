@@ -109,6 +109,17 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
     ast::ScopeMod scope = ast::Public;
     tokens.pop();
 
+    bool isMutable = true;
+
+    if (obj.meta == "const") {
+      isMutable = false;
+      if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
+      throw err::Exception("Expected statent after public on line " +
+                          std::to_string(obj.lineCount));
+      obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+      tokens.pop();
+    }
+
     // check if the next token is a scope modifier
     if (obj.meta == "public") {
       // set the scope modifier to public
@@ -277,6 +288,7 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
             tokens.pop();
             ast::DecAssign *assign = new ast::DecAssign;
             assign->declare = dec;
+            assign->mute = isMutable;
             assign->expr = this->parseExpr(tokens);
             output = assign;
           }

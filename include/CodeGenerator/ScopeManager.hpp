@@ -45,8 +45,7 @@ public:
   void operator=(ScopeManager const &) = delete;
 
   // Assign a new symbol and return the byteMod
-  int assign(std::string symbol, ast::Type type, bool mask,
-             bool isGlobal = false);
+  int assign(std::string symbol, ast::Type type, bool mask, bool mut = true);
 
   // Get a symbol
   gen::Symbol *get(std::string symbol);

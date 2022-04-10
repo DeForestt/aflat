@@ -150,6 +150,7 @@ public:
 class DecAssign : public Statment {
 public:
   Declare *declare;
+  bool mute = true;
   Expr *expr;
 };
 
