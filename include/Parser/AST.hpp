@@ -119,6 +119,7 @@ public:
   ast::ScopeMod scope;
   std::string Ident;
   std::string TypeName;
+  bool mut = true;
   bool mask;
   Type type;
 };

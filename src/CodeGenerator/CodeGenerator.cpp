@@ -1678,7 +1678,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       // if the there  is no scope use the scope manager otherwise use the scope
       if (this->scope == nullptr || this->inFunction) {
         gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type,
-                                                        dec->mask);
+                                                        dec->mask, dec->mut);
       } else {
         // add the symbol to the class symbol table
         Table = &this->scope->SymbolTable;
@@ -1693,6 +1693,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
         }
         Symbol.type = dec->type;
         Symbol.symbol = dec->Ident;
+        Symbol.mutable_ = dec->mut;
         Table->push(Symbol);
         // if the symbol is public add it to the public symbol table
         if (dec->scope == ast::Public && this->scope != nullptr)
@@ -1713,6 +1714,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
 
       Symbol.type = dec->type;
       Symbol.symbol = dec->Ident;
+      Symbol.mutable_ = dec->mut;
       OutputFile.bss << lable;
       OutputFile.bss << var;
       Table->push(Symbol);
@@ -1797,6 +1799,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
         // add the decAssign to the class default list
         this->scope->defaultValues.push_back(*decAssign);
         // genorate the declare
+        dec->mut = decAssign->mute;
         OutputFile << this->GenSTMT(dec);
       }
     } else {
