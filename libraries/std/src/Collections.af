@@ -14,11 +14,18 @@ class ListNode{
 
 class LinkedList {
     public ListNode head;
+    public adr pos = my.head;
     LinkedList init();
     int append(adr data);
     int insert(adr data, int index);
     int del(int index);
     adr get(int index);
+
+    adr touch();
+    adr shift();
+
+    int reset();
+
     adr stitch(adr New);
     LinkedList reverse();
     LinkedList where(adr foo, * adr args);
