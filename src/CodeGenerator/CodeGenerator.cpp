@@ -625,6 +625,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     gen::Symbol *sym = nullptr;
     // check if expr 1 is a var
     ast::Var *var = dynamic_cast<ast::Var *>(comp.expr1);
+    std::string tname = "";
 
     if (var != nullptr) {
         sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
@@ -648,9 +649,22 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
             gen::Class *cls = dynamic_cast<gen::Class *>(*type);
             if (cls != nullptr) {
               opor = cls->overloadTable[comp.op];
+              tname = sym->type.typeName;
             }
           }
         }
+    } else {
+      // gen expr 1 and check if it is a class
+      asmc::File dd = asmc::File();
+      std::string optn = this->GenExpr(comp.expr1, dd).type;
+      gen::Type **type = this->typeList[optn];
+      if (type != nullptr) {
+            gen::Class *cls = dynamic_cast<gen::Class *>(*type);
+            if (cls != nullptr) {
+              tname = optn;
+              opor = cls->overloadTable[comp.op];
+            }
+          }
     }
 
     if (opor != nullptr) {
@@ -660,7 +674,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       call->call->Args = links::LinkedList<ast::Expr *>();
       call->call->Args.push(comp.expr1);
       call->call->Args.push(comp.expr2);
-      call->call->publify = sym->type.typeName;
+      call->call->publify = tname;
 
       gen::Expr aftercall = this->GenExpr(call, OutputFile);
       output.access = aftercall.access;
