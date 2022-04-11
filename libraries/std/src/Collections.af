@@ -12,16 +12,17 @@ class ListNode{
     adr data;
 };
 
-class LinkedList signs ICollection{
+class LinkedList {
     public ListNode head;
-
-    adr init();
+    LinkedList init();
     int append(adr data);
     int insert(adr data, int index);
     int del(int index);
     adr get(int index);
     adr stitch(adr New);
     LinkedList reverse();
+    LinkedList where(adr foo, * adr args);
+    int forEach(adr foo, * adr args);
     LinkedList sort(adr compare, * adr args);
     int find(adr foo, * adr args);
     adr apply(adr foo, * adr args);
@@ -43,7 +44,7 @@ class Array signs ICollection{
 };
 
 
-private int forEachLinkedList(LinkedList my, adr foo, adr arg){
+int forEach@LinkedList(adr foo, * adr arg){
     ListNode curr = my.head;
     int i = 0;
     while(curr != NULL){
@@ -59,7 +60,7 @@ private int forEachLinkedList(LinkedList my, adr foo, adr arg){
     return 0;
 };
 
-private LinkedList whereLinkedList(LinkedList my, adr foo, adr arg){
+LinkedList where@LinkedList(adr foo, * adr arg){
     LinkedList newList = new LinkedList();
     ListNode curr = my.head;
     int i = 0;
@@ -78,8 +79,6 @@ private LinkedList whereLinkedList(LinkedList my, adr foo, adr arg){
 
 LinkedList init@LinkedList(){
     my.head = NULL;
-    my.forEach = forEachLinkedList;
-    my.where = whereLinkedList;
     return my;
 };
 

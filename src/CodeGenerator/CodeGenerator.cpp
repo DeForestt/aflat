@@ -1010,7 +1010,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     func->type = Adr;
 
+    this->nameTable.push(*func);
+    ast::Type saveRetType = this->returnType;
+
+    this->returnType.typeName = "--std--flex--function";
+
     OutputFile.lambdas->operator<<(this->GenSTMT(func));
+
+    this->returnType = saveRetType;
+
+    this->nameTable.pop();
 
     this->inFunction = inFunc;
     this->globalScope = gscop;
