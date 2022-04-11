@@ -439,26 +439,27 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
 
         var.modList.invert();
+        var.modList.reset();
         int tbyte = 0;
 
         ast::Type last = sym->type;
 
-        while (var.modList.head != nullptr) {
+        while (var.modList.pos != nullptr) {
           if (this->typeList[last.typeName] == nullptr)
             alert("type not found " + last.typeName);
           gen::Type type = **this->typeList[last.typeName];
           gen::Symbol *modSym;
-          std::string sto = var.modList.peek();
+          std::string sto = var.modList.touch();
           if (this->scope == *this->typeList[last.typeName]) {
             // if we are scoped to the type seache the symbol in the type symbol
             // table
             modSym = type.SymbolTable.search<std::string>(searchSymbol,
-                                                          var.modList.pop());
+                                                          var.modList.shift());
           } else {
             // if we are not scoped to the type search the symbol in the public
             // symbol table
             modSym = type.publicSymbols.search<std::string>(searchSymbol,
-                                                            var.modList.pop());
+                                                            var.modList.shift());
           };
           if (modSym == nullptr)
             alert("variable not found " + last.typeName + "." + sto);
@@ -476,6 +477,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.size = last.size;
           output.type = last.typeName;
         }
+        var.modList.invert();
+        var.modList.reset();     
       } else {
         Type **t = this->typeList[var.Ident];
         if (t != nullptr) {
@@ -622,49 +625,17 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     ast::Compound comp = *dynamic_cast<ast::Compound *>(expr);
     asmc::File Dummby = asmc::File();
     ast::Function *opor = nullptr;
-    gen::Symbol *sym = nullptr;
-    // check if expr 1 is a var
-    ast::Var *var = dynamic_cast<ast::Var *>(comp.expr1);
     std::string tname = "";
-
-    if (var != nullptr) {
-        sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
-        ast::Type last = sym->type;
-        var->modList.invert();
-        var->modList.reset();
-        while (var->modList.pos != nullptr){
-          gen::Type *t = *this->typeList[last.typeName];
-          std::string sto = var->modList.shift();
-          sym = t->SymbolTable.search<std::string>(searchSymbol,
-                                                   sto);
-          if (sym == nullptr)
-            alert("variable not found " + last.typeName + "." + sto);
-          last = sym->type;
-        }
-        var->modList.invert();
-        var->modList.reset();
-        if (sym != nullptr) {
-          gen::Type **type = this->typeList[sym->type.typeName];
-          if (type != nullptr) {
-            gen::Class *cls = dynamic_cast<gen::Class *>(*type);
-            if (cls != nullptr) {
-              opor = cls->overloadTable[comp.op];
-              tname = sym->type.typeName;
-            }
-          }
-        }
-    } else {
-      // gen expr 1 and check if it is a class
-      asmc::File dd = asmc::File();
-      std::string optn = this->GenExpr(comp.expr1, dd).type;
-      gen::Type **type = this->typeList[optn];
-      if (type != nullptr) {
-            gen::Class *cls = dynamic_cast<gen::Class *>(*type);
-            if (cls != nullptr) {
-              tname = optn;
-              opor = cls->overloadTable[comp.op];
-            }
-          }
+    // gen expr 1 and check if it is a class
+    asmc::File dd = asmc::File();
+    std::string optn = this->GenExpr(comp.expr1, dd).type;
+    gen::Type **type = this->typeList[optn];
+    if (type != nullptr) {
+      gen::Class *cls = dynamic_cast<gen::Class *>(*type);
+      if (cls != nullptr) {
+        tname = optn;
+        opor = cls->overloadTable[comp.op];
+      }
     }
 
     if (opor != nullptr) {

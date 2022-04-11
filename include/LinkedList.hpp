@@ -14,7 +14,7 @@ use it for somthing else in the futer.*/
 template <typename T> class Node {
 public:
   T data;
-  Node *next;
+  Node *next = nullptr;
 };
 
 template <typename T> class LinkedList {
@@ -259,6 +259,7 @@ template <typename T> void links::LinkedList<T>::invert() {
     prev = curr;
     curr = next;
   }
+  
   this->head = prev;
   this->pos = this->head;
 }
