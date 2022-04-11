@@ -625,9 +625,23 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     gen::Symbol *sym = nullptr;
     // check if expr 1 is a var
     ast::Var *var = dynamic_cast<ast::Var *>(comp.expr1);
+
     if (var != nullptr) {
-      if (var->modList.count == 0) {
         sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
+        ast::Type last = sym->type;
+        var->modList.invert();
+        var->modList.reset();
+        while (var->modList.pos != nullptr){
+          gen::Type *t = *this->typeList[last.typeName];
+          std::string sto = var->modList.shift();
+          sym = t->SymbolTable.search<std::string>(searchSymbol,
+                                                   sto);
+          if (sym == nullptr)
+            alert("variable not found " + last.typeName + "." + sto);
+          last = sym->type;
+        }
+        var->modList.invert();
+        var->modList.reset();
         if (sym != nullptr) {
           gen::Type **type = this->typeList[sym->type.typeName];
           if (type != nullptr) {
@@ -637,7 +651,6 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
             }
           }
         }
-      }
     }
 
     if (opor != nullptr) {
