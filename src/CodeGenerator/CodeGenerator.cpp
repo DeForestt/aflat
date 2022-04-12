@@ -211,6 +211,7 @@ std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std
 
   indicies.reset();
   modSym->type.indecies.reset();
+  gen::Symbol retSym = *modSym;
 
   if (indicies.trail() != 0){
     this->canAssign(modSym->type, "adr");
@@ -259,22 +260,22 @@ std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std
     mov->size = asmc::QWord;
     mov->to = this->registers["%rdx"]->get(asmc::QWord);
     mov->from = access;
-
     OutputFile.text << mov;
-    // add rdx to r14
-    asmc::Add *add = new asmc::Add();
+    
+    // add rdx to r13
+    asmc::Add * add = new asmc::Add();
     add->op1 =  this->registers["%rdx"]->get(asmc::QWord);
-    add->op2 = this->registers["%r14"]->get(asmc::QWord);
+    add->op2 = this->registers["%r13"]->get(asmc::QWord);
     add->size = asmc::QWord;
 
     OutputFile.text << add;
 
-    access = '(' + this->registers["%r14"]->get(asmc::QWord) + ')';
-    modSym->type = *modSym->type.typeHint;
+    access = '(' + this->registers["%r13"]->get(asmc::QWord) + ')';
+    retSym.type = *retSym.type.typeHint;
 
   };
 
-  return std::make_tuple(access, *modSym, true);
+  return std::make_tuple(access, retSym, true);
 };
 
 bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
