@@ -1806,16 +1806,14 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
 
     links::LinkedList<gen::Symbol> *Table = &this->SymbolTable;
 
-    Symbol *symbol =
-        gen::scope::ScopeManager::getInstance()->get(assign->Ident);
+    std::tuple<std::string, gen::Symbol, bool> resolved =
+        this->resolveSymbol(assign->Ident, assign->modList, OutputFile);
 
-    if (symbol == nullptr) {
-      Table = &this->GlobalSymbolTable;
-      symbol = Table->search<std::string>(searchSymbol, assign->Ident);
-      if (symbol == nullptr)
-        alert("unknown name: " + assign->Ident);
-      global = true;
-    };
+    if (!std::get<2>(resolved)) {
+      alert("undefined veriable:" + assign->Ident);
+    }
+
+    Symbol *symbol = &std::get<1>(resolved);
 
     Symbol *fin = symbol;
 
@@ -1843,6 +1841,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
         };
       }
     }
+    
     asmc::Mov *mov = new asmc::Mov();
     asmc::Mov *mov2 = new asmc::Mov();
     gen::Expr expr = this->GenExpr(assign->expr, OutputFile, symbol->type.size);
@@ -1861,48 +1860,8 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     assign->modList.invert();
     int tbyte = 0;
 
-    ast::Type last = symbol->type;
     asmc::Size size;
-    std::string output;
-    if (global)
-      output = symbol->symbol;
-    else
-      output = "-" + std::to_string(symbol->byteMod) + "(%rbp)";
-
-    while (assign->modList.head != nullptr) {
-      if (this->typeList[last.typeName] == nullptr)
-        alert("type not found " + last.typeName);
-      gen::Type type = **this->typeList[last.typeName];
-      gen::Symbol *modSym;
-      // store the next dot mod in case of an error
-      std::string sto = assign->modList.peek();
-      if (this->scope == *this->typeList[last.typeName]) {
-        // if we are scoped to the type seache the symbol in the type symbol
-        // table
-        modSym = type.SymbolTable.search<std::string>(searchSymbol,
-                                                      assign->modList.pop());
-      } else {
-        // if we are not scoped to the type search the symbol in the public
-        // symbol table
-        modSym = type.publicSymbols.search<std::string>(searchSymbol,
-                                                        assign->modList.pop());
-      };
-      if (modSym == nullptr)
-        alert("unknown name: " + last.typeName + "." + sto);
-      last = modSym->type;
-      tbyte = modSym->byteMod;
-      fin = modSym;
-
-      asmc::Mov *mov7 = new asmc::Mov();
-      mov7->size = asmc::QWord;
-      mov7->to = this->registers["%edx"]->get(asmc::QWord);
-      mov7->from = output;
-      OutputFile.text << mov7;
-      output = std::to_string(tbyte - this->getBytes(last.size)) + '(' +
-               mov7->to + ')';
-      size = last.size;
-    }
-
+    std::string output = std::get<0>(resolved);
     if (assign->refrence == true) {
       asmc::Mov *m1 = new asmc::Mov;
       m1->from = output;
@@ -1911,11 +1870,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       mov->to = "(" + this->registers["%eax"]->get(asmc::QWord) + ")";
       OutputFile.text << m1;
     } else {
-      // std::cout << "Atempting to assign not dec " << symbol->symbol << " " <<
-      // last.typeName << " to " << expr.type << std::endl;
-      this->canAssign(last, expr.type);
-      // std::cout << "Assigned not dec " << symbol->symbol << " " <<
-      // last.typeName << " to " << expr.type << std::endl;
+      this->canAssign(symbol->type, expr.type);
       mov->to = output;
     };
 
@@ -2285,36 +2240,39 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     this->nameSpaceTable.insert(imp->nameSpace, id);
   } else if (dynamic_cast<ast::Delete *>(STMT) != nullptr){
     ast::Delete *del = dynamic_cast<ast::Delete *>(STMT);
-    gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(del->ident);
+
+    std::tuple<std::string, gen::Symbol, bool> resolved = this->resolveSymbol(del->ident, del->modList, OutputFile);
+    if (!std::get<2>(resolved))
+      this->alert("Identifier " + del->ident + " not found to delete");
+
+    gen::Symbol *sym = &std::get<1>(resolved);
 
     ast::Function *free = this->nameTable["free"];
     if (free == nullptr)
       alert("Please import std library in order to use delete operator.\n\n -> "
             ".needs <std> \n\n");
-
-    if (sym == nullptr)
-      this->alert("Identifier not found to delete");
+    
     gen::Type **type = this->typeList[sym->type.typeName];
     if (type == nullptr)
       this->alert("Type" + sym->type.typeName + " not found to delete");
     
     gen::Class *classType = dynamic_cast<gen::Class *>(*type);
-    if (classType == nullptr)
-      this->alert("Type" + sym->type.typeName + " is not a class");
+    if (classType != nullptr) {
     
-    // check if the class has a destructor
-    ast::Function *destructor = classType->nameTable["del"];
+      // check if the class has a destructor
+      ast::Function *destructor = classType->nameTable["del"];
 
-    if (destructor != nullptr){
-      ast::Call *call = new ast::Call();
-      call->ident = del->ident;
-      call->modList = LinkedList<std::string>();
-      call->modList.push("del");
-      call->Args = LinkedList<ast::Expr*>();
+      if (destructor != nullptr){
+        ast::Call *call = new ast::Call();
+        call->ident = del->ident;
+        call->modList = LinkedList<std::string>();
+        call->modList.push("del");
+        call->Args = LinkedList<ast::Expr*>();
 
-      OutputFile << this->GenSTMT(call);
-    };
-
+        OutputFile << this->GenSTMT(call);
+      };
+      
+    }
     // call free
     ast::Var *var = new ast::Var();
     var->Ident = del->ident;

@@ -642,6 +642,24 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
             " Expected Ident");
       
       del->ident = ident->meta;
+      links::LinkedList<std::string> modList;
+      lex::OpSym * sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+      while (sym != nullptr && sym->Sym == '.') {
+        tokens.pop();
+        if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+          lex::LObj mod = *dynamic_cast<lex::LObj *>(tokens.pop());
+          modList << mod.meta;
+        } else
+          throw err::Exception("Expected, Ident after dot. on line " +
+                                std::to_string(sym->lineCount));
+        if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
+          sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+        } else
+          throw err::Exception("expected assignment oporator got on line " +
+                                std::to_string(sym->lineCount) + " " + sym->Sym);
+      }
+      
+      del->modList = modList;
       output = del;
     }else {
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {

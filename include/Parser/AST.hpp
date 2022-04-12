@@ -189,6 +189,7 @@ public:
 class Delete : public Statment {
 public:
   std::string ident;
+  links::LinkedList<std::string> modList;
 };
 
 class Sequence : public Statment {
