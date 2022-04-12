@@ -253,6 +253,7 @@ class Import : public Statment {
 class Var : public Expr {
 public:
   std::string Ident;
+  links::LinkedList<ast::Expr *> indecies;
   links::LinkedList<std::string> modList;
 };
 

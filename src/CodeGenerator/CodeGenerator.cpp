@@ -224,6 +224,12 @@ std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std
 
     int count = 1;
     
+    asmc::Mov * zero = new asmc::Mov();
+    zero->from = "$0";
+    zero->to = this->registers["%r12"]->get(asmc::QWord);
+    zero->size = asmc::QWord;
+
+    OutputFile.text << zero;
 
     while (indicies.trail() > 0){
       // generate the expression
@@ -249,10 +255,19 @@ std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std
       mul->op1 = '$' + std::to_string(count);
 
       OutputFile.text << mul;
+
+      // add r13 to r12
+      asmc::Add * add = new asmc::Add();
+      add->op1 =  this->registers["%r13"]->get(asmc::QWord);
+      add->op2 = this->registers["%r12"]->get(asmc::QWord);
+      add->size = asmc::QWord;
+
+      OutputFile.text << add;
+      count = modSym->type.indecies.shift();
     };
     // multiply r13 by the size of the type
     asmc::Mul *mul = new asmc::Mul();
-    mul->op2 = this->registers["%r13"]->get(asmc::QWord);
+    mul->op2 = this->registers["%r12"]->get(asmc::QWord);
     mul->op1 = '$' + std::to_string(multiplyer);
     mul->size = asmc::QWord;
 
@@ -267,12 +282,12 @@ std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std
     // add rdx to r13
     asmc::Add * add = new asmc::Add();
     add->op1 =  this->registers["%rdx"]->get(asmc::QWord);
-    add->op2 = this->registers["%r13"]->get(asmc::QWord);
+    add->op2 = this->registers["%r12"]->get(asmc::QWord);
     add->size = asmc::QWord;
 
     OutputFile.text << add;
 
-    access = '(' + this->registers["%r13"]->get(asmc::QWord) + ')';
+    access = '(' + this->registers["%r12"]->get(asmc::QWord) + ')';
     retSym.type = *retSym.type.typeHint;
 
   };
@@ -488,7 +503,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   } else if (dynamic_cast<ast::Var *>(expr) != nullptr) {
     ast::Var var = *dynamic_cast<ast::Var *>(expr);
 
-    std::tuple<std::string, gen::Symbol, bool> resolved = this->resolveSymbol(var.Ident, var.modList, OutputFile, links::LinkedList<ast::Expr *>());
+    std::tuple<std::string, gen::Symbol, bool> resolved = this->resolveSymbol(var.Ident, var.modList, OutputFile, var.indecies);
       
     if (std::get<2>(resolved) == false) {
       Type **t = this->typeList[var.Ident];
