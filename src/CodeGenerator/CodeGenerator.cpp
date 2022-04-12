@@ -147,6 +147,70 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId) {
   this->scope = nullptr;
 }
 
+
+std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std::string ident, links::LinkedList<std::string> modList, asmc::File &OutputFile){
+  modList.invert();
+  modList.reset();
+
+  std::string nsp = "";
+  if (this->nameSpaceTable.contains(ident)) {
+    nsp = this->nameSpaceTable.get(ident) + ".";
+    if (modList.count == 0) alert("NameSpace " + ident + " cannot be used as a variable");
+    ident = nsp + modList.shift();
+  };
+
+  bool global = false;
+  gen::Symbol * sym = gen::scope::ScopeManager::getInstance()->get(ident);
+
+  if (sym == nullptr) {
+    sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, ident);
+    global = true;
+  } if (sym == nullptr) return std::make_tuple("", gen::Symbol(), false);
+
+  std::string access = "";
+  if (global)
+    access = sym->symbol;
+  else
+    access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
+  ast::Type last = sym->type;
+  gen::Symbol *modSym = sym;
+
+  while (modList.pos != nullptr) {
+    if (this->typeList[last.typeName] == nullptr)
+      alert("type not found " + last.typeName);
+    gen::Type type = **this->typeList[last.typeName];
+    std::string sto = modList.touch();
+    if (this->scope == *this->typeList[last.typeName]) {
+      // if we are scoped to the type seache the symbol in the type symbol
+      // table
+      modSym = type.SymbolTable.search<std::string>(searchSymbol,
+                                                    modList.shift());
+    } else {
+      // if we are not scoped to the type search the symbol in the public
+      // symbol table
+      modSym = type.publicSymbols.search<std::string>(searchSymbol,
+                                                      modList.shift());
+    };
+    if (modSym == nullptr)
+      alert("variable not found " + last.typeName + "." + sto);
+    last = modSym->type;
+    int tbyte = modSym->byteMod;
+    asmc::Mov *mov = new asmc::Mov();
+    mov->op = modSym->type.opType;
+    mov->size = asmc::QWord;
+    mov->to = this->registers["%r14"]->get(asmc::QWord);
+    mov->from = access;
+    OutputFile.text << mov;
+    access = std::to_string(tbyte - this->getBytes(last.size)) +
+                    '(' + mov->to + ')';
+  }
+
+  modList.invert();
+  modList.reset();
+
+  return std::make_tuple(access, *modSym, true);
+};
+
 bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
                                    bool strict = false) {
   if (type.typeName == typeName)
@@ -355,145 +419,61 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   } else if (dynamic_cast<ast::Var *>(expr) != nullptr) {
     ast::Var var = *dynamic_cast<ast::Var *>(expr);
 
-    std::string nsp = "";
-    if (this->nameSpaceTable.contains(var.Ident)) {
-      nsp = this->nameSpaceTable.get(var.Ident) + ".";
-      if (var.modList.count == 0) alert("NameSpace " + var.Ident + " cannot be used as");
-      var.Ident = nsp + var.modList.pop();
-    };
-    bool global = false;
-    bool handled = false;
-    gen::Symbol *sym;
-    sym = gen::scope::ScopeManager::getInstance()->get(var.Ident);
-    if (sym == nullptr) {
-      sym =
-          this->GlobalSymbolTable.search<std::string>(searchSymbol, var.Ident);
-      global = true;
-      if (sym == nullptr) {
-        Type **t = this->typeList[var.Ident];
-        if (t != nullptr) {
-          Type *type = *t;
-          output.size = asmc::DWord;
-          output.access =
-              '$' + std::to_string(type->SymbolTable.head->data.byteMod);
-          output.type = "int";
-          handled = true;
-        } else if (var.Ident == "int") {
-          output.size = asmc::DWord;
-          output.access = "$4";
-          output.type = "int";
-          handled = true;
-        } else if (var.Ident == "char" || var.Ident == "bool" || var.Ident == "byte") {
-          output.size = asmc::DWord;
-          output.access = "$1";
-          output.type = "int";
-          handled = true;
-        } else if (var.Ident == "adr") {
-          output.size = asmc::DWord;
-          output.access = "$8";
-          output.type = "int";
-          handled = true;
-        } else if (var.Ident == "byte") {
-          output.size = asmc::DWord;
-          output.access = "$1";
-          output.type = "int";
-          handled = true;
-        } else if (var.Ident == "float") {
-          output.size = asmc::DWord;
-          output.access = "$4";
-          output.type = "int";
-          handled = true;
-        } else if (var.Ident == "NULL") {
-          output.size = asmc::QWord;
-          output.access = "$0";
-          output.type = "adr";
-          handled = true;
-        } else if (var.Ident == "true") {
-          output.size = asmc::Byte;
-          output.access = "$1";
-          output.type = "bool";
-          handled = true;
-        } else if (var.Ident == "false") {
-          output.size = asmc::Byte;
-          output.access = "$0";
-          output.type = "bool";
-          handled = true;
-        } else if (this->nameTable[var.Ident] != nullptr) {
-          output.size = asmc::QWord;
-          output.access = '$' + this->nameTable[var.Ident]->ident.ident;
-          output.type = "adr";
-          handled = true;
-        } else
-          alert("variable not found " + var.Ident);
-      }
-    }
-
-    if (!handled) {
-      if (sym != nullptr) {
-        output.size = sym->type.size;
-        output.op = sym->type.opType;
-        output.type = sym->type.typeName;
-        if (global)
-          output.access = sym->symbol;
-        else
-          output.access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
-
-        var.modList.invert();
-        var.modList.reset();
-        int tbyte = 0;
-
-        ast::Type last = sym->type;
-
-        while (var.modList.pos != nullptr) {
-          if (this->typeList[last.typeName] == nullptr)
-            alert("type not found " + last.typeName);
-          gen::Type type = **this->typeList[last.typeName];
-          gen::Symbol *modSym;
-          std::string sto = var.modList.touch();
-          if (this->scope == *this->typeList[last.typeName]) {
-            // if we are scoped to the type seache the symbol in the type symbol
-            // table
-            modSym = type.SymbolTable.search<std::string>(searchSymbol,
-                                                          var.modList.shift());
-          } else {
-            // if we are not scoped to the type search the symbol in the public
-            // symbol table
-            modSym = type.publicSymbols.search<std::string>(searchSymbol,
-                                                            var.modList.shift());
-          };
-          if (modSym == nullptr)
-            alert("variable not found " + last.typeName + "." + sto);
-          last = modSym->type;
-          tbyte = modSym->byteMod;
-          asmc::Mov *mov = new asmc::Mov();
-          mov->op = modSym->type.opType;
-          mov->size = asmc::QWord;
-          mov->to = this->registers["%r14"]->get(asmc::QWord);
-          mov->from = output.access;
-          OutputFile.text << mov;
-          output.access = std::to_string(tbyte - this->getBytes(last.size)) +
-                          '(' + mov->to + ')';
-          output.op = modSym->type.opType;
-          output.size = last.size;
-          output.type = last.typeName;
-        }
-        var.modList.invert();
-        var.modList.reset();     
+    std::tuple<std::string, gen::Symbol, bool> resolved = this->resolveSymbol(var.Ident, var.modList, OutputFile);
+      
+    if (std::get<2>(resolved) == false) {
+      Type **t = this->typeList[var.Ident];
+      if (t != nullptr) {
+        Type *type = *t;
+        output.size = asmc::DWord;
+        output.access =
+            '$' + std::to_string(type->SymbolTable.head->data.byteMod);
+        output.type = "int";
+      } else if (var.Ident == "int") {
+        output.size = asmc::DWord;
+        output.access = "$4";
+        output.type = "int";
+      } else if (var.Ident == "char" || var.Ident == "bool" || var.Ident == "byte") {
+        output.size = asmc::DWord;
+        output.access = "$1";
+        output.type = "int";
+      } else if (var.Ident == "adr") {
+        output.size = asmc::DWord;
+        output.access = "$8";
+        output.type = "int";
+      } else if (var.Ident == "byte") {
+        output.size = asmc::DWord;
+        output.access = "$1";
+        output.type = "int";
+      } else if (var.Ident == "float") {
+        output.size = asmc::DWord;
+        output.access = "$4";
+        output.type = "int";
+      } else if (var.Ident == "NULL") {
+        output.size = asmc::QWord;
+        output.access = "$0";
+        output.type = "adr";
+      } else if (var.Ident == "true") {
+        output.size = asmc::Byte;
+        output.access = "$1";
+        output.type = "bool";
+      } else if (var.Ident == "false") {
+        output.size = asmc::Byte;
+        output.access = "$0";
+        output.type = "bool";
+      } else if (this->nameTable[var.Ident] != nullptr) {
+        output.size = asmc::QWord;
+        output.access = '$' + this->nameTable[var.Ident]->ident.ident;
+        output.type = "adr";
       } else {
-        Type **t = this->typeList[var.Ident];
-        if (t != nullptr) {
-          Type *type = *t;
-          output.size = asmc::DWord;
-          output.access =
-              '$' + std::to_string(type->SymbolTable.head->data.byteMod);
-          handled = true;
-        } else if (this->nameTable[var.Ident] != nullptr) {
-          output.size = asmc::DWord;
-          output.access = '$' + this->nameTable[var.Ident]->ident.ident;
-          handled = true;
-        } else
           alert("variable not found " + var.Ident);
       }
+    } else {
+      gen::Symbol sym = std::get<1>(resolved);
+      output.size = sym.type.size;
+      output.op = sym.type.opType;
+      output.type = sym.type.typeName;
+      output.access = std::get<0>(resolved);  
     }
   } else if (dynamic_cast<ast::Refrence *>(expr) != nullptr) {
     links::LinkedList<gen::Symbol> *Table;

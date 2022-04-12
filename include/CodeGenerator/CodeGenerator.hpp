@@ -1,6 +1,7 @@
 #ifndef GEN
 #define GEN
 
+#include <tuple>
 #include "ASM.hpp"
 #include "Parser/AST.hpp"
 #include "LinkedList.hpp"
@@ -101,6 +102,7 @@ private:
                           asmc::File &OutputFile);
   bool canAssign(ast::Type type, std::string typeName, bool strict = false);
   std::string moduleId;
+  std::tuple<std::string, gen::Symbol, bool> resolveSymbol(std::string ident, links::LinkedList<std::string> modList, asmc::File &OutputFile);
 
 public:
   asmc::File GenSTMT(ast::Statment *stmt);
