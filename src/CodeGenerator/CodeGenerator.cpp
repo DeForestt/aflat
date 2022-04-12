@@ -148,7 +148,7 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId) {
 }
 
 
-std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std::string ident, links::LinkedList<std::string> modList, asmc::File &OutputFile){
+std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std::string ident, links::LinkedList<std::string> modList, asmc::File &OutputFile, bool internal = false) {
   modList.invert();
   modList.reset();
 
@@ -174,8 +174,9 @@ std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std
     access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
   ast::Type last = sym->type;
   gen::Symbol *modSym = sym;
+  const int checkTo = (internal) ? 1 : 0;
 
-  while (modList.pos != nullptr) {
+  while (modList.trail() > checkTo) {
     if (this->typeList[last.typeName] == nullptr)
       alert("type not found " + last.typeName);
     gen::Type type = **this->typeList[last.typeName];
@@ -476,13 +477,17 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       output.access = std::get<0>(resolved);  
     }
   } else if (dynamic_cast<ast::Refrence *>(expr) != nullptr) {
-    links::LinkedList<gen::Symbol> *Table;
     ast::Refrence ref = *dynamic_cast<ast::Refrence *>(expr);
+
+    std::tuple<std::string, gen::Symbol, bool> resolved = this->resolveSymbol(ref.Ident, ref.modList, OutputFile, ref.internal);
 
     gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(ref.Ident);
     asmc::Lea *lea = new asmc::Lea();
+
+    if (std::get<2>(resolved)){
+      lea->from = std::get<0>(resolved);
+    } else alert("variable not found " + ref.Ident);
     lea->to = this->registers["%rax"]->get(asmc::QWord);
-    lea->from = '-' + std::to_string(sym->byteMod) + "(%rbp)";
 
     
     output.access = registers["%rax"]->get(asmc::QWord);
@@ -490,47 +495,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.size = asmc::QWord;
     output.op = asmc::OpType::Hard;
     output.type = "adr";
-
-    ast::Type last = sym->type;
-    int checkTo = 0;
-    if (ref.internal == true) checkTo = 1;
-    ref.modList.invert();
-    ref.modList.reset();
-
-    while (ref.modList.trail() > checkTo) {
-      gen::Symbol * modSym;
-      std::string sto = ref.modList.touch();
-      if (this->typeList[last.typeName] == nullptr)
-        alert("type not found " + last.typeName);
-      gen::Type type = **this->typeList[last.typeName];
-
-          if (this->scope == *this->typeList[last.typeName]) {
-            // if we are scoped to the type seache the symbol in the type symbol
-            // table
-            modSym = type.SymbolTable.search<std::string>(searchSymbol,
-                                                          ref.modList.shift());
-          } else {
-            // if we are not scoped to the type search the symbol in the public
-            // symbol table
-            modSym = type.publicSymbols.search<std::string>(searchSymbol,
-                                                            ref.modList.shift());
-          };
-          if (modSym == nullptr)
-            alert("variable not found " + last.typeName + "." + sto);
-      
-                asmc::Mov *mov = new asmc::Mov();
-          mov->op = modSym->type.opType;
-          mov->size = asmc::QWord;
-          mov->to = this->registers["%r14"]->get(asmc::QWord);
-          mov->from = lea->from;
-          OutputFile.text << mov;
-          lea->from = std::to_string(modSym->byteMod - this->getBytes(modSym->type.size)) +
-                          '(' + mov->to + ')';
-      last = modSym->type;
-    }
     OutputFile.text << lea;
-    ref.modList.invert();
-    ref.modList.reset();
   } else if (dynamic_cast<ast::StringLiteral *>(expr) != nullptr) {
     ast::StringLiteral str = *dynamic_cast<ast::StringLiteral *>(expr);
     asmc::StringLiteral *strlit = new asmc::StringLiteral();
