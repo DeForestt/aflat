@@ -131,6 +131,7 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId) {
   this->registers << asmc::Register("rdi", "edi", "di", "dil");
   this->registers << asmc::Register("rsp", "esp", "sp", "spl");
   this->registers << asmc::Register("rbp", "ebp", "bp", "bpl");
+  this->registers << asmc::Register("r12", "r12d", "r12w", "r12b");
   this->registers << asmc::Register("r13", "r13d", "r13w", "r13b");
   this->registers << asmc::Register("r14", "r14d", "r14w", "r14b");
   this->registers << asmc::Register("r15", "r15d", "r15w", "r15b");
@@ -222,6 +223,7 @@ std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std
     int multiplyer = getBytes(modSym->type.typeHint->size);
 
     int count = 1;
+    
 
     while (indicies.trail() > 0){
       // generate the expression
