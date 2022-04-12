@@ -52,7 +52,7 @@ enum Op {
 // Enum to represent the scope of a variable
 enum ScopeMod { Public, Private, Static, Export };
 
-class Expr {
+class Expr : public Statment {
 public:
   virtual std::string toString() { return ""; };
 };
@@ -72,6 +72,8 @@ public:
   asmc::OpType opType = asmc::Hard;
   int arraySize = 1;
   static bool compair(Type t, std::string name);
+  Type * typeHint = nullptr;
+  links::LinkedList <int> indecies;
 };
 
 class Arg {
@@ -162,6 +164,7 @@ public:
   bool override = false;
   Expr *expr;
   links::LinkedList<std::string> modList;
+  links::LinkedList<ast::Expr *> indices;
 };
 
 class While : public Statment {
@@ -220,6 +223,9 @@ public:
   std::string ident;
   ast::Type type;
   int count;
+  bool mut = true;
+  ast::ScopeMod scope;
+  links::LinkedList<Expr *> indices;
 };
 
 class Inc : public Statment {

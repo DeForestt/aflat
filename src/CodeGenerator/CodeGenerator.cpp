@@ -131,6 +131,7 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId) {
   this->registers << asmc::Register("rdi", "edi", "di", "dil");
   this->registers << asmc::Register("rsp", "esp", "sp", "spl");
   this->registers << asmc::Register("rbp", "ebp", "bp", "bpl");
+  this->registers << asmc::Register("r13", "r13d", "r13w", "r13b");
   this->registers << asmc::Register("r14", "r14d", "r14w", "r14b");
   this->registers << asmc::Register("r15", "r15d", "r15w", "r15b");
   this->registers << asmc::Register("xmm0", "xmm0", "xmm0", "xmm0");
@@ -147,8 +148,7 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId) {
   this->scope = nullptr;
 }
 
-
-std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std::string ident, links::LinkedList<std::string> modList, asmc::File &OutputFile, bool internal = false) {
+std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std::string ident, links::LinkedList<std::string> modList, asmc::File &OutputFile, links::LinkedList<ast::Expr *> indicies, bool internal = false) {
   modList.invert();
   modList.reset();
 
@@ -208,6 +208,71 @@ std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std
 
   modList.invert();
   modList.reset();
+
+  indicies.reset();
+  modSym->type.indecies.reset();
+
+  if (indicies.trail() != 0){
+    this->canAssign(modSym->type, "adr");
+
+    if (modSym->type.indecies.trail() != indicies.trail())
+      alert("invalid index count");
+
+    int multiplyer = getBytes(modSym->type.typeHint->size);
+
+    int count = 1;
+
+    while (indicies.trail() > 0){
+      // generate the expression
+      ast::Expr * index = indicies.shift();
+      gen::Expr expr = this->GenExpr(index, OutputFile);
+      // clear r13
+      asmc::Xor *xr = new asmc::Xor();
+      xr->op1 = this->registers["%r13"]->get(asmc::QWord);
+      xr->op2 = this->registers["%r13"]->get(asmc::QWord);
+      OutputFile.text << xr;
+
+      // move expression access to r13
+      asmc::Mov *mov = new asmc::Mov();
+      mov->size = asmc::DWord;
+      mov->to = this->registers["%r13"]->get(asmc::DWord);
+      mov->from = expr.access;
+
+      OutputFile.text << mov;
+
+      // multiply r13 by count
+      asmc::Mul *mul = new asmc::Mul();
+      mul->op2 = this->registers["%r13"]->get(asmc::QWord);
+      mul->op1 = '$' + std::to_string(count);
+
+      OutputFile.text << mul;
+    };
+    // multiply r13 by the size of the type
+    asmc::Mul *mul = new asmc::Mul();
+    mul->op2 = this->registers["%r13"]->get(asmc::QWord);
+    mul->op1 = '$' + std::to_string(multiplyer);
+    mul->size = asmc::QWord;
+
+    OutputFile.text << mul;
+    // load the address of the acces to rdx
+    asmc::Mov *mov = new asmc::Mov();
+    mov->size = asmc::QWord;
+    mov->to = this->registers["%rdx"]->get(asmc::QWord);
+    mov->from = access;
+
+    OutputFile.text << mov;
+    // add rdx to r14
+    asmc::Add *add = new asmc::Add();
+    add->op1 =  this->registers["%rdx"]->get(asmc::QWord);
+    add->op2 = this->registers["%r14"]->get(asmc::QWord);
+    add->size = asmc::QWord;
+
+    OutputFile.text << add;
+
+    access = '(' + this->registers["%r14"]->get(asmc::QWord) + ')';
+    modSym->type = *modSym->type.typeHint;
+
+  };
 
   return std::make_tuple(access, *modSym, true);
 };
@@ -420,7 +485,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   } else if (dynamic_cast<ast::Var *>(expr) != nullptr) {
     ast::Var var = *dynamic_cast<ast::Var *>(expr);
 
-    std::tuple<std::string, gen::Symbol, bool> resolved = this->resolveSymbol(var.Ident, var.modList, OutputFile);
+    std::tuple<std::string, gen::Symbol, bool> resolved = this->resolveSymbol(var.Ident, var.modList, OutputFile, links::LinkedList<ast::Expr *>());
       
     if (std::get<2>(resolved) == false) {
       Type **t = this->typeList[var.Ident];
@@ -479,7 +544,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   } else if (dynamic_cast<ast::Refrence *>(expr) != nullptr) {
     ast::Refrence ref = *dynamic_cast<ast::Refrence *>(expr);
 
-    std::tuple<std::string, gen::Symbol, bool> resolved = this->resolveSymbol(ref.Ident, ref.modList, OutputFile, ref.internal);
+    std::tuple<std::string, gen::Symbol, bool> resolved = this->resolveSymbol(ref.Ident, ref.modList, OutputFile, links::LinkedList<ast::Expr *>(), ref.internal);
 
     gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(ref.Ident);
     asmc::Lea *lea = new asmc::Lea();
@@ -1680,13 +1745,48 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     ast::DecArr *dec = dynamic_cast<ast::DecArr *>(STMT);
     int offset = this->getBytes(dec->type.size);
 
-    offset = offset * dec->count;
+    int index = 1;
+    dec->indices.reset();
+    links::LinkedList<int> typeHolder;
+    while (dec->indices.pos != nullptr) {
+      ast::IntLiteral *lit = dynamic_cast<ast::IntLiteral *>(dec->indices.shift());
+      if (lit == nullptr)
+        alert("array index must be an integer");
+      index *= lit->val;
+      typeHolder.push(lit->val);
+    }
+
+    offset *= index;
+
+    ast::Type type = dec->type;
+    type.arraySize = index;
 
     links::LinkedList<gen::Symbol> *Table;
     if (this->scope == nullptr || this->inFunction) {
       dec->type.arraySize = dec->count;
-      gen::scope::ScopeManager::getInstance()->assign(dec->ident, dec->type,
+      int bMod = gen::scope::ScopeManager::getInstance()->assign("." + dec->ident, type,
                                                       false);
+      // create a pointer to the array
+      ast::Type adr;
+      adr.arraySize = 1;
+      adr.opType = asmc::Hard;
+      adr.typeName = "adr";
+      adr.typeHint = &dec->type;
+      adr.size = asmc::QWord;
+      adr.indecies = typeHolder;
+      ast::Refrence *ref = new ast::Refrence();
+      ref->Ident = "." + dec->ident;
+
+      ast::DecAssign *assign = new ast::DecAssign();
+      assign->declare = &ast::Declare();
+      assign->declare->Ident = dec->ident;
+      assign->declare->type = adr;
+      assign->expr = ref;
+      assign->mute = dec->mut;
+      assign->declare->scope = dec->scope;
+
+      OutputFile << this->GenSTMT(assign);
+
     } else {
       Table = &this->scope->SymbolTable;
 
@@ -1701,8 +1801,29 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
         Symbol.byteMod = Table->head->data.byteMod + offset;
       }
       Symbol.type = dec->type;
-      Symbol.symbol = dec->ident;
+      Symbol.symbol = "." + dec->ident;
       Table->push(Symbol);
+
+      // create a pointer to the array
+      ast::Type adr;
+      adr.arraySize = 1;
+      adr.opType = asmc::Hard;
+      adr.typeName = "adr";
+      adr.typeHint = &dec->type;
+      adr.indecies = typeHolder;
+      adr.size = asmc::QWord;
+      ast::Refrence *ref = new ast::Refrence();
+      ref->Ident = "my";
+      ref->modList.push("." + dec->ident);
+
+      ast::DecAssign *assign = new ast::DecAssign();
+      assign->declare = &ast::Declare();
+      assign->declare->Ident = dec->ident;
+      assign->declare->type = adr;
+      assign->expr = ref;
+      assign->mute = dec->mut;
+      assign->declare->scope = dec->scope;
+      OutputFile << this->GenSTMT(assign);
     }
 
   } else if (dynamic_cast<ast::DecAssign *>(STMT) != nullptr) {
@@ -1807,7 +1928,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     links::LinkedList<gen::Symbol> *Table = &this->SymbolTable;
 
     std::tuple<std::string, gen::Symbol, bool> resolved =
-        this->resolveSymbol(assign->Ident, assign->modList, OutputFile);
+        this->resolveSymbol(assign->Ident, assign->modList, OutputFile, assign->indices);
 
     if (!std::get<2>(resolved)) {
       alert("undefined veriable:" + assign->Ident);
@@ -2241,7 +2362,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
   } else if (dynamic_cast<ast::Delete *>(STMT) != nullptr){
     ast::Delete *del = dynamic_cast<ast::Delete *>(STMT);
 
-    std::tuple<std::string, gen::Symbol, bool> resolved = this->resolveSymbol(del->ident, del->modList, OutputFile);
+    std::tuple<std::string, gen::Symbol, bool> resolved = this->resolveSymbol(del->ident, del->modList, OutputFile, links::LinkedList<ast::Expr *>());
     if (!std::get<2>(resolved))
       this->alert("Identifier " + del->ident + " not found to delete");
 
@@ -2253,26 +2374,25 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
             ".needs <std> \n\n");
     
     gen::Type **type = this->typeList[sym->type.typeName];
-    if (type == nullptr)
-      this->alert("Type" + sym->type.typeName + " not found to delete");
-    
-    gen::Class *classType = dynamic_cast<gen::Class *>(*type);
-    if (classType != nullptr) {
-    
-      // check if the class has a destructor
-      ast::Function *destructor = classType->nameTable["del"];
-
-      if (destructor != nullptr){
-        ast::Call *call = new ast::Call();
-        call->ident = del->ident;
-        call->modList = LinkedList<std::string>();
-        call->modList.push("del");
-        call->Args = LinkedList<ast::Expr*>();
-
-        OutputFile << this->GenSTMT(call);
-      };
+    if (type != nullptr) {
+      gen::Class *classType = dynamic_cast<gen::Class *>(*type);
+      if (classType != nullptr) {
       
-    }
+        // check if the class has a destructor
+        ast::Function *destructor = classType->nameTable["del"];
+
+        if (destructor != nullptr){
+          ast::Call *call = new ast::Call();
+          call->ident = del->ident;
+          call->modList = LinkedList<std::string>();
+          call->modList.push("del");
+          call->Args = LinkedList<ast::Expr*>();
+
+          OutputFile << this->GenSTMT(call);
+        };
+        
+      }
+    };
     // call free
     ast::Var *var = new ast::Var();
     var->Ident = del->ident;

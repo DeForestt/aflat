@@ -102,7 +102,11 @@ private:
                           asmc::File &OutputFile);
   bool canAssign(ast::Type type, std::string typeName, bool strict = false);
   std::string moduleId;
-  std::tuple<std::string, gen::Symbol, bool> resolveSymbol(std::string ident, links::LinkedList<std::string> modList, asmc::File &OutputFile, bool internal = false);
+  std::tuple<std::string, gen::Symbol, bool> 
+    resolveSymbol(std::string ident, 
+      links::LinkedList<std::string> modList, asmc::File &OutputFile,
+      links::LinkedList<ast::Expr *> indicies,
+      bool internal = false);
 
 public:
   asmc::File GenSTMT(ast::Statment *stmt);
