@@ -262,7 +262,7 @@ Elements of an array are accessed by index.  The index is the number of the elem
 
 ```js
 myArray[0] = "Hello";
-myArray[2] = "World";
+myArray[1] = "World";
 ```
 
 ## Done So Soon?
