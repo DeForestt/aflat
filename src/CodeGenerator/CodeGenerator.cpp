@@ -1174,7 +1174,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       mov->size = genExpr.size;
       OutputFile.text << mov;
       asmc::Mov *mov2 = new asmc::Mov();
-      mov2->from = this->registers["%eax"]->get(asmc::DWord);
+      mov2->from = this->registers["%eax"]->get(genExpr.size);
       mov2->to = "-" + std::to_string(bMod - offset) + "(%rbp)";
       mov2->size = genExpr.size;
       OutputFile.text << mov2;
