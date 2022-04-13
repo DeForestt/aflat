@@ -1170,7 +1170,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       gen::Expr genExpr = this->GenExpr(expr, OutputFile);
       asmc::Mov *mov = new asmc::Mov();
       mov->from = genExpr.access;
-      mov->to = this->registers["%eax"]->get(asmc::DWord);
+      mov->to = this->registers["%eax"]->get(genExpr.size);
       mov->size = genExpr.size;
       OutputFile.text << mov;
       asmc::Mov *mov2 = new asmc::Mov();
