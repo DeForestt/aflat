@@ -315,9 +315,6 @@ int len@String(){
 };
 
 private char lower(char c){
-    char 4 buff;
-    adr cast = ?buff;
-    cast =: 0;
     if (c > '@'){
         if (c < '['){
             c = c + 32;
@@ -327,9 +324,6 @@ private char lower(char c){
 };
 
 private char upper(char c){
-    char 4 buff;
-    adr cast = ?buff;
-    cast =: 0;
     if (c > '`'){
         if (c < '{'){
             c = c - 32;

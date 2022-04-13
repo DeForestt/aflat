@@ -253,11 +253,11 @@ export float charToFloat(char a){
 };
 
 export int str_toFloat(adr input){
-	char 20 whole;
-	char 20 decimal;
+	char[20] whole;
+	char[20] decimal;
 
-	str_split(input, '.', ?whole, ?decimal);
-	int len = len(?whole);
+	str_split(input, '.', whole, decimal);
+	int len = len(whole);
 	len = len - 1;
 
 	float result = 0.00;
@@ -402,12 +402,12 @@ export int float_toString(adr input, adr obuff, int signed){
 	};
 
 	push ?mySign; io.printInt(result); io.print("."); io.printInt(decimalPlacess);
-    char 10 rstring;
-    int_toString(result, ?rstring);
-    str_concat(mySign, ?rstring, obuff);
+    char[10] rstring;
+    int_toString(result, rstring);
+    str_concat(mySign, rstring, obuff);
     str_concat(obuff, ".", obuff);
-    int_toString(decimalPlacess, ?rstring);
-    str_concat(obuff, ?rstring, obuff);
+    int_toString(decimalPlacess, rstring);
+    str_concat(obuff, rstring, obuff);
 	
 	return 0;	
 };
