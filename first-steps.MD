@@ -218,5 +218,52 @@ int main(){
 
 Now we have imported the Random object from the math library.  The random object has a nextInt(int n) function that returns a random number between 0 and n.
 
+
+## Arrays
+Lets go back to the program we wrote in the if else section.  Now that we know how to use random, we can make it a little bit more interesting.  Lets make the program select a random greeting to greet the user.
+
+```js
+.needs <std>
+import * from "io" under io;
+import String from "String";
+import * from "String" under str;
+import Random from "math";
+
+int main(){
+	adr[7] salutations = {"Hello", "Greetings", "Good Evening", "Good Afternoon", "Good Morning", "Salutations", "Good Day"};
+
+	io.print("Please enter your name: ");
+	String name = str.getString();
+
+	if name == "DeForestt" {
+		Random rand = Random();
+		io.print(salutations[rand.nextInt(7)]); io.print(", ");
+		str.printString(name);
+		io.print("!\n");
+		io.print("From, The aflat Team\n");
+	} else {
+		io.print("I don't know you... \nGo away!\n");
+	};
+
+	return 0;
+};
+```
+
+What we have on line 8 is an array.  In aflat an array is declared as follows `<typename>[count] name`
+
+examples:
+```js
+int[5] myArray;
+adr[5] myArray;
+String[5] myArray;
+```
+
+Elements of an array are accessed by index.  The index is the number of the element.  The first element is 0, the second is 1, and so on.
+
+```js
+myArray[0] = "Hello";
+myArray[2] = "World";
+```
+
 ## Done So Soon?
 Don't worry, more tutorial to come...
