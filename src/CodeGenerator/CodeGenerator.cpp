@@ -1136,6 +1136,60 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.type = boolType.typeName;
     output.access = this->registers["%eax"]->get(asmc::Byte);
 
+  } else if (dynamic_cast<ast::StructList *>(expr) != nullptr) {
+    ast::StructList structList = *dynamic_cast<ast::StructList *>(expr);
+    structList.args.invert();
+    structList.args.reset();
+
+    // calculate the size of the struct
+    int size = 0;
+    while (structList.args.trail() > 0){
+      asmc::File tempFile;
+      gen::Expr expr = this->GenExpr(structList.args.shift(), tempFile);
+      size += this->getBytes(expr.size);
+    };
+    structList.args.reset();
+
+    auto millies = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+    std::string uniqueIdent = std::to_string(millies);
+
+    ast::Type structType = ast::Type();
+    structType.size = asmc::Byte;
+    structType.arraySize = size;
+    structType.typeName = "struct";
+    // save a symbol
+    int bMod = gen::scope::ScopeManager::getInstance()->assign(uniqueIdent, structType, false, false);
+    
+    // load
+    int offset = 0;
+
+    while (structList.args.trail() > 0){
+      ast::Expr *expr = structList.args.shift();
+      gen::Expr genExpr = this->GenExpr(expr, OutputFile);
+      asmc::Mov *mov = new asmc::Mov();
+      mov->from = genExpr.access;
+      mov->to = this->registers["%eax"]->get(asmc::DWord);
+      mov->size = genExpr.size;
+      OutputFile.text << mov;
+      asmc::Mov *mov2 = new asmc::Mov();
+      mov2->from = this->registers["%eax"]->get(asmc::DWord);
+      mov2->to = "-" + std::to_string(bMod - offset) + "(%rbp)";
+      mov2->size = genExpr.size;
+      OutputFile.text << mov2;
+      offset += this->getBytes(genExpr.size);
+    };
+
+    // create a pointer to the struct
+    asmc::Lea *lea = new asmc::Lea();
+    lea->from = "-" + std::to_string(bMod) + "(%rbp)";
+    lea->to = this->registers["%rax"]->get(asmc::QWord);
+    OutputFile.text << lea;
+
+    output.access = this->registers["%rax"]->get(asmc::QWord);
+    output.size = asmc::QWord;
+    output.type = "adr";
   } else {
     this->alert("Unhandled expression");
   }
@@ -1773,6 +1827,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       index *= lit->val;
       typeHolder.push(lit->val);
     }
+    typeHolder.invert();
 
     offset *= index;
 
@@ -1919,6 +1974,32 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       Table->push(Symbol);
     };
 
+  } else if (dynamic_cast<ast::DecAssignArr *>(STMT)) {
+    ast::DecAssignArr *decAssign = dynamic_cast<ast::DecAssignArr *>(STMT);
+    ast::DecArr *dec = decAssign->declare;
+    ast::Type adr;
+    adr.arraySize = 1;
+    dec->indices.reset();
+    while (dec->indices.pos != nullptr) {
+      ast::IntLiteral *lit = dynamic_cast<ast::IntLiteral *>(dec->indices.shift());
+      if (lit == nullptr)
+        alert("array index must be an integer");
+      adr.indecies.push(lit->val);
+    }
+    adr.indecies.invert();
+    adr.opType = asmc::Hard;
+    adr.size = asmc::QWord;
+    adr.typeName = "adr";
+    adr.typeHint = &dec->type;
+
+    ast::DecAssign *assign = new ast::DecAssign();
+    assign->declare = new ast::Declare();
+    assign->declare->Ident = dec->ident;
+    assign->declare->type = adr;
+    assign->expr = decAssign->expr;
+    assign->mute = decAssign->mute;
+    assign->declare->scope = dec->scope;
+    OutputFile << this->GenSTMT(assign);
   } else if (dynamic_cast<ast::Return *>(STMT) != nullptr) {
     /*
         mov [this.GenExpr(ret.value)]

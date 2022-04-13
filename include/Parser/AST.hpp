@@ -228,6 +228,13 @@ public:
   links::LinkedList<Expr *> indices;
 };
 
+class DecAssignArr : public Statment {
+  public:
+  DecArr *declare;
+  bool mute = true;
+  Expr *expr;
+};
+
 class Inc : public Statment {
 public:
   std::string ident;
@@ -317,6 +324,11 @@ class NewExpr : public Expr {
 public:
   ast::Type type;
   links::LinkedList<Expr *> args;
+};
+
+class StructList : public Expr {
+  public:
+    links::LinkedList<ast::Expr *> args;
 };
 
 class Not : public Expr {

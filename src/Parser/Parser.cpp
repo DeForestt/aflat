@@ -322,6 +322,17 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
           arr->mut = isMutable;
           arr->scope = scope;
           output = arr;
+
+          // Check for equal sign
+          lex::OpSym * eq = dynamic_cast<lex::OpSym *>(tokens.peek());
+          if (eq != nullptr && eq->Sym == '='){
+            tokens.pop();
+            ast::DecAssignArr * assign = new ast::DecAssignArr;
+            assign->declare = arr;
+            assign->expr = this->parseExpr(tokens);
+            assign->mute = isMutable;
+            output = assign;
+          }
         } else throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
                                     " Expected a symbol or a declaration");
       } else {
@@ -1212,6 +1223,21 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       ast::Not *notExpr = new ast::Not();
       notExpr->expr = this->parseExpr(tokens);
       output = notExpr;
+    } else if (eq.Sym == '{') {
+      ast::StructList *structList = new ast::StructList();
+      lex::OpSym *symp;
+      do {
+        tokens.pop();
+        structList->args.push(this->parseExpr(tokens));
+        symp = dynamic_cast<lex::OpSym *>(tokens.peek());
+      } while (symp != nullptr && symp->Sym == ',');
+      
+      if (symp == nullptr || symp->Sym != '}')
+        throw err::Exception(
+            "Line: " + std::to_string(tokens.peek()->lineCount) +
+            " Need an } to end struct not a symbol");
+      tokens.pop();
+      output = structList;
     }
   } else
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
