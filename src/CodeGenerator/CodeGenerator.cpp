@@ -112,8 +112,8 @@ void gen::CodeGenerator::alert(std::string message, bool error = true) {
     if (this->scope != nullptr) {
       std::cout << "in class " << this->scope->Ident << ": ";
     }
-    if (!this->globalScope && this->nameTable.head != nullptr) {
-      std::cout << "in function " << this->nameTable.peek().ident.ident << ": ";
+    if (!this->globalScope && this->currentFunction != nullptr) {
+      std::cout << "in function " << this->currentFunction->ident.ident << ": ";
     }
     std::cout << message << std::endl;
     exit(1);
@@ -1583,7 +1583,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     */
 
     gen::scope::ScopeManager::getInstance()->pushScope();
-
+    ast::Function * saveFunc = this->currentFunction;
     ast::Function *func = dynamic_cast<ast::Function *>(STMT);
     int saveIntArgs = intArgsCounter;
     bool isLambda = func->isLambda;
@@ -1606,6 +1606,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     }
 
     if (func->statment != nullptr) {
+      this->currentFunction = func;
       bool saveIn = this->inFunction;
       this->inFunction = true;
       gen::Class *saveScope = this->scope;
@@ -1751,6 +1752,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     }
 
     this->intArgsCounter = saveIntArgs;
+    this->currentFunction = saveFunc;
 
     gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile, true);
   } else if (dynamic_cast<ast::Declare *>(STMT) != nullptr) {

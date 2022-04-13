@@ -72,6 +72,7 @@ private:
   bool inFunction = false;
   HashMap <ast::Statment *> includedMemo;
   HashMap <std::string> nameSpaceTable;
+  ast::Function *currentFunction = nullptr;
 #pragma endregion
 
 #pragma region Item Lists
@@ -103,10 +104,11 @@ private:
   bool canAssign(ast::Type type, std::string typeName, bool strict = false);
   std::string moduleId;
   std::tuple<std::string, gen::Symbol, bool> 
-    resolveSymbol(std::string ident, 
+  resolveSymbol(std::string ident, 
       links::LinkedList<std::string> modList, asmc::File &OutputFile,
       links::LinkedList<ast::Expr *> indicies,
       bool internal = false);
+
 
 public:
   asmc::File GenSTMT(ast::Statment *stmt);
