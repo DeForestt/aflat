@@ -203,7 +203,6 @@ std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std
     mov->to = this->registers["%r14"]->get(asmc::QWord);
     mov->from = access;
     OutputFile.text << mov;
-    alert("Type Name: " + last.typeName + " Symbol: " + sto + " ByteMod: " + std::to_string(tbyte) + " array: " + std::to_string(last.arraySize), false);
     access = std::to_string(tbyte - (this->getBytes(last.size) * last.arraySize)) +
                     '(' + mov->to + ')';
   }
