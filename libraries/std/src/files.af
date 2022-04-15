@@ -12,7 +12,7 @@ class fstat{
     long st_dev;
     long st_ino;
     int st_mode;
-    char 4 alligner;
+    int alligner;
     long st_nlink;
     int st_uid;
     int st_gid;
