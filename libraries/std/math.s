@@ -15,25 +15,34 @@ pub_Random_nextInt:
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movl	%esi, -12(%rbp)
+	pushq	%r14
+	movq	-8(%rbp), %r14
 	pushq	%rdi
 	pushq	%rdx
 	movl	$910230123, %edx
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	0(%r14), %edi
+	movl	0(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %edi
 	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
-	movq	-8(%rbp), %rdx
 	movl	%eax, %ebx
-	movl	%ebx, 0(%rdx)
+	movl	%ebx, 0(%r14)
+	popq	%r14
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	0(%r14), %ebx
+	movl	0(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %ebx
 	movl	%ebx, -16(%rbp)
 	pushq	%rdi
 	pushq	%rdx
 	movl	$0, %edx
-	movl	-16(%rbp), %edi
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	setl	%al
 	popq	%rdx
@@ -44,7 +53,8 @@ pub_Random_nextInt:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$-1, %edx
-	movl	-16(%rbp), %edi
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %edi
 	imul	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -54,8 +64,8 @@ pub_Random_nextInt:
 .Lexp0:
 	pushq	%rdi
 	pushq	%rdx
-	movl	-16(%rbp), %eax
-	movl	-12(%rbp), %ecx
+	movl	%r15d, %eax
+	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx
 	movl	%edx, %eax
@@ -76,6 +86,8 @@ pub_Random_init:
 	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -16(%rbp)
+	pushq	%r14
+	movq	-8(%rbp), %r14
 	pushq	%rdx
 	lea	-16(%rbp), %rax
 	pushq	%rdi
@@ -84,12 +96,13 @@ pub_Random_init:
 	call	pub_DateTime_getSeconds
 	popq	%rdi
 	popq	%rdx
-	movq	-8(%rbp), %rdx
 	movl	%eax, %ebx
-	movl	%ebx, 0(%rdx)
+	movl	%ebx, 0(%r14)
+	popq	%r14
 	pushq	%rdx
+	movq	-16(%rbp), %r15
 	pushq	%rdi
-	movq	-16(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
@@ -127,7 +140,8 @@ pub_Random_init:
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %edx
-	movl	-20(%rbp), %edi
+	movl	-20(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	setl	%al
 	popq	%rdx
@@ -155,8 +169,10 @@ exp:
 .Lexp3:
 	pushq	%rdi
 	pushq	%rdx
-	movl	-4(%rbp), %edx
-	movl	-16(%rbp), %edi
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edx
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %edi
 	imul	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -166,7 +182,8 @@ exp:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
-	movl	-12(%rbp), %edi
+	movl	-12(%rbp), %r15d
+	movl	%r15d, %edi
 	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -176,8 +193,10 @@ exp:
 .Lexp4:
 	pushq	%rdi
 	pushq	%rdx
-	movl	-8(%rbp), %edx
-	movl	-12(%rbp), %edi
+	movl	-8(%rbp), %r15d
+	movl	%r15d, %edx
+	movl	-12(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	setl	%al
 	popq	%rdx
@@ -185,7 +204,8 @@ exp:
 	movb	%al, %al
 	cmpb	$1, %al
 	je	.Lexp3
-	movl	-16(%rbp), %eax
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %eax
 	leave
 	ret
 math.longExp:
@@ -204,8 +224,10 @@ longExp:
 .LlongExp5:
 	pushq	%rdi
 	pushq	%rdx
-	movq	-8(%rbp), %rdx
-	movq	-24(%rbp), %rdi
+	movq	-8(%rbp), %r15
+	movq	%r15, %rdx
+	movq	-24(%rbp), %r15
+	movq	%r15, %rdi
 	imul	%rdx, %rdi
 	movq	%rdi, %rax
 	popq	%rdx
@@ -215,7 +237,8 @@ longExp:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
-	movl	-16(%rbp), %edi
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %edi
 	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -225,8 +248,10 @@ longExp:
 .LlongExp6:
 	pushq	%rdi
 	pushq	%rdx
-	movl	-12(%rbp), %edx
-	movl	-16(%rbp), %edi
+	movl	-12(%rbp), %r15d
+	movl	%r15d, %edx
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	setl	%al
 	popq	%rdx
@@ -234,7 +259,8 @@ longExp:
 	movb	%al, %al
 	cmpb	$1, %al
 	je	.LlongExp5
-	movq	-24(%rbp), %rax
+	movq	-24(%rbp), %r15
+	movq	%r15, %rax
 	leave
 	ret
 math.longDiv:
@@ -247,8 +273,8 @@ longDiv:
 	movl	%esi, -8(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-4(%rbp), %eax
-	movl	-8(%rbp), %ecx
+	movl	%r15d, %eax
+	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx
 	movl	%edx, %eax
@@ -259,7 +285,8 @@ longDiv:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$10, %edx
-	movl	-12(%rbp), %edi
+	movl	-12(%rbp), %r15d
+	movl	%r15d, %edi
 	imul	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -268,15 +295,16 @@ longDiv:
 	movl	%ebx, -12(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-12(%rbp), %eax
-	movl	-8(%rbp), %ecx
+	movl	%r15d, %eax
+	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -12(%rbp)
-	movl	-12(%rbp), %eax
+	movl	-12(%rbp), %r15d
+	movl	%r15d, %eax
 	leave
 	ret
 math.abs:
@@ -289,7 +317,8 @@ abs:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$0, %edx
-	movl	-4(%rbp), %edi
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	setl	%al
 	popq	%rdx
@@ -300,7 +329,8 @@ abs:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$-1, %edx
-	movl	-4(%rbp), %edi
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
 	imul	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -309,7 +339,8 @@ abs:
 	leave
 	ret
 .Labs7:
-	movl	-4(%rbp), %eax
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %eax
 	leave
 	ret
 

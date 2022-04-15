@@ -1,10 +1,10 @@
-.global	concurrancy.wait
-.global	concurrancy.exit
+.global	concurrency.wait
+.global	concurrency.exit
 .global	pub_Pipe_write
 .global	pub_Pipe_read
 .global	pub_Pipe_init
 .global	pub_Message_writePipe
-.global	concurrancy.readPipe
+.global	concurrency.readPipe
 .global	pub_MProcess_output
 .global	pub_MProcess_input
 .global	pub_Process_isRunning
@@ -25,19 +25,25 @@ pub_Message_init:
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
+	pushq	%r14
+	movq	-8(%rbp), %r14
 	pushq	%rdx
+	movq	-16(%rbp), %r15
 	pushq	%rdi
-	movq	-16(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rdi
 	call	strings.len
 	popq	%rdi
 	popq	%rdx
-	movq	-8(%rbp), %rdx
 	movl	%eax, %ebx
-	movl	%ebx, 0(%rdx)
-	movq	-8(%rbp), %rdx
-	movq	-16(%rbp), %rbx
-	movq	%rbx, 4(%rdx)
+	movl	%ebx, 0(%r14)
+	popq	%r14
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movq	-16(%rbp), %r15
+	movq	%r15, %rbx
+	movq	%rbx, 4(%r14)
+	popq	%r14
 	popq	%rbx
 	movq	-8(%rbp), %rax
 	leave
@@ -49,12 +55,17 @@ pub_Process_init:
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
-	movq	-8(%rbp), %rdx
-	movq	-16(%rbp), %rbx
-	movq	%rbx, 4(%rdx)
-	movq	-8(%rbp), %rdx
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movq	-16(%rbp), %r15
+	movq	%r15, %rbx
+	movq	%rbx, 4(%r14)
+	popq	%r14
+	pushq	%r14
+	movq	-8(%rbp), %r14
 	movl	$0, %ebx
-	movl	%ebx, 0(%rdx)
+	movl	%ebx, 0(%r14)
+	popq	%r14
 	popq	%rbx
 	movq	-8(%rbp), %rax
 	leave
@@ -66,12 +77,19 @@ pub_MProcess_init:
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
-	movq	-8(%rbp), %rdx
-	movq	-16(%rbp), %rbx
-	movq	%rbx, 4(%rdx)
-	movq	-8(%rbp), %rdx
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movq	-16(%rbp), %r15
+	movq	%r15, %rbx
+	movq	%rbx, 4(%r14)
+	popq	%r14
+	pushq	%r14
+	movq	-8(%rbp), %r14
 	movl	$0, %ebx
-	movl	%ebx, 0(%rdx)
+	movl	%ebx, 0(%r14)
+	popq	%r14
+	pushq	%r14
+	movq	-8(%rbp), %r14
 	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
@@ -85,9 +103,11 @@ pub_MProcess_init:
 	call	pub_Pipe_init
 	popq	%rdi
 	popq	%rdx
-	movq	-8(%rbp), %rdx
 	movq	%rax, %rbx
-	movq	%rbx, 12(%rdx)
+	movq	%rbx, 12(%r14)
+	popq	%r14
+	pushq	%r14
+	movq	-8(%rbp), %r14
 	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
@@ -101,9 +121,9 @@ pub_MProcess_init:
 	call	pub_Pipe_init
 	popq	%rdi
 	popq	%rdx
-	movq	-8(%rbp), %rdx
 	movq	%rax, %rbx
-	movq	%rbx, 20(%rdx)
+	movq	%rbx, 20(%r14)
+	popq	%r14
 	popq	%rbx
 	movq	-8(%rbp), %rax
 	leave
@@ -115,20 +135,28 @@ pub_Process_start:
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
+	pushq	%r14
+	movq	-8(%rbp), %r14
 	pushq	%rdx
 	call	sys_fork
 	popq	%rdx
-	movq	-8(%rbp), %rdx
 	movl	%eax, %ebx
-	movl	%ebx, 0(%rdx)
+	movl	%ebx, 0(%r14)
+	popq	%r14
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	4(%r14), %rbx
+	movq	4(%r14), %r15
+	popq	%r14
+	movq	%r15, %rbx
 	movq	%rbx, -24(%rbp)
 	pushq	%rdi
 	pushq	%rdx
 	movl	$0, %edx
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	0(%r14), %edi
+	movl	0(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	sete	%al
 	popq	%rdx
@@ -138,8 +166,10 @@ pub_Process_start:
 	je	.Lstart0
 	pushq	%rdx
 	movq	-24(%rbp), %r15
+	movq	%r15, %r15
+	movq	-16(%rbp), %r15
 	pushq	%rdi
-	movq	-16(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rdi
 	call	*%r15
 	popq	%rdi
@@ -162,20 +192,28 @@ pub_MProcess_start:
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
+	pushq	%r14
+	movq	-8(%rbp), %r14
 	pushq	%rdx
 	call	sys_fork
 	popq	%rdx
-	movq	-8(%rbp), %rdx
 	movl	%eax, %ebx
-	movl	%ebx, 0(%rdx)
+	movl	%ebx, 0(%r14)
+	popq	%r14
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	4(%r14), %rbx
+	movq	4(%r14), %r15
+	popq	%r14
+	movq	%r15, %rbx
 	movq	%rbx, -24(%rbp)
 	pushq	%rdi
 	pushq	%rdx
 	movl	$0, %edx
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	0(%r14), %edi
+	movl	0(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	sete	%al
 	popq	%rdx
@@ -185,16 +223,24 @@ pub_MProcess_start:
 	je	.Lstart1
 	pushq	%rdx
 	movq	-24(%rbp), %r15
+	movq	%r15, %r15
+	movq	-16(%rbp), %r15
 	pushq	%rdi
-	movq	-16(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rdi
+	pushq	%r14
 	movq	-8(%rbp), %r14
+	movq	12(%r14), %r15
+	popq	%r14
 	pushq	%rsi
-	movq	12(%r14), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
+	pushq	%r14
 	movq	-8(%rbp), %r14
+	movq	20(%r14), %r15
+	popq	%r14
 	pushq	%rdx
-	movq	20(%r14), %rax
+	movq	%r15, %rax
 	movq	%rax, %rdx
 	call	*%r15
 	popq	%rdx
@@ -218,8 +264,11 @@ pub_Thread_getPid:
 	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	0(%r14), %eax
+	movl	0(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %eax
 	leave
 	ret
 pub_Process_isRunning:
@@ -229,9 +278,12 @@ pub_Process_isRunning:
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	pushq	%rdx
+	pushq	%r14
 	movq	-8(%rbp), %r14
+	movl	0(%r14), %r15d
+	popq	%r14
 	pushq	%rdi
-	movl	0(%r14), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
 	pushq	%rsi
 	movl	$0, %eax
@@ -245,7 +297,8 @@ pub_Process_isRunning:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$0, %edx
-	movl	-12(%rbp), %edi
+	movl	-12(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	setge	%al
 	popq	%rdx
@@ -264,8 +317,9 @@ pub_MProcess_input:
 	pushq	%rdi
 	movq	%rax, %rdi
 	pushq	%rdx
+	movq	-16(%rbp), %r15
 	pushq	%rsi
-	movq	-16(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
 	call	pub_Message_init
 	popq	%rsi
@@ -273,8 +327,11 @@ pub_MProcess_input:
 	popq	%rdx
 	movq	%rax, %rbx
 	movq	%rbx, -24(%rbp)
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	12(%r14), %rbx
+	movq	12(%r14), %r15
+	popq	%r14
+	movq	%r15, %rbx
 	movq	%rbx, -44(%rbp)
 	pushq	%rdx
 	pushq	%rdi
@@ -286,12 +343,16 @@ pub_MProcess_input:
 	movq	%rax, %rbx
 	movq	%rbx, -52(%rbp)
 	pushq	%rdx
+	pushq	%r14
 	movq	-24(%rbp), %r14
+	movl	0(%r14), %r15d
+	popq	%r14
 	pushq	%rdi
-	movl	0(%r14), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
+	movq	-52(%rbp), %r15
 	pushq	%rsi
-	movq	-52(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
 	pushq	%rdx
 	movl	$5, %eax
@@ -306,8 +367,9 @@ pub_MProcess_input:
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	movq	-52(%rbp), %r15
 	pushq	%rsi
-	movq	-52(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
 	pushq	%rdx
 	movl	$5, %eax
@@ -324,13 +386,19 @@ pub_MProcess_input:
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	pushq	%r14
 	movq	-24(%rbp), %r14
+	movq	4(%r14), %r15
+	popq	%r14
 	pushq	%rsi
-	movq	4(%r14), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
+	pushq	%r14
 	movq	-24(%rbp), %r14
+	movl	0(%r14), %r15d
+	popq	%r14
 	pushq	%rdx
-	movl	0(%r14), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edx
 	call	pub_Pipe_write
 	popq	%rdx
@@ -340,8 +408,9 @@ pub_MProcess_input:
 	movl	%eax, %ebx
 	movl	%ebx, -56(%rbp)
 	pushq	%rdx
+	movq	-52(%rbp), %r15
 	pushq	%rdi
-	movq	-52(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
@@ -355,8 +424,11 @@ pub_MProcess_output:
 	pushq	%rbx
 	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	20(%r14), %rbx
+	movq	20(%r14), %r15
+	popq	%r14
+	movq	%r15, %rbx
 	movq	%rbx, -16(%rbp)
 	pushq	%rdx
 	pushq	%rdi
@@ -372,8 +444,9 @@ pub_MProcess_output:
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	movq	-24(%rbp), %r15
 	pushq	%rsi
-	movq	-24(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
 	pushq	%rdx
 	movl	$5, %eax
@@ -384,8 +457,9 @@ pub_MProcess_output:
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
+	movq	-24(%rbp), %r15
 	pushq	%rdi
-	movq	-24(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rdi
 	call	strings.str_toInt
 	popq	%rdi
@@ -393,8 +467,9 @@ pub_MProcess_output:
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
 	pushq	%rdx
+	movq	-24(%rbp), %r15
 	pushq	%rdi
-	movq	-24(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
@@ -403,7 +478,8 @@ pub_MProcess_output:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
-	movl	-28(%rbp), %edi
+	movl	-28(%rbp), %r15d
+	movl	%r15d, %edi
 	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -418,8 +494,10 @@ pub_MProcess_output:
 	movq	%rbx, -36(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-28(%rbp), %edx
-	movq	-36(%rbp), %rdi
+	movl	-28(%rbp), %r15d
+	movl	%r15d, %edx
+	movq	-36(%rbp), %r15
+	movq	%r15, %rdi
 	add	%rdx, %rdi
 	movq	%rdi, %rax
 	popq	%rdx
@@ -434,21 +512,24 @@ pub_MProcess_output:
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	movq	-36(%rbp), %r15
 	pushq	%rsi
-	movq	-36(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
+	movl	-28(%rbp), %r15d
 	pushq	%rdx
-	movl	-28(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edx
 	call	pub_Pipe_read
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
-	movq	-36(%rbp), %rax
+	movq	-36(%rbp), %r15
+	movq	%r15, %rax
 	leave
 	ret
-concurrancy.readPipe:
+concurrency.readPipe:
 readPipe:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -469,8 +550,9 @@ readPipe:
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	movq	-16(%rbp), %r15
 	pushq	%rsi
-	movq	-16(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
 	pushq	%rdx
 	movl	$5, %eax
@@ -481,8 +563,9 @@ readPipe:
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
+	movq	-16(%rbp), %r15
 	pushq	%rdi
-	movq	-16(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rdi
 	call	strings.str_toInt
 	popq	%rdi
@@ -490,8 +573,9 @@ readPipe:
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
 	pushq	%rdx
+	movq	-16(%rbp), %r15
 	pushq	%rdi
-	movq	-16(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
@@ -500,7 +584,8 @@ readPipe:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
-	movl	-20(%rbp), %edi
+	movl	-20(%rbp), %r15d
+	movl	%r15d, %edi
 	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -518,11 +603,13 @@ readPipe:
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	movq	-28(%rbp), %r15
 	pushq	%rsi
-	movq	-28(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
+	movl	-20(%rbp), %r15d
 	pushq	%rdx
-	movl	-20(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edx
 	call	pub_Pipe_read
 	popq	%rdx
@@ -533,8 +620,9 @@ readPipe:
 	pushq	%rdi
 	movq	%rax, %rdi
 	pushq	%rdx
+	movq	-28(%rbp), %r15
 	pushq	%rsi
-	movq	-28(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
 	call	pub_Message_init
 	popq	%rsi
@@ -544,8 +632,10 @@ readPipe:
 	movq	%rbx, -36(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-20(%rbp), %edx
-	movq	-28(%rbp), %rdi
+	movl	-20(%rbp), %r15d
+	movl	%r15d, %edx
+	movq	-28(%rbp), %r15
+	movq	%r15, %rdi
 	add	%rdx, %rdi
 	movq	%rdi, %rax
 	popq	%rdx
@@ -555,7 +645,8 @@ readPipe:
 	movq	-28(%rbp), %rax
 	movb	$0, %bl
 	movb	%bl, (%rax)
-	movq	-36(%rbp), %rax
+	movq	-36(%rbp), %r15
+	movq	%r15, %rax
 	leave
 	ret
 pub_Message_writePipe:
@@ -575,12 +666,16 @@ pub_Message_writePipe:
 	movq	%rax, %rbx
 	movq	%rbx, -24(%rbp)
 	pushq	%rdx
+	pushq	%r14
 	movq	-8(%rbp), %r14
+	movl	0(%r14), %r15d
+	popq	%r14
 	pushq	%rdi
-	movl	0(%r14), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
+	movq	-24(%rbp), %r15
 	pushq	%rsi
-	movq	-24(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
 	pushq	%rdx
 	movl	$5, %eax
@@ -595,8 +690,9 @@ pub_Message_writePipe:
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	movq	-24(%rbp), %r15
 	pushq	%rsi
-	movq	-24(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
 	pushq	%rdx
 	movl	$5, %eax
@@ -613,13 +709,19 @@ pub_Message_writePipe:
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	pushq	%r14
 	movq	-8(%rbp), %r14
+	movq	4(%r14), %r15
+	popq	%r14
 	pushq	%rsi
-	movq	4(%r14), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
+	pushq	%r14
 	movq	-8(%rbp), %r14
+	movl	0(%r14), %r15d
+	popq	%r14
 	pushq	%rdx
-	movl	0(%r14), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edx
 	call	pub_Pipe_write
 	popq	%rdx
@@ -629,8 +731,9 @@ pub_Message_writePipe:
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
 	pushq	%rdx
+	movq	-24(%rbp), %r15
 	pushq	%rdi
-	movq	-24(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rdi
 	call	free
 	popq	%rdi
@@ -648,20 +751,31 @@ pub_Pipe_init:
 	movq	%rax, %rbx
 	movq	%rbx, -16(%rbp)
 	pushq	%rdx
+	movq	-16(%rbp), %r15
 	pushq	%rdi
-	movq	-16(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rdi
 	call	sys_pipe
 	popq	%rdi
 	popq	%rdx
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	pushq	%r14
 	movq	-16(%rbp), %r14
-	movq	-8(%rbp), %rdx
-	movl	0(%r14), %ebx
-	movl	%ebx, 4(%rdx)
+	movl	0(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %ebx
+	movl	%ebx, 4(%r14)
+	popq	%r14
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	pushq	%r14
 	movq	-16(%rbp), %r14
-	movq	-8(%rbp), %rdx
-	movl	4(%r14), %ebx
-	movl	%ebx, 0(%rdx)
+	movl	4(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %ebx
+	movl	%ebx, 0(%r14)
+	popq	%r14
 	popq	%rbx
 	movq	-8(%rbp), %rax
 	leave
@@ -674,18 +788,24 @@ pub_Pipe_read:
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movl	%edx, -20(%rbp)
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	4(%r14), %ebx
+	movl	4(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %ebx
 	movl	%ebx, -24(%rbp)
 	pushq	%rdx
+	movl	-24(%rbp), %r15d
 	pushq	%rdi
-	movl	-24(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
+	movq	-16(%rbp), %r15
 	pushq	%rsi
-	movq	-16(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
+	movl	-20(%rbp), %r15d
 	pushq	%rdx
-	movl	-20(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edx
 	call	sys_read
 	popq	%rdx
@@ -694,7 +814,8 @@ pub_Pipe_read:
 	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
-	movl	-28(%rbp), %eax
+	movl	-28(%rbp), %r15d
+	movl	%r15d, %eax
 	leave
 	ret
 pub_Pipe_write:
@@ -705,18 +826,24 @@ pub_Pipe_write:
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movl	%edx, -20(%rbp)
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	0(%r14), %ebx
+	movl	0(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %ebx
 	movl	%ebx, -24(%rbp)
 	pushq	%rdx
+	movl	-24(%rbp), %r15d
 	pushq	%rdi
-	movl	-24(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
+	movq	-16(%rbp), %r15
 	pushq	%rsi
-	movq	-16(%rbp), %rax
+	movq	%r15, %rax
 	movq	%rax, %rsi
+	movl	-20(%rbp), %r15d
 	pushq	%rdx
-	movl	-20(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edx
 	call	sys_write
 	popq	%rdx
@@ -725,10 +852,11 @@ pub_Pipe_write:
 	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
-	movl	-28(%rbp), %eax
+	movl	-28(%rbp), %r15d
+	movl	%r15d, %eax
 	leave
 	ret
-concurrancy.exit:
+concurrency.exit:
 exit:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -736,8 +864,9 @@ exit:
 	subq	$16, %rsp
 	movl	%edi, -4(%rbp)
 	pushq	%rdx
+	movl	-4(%rbp), %r15d
 	pushq	%rdi
-	movl	-4(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
 	call	sys_exit
 	popq	%rdi
@@ -745,7 +874,7 @@ exit:
 	movl	$0, %eax
 	leave
 	ret
-concurrancy.wait:
+concurrency.wait:
 wait:
 	pushq	%rbp
 	movq	%rsp, %rbp

@@ -15,6 +15,26 @@
 
 .text
 
+pub_ICollection_init:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$16, %rsp
+	movq	%rdi, -8(%rbp)
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movq	$lambda_1650045935654_0, %rbx
+	movq	%rbx, 0(%r14)
+	popq	%r14
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movq	$lambda_1650045935654_2, %rbx
+	movq	%rbx, 8(%r14)
+	popq	%r14
+	movq	-8(%rbp), %r15
+	movq	%r15, %rax
+	leave
+	ret
 daysInMonth:
 	pushq	%rbp
 	movq	%rsp, %rbp
@@ -25,20 +45,21 @@ daysInMonth:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$2, %edx
-	movl	-4(%rbp), %edi
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	sete	%al
 	popq	%rdx
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LdaysInMonth0
+	je	.LdaysInMonth4
 	pushq	%rdi
 	pushq	%rdx
 	movl	$0, %edx
 	pushq	%rdi
 	pushq	%rdx
-	movl	-8(%rbp), %eax
+	movl	%r15d, %eax
 	movl	$4, %ecx
 	cltd
 	idiv	%ecx
@@ -52,13 +73,13 @@ daysInMonth:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LdaysInMonth1
+	je	.LdaysInMonth5
 	pushq	%rdi
 	pushq	%rdx
 	movl	$0, %edx
 	pushq	%rdi
 	pushq	%rdx
-	movl	-8(%rbp), %eax
+	movl	%r15d, %eax
 	movl	$100, %ecx
 	cltd
 	idiv	%ecx
@@ -72,13 +93,13 @@ daysInMonth:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LdaysInMonth2
+	je	.LdaysInMonth6
 	pushq	%rdi
 	pushq	%rdx
 	movl	$0, %edx
 	pushq	%rdi
 	pushq	%rdx
-	movl	-8(%rbp), %eax
+	movl	%r15d, %eax
 	movl	$400, %ecx
 	cltd
 	idiv	%ecx
@@ -92,29 +113,30 @@ daysInMonth:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LdaysInMonth3
+	je	.LdaysInMonth7
 	movl	$29, %eax
 	leave
 	ret
-.LdaysInMonth3:
+.LdaysInMonth7:
 	movl	$28, %eax
 	leave
 	ret
-.LdaysInMonth2:
+.LdaysInMonth6:
 	movl	$29, %eax
 	leave
 	ret
-.LdaysInMonth1:
+.LdaysInMonth5:
 	movl	$28, %eax
 	leave
 	ret
-.LdaysInMonth0:
+.LdaysInMonth4:
 	pushq	%rdi
 	pushq	%rdx
 	pushq	%rdi
 	pushq	%rdx
 	movl	$11, %edx
-	movl	-4(%rbp), %edi
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	sete	%al
 	popq	%rdx
@@ -127,7 +149,8 @@ daysInMonth:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$9, %edx
-	movl	-4(%rbp), %edi
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	sete	%al
 	popq	%rdx
@@ -136,7 +159,8 @@ daysInMonth:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$6, %edx
-	movl	-4(%rbp), %edi
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	sete	%al
 	popq	%rdx
@@ -150,7 +174,8 @@ daysInMonth:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$4, %edx
-	movl	-4(%rbp), %edi
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	sete	%al
 	popq	%rdx
@@ -167,11 +192,11 @@ daysInMonth:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LdaysInMonth4
+	je	.LdaysInMonth8
 	movl	$30, %eax
 	leave
 	ret
-.LdaysInMonth4:
+.LdaysInMonth8:
 	movl	$31, %eax
 	leave
 	ret
@@ -186,7 +211,7 @@ daysInYear:
 	movl	$0, %edx
 	pushq	%rdi
 	pushq	%rdx
-	movl	-4(%rbp), %eax
+	movl	%r15d, %eax
 	movl	$4, %ecx
 	cltd
 	idiv	%ecx
@@ -200,13 +225,13 @@ daysInYear:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LdaysInYear5
+	je	.LdaysInYear9
 	pushq	%rdi
 	pushq	%rdx
 	movl	$0, %edx
 	pushq	%rdi
 	pushq	%rdx
-	movl	-4(%rbp), %eax
+	movl	%r15d, %eax
 	movl	$100, %ecx
 	cltd
 	idiv	%ecx
@@ -220,13 +245,13 @@ daysInYear:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LdaysInYear6
+	je	.LdaysInYear10
 	pushq	%rdi
 	pushq	%rdx
 	movl	$0, %edx
 	pushq	%rdi
 	pushq	%rdx
-	movl	-4(%rbp), %eax
+	movl	%r15d, %eax
 	movl	$400, %ecx
 	cltd
 	idiv	%ecx
@@ -240,19 +265,19 @@ daysInYear:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LdaysInYear7
+	je	.LdaysInYear11
 	movl	$366, %eax
 	leave
 	ret
-.LdaysInYear7:
+.LdaysInYear11:
 	movl	$365, %eax
 	leave
 	ret
-.LdaysInYear6:
+.LdaysInYear10:
 	movl	$366, %eax
 	leave
 	ret
-.LdaysInYear5:
+.LdaysInYear9:
 	movl	$365, %eax
 	leave
 	ret
@@ -268,23 +293,26 @@ daysSinceJan1:
 	movl	%ebx, -16(%rbp)
 	movl	$1, %ebx
 	movl	%ebx, -20(%rbp)
-	jmp	.LdaysSinceJan19
-.LdaysSinceJan18:
+	jmp	.LdaysSinceJan113
+.LdaysSinceJan112:
 	pushq	%rdi
 	pushq	%rdx
 	pushq	%rdx
+	movl	-20(%rbp), %r15d
 	pushq	%rdi
-	movl	-20(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
+	movl	-12(%rbp), %r15d
 	pushq	%rsi
-	movl	-12(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %esi
 	call	daysInMonth
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %edx
-	movl	-16(%rbp), %edi
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %edi
 	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -292,25 +320,29 @@ daysSinceJan1:
 	movl	%eax, %ebx
 	movl	%ebx, -16(%rbp)
 	add	$1, -20(%rbp)
-.LdaysSinceJan19:
+.LdaysSinceJan113:
 	pushq	%rdi
 	pushq	%rdx
-	movl	-4(%rbp), %edx
-	movl	-20(%rbp), %edi
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edx
+	movl	-20(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	setl	%al
 	popq	%rdx
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.LdaysSinceJan18
+	je	.LdaysSinceJan112
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
 	pushq	%rdi
 	pushq	%rdx
-	movl	-8(%rbp), %edx
-	movl	-16(%rbp), %edi
+	movl	-8(%rbp), %r15d
+	movl	%r15d, %edx
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %edi
 	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -322,7 +354,8 @@ daysSinceJan1:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -16(%rbp)
-	movl	-16(%rbp), %eax
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %eax
 	leave
 	ret
 dateRelativeTo:
@@ -335,14 +368,17 @@ dateRelativeTo:
 	movl	%edx, -12(%rbp)
 	movl	%ecx, -16(%rbp)
 	pushq	%rdx
+	movl	-4(%rbp), %r15d
 	pushq	%rdi
-	movl	-4(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
+	movl	-8(%rbp), %r15d
 	pushq	%rsi
-	movl	-8(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %esi
+	movl	-12(%rbp), %r15d
 	pushq	%rdx
-	movl	-12(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edx
 	call	daysSinceJan1
 	popq	%rdx
@@ -351,21 +387,24 @@ dateRelativeTo:
 	popq	%rdx
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
-	movl	-16(%rbp), %ebx
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %ebx
 	movl	%ebx, -24(%rbp)
-	jmp	.LdateRelativeTo11
-.LdateRelativeTo10:
+	jmp	.LdateRelativeTo15
+.LdateRelativeTo14:
 	pushq	%rdi
 	pushq	%rdx
 	pushq	%rdx
+	movl	-24(%rbp), %r15d
 	pushq	%rdi
-	movl	-24(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
 	call	daysInYear
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %edx
-	movl	-20(%rbp), %edi
+	movl	-20(%rbp), %r15d
+	movl	%r15d, %edi
 	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -373,19 +412,22 @@ dateRelativeTo:
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
 	add	$1, -24(%rbp)
-.LdateRelativeTo11:
+.LdateRelativeTo15:
 	pushq	%rdi
 	pushq	%rdx
-	movl	-12(%rbp), %edx
-	movl	-24(%rbp), %edi
+	movl	-12(%rbp), %r15d
+	movl	%r15d, %edx
+	movl	-24(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	setl	%al
 	popq	%rdx
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.LdateRelativeTo10
-	movl	-20(%rbp), %eax
+	je	.LdateRelativeTo14
+	movl	-20(%rbp), %r15d
+	movl	%r15d, %eax
 	leave
 	ret
 pub_DateTime_epochToDate:
@@ -394,12 +436,15 @@ pub_DateTime_epochToDate:
 	pushq	%rbx
 	subq	$48, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	0(%r14), %ebx
+	movl	0(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %ebx
 	movl	%ebx, -12(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-12(%rbp), %eax
+	movl	%r15d, %eax
 	movl	$86400, %ecx
 	cltd
 	idiv	%ecx
@@ -413,19 +458,21 @@ pub_DateTime_epochToDate:
 	movl	%ebx, -24(%rbp)
 	movl	$1, %ebx
 	movl	%ebx, -28(%rbp)
-	jmp	.LepochToDate13
-.LepochToDate12:
+	jmp	.LepochToDate17
+.LepochToDate16:
 	pushq	%rdi
 	pushq	%rdx
 	pushq	%rdx
+	movl	-20(%rbp), %r15d
 	pushq	%rdi
-	movl	-20(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
 	call	daysInYear
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %edx
-	movl	-16(%rbp), %edi
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %edi
 	sub	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -435,49 +482,55 @@ pub_DateTime_epochToDate:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
-	movl	-20(%rbp), %edi
+	movl	-20(%rbp), %r15d
+	movl	%r15d, %edi
 	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -20(%rbp)
-.LepochToDate13:
+.LepochToDate17:
 	pushq	%rdi
 	pushq	%rdx
 	pushq	%rdx
+	movl	-20(%rbp), %r15d
 	pushq	%rdi
-	movl	-20(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
 	call	daysInYear
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %edx
-	movl	-16(%rbp), %edi
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	setge	%al
 	popq	%rdx
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.LepochToDate12
-	jmp	.LepochToDate15
-.LepochToDate14:
+	je	.LepochToDate16
+	jmp	.LepochToDate19
+.LepochToDate18:
 	pushq	%rdi
 	pushq	%rdx
 	pushq	%rdx
+	movl	-24(%rbp), %r15d
 	pushq	%rdi
-	movl	-24(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
+	movl	-20(%rbp), %r15d
 	pushq	%rsi
-	movl	-20(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %esi
 	call	daysInMonth
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %edx
-	movl	-16(%rbp), %edi
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %edi
 	sub	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -487,58 +540,73 @@ pub_DateTime_epochToDate:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
-	movl	-24(%rbp), %edi
+	movl	-24(%rbp), %r15d
+	movl	%r15d, %edi
 	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -24(%rbp)
-.LepochToDate15:
+.LepochToDate19:
 	pushq	%rdi
 	pushq	%rdx
 	pushq	%rdx
+	movl	-24(%rbp), %r15d
 	pushq	%rdi
-	movl	-24(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
+	movl	-20(%rbp), %r15d
 	pushq	%rsi
-	movl	-20(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %esi
 	call	daysInMonth
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %edx
-	movl	-16(%rbp), %edi
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	setge	%al
 	popq	%rdx
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.LepochToDate14
+	je	.LepochToDate18
 	pushq	%rdi
 	pushq	%rdx
-	movl	-16(%rbp), %edx
-	movl	-28(%rbp), %edi
+	movl	-16(%rbp), %r15d
+	movl	%r15d, %edx
+	movl	-28(%rbp), %r15d
+	movl	%r15d, %edi
 	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -28(%rbp)
-	movq	-8(%rbp), %rdx
-	movl	-20(%rbp), %ebx
-	movl	%ebx, 12(%rdx)
-	movq	-8(%rbp), %rdx
-	movl	-24(%rbp), %ebx
-	movl	%ebx, 8(%rdx)
-	movq	-8(%rbp), %rdx
-	movl	-28(%rbp), %ebx
-	movl	%ebx, 4(%rdx)
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movl	-20(%rbp), %r15d
+	movl	%r15d, %ebx
+	movl	%ebx, 12(%r14)
+	popq	%r14
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movl	-24(%rbp), %r15d
+	movl	%r15d, %ebx
+	movl	%ebx, 8(%r14)
+	popq	%r14
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movl	-28(%rbp), %r15d
+	movl	%r15d, %ebx
+	movl	%ebx, 4(%r14)
+	popq	%r14
 	pushq	%rdi
 	pushq	%rdx
-	movl	-12(%rbp), %eax
+	movl	%r15d, %eax
 	movl	$86400, %ecx
 	cltd
 	idiv	%ecx
@@ -549,7 +617,7 @@ pub_DateTime_epochToDate:
 	movl	%ebx, -32(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-32(%rbp), %eax
+	movl	%r15d, %eax
 	movl	$3600, %ecx
 	cltd
 	idiv	%ecx
@@ -559,7 +627,7 @@ pub_DateTime_epochToDate:
 	movl	%ebx, -36(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-32(%rbp), %eax
+	movl	%r15d, %eax
 	movl	$3600, %ecx
 	cltd
 	idiv	%ecx
@@ -570,7 +638,7 @@ pub_DateTime_epochToDate:
 	movl	%ebx, -32(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-32(%rbp), %eax
+	movl	%r15d, %eax
 	movl	$60, %ecx
 	cltd
 	idiv	%ecx
@@ -580,7 +648,7 @@ pub_DateTime_epochToDate:
 	movl	%ebx, -40(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-32(%rbp), %eax
+	movl	%r15d, %eax
 	movl	$60, %ecx
 	cltd
 	idiv	%ecx
@@ -589,15 +657,24 @@ pub_DateTime_epochToDate:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -44(%rbp)
-	movq	-8(%rbp), %rdx
-	movl	-36(%rbp), %ebx
-	movl	%ebx, 16(%rdx)
-	movq	-8(%rbp), %rdx
-	movl	-40(%rbp), %ebx
-	movl	%ebx, 20(%rdx)
-	movq	-8(%rbp), %rdx
-	movl	-44(%rbp), %ebx
-	movl	%ebx, 24(%rdx)
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movl	-36(%rbp), %r15d
+	movl	%r15d, %ebx
+	movl	%ebx, 16(%r14)
+	popq	%r14
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movl	-40(%rbp), %r15d
+	movl	%r15d, %ebx
+	movl	%ebx, 20(%r14)
+	popq	%r14
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movl	-44(%rbp), %r15d
+	movl	%r15d, %ebx
+	movl	%ebx, 24(%r14)
+	popq	%r14
 	movl	$0, %eax
 	leave
 	ret
@@ -613,14 +690,17 @@ dayOfWeek:
 	pushq	%rdx
 	movl	$1, %edx
 	pushq	%rdx
+	movl	-4(%rbp), %r15d
 	pushq	%rdi
-	movl	-4(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
+	movl	-8(%rbp), %r15d
 	pushq	%rsi
-	movl	-8(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %esi
+	movl	-12(%rbp), %r15d
 	pushq	%rdx
-	movl	-12(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edx
 	pushq	%rcx
 	movl	$1, %eax
@@ -640,7 +720,7 @@ dayOfWeek:
 	movl	%ebx, -16(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-16(%rbp), %eax
+	movl	%r15d, %eax
 	movl	$7, %ecx
 	cltd
 	idiv	%ecx
@@ -659,37 +739,8 @@ dowToString:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$0, %edx
-	movl	-4(%rbp), %edi
-	cmpl	%edx, %edi
-	sete	%al
-	popq	%rdx
-	popq	%rdi
-	movb	%al, %al
-	cmpb	$0, %al
-	je	.LdowToString16
-	movq	$.strdowToString17, %rax
-	leave
-	ret
-.LdowToString16:
-	pushq	%rdi
-	pushq	%rdx
-	movl	$1, %edx
-	movl	-4(%rbp), %edi
-	cmpl	%edx, %edi
-	sete	%al
-	popq	%rdx
-	popq	%rdi
-	movb	%al, %al
-	cmpb	$0, %al
-	je	.LdowToString18
-	movq	$.strdowToString19, %rax
-	leave
-	ret
-.LdowToString18:
-	pushq	%rdi
-	pushq	%rdx
-	movl	$2, %edx
-	movl	-4(%rbp), %edi
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	sete	%al
 	popq	%rdx
@@ -703,8 +754,9 @@ dowToString:
 .LdowToString20:
 	pushq	%rdi
 	pushq	%rdx
-	movl	$3, %edx
-	movl	-4(%rbp), %edi
+	movl	$1, %edx
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	sete	%al
 	popq	%rdx
@@ -718,8 +770,9 @@ dowToString:
 .LdowToString22:
 	pushq	%rdi
 	pushq	%rdx
-	movl	$4, %edx
-	movl	-4(%rbp), %edi
+	movl	$2, %edx
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	sete	%al
 	popq	%rdx
@@ -733,8 +786,9 @@ dowToString:
 .LdowToString24:
 	pushq	%rdi
 	pushq	%rdx
-	movl	$5, %edx
-	movl	-4(%rbp), %edi
+	movl	$3, %edx
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	sete	%al
 	popq	%rdx
@@ -748,8 +802,9 @@ dowToString:
 .LdowToString26:
 	pushq	%rdi
 	pushq	%rdx
-	movl	$6, %edx
-	movl	-4(%rbp), %edi
+	movl	$4, %edx
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	sete	%al
 	popq	%rdx
@@ -761,9 +816,41 @@ dowToString:
 	leave
 	ret
 .LdowToString28:
+	pushq	%rdi
+	pushq	%rdx
+	movl	$5, %edx
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
+	cmpl	%edx, %edi
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.LdowToString30
+	movq	$.strdowToString31, %rax
+	leave
+	ret
+.LdowToString30:
+	pushq	%rdi
+	pushq	%rdx
+	movl	$6, %edx
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
+	cmpl	%edx, %edi
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.LdowToString32
+	movq	$.strdowToString33, %rax
+	leave
+	ret
+.LdowToString32:
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strdowToString30, %rax
+	movq	$.strdowToString34, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
@@ -777,9 +864,12 @@ pub_DateTime_init:
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
 	movl	%esi, -12(%rbp)
-	movq	-8(%rbp), %rdx
-	movl	-12(%rbp), %ebx
-	movl	%ebx, 0(%rdx)
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movl	-12(%rbp), %r15d
+	movl	%r15d, %ebx
+	movl	%ebx, 0(%r14)
+	popq	%r14
 	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
@@ -798,8 +888,11 @@ pub_DateTime_getSeconds:
 	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	0(%r14), %eax
+	movl	0(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %eax
 	leave
 	ret
 pub_DateTime_getMinutes:
@@ -810,7 +903,7 @@ pub_DateTime_getMinutes:
 	movq	%rdi, -8(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	0(%r14), %eax
+	movl	%r15d, %eax
 	movl	$60, %ecx
 	cltd
 	idiv	%ecx
@@ -827,7 +920,7 @@ pub_DateTime_getHours:
 	movq	%rdi, -8(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	0(%r14), %eax
+	movl	%r15d, %eax
 	movl	$3600, %ecx
 	cltd
 	idiv	%ecx
@@ -844,7 +937,7 @@ pub_DateTime_getDays:
 	movq	%rdi, -8(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	0(%r14), %eax
+	movl	%r15d, %eax
 	movl	$86400, %ecx
 	cltd
 	idiv	%ecx
@@ -859,8 +952,11 @@ pub_DateTime_getDay:
 	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	4(%r14), %eax
+	movl	4(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %eax
 	leave
 	ret
 pub_DateTime_getMonth:
@@ -869,8 +965,11 @@ pub_DateTime_getMonth:
 	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	8(%r14), %eax
+	movl	8(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %eax
 	leave
 	ret
 pub_DateTime_getYear:
@@ -879,8 +978,11 @@ pub_DateTime_getYear:
 	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	12(%r14), %eax
+	movl	12(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %eax
 	leave
 	ret
 pub_DateTime_getSecond:
@@ -889,8 +991,11 @@ pub_DateTime_getSecond:
 	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	24(%r14), %eax
+	movl	24(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %eax
 	leave
 	ret
 pub_DateTime_getMinute:
@@ -899,8 +1004,11 @@ pub_DateTime_getMinute:
 	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	20(%r14), %eax
+	movl	20(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %eax
 	leave
 	ret
 pub_DateTime_getHour:
@@ -909,8 +1017,11 @@ pub_DateTime_getHour:
 	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
+	pushq	%r14
 	movq	-8(%rbp), %r14
-	movl	16(%r14), %eax
+	movl	16(%r14), %r15d
+	popq	%r14
+	movl	%r15d, %eax
 	leave
 	ret
 DateTime.Now:
@@ -929,7 +1040,8 @@ Now:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$3600, %edx
-	movl	-4(%rbp), %edi
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edi
 	imul	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -938,8 +1050,10 @@ Now:
 	movl	%ebx, -4(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-4(%rbp), %edx
-	movl	-8(%rbp), %edi
+	movl	-4(%rbp), %r15d
+	movl	%r15d, %edx
+	movl	-8(%rbp), %r15d
+	movl	%r15d, %edi
 	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -956,8 +1070,9 @@ Now:
 	pushq	%rdi
 	movq	%rax, %rdi
 	pushq	%rdx
+	movl	-8(%rbp), %r15d
 	pushq	%rsi
-	movl	-8(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %esi
 	call	pub_DateTime_init
 	popq	%rsi
@@ -977,24 +1092,26 @@ mmddyyyyToDate:
 	pushq	%rdi
 	pushq	%rdx
 	movb	$0, %dl
-	movb	-9(%rbp), %dil
+	movb	-9(%rbp), %r15b
+	movb	%r15b, %dil
 	cmpb	%dl, %dil
 	sete	%al
 	popq	%rdx
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LmmddyyyyToDate31
+	je	.LmmddyyyyToDate35
 	movb	$45, %bl
 	movb	%bl, -9(%rbp)
-.LmmddyyyyToDate31:
+.LmmddyyyyToDate35:
 	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
+	movb	-9(%rbp), %r15b
 	pushq	%rsi
-	movb	-9(%rbp), %al
+	movb	%r15b, %al
 	movb	%al, %sil
 	call	pub_String_split
 	popq	%rsi
@@ -1023,7 +1140,7 @@ mmddyyyyToDate:
 	movb	%al, %al
 	movb	%al, %dil
 	pushq	%rsi
-	movq	$.strmmddyyyyToDate32, %rax
+	movq	$.strmmddyyyyToDate36, %rax
 	movq	%rax, %rsi
 	call	assert
 	popq	%rsi
@@ -1102,14 +1219,17 @@ mmddyyyyToDate:
 	movl	%eax, %ebx
 	movl	%ebx, -53(%rbp)
 	pushq	%rdx
+	movl	-45(%rbp), %r15d
 	pushq	%rdi
-	movl	-45(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edi
+	movl	-49(%rbp), %r15d
 	pushq	%rsi
-	movl	-49(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %esi
+	movl	-53(%rbp), %r15d
 	pushq	%rdx
-	movl	-53(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %edx
 	pushq	%rcx
 	movl	$1970, %eax
@@ -1125,7 +1245,8 @@ mmddyyyyToDate:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$86400, %edx
-	movl	-57(%rbp), %edi
+	movl	-57(%rbp), %r15d
+	movl	%r15d, %edi
 	imul	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
@@ -1142,8 +1263,9 @@ mmddyyyyToDate:
 	pushq	%rdi
 	movq	%rax, %rdi
 	pushq	%rdx
+	movl	-61(%rbp), %r15d
 	pushq	%rsi
-	movl	-61(%rbp), %eax
+	movl	%r15d, %eax
 	movl	%eax, %esi
 	call	pub_DateTime_init
 	popq	%rsi
@@ -1152,27 +1274,59 @@ mmddyyyyToDate:
 	movq	%rax, %rax
 	leave
 	ret
+lambda_1650045935654_0:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$16, %rsp
+	pushq	%rdx
+	pushq	%rdi
+	movq	$.strICollection.lambda_1650045935654_01, %rax
+	movq	%rax, %rdi
+	call	panic
+	popq	%rdi
+	popq	%rdx
+	leave
+	ret
+lambda_1650045935654_2:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$16, %rsp
+	pushq	%rdx
+	pushq	%rdi
+	movq	$.strICollection.lambda_1650045935654_23, %rax
+	movq	%rax, %rdi
+	call	panic
+	popq	%rdi
+	popq	%rdx
+	leave
+	ret
 
 
 .data
 
-.strmmddyyyyToDate32:
+.strICollection.lambda_1650045935654_23:
+	.asciz	 "Function (where) not implemented on this instance"
+.strICollection.lambda_1650045935654_01:
+	.asciz	 "Function (forEach) not implemented on this instance"
+.strmmddyyyyToDate36:
 	.asciz	 "Invalid date format passed to mmddyyyyToDate"
-.strdowToString30:
+.strdowToString34:
 	.asciz	 "Invalid day of week"
-.strdowToString29:
+.strdowToString33:
 	.asciz	 "Saturday"
-.strdowToString27:
+.strdowToString31:
 	.asciz	 "Friday"
-.strdowToString25:
+.strdowToString29:
 	.asciz	 "Thursday"
-.strdowToString23:
+.strdowToString27:
 	.asciz	 "Wednesday"
-.strdowToString21:
+.strdowToString25:
 	.asciz	 "Tuesday"
-.strdowToString19:
+.strdowToString23:
 	.asciz	 "Monday"
-.strdowToString17:
+.strdowToString21:
 	.asciz	 "Sunday"
 
 
