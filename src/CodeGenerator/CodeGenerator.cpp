@@ -203,7 +203,8 @@ std::tuple<std::string, gen::Symbol, bool> gen::CodeGenerator::resolveSymbol(std
     mov->to = this->registers["%r14"]->get(asmc::QWord);
     mov->from = access;
     OutputFile.text << mov;
-    access = std::to_string(tbyte - this->getBytes(last.size)) +
+    alert("Type Name: " + last.typeName + " Symbol: " + sto + " ByteMod: " + std::to_string(tbyte) + " array: " + std::to_string(last.arraySize), false);
+    access = std::to_string(tbyte - (this->getBytes(last.size) * last.arraySize)) +
                     '(' + mov->to + ')';
   }
 
@@ -564,7 +565,6 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     std::tuple<std::string, gen::Symbol, bool> resolved = this->resolveSymbol(ref.Ident, ref.modList, OutputFile, links::LinkedList<ast::Expr *>(), ref.internal);
 
-    gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(ref.Ident);
     asmc::Lea *lea = new asmc::Lea();
 
     if (std::get<2>(resolved)){
@@ -1835,10 +1835,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
 
     ast::Type type = dec->type;
     type.arraySize = index;
-
+    dec->type.arraySize = index;
     links::LinkedList<gen::Symbol> *Table;
     if (this->scope == nullptr || this->inFunction) {
-      dec->type.arraySize = dec->count;
       int bMod = gen::scope::ScopeManager::getInstance()->assign("." + dec->ident, type,
                                                       false);
       // create a pointer to the array
