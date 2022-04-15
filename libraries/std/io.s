@@ -1419,7 +1419,9 @@ printInt:
 .LprintInt72:
 	pushq	%rdi
 	pushq	%rdx
+	movl	-8(%rbp), %r15d
 	movl	%r15d, %eax
+	movl	-12(%rbp), %r15d
 	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx
@@ -1480,7 +1482,9 @@ printInt:
 	movl	%ebx, -16(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movl	-4(%rbp), %r15d
 	movl	%r15d, %eax
+	movl	-16(%rbp), %r15d
 	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx
@@ -1633,6 +1637,7 @@ printHex:
 .LprintHex80:
 	pushq	%rdi
 	pushq	%rdx
+	movq	-16(%rbp), %r15
 	movq	%r15, %rax
 	movq	$16, %rcx
 	cltd
@@ -1694,7 +1699,9 @@ printHex:
 	movq	%rbx, -24(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movq	-8(%rbp), %r15
 	movq	%r15, %rax
+	movq	-24(%rbp), %r15
 	movq	%r15, %rcx
 	cltd
 	idiv	%rcx
@@ -1849,7 +1856,9 @@ printLong:
 .LprintLong88:
 	pushq	%rdi
 	pushq	%rdx
+	movq	-16(%rbp), %r15
 	movq	%r15, %rax
+	movq	-24(%rbp), %r15
 	movq	%r15, %rcx
 	cltd
 	idiv	%rcx
@@ -1910,7 +1919,9 @@ printLong:
 	movq	%rbx, -32(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movq	-8(%rbp), %r15
 	movq	%r15, %rax
+	movq	-32(%rbp), %r15
 	movq	%r15, %rcx
 	cltd
 	idiv	%rcx
@@ -2439,7 +2450,9 @@ printFloat:
 	movq	%rbx, -49(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movl	-65(%rbp), %r15d
 	movl	%r15d, %eax
+	movl	-77(%rbp), %r15d
 	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx

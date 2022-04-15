@@ -64,7 +64,9 @@ pub_Random_nextInt:
 .Lexp0:
 	pushq	%rdi
 	pushq	%rdx
+	movl	-16(%rbp), %r15d
 	movl	%r15d, %eax
+	movl	-12(%rbp), %r15d
 	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx
@@ -273,7 +275,9 @@ longDiv:
 	movl	%esi, -8(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movl	-4(%rbp), %r15d
 	movl	%r15d, %eax
+	movl	-8(%rbp), %r15d
 	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx
@@ -295,7 +299,9 @@ longDiv:
 	movl	%ebx, -12(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movl	-12(%rbp), %r15d
 	movl	%r15d, %eax
+	movl	-8(%rbp), %r15d
 	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx

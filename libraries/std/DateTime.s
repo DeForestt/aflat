@@ -23,12 +23,12 @@ pub_ICollection_init:
 	movq	%rdi, -8(%rbp)
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650045935654_0, %rbx
+	movq	$lambda_1650049095608_0, %rbx
 	movq	%rbx, 0(%r14)
 	popq	%r14
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650045935654_2, %rbx
+	movq	$lambda_1650049095608_2, %rbx
 	movq	%rbx, 8(%r14)
 	popq	%r14
 	movq	-8(%rbp), %r15
@@ -59,6 +59,7 @@ daysInMonth:
 	movl	$0, %edx
 	pushq	%rdi
 	pushq	%rdx
+	movl	-8(%rbp), %r15d
 	movl	%r15d, %eax
 	movl	$4, %ecx
 	cltd
@@ -79,6 +80,7 @@ daysInMonth:
 	movl	$0, %edx
 	pushq	%rdi
 	pushq	%rdx
+	movl	-8(%rbp), %r15d
 	movl	%r15d, %eax
 	movl	$100, %ecx
 	cltd
@@ -99,6 +101,7 @@ daysInMonth:
 	movl	$0, %edx
 	pushq	%rdi
 	pushq	%rdx
+	movl	-8(%rbp), %r15d
 	movl	%r15d, %eax
 	movl	$400, %ecx
 	cltd
@@ -211,6 +214,7 @@ daysInYear:
 	movl	$0, %edx
 	pushq	%rdi
 	pushq	%rdx
+	movl	-4(%rbp), %r15d
 	movl	%r15d, %eax
 	movl	$4, %ecx
 	cltd
@@ -231,6 +235,7 @@ daysInYear:
 	movl	$0, %edx
 	pushq	%rdi
 	pushq	%rdx
+	movl	-4(%rbp), %r15d
 	movl	%r15d, %eax
 	movl	$100, %ecx
 	cltd
@@ -251,6 +256,7 @@ daysInYear:
 	movl	$0, %edx
 	pushq	%rdi
 	pushq	%rdx
+	movl	-4(%rbp), %r15d
 	movl	%r15d, %eax
 	movl	$400, %ecx
 	cltd
@@ -444,6 +450,7 @@ pub_DateTime_epochToDate:
 	movl	%ebx, -12(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movl	-12(%rbp), %r15d
 	movl	%r15d, %eax
 	movl	$86400, %ecx
 	cltd
@@ -606,6 +613,7 @@ pub_DateTime_epochToDate:
 	popq	%r14
 	pushq	%rdi
 	pushq	%rdx
+	movl	-12(%rbp), %r15d
 	movl	%r15d, %eax
 	movl	$86400, %ecx
 	cltd
@@ -617,6 +625,7 @@ pub_DateTime_epochToDate:
 	movl	%ebx, -32(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movl	-32(%rbp), %r15d
 	movl	%r15d, %eax
 	movl	$3600, %ecx
 	cltd
@@ -627,6 +636,7 @@ pub_DateTime_epochToDate:
 	movl	%ebx, -36(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movl	-32(%rbp), %r15d
 	movl	%r15d, %eax
 	movl	$3600, %ecx
 	cltd
@@ -638,6 +648,7 @@ pub_DateTime_epochToDate:
 	movl	%ebx, -32(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movl	-32(%rbp), %r15d
 	movl	%r15d, %eax
 	movl	$60, %ecx
 	cltd
@@ -648,6 +659,7 @@ pub_DateTime_epochToDate:
 	movl	%ebx, -40(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movl	-32(%rbp), %r15d
 	movl	%r15d, %eax
 	movl	$60, %ecx
 	cltd
@@ -720,6 +732,7 @@ dayOfWeek:
 	movl	%ebx, -16(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movl	-16(%rbp), %r15d
 	movl	%r15d, %eax
 	movl	$7, %ecx
 	cltd
@@ -903,6 +916,10 @@ pub_DateTime_getMinutes:
 	movq	%rdi, -8(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movl	0(%r14), %r15d
+	popq	%r14
 	movl	%r15d, %eax
 	movl	$60, %ecx
 	cltd
@@ -920,6 +937,10 @@ pub_DateTime_getHours:
 	movq	%rdi, -8(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movl	0(%r14), %r15d
+	popq	%r14
 	movl	%r15d, %eax
 	movl	$3600, %ecx
 	cltd
@@ -937,6 +958,10 @@ pub_DateTime_getDays:
 	movq	%rdi, -8(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movl	0(%r14), %r15d
+	popq	%r14
 	movl	%r15d, %eax
 	movl	$86400, %ecx
 	cltd
@@ -1274,28 +1299,28 @@ mmddyyyyToDate:
 	movq	%rax, %rax
 	leave
 	ret
-lambda_1650045935654_0:
+lambda_1650049095608_0:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650045935654_01, %rax
+	movq	$.strICollection.lambda_1650049095608_01, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
 	popq	%rdx
 	leave
 	ret
-lambda_1650045935654_2:
+lambda_1650049095608_2:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650045935654_23, %rax
+	movq	$.strICollection.lambda_1650049095608_23, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
@@ -1306,9 +1331,9 @@ lambda_1650045935654_2:
 
 .data
 
-.strICollection.lambda_1650045935654_23:
+.strICollection.lambda_1650049095608_23:
 	.asciz	 "Function (where) not implemented on this instance"
-.strICollection.lambda_1650045935654_01:
+.strICollection.lambda_1650049095608_01:
 	.asciz	 "Function (forEach) not implemented on this instance"
 .strmmddyyyyToDate36:
 	.asciz	 "Invalid date format passed to mmddyyyyToDate"

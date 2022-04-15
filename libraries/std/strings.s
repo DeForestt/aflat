@@ -623,7 +623,9 @@ int_toString:
 .Lint_toString15:
 	pushq	%rdi
 	pushq	%rdx
+	movl	-16(%rbp), %r15d
 	movl	%r15d, %eax
+	movl	-20(%rbp), %r15d
 	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx
@@ -686,7 +688,9 @@ int_toString:
 	movl	%ebx, -24(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movl	-4(%rbp), %r15d
 	movl	%r15d, %eax
+	movl	-24(%rbp), %r15d
 	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx
@@ -815,7 +819,9 @@ int_toStringL0:
 .Lint_toStringL019:
 	pushq	%rdi
 	pushq	%rdx
+	movl	-20(%rbp), %r15d
 	movl	%r15d, %eax
+	movl	-24(%rbp), %r15d
 	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx
@@ -1005,7 +1011,9 @@ int_toStringL0:
 .Lint_toStringL026:
 	pushq	%rdi
 	pushq	%rdx
+	movl	-20(%rbp), %r15d
 	movl	%r15d, %eax
+	movl	-24(%rbp), %r15d
 	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx
@@ -1068,7 +1076,9 @@ int_toStringL0:
 	movl	%ebx, -28(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movl	-4(%rbp), %r15d
 	movl	%r15d, %eax
+	movl	-28(%rbp), %r15d
 	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx
@@ -1561,8 +1571,8 @@ charToFloat:
 	movss	%xmm0, %xmm0
 	movss	%xmm0, -5(%rbp)
 .LcharToFloat58:
-	movl	-5(%rbp), %r15d
-	movl	%r15d, %eax
+	movss	-5(%rbp), %xmm0
+	movss	%xmm0, %xmm0
 	leave
 	ret
 strings.str_toFloat:
@@ -1635,8 +1645,8 @@ str_toFloat:
 	pushq	%rdx
 	movss	.floatstr_toFloat64, %xmm0
 	movss	%xmm0, %xmm1
-	movl	-80(%rbp), %r15d
-	movss	%r15d, %xmm0
+	movss	-80(%rbp), %xmm0
+	movss	%xmm0, %xmm0
 	mulss	%xmm1, %xmm0
 	movss	%xmm0, %xmm2
 	popq	%rdx
@@ -1733,8 +1743,8 @@ str_toFloat:
 	pushq	%rdx
 	movss	.floatstr_toFloat72, %xmm0
 	movss	%xmm0, %xmm1
-	movl	-72(%rbp), %r15d
-	movss	%r15d, %xmm0
+	movss	-72(%rbp), %xmm0
+	movss	%xmm0, %xmm0
 	addss	%xmm1, %xmm0
 	movss	%xmm0, %xmm2
 	popq	%rdx
@@ -1743,10 +1753,10 @@ str_toFloat:
 	movss	%xmm0, -94(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-80(%rbp), %r15d
-	movss	%r15d, %xmm1
-	movl	-84(%rbp), %r15d
-	movss	%r15d, %xmm0
+	movss	-80(%rbp), %xmm0
+	movss	%xmm0, %xmm1
+	movss	-84(%rbp), %xmm0
+	movss	%xmm0, %xmm0
 	mulss	%xmm1, %xmm0
 	movss	%xmm0, %xmm2
 	popq	%rdx
@@ -1755,10 +1765,10 @@ str_toFloat:
 	movss	%xmm0, -72(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-94(%rbp), %r15d
-	movss	%r15d, %xmm1
-	movl	-72(%rbp), %r15d
-	movss	%r15d, %xmm0
+	movss	-94(%rbp), %xmm0
+	movss	%xmm0, %xmm1
+	movss	-72(%rbp), %xmm0
+	movss	%xmm0, %xmm0
 	addss	%xmm1, %xmm0
 	movss	%xmm0, %xmm2
 	popq	%rdx
@@ -1767,10 +1777,10 @@ str_toFloat:
 	movss	%xmm0, -72(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-90(%rbp), %r15d
-	movss	%r15d, %xmm1
-	movl	-80(%rbp), %r15d
-	movss	%r15d, %xmm0
+	movss	-90(%rbp), %xmm0
+	movss	%xmm0, %xmm1
+	movss	-80(%rbp), %xmm0
+	movss	%xmm0, %xmm0
 	divss	%xmm1, %xmm0
 	popq	%rdx
 	popq	%rdi
@@ -1825,10 +1835,10 @@ str_toFloat:
 	movss	%xmm0, -102(%rbp)
 	pushq	%rdi
 	pushq	%rdx
-	movl	-102(%rbp), %r15d
-	movss	%r15d, %xmm1
-	movl	-102(%rbp), %r15d
-	movss	%r15d, %xmm0
+	movss	-102(%rbp), %xmm0
+	movss	%xmm0, %xmm1
+	movss	-102(%rbp), %xmm0
+	movss	%xmm0, %xmm0
 	mulss	%xmm1, %xmm0
 	movss	%xmm0, %xmm2
 	popq	%rdx
@@ -2308,7 +2318,9 @@ float_toString:
 	movq	%rbx, -64(%rbp)
 	pushq	%rdi
 	pushq	%rdx
+	movl	-80(%rbp), %r15d
 	movl	%r15d, %eax
+	movl	-92(%rbp), %r15d
 	movl	%r15d, %ecx
 	cltd
 	idiv	%ecx

@@ -570,11 +570,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       output.type = sym.type.typeName;
       // mov output to r15
       asmc::Mov *mov = new asmc::Mov();
-      mov->to = this->registers["%r15"]->get(output.size);
+      std::string move2 = (output.op == asmc::Float) ? this->registers["%xmm0"]->get(asmc::QWord) : this->registers["%r15"]->get(output.size);
+      
+      mov->to = move2;
       mov->from = std::get<0>(resolved);
       mov->size = output.size;
+      mov->op = output.op;
       OutputFile.text << mov;
-      output.access = this->registers["%r15"]->get(output.size);
+      output.access = mov->to;
       OutputFile << std::get<3>(resolved);
     }
 
@@ -834,18 +837,22 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         } else {
           asmc::Mov *mov = new asmc::Mov;
           asmc::Mov *eax = new asmc::Mov;
+          expr1 = this->GenExpr(comp.expr1, OutputFile);
+          
           eax->from = expr1.access;
           eax->to = this->registers["%rax"]->get(expr1.size);
           eax->size = expr1.size;
+          OutputFile.text << eax;
           mov->op = expr1.op;
-
+          
+          expr2 = this->GenExpr(comp.expr2, OutputFile, expr1.size);
           mov->from = expr2.access;
           mov->to = this->registers["%rcx"]->get(expr1.size);
           mov->size = expr1.size;
           mov->op = expr1.op;
           div->op1 = mov->to;
           output.access = this->registers["%rax"]->get(expr1.size);
-          OutputFile.text << eax;
+          
           OutputFile.text << mov;
         }
 
@@ -875,18 +882,22 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         } else {
           asmc::Mov *mov = new asmc::Mov;
           asmc::Mov *eax = new asmc::Mov;
+          expr1 = this->GenExpr(comp.expr1, OutputFile);
+          
           eax->from = expr1.access;
           eax->to = this->registers["%rax"]->get(expr1.size);
           eax->size = expr1.size;
+          OutputFile.text << eax;
           mov->op = expr1.op;
-
+          
+          expr2 = this->GenExpr(comp.expr2, OutputFile, expr1.size);
           mov->from = expr2.access;
           mov->to = this->registers["%rcx"]->get(expr1.size);
           mov->size = expr1.size;
           mov->op = expr1.op;
           div->op1 = mov->to;
           output.access = this->registers["%rax"]->get(expr1.size);
-          OutputFile.text << eax;
+          
           OutputFile.text << mov;
         }
 
@@ -2031,10 +2042,13 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
 
     asmc::Mov *mov = new asmc::Mov();
 
+
     gen::Expr from = this->GenExpr(ret->expr, OutputFile);
+    std::string move2 = (from.op == asmc::Float) ? this->registers["%xmm0"]->get(from.size) : this->registers["%rax"]->get(from.size);
     mov->from = from.access;
-    mov->to = this->registers["%rax"]->get(from.size);
+    mov->to = move2;
     mov->size = from.size;
+    mov->op = from.op;
     OutputFile.text << mov;
     this->canAssign(this->returnType, from.type, true);
     asmc::Return *re = new asmc::Return();
