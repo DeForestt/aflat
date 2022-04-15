@@ -176,7 +176,7 @@ int inspectHeap(){
     io.print("Heap:\n");
     io.print("HEAD --> ");
     while (current != NULL){
-        io.printHex(#1 * current); io.print(": status: ");
+        io.printHex(current); io.print(": status: ");
         io.printInt(current.free); io.print(" size: ");
         io.printInt(current.size); io.print(" overhead: ");
         io.printInt(16); io.print("\n");
