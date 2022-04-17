@@ -32,12 +32,12 @@ pub_ICollection_init:
 	movq	%rdi, -8(%rbp)
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650049095728_0, %rbx
+	movq	$lambda_1650179953112_0, %rbx
 	movq	%rbx, 0(%r14)
 	popq	%r14
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650049095728_2, %rbx
+	movq	$lambda_1650179953112_2, %rbx
 	movq	%rbx, 8(%r14)
 	popq	%r14
 	movq	-8(%rbp), %r15
@@ -58,7 +58,7 @@ pub_String_isNumeric:
 	movq	(%rax), %rax
 	movq	%rax, %rdi
 	pushq	%rsi
-	movq	$lambda_1650049095739_4, %rax
+	movq	$lambda_1650179953123_4, %rax
 	movq	%rax, %rsi
 	lea	-9(%rbp), %rax
 	pushq	%rdx
@@ -1983,7 +1983,7 @@ pub_String_toInt:
 	je	.LtoInt28
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strString.lambda_1650049095739_429, %rax
+	movq	$.strString.lambda_1650179953123_429, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
@@ -2153,35 +2153,35 @@ upper:
 	movb	%r15b, %al
 	leave
 	ret
-lambda_1650049095728_0:
+lambda_1650179953112_0:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650049095728_01, %rax
+	movq	$.strICollection.lambda_1650179953112_01, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
 	popq	%rdx
 	leave
 	ret
-lambda_1650049095728_2:
+lambda_1650179953112_2:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650049095728_23, %rax
+	movq	$.strICollection.lambda_1650179953112_23, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
 	popq	%rdx
 	leave
 	ret
-lambda_1650049095739_4:
+lambda_1650179953123_4:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
@@ -2207,14 +2207,14 @@ lambda_1650049095739_4:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Llambda_1650049095739_45
+	je	.Llambda_1650179953123_45
 	movq	-22(%rbp), %rax
 	movb	$0, %bl
 	movb	%bl, (%rax)
 	movl	$1, %eax
 	leave
 	ret
-.Llambda_1650049095739_45:
+.Llambda_1650179953123_45:
 	movl	$0, %eax
 	leave
 	ret
@@ -2222,11 +2222,11 @@ lambda_1650049095739_4:
 
 .data
 
-.strICollection.lambda_1650049095728_23:
+.strICollection.lambda_1650179953112_23:
 	.asciz	 "Function (where) not implemented on this instance"
-.strICollection.lambda_1650049095728_01:
+.strICollection.lambda_1650179953112_01:
 	.asciz	 "Function (forEach) not implemented on this instance"
-.strString.lambda_1650049095739_429:
+.strString.lambda_1650179953123_429:
 	.asciz	 "Attempt to convert non-numeric string to int"
 
 
