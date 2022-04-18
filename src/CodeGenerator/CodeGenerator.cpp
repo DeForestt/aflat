@@ -741,7 +741,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         this->prepareCompound(comp, OutputFile);
 
         std::string to1 = this->registers["%rdx"]->get(expr1.size);
-        std::string to2 = this->registers["%cl"]->get(expr1.size);
+        std::string to2 = this->registers["%cl"]->get(asmc::Byte);
         output.access = this->registers["%rax"]->get(expr1.size);
 
         if (expr1.op == asmc::Float) {
@@ -751,15 +751,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.op = asmc::Float;
         }
 
-        andBit->op2 = to2;
-        andBit->op1 = "%cl";
+        andBit->op2 = to1;
+        andBit->op1 = to2;
         andBit->size = expr1.size;
 
         // Move the value from edx to ecx
         asmc::Mov *mov = new asmc::Mov();
         mov->to = to1;
         mov->from = this->registers["%rdx"]->get(expr1.size);
-        ;
         mov->size = expr1.size;
 
         OutputFile.text << mov;
