@@ -2262,22 +2262,24 @@ printFloat:
 	movl	$31, %edx
 	movl	-21(%rbp), %r15d
 	movl	%r15d, %edi
-	movl	%edi, %ecx
+	movl	%edx, %ecx
 	sarl	%cl, %edi
+	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
-	movl	%edi, %ebx
+	movl	%eax, %ebx
 	movl	%ebx, -25(%rbp)
 	pushq	%rdi
 	pushq	%rdx
 	movl	$23, %edx
 	movl	-21(%rbp), %r15d
 	movl	%r15d, %edi
-	movl	%edi, %ecx
+	movl	%edx, %ecx
 	sarl	%cl, %edi
+	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
-	movl	%edi, %ebx
+	movl	%eax, %ebx
 	movl	%ebx, -29(%rbp)
 	pushq	%rdi
 	pushq	%rdx
@@ -2366,11 +2368,12 @@ printFloat:
 	movl	$1, %edx
 	movl	-33(%rbp), %r15d
 	movl	%r15d, %edi
-	movl	%edi, %ecx
+	movl	%edx, %ecx
 	sarl	%cl, %edi
+	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
-	movl	%edi, %ebx
+	movl	%eax, %ebx
 	movl	%ebx, -33(%rbp)
 	pushq	%rdi
 	pushq	%rdx

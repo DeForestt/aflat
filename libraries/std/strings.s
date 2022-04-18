@@ -1933,22 +1933,24 @@ float_toString:
 	movl	$31, %edx
 	movl	-36(%rbp), %r15d
 	movl	%r15d, %edi
-	movl	%edi, %ecx
+	movl	%edx, %ecx
 	sarl	%cl, %edi
+	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
-	movl	%edi, %ebx
+	movl	%eax, %ebx
 	movl	%ebx, -40(%rbp)
 	pushq	%rdi
 	pushq	%rdx
 	movl	$23, %edx
 	movl	-36(%rbp), %r15d
 	movl	%r15d, %edi
-	movl	%edi, %ecx
+	movl	%edx, %ecx
 	sarl	%cl, %edi
+	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
-	movl	%edi, %ebx
+	movl	%eax, %ebx
 	movl	%ebx, -44(%rbp)
 	pushq	%rdi
 	pushq	%rdx
@@ -2037,11 +2039,12 @@ float_toString:
 	movl	$1, %edx
 	movl	-48(%rbp), %r15d
 	movl	%r15d, %edi
-	movl	%edi, %ecx
+	movl	%edx, %ecx
 	sarl	%cl, %edi
+	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
-	movl	%edi, %ebx
+	movl	%eax, %ebx
 	movl	%ebx, -48(%rbp)
 	pushq	%rdi
 	pushq	%rdx

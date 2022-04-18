@@ -740,9 +740,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
         this->prepareCompound(comp, OutputFile);
 
-        std::string to1 = this->registers["%rdx"]->get(expr1.size);
-        std::string to2 = this->registers["%cl"]->get(asmc::Byte);
-        output.access = this->registers["%rax"]->get(expr1.size);
+        std::string to1 = this->registers["%cl"]->get(expr1.size);
+        std::string to2 = this->registers["%rdi"]->get(expr1.size);
+        output.access = this->registers["%rdi"]->get(expr1.size);
 
         if (expr1.op == asmc::Float) {
           to1 = this->registers["%xmm1"]->get(asmc::DWord);
@@ -750,11 +750,6 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.access = "%xmm0";
           output.op = asmc::Float;
         }
-
-        andBit->op2 = to1;
-        andBit->op1 = to2;
-        andBit->size = expr1.size;
-
         // Move the value from edx to ecx
         asmc::Mov *mov = new asmc::Mov();
         mov->to = to1;
@@ -763,10 +758,20 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
         OutputFile.text << mov;
 
+        andBit->op2 = to2;
+        andBit->op1 = "%cl";
+        andBit->size = expr1.size;
         OutputFile.text << andBit;
+        output.access = this->registers["%rdi"]->get(expr1.size);
 
-        output.size = expr1.size;
-        output.type = expr1.type;
+        // move access to rax
+        asmc::Mov *mov2 = new asmc::Mov();
+        mov2->to = this->registers["%rax"]->get(expr1.size);
+        mov2->from = output.access;
+        mov2->size = expr1.size;
+        OutputFile.text << mov2;
+        output.access = this->registers["%rax"]->get(expr1.size);
+
         break;
       }
       case ast::Great: {
@@ -790,7 +795,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         // Move the value from edx to ecx
         asmc::Mov *mov = new asmc::Mov();
         mov->to = to1;
-        mov->from = this->registers["%rdi"]->get(expr1.size);
+        mov->from = this->registers["%rdx"]->get(expr1.size);
         mov->size = expr1.size;
 
         OutputFile.text << mov;
@@ -803,6 +808,15 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
         output.size = expr1.size;
         output.type = expr1.type;
+        output.access = to2;
+
+        // move access to rax
+        asmc::Mov *mov2 = new asmc::Mov();
+        mov2->to = this->registers["%rax"]->get(expr1.size);
+        mov2->from = output.access;
+        mov2->size = expr1.size;
+        OutputFile.text << mov2;
+        output.access = this->registers["%rax"]->get(expr1.size);
         break;
       }
       case ast::Mul: {
