@@ -1,5 +1,6 @@
 .global	pub_File_toList
 .global	pub_File_toArray
+.global	pub_File_readToEnd
 .global	pub_File_read
 .global	pub_File_write
 .global	pub_File_close
@@ -17,12 +18,12 @@ pub_ICollection_init:
 	movq	%rdi, -8(%rbp)
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650341801568_0, %rbx
+	movq	$lambda_1650379164197_0, %rbx
 	movq	%rbx, 0(%r14)
 	popq	%r14
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650341801568_2, %rbx
+	movq	$lambda_1650379164197_2, %rbx
 	movq	%rbx, 8(%r14)
 	popq	%r14
 	movq	-8(%rbp), %r15
@@ -335,6 +336,148 @@ pub_File_read:
 	movb	%r15b, %bl
 	movb	%bl, (%rax)
 	movl	$0, %eax
+	leave
+	ret
+pub_File_readToEnd:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$48, %rsp
+	movq	%rdi, -8(%rbp)
+	pushq	%rdx
+	pushq	%rdi
+	movl	$96, %eax
+	movl	%eax, %edi
+	call	malloc
+	popq	%rdi
+	popq	%rdx
+	movq	%rax, %rbx
+	movq	%rbx, -16(%rbp)
+	pushq	%rdx
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movl	8(%r14), %r15d
+	popq	%r14
+	pushq	%rdi
+	movl	%r15d, %eax
+	movl	%eax, %edi
+	movq	-16(%rbp), %r15
+	pushq	%rsi
+	movq	%r15, %rax
+	movq	%rax, %rsi
+	call	sys_fstat
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%r14
+	movq	-16(%rbp), %r14
+	movq	48(%r14), %r15
+	popq	%r14
+	movq	%r15, %rdx
+	movl	$1, %edi
+	add	%edx, %edi
+	movl	%edi, %eax
+	popq	%rdx
+	popq	%rdi
+	pushq	%rdi
+	movl	%eax, %eax
+	movl	%eax, %edi
+	call	malloc
+	popq	%rdi
+	popq	%rdx
+	movq	%rax, %rbx
+	movq	%rbx, -24(%rbp)
+	pushq	%rdx
+	pushq	%r14
+	movq	-8(%rbp), %r14
+	movl	8(%r14), %r15d
+	popq	%r14
+	pushq	%rdi
+	movl	%r15d, %eax
+	movl	%eax, %edi
+	movq	-24(%rbp), %r15
+	pushq	%rsi
+	movq	%r15, %rax
+	movq	%rax, %rsi
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%r14
+	movq	-16(%rbp), %r14
+	movq	48(%r14), %r15
+	popq	%r14
+	movq	%r15, %rdx
+	movl	$0, %edi
+	add	%edx, %edi
+	movl	%edi, %eax
+	popq	%rdx
+	popq	%rdi
+	pushq	%rdx
+	movl	%eax, %eax
+	movl	%eax, %edx
+	call	sys_read
+	popq	%rdx
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%r14
+	movq	-16(%rbp), %r14
+	movq	48(%r14), %r15
+	popq	%r14
+	movq	%r15, %rdx
+	movl	$0, %edi
+	add	%edx, %edi
+	movl	%edi, %eax
+	popq	%rdx
+	popq	%rdi
+	movl	%eax, %edx
+	movq	-24(%rbp), %r15
+	movq	%r15, %rdi
+	add	%rdx, %rdi
+	movq	%rdi, %rax
+	popq	%rdx
+	popq	%rdi
+	movq	%rax, %rbx
+	movq	%rbx, -32(%rbp)
+	movq	-32(%rbp), %rax
+	movb	$0, %bl
+	movb	%bl, (%rax)
+	pushq	%rdx
+	pushq	%rdi
+	movl	$8, %eax
+	movl	%eax, %edi
+	call	malloc
+	popq	%rdi
+	popq	%rdx
+	pushq	%rdi
+	movq	%rax, %rdi
+	pushq	%rdx
+	movq	-24(%rbp), %r15
+	pushq	%rsi
+	movq	%r15, %rax
+	movq	%rax, %rsi
+	call	pub_String_init
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movq	%rax, %rbx
+	movq	%rbx, -40(%rbp)
+	pushq	%rdx
+	movq	-24(%rbp), %r15
+	pushq	%rdi
+	movq	%r15, %rax
+	movq	%rax, %rdi
+	call	free
+	popq	%rdi
+	popq	%rdx
+	movq	-40(%rbp), %r15
+	movq	%r15, %rax
 	leave
 	ret
 pub_File_toArray:
@@ -652,28 +795,28 @@ pub_File_toList:
 	movq	%r15, %rax
 	leave
 	ret
-lambda_1650341801568_0:
+lambda_1650379164197_0:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650341801568_01, %rax
+	movq	$.strICollection.lambda_1650379164197_01, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
 	popq	%rdx
 	leave
 	ret
-lambda_1650341801568_2:
+lambda_1650379164197_2:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650341801568_23, %rax
+	movq	$.strICollection.lambda_1650379164197_23, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
@@ -684,9 +827,9 @@ lambda_1650341801568_2:
 
 .data
 
-.strICollection.lambda_1650341801568_23:
+.strICollection.lambda_1650379164197_23:
 	.asciz	 "Function (where) not implemented on this instance"
-.strICollection.lambda_1650341801568_01:
+.strICollection.lambda_1650379164197_01:
 	.asciz	 "Function (forEach) not implemented on this instance"
 
 

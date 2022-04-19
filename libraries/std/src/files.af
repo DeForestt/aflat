@@ -2,11 +2,11 @@
 .needs <asm.gs>
 
 
-.needs <std>
 import ICollection from "Collections";
 import Array from "Collections";
 import LinkedList from "Collections";
 import len from "strings" under str;
+import String from "String";
 
 class fstat{
     long st_dev;
@@ -33,6 +33,7 @@ class File{
     int read(adr pointer, char delim);
     Array toArray(char delim);
     LinkedList toList(char delim);
+    String readToEnd();
     int close();
 };
 
@@ -87,6 +88,18 @@ int read@File(adr pointer, char delim){
         return  0;
 };
 
+String readToEnd@File(){
+        fstat stat = new fstat();
+        sys_fstat(my.file, stat);
+        adr buffer = malloc(1 + stat.st_size);
+        sys_read(my.file, buffer, 0 + stat.st_size);
+        adr pointer = buffer + (0 + stat.st_size);
+        pointer =: '\0';
+        String text = new String(buffer);
+        free(buffer);
+        return text;
+};
+
 Array toArray@File(char delim){
 	Array a = new Array(adr, 0);
 	adr ibuff = malloc(256);
@@ -129,3 +142,4 @@ LinkedList toList@File(char delim){
 
         return l;
 };
+
