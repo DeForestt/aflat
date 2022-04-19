@@ -32,12 +32,12 @@ pub_ICollection_init:
 	movq	%rdi, -8(%rbp)
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650379164316_0, %rbx
+	movq	$lambda_1650382341071_0, %rbx
 	movq	%rbx, 0(%r14)
 	popq	%r14
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650379164316_2, %rbx
+	movq	$lambda_1650382341071_2, %rbx
 	movq	%rbx, 8(%r14)
 	popq	%r14
 	movq	-8(%rbp), %r15
@@ -2233,28 +2233,28 @@ upper:
 	movb	%r15b, %al
 	leave
 	ret
-lambda_1650379164316_0:
+lambda_1650382341071_0:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650379164316_01, %rax
+	movq	$.strICollection.lambda_1650382341071_01, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
 	popq	%rdx
 	leave
 	ret
-lambda_1650379164316_2:
+lambda_1650382341071_2:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650379164316_23, %rax
+	movq	$.strICollection.lambda_1650382341071_23, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
@@ -2265,9 +2265,9 @@ lambda_1650379164316_2:
 
 .data
 
-.strICollection.lambda_1650379164316_23:
+.strICollection.lambda_1650382341071_23:
 	.asciz	 "Function (where) not implemented on this instance"
-.strICollection.lambda_1650379164316_01:
+.strICollection.lambda_1650382341071_01:
 	.asciz	 "Function (forEach) not implemented on this instance"
 .strString.del31:
 	.asciz	 "Attempt to convert non-numeric string to int"

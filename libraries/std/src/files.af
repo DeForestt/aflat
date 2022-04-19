@@ -97,6 +97,7 @@ String readToEnd@File(){
         pointer =: '\0';
         String text = new String(buffer);
         free(buffer);
+        delete stat;
         return text;
 };
 
