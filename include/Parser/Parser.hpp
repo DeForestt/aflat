@@ -14,9 +14,10 @@ public:
   ast::Statment Output;
   ast::Statment *parseStmt(links::LinkedList<lex::Token *> &tokens,
                            bool singleStmt = false);
-  Parser();
+  Parser(int mutability = 0);
 
 private:
+  int mutability;
   links::SLinkedList<ast::Type, std::string> typeList;
   ast::Expr *parseExpr(links::LinkedList<lex::Token *> &tokens);
   ast::Statment *parseArgs(links::LinkedList<lex::Token *> &tokens, char delimn,

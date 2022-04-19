@@ -4,8 +4,9 @@
 
 ast::Expr *prioritizeExpr(ast::Expr *expr);
 
-parse::Parser::Parser() {
+parse::Parser::Parser(int mutability = 0) {
   this->typeList.foo = ast::Type::compair;
+  this->mutability = mutability;
 
   // Int Type
   ast::Type Int = ast::Type();
@@ -110,6 +111,8 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
     tokens.pop();
 
     bool isMutable = true;
+    if (this->mutability == 0) isMutable = true;
+    else isMutable = false;
 
     if (obj.meta == "const") {
       isMutable = false;
@@ -118,7 +121,16 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
                           std::to_string(obj.lineCount));
       obj = *dynamic_cast<lex::LObj *>(tokens.peek());
       tokens.pop();
-    }
+    } else if (obj.meta == "mutable") {
+      if (mutability == 2)
+        throw err::Exception("Cannot use a mutable variable in safe mode, please set config mutability to promiscuous or strict");
+      isMutable = true;
+      if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
+      throw err::Exception("Expected statent after public on line " +
+                          std::to_string(obj.lineCount));
+      obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+      tokens.pop();
+    };
 
     // check if the next token is a scope modifier
     if (obj.meta == "public") {
@@ -167,6 +179,7 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
         dec->type = *this->typeList[obj.meta];
         dec->mask = mask;
         dec->scope = scope;
+        dec->mut = isMutable;
         output = dec;
         ast::Op overload = ast::Op::None;
         if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {

@@ -18,7 +18,7 @@
 std::string preProcess(std::string input);
 std::string getExePath();
 void buildTemplate(std::string value);
-void build(std::string path, std::string output);
+void build(std::string path, std::string output, int mutability = 0);
 void runConfig(std::string path, std::string libPath, char pmode = 'e');
 
 int main(int argc, char *argv[]) {
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void build(std::string path, std::string output) {
+void build(std::string path, std::string output, int mutability = 0) {
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;
 
@@ -151,7 +151,7 @@ void build(std::string path, std::string output) {
       return;
     }
     tokens.invert();
-    parse::Parser parser;
+    parse::Parser parser(mutability);
 
     ast::Statment *Prog = parser.parseStmt(tokens);
 
@@ -274,6 +274,7 @@ void buildTemplate(std::string value) {
 
 void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   bool debug = false;
+  int mutability = 0; // 0 = promiscuous, 1 = strict, 2 = safe
   std::vector<std::string> linker;
   std::vector<std::string> pathList;
   std::vector<std::thread> threads;
@@ -335,7 +336,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
       }
 
       // add the thread to the vector of threads
-      build("./src/" + copy + ".af", "./bin/" + copy + ".s");
+      build("./src/" + copy + ".af", "./bin/" + copy + ".s", mutability);
 
       // add the library to the linker
       linker.push_back("./bin/" + copy + ".s");
@@ -346,7 +347,15 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
       std::string setting = line.substr(4);
       if (setting == "debug") {
         debug = true;
-      };
+      } else if (setting.substr(0, 3) == "mut") {
+        if (setting.substr(4) == "promiscuous") {
+          mutability = 0;
+        } else if (setting.substr(4) == "strict") {
+          mutability = 1;
+        } else if (setting.substr(4) == "safe") {
+          mutability = 2;
+        }
+      }
     }
   }
 
