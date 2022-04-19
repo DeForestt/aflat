@@ -44,17 +44,13 @@ class String{
 
 
 bool isNumeric@String(){
-	bool isNumeric = true;
-
-	my.loop([char c, int index, adr isNum]=>{
-		if str.char_isDigit(c) == false {
-			isNum =: false;
-			return 1;
-		};
-		return 0;
-	}, ?isNumeric);
-
-	return isNumeric;
+    if my.len() == 0
+        return false;
+    for int i = 0; i < my.len(); i++ {
+        if (my.at(i) < '0') | (my.at(i) > '9')
+            return false;
+    };
+    return true;
 };
 
 String init@String(adr value){
@@ -297,9 +293,8 @@ LinkedList split@String(* char c){
 };
 
 int toInt@String(){
-    if my.isNumeric() == false {
+    if !my.isNumeric()
         panic("Attempt to convert non-numeric string to int");
-    };
     return str.str_toInt(my.head);
 };
 

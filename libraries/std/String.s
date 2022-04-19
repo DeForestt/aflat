@@ -32,12 +32,12 @@ pub_ICollection_init:
 	movq	%rdi, -8(%rbp)
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650296294039_0, %rbx
+	movq	$lambda_1650341801665_0, %rbx
 	movq	%rbx, 0(%r14)
 	popq	%r14
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650296294039_2, %rbx
+	movq	$lambda_1650341801665_2, %rbx
 	movq	%rbx, 8(%r14)
 	popq	%r14
 	movq	-8(%rbp), %r15
@@ -50,27 +50,113 @@ pub_String_isNumeric:
 	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
-	movb	$1, %bl
-	movb	%bl, -9(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movl	$0, %edx
 	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
 	movq	(%rax), %rax
 	movq	%rax, %rdi
-	pushq	%rsi
-	movq	$lambda_1650296294051_4, %rax
-	movq	%rax, %rsi
-	lea	-9(%rbp), %rax
-	pushq	%rdx
-	movq	%rax, %rax
-	movq	%rax, %rdx
-	call	pub_String_loop
+	call	pub_String_len
+	popq	%rdi
 	popq	%rdx
+	movl	%eax, %edi
+	cmpl	%edx, %edi
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.LisNumeric4
+	movb	$0, %al
+	leave
+	ret
+.LisNumeric4:
+	movl	$0, %ebx
+	movl	%ebx, -12(%rbp)
+	jmp	.LisNumeric6
+.LisNumeric5:
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	movb	$57, %dl
+	pushq	%rdx
+	lea	-8(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	movl	-12(%rbp), %r15d
+	pushq	%rsi
+	movl	%r15d, %eax
+	movl	%eax, %esi
+	call	pub_String_at
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
-	movb	-9(%rbp), %r15b
-	movb	%r15b, %al
+	movb	%al, %dil
+	cmpb	%dl, %dil
+	setg	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
+	pushq	%rdi
+	pushq	%rdx
+	movb	$48, %dl
+	pushq	%rdx
+	lea	-8(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	movl	-12(%rbp), %r15d
+	pushq	%rsi
+	movl	%r15d, %eax
+	movl	%eax, %esi
+	call	pub_String_at
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movb	%al, %dil
+	cmpb	%dl, %dil
+	setl	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dil
+	orb	%dl, %dil
+	movb	%dil, %al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.LisNumeric7
+	movb	$0, %al
+	leave
+	ret
+.LisNumeric7:
+	add	$1, -12(%rbp)
+.LisNumeric6:
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdx
+	lea	-8(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_String_len
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %edx
+	movl	-12(%rbp), %r15d
+	movl	%r15d, %edi
+	cmpl	%edx, %edi
+	setl	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$1, %al
+	je	.LisNumeric5
+	movb	$1, %al
 	leave
 	ret
 pub_String_init:
@@ -785,8 +871,8 @@ pub_String_loop:
 	movl	%ebx, -36(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -40(%rbp)
-	jmp	.Lloop7
-.Lloop6:
+	jmp	.Lloop9
+.Lloop8:
 	pushq	%rdx
 	movq	-32(%rbp), %r15
 	pushq	%rdi
@@ -846,12 +932,12 @@ pub_String_loop:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Lloop8
+	je	.Lloop10
 	movl	$0, %eax
 	leave
 	ret
-.Lloop8:
-.Lloop7:
+.Lloop10:
+.Lloop9:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-36(%rbp), %r15d
@@ -864,7 +950,7 @@ pub_String_loop:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lloop6
+	je	.Lloop8
 	movl	$0, %eax
 	leave
 	ret
@@ -926,8 +1012,8 @@ getString:
 	movb	%bl, -31(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -35(%rbp)
-	jmp	.LgetString10
-.LgetString9:
+	jmp	.LgetString12
+.LgetString11:
 	pushq	%rdx
 	pushq	%rdi
 	movl	$0, %eax
@@ -972,12 +1058,12 @@ getString:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LgetString11
+	je	.LgetString13
 	movb	-31(%rbp), %r15b
 	movq	-8(%rbp), %rax
 	movb	%r15b, %bl
 	movb	%bl, (%rax)
-.LgetString11:
+.LgetString13:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
@@ -1018,7 +1104,7 @@ getString:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -35(%rbp)
-.LgetString10:
+.LgetString12:
 	pushq	%rdi
 	pushq	%rdx
 	movb	-30(%rbp), %r15b
@@ -1031,7 +1117,7 @@ getString:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.LgetString9
+	je	.LgetString11
 	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
@@ -1109,10 +1195,10 @@ pub_String_trim:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Ltrim12
+	je	.Ltrim14
 	movb	$32, %bl
 	movb	%bl, -9(%rbp)
-.Ltrim12:
+.Ltrim14:
 	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
@@ -1140,8 +1226,8 @@ pub_String_trim:
 	popq	%rdx
 	movb	%al, %bl
 	movb	%bl, -18(%rbp)
-	jmp	.Ltrim14
-.Ltrim13:
+	jmp	.Ltrim16
+.Ltrim15:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
@@ -1168,7 +1254,7 @@ pub_String_trim:
 	popq	%rdx
 	movb	%al, %bl
 	movb	%bl, -18(%rbp)
-.Ltrim14:
+.Ltrim16:
 	pushq	%rdi
 	pushq	%rdx
 	movb	-9(%rbp), %r15b
@@ -1181,7 +1267,7 @@ pub_String_trim:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Ltrim13
+	je	.Ltrim15
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
@@ -1208,8 +1294,8 @@ pub_String_trim:
 	popq	%rdx
 	movb	%al, %bl
 	movb	%bl, -18(%rbp)
-	jmp	.Ltrim16
-.Ltrim15:
+	jmp	.Ltrim18
+.Ltrim17:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
@@ -1236,7 +1322,7 @@ pub_String_trim:
 	popq	%rdx
 	movb	%al, %bl
 	movb	%bl, -18(%rbp)
-.Ltrim16:
+.Ltrim18:
 	pushq	%rdi
 	pushq	%rdx
 	movb	-9(%rbp), %r15b
@@ -1249,7 +1335,7 @@ pub_String_trim:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Ltrim15
+	je	.Ltrim17
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
@@ -1360,8 +1446,8 @@ pub_String_replace:
 	popq	%rdx
 	movl	$0, %ebx
 	movl	%ebx, -42(%rbp)
-	jmp	.Lreplace18
-.Lreplace17:
+	jmp	.Lreplace20
+.Lreplace19:
 	pushq	%rdi
 	pushq	%rdx
 	movb	-9(%rbp), %r15b
@@ -1386,7 +1472,7 @@ pub_String_replace:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Lreplace19
+	je	.Lreplace21
 	pushq	%rdi
 	pushq	%rdx
 	movl	-42(%rbp), %r15d
@@ -1403,7 +1489,7 @@ pub_String_replace:
 	movq	-18(%rbp), %rax
 	movb	%r15b, %bl
 	movb	%bl, (%rax)
-.Lreplace19:
+.Lreplace21:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
@@ -1415,7 +1501,7 @@ pub_String_replace:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -42(%rbp)
-.Lreplace18:
+.Lreplace20:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-30(%rbp), %r15d
@@ -1428,7 +1514,7 @@ pub_String_replace:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lreplace17
+	je	.Lreplace19
 	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
@@ -1516,8 +1602,8 @@ pub_String_toLower:
 	movq	%rbx, -36(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -40(%rbp)
-	jmp	.LtoLower21
-.LtoLower20:
+	jmp	.LtoLower23
+.LtoLower22:
 	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
@@ -1569,7 +1655,7 @@ pub_String_toLower:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -40(%rbp)
-.LtoLower21:
+.LtoLower23:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-28(%rbp), %r15d
@@ -1582,7 +1668,7 @@ pub_String_toLower:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.LtoLower20
+	je	.LtoLower22
 	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
@@ -1670,8 +1756,8 @@ pub_String_toUpper:
 	movq	%rbx, -36(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -40(%rbp)
-	jmp	.LtoUpper23
-.LtoUpper22:
+	jmp	.LtoUpper25
+.LtoUpper24:
 	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
@@ -1723,7 +1809,7 @@ pub_String_toUpper:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -40(%rbp)
-.LtoUpper23:
+.LtoUpper25:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-28(%rbp), %r15d
@@ -1736,7 +1822,7 @@ pub_String_toUpper:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.LtoUpper22
+	je	.LtoUpper24
 	pushq	%rdx
 	pushq	%rdi
 	movl	$8, %eax
@@ -1802,10 +1888,10 @@ pub_String_split:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Lsplit24
+	je	.Lsplit26
 	movb	$32, %bl
 	movb	%bl, -9(%rbp)
-.Lsplit24:
+.Lsplit26:
 	pushq	%r14
 	movq	-8(%rbp), %r14
 	movq	0(%r14), %r15
@@ -1826,8 +1912,8 @@ pub_String_split:
 	movl	%ebx, -33(%rbp)
 	movl	$0, %ebx
 	movl	%ebx, -37(%rbp)
-	jmp	.Lsplit26
-.Lsplit25:
+	jmp	.Lsplit28
+.Lsplit27:
 	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
@@ -1855,7 +1941,7 @@ pub_String_split:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Lsplit27
+	je	.Lsplit29
 	movl	-37(%rbp), %r15d
 	movl	%r15d, %ebx
 	movl	%ebx, -42(%rbp)
@@ -1903,9 +1989,9 @@ pub_String_split:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -33(%rbp)
-.Lsplit27:
+.Lsplit29:
 	add	$1, -37(%rbp)
-.Lsplit26:
+.Lsplit28:
 	pushq	%rdi
 	pushq	%rdx
 	movl	-29(%rbp), %r15d
@@ -1918,7 +2004,7 @@ pub_String_split:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Lsplit25
+	je	.Lsplit27
 	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
@@ -1962,9 +2048,6 @@ pub_String_toInt:
 	pushq	%rbx
 	subq	$16, %rsp
 	movq	%rdi, -8(%rbp)
-	pushq	%rdi
-	pushq	%rdx
-	movb	$0, %dl
 	pushq	%rdx
 	lea	-8(%rbp), %rax
 	pushq	%rdi
@@ -1973,22 +2056,19 @@ pub_String_toInt:
 	call	pub_String_isNumeric
 	popq	%rdi
 	popq	%rdx
-	movb	%al, %dil
-	cmpb	%dl, %dil
-	sete	%al
-	popq	%rdx
-	popq	%rdi
+	movzbl	%al, %eax
+	xor	$1, %eax
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.LtoInt28
+	je	.LtoInt30
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strString.lambda_1650296294051_429, %rax
+	movq	$.strString.del31, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
 	popq	%rdx
-.LtoInt28:
+.LtoInt30:
 	pushq	%rdx
 	pushq	%r14
 	movq	-8(%rbp), %r14
@@ -2017,8 +2097,8 @@ pub_String_len:
 	popq	%r14
 	movq	%r15, %rbx
 	movq	%rbx, -20(%rbp)
-	jmp	.Llen31
-.Llen30:
+	jmp	.Llen33
+.Llen32:
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
@@ -2041,7 +2121,7 @@ pub_String_len:
 	popq	%rdi
 	movl	%eax, %ebx
 	movl	%ebx, -12(%rbp)
-.Llen31:
+.Llen33:
 	pushq	%rdi
 	pushq	%rdx
 	movb	$0, %dl
@@ -2054,7 +2134,7 @@ pub_String_len:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$1, %al
-	je	.Llen30
+	je	.Llen32
 	movl	-12(%rbp), %r15d
 	movl	%r15d, %eax
 	leave
@@ -2076,7 +2156,7 @@ lower:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Llower32
+	je	.Llower34
 	pushq	%rdi
 	pushq	%rdx
 	movb	$91, %dl
@@ -2088,7 +2168,7 @@ lower:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Llower33
+	je	.Llower35
 	pushq	%rdi
 	pushq	%rdx
 	movl	$32, %edx
@@ -2100,8 +2180,8 @@ lower:
 	popq	%rdi
 	movb	%al, %bl
 	movb	%bl, -1(%rbp)
-.Llower33:
-.Llower32:
+.Llower35:
+.Llower34:
 	movb	-1(%rbp), %r15b
 	movb	%r15b, %al
 	leave
@@ -2123,7 +2203,7 @@ upper:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Lupper34
+	je	.Lupper36
 	pushq	%rdi
 	pushq	%rdx
 	movb	$123, %dl
@@ -2135,7 +2215,7 @@ upper:
 	popq	%rdi
 	movb	%al, %al
 	cmpb	$0, %al
-	je	.Lupper35
+	je	.Lupper37
 	pushq	%rdi
 	pushq	%rdx
 	movl	$32, %edx
@@ -2147,86 +2227,49 @@ upper:
 	popq	%rdi
 	movb	%al, %bl
 	movb	%bl, -1(%rbp)
-.Lupper35:
-.Lupper34:
+.Lupper37:
+.Lupper36:
 	movb	-1(%rbp), %r15b
 	movb	%r15b, %al
 	leave
 	ret
-lambda_1650296294039_0:
+lambda_1650341801665_0:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650296294039_01, %rax
+	movq	$.strICollection.lambda_1650341801665_01, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
 	popq	%rdx
 	leave
 	ret
-lambda_1650296294039_2:
+lambda_1650341801665_2:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650296294039_23, %rax
+	movq	$.strICollection.lambda_1650341801665_23, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
 	popq	%rdx
-	leave
-	ret
-lambda_1650296294051_4:
-	pushq	%rbp
-	movq	%rsp, %rbp
-	pushq	%rbx
-	subq	$32, %rsp
-	movb	%dil, -10(%rbp)
-	movl	%esi, -14(%rbp)
-	movq	%rdx, -22(%rbp)
-	pushq	%rdi
-	pushq	%rdx
-	movb	$0, %dl
-	pushq	%rdx
-	movb	-10(%rbp), %r15b
-	pushq	%rdi
-	movb	%r15b, %al
-	movb	%al, %dil
-	call	strings.char_isDigit
-	popq	%rdi
-	popq	%rdx
-	movb	%al, %dil
-	cmpb	%dl, %dil
-	sete	%al
-	popq	%rdx
-	popq	%rdi
-	movb	%al, %al
-	cmpb	$0, %al
-	je	.Llambda_1650296294051_45
-	movq	-22(%rbp), %rax
-	movb	$0, %bl
-	movb	%bl, (%rax)
-	movl	$1, %eax
-	leave
-	ret
-.Llambda_1650296294051_45:
-	movl	$0, %eax
 	leave
 	ret
 
 
 .data
 
-.strICollection.lambda_1650296294039_23:
+.strICollection.lambda_1650341801665_23:
 	.asciz	 "Function (where) not implemented on this instance"
-.strICollection.lambda_1650296294039_01:
+.strICollection.lambda_1650341801665_01:
 	.asciz	 "Function (forEach) not implemented on this instance"
-.strString.lambda_1650296294051_429:
+.strString.del31:
 	.asciz	 "Attempt to convert non-numeric string to int"
 
 
