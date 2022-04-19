@@ -873,7 +873,28 @@ ast::Statment *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens,
   
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     lex::LObj obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+    bool isMutable;
+    if (this->mutability == 0) isMutable = true;
+    else isMutable = false;
     tokens.pop();
+     if (obj.meta == "const") {
+      isMutable = false;
+      if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
+      throw err::Exception("Expected statent after public on line " +
+                          std::to_string(obj.lineCount));
+      obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+      tokens.pop();
+    } else if (obj.meta == "mutable") {
+      if (mutability == 2)
+        throw err::Exception("Cannot use a mutable variable in safe mode, please set config mutability to promiscuous or strict");
+      isMutable = true;
+      if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
+      throw err::Exception("Expected statent after public on line " +
+                          std::to_string(obj.lineCount));
+      obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+      tokens.pop();
+    };
+
     if (typeList[obj.meta] != nullptr) {
       ast::Declare *dec = new ast::Declare();
       // ensures the the current token is an Ident
@@ -882,6 +903,7 @@ ast::Statment *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens,
         tokens.pop();
         dec->Ident = Ident.meta;
         dec->type = *typeList[obj.meta];
+        dec->mut = isMutable;
         output = dec;
         types.push_back(dec->type);
       }
@@ -891,7 +913,7 @@ ast::Statment *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens,
   }
 
   if (tokens.head == nullptr) {
-    throw err::Exception("unterminated functioncall");
+    throw err::Exception("unterminated function call");
   } else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &
              tokens.head->next != nullptr) {
     lex::OpSym obj = *dynamic_cast<lex::OpSym *>(tokens.peek());

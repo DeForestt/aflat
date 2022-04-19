@@ -2762,7 +2762,7 @@ str_forEach:
 	movb	%bl, -33(%rbp)
 	pushq	%rdx
 	movq	-16(%rbp), %r15
-	movq	%r15, %r15
+	movq	%r15, %r11
 	movb	-33(%rbp), %r15b
 	pushq	%rdi
 	movb	%r15b, %al
@@ -2775,7 +2775,7 @@ str_forEach:
 	pushq	%rdx
 	movq	%r15, %rax
 	movq	%rax, %rdx
-	call	*%r15
+	call	*%r11
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi

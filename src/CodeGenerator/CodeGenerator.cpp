@@ -131,6 +131,7 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId) {
   this->registers << asmc::Register("rdi", "edi", "di", "dil");
   this->registers << asmc::Register("rsp", "esp", "sp", "spl");
   this->registers << asmc::Register("rbp", "ebp", "bp", "bpl");
+  this->registers << asmc::Register("r11", "r11d", "r11w", "r11b");
   this->registers << asmc::Register("r12", "r12d", "r12w", "r12b");
   this->registers << asmc::Register("r13", "r13d", "r13w", "r13b");
   this->registers << asmc::Register("r14", "r14d", "r14w", "r14b");
@@ -517,22 +518,32 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     std::tuple<std::string, gen::Symbol, bool, asmc::File> resolved = this->resolveSymbol(var.Ident, var.modList, OutputFile, var.indecies);
       
     if (std::get<2>(resolved) == false) {
-      Type **t = this->typeList[var.Ident];
+      std::string ident = var.Ident;
+      std::string nsp = "";
+      var.modList.invert();
+      var.modList.reset();
+      if (this->nameSpaceTable.contains(var.Ident)) {
+        nsp = this->nameSpaceTable.get(ident) + ".";
+        if (var.modList.trail() == 0) alert("NameSpace " + ident + " cannot be used as a variable");
+        ident = nsp + var.modList.shift();
+      };
+
+      Type **t = this->typeList[ident];
       if (t != nullptr) {
         Type *type = *t;
         output.size = asmc::DWord;
         output.access =
             '$' + std::to_string(type->SymbolTable.head->data.byteMod);
         output.type = "int";
-      } else if (var.Ident == "int") {
+      } else if (ident == "int") {
         output.size = asmc::DWord;
         output.access = "$4";
         output.type = "int";
-      } else if (var.Ident == "char" || var.Ident == "bool" || var.Ident == "byte") {
+      } else if (ident == "char" || ident == "bool" || ident == "byte") {
         output.size = asmc::DWord;
         output.access = "$1";
         output.type = "int";
-      } else if (var.Ident == "adr") {
+      } else if (ident == "adr") {
         output.size = asmc::DWord;
         output.access = "$8";
         output.type = "int";
@@ -556,13 +567,15 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.size = asmc::Byte;
         output.access = "$0";
         output.type = "bool";
-      } else if (this->nameTable[var.Ident] != nullptr) {
+      } else if (this->nameTable[ident] != nullptr) {
         output.size = asmc::QWord;
-        output.access = '$' + this->nameTable[var.Ident]->ident.ident;
+        output.access = '$' + this->nameTable[ident]->ident.ident;
         output.type = "adr";
       } else {
-          alert("variable not found " + var.Ident);
+          alert("variable not found " + ident);
       }
+      var.modList.invert();
+      var.modList.reset();
     } else {
       gen::Symbol sym = std::get<1>(resolved);
       output.size = sym.type.size;
@@ -1323,7 +1336,7 @@ void gen::CodeGenerator::GenArgs(ast::Statment *STMT, asmc::File &OutputFile) {
     mov->from = this->intArgs[intArgsCounter].get(arg->type.size);
 
     int mod = gen::scope::ScopeManager::getInstance()->assign(arg->Ident,
-                                                              arg->type, false);
+                                                              arg->type, false, arg->mut);
 
     mov->size = size;
     mov->to = "-" + std::to_string(mod) + +"(%rbp)";
@@ -1379,11 +1392,11 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
         asmc::Mov *mov = new asmc::Mov();
         mov->size = exp1.size;
         mov->from = exp1.access;
-        mov->to = this->registers["%r15"]->get(exp1.size);
+        mov->to = this->registers["%r11"]->get(exp1.size);
         OutputFile.text << mov;
 
         func = new ast::Function();
-        func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
+        func->ident.ident = '*' + this->registers["%r11"]->get(exp1.size);
         func->type.arraySize = 0;
         func->type.size = asmc::QWord;
         func->type.typeName = "--std--flex--function";
@@ -1437,11 +1450,11 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call *call,
             asmc::Mov *mov = new asmc::Mov();
             mov->size = exp1.size;
             mov->from = exp1.access;
-            mov->to = this->registers["%r15"]->get(exp1.size);
+            mov->to = this->registers["%r11"]->get(exp1.size);
             OutputFile.text << mov;
 
             func = new ast::Function();
-            func->ident.ident = '*' + this->registers["%r15"]->get(exp1.size);
+            func->ident.ident = '*' + this->registers["%r11"]->get(exp1.size);
             func->type = sym->type;
             func->type.typeName = "--std--flex--function";
             checkArgs = false;
@@ -1713,6 +1726,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
         movy->from = this->intArgs[intArgsCounter].get(asmc::QWord);
 
         symbol.symbol = "my";
+        symbol.mutable_ = false;
 
         auto ty = ast::Type();
         ty.typeName = scope->Ident;

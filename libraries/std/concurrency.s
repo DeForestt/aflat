@@ -166,12 +166,12 @@ pub_Process_start:
 	je	.Lstart0
 	pushq	%rdx
 	movq	-24(%rbp), %r15
-	movq	%r15, %r15
+	movq	%r15, %r11
 	movq	-16(%rbp), %r15
 	pushq	%rdi
 	movq	%r15, %rax
 	movq	%rax, %rdi
-	call	*%r15
+	call	*%r11
 	popq	%rdi
 	popq	%rdx
 	pushq	%rdx
@@ -223,7 +223,7 @@ pub_MProcess_start:
 	je	.Lstart1
 	pushq	%rdx
 	movq	-24(%rbp), %r15
-	movq	%r15, %r15
+	movq	%r15, %r11
 	movq	-16(%rbp), %r15
 	pushq	%rdi
 	movq	%r15, %rax
@@ -242,7 +242,7 @@ pub_MProcess_start:
 	pushq	%rdx
 	movq	%r15, %rax
 	movq	%rax, %rdx
-	call	*%r15
+	call	*%r11
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi

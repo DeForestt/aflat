@@ -26,7 +26,7 @@ class String{
     adr getPrimitive();
 
     String subString(int start, int end);
-    int loop(adr foo, *adr args);
+    int loop(adr foo, * adr args);
 
     // compare is for compairing to another string object
     bool compare(adr s);
@@ -138,13 +138,14 @@ int del@String(){
     free(head);
 };
 
-int loop@String(adr foo, adr args){
+int loop@String(const adr foo, * adr args){
     adr head = my.head;
+    adr bar = foo;
     int length = str.len(head);
     int i = 0;
     while(i < length){
         char ch = str.str_at(head, i);
-        int brk = foo(ch, i, args);
+        int brk = bar(ch, i, args);
         i = i + 1;
         if(brk == 1){
             return 0;

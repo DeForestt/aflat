@@ -18,12 +18,12 @@ pub_ICollection_init:
 	movq	%rdi, -8(%rbp)
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650382340953_0, %rbx
+	movq	$lambda_1650395648778_0, %rbx
 	movq	%rbx, 0(%r14)
 	popq	%r14
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650382340953_2, %rbx
+	movq	$lambda_1650395648778_2, %rbx
 	movq	%rbx, 8(%r14)
 	popq	%r14
 	movq	-8(%rbp), %r15
@@ -803,28 +803,28 @@ pub_File_toList:
 	movq	%r15, %rax
 	leave
 	ret
-lambda_1650382340953_0:
+lambda_1650395648778_0:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650382340953_01, %rax
+	movq	$.strICollection.lambda_1650395648778_01, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
 	popq	%rdx
 	leave
 	ret
-lambda_1650382340953_2:
+lambda_1650395648778_2:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650382340953_23, %rax
+	movq	$.strICollection.lambda_1650395648778_23, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
@@ -835,9 +835,9 @@ lambda_1650382340953_2:
 
 .data
 
-.strICollection.lambda_1650382340953_23:
+.strICollection.lambda_1650395648778_23:
 	.asciz	 "Function (where) not implemented on this instance"
-.strICollection.lambda_1650382340953_01:
+.strICollection.lambda_1650395648778_01:
 	.asciz	 "Function (forEach) not implemented on this instance"
 
 

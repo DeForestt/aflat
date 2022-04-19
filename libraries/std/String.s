@@ -32,12 +32,12 @@ pub_ICollection_init:
 	movq	%rdi, -8(%rbp)
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650382341071_0, %rbx
+	movq	$lambda_1650395648884_0, %rbx
 	movq	%rbx, 0(%r14)
 	popq	%r14
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650382341071_2, %rbx
+	movq	$lambda_1650395648884_2, %rbx
 	movq	%rbx, 8(%r14)
 	popq	%r14
 	movq	-8(%rbp), %r15
@@ -849,7 +849,7 @@ pub_String_loop:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
-	subq	$48, %rsp
+	subq	$64, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
 	movq	%rdx, -24(%rbp)
@@ -859,6 +859,9 @@ pub_String_loop:
 	popq	%r14
 	movq	%r15, %rbx
 	movq	%rbx, -32(%rbp)
+	movq	-16(%rbp), %r15
+	movq	%r15, %rbx
+	movq	%rbx, -40(%rbp)
 	pushq	%rdx
 	movq	-32(%rbp), %r15
 	pushq	%rdi
@@ -868,9 +871,9 @@ pub_String_loop:
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %ebx
-	movl	%ebx, -36(%rbp)
+	movl	%ebx, -44(%rbp)
 	movl	$0, %ebx
-	movl	%ebx, -40(%rbp)
+	movl	%ebx, -48(%rbp)
 	jmp	.Lloop9
 .Lloop8:
 	pushq	%rdx
@@ -878,7 +881,7 @@ pub_String_loop:
 	pushq	%rdi
 	movq	%r15, %rax
 	movq	%rax, %rdi
-	movl	-40(%rbp), %r15d
+	movl	-48(%rbp), %r15d
 	pushq	%rsi
 	movl	%r15d, %eax
 	movl	%eax, %esi
@@ -887,15 +890,15 @@ pub_String_loop:
 	popq	%rdi
 	popq	%rdx
 	movb	%al, %bl
-	movb	%bl, -41(%rbp)
+	movb	%bl, -49(%rbp)
 	pushq	%rdx
-	movq	-16(%rbp), %r15
-	movq	%r15, %r15
-	movb	-41(%rbp), %r15b
+	movq	-40(%rbp), %r15
+	movq	%r15, %r11
+	movb	-49(%rbp), %r15b
 	pushq	%rdi
 	movb	%r15b, %al
 	movb	%al, %dil
-	movl	-40(%rbp), %r15d
+	movl	-48(%rbp), %r15d
 	pushq	%rsi
 	movl	%r15d, %eax
 	movl	%eax, %esi
@@ -903,28 +906,28 @@ pub_String_loop:
 	pushq	%rdx
 	movq	%r15, %rax
 	movq	%rax, %rdx
-	call	*%r15
+	call	*%r11
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
 	movl	%eax, %ebx
-	movl	%ebx, -45(%rbp)
+	movl	%ebx, -53(%rbp)
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
-	movl	-40(%rbp), %r15d
+	movl	-48(%rbp), %r15d
 	movl	%r15d, %edi
 	add	%edx, %edi
 	movl	%edi, %eax
 	popq	%rdx
 	popq	%rdi
 	movl	%eax, %ebx
-	movl	%ebx, -40(%rbp)
+	movl	%ebx, -48(%rbp)
 	pushq	%rdi
 	pushq	%rdx
 	movl	$1, %edx
-	movl	-45(%rbp), %r15d
+	movl	-53(%rbp), %r15d
 	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	sete	%al
@@ -940,9 +943,9 @@ pub_String_loop:
 .Lloop9:
 	pushq	%rdi
 	pushq	%rdx
-	movl	-36(%rbp), %r15d
+	movl	-44(%rbp), %r15d
 	movl	%r15d, %edx
-	movl	-40(%rbp), %r15d
+	movl	-48(%rbp), %r15d
 	movl	%r15d, %edi
 	cmpl	%edx, %edi
 	setl	%al
@@ -2233,28 +2236,28 @@ upper:
 	movb	%r15b, %al
 	leave
 	ret
-lambda_1650382341071_0:
+lambda_1650395648884_0:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650382341071_01, %rax
+	movq	$.strICollection.lambda_1650395648884_01, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
 	popq	%rdx
 	leave
 	ret
-lambda_1650382341071_2:
+lambda_1650395648884_2:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650382341071_23, %rax
+	movq	$.strICollection.lambda_1650395648884_23, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
@@ -2265,9 +2268,9 @@ lambda_1650382341071_2:
 
 .data
 
-.strICollection.lambda_1650382341071_23:
+.strICollection.lambda_1650395648884_23:
 	.asciz	 "Function (where) not implemented on this instance"
-.strICollection.lambda_1650382341071_01:
+.strICollection.lambda_1650395648884_01:
 	.asciz	 "Function (forEach) not implemented on this instance"
 .strString.del31:
 	.asciz	 "Attempt to convert non-numeric string to int"
