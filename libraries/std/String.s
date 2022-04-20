@@ -1,3 +1,5 @@
+.global	String.consume
+.global	String.matches
 .global	pub_String_len
 .global	pub_String_toInt
 .global	pub_String_split
@@ -32,12 +34,12 @@ pub_ICollection_init:
 	movq	%rdi, -8(%rbp)
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650397015499_0, %rbx
+	movq	$lambda_1650418631956_0, %rbx
 	movq	%rbx, 0(%r14)
 	popq	%r14
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650397015499_2, %rbx
+	movq	$lambda_1650418631956_2, %rbx
 	movq	%rbx, 8(%r14)
 	popq	%r14
 	movq	-8(%rbp), %r15
@@ -2236,28 +2238,649 @@ upper:
 	movb	%r15b, %al
 	leave
 	ret
-lambda_1650397015499_0:
+match:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$16, %rsp
+	movb	%dil, -1(%rbp)
+	movb	%sil, -2(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	movb	$46, %dl
+	movb	-2(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lmatch38
+	movb	$1, %al
+	leave
+	ret
+.Lmatch38:
+	pushq	%rdi
+	pushq	%rdx
+	movb	$42, %dl
+	movb	-2(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lmatch39
+	movb	$1, %al
+	leave
+	ret
+.Lmatch39:
+	pushq	%rdi
+	pushq	%rdx
+	movb	$100, %dl
+	movb	-2(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lmatch40
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	movb	$57, %dl
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	setle	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
+	pushq	%rdi
+	pushq	%rdx
+	movb	$48, %dl
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	setge	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dil
+	andb	%dl, %dil
+	movb	%dil, %al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	leave
+	ret
+.Lmatch40:
+	pushq	%rdi
+	pushq	%rdx
+	movb	$68, %dl
+	movb	-2(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lmatch41
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	movb	$57, %dl
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	setg	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
+	pushq	%rdi
+	pushq	%rdx
+	movb	$48, %dl
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	setl	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dil
+	orb	%dl, %dil
+	movb	%dil, %al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	leave
+	ret
+.Lmatch41:
+	pushq	%rdi
+	pushq	%rdx
+	movb	$119, %dl
+	movb	-2(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lmatch42
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	movb	$95, %dl
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	movb	$90, %dl
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	setle	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
+	pushq	%rdi
+	pushq	%rdx
+	movb	$65, %dl
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	setge	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dil
+	andb	%dl, %dil
+	movb	%dil, %al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	movb	$122, %dl
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	setle	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
+	pushq	%rdi
+	pushq	%rdx
+	movb	$97, %dl
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	setge	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dil
+	andb	%dl, %dil
+	movb	%dil, %al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dil
+	orb	%dl, %dil
+	movb	%dil, %al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dil
+	orb	%dl, %dil
+	movb	%dil, %al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	leave
+	ret
+.Lmatch42:
+	pushq	%rdi
+	pushq	%rdx
+	movb	$87, %dl
+	movb	-2(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lmatch43
+	pushq	%rdx
+	movb	-1(%rbp), %r15b
+	pushq	%rdi
+	movb	%r15b, %al
+	movb	%al, %dil
+	pushq	%rsi
+	movb	$119, %al
+	movb	%al, %sil
+	call	match
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movzbl	%al, %eax
+	xor	$1, %eax
+	movb	%al, %al
+	leave
+	ret
+.Lmatch43:
+	pushq	%rdi
+	pushq	%rdx
+	movb	$115, %dl
+	movb	-2(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lmatch44
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	movb	$13, %dl
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	movb	$10, %dl
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
+	movb	$9, %dil
+	orb	%dl, %dil
+	movb	%dil, %al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
+	movb	$32, %dil
+	orb	%dl, %dil
+	movb	%dil, %al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dil
+	orb	%dl, %dil
+	movb	%dil, %al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	leave
+	ret
+.Lmatch44:
+	pushq	%rdi
+	pushq	%rdx
+	movb	$83, %dl
+	movb	-2(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lmatch45
+	pushq	%rdx
+	movb	-1(%rbp), %r15b
+	pushq	%rdi
+	movb	%r15b, %al
+	movb	%al, %dil
+	pushq	%rsi
+	movb	$115, %al
+	movb	%al, %sil
+	call	match
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movzbl	%al, %eax
+	xor	$1, %eax
+	movb	%al, %al
+	leave
+	ret
+.Lmatch45:
+	pushq	%rdi
+	pushq	%rdx
+	movb	-1(%rbp), %r15b
+	movb	%r15b, %dl
+	movb	-2(%rbp), %r15b
+	movb	%r15b, %dil
+	cmpb	%dl, %dil
+	sete	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lmatch46
+	movb	$1, %al
+	leave
+	ret
+.Lmatch46:
+	movb	$0, %al
+	leave
+	ret
+String.matches:
+matches:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$48, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	%rsi, -16(%rbp)
+	pushq	%rdx
+	pushq	%rdi
+	movl	$8, %eax
+	movl	%eax, %edi
+	call	malloc
+	popq	%rdi
+	popq	%rdx
+	pushq	%rdi
+	movq	%rax, %rdi
+	pushq	%rdx
+	movq	-16(%rbp), %r15
+	pushq	%rsi
+	movq	%r15, %rax
+	movq	%rax, %rsi
+	call	pub_String_init
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movq	%rax, %rbx
+	movq	%rbx, -24(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -28(%rbp)
+	movl	$0, %ebx
+	movl	%ebx, -32(%rbp)
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdx
+	lea	-8(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_String_len
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %edx
+	pushq	%rdx
+	lea	-24(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_String_len
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %edi
+	cmpl	%edx, %edi
+	setne	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lmatches47
+	movb	$0, %al
+	leave
+	ret
+.Lmatches47:
+	jmp	.Lmatches49
+.Lmatches48:
+	pushq	%rdx
+	lea	-24(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	movl	-32(%rbp), %r15d
+	pushq	%rsi
+	movl	%r15d, %eax
+	movl	%eax, %esi
+	call	pub_String_at
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movb	%al, %bl
+	movb	%bl, -33(%rbp)
+	pushq	%rdx
+	lea	-8(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	movl	-28(%rbp), %r15d
+	pushq	%rsi
+	movl	%r15d, %eax
+	movl	%eax, %esi
+	call	pub_String_at
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movb	%al, %bl
+	movb	%bl, -34(%rbp)
+	pushq	%rdx
+	movb	-34(%rbp), %r15b
+	pushq	%rdi
+	movb	%r15b, %al
+	movb	%al, %dil
+	movb	-33(%rbp), %r15b
+	pushq	%rsi
+	movb	%r15b, %al
+	movb	%al, %sil
+	call	match
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movzbl	%al, %eax
+	xor	$1, %eax
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lmatches50
+	movb	$0, %al
+	leave
+	ret
+.Lmatches50:
+	add	$1, -28(%rbp)
+	add	$1, -32(%rbp)
+.Lmatches49:
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdx
+	lea	-24(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_String_len
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %edx
+	movl	-32(%rbp), %r15d
+	movl	%r15d, %edi
+	cmpl	%edx, %edi
+	setl	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dl
+	pushq	%rdi
+	pushq	%rdx
+	pushq	%rdx
+	lea	-8(%rbp), %rax
+	pushq	%rdi
+	movq	(%rax), %rax
+	movq	%rax, %rdi
+	call	pub_String_len
+	popq	%rdi
+	popq	%rdx
+	movl	%eax, %edx
+	movl	-28(%rbp), %r15d
+	movl	%r15d, %edi
+	cmpl	%edx, %edi
+	setl	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %dil
+	andb	%dl, %dil
+	movb	%dil, %al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$1, %al
+	je	.Lmatches48
+	movb	$1, %al
+	leave
+	ret
+String.consume:
+consume:
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%rbx
+	subq	$32, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	%rsi, -16(%rbp)
+	movq	%rdx, -24(%rbp)
+	pushq	%rdx
+	movq	-8(%rbp), %r15
+	pushq	%rdi
+	movq	%r15, %rax
+	movq	%rax, %rdi
+	movq	-16(%rbp), %r15
+	pushq	%rsi
+	movq	%r15, %rax
+	movq	%rax, %rsi
+	call	matches
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lconsume51
+	movq	-8(%rbp), %r15
+	movq	%r15, %rax
+	leave
+	ret
+.Lconsume51:
+	pushq	%rdi
+	pushq	%rdx
+	movq	$0, %rdx
+	movq	-24(%rbp), %r15
+	movq	%r15, %rdi
+	cmpq	%rdx, %rdi
+	setne	%al
+	popq	%rdx
+	popq	%rdi
+	movb	%al, %al
+	cmpb	$0, %al
+	je	.Lconsume52
+	pushq	%rdx
+	movq	-24(%rbp), %r15
+	pushq	%rdi
+	movq	%r15, %rax
+	movq	%rax, %rdi
+	movq	$0, %rsi
+	call	io.print
+	popq	%rdi
+	popq	%rdx
+.Lconsume52:
+	pushq	%rdx
+	pushq	%rdi
+	movq	$.strconsume53, %rax
+	movq	%rax, %rdi
+	movq	$0, %rsi
+	call	io.print
+	popq	%rdi
+	popq	%rdx
+	pushq	%rdx
+	movq	-8(%rbp), %r15
+	pushq	%rdi
+	movq	%r15, %rax
+	movq	%rax, %rdi
+	movq	-16(%rbp), %r15
+	pushq	%rsi
+	movq	%r15, %rax
+	movq	%rax, %rsi
+	movq	-24(%rbp), %r15
+	pushq	%rdx
+	movq	%r15, %rax
+	movq	%rax, %rdx
+	call	consume
+	popq	%rdx
+	popq	%rsi
+	popq	%rdi
+	popq	%rdx
+	movq	%rax, %rax
+	leave
+	ret
+lambda_1650418631956_0:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650397015499_01, %rax
+	movq	$.strICollection.lambda_1650418631956_01, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
 	popq	%rdx
 	leave
 	ret
-lambda_1650397015499_2:
+lambda_1650418631956_2:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650397015499_23, %rax
+	movq	$.strICollection.lambda_1650418631956_23, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
@@ -2268,10 +2891,12 @@ lambda_1650397015499_2:
 
 .data
 
-.strICollection.lambda_1650397015499_23:
+.strICollection.lambda_1650418631956_23:
 	.asciz	 "Function (where) not implemented on this instance"
-.strICollection.lambda_1650397015499_01:
+.strICollection.lambda_1650418631956_01:
 	.asciz	 "Function (forEach) not implemented on this instance"
+.strconsume53:
+	.asciz	 " "
 .strString.del31:
 	.asciz	 "Attempt to convert non-numeric string to int"
 

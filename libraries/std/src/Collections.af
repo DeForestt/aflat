@@ -31,6 +31,7 @@ class LinkedList {
     LinkedList where(adr foo, * adr args);
     int forEach(adr foo, * adr args);
     LinkedList sort(adr compare, * adr args);
+    adr reduce(adr foo, * adr args);
     int find(adr foo, * adr args);
     adr apply(adr foo, * adr args);
     adr map(adr foo, * adr args);
@@ -50,6 +51,15 @@ class Array signs ICollection{
     public int extend(int size);
 };
 
+adr reduce@LinkedList(adr foo, * adr args){
+    adr result = my.head.data;
+    ListNode node = my.head.next;
+    while(node != NULL){
+        result = foo(result, node.data, args);
+        node = node.next;
+    };
+    return result;
+};
 
 int forEach@LinkedList(adr foo, * adr arg){
     ListNode curr = my.head;

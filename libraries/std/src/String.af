@@ -327,3 +327,58 @@ private char upper(char c){
     };
     return c;
 };
+
+private bool match(char c, char p) {
+    if p == '.' return true;
+    if p == '*' return true;
+    if p == 'd' return
+        c >= '0' & c <= '9';
+    if p == 'D' return
+        c < '0' | c > '9';
+    if p == 'w' return 
+        (c >= 'a' & 
+            c <= 'z') |
+        (c >= 'A' &
+            c <= 'Z')
+        | (c == '_');
+    if p == 'W' return
+        !match(c, 'w');
+    if p == 's' return 
+        c == ' ' | 
+        c == '\t' |
+        c == '\n' |
+        c == '\r';
+    if p == 'S' return
+        !match(c, 's');
+    if p == c return true;
+    return false;
+};
+
+export bool matches(String input, adr pattern){
+    String pString = new String(pattern);
+
+    int i = 0;
+    int j = 0;
+
+    if pString.len() != input.len() return false;
+    
+    while i < input.len() & j < pString.len() {
+        char pChar = pString.at(j);
+        char iChar = input.at(i);
+        if !match(iChar, pChar) return false;
+        i++;
+        j++;
+    };
+
+    return true;
+};
+
+export String consume(String input, adr pattern, * adr message){
+    if matches(input, pattern)
+        return input;
+
+    if message != NULL
+        io.print(message); io.print(" ");
+    
+    return consume(input, pattern, message);
+};
