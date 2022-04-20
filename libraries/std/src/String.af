@@ -373,12 +373,15 @@ export bool matches(String input, adr pattern){
     return true;
 };
 
-export String consume(String input, adr pattern, * adr message){
+export String consume(adr pattern, * adr message){
+    const String input = getString();
     if matches(input, pattern)
         return input;
 
-    if message != NULL
-        io.print(message); io.print(" ");
+    if message != NULL {
+        io.print(message); 
+        io.print(" ");
+    };
     
-    return consume(input, pattern, message);
+    return consume(pattern, message);
 };

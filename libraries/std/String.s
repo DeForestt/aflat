@@ -34,12 +34,12 @@ pub_ICollection_init:
 	movq	%rdi, -8(%rbp)
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650418631956_0, %rbx
+	movq	$lambda_1650419094015_0, %rbx
 	movq	%rbx, 0(%r14)
 	popq	%r14
 	pushq	%r14
 	movq	-8(%rbp), %r14
-	movq	$lambda_1650418631956_2, %rbx
+	movq	$lambda_1650419094015_2, %rbx
 	movq	%rbx, 8(%r14)
 	popq	%r14
 	movq	-8(%rbp), %r15
@@ -2786,13 +2786,17 @@ consume:
 	subq	$32, %rsp
 	movq	%rdi, -8(%rbp)
 	movq	%rsi, -16(%rbp)
-	movq	%rdx, -24(%rbp)
 	pushq	%rdx
-	movq	-8(%rbp), %r15
+	call	getString
+	popq	%rdx
+	movq	%rax, %rbx
+	movq	%rbx, -24(%rbp)
+	pushq	%rdx
+	movq	-24(%rbp), %r15
 	pushq	%rdi
 	movq	%r15, %rax
 	movq	%rax, %rdi
-	movq	-16(%rbp), %r15
+	movq	-8(%rbp), %r15
 	pushq	%rsi
 	movq	%r15, %rax
 	movq	%rax, %rsi
@@ -2803,7 +2807,7 @@ consume:
 	movb	%al, %al
 	cmpb	$0, %al
 	je	.Lconsume51
-	movq	-8(%rbp), %r15
+	movq	-24(%rbp), %r15
 	movq	%r15, %rax
 	leave
 	ret
@@ -2811,7 +2815,7 @@ consume:
 	pushq	%rdi
 	pushq	%rdx
 	movq	$0, %rdx
-	movq	-24(%rbp), %r15
+	movq	-16(%rbp), %r15
 	movq	%r15, %rdi
 	cmpq	%rdx, %rdi
 	setne	%al
@@ -2821,7 +2825,7 @@ consume:
 	cmpb	$0, %al
 	je	.Lconsume52
 	pushq	%rdx
-	movq	-24(%rbp), %r15
+	movq	-16(%rbp), %r15
 	pushq	%rdi
 	movq	%r15, %rax
 	movq	%rax, %rdi
@@ -2829,7 +2833,6 @@ consume:
 	call	io.print
 	popq	%rdi
 	popq	%rdx
-.Lconsume52:
 	pushq	%rdx
 	pushq	%rdi
 	movq	$.strconsume53, %rax
@@ -2838,6 +2841,7 @@ consume:
 	call	io.print
 	popq	%rdi
 	popq	%rdx
+.Lconsume52:
 	pushq	%rdx
 	movq	-8(%rbp), %r15
 	pushq	%rdi
@@ -2847,40 +2851,35 @@ consume:
 	pushq	%rsi
 	movq	%r15, %rax
 	movq	%rax, %rsi
-	movq	-24(%rbp), %r15
-	pushq	%rdx
-	movq	%r15, %rax
-	movq	%rax, %rdx
 	call	consume
-	popq	%rdx
 	popq	%rsi
 	popq	%rdi
 	popq	%rdx
 	movq	%rax, %rax
 	leave
 	ret
-lambda_1650418631956_0:
+lambda_1650419094015_0:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650418631956_01, %rax
+	movq	$.strICollection.lambda_1650419094015_01, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
 	popq	%rdx
 	leave
 	ret
-lambda_1650418631956_2:
+lambda_1650419094015_2:
 	pushq	%rbp
 	movq	%rsp, %rbp
 	pushq	%rbx
 	subq	$16, %rsp
 	pushq	%rdx
 	pushq	%rdi
-	movq	$.strICollection.lambda_1650418631956_23, %rax
+	movq	$.strICollection.lambda_1650419094015_23, %rax
 	movq	%rax, %rdi
 	call	panic
 	popq	%rdi
@@ -2891,9 +2890,9 @@ lambda_1650418631956_2:
 
 .data
 
-.strICollection.lambda_1650418631956_23:
+.strICollection.lambda_1650419094015_23:
 	.asciz	 "Function (where) not implemented on this instance"
-.strICollection.lambda_1650418631956_01:
+.strICollection.lambda_1650419094015_01:
 	.asciz	 "Function (forEach) not implemented on this instance"
 .strconsume53:
 	.asciz	 " "
