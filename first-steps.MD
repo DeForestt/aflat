@@ -395,16 +395,109 @@ class Student {
 
 int main(){
 	Student s = Student(1, "Jhon Doe", 90);
+	Student s2 = Student(2, "Jane Doe", 80);
 
 	io.print("Student information:\n");
 	io.print("\tID: "); io.printInt(s.id); io.print("\n");
 	io.print("\tName: "); io.print(s.name); io.print("\n");
 	io.print("\tAverage: "); io.printInt(s.average); io.print("\n");
 
+	io.print("\n");
+
+	io.print("Student information:\n");
+	io.print("\tID: "); io.printInt(s2.id); io.print("\n");
+	io.print("\tName: "); io.print(s2.name); io.print("\n");
+	io.print("\tAverage: "); io.printInt(s2.average); io.print("\n");
+
 	return 0;
 };
+```
 
+The constructor made creating our objects much easier, but we still have a lot of repetitive code.  You can see that identical code is being used to print out the student information.  In order to make this simpler, we can create a class method to print out the student information.
 
+```js
+.needs <std>
+
+import * from "io" under io;
+
+class Student {
+	int id;
+	adr name;
+	int average;
+
+	Student init(int id, adr name, int average){
+		my.id = id; // 'my' is a way of accessing the fields of the class
+		my.name = name;
+		my.average = average;
+	};
+
+	int printInfo(){
+		io.print("Student information:\n");
+		io.print("\tID: "); io.printInt(my.id); io.print("\n"); // notice that 'my' is used again to access the fields of the class
+		io.print("\tName: "); io.print(my.name); io.print("\n");
+		io.print("\tAverage: "); io.printInt(my.average); io.print("\n");
+	};
+};
+
+int main(){
+	Student s = Student(1, "Jhon Doe", 90);
+	Student s2 = Student(2, "Jane Doe", 80);
+
+	s.printInfo();
+	io.print("\n");
+	s2.printInfo();
+
+	return 0;
+};
+```
+As you can see, the code is much cleaner.  We can now call the method to print out the student information. in stead of repeating the same code over and over again.
+
+## Linked Lists
+The code that we have here is great, but we can see how it can become very long if the number of students gose up. The aflat standard library provides a LinkedList class.  The LinkedList class is meant to be used as a list of objects.  In stead of using 's1' 's2' and so on, lets use a linked list to hold our students.
+
+```js
+.needs <std>
+
+import * from "io" under io;
+import LinkedList from "Collections";  // First we import the LinkedList class from the Collections module.
+
+class Student {
+	int id;
+	adr name;
+	int average;
+
+	Student init(int id, adr name, int average){
+		my.id = id; // 'my' is a way of accessing the fields of the class
+		my.name = name;
+		my.average = average;
+	};
+
+	int printInfo(){
+		io.print("Student information:\n");
+		io.print("\tID: "); io.printInt(my.id); io.print("\n"); // notice that 'my' is used again to access the fields of the class
+		io.print("\tName: "); io.print(my.name); io.print("\n");
+		io.print("\tAverage: "); io.printInt(my.average); io.print("\n");
+	};
+};
+
+int main(){
+	LinkedList roster = LinkedList(); // We create a new LinkedList object.
+	Student s = new Student(1, "John Doe", 90); // we will talk more about when to use 'new' later on.
+	roster.append(s); // We add a new student to the roster.
+	s = new Student(2, "Jane Doe", 80);
+	roster.append(s); // We add a new student to the roster.
+
+	// We can use the 'forEach' method of the LinkedList class to iterate through the list.
+	roster.forEach([Student student] => {
+		student.printInfo();
+		io.print("\n");
+	});  // I know that the 'forEach' method can look a bit confusing. For now, just know that it iterates through the list and calls the function you pass to it.
+
+	return 0;
+};
+```
+
+Now we can add as many students as we want to the roster, and keep the code clean.  Try adding a few more students to the roster.
 
 ## Done So Soon?
 Don't worry, more tutorial to come...
