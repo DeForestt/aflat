@@ -282,7 +282,7 @@ class Student {
 	int id;
 	String name;
 	int grade;
-	float gpa; // a float is a number with a decimal point.
+	float gpa; // a float is a number with a decimal point. ie: 3.14
 };
 
 ```
