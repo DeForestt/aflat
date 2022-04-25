@@ -630,18 +630,19 @@ class Student {
 ```
 
 We chould also add a way to update the student's average each time we add an assignment. here is how we change the addAssignment method:
+We will need to add a total variable to the student class.  This variable will keep track of the total of all the assignments.
 
+```js
+int total; // add this code to the student class
+```
+
+now we can calculate the average by dividing the total by the number of assignments.
 ```js
     int addAssignment(Assignment a){
         my.assignments.append(a);
-        int allGrades = 0;
-        // The rest of this function gets a little bit more complicated.  It is ok not to understand it completely for now.
-        my.assignments.forEach([Assignment element, int index, adr value] => { // We are using another forEach function to iterate through the assignments
-            int total = value as int + element.grade; // the 'as' keyword is used to treat the value pointer as an integer
-            value =: total; // stores the total in the value pointer
-        }, ?allGrades); // We need to pass a reference to the allGrades variable so that it can be updated by the forEach function
+        my.total = my.total + a.grade;
         int count = my.assignments.size();
-        my.average = allGrades / count; // update the average
+        my.average = my.total / count;
     };
 ```
 
@@ -676,6 +677,7 @@ You may have noticed that there is no reason for anything outside of the student
 class Student {
 	int id;
 	adr name;
+	private int total; // we can also make total private since it is not used anywhere else
 	private int average;
     LinkedList assignments = new LinkedList(); // Notice that we create a new linkedList object and initialize it to an empty list
 
