@@ -235,7 +235,7 @@ int main(){
 	io.print("Please enter your name: ");
 	String name = str.getString();
 
-	if name == "DeForestt" {
+	if name == "Name" {
 		Random rand = Random();
 		io.print(salutations[rand.nextInt(7)]); io.print(", ");
 		str.printString(name);
