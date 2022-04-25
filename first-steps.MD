@@ -711,5 +711,254 @@ int getAverage(){
 
 Now we can read the getAverage method and see that the average value.
 
+## Building out a system
+Now lets build out a student roster system. Delete everything in the main module.  add the following imports:
+
+```js
+.needs <std>
+
+import * from "io" under io;
+import Student from "./src/Student";  // First we import the Student class from the Student module.
+import Assignment from "./src/Assignment";  // Then we import the Assignment class from the Assignment module.
+import LinkedList from "Collections";
+import String from "String";
+import * from "String" under str;
+
+```
+
+Now we will make our main method and create the student roster list
+
+
+```js
+int main(){
+	LinkedList roster = new LinkedList();
+};
+```
+
+Now we should add an infinite loop to our main method.  This loop will keep running until the user chooses to quit.
+
+```js
+int main(){
+	LinkedList roster = new LinkedList();
+
+	while true { // things inside of this loop will run forever
+
+	};
+};
+```
+
+Inside of the loop you can print out all of the student information.  You can use the printInfo method from the student class.
+
+```js
+int main(){
+	LinkedList roster = new LinkedList();
+
+	while true { // things inside of this loop will run forever
+		
+		// print all students in the list
+		roster.forEach([Student s, int index] => {
+			s.printInfo();
+		});
+	};
+};
+```
+Note that the Student.printInfo method has been changed to the following for formatting reasons: 
+```js
+	int printInfo(){
+		io.print("ID: "); io.printInt(my.id); // notice that 'my' is used again to access the fields of the class
+		io.print("\tName: "); io.print(my.name);
+		io.print("\tAverage: "); io.printInt(my.average);
+		io.print("\n");
+	};
+```
+
+now we will print out a menu to the user: 
+
+```js
+int main(){
+	LinkedList roster = LinkedList();
+
+
+	while true { // we use while true to repeat the menu until the user chooses to exit.
+
+		// print all students in the list
+		roster.forEach([Student s, int index] => {
+			s.printInfo();
+		});
+
+
+		// Print out a menu of options.
+		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n> ");
+		String choice = str.getString();
+	};
+	return 0;
+};
+```
+
+Now we need to create a function to add a student to the roster.  The function will take in a LinkedList of students and add a new student to the list.  This function should go under the imports and over the main function.
+
+```js
+// This a function to add a student to the list.
+int addStudent(LinkedList roster){
+	io.print("Enter the student's name: ");
+	String name = str.getString();
+	int id = roster.size();
+	int average = 0;
+	Student student = new Student(id, name.getPrimitive(), average);
+	roster.append(student);
+};
+```
+
+Now we can call it from the main loop.
+
+```js
+	while true { // we use while true to repeat the menu until the user chooses to exit.
+
+		// print all students in the list
+		roster.forEach([Student s, int index] => {
+			s.printInfo();
+		});
+
+
+		// Print out a menu of options.
+		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n> ");
+		String choice = str.getString();
+		if choice == "1"{
+			addStudent(roster);
+		} else {
+			io.print("Invalid choice.\n");
+		};
+	};
+```
+
+Next we will add an addGrade function that will add an assignment to the student. This should go under the imports and over the main function.
+
+```js
+// Add Grade
+int addGrade(LinkedList roster){
+	io.print("Enter the student's ID: ");
+	String id = str.getString(); // Get the student's ID from the user.
+	int index = id.toInt(); // Convert the ID to an integer.
+	if index >= roster.size() { // If the ID is greater than the size of the list, then the student doesn't exist.
+		io.print("Student not found.");
+		return 0; // quit the function
+	};
+	Student student = roster.get(index); // use the LinkedList.get() function to get the student from the list at the index.
+	io.print("Enter the assignment's name: ");
+	String name = str.getString(); // Get the assignment's name from the user.
+	io.print("Enter the assignment's grade: ");
+	String grade = str.getString(); // Get the assignment's grade from the user.
+	int intGrade = grade.toInt();
+	
+	Assignment assignment = new Assignment(intGrade, name.getPrimitive()); // Create a new Assignment object.
+	student.addAssignment(assignment); // Add the assignment to the student.
+
+	return 0;
+};
+```
+
+Now we can call it from the main function.  and we can call the addGrade function to the main function and add the exit option.
+
+```js
+	while true { // we use while true to repeat the menu until the user chooses to exit.
+
+		// print all students in the list
+		roster.forEach([Student s, int index] => {
+			s.printInfo();
+		});
+
+
+		// Print out a menu of options.
+		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n> ");
+		String choice = str.getString();
+		if choice == "1"{
+			addStudent(roster);
+		} else if choice == "2"{
+			addGrade(roster);
+		} else if choice == "quit" {
+			return 0; // quit
+		} else {
+			io.print("Invalid choice.\n");
+		};
+		io.print("\n\n");
+	};
+```
+
+All togeather, the main module should look like this:
+
+```js
+.needs <std>
+
+import * from "io" under io;
+import Student from "./src/Student";  // First we import the Student class from the Student module.
+import Assignment from "./src/Assignment";  // Then we import the Assignment class from the Assignment module.
+import LinkedList from "Collections";
+import String from "String";
+import * from "String" under str;
+
+// This a function to add a student to the list.
+int addStudent(LinkedList roster){
+	io.print("Enter the student's name: ");
+	String name = str.getString();
+	int id = roster.size();
+	int average = 0;
+	Student student = new Student(id, name.getPrimitive(), average);
+	roster.append(student);
+};
+
+// Add Grade
+int addGrade(LinkedList roster){
+	io.print("Enter the student's ID: ");
+	String id = str.getString(); // Get the student's ID from the user.
+	int index = id.toInt(); // Convert the ID to an integer.
+	if index >= roster.size() { // If the ID is greater than the size of the list, then the student doesn't exist.
+		io.print("Student not found.");
+		return 0; // quit the function
+	};
+	Student student = roster.get(index); // use the LinkedList.get() function to get the student from the list at the index.
+	io.print("Enter the assignment's name: ");
+	String name = str.getString(); // Get the assignment's name from the user.
+	io.print("Enter the assignment's grade: ");
+	String grade = str.getString(); // Get the assignment's grade from the user.
+	int intGrade = grade.toInt();
+	
+	Assignment assignment = new Assignment(intGrade, name.getPrimitive()); // Create a new Assignment object.
+	student.addAssignment(assignment); // Add the assignment to the student.
+
+	return 0;
+};
+
+int main(){
+	LinkedList roster = LinkedList();
+
+
+	while true { // we use while true to repeat the menu until the user chooses to exit.
+
+		// print all students in the list
+		roster.forEach([Student s, int index] => {
+			s.printInfo();
+		});
+
+
+		// Print out a menu of options.
+		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n> ");
+		String choice = str.getString();
+		if choice == "1"{
+			addStudent(roster);
+		} else if choice == "2"{
+			addGrade(roster);
+		} else if choice == "quit" {
+			return 0; // quit
+		} else {
+			io.print("Invalid choice.\n");
+		};
+		io.print("\n\n");
+	};
+	return 0;
+};
+```
+
+Play around with the program and see how it works.
+
 ## Done So Soon?
 Don't worry, more tutorial to come...
