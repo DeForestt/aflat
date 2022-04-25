@@ -560,5 +560,154 @@ int main(){
 
 We should see that the code is much easier to look at, and we get the same output as before.
 
+## A Class Challenge
+Now that we know how to make modules and classes, see if you can create an Assignment module. with an Assignment class.  The assignment class should have the following fields:
+	- adr name
+	- int grade
+The constructor should take in the name and the grade and set the fields.
+
+## Adding to the student class
+Now that we have the Assignment class, add a list of assignments as a field in our student class.  The list should be a LinkedList.  Our new student module should look like this:
+
+```js
+.needs <std>
+import * from "io" under io;
+import Assignment from "./src/Assignment"; // Here, we import the assignment class
+import LinkedList from "Collections"; // We also need to import the LinkedList class
+
+class Student {
+	int id;
+	adr name;
+	int average;
+    LinkedList assignments = new LinkedList(); // Notice that we create a new linkedList object and initialize it to an empty list
+
+	Student init(int id, adr name, int average){
+		my.id = id; // 'my' is a way of accessing the fields of the class
+		my.name = name;
+		my.average = average;
+	};
+
+	int printInfo(){
+		io.print("Student information:\n");
+		io.print("\tID: "); io.printInt(my.id); io.print("\n"); // notice that 'my' is used again to access the fields of the class
+		io.print("\tName: "); io.print(my.name); io.print("\n");
+		io.print("\tAverage: "); io.printInt(my.average); io.print("\n");
+	};
+};
+```
+
+Now we should create a method to add an assignment to the student's list of assignments.  The method should take in an assignment object and add it to the list.
+
+```js
+.needs <std>
+import * from "io" under io;
+import Assignment from "./src/Assignment"; // Here, we import the assignment class
+import LinkedList from "Collections"; // We also need to import the LinkedList class
+
+class Student {
+	int id;
+	adr name;
+	int average;
+    LinkedList assignments = new LinkedList(); // Notice that we create a new linkedList object and initialize it to an empty list
+
+	Student init(int id, adr name, int average){
+		my.id = id;
+		my.name = name;
+		my.average = average;
+	};
+
+	int printInfo(){
+		io.print("Student information:\n");
+		io.print("\tID: "); io.printInt(my.id); io.print("\n"); // notice that 'my' is used again to access the fields of the class
+		io.print("\tName: "); io.print(my.name); io.print("\n");
+		io.print("\tAverage: "); io.printInt(my.average); io.print("\n");
+	};
+
+    int addAssignment(Assignment a){
+        my.assignments.append(a);
+    };
+};
+```
+
+We chould also add a way to update the student's average each time we add an assignment. here is how we change the addAssignment method:
+
+```js
+    int addAssignment(Assignment a){
+        my.assignments.append(a);
+        int allGrades = 0;
+        // The rest of this function gets a little bit more complicated.  It is ok not to understand it completely for now.
+        my.assignments.forEach([Assignment element, int index, adr value] => { // We are using another forEach function to iterate through the assignments
+            int total = value as int + element.grade; // the 'as' keyword is used to treat the value pointer as an integer
+            value =: total; // stores the total in the value pointer
+        }, ?allGrades); // We need to pass a reference to the allGrades variable so that it can be updated by the forEach function
+        int count = my.assignments.size();
+        my.average = allGrades / count; // update the average
+    };
+```
+
+Now lets rewrite our main program to use our new student module.
+
+```js
+.needs <std>
+
+import * from "io" under io;
+import Student from "./src/Student";  // First we import the Student class from the Student module.
+import Assignment from "./src/Assignment";  // Then we import the Assignment class from the Assignment module.
+
+int main(){
+	Student s = new Student(1, "John Doe", 0);
+
+	Assignment a1 = new Assignment(100, "Math test");
+	Assignment a2 = new Assignment(90, "English test");
+
+	s.addAssignment(a1);
+	s.addAssignment(a2);
+	s.printInfo();
+	return 0;
+};
+```
+
+Now we can see that the updated average is correct. Try adding some more assignments and see if the average is still correct.
+
+## Encapsulation
+You may have noticed that there is no reason for anything outside of the student class to update the average.  What if a student finds our main module and adds code to update his grade... we cant have that.  That is why we use encapsulation.  We can hide the average field from the rest of the code by makeing it private. as follows:
+
+```js
+class Student {
+	int id;
+	adr name;
+	private int average;
+    LinkedList assignments = new LinkedList(); // Notice that we create a new linkedList object and initialize it to an empty list
+
+	Student init(int id, adr name, int average){
+		my.id = id;
+		my.name = name;
+		my.average = average;
+	};
+
+	int printInfo(){
+		io.print("Student information:\n");
+		io.print("\tID: "); io.printInt(my.id); io.print("\n"); // notice that 'my' is used again to access the fields of the class
+		io.print("\tName: "); io.print(my.name); io.print("\n");
+		io.print("\tAverage: "); io.printInt(my.average); io.print("\n");
+	};
+
+    int addAssignment(Assignment a){
+        my.assignments.append(a);
+    };
+};
+```
+Now if you try to use the average field outside of the student class, you will get an error.  This is because the average field is private.
+
+If you want to access the average field, you can create a getter method that returns the average.  The getter method should look like this:
+
+```js
+int getAverage(){
+	return my.average;
+};
+```
+
+Now we can read the getAverage method and see that the average value.
+
 ## Done So Soon?
 Don't worry, more tutorial to come...
