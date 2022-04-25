@@ -960,7 +960,7 @@ int main(){
 
 Play around with the program and see how it works.
 
-The next tutorial will cover the use of File I/O so that the class roster can be saved to a file.
+As a side project, see if you can add a way to view all of the assignments in a students assignment list.
 
 ## Done So Soon?
 Don't worry, more tutorial to come...
