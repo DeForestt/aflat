@@ -499,5 +499,66 @@ int main(){
 
 Now we can add as many students as we want to the roster, and keep the code clean.  Try adding a few more students to the roster.
 
+## Modules
+It is helpful to hide our classes in another file, It helps to give us less to look at when we are working on the program.  in order to create a module, we can type the following in the terminal: 
+
+```bash
+aflat module Student
+```
+
+this will create a new file called 'Student.af' in the src folder. Copy the Student class from the previous section and paste it into the new file. 
+
+```js
+.needs <std>
+import * from "io" under io;
+
+class Student {
+	int id;
+	adr name;
+	int average;
+
+	Student init(int id, adr name, int average){
+		my.id = id; // 'my' is a way of accessing the fields of the class
+		my.name = name;
+		my.average = average;
+	};
+
+	int printInfo(){
+		io.print("Student information:\n");
+		io.print("\tID: "); io.printInt(my.id); io.print("\n"); // notice that 'my' is used again to access the fields of the class
+		io.print("\tName: "); io.print(my.name); io.print("\n");
+		io.print("\tAverage: "); io.printInt(my.average); io.print("\n");
+	};
+};
+```
+
+Now it can bee imported into our main program the same way we would import any class.
+
+```js
+.needs <std>
+
+import * from "io" under io;
+import LinkedList from "Collections";  // First we import the LinkedList class from the Collections module.
+import Student from "./src/Student";  // Then we import the Student class from the Student module.
+
+int main(){
+	LinkedList roster = LinkedList();
+	Student s = new Student(1, "John Doe", 90); // we will talk more about when to use 'new' later on.
+	roster.append(s); 
+	s = new Student(2, "Jane Doe", 80);
+	roster.append(s);
+
+	// We can use the 'forEach' method of the LinkedList class to iterate through the list.
+	roster.forEach([Student student] => {
+		student.printInfo();
+		io.print("\n");
+	});  // I know that the 'forEach' method can look a bit confusing. For now, just know that it iterates through the list and calls the function you pass to it.
+
+	return 0;
+};
+```
+
+We should see that the code is much easier to look at, and we get the same output as before.
+
 ## Done So Soon?
 Don't worry, more tutorial to come...
