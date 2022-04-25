@@ -294,19 +294,19 @@ import * from "io" under io;
 class Student {
 	int id;
 	adr name;
-	int Average;
+	int average;
 };
 
 int main(){
 	Student s = Student();
 	s.id = 1;
 	s.name = "John Doe";
-	s.Average = 90;
+	s.average = 90;
 
 	io.print("Student information:\n");
 	io.print("\tID: "); io.printInt(s.id); io.print("\n");
 	io.print("\tName: "); io.print(s.name); io.print("\n");
-	io.print("\tAverage: "); io.printInt(s.Average); io.print("\n");
+	io.print("\tAverage: "); io.printInt(s.average); io.print("\n");
 
 	return 0;
 };
@@ -320,6 +320,91 @@ Student information:
 	Name: John Doe
 	Average: 90
 ```
+
+## Class constructors
+A class constructor is a function that is called when an object is created from the class.  The constructor is used to initialize the object.  The constructor is the first function that is called when an object is created from the class.  The name of a constructor function must be 'init'.
+
+```js
+class Student {
+
+	int id;
+	adr name;
+	int average;
+
+	init(int id, adr name, int average){
+		io.print("The constructor has just been called!!!\n");
+		my.id = id; // 'my' is a way of accessing the fields of the class
+		my.name = name;
+		my.average = average;
+	};
+};
+```
+
+Now we can use the constructor to make our 'Student' program a lot simpler.
+
+```js
+.needs <std>
+
+import * from "io" under io;
+
+class Student {
+	int id;
+	adr name;
+	int average;
+
+	Student init(int id, adr name, int average){
+		io.print("The constructor has just been called!!!\n");
+		my.id = id; // 'my' is a way of accessing the fields of the class
+		my.name = name;
+		my.average = average;
+	};
+};
+
+int main(){
+	Student s = Student(1, "Jhon Doe", 90);
+
+	io.print("Student information:\n");
+	io.print("\tID: "); io.printInt(s.id); io.print("\n");
+	io.print("\tName: "); io.print(s.name); io.print("\n");
+	io.print("\tAverage: "); io.printInt(s.average); io.print("\n");
+
+	return 0;
+};
+```
+
+Take a look at our program now, it gives the same output as before but it is much simpler.
+lets add another student.
+
+```js
+.needs <std>
+
+import * from "io" under io;
+
+class Student {
+	int id;
+	adr name;
+	int average;
+
+	Student init(int id, adr name, int average){
+		io.print("The constructor has just been called!!!\n");
+		my.id = id; // 'my' is a way of accessing the fields of the class
+		my.name = name;
+		my.average = average;
+	};
+};
+
+int main(){
+	Student s = Student(1, "Jhon Doe", 90);
+
+	io.print("Student information:\n");
+	io.print("\tID: "); io.printInt(s.id); io.print("\n");
+	io.print("\tName: "); io.print(s.name); io.print("\n");
+	io.print("\tAverage: "); io.printInt(s.average); io.print("\n");
+
+	return 0;
+};
+
+
 
 ## Done So Soon?
 Don't worry, more tutorial to come...
