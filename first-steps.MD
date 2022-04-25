@@ -265,5 +265,27 @@ myArray[0] = "Hello";
 myArray[1] = "World";
 ```
 
+
+## Classes
+A class is a blueprint for creating an object.  We can create a class by using the class keyword.  The class keyword is followed by the name of the class.  The class name is followed by a block of code.  The block of code is enclosed in curly braces.
+
+```js
+class <classname> {
+	// code goes here
+};
+```
+
+A class can contain filds and methods.  Filds are data Types that are stored in the class.  Methods are functions that can act on the data in the class. Lets create a student class.
+
+```js
+class Student {
+	int id;
+	String name;
+	int grade;
+	float gpa; // a float is a number with a decimal point.
+};
+
+```
+
 ## Done So Soon?
 Don't worry, more tutorial to come...
