@@ -960,5 +960,7 @@ int main(){
 
 Play around with the program and see how it works.
 
+The next tutorial will cover the use of File I/O so that the class roster can be saved to a file.
+
 ## Done So Soon?
 Don't worry, more tutorial to come...
