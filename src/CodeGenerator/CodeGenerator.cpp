@@ -204,7 +204,6 @@ std::tuple<std::string, gen::Symbol, bool, asmc::File> gen::CodeGenerator::resol
       last = modSym->type;
       int tbyte = modSym->byteMod;
       asmc::Mov *mov = new asmc::Mov();
-      mov->op = modSym->type.opType;
       mov->size = asmc::QWord;
       mov->to = this->registers["%r14"]->get(asmc::QWord);
       mov->from = access;
