@@ -280,11 +280,45 @@ A class can contain filds and methods.  Filds are data Types that are stored in 
 ```js
 class Student {
 	int id;
-	String name;
-	int grade;
-	float gpa; // a float is a number with a decimal point. ie: 3.14
+	adr name;
+	int Average;
+};
+```
+Lets see if we can use the class in a program.
+
+```js
+.needs <std>
+
+import * from "io" under io;
+
+class Student {
+	int id;
+	adr name;
+	int Average;
 };
 
+int main(){
+	Student s = Student();
+	s.id = 1;
+	s.name = "John Doe";
+	s.Average = 90;
+
+	io.print("Student information:\n");
+	io.print("\tID: "); io.printInt(s.id); io.print("\n");
+	io.print("\tName: "); io.print(s.name); io.print("\n");
+	io.print("\tAverage: "); io.printInt(s.Average); io.print("\n");
+
+	return 0;
+};
+```
+
+Take a look at the output.  It should look something like this.
+
+```
+Student information:
+	ID: 1
+	Name: John Doe
+	Average: 90
 ```
 
 ## Done So Soon?
