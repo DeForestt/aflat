@@ -1,0 +1,146 @@
+.needs <std.gs>
+.needs <asm.gs>
+
+
+import ICollection from "Collections";
+import Array from "Collections";
+import LinkedList from "Collections";
+import len from "strings" under str;
+import String from "String";
+
+class fstat{
+    long st_dev;
+    long st_ino;
+    int st_mode;
+    int alligner;
+    long st_nlink;
+    int st_uid;
+    int st_gid;
+    long st_rdev;
+    long st_size;
+    long st_blksize;
+    long st_blocks;
+    Times st_atime;
+    Times st_mtime;
+    Times st_ctime;
+};
+
+class File{
+    adr fileName;
+    int file;
+
+    int write(adr text);
+    int read(adr pointer, char delim);
+    Array toArray(char delim);
+    LinkedList toList(char delim);
+    String readToEnd();
+    int close();
+};
+
+export File createFile(adr fileName){
+        File file = malloc(File);
+        file.file = sys_create(fileName, #511);
+        int test;
+        test = file.file;
+        if(test < 1){
+                return NULL;
+        };
+        return file;
+};
+
+export File openFile(adr fileName){
+        File file = malloc(File);
+        long flag = #2;
+        file.file = sys_open(fileName, flag, #777);
+        int test;
+        test = file.file;
+        if(test < 0){
+                return NULL;
+        };
+        file.fileName = fileName;
+        return file;
+};
+
+int close@File(){
+        return sys_close(my.file);
+};
+
+int write@File(adr text){
+        int length = str.len(text);
+        int ret = sys_write(my.file, text, length);
+        return ret;
+};
+
+int read@File(adr pointer, char delim){
+        char input;
+        input = '\0';
+        char null = '\0';
+        while(input != delim){
+                int eof = sys_read(my.file, ?input, 1);
+                char inp;
+                inp = input;
+                pointer =: inp;
+                if(inp == delim){pointer =: null};
+                if(eof == 0){pointer =: null; return 1};
+                pointer = pointer + #1;
+        };
+        pointer =: null;
+        return  0;
+};
+
+String readToEnd@File(){
+        fstat stat = new fstat();
+        sys_fstat(my.file, stat);
+        adr buffer = malloc(1 + stat.st_size);
+        sys_read(my.file, buffer, 0 + stat.st_size);
+        adr pointer = buffer + (0 + stat.st_size);
+        pointer =: '\0';
+        String text = new String(buffer);
+        free(buffer);
+        delete stat;
+        return text;
+};
+
+Array toArray@File(char delim){
+	Array a = new Array(adr, 0);
+	adr ibuff = malloc(256);
+	
+	int eof = my.read(ibuff, delim);
+        int size;
+	
+        while (eof != 1){
+		size = a.size;
+		a.extend(1);
+		adr pointer = a.at(size);
+                pointer =: ibuff;
+                ibuff = malloc(256);
+		eof = my.read(ibuff, delim);
+	};
+
+        size = a.size;
+        a.extend(1);
+        adr pointer = a.at(size);
+        pointer =: ibuff;
+        ibuff = malloc(256);
+
+        return a;
+};
+
+LinkedList toList@File(char delim){
+        LinkedList l = new LinkedList;
+        adr ibuff = malloc(256);
+        
+        int eof = my.read(ibuff, delim);
+
+        while (eof != 1){
+                l.append(ibuff);
+                ibuff = malloc(256);
+                eof = my.read(ibuff, delim);
+        };
+
+        l.append(ibuff);
+
+
+        return l;
+};
+

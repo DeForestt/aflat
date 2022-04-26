@@ -1,0 +1,186 @@
+.needs <asm>
+.needs <std>
+
+import {len, int_toStringL0, str_toInt} from "strings" under str;
+import String from "String.af";
+
+class Thread {
+    contract {
+        private int pid;
+    };
+    int getPid();
+};
+
+class Process signs Thread {
+    private adr foo;
+
+    Process init(adr foo);
+    int start(* adr args);
+    bool isRunning();
+};
+
+class Pipe {
+    int in;
+    int out;
+    int write(adr buf, int len);
+    int read(adr buf, int len);
+    Pipe init();
+};
+
+class Message{
+    int len;
+    adr body;
+
+    public Message init(adr body);
+    public int writePipe(Pipe pipe);
+    private Message copy<<=>>(Message msg);
+};
+
+class MProcess signs Thread {
+    private adr foo;
+    private Pipe inbox;
+    private Pipe outbox;
+
+    public MProcess init(adr foo);
+    int start(* adr args);
+    private Process copy<<=>>();
+    public bool input(adr message);
+    public adr output();
+};
+
+class FD {
+  public int out;
+  public int in;
+};
+
+Message init@Message(adr body){
+    my.len = str.len(body);
+    my.body = body;
+};
+
+Process init@Process(adr bar){
+    my.foo = bar;
+    my.pid = 0;
+};
+
+MProcess init@MProcess(adr bar){
+    my.foo = bar;
+    my.pid = 0;
+    my.inbox = new Pipe();
+    my.outbox = new Pipe();
+};
+
+int start@Process(adr args){
+    my.pid = sys_fork();
+    adr bar = my.foo;
+    if(my.pid == 0){
+        bar(args);
+        sys_exit(0);
+    };
+    return 0;
+};
+
+int start@MProcess(adr args){
+    my.pid = sys_fork();
+    adr bar = my.foo;
+    if my.pid == 0 {
+        bar(args, my.inbox, my.outbox);
+        sys_exit(0);
+    };
+    return 0;
+};
+
+int getPid@Thread(){
+    return my.pid;
+};
+
+bool isRunning@Process(){
+    int status = sys_kill(my.pid, 0); // 0 means no signal
+    return status >= 0;
+};
+
+bool input@MProcess(adr message){
+    Message m = Message(message);
+    Pipe pipe = my.inbox;
+
+    adr header = malloc(5);
+    str.int_toStringL0(m.len, header, 5);
+    int p = pipe.write(header, 5);
+    p = pipe.write(m.body, m.len);
+    free(header);
+
+    return true;
+};
+
+adr output@MProcess(){
+    Pipe outbox = my.outbox;
+    // read header message from pipe
+    adr header = malloc(5);
+    outbox.read(header, 5);
+    int mlen = str.str_toInt(header);
+    free(header);
+
+    // read body from pipe
+    adr mbody = malloc(mlen + 1);
+    adr pbody = mbody + mlen;
+    pbody =: '\0';
+    outbox.read(mbody, mlen);
+
+    return mbody;
+};
+
+export Message readPipe(Pipe pipe){
+    adr header = malloc(5);
+    pipe.read(header, 5);
+    int mlen = str.str_toInt(header);
+    free(header);
+
+    // read body from pipe
+    adr mbody = malloc(mlen + 1);
+
+    pipe.read(mbody, mlen);
+    Message m = Message(mbody);
+    mbody = mbody + mlen;
+    mbody =: '\0';
+    return m;
+};
+
+int writePipe@Message(Pipe pipe){
+    adr header = malloc(5);
+    str.int_toStringL0(my.len, header, 5);
+    int p = pipe.write(header, 5);
+    p = pipe.write(my.body, my.len);
+    free(header);
+    return 0;
+};
+
+Pipe init@Pipe(){
+    FD fd = FD();
+    sys_pipe(fd);
+    my.out = fd.out;
+    my.in = fd.in;
+};
+
+int read@Pipe(adr buf, int size){
+    int fd;
+    fd = my.out;
+    int ret = sys_read(fd, buf, size);
+    return ret;
+};
+
+int write@Pipe(adr buf, int size){
+    int fd;
+    fd = my.in;
+    int ret = sys_write(fd, buf, size);
+    return ret;
+};
+
+export int exit(int status){
+    sys_exit(status);
+    return 0;
+};
+
+export int wait(Thread p){
+    sys_wait(p.getPid(), NULL, 0, NULL);
+    return 0;
+};

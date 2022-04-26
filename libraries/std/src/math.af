@@ -1,0 +1,61 @@
+.needs <std.gs>
+
+import DateTime from "DateTime.af";
+import {Now} from "DateTime" under dt;
+import {hex_toInt} from "strings" under str;
+
+export int exp(int base, int pow);
+
+class Random {
+	private int seed;
+
+	int nextInt(int n){
+		my.seed = (my.seed + 910230123);
+		int result = my.seed;
+		if result < 0
+		 	result = result  * -1;
+		return result % n;
+	};
+
+	Random init(){
+		DateTime now = dt.Now();
+		my.seed = now.getSeconds();
+
+		delete now;
+		for int i = 0; i < my.nextInt(10); i++
+			my.nextInt(100);
+	};
+};
+
+export int exp(int base, int pow){
+	int i = 0;
+	int output = 1;
+	while (i < pow){
+		output = output * base;
+		i = i + 1;
+	};
+	return output;
+};
+
+export long longExp(long base, int pow){
+	int i = 0;
+	long output = 1;
+	while (i < pow){
+		output = output * base;
+		i = i + 1;
+	};
+	return output;
+};
+
+export int longDiv(int int1, int int2){
+	int remainder = int1 % int2;
+	remainder = remainder * 10;
+	remainder = remainder / int2;
+	return remainder;
+};
+
+export int abs(int input){
+	if input < 0
+		return input * -1;
+	return input;
+};
