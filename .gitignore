@@ -2,3 +2,4 @@
 /KeyPair.pem
 /aflat-doc/**
 /bin/**
+/libraries/std/*.s
