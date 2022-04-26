@@ -43,7 +43,7 @@ sys_write:
     leave
     ret
 
-sys_read
+sys_read:
     pushq	%rbp
     movq	%rsp, %rbp
     pushq	%rbx
@@ -53,7 +53,7 @@ sys_read
     leave
     ret
 
-sys_create
+sys_create:
     pushq	%rbp
     movq	%rsp, %rbp
     pushq	%rbx
@@ -63,7 +63,7 @@ sys_create
     leave
     ret
 
-sys_open
+sys_open:
     pushq	%rbp
     movq	%rsp, %rbp
     pushq	%rbx
