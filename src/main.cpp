@@ -342,6 +342,36 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
       linker.push_back("./bin/" + copy + ".s");
     }
 
+    // if the line starts with 'c' build the c file and add it to the linker
+    if (line[0] == 'c') {
+      std::string addPath = "";
+      
+      // Check if the modual name has a path
+      if (copy.find("/") != std::string::npos) {
+        addPath = copy.substr(0, copy.find_last_of("/"));
+      }
+
+      // Check if path is in the pathList
+      bool found = false;
+      for (int i = 0; i < pathList.size(); i++) {
+        if (pathList[i] == addPath) {
+          found = true;
+          break;
+        }
+      }
+
+      if (!found && addPath != "") {
+        std::filesystem::create_directories("./bin/" + addPath);
+        pathList.push_back(addPath);
+      }
+
+      if (debug)
+        system(("gcc -g -no-pie -S ./src/" + copy + ".c -o ./bin/" + copy + ".s").c_str());
+      else
+        system(("gcc -S -no-pie ./src/" + copy + ".c -o ./bin/" + copy + ".s").c_str());
+
+      linker.push_back("./bin/" + copy + ".s");
+    };
     // check if line starts with 'settings'
     if (line.substr(0, 3) == "set") {
       std::string setting = line.substr(4);
