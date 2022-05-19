@@ -38,14 +38,6 @@ class LinkedList {
     int size();
     int erace();
     public LinkedList copy<<=>>(adr list);
-    // public LinkedList stitch(LinkedList list){
-    //     ListNode tmp = my.head;
-    //     while(tmp.next != NULL){
-    //         tmp = tmp.next;
-    //     };
-    //     tmp.next = list.head;
-    //     return my;
-    // };
 };
 
 class Array signs ICollection{
@@ -111,6 +103,29 @@ class BinTree {
         if my.left != NULL list.stitch(my.left.traverse());
         if my.right != NULL list.stitch(my.right.traverse());
         return list;
+    };
+
+    public int normalize() {
+        if my.left != NULL my.left.normalize();
+        if my.right != NULL my.right.normalize();
+
+        if my.left != NULL {
+            if my.left.right != NULL {
+                BinTree temp = my.left.right;
+                my.left.right = NULL;
+                my.left = temp;
+            };
+        };
+
+        if my.right != NULL {
+            if my.right.left != NULL {
+                BinTree temp = my.right.left;
+                my.right.left = NULL;
+                my.right = temp;
+            };
+        };
+
+        return 0;
     };
 };
 
