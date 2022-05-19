@@ -51,6 +51,53 @@ class Array signs ICollection{
     public int extend(int size);
 };
 
+
+class Keyed {
+    contract {
+        public int key;
+    };
+};
+
+class BinTree {
+    const Keyed data = data;
+    private BinTree left = NULL;
+    private BinTree right = NULL;
+
+    public BinTree init(Keyed data) {
+        return my;
+    };
+
+    public bool insert(Keyed data) {
+        if data.key == my.data.key return false;
+
+        if data.key < my.data.key {
+            if my.left == NULL {
+                my.left = new BinTree(data);
+                return true;
+            } else return my.left.insert(data);
+        } else {
+            if my.right == NULL {
+                my.right = new BinTree(data);
+                return true;
+            } else return my.right.insert(data);
+        };
+
+        return true;
+    };
+
+    public adr find(int key) {
+        if my.data.key == key return my.data;
+
+        if key < my.data.key {
+            if my.left == NULL return NULL
+            else return my.left.find(key);
+        } else {
+            if my.right == NULL return NULL
+            else return my.right.find(key);
+        };
+    };
+};
+
 adr reduce@LinkedList(adr foo, * adr args){
     adr result = my.head.data;
     ListNode node = my.head.next;
