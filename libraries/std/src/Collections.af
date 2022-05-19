@@ -38,14 +38,14 @@ class LinkedList {
     int size();
     int erace();
     public LinkedList copy<<=>>(adr list);
-    public LinkedList stitch(LinkedList list){
-        ListNode tmp = my.head;
-        while(tmp.next != NULL){
-            tmp = tmp.next;
-        };
-        tmp.next = list.head;
-        return my;
-    };
+    // public LinkedList stitch(LinkedList list){
+    //     ListNode tmp = my.head;
+    //     while(tmp.next != NULL){
+    //         tmp = tmp.next;
+    //     };
+    //     tmp.next = list.head;
+    //     return my;
+    // };
 };
 
 class Array signs ICollection{
