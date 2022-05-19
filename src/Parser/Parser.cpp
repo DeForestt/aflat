@@ -703,6 +703,8 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
       
       del->modList = modList;
       output = del;
+    } else if (obj.meta == "else") {
+      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + " floating else, may have an extra semicolon before the else");
     } else {
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
         lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
