@@ -1,6 +1,34 @@
 # String
 The 'String' class is a wrapper around a string pointer which provides memory managment and other useful features.
 
+## API Functions
+### Matches
+Matches returns true if the string matches the given pattern.
+signature: 
+```js
+export bool matches(String input, adr pattern)
+```
+
+```js
+import String from "String";
+import { matches } from "String" under str;
+String number = "111-111-1111";
+bool result = matches(number, "ddd-ddd-dddd"); // true
+```
+
+### Consume
+Consume gets string input that matches the given pattern.
+signature: 
+```js
+export String consume(adr pattern, * adr message)
+```
+
+
+```js
+import String from "String";
+import { consume } from "String" under str;
+String number = consume("ddd-ddd-dddd", "Please enter your phone number: "); // this will attempt to consume a phone number from the stdin
+```
 ## Constructor
 The constructor takes a string literal or a pointer to a character array and returns a 'String' object.
 
@@ -10,6 +38,14 @@ String s = new String("Hello World!");
 
 It is suggested to dynamically allocate the string using the 'new' keyword so that the delete operator can be used to free the memory.  Keep in mind that the constructor copies the string, so if the string is modified after the constructor is called, the 'String' object will not reflect the changes.
 
+
+## Destructor
+The destructor frees the memory allocated by the 'String' object and the internal char array.
+
+```js
+String s = new String("Hello World!");
+delete s;
+```
 ## Fields
 
 The 'String' class does not provide any public fields.
@@ -184,4 +220,83 @@ adr arg = // optional pointer to pass to the parameter function
 s.loop([char c, int index, adr args] {
     // do something with c, index, and args
 }, arg);
+```
+
+### Compare
+The compare method returns true if the current String object is equal to the parameter String Object.  This method does not mutate the current String object.
+signature:
+```js
+bool compare(String s);
+```
+
+```js
+String s = new String("Hello World!");
+String s2 = new String("Hello World!");
+bool b = s.compare(s2); // b = true
+```
+
+### Equal
+The equal method returns true if the current String object is equal to the parameter char array pointer.  This method does not mutate the current String object. This method overloads the '==' operator.
+signature:
+```js
+bool equal<<==>>(adr s);
+```
+
+```js
+String s = new String("Hello World!");
+bool b = s.equal("Hello World!"); // b = true
+```
+
+The equals method overloads the '==' operator.
+
+```js
+String s = new String("Hello World!");
+bool b = (s == "Hello World!"); // b = true
+```
+### IsNumeric
+The isNumeric method returns true if the current String object is a numeric value.  This method does not mutate the current String object.
+signature:
+```js
+bool isNumeric();
+```
+
+```js
+String s = new String("123");
+bool b = s.isNumeric(); // b = true
+```
+
+### IndexOf
+The indexOf method returns the index of the first occurrence of the parameter character in the current String object.  This method does not mutate the current String object.
+signature:
+```js
+int indexOf(char c);
+```
+
+```js
+String s = new String("Hello World!");
+int i = s.indexOf('o'); // i = 4
+```
+
+### toInt
+The toInt method returns the integer value of the current String object. Will panic if the current String is not a numeric value "Attempt to convert non-numeric string to int". This method does not mutate the current String object.
+signature:
+```js
+int toInt();
+```
+
+```js
+String s = new String("123");
+int i = s.toInt(); // i = 123
+```
+
+Len
+The length method returns the length of the current String object.  This method does not mutate the current String object.
+signature:
+```js
+int len();
+```
+
+```js
+String s = new String("Hello World!");
+int i = s.len(); // i = 12
 ```
