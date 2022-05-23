@@ -98,3 +98,30 @@ LinkedList split(* char c);
 String s = new String("This is a string to split");
 LinkedList l = s.split(' '); // l = ["This", "is", "a", "string", "to", "split"] <= String objects not string literals
 ```
+
+### ToLower
+The toLower method returns a new 'String' object which is the result of converting the current String object to lower case.  This method does not mutate the current String object.
+signature:
+```js
+String toLower();
+```
+
+```js
+String s = new String("Hello World!");
+String s2 = s.toLower(); // s2 = "hello world!"
+```
+
+### ToUpper
+The toUpper method returns a new 'String' object which is the result of converting the current String object to upper case.  This method does not mutate the current String object.
+signature:
+```js
+String toUpper();
+```
+
+```js
+String s = new String("Hello World!");
+String s2 = s.toUpper(); // s2 = "HELLO WORLD!"
+```
+
+### Trim
+The trim method returns a new 'String' object which is the result of removing all leading and trailing occurrences of the parameter character from the current String object. If the parameter character is not given, it will assume ' '.  This method does not mutate the current String object.
