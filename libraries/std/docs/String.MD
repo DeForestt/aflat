@@ -125,3 +125,63 @@ String s2 = s.toUpper(); // s2 = "HELLO WORLD!"
 
 ### Trim
 The trim method returns a new 'String' object which is the result of removing all leading and trailing occurrences of the parameter character from the current String object. If the parameter character is not given, it will assume ' '.  This method does not mutate the current String object.
+signature:
+```js
+String trim(* char c);
+```
+
+```js
+String s = new String("***Hello World!***");
+String s2 = s.trim('*'); // s2 = "Hello World!"
+```
+
+### At
+The at method returns the character at the specified index.  This method does not mutate the current String object.
+signature:
+```js
+char at(int i);
+```
+
+```js
+String s = new String("Hello World!");
+char c = s.at(4); // c = 'o'
+```
+
+### GetPrimitive
+The getPrimitive method returns a pointer to the underlying character array. It is suggested to use this method only when absolutely necessary.
+signature:
+```js
+adr getPrimitive();
+```
+
+```js
+String s = new String("Hello World!");
+adr s2 = s.getPrimitive(); // s2 = "Hello World!"
+```
+
+### SubString
+The subString method returns a new 'String' object which is a substring of the current String object between the specified indices.  This method does not mutate the current String object.
+signature:
+```js
+String subString(int start, int end);
+```
+
+```js
+String s = new String("Hello World!");
+String s2 = s.subString(4, 8); // s2 = "World"
+```
+
+### Loop
+The loop method loops through the current String object and calls the parameter function for each character. The loop method can also pass an optional pointer parameter to the parameter function.  The loop method passes the current character, the current index, and the optional pointer to the parameter function to the parameter function.
+signature:
+```js
+int loop(adr foo, * adr args)
+```
+
+```js
+String s = new String("Hello World!");
+adr arg = // optional pointer to pass to the parameter function
+s.loop([char c, int index, adr args] {
+    // do something with c, index, and args
+}, arg);
+```
