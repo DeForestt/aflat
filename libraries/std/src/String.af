@@ -16,7 +16,7 @@ class String{
     String init(adr value);
     String concat<<&>>(String s);
     String stitch<<+>>(adr s);
-    String copy<<=>>(adr s);
+    String copy<<=>>(String s);
     String replace(char o, char n);
     LinkedList split(* char c);
     String toLower();

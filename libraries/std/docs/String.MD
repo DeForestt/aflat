@@ -47,4 +47,17 @@ String s2 = s + "World!"; // s2 = "Hello World!"
 ```
 
 ### Copy
-The copy method 
+The copy method copies the value of the argument String object into the current String object.  This method does not mutate the argument String object.
+
+```js
+String s = new String("Hello ");
+String s2 = new String("World!");
+s.copy(s2); // s = "World!"
+```
+The copy method overloads the '=' operator.
+
+```js
+String s = new String("Hello ");
+String s2 = new String("World!");
+s = s2; // s = "World!"
+```
