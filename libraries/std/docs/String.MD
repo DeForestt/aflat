@@ -2,6 +2,32 @@
 The 'String' class is a wrapper around a string pointer which provides memory managment and other useful features.
 
 ## API Functions
+
+### PrintString
+The printString function prints the string to the console or stdout.
+signature:
+```js
+export int printString(String s)
+```
+
+```js
+import { printString } from "String" under str;
+String s = new String("Hello World!");
+str.printString(s);
+```
+
+### GetString
+The getString function reads console input or stdin and returns a new String object.
+signature:
+```js
+export String getString()
+```
+
+```js
+import { getString } from "String" under str;
+String s = str.getString(); // Reads from stdin
+```
+
 ### Matches
 Matches returns true if the string matches the given pattern.
 signature: 
