@@ -14,7 +14,7 @@ class String{
     private adr head;
 
     String init(adr value);
-    String concat<<&>>(adr s);
+    String concat<<&>>(String s);
     String stitch<<+>>(adr s);
     String copy<<=>>(adr s);
     String replace(char o, char n);

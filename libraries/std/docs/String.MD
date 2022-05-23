@@ -46,3 +46,5 @@ String s = new String("Hello ");
 String s2 = s + "World!"; // s2 = "Hello World!"
 ```
 
+### Copy
+The copy method 
