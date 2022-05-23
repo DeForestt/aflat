@@ -19,6 +19,11 @@ The 'String' class does not provide any public fields.
 ### Concat
 The concat method returns a new 'String' object which is the concatenation of the current string and the parameter string. This method does not mutate either of the strings.
 
+signature:
+```js
+String concat(String s)
+```
+
 ```js
 String s = new String("Hello ");
 String s2 = new String("World!");
@@ -34,6 +39,10 @@ String s3 = s & s2; // s3 = "Hello World!"
 
 ### Stitch
 The stitch method returns a new 'String' object which is a concatenation of the current String and the parameter character array. This method does not mutate either of the strings.
+signature:
+```js
+String stitch(adr s);
+```
 
 ```js
 String s = new String("Hello ");
@@ -48,6 +57,10 @@ String s2 = s + "World!"; // s2 = "Hello World!"
 
 ### Copy
 The copy method copies the value of the argument String object into the current String object.  This method does not mutate the argument String object.
+signiture:
+```js
+String copy<<=>>(String s);
+```
 
 ```js
 String s = new String("Hello ");
@@ -60,4 +73,28 @@ The copy method overloads the '=' operator.
 String s = new String("Hello ");
 String s2 = new String("World!");
 s = s2; // s = "World!"
+```
+
+### Replace
+The replace returns a new 'String' object which is the result of replacing all occurrences of the parameter character with the replacement character.  This method does not mutate the current String object.
+signature:
+```js
+String replace(char o, char n);
+```
+
+```js
+String s = new String("Hello World!");
+String s2 = s.replace('o', 'O'); // s2 = "HellO WOrld!"
+```
+
+### Split
+The split method returns a LinkedList of new String objects which are the result of splitting the current String object at the parameter character.  This method does not mutate the current String object.  If the parameter character is not provided, the split method splits the current String object at every space character. The split method does not mutate the current String object.
+signature:
+```js
+LinkedList split(* char c);
+```
+
+```js
+String s = new String("This is a string to split");
+LinkedList l = s.split(' '); // l = ["This", "is", "a", "string", "to", "split"] <= String objects not string literals
 ```
