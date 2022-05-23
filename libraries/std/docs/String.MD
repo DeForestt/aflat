@@ -31,3 +31,18 @@ String s = new String("Hello ");
 String s2 = new String("World!");
 String s3 = s & s2; // s3 = "Hello World!"
 ```
+
+### Stitch
+The stitch method returns a new 'String' object which is a concatenation of the current String and the parameter character array. This method does not mutate either of the strings.
+
+```js
+String s = new String("Hello ");
+String s2 = s.stitch("World!"); // s2 = "Hello World!"
+```
+The stitch method overloads the '+' operator.
+
+```js
+String s = new String("Hello ");
+String s2 = s + "World!"; // s2 = "Hello World!"
+```
+
