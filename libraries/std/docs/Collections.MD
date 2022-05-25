@@ -78,3 +78,24 @@ linkedList.insert(?j, 0); // insert a reference to the integer j at the beginnin
 
 // the linked list now contains: [?j, ?i]
 ```
+
+### del
+The del method deletes the node at the given position.
+signature:
+```js
+int del(int index);
+```
+example:
+```js
+import LinkedList from "Collections";
+//...
+
+LinkedList list = new LinkedList();
+int i = 0;
+linkedList.append(?i); // append a reference to the integer i to the end of the linked list.
+int j = 1;
+linkedList.insert(?j, 0); // insert a reference to the integer j at the beginning of the linked list.
+linkedList.del(0); // delete the node at index 0.
+
+// the linked list now contains: [?i]
+```
