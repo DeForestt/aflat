@@ -63,7 +63,7 @@ linkedList.append(?i); // append a reference to the integer i to the end of the 
 The insert method inserts a new node at the given position.
 signature:
 ```js
-int insert(int pos, adr data);
+int insert(adr data, int index);
 ```
 example:
 ```js
@@ -74,7 +74,7 @@ LinkedList list = new LinkedList();
 int i = 0;
 linkedList.append(?i); // append a reference to the integer i to the end of the linked list.
 int j = 1;
-linkedList.insert(0, ?j); // insert a reference to the integer j at the beginning of the linked list.
+linkedList.insert(?j, 0); // insert a reference to the integer j at the beginning of the linked list.
 
 // the linked list now contains: [?j, ?i]
 ```
