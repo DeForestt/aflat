@@ -51,7 +51,6 @@ class Array signs ICollection{
     public int extend(int size);
 };
 
-
 class Keyed {
     contract {
         public int key;
