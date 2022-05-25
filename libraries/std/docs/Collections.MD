@@ -99,3 +99,4 @@ linkedList.del(0); // delete the node at index 0.
 
 // the linked list now contains: [?i]
 ```
+
