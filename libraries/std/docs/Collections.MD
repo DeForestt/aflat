@@ -56,7 +56,7 @@ import LinkedList from "Collections";
 
 LinkedList list = new LinkedList();
 int i = 0;
-linkedList.append(?i); // append a reference to the integer i to the end of the linked list.
+list.append(?i); // append a reference to the integer i to the end of the linked list.
 ```
 
 ### insert
@@ -72,9 +72,9 @@ import LinkedList from "Collections";
 
 LinkedList list = new LinkedList();
 int i = 0;
-linkedList.append(?i); // append a reference to the integer i to the end of the linked list.
+list.append(?i); // append a reference to the integer i to the end of the linked list.
 int j = 1;
-linkedList.insert(?j, 0); // insert a reference to the integer j at the beginning of the linked list.
+list.insert(?j, 0); // insert a reference to the integer j at the beginning of the linked list.
 
 // the linked list now contains: [?j, ?i]
 ```
@@ -92,11 +92,31 @@ import LinkedList from "Collections";
 
 LinkedList list = new LinkedList();
 int i = 0;
-linkedList.append(?i); // append a reference to the integer i to the end of the linked list.
+list.append(?i); // append a reference to the integer i to the end of the linked list.
 int j = 1;
-linkedList.insert(?j, 0); // insert a reference to the integer j at the beginning of the linked list.
-linkedList.del(0); // delete the node at index 0.
+list.insert(?j, 0); // insert a reference to the integer j at the beginning of the linked list.
+list.del(0); // delete the node at index 0.
 
 // the linked list now contains: [?i]
 ```
+### get
+The get method returns the data at the given position.
+signature:
+```js
+adr get(int index);
+```
+example:
+```js
+import LinkedList from "Collections";
+//...
 
+LinkedList list = new LinkedList();
+int i = 0;
+list.append(?i); // append a reference to the integer i to the end of the linked list.
+int j = 1;
+list.insert(?j, 0); // insert a reference to the integer j at the beginning of the linked list.
+list.get(0); // returns the data at index 0.
+```
+
+### stitch
+The stitch method stitches two linked lists together. and 
