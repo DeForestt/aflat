@@ -6,11 +6,6 @@ if ! [ -x "$(command -v git)" ]; then
   exit 1
 fi
 
-# Check for ~/.aflat directory
-if [ -d ~/.aflat ]; then
-  echo 'Remove ~/.aflat directory?'
-  rm -rf ~/.aflat
-fi
 
 # Check if aflat is in the PATH
 if ! [ -x "$(command -v aflat)" ]; then
@@ -18,6 +13,13 @@ if ! [ -x "$(command -v aflat)" ]; then
     echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.bashrc
     echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.zshrc
 fi
+
+# Check for ~/.aflat directory
+if [ -d ~/.aflat ]; then
+  echo 'Remove ~/.aflat directory?'
+  rm -rf ~/.aflat
+fi
+
 
 # Cd into the aflat directory
 mkdir ~/.aflat
