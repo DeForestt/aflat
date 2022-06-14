@@ -16,7 +16,7 @@ fi
 
 # Check for ~/.aflat directory
 if [ -d ~/.aflat ]; then
-  echo 'Remove ~/.aflat directory?'
+  echo 'Remove ~/.aflat directory'
   rm -rf ~/.aflat
 fi
 
