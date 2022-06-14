@@ -26,5 +26,4 @@ if [ "$(command -v aflat)" = "" ]; then
     echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.zshrc
 fi
 
-
 echo "Successfully installed aflat!"
