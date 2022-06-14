@@ -8,7 +8,7 @@ fi
 
 
 # Check if aflat is in the PATH
-if ! [[ ":$PATH:" == *":~/.aflat/aflat/bin:"* ]]; then
+if ! [[ ":$PATH:" == *":$HOME/.aflat/aflat/bin:"* ]]; then
     echo 'Adding aflat to PATH'
     echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.bashrc
     echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.zshrc
@@ -26,6 +26,6 @@ mkdir ~/.aflat
 (cd ~/.aflat && git clone https://github.com/DeForestt/aflat.git)
 
 # Build aflat
-(cd ~/.aflat/aflat && mkdir bin && make)
+(cd ~/.aflat/aflat && mkdir bin && make > buildLog.log)
 
 echo "Successfully installed aflat!"
