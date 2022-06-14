@@ -17,7 +17,6 @@ if ! [ -x "$(command -v aflat)" ]; then
     echo 'adding aflat to PATH'
     echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.bashrc
     echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.zshrc
-    exit 1
 fi
 
 # Cd into the aflat directory
