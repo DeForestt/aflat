@@ -18,9 +18,13 @@ mkdir ~/.aflat
 # Build aflat
 (cd ~/.aflat && make)
 
-# Add aflat to PATH
-echo 'export PATH=$PATH:~/.aflat' >> ~/.bashrc
-echo 'export PATH=$PATH:~/.aflat' >> ~/.zshrc
+# check if aflat is added to PATH
+if ! [ -x "$(command -v aflat)" ]; then
+    echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.bashrc
+    echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.zshrc
+fi
+
+
 
 # remove any aflat aliases
 echo 'Do you want to remove any existing aflat aliases?'

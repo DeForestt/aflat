@@ -9,6 +9,9 @@ AFlat aims to trust that developers know what they are doing.  It allows and enc
 
 ## Getting started
 
+### One Command to rule them all
+Install with one command: `curl -s https://raw.githubusercontent.com/DeForestt/aflat/main/install.sh | bash`
+
 ### Cloning the repository
 ```bash
 git clone https://github.com/DeForestt/aflat
