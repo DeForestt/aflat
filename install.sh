@@ -12,18 +12,19 @@ if [ -d ~/.aflat ]; then
   rm -rf ~/.aflat
 fi
 
+# Check if aflat is in the PATH
+if ! [ -x "$(command -v aflat)" ]; then
+    echo 'adding aflat to PATH'
+    echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.bashrc
+    echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.zshrc
+    exit 1
+fi
+
 # Cd into the aflat directory
 mkdir ~/.aflat
 (cd ~/.aflat && git clone https://github.com/DeForestt/aflat.git)
 
 # Build aflat
 (cd ~/.aflat/aflat && mkdir bin && make)
-
-# check if aflat is added to PATH
-if [ "$(command -v aflat)" = "" ]; then
-    echo 'Adding aflat to PATH'
-    echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.bashrc
-    echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.zshrc
-fi
 
 echo "Successfully installed aflat!"
