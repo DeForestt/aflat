@@ -16,7 +16,7 @@ mkdir ~/.aflat
 (cd ~/.aflat && git clone https://github.com/DeForestt/aflat.git)
 
 # Build aflat
-(cd ~/.aflat && make)
+(cd ~/.aflat/aflat && mkdir bin && make)
 
 # check if aflat is added to PATH
 if ! [ -x "$(command -v aflat)" ]; then
@@ -27,19 +27,13 @@ fi
 
 
 # remove any aflat aliases
-echo 'Do you want to remove any existing aflat aliases?'
-select yn in "Yes" "No"; do
-    case $yn in
-        Yes )
-            echo 'Removing existing aflat aliases...'
-            sed -i '/alias aflat/d' ~/.bashrc
-            sed -i '/alias aflat/d' ~/.zshrc
-            break;;
-        No )
-            echo 'Skipping...'
-            break;;
-    esac
-done
+echo 'Do you want to remove any existing aflat aliases (y/N)?'
+read answer
+if [ "$answer" == "y" ]; then
+    echo 'Removing existing aflat aliases...'
+    sed -i '/aflat/d' ~/.bashrc
+    sed -i '/aflat/d' ~/.zshrc
+fi
 
 echo "Successfully installed aflat!"
 
