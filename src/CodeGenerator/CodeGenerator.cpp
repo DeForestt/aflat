@@ -2497,6 +2497,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     if (imp->path.find("./") == std::string::npos) {
       imp->path = getLibPath("src") + imp->path;
     };
+    std::cout << imp->path << std::endl;
 
     if (imp->path.find(".af") == std::string::npos){
       imp->path = imp->path + ".af";
