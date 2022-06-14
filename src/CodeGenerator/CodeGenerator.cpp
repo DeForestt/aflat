@@ -2499,7 +2499,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     };
     std::cout << imp->path << std::endl;
 
-    if (imp->path.substr(imp->path.length() - 4, 3) != ".af" ){
+    if (imp->path.substr(imp->path.length() - 3, 3) != ".af" ){
       imp->path = imp->path + ".af";
     };
 
