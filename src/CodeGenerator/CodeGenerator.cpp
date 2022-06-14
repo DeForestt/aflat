@@ -106,6 +106,14 @@ int gen::CodeGenerator::getBytes(asmc::Size size) {
   return 0;
 }
 
+std::string getUUID() {
+  std::string uuid = "";
+  for (int i = 0; i < 16; i++) {
+    uuid += std::to_string(rand() % 10);
+  }
+  return uuid;
+};
+
 void gen::CodeGenerator::alert(std::string message, bool error = true) {
   if (error) {
     std::cout << "Error: ";
@@ -1209,6 +1217,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                     std::chrono::system_clock::now().time_since_epoch())
                     .count();
     std::string uniqueIdent = std::to_string(millies);
+    uniqueIdent = uniqueIdent + getUUID();
 
     ast::Type structType = ast::Type();
     structType.size = asmc::Byte;
