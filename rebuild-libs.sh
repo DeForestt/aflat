@@ -1,5 +1,5 @@
 function aflat {
-    ./bin/main $1 $2
+    ./bin/aflat $1 $2
 }
 aflat ./libraries/std/src/Collections.af ./libraries/std/Collections.s
 aflat ./libraries/std/src/concurrency.af ./libraries/std/concurrency.s
