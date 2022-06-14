@@ -14,7 +14,7 @@ fi
 
 # Check if aflat is in the PATH
 if ! [ -x "$(command -v aflat)" ]; then
-    echo 'adding aflat to PATH'
+    echo 'Adding aflat to PATH'
     echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.bashrc
     echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.zshrc
 fi
