@@ -2283,7 +2283,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
       OutputFile.text << lable1;
 
     gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
-  } else if (dynamic_cast<ast::While *>(STMT) != nullptr) {
+  } else if (dynamic_cast<ast::While *>(STMT) != nullptr) {  
     gen::scope::ScopeManager::getInstance()->pushScope();
     ast::While *loop = dynamic_cast<ast::While *>(STMT);
 
@@ -2499,7 +2499,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment *STMT) {
     };
     std::cout << imp->path << std::endl;
 
-    if (imp->path.find(".af") == std::string::npos){
+    if (imp->path.substr(imp->path.length() - 4, 3) != ".af" ){
       imp->path = imp->path + ".af";
     };
 
