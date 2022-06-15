@@ -8,10 +8,12 @@ fi
 
 
 # Check if aflat is in the PATH
-if ! [[ ":$PATH:" == *":$HOME/.aflat/aflat/bin:"* ]]; then
+if ! [[ $AFLAT_INSTALLED == "SET" ]]; then
     echo 'Adding aflat to PATH'
     echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.bashrc
+    echo 'export AFLAT_INSTALLED=SET' >> ~/.bashrc
     echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.zshrc
+    echo 'export AFLAT_INSTALLED=SET' >> ~/.zshrc
 fi
 
 # Check for ~/.aflat directory
