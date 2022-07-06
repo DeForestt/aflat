@@ -17,7 +17,7 @@ namespace parse
 
             ast::Statment * lower(ast::Statment *stmt);
             ast::Statment * lowerFunction(ast::Function * func);
-            ast::Function * findFunction(ast::Statment * stmt);
+            ast::Function * findFunction(ast::Statment * stmt, std::string ident);
         };
     } // namespace lower
 }

@@ -284,6 +284,19 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
             func->args = this->parseArgs(tokens, ',', ')', func->argTypes, func->req);
             if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
               sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+              
+              // Check for a ':'
+              if (sym.Sym == ':'){
+                // make the next word a decorator.
+                tokens.pop();
+                lex::LObj * decor = dynamic_cast<lex::LObj *>(tokens.pop());
+                if (decor == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + 
+                "Expected Identifier after ':'");
+                func->decorator = decor->meta;
+                
+                if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount));
+                sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+              }
               if (sym.Sym == '{') {
                 tokens.pop();
                 func->statment = this->parseStmt(tokens);

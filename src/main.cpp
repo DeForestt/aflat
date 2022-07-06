@@ -5,6 +5,7 @@
 #include "LinkedList.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
+#include "Parser/Lower.hpp"
 #include "Scanner.hpp"
 #include <algorithm>
 #include <filesystem>
@@ -155,6 +156,8 @@ void build(std::string path, std::string output, int mutability = 0) {
 
     ast::Statment *Prog = parser.parseStmt(tokens);
 
+    parse::lower::Lowerer lower = parse::lower::Lowerer(Prog);  
+  
     std::string outputID = output.substr(0, output.find_last_of("."));
     if (outputID.find("/") != std::string::npos) {
       outputID = outputID.substr(outputID.find_last_of("/") + 1);

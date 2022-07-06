@@ -99,6 +99,7 @@ public:
   ast::ScopeMod scope;
   Type type;
   std::string scopeName = "";
+  std::string decorator = "";
   Ident ident;
   Statment *args;
   Statment *statment;
