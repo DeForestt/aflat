@@ -578,6 +578,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.size = asmc::QWord;
         output.access = '$' + this->nameTable[ident]->ident.ident;
         output.type = "adr";
+      } else if (this->scope != nullptr && this->scope->nameTable[ident] != nullptr){
+        output.size = asmc::QWord;
+        output.access = "$pub_" + this->scope->Ident + "_" + ident;
+        output.type = "adr";
       } else {
           alert("variable not found " + ident);
       }
