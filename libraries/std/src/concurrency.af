@@ -53,6 +53,32 @@ class FD {
   public int in;
 };
 
+class Result{
+    private MProcess p = p;
+
+    Result init(MProcess p){
+        return my;
+    };
+
+    public adr get() {
+        return my.p.output();
+    };
+};
+
+class WorkArgs {
+    public adr func = bar;
+    public adr args = args;
+
+    WorkArgs init(adr bar, adr args){
+        return my;
+    };
+
+    adr run() {
+        adr func = my.func;
+        return func(my.args);
+    };
+};
+
 Message init@Message(adr body){
     my.len = str.len(body);
     my.body = body;
@@ -183,4 +209,18 @@ export int exit(int status){
 export int wait(Thread p){
     sys_wait(p.getPid(), NULL, 0, NULL);
     return 0;
+};
+
+// Start a function as a concurrant process
+export adr worker(adr foo, adr _arg) {
+    
+    MProcess p = new MProcess([WorkArgs args, Pipe inbox, Pipe outbox] => {
+        adr res = args.run();
+        Message msg = new Message(res);
+        msg.writePipe(outbox);
+    });
+    Result ret = new Result(p);
+    WorkArgs pArgs = new WorkArgs(foo, _arg);
+    p.start(pArgs);
+    return ret; 
 };
