@@ -296,6 +296,16 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
                 
                 if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount));
                 sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                if (sym.Sym == '.') {
+                  tokens.pop();
+                  lex::LObj * lob = dynamic_cast<lex::LObj *>(tokens.pop());
+                  if (lob == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) + 
+                  "Expected Identifier after '.'");
+                  func->decNSP = func->decorator;
+                  func->decorator = lob->meta;
+                  if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr) throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount));
+                  sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+                };
               }
               if (sym.Sym == '{') {
                 tokens.pop();

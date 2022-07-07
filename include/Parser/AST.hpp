@@ -100,6 +100,7 @@ public:
   Type type;
   std::string scopeName = "";
   std::string decorator = "";
+  std::string decNSP = "";
   Ident ident;
   Statment *args;
   Statment *statment;

@@ -46,8 +46,7 @@ ast::Statment * Lower::lowerFunction(ast::Function * func){
         func->ident.ident = "_" + func->ident.ident;
 
         bool fromClass = false;
-        ast::Function * dec = this->findFunction(this->root, func->decorator, fromClass);
-        if (dec == nullptr) throw err::Exception("No Function " + func->decorator + " found");
+
         ast::Var * fpoint = new ast::Var;
         fpoint->Ident = func->ident.ident;
         ast::Var * Arg = new ast::Var;
@@ -58,12 +57,22 @@ ast::Statment * Lower::lowerFunction(ast::Function * func){
         call->call->Args = links::LinkedList<ast::Expr *>();
         call->call->Args.push(fpoint);
         call->call->Args.push(Arg);
-        call->call->ident = func->decorator;
 
-        if (dec->scopeName != "global" || fromClass){
-            call->call->modList.push(call->call->ident);
-            call->call->ident = "my";
-        };
+        if (func->decNSP == ""){
+
+            call->call->ident = func->decorator;
+
+            ast::Function * dec = this->findFunction(this->root, func->decorator, fromClass);
+            if (dec == nullptr) throw err::Exception("No Function " + func->decorator + " found");
+
+            if (dec->scopeName != "global" || fromClass){
+                call->call->modList.push(call->call->ident);
+                call->call->ident = "my";
+            };
+        } else {
+            call->call->ident = func->decNSP;
+            call->call->modList.push(func->decorator);
+        }
         
         ast::Return * ret = new ast::Return;
         ret->expr = call;
@@ -77,7 +86,7 @@ ast::Statment * Lower::lowerFunction(ast::Function * func){
     return res;
 }
 
-ast::Function * Lower::findFunction(ast::Statment * stmt, std::string ident, bool &fromClass){
+ast::Function * Lower::findFunction(ast::Statment * stmt, std::string ident, bool &fromClass) {
     if (dynamic_cast<ast::Sequence *>(stmt) != nullptr){
         ast::Sequence * seq = dynamic_cast<ast::Sequence *>(stmt);
         this->curr = seq;
