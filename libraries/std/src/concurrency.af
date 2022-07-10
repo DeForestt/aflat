@@ -80,7 +80,7 @@ class WorkArgs {
 };
 
 Message init@Message(adr body){
-    my.len = str.len(body);
+    my.len = blockSize(body);
     my.body = body;
 };
 
