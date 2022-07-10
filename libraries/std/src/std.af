@@ -119,6 +119,15 @@ int free(adr ptr){
     return 0;
 };
 
+int blockSize(adr ptr) {
+    if (ptr == NULL){
+        return 0;
+    };
+
+    Block block = getBlock(ptr);
+    return block.size;
+};
+
 adr malloc(int size){
 
     Block block;
@@ -170,7 +179,7 @@ adr realloc(adr ptr, int size){
     return new_ptr;
 };
 
-int inspectHeap(){
+int inspectHeap() {
     Block current;
     current = head;
     io.print("Heap:\n");
