@@ -3,9 +3,9 @@
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Exceptions.hpp"
 #include "LinkedList.hpp"
+#include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
-#include "Parser/Lower.hpp"
 #include "Scanner.hpp"
 #include <algorithm>
 #include <filesystem>
@@ -81,21 +81,21 @@ int main(int argc, char *argv[]) {
       if (!std::filesystem::exists(path)) {
         // Create the paths
         std::filesystem::create_directories("./src/" + path);
-        if (value == "add") std::filesystem::create_directories("./head/" + path);
+        if (value == "add")
+          std::filesystem::create_directories("./head/" + path);
       }
     }
 
     // create the files
     std::ofstream srcFile(srcName);
-    
-    if (value == "add"){
+
+    if (value == "add") {
       std::ofstream headerFile(headerName);
       srcFile << ".root \"head\"\n";
       srcFile << ".needs \"" << modualName << ".gs\"\n";
       headerFile.close();
     }
     srcFile.close();
-    
 
     // Read the last line of the config file
     std::fstream cFile("./aflat.cfg", std::fstream::in | std::fstream::out);
@@ -156,8 +156,8 @@ void build(std::string path, std::string output, int mutability = 0) {
 
     auto Prog = parser.parseStmt(tokens);
 
-    auto lower = parse::lower::Lowerer(Prog);  
-  
+    auto lower = parse::lower::Lowerer(Prog);
+
     auto outputID = output.substr(0, output.find_last_of("."));
     if (outputID.find("/") != std::string::npos) {
       outputID = outputID.substr(outputID.find_last_of("/") + 1);
@@ -255,9 +255,10 @@ void buildTemplate(std::string value) {
   auto root = cwd.string() + "/" + value;
   std::ofstream outfile(value + "/src/main.af");
   outfile << ".needs <std>\n";
-  
+
   outfile << "import * from \"io\" under io;\n\n";
-  outfile << "int main(){\n\tio.print(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
+  outfile
+      << "int main(){\n\tio.print(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
   outfile.close();
 
   outfile = std::ofstream(value + "/src/test/test.af");
@@ -348,7 +349,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
     // if the line starts with 'c' build the c file and add it to the linker
     if (line[0] == 'c') {
       std::string addPath = "";
-      
+
       // Check if the modual name has a path
       if (copy.find("/") != std::string::npos) {
         addPath = copy.substr(0, copy.find_last_of("/"));
@@ -369,9 +370,12 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
       }
 
       if (debug)
-        system(("gcc -g -no-pie -S ./src/" + copy + ".c -o ./bin/" + copy + ".s").c_str());
+        system(
+            ("gcc -g -no-pie -S ./src/" + copy + ".c -o ./bin/" + copy + ".s")
+                .c_str());
       else
-        system(("gcc -S -no-pie ./src/" + copy + ".c -o ./bin/" + copy + ".s").c_str());
+        system(("gcc -S -no-pie ./src/" + copy + ".c -o ./bin/" + copy + ".s")
+                   .c_str());
 
       linker.push_back("./bin/" + copy + ".s");
     };
