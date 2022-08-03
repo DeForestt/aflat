@@ -29,24 +29,24 @@ std::string asmc::Call::toString() {
 std::string asmc::Mov::toString() {
   std::string size = "";
   switch (this->size) {
-  case asmc::Byte:
-    size = "b";
-    break;
-  case asmc::Word:
-    size = "w";
-    break;
-  case asmc::DWord:
-    size = "l";
-    break;
-  case asmc::QWord:
-    size = "q";
-    break;
-  case asmc::AUTO:
-    size = "";
-    break;
-  default:
-    size = "";
-    break;
+    case asmc::Byte:
+      size = "b";
+      break;
+    case asmc::Word:
+      size = "w";
+      break;
+    case asmc::DWord:
+      size = "l";
+      break;
+    case asmc::QWord:
+      size = "q";
+      break;
+    case asmc::AUTO:
+      size = "";
+      break;
+    default:
+      size = "";
+      break;
   }
   if (this->op == asmc::Float)
     return "\tmovss"
@@ -66,24 +66,24 @@ std::string asmc::Movzbl::toString() {
 std::string asmc::Cmp::toString() {
   std::string size = "";
   switch (this->size) {
-  case asmc::Byte:
-    size = "b";
-    break;
-  case asmc::Word:
-    size = "w";
-    break;
-  case asmc::DWord:
-    size = "l";
-    break;
-  case asmc::QWord:
-    size = "q";
-    break;
-  case asmc::AUTO:
-    size = "";
-    break;
-  default:
-    size = "";
-    break;
+    case asmc::Byte:
+      size = "b";
+      break;
+    case asmc::Word:
+      size = "w";
+      break;
+    case asmc::DWord:
+      size = "l";
+      break;
+    case asmc::QWord:
+      size = "q";
+      break;
+    case asmc::AUTO:
+      size = "";
+      break;
+    default:
+      size = "";
+      break;
   }
   return "\tcmp" + size + "\t" + this->from + ", " + this->to + "\n";
 }
@@ -143,24 +143,24 @@ std::string asmc::Mul::toString() {
 std::string asmc::And::toString() {
   std::string size = "";
   switch (this->size) {
-  case asmc::Byte:
-    size = "b";
-    break;
-  case asmc::Word:
-    size = "w";
-    break;
-  case asmc::DWord:
-    size = "l";
-    break;
-  case asmc::QWord:
-    size = "q";
-    break;
-  case asmc::AUTO:
-    size = "q";
-    break;
-  default:
-    size = "l";
-    break;
+    case asmc::Byte:
+      size = "b";
+      break;
+    case asmc::Word:
+      size = "w";
+      break;
+    case asmc::DWord:
+      size = "l";
+      break;
+    case asmc::QWord:
+      size = "q";
+      break;
+    case asmc::AUTO:
+      size = "q";
+      break;
+    default:
+      size = "l";
+      break;
   }
   return "\tand" + size + "\t" + this->op1 + ", " + this->op2 + "\n";
 }
@@ -168,24 +168,24 @@ std::string asmc::And::toString() {
 std::string asmc::Or::toString() {
   std::string size = "";
   switch (this->size) {
-  case asmc::Byte:
-    size = "b";
-    break;
-  case asmc::Word:
-    size = "w";
-    break;
-  case asmc::DWord:
-    size = "l";
-    break;
-  case asmc::QWord:
-    size = "q";
-    break;
-  case asmc::AUTO:
-    size = "q";
-    break;
-  default:
-    size = "l";
-    break;
+    case asmc::Byte:
+      size = "b";
+      break;
+    case asmc::Word:
+      size = "w";
+      break;
+    case asmc::DWord:
+      size = "l";
+      break;
+    case asmc::QWord:
+      size = "q";
+      break;
+    case asmc::AUTO:
+      size = "q";
+      break;
+    default:
+      size = "l";
+      break;
   }
   return "\tor" + size + "\t" + this->op1 + ", " + this->op2 + "\n";
 }
@@ -193,24 +193,24 @@ std::string asmc::Or::toString() {
 std::string asmc::Sal::toString() {
   std::string size = "";
   switch (this->size) {
-  case asmc::Byte:
-    size = "b";
-    break;
-  case asmc::Word:
-    size = "w";
-    break;
-  case asmc::DWord:
-    size = "l";
-    break;
-  case asmc::QWord:
-    size = "q";
-    break;
-  case asmc::AUTO:
-    size = "q";
-    break;
-  default:
-    size = "l";
-    break;
+    case asmc::Byte:
+      size = "b";
+      break;
+    case asmc::Word:
+      size = "w";
+      break;
+    case asmc::DWord:
+      size = "l";
+      break;
+    case asmc::QWord:
+      size = "q";
+      break;
+    case asmc::AUTO:
+      size = "q";
+      break;
+    default:
+      size = "l";
+      break;
   }
   return "\tsal" + size + "\t" + this->op1 + ", " + this->op2 + "\n";
 }
@@ -218,24 +218,24 @@ std::string asmc::Sal::toString() {
 std::string asmc::Sar::toString() {
   std::string size = "";
   switch (this->size) {
-  case asmc::Byte:
-    size = "b";
-    break;
-  case asmc::Word:
-    size = "w";
-    break;
-  case asmc::DWord:
-    size = "l";
-    break;
-  case asmc::QWord:
-    size = "q";
-    break;
-  case asmc::AUTO:
-    size = "q";
-    break;
-  default:
-    size = "l";
-    break;
+    case asmc::Byte:
+      size = "b";
+      break;
+    case asmc::Word:
+      size = "w";
+      break;
+    case asmc::DWord:
+      size = "l";
+      break;
+    case asmc::QWord:
+      size = "q";
+      break;
+    case asmc::AUTO:
+      size = "q";
+      break;
+    default:
+      size = "l";
+      break;
   }
   return "\tsar" + size + "\t" + this->op1 + ", " + this->op2 + "\n";
 }
@@ -305,9 +305,9 @@ void asmc::File::collect() {
 asmc::File::File() {
   this->hasLambda = false;
   this->lambdas = nullptr;
-  this->linker = links::LinkedList<asmc::Instruction *>();
-  this->text = links::LinkedList<asmc::Instruction *>();
-  this->bss = links::LinkedList<asmc::Instruction *>();
+  this->linker = links::LinkedList<asmc::Instruction*>();
+  this->text = links::LinkedList<asmc::Instruction*>();
+  this->bss = links::LinkedList<asmc::Instruction*>();
 };
 
 asmc::Register::Register(std::string _qWord, std::string _dWord,
@@ -320,19 +320,19 @@ asmc::Register::Register(std::string _qWord, std::string _dWord,
 
 std::string asmc::Register::get(asmc::Size wants) {
   switch (wants) {
-  case asmc::QWord:
-    return this->qWord;
-    break;
-  case asmc::DWord:
-    return this->dWord;
-    break;
-  case asmc::Word:
-    return this->word;
-    break;
-  case asmc::Byte:
-    return this->byte;
-    break;
-  default:
-    throw err::Exception("Unknown register size");
+    case asmc::QWord:
+      return this->qWord;
+      break;
+    case asmc::DWord:
+      return this->dWord;
+      break;
+    case asmc::Word:
+      return this->word;
+      break;
+    case asmc::Byte:
+      return this->byte;
+      break;
+    default:
+      throw err::Exception("Unknown register size");
   };
 }

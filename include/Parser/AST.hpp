@@ -1,30 +1,31 @@
 #ifndef STRUCT
 #define STRUCT
 
-#include "ASM.hpp"
-#include "LinkedList.hpp"
 #include <string>
 #include <vector>
 
+#include "ASM.hpp"
+#include "LinkedList.hpp"
+
 namespace ast {
 class ProgramMember {
-public:
+ public:
   virtual std::string toString() { return ""; };
 };
 
 class Ident {
-public:
+ public:
   std::string ident;
 };
 
 class Statment {
-public:
+ public:
   bool locked = false;
   virtual std::string toString() { return ""; };
 };
 
 class Member {
-public:
+ public:
   virtual std::string toString() { return ""; };
 };
 
@@ -53,57 +54,57 @@ enum Op {
 enum ScopeMod { Public, Private, Static, Export };
 
 class Expr : public Statment {
-public:
+ public:
   virtual std::string toString() { return ""; };
 };
 
 class ConditionalExpr {
-public:
-  Expr *expr1;
+ public:
+  Expr* expr1;
   Op op;
-  Expr *expr2;
+  Expr* expr2;
 };
 
 class Type {
-public:
+ public:
   std::string typeName;
 
   asmc::Size size;
   asmc::OpType opType = asmc::Hard;
   int arraySize = 1;
   static bool compair(Type t, std::string name);
-  Type *typeHint = nullptr;
+  Type* typeHint = nullptr;
   links::LinkedList<int> indecies;
 };
 
 class Arg {
-public:
+ public:
   virtual std::string toString() { return ""; };
 };
 
 class Program {
-public:
+ public:
   ProgramMember members;
 };
 
 class Class : public Statment {
-public:
+ public:
   Ident ident;
   std::string base;
-  Statment *contract;
-  Statment *statment;
+  Statment* contract;
+  Statment* statment;
 };
 
 class Function : public Member, public Statment {
-public:
+ public:
   ast::ScopeMod scope;
   Type type;
   std::string scopeName = "";
   std::string decorator = "";
   std::string decNSP = "";
   Ident ident;
-  Statment *args;
-  Statment *statment;
+  Statment* args;
+  Statment* statment;
   ast::Op op;
   int req;
   std::vector<ast::Type> argTypes;
@@ -113,13 +114,13 @@ public:
 };
 
 class UDeffType : public Member, public Statment {
-public:
+ public:
   Ident ident;
-  Statment *statment;
+  Statment* statment;
 };
 
 class Declare : public Arg, public Statment {
-public:
+ public:
   ast::ScopeMod scope;
   std::string Ident;
   std::string TypeName;
@@ -129,214 +130,214 @@ public:
 };
 
 class Argument : public Arg, public Statment {
-public:
+ public:
   std::string Ident;
   Type type;
 };
 
 class ParenExpr : public Expr {
-public:
-  Expr *expr;
+ public:
+  Expr* expr;
 };
 
 class CharLiteral : public Expr {
-public:
+ public:
   char value;
 };
 
 class If : public Statment {
-public:
-  Expr *expr;
-  Statment *statment;
-  Statment *elseStatment;
-  Statment *elseIf;
+ public:
+  Expr* expr;
+  Statment* statment;
+  Statment* elseStatment;
+  Statment* elseIf;
 };
 
 class DecAssign : public Statment {
-public:
-  Declare *declare;
+ public:
+  Declare* declare;
   bool mute = true;
-  Expr *expr;
+  Expr* expr;
 };
 
 class Assign : public Statment {
-public:
+ public:
   std::string Ident;
   bool refrence = false;
   bool override = false;
-  Expr *expr;
+  Expr* expr;
   links::LinkedList<std::string> modList;
-  links::LinkedList<ast::Expr *> indices;
+  links::LinkedList<ast::Expr*> indices;
 };
 
 class While : public Statment {
-public:
-  Expr *expr;
-  Statment *stmt;
+ public:
+  Expr* expr;
+  Statment* stmt;
 };
 
 class For : public Statment {
-public:
-  Statment *declare;
-  ast::Expr *expr;
-  Statment *increment;
-  Statment *Run;
+ public:
+  Statment* declare;
+  ast::Expr* expr;
+  Statment* increment;
+  Statment* Run;
 };
 
 class Call : public Statment {
-public:
+ public:
   std::string ident;
-  links::LinkedList<Expr *> Args;
+  links::LinkedList<Expr*> Args;
   links::LinkedList<std::string> modList;
   std::string publify = "";
 };
 
 class Delete : public Statment {
-public:
+ public:
   std::string ident;
   links::LinkedList<std::string> modList;
 };
 
 class Sequence : public Statment {
-public:
-  Statment *Statment1;
-  Statment *Statment2;
+ public:
+  Statment* Statment1;
+  Statment* Statment2;
 };
 
 class Iflush : public Statment {};
 
 class CWrite : public Statment {
-public:
-  Expr *expr;
+ public:
+  Expr* expr;
 };
 
 class Push : public Statment {
-public:
-  Expr *expr;
+ public:
+  Expr* expr;
 };
 
 class Pull : public Statment {
-public:
-  Expr *expr;
+ public:
+  Expr* expr;
 };
 
 class DecArr : public Statment {
-public:
+ public:
   std::string ident;
   ast::Type type;
   int count;
   bool mut = true;
   ast::ScopeMod scope;
-  links::LinkedList<Expr *> indices;
+  links::LinkedList<Expr*> indices;
 };
 
 class DecAssignArr : public Statment {
-public:
-  DecArr *declare;
+ public:
+  DecArr* declare;
   bool mute = true;
-  Expr *expr;
+  Expr* expr;
 };
 
 class Inc : public Statment {
-public:
+ public:
   std::string ident;
 };
 
 class Dec : public Statment {
-public:
+ public:
   std::string ident;
 };
 
 class Return : public Statment {
-public:
-  Expr *expr;
+ public:
+  Expr* expr;
 };
 
 class Import : public Statment {
-public:
+ public:
   std::vector<std::string> imports;
   std::string path;
   std::string nameSpace;
 };
 
 class Var : public Expr {
-public:
+ public:
   std::string Ident;
-  links::LinkedList<ast::Expr *> indecies;
+  links::LinkedList<ast::Expr*> indecies;
   links::LinkedList<std::string> modList;
 };
 
 class StringLiteral : public Expr {
-public:
+ public:
   std::string val;
 };
 
 class IntLiteral : public Expr {
-public:
+ public:
   int val;
 };
 
 class FloatLiteral : public Expr {
-public:
+ public:
   std::string val;
 };
 
 class LongLiteral : public Expr {
-public:
+ public:
   int val;
 };
 
 class Compound : public Expr {
-public:
-  Expr *expr1;
+ public:
+  Expr* expr1;
   Op op;
-  Expr *expr2;
+  Expr* expr2;
 };
 
 class Refrence : public Expr {
-public:
+ public:
   std::string Ident;
   links::LinkedList<std::string> modList;
   bool internal = false;
 };
 
 class DeRefence : public Expr {
-public:
+ public:
   std::string Ident;
   links::LinkedList<std::string> modList;
   ast::Type type;
 };
 
 class CallExpr : public Expr {
-public:
-  ast::Call *call;
+ public:
+  ast::Call* call;
 };
 
 class parenExpr : public Expr {
-public:
-  Expr *expr;
+ public:
+  Expr* expr;
 };
 
 class Lambda : public Expr {
-public:
-  ast::Function *function;
+ public:
+  ast::Function* function;
 };
 
 class NewExpr : public Expr {
-public:
+ public:
   ast::Type type;
-  links::LinkedList<Expr *> args;
+  links::LinkedList<Expr*> args;
 };
 
 class StructList : public Expr {
-public:
-  links::LinkedList<ast::Expr *> args;
+ public:
+  links::LinkedList<ast::Expr*> args;
 };
 
 class Not : public Expr {
-public:
-  Expr *expr;
+ public:
+  Expr* expr;
 };
-} // namespace ast
+}  // namespace ast
 
 #endif
