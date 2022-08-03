@@ -12,15 +12,15 @@ Lower::Lowerer(ast::Statment *root) {
 
 ast::Statment *Lower::lower(ast::Statment *stmt) {
   if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
-    ast::Sequence *seq = dynamic_cast<ast::Sequence *>(stmt);
+    auto seq = dynamic_cast<ast::Sequence *>(stmt);
     this->curr = seq;
     seq->Statment1 = this->lower(seq->Statment1);
     seq->Statment2 = this->lower(seq->Statment2);
   } else if (dynamic_cast<ast::Function *>(stmt) != nullptr) {
-    ast::Function *func = dynamic_cast<ast::Function *>(stmt);
+    auto func = dynamic_cast<ast::Function *>(stmt);
     stmt = this->lowerFunction(func);
   } else if (dynamic_cast<ast::Class *>(stmt) != nullptr) {
-    ast::Class *cl = dynamic_cast<ast::Class *>(stmt);
+    auto cl = dynamic_cast<ast::Class *>(stmt);
     this->inclass = true;
     this->className = cl->ident.ident;
     cl->statment = this->lower(cl->statment);
@@ -32,9 +32,9 @@ ast::Statment *Lower::lower(ast::Statment *stmt) {
 }
 
 ast::Statment *Lower::lowerFunction(ast::Function *func) {
-  ast::Statment *res = func;
+  ast::Statment * res = func;
   if (func->decorator != "") {
-    ast::Function *newFunc = new ast::Function;
+    auto newFunc = new ast::Function;
 
     newFunc->args = func->args;
     newFunc->argTypes = func->argTypes;
@@ -47,12 +47,12 @@ ast::Statment *Lower::lowerFunction(ast::Function *func) {
 
     bool fromClass = false;
 
-    ast::Var *fpoint = new ast::Var;
+    auto fpoint = new ast::Var;
     fpoint->Ident = func->ident.ident;
-    ast::Var *Arg = new ast::Var;
+    auto Arg = new ast::Var;
     Arg->Ident = "_arg";
 
-    ast::CallExpr *call = new ast::CallExpr;
+    auto call = new ast::CallExpr;
     call->call = new ast::Call;
     call->call->Args = links::LinkedList<ast::Expr *>();
     call->call->Args.push(fpoint);
@@ -76,11 +76,11 @@ ast::Statment *Lower::lowerFunction(ast::Function *func) {
       call->call->modList.push(func->decorator);
     }
 
-    ast::Return *ret = new ast::Return;
+    auto ret = new ast::Return;
     ret->expr = call;
     newFunc->statment = ret;
 
-    ast::Sequence *seq = new ast::Sequence;
+    auto seq = new ast::Sequence;
     seq->Statment1 = func;
     seq->Statment2 = newFunc;
     res = seq;
@@ -91,7 +91,7 @@ ast::Statment *Lower::lowerFunction(ast::Function *func) {
 ast::Function *Lower::findFunction(ast::Statment *stmt, std::string ident,
                                    bool &fromClass) {
   if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
-    ast::Sequence *seq = dynamic_cast<ast::Sequence *>(stmt);
+   auto seq = dynamic_cast<ast::Sequence *>(stmt);
     this->curr = seq;
     if (this->findFunction(seq->Statment1, ident, fromClass) != nullptr)
       return this->findFunction(seq->Statment1, ident, fromClass);
@@ -99,11 +99,11 @@ ast::Function *Lower::findFunction(ast::Statment *stmt, std::string ident,
       return this->findFunction(seq->Statment2, ident, fromClass);
     seq->Statment2 = this->lower(seq->Statment2);
   } else if (dynamic_cast<ast::Function *>(stmt) != nullptr) {
-    ast::Function *func = dynamic_cast<ast::Function *>(stmt);
+    auto func = dynamic_cast<ast::Function *>(stmt);
     if (func->ident.ident == ident)
       return func;
   } else if (dynamic_cast<ast::Class *>(stmt) != nullptr) {
-    ast::Class *cl = dynamic_cast<ast::Class *>(stmt);
+    auto cl = dynamic_cast<ast::Class *>(stmt);
     if (this->findFunction(cl->statment, ident, fromClass) != nullptr) {
       fromClass = true;
       bool trash;
