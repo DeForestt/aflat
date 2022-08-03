@@ -133,9 +133,9 @@ void build(std::string path, std::string output, int mutability = 0) {
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;
 
-  std::string filename = getExePath();
-  std::string exepath = filename.substr(0, filename.find_last_of("/"));
-  std::string libPath =
+  auto filename = getExePath();
+  auto exepath = filename.substr(0, filename.find_last_of("/"));
+  auto libPath =
       exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/head/";
   std::ifstream ifs(path);
   std::string content((std::istreambuf_iterator<char>(ifs)),
@@ -154,17 +154,17 @@ void build(std::string path, std::string output, int mutability = 0) {
     tokens.invert();
     parse::Parser parser(mutability);
 
-    ast::Statment *Prog = parser.parseStmt(tokens);
+    auto Prog = parser.parseStmt(tokens);
 
-    parse::lower::Lowerer lower = parse::lower::Lowerer(Prog);  
+    auto lower = parse::lower::Lowerer(Prog);  
   
-    std::string outputID = output.substr(0, output.find_last_of("."));
+    auto outputID = output.substr(0, output.find_last_of("."));
     if (outputID.find("/") != std::string::npos) {
       outputID = outputID.substr(outputID.find_last_of("/") + 1);
     }
 
     gen::CodeGenerator genny(outputID);
-    asmc::File file = genny.GenSTMT(Prog);
+    auto file = genny.GenSTMT(Prog);
     file.collect();
 
     file.text.invert();
@@ -230,7 +230,7 @@ std::string remove_char(std::string str, char ch) {
  */
 std::string getExePath() {
   char result[200];
-  ssize_t count = readlink("/proc/self/exe", result, 200);
+  auto count = readlink("/proc/self/exe", result, 200);
   return std::string(result, (count > 0) ? count : 0);
 }
 
@@ -241,9 +241,9 @@ std::string getExePath() {
  * return value:    void
  */
 void buildTemplate(std::string value) {
-  std::string filename = getExePath();
-  std::string exepath = filename.substr(0, filename.find_last_of("/"));
-  std::string libPath =
+  auto filename = getExePath();
+  auto exepath = filename.substr(0, filename.find_last_of("/"));
+  auto libPath =
       exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std";
   std::filesystem::create_directories(value);
   std::filesystem::create_directories(value + "/src");
@@ -251,8 +251,8 @@ void buildTemplate(std::string value) {
   std::filesystem::create_directories(value + "/head");
   std::filesystem::create_directories(value + "/bin");
 
-  std::filesystem::path cwd = std::filesystem::current_path();
-  std::string root = cwd.string() + "/" + value;
+  auto cwd = std::filesystem::current_path();
+  auto root = cwd.string() + "/" + value;
   std::ofstream outfile(value + "/src/main.af");
   outfile << ".needs <std>\n";
   
@@ -305,9 +305,9 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
     line = remove_char(line, '\t');
 
     // get a copy of the line after the first char
-    std::string copy = line.substr(1);
+    auto copy = line.substr(1);
     copy = remove_char(copy, ' ');
-    std::string lowerCaseCopy = copy;
+    auto lowerCaseCopy = copy;
     std::transform(lowerCaseCopy.begin(), lowerCaseCopy.end(),
                    lowerCaseCopy.begin(), ::tolower);
 
@@ -326,8 +326,8 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
 
       // Check if path is in the pathList
       bool found = false;
-      for (int i = 0; i < pathList.size(); i++) {
-        if (pathList[i] == addPath) {
+      for (auto path : pathList) {
+        if (path == addPath) {
           found = true;
           break;
         }
@@ -356,8 +356,8 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
 
       // Check if path is in the pathList
       bool found = false;
-      for (int i = 0; i < pathList.size(); i++) {
-        if (pathList[i] == addPath) {
+      for (auto path : pathList) {
+        if (path == addPath) {
           found = true;
           break;
         }
@@ -377,7 +377,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
     };
     // check if line starts with 'settings'
     if (line.substr(0, 3) == "set") {
-      std::string setting = line.substr(4);
+      auto setting = line.substr(4);
       if (setting == "debug") {
         debug = true;
       } else if (setting.substr(0, 3) == "mut") {
@@ -408,7 +408,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
     ofile = "./bin/a.test ";
   };
 
-  std::string gcc = "gcc -O0 -no-pie -o " + ofile + linkerList;
+  auto gcc = "gcc -O0 -no-pie -o " + ofile + linkerList;
   if (debug) {
     gcc = "gcc -O0 -g -no-pie -o " + ofile + linkerList;
   }

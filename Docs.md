@@ -35,12 +35,18 @@ An 8 bit memory address.  In aflat, pointers point to any type
 adr a = NULL;
 ```
 
+## User Defined Types...
+Any Type Defined by a user will be an 8 bit memory refrence to the given tyoe
+```js
+Type a = new Type();
+```
+
 ## Functions
 
 ### Syntax
 Functions in aflat are defined with the following syntax:
 ```c
-<access> <return Type> <function name>(<arguments>){
+<access> <return Type> <function name> : <decorator name> (<arguments>){
     <function body>
 };
 ```
