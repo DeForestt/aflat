@@ -9,49 +9,49 @@ parse::Parser::Parser(int mutability = 0) {
   this->mutability = mutability;
 
   // Int Type
-  ast::Type Int = ast::Type();
+  auto Int = ast::Type();
   Int.typeName = "int";
   Int.opType = asmc::Hard;
   Int.size = asmc::DWord;
 
   // Sort Type
-  ast::Type Short = ast::Type();
+  auto Short = ast::Type();
   Short.typeName = "short";
   Short.opType = asmc::Hard;
   Short.size = asmc::Word;
 
   // Char Type
-  ast::Type Char = ast::Type();
+  auto Char = ast::Type();
   Char.typeName = "char";
   Char.opType = asmc::Hard;
   Char.size = asmc::Byte;
 
   // Long Type
-  ast::Type Long = ast::Type();
+  auto Long = ast::Type();
   Long.typeName = "long";
   Long.opType = asmc::Hard;
   Long.size = asmc::QWord;
 
   // Pointer Type
-  ast::Type Adr = ast::Type();
+  auto Adr = ast::Type();
   Adr.typeName = "adr";
   Adr.opType = asmc::Hard;
   Adr.size = asmc::QWord;
 
   // Byte type
-  ast::Type Byte = ast::Type();
+  auto Byte = ast::Type();
   Byte.typeName = "byte";
   Byte.opType = asmc::Hard;
   Byte.size = asmc::Byte;
 
   // Float Type
-  ast::Type Float = ast::Type();
+  auto Float = ast::Type();
   Float.typeName = "float";
   Float.opType = asmc::Float;
   Float.size = asmc::DWord;
 
   // Bool Type
-  ast::Type Bool = ast::Type();
+  auto Bool = ast::Type();
   Bool.typeName = "bool";
   Bool.opType = asmc::Hard;
   Bool.size = asmc::Byte;
