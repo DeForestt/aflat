@@ -36,7 +36,8 @@ void gen::scope::ScopeManager::reset() {
   this->scopeStack.push_back(0);
 }
 
-int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type, bool mask, bool mut = true) {
+int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type,
+                                     bool mask, bool mut = true) {
   gen::Symbol sym = gen::Symbol();
 
   // if the symbol is already in the stack, throw an error
@@ -64,14 +65,16 @@ int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type, bool ma
 
 void gen::scope::ScopeManager::pushScope() { this->scopeStack.push_back(0); };
 
-void gen::scope::ScopeManager::popScope(CodeGenerator * callback, asmc::File &OutputFile, bool fPop = false) {
+void gen::scope::ScopeManager::popScope(CodeGenerator *callback,
+                                        asmc::File &OutputFile,
+                                        bool fPop = false) {
   int size = this->scopeStack.back();
   for (int i = 0; i < size; i++) {
     this->stackPos -= sizeToInt(this->stack.back().type.size) *
                       this->stack.back().type.arraySize;
     gen::Symbol sym = this->stack.back();
-    if (sym.symbol == ""){
-      //OutputFile << callback->deScope(sym);
+    if (sym.symbol == "") {
+      // OutputFile << callback->deScope(sym);
     }
     this->stack.pop_back();
   }

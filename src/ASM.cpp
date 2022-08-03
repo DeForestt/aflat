@@ -243,7 +243,7 @@ std::string asmc::Sar::toString() {
 std::string asmc::Div::toString() {
   if (this->opType == asmc::Float)
     return "\tdivss\t" + this->op1 + ", " + this->op2 + "\n";
-  
+
   return "\tcltd\n\tidiv\t" + this->op1 + "\n";
 }
 
