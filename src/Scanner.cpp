@@ -11,7 +11,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
     if (input[i] == '\n')
       lineCount++;
     if (std::isalpha(input[i]) || input[i] == '_') {
-      lex::LObj *l_obj = new LObj();
+      auto l_obj = new LObj();
       l_obj->meta = "";
       while (std::isalpha(input[i]) || std::isdigit(input[i]) ||
              input[i] == '_' || input[i] == '-') {
@@ -22,13 +22,13 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
       tokens.push(l_obj);
     } else if (std::isdigit(input[i]) || input[i] == '-') {
       if (input[i] == '-' && !std::isdigit(input[i + 1])) {
-        lex::OpSym *sym = new lex::OpSym;
+        auto sym = new lex::OpSym;
         sym->Sym = '-';
         i++;
         sym->lineCount = lineCount;
         tokens << sym;
       } else {
-        lex::INT *IntLit = new lex::INT();
+        auto IntLit = new lex::INT();
         IntLit->value = input[i];
         i++;
 
@@ -46,7 +46,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
                                  " on line " + std::to_string(lineCount));
           }
 
-          lex::FloatLit *FloatLit = new lex::FloatLit();
+          auto *FloatLit = new lex::FloatLit();
           FloatLit->value = IntLit->value;
           FloatLit->lineCount = lineCount;
           tokens << FloatLit;
@@ -56,7 +56,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
 
     } else if (input[i] == '#') {
 
-      lex::Long *IntLit = new lex::Long();
+      auto*IntLit = new lex::Long();
       i++;
 
       while (std::isdigit(input[i])) {
@@ -69,7 +69,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
     } else if (std::isspace(input[i])) {
       i++;
     } else if (input[i] == '\"') {
-      lex::StringObj *stringObj = new StringObj();
+      auto *stringObj = new StringObj();
       stringObj->value = "";
       i++;
       while (input[i] != '\"') {
@@ -107,7 +107,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
       i++;
       tokens.push(stringObj);
     } else if (input[i] == '\'') {
-      lex::CharObj *charobj = new CharObj();
+      auto charobj = new CharObj();
       i++;
       if (input[i] == '\\') {
         i++;
@@ -139,26 +139,26 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
       tokens << charobj;
       i++;
     } else if (input[i] == ';') {
-      lex::OpSym *semi = new OpSym;
+      auto semi = new OpSym;
       semi->Sym = input[i];
       tokens.push(semi);
       i++;
     } else if (input[i] == '?') {
-      lex::Ref *Ref = new lex::Ref;
+      auto Ref = new lex::Ref;
       tokens << Ref;
       i++;
     } else if (input[i] == '(') {
-      lex::OpSym *cPrenth = new OpSym;
+      auto cPrenth = new OpSym;
       cPrenth->Sym = input[i];
       tokens.push(cPrenth);
       i++;
     } else if (input[i] == ')') {
-      lex::OpSym *cPrenth = new OpSym;
+      auto cPrenth = new OpSym;
       cPrenth->Sym = input[i];
       tokens.push(cPrenth);
       i++;
     } else if (input[i] == '{') {
-      lex::OpSym *cPrenth = new OpSym;
+      auto cPrenth = new OpSym;
       cPrenth->Sym = input[i];
       tokens.push(cPrenth);
       i++;
@@ -169,23 +169,24 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
       i++;
     } else if (input[i] == '=') {
       if (input[i + 1] == '=') {
-        lex::Symbol *equ = new lex::Symbol;
+        auto equ = new lex::Symbol;
         equ->meta = "==";
         i++;
         tokens << equ;
       } else {
-        lex::OpSym *equ = new OpSym;
+        auto equ = new OpSym;
         equ->Sym = input[i];
         tokens << equ;
       }
       i++;
     } else if (input[i] == '<') {
-      lex::Symbol *sym = new lex::Symbol;
+      auto sym = new lex::Symbol;
       sym->meta = "<";
       if (input[i + 1] == '<') {
-        lex::OpSym *opSym = new lex::OpSym;
+        auto opSym = new lex::OpSym;
         opSym->Sym = '<';
         tokens << opSym;
+        free(sym);
         i++;
       } else if (input[i + 1] == '=') {
         sym->meta = "<=";
@@ -195,11 +196,12 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
         tokens << sym;
       i++;
     } else if (input[i] == '>') {
-      lex::Symbol *sym = new lex::Symbol;
+      auto *sym = new lex::Symbol;
       sym->meta = ">";
       if (input[i + 1] == '>') {
-        lex::OpSym *opSym = new lex::OpSym;
+        auto *opSym = new lex::OpSym;
         opSym->Sym = '>';
+        free(sym);
         tokens << opSym;
         i++;
       } else if (input[i + 1] == '=') {
@@ -210,11 +212,12 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
         tokens << sym;
       i++;
     } else if (input[i] == '|') {
-      lex::OpSym *sym = new lex::OpSym;
+      auto *sym = new lex::OpSym;
       sym->Sym = '|';
       if (input[i + 1] == '|') {
-        lex::Symbol *opSym = new lex::Symbol;
+        auto opSym = new lex::Symbol;
         opSym->meta = "||";
+        free(sym);
         tokens << opSym;
         i++;
       } else
@@ -222,68 +225,68 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
       i++;
     } else if (input[i] == '!') {
       if (input[i + 1] == '=') {
-        lex::Symbol *equ = new lex::Symbol;
+        auto equ = new lex::Symbol;
         equ->meta = "!=";
         i++;
         tokens << equ;
       } else {
-        lex::OpSym *equ = new OpSym;
+        auto equ = new OpSym;
         equ->Sym = input[i];
         tokens << equ;
       }
       i++;
     } else if (input[i] == ',') {
-      lex::OpSym *com = new OpSym;
+      auto com = new OpSym;
       com->Sym = input[i];
       tokens.push(com);
       i++;
     } else if (input[i] == '+') {
-      lex::OpSym *add = new OpSym;
+      auto add = new OpSym;
       add->Sym = input[i];
       tokens.push(add);
       i++;
     } else if (input[i] == '[') {
-      lex::OpSym *add = new OpSym;
+      auto add = new OpSym;
       add->Sym = input[i];
       tokens.push(add);
       i++;
     } else if (input[i] == ']') {
-      lex::OpSym *add = new OpSym;
+      auto add = new OpSym;
       add->Sym = input[i];
       tokens.push(add);
       i++;
     } else if (input[i] == '*') {
-      lex::OpSym *mul = new OpSym;
+      auto mul = new OpSym;
       mul->Sym = input[i];
       tokens << mul;
       i++;
     } else if (input[i] == '%') {
-      lex::OpSym *mul = new OpSym;
+      auto mul = new OpSym;
       mul->Sym = input[i];
       tokens << mul;
       i++;
     } else if (input[i] == ':') {
-      lex::OpSym *col = new OpSym;
+      auto col = new OpSym;
       col->Sym = input[i];
       tokens << col;
       i++;
     } else if (input[i] == '@') {
-      lex::OpSym *at = new OpSym;
+      auto at = new OpSym;
       at->Sym = input[i];
       tokens << at;
       i++;
     } else if (input[i] == '.') {
-      lex::OpSym *mul = new OpSym;
+      auto mul = new OpSym;
       mul->Sym = input[i];
       tokens << mul;
       i++;
     } else if (input[i] == '/') {
-      lex::OpSym *div = new OpSym;
+      auto div = new OpSym;
       div->Sym = input[i];
       tokens << div;
       i++;
     } else if (input[i] == '&') {
-      lex::OpSym *andBit = new OpSym;
+      auto andBit = new OpSym;
       andBit->Sym = input[i];
       tokens << andBit;
       i++;
