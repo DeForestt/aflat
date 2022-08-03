@@ -8,63 +8,23 @@ parse::Parser::Parser(int mutability = 0) {
   this->typeList.foo = ast::Type::compair;
   this->mutability = mutability;
 
-  // Int Type
-  auto Int = ast::Type();
-  Int.typeName = "int";
-  Int.opType = asmc::Hard;
-  Int.size = asmc::DWord;
+  this->addType("int", asmc::Hard, asmc::DWord);
+  this->addType("short", asmc::Hard, asmc::Word);
+  this->addType("char", asmc::Hard, asmc::Byte);
+  this->addType("long", asmc::Hard, asmc::QWord);
+  this->addType("adr", asmc::Hard, asmc::QWord);
+  this->addType("byte", asmc::Hard, asmc::Byte);
+  this->addType("float", asmc::Float, asmc::DWord);
+  this->addType("bool", asmc::Hard, asmc::Byte);
+}
 
-  // Sort Type
-  auto Short = ast::Type();
-  Short.typeName = "short";
-  Short.opType = asmc::Hard;
-  Short.size = asmc::Word;
+void parse::Parser::addType(std::string name, asmc::OpType opType, asmc::Size size){
+  ast::Type type;
+  type.typeName = name;
+  type.opType = opType;
+  type.size = size;
 
-  // Char Type
-  auto Char = ast::Type();
-  Char.typeName = "char";
-  Char.opType = asmc::Hard;
-  Char.size = asmc::Byte;
-
-  // Long Type
-  auto Long = ast::Type();
-  Long.typeName = "long";
-  Long.opType = asmc::Hard;
-  Long.size = asmc::QWord;
-
-  // Pointer Type
-  auto Adr = ast::Type();
-  Adr.typeName = "adr";
-  Adr.opType = asmc::Hard;
-  Adr.size = asmc::QWord;
-
-  // Byte type
-  auto Byte = ast::Type();
-  Byte.typeName = "byte";
-  Byte.opType = asmc::Hard;
-  Byte.size = asmc::Byte;
-
-  // Float Type
-  auto Float = ast::Type();
-  Float.typeName = "float";
-  Float.opType = asmc::Float;
-  Float.size = asmc::DWord;
-
-  // Bool Type
-  auto Bool = ast::Type();
-  Bool.typeName = "bool";
-  Bool.opType = asmc::Hard;
-  Bool.size = asmc::Byte;
-
-  // Add Types to TypeList
-  this->typeList << Int;
-  this->typeList << Char;
-  this->typeList << Byte;
-  this->typeList << Adr;
-  this->typeList << Float;
-  this->typeList << Short;
-  this->typeList << Long;
-  this->typeList << Bool;
+  this->typeList << type;
 }
 
 int getOpPriority(ast::Op op) {

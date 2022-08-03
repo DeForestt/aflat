@@ -18,6 +18,7 @@ public:
 
 private:
   int mutability;
+  void addType(std::string name, asmc::OpType opType, asmc::Size size);
   links::SLinkedList<ast::Type, std::string> typeList;
   ast::Expr *parseExpr(links::LinkedList<lex::Token *> &tokens);
   ast::Statment *parseArgs(links::LinkedList<lex::Token *> &tokens, char delimn,
