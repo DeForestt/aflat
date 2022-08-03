@@ -72,8 +72,8 @@ public:
   asmc::OpType opType = asmc::Hard;
   int arraySize = 1;
   static bool compair(Type t, std::string name);
-  Type * typeHint = nullptr;
-  links::LinkedList <int> indecies;
+  Type *typeHint = nullptr;
+  links::LinkedList<int> indecies;
 };
 
 class Arg {
@@ -231,7 +231,7 @@ public:
 };
 
 class DecAssignArr : public Statment {
-  public:
+public:
   DecArr *declare;
   bool mute = true;
   Expr *expr;
@@ -253,10 +253,10 @@ public:
 };
 
 class Import : public Statment {
-  public:
-    std::vector<std::string> imports;
-    std::string path;
-    std::string nameSpace;
+public:
+  std::vector<std::string> imports;
+  std::string path;
+  std::string nameSpace;
 };
 
 class Var : public Expr {
@@ -329,8 +329,8 @@ public:
 };
 
 class StructList : public Expr {
-  public:
-    links::LinkedList<ast::Expr *> args;
+public:
+  links::LinkedList<ast::Expr *> args;
 };
 
 class Not : public Expr {

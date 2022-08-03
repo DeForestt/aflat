@@ -1,9 +1,9 @@
 #ifndef PARSE
 #define PARSE
 
-#include "Parser/AST.hpp"
 #include "LinkedList.hpp"
 #include "LinkedListS.hpp"
+#include "Parser/AST.hpp"
 #include "Scanner.hpp"
 #include <string>
 #include <vector>
@@ -21,7 +21,8 @@ private:
   links::SLinkedList<ast::Type, std::string> typeList;
   ast::Expr *parseExpr(links::LinkedList<lex::Token *> &tokens);
   ast::Statment *parseArgs(links::LinkedList<lex::Token *> &tokens, char delimn,
-                           char close, std::vector<ast::Type> &types, int &requiered);
+                           char close, std::vector<ast::Type> &types,
+                           int &requiered);
   ast::ConditionalExpr *parseCondition(links::LinkedList<lex::Token *> &tokens);
 };
 }; // namespace parse

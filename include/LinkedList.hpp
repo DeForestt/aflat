@@ -77,8 +77,9 @@ public:
   T *append(T input);
 
   /*A list of functions to use without mutating the List */
-  
-  /*Return the element pointed to by the pos Pointer and shifts the pos pointer by one*/
+
+  /*Return the element pointed to by the pos Pointer and shifts the pos pointer
+   * by one*/
   T shift();
 
   /*Return the element pointed to by the pos pointer without shifting*/
@@ -140,7 +141,7 @@ template <typename T> T *links::LinkedList<T>::append(T input) {
   return &temp->data;
 }
 
-template <typename T> void links::LinkedList<T>::reset(){
+template <typename T> void links::LinkedList<T>::reset() {
   this->pos = this->head;
 }
 
@@ -220,7 +221,8 @@ template <typename T> void links::LinkedList<T>::insert(T value, int index) {
   throw err::Exception("Index Out of Range");
 };
 
-template <typename T> void links::LinkedList<T>::insert_top(T value, int index){
+template <typename T>
+void links::LinkedList<T>::insert_top(T value, int index) {
   Node<T> *curr = this->head;
   int i = 0;
   int count = this->size();
@@ -259,7 +261,7 @@ template <typename T> void links::LinkedList<T>::invert() {
     prev = curr;
     curr = next;
   }
-  
+
   this->head = prev;
   this->pos = this->head;
 }
@@ -274,7 +276,7 @@ template <typename T> T links::LinkedList<T>::pop() {
   return data;
 }
 
-template <typename T> T links::LinkedList<T>::shift(){
+template <typename T> T links::LinkedList<T>::shift() {
   if (this->pos == nullptr)
     throw err::Exception("Position Pointer is null");
 

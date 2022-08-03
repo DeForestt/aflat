@@ -1,13 +1,13 @@
 #ifndef GEN
 #define GEN
 
-#include <tuple>
 #include "ASM.hpp"
-#include "Parser/AST.hpp"
-#include "LinkedList.hpp"
 #include "HashMap.hpp"
+#include "LinkedList.hpp"
 #include "LinkedListS.hpp"
+#include "Parser/AST.hpp"
 #include "Parser/Parser.hpp"
+#include <tuple>
 namespace gen {
 
 class Expr {
@@ -70,8 +70,8 @@ private:
   int selectReg = 0;
   bool globalScope = true;
   bool inFunction = false;
-  HashMap <ast::Statment *> includedMemo;
-  HashMap <std::string> nameSpaceTable;
+  HashMap<ast::Statment *> includedMemo;
+  HashMap<std::string> nameSpaceTable;
   ast::Function *currentFunction = nullptr;
 #pragma endregion
 
@@ -103,12 +103,10 @@ private:
                           asmc::File &OutputFile);
   bool canAssign(ast::Type type, std::string typeName, bool strict = false);
   std::string moduleId;
-  std::tuple<std::string, gen::Symbol, bool, asmc::File> 
-  resolveSymbol(std::string ident, 
-      links::LinkedList<std::string> modList, asmc::File &OutputFile,
-      links::LinkedList<ast::Expr *> indicies,
-      bool internal = false);
-
+  std::tuple<std::string, gen::Symbol, bool, asmc::File>
+  resolveSymbol(std::string ident, links::LinkedList<std::string> modList,
+                asmc::File &OutputFile, links::LinkedList<ast::Expr *> indicies,
+                bool internal = false);
 
 public:
   asmc::File GenSTMT(ast::Statment *stmt);
