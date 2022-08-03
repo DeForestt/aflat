@@ -8,7 +8,7 @@
 // helper functons
 
 std::string slice(std::string &str) {
-  int index = str.find("//");
+  auto index = str.find("//");
   if (index != std::string::npos) {
     str = str.substr(0, index);
   }
@@ -35,7 +35,7 @@ bool Definition::compair(Definition def, std::string str) {
 // PreProcessor
 
 PreProcessor::PreProcessor() {
-  std::filesystem::path cwd = std::filesystem::current_path();
+  auto cwd = std::filesystem::current_path();
   this->root = cwd.string();
   this->definitions.foo = Definition::compair;
 }
@@ -52,7 +52,7 @@ std::string PreProcessor::PreProcess(std::string code, std::string libPath) {
   std::string line;
 
   while (getline(input_stringstream, line, '\n')) {
-    // Ignor multiline comments
+    // Ignore multiline comments
     if (line.find("/*") != std::string::npos) {
       while (line.find("*/") == std::string::npos) {
         getline(input_stringstream, line, '\n');
@@ -73,8 +73,8 @@ std::string PreProcessor::PreProcess(std::string code, std::string libPath) {
       output += this->Include(line, libPath);
     } else if (line.substr(0, 5) == ".root") {
       // changes the root directory
-      int startPos = line.find_first_of('\"') + 1;
-      int endPos = line.find_last_of('\"');
+      auto startPos = line.find_first_of('\"') + 1;
+      auto endPos = line.find_last_of('\"');
       root = line.substr(startPos, endPos - startPos);
     } else if (line.substr(0, 4) == ".def") {
       // create a definition
@@ -102,9 +102,9 @@ std::string PreProcessor::Include(std::string line, std::string libPath) {
   // check if the line has quotes
   if (line.find("\"") != std::string::npos) {
     // get the file name
-    int startPos = line.find_first_of('\"') + 1;
-    int endPos = line.find_last_of('\"');
-    std::string relpath = line.substr(startPos, endPos - startPos);
+    auto startPos = line.find_first_of('\"') + 1;
+    auto endPos = line.find_last_of('\"');
+    auto relpath = line.substr(startPos, endPos - startPos);
     // check if relative path starts with a '/'
     if (relpath[0] != '/') {
       relpath = "/" + relpath;
@@ -115,9 +115,9 @@ std::string PreProcessor::Include(std::string line, std::string libPath) {
     path = this->root + relpath;
   } else if (line.find("<") != std::string::npos) {
     // get the file name
-    int startPos = line.find_first_of('<') + 1;
-    int endPos = line.find_last_of('>');
-    std::string relpath = line.substr(startPos, endPos - startPos);
+    auto startPos = line.find_first_of('<') + 1;
+    auto endPos = line.find_last_of('>');
+    auto relpath = line.substr(startPos, endPos - startPos);
     // check if the file ends with .gs
     if (relpath.find(".gs") == std::string::npos) {
       relpath += ".gs";
@@ -132,22 +132,16 @@ std::string PreProcessor::Include(std::string line, std::string libPath) {
     output += content;
     // remove all new lines from output
     std::string cleanPut;
-    // output.reserve(output.size()); // optional, avoids buffer reallocations
-    // in the loop
-    //     for(size_t i = 0; i < output.size(); ++i)
-    //     if(output[i] != '\n') cleanPut += output[i];
-    // check if the file is in the list of includes
     if (std::find(this->includes.begin(), this->includes.end(), path) ==
         this->includes.end()) {
       this->includes.push_back(path);
       if (this->debug)
         return this->PreProcess(output, libPath);
       output = this->PreProcess(output, libPath);
-      output.reserve(
-          output.size()); // optional, avoids buffer reallocations in the loop
-      for (size_t i = 0; i < output.size(); ++i)
-        if (output[i] != '\n')
-          cleanPut += output[i];
+      output.reserve(output.size());
+      for (auto ch : output)
+        if (ch != '\n')
+          cleanPut += ch;
       return this->PreProcess(cleanPut, libPath);
     }
     return "";
@@ -178,9 +172,9 @@ void PreProcessor::Define(std::string line) {
   line = line.substr(4);
 
   // split line into two strings with the =
-  int equalsPos = line.find_first_of('=');
-  std::string name = trim(line.substr(0, equalsPos));
-  std::string value = trim(line.substr(equalsPos + 1));
+  auto equalsPos = line.find_first_of('=');
+  auto name = trim(line.substr(0, equalsPos));
+  auto value = trim(line.substr(equalsPos + 1));
 
   // Store in a Deffinition struct
   Definition def;
