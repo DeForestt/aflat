@@ -38,7 +38,7 @@ void gen::scope::ScopeManager::reset() {
 
 int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type,
                                      bool mask, bool mut = true) {
-  gen::Symbol sym = gen::Symbol();
+  auto sym = gen::Symbol();
 
   // if the symbol is already in the stack, throw an error
   for (int i = 0; i < this->stack.size(); i++) {
