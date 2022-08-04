@@ -1726,80 +1726,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
     }
 
   } else if (dynamic_cast<ast::DecAssign*>(STMT) != nullptr) {
-    /*
-        movl $0x0, -[SymbolT + size](rdp)
-        **also needs to be added to symbol table**
-    */
-    ast::DecAssign* decAssign = dynamic_cast<ast::DecAssign*>(STMT);
-    ast::Declare* dec = decAssign->declare;
-    int offset = this->getBytes(dec->type.size);
-
-    links::LinkedList<gen::Symbol>* Table;
-    Table = &this->SymbolTable;
-
-    if (!this->globalScope) {
-      if (this->scope == nullptr || this->inFunction) {
-        int byteMod = gen::scope::ScopeManager::getInstance()->assign(
-            dec->Ident, dec->type, dec->mask, decAssign->mute);
-
-        asmc::Mov* mov = new asmc::Mov();
-        gen::Expr expr =
-            this->GenExpr(decAssign->expr, OutputFile, dec->type.size);
-
-        this->canAssign(dec->type, expr.type);
-
-        asmc::Mov* mov2 = new asmc::Mov();
-        mov2->size = dec->type.size;
-        mov2->from = expr.access;
-        if (expr.op == asmc::Float)
-          mov2->to = this->registers["%xmm0"]->get(expr.size);
-        else
-          mov2->to = this->registers["%rbx"]->get(dec->type.size);
-
-        mov->op = expr.op;
-
-        mov2->op = expr.op;
-        mov->size = dec->type.size;
-        mov->from = this->registers["%rbx"]->get(dec->type.size);
-        mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
-
-        mov->from = mov2->to;
-
-        OutputFile.text << mov2;
-        OutputFile.text << mov;
-      } else {
-        // add the decAssign to the class default list
-        this->scope->defaultValues.push_back(*decAssign);
-        // genorate the declare
-        dec->mut = decAssign->mute;
-        OutputFile << this->GenSTMT(dec);
-      }
-    } else {
-      gen::Symbol Symbol;
-
-      Symbol.type = dec->type;
-      Symbol.symbol = dec->Ident;
-      Symbol.mutable_ = decAssign->mute;
-      Table = &this->GlobalSymbolTable;
-
-      asmc::LinkTask* var = new asmc::LinkTask();
-      asmc::Lable* lable = new asmc::Lable();
-
-      lable->lable = dec->Ident;
-      if (dec->type.size = asmc::QWord) {
-        var->command = "quad";
-      }
-      gen::Expr exp = this->GenExpr(decAssign->expr, OutputFile);
-      this->canAssign(dec->type, exp.type);
-      var->operand = exp.access.erase(0, 1);
-      Symbol.type.opType = exp.op;
-      OutputFile.data << lable;
-      OutputFile.data << var;
-      if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
-        alert("redefined veriable:" + dec->Ident);
-      Table->push(Symbol);
-    };
-
+    this->genDecAssign(dynamic_cast<ast::DecAssign*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::DecAssignArr*>(STMT)) {
     ast::DecAssignArr* decAssign = dynamic_cast<ast::DecAssignArr*>(STMT);
     ast::DecArr* dec = decAssign->declare;
@@ -2567,6 +2494,78 @@ void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
     OutputFile.bss << var;
     Table->push(Symbol);
   }
+}
+
+void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
+                                      asmc::File& OutputFile) {
+  ast::Declare* dec = decAssign->declare;
+  int offset = this->getBytes(dec->type.size);
+
+  links::LinkedList<gen::Symbol>* Table;
+  Table = &this->SymbolTable;
+
+  if (!this->globalScope) {
+    if (this->scope == nullptr || this->inFunction) {
+      int byteMod = gen::scope::ScopeManager::getInstance()->assign(
+          dec->Ident, dec->type, dec->mask, decAssign->mute);
+
+      auto mov = new asmc::Mov();
+      gen::Expr expr =
+          this->GenExpr(decAssign->expr, OutputFile, dec->type.size);
+
+      this->canAssign(dec->type, expr.type);
+
+      auto mov2 = new asmc::Mov();
+      mov2->size = dec->type.size;
+      mov2->from = expr.access;
+      if (expr.op == asmc::Float)
+        mov2->to = this->registers["%xmm0"]->get(expr.size);
+      else
+        mov2->to = this->registers["%rbx"]->get(dec->type.size);
+
+      mov->op = expr.op;
+
+      mov2->op = expr.op;
+      mov->size = dec->type.size;
+      mov->from = this->registers["%rbx"]->get(dec->type.size);
+      mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
+
+      mov->from = mov2->to;
+
+      OutputFile.text << mov2;
+      OutputFile.text << mov;
+    } else {
+      // add the decAssign to the class default list
+      this->scope->defaultValues.push_back(*decAssign);
+      // genorate the declare
+      dec->mut = decAssign->mute;
+      OutputFile << this->GenSTMT(dec);
+    }
+  } else {
+    gen::Symbol Symbol;
+
+    Symbol.type = dec->type;
+    Symbol.symbol = dec->Ident;
+    Symbol.mutable_ = decAssign->mute;
+    Table = &this->GlobalSymbolTable;
+
+    auto var = new asmc::LinkTask();
+    auto lable = new asmc::Lable();
+
+    lable->lable = dec->Ident;
+    if (dec->type.size = asmc::QWord) {
+      var->command = "quad";
+    }
+    gen::Expr exp = this->GenExpr(decAssign->expr, OutputFile);
+    this->canAssign(dec->type, exp.type);
+    var->operand = exp.access.erase(0, 1);
+    Symbol.type.opType = exp.op;
+    OutputFile.data << lable;
+    OutputFile.data << var;
+    if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
+      alert("redefined veriable:" + dec->Ident);
+    Table->push(Symbol);
+  };
 }
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
