@@ -1356,275 +1356,6 @@ void gen::CodeGenerator::GenArgs(ast::Statment* STMT, asmc::File& OutputFile) {
   }
 }
 
-ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
-                                          asmc::File& OutputFile) {
-  std::string mod = "";
-  ast::Function* func;
-  bool checkArgs = true;
-  call->modList.invert();
-  call->modList.reset();
-  std::string ident = call->ident;
-
-  std::string nsp = "";
-  if (this->nameSpaceTable.contains(ident)) {
-    nsp = this->nameSpaceTable.get(ident) + ".";
-    ident = nsp + call->modList.shift();
-  };
-
-  links::LinkedList<gen::Symbol>* Table;
-  Table = &this->SymbolTable;
-  links::LinkedList<std::string> mods = links::LinkedList<std::string>();
-  // first push rdx
-  links::LinkedList<std::string> stack;
-  asmc::Push* push = new asmc::Push();
-  push->op = this->registers["%rdx"]->get(asmc::QWord);
-  stack << push->op;
-  OutputFile.text << push;
-
-  this->intArgsCounter = 0;
-  int argsCounter = 0;
-  std::string allMods = "";
-  if (call->modList.pos == nullptr) {
-    func = this->nameTable[ident];
-    if (func == nullptr) {
-      gen::Symbol* smbl = gen::scope::ScopeManager::getInstance()->get(ident);
-      if (smbl == nullptr)
-        smbl = this->GlobalSymbolTable.search<std::string>(searchSymbol, ident);
-      if (smbl != nullptr) {
-        ast::Var* var = new ast::Var();
-        var->Ident = smbl->symbol;
-        var->modList = links::LinkedList<std::string>();
-
-        gen::Expr exp1 = this->GenExpr(var, OutputFile);
-
-        asmc::Mov* mov = new asmc::Mov();
-        mov->size = exp1.size;
-        mov->from = exp1.access;
-        mov->to = this->registers["%r11"]->get(exp1.size);
-        OutputFile.text << mov;
-
-        func = new ast::Function();
-        func->ident.ident = '*' + this->registers["%r11"]->get(exp1.size);
-        func->type.arraySize = 0;
-        func->type.size = asmc::QWord;
-        func->type.typeName = "--std--flex--function";
-        func->flex = true;
-        checkArgs = false;
-      };
-    }
-  } else {
-    std::string pubname;
-    gen::Symbol* sym = gen::scope::ScopeManager::getInstance()->get(ident);
-    if (sym == nullptr) alert("cannot find object: " + ident);
-    allMods += sym->symbol + ".";
-
-    ast::Type last = sym->type;
-    std::string my = sym->symbol;
-    // get the type of the original function
-    gen::Type* type = *this->typeList[last.typeName];
-
-    while (call->modList.pos != nullptr) {
-      bool addpub = true;
-      if (this->typeList[last.typeName] == nullptr)
-        alert("type not found " + last.typeName);
-      type = *this->typeList[last.typeName];
-      gen::Class* cl = dynamic_cast<gen::Class*>(type);
-      if (cl != nullptr) {
-        pubname = cl->Ident;
-        func = cl->nameTable[call->modList.touch()];
-        gen::Class* parent = cl->parent;
-        if (func == nullptr && parent) {
-          func = parent->nameTable[call->modList.touch()];
-          if (func != nullptr) pubname = parent->Ident;
-        }
-        if (func == nullptr) {
-          // search the class symbol table for a pointer
-          std::string id = call->modList.touch();
-          mods.push(id);
-          sym = cl->SymbolTable.search<std::string>(searchSymbol,
-                                                    call->modList.touch());
-          if (sym != nullptr && sym->type.typeName == "adr") {
-            call->modList.shift();
-            ast::Var* var = new ast::Var();
-            var->Ident = ident;
-            mods.invert();
-            var->modList = mods;
-
-            gen::Expr exp1 = this->GenExpr(var, OutputFile);
-
-            asmc::Mov* mov = new asmc::Mov();
-            mov->size = exp1.size;
-            mov->from = exp1.access;
-            mov->to = this->registers["%r11"]->get(exp1.size);
-            OutputFile.text << mov;
-
-            func = new ast::Function();
-            func->ident.ident = '*' + this->registers["%r11"]->get(exp1.size);
-            func->type = sym->type;
-            func->type.typeName = "--std--flex--function";
-            checkArgs = false;
-            func->type.size = asmc::QWord;
-            func->flex = true;
-            addpub = false;
-          }
-        } else {
-          call->modList.shift();
-          call->modList.invert();
-          call->modList.reset();
-          ast::Refrence* ref = new ast::Refrence();
-          ref->Ident = my;
-          ref->modList = call->modList;
-          ref->internal = true;
-          mod = "pub_" + pubname + "_";
-          if (!addpub) mod = "";
-          gen::Expr exp;
-          exp = this->GenExpr(ref, OutputFile);
-          asmc::Mov* mov = new asmc::Mov();
-          asmc::Mov* mov2 = new asmc::Mov();
-          asmc::Push* push = new asmc::Push();
-
-          mov->size = exp.size;
-          mov2->size = exp.size;
-
-          mov->from = '(' + exp.access + ')';
-          mov->to = this->registers["%eax"]->get(exp.size);
-          mov2->from = this->registers["%eax"]->get(exp.size);
-          mov2->to = this->intArgs[argsCounter].get(exp.size);
-          push->op = this->intArgs[argsCounter].get(asmc::QWord);
-          stack << this->intArgs[argsCounter].get(asmc::QWord);
-
-          argsCounter++;
-          OutputFile.text << push;
-          OutputFile.text << mov;
-          OutputFile.text << mov2;
-          break;
-        }
-      }
-      mods.push(call->modList.shift());
-      last = sym->type;
-      allMods += sym->symbol + ".";
-    };
-  };
-
-  if (call->publify != "") {
-    func = new ast::Function();
-    func->ident.ident = "pub_" + call->publify + "_" + ident;
-    func->type.typeName = call->publify;
-    func->type.size = asmc::QWord;
-    func->scopeName = call->publify;
-    if (ident != "init" && ident != "del") {
-      // find the function in the class
-      gen::Class* cl =
-          dynamic_cast<gen::Class*>(*this->typeList[call->publify]);
-      if (cl != nullptr) {
-        ast::Function* f = cl->nameTable[ident];
-        if (f == nullptr) {
-          alert("cannot find function: " + ident + " in class " +
-                call->publify);
-        };
-        func->type = f->type;
-        func->scope = f->scope;
-        func->scopeName = f->scopeName;
-        ast::Type t;
-        t.typeName = cl->Ident;
-        t.size = asmc::QWord;
-        func->argTypes = f->argTypes;
-        func->argTypes.push_back(t);
-      };
-    } else {
-      argsCounter++;
-      stack.push("%rdi");
-      // find the class
-      gen::Type* type = *this->typeList[call->publify];
-      if (type == nullptr) alert("type not found " + call->publify);
-      gen::Class* cl = dynamic_cast<gen::Class*>(type);
-      if (cl == nullptr) alert("not a class: " + call->publify);
-      ast::Function* f = cl->nameTable[ident];
-      if (f == nullptr)
-        alert("cannot find function: " + ident + " in " + cl->Ident);
-      func->argTypes = f->argTypes;
-    }
-    mod = "";
-  }
-
-  if (func == nullptr) alert("Cannot Find Function: " + ident + allMods);
-
-  if (func->scope == ast::Private && func->scopeName != "global") {
-    if (this->scope == nullptr)
-      alert("attempt to call private function: " + allMods + func->ident.ident +
-            " from global scope");
-    if (func->scopeName != this->scope->Ident)
-      alert("Attempt to call private function " + allMods + func->ident.ident +
-            " from wrong scope: " + this->scope->Ident +
-            " != " + func->scopeName);
-  }
-
-  call->Args.invert();
-  call->Args.reset();
-  links::LinkedList<ast::Expr*> args;
-  int i = 0;
-  if (call->Args.trail() < func->req)
-    alert("Too few arguments for function: " + ident +
-          " expected: " + std::to_string(func->argTypes.size()) +
-          " got: " + std::to_string(i + 1));
-
-  while (call->Args.trail() > 0) {
-    args.push(call->Args.touch());
-    gen::Expr exp = this->GenExpr(call->Args.shift(), OutputFile);
-    if (checkArgs) {
-      if (i >= func->argTypes.size()) {
-        alert("Too many arguments for function: " + ident +
-              " expected: " + std::to_string(func->argTypes.size()) +
-              " got: " + std::to_string(i + 1));
-      };
-      canAssign(func->argTypes.at(i), exp.type);
-    };
-    i++;
-    asmc::Mov* mov = new asmc::Mov();
-    asmc::Mov* mov2 = new asmc::Mov();
-    asmc::Push* push = new asmc::Push();
-    mov->size = exp.size;
-    mov2->size = exp.size;
-
-    mov->from = exp.access;
-    mov->to = this->registers["%eax"]->get(exp.size);
-    mov2->from = this->registers["%eax"]->get(exp.size);
-    mov2->to = this->intArgs[argsCounter].get(exp.size);
-    push->op = this->intArgs[argsCounter].get(asmc::QWord);
-    stack << this->intArgs[argsCounter].get(asmc::QWord);
-
-    argsCounter++;
-    OutputFile.text << push;
-    OutputFile.text << mov;
-    OutputFile.text << mov2;
-  };
-
-  while (argsCounter < func->argTypes.size()) {
-    asmc::Mov* move = new asmc::Mov();
-    move->size = asmc::QWord;
-    move->from = "$0";
-    move->to = this->intArgs[argsCounter].get(asmc::QWord);
-    argsCounter++;
-    OutputFile.text << move;
-  }
-
-  // call->Args = args;
-  call->Args.invert();
-  asmc::Call* calls = new asmc::Call;
-
-  calls->function = mod + func->ident.ident;
-  OutputFile.text << calls;
-  // push everything back on the stack
-  while (stack.count > 0) {
-    asmc::Pop* pop = new asmc::Pop();
-    pop->op = stack.pop();
-    OutputFile.text << pop;
-  }
-  intArgsCounter = 0;
-  ast::Function ret = *func;
-  return ret;
-};
-
 asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
   asmc::File OutputFile = asmc::File();
 
@@ -1669,90 +1400,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
   } else if (dynamic_cast<ast::Return*>(STMT) != nullptr) {
     this->genReturn(dynamic_cast<ast::Return*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Assign*>(STMT) != nullptr) {
-    ast::Assign* assign = dynamic_cast<ast::Assign*>(STMT);
-    bool global = false;
-
-    links::LinkedList<gen::Symbol>* Table = &this->SymbolTable;
-
-    std::tuple<std::string, gen::Symbol, bool, asmc::File> resolved =
-        this->resolveSymbol(assign->Ident, assign->modList, OutputFile,
-                            assign->indices);
-
-    if (!std::get<2>(resolved)) {
-      alert("undefined veriable:" + assign->Ident);
-    }
-
-    Symbol* symbol = &std::get<1>(resolved);
-
-    Symbol* fin = symbol;
-
-    // check if the symbol is a class
-    gen::Type** t = this->typeList[symbol->type.typeName];
-    if (t != nullptr && assign->modList.count == 0) {
-      gen::Class* cl = dynamic_cast<gen::Class*>(*t);
-      if (cl != nullptr) {
-        // check if the class has an overloaded operator =
-        ast::Function* func = cl->overloadTable[ast::Equ];
-        if (func != nullptr) {
-          // call the overloaded operator =
-          ast::Var* v = new ast::Var();
-          v->Ident = assign->Ident;
-          v->modList = assign->modList;
-          ast::Call* call = new ast::Call();
-          call->ident = func->ident.ident;
-          call->modList = assign->modList;
-          call->Args.push(v);
-          call->Args.push(assign->expr);
-          call->publify = cl->Ident;
-          ast::CallExpr* callExpr = new ast::CallExpr();
-          callExpr->call = call;
-          assign->expr = callExpr;
-        };
-      }
-    }
-
-    asmc::Mov* mov = new asmc::Mov();
-    asmc::Mov* mov2 = new asmc::Mov();
-    gen::Expr expr = this->GenExpr(assign->expr, OutputFile, symbol->type.size);
-    mov->op = expr.op;
-    mov2->op = expr.op;
-    mov->size = expr.size;
-    mov2->size = expr.size;
-    mov2->from = expr.access;
-
-    if (expr.op == asmc::Float)
-      mov2->to = this->registers["%xmm0"]->get(expr.size);
-    else
-      mov2->to = this->registers["%rbx"]->get(expr.size);
-    mov->from = mov2->to;
-
-    assign->modList.invert();
-    int tbyte = 0;
-
-    asmc::Size size;
-    std::string output = std::get<0>(resolved);
-    if (assign->refrence == true) {
-      asmc::Mov* m1 = new asmc::Mov;
-      m1->from = output;
-      m1->size = asmc::QWord;
-      m1->to = this->registers["%eax"]->get(asmc::QWord);
-      mov->to = "(" + this->registers["%eax"]->get(asmc::QWord) + ")";
-      OutputFile.text << m1;
-    } else {
-      this->canAssign(symbol->type, expr.type);
-      mov->to = output;
-    };
-
-    if (!assign->refrence && !fin->mutable_ && !assign->override) {
-      alert("cannot assign to const " + fin->symbol);
-    }
-
-    OutputFile.text << mov2;
-    OutputFile.text << mov;
-    OutputFile << std::get<3>(resolved);
+    this->genAssign(dynamic_cast<ast::Assign*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Call*>(STMT) != nullptr) {
-    ast::Call* call = dynamic_cast<ast::Call*>(STMT);
-    this->GenCall(call, OutputFile);
+    this->GenCall(dynamic_cast<ast::Call*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Push*>(STMT) != nullptr) {
     ast::Push* push = dynamic_cast<ast::Push*>(STMT);
     asmc::Mov* count = new asmc::Mov;
@@ -2586,6 +2236,360 @@ void gen::CodeGenerator::genReturn(ast::Return* ret, asmc::File& OutputFile) {
   auto re = new asmc::Return();
   OutputFile.text << re;
 }
+
+void gen::CodeGenerator::genAssign(ast::Assign* assign, asmc::File& OutputFile) {
+      bool global = false;
+
+    links::LinkedList<gen::Symbol>* Table = &this->SymbolTable;
+
+    std::tuple<std::string, gen::Symbol, bool, asmc::File> resolved =
+        this->resolveSymbol(assign->Ident, assign->modList, OutputFile,
+                            assign->indices);
+
+    if (!std::get<2>(resolved)) {
+      alert("undefined veriable:" + assign->Ident);
+    }
+
+    Symbol* symbol = &std::get<1>(resolved);
+
+    Symbol* fin = symbol;
+
+    // check if the symbol is a class
+    gen::Type** t = this->typeList[symbol->type.typeName];
+    if (t != nullptr && assign->modList.count == 0) {
+      gen::Class* cl = dynamic_cast<gen::Class*>(*t);
+      if (cl != nullptr) {
+        // check if the class has an overloaded operator =
+        ast::Function* func = cl->overloadTable[ast::Equ];
+        if (func != nullptr) {
+          // call the overloaded operator =
+          ast::Var* v = new ast::Var();
+          v->Ident = assign->Ident;
+          v->modList = assign->modList;
+          ast::Call* call = new ast::Call();
+          call->ident = func->ident.ident;
+          call->modList = assign->modList;
+          call->Args.push(v);
+          call->Args.push(assign->expr);
+          call->publify = cl->Ident;
+          ast::CallExpr* callExpr = new ast::CallExpr();
+          callExpr->call = call;
+          assign->expr = callExpr;
+        };
+      }
+    }
+
+    asmc::Mov* mov = new asmc::Mov();
+    asmc::Mov* mov2 = new asmc::Mov();
+    gen::Expr expr = this->GenExpr(assign->expr, OutputFile, symbol->type.size);
+    mov->op = expr.op;
+    mov2->op = expr.op;
+    mov->size = expr.size;
+    mov2->size = expr.size;
+    mov2->from = expr.access;
+
+    if (expr.op == asmc::Float)
+      mov2->to = this->registers["%xmm0"]->get(expr.size);
+    else
+      mov2->to = this->registers["%rbx"]->get(expr.size);
+    mov->from = mov2->to;
+
+    assign->modList.invert();
+    int tbyte = 0;
+
+    asmc::Size size;
+    std::string output = std::get<0>(resolved);
+    if (assign->refrence == true) {
+      asmc::Mov* m1 = new asmc::Mov;
+      m1->from = output;
+      m1->size = asmc::QWord;
+      m1->to = this->registers["%eax"]->get(asmc::QWord);
+      mov->to = "(" + this->registers["%eax"]->get(asmc::QWord) + ")";
+      OutputFile.text << m1;
+    } else {
+      this->canAssign(symbol->type, expr.type);
+      mov->to = output;
+    };
+
+    if (!assign->refrence && !fin->mutable_ && !assign->override) {
+      alert("cannot assign to const " + fin->symbol);
+    }
+
+    OutputFile.text << mov2;
+    OutputFile.text << mov;
+    OutputFile << std::get<3>(resolved);
+}
+
+ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
+                                          asmc::File& OutputFile) {
+  std::string mod = "";
+  ast::Function* func;
+  bool checkArgs = true;
+  call->modList.invert();
+  call->modList.reset();
+  std::string ident = call->ident;
+
+  std::string nsp = "";
+  if (this->nameSpaceTable.contains(ident)) {
+    nsp = this->nameSpaceTable.get(ident) + ".";
+    ident = nsp + call->modList.shift();
+  };
+
+  links::LinkedList<gen::Symbol>* Table;
+  Table = &this->SymbolTable;
+  links::LinkedList<std::string> mods = links::LinkedList<std::string>();
+  // first push rdx
+  links::LinkedList<std::string> stack;
+  asmc::Push* push = new asmc::Push();
+  push->op = this->registers["%rdx"]->get(asmc::QWord);
+  stack << push->op;
+  OutputFile.text << push;
+
+  this->intArgsCounter = 0;
+  int argsCounter = 0;
+  std::string allMods = "";
+  if (call->modList.pos == nullptr) {
+    func = this->nameTable[ident];
+    if (func == nullptr) {
+      gen::Symbol* smbl = gen::scope::ScopeManager::getInstance()->get(ident);
+      if (smbl == nullptr)
+        smbl = this->GlobalSymbolTable.search<std::string>(searchSymbol, ident);
+      if (smbl != nullptr) {
+        ast::Var* var = new ast::Var();
+        var->Ident = smbl->symbol;
+        var->modList = links::LinkedList<std::string>();
+
+        gen::Expr exp1 = this->GenExpr(var, OutputFile);
+
+        asmc::Mov* mov = new asmc::Mov();
+        mov->size = exp1.size;
+        mov->from = exp1.access;
+        mov->to = this->registers["%r11"]->get(exp1.size);
+        OutputFile.text << mov;
+
+        func = new ast::Function();
+        func->ident.ident = '*' + this->registers["%r11"]->get(exp1.size);
+        func->type.arraySize = 0;
+        func->type.size = asmc::QWord;
+        func->type.typeName = "--std--flex--function";
+        func->flex = true;
+        checkArgs = false;
+      };
+    }
+  } else {
+    std::string pubname;
+    gen::Symbol* sym = gen::scope::ScopeManager::getInstance()->get(ident);
+    if (sym == nullptr) alert("cannot find object: " + ident);
+    allMods += sym->symbol + ".";
+
+    ast::Type last = sym->type;
+    std::string my = sym->symbol;
+    // get the type of the original function
+    gen::Type* type = *this->typeList[last.typeName];
+
+    while (call->modList.pos != nullptr) {
+      bool addpub = true;
+      if (this->typeList[last.typeName] == nullptr)
+        alert("type not found " + last.typeName);
+      type = *this->typeList[last.typeName];
+      gen::Class* cl = dynamic_cast<gen::Class*>(type);
+      if (cl != nullptr) {
+        pubname = cl->Ident;
+        func = cl->nameTable[call->modList.touch()];
+        gen::Class* parent = cl->parent;
+        if (func == nullptr && parent) {
+          func = parent->nameTable[call->modList.touch()];
+          if (func != nullptr) pubname = parent->Ident;
+        }
+        if (func == nullptr) {
+          // search the class symbol table for a pointer
+          std::string id = call->modList.touch();
+          mods.push(id);
+          sym = cl->SymbolTable.search<std::string>(searchSymbol,
+                                                    call->modList.touch());
+          if (sym != nullptr && sym->type.typeName == "adr") {
+            call->modList.shift();
+            ast::Var* var = new ast::Var();
+            var->Ident = ident;
+            mods.invert();
+            var->modList = mods;
+
+            gen::Expr exp1 = this->GenExpr(var, OutputFile);
+
+            asmc::Mov* mov = new asmc::Mov();
+            mov->size = exp1.size;
+            mov->from = exp1.access;
+            mov->to = this->registers["%r11"]->get(exp1.size);
+            OutputFile.text << mov;
+
+            func = new ast::Function();
+            func->ident.ident = '*' + this->registers["%r11"]->get(exp1.size);
+            func->type = sym->type;
+            func->type.typeName = "--std--flex--function";
+            checkArgs = false;
+            func->type.size = asmc::QWord;
+            func->flex = true;
+            addpub = false;
+          }
+        } else {
+          call->modList.shift();
+          call->modList.invert();
+          call->modList.reset();
+          ast::Refrence* ref = new ast::Refrence();
+          ref->Ident = my;
+          ref->modList = call->modList;
+          ref->internal = true;
+          mod = "pub_" + pubname + "_";
+          if (!addpub) mod = "";
+          gen::Expr exp;
+          exp = this->GenExpr(ref, OutputFile);
+          asmc::Mov* mov = new asmc::Mov();
+          asmc::Mov* mov2 = new asmc::Mov();
+          asmc::Push* push = new asmc::Push();
+
+          mov->size = exp.size;
+          mov2->size = exp.size;
+
+          mov->from = '(' + exp.access + ')';
+          mov->to = this->registers["%eax"]->get(exp.size);
+          mov2->from = this->registers["%eax"]->get(exp.size);
+          mov2->to = this->intArgs[argsCounter].get(exp.size);
+          push->op = this->intArgs[argsCounter].get(asmc::QWord);
+          stack << this->intArgs[argsCounter].get(asmc::QWord);
+
+          argsCounter++;
+          OutputFile.text << push;
+          OutputFile.text << mov;
+          OutputFile.text << mov2;
+          break;
+        }
+      }
+      mods.push(call->modList.shift());
+      last = sym->type;
+      allMods += sym->symbol + ".";
+    };
+  };
+
+  if (call->publify != "") {
+    func = new ast::Function();
+    func->ident.ident = "pub_" + call->publify + "_" + ident;
+    func->type.typeName = call->publify;
+    func->type.size = asmc::QWord;
+    func->scopeName = call->publify;
+    if (ident != "init" && ident != "del") {
+      // find the function in the class
+      gen::Class* cl =
+          dynamic_cast<gen::Class*>(*this->typeList[call->publify]);
+      if (cl != nullptr) {
+        ast::Function* f = cl->nameTable[ident];
+        if (f == nullptr) {
+          alert("cannot find function: " + ident + " in class " +
+                call->publify);
+        };
+        func->type = f->type;
+        func->scope = f->scope;
+        func->scopeName = f->scopeName;
+        ast::Type t;
+        t.typeName = cl->Ident;
+        t.size = asmc::QWord;
+        func->argTypes = f->argTypes;
+        func->argTypes.push_back(t);
+      };
+    } else {
+      argsCounter++;
+      stack.push("%rdi");
+      // find the class
+      gen::Type* type = *this->typeList[call->publify];
+      if (type == nullptr) alert("type not found " + call->publify);
+      gen::Class* cl = dynamic_cast<gen::Class*>(type);
+      if (cl == nullptr) alert("not a class: " + call->publify);
+      ast::Function* f = cl->nameTable[ident];
+      if (f == nullptr)
+        alert("cannot find function: " + ident + " in " + cl->Ident);
+      func->argTypes = f->argTypes;
+    }
+    mod = "";
+  }
+
+  if (func == nullptr) alert("Cannot Find Function: " + ident + allMods);
+
+  if (func->scope == ast::Private && func->scopeName != "global") {
+    if (this->scope == nullptr)
+      alert("attempt to call private function: " + allMods + func->ident.ident +
+            " from global scope");
+    if (func->scopeName != this->scope->Ident)
+      alert("Attempt to call private function " + allMods + func->ident.ident +
+            " from wrong scope: " + this->scope->Ident +
+            " != " + func->scopeName);
+  }
+
+  call->Args.invert();
+  call->Args.reset();
+  links::LinkedList<ast::Expr*> args;
+  int i = 0;
+  if (call->Args.trail() < func->req)
+    alert("Too few arguments for function: " + ident +
+          " expected: " + std::to_string(func->argTypes.size()) +
+          " got: " + std::to_string(i + 1));
+
+  while (call->Args.trail() > 0) {
+    args.push(call->Args.touch());
+    gen::Expr exp = this->GenExpr(call->Args.shift(), OutputFile);
+    if (checkArgs) {
+      if (i >= func->argTypes.size()) {
+        alert("Too many arguments for function: " + ident +
+              " expected: " + std::to_string(func->argTypes.size()) +
+              " got: " + std::to_string(i + 1));
+      };
+      canAssign(func->argTypes.at(i), exp.type);
+    };
+    i++;
+    asmc::Mov* mov = new asmc::Mov();
+    asmc::Mov* mov2 = new asmc::Mov();
+    asmc::Push* push = new asmc::Push();
+    mov->size = exp.size;
+    mov2->size = exp.size;
+
+    mov->from = exp.access;
+    mov->to = this->registers["%eax"]->get(exp.size);
+    mov2->from = this->registers["%eax"]->get(exp.size);
+    mov2->to = this->intArgs[argsCounter].get(exp.size);
+    push->op = this->intArgs[argsCounter].get(asmc::QWord);
+    stack << this->intArgs[argsCounter].get(asmc::QWord);
+
+    argsCounter++;
+    OutputFile.text << push;
+    OutputFile.text << mov;
+    OutputFile.text << mov2;
+  };
+
+  while (argsCounter < func->argTypes.size()) {
+    asmc::Mov* move = new asmc::Mov();
+    move->size = asmc::QWord;
+    move->from = "$0";
+    move->to = this->intArgs[argsCounter].get(asmc::QWord);
+    argsCounter++;
+    OutputFile.text << move;
+  }
+
+  // call->Args = args;
+  call->Args.invert();
+  asmc::Call* calls = new asmc::Call;
+
+  calls->function = mod + func->ident.ident;
+  OutputFile.text << calls;
+  // push everything back on the stack
+  while (stack.count > 0) {
+    asmc::Pop* pop = new asmc::Pop();
+    pop->op = stack.pop();
+    OutputFile.text << pop;
+  }
+  intArgsCounter = 0;
+  ast::Function ret = *func;
+  return ret;
+};
+
+
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
   asmc::File file;
