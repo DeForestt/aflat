@@ -1633,63 +1633,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
   else if (dynamic_cast<ast::Sequence*>(STMT) != nullptr) {
     this->genSequence(dynamic_cast<ast::Sequence*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Function*>(STMT)) {
-   this->genFunction(dynamic_cast<ast::Function*>(STMT), OutputFile);
+    this->genFunction(dynamic_cast<ast::Function*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Declare*>(STMT) != nullptr) {
-    /*
-        movl $0x0, -[SymbolT + size](rdp)
-        **also needs to be added to symbol table**
-    */
-
-    ast::Declare* dec = dynamic_cast<ast::Declare*>(STMT);
-    int offset = this->getBytes(dec->type.size);
-    links::LinkedList<gen::Symbol>* Table;
-
-    if (!this->globalScope) {
-      // if the there  is no scope use the scope manager otherwise use the scope
-      if (this->scope == nullptr || this->inFunction) {
-        gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type,
-                                                        dec->mask, dec->mut);
-      } else {
-        // add the symbol to the class symbol table
-        Table = &this->scope->SymbolTable;
-
-        if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
-          alert("redefined veriable: " + dec->Ident);
-        gen::Symbol Symbol;
-        if (Table->head == nullptr) {
-          Symbol.byteMod = offset;
-        } else {
-          Symbol.byteMod = Table->head->data.byteMod + offset;
-        }
-        Symbol.type = dec->type;
-        Symbol.symbol = dec->Ident;
-        Symbol.mutable_ = dec->mut;
-        Table->push(Symbol);
-        // if the symbol is public add it to the public symbol table
-        if (dec->scope == ast::Public && this->scope != nullptr)
-          this->scope->publicSymbols.push(Symbol);
-      };
-    } else {
-      Table = &this->GlobalSymbolTable;
-      asmc::LinkTask* var = new asmc::LinkTask();
-      asmc::Lable* lable = new asmc::Lable();
-      if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
-        alert("redefined global veriable: " + dec->Ident);
-
-      lable->lable = dec->Ident;
-      if (dec->type.size = asmc::QWord) {
-        var->command = "quad";
-      };
-      gen::Symbol Symbol;
-
-      Symbol.type = dec->type;
-      Symbol.symbol = dec->Ident;
-      Symbol.mutable_ = dec->mut;
-      OutputFile.bss << lable;
-      OutputFile.bss << var;
-      Table->push(Symbol);
-    }
-
+    this->genDeclare(dynamic_cast<ast::Declare*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::DecArr*>(STMT) != nullptr) {
     /*
     movl $0x0, -[SymbolT + size](rdp)
@@ -2406,13 +2352,6 @@ void gen::CodeGenerator::genSequence(ast::Sequence* seq,
 
 void gen::CodeGenerator::genFunction(ast::Function* func,
                                      asmc::File& OutputFile) {
-  /*
-        ident:
-            push rbp
-            mov  rsp, rbp
-            this->GenSTMT()
-    */
-
   gen::scope::ScopeManager::getInstance()->pushScope();
   ast::Function* saveFunc = this->currentFunction;
   int saveIntArgs = intArgsCounter;
@@ -2577,7 +2516,58 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
   this->currentFunction = saveFunc;
 
   gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile, true);
-};
+}
+
+void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
+  int offset = this->getBytes(dec->type.size);
+  links::LinkedList<gen::Symbol>* Table;
+
+  if (!this->globalScope) {
+    // if the there  is no scope use the scope manager otherwise use the scope
+    if (this->scope == nullptr || this->inFunction) {
+      gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type,
+                                                      dec->mask, dec->mut);
+    } else {
+      // add the symbol to the class symbol table
+      Table = &this->scope->SymbolTable;
+
+      if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
+        alert("redefined veriable: " + dec->Ident);
+      gen::Symbol Symbol;
+      if (Table->head == nullptr) {
+        Symbol.byteMod = offset;
+      } else {
+        Symbol.byteMod = Table->head->data.byteMod + offset;
+      }
+      Symbol.type = dec->type;
+      Symbol.symbol = dec->Ident;
+      Symbol.mutable_ = dec->mut;
+      Table->push(Symbol);
+      // if the symbol is public add it to the public symbol table
+      if (dec->scope == ast::Public && this->scope != nullptr)
+        this->scope->publicSymbols.push(Symbol);
+    };
+  } else {
+    Table = &this->GlobalSymbolTable;
+    auto var = new asmc::LinkTask();
+    auto lable = new asmc::Lable();
+    if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
+      alert("redefined global veriable: " + dec->Ident);
+
+    lable->lable = dec->Ident;
+    if (dec->type.size = asmc::QWord) {
+      var->command = "quad";
+    };
+    gen::Symbol Symbol;
+
+    Symbol.type = dec->type;
+    Symbol.symbol = dec->Ident;
+    Symbol.mutable_ = dec->mut;
+    OutputFile.bss << lable;
+    OutputFile.bss << var;
+    Table->push(Symbol);
+  }
+}
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
   asmc::File file;

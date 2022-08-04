@@ -111,6 +111,7 @@ class CodeGenerator {
 
   void genSequence(ast::Sequence* seq, asmc::File& OutputFile);
   void genFunction(ast::Function* func, asmc::File& OutputFile);
+  void genDeclare(ast::Declare* dec, asmc::File& OutputFile);
 
  public:
   asmc::File GenSTMT(ast::Statment* stmt);
