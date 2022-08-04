@@ -2571,20 +2571,20 @@ void gen::CodeGenerator::genDecAssignArr(ast::DecAssignArr* decAssign,
 }
 
 void gen::CodeGenerator::genReturn(ast::Return* ret, asmc::File& OutputFile) {
-    auto mov = new asmc::Mov();
+  auto mov = new asmc::Mov();
 
-    gen::Expr from = this->GenExpr(ret->expr, OutputFile);
-    std::string move2 = (from.op == asmc::Float)
-                            ? this->registers["%xmm0"]->get(from.size)
-                            : this->registers["%rax"]->get(from.size);
-    mov->from = from.access;
-    mov->to = move2;
-    mov->size = from.size;
-    mov->op = from.op;
-    OutputFile.text << mov;
-    this->canAssign(this->returnType, from.type, true);
-    auto re = new asmc::Return();
-    OutputFile.text << re;
+  gen::Expr from = this->GenExpr(ret->expr, OutputFile);
+  std::string move2 = (from.op == asmc::Float)
+                          ? this->registers["%xmm0"]->get(from.size)
+                          : this->registers["%rax"]->get(from.size);
+  mov->from = from.access;
+  mov->to = move2;
+  mov->size = from.size;
+  mov->op = from.op;
+  OutputFile.text << mov;
+  this->canAssign(this->returnType, from.type, true);
+  auto re = new asmc::Return();
+  OutputFile.text << re;
 }
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
