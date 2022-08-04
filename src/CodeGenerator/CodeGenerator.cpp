@@ -1667,29 +1667,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
     assign->declare->scope = dec->scope;
     OutputFile << this->GenSTMT(assign);
   } else if (dynamic_cast<ast::Return*>(STMT) != nullptr) {
-    /*
-        mov [this.GenExpr(ret.value)]
-        pop rbp
-        ret
-    */
-
-    ast::Return* ret = dynamic_cast<ast::Return*>(STMT);
-
-    asmc::Mov* mov = new asmc::Mov();
-
-    gen::Expr from = this->GenExpr(ret->expr, OutputFile);
-    std::string move2 = (from.op == asmc::Float)
-                            ? this->registers["%xmm0"]->get(from.size)
-                            : this->registers["%rax"]->get(from.size);
-    mov->from = from.access;
-    mov->to = move2;
-    mov->size = from.size;
-    mov->op = from.op;
-    OutputFile.text << mov;
-    this->canAssign(this->returnType, from.type, true);
-    asmc::Return* re = new asmc::Return();
-    OutputFile.text << re;
-
+    this->genReturn(dynamic_cast<ast::Return*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Assign*>(STMT) != nullptr) {
     ast::Assign* assign = dynamic_cast<ast::Assign*>(STMT);
     bool global = false;
@@ -2590,6 +2568,23 @@ void gen::CodeGenerator::genDecAssignArr(ast::DecAssignArr* decAssign,
   assign->mute = decAssign->mute;
   assign->declare->scope = dec->scope;
   OutputFile << this->GenSTMT(assign);
+}
+
+void gen::CodeGenerator::genReturn(ast::Return* ret, asmc::File& OutputFile) {
+    auto mov = new asmc::Mov();
+
+    gen::Expr from = this->GenExpr(ret->expr, OutputFile);
+    std::string move2 = (from.op == asmc::Float)
+                            ? this->registers["%xmm0"]->get(from.size)
+                            : this->registers["%rax"]->get(from.size);
+    mov->from = from.access;
+    mov->to = move2;
+    mov->size = from.size;
+    mov->op = from.op;
+    OutputFile.text << mov;
+    this->canAssign(this->returnType, from.type, true);
+    auto re = new asmc::Return();
+    OutputFile.text << re;
 }
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
