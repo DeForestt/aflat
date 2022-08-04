@@ -108,8 +108,9 @@ class CodeGenerator {
       std::string ident, links::LinkedList<std::string> modList,
       asmc::File& OutputFile, links::LinkedList<ast::Expr*> indicies,
       bool internal = false);
-  
-  void genSequence(ast::Sequence * seq, asmc::File& OutputFile);
+
+  void genSequence(ast::Sequence* seq, asmc::File& OutputFile);
+  void genFunction(ast::Function* func, asmc::File& OutputFile);
 
  public:
   asmc::File GenSTMT(ast::Statment* stmt);

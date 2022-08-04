@@ -1631,7 +1631,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
   if (STMT->locked)
     OutputFile.text.push(new asmc::nop());
   else if (dynamic_cast<ast::Sequence*>(STMT) != nullptr) {
-    this->genSequence(dynamic_cast<ast::Sequence *>(STMT), OutputFile);
+    this->genSequence(dynamic_cast<ast::Sequence*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Function*>(STMT)) {
     /*
         ident:
@@ -2576,9 +2576,185 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
   return OutputFile;
 }
 
-void gen::CodeGenerator::genSequence(ast::Sequence * seq, asmc::File& OutputFile){
-    OutputFile << this->GenSTMT(seq->Statment1);
-    OutputFile << this->GenSTMT(seq->Statment2);
+void gen::CodeGenerator::genSequence(ast::Sequence* seq,
+                                     asmc::File& OutputFile) {
+  OutputFile << this->GenSTMT(seq->Statment1);
+  OutputFile << this->GenSTMT(seq->Statment2);
+};
+
+void gen::CodeGenerator::genFunction(ast::Function* func,
+                                     asmc::File& OutputFile) {
+  /*
+        ident:
+            push rbp
+            mov  rsp, rbp
+            this->GenSTMT()
+    */
+
+  gen::scope::ScopeManager::getInstance()->pushScope();
+  ast::Function* saveFunc = this->currentFunction;
+  int saveIntArgs = intArgsCounter;
+  bool isLambda = func->isLambda;
+
+  if (this->scope == nullptr) {
+    if (!func->isLambda) this->nameTable << *func;
+  } else {
+    if (!func->isLambda) func->scopeName = this->scope->Ident;
+    this->scope->nameTable << *func;
+    if (func->op != ast::None)
+      if (!func->isLambda) func->scopeName = this->scope->Ident;
+    this->scope->overloadTable << *func;
+    if (func->scope == ast::Public)
+      if (!func->isLambda) this->scope->publicNameTable << *func;
+  }
+
+  if (func->statment != nullptr) {
+    this->currentFunction = func;
+    bool saveIn = this->inFunction;
+    this->inFunction = true;
+    gen::Class* saveScope = this->scope;
+    bool saveGlobal = this->globalScope;
+    this->globalScope = false;
+
+    auto lable = new asmc::Lable;
+    if (this->scope == nullptr || func->isLambda)
+      lable->lable = func->ident.ident;
+    else
+      lable->lable = "pub_" + scope->Ident + "_" + func->ident.ident;
+    if (func->scopeName != "global") {
+      lable->lable = "pub_" + func->scopeName + "_" + func->ident.ident;
+      gen::Type* tscope = *this->typeList[func->scopeName];
+      if (tscope == nullptr) alert("Failed to locate function Scope");
+      if (dynamic_cast<gen::Class*>(tscope) == nullptr)
+        alert("Can only scope to  a class");
+      this->scope = dynamic_cast<gen::Class*>(tscope);
+    }
+
+    asmc::Push* push = new asmc::Push();
+    push->op = "%rbp";
+    asmc::Mov* mov = new asmc::Mov();
+    mov->size = asmc::QWord;
+    mov->from = "%rsp";
+    mov->to = "%rbp";
+
+    if (func->scope == ast::Export) {
+      auto link = new asmc::LinkTask();
+      link->command = "global";
+      link->operand = this->moduleId + '.' + lable->lable;
+      OutputFile.linker.push(link);
+      auto lable2 = new asmc::Lable();
+      lable2->lable = this->moduleId + '.' + lable->lable;
+      OutputFile.text << lable2;
+    }
+
+    OutputFile.text.push(lable);
+    OutputFile.text.push(push);
+    OutputFile.text.push(mov);
+    // push the callee preserved registers
+    auto push2 = new asmc::Push();
+    push2->op = "%rbx";
+    OutputFile.text.push(push2);
+    auto push3 = new asmc::Push();
+
+    int AlignmentLoc = OutputFile.text.count;
+    this->intArgsCounter = 0;
+    this->returnType = func->type;
+    auto link = new asmc::LinkTask();
+    link->command = "global";
+    link->operand = lable->lable;
+
+    if (this->scope != nullptr && !func->isLambda) {
+      // add the opject to the arguments of the function
+      int offset = this->getBytes(asmc::QWord);
+      int size = asmc::QWord;
+      gen::Symbol symbol;
+      auto movy = new asmc::Mov();
+      movy->from = this->intArgs[intArgsCounter].get(asmc::QWord);
+
+      symbol.symbol = "my";
+      symbol.mutable_ = false;
+
+      auto ty = ast::Type();
+      ty.typeName = scope->Ident;
+      ty.size = asmc::QWord;
+      symbol.type = ty;
+
+      int byteMod =
+          gen::scope::ScopeManager::getInstance()->assign("my", ty, false);
+
+      movy->size = asmc::QWord;
+      movy->to = "-" + std::to_string(byteMod) + +"(%rbp)";
+      OutputFile.text << movy;
+      this->intArgsCounter++;
+    };
+    this->GenArgs(func->args, OutputFile);
+    if (!isLambda && func->scope == ast::Public) OutputFile.linker.push(link);
+
+    // if the function is 'init' and scope is a class, add the default value
+    if (func->ident.ident == "init" && this->scope != nullptr) {
+      // add all of the default values from the scopes list
+      for (ast::DecAssign it : this->scope->defaultValues) {
+        ast::Assign assign = ast::Assign();
+        assign.Ident = ("my");
+        assign.override = true;
+        assign.expr = it.expr;
+        assign.modList = LinkedList<std::string>();
+        assign.modList.push(it.declare->Ident);
+        OutputFile << this->GenSTMT(&assign);
+      }
+    }
+
+    asmc::File file = this->GenSTMT(func->statment);
+    // check if the last statement is a return statement
+    if (file.text.count > 0) {
+      asmc::Instruction* last = file.text.peek();
+      while (dynamic_cast<asmc::nop*>(last) != nullptr) {
+        file.text.pop();
+        last = file.text.peek();
+      };
+      if (dynamic_cast<asmc::Return*>(last) == nullptr) {
+        // if the function name is init then we need to alert to return 'my'
+        if (func->ident.ident == "init") {
+          gen::Symbol* my = gen::scope::ScopeManager::getInstance()->get("my");
+          asmc::Mov* mov = new asmc::Mov();
+          mov->size = asmc::QWord;
+          mov->from = '-' + std::to_string(my->byteMod) + "(%rbp)";
+          ;
+          mov->to = this->registers["%rax"]->get(asmc::QWord);
+          // pop rbx
+          asmc::Pop* pop = new asmc::Pop();
+          pop->op = "%rbx";
+          file.text.push(pop);
+          file.text.push(mov);
+        }
+        asmc::Return* ret = new asmc::Return();
+        file.text.push(ret);
+      }
+    } else {
+      auto pop = new asmc::Pop();
+      pop->op = "%rbx";
+      file.text.push(pop);
+      auto ret = new asmc::Return();
+      file.text.push(ret);
+    }
+    OutputFile << file;
+
+    auto sub = new asmc::Subq;
+    sub->op1 =
+        "$" + std::to_string(
+                  gen::scope::ScopeManager::getInstance()->getStackAlignment());
+    sub->op2 = this->registers["%rsp"]->get(asmc::QWord);
+    OutputFile.text.insert(sub, AlignmentLoc + 1);
+
+    this->scope = saveScope;
+    this->globalScope = saveGlobal;
+    this->inFunction = saveIn;
+  }
+
+  this->intArgsCounter = saveIntArgs;
+  this->currentFunction = saveFunc;
+
+  gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile, true);
 };
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
