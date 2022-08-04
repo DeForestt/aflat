@@ -1637,94 +1637,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
   } else if (dynamic_cast<ast::Declare*>(STMT) != nullptr) {
     this->genDeclare(dynamic_cast<ast::Declare*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::DecArr*>(STMT) != nullptr) {
-    /*
-    movl $0x0, -[SymbolT + size](rdp)
-    **also needs to be added to symbol table**
-    */
-    ast::DecArr* dec = dynamic_cast<ast::DecArr*>(STMT);
-    int offset = this->getBytes(dec->type.size);
-
-    int index = 1;
-    dec->indices.reset();
-    links::LinkedList<int> typeHolder;
-    while (dec->indices.pos != nullptr) {
-      ast::IntLiteral* lit =
-          dynamic_cast<ast::IntLiteral*>(dec->indices.shift());
-      if (lit == nullptr) alert("array index must be an integer");
-      index *= lit->val;
-      typeHolder.push(lit->val);
-    }
-    typeHolder.invert();
-
-    offset *= index;
-
-    ast::Type type = dec->type;
-    type.arraySize = index;
-    dec->type.arraySize = index;
-    links::LinkedList<gen::Symbol>* Table;
-    if (this->scope == nullptr || this->inFunction) {
-      int bMod = gen::scope::ScopeManager::getInstance()->assign(
-          "." + dec->ident, type, false);
-      // create a pointer to the array
-      ast::Type adr;
-      adr.arraySize = 1;
-      adr.opType = asmc::Hard;
-      adr.typeName = "adr";
-      adr.typeHint = &dec->type;
-      adr.size = asmc::QWord;
-      adr.indecies = typeHolder;
-      ast::Refrence* ref = new ast::Refrence();
-      ref->Ident = "." + dec->ident;
-
-      ast::DecAssign* assign = new ast::DecAssign();
-      assign->declare = &ast::Declare();
-      assign->declare->Ident = dec->ident;
-      assign->declare->type = adr;
-      assign->expr = ref;
-      assign->mute = dec->mut;
-      assign->declare->scope = dec->scope;
-
-      OutputFile << this->GenSTMT(assign);
-
-    } else {
-      Table = &this->scope->SymbolTable;
-
-      if (Table->search<std::string>(searchSymbol, dec->ident) != nullptr)
-        alert("redefined veriable:" + dec->ident);
-
-      gen::Symbol Symbol;
-
-      if (Table->head == nullptr) {
-        Symbol.byteMod = offset;
-      } else {
-        Symbol.byteMod = Table->head->data.byteMod + offset;
-      }
-      Symbol.type = dec->type;
-      Symbol.symbol = "." + dec->ident;
-      Table->push(Symbol);
-
-      // create a pointer to the array
-      ast::Type adr;
-      adr.arraySize = 1;
-      adr.opType = asmc::Hard;
-      adr.typeName = "adr";
-      adr.typeHint = &dec->type;
-      adr.indecies = typeHolder;
-      adr.size = asmc::QWord;
-      ast::Refrence* ref = new ast::Refrence();
-      ref->Ident = "my";
-      ref->modList.push("." + dec->ident);
-
-      ast::DecAssign* assign = new ast::DecAssign();
-      assign->declare = &ast::Declare();
-      assign->declare->Ident = dec->ident;
-      assign->declare->type = adr;
-      assign->expr = ref;
-      assign->mute = dec->mut;
-      assign->declare->scope = dec->scope;
-      OutputFile << this->GenSTMT(assign);
-    }
-
+    this->genDecArr(dynamic_cast<ast::DecArr*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::DecAssign*>(STMT) != nullptr) {
     this->genDecAssign(dynamic_cast<ast::DecAssign*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::DecAssignArr*>(STMT)) {
@@ -2493,6 +2406,90 @@ void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
     OutputFile.bss << lable;
     OutputFile.bss << var;
     Table->push(Symbol);
+  }
+}
+
+void gen::CodeGenerator::genDecArr(ast::DecArr* dec, asmc::File& OutputFile) {
+  int offset = this->getBytes(dec->type.size);
+
+  int index = 1;
+  dec->indices.reset();
+  links::LinkedList<int> typeHolder;
+  while (dec->indices.pos != nullptr) {
+    ast::IntLiteral* lit = dynamic_cast<ast::IntLiteral*>(dec->indices.shift());
+    if (lit == nullptr) alert("array index must be an integer");
+    index *= lit->val;
+    typeHolder.push(lit->val);
+  }
+  typeHolder.invert();
+
+  offset *= index;
+
+  ast::Type type = dec->type;
+  type.arraySize = index;
+  dec->type.arraySize = index;
+  links::LinkedList<gen::Symbol>* Table;
+  if (this->scope == nullptr || this->inFunction) {
+    int bMod = gen::scope::ScopeManager::getInstance()->assign("." + dec->ident,
+                                                               type, false);
+    // create a pointer to the array
+    ast::Type adr;
+    adr.arraySize = 1;
+    adr.opType = asmc::Hard;
+    adr.typeName = "adr";
+    adr.typeHint = &dec->type;
+    adr.size = asmc::QWord;
+    adr.indecies = typeHolder;
+    ast::Refrence* ref = new ast::Refrence();
+    ref->Ident = "." + dec->ident;
+
+    ast::DecAssign* assign = new ast::DecAssign();
+    assign->declare = &ast::Declare();
+    assign->declare->Ident = dec->ident;
+    assign->declare->type = adr;
+    assign->expr = ref;
+    assign->mute = dec->mut;
+    assign->declare->scope = dec->scope;
+
+    OutputFile << this->GenSTMT(assign);
+
+  } else {
+    Table = &this->scope->SymbolTable;
+
+    if (Table->search<std::string>(searchSymbol, dec->ident) != nullptr)
+      alert("redefined veriable:" + dec->ident);
+
+    gen::Symbol Symbol;
+
+    if (Table->head == nullptr) {
+      Symbol.byteMod = offset;
+    } else {
+      Symbol.byteMod = Table->head->data.byteMod + offset;
+    }
+    Symbol.type = dec->type;
+    Symbol.symbol = "." + dec->ident;
+    Table->push(Symbol);
+
+    // create a pointer to the array
+    ast::Type adr;
+    adr.arraySize = 1;
+    adr.opType = asmc::Hard;
+    adr.typeName = "adr";
+    adr.typeHint = &dec->type;
+    adr.indecies = typeHolder;
+    adr.size = asmc::QWord;
+    ast::Refrence* ref = new ast::Refrence();
+    ref->Ident = "my";
+    ref->modList.push("." + dec->ident);
+
+    ast::DecAssign* assign = new ast::DecAssign();
+    assign->declare = &ast::Declare();
+    assign->declare->Ident = dec->ident;
+    assign->declare->type = adr;
+    assign->expr = ref;
+    assign->mute = dec->mut;
+    assign->declare->scope = dec->scope;
+    OutputFile << this->GenSTMT(assign);
   }
 }
 
