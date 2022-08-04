@@ -114,6 +114,8 @@ class CodeGenerator {
   void genDeclare(ast::Declare* dec, asmc::File& OutputFile);
   void genDecAssign(ast::DecAssign* decAssign, asmc::File& OutputFile);
   void genDecArr(ast::DecArr* dec, asmc::File& OutputFile);
+  void genDecAssignArr(ast::DecAssignArr* decAssign, asmc::File& OutputFile);
+
  public:
   asmc::File GenSTMT(ast::Statment* stmt);
   links::LinkedList<gen::Symbol> GenTable(

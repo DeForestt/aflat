@@ -2565,6 +2565,33 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
   };
 }
 
+void gen::CodeGenerator::genDecAssignArr(ast::DecAssignArr* decAssign,
+                                         asmc::File& OutputFile) {
+  ast::DecArr* dec = decAssign->declare;
+  ast::Type adr;
+  adr.arraySize = 1;
+  dec->indices.reset();
+  while (dec->indices.pos != nullptr) {
+    ast::IntLiteral* lit = dynamic_cast<ast::IntLiteral*>(dec->indices.shift());
+    if (lit == nullptr) alert("array index must be an integer");
+    adr.indecies.push(lit->val);
+  }
+  adr.indecies.invert();
+  adr.opType = asmc::Hard;
+  adr.size = asmc::QWord;
+  adr.typeName = "adr";
+  adr.typeHint = &dec->type;
+
+  ast::DecAssign* assign = new ast::DecAssign();
+  assign->declare = new ast::Declare();
+  assign->declare->Ident = dec->ident;
+  assign->declare->type = adr;
+  assign->expr = decAssign->expr;
+  assign->mute = decAssign->mute;
+  assign->declare->scope = dec->scope;
+  OutputFile << this->GenSTMT(assign);
+}
+
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
   asmc::File file;
   gen::Type** type = this->typeList[sym.type.typeName];
