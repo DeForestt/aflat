@@ -120,6 +120,8 @@ class CodeGenerator {
   void genPush(ast::Push* push, asmc::File& OutputFile);
   void genPull(ast::Pull* pull, asmc::File& OutputFile);
   void genIf(ast::If* ifStmt, asmc::File& OutputFile);
+  void genWhile(ast::While* loop, asmc::File& OutputFile);
+  void genFor(ast::For* loop, asmc::File& OPutputFile);
 
  public:
   asmc::File GenSTMT(ast::Statment* stmt);
