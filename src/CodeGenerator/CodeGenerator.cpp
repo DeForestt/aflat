@@ -2188,87 +2188,88 @@ void gen::CodeGenerator::genReturn(ast::Return* ret, asmc::File& OutputFile) {
   OutputFile.text << re;
 }
 
-void gen::CodeGenerator::genAssign(ast::Assign* assign, asmc::File& OutputFile) {
-      bool global = false;
+void gen::CodeGenerator::genAssign(ast::Assign* assign,
+                                   asmc::File& OutputFile) {
+  bool global = false;
 
-    links::LinkedList<gen::Symbol>* Table = &this->SymbolTable;
+  links::LinkedList<gen::Symbol>* Table = &this->SymbolTable;
 
-    std::tuple<std::string, gen::Symbol, bool, asmc::File> resolved =
-        this->resolveSymbol(assign->Ident, assign->modList, OutputFile,
-                            assign->indices);
+  std::tuple<std::string, gen::Symbol, bool, asmc::File> resolved =
+      this->resolveSymbol(assign->Ident, assign->modList, OutputFile,
+                          assign->indices);
 
-    if (!std::get<2>(resolved)) {
-      alert("undefined veriable:" + assign->Ident);
+  if (!std::get<2>(resolved)) {
+    alert("undefined veriable:" + assign->Ident);
+  }
+
+  Symbol* symbol = &std::get<1>(resolved);
+
+  Symbol* fin = symbol;
+
+  // check if the symbol is a class
+  gen::Type** t = this->typeList[symbol->type.typeName];
+  if (t != nullptr && assign->modList.count == 0) {
+    gen::Class* cl = dynamic_cast<gen::Class*>(*t);
+    if (cl != nullptr) {
+      // check if the class has an overloaded operator =
+      ast::Function* func = cl->overloadTable[ast::Equ];
+      if (func != nullptr) {
+        // call the overloaded operator =
+        ast::Var* v = new ast::Var();
+        v->Ident = assign->Ident;
+        v->modList = assign->modList;
+        ast::Call* call = new ast::Call();
+        call->ident = func->ident.ident;
+        call->modList = assign->modList;
+        call->Args.push(v);
+        call->Args.push(assign->expr);
+        call->publify = cl->Ident;
+        ast::CallExpr* callExpr = new ast::CallExpr();
+        callExpr->call = call;
+        assign->expr = callExpr;
+      };
     }
+  }
 
-    Symbol* symbol = &std::get<1>(resolved);
+  asmc::Mov* mov = new asmc::Mov();
+  asmc::Mov* mov2 = new asmc::Mov();
+  gen::Expr expr = this->GenExpr(assign->expr, OutputFile, symbol->type.size);
+  mov->op = expr.op;
+  mov2->op = expr.op;
+  mov->size = expr.size;
+  mov2->size = expr.size;
+  mov2->from = expr.access;
 
-    Symbol* fin = symbol;
+  if (expr.op == asmc::Float)
+    mov2->to = this->registers["%xmm0"]->get(expr.size);
+  else
+    mov2->to = this->registers["%rbx"]->get(expr.size);
+  mov->from = mov2->to;
 
-    // check if the symbol is a class
-    gen::Type** t = this->typeList[symbol->type.typeName];
-    if (t != nullptr && assign->modList.count == 0) {
-      gen::Class* cl = dynamic_cast<gen::Class*>(*t);
-      if (cl != nullptr) {
-        // check if the class has an overloaded operator =
-        ast::Function* func = cl->overloadTable[ast::Equ];
-        if (func != nullptr) {
-          // call the overloaded operator =
-          ast::Var* v = new ast::Var();
-          v->Ident = assign->Ident;
-          v->modList = assign->modList;
-          ast::Call* call = new ast::Call();
-          call->ident = func->ident.ident;
-          call->modList = assign->modList;
-          call->Args.push(v);
-          call->Args.push(assign->expr);
-          call->publify = cl->Ident;
-          ast::CallExpr* callExpr = new ast::CallExpr();
-          callExpr->call = call;
-          assign->expr = callExpr;
-        };
-      }
-    }
+  assign->modList.invert();
+  int tbyte = 0;
 
-    asmc::Mov* mov = new asmc::Mov();
-    asmc::Mov* mov2 = new asmc::Mov();
-    gen::Expr expr = this->GenExpr(assign->expr, OutputFile, symbol->type.size);
-    mov->op = expr.op;
-    mov2->op = expr.op;
-    mov->size = expr.size;
-    mov2->size = expr.size;
-    mov2->from = expr.access;
+  asmc::Size size;
+  std::string output = std::get<0>(resolved);
+  if (assign->refrence == true) {
+    asmc::Mov* m1 = new asmc::Mov;
+    m1->from = output;
+    m1->size = asmc::QWord;
+    m1->to = this->registers["%eax"]->get(asmc::QWord);
+    mov->to = "(" + this->registers["%eax"]->get(asmc::QWord) + ")";
+    OutputFile.text << m1;
+  } else {
+    this->canAssign(symbol->type, expr.type);
+    mov->to = output;
+  };
 
-    if (expr.op == asmc::Float)
-      mov2->to = this->registers["%xmm0"]->get(expr.size);
-    else
-      mov2->to = this->registers["%rbx"]->get(expr.size);
-    mov->from = mov2->to;
+  if (!assign->refrence && !fin->mutable_ && !assign->override) {
+    alert("cannot assign to const " + fin->symbol);
+  }
 
-    assign->modList.invert();
-    int tbyte = 0;
-
-    asmc::Size size;
-    std::string output = std::get<0>(resolved);
-    if (assign->refrence == true) {
-      asmc::Mov* m1 = new asmc::Mov;
-      m1->from = output;
-      m1->size = asmc::QWord;
-      m1->to = this->registers["%eax"]->get(asmc::QWord);
-      mov->to = "(" + this->registers["%eax"]->get(asmc::QWord) + ")";
-      OutputFile.text << m1;
-    } else {
-      this->canAssign(symbol->type, expr.type);
-      mov->to = output;
-    };
-
-    if (!assign->refrence && !fin->mutable_ && !assign->override) {
-      alert("cannot assign to const " + fin->symbol);
-    }
-
-    OutputFile.text << mov2;
-    OutputFile.text << mov;
-    OutputFile << std::get<3>(resolved);
+  OutputFile.text << mov2;
+  OutputFile.text << mov;
+  OutputFile << std::get<3>(resolved);
 }
 
 ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
@@ -2543,57 +2544,57 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
 void gen::CodeGenerator::genPush(ast::Push* push, asmc::File& OutputFile) {
   asmc::Mov* count = new asmc::Mov;
 
-    count->size = asmc::QWord;
-    count->to = this->registers["%rdx"]->get(count->size);
-    count->from = "$1";
-    asmc::Mov* pointer = new asmc::Mov;
-    pointer->size = asmc::QWord;
-    pointer->to = this->registers["%rsi"]->get(pointer->size);
-    pointer->from = this->GenExpr(push->expr, OutputFile).access;
+  count->size = asmc::QWord;
+  count->to = this->registers["%rdx"]->get(count->size);
+  count->from = "$1";
+  asmc::Mov* pointer = new asmc::Mov;
+  pointer->size = asmc::QWord;
+  pointer->to = this->registers["%rsi"]->get(pointer->size);
+  pointer->from = this->GenExpr(push->expr, OutputFile).access;
 
-    asmc::Mov* callnum = new asmc::Mov;
-    callnum->size = asmc::QWord;
-    callnum->to = this->registers["%rax"]->get(callnum->size);
-    callnum->from = "$1";
+  asmc::Mov* callnum = new asmc::Mov;
+  callnum->size = asmc::QWord;
+  callnum->to = this->registers["%rax"]->get(callnum->size);
+  callnum->from = "$1";
 
-    asmc::Mov* rdi = new asmc::Mov;
-    rdi->size = asmc::QWord;
-    rdi->from = "$1";
-    rdi->to = this->registers["%rdi"]->get(rdi->size);
+  asmc::Mov* rdi = new asmc::Mov;
+  rdi->size = asmc::QWord;
+  rdi->from = "$1";
+  rdi->to = this->registers["%rdi"]->get(rdi->size);
 
-    OutputFile.text << rdi;
-    OutputFile.text << pointer;
-    OutputFile.text << count;
-    OutputFile.text << callnum;
+  OutputFile.text << rdi;
+  OutputFile.text << pointer;
+  OutputFile.text << count;
+  OutputFile.text << callnum;
 
-    OutputFile.text << new asmc::SysCall;
+  OutputFile.text << new asmc::SysCall;
 };
 
 // Depricated
 void gen::CodeGenerator::genPull(ast::Pull* pull, asmc::File& OutputFile) {
-      asmc::Mov* count = new asmc::Mov;
-    count->size = asmc::QWord;
-    count->to = this->registers["%rdx"]->get(count->size);
-    count->from = "$1";
-    asmc::Mov* pointer = new asmc::Mov;
-    pointer->size = asmc::QWord;
-    pointer->to = this->registers["%rsi"]->get(pointer->size);
-    pointer->from = this->GenExpr(pull->expr, OutputFile).access;
-    asmc::Mov* callnum = new asmc::Mov;
-    callnum->size = asmc::QWord;
-    callnum->to = this->registers["%rax"]->get(callnum->size);
-    callnum->from = "$0";
-    asmc::Mov* rdi = new asmc::Mov;
-    rdi->size = asmc::QWord;
-    rdi->from = "$1";
-    rdi->to = this->registers["%rdi"]->get(rdi->size);
+  asmc::Mov* count = new asmc::Mov;
+  count->size = asmc::QWord;
+  count->to = this->registers["%rdx"]->get(count->size);
+  count->from = "$1";
+  asmc::Mov* pointer = new asmc::Mov;
+  pointer->size = asmc::QWord;
+  pointer->to = this->registers["%rsi"]->get(pointer->size);
+  pointer->from = this->GenExpr(pull->expr, OutputFile).access;
+  asmc::Mov* callnum = new asmc::Mov;
+  callnum->size = asmc::QWord;
+  callnum->to = this->registers["%rax"]->get(callnum->size);
+  callnum->from = "$0";
+  asmc::Mov* rdi = new asmc::Mov;
+  rdi->size = asmc::QWord;
+  rdi->from = "$1";
+  rdi->to = this->registers["%rdi"]->get(rdi->size);
 
-    OutputFile.text << rdi;
-    OutputFile.text << pointer;
-    OutputFile.text << count;
-    OutputFile.text << callnum;
+  OutputFile.text << rdi;
+  OutputFile.text << pointer;
+  OutputFile.text << count;
+  OutputFile.text << callnum;
 
-    OutputFile.text << new asmc::SysCall;
+  OutputFile.text << new asmc::SysCall;
 };
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
