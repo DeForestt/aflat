@@ -117,6 +117,8 @@ class CodeGenerator {
   void genDecAssignArr(ast::DecAssignArr* decAssign, asmc::File& OutputFile);
   void genReturn(ast::Return* ret, asmc::File& OutputFile);
   void genAssign(ast::Assign* assign, asmc::File& OutputFile);
+  void genPush(ast::Push* push, asmc::File& OutputFile);
+  void genPull(ast::Pull* pull, asmc::File& OutputFile);
 
  public:
   asmc::File GenSTMT(ast::Statment* stmt);

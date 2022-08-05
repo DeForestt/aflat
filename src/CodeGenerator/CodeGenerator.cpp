@@ -1404,58 +1404,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
   } else if (dynamic_cast<ast::Call*>(STMT) != nullptr) {
     this->GenCall(dynamic_cast<ast::Call*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Push*>(STMT) != nullptr) {
-    ast::Push* push = dynamic_cast<ast::Push*>(STMT);
-    asmc::Mov* count = new asmc::Mov;
-
-    count->size = asmc::QWord;
-    count->to = this->registers["%rdx"]->get(count->size);
-    count->from = "$1";
-    asmc::Mov* pointer = new asmc::Mov;
-    pointer->size = asmc::QWord;
-    pointer->to = this->registers["%rsi"]->get(pointer->size);
-    pointer->from = this->GenExpr(push->expr, OutputFile).access;
-
-    asmc::Mov* callnum = new asmc::Mov;
-    callnum->size = asmc::QWord;
-    callnum->to = this->registers["%rax"]->get(callnum->size);
-    callnum->from = "$1";
-
-    asmc::Mov* rdi = new asmc::Mov;
-    rdi->size = asmc::QWord;
-    rdi->from = "$1";
-    rdi->to = this->registers["%rdi"]->get(rdi->size);
-
-    OutputFile.text << rdi;
-    OutputFile.text << pointer;
-    OutputFile.text << count;
-    OutputFile.text << callnum;
-
-    OutputFile.text << new asmc::SysCall;
+    this->genPush(dynamic_cast<ast::Push*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Pull*>(STMT) != nullptr) {
-    ast::Pull* pull = dynamic_cast<ast::Pull*>(STMT);
-    asmc::Mov* count = new asmc::Mov;
-    count->size = asmc::QWord;
-    count->to = this->registers["%rdx"]->get(count->size);
-    count->from = "$1";
-    asmc::Mov* pointer = new asmc::Mov;
-    pointer->size = asmc::QWord;
-    pointer->to = this->registers["%rsi"]->get(pointer->size);
-    pointer->from = this->GenExpr(pull->expr, OutputFile).access;
-    asmc::Mov* callnum = new asmc::Mov;
-    callnum->size = asmc::QWord;
-    callnum->to = this->registers["%rax"]->get(callnum->size);
-    callnum->from = "$0";
-    asmc::Mov* rdi = new asmc::Mov;
-    rdi->size = asmc::QWord;
-    rdi->from = "$1";
-    rdi->to = this->registers["%rdi"]->get(rdi->size);
-
-    OutputFile.text << rdi;
-    OutputFile.text << pointer;
-    OutputFile.text << count;
-    OutputFile.text << callnum;
-
-    OutputFile.text << new asmc::SysCall;
+    this->genPull(dynamic_cast<ast::Pull*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::If*>(STMT) != nullptr) {
     // push a new scope
     gen::scope::ScopeManager::getInstance()->pushScope();
@@ -2588,8 +2539,62 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
   ast::Function ret = *func;
   return ret;
 };
+// Depricated
+void gen::CodeGenerator::genPush(ast::Push* push, asmc::File& OutputFile) {
+  asmc::Mov* count = new asmc::Mov;
 
+    count->size = asmc::QWord;
+    count->to = this->registers["%rdx"]->get(count->size);
+    count->from = "$1";
+    asmc::Mov* pointer = new asmc::Mov;
+    pointer->size = asmc::QWord;
+    pointer->to = this->registers["%rsi"]->get(pointer->size);
+    pointer->from = this->GenExpr(push->expr, OutputFile).access;
 
+    asmc::Mov* callnum = new asmc::Mov;
+    callnum->size = asmc::QWord;
+    callnum->to = this->registers["%rax"]->get(callnum->size);
+    callnum->from = "$1";
+
+    asmc::Mov* rdi = new asmc::Mov;
+    rdi->size = asmc::QWord;
+    rdi->from = "$1";
+    rdi->to = this->registers["%rdi"]->get(rdi->size);
+
+    OutputFile.text << rdi;
+    OutputFile.text << pointer;
+    OutputFile.text << count;
+    OutputFile.text << callnum;
+
+    OutputFile.text << new asmc::SysCall;
+};
+
+// Depricated
+void gen::CodeGenerator::genPull(ast::Pull* pull, asmc::File& OutputFile) {
+      asmc::Mov* count = new asmc::Mov;
+    count->size = asmc::QWord;
+    count->to = this->registers["%rdx"]->get(count->size);
+    count->from = "$1";
+    asmc::Mov* pointer = new asmc::Mov;
+    pointer->size = asmc::QWord;
+    pointer->to = this->registers["%rsi"]->get(pointer->size);
+    pointer->from = this->GenExpr(pull->expr, OutputFile).access;
+    asmc::Mov* callnum = new asmc::Mov;
+    callnum->size = asmc::QWord;
+    callnum->to = this->registers["%rax"]->get(callnum->size);
+    callnum->from = "$0";
+    asmc::Mov* rdi = new asmc::Mov;
+    rdi->size = asmc::QWord;
+    rdi->from = "$1";
+    rdi->to = this->registers["%rdi"]->get(rdi->size);
+
+    OutputFile.text << rdi;
+    OutputFile.text << pointer;
+    OutputFile.text << count;
+    OutputFile.text << callnum;
+
+    OutputFile.text << new asmc::SysCall;
+};
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
   asmc::File file;
