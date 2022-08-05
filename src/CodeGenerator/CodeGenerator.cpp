@@ -2553,55 +2553,55 @@ void gen::CodeGenerator::genWhile(ast::While* loop, asmc::File& OutputFile) {
 void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   gen::scope::ScopeManager::getInstance()->pushScope();
 
-    asmc::Lable* lable1 = new asmc::Lable();
-    lable1->lable = ".L" + this->nameTable.head->data.ident.ident +
-                    std::to_string(this->lablecount);
-    this->lablecount++;
+  asmc::Lable* lable1 = new asmc::Lable();
+  lable1->lable = ".L" + this->nameTable.head->data.ident.ident +
+                  std::to_string(this->lablecount);
+  this->lablecount++;
 
-    asmc::Lable* lable2 = new asmc::Lable();
-    lable2->lable = ".L" + this->nameTable.head->data.ident.ident +
-                    std::to_string(this->lablecount);
-    this->lablecount++;
-    OutputFile << this->GenSTMT(loop->declare);
-    asmc::Jmp* jmp = new asmc::Jmp();
-    jmp->to = lable2->lable;
-    OutputFile.text << jmp;
+  asmc::Lable* lable2 = new asmc::Lable();
+  lable2->lable = ".L" + this->nameTable.head->data.ident.ident +
+                  std::to_string(this->lablecount);
+  this->lablecount++;
+  OutputFile << this->GenSTMT(loop->declare);
+  asmc::Jmp* jmp = new asmc::Jmp();
+  jmp->to = lable2->lable;
+  OutputFile.text << jmp;
 
-    OutputFile.text << lable1;
+  OutputFile.text << lable1;
 
-    OutputFile << this->GenSTMT(loop->Run);
-    OutputFile << this->GenSTMT(loop->increment);
+  OutputFile << this->GenSTMT(loop->Run);
+  OutputFile << this->GenSTMT(loop->increment);
 
-    OutputFile.text << lable2;
+  OutputFile.text << lable2;
 
-    gen::Expr expr = this->GenExpr(loop->expr, OutputFile);
+  gen::Expr expr = this->GenExpr(loop->expr, OutputFile);
 
-    ast::Type t = ast::Type();
-    t.typeName = "bool";
-    t.size = asmc::Byte;
-    this->canAssign(t, expr.type);
+  ast::Type t = ast::Type();
+  t.typeName = "bool";
+  t.size = asmc::Byte;
+  this->canAssign(t, expr.type);
 
-    asmc::Mov* mov = new asmc::Mov();
+  asmc::Mov* mov = new asmc::Mov();
 
-    mov->size = expr.size;
+  mov->size = expr.size;
 
-    mov->from = expr.access;
+  mov->from = expr.access;
 
-    mov->to = this->registers["%eax"]->get(mov->size);
+  mov->to = this->registers["%eax"]->get(mov->size);
 
-    asmc::Cmp* cmp = new asmc::Cmp();
-    asmc::Je* je = new asmc::Je();
-    je->to = lable1->lable;
+  asmc::Cmp* cmp = new asmc::Cmp();
+  asmc::Je* je = new asmc::Je();
+  je->to = lable1->lable;
 
-    cmp->from = "$1";
-    cmp->to = mov->to;
-    cmp->size = expr.size;
+  cmp->from = "$1";
+  cmp->to = mov->to;
+  cmp->size = expr.size;
 
-    OutputFile.text << mov;
-    OutputFile.text << cmp;
-    OutputFile.text << je;
+  OutputFile.text << mov;
+  OutputFile.text << cmp;
+  OutputFile.text << je;
 
-    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
+  gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
 }
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
