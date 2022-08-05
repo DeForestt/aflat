@@ -1416,78 +1416,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
   } else if (dynamic_cast<ast::UDeffType*>(STMT) != nullptr) {
     this->genUDef(dynamic_cast<ast::UDeffType*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Class*>(STMT) != nullptr) {
-    ast::Class* deff = dynamic_cast<ast::Class*>(STMT);
-    gen::Class* type = new gen::Class();
-    bool saveScope = this->globalScope;
-    this->globalScope = false;
-    type->Ident = deff->ident.ident;
-    type->nameTable.foo = compairFunc;
-    this->scope = type;
-    type->overloadTable.foo = [](ast::Function func, ast::Op op) {
-      if (func.op == op) {
-        return true;
-      }
-      return false;
-    };
-    type->SymbolTable;
-    this->typeList.push(type);
-    // write any signed contracts
-    if (deff->base != "") {
-      gen::Type** T = this->typeList[deff->base];
-      if (T != nullptr) {
-        gen::Class* base = dynamic_cast<gen::Class*>(*T);
-        asmc::File contractFile;
-        if (base != nullptr) {
-          // check if the base class has a contract
-          if (base->contract == nullptr)
-            err::Exception("Base class does not have a contract");
-          // if my contact is not nullptr stitch it with the base
-          if (deff->contract != nullptr) {
-            ast::Sequence* seq = new ast::Sequence();
-            seq->Statment1 = deff->contract;
-            seq->Statment2 = base->contract;
-            type->contract = seq;
-            type->parent = base;
-            contractFile = this->GenSTMT(seq);
-            OutputFile << contractFile;
-          } else {
-            type->contract = base->contract;
-            type->parent = base;
-            contractFile = this->GenSTMT(base->contract);
-            OutputFile << contractFile;
-            type->contract = deff->contract;
-          }
-        } else
-          alert("Base class is not a class");
-      } else
-        alert("Base class not found");
-    } else if (deff->contract != nullptr) {
-      asmc::File contractFile = this->GenSTMT(deff->contract);
-      OutputFile << contractFile;
-      type->contract = deff->contract;
-    }
-    asmc::File file = this->GenSTMT(deff->statment);
-    if (extract("init", deff->statment) == nullptr &&
-        this->scope->defaultValues.size() > 0) {
-      ast::Function* func = new ast::Function();
-      ast::Return* ret = new ast::Return();
-      ast::Var* var = new ast::Var();
-      var->Ident = "my";
-      var->modList = links::LinkedList<std::string>();
-      ret->expr = var;
-      func->ident.ident = "init";
-      func->scope = ast::Private;
-      func->statment = ret;
-      func->args = nullptr;
-      ast::Type t;
-      t.typeName = "adr";
-      t.size = asmc::QWord;
-      func->type = t;
-      file << this->GenSTMT(func);
-    }
-    OutputFile << file;
-    this->globalScope = saveScope;
-    this->scope = nullptr;
+    this->genClass(dynamic_cast<ast::Class*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Inc*>(STMT) != nullptr) {
     ast::Inc* inc = dynamic_cast<ast::Inc*>(STMT);
     gen::Symbol* sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);
@@ -2605,6 +2534,80 @@ void gen::CodeGenerator::genUDef(ast::UDeffType* udef, asmc::File& OutputFile) {
   type->SymbolTable = this->GenTable(udef->statment, type->SymbolTable);
   this->typeList.push(type);
   this->globalScope = saveScope;
+}
+
+void gen::CodeGenerator::genClass(ast::Class* deff, asmc::File& OutputFile) {
+  gen::Class* type = new gen::Class();
+  bool saveScope = this->globalScope;
+  this->globalScope = false;
+  type->Ident = deff->ident.ident;
+  type->nameTable.foo = compairFunc;
+  this->scope = type;
+  type->overloadTable.foo = [](ast::Function func, ast::Op op) {
+    if (func.op == op) {
+      return true;
+    }
+    return false;
+  };
+  type->SymbolTable;
+  this->typeList.push(type);
+  // write any signed contracts
+  if (deff->base != "") {
+    gen::Type** T = this->typeList[deff->base];
+    if (T != nullptr) {
+      gen::Class* base = dynamic_cast<gen::Class*>(*T);
+      asmc::File contractFile;
+      if (base != nullptr) {
+        // check if the base class has a contract
+        if (base->contract == nullptr)
+          err::Exception("Base class does not have a contract");
+        // if my contact is not nullptr stitch it with the base
+        if (deff->contract != nullptr) {
+          ast::Sequence* seq = new ast::Sequence();
+          seq->Statment1 = deff->contract;
+          seq->Statment2 = base->contract;
+          type->contract = seq;
+          type->parent = base;
+          contractFile = this->GenSTMT(seq);
+          OutputFile << contractFile;
+        } else {
+          type->contract = base->contract;
+          type->parent = base;
+          contractFile = this->GenSTMT(base->contract);
+          OutputFile << contractFile;
+          type->contract = deff->contract;
+        }
+      } else
+        alert("Base class is not a class");
+    } else
+      alert("Base class not found");
+  } else if (deff->contract != nullptr) {
+    asmc::File contractFile = this->GenSTMT(deff->contract);
+    OutputFile << contractFile;
+    type->contract = deff->contract;
+  }
+  asmc::File file = this->GenSTMT(deff->statment);
+  if (extract("init", deff->statment) == nullptr &&
+      this->scope->defaultValues.size() > 0) {
+    ast::Function* func = new ast::Function();
+    ast::Return* ret = new ast::Return();
+    ast::Var* var = new ast::Var();
+    var->Ident = "my";
+    var->modList = links::LinkedList<std::string>();
+    ret->expr = var;
+    func->ident.ident = "init";
+    func->scope = ast::Private;
+    func->statment = ret;
+    func->args = nullptr;
+    ast::Type t;
+    t.typeName = "adr";
+    t.size = asmc::QWord;
+    func->type = t;
+    file << this->GenSTMT(func);
+  }
+  OutputFile << file;
+  this->globalScope = saveScope;
+  this->scope = nullptr;
 }
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
