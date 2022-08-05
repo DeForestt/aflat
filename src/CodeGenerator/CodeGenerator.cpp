@@ -1422,43 +1422,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
   } else if (dynamic_cast<ast::Dec*>(STMT) != nullptr) {
     this->genDec(dynamic_cast<ast::Dec*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Import*>(STMT) != nullptr) {
-    ast::Import* imp = dynamic_cast<ast::Import*>(STMT);
-    bool standard = false;
-    if (imp->path.find("./") == std::string::npos) {
-      imp->path = getLibPath("src") + imp->path;
-    };
-
-    if (imp->path.substr(imp->path.length() - 3, 3) != ".af") {
-      imp->path = imp->path + ".af";
-    };
-
-    std::string id = imp->path.substr(imp->path.find_last_of("/") + 1);
-    // remove the .af extension
-    id = id.substr(0, id.find_last_of("."));
-    ast::Statment* added;
-    if (this->includedMemo.contains(imp->path))
-      added = this->includedMemo.get(imp->path);
-    else {
-      // scan the file
-      std::ifstream file(imp->path);
-      std::string text = std::string((std::istreambuf_iterator<char>(file)),
-                                     std::istreambuf_iterator<char>());
-      lex::Lexer l = lex::Lexer();
-      PreProcessor pp = PreProcessor();
-      auto tokens = l.Scan(pp.PreProcess(text, getLibPath("head")));
-      tokens.invert();
-      // parse the file
-      parse::Parser p = parse::Parser();
-      ast::Statment* statment = p.parseStmt(tokens);
-      added = statment;
-    }
-    for (std::string ident : imp->imports) {
-      ast::Statment* statment = extract(ident, added, id);
-      if (statment == nullptr)
-        this->alert("Identifier " + ident + " not found to import");
-      OutputFile << this->GenSTMT(statment);
-    }
-    this->nameSpaceTable.insert(imp->nameSpace, id);
+    this->genImport(dynamic_cast<ast::Import*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Delete*>(STMT) != nullptr) {
     ast::Delete* del = dynamic_cast<ast::Delete*>(STMT);
 
@@ -2614,6 +2578,45 @@ void gen::CodeGenerator::genDec(ast::Dec* inc, asmc::File& OutputFile) {
   sub->op1 = "$-1";
   sub->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
   OutputFile.text << sub;
+}
+
+void gen::CodeGenerator::genImport(ast::Import* imp, asmc::File& OutputFile) {
+  bool standard = false;
+    if (imp->path.find("./") == std::string::npos) {
+      imp->path = getLibPath("src") + imp->path;
+    };
+
+    if (imp->path.substr(imp->path.length() - 3, 3) != ".af") {
+      imp->path = imp->path + ".af";
+    };
+
+    std::string id = imp->path.substr(imp->path.find_last_of("/") + 1);
+    // remove the .af extension
+    id = id.substr(0, id.find_last_of("."));
+    ast::Statment* added;
+    if (this->includedMemo.contains(imp->path))
+      added = this->includedMemo.get(imp->path);
+    else {
+      // scan the file
+      std::ifstream file(imp->path);
+      std::string text = std::string((std::istreambuf_iterator<char>(file)),
+                                     std::istreambuf_iterator<char>());
+      lex::Lexer l = lex::Lexer();
+      PreProcessor pp = PreProcessor();
+      auto tokens = l.Scan(pp.PreProcess(text, getLibPath("head")));
+      tokens.invert();
+      // parse the file
+      parse::Parser p = parse::Parser();
+      ast::Statment* statment = p.parseStmt(tokens);
+      added = statment;
+    }
+    for (std::string ident : imp->imports) {
+      ast::Statment* statment = extract(ident, added, id);
+      if (statment == nullptr)
+        this->alert("Identifier " + ident + " not found to import");
+      OutputFile << this->GenSTMT(statment);
+    }
+    this->nameSpaceTable.insert(imp->nameSpace, id);
 }
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
