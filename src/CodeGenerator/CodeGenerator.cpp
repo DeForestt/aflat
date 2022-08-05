@@ -1414,14 +1414,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
   } else if (dynamic_cast<ast::For*>(STMT) != nullptr) {
     this->genFor(dynamic_cast<ast::For*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::UDeffType*>(STMT) != nullptr) {
-    ast::UDeffType* udef = dynamic_cast<ast::UDeffType*>(STMT);
-    gen::Type* type = new gen::Type();
-    bool saveScope = this->globalScope;
-    this->globalScope = false;
-    type->Ident = udef->ident.ident;
-    type->SymbolTable = this->GenTable(udef->statment, type->SymbolTable);
-    this->typeList.push(type);
-    this->globalScope = saveScope;
+    this->genUDef(dynamic_cast<ast::UDeffType*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Class*>(STMT) != nullptr) {
     ast::Class* deff = dynamic_cast<ast::Class*>(STMT);
     gen::Class* type = new gen::Class();
@@ -2602,6 +2595,17 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   OutputFile.text << je;
 
   gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
+}
+
+void gen::CodeGenerator::genUDef(ast::UDeffType* udef, asmc::File& OutputFile) {
+  ast::UDeffType* udef = dynamic_cast<ast::UDeffType*>(STMT);
+  gen::Type* type = new gen::Type();
+  bool saveScope = this->globalScope;
+  this->globalScope = false;
+  type->Ident = udef->ident.ident;
+  type->SymbolTable = this->GenTable(udef->statment, type->SymbolTable);
+  this->typeList.push(type);
+  this->globalScope = saveScope;
 }
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
