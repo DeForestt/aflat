@@ -1418,15 +1418,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
   } else if (dynamic_cast<ast::Class*>(STMT) != nullptr) {
     this->genClass(dynamic_cast<ast::Class*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Inc*>(STMT) != nullptr) {
-    ast::Inc* inc = dynamic_cast<ast::Inc*>(STMT);
-    gen::Symbol* sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);
-    if (sym == nullptr) this->alert("Identifier not found to increment");
-    this->canAssign(sym->type, "int");
-
-    asmc::Add* add = new asmc::Add();
-    add->op1 = "$1";
-    add->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
-    OutputFile.text << add;
+    this->genInc(dynamic_cast<ast::Inc*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Dec*>(STMT) != nullptr) {
     ast::Dec* inc = dynamic_cast<ast::Dec*>(STMT);
     gen::Symbol* sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);
@@ -2608,6 +2600,17 @@ void gen::CodeGenerator::genClass(ast::Class* deff, asmc::File& OutputFile) {
   OutputFile << file;
   this->globalScope = saveScope;
   this->scope = nullptr;
+}
+
+void gen::CodeGenerator::genInc(ast::Inc* inc, asmc::File& OutputFile) {
+  gen::Symbol* sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);
+  if (sym == nullptr) this->alert("Identifier not found to increment");
+  this->canAssign(sym->type, "int");
+
+  asmc::Add* add = new asmc::Add();
+  add->op1 = "$1";
+  add->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
+  OutputFile.text << add;
 }
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {

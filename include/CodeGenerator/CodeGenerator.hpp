@@ -124,6 +124,7 @@ class CodeGenerator {
   void genFor(ast::For* loop, asmc::File& OPutputFile);
   void genUDef(ast::UDeffType* udef, asmc::File& OutputFile);
   void genClass(ast::Class* deff, asmc::File& OutputFile);
+  void genInc(ast::Inc* inc, asmc::File& OutputFile);
 
  public:
   asmc::File GenSTMT(ast::Statment* stmt);
