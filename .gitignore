@@ -4,3 +4,4 @@
 /bin/**
 /libraries/std/*.s
 !/libraries/std/asm.s
+/build/**

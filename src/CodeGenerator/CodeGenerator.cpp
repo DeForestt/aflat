@@ -1694,7 +1694,8 @@ void gen::CodeGenerator::genDecArr(ast::DecArr* dec, asmc::File& OutputFile) {
     ref->Ident = "." + dec->ident;
 
     ast::DecAssign* assign = new ast::DecAssign();
-    assign->declare = &ast::Declare();
+    auto _dec = ast::Declare();
+    assign->declare = &_dec;
     assign->declare->Ident = dec->ident;
     assign->declare->type = adr;
     assign->expr = ref;
@@ -1733,7 +1734,8 @@ void gen::CodeGenerator::genDecArr(ast::DecArr* dec, asmc::File& OutputFile) {
     ref->modList.push("." + dec->ident);
 
     ast::DecAssign* assign = new ast::DecAssign();
-    assign->declare = &ast::Declare();
+    auto __dec = ast::Declare();
+    assign->declare = &__dec;
     assign->declare->Ident = dec->ident;
     assign->declare->type = adr;
     assign->expr = ref;
