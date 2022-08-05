@@ -1424,58 +1424,15 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
   } else if (dynamic_cast<ast::Import*>(STMT) != nullptr) {
     this->genImport(dynamic_cast<ast::Import*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Delete*>(STMT) != nullptr) {
-    ast::Delete* del = dynamic_cast<ast::Delete*>(STMT);
-
-    std::tuple<std::string, gen::Symbol, bool, asmc::File> resolved =
-        this->resolveSymbol(del->ident, del->modList, OutputFile,
-                            links::LinkedList<ast::Expr*>());
-    if (!std::get<2>(resolved))
-      this->alert("Identifier " + del->ident + " not found to delete");
-
-    gen::Symbol* sym = &std::get<1>(resolved);
-
-    ast::Function* free = this->nameTable["free"];
-    if (free == nullptr)
-      alert(
-          "Please import std library in order to use delete operator.\n\n -> "
-          ".needs <std> \n\n");
-
-    gen::Type** type = this->typeList[sym->type.typeName];
-    if (type != nullptr) {
-      gen::Class* classType = dynamic_cast<gen::Class*>(*type);
-      if (classType != nullptr) {
-        // check if the class has a destructor
-        ast::Function* destructor = classType->nameTable["del"];
-
-        if (destructor != nullptr) {
-          ast::Call* call = new ast::Call();
-          call->ident = del->ident;
-          call->modList = LinkedList<std::string>();
-          call->modList.push("del");
-          call->Args = LinkedList<ast::Expr*>();
-
-          OutputFile << this->GenSTMT(call);
-        };
-      }
-    };
-    // call free
-    ast::Var* var = new ast::Var();
-    var->Ident = del->ident;
-    var->modList = LinkedList<std::string>();
-
-    ast::Call* freeCall = new ast::Call();
-    freeCall->ident = "free";
-    freeCall->modList = LinkedList<std::string>();
-    freeCall->Args = LinkedList<ast::Expr*>();
-    freeCall->Args.push(var);
-    OutputFile << this->GenSTMT(freeCall);
-    OutputFile << std::get<3>(resolved);
+    this->genDelete(dynamic_cast<ast::Delete*>(STMT), OutputFile);
   } else {
     OutputFile.text.push(new asmc::nop());
   }
 
   return OutputFile;
 }
+
+#pragma region STMT Generators
 
 void gen::CodeGenerator::genSequence(ast::Sequence* seq,
                                      asmc::File& OutputFile) {
@@ -2618,6 +2575,55 @@ void gen::CodeGenerator::genImport(ast::Import* imp, asmc::File& OutputFile) {
     }
     this->nameSpaceTable.insert(imp->nameSpace, id);
 }
+
+void gen::CodeGenerator::genDelete(ast::Delete* del, asmc::File& OutputFile) {
+  std::tuple<std::string, gen::Symbol, bool, asmc::File> resolved =
+        this->resolveSymbol(del->ident, del->modList, OutputFile,
+                            links::LinkedList<ast::Expr*>());
+    if (!std::get<2>(resolved))
+      this->alert("Identifier " + del->ident + " not found to delete");
+
+    gen::Symbol* sym = &std::get<1>(resolved);
+
+    ast::Function* free = this->nameTable["free"];
+    if (free == nullptr)
+      alert(
+          "Please import std library in order to use delete operator.\n\n -> "
+          ".needs <std> \n\n");
+
+    gen::Type** type = this->typeList[sym->type.typeName];
+    if (type != nullptr) {
+      gen::Class* classType = dynamic_cast<gen::Class*>(*type);
+      if (classType != nullptr) {
+        // check if the class has a destructor
+        ast::Function* destructor = classType->nameTable["del"];
+
+        if (destructor != nullptr) {
+          ast::Call* call = new ast::Call();
+          call->ident = del->ident;
+          call->modList = LinkedList<std::string>();
+          call->modList.push("del");
+          call->Args = LinkedList<ast::Expr*>();
+
+          OutputFile << this->GenSTMT(call);
+        };
+      }
+    };
+    // call free
+    ast::Var* var = new ast::Var();
+    var->Ident = del->ident;
+    var->modList = LinkedList<std::string>();
+
+    ast::Call* freeCall = new ast::Call();
+    freeCall->ident = "free";
+    freeCall->modList = LinkedList<std::string>();
+    freeCall->Args = LinkedList<ast::Expr*>();
+    freeCall->Args.push(var);
+    OutputFile << this->GenSTMT(freeCall);
+    OutputFile << std::get<3>(resolved);
+}
+
+#pragma endregion
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
   asmc::File file;

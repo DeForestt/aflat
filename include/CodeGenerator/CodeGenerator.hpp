@@ -127,6 +127,7 @@ class CodeGenerator {
   void genInc(ast::Inc* inc, asmc::File& OutputFile);
   void genDec(ast::Dec* inc, asmc::File& OutputFile);
   void genImport(ast::Import* imp, asmc::File& OutputFile);
+  void genDelete(ast::Delete* del, asmc::File& OutputFile);
 
  public:
   asmc::File GenSTMT(ast::Statment* stmt);
