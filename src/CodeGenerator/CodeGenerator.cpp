@@ -1408,62 +1408,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
   } else if (dynamic_cast<ast::Pull*>(STMT) != nullptr) {
     this->genPull(dynamic_cast<ast::Pull*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::If*>(STMT) != nullptr) {
-    // push a new scope
-    gen::scope::ScopeManager::getInstance()->pushScope();
-    ast::If ifStmt = *dynamic_cast<ast::If*>(STMT);
-
-    asmc::Lable* lable1 = new asmc::Lable();
-    lable1->lable = ".L" + this->nameTable.head->data.ident.ident +
-                    std::to_string(this->lablecount);
-    this->lablecount++;
-
-    gen::Expr expr = this->GenExpr(ifStmt.expr, OutputFile);
-
-    ast::Type t = ast::Type();
-    t.typeName = "bool";
-    t.size = asmc::Byte;
-    this->canAssign(t, expr.type);
-
-    asmc::Mov* mov1 = new asmc::Mov();
-
-    mov1->size = asmc::Byte;
-
-    mov1->from = expr.access;
-    ;
-
-    mov1->to = this->registers["%rax"]->get(mov1->size);
-
-    asmc::Cmp* cmp = new asmc::Cmp();
-    asmc::Je* je = new asmc::Je();
-
-    cmp->from = "$0";
-    cmp->to = mov1->to;
-    cmp->size = expr.size;
-
-    je->to = lable1->lable;
-
-    OutputFile.text << mov1;
-    OutputFile.text << cmp;
-    OutputFile.text << je;
-    OutputFile << this->GenSTMT(ifStmt.statment);
-    if (ifStmt.elseStatment != nullptr) {
-      asmc::Lable* end = new asmc::Lable();
-      end->lable = ".L" + this->nameTable.head->data.ident.ident +
-                   std::to_string(this->lablecount);
-      this->lablecount++;
-      asmc::Jmp* jmp = new asmc::Jmp();
-      jmp->to = end->lable;
-      OutputFile.text << jmp;
-      OutputFile.text << lable1;
-
-      gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
-      gen::scope::ScopeManager::getInstance()->pushScope();
-      OutputFile << this->GenSTMT(ifStmt.elseStatment);
-      OutputFile.text << end;
-    } else
-      OutputFile.text << lable1;
-
-    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
+    this->genIf(dynamic_cast<ast::If*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::While*>(STMT) != nullptr) {
     gen::scope::ScopeManager::getInstance()->pushScope();
     ast::While* loop = dynamic_cast<ast::While*>(STMT);
@@ -2596,6 +2541,63 @@ void gen::CodeGenerator::genPull(ast::Pull* pull, asmc::File& OutputFile) {
 
   OutputFile.text << new asmc::SysCall;
 };
+
+void gen::CodeGenerator::genIf(ast::If* ifStmt, asmc::File& OutputFile) {
+  // push a new scope
+  gen::scope::ScopeManager::getInstance()->pushScope();
+
+  asmc::Lable* lable1 = new asmc::Lable();
+  lable1->lable = ".L" + this->nameTable.head->data.ident.ident +
+                  std::to_string(this->lablecount);
+  this->lablecount++;
+
+  gen::Expr expr = this->GenExpr(ifStmt->expr, OutputFile);
+
+  ast::Type t = ast::Type();
+  t.typeName = "bool";
+  t.size = asmc::Byte;
+  this->canAssign(t, expr.type);
+
+  asmc::Mov* mov1 = new asmc::Mov();
+
+  mov1->size = asmc::Byte;
+
+  mov1->from = expr.access;
+
+  mov1->to = this->registers["%rax"]->get(mov1->size);
+
+  asmc::Cmp* cmp = new asmc::Cmp();
+  asmc::Je* je = new asmc::Je();
+
+  cmp->from = "$0";
+  cmp->to = mov1->to;
+  cmp->size = expr.size;
+
+  je->to = lable1->lable;
+
+  OutputFile.text << mov1;
+  OutputFile.text << cmp;
+  OutputFile.text << je;
+  OutputFile << this->GenSTMT(ifStmt->statment);
+  if (ifStmt->elseStatment != nullptr) {
+    asmc::Lable* end = new asmc::Lable();
+    end->lable = ".L" + this->nameTable.head->data.ident.ident +
+                 std::to_string(this->lablecount);
+    this->lablecount++;
+    asmc::Jmp* jmp = new asmc::Jmp();
+    jmp->to = end->lable;
+    OutputFile.text << jmp;
+    OutputFile.text << lable1;
+
+    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
+    gen::scope::ScopeManager::getInstance()->pushScope();
+    OutputFile << this->GenSTMT(ifStmt->elseStatment);
+    OutputFile.text << end;
+  } else
+    OutputFile.text << lable1;
+
+  gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
+}
 
 asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
   asmc::File file;
