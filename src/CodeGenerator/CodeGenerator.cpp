@@ -2598,7 +2598,6 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
 }
 
 void gen::CodeGenerator::genUDef(ast::UDeffType* udef, asmc::File& OutputFile) {
-  ast::UDeffType* udef = dynamic_cast<ast::UDeffType*>(STMT);
   gen::Type* type = new gen::Type();
   bool saveScope = this->globalScope;
   this->globalScope = false;
