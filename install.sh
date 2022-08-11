@@ -36,4 +36,7 @@ mkdir ~/.aflat
 # Build aflat
 (cd ~/.aflat/aflat && mkdir bin && mkdir build && cd build && cmake ../. && cd .. && cmake --build build> buildLog.log)
 
+# Build libs
+(cd ~/.aflat/aflat && bash rebuild-libs.sh)
+
 echo "Successfully installed aflat!"
