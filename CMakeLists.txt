@@ -8,7 +8,7 @@ project(aflat VERSION 1.1.0)
 
 file(GLOB_RECURSE aflat_SRC
     src/*.cpp
-)
+) 
 
 add_definitions(${GCC_COMPILER_FLAGS})
 add_executable(aflat ${aflat_SRC})
