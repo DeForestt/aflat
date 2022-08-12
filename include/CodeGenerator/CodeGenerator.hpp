@@ -61,7 +61,7 @@ class Class : public Type {
 };
 
 class CodeGenerator {
- private:
+ protected:
 #pragma region State Variables
   gen::Class* scope;
   ast::Type returnType;
