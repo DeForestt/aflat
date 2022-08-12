@@ -22,7 +22,7 @@ file(GLOB_RECURSE testing_Modules
     src/*.cpp
 )
 
-list(REMOVE_ITEM testing_Modules /home/deforestt/repos/aflat/src/main.cpp)
+list(REMOVE_ITEM testing_Modules ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
 message (STATUS ${testing_Modules})
 add_executable(test ${testing_Modules})
