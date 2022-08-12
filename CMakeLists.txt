@@ -13,7 +13,7 @@ file(GLOB_RECURSE aflat_SRC
 add_definitions(${GCC_COMPILER_FLAGS})
 add_executable(aflat ${aflat_SRC})
 
-target_include_directories(aflat PRIVATE include/)
+target_include_directories(aflat PRIVATE include/) 
 
 # Testing -->
 file(GLOB_RECURSE testing_Modules
