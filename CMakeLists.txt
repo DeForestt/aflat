@@ -17,7 +17,7 @@ target_include_directories(aflat PRIVATE include/)
 
 # Testing -->
 file(GLOB_RECURSE testing_Modules
-    test/test.cpp
+    test/*.cpp
     src/CodeGenerator/*.cpp
     src/*.cpp
 )
