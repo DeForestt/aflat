@@ -343,12 +343,24 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     gen::Class* cl = dynamic_cast<gen::Class*>(*udef);
     if (cl != nullptr) {
       gen::Class* parent = cl->parent;
-
       if (parent != nullptr) {
         if (parent->Ident == type.typeName) return true;
+      }
+    }
+  }
+
+  // search if the expected type is the class
+  gen::Type** expected = this->typeList[type.typeName];
+  if (expected) {
+    gen::Class* cl = dynamic_cast<gen::Class*>(*expected);
+    if (cl) {
+      ast::Function * init = cl->nameTable["init"];
+      if (init) {
+        if (init->argTypes.size() == 1 && init->argTypes[0].typeName == typeName) return false;
       };
-    };
-  };
+    }
+  }
+
   if (!strict) alert("Cannot assign type " + type.typeName + " to " + typeName);
   alert("Cannot return type " + typeName + " from " + type.typeName);
   return false;
