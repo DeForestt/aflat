@@ -15,6 +15,11 @@ namespace test
         CodeGenerator::CodeGenerator(std::string moduleId) : gen::CodeGenerator(moduleId) {
 
         }
+
+        bool CodeGenerator::addType(gen::Type* type) {
+            this->typeList.push(type);
+            return true;
+        }
     }
 }
     
