@@ -11,6 +11,13 @@
 #include "Scanner.hpp"
 #pragma region helper functions
 
+ast::Call * imply(ast::Expr * expr, std::string typeName) {
+  ast::Call * init = new ast::Call;
+  init->ident = typeName;
+  init->Args.push(expr);
+  return init;
+}
+
 bool searchSymbol(gen::Symbol sym, std::string str) {
   if (sym.symbol == str)
     return true;
@@ -2175,6 +2182,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
 
   while (call->Args.trail() > 0) {
     args.push(call->Args.touch());
+    ast::Expr * rem = call->Args.touch();
     gen::Expr exp = this->GenExpr(call->Args.shift(), OutputFile);
     bool run;
     if (checkArgs) {
@@ -2184,7 +2192,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
               " got: " + std::to_string(i + 1));
       };
       if (!canAssign(func->argTypes.at(i), exp.type)){
-        
+        ast::Call * init = imply(rem, func->argTypes.at(i).typeName);
       };
     };
     i++;
