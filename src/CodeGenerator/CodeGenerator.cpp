@@ -354,10 +354,14 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   if (expected) {
     gen::Class* cl = dynamic_cast<gen::Class*>(*expected);
     if (cl) {
-      ast::Function * init = cl->nameTable["init"];
-      if (init) {
-        if (init->argTypes.size() == 1 && init->argTypes[0].typeName == typeName) return false;
-      };
+      if (cl->nameTable.count > 0){
+        ast::Function * init = cl->nameTable["init"];
+        if (init) {
+          if (init->argTypes.size() == 1 && init->argTypes[0].typeName == typeName) {
+            return false;
+          }
+        }
+      }
     }
   }
 
@@ -2172,13 +2176,16 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
   while (call->Args.trail() > 0) {
     args.push(call->Args.touch());
     gen::Expr exp = this->GenExpr(call->Args.shift(), OutputFile);
+    bool run;
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
         alert("Too many arguments for function: " + ident +
               " expected: " + std::to_string(func->argTypes.size()) +
               " got: " + std::to_string(i + 1));
       };
-      canAssign(func->argTypes.at(i), exp.type);
+      if (!canAssign(func->argTypes.at(i), exp.type)){
+        
+      };
     };
     i++;
     asmc::Mov* mov = new asmc::Mov();
