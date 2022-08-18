@@ -11,11 +11,13 @@
 #include "Scanner.hpp"
 #pragma region helper functions
 
-ast::Call * imply(ast::Expr * expr, std::string typeName) {
-  ast::Call * init = new ast::Call;
+ast::CallExpr * imply(ast::Expr * expr, std::string typeName) {
+  ast::Call * init = new ast::Call();
   init->ident = typeName;
   init->Args.push(expr);
-  return init;
+  ast::CallExpr * call = new ast::CallExpr;
+  call->call = init;
+  return call;
 }
 
 bool searchSymbol(gen::Symbol sym, std::string str) {
@@ -340,8 +342,6 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   if (type.typeName == "short" && typeName == "number") return true;
   if (type.typeName == "int" && typeName == "number") return true;
   if (type.typeName == "long" && typeName == "number") return true;
-  if (type.size == asmc::QWord && typeName == "adr") return true;
-  if (strict && type.typeName == "adr") return true;
   // search the type list for the type
   gen::Type** udef = this->typeList[typeName];
   if (udef != nullptr) {
@@ -371,6 +371,9 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
       }
     }
   }
+
+  if (type.size == asmc::QWord && typeName == "adr") return true;
+  if (strict && type.typeName == "adr") return true;
 
   if (!strict) alert("Cannot assign type " + type.typeName + " to " + typeName);
   alert("Cannot return type " + typeName + " from " + type.typeName);
@@ -1785,7 +1788,9 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
       gen::Expr expr =
           this->GenExpr(decAssign->expr, OutputFile, dec->type.size);
 
-      this->canAssign(dec->type, expr.type);
+      if (!this->canAssign(dec->type, expr.type)){
+        expr = this->GenExpr(imply(decAssign->expr, dec->type.typeName), OutputFile);
+      };
 
       auto mov2 = new asmc::Mov();
       mov2->size = dec->type.size;
@@ -1829,7 +1834,9 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
       var->command = "quad";
     }
     gen::Expr exp = this->GenExpr(decAssign->expr, OutputFile);
-    this->canAssign(dec->type, exp.type);
+    if (!this->canAssign(dec->type, exp.type)){
+      exp = this->GenExpr(imply(decAssign->expr, dec->type.typeName), OutputFile);
+    };
     var->operand = exp.access.erase(0, 1);
     Symbol.type.opType = exp.op;
     OutputFile.data << lable;
@@ -1871,15 +1878,21 @@ void gen::CodeGenerator::genReturn(ast::Return* ret, asmc::File& OutputFile) {
   auto mov = new asmc::Mov();
 
   gen::Expr from = this->GenExpr(ret->expr, OutputFile);
+
+  if(!this->canAssign(this->returnType, from.type, true)){
+    auto imp = imply(ret->expr, this->returnType.typeName);
+    from = this->GenExpr(imp, OutputFile);
+  };
+
   std::string move2 = (from.op == asmc::Float)
                           ? this->registers["%xmm0"]->get(from.size)
                           : this->registers["%rax"]->get(from.size);
+  
   mov->from = from.access;
   mov->to = move2;
   mov->size = from.size;
   mov->op = from.op;
   OutputFile.text << mov;
-  this->canAssign(this->returnType, from.type, true);
   auto re = new asmc::Return();
   OutputFile.text << re;
 }
@@ -1930,6 +1943,13 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
   asmc::Mov* mov = new asmc::Mov();
   asmc::Mov* mov2 = new asmc::Mov();
   gen::Expr expr = this->GenExpr(assign->expr, OutputFile, symbol->type.size);
+
+  if(!assign->refrence){
+    if (!this->canAssign(symbol->type, expr.type)){
+      expr = this->GenExpr(imply(assign->expr,symbol->type.typeName), OutputFile);
+    }
+  }
+
   mov->op = expr.op;
   mov2->op = expr.op;
   mov->size = expr.size;
@@ -1955,7 +1975,6 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
     mov->to = "(" + this->registers["%eax"]->get(asmc::QWord) + ")";
     OutputFile.text << m1;
   } else {
-    this->canAssign(symbol->type, expr.type);
     mov->to = output;
   };
 
@@ -2191,8 +2210,9 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
               " expected: " + std::to_string(func->argTypes.size()) +
               " got: " + std::to_string(i + 1));
       };
-      if (!canAssign(func->argTypes.at(i), exp.type)){
-        ast::Call * init = imply(rem, func->argTypes.at(i).typeName);
+      if (!canAssign(func->argTypes.at(i), exp.type)) {
+        ast::CallExpr * init = imply(rem, func->argTypes.at(i).typeName);
+        exp = this->GenExpr(init, OutputFile);
       };
     };
     i++;
