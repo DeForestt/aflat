@@ -263,8 +263,24 @@ void buildTemplate(std::string value) {
 
   outfile = std::ofstream(value + "/src/test/test.af");
   outfile << ".needs <std>\n\n";
-  outfile << "int main(){\n\tassert(1 == 1, \"Failed 1 == 1 "
-             "assert\");\n\treturn 0;\n};\n";
+  outfile << "import {case, report, requier} from \"ATest.af\" under test;\n"
+             "\timport TestSuite from \"ATest.af\";\n\n"
+             "\tbool simpleTest(adr _arg) : test.case {\n"
+	           "\ttest.requier(3 != 3, \"3 is 3\");\n"
+	           "\treturn 1 == 1;\n};\n\n";
+  
+  outfile << "bool simpleFail(adr _arg) : test.case {\n"
+	           "\treturn 1 == 2;\n"
+             "};\n\n";
+
+  outfile << "int main() {\n"
+	           "\tTestSuite suite = new TestSuite(\"Simple Test Suite\");\n"
+	           "\tsuite.addCase(simpleTest, \"simpleTest\");\n"
+	           "\tsuite.addCase(simpleFail, \"simpleFail\");\n"
+	           "\tsuite.run();\n"
+	           "\ttest.report();\n"
+	           "\treturn 0;\n"
+             "};";
   outfile.close();
 
   outfile = std::ofstream(value + "/aflat.cfg");
@@ -301,6 +317,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   linker.push_back(libPath + "asm.s");
   linker.push_back(libPath + "String.s");
   linker.push_back(libPath + "DateTime.s");
+  linker.push_back(libPath + "ATest.s");
 
   while (std::getline(ss, line)) {
     line = remove_char(line, '\t');
@@ -420,7 +437,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   system(gcc.c_str());
 
   // remove first 8 elements from the linker list
-  linker.erase(linker.begin(), linker.begin() + 10);
+  linker.erase(linker.begin(), linker.begin() + 11);
 
   // delete the linkerList files
   if (!debug) {
