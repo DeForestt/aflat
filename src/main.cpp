@@ -437,7 +437,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   system(gcc.c_str());
 
   // remove first 8 elements from the linker list
-  linker.erase(linker.begin(), linker.begin() + 10);
+  linker.erase(linker.begin(), linker.begin() + 11);
 
   // delete the linkerList files
   if (!debug) {
