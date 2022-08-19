@@ -1,0 +1,85 @@
+.needs <std>
+import {print, printInt} from "io" under io;
+import LinkedList from "Collections";
+import String from "String";
+import {printString} from "String" under str;
+
+// keep track of passes and failures
+int passes = 0;
+int failures = 0;
+
+int requiers = 0;
+
+export bool case(adr foo, adr _arg) {
+	io.print("Test Case "); io.print(_arg); io.print(": ");
+
+	bool result = foo(_arg);
+
+	if result {
+		io.print("OK\n", 'g');
+        passes = passes + 1;
+        io.print("\n----------------------------------------------------\n");
+		return true;
+	} else {
+		io.print("FAIL\n", 'r');
+        failures = failures + 1;
+        io.print("\n----------------------------------------------------\n");
+		return false;
+	};
+    requiers = 0;
+};
+
+export bool requier(bool result, adr describe) {
+    if result {
+        passes = passes + 1;
+        return true;
+    } else {
+        io.print("\n\tTest Requier: "); io.print(describe); io.print(": ");
+        io.print("FAIL\n", 'r');
+        failures = failures + 1;
+        return false;
+    };
+    requiers = requiers + 1;
+};
+
+export int report() {
+    io.print("Passed tests: "); io.printInt(passes); io.print("\n");
+    io.print("Failed tests: "); io.printInt(failures); io.print("\n");
+
+    for int i = 0; i < failures; i++ {
+        io.print("-", 'r');
+    };
+    
+    for int i = 0; i < passes; i++ {
+        io.print("+", 'g');
+    };
+    io.print("\n");
+};
+
+class TestSuite {
+    LinkedList cases = new LinkedList();
+    LinkedList args = new LinkedList();
+
+    String name = new String(name);
+
+    TestSuite init(adr name) {
+        return my;
+    };
+
+    int addCase(adr foo, adr _arg) {
+        my.cases.append(foo);
+        my.args.append(_arg);
+        return 0;
+    };
+
+    int run() {
+        io.print("\n\nRunning test suite: "); str.printString(my.name); io.print("\n\n\n");
+        for int i = 0; i < my.cases.size(); i++ {
+            adr foo = my.cases.get(i);
+            adr _arg = my.args.get(i);
+            foo(_arg);
+        };
+        return 0;
+    };
+
+};
