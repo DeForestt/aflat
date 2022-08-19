@@ -301,6 +301,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   linker.push_back(libPath + "asm.s");
   linker.push_back(libPath + "String.s");
   linker.push_back(libPath + "DateTime.s");
+  linker.push_back(libPath + "ATest.s");
 
   while (std::getline(ss, line)) {
     line = remove_char(line, '\t');
