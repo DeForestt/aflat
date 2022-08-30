@@ -125,7 +125,7 @@ int main(){
 };
 ```
 ### Annonymous Functions
-Functions can be defined without a name. Annonymous functions.If the unction body only has one statment, the curly braces are not requiered.
+Functions can be defined without a name. Annonymous functions.If the function body only has one statment, the curly braces are not requiered.
 ```js
 [<parameters>]=>{
     <function body>
