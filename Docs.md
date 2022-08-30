@@ -36,11 +36,17 @@ adr a = NULL;
 ```
 
 ## User Defined Types...
-Any Type Defined by a user will be an 8 bit memory refrence to the given tyoe
+Any Type Defined by a user will be an 8 bit memory refrence to the given type
 ```js
 Type a = new Type();
 ```
+A user defined type can be cast to and from an adr... be careful! This is not type safe!
+```js
+adr b = NULL;
+Type a = b;
+```
 
+You will see more about this in the class section.
 ## Functions
 
 ### Syntax
@@ -62,7 +68,7 @@ int add(int a, int b){
 };
 ```
 
-- A function can have an Optional argument by using the * opporator before. If the argument is not given, it will be passed as 'NULL'
+- A function can have an optional argument by using the * opporator before. If the argument is not given, it will be passed as `NULL`
 
 Example:
 ```js
@@ -114,12 +120,12 @@ int add(int a, int b){
 };
 
 int main(){
-    int i = add(1, 2);
+    int i = add(1, 2); // Be careful with function pointers! they are not type safe!
     return 0;
 };
 ```
 ### Annonymous Functions
-Functions can be defined without a name. Annonymous functions.If the unction body only has one statment, the curly braces are not requiered.
+Functions can be defined without a name. Annonymous functions.If the function body only has one statment, the curly braces are not requiered.
 ```js
 [<parameters>]=>{
     <function body>
@@ -143,6 +149,28 @@ Functions under the global scope can be public(default), private, or export.
     - Public functions are globaly accessable to the linker. This is necissary if using a header file.
     - Private functions are only accessable within the Module to avoid naming conflicts with other modules.
     - Export can be explicetly imported for use in another module and avoid naming conflicts during linking.
+
+### Function Decorators
+Functions can be decorated with functions. Functions that are decorated with a function must have a single refrence argument with the name _arg.  This can point to an object with multiple properties if needed.  The decorator function must take two arguments, adr foo and adr _arg.
+```js
+adr decorator(adr foo, adr _arg) {
+    io.print("Hello from Decorator");
+    return foo(_arg);
+};
+
+int decorated(adr _arg) : decorator {
+    io.print("Hello from Decorated");
+    return 0;
+};
+
+int main() {
+    decorated();
+};
+```
+
+The above example will print "Hello from Decorator" and then "Hello from Decorated" when the decorated function is called.
+
+Class Decorators are also supported. And will be documented in the class section.
 
 ## Statements
 
@@ -363,6 +391,62 @@ class <class name>{
 ```
 - A class function automaticly creates a pointer to the object that called it.  It is stored in the my variable.  This is useful for functions that need to access the class variables.
 
+### Constructor
+the constructor is a special function that is called when an object is created. The constructor must have the name `init`.  The syntax is:
+```js
+class <class name>{
+    <class name> init([<paramiters>]) {
+        <function body>
+        return my; // if my is not returned, the compiler wil assume that the constructor returns the address of the object (my).
+    };
+};
+```
+### Class fields
+Class fields are variables that are declared in the class definition.  They can be accessed from within the class by using the `my` reference.  The syntax is:
+```js
+class <class name>{
+    <mutability> <acess modifier> <type> <field name> = <initial value>;
+};
+```
+#### access modifiers
+If an initial value is specified, an assignment is added to the top of the constructor.
+
+The access modifier is used to determine the visibility of the field.  The following are valid access modifiers:
+    - `public` : the field is visible to all classes.
+    - `private` : the field is visible only to the class that defines it.
+
+### Class Decorators
+Class decorators are used to turn a function into an instance of a class.  It is syntactic sugar for passing a function pointer to the constructor.  The syntax is:
+```js
+class Decorator {
+    const adr foo = foo;
+    Decorator init(adr foo){
+        return my;
+    };
+
+    int runFoo(){
+        adr foo = my.foo;
+        return foo();
+    };
+};
+
+class HasDecoratedFunction {
+    
+    int decorated() : Decorator {
+        io.print("decorated");
+    };
+
+    HasDecoratedFunction init(){
+        return my;
+    };
+};
+
+int main(){
+    HasDecoratedFunction hdf = new HasDecoratedFunction();
+    hdf.decorated.runFoo(); // decorated is not a function, it is an instance of the Decorator class.
+    return 0;
+}
+```
 ## Contracts
 Contracts are used to create OO interfaces. The allows classes that sign them to behave as the parent class.  The syntax is:
 ```js
