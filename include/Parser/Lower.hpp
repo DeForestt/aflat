@@ -18,6 +18,7 @@ private:
   ast::Statment *lowerFunction(ast::Function *func);
   ast::Function *findFunction(ast::Statment *stmt, std::string ident,
                               bool &fromClass);
+  ast::Class *findClass(ast::Statment *stmt, std::string ident);
 };
 } // namespace lower
 } // namespace parse
