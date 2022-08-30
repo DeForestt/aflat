@@ -150,6 +150,28 @@ Functions under the global scope can be public(default), private, or export.
     - Private functions are only accessable within the Module to avoid naming conflicts with other modules.
     - Export can be explicetly imported for use in another module and avoid naming conflicts during linking.
 
+### Function Decorators
+Functions can be decorated with functions. Functions that are decorated with a function must have a single refrence argument with the name _arg.  This can point to an object with multiple properties if needed.  The decorator function must take two arguments, adr foo and adr _arg.
+```js
+adr decorator(adr foo, adr _arg) {
+    io.print("Hello from Decorator");
+    return foo(_arg);
+};
+
+int decorated(adr _arg) : decorator {
+    io.print("Hello from Decorated");
+    return 0;
+};
+
+int main() {
+    decorated();
+};
+```
+
+The above example will print "Hello from Decorator" and then "Hello from Decorated" when the decorated function is called.
+
+Class Decorators are also supported. And will be documented in the class section.
+
 ## Statements
 
 ### Declarations
