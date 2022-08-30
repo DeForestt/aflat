@@ -36,11 +36,15 @@ adr a = NULL;
 ```
 
 ## User Defined Types...
-Any Type Defined by a user will be an 8 bit memory refrence to the given tyoe
+Any Type Defined by a user will be an 8 bit memory refrence to the given type
 ```js
 Type a = new Type();
 ```
-
+A user defined type can be cast to and from an adr... be careful! This is not type safe!
+```js
+adr b = NULL;
+Type a = b;
+```
 ## Functions
 
 ### Syntax
