@@ -64,8 +64,41 @@ ast::Statment *Lower::lowerFunction(ast::Function *func) {
 
       ast::Function *dec =
           this->findFunction(this->root, func->decorator, fromClass);
-      if (dec == nullptr)
-        throw err::Exception("No Function " + func->decorator + " found");
+      if (dec == nullptr) {
+        ast::Class *cl = this->findClass(this->root, func->decorator);
+        if (!cl)
+          throw err::Exception("No Function " + func->decorator + " found");
+
+        if (!this->inclass)
+          throw err::Exception("Can't use a class as a decorator outside a class");
+
+        ast::Declare *declare = new ast::Declare;
+        declare->Ident = newFunc->ident.ident;
+        declare->type.size = asmc::QWord;
+        declare->type.typeName = cl->ident.ident;
+        declare->mut = false;
+        declare->TypeName = cl->ident.ident;
+
+        ast::DecAssign *decAssign = new ast::DecAssign;
+        decAssign->declare = declare;
+        decAssign->expr = call;
+        delete newFunc;
+        delete call;
+
+        ast::NewExpr *newExpr = new ast::NewExpr;
+        ast::Var *var = new ast::Var;
+        var->Ident = func->ident.ident;
+        newExpr->args.append(var);
+        newExpr->type = declare->type;
+        decAssign->expr = newExpr;
+
+        auto seq = new ast::Sequence;
+        seq->Statment1 = func;
+        seq->Statment2 = decAssign;
+
+        res = seq;
+        return res;
+      };
 
       if (dec->scopeName != "global" || fromClass) {
         call->call->modList.push(call->call->ident);
@@ -90,14 +123,15 @@ ast::Statment *Lower::lowerFunction(ast::Function *func) {
 
 ast::Function *Lower::findFunction(ast::Statment *stmt, std::string ident,
                                    bool &fromClass) {
-  if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
+  
+  if (stmt) if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
    auto seq = dynamic_cast<ast::Sequence *>(stmt);
     this->curr = seq;
     if (this->findFunction(seq->Statment1, ident, fromClass) != nullptr)
       return this->findFunction(seq->Statment1, ident, fromClass);
     if (this->findFunction(seq->Statment2, ident, fromClass) != nullptr)
       return this->findFunction(seq->Statment2, ident, fromClass);
-    seq->Statment2 = this->lower(seq->Statment2);
+    // seq->Statment2 = this->lower(seq->Statment2);
   } else if (dynamic_cast<ast::Function *>(stmt) != nullptr) {
     auto func = dynamic_cast<ast::Function *>(stmt);
     if (func->ident.ident == ident)
@@ -109,7 +143,24 @@ ast::Function *Lower::findFunction(ast::Statment *stmt, std::string ident,
       bool trash;
       return this->findFunction(cl->statment, ident, trash);
     }
-    cl->statment = this->lower(cl->statment);
+    // cl->statment = this->lower(cl->statment);
   };
+  return nullptr;
+}
+
+ast::Class *Lower::findClass(ast::Statment *stmt, std::string ident) {
+  if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
+       auto seq = dynamic_cast<ast::Sequence *>(stmt);
+    this->curr = seq;
+    if (this->findClass(seq->Statment1, ident) != nullptr)
+      return this->findClass(seq->Statment1, ident);
+    if (this->findClass(seq->Statment2, ident) != nullptr)
+      return this->findClass(seq->Statment2, ident);
+    seq->Statment2 = this->lower(seq->Statment2);
+  } else if (dynamic_cast<ast::Class *>(stmt) != nullptr) {
+    auto cl = dynamic_cast<ast::Class *>(stmt);
+    if (cl->ident.ident == ident)
+      return cl;
+  }
   return nullptr;
 }
