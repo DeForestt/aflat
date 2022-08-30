@@ -68,7 +68,7 @@ int add(int a, int b){
 };
 ```
 
-- A function can have an optional argument by using the * opporator before. If the argument is not given, it will be passed as 'NULL'
+- A function can have an optional argument by using the * opporator before. If the argument is not given, it will be passed as `NULL`
 
 Example:
 ```js
