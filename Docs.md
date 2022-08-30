@@ -391,6 +391,62 @@ class <class name>{
 ```
 - A class function automaticly creates a pointer to the object that called it.  It is stored in the my variable.  This is useful for functions that need to access the class variables.
 
+### Constructor
+the constructor is a special function that is called when an object is created. The constructor must have the name `init`.  The syntax is:
+```js
+class <class name>{
+    <class name> init([<paramiters>]) {
+        <function body>
+        return my; // if my is not returned, the compiler wil assume that the constructor returns the address of the object (my).
+    };
+};
+```
+### Class fields
+Class fields are variables that are declared in the class definition.  They can be accessed from within the class by using the `my` reference.  The syntax is:
+```js
+class <class name>{
+    <mutability> <acess modifier> <type> <field name> = <initial value>;
+};
+```
+#### access modifiers
+If an initial value is specified, an assignment is added to the top of the constructor.
+
+The access modifier is used to determine the visibility of the field.  The following are valid access modifiers:
+    - `public` : the field is visible to all classes.
+    - `private` : the field is visible only to the class that defines it.
+
+### Class Decorators
+Class decorators are used to turn a function into an instance of a class.  It is syntactic sugar for passing a function pointer to the constructor.  The syntax is:
+```js
+class Decorator {
+    const adr foo = foo;
+    Decorator init(adr foo){
+        return my;
+    };
+
+    int runFoo(){
+        adr foo = my.foo;
+        return foo();
+    };
+};
+
+class HasDecoratedFunction {
+    
+    int decorated() : Decorator {
+        io.print("decorated");
+    };
+
+    HasDecoratedFunction init(){
+        return my;
+    };
+};
+
+int main(){
+    HasDecoratedFunction hdf = new HasDecoratedFunction();
+    hdf.decorated.runFoo(); // decorated is not a function, it is an instance of the Decorator class.
+    return 0;
+}
+```
 ## Contracts
 Contracts are used to create OO interfaces. The allows classes that sign them to behave as the parent class.  The syntax is:
 ```js
