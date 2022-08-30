@@ -45,6 +45,8 @@ A user defined type can be cast to and from an adr... be careful! This is not ty
 adr b = NULL;
 Type a = b;
 ```
+
+You will see more about this in the class section.
 ## Functions
 
 ### Syntax
