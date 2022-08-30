@@ -120,7 +120,7 @@ int add(int a, int b){
 };
 
 int main(){
-    int i = add(1, 2);
+    int i = add(1, 2); // Be careful with function pointers! they are not type safe!
     return 0;
 };
 ```
