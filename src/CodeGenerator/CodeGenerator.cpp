@@ -136,7 +136,7 @@ void gen::CodeGenerator::alert(std::string message, bool error = true) {
       std::cout << "in function " << this->currentFunction->ident.ident << ": ";
     }
     std::cout << message << std::endl;
-    exit(0);
+    throw err::Exception(message);
   } else {
     std::cout << "Warning: " << message << std::endl;
   }
