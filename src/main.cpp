@@ -263,10 +263,10 @@ void buildTemplate(std::string value) {
 
   outfile = std::ofstream(value + "/src/test/test.af");
   outfile << ".needs <std>\n\n";
-  outfile << "import {case, report, requier} from \"ATest.af\" under test;\n"
+  outfile << "import {case, report, require} from \"ATest.af\" under test;\n"
              "\timport TestSuite from \"ATest.af\";\n\n"
              "\tbool simpleTest(adr _arg) : test.case {\n"
-	           "\ttest.requier(3 != 3, \"3 is 3\");\n"
+	           "\ttest.require(3 != 3, \"3 is 3\");\n"
 	           "\treturn 1 == 1;\n};\n\n";
   
   outfile << "bool simpleFail(adr _arg) : test.case {\n"

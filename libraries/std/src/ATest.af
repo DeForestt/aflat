@@ -8,7 +8,7 @@ import {printString} from "String" under str;
 int passes = 0;
 int failures = 0;
 
-int requiers = 0;
+int requires = 0;
 
 export bool case(adr foo, adr _arg) {
 	io.print("Test Case "); io.print(_arg); io.print(": ");
@@ -26,20 +26,20 @@ export bool case(adr foo, adr _arg) {
         io.print("\n----------------------------------------------------\n");
 		return false;
 	};
-    requiers = 0;
+    requires = 0;
 };
 
-export bool requier(bool result, adr describe) {
+export bool require(bool result, adr describe) {
     if result {
         passes = passes + 1;
         return true;
     } else {
-        io.print("\n\tTest Requier: "); io.print(describe); io.print(": ");
+        io.print("\n\tTest require: "); io.print(describe); io.print(": ");
         io.print("FAIL\n", 'r');
         failures = failures + 1;
         return false;
     };
-    requiers = requiers + 1;
+    requires = requires + 1;
 };
 
 export int report() {
