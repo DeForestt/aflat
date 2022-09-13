@@ -20,6 +20,13 @@ if ! [ -x "$(command -v aflat)" ]; then
   echo 'export AFLAT_INSTALLED=SET' >> ~/.bashrc
   echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.zshrc
   echo 'export AFLAT_INSTALLED=SET' >> ~/.zshrc
+
+  # check which shell is being used
+  if [ -n "$BASH_VERSION" ]; then
+    source ~/.bashrc
+  elif [ -n "$ZSH_VERSION" ]; then
+    source ~/.zshrc
+  fi
 fi
 
 # Check for ~/.aflat directory
