@@ -24,7 +24,7 @@ if ! [ -x "$(command -v aflat)" ]; then
   if [ -f ~/.zshrc ]; then
     echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.zshrc
   fi
-
+  echo "Exporting PATH"
   export PATH=$PATH:~/.aflat/aflat/bin
 fi
 
