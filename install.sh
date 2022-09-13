@@ -14,12 +14,12 @@ fi
 
 
 # Check if aflat is in the PATH
-if ! [[ $AFLAT_INSTALLED == "SET" ]]; then
-    echo 'Adding aflat to PATH'
-    echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.bashrc
-    echo 'export AFLAT_INSTALLED=SET' >> ~/.bashrc
-    echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.zshrc
-    echo 'export AFLAT_INSTALLED=SET' >> ~/.zshrc
+if ! [ -x "$(command -v aflat)" ]; then
+  echo 'Adding aflat to PATH'
+  echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.bashrc
+  echo 'export AFLAT_INSTALLED=SET' >> ~/.bashrc
+  echo 'export PATH=$PATH:~/.aflat/aflat/bin' >> ~/.zshrc
+  echo 'export AFLAT_INSTALLED=SET' >> ~/.zshrc
 fi
 
 # Check for ~/.aflat directory
@@ -39,8 +39,8 @@ mkdir ~/.aflat
 # Build libs
 (cd ~/.aflat/aflat && bash rebuild-libs.sh)
 
-# if ! [ '' ]; then
-#   echo 'Error: aflat is not installed.' >&2
-#   exit 1
-# fi
+if ! [ -x "$(command aflat)" ]; then
+  echo 'Error: aflat is not installed.' >&2
+  exit 1
+fi
 echo "Successfully installed aflat!"
