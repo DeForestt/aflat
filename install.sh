@@ -39,8 +39,8 @@ mkdir ~/.aflat
 # Build libs
 (cd ~/.aflat/aflat && bash rebuild-libs.sh)
 
-if ! [ -x "$(command -v aflat)" ]; then
-  echo 'Error: aflat is not installed.' >&2
-  exit 1
-fi
+# if ! [ '' ]; then
+#   echo 'Error: aflat is not installed.' >&2
+#   exit 1
+# fi
 echo "Successfully installed aflat!"
