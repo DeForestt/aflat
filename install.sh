@@ -17,7 +17,7 @@ fi
 if ! [ -x "$(command -v aflat)" ]; then
 
   echo 'Exporting PATH'
-  export PATH=$PATH:~/.aflat/aflat/bin
+  PATH=$PATH:~/.aflat/aflat/bin
 
   echo 'Adding aflat to PATH'
   # Check if .bashrc exists
