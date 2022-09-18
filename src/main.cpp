@@ -410,17 +410,17 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
     threads[i].join();
   }
 
-  linker.push_back(libPath + "io.s");
-  linker.push_back(libPath + "Collections.s");
-  linker.push_back(libPath + "math.s");
-  linker.push_back(libPath + "strings.s");
-  if (compatiblity) linker.push_back(libPath + "std-cmp.s"); else linker.push_back(libPath + "std.s");
-  linker.push_back(libPath + "concurrency.s");
-  linker.push_back(libPath + "files.s");
-  linker.push_back(libPath + "asm.s");
-  linker.push_back(libPath + "String.s");
-  linker.push_back(libPath + "DateTime.s");
-  linker.push_back(libPath + "ATest.s");
+  linker.insert(linker.begin(), libPath + "io.s");
+  linker.insert(linker.begin(), libPath + "Collections.s");
+  linker.insert(linker.begin(), libPath + "math.s");
+  linker.insert(linker.begin(), libPath + "strings.s");
+  if (compatiblity) linker.insert(linker.begin(), libPath + "std-cmp.s"); else linker.insert(linker.begin(), libPath + "std.s");
+  linker.insert(linker.begin(), libPath + "concurrency.s");
+  linker.insert(linker.begin(), libPath + "files.s");
+  linker.insert(linker.begin(), libPath + "asm.s");
+  linker.insert(linker.begin(), libPath + "String.s");
+  linker.insert(linker.begin(), libPath + "DateTime.s");
+  linker.insert(linker.begin(), libPath + "ATest.s");
 
   // run gcc on the linkerList
   std::string linkerList = "";
