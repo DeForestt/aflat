@@ -294,6 +294,7 @@ void buildTemplate(std::string value) {
 
 void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   bool debug = false;
+  bool compatiblity = false;
   int mutability = 0; // 0 = promiscuous, 1 = strict, 2 = safe
   std::vector<std::string> linker;
   std::vector<std::string> pathList;
@@ -306,18 +307,6 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   // loop through the config file line by line
   std::stringstream ss(content);
   std::string line;
-
-  linker.push_back(libPath + "io.s");
-  linker.push_back(libPath + "Collections.s");
-  linker.push_back(libPath + "math.s");
-  linker.push_back(libPath + "strings.s");
-  linker.push_back(libPath + "std.s");
-  linker.push_back(libPath + "concurrency.s");
-  linker.push_back(libPath + "files.s");
-  linker.push_back(libPath + "asm.s");
-  linker.push_back(libPath + "String.s");
-  linker.push_back(libPath + "DateTime.s");
-  linker.push_back(libPath + "ATest.s");
 
   while (std::getline(ss, line)) {
     line = remove_char(line, '\t');
@@ -396,6 +385,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
 
       linker.push_back("./bin/" + copy + ".s");
     };
+    
     // check if line starts with 'settings'
     if (line.substr(0, 3) == "set") {
       auto setting = line.substr(4);
@@ -417,6 +407,18 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   for (int i = 0; i < threads.size(); i++) {
     threads[i].join();
   }
+
+  linker.push_back(libPath + "io.s");
+  linker.push_back(libPath + "Collections.s");
+  linker.push_back(libPath + "math.s");
+  linker.push_back(libPath + "strings.s");
+  linker.push_back(libPath + "std.s");
+  linker.push_back(libPath + "concurrency.s");
+  linker.push_back(libPath + "files.s");
+  linker.push_back(libPath + "asm.s");
+  linker.push_back(libPath + "String.s");
+  linker.push_back(libPath + "DateTime.s");
+  linker.push_back(libPath + "ATest.s");
 
   // run gcc on the linkerList
   std::string linkerList = "";
