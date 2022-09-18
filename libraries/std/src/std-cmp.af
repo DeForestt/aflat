@@ -1,0 +1,99 @@
+.needs <std>
+.needs <asm>
+
+import * from "io" under io;
+
+Block head = NULL;
+
+//helpers
+
+Block findFreeBlock(Block last, int size) {
+    // this function is not available in compatiblity mode
+    panic("findFreeBlock is not available in compatibility mode");
+};
+
+Block requestSpace(Block last, int size){
+    // this function is not availible in compatiblity mode
+    panic("requestSpace is not availible in compatiblity mode");
+};
+
+Time newTime(adr count){
+    Time this = malloc(Time);
+    this.amount = count;
+    return this;
+};
+
+Block getBlock(adr ptr){
+    // this function is not available in compatiblity mode
+    panic("getBlock is not available in compatibility mode");
+};
+
+int splitBlock(Block block, int size){
+    // this function is not available in compatiblity mode
+    panic("splitBlock is not available in compatibility mode");
+};
+
+int defragment(Block block){
+    // this function is not available in compatiblity mode
+    panic("defragment is not available in compatibility mode");
+};
+
+int deFragAll(Block head){
+    // this function is not available in compatiblity mode
+    panic("deFragAll is not available in compatibility mode");
+};
+
+int blockSize(adr ptr) {
+    // this function is not available in compatiblity mode
+    panic("blockSize is not available in compatibility mode");
+};
+
+int inspectHeap() {
+    // this function is not available in compatiblity mode
+    panic("inspectHeap is not available in compatibility mode");
+};
+
+Bit newBit(int value){
+	Bit b = malloc(Bit);
+	b.value = value;
+	b.last = NULL;
+	b.next = NULL;
+	return b;
+};
+
+Times newTimes(){
+    Times t = malloc(Times);
+    t.tms_cstime = 0;
+    t.tms_cutime = 0;
+    t.tms_stime = 0;
+    t.tms_utime = 0;
+    return t;
+};
+
+int panic(adr msg){
+    io.print("Panic: ", 'r'); io.print(msg);
+    io.print("\n");
+    sys_exit(1);
+};
+
+int assert(bool cond, * adr message){
+    if !cond {
+        io.print("Failed assert: ");
+        if message != NULL
+            io.print(message);
+        io.print("\n");
+        sys_exit(1);
+    };
+    return 0;
+};
+
+int sleep(int seconds, * int nanoseconds){
+    long sec = #0 + seconds;
+    long nsec = #0 + nanoseconds;
+    TimeSpec t = new TimeSpec();
+    t.tv_sec = sec;
+    t.tv_nsec = nsec;
+    sys_nsleep(t);
+    free(t);
+    return 0;
+};

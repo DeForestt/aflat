@@ -96,7 +96,7 @@ int deFragAll(Block head){
 };
 
 //Interface
-int memcopy (adr from, adr to, int size){
+int memcpy (adr from, adr to, int size){
     int i = 0;
     while(i < size){
         byte b = from as byte;
@@ -174,7 +174,7 @@ adr realloc(adr ptr, int size){
     if (new_ptr == #0){return #0;};
     int bsize;
     bsize = block.size;
-    memcopy(ptr, new_ptr, bsize);
+    memcpy(ptr, new_ptr, bsize);
     free(ptr);
     return new_ptr;
 };

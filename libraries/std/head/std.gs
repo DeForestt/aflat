@@ -37,7 +37,7 @@ Time newTime(adr size);
 adr malloc(int size);
 adr realloc(adr ptr, int size);
 int inspectHeap();
-int memcopy(adr src, adr dst, int size);
+int memcpy(adr src, adr dst, int size);
 int panic(adr msg);
 int assert(bool cond, * adr message);
 int sleep(int seconds, * int nanoseconds);
