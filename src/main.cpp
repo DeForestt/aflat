@@ -399,6 +399,8 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
         } else if (setting.substr(4) == "safe") {
           mutability = 2;
         }
+      } else if (setting == "compatiblity") {
+        compatiblity = true;
       }
     }
   }
@@ -412,7 +414,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   linker.push_back(libPath + "Collections.s");
   linker.push_back(libPath + "math.s");
   linker.push_back(libPath + "strings.s");
-  linker.push_back(libPath + "std.s");
+  if (compatiblity) linker.push_back(libPath + "std-cmp.s"); else linker.push_back(libPath + "std.s");
   linker.push_back(libPath + "concurrency.s");
   linker.push_back(libPath + "files.s");
   linker.push_back(libPath + "asm.s");

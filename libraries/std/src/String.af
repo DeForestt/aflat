@@ -58,7 +58,7 @@ String init@String(adr value){
     length = length + 1;
     my.head = malloc(length);
     adr head = my.head;
-    memcopy(value, head, length);
+    memcpy(value, head, length);
 };
 
 String concat@String(String s){
@@ -68,9 +68,9 @@ String concat@String(String s){
     int length = mylen + slen;
     adr newhead = malloc(length);
     adr ret = newhead;
-    memcopy(my.head, newhead, mylen);
+    memcpy(my.head, newhead, mylen);
     newhead = newhead + mylen;
-    memcopy(s.head, newhead, slen);
+    memcpy(s.head, newhead, slen);
     String newString = new String(ret);
     free(ret);
     return newString;
@@ -83,9 +83,9 @@ String stitch@String(adr value){
     int length = mylen + slen;
     adr newhead = malloc(length);
     adr ret = newhead;
-    memcopy(my.head, newhead, mylen);
+    memcpy(my.head, newhead, mylen);
     newhead = newhead + mylen;
-    memcopy(value, newhead, slen);
+    memcpy(value, newhead, slen);
     String newString = new String(ret);
     free(ret);
     return newString;
@@ -99,7 +99,7 @@ String subString@String(int start, int end){
     adr newhead = malloc(length + 1);
     adr ret = newhead;
     head = head + start;
-    memcopy(head, newhead, length);
+    memcpy(head, newhead, length);
     newhead = newhead + length;
     newhead =: '\0';
     String newString = new String(ret);
@@ -220,7 +220,7 @@ String replace@String(char o, char n){
     int length = my.len();
     length = length + 1;
     adr head = my.head;
-    memcopy(head, newhead, length);
+    memcpy(head, newhead, length);
     int i = 0;
     while(i < length){
         if(my.at(i) == o){
