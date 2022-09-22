@@ -70,8 +70,11 @@ class Enum : public Type {
     EnumValue(std::string name, int value) : name(name), value(value) {};
   };
 
+  Enum();
+
   links::SLinkedList<EnumValue, std::string> values;
   static bool compair(Type* t, std::string ident);
+  static bool compairEnum(EnumValue e, std::string ident);
 };
 
 

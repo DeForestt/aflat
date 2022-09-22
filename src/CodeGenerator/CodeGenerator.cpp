@@ -20,6 +20,15 @@ ast::CallExpr * imply(ast::Expr * expr, std::string typeName) {
   return call;
 }
 
+
+bool gen::Enum::compairEnum(gen::Enum::EnumValue e, std::string ident) {
+  return e.name == ident;
+};
+
+gen::Enum::Enum() {
+  this->values.foo = gen::Enum::compairEnum;
+}
+
 bool searchSymbol(gen::Symbol sym, std::string str) {
   if (sym.symbol == str)
     return true;
@@ -562,10 +571,25 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile,
       Type** t = this->typeList[ident];
       if (t != nullptr) {
         Type* type = *t;
-        output.size = asmc::DWord;
+        // check if t is an enum
+        gen::Enum* en = dynamic_cast<gen::Enum*>(type);
+        if (en) {
+          if (var.modList.trail() == 0) {
+            alert("Enum " + ident + " cannot be used as a variable");
+          }
+          std::string enumIdent = var.modList.shift();
+          gen::Enum::EnumValue* item = en->values[enumIdent];
+          if (!item) {
+            alert("Enum " + ident + " does not contain " + enumIdent);
+          }
+          output.access = '$' + std::to_string(item->value);
+          output.type = en->Ident;
+        } else {
         output.access =
             '$' + std::to_string(type->SymbolTable.head->data.byteMod);
-        output.type = "int";
+            output.type = "int";
+        };
+        output.size = asmc::DWord;
       } else if (ident == "int") {
         output.size = asmc::DWord;
         output.access = "$4";
@@ -2569,8 +2593,9 @@ void gen::CodeGenerator::genClass(ast::Class* deff, asmc::File& OutputFile) {
 void gen::CodeGenerator::genEnum(ast::Enum* deff, asmc::File& OutputFile) {
   gen::Enum* type = new gen::Enum();
   type->Ident = deff->Ident;
+  int i = 0;
   for ( std::string s : deff->values)
-    type->values << gen::Enum::EnumValue(s, type->values.count - 1);
+    type->values << gen::Enum::EnumValue(s, i++);
   
   this->typeList.push(type);
 };
