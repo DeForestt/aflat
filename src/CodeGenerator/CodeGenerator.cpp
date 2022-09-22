@@ -1443,6 +1443,8 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
     this->genUDef(dynamic_cast<ast::UDeffType*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Class*>(STMT) != nullptr) {
     this->genClass(dynamic_cast<ast::Class*>(STMT), OutputFile);
+  } else if (dynamic_cast<ast::Enum*>(STMT)) {
+    this->genEnum(dynamic_cast<ast::Enum*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Inc*>(STMT) != nullptr) {
     this->genInc(dynamic_cast<ast::Inc*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Dec*>(STMT) != nullptr) {
@@ -2563,6 +2565,15 @@ void gen::CodeGenerator::genClass(ast::Class* deff, asmc::File& OutputFile) {
   this->globalScope = saveScope;
   this->scope = nullptr;
 }
+
+void gen::CodeGenerator::genEnum(ast::Enum* deff, asmc::File& OutputFile) {
+  gen::Enum* type = new gen::Enum();
+  type->Ident = deff->Ident;
+  for ( std::string s : deff->values)
+    type->values << gen::Enum::EnumValue(s, type->values.count - 1);
+  
+  this->typeList.push(type);
+};
 
 void gen::CodeGenerator::genInc(ast::Inc* inc, asmc::File& OutputFile) {
   gen::Symbol* sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);

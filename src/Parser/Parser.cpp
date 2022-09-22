@@ -1,5 +1,6 @@
 #include "Parser/Parser.hpp"
 #include "Exceptions.hpp"
+#include <iostream>
 #include "Parser/AST.hpp"
 
 ast::Expr *prioritizeExpr(ast::Expr *expr);
@@ -580,7 +581,6 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
       output = item;
     } else if (obj.meta == "enum") {
       auto item = new ast::Enum();
-      
       if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
         auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
         item->Ident = ident.meta;
