@@ -60,6 +60,24 @@ class Class : public Type {
   gen::Class* parent = nullptr;
 };
 
+class Enum : public Type {
+ public:
+  struct EnumValue {
+   public:
+    std::string name;
+    int value;
+    EnumValue() = default;
+    EnumValue(std::string name, int value) : name(name), value(value) {};
+  };
+
+  Enum();
+
+  links::SLinkedList<EnumValue, std::string> values;
+  static bool compair(Type* t, std::string ident);
+  static bool compairEnum(EnumValue e, std::string ident);
+};
+
+
 class CodeGenerator {
  protected:
 #pragma region State Variables
@@ -124,6 +142,7 @@ class CodeGenerator {
   void genFor(ast::For* loop, asmc::File& OPutputFile);
   void genUDef(ast::UDeffType* udef, asmc::File& OutputFile);
   void genClass(ast::Class* deff, asmc::File& OutputFile);
+  void genEnum(ast::Enum* deff, asmc::File& OutputFile);
   void genInc(ast::Inc* inc, asmc::File& OutputFile);
   void genDec(ast::Dec* inc, asmc::File& OutputFile);
   void genImport(ast::Import* imp, asmc::File& OutputFile);
