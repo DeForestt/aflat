@@ -578,6 +578,42 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
 
       item->statment = this->parseStmt(tokens);
       output = item;
+    } else if (obj.meta == "enum") {
+      auto item = new ast::Enum();
+      
+      if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+        auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
+        item->Ident = ident.meta;
+      } else
+        throw err::Exception(
+            "Line: " + std::to_string(tokens.peek()->lineCount) +
+            " enum needs Ident");
+
+      lex::OpSym *op = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (!op || op->Sym != '{')
+        throw err::Exception(
+            "Line: " + std::to_string(tokens.peek()->lineCount) +
+            " Unopened Enum");
+        
+        tokens.pop();
+
+      while (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+        auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
+        item->values.push_back(ident.meta);
+        op = dynamic_cast<lex::OpSym *>(tokens.peek());
+        if (op && op->Sym == ',')
+          tokens.pop();
+      };
+
+      op = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (!op || op->Sym != '}')
+        throw err::Exception(
+            "Line: " + std::to_string(tokens.peek()->lineCount) +
+            " Unclosed Enum");
+      tokens.pop();
+      output = item;
+      this->typeList << ast::Type(item->Ident, asmc::DWord);
+      
     } else if (obj.meta == "import") {
       auto imp = new ast::Import();
 
