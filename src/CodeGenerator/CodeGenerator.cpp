@@ -90,6 +90,11 @@ ast::Statment* extract(std::string ident, ast::Statment* stmt,
       shellStatment(cls->statment);
       return stmt;
     }
+  } else if (dynamic_cast<ast::Enum*>(stmt)) {
+    ast::Enum* enm = dynamic_cast<ast::Enum*>(stmt);
+    if (enm->Ident == ident) {
+      return stmt;
+    }
   } else if (dynamic_cast<ast::Function*>(stmt)) {
     ast::Function* func = dynamic_cast<ast::Function*>(stmt);
     if (func->ident.ident == ident || ident == "*") {
