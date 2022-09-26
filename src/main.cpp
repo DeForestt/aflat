@@ -420,6 +420,8 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   linker.insert(linker.begin(), libPath + "asm.s");
   linker.insert(linker.begin(), libPath + "String.s");
   linker.insert(linker.begin(), libPath + "DateTime.s");
+  linker.insert(linker.begin(), libPath + "HTTP.s");
+  linker.insert(linker.begin(), libPath + "request.s");
   linker.insert(linker.begin(), libPath + "ATest.s");
 
   // run gcc on the linkerList
@@ -441,7 +443,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   system(gcc.c_str());
 
   // remove first 8 elements from the linker list
-  linker.erase(linker.begin(), linker.begin() + 11);
+  linker.erase(linker.begin(), linker.begin() + 13);
 
   // delete the linkerList files
   if (!debug) {
