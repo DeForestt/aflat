@@ -21,8 +21,9 @@
 std::string preProcess(std::string input);
 std::string getExePath();
 void buildTemplate(std::string value);
-void build(std::string path, std::string output, int mutability = 0);
+void build(std::string path, std::string output, cfg::Mutibility mutibility);
 void runConfig(std::string path, std::string libPath, char pmode = 'e');
+void runConfig(cfg::Config config, std::string libPath, char pmode);
 
 int main(int argc, char *argv[]) {
   // Usage error
@@ -49,16 +50,28 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   if (value == "build") {
-    runConfig("./aflat.cfg", libPathA);
+    std::ifstream ifs("aflat.cfg");
+    std::string content((std::istreambuf_iterator<char>(ifs)),
+                    (std::istreambuf_iterator<char>()));
+    cfg::Config config = cfg::getConfig(content);
+    runConfig(config, libPathA, 'e');
     return 0;
   }
   if (value == "run") {
-    runConfig("./aflat.cfg", libPathA);
+    std::ifstream ifs("aflat.cfg");
+    std::string content((std::istreambuf_iterator<char>(ifs)),
+                    (std::istreambuf_iterator<char>()));
+    cfg::Config config = cfg::getConfig(content);
+    runConfig(config, libPathA, 'e');
     system("./bin/a.out");
     return 0;
   }
   if (value == "test") {
-    runConfig("./aflat.cfg", libPathA, 't');
+    std::ifstream ifs("aflat.cfg");
+    std::string content((std::istreambuf_iterator<char>(ifs)),
+                    (std::istreambuf_iterator<char>()));
+    cfg::Config config = cfg::getConfig(content);
+    runConfig(config, libPathA, 't');
     system("./bin/a.test");
     return 0;
   }
@@ -123,7 +136,7 @@ int main(int argc, char *argv[]) {
   else
     outputFile = argv[2];
   if (std::filesystem::exists(value)) {
-    build(value, outputFile);
+    build(value, outputFile, cfg::Mutibility::Promiscuous);
   } else {
     std::cout << "File " << value << " does not exist\n";
     return 1;
@@ -131,7 +144,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void build(std::string path, std::string output, int mutability = 0) {
+void build(std::string path, std::string output, cfg::Mutibility mutability) {
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;
 
@@ -281,183 +294,13 @@ void buildTemplate(std::string value) {
   outfile.close();
 }
 
-void runConfig(std::string path, std::string libPath, char pmode = 'e') {
-  bool debug = false;
-  bool compatibility = false;
-  int mutability = 0; // 0 = promiscuous, 1 = strict, 2 = safe
-  std::vector<std::string> linker;
-  std::vector<std::string> pathList;
-  std::vector<std::thread> threads;
-  // open the config file
-  std::ifstream ifs(path);
-  std::string content((std::istreambuf_iterator<char>(ifs)),
-                      (std::istreambuf_iterator<char>()));
-
-  // loop through the config file line by line
-  std::stringstream ss(content);
-  std::string line;
-
-  while (std::getline(ss, line)) {
-    line = utils::remove_char(line, '\t');
-
-    // get a copy of the line after the first char
-    auto copy = line.substr(1);
-    copy = utils::remove_char(copy, ' ');
-    auto lowerCaseCopy = copy;
-    std::transform(lowerCaseCopy.begin(), lowerCaseCopy.end(),
-                   lowerCaseCopy.begin(), ::tolower);
-
-    // if the line is a comment, skip it
-    if (line[0] == ';')
-      continue;
-
-    // if the line is a dependency, build it and add it to the linker
-    if (line[0] == 'm' | line[0] == pmode) {
-      std::string addPath = "";
-
-      // Check if the modual name has a path
-      if (copy.find("/") != std::string::npos) {
-        addPath = copy.substr(0, copy.find_last_of("/"));
-      }
-
-      // Check if path is in the pathList
-      bool found = false;
-      for (auto path : pathList) {
-        if (path == addPath) {
-          found = true;
-          break;
-        }
-      }
-
-      if (!found && addPath != "") {
-        std::filesystem::create_directories("./bin/" + addPath);
-        pathList.push_back(addPath);
-      }
-
-      // add the thread to the vector of threads
-      build("./src/" + copy + ".af", "./bin/" + copy + ".s", mutability);
-
-      // add the library to the linker
-      linker.push_back("./bin/" + copy + ".s");
-    }
-
-    // if the line starts with 'c' build the c file and add it to the linker
-    if (line[0] == 'c') {
-      std::string addPath = "";
-
-      // Check if the modual name has a path
-      if (copy.find("/") != std::string::npos) {
-        addPath = copy.substr(0, copy.find_last_of("/"));
-      }
-
-      // Check if path is in the pathList
-      bool found = false;
-      for (auto path : pathList) {
-        if (path == addPath) {
-          found = true;
-          break;
-        }
-      }
-
-      if (!found && addPath != "") {
-        std::filesystem::create_directories("./bin/" + addPath);
-        pathList.push_back(addPath);
-      }
-
-      if (debug)
-        system(
-            ("gcc -g -no-pie -S ./src/" + copy + ".c -o ./bin/" + copy + ".s")
-                .c_str());
-      else
-        system(("gcc -S -no-pie ./src/" + copy + ".c -o ./bin/" + copy + ".s")
-                   .c_str());
-
-      linker.push_back("./bin/" + copy + ".s");
-    };
-    
-    // check if line starts with 'settings'
-    if (line.substr(0, 3) == "set") {
-      auto setting = line.substr(4);
-      if (setting == "debug") {
-        debug = true;
-      } else if (setting.substr(0, 3) == "mut") {
-        if (setting.substr(4) == "promiscuous") {
-          mutability = 0;
-        } else if (setting.substr(4) == "strict") {
-          mutability = 1;
-        } else if (setting.substr(4) == "safe") {
-          mutability = 2;
-        }
-      } else if (setting == "compatibility") {
-        compatibility = true;
-      }
-    }
-  }
-
-  // join all the threads
-  for (int i = 0; i < threads.size(); i++) {
-    threads[i].join();
-  }
-
-  linker.insert(linker.begin(), libPath + "io.s");
-  linker.insert(linker.begin(), libPath + "Collections.s");
-  linker.insert(linker.begin(), libPath + "math.s");
-  linker.insert(linker.begin(), libPath + "strings.s");
-  if (compatibility) linker.insert(linker.begin(), libPath + "std-cmp.s"); else linker.insert(linker.begin(), libPath + "std.s");
-  linker.insert(linker.begin(), libPath + "concurrency.s");
-  linker.insert(linker.begin(), libPath + "files.s");
-  linker.insert(linker.begin(), libPath + "asm.s");
-  linker.insert(linker.begin(), libPath + "String.s");
-  linker.insert(linker.begin(), libPath + "DateTime.s");
-  linker.insert(linker.begin(), libPath + "HTTP.s");
-  linker.insert(linker.begin(), libPath + "request.s");
-  linker.insert(linker.begin(), libPath + "ATest.s");
-
-  // run gcc on the linkerList
-  std::string linkerList = "";
-  for (auto &s : linker) {
-    linkerList += s + " ";
-  }
-
-  std::string ofile = "./bin/a.out ";
-  if (pmode == 't') {
-    ofile = "./bin/a.test ";
-  };
-
-  auto gcc = "gcc -O0 -no-pie -o " + ofile + linkerList;
-  if (debug) {
-    gcc = "gcc -O0 -g -no-pie -o " + ofile + linkerList;
-  }
-
-  system(gcc.c_str());
-
-  // remove first 8 elements from the linker list
-  linker.erase(linker.begin(), linker.begin() + 13);
-
-  // delete the linkerList files
-  if (!debug) {
-    for (auto &s : linker) {
-      std::filesystem::remove(s);
-    }
-
-    // remove the paths from the pathList
-    for (auto &s : pathList) {
-      std::filesystem::remove_all("./bin/" + s);
-    }
-  };
-} 
-
-void buildCfgItem(){
-
-}
-
-void runConfig(cfg::Config config, std::string libpath, char pmode) {
+void runConfig(cfg::Config config, std::string libPath, char pmode) {
   std::vector<std::string> linker;
   std::vector<std::string> pathList;
 
-  if (pmode == e) {
+  if (pmode == 'e') {
     config.modules.push_back(config.entryPoint);
-  } else if (pmode == t) {
+  } else if (pmode == 't') {
     config.modules.push_back(config.testFile);
   }
 
@@ -465,7 +308,7 @@ void runConfig(cfg::Config config, std::string libpath, char pmode) {
    std::string path = mod;
    std::string addPath = "";
 
-   if (path.find("/") != std:string::npos) {
+   if (path.find("/") != std::string::npos) {
      addPath = path.substr(0, path.find_last_of("/"));
    }
 
@@ -490,7 +333,7 @@ void runConfig(cfg::Config config, std::string libpath, char pmode) {
     std::string path = file;
     std::string addPath = "";
 
-    if (path.find("/") != std:string::npos) {
+    if (path.find("/") != std::string::npos) {
       addPath = path.substr(0, path.find_last_of("/"));
     }
 
@@ -522,12 +365,14 @@ void runConfig(cfg::Config config, std::string libpath, char pmode) {
   linker.insert(linker.begin(), libPath + "Collections.s");
   linker.insert(linker.begin(), libPath + "math.s");
   linker.insert(linker.begin(), libPath + "strings.s");
-  if (linker.compatiblity) linker.insert(linker.begin(), libPath + "std-cmp.s"); else linker.insert(linker.begin(), libPath + "std.s");
+  if (config.compatibility) linker.insert(linker.begin(), libPath + "std-cmp.s"); else linker.insert(linker.begin(), libPath + "std.s");
   linker.insert(linker.begin(), libPath + "concurrency.s");
   linker.insert(linker.begin(), libPath + "files.s");
   linker.insert(linker.begin(), libPath + "asm.s");
   linker.insert(linker.begin(), libPath + "String.s");
   linker.insert(linker.begin(), libPath + "DateTime.s");
+  linker.insert(linker.begin(), libPath + "HTTP.s");
+  linker.insert(linker.begin(), libPath + "request.s");
   linker.insert(linker.begin(), libPath + "ATest.s");
 
   // run gcc on the linkerList
@@ -547,6 +392,16 @@ void runConfig(cfg::Config config, std::string libpath, char pmode) {
   }
 
   system(gcc.c_str());
-  linker.erase(linker.begin(), linker.begin() + 11);
+  linker.erase(linker.begin(), linker.begin() + 13);
 
-} 
+  if (!config.debug) {
+    for (auto &s : linker) {
+      std::filesystem::remove(s);
+    }
+
+    // remove the paths from the pathList
+    for (auto &s : pathList) {
+      std::filesystem::remove_all("./bin/" + s);
+    }
+  }
+}

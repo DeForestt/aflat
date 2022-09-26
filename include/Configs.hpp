@@ -6,9 +6,9 @@ namespace cfg
 {
 
 enum Mutibility {
-    Promiscuous,
-    Strict,
-    Safe
+    Promiscuous = 0,
+    Strict = 1,
+    Safe = 2
 };
 
 struct Config {
@@ -17,10 +17,10 @@ struct Config {
     std::vector<std::string> cFiles;
     std::string testFile;
     std::string entryPoint;
-    std::string outPutFile;
-    Mutibility mutibility;
-    bool debug;
-    bool compatibility;
+    std::string outPutFile = "a.out";
+    Mutibility mutibility = Mutibility::Promiscuous;
+    bool debug = false;
+    bool compatibility = false;
 };
 
 Config getConfig(std::string content);
