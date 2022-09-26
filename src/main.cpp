@@ -7,6 +7,7 @@
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
+#include "Configs.hpp"
 #include "Utils.hpp"
 #include <algorithm>
 #include <filesystem>
@@ -442,4 +443,108 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
       std::filesystem::remove_all("./bin/" + s);
     }
   };
+} 
+
+void buildCfgItem(){
+
 }
+
+void runConfig(cfg::Config config, std::string libpath, char pmode) {
+  std::vector<std::string> linker;
+  std::vector<std::string> pathList;
+
+  if (pmode == e) {
+    config.modules.push_back(config.entryPoint);
+  } else if (pmode == t) {
+    config.modules.push_back(config.testFile);
+  }
+
+  for (auto mod : config.modules) {
+   std::string path = mod;
+   std::string addPath = "";
+
+   if (path.find("/") != std:string::npos) {
+     addPath = path.substr(0, path.find_last_of("/"));
+   }
+
+    bool found = false;
+    for (auto path : pathList) {
+      if (path == addPath) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found && addPath != "") {
+      std::filesystem::create_directories("./bin/" + addPath);
+      pathList.push_back(addPath);
+    }
+
+    build("./src/" + path + ".af", "./bin/" + path + ".s", config.mutibility);
+    linker.push_back("./bin/" + path + ".s");
+  }
+
+  for (auto file : config.cFiles) {
+    std::string path = file;
+    std::string addPath = "";
+
+    if (path.find("/") != std:string::npos) {
+      addPath = path.substr(0, path.find_last_of("/"));
+    }
+
+    bool found = false;
+    for (auto path : pathList) {
+      if (path == addPath) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found && addPath != "") {
+      std::filesystem::create_directories("./bin/" + addPath);
+      pathList.push_back(addPath);
+    }
+
+    if (config.debug)
+      system(
+          ("gcc -g -no-pie -S ./src/" + path + ".c -o ./bin/" + path + ".s")
+              .c_str());
+    else
+      system(("gcc -S -no-pie ./src/" + path + ".c -o ./bin/" + path + ".s")
+                 .c_str());
+
+    linker.push_back("./bin/" + path + ".s");
+  }
+  
+  linker.insert(linker.begin(), libPath + "io.s");
+  linker.insert(linker.begin(), libPath + "Collections.s");
+  linker.insert(linker.begin(), libPath + "math.s");
+  linker.insert(linker.begin(), libPath + "strings.s");
+  if (linker.compatiblity) linker.insert(linker.begin(), libPath + "std-cmp.s"); else linker.insert(linker.begin(), libPath + "std.s");
+  linker.insert(linker.begin(), libPath + "concurrency.s");
+  linker.insert(linker.begin(), libPath + "files.s");
+  linker.insert(linker.begin(), libPath + "asm.s");
+  linker.insert(linker.begin(), libPath + "String.s");
+  linker.insert(linker.begin(), libPath + "DateTime.s");
+  linker.insert(linker.begin(), libPath + "ATest.s");
+
+  // run gcc on the linkerList
+  std::string linkerList = "";
+  for (auto &s : linker) {
+    linkerList += s + " ";
+  }
+
+  std::string ofile = "./bin/a.out ";
+  if (pmode == 't') {
+    ofile = "./bin/a.test ";
+  };
+
+  auto gcc = "gcc -no-pie -o " + ofile + linkerList;
+  if (config.debug) {
+    gcc = "gcc -O0 -g -no-pie -o " + ofile + linkerList;
+  }
+
+  system(gcc.c_str());
+  linker.erase(linker.begin(), linker.begin() + 11);
+
+} 
