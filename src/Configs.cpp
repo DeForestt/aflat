@@ -33,6 +33,8 @@ cfg::Config cfg::getConfig(std::string content) {
             config.outPutFile = copy;
         } else if (line[0] == 'c') {
             config.cFiles.push_back(copy);
+        } else if (line[0] == 'v') {
+            config.aflatVersion = copy;
         } else if (line.substr(0, 3) == "set") {
             auto setting = line.substr(4);
             if (setting == "debug") {
