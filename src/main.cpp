@@ -7,6 +7,7 @@
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
+#include "Utils.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -210,19 +211,6 @@ void build(std::string path, std::string output, int mutability = 0) {
 };
 
 /*
- * function name:   remove_char
- * Description:     removes a character from a string
- * Parameters:      std::string str - the string to remove from
- *                 char ch - the character to remove
- * Returns:         std::string - the string with the character removed
- */
-std::string remove_char(std::string str, char ch) {
-  // remove all occurrences of char ch from str
-  str.erase(std::remove(str.begin(), str.end(), ch), str.end());
-  return str;
-}
-
-/*
  * function name:   getExePath
  * description:     gets the path of the executable
  * parameters:      none
@@ -309,11 +297,11 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   std::string line;
 
   while (std::getline(ss, line)) {
-    line = remove_char(line, '\t');
+    line = utils::remove_char(line, '\t');
 
     // get a copy of the line after the first char
     auto copy = line.substr(1);
-    copy = remove_char(copy, ' ');
+    copy = utils::remove_char(copy, ' ');
     auto lowerCaseCopy = copy;
     std::transform(lowerCaseCopy.begin(), lowerCaseCopy.end(),
                    lowerCaseCopy.begin(), ::tolower);
