@@ -20,6 +20,15 @@ ast::CallExpr * imply(ast::Expr * expr, std::string typeName) {
   return call;
 }
 
+
+bool gen::Enum::compairEnum(gen::Enum::EnumValue e, std::string ident) {
+  return e.name == ident;
+};
+
+gen::Enum::Enum() {
+  this->values.foo = gen::Enum::compairEnum;
+}
+
 bool searchSymbol(gen::Symbol sym, std::string str) {
   if (sym.symbol == str)
     return true;
@@ -79,6 +88,11 @@ ast::Statment* extract(std::string ident, ast::Statment* stmt,
     ast::Class* cls = dynamic_cast<ast::Class*>(stmt);
     if (cls->ident.ident == ident) {
       shellStatment(cls->statment);
+      return stmt;
+    }
+  } else if (dynamic_cast<ast::Enum*>(stmt)) {
+    ast::Enum* enm = dynamic_cast<ast::Enum*>(stmt);
+    if (enm->Ident == ident) {
       return stmt;
     }
   } else if (dynamic_cast<ast::Function*>(stmt)) {
@@ -562,10 +576,25 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile,
       Type** t = this->typeList[ident];
       if (t != nullptr) {
         Type* type = *t;
-        output.size = asmc::DWord;
+        // check if t is an enum
+        gen::Enum* en = dynamic_cast<gen::Enum*>(type);
+        if (en) {
+          if (var.modList.trail() == 0) {
+            alert("Enum " + ident + " cannot be used as a variable");
+          }
+          std::string enumIdent = var.modList.shift();
+          gen::Enum::EnumValue* item = en->values[enumIdent];
+          if (!item) {
+            alert("Enum " + ident + " does not contain " + enumIdent);
+          }
+          output.access = '$' + std::to_string(item->value);
+          output.type = en->Ident;
+        } else {
         output.access =
             '$' + std::to_string(type->SymbolTable.head->data.byteMod);
-        output.type = "int";
+            output.type = "int";
+        };
+        output.size = asmc::DWord;
       } else if (ident == "int") {
         output.size = asmc::DWord;
         output.access = "$4";
@@ -1443,6 +1472,8 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
     this->genUDef(dynamic_cast<ast::UDeffType*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Class*>(STMT) != nullptr) {
     this->genClass(dynamic_cast<ast::Class*>(STMT), OutputFile);
+  } else if (dynamic_cast<ast::Enum*>(STMT)) {
+    this->genEnum(dynamic_cast<ast::Enum*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Inc*>(STMT) != nullptr) {
     this->genInc(dynamic_cast<ast::Inc*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Dec*>(STMT) != nullptr) {
@@ -2563,6 +2594,16 @@ void gen::CodeGenerator::genClass(ast::Class* deff, asmc::File& OutputFile) {
   this->globalScope = saveScope;
   this->scope = nullptr;
 }
+
+void gen::CodeGenerator::genEnum(ast::Enum* deff, asmc::File& OutputFile) {
+  gen::Enum* type = new gen::Enum();
+  type->Ident = deff->Ident;
+  int i = 0;
+  for ( std::string s : deff->values)
+    type->values << gen::Enum::EnumValue(s, i++);
+  
+  this->typeList.push(type);
+};
 
 void gen::CodeGenerator::genInc(ast::Inc* inc, asmc::File& OutputFile) {
   gen::Symbol* sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);

@@ -68,13 +68,14 @@ class ConditionalExpr {
 class Type {
  public:
   std::string typeName;
-
   asmc::Size size;
   asmc::OpType opType = asmc::Hard;
   int arraySize = 1;
   static bool compair(Type t, std::string name);
   Type* typeHint = nullptr;
   links::LinkedList<int> indecies;
+  Type() = default;
+  Type(std::string typeName, asmc::Size size) : typeName(typeName), size(size) {};
 };
 
 class Arg {
@@ -258,6 +259,12 @@ class Import : public Statment {
   std::vector<std::string> imports;
   std::string path;
   std::string nameSpace;
+};
+
+class Enum : public Statment {
+  public:
+  std::string Ident;
+  std::vector<std::string> values;
 };
 
 class Var : public Expr {

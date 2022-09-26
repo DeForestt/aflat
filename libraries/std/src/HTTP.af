@@ -1,0 +1,136 @@
+.needs <std>
+.needs <asm>
+.needs <request>
+
+import LinkedList from "Collections";
+import String from "String";
+import {len, int_toString} from "strings" under str;
+import {print} from "io" under io;
+import {worker} from "concurrency" under async;
+
+enum HTTPMethod {
+    GET,
+    POST,
+    PUT,
+    DELETE,
+    HEAD,
+    OPTIONS,
+    TRACE,
+    CONNECT
+};
+
+
+export adr methodToString(HTTPMethod method) {
+    if method == HTTPMethod.GET 
+        return "GET"
+    else if method == HTTPMethod.POST
+        return "POST"
+    else if method == HTTPMethod.PUT
+        return "PUT"
+    else if method == HTTPMethod.DELETE
+        return "DELETE"
+    else if method == HTTPMethod.HEAD
+        return "HEAD"
+    else if method == HTTPMethod.OPTIONS
+        return "OPTIONS"
+    else if method == HTTPMethod.TRACE
+        return "TRACE"
+    else if method == HTTPMethod.CONNECT
+        return "CONNECT"
+    else
+        return "UNKNOWN";
+};
+
+class HTTPHeader {
+    const adr key = key;
+    const adr value = value;
+
+    HTTPHeader init(adr key, adr value) {
+        return my;
+    };
+};
+
+class HTTPRequest {
+    const private HTTPMethod method = method;
+    private adr host;
+    private adr endpoint;
+    const private LinkedList headers = new LinkedList();
+    private adr body = "\r\n";
+
+    HTTPRequest init(HTTPMethod method) {
+        my.host = "";
+        my.endpoint = "/";
+        return my;
+    };
+
+    int setHost(adr host) {
+        my.host = host;
+        return 0;
+    };
+
+    int setEndpoint(adr endpoint) {
+        my.endpoint = endpoint;
+        return 0;
+    };
+
+    int addHeader(adr key, adr value) {
+        HTTPHeader header = new HTTPHeader(key, value);
+        my.headers.append(header);
+    };
+
+    int setBody(adr body) {
+        my.body = body;
+        adr contentLen = malloc(10);
+        int size = str.len(body);
+        str.int_toString(size, contentLen);
+        my.addHeader("Content-Length", contentLen);
+    };
+
+    public String getHeaders() {
+        String res = new String("");
+        my.headers.forEach([HTTPHeader header, int i, adr strptr] => {
+            String buffer = strptr as String;
+            buffer = buffer.stitch(header.key);
+            buffer = buffer.stitch(": ");
+            buffer = buffer.stitch(header.value);
+            buffer = buffer.stitch("\r\n");
+            strptr =: buffer;
+            return 0;
+        }, ?res);
+        return res;
+    };
+
+    String toString() {
+        String res = new String("");
+        res = res.stitch(methodToString(my.method));
+        res = res.stitch(" ");
+        res = res.stitch(my.endpoint);
+        res = res.stitch(" ");
+        res = res.stitch("HTTP/1.1");
+        res = res.stitch("\r\n");
+        res = res.stitch("Host: ");
+        res = res.stitch(my.host);
+        res = res.stitch("\r\n");
+        res = res.concat(my.getHeaders());
+        res = res.stitch("\r\n");
+        res = res.stitch(my.body);
+        return res;
+    };
+
+    String send(int bufferSize) {
+        String msg = my.toString();
+        adr buffer = malloc(bufferSize);
+        adr host = my.host;
+        adr endpoint = my.endpoint;
+        adr msg_prim = msg.getPrimitive();
+        request(host, endpoint, "80", msg_prim, buffer, bufferSize);
+        String res = new String(buffer);
+        free(buffer);
+        return res;
+    };
+};
+
+export adr requestWorker(HTTPRequest _arg) : async.worker {
+    String res = _arg.send(10000);
+    return res.getPrimitive();
+};
