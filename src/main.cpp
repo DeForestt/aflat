@@ -294,7 +294,7 @@ void buildTemplate(std::string value) {
 
 void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   bool debug = false;
-  bool compatiblity = false;
+  bool compatibility = false;
   int mutability = 0; // 0 = promiscuous, 1 = strict, 2 = safe
   std::vector<std::string> linker;
   std::vector<std::string> pathList;
@@ -399,8 +399,8 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
         } else if (setting.substr(4) == "safe") {
           mutability = 2;
         }
-      } else if (setting == "compatiblity") {
-        compatiblity = true;
+      } else if (setting == "compatibility") {
+        compatibility = true;
       }
     }
   }
@@ -414,7 +414,7 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
   linker.insert(linker.begin(), libPath + "Collections.s");
   linker.insert(linker.begin(), libPath + "math.s");
   linker.insert(linker.begin(), libPath + "strings.s");
-  if (compatiblity) linker.insert(linker.begin(), libPath + "std-cmp.s"); else linker.insert(linker.begin(), libPath + "std.s");
+  if (compatibility) linker.insert(linker.begin(), libPath + "std-cmp.s"); else linker.insert(linker.begin(), libPath + "std.s");
   linker.insert(linker.begin(), libPath + "concurrency.s");
   linker.insert(linker.begin(), libPath + "files.s");
   linker.insert(linker.begin(), libPath + "asm.s");
