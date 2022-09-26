@@ -46,6 +46,9 @@ class MProcess signs Thread {
     private Process copy<<=>>();
     public bool input(adr message);
     public adr output();
+    public int kill(){
+        sys_kill(my.pid, 2);
+    };
 };
 
 class FD {
@@ -62,6 +65,10 @@ class Result{
 
     public adr get() {
         return my.p.output();
+    };
+
+    public int kill() {
+        return my.p.kill();
     };
 };
 

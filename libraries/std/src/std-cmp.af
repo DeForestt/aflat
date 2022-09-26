@@ -43,9 +43,11 @@ int deFragAll(Block head){
     panic("deFragAll is not available in compatibility mode");
 };
 
+// add in mallock_usable_size
+int malloc_usable_size(adr ptr);
 int blockSize(adr ptr) {
     // this function is not available in compatiblity mode
-    panic("blockSize is not available in compatibility mode");
+    return malloc_usable_size(ptr);
 };
 
 int inspectHeap() {
