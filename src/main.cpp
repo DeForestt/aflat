@@ -7,6 +7,8 @@
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
+#include "Configs.hpp"
+#include "Utils.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -19,8 +21,9 @@
 std::string preProcess(std::string input);
 std::string getExePath();
 void buildTemplate(std::string value);
-void build(std::string path, std::string output, int mutability = 0);
+void build(std::string path, std::string output, cfg::Mutibility mutibility);
 void runConfig(std::string path, std::string libPath, char pmode = 'e');
+void runConfig(cfg::Config config, std::string libPath, char pmode);
 
 int main(int argc, char *argv[]) {
   // Usage error
@@ -47,16 +50,28 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   if (value == "build") {
-    runConfig("./aflat.cfg", libPathA);
+    std::ifstream ifs("aflat.cfg");
+    std::string content((std::istreambuf_iterator<char>(ifs)),
+                    (std::istreambuf_iterator<char>()));
+    cfg::Config config = cfg::getConfig(content);
+    runConfig(config, libPathA, 'e');
     return 0;
   }
   if (value == "run") {
-    runConfig("./aflat.cfg", libPathA);
+    std::ifstream ifs("aflat.cfg");
+    std::string content((std::istreambuf_iterator<char>(ifs)),
+                    (std::istreambuf_iterator<char>()));
+    cfg::Config config = cfg::getConfig(content);
+    runConfig(config, libPathA, 'e');
     system("./bin/a.out");
     return 0;
   }
   if (value == "test") {
-    runConfig("./aflat.cfg", libPathA, 't');
+    std::ifstream ifs("aflat.cfg");
+    std::string content((std::istreambuf_iterator<char>(ifs)),
+                    (std::istreambuf_iterator<char>()));
+    cfg::Config config = cfg::getConfig(content);
+    runConfig(config, libPathA, 't');
     system("./bin/a.test");
     return 0;
   }
@@ -121,7 +136,7 @@ int main(int argc, char *argv[]) {
   else
     outputFile = argv[2];
   if (std::filesystem::exists(value)) {
-    build(value, outputFile);
+    build(value, outputFile, cfg::Mutibility::Promiscuous);
   } else {
     std::cout << "File " << value << " does not exist\n";
     return 1;
@@ -129,7 +144,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void build(std::string path, std::string output, int mutability = 0) {
+void build(std::string path, std::string output, cfg::Mutibility mutability) {
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;
 
@@ -210,19 +225,6 @@ void build(std::string path, std::string output, int mutability = 0) {
 };
 
 /*
- * function name:   remove_char
- * Description:     removes a character from a string
- * Parameters:      std::string str - the string to remove from
- *                 char ch - the character to remove
- * Returns:         std::string - the string with the character removed
- */
-std::string remove_char(std::string str, char ch) {
-  // remove all occurrences of char ch from str
-  str.erase(std::remove(str.begin(), str.end(), ch), str.end());
-  return str;
-}
-
-/*
  * function name:   getExePath
  * description:     gets the path of the executable
  * parameters:      none
@@ -292,129 +294,78 @@ void buildTemplate(std::string value) {
   outfile.close();
 }
 
-void runConfig(std::string path, std::string libPath, char pmode = 'e') {
-  bool debug = false;
-  bool compatibility = false;
-  int mutability = 0; // 0 = promiscuous, 1 = strict, 2 = safe
+void runConfig(cfg::Config config, std::string libPath, char pmode) {
   std::vector<std::string> linker;
   std::vector<std::string> pathList;
-  std::vector<std::thread> threads;
-  // open the config file
-  std::ifstream ifs(path);
-  std::string content((std::istreambuf_iterator<char>(ifs)),
-                      (std::istreambuf_iterator<char>()));
 
-  // loop through the config file line by line
-  std::stringstream ss(content);
-  std::string line;
-
-  while (std::getline(ss, line)) {
-    line = remove_char(line, '\t');
-
-    // get a copy of the line after the first char
-    auto copy = line.substr(1);
-    copy = remove_char(copy, ' ');
-    auto lowerCaseCopy = copy;
-    std::transform(lowerCaseCopy.begin(), lowerCaseCopy.end(),
-                   lowerCaseCopy.begin(), ::tolower);
-
-    // if the line is a comment, skip it
-    if (line[0] == ';')
-      continue;
-
-    // if the line is a dependency, build it and add it to the linker
-    if (line[0] == 'm' | line[0] == pmode) {
-      std::string addPath = "";
-
-      // Check if the modual name has a path
-      if (copy.find("/") != std::string::npos) {
-        addPath = copy.substr(0, copy.find_last_of("/"));
-      }
-
-      // Check if path is in the pathList
-      bool found = false;
-      for (auto path : pathList) {
-        if (path == addPath) {
-          found = true;
-          break;
-        }
-      }
-
-      if (!found && addPath != "") {
-        std::filesystem::create_directories("./bin/" + addPath);
-        pathList.push_back(addPath);
-      }
-
-      // add the thread to the vector of threads
-      build("./src/" + copy + ".af", "./bin/" + copy + ".s", mutability);
-
-      // add the library to the linker
-      linker.push_back("./bin/" + copy + ".s");
-    }
-
-    // if the line starts with 'c' build the c file and add it to the linker
-    if (line[0] == 'c') {
-      std::string addPath = "";
-
-      // Check if the modual name has a path
-      if (copy.find("/") != std::string::npos) {
-        addPath = copy.substr(0, copy.find_last_of("/"));
-      }
-
-      // Check if path is in the pathList
-      bool found = false;
-      for (auto path : pathList) {
-        if (path == addPath) {
-          found = true;
-          break;
-        }
-      }
-
-      if (!found && addPath != "") {
-        std::filesystem::create_directories("./bin/" + addPath);
-        pathList.push_back(addPath);
-      }
-
-      if (debug)
-        system(
-            ("gcc -g -no-pie -S ./src/" + copy + ".c -o ./bin/" + copy + ".s")
-                .c_str());
-      else
-        system(("gcc -S -no-pie ./src/" + copy + ".c -o ./bin/" + copy + ".s")
-                   .c_str());
-
-      linker.push_back("./bin/" + copy + ".s");
-    };
-    
-    // check if line starts with 'settings'
-    if (line.substr(0, 3) == "set") {
-      auto setting = line.substr(4);
-      if (setting == "debug") {
-        debug = true;
-      } else if (setting.substr(0, 3) == "mut") {
-        if (setting.substr(4) == "promiscuous") {
-          mutability = 0;
-        } else if (setting.substr(4) == "strict") {
-          mutability = 1;
-        } else if (setting.substr(4) == "safe") {
-          mutability = 2;
-        }
-      } else if (setting == "compatibility") {
-        compatibility = true;
-      }
-    }
+  if (pmode == 'e') {
+    config.modules.push_back(config.entryPoint);
+  } else if (pmode == 't') {
+    config.modules.push_back(config.testFile);
   }
 
-  // join all the threads
-  for (int i = 0; i < threads.size(); i++) {
-    threads[i].join();
+  for (auto mod : config.modules) {
+   std::string path = mod;
+   std::string addPath = "";
+
+   if (path.find("/") != std::string::npos) {
+     addPath = path.substr(0, path.find_last_of("/"));
+   }
+
+    bool found = false;
+    for (auto path : pathList) {
+      if (path == addPath) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found && addPath != "") {
+      std::filesystem::create_directories("./bin/" + addPath);
+      pathList.push_back(addPath);
+    }
+
+    build("./src/" + path + ".af", "./bin/" + path + ".s", config.mutibility);
+    linker.push_back("./bin/" + path + ".s");
   }
 
+  for (auto file : config.cFiles) {
+    std::string path = file;
+    std::string addPath = "";
+
+    if (path.find("/") != std::string::npos) {
+      addPath = path.substr(0, path.find_last_of("/"));
+    }
+
+    bool found = false;
+    for (auto path : pathList) {
+      if (path == addPath) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found && addPath != "") {
+      std::filesystem::create_directories("./bin/" + addPath);
+      pathList.push_back(addPath);
+    }
+
+    if (config.debug)
+      system(
+          ("gcc -g -no-pie -S ./src/" + path + ".c -o ./bin/" + path + ".s")
+              .c_str());
+    else
+      system(("gcc -S -no-pie ./src/" + path + ".c -o ./bin/" + path + ".s")
+                 .c_str());
+
+    linker.push_back("./bin/" + path + ".s");
+  }
+  
   linker.insert(linker.begin(), libPath + "io.s");
   linker.insert(linker.begin(), libPath + "Collections.s");
   linker.insert(linker.begin(), libPath + "math.s");
   linker.insert(linker.begin(), libPath + "strings.s");
-  if (compatibility) linker.insert(linker.begin(), libPath + "std-cmp.s"); else linker.insert(linker.begin(), libPath + "std.s");
+  if (config.compatibility) linker.insert(linker.begin(), libPath + "std-cmp.s"); else linker.insert(linker.begin(), libPath + "std.s");
   linker.insert(linker.begin(), libPath + "concurrency.s");
   linker.insert(linker.begin(), libPath + "files.s");
   linker.insert(linker.begin(), libPath + "asm.s");
@@ -435,18 +386,15 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
     ofile = "./bin/a.test ";
   };
 
-  auto gcc = "gcc -O0 -no-pie -o " + ofile + linkerList;
-  if (debug) {
+  auto gcc = "gcc -no-pie -o " + ofile + linkerList;
+  if (config.debug) {
     gcc = "gcc -O0 -g -no-pie -o " + ofile + linkerList;
   }
 
   system(gcc.c_str());
-
-  // remove first 8 elements from the linker list
   linker.erase(linker.begin(), linker.begin() + 13);
 
-  // delete the linkerList files
-  if (!debug) {
+  if (!config.debug) {
     for (auto &s : linker) {
       std::filesystem::remove(s);
     }
@@ -455,5 +403,5 @@ void runConfig(std::string path, std::string libPath, char pmode = 'e') {
     for (auto &s : pathList) {
       std::filesystem::remove_all("./bin/" + s);
     }
-  };
+  }
 }
