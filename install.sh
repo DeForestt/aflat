@@ -12,7 +12,6 @@ if ! [ -x "$(command -v cmake)" ]; then
   exit 1
 fi
 
-
 # Check if aflat is in the PATH
 if ! [ -x "$(command -v aflat)" ]; then
 
@@ -32,10 +31,10 @@ fi
 
 # Check for ~/.aflat directory
 if [ -d ~/.aflat ]; then
-  echo 'Remove ~/.aflat directory'
-  rm -rf ~/.aflat
+  (cd ~/.aflat/aflat && git pull && cd build && cmake . && cd .. && cmake --build build)
+  echo 'aflat updated'
+  exit
 fi
-
 
 # Cd into the aflat directory
 mkdir ~/.aflat
@@ -47,8 +46,4 @@ mkdir ~/.aflat
 # Build libs
 (cd ~/.aflat/aflat && bash rebuild-libs.sh)
 
-if ! [ -x "$(command aflat)" ]; then
-  echo 'Error: aflat is not installed.' >&2
-  exit 1
-fi
-echo "Successfully installed aflat!"
+echo 'Done Please restart your terminal or run source ~/.bashrc or source ~/.zshrc'
