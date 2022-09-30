@@ -74,6 +74,7 @@ class Type {
   static bool compair(Type t, std::string name);
   Type* typeHint = nullptr;
   links::LinkedList<int> indecies;
+  bool isGeneric = false;
   Type() = default;
   Type(std::string typeName, asmc::Size size) : typeName(typeName), size(size) {};
 };
