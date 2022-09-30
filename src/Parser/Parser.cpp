@@ -17,6 +17,7 @@ parse::Parser::Parser(int mutability = 0) {
   this->addType("byte", asmc::Hard, asmc::Byte);
   this->addType("float", asmc::Float, asmc::DWord);
   this->addType("bool", asmc::Hard, asmc::Byte);
+  this->addType("generic", asmc::Hard, asmc::QWord, true);
 }
 
 void parse::Parser::addType(std::string name, asmc::OpType opType, asmc::Size size){
@@ -24,6 +25,14 @@ void parse::Parser::addType(std::string name, asmc::OpType opType, asmc::Size si
   type.typeName = name;
   type.opType = opType;
   type.size = size;
+
+  this->typeList << type;
+}
+
+void parse::Parser::addType(std::string name, asmc::OpType opType, asmc::Size size, bool isGeneric){
+  ast::Type type = ast::Type(name, size);
+  type.opType = opType;
+  type.isGeneric = isGeneric;
 
   this->typeList << type;
 }
