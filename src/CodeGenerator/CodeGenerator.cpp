@@ -356,38 +356,41 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   if (type.typeName == "short" && typeName == "number") return true;
   if (type.typeName == "int" && typeName == "number") return true;
   if (type.typeName == "long" && typeName == "number") return true;
-  // search the type list for the type
-  gen::Type** udef = this->typeList[typeName];
-  if (udef != nullptr) {
-    if (type.typeName == "adr") return true;
-    // if the type is a class
-    gen::Class* cl = dynamic_cast<gen::Class*>(*udef);
-    if (cl != nullptr) {
-      gen::Class* parent = cl->parent;
-      if (parent != nullptr) {
-        if (parent->Ident == type.typeName) return true;
+
+  if (typeName != "generic") {
+    // search the type list for the type
+    gen::Type** udef = this->typeList[typeName];
+    if (udef != nullptr) {
+      if (type.typeName == "adr") return true;
+      // if the type is a class
+      gen::Class* cl = dynamic_cast<gen::Class*>(*udef);
+      if (cl != nullptr) {
+        gen::Class* parent = cl->parent;
+        if (parent != nullptr) {
+          if (parent->Ident == type.typeName) return true;
+        }
       }
     }
-  }
 
-  // search if the expected type is the class
-  gen::Type** expected = this->typeList[type.typeName];
-  if (expected) {
-    gen::Class* cl = dynamic_cast<gen::Class*>(*expected);
-    if (cl) {
-      if (cl->nameTable.count > 0){
-        ast::Function * init = cl->nameTable["init"];
-        if (init) {
-          if (init->argTypes.size() == 1 && init->argTypes[0].typeName == typeName) {
-            return false;
+    // search if the expected type is the class
+    gen::Type** expected = this->typeList[type.typeName];
+    if (expected) {
+      gen::Class* cl = dynamic_cast<gen::Class*>(*expected);
+      if (cl) {
+        if (cl->nameTable.count > 0){
+          ast::Function * init = cl->nameTable["init"];
+          if (init) {
+            if (init->argTypes.size() == 1 && init->argTypes[0].typeName == typeName) {
+              return false;
+            }
           }
         }
       }
     }
   }
 
-  if (type.size == asmc::QWord && typeName == "adr") return true;
-  if (strict && type.typeName == "adr") return true;
+  if (type.size == asmc::QWord && (typeName == "adr" || typeName == "generic")) return true;
+  if (strict && (type.typeName == "adr" || typeName == "generic")) return true;
 
   if (!strict) alert("Cannot assign type " + type.typeName + " to " + typeName);
   alert("Cannot return type " + typeName + " from " + type.typeName);
@@ -467,7 +470,6 @@ gen::Expr gen::CodeGenerator::genArithmatic(asmc::ArithInst* inst,
   output.type = expr.type;
   return output;
 }
-
 gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile,
                                       asmc::Size size = asmc::AUTO) {
   gen::Expr output;
