@@ -19,7 +19,7 @@ class LinkedList {
     int append(adr data);
     int insert(adr data, int index);
     int del(int index);
-    adr get(int index);
+    generic get(int index);
 
     adr stitch(LinkedList New);
     LinkedList reverse();
@@ -206,7 +206,7 @@ int stitch@LinkedList(LinkedList ln){
     return 0;
 };
 
-adr get@LinkedList(int index){
+generic get@LinkedList(int index){
     if (index < 0){
         return NULL;
     };
