@@ -16,6 +16,7 @@ enum Size { Byte, Word, DWord, QWord, AUTO };
 class Instruction {
  public:
   virtual std::string toString();
+  int logicalLine = 0;
 };
 
 class Lable : public Instruction {

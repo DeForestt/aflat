@@ -21,6 +21,7 @@ class Ident {
 class Statment {
  public:
   bool locked = false;
+  int logicalLine = 0;
   virtual std::string toString() { return ""; };
 };
 
