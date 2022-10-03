@@ -5,8 +5,9 @@
 import LinkedList from "Collections";
 import String from "String";
 import {len, int_toString} from "strings" under str;
-import {print} from "io" under io;
+import {print, printInt} from "io" under io;
 import {worker} from "concurrency" under async;
+import {printString} from "String" under st;
 
 enum HTTPMethod {
     GET,
@@ -47,6 +48,101 @@ class HTTPHeader {
 
     HTTPHeader init(adr key, adr value) {
         return my;
+    };
+};
+
+class HTTPResponce {
+    const private LinkedList headers = new LinkedList();
+    private bool switch = false;
+    String origin = origin;
+    String body = new String("");
+    String version;
+    String statusCode;
+    String statusMessage;
+
+    int parse(String rsp) {
+        LinkedList lines = rsp.split('\r');
+        String firstLine = lines.get(0);
+        firstLine.trim();
+        LinkedList firstLineParts = firstLine.split(' ');
+
+        if (firstLineParts.size() != 3) {
+            io.print("\n\nFirst line of HTTP response is not valid: ");
+            st.printString(firstLine);
+            io.print("\n");
+            io.printInt(firstLineParts.size());
+            io.print("\n");
+            return -1;
+        };
+        my.version = firstLineParts.get(0);
+        my.statusCode = firstLineParts.get(1);
+        my.statusMessage = firstLineParts.get(2);
+        my.switch = false;
+
+        lines.forEach([String line, int index, HTTPResponce this] => {
+            if line.equal("\n") {
+                this.switch = true;
+                return 0;
+            };
+            
+            if index == 0
+                return 0;
+
+            if this.switch {
+                this.body = this.body.concat(line);
+                this.body = this.body.stitch("\r");
+                return 0;
+            };
+
+            LinkedList sections = line.split(':');
+            if sections.size() < 2{
+                io.print("\n\nHeader line is not valid: ");
+                st.printString(line);
+                io.print("\n");
+                return 0;
+            };
+
+            String key = sections.get(0);
+            String value = sections.get(1);
+
+            if sections.size() > 2 {
+                for int i = 2; i < sections.size(); i = i + 1 {
+                    value = value.stitch(":");
+                    value = value.concat(sections.get(i));
+                };
+            };
+            key = key.trim();
+            value = value.trim();
+            HTTPHeader n = new HTTPHeader(key.getPrimitive(), value.getPrimitive());
+            this.headers.append(n);
+        }, my);
+        return 0;
+    };
+
+    HTTPResponce init(* String origin) {
+        if origin != NULL
+            my.parse(origin);
+        return my;
+    };
+
+    adr getHeader(adr key) {
+        adr args = malloc(adr);
+        args =: key;
+        my.headers.forEach([HTTPHeader header, int index, adr arg] => {
+            adr comp = arg as adr;
+            String a = new String(header.key);
+            a = a.trim('\n');
+            a = a.trim('\r');
+            a = a.trim();
+            if a.equal(comp) {
+                arg =: header.value;
+                delete a;
+                return 1;
+            };
+            delete a;
+        }, args);
+        adr ret = args as adr;
+        return ret;
     };
 };
 
@@ -117,7 +213,7 @@ class HTTPRequest {
         return res;
     };
 
-    String send(int bufferSize) {
+    HTTPResponce send(int bufferSize) {
         String msg = my.toString();
         adr buffer = malloc(bufferSize);
         adr host = my.host;
@@ -126,11 +222,11 @@ class HTTPRequest {
         request(host, endpoint, "80", msg_prim, buffer, bufferSize);
         String res = new String(buffer);
         free(buffer);
-        return res;
+        HTTPResponce rsp = new HTTPResponce(res);
+        return rsp;
     };
 };
 
 export adr requestWorker(HTTPRequest _arg) : async.worker {
-    String res = _arg.send(10000);
-    return res.getPrimitive();
+    return _arg.send(10000000);
 };
