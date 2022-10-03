@@ -1756,8 +1756,14 @@ void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
   if (!this->globalScope) {
     // if the there  is no scope use the scope manager otherwise use the scope
     if (this->scope == nullptr || this->inFunction) {
-      gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type,
+      auto mod = gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type,
                                                       dec->mask, dec->mut);
+      auto def = new asmc::Define();
+      def->logicalLine = dec->logicalLine;
+      def->name = dec->Ident;
+      def->type = dec->type.size;
+      def->value = "-" + std::to_string(mod) + "(%rbp)";
+      OutputFile.text << def;
     } else {
       // add the symbol to the class symbol table
       Table = &this->scope->SymbolTable;
@@ -1777,6 +1783,7 @@ void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
       // if the symbol is public add it to the public symbol table
       if (dec->scope == ast::Public && this->scope != nullptr)
         this->scope->publicSymbols.push(Symbol);
+
     };
   } else {
     Table = &this->GlobalSymbolTable;
@@ -1898,6 +1905,12 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
     if (this->scope == nullptr || this->inFunction) {
       int byteMod = gen::scope::ScopeManager::getInstance()->assign(
           dec->Ident, dec->type, dec->mask, decAssign->mute);
+      
+      auto def = new asmc::Define();
+      def->name = dec->Ident;
+      def->type = dec->type.size;
+      def->value = "-" + std::to_string(byteMod) + "(%rbp)";
+      OutputFile.text << def;
 
       auto mov = new asmc::Mov();
       mov->logicalLine = decAssign->logicalLine;

@@ -207,6 +207,14 @@ class Return : public Instruction {
   std::string toString();
 };
 
+class Define : public Instruction {
+  public:
+  std::string name;
+  std::string value;
+  int type;
+  std::string toString();
+};
+
 class ArithInst : public Instruction {
  public:
   std::string op1;
@@ -214,6 +222,7 @@ class ArithInst : public Instruction {
   asmc::Size size;
   asmc::OpType opType = asmc::Hard;
 };
+
 
 class Add : public ArithInst {
  public:

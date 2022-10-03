@@ -210,8 +210,9 @@ void build(std::string path, std::string output, cfg::Mutibility mutability, boo
         logicalLine = inst->logicalLine;
       }
       
-      if (inst->logicalLine > 0) ofs << ".line " << inst->logicalLine - 1 << "\n";
-      ofs << inst->toString();
+      if (inst->logicalLine > 0 && dynamic_cast<asmc::Define *>(inst) == nullptr) ofs << ".line " << inst->logicalLine - 1 << "\n";
+      if (dynamic_cast<asmc::Define *>(inst) == nullptr) ofs << inst->toString();
+      //if (debug && dynamic_cast<asmc::Define *>(inst) != nullptr) ofs << inst->toString();
     }
 
     // data section output
