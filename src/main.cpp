@@ -206,10 +206,11 @@ void build(std::string path, std::string output, cfg::Mutibility mutability, boo
 
     while (file.text.head != nullptr) {
       auto inst = file.text.pop();
-      if (inst->logicalLine != logicalLine && debug && dynamic_cast<asmc::Lable*>(inst) == nullptr && inst->logicalLine > 0) {
-        ofs << ".Line " << inst->logicalLine - 1 << "\n";
-        logicalLine = inst->logicalLine
+      if (inst->logicalLine != logicalLine && debug && dynamic_cast<asmc::Lable*>(inst) == nullptr) {
+        logicalLine = inst->logicalLine;
       }
+      
+      if (inst->logicalLine > 0) ofs << ".line " << inst->logicalLine - 1 << "\n";
       ofs << inst->toString();
     }
 
@@ -403,14 +404,12 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
   system(gcc.c_str());
   linker.erase(linker.begin(), linker.begin() + 13);
 
-  if (!config.debug) {
-    for (auto &s : linker) {
-      std::filesystem::remove(s);
-    }
+  for (auto &s : linker) {
+    std::filesystem::remove(s);
+  }
 
-    // remove the paths from the pathList
-    for (auto &s : pathList) {
-      std::filesystem::remove_all("./bin/" + s);
-    }
+  // remove the paths from the pathList
+  for (auto &s : pathList) {
+    std::filesystem::remove_all("./bin/" + s);
   }
 }
