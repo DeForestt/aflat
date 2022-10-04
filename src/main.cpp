@@ -385,6 +385,7 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
   linker.insert(linker.begin(), libPath + "HTTP.s");
   linker.insert(linker.begin(), libPath + "request.s");
   linker.insert(linker.begin(), libPath + "ATest.s");
+  linker.insert(linker.begin(), libPath + "CLArgs.s");
 
   // run gcc on the linkerList
   std::string linkerList = "";
@@ -403,7 +404,7 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
   }
 
   system(gcc.c_str());
-  linker.erase(linker.begin(), linker.begin() + 13);
+  linker.erase(linker.begin(), linker.begin() + 14);
 
   for (auto &s : linker) {
     std::filesystem::remove(s);
