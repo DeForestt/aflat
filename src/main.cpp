@@ -21,7 +21,7 @@
 std::string preProcess(std::string input);
 std::string getExePath();
 void buildTemplate(std::string value);
-void build(std::string path, std::string output, cfg::Mutibility mutibility);
+void build(std::string path, std::string output, cfg::Mutibility mutibility, bool debug);
 void runConfig(std::string path, std::string libPath, char pmode = 'e');
 void runConfig(cfg::Config config, std::string libPath, char pmode);
 
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
   else
     outputFile = argv[2];
   if (std::filesystem::exists(value)) {
-    build(value, outputFile, cfg::Mutibility::Promiscuous);
+    build(value, outputFile, cfg::Mutibility::Promiscuous, true);
   } else {
     std::cout << "File " << value << " does not exist\n";
     return 1;
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void build(std::string path, std::string output, cfg::Mutibility mutability) {
+void build(std::string path, std::string output, cfg::Mutibility mutability, bool debug) {
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;
 
@@ -160,7 +160,6 @@ void build(std::string path, std::string output, cfg::Mutibility mutability) {
   try {
     try {
       PreProcessor pp;
-      // pp.debug = true;
       tokens = scanner.Scan(pp.PreProcess(content, libPath));
     } catch (int x) {
       std::cout << " unparsable Char at index " + x;
@@ -199,9 +198,21 @@ void build(std::string path, std::string output, cfg::Mutibility mutability) {
 
     // text section output
     ofs << "\n\n.text\n\n";
+    // write the .file directive if in debug mode
+    if (debug){
+      ofs << ".file\t\"" << path << "\"\n";
+    }
+    int logicalLine = -1;
 
     while (file.text.head != nullptr) {
-      ofs << file.text.pop()->toString();
+      auto inst = file.text.pop();
+      if (inst->logicalLine != logicalLine && debug && dynamic_cast<asmc::Lable*>(inst) == nullptr) {
+        logicalLine = inst->logicalLine;
+      }
+      
+      if (inst->logicalLine > 0 && dynamic_cast<asmc::Define *>(inst) == nullptr) ofs << ".line " << inst->logicalLine - 1 << "\n";
+      if (dynamic_cast<asmc::Define *>(inst) == nullptr) ofs << inst->toString();
+      //if (debug && dynamic_cast<asmc::Define *>(inst) != nullptr) ofs << inst->toString();
     }
 
     // data section output
@@ -325,7 +336,7 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
       pathList.push_back(addPath);
     }
 
-    build("./src/" + path + ".af", "./bin/" + path + ".s", config.mutibility);
+    build("./src/" + path + ".af", "./bin/" + path + ".s", config.mutibility, config.debug);
     linker.push_back("./bin/" + path + ".s");
   }
 
@@ -394,14 +405,12 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
   system(gcc.c_str());
   linker.erase(linker.begin(), linker.begin() + 13);
 
-  if (!config.debug) {
-    for (auto &s : linker) {
-      std::filesystem::remove(s);
-    }
+  for (auto &s : linker) {
+    std::filesystem::remove(s);
+  }
 
-    // remove the paths from the pathList
-    for (auto &s : pathList) {
-      std::filesystem::remove_all("./bin/" + s);
-    }
+  // remove the paths from the pathList
+  for (auto &s : pathList) {
+    std::filesystem::remove_all("./bin/" + s);
   }
 }

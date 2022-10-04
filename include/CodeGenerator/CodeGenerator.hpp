@@ -111,7 +111,7 @@ class CodeGenerator {
                                asmc::Register("rcx", "ecx", "cx", "cl"),
                                asmc::Register("r8", "r8d", "r8w", "r8b"),
                                asmc::Register("r9", "r9d", "r9w", "r9b")};
-
+  int logicalLine = 0;
   void GenArgs(ast::Statment* STMT, asmc::File& OutputFile);
   ast::Function GenCall(ast::Call* call, asmc::File& OutputFile);
   Expr GenExpr(ast::Expr* expr, asmc::File& OutputFile,
