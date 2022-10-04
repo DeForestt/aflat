@@ -1,0 +1,84 @@
+.needs <std>
+
+import { print, printInt } from "io" under io;
+import String from "String";
+import LinkedList from "Collections";
+
+class CLArg {
+    public String key;
+    public String value;
+
+    CLArg init(String tag, String value) {
+        my.key = tag;
+        my.value = value;
+        return my;
+    };
+};
+
+
+export LinkedList getArgsList(int argc, adr argv){
+    LinkedList strings = new LinkedList();
+    
+    for int i = 0; i < argc; i = i + 1 {
+        String s = new String(argv as adr);
+        argv = argv + adr;
+        strings.append(s);
+    };
+
+    LinkedList args = new LinkedList();
+    int i = 1;
+    int l = strings.size();
+    while(i < l){
+        String s = strings.get(i);
+
+        if(s.at(0) != '-'){
+            String tag = new String("nan");
+            String data = s + "";
+            CLArg n = new CLArg(tag, data);
+            args.append(n);
+        } else {
+            int length = s.len();
+            String tag = s.subString(1, length);
+            String data = new String("nan");
+            if(i + 1 < l){
+                s = strings.get(i + 1);
+                if(s.at(0) != '-'){
+                    data = s.stitch("");
+                    i = i + 1;
+                };
+            };
+            CLArg n = new CLArg(tag, data);
+            args.append(n);
+        };
+        i = i + 1;
+    };
+
+    return args;
+};
+
+export String getArg(LinkedList args, adr tag) {
+    int l = args.size();
+    for int i = 0; i < l; i = i + 1 {
+        CLArg arg = args.get(i);
+        if arg.key.equal(tag)
+            return arg.value;
+    };
+    return NULL;
+};
+
+export int findArg(CLArg arg, int index, adr str){
+    String tag = arg.key;
+    if (tag.equal(str) == 1){
+        return 1;
+    };
+
+    return 0;
+};
+
+export int findTaglessArg(CLArg arg){
+    String tag = arg.key;
+    if (tag.equal("nan") == 1){
+        return 1;
+    };
+    return 0;
+};
