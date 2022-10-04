@@ -257,6 +257,11 @@ std::string asmc::Pop::toString() { return "\tpopq\t" + this->op + "\n"; }
 
 std::string asmc::Return::toString() { return "\tleave\n\tret\n"; }
 
+std::string asmc::Define::toString() {
+  return ".def\t" + this->name + "; .scl\t 2; .type\t" +
+         std::to_string(this->type) + ".val\t" + this->value + "; .endef\n";
+}
+
 void asmc::File::operator<<(asmc::File file) {
   this->linker.stitch(file.linker);
   this->text.istitch(file.text);
