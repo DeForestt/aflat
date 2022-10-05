@@ -639,7 +639,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile,
       } else if (var.Ident == "NULL") {
         output.size = asmc::QWord;
         output.access = "$0";
-        output.type = "adr";
+        output.type = "generic";
       } else if (var.Ident == "true") {
         output.size = asmc::Byte;
         output.access = "$1";
