@@ -63,7 +63,11 @@ int main(int argc, char *argv[]) {
                     (std::istreambuf_iterator<char>()));
     cfg::Config config = cfg::getConfig(content);
     runConfig(config, libPathA, 'e');
-    system("./bin/a.out");
+    auto of = config.outPutFile;
+    if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
+      of = "./" + config.outPutFile;
+    }
+    system(of.c_str());
     return 0;
   }
   if (value == "test") {
@@ -149,6 +153,7 @@ void build(std::string path, std::string output, cfg::Mutibility mutability, boo
   links::LinkedList<lex::Token *> tokens;
 
   auto filename = getExePath();
+  auto wd = std::filesystem::current_path();
   auto exepath = filename.substr(0, filename.find_last_of("/"));
   auto libPath =
       exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/head/";
@@ -188,6 +193,17 @@ void build(std::string path, std::string output, cfg::Mutibility mutability, boo
 
     std::ofstream ofs;
 
+    // if there is a dot as the first char of the path, remove it
+    if (path[0] == '.') {
+      path = path.substr(1);
+    };
+
+    if (path[0] != '/') {
+      path = wd.string() + "/" + path;
+    } else {
+      path = wd.string() + path;
+    }
+
     // assembly file output
     ofs.open(output);
 
@@ -206,11 +222,12 @@ void build(std::string path, std::string output, cfg::Mutibility mutability, boo
 
     while (file.text.head != nullptr) {
       auto inst = file.text.pop();
-      if (inst->logicalLine != logicalLine && debug && dynamic_cast<asmc::Lable*>(inst) == nullptr) {
+      if (inst->logicalLine != logicalLine && debug && dynamic_cast<asmc::Lable*>(inst) == nullptr && inst->logicalLine > 0) {
         logicalLine = inst->logicalLine;
       }
       
       if (inst->logicalLine > 0 && dynamic_cast<asmc::Define *>(inst) == nullptr) ofs << ".line " << inst->logicalLine - 1 << "\n";
+      else if (logicalLine > 0 && dynamic_cast<asmc::Define *>(inst) != nullptr) ofs << ".line " << logicalLine - 1 << "\n";
       if (dynamic_cast<asmc::Define *>(inst) == nullptr) ofs << inst->toString();
       //if (debug && dynamic_cast<asmc::Define *>(inst) != nullptr) ofs << inst->toString();
     }
@@ -309,6 +326,8 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
   std::vector<std::string> linker;
   std::vector<std::string> pathList;
 
+    std::string ofile = config.outPutFile;
+
   if (pmode == 'e') {
     config.modules.push_back(config.entryPoint);
   } else if (pmode == 't') {
@@ -393,14 +412,13 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
     linkerList += s + " ";
   }
 
-  std::string ofile = "./bin/a.out ";
   if (pmode == 't') {
     ofile = "./bin/a.test ";
   };
 
-  auto gcc = "gcc -no-pie -o " + ofile + linkerList;
+  auto gcc = "gcc -no-pie -o " + ofile + " " + linkerList;
   if (config.debug) {
-    gcc = "gcc -O0 -g -no-pie -o " + ofile + linkerList;
+    gcc = "gcc -O0 -g -no-pie -o " + ofile + " " + linkerList;
   }
 
   system(gcc.c_str());
