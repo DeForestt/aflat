@@ -37,6 +37,13 @@ export int exp(int base, int pow){
 	return output;
 };
 
+export int sqrt(int n){
+	int i = 0;
+	while (i * i < n)
+		i = i + 1;
+	return i;
+};
+
 export long longExp(long base, int pow){
 	int i = 0;
 	long output = 1;
