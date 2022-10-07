@@ -260,6 +260,11 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
       mul->Sym = input[i];
       tokens << mul;
       i++;
+    } else if (input[i] == '^') {
+      auto carrot = new OpSym;
+      carrot->Sym = input[i];
+      tokens << carrot;
+      i++;
     } else if (input[i] == '%') {
       auto mul = new OpSym;
       mul->Sym = input[i];
