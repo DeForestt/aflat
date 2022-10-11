@@ -575,6 +575,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile,
       output.size = func.type.size;
       if (size != asmc::AUTO && func.flex) output.size = size;
       output.access = this->registers["%rax"]->get(output.size);
+      if (func.type.typeName == "float"){
+        output.access = this->registers["%xmm0"]->get(output.size);
+        output.op = asmc::Float;
+      }
     }
   } else if (dynamic_cast<ast::Var*>(expr) != nullptr) {
     ast::Var var = *dynamic_cast<ast::Var*>(expr);
