@@ -3,6 +3,7 @@
 import DateTime from "DateTime.af";
 import {Now} from "DateTime" under dt;
 import {hex_toInt} from "strings" under str;
+import * from "io" under io;
 
 export int exp(int base, int pow);
 
@@ -85,4 +86,36 @@ export int abs(int input){
 	if input < 0
 		return input * -1;
 	return input;
+};
+
+export float floatExp(float base, int pow){
+	int i = 0;
+	let output = 1.0;
+	while (i < pow){
+		output = output * base;
+		i = i + 1;
+	};
+	return output;
+};
+
+export float floatAbs(float input){
+	if input < 0.0
+		return input * -1.0;
+	return input;
+};
+
+// Newton's method for square root
+export float floatSqrt(float n){
+	let l = 0.00001;
+	let x = n;
+	int count = 0;
+
+	while (count < 100){
+		count++;
+		let root = 0.5 * (x + (n / x));
+		if (floatAbs(root - x) < l)
+			return root;
+		x = root; 
+	};
+	return x;
 };

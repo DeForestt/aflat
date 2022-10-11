@@ -58,6 +58,7 @@ class Cmp : public Instruction {
   std::string to;
   std::string from;
   Size size;
+  OpType op = Hard;
   std::string toString();
 };
 
