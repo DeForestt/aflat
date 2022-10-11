@@ -96,6 +96,10 @@ std::string asmc::Movq::toString() {
   return "\tmovq\t" + this->from + ", " + this->to + "\n";
 }
 
+std::string asmc::Movdqu::toString() {
+  return "\tmovdqu\t" + this->from + ", " + this->to + "\n";
+}
+
 std::string asmc::Jmp::toString() { return "\tjmp\t" + this->to + "\n"; }
 
 std::string asmc::Jne::toString() { return "\tjne\t" + this->to + "\n"; }
@@ -251,9 +255,55 @@ std::string asmc::Subq::toString() {
   return "\tsubq\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
-std::string asmc::Push::toString() { return "\tpushq\t" + this->op + "\n"; }
+std::string asmc::Push::toString() { 
+  std::string size = "q";
+  switch (this->size) {
+    case asmc::Byte:
+      size = "b";
+      break;
+    case asmc::Word:
+      size = "w";
+      break;
+    case asmc::DWord:
+      size = "l";
+      break;
+    case asmc::QWord:
+      size = "q";
+      break;
+    case asmc::AUTO:
+      size = "q";
+      break;
+    default:
+      size = "q";
+      break;
+  }
+  return "\tpushq\t" + this->op + "\n"; 
+  }
 
-std::string asmc::Pop::toString() { return "\tpopq\t" + this->op + "\n"; }
+std::string asmc::Pop::toString() { 
+  std::string size = "q";
+  switch (this->size) {
+    case asmc::Byte:
+      size = "b";
+      break;
+    case asmc::Word:
+      size = "w";
+      break;
+    case asmc::DWord:
+      size = "l";
+      break;
+    case asmc::QWord:
+      size = "q";
+      break;
+    case asmc::AUTO:
+      size = "q";
+      break;
+    default:
+      size = "q";
+      break;
+  }
+  return "\tpopq\t" + this->op + "\n";
+}
 
 std::string asmc::Return::toString() { return "\tleave\n\tret\n"; }
 
