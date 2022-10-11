@@ -1455,32 +1455,7 @@ void gen::CodeGenerator::GenArgs(ast::Statment* STMT, asmc::File& OutputFile) {
         **also needs to be added to symbol table**
     */
     ast::Declare* arg = dynamic_cast<ast::Declare*>(STMT);
-    if (arg->type.opType == asmc::Float){
-      // float arguments are popped into the xmm registers from the stack
-      int offset = this->getBytes(arg->type.size);
-      gen::Symbol symbol;
-      asmc::Mov* mov = new asmc::Mov();
-      mov->logicalLine = this->logicalLine;
-      links::LinkedList<gen::Symbol>* Table = &this->SymbolTable;
-      asmc::Size size = arg->type.size;
-      int mod = gen::scope::ScopeManager::getInstance()->assign(
-          arg->Ident, arg->type, false, arg->mut);
-      
-      // pop the value into the xmm register
-      asmc::Pop* pop = new asmc::Pop();
-
-      pop->logicalLine = this->logicalLine;
-      pop->op = this->registers["%eax"]->get(asmc::QWord);
-      pop->size = size;
-      OutputFile.text << pop;
-      // move the value into the variable
-      asmc::Mov* mov2 = new asmc::Mov();
-      mov2->logicalLine = this->logicalLine;
-      mov2->from = this->registers["%eax"]->get(size);
-      mov2->to = "-" + std::to_string(mod) + "(%rbp)";
-      mov2->size = size;
-      OutputFile.text << mov2;
-    } else if (intArgsCounter > 6){
+   if (intArgsCounter > 6){
       alert("AFlat compiler cannot handle more than 6 int / pointer arguments.");
     } else {
       asmc::Size size;
@@ -2402,7 +2377,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
       mov->size = exp.size;
       mov->from = exp.access;
       mov->to = this->registers["%xmm0"]->get(exp.size);
-      overflawArgs.push_back(mov);
+      OutputFile.text << mov;
 
       asmc::Mov* mov2 = new asmc::Mov();
       mov2->op = asmc::Float;
@@ -2410,7 +2385,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
       mov2->size = exp.size;
       mov2->from = this->registers["%xmm0"]->get(exp.size);
       mov2->to = "-" + std::to_string(bytemod) + "(%rbp)";
-      overflawArgs.push_back(mov2);
+      OutputFile.text << mov2;
       // move to eax
 
       // clear out eax
@@ -2418,7 +2393,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
       xory->logicalLine = call->logicalLine;
       xory->op1 = this->registers["%eax"]->get(asmc::QWord);
       xory->op2 = this->registers["%eax"]->get(asmc::QWord);
-      overflawArgs.push_back(xory); 
+      OutputFile.text << xory;
 
 
       asmc::Mov* mov3 = new asmc::Mov();
@@ -2426,14 +2401,21 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
       mov3->size = asmc::DWord;
       mov3->from = "-" + std::to_string(bytemod) + "(%rbp)";
       mov3->to = this->registers["%eax"]->get(asmc::DWord);
-      overflawArgs.push_back(mov3);
+      OutputFile.text << mov3;
 
-      // push eax
       asmc::Push* push = new asmc::Push();
       push->logicalLine = call->logicalLine;
-      push->op = this->registers["%eax"]->get(asmc::QWord);
-      overflawArgs.push_back(push);
 
+      push->op = this->intArgs[argsCounter].get(asmc::QWord);
+
+      OutputFile.text << push;
+
+      asmc::Mov* mov4 = new asmc::Mov();
+      mov4->logicalLine = call->logicalLine;
+      mov4->size = asmc::DWord;
+      mov4->from = this->registers["%eax"]->get(asmc::DWord);
+      mov4->to = this->intArgs[argsCounter].get(asmc::DWord);
+      OutputFile.text << mov4;
     } else {
       asmc::Mov* mov = new asmc::Mov();
       mov->logicalLine = call->logicalLine;
@@ -2460,20 +2442,13 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
 
   while (argsCounter < func->argTypes.size()) {
     // if the argument is a float, we need to push a float
-    if (func->argTypes.at(argsCounter).opType == asmc::Float){
-      asmc::Push* push = new asmc::Push();
-      push->logicalLine = call->logicalLine;
-      push->op = "$0";
-      overflawArgs.push_back(push);
-    } else {
-      asmc::Mov* move = new asmc::Mov();
-      move->logicalLine = call->logicalLine;
-      move->size = asmc::QWord;
-      move->from = "$0";
-      move->to = this->intArgs[argsCounter].get(asmc::QWord);
-      argsCounter++;
-      OutputFile.text << move;
-    }
+    asmc::Mov* move = new asmc::Mov();
+    move->logicalLine = call->logicalLine;
+    move->size = asmc::QWord;
+    move->from = "$0";
+    move->to = this->intArgs[argsCounter].get(asmc::QWord);
+    argsCounter++;
+    OutputFile.text << move;
   }
 
   // add the overflow arguments
