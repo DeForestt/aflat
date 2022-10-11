@@ -64,6 +64,7 @@ std::string asmc::Movzbl::toString() {
 }
 
 std::string asmc::Cmp::toString() {
+
   std::string size = "";
   switch (this->size) {
     case asmc::Byte:
@@ -85,7 +86,13 @@ std::string asmc::Cmp::toString() {
       size = "";
       break;
   }
-  return "\tcmp" + size + "\t" + this->from + ", " + this->to + "\n";
+  
+  std::string command = "\tcmp";
+  if (this->op == asmc::Float){
+    command = "\tucomiss";
+    size = "";
+  };
+  return command + size + "\t" + this->from + ", " + this->to + "\n";
 }
 
 std::string asmc::Lea::toString() {

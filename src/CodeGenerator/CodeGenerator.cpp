@@ -1063,6 +1063,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile,
           cmp->to = this->registers["%rdi"]->get(expr1.size);
           cmp->from = this->registers["%rdx"]->get(expr1.size);
 
+          if (expr1.op == asmc::Float) {
+            cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
+            cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+            cmp->op = asmc::Float;
+          }
+
           asmc::Sete* sete = new asmc::Sete();
           sete->logicalLine = this->logicalLine;
           sete->op = this->registers["%rax"]->get(asmc::Byte);
@@ -1083,6 +1089,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile,
           cmp->size = expr1.size;
           cmp->to = this->registers["%rdi"]->get(expr1.size);
           cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+          if (expr1.op == asmc::Float) {
+            cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
+            cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+            cmp->op = asmc::Float;
+          }
 
           asmc::Setl* setl = new asmc::Setl();
           setl->logicalLine = this->logicalLine;
@@ -1105,6 +1117,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile,
           cmp->to = this->registers["%rdi"]->get(expr1.size);
           cmp->from = this->registers["%rdx"]->get(expr1.size);
 
+          if (expr1.op == asmc::Float) {
+            cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
+            cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+            cmp->op = asmc::Float;
+          }
+
           asmc::Setg* setg = new asmc::Setg();
           setg->logicalLine = this->logicalLine;
           setg->op = this->registers["%rax"]->get(asmc::Byte);
@@ -1125,6 +1143,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile,
           cmp->size = expr1.size;
           cmp->to = this->registers["%rdi"]->get(expr1.size);
           cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+          if (expr1.op == asmc::Float) {
+            cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
+            cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+            cmp->op = asmc::Float;
+          }
 
           asmc::Setle* setle = new asmc::Setle();
           setle->logicalLine = this->logicalLine;
@@ -1147,6 +1171,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile,
           cmp->to = this->registers["%rdi"]->get(expr1.size);
           cmp->from = this->registers["%rdx"]->get(expr1.size);
 
+          if (expr1.op == asmc::Float) {
+            cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
+            cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+            cmp->op = asmc::Float;
+          }
+
           asmc::Setge* setge = new asmc::Setge();
           setge->logicalLine = this->logicalLine;
           setge->op = this->registers["%rax"]->get(asmc::Byte);
@@ -1167,6 +1197,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile,
           cmp->size = expr1.size;
           cmp->to = this->registers["%rdi"]->get(expr1.size);
           cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+          if (expr1.op == asmc::Float) {
+            cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
+            cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+            cmp->op = asmc::Float;
+          }
 
           asmc::Setne* setne = new asmc::Setne();
           setne->logicalLine = this->logicalLine;
