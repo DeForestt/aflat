@@ -1930,23 +1930,22 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
 
   if (!this->globalScope) {
     if (this->scope == nullptr || this->inFunction) {
-      int byteMod = gen::scope::ScopeManager::getInstance()->assign(
-          dec->Ident, dec->type, dec->mask, decAssign->mute);
-      
-      auto def = new asmc::Define();
-      def->name = dec->Ident;
-      def->type = dec->type.size;
-      def->value = "-" + std::to_string(byteMod) + "(%rbp)";
-      OutputFile.text << def;
-
       auto mov = new asmc::Mov();
       mov->logicalLine = decAssign->logicalLine;
       gen::Expr expr =
           this->GenExpr(decAssign->expr, OutputFile, dec->type.size);
 
-      if (!this->canAssign(dec->type, expr.type)){
+      if (dec->type.typeName != "let" && !this->canAssign(dec->type, expr.type)){
         expr = this->GenExpr(imply(decAssign->expr, dec->type.typeName), OutputFile);
       };
+
+      if (dec->type.typeName == "let") {
+        dec->type.typeName = expr.type;
+        dec->type.size = expr.size;
+        dec->type.opType = expr.op;
+      }
+      int byteMod = gen::scope::ScopeManager::getInstance()->assign(
+          dec->Ident, dec->type, dec->mask, decAssign->mute);
 
       auto mov2 = new asmc::Mov();
       mov2->logicalLine = decAssign->logicalLine;
