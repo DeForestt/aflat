@@ -228,7 +228,13 @@ void build(std::string path, std::string output, cfg::Mutibility mutability, boo
       
       if (inst->logicalLine > 0 && dynamic_cast<asmc::Define *>(inst) == nullptr) ofs << ".line " << inst->logicalLine - 1 << "\n";
       else if (logicalLine > 0 && dynamic_cast<asmc::Define *>(inst) != nullptr) ofs << ".line " << logicalLine - 1 << "\n";
-      if (dynamic_cast<asmc::Define *>(inst) == nullptr) ofs << inst->toString();
+      auto str = inst->toString();
+      // replace '\n' with "\n .line " + line number
+      // while(str.find('\n') != std::string::npos){
+      //   auto index = str.find('\n');
+      //   str = str.substr(0, index) + "\n.line " + std::to_string(inst->logicalLine) + "\n" + str.substr(index + 1);
+      // }
+      if (dynamic_cast<asmc::Define *>(inst) == nullptr) ofs << str;
       //if (debug && dynamic_cast<asmc::Define *>(inst) != nullptr) ofs << inst->toString();
     }
 

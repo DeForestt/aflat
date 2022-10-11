@@ -37,6 +37,26 @@ export int exp(int base, int pow){
 	return output;
 };
 
+export int floatToInt(adr f){
+	int i = f as int;
+	int sign = i >> 31;
+	i = f as int;
+	int exponent = (i >> 23) & 255;
+	int mantissa = i & 8388607;
+
+	if exponent == 0 {
+		exponent = 1;
+		int man = mantissa << 1;
+		mantissa = man;
+	} else {
+		exponent = exponent - 127;
+		mantissa = mantissa | 8388608;
+	};
+
+	int whole = mantissa >> (23 - exponent);
+	return whole;
+};
+
 export int sqrt(int n){
 	int i = 0;
 	while (i * i < n)
