@@ -471,3 +471,119 @@ int extend@Array(int amount){
     };
     return  amount;
 };
+
+class List {
+    private adr head = malloc(typeSize * size);
+    private int typeSize = typeSize;
+    private int size = size;
+    private int count = 0;
+
+    List init(int typeSize, * int size){
+        if size == 0 {
+            my.size = 1;
+            my.head = malloc(typeSize);
+        };
+        return my;
+    };
+
+    int pushBack(adr value) {
+        if my.count == my.size {
+            my.size = my.size * 2;
+            my.head = realloc(my.head, my.typeSize * my.size);
+        };
+
+        memcpy(my.head + (my.count * my.typeSize), value, my.typeSize);
+        my.count = my.count + 1;
+        return my.count;
+    };
+
+    generic get(int index) {
+        if index >= my.count {
+            return NULL;
+        };
+
+        return my.head + (index * my.typeSize);
+    };
+
+    generic popBack() {
+        if my.count == 0 {
+            return NULL;
+        };
+
+        my.count = my.count - 1;
+        return my.head + (my.count * my.typeSize);
+    };
+
+    int getCount() {
+        return my.count;
+    };
+
+    generic back() {
+        return my.get(my.count - 1);
+    };
+
+    int forEach(adr func, * adr args) {
+        for int i = 0; i < my.count; i = i + 1 {
+            func(my.get(i), i, args);
+        };
+        return 0;
+    };
+
+    int set(int index, adr value) {
+        if index >= my.count {
+            return 1;
+        };
+
+        memcpy(my.head + (index * my.typeSize), value, my.typeSize);
+        return 0;
+    };
+
+    int insert(int index, adr value) {
+        if index > my.count {
+            return 1;
+        };
+
+        if my.count == my.size {
+            my.size = my.size * 2;
+            my.head = realloc(my.head, my.typeSize * my.size);
+        };
+        
+        memcpy(my.head + ((index + 1) * my.typeSize), my.head + (index * my.typeSize), my.typeSize * (my.count - index));
+        memcpy(my.head + (index * my.typeSize), value, my.typeSize);
+        my.count = my.count + 1;
+    };
+
+    int drop(int index) {
+        if index >= my.count {
+            return 1;
+        };
+
+        memcpy(my.head + (index * my.typeSize), my.head + ((index + 1) * my.typeSize), my.typeSize * (my.count - index));
+        my.count = my.count - 1;
+    };
+
+    List map(int newTypeSize ,adr func, * adr args) {
+        let result = new List(newTypeSize, my.count);
+        for int i = 0; i < my.count; i = i + 1 {
+            adr res = func(my.get(i), i, args);
+            result.pushBack(res);
+        };
+        return result;
+    };
+
+    List filter(adr func, * adr args) {
+        let result = new List(my.typeSize, my.count);
+        for int i = 0; i < my.count; i = i + 1 {
+            bool res = func(my.get(i), i, args);
+            if res {
+                result.pushBack(my.get(i));
+            };
+        };
+        return result;
+    };
+
+    int del() {
+        free(my.head);
+        return 0;
+    };
+};
