@@ -18,6 +18,8 @@ parse::Parser::Parser(int mutability = 0) {
   this->addType("float", asmc::Float, asmc::DWord);
   this->addType("bool", asmc::Hard, asmc::Byte);
   this->addType("generic", asmc::Hard, asmc::QWord, true);
+  // create a dummy type for let
+  this->addType("let", asmc::Hard, asmc::QWord, true); 
 }
 
 void parse::Parser::addType(std::string name, asmc::OpType opType, asmc::Size size){
@@ -58,6 +60,7 @@ int getOpPriority(ast::Op op) {
   case ast::Div:
     return 4;
   case ast::Mod:
+  case ast::Carrot:
     return 5;
   default:
     throw err::Exception("Unknown operator");
@@ -173,6 +176,8 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
                 overload = ast::Op::Minus;
               } else if (next->Sym == '*') {
                 overload = ast::Op::Mul;
+              } else if (next->Sym == '^') {
+                overload = ast::Op::Carrot;
               } else if (next->Sym == '/') {
                 overload = ast::Op::Div;
               } else if (next->Sym == '%') {
@@ -1396,6 +1401,12 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     } else if (sym.Sym == '*') {
       tokens.pop();
       compound->op = ast::Mul;
+      compound->expr1 = output;
+      compound->expr2 = this->parseExpr(tokens);
+      return prioritizeExpr(compound);
+    } else if(sym.Sym == '^') {
+      tokens.pop();
+      compound->op = ast::Carrot;
       compound->expr1 = output;
       compound->expr2 = this->parseExpr(tokens);
       return prioritizeExpr(compound);

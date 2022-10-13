@@ -17,7 +17,7 @@ struct Config {
     std::vector<std::string> cFiles;
     std::string testFile;
     std::string entryPoint;
-    std::string outPutFile = "a.out";
+    std::string outPutFile = "./bin/a.out";
     Mutibility mutibility = Mutibility::Promiscuous;
     bool debug = false;
     bool compatibility = false;

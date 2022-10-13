@@ -33,6 +33,7 @@ class Member {
 enum Op {
   Plus,
   Minus,
+  Carrot,
   Mod,
   Mul,
   Div,

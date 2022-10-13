@@ -58,6 +58,7 @@ class Cmp : public Instruction {
   std::string to;
   std::string from;
   Size size;
+  OpType op = Hard;
   std::string toString();
 };
 
@@ -136,6 +137,13 @@ class Movq : public Instruction {
   std::string toString();
 };
 
+class Movdqu : public Instruction {
+ public:
+  std::string to;
+  std::string from;
+  std::string toString();
+};
+
 class Call : public Instruction {
  public:
   std::string function;
@@ -188,12 +196,14 @@ class Setge : public Instruction {
 class Push : public Instruction {
  public:
   std::string op;
+  asmc::Size size = asmc::QWord;
   std::string toString();
 };
 
 class Pop : public Instruction {
  public:
   std::string op;
+  asmc::Size size = asmc::QWord;
   std::string toString();
 };
 
