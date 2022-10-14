@@ -29,6 +29,9 @@ private:
 
   // scopeStack holds the number of symbols in the current scope
   std::vector<int> scopeStack;
+  int SStackSize = 0;
+
+  // int scopeStackPos;
 
 public:
   // Singleton Access
@@ -56,6 +59,8 @@ public:
   // pop a scope
   void popScope(gen::CodeGenerator *callback, asmc::File &OutputFile,
                 bool fPop = false);
+
+  void softPop(gen::CodeGenerator *callback, asmc::File &OutputFile);
 
   // Get stack alignment value
   int getStackAlignment();
