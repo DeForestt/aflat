@@ -2069,6 +2069,7 @@ void gen::CodeGenerator::genReturn(ast::Return* ret, asmc::File& OutputFile) {
                           ? this->registers["%xmm0"]->get(from.size)
                           : this->registers["%rax"]->get(from.size);
   
+  scope::ScopeManager::getInstance()->softPop(this, OutputFile);
   mov->from = from.access;
   mov->to = move2;
   mov->size = from.size;
@@ -2987,18 +2988,21 @@ void gen::CodeGenerator::genDelete(ast::Delete* del, asmc::File& OutputFile) {
 
 #pragma endregion
 
-asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
-  asmc::File file;
+asmc::File * gen::CodeGenerator::deScope(gen::Symbol &sym) {
+  
+  asmc::File* file = new asmc::File();
   gen::Type** type = this->typeList[sym.type.typeName];
   if (type == nullptr)
-    this->alert("Type" + sym.type.typeName + " not found to delete");
+    return nullptr;
 
   gen::Class* classType = dynamic_cast<gen::Class*>(*type);
   if (classType == nullptr)
-    this->alert("Type" + sym.type.typeName + " is not a class");
+    return nullptr;
 
   // check if the class has a destructor
-  ast::Function* destructor = classType->nameTable["del"];
+  ast::Function* endScope = classType->nameTable["endScope"];
+  if (endScope == nullptr)
+    return nullptr;
 
   // get the address of the object to delete
   asmc::Lea* lea = new asmc::Lea();
@@ -3006,29 +3010,18 @@ asmc::File gen::CodeGenerator::deScope(gen::Symbol sym) {
   lea->to = this->registers["%rax"]->get(asmc::QWord);
   lea->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
   // ASMC::Mov * mov = new ASMC::Mov();
-  file.text << lea;
+  file->text << lea;
   std::string pointer = registers["%rax"]->get(asmc::QWord);
 
   // call the destructor
-  if (destructor != nullptr) {
+  if (endScope != nullptr) {
     ast::Call* callDel = new ast::Call();
     callDel->logicalLine = this->logicalLine;
-    callDel->ident = "del";
+    callDel->ident = sym.symbol;
     callDel->Args = LinkedList<ast::Expr*>();
     callDel->modList = links::LinkedList<std::string>();
-    callDel->publify = classType->Ident;
-    asmc::Mov* mov = new asmc::Mov();
-    mov->logicalLine = this->logicalLine;
-
-    asmc::Push* push = new asmc::Push();
-    push->logicalLine = this->logicalLine;
-    push->op = mov->to = this->intArgs[0].get(asmc::QWord);
-    file.text << push;
-    mov->size = asmc::QWord;
-    mov->from = this->registers["%eax"]->get(asmc::QWord);
-    mov->to = this->intArgs[0].get(asmc::QWord);
-    file.text << mov;
-    file << this->GenSTMT(callDel);
+    callDel->modList.push("endScope");
+    file->operator<<(this->GenSTMT(callDel));
   };
 
   return file;

@@ -158,7 +158,7 @@ class CodeGenerator {
   // a function for warnings or errors
   void alert(std::string message, bool error = true);
   CodeGenerator(std::string moduleId);
-  asmc::File deScope(gen::Symbol sym);
+  asmc::File *deScope(gen::Symbol &sym);
 };
 }  // namespace gen
 

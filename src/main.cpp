@@ -431,7 +431,7 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
   linker.erase(linker.begin(), linker.begin() + 14);
 
   for (auto &s : linker) {
-    std::filesystem::remove(s);
+    //std::filesystem::remove(s);
   }
 
   // remove the paths from the pathList

@@ -57,6 +57,7 @@ int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type,
   sym.byteMod = this->stackPos;
   sym.mutable_ = mut;
   this->stack.push_back(sym);
+  this->SStackSize++;
 
   this->scopeStack.back()++;
 
@@ -70,18 +71,44 @@ void gen::scope::ScopeManager::popScope(CodeGenerator *callback,
                                         bool fPop = false) {
   int size = this->scopeStack.back();
   for (int i = 0; i < size; i++) {
+    if (!fPop) {
+      this->SStackSize--;
+    };
     this->stackPos -= sizeToInt(this->stack.back().type.size) *
                       this->stack.back().type.arraySize;
     gen::Symbol sym = this->stack.back();
-    if (sym.symbol == "") {
-      // OutputFile << callback->deScope(sym);
+    if (sym.symbol != "" && sym.symbol != "my") {
+      auto desc = callback->deScope(sym);
+      if (desc) {
+        OutputFile << *desc;
+      }
     }
     this->stack.pop_back();
   }
-  if (fPop)
+  if (fPop){
     this->maxStackPos = 0;
+    this->SStackSize = 0;
+  };
   this->scopeStack.pop_back();
 };
+
+void gen::scope::ScopeManager::softPop(CodeGenerator *callback,
+                                       asmc::File &OutputFile) {
+  int size = this->SStackSize;
+  int pos = this->stack.size() - 1;
+  for (int i = 0; i < size; i++) {
+    gen::Symbol sym = this->stack.at(pos);
+    if (sym.symbol != "" && sym.symbol != "my") {
+      auto desc = callback->deScope(sym);
+      if (desc) {
+        OutputFile << *desc;
+      }
+    }
+    pos--;
+  }
+}
+
+
 
 int gen::scope::ScopeManager::getStackAlignment() {
   // align the stack
