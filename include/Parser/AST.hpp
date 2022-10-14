@@ -77,6 +77,7 @@ class Type {
   Type* typeHint = nullptr;
   links::LinkedList<int> indecies;
   bool isGeneric = false;
+  bool safeType = false;
   Type() = default;
   Type(std::string typeName, asmc::Size size) : typeName(typeName), size(size) {};
 };
@@ -97,6 +98,7 @@ class Class : public Statment {
   std::string base;
   Statment* contract;
   Statment* statment;
+  bool safeType = false;
 };
 
 class Function : public Member, public Statment {

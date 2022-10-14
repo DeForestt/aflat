@@ -17,6 +17,7 @@ class Expr {
   std::string access;
   std::string type = "";
   asmc::Size size;
+  bool passable = true;
 };
 
 class Symbol {
@@ -24,6 +25,7 @@ class Symbol {
   std::string symbol;
   ast::Type type;
   bool mutable_ = true;
+  bool readOnly = false;
   bool mask;
   int byteMod;
 };
@@ -46,6 +48,7 @@ class Type {
 
 class Class : public Type {
  public:
+  bool safeType = false; // if true, this class cannot be passed as an argument.
   // The public Name table will hold all public functions
   // This is to be used externally
   links::SLinkedList<ast::Function, std::string> publicNameTable;
