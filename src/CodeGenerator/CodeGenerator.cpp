@@ -142,7 +142,7 @@ std::string getUUID() {
 
 void gen::CodeGenerator::alert(std::string message, bool error = true) {
   if (error) {
-    std::cout << "Error: ";
+    std::cout << "Error: on line " << this->logicalLine << ": ";
     if (this->scope != nullptr) {
       std::cout << "in class " << this->scope->Ident << ": ";
     }
@@ -485,8 +485,7 @@ gen::Expr gen::CodeGenerator::genArithmatic(asmc::ArithInst* inst,
   output.type = expr.type;
   return output;
 }
-gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile,
-                                      asmc::Size size = asmc::AUTO) {
+gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, asmc::Size size = asmc::AUTO) {
   gen::Expr output;
   output.op = asmc::Hard;
   this->logicalLine = expr->logicalLine;
@@ -671,6 +670,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile,
       output.size = sym.type.size;
       output.op = sym.type.opType;
       output.type = sym.type.typeName;
+
+      // check if the symbol type is a class
+      gen::Type** t = this->typeList[sym.type.typeName];
+      if (t) {
+        gen::Class* cl = dynamic_cast<gen::Class*>(*t);
+        if (cl) {
+          if (cl->safeType & sym.symbol != "my") output.passable = false;
+        }
+      }
+
       // mov output to r15
       asmc::Mov* mov = new asmc::Mov();
       std::string move2 = (output.op == asmc::Float)
@@ -2393,6 +2402,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
     args.push(call->Args.touch());
     ast::Expr * rem = call->Args.touch();
     gen::Expr exp = this->GenExpr(call->Args.shift(), OutputFile);
+    if (!exp.passable) this->alert("Cannot pass an lvalue of safe type " + exp.type + " to a function");
     bool run;
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
@@ -2781,6 +2791,7 @@ void gen::CodeGenerator::genClass(ast::Class* deff, asmc::File& OutputFile) {
   this->globalScope = false;
   type->Ident = deff->ident.ident;
   type->nameTable.foo = compairFunc;
+  type->safeType = deff->safeType;
   this->scope = type;
   type->overloadTable.foo = [](ast::Function func, ast::Op op) {
     if (func.op == op) {

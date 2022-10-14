@@ -79,6 +79,7 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto obj = *dynamic_cast<lex::LObj *>(tokens.peek());
     bool mask = false;
+    auto safeType = false;
     auto scope = ast::Public;
     tokens.pop();
 
@@ -87,7 +88,17 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
       isMutable = true;
     else
       isMutable = false;
+;
+    if (obj.meta == "safe") {
+      safeType = true;
+      if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr ||
+          dynamic_cast<lex::LObj *>(tokens.peek())->meta != "class") {
+        throw err::Exception("Can only specify a class as safe " + std::to_string(obj.lineCount));
+      };
 
+      obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+      tokens.pop();
+    };
     if (obj.meta == "const") {
       isMutable = false;
       if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
@@ -107,7 +118,6 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
       obj = *dynamic_cast<lex::LObj *>(tokens.peek());
       tokens.pop();
     };
-
     // check if the next token is a scope modifier
     if (obj.meta == "public") {
       // set the scope modifier to public
@@ -602,7 +612,7 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
           item->contract = nullptr;
       } else
         item->contract = nullptr;
-
+      item->safeType = safeType;
       item->statment = this->parseStmt(tokens);
       output = item;
     } else if (obj.meta == "enum") {
