@@ -99,6 +99,7 @@ class Class : public Statment {
   Statment* contract;
   Statment* statment;
   bool safeType = false;
+  bool dynamic = false;
 };
 
 class Function : public Member, public Statment {

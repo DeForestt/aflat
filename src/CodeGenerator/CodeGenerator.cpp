@@ -517,6 +517,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
     if (t != nullptr) {
       gen::Class* cl = dynamic_cast<gen::Class*>(*t);
       if (cl != nullptr) {
+        if (cl->dynamic) alert("Dynamic class '" + cl->Ident + "' must be called with new");
         // allocate space for the object
         ast::Type type = ast::Type();
         type.typeName = cl->Ident;
@@ -672,28 +673,46 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
       output.type = sym.type.typeName;
 
       // check if the symbol type is a class
+      auto cont = true;
       gen::Type** t = this->typeList[sym.type.typeName];
       if (t) {
         gen::Class* cl = dynamic_cast<gen::Class*>(*t);
         if (cl) {
-          if (cl->safeType & sym.symbol != "my") output.passable = false;
+          if (cl->safeType & sym.symbol != "my"){
+            output.passable = false;
+            if (cl->nameTable["get"] != nullptr){
+              ast::Call * callGet = new ast::Call();
+              callGet->ident = var.Ident;
+              callGet->modList = var.modList;
+              callGet->modList << "get";
+              callGet->logicalLine = var.logicalLine;
+              ast::CallExpr * callExpr = new ast::CallExpr();
+              callExpr->call = callGet;
+              callExpr->logicalLine = var.logicalLine;
+              output = this->GenExpr(callExpr, OutputFile);
+              callGet->modList.pop();
+              cont = false;
+            }
+          }
         }
       }
 
       // mov output to r15
-      asmc::Mov* mov = new asmc::Mov();
-      std::string move2 = (output.op == asmc::Float)
-                              ? this->registers["%xmm0"]->get(asmc::QWord)
-                              : this->registers["%r15"]->get(output.size);
+      if (cont) {
+        asmc::Mov* mov = new asmc::Mov();
+        std::string move2 = (output.op == asmc::Float)
+                                ? this->registers["%xmm0"]->get(asmc::QWord)
+                                : this->registers["%r15"]->get(output.size);
 
-      mov->to = move2;
-      mov->from = std::get<0>(resolved);
-      mov->size = output.size;
-      mov->op = output.op;
-      mov->logicalLine = this->logicalLine;
-      OutputFile.text << mov;
-      output.access = mov->to;
-      OutputFile << std::get<3>(resolved);
+        mov->to = move2;
+        mov->from = std::get<0>(resolved);
+        mov->size = output.size;
+        mov->op = output.op;
+        mov->logicalLine = this->logicalLine;
+        OutputFile.text << mov;
+        output.access = mov->to;
+        OutputFile << std::get<3>(resolved);
+      };
     }
 
   } else if (dynamic_cast<ast::Refrence*>(expr) != nullptr) {
@@ -2793,6 +2812,7 @@ void gen::CodeGenerator::genClass(ast::Class* deff, asmc::File& OutputFile) {
   type->Ident = deff->ident.ident;
   type->nameTable.foo = compairFunc;
   type->safeType = deff->safeType;
+  type->dynamic = deff->dynamic;
   this->scope = type;
   type->overloadTable.foo = [](ast::Function func, ast::Op op) {
     if (func.op == op) {
