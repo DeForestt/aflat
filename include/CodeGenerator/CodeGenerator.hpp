@@ -48,6 +48,7 @@ class Type {
 
 class Class : public Type {
  public:
+  bool dynamic = false;
   bool safeType = false; // if true, this class cannot be passed as an argument.
   // The public Name table will hold all public functions
   // This is to be used externally
