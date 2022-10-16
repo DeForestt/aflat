@@ -80,6 +80,7 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
     auto obj = *dynamic_cast<lex::LObj *>(tokens.peek());
     bool mask = false;
     auto safeType = false;
+    auto dynamicType = false;
     auto scope = ast::Public;
     tokens.pop();
 
@@ -88,17 +89,58 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
       isMutable = true;
     else
       isMutable = false;
-;
-    if (obj.meta == "safe") {
-      safeType = true;
-      if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr ||
-          dynamic_cast<lex::LObj *>(tokens.peek())->meta != "class") {
+
+    if (obj.meta == "safe" || obj.meta == "dynamic") {
+      while (obj.meta == "safe" || obj.meta == "dynamic") {
+        if (obj.meta == "safe")
+          safeType = true;
+        else if (obj.meta == "dynamic")
+          dynamicType = true;
+        if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+          obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+          tokens.pop();
+        } else {
+          throw err::Exception("Expected type after safe/dynamic on line " +
+                               std::to_string(obj.lineCount));
+        }
+      }
+
+      if (obj.meta != "class") {
         throw err::Exception("Can only specify a class as safe " + std::to_string(obj.lineCount));
       };
 
-      obj = *dynamic_cast<lex::LObj *>(tokens.peek());
-      tokens.pop();
-    };
+    }
+
+    if (obj.meta == "const" || obj.meta == "mutable" ||
+      obj.meta == "public" || obj.meta == "private"
+      || obj.meta == "static" || obj.meta == "export") {
+
+      while(obj.meta == "const" || obj.meta == "mutable" ||
+      obj.meta == "public" || obj.meta == "private"
+      || obj.meta == "static" || obj.meta == "export") {
+        if (obj.meta == "const") {
+          isMutable = false;
+        } else if (obj.meta == "mutable") {
+          isMutable = true;
+        } else if (obj.meta == "public") {
+          scope = ast::Public;
+        } else if (obj.meta == "private") {
+          scope = ast::Private;
+        } else if (obj.meta == "static") {
+          scope = ast::Static;
+        } else if (obj.meta == "export") {
+          scope = ast::Export;
+        }
+        if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+          obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+          tokens.pop();
+        } else {
+          throw err::Exception("Expected type after memory modifier on line " +
+                               std::to_string(obj.lineCount));
+        }
+      };
+    }
+
     if (obj.meta == "const") {
       isMutable = false;
       if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
@@ -613,6 +655,7 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
       } else
         item->contract = nullptr;
       item->safeType = safeType;
+      item->dynamic = dynamicType;
       item->statment = this->parseStmt(tokens);
       output = item;
     } else if (obj.meta == "enum") {
