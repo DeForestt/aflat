@@ -2311,7 +2311,9 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
             func->type.size = asmc::QWord;
             func->flex = true;
             addpub = false;
-          }
+          } else if (sym == nullptr) {
+            alert("cannot find function " + call->modList.touch());
+          };
         } else {
           call->modList.shift();
           call->modList.invert();
