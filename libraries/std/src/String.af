@@ -2,7 +2,7 @@
 .needs <asm>
 
 import ICollection from "Collections";
-import LinkedList from "Collections";
+import LinkedList, List from "Collections";
 
 import * from "strings" under str;
 import {print} from "io" under io;
@@ -108,9 +108,9 @@ String subString@String(int start, int end){
 };
 
 bool compare@String(String s){
-    adr string = s.head;
+    adr strin = s.head;
     adr mystring = my.head;
-    int comp = str.str_comp(string, mystring);
+    int comp = str.str_comp(strin, mystring);
     return comp == 1;
 };
 
@@ -384,4 +384,164 @@ export String consume(adr pattern, * adr message){
     };
     
     return consume(pattern, message);
+};
+
+safe dynamic class string {
+    private adr head;
+    private int refcount = 1;
+
+    string init(adr head) {
+        my.head = malloc(str.len(head) + 1);
+        memcpy(my.head, head, str.len(head) + 1);
+        return my;
+    };
+
+    bool compair<<==>>(string other) {
+        return str.str_comp(my.head, other.head) == 0;
+    };
+
+    string get(){
+        my.refcount = my.refcount + 1;
+        return my;
+    };
+
+    string cpy<<=>>(string other) {
+        free(my.head);
+        other.refcount = other.refcount - 1;
+        my.refcount = my.refcount - 1;
+        my.head = malloc(str.len(other.head) + 1);
+        memcpy(my.head, other.head, str.len(other.head) + 1);
+        if (other.refcount == 0) {
+            free(other.head);
+            free(other);
+        } else if (my.refcount == 0) {
+            free(my.head);
+            delete my;
+        };
+        return my;
+    };
+
+    adr cstr() {
+        return my.head;
+    };
+
+    bool input(adr prompt) {
+        free(my.head);
+        if prompt != NULL
+            io.print(prompt);
+        adr buff = malloc(1);
+        adr save = buff;
+        int buffSize = 1;
+        adr pointer;
+        char input = ' ';
+        char nl = '\n';
+        char null = '\0';
+        int i = 0;
+        while(input != nl){
+            sys_read(0, ?input, 1);
+            buff = buff + i;
+            buff =: input;
+            if(input == nl){buff =: null};
+            buffSize = buffSize + 1;
+            save = realloc(save, buffSize);
+            buff = save;
+            i = i + 1;
+        };
+        my.head = buff;
+        return true;
+    };
+
+    int getRefcount() {
+        return my.refcount;
+    };
+    
+    string concat<<+>>(string other) {
+        int myLen = str.len(my.head);
+        int otherLen = str.len(other.head);
+        adr newHead = malloc(myLen + otherLen + 1);
+        memcpy(newHead, my.head, myLen);
+        memcpy(newHead + myLen, other.head, otherLen + 1);
+        string newString = new string(newHead);
+        free(newHead);
+        other.refcount = other.refcount - 1;
+        my.refcount = my.refcount - 1;
+
+        if (other.refcount == 0) {
+            free(other.head);
+            free(other);
+        } else if (my.refcount == 0) {
+            free(my.head);
+            delete my;
+        };
+        return newString;
+    };
+
+    List split(char delim) {
+        List list = new List(string, 1);
+        int myLen = str.len(my.head);
+        adr buff = malloc(1);
+        adr save = buff;
+        int buffSize = 1;
+
+        for int i = 0; i < myLen; i = i + 1 {
+            adr curr = my.head + i;
+            char c = curr as char;
+            if (c == delim) {
+                buff = buff + 1;
+                buff =: '\0';
+                let s = new string(save);
+                list.pushBack(s.get());
+                free(save);
+                buffSize = 1;
+            } else {
+                buffSize = buffSize + 1;
+                save = realloc(save, buffSize);
+                buff = save;
+                buff = buff + buffSize - 2;
+                buff =: c;
+            };
+        };
+        buff = buff + 1;
+        buff =: '\0';
+        let s = new string(save);
+        list.pushBack(s.get());
+        free(save);
+        return list;
+    };
+
+    int forEach(adr func, * adr args) {
+        int myLen = str.len(my.head);
+        for int i = 0; i < myLen; i = i + 1 {
+            adr curr = my.head + i;
+            char c = curr as char;
+            func(c, i, args);
+        };
+        return 0;
+    };
+
+    int len() {
+        return str.len(my.head);
+    };
+
+    string copy() {
+        return new string(my.head);
+    };
+
+    int endScope() {
+        my.refcount = my.refcount - 1;
+        if my.refcount == 0 {
+            free(my.head);
+            delete my;
+        };
+        return 0;
+    };
+};
+
+export string create_string(adr head) {
+    return new string(head);
+};
+
+export int print(string obj) {
+    io.print(obj.cstr());
+    return 0;
 };
