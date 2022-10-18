@@ -124,6 +124,7 @@ class CodeGenerator {
                             bool isDiv = false);
   gen::Expr genArithmatic(asmc::ArithInst*, ast::Compound compound,
                           asmc::File& OutputFile);
+  ast::Expr * imply(ast::Expr * expr, std::string typeName);
   bool canAssign(ast::Type type, std::string typeName, bool strict = false);
   std::string moduleId;
   std::tuple<std::string, gen::Symbol, bool, asmc::File> resolveSymbol(
