@@ -11,16 +11,6 @@
 #include "Scanner.hpp"
 #pragma region helper functions
 
-ast::CallExpr * imply(ast::Expr * expr, std::string typeName) {
-  ast::Call * init = new ast::Call();
-  init->ident = typeName;
-  init->Args.push(expr);
-  ast::CallExpr * call = new ast::CallExpr;
-  call->call = init;
-  return call;
-}
-
-
 bool gen::Enum::compairEnum(gen::Enum::EnumValue e, std::string ident) {
   return e.name == ident;
 };
@@ -831,7 +821,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
 
     if (opor != nullptr) {
       ast::CallExpr* call = new ast::CallExpr();
+      call->logicalLine = this->logicalLine;
       call->call = new ast::Call;
+      call->call->logicalLine = comp.logicalLine;
       call->call->ident = opor->ident.ident;
       call->call->Args = links::LinkedList<ast::Expr*>();
       call->call->Args.push(comp.expr1);
@@ -1349,11 +1341,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
       mov->logicalLine = this->logicalLine;
       asmc::Push* push = new asmc::Push();
       push->logicalLine = this->logicalLine;
-      push->op = mov->to = this->intArgs[0].get(asmc::QWord);
+      push->op = mov->to = this->registers["%rdi"]->get(asmc::QWord);
       OutputFile.text << push;
       mov->size = asmc::QWord;
       mov->from = this->registers["%eax"]->get(asmc::QWord);
-      mov->to = this->intArgs[0].get(asmc::QWord);
       OutputFile.text << mov;
       gen::Expr afterInit = this->GenExpr(callInit, OutputFile);
       output.access = afterInit.access;
@@ -1454,6 +1445,36 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
   }
   return output;
 };
+
+ast::Expr * gen::CodeGenerator::imply(ast::Expr * expr, std::string typeName) {
+  // find the type
+  auto type = this->typeList[typeName];
+  if (type != nullptr) {
+    auto cl = dynamic_cast<gen::Class*>(*type);
+    if (cl != nullptr) {
+      if (cl->dynamic) {
+        ast::NewExpr* newExpr = new ast::NewExpr();
+        newExpr->logicalLine = this->logicalLine;
+        newExpr->type.typeName = typeName;
+        newExpr->type.safeType = cl->safeType;
+        newExpr->type.opType = asmc::Hard;
+        newExpr->type.size = asmc::QWord;
+        newExpr->args.push(expr);
+        return newExpr;
+      } else {
+        ast::Call * init = new ast::Call();
+        init->logicalLine = this->logicalLine;
+        init->ident = typeName;
+        init->Args.push(expr);
+        ast::CallExpr * call = new ast::CallExpr;
+        call->logicalLine = this->logicalLine;
+        call->call = init;
+        return call;
+      }
+    }
+  }
+  this->alert("Cannot imply type");
+}
 
 links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(
     ast::Statment* STMT, links::LinkedList<gen::Symbol>& table) {
@@ -2214,11 +2235,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
   links::LinkedList<std::string> mods = links::LinkedList<std::string>();
   // first push rdx
   links::LinkedList<std::string> stack;
-  asmc::Push* push = new asmc::Push();
-  push->logicalLine = call->logicalLine;
-  push->op = this->registers["%rdx"]->get(asmc::QWord);
-  stack << push->op;
-  OutputFile.text << push;
+
 
   this->intArgsCounter = 0;
   int argsCounter = 0;
@@ -2398,6 +2415,12 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
     mod = "";
   }
 
+  asmc::Push* push = new asmc::Push();
+  push->logicalLine = call->logicalLine;
+  push->op = this->registers["%rdx"]->get(asmc::QWord);
+  OutputFile.text << push;
+  stack << push->op;
+
   if (func == nullptr) alert("Cannot Find Function: " + ident + allMods);
 
   if (func->scope == ast::Private && func->scopeName != "global") {
@@ -2433,7 +2456,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
               " got: " + std::to_string(i + 1));
       };
       if (!canAssign(func->argTypes.at(i), exp.type)) {
-        ast::CallExpr * init = imply(rem, func->argTypes.at(i).typeName);
+        ast::Expr * init = imply(rem, func->argTypes.at(i).typeName);
         exp = this->GenExpr(init, OutputFile);
       };
     };
