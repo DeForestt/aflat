@@ -133,7 +133,11 @@ int main(int argc, char *argv[]) {
     configFile << "m " << modualName << "\n";
     return 0;
   }
-
+  if (value == "update") {
+    std::string update_command = "curl -s https://raw.githubusercontent.com/DeForestt/aflat/main/install.sh | bash";
+    system(update_command.c_str());
+    return 0;
+  }
   std::string outputFile;
   if (argc == 2)
     outputFile = "out.s";
