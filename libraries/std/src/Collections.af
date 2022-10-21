@@ -40,8 +40,8 @@ class LinkedList {
         if (my.delFunc != NULL) {
             adr foo = my.delFunc;
             my.forEach(foo);
+            my.forEach(free);
         };
-        my.forEach(free);
         ListNode curr = my.head;
         ListNode next = NULL;
         while (curr != NULL) {
