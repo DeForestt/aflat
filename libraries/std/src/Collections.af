@@ -495,8 +495,9 @@ class List {
     private int typeSize = typeSize;
     private int size = size;
     private int count = 0;
+    private adr delFunc = delFunc;
 
-    List init(int typeSize, * int size){
+    List init(int typeSize, * int size, * adr delFunc){
         if size == 0 {
             my.size = 1;
             my.head = malloc(typeSize);
@@ -601,6 +602,7 @@ class List {
     };
 
     int del() {
+        my.forEach(my.delFunc);
         free(my.head);
         return 0;
     };
