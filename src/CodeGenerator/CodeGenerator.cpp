@@ -2690,17 +2690,18 @@ void gen::CodeGenerator::genIf(ast::If* ifStmt, asmc::File& OutputFile) {
     asmc::Jmp* jmp = new asmc::Jmp();
     jmp->logicalLine = ifStmt->logicalLine;
     jmp->to = end->lable;
+    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
     OutputFile.text << jmp;
     OutputFile.text << lable1;
 
-    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
     gen::scope::ScopeManager::getInstance()->pushScope();
     OutputFile << this->GenSTMT(ifStmt->elseStatment);
+    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
     OutputFile.text << end;
-  } else
+  } else {
+    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
     OutputFile.text << lable1;
-
-  gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
+  };
 }
 
 void gen::CodeGenerator::genWhile(ast::While* loop, asmc::File& OutputFile) {
@@ -2726,6 +2727,7 @@ void gen::CodeGenerator::genWhile(ast::While* loop, asmc::File& OutputFile) {
   OutputFile.text << lable1;
 
   OutputFile << this->GenSTMT(loop->stmt);
+  gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
 
   OutputFile.text << lable2;
 
@@ -2757,8 +2759,8 @@ void gen::CodeGenerator::genWhile(ast::While* loop, asmc::File& OutputFile) {
 
   OutputFile.text << mov;
   OutputFile.text << cmp;
-  gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
   OutputFile.text << je;
+
 }
 
 void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
@@ -2781,13 +2783,14 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   OutputFile.text << jmp;
 
   OutputFile.text << lable1;
-
+  gen::scope::ScopeManager::getInstance()->pushScope();
   OutputFile << this->GenSTMT(loop->Run);
   OutputFile << this->GenSTMT(loop->increment);
-
+  gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
   OutputFile.text << lable2;
 
   gen::Expr expr = this->GenExpr(loop->expr, OutputFile);
+  
 
   ast::Type t = ast::Type();
   t.typeName = "bool";
@@ -2816,8 +2819,7 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   OutputFile.text << mov;
   OutputFile.text << cmp;
   OutputFile.text << je;
-
-  gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
+  scope::ScopeManager::getInstance()->popScope(this, OutputFile);
 }
 
 void gen::CodeGenerator::genUDef(ast::UDeffType* udef, asmc::File& OutputFile) {
