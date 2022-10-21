@@ -1,5 +1,7 @@
 .needs <std>
 
+import * from "io" under io;
+
 class ICollection{
     contract {
         adr forEach = [] => panic("Function (forEach) not implemented on this instance");
@@ -15,10 +17,11 @@ class ListNode{
 class LinkedList {
     public ListNode head;
     public adr pos = my.head;
-    LinkedList init();
+    private adr delFunc = delFunc;
+    LinkedList init(*adr delFunc);
     int append(adr data);
     int insert(adr data, int index);
-    int del(int index);
+    int drop(int index);
     generic get(int index);
 
     adr stitch(LinkedList New);
@@ -33,6 +36,21 @@ class LinkedList {
     int size();
     int erace();
     public LinkedList copy<<=>>(adr list);
+    int del(){
+        if (my.delFunc != NULL) {
+            adr foo = my.delFunc;
+            my.forEach(foo);
+        };
+        my.forEach(free);
+        ListNode curr = my.head;
+        ListNode next = NULL;
+        while (curr != NULL) {
+            next = curr.next;
+            free(curr);
+            curr = next;
+        };
+    };
+
 };
 
 class Array signs ICollection{
@@ -166,12 +184,12 @@ LinkedList where@LinkedList(adr foo, * adr arg){
     return newList;
 };
 
-LinkedList init@LinkedList(){
+LinkedList init@LinkedList(adr delFunc){
     my.head = NULL;
     return my;
 };
 
-int del@LinkedList(int index){
+int drop@LinkedList(int index){
     if index < 0 | index > my.size() {
         return -1;
     };

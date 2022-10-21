@@ -2425,6 +2425,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
       if (f == nullptr)
         alert("cannot find function: " + ident + " in " + cl->Ident);
       func->argTypes = f->argTypes;
+      func->req = f->req;
     }
     mod = "";
   }
@@ -2549,7 +2550,10 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
     argsCounter++;
   };
 
-  while (argsCounter < func->argTypes.size()) {
+  int argsUsed = argsCounter;
+  if (call->publify != "") argsUsed--;
+
+  while (argsUsed < func->argTypes.size()) {
     // if the argument is a float, we need to push a float
     asmc::Mov* move = new asmc::Mov();
     move->logicalLine = call->logicalLine;
@@ -2557,6 +2561,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
     move->from = "$0";
     move->to = this->intArgs[argsCounter].get(asmc::QWord);
     argsCounter++;
+    argsUsed++;
     OutputFile.text << move;
   }
 
