@@ -1,5 +1,7 @@
 .needs <std>
 
+import * from "io" under io;
+
 class ICollection{
     contract {
         adr forEach = [] => panic("Function (forEach) not implemented on this instance");
@@ -15,10 +17,12 @@ class ListNode{
 class LinkedList {
     public ListNode head;
     public adr pos = my.head;
-    LinkedList init();
+    private adr delFunc = delFunc;
+    bool cleanUp = cleanUp;
+    LinkedList init(* adr delFunc, * bool cleanUp);
     int append(adr data);
     int insert(adr data, int index);
-    int del(int index);
+    int drop(int index);
     generic get(int index);
 
     adr stitch(LinkedList New);
@@ -33,6 +37,23 @@ class LinkedList {
     int size();
     int erace();
     public LinkedList copy<<=>>(adr list);
+    int del(){
+        if (my.delFunc != NULL) {
+            adr foo = my.delFunc;
+            my.forEach(foo);
+        };
+        if (my.cleanUp) {
+            my.forEach(free);
+        };
+        ListNode curr = my.head;
+        ListNode next = NULL;
+        while (curr != NULL) {
+            next = curr.next;
+            free(curr);
+            curr = next;
+        };
+    };
+
 };
 
 class Array signs ICollection{
@@ -166,12 +187,12 @@ LinkedList where@LinkedList(adr foo, * adr arg){
     return newList;
 };
 
-LinkedList init@LinkedList(){
+LinkedList init@LinkedList(* adr delFunc, * bool cleanUp){
     my.head = NULL;
     return my;
 };
 
-int del@LinkedList(int index){
+int drop@LinkedList(int index){
     if index < 0 | index > my.size() {
         return -1;
     };
@@ -477,8 +498,9 @@ class List {
     private int typeSize = typeSize;
     private int size = size;
     private int count = 0;
+    private adr delFunc = delFunc;
 
-    List init(int typeSize, * int size){
+    List init(int typeSize, * int size, * adr delFunc){
         if size == 0 {
             my.size = 1;
             my.head = malloc(typeSize);
@@ -558,6 +580,11 @@ class List {
             return 1;
         };
 
+        if my.delFunc != NULL {
+            adr delFunc = my.delFunc;
+            delFunc(my.get(index));
+        };
+
         memcpy(my.head + (index * my.typeSize), my.head + ((index + 1) * my.typeSize), my.typeSize * (my.count - index));
         my.count = my.count - 1;
     };
@@ -583,6 +610,7 @@ class List {
     };
 
     int del() {
+        my.forEach(my.delFunc);
         free(my.head);
         return 0;
     };
