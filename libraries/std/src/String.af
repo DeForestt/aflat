@@ -396,6 +396,10 @@ safe dynamic class string {
         return my;
     };
 
+    int del(){
+        free(my.head);
+    };
+
     bool compair<<==>>(string other) {
         return str.str_comp(my.head, other.head) == 0;
     };
@@ -530,7 +534,6 @@ safe dynamic class string {
     int endScope() {
         my.refcount = my.refcount - 1;
         if my.refcount == 0 {
-            free(my.head);
             delete my;
         };
         return 0;
