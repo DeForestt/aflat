@@ -273,7 +273,7 @@ String toUpper@String(){
 };
 
 LinkedList split@String(* char c){
-    LinkedList list = new LinkedList(String.del);
+    LinkedList list = new LinkedList(String.del, true);
     if c == '\0'
         c = ' ';
     adr head = my.head;
