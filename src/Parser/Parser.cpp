@@ -76,6 +76,9 @@ int getOpPriority(ast::Op op) {
 ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
                                         bool singleStmt = false) {
   ast::Statment *output = new ast::Statment;
+  if (tokens.head == nullptr) {
+    return output;
+  };
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto obj = *dynamic_cast<lex::LObj *>(tokens.peek());
     bool mask = false;

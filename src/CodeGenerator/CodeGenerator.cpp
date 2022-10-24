@@ -2311,13 +2311,12 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
           if (func != nullptr) pubname = parent->Ident;
         }
         if (func == nullptr) {
-          // search the class symbol table for a pointer
           std::string id = call->modList.touch();
           mods.push(id);
           sym = cl->SymbolTable.search<std::string>(searchSymbol,
                                                     call->modList.touch());
           if (sym != nullptr && sym->type.typeName == "adr") {
-            call->modList.shift();
+            call->modList.touch();
             ast::Var* var = new ast::Var();
             var->logicalLine = call->logicalLine;
             var->Ident = ident;
@@ -2333,6 +2332,8 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
             mov->to = this->registers["%r11"]->get(exp1.size);
             OutputFile.text << mov;
 
+            //
+
             func = new ast::Function();
             func->logicalLine = call->logicalLine;
             func->ident.ident = '*' + this->registers["%r11"]->get(exp1.size);
@@ -2345,7 +2346,8 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
           } else if (sym == nullptr) {
             alert("cannot find function " + call->modList.touch());
           };
-        } else {
+        }
+        if (func != nullptr) {
           call->modList.shift();
           call->modList.invert();
           call->modList.reset();
