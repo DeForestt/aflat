@@ -604,12 +604,26 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
           }
           output.access = '$' + std::to_string(item->value);
           output.type = en->Ident;
+          output.size = asmc::DWord;
         } else {
-        output.access =
-            '$' + std::to_string(type->SymbolTable.head->data.byteMod);
+          auto cl = dynamic_cast<gen::Class*>(type);
+          if (var.modList.trail() == 1 && cl) {
+            std::string functionName = var.modList.shift();
+            auto func = cl->nameTable[functionName];
+            if (func) {
+              output.access = "$pub_" + cl->Ident + "_" + func->ident.ident;
+              output.type = "adr";
+              output.size = asmc::QWord;
+            } else {
+              alert("Class " + ident + " does not contain " + functionName);
+            }
+          } else {
+            output.access = '$' + std::to_string(type->SymbolTable.head->data.byteMod);
             output.type = "int";
+            output.size = asmc::DWord;
+          }
         };
-        output.size = asmc::DWord;
+        
       } else if (ident == "int") {
         output.size = asmc::DWord;
         output.access = "$4";
@@ -2411,6 +2425,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
       if (f == nullptr)
         alert("cannot find function: " + ident + " in " + cl->Ident);
       func->argTypes = f->argTypes;
+      func->req = f->req;
     }
     mod = "";
   }
@@ -2535,7 +2550,10 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
     argsCounter++;
   };
 
-  while (argsCounter < func->argTypes.size()) {
+  int argsUsed = argsCounter;
+  if (call->publify != "") argsUsed--;
+
+  while (argsUsed < func->argTypes.size()) {
     // if the argument is a float, we need to push a float
     asmc::Mov* move = new asmc::Mov();
     move->logicalLine = call->logicalLine;
@@ -2543,6 +2561,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
     move->from = "$0";
     move->to = this->intArgs[argsCounter].get(asmc::QWord);
     argsCounter++;
+    argsUsed++;
     OutputFile.text << move;
   }
 
