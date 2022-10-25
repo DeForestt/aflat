@@ -471,17 +471,15 @@ safe dynamic class string {
         my.refcount = my.refcount - 1;
 
         if (other.refcount == 0) {
-            free(other.head);
-            free(other);
+            delete other;
         } else if (my.refcount == 0) {
-            free(my.head);
             delete my;
         };
         return newString;
     };
 
     List split(char delim) {
-        List list = new List(string, 1);
+        List list = new List(string, 1, string.del);
         int myLen = str.len(my.head);
         adr buff = malloc(1);
         adr save = buff;
@@ -494,8 +492,8 @@ safe dynamic class string {
                 buff = buff + 1;
                 buff =: '\0';
                 let s = new string(save);
-                list.pushBack(s.get());
-                free(save);
+                list.pushBack(s);
+                //free(save);
                 buffSize = 1;
             } else {
                 buffSize = buffSize + 1;

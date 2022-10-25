@@ -9,6 +9,7 @@
 #include "CodeGenerator/ScopeManager.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
+#include "Parser/Lower.hpp"
 #pragma region helper functions
 
 bool gen::Enum::compairEnum(gen::Enum::EnumValue e, std::string ident) {
@@ -2998,6 +2999,7 @@ void gen::CodeGenerator::genImport(ast::Import* imp, asmc::File& OutputFile) {
     }
     for (std::string ident : imp->imports) {
       ast::Statment* statment = extract(ident, added, id);
+      auto lower = parse::lower::Lowerer(statment);
       if (statment == nullptr)
         this->alert("Identifier " + ident + " not found to import");
       OutputFile << this->GenSTMT(statment);
