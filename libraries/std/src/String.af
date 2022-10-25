@@ -529,6 +529,21 @@ safe dynamic class string {
         return new string(my.head);
     };
 
+    bool isNumeric() {
+        int myLen = str.len(my.head);
+        for int i = 0; i < myLen; i = i + 1 {
+            adr curr = my.head + i;
+            char c = curr as char;
+            if (c < '0' | c > '9') return false;
+        };
+        return true;
+    };
+
+    int toInt() {
+        if !my.isNumeric() return 0;
+        return str.str_toInt(my.head);
+    };
+
     int endScope() {
         my.refcount = my.refcount - 1;
         if my.refcount == 0 {
