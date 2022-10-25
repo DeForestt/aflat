@@ -5,7 +5,7 @@ import ICollection from "Collections";
 import LinkedList, List from "Collections";
 
 import * from "strings" under str;
-import {print} from "io" under io;
+import {print, printInt} from "io" under io;
 
 private char lower(char c);
 private char upper(char c);
@@ -425,6 +425,11 @@ safe dynamic class string {
         return my;
     };
 
+    char at(int index) {
+        char[10] buff = my.head;
+        return buff[index];
+    };
+
     adr cstr() {
         return my.head;
     };
@@ -471,17 +476,15 @@ safe dynamic class string {
         my.refcount = my.refcount - 1;
 
         if (other.refcount == 0) {
-            free(other.head);
-            free(other);
+            delete other;
         } else if (my.refcount == 0) {
-            free(my.head);
             delete my;
         };
         return newString;
     };
 
     List split(char delim) {
-        List list = new List(string, 1);
+        List list = new List(string, 1, string.del);
         int myLen = str.len(my.head);
         adr buff = malloc(1);
         adr save = buff;
@@ -494,8 +497,8 @@ safe dynamic class string {
                 buff = buff + 1;
                 buff =: '\0';
                 let s = new string(save);
-                list.pushBack(s.get());
-                free(save);
+                list.pushBack(s);
+                //free(save);
                 buffSize = 1;
             } else {
                 buffSize = buffSize + 1;
@@ -529,6 +532,172 @@ safe dynamic class string {
 
     string copy() {
         return new string(my.head);
+    };
+
+    bool isNumeric() {
+        int myLen = str.len(my.head);
+        for int i = 0; i < myLen; i = i + 1 {
+            adr curr = my.head + i;
+            char c = curr as char;
+            if (c < '0' | c > '9') return false;
+        };
+        return true;
+    };
+
+    int toInt() {
+        if !my.isNumeric() return 0;
+        return str.str_toInt(my.head);
+    };
+
+    string toUpper() {
+        adr newhead = malloc(my.len() + 1);
+        adr save = newhead;
+        int length = my.len();
+        int i = 0;
+        while(i < length){
+            char c = my.at(i);
+            c = upper(c);
+            newhead =: c;
+            newhead = newhead + 1;
+            i = i + 1;
+        };
+        newhead =: '\0';
+        string newString = save;
+        free(save);
+        return newString;
+    };
+
+    string toLower() {
+        adr newhead = malloc(my.len() + 1);
+        adr save = newhead;
+        int length = my.len();
+        int i = 0;
+        while(i < length){
+            char c = my.at(i);
+            c = lower(c);
+            newhead =: c;
+            newhead = newhead + 1;
+            i = i + 1;
+        };
+        newhead =: '\0';
+        string newString = save;
+        free(save);
+        return newString;
+    };
+
+    string title() {
+        adr newhead = malloc(my.len() + 1);
+        adr save = newhead;
+        int length = my.len();
+        int i = 0;
+        bool space = true;
+        while(i < length){
+            char c = my.at(i);
+            if (space) {
+                c = upper(c);
+                space = false;
+            } else {
+                c = lower(c);
+            };
+            if (c == ' ') space = true;
+            newhead =: c;
+            newhead = newhead + 1;
+            i = i + 1;
+        };
+        newhead =: '\0';
+        string newString = save;
+        free(save);
+        return newString;
+    };
+
+
+    string replaceChar(char old, char n) {
+        char[10] newHead = malloc(my.len() + 1);
+        int length = my.len();
+        memcpy(newHead, my.head, length + 1);
+        for int i = 0; i < length; i = i + 1 {
+            char c = newHead[i];
+            if (c == old) newHead[i] = n;
+        };
+        string newString = newHead;
+        free(newHead);
+        return newString;
+    };
+
+    int find(string sub, int start) {
+        int myLen = str.len(my.head);
+        int subLen = str.len(sub.head);
+        if (subLen > myLen) return -1;
+        for int i = start; i < myLen - subLen + 1; i = i + 1 {
+            bool found = true;
+            for int j = 0; j < subLen; j = j + 1 {
+                char c1 = my.at(i + j);
+                char c2 = sub.at(j);
+                if (c1 != c2) {
+                    found = false;
+                    j = subLen;
+                };
+            };
+            if (found) return i;
+        };
+        return -1;
+    };
+
+    string replace(string sub, string n) {
+        int myLen = str.len(my.head);
+        int subLen = str.len(sub.head);
+        int nLen = str.len(n.head);
+        int newLen = myLen - subLen + nLen;
+        adr newHead = malloc(newLen + 1);
+        adr save = newHead;
+        int i = 0;
+        while(i < myLen) {
+            int index = my.find(sub, i);
+            if (index == -1) {
+                memcpy(newHead, my.head + i, myLen - i);
+                newHead = newHead + myLen - i;
+                i = myLen;
+            } else {
+                memcpy(newHead, my.head + i, index - i);
+                newHead = newHead + index - i;
+                memcpy(newHead, n.head, nLen);
+                newHead = newHead + nLen;
+                i = index + subLen;
+            };
+        };
+        newHead =: '\0';
+        string newString = save;
+        free(save);
+        return newString;
+    };
+    string subString(int start, int end) {
+        int length = my.len();
+        if (start < 0) | (start > length) | (end < 0) | (end > length) | (start > end) return new string("");
+        int newLength = end - start;
+        char[10] newHead = malloc(newLength + 1);
+        memcpy(newHead, my.head + start, newLength);
+        newHead[newLength] = '\0';
+        return newHead;
+    };
+
+    string trim(* char ch) {
+        if ch == '\0'
+            ch = ' ';
+
+        int start = 0;
+        int end = my.len() - 1;
+
+        while (my.at(start) == ch){start = start + 1;};
+        while (my.at(end) == ch) end = end - 1;
+        return my.subString(start, end + 1);
+    };
+
+    int indexOf(char ch) {
+        int length = my.len();
+        for int i = 0; i < length; i = i + 1 {
+            if (my.at(i) == ch) return i;
+        };
+        return -1;
     };
 
     int endScope() {
