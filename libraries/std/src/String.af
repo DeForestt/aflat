@@ -5,7 +5,7 @@ import ICollection from "Collections";
 import LinkedList, List from "Collections";
 
 import * from "strings" under str;
-import {print, printInt} from "io" under io;
+import {print} from "io" under io;
 
 private char lower(char c);
 private char upper(char c);
