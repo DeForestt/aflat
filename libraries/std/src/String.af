@@ -5,7 +5,7 @@ import ICollection from "Collections";
 import LinkedList, List from "Collections";
 
 import * from "strings" under str;
-import {print} from "io" under io;
+import {print, printInt} from "io" under io;
 
 private char lower(char c);
 private char upper(char c);
@@ -610,6 +610,7 @@ safe dynamic class string {
         return newString;
     };
 
+
     string replaceChar(char old, char n) {
         char[10] newHead = malloc(my.len() + 1);
         int length = my.len();
@@ -669,7 +670,6 @@ safe dynamic class string {
         free(save);
         return newString;
     };
-
     string subString(int start, int end) {
         int length = my.len();
         if (start < 0) | (start > length) | (end < 0) | (end > length) | (start > end) return new string("");
