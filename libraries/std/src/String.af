@@ -610,7 +610,7 @@ safe dynamic class string {
         return newString;
     };
 
-    string replace(char old, char n) {
+    string replaceChar(char old, char n) {
         char[10] newHead = malloc(my.len() + 1);
         int length = my.len();
         memcpy(newHead, my.head, length + 1);
@@ -620,6 +620,53 @@ safe dynamic class string {
         };
         string newString = newHead;
         free(newHead);
+        return newString;
+    };
+
+    int find(string sub, int start) {
+        int myLen = str.len(my.head);
+        int subLen = str.len(sub.head);
+        if (subLen > myLen) return -1;
+        for int i = start; i < myLen - subLen + 1; i = i + 1 {
+            bool found = true;
+            for int j = 0; j < subLen; j = j + 1 {
+                char c1 = my.at(i + j);
+                char c2 = sub.at(j);
+                if (c1 != c2) {
+                    found = false;
+                    j = subLen;
+                };
+            };
+            if (found) return i;
+        };
+        return -1;
+    };
+
+    string replace(string sub, string n) {
+        int myLen = str.len(my.head);
+        int subLen = str.len(sub.head);
+        int nLen = str.len(n.head);
+        int newLen = myLen - subLen + nLen;
+        adr newHead = malloc(newLen + 1);
+        adr save = newHead;
+        int i = 0;
+        while(i < myLen) {
+            int index = my.find(sub, i);
+            if (index == -1) {
+                memcpy(newHead, my.head + i, myLen - i);
+                newHead = newHead + myLen - i;
+                i = myLen;
+            } else {
+                memcpy(newHead, my.head + i, index - i);
+                newHead = newHead + index - i;
+                memcpy(newHead, n.head, nLen);
+                newHead = newHead + nLen;
+                i = index + subLen;
+            };
+        };
+        newHead =: '\0';
+        string newString = save;
+        free(save);
         return newString;
     };
 
