@@ -610,7 +610,8 @@ class List {
     };
 
     int del() {
-        my.forEach(my.delFunc);
+        if my.delFunc != NULL
+            my.forEach(my.delFunc);
         free(my.head);
         return 0;
     };
