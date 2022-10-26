@@ -31,7 +31,6 @@ private bool testStr_concat(adr _arg) : test.case {
 };
 
 private bool testToInt(adr _arg) : test.case {
-    return false;
     return (
         test.require(st.str_toInt("123") == 123, "123 == 123") &
         test.require(st.str_toInt("0") == 0, "0 == 0") &
