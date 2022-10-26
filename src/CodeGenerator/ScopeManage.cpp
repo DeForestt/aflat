@@ -64,7 +64,13 @@ int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type,
   return sym.byteMod;
 }
 
-void gen::scope::ScopeManager::pushScope() { this->scopeStack.push_back(0); };
+void gen::scope::ScopeManager::pushScope(bool func) { 
+  this->scopeStack.push_back(0);
+  this->pleading.push_back({this->SStackSize, func});
+  if (func) {
+    this->SStackSize = 0;
+  }
+};
 
 void gen::scope::ScopeManager::popScope(CodeGenerator *callback,
                                         asmc::File &OutputFile,
@@ -73,7 +79,10 @@ void gen::scope::ScopeManager::popScope(CodeGenerator *callback,
   for (int i = 0; i < size; i++) {
     if (!fPop) {
       this->SStackSize--;
-    };
+      if (this->pleading.size() > 0 && this->pleading.back().pleading) {
+        this->SStackSize = this->pleading.back().SScopeSize;
+      }
+    }
     this->stackPos -= sizeToInt(this->stack.back().type.size) *
                       this->stack.back().type.arraySize;
     gen::Symbol sym = this->stack.back();
@@ -90,11 +99,12 @@ void gen::scope::ScopeManager::popScope(CodeGenerator *callback,
     this->SStackSize = 0;
   };
   this->scopeStack.pop_back();
+  if (this->pleading.size() > 0) this->pleading.pop_back();
 };
 
 void gen::scope::ScopeManager::softPop(CodeGenerator *callback,
                                        asmc::File &OutputFile) {
-  int size = this->SStackSize;
+  int size = (this->pleading.size() > 0 && this->pleading.back().pleading)? this->scopeStack.back() : this->SStackSize;
   int pos = this->stack.size() - 1;
   for (int i = 0; i < size; i++) {
     gen::Symbol sym = this->stack.at(pos);

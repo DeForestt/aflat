@@ -598,7 +598,7 @@ class List {
         return result;
     };
 
-    List filter(adr func, * adr args) {
+    List where(adr func, * adr args) {
         let result = new List(my.typeSize, my.count);
         for int i = 0; i < my.count; i = i + 1 {
             bool res = func(my.get(i), i, args);

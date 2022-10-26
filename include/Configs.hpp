@@ -21,6 +21,7 @@ struct Config {
     Mutibility mutibility = Mutibility::Promiscuous;
     bool debug = false;
     bool compatibility = false;
+    bool asm_ = false;
 };
 
 Config getConfig(std::string content);

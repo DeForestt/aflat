@@ -1675,7 +1675,7 @@ void gen::CodeGenerator::genSequence(ast::Sequence* seq,
 
 void gen::CodeGenerator::genFunction(ast::Function* func,
                                      asmc::File& OutputFile) {
-  gen::scope::ScopeManager::getInstance()->pushScope();
+  
   ast::Function* saveFunc = this->currentFunction;
   int saveIntArgs = intArgsCounter;
   bool isLambda = func->isLambda;
@@ -1693,6 +1693,7 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
   }
 
   if (func->statment != nullptr) {
+    gen::scope::ScopeManager::getInstance()->pushScope(true);
     this->currentFunction = func;
     bool saveIn = this->inFunction;
     this->inFunction = true;
@@ -1755,7 +1756,7 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
     link->operand = lable->lable;
 
     if (this->scope != nullptr && !func->isLambda) {
-      // add the opject to the arguments of the function
+      // add the opoect to the arguments of the function
       int offset = this->getBytes(asmc::QWord);
       int size = asmc::QWord;
       gen::Symbol symbol;
@@ -1847,12 +1848,11 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
     this->scope = saveScope;
     this->globalScope = saveGlobal;
     this->inFunction = saveIn;
+    bool funcPop = !isLambda;
+    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile, true);
   }
-
   this->intArgsCounter = saveIntArgs;
   this->currentFunction = saveFunc;
-
-  gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile, true);
 }
 
 void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
@@ -2115,16 +2115,44 @@ void gen::CodeGenerator::genReturn(ast::Return* ret, asmc::File& OutputFile) {
 
   gen::Expr from = this->GenExpr(ret->expr, OutputFile);
 
+  if (!from.passable){
+    alert("cannot return an lvalue reference to safe type " + from.type);
+  };
+
+  if (from.op != asmc::Float) {
+    // move from.access to %rax
+    auto mov2 = new asmc::Mov();
+    mov2->logicalLine = ret->logicalLine;
+    mov2->size = from.size;
+    mov2->from = from.access;
+    mov2->to = this->registers["%rax"]->get(from.size);
+    mov2->op = from.op;
+    OutputFile.text << mov2;
+    auto push = new asmc::Push();
+    push->logicalLine = ret->logicalLine;
+    push->op = this->registers["%rax"]->get(asmc::QWord);
+    OutputFile.text << push;
+  };
+
+
   if(!this->canAssign(this->returnType, from.type, true)){
     auto imp = imply(ret->expr, this->returnType.typeName);
     from = this->GenExpr(imp, OutputFile);
+  };
+
+  scope::ScopeManager::getInstance()->softPop(this, OutputFile);
+
+  if (from.op != asmc::Float){
+    auto pop = new asmc::Pop();
+    pop->logicalLine = ret->logicalLine;
+    pop->op = this->registers["%rax"]->get(asmc::QWord);
+    OutputFile.text << pop;
   };
 
   std::string move2 = (from.op == asmc::Float)
                           ? this->registers["%xmm0"]->get(from.size)
                           : this->registers["%rax"]->get(from.size);
   
-  scope::ScopeManager::getInstance()->softPop(this, OutputFile);
   mov->from = from.access;
   mov->to = move2;
   mov->size = from.size;
@@ -2664,7 +2692,7 @@ void gen::CodeGenerator::genPull(ast::Pull* pull, asmc::File& OutputFile) {
 
 void gen::CodeGenerator::genIf(ast::If* ifStmt, asmc::File& OutputFile) {
   // push a new scope
-  gen::scope::ScopeManager::getInstance()->pushScope();
+  gen::scope::ScopeManager::getInstance()->pushScope(false);
 
   asmc::Lable* lable1 = new asmc::Lable();
   lable1->logicalLine = ifStmt->logicalLine;
@@ -2716,7 +2744,7 @@ void gen::CodeGenerator::genIf(ast::If* ifStmt, asmc::File& OutputFile) {
     OutputFile.text << jmp;
     OutputFile.text << lable1;
 
-    gen::scope::ScopeManager::getInstance()->pushScope();
+    gen::scope::ScopeManager::getInstance()->pushScope(true);
     OutputFile << this->GenSTMT(ifStmt->elseStatment);
     gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
     OutputFile.text << end;
@@ -2727,7 +2755,7 @@ void gen::CodeGenerator::genIf(ast::If* ifStmt, asmc::File& OutputFile) {
 }
 
 void gen::CodeGenerator::genWhile(ast::While* loop, asmc::File& OutputFile) {
-  gen::scope::ScopeManager::getInstance()->pushScope();
+  gen::scope::ScopeManager::getInstance()->pushScope(true);
 
   asmc::Lable* lable1 = new asmc::Lable();
   lable1->logicalLine = loop->logicalLine;
@@ -2786,7 +2814,7 @@ void gen::CodeGenerator::genWhile(ast::While* loop, asmc::File& OutputFile) {
 }
 
 void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
-  gen::scope::ScopeManager::getInstance()->pushScope();
+  gen::scope::ScopeManager::getInstance()->pushScope(true);
 
   asmc::Lable* lable1 = new asmc::Lable();
   lable1->logicalLine = loop->logicalLine;
@@ -2805,7 +2833,7 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   OutputFile.text << jmp;
 
   OutputFile.text << lable1;
-  gen::scope::ScopeManager::getInstance()->pushScope();
+  gen::scope::ScopeManager::getInstance()->pushScope(true);
   OutputFile << this->GenSTMT(loop->Run);
   OutputFile << this->GenSTMT(loop->increment);
   gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
