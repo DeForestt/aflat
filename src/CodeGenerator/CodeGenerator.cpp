@@ -2115,16 +2115,44 @@ void gen::CodeGenerator::genReturn(ast::Return* ret, asmc::File& OutputFile) {
 
   gen::Expr from = this->GenExpr(ret->expr, OutputFile);
 
+  if (!from.passable){
+    alert("cannot return an lvalue reference to safe type " + from.type);
+  };
+
+  if (from.op != asmc::Float) {
+    // move from.access to %rax
+    auto mov2 = new asmc::Mov();
+    mov2->logicalLine = ret->logicalLine;
+    mov2->size = from.size;
+    mov2->from = from.access;
+    mov2->to = this->registers["%rax"]->get(from.size);
+    mov2->op = from.op;
+    OutputFile.text << mov2;
+    auto push = new asmc::Push();
+    push->logicalLine = ret->logicalLine;
+    push->op = this->registers["%rax"]->get(asmc::QWord);
+    OutputFile.text << push;
+  };
+
+
   if(!this->canAssign(this->returnType, from.type, true)){
     auto imp = imply(ret->expr, this->returnType.typeName);
     from = this->GenExpr(imp, OutputFile);
+  };
+
+  scope::ScopeManager::getInstance()->softPop(this, OutputFile);
+
+  if (from.op != asmc::Float){
+    auto pop = new asmc::Pop();
+    pop->logicalLine = ret->logicalLine;
+    pop->op = this->registers["%rax"]->get(asmc::QWord);
+    OutputFile.text << pop;
   };
 
   std::string move2 = (from.op == asmc::Float)
                           ? this->registers["%xmm0"]->get(from.size)
                           : this->registers["%rax"]->get(from.size);
   
-  scope::ScopeManager::getInstance()->softPop(this, OutputFile);
   mov->from = from.access;
   mov->to = move2;
   mov->size = from.size;

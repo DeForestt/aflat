@@ -4,7 +4,7 @@
 
 import ICollection from "Collections";
 import Array from "Collections";
-import LinkedList from "Collections";
+import LinkedList, List from "Collections";
 import len from "strings" under str;
 import String from "String";
 
@@ -32,7 +32,8 @@ class File{
     int write(adr text);
     int read(adr pointer, char delim);
     Array toArray(char delim);
-    LinkedList toList(char delim);
+    LinkedList toLinkedList(char delim);
+    List toList(char delim);
     String readToEnd();
     int close();
 };
@@ -126,7 +127,7 @@ Array toArray@File(char delim){
         return a;
 };
 
-LinkedList toList@File(char delim){
+LinkedList toLinkedList@File(char delim){
         LinkedList l = new LinkedList;
         adr ibuff = malloc(256);
         
@@ -141,6 +142,31 @@ LinkedList toList@File(char delim){
         l.append(ibuff);
 
 
+        return l;
+};
+
+private int clearChar(adr pointer, int size){
+        int i = 0;
+        while(i < size){
+                pointer =: '\0';
+                pointer = pointer + 1;
+                i = i + 1;
+        };
+};
+
+List toList@File(char delim){
+        List l = new List(256, 1);
+        char[256] ibuff;
+        
+        int eof = my.read(ibuff, delim);
+
+        while (eof != 1){
+                l.pushBack(ibuff);
+                clearChar(ibuff, 256);
+                eof = my.read(ibuff, delim);
+        };
+
+        l.pushBack(ibuff);
         return l;
 };
 
