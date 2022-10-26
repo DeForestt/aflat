@@ -1675,7 +1675,7 @@ void gen::CodeGenerator::genSequence(ast::Sequence* seq,
 
 void gen::CodeGenerator::genFunction(ast::Function* func,
                                      asmc::File& OutputFile) {
-  gen::scope::ScopeManager::getInstance()->pushScope();
+  
   ast::Function* saveFunc = this->currentFunction;
   int saveIntArgs = intArgsCounter;
   bool isLambda = func->isLambda;
@@ -1693,6 +1693,7 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
   }
 
   if (func->statment != nullptr) {
+    gen::scope::ScopeManager::getInstance()->pushScope(true);
     this->currentFunction = func;
     bool saveIn = this->inFunction;
     this->inFunction = true;
@@ -1755,7 +1756,7 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
     link->operand = lable->lable;
 
     if (this->scope != nullptr && !func->isLambda) {
-      // add the opject to the arguments of the function
+      // add the opoect to the arguments of the function
       int offset = this->getBytes(asmc::QWord);
       int size = asmc::QWord;
       gen::Symbol symbol;
@@ -1847,12 +1848,11 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
     this->scope = saveScope;
     this->globalScope = saveGlobal;
     this->inFunction = saveIn;
+    bool funcPop = !isLambda;
+    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile, true);
   }
-
   this->intArgsCounter = saveIntArgs;
   this->currentFunction = saveFunc;
-
-  gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile, true);
 }
 
 void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
@@ -2692,7 +2692,7 @@ void gen::CodeGenerator::genPull(ast::Pull* pull, asmc::File& OutputFile) {
 
 void gen::CodeGenerator::genIf(ast::If* ifStmt, asmc::File& OutputFile) {
   // push a new scope
-  gen::scope::ScopeManager::getInstance()->pushScope();
+  gen::scope::ScopeManager::getInstance()->pushScope(false);
 
   asmc::Lable* lable1 = new asmc::Lable();
   lable1->logicalLine = ifStmt->logicalLine;
@@ -2744,7 +2744,7 @@ void gen::CodeGenerator::genIf(ast::If* ifStmt, asmc::File& OutputFile) {
     OutputFile.text << jmp;
     OutputFile.text << lable1;
 
-    gen::scope::ScopeManager::getInstance()->pushScope();
+    gen::scope::ScopeManager::getInstance()->pushScope(true);
     OutputFile << this->GenSTMT(ifStmt->elseStatment);
     gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
     OutputFile.text << end;
@@ -2755,7 +2755,7 @@ void gen::CodeGenerator::genIf(ast::If* ifStmt, asmc::File& OutputFile) {
 }
 
 void gen::CodeGenerator::genWhile(ast::While* loop, asmc::File& OutputFile) {
-  gen::scope::ScopeManager::getInstance()->pushScope();
+  gen::scope::ScopeManager::getInstance()->pushScope(true);
 
   asmc::Lable* lable1 = new asmc::Lable();
   lable1->logicalLine = loop->logicalLine;
@@ -2814,7 +2814,7 @@ void gen::CodeGenerator::genWhile(ast::While* loop, asmc::File& OutputFile) {
 }
 
 void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
-  gen::scope::ScopeManager::getInstance()->pushScope();
+  gen::scope::ScopeManager::getInstance()->pushScope(true);
 
   asmc::Lable* lable1 = new asmc::Lable();
   lable1->logicalLine = loop->logicalLine;
@@ -2833,7 +2833,7 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   OutputFile.text << jmp;
 
   OutputFile.text << lable1;
-  gen::scope::ScopeManager::getInstance()->pushScope();
+  gen::scope::ScopeManager::getInstance()->pushScope(true);
   OutputFile << this->GenSTMT(loop->Run);
   OutputFile << this->GenSTMT(loop->increment);
   gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
