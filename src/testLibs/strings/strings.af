@@ -2,7 +2,7 @@
 
 import {case, require} from "ATest.af" under test;
 import TestSuite from "ATest.af";
-import { len, str_comp, str_concat, str_toInt, int_toString, int_toStringL0 } from "strings" under st;
+import { len, str_comp, str_concat, str_toInt, int_toString, int_toStringL0, str_find } from "strings" under st;
 
 private bool testLen(adr _arg) : test.case {
     return (
@@ -57,6 +57,15 @@ private bool testInt_toStringL0(adr _arg) : test.case {
     return (
         test.require(st.str_comp(buf, "01") == 1, "1 == 01") &
         test.require(st.str_comp(buf2, "00123") == 1, "123 == 00123")
+    );
+};
+
+private bool testStr_find(adr _arg) : test.case {
+    return (
+        test.require(st.str_find("abc", 'a') == 0, "a in abc") &
+        test.require(st.str_find("abc", 'c') == 2, "c in abc") &
+        test.require(st.str_find("abc", 'd') == -1, "d not in abc") &
+        test.require(st.str_find("abc", 'b') == 1, "b in abc")
     );
 };
 
