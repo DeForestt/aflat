@@ -40,6 +40,5 @@ jobs:
       run: ./test
     - name: Test Aflat Libraries
       working-directory: ${{github.workspace}}
-      run: bash ./rebuild-libs.sh
-      run: ./bin/aflat test
+      run: (bash ./rebuild-libs.sh && ./bin/aflat test)
       
