@@ -1,4 +1,5 @@
 .needs <std>
+.needs <asm>
 
 import {case, report, require} from "ATest.af" under test;
 import TestSuite from "ATest.af";
@@ -7,6 +8,5 @@ import { getSuite } from "./src/testLibs/strings/strings" under st1;
 int main() {
     TestSuite stringsLib = st1.getSuite();
     stringsLib.run();
-    test.report();
-    return 0;
+    return test.report();
 };
