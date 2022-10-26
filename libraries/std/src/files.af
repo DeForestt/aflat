@@ -6,7 +6,7 @@ import ICollection from "Collections";
 import Array from "Collections";
 import LinkedList, List from "Collections";
 import len from "strings" under str;
-import String from "String";
+import string from "String";
 
 class fstat{
     long st_dev;
@@ -34,7 +34,7 @@ class File{
     Array toArray(char delim);
     LinkedList toLinkedList(char delim);
     List toList(char delim);
-    String readToEnd();
+    string readToEnd();
     int close();
 };
 
@@ -89,14 +89,14 @@ int read@File(adr pointer, char delim){
         return  0;
 };
 
-String readToEnd@File(){
+string readToEnd@File(){
         fstat stat = new fstat();
         sys_fstat(my.file, stat);
         adr buffer = malloc(1 + stat.st_size);
         sys_read(my.file, buffer, 0 + stat.st_size);
         adr pointer = buffer + (0 + stat.st_size);
         pointer =: '\0';
-        String text = new String(buffer);
+        string text = new string(buffer);
         free(buffer);
         delete stat;
         return text;

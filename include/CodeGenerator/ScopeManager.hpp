@@ -12,6 +12,11 @@ namespace scope {
 class ScopeManager {
 
 private:
+
+  struct plead {
+    int SScopeSize;
+    bool pleading;
+  };
   ScopeManager();
   ~ScopeManager() = default;
   static ScopeManager *instance;
@@ -21,6 +26,8 @@ private:
 
   // Global Scope
   std::vector<gen::Symbol> globalStack;
+
+  std::vector<plead> pleading;
 
   // hold the current memory location relative to the rbp
   int stackPos;
@@ -54,7 +61,7 @@ public:
   gen::Symbol *get(std::string symbol);
 
   // push a new scope
-  void pushScope();
+  void pushScope(bool func);
 
   // pop a scope
   void popScope(gen::CodeGenerator *callback, asmc::File &OutputFile,

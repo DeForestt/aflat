@@ -41,6 +41,8 @@ cfg::Config cfg::getConfig(std::string content) {
                 config.debug = true;
             } else if (setting == "compatibility") {
                 config.compatibility = true;
+            } else if (setting == "asm") {
+                config.asm_ = true;
             } else if (setting.substr(0, 3) == "mut") {
                 auto mut = setting.substr(4);
                 if (mut == "promiscuous") {
