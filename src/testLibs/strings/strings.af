@@ -2,7 +2,7 @@
 
 import {case, require} from "ATest.af" under test;
 import TestSuite from "ATest.af";
-import { len, str_comp, str_concat, str_toInt, int_toString } from "strings" under st;
+import { len, str_comp, str_concat, str_toInt, int_toString, int_toStringL0 } from "strings" under st;
 
 private bool testLen(adr _arg) : test.case {
     return (
@@ -39,11 +39,33 @@ private bool testToInt(adr _arg) : test.case {
     );
 };
 
+private bool testInt_toString(adr _arg) : test.case {
+    char[11] buf;
+    st.int_toString(123, buf);
+    return (
+        test.require(st.str_comp(buf, "123") == 1, "123 == 123")
+    );
+};
+
+private bool testInt_toStringL0(adr _arg) : test.case {
+    char[11] buf;
+    st.int_toStringL0(1, buf, 2);
+
+    char[11] buf2;
+    st.int_toStringL0(123, buf2, 5);
+
+    return (
+        test.require(st.str_comp(buf, "01") == 1, "1 == 01") &
+        test.require(st.str_comp(buf2, "00123") == 1, "123 == 00123")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("Test strings library");
     suite.addCase(testLen, "len");
     suite.addCase(testStrComp, "str_comp");
     suite.addCase(testStr_concat, "str_concat");
     suite.addCase(testToInt, "str_toInt");
+    suite.addCase(testInt_toString, "int_toString");
     return suite;
 };
