@@ -400,8 +400,8 @@ safe dynamic class string {
         free(my.head);
     };
 
-    bool compair<<==>>(string other) {
-        return str.str_comp(my.head, other.head) == 0;
+    bool compare<<==>>(string other) {
+        return str.str_comp(my.head, other.head) == 1;
     };
 
     string get(){
