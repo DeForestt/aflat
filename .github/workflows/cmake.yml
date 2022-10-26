@@ -38,4 +38,7 @@ jobs:
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ./test
+    - name: Test Aflat Libraries
+      working-directory: ${{github.workspace}}
+      run: ./bin/aflat test
       
