@@ -1,0 +1,8 @@
+.needs <std>
+
+import {case, report, require} from "ATest.af" under test;
+import TestSuite from "ATest.af";
+
+int main() {
+
+};
