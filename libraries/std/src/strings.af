@@ -203,10 +203,11 @@ export int str_find(adr in, char find){
     int i = 0;
     int len = len(in);
     while(i < len){
-        in = in + 1;
+        
 		char b = in as char;
         if(b == find){return i};
         i = i + 1;
+		in = in + 1;
     };
     return -1;
 };

@@ -2,7 +2,7 @@
 
 import {case, require} from "ATest.af" under test;
 import TestSuite from "ATest.af";
-import { len, str_comp, str_concat, str_toInt, int_toString, int_toStringL0, str_find } from "strings" under st;
+import { len, str_comp, str_concat, str_toInt, int_toString, int_toStringL0, str_find, str_split } from "strings" under st;
 
 private bool testLen(adr _arg) : test.case {
     return (
@@ -69,6 +69,16 @@ private bool testStr_find(adr _arg) : test.case {
     );
 };
 
+private bool testStr_split(adr _arg) : test.case {
+    char[10] buf;
+    char[10] buf2;
+    st.str_split("adc", 'd', buf, buf2);
+    return (
+        test.require(st.str_comp(buf, "a") == 1, "abc split b 1 == a") &
+        test.require(st.str_comp(buf2, "c") == 1, "abc split b 2 == c")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("Test strings library");
     suite.addCase(testLen, "len");
@@ -76,5 +86,8 @@ export TestSuite getSuite() {
     suite.addCase(testStr_concat, "str_concat");
     suite.addCase(testToInt, "str_toInt");
     suite.addCase(testInt_toString, "int_toString");
+    suite.addCase(testInt_toStringL0, "int_toStringL0");
+    suite.addCase(testStr_find, "str_find");
+    suite.addCase(testStr_split, "str_split");
     return suite;
 };
