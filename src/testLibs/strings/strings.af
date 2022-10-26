@@ -1,0 +1,49 @@
+.needs <std>
+
+import {case, require} from "ATest.af" under test;
+import TestSuite from "ATest.af";
+import { len, str_comp, str_concat, str_toInt, int_toString } from "strings" under st;
+
+private bool testLen(adr _arg) : test.case {
+    return (
+        test.require(st.len("abc") == 3, "len abc == 3") &
+        test.require(st.len("a") == 1, "len a == 1") &
+        test.require(st.len("") == 0, "len \"\" == 0")
+    );
+};
+
+private bool testStrComp(adr _arg) : test.case {
+    return (
+        test.require(st.str_comp("abc", "abc") == 1, "abc == abc") &
+        test.require(st.str_comp("abc", "ab") == 0, "abc != ab") &
+        test.require(st.str_comp("abc", "abd") == 0, "abc != abd") &
+        test.require(st.str_comp("abc", "abcd") == 0, "abc != abcd") &
+        test.require(st.str_comp("abc", "a") == 0, "abc != a") 
+    );
+};
+
+private bool testStr_concat(adr _arg) : test.case {
+    char[7] buf;
+    st.str_concat("abc", "def", buf);
+    return (
+        test.require(st.str_comp(buf, "abcdef") == 1, "abc + def == abcdef")
+    );
+};
+
+private bool testToInt(adr _arg) : test.case {
+    return (
+        test.require(st.str_toInt("123") == 123, "123 == 123") &
+        test.require(st.str_toInt("0") == 0, "0 == 0") &
+        test.require(st.str_toInt("1") == 1, "1 == 1") &
+        test.require(st.str_toInt("1234567890") == 1234567890, "1234567890 == 1234567890")
+    );
+};
+
+export TestSuite getSuite() {
+    let suite = new TestSuite("Test strings library");
+    suite.addCase(testLen, "len");
+    suite.addCase(testStrComp, "str_comp");
+    suite.addCase(testStr_concat, "str_concat");
+    suite.addCase(testToInt, "str_toInt");
+    return suite;
+};
