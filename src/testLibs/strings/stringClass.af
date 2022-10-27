@@ -1,0 +1,11 @@
+.needs <std>
+
+import {case, require} from "ATest.af" under test;
+import TestSuite from "ATest.af";
+import string from "String";
+
+
+export TestSuite getSuite() {
+    let suite = new TestSuite("string class");
+    return suite;
+};
