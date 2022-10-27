@@ -3,6 +3,7 @@
 import {case, require} from "ATest.af" under test;
 import TestSuite from "ATest.af";
 import string from "String";
+import {str_comp} from "strings" under st;
 
 private bool test_compare(adr _arg) : test.case {
     let s1 = new string("Hello");
@@ -11,8 +12,37 @@ private bool test_compare(adr _arg) : test.case {
     );
 };
 
+private bool test_at(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    return (
+        test.require(s1.at(0) == 'H', "s1.at(0) == 'H'") &
+        test.require(s1.at(1) == 'e', "s1.at(1) == 'e'") &
+        test.require(s1.at(2) == 'l', "s1.at(2) == 'l'") &
+        test.require(s1.at(3) == 'l', "s1.at(3) == 'l'") &
+        test.require(s1.at(4) == 'o', "s1.at(4) == 'o'")
+    );
+};
+
+private bool test_cstr(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    return (
+        test.require(st.str_comp(s1.cstr(), "Hello") == 1, "s1.cstr() == Hello")
+    );
+};
+
+private bool test_concat(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = new string("World");
+    return (
+        test.require(s1 + s2 == "HelloWorld", "Hello + World == HelloWorld")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
+    suite.addCase(test_at, "at");
+    suite.addCase(test_cstr, "cstr");
+    suite.addCase(test_concat, "concat");
     return suite;
 };
