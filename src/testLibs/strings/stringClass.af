@@ -206,7 +206,13 @@ private bool test_trim(adr _arg) : test.case {
     );
 };
 
-
+private bool test_indexOf(adr _arg) : test.case {
+    let s1 = new string("Hello World");
+    return (
+        test.require(s1.indexOf('o') == 4, "Finds a character") &
+        test.require(s1.indexOf('a') == -1, "Does not find a character")
+    );
+};
 
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
@@ -229,5 +235,6 @@ export TestSuite getSuite() {
     suite.addCase(test_replace, "replace");
     suite.addCase(test_subString, "subString");
     suite.addCase(test_trim, "trim");
+    suite.addCase(test_indexOf, "indexOf");
     return suite;
 };
