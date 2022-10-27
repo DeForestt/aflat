@@ -253,6 +253,7 @@ export float charToFloat(char a){
     return result;
 };
 
+// deprecated
 export int str_toFloat(adr input){
 	char[20] whole;
 	char[20] decimal;
@@ -298,11 +299,13 @@ export int str_toFloat(adr input){
 	return ret;
 };
 
+// deprecated
 export int sPrintFloat(adr input){
 	io.printFloat(input);
 	return 0;
 };
 
+// deprecated
 export int float_toString(adr input, adr obuff, int signed){
 
 	if(input == #0){

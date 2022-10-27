@@ -2,8 +2,8 @@
 
 import {case, require} from "ATest.af" under test;
 import TestSuite from "ATest.af";
-import { len, str_comp, str_concat, str_toInt, int_toString, int_toStringL0, str_find, str_split } from "strings" under st;
-
+import { len, str_comp, str_concat, str_toInt, int_toString, int_toStringL0, str_find, str_split,str_subString, str_reverse } from "strings" under st;
+import { str_at, char_isDigit} from "strings" under st;
 private bool testLen(adr _arg) : test.case {
     return (
         test.require(st.len("abc") == 3, "len abc == 3") &
@@ -79,6 +79,42 @@ private bool testStr_split(adr _arg) : test.case {
     );
 };
 
+private bool testStr_substr(adr _arg) : test.case {
+    char[10] buf;
+    st.str_subString(0, 1, "abc", buf);
+    return (
+        test.require(st.str_comp(buf, "a") == 1, "abc substr 0,1 == a") &
+        test.require(st.str_comp(buf, "b") == 0, "abc substr 0,1 != b")
+    );
+};
+
+private bool testStr_reverse(adr _arg) : test.case {
+    char[10] buf;
+    st.str_reverse("abc", buf);
+    return (
+        test.require(st.str_comp(buf, "cba") == 1, "abc reverse == cba")
+    );
+};
+
+private bool testStr_at(adr _arg) : test.case {
+    return (
+        test.require(st.str_at("abc", 0) == 'a', "abc at 0 == a") &
+        test.require(st.str_at("abc", 1) == 'b', "abc at 1 == b") &
+        test.require(st.str_at("abc", 2) == 'c', "abc at 2 == c")
+    );
+};
+
+private bool testChar_isDigit(adr _arg) : test.case {
+    return (
+        test.require(st.char_isDigit('0'), "0 is digit") &
+        test.require(st.char_isDigit('1'), "1 is digit") &
+        test.require(st.char_isDigit('2'), "2 is digit") &
+        test.require(st.char_isDigit('a') == false, "a is not digit") &
+        test.require(st.char_isDigit('b') == false, "b is not digit") &
+        test.require(st.char_isDigit('c') == false, "c is not digit")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("Test strings library");
     suite.addCase(testLen, "len");
@@ -89,5 +125,9 @@ export TestSuite getSuite() {
     suite.addCase(testInt_toStringL0, "int_toStringL0");
     suite.addCase(testStr_find, "str_find");
     suite.addCase(testStr_split, "str_split");
+    suite.addCase(testStr_substr, "str_substr");
+    suite.addCase(testStr_reverse, "str_reverse");
+    suite.addCase(testStr_at, "str_at");
+    suite.addCase(testChar_isDigit, "char_isDigit");
     return suite;
 };
