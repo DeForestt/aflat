@@ -197,6 +197,17 @@ private bool test_subString(adr _arg) : test.case {
     );
 };
 
+private bool test_trim(adr _arg) : test.case {
+    let s1 = new string(" Hello World ");
+    let s2 = new string("!!!!Hello World!!!!");
+    return (
+        test.require(s1.trim() == "Hello World", "Trims a string") &
+        test.require(s2.trim('!') == "Hello World", "Trims a string with a given character")
+    );
+};
+
+
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
@@ -217,6 +228,6 @@ export TestSuite getSuite() {
     suite.addCase(test_find, "find");
     suite.addCase(test_replace, "replace");
     suite.addCase(test_subString, "subString");
-
+    suite.addCase(test_trim, "trim");
     return suite;
 };
