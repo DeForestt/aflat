@@ -88,6 +88,15 @@ private bool test_forEach(adr _arg) : test.case {
     );
 };
 
+private bool test_len(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = new string("");
+    return (
+        test.require(s1.len() == 5, "s1.len() == 5") &
+        test.require(s2.len() == 0, "s2.len() == 0")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
@@ -96,5 +105,7 @@ export TestSuite getSuite() {
     suite.addCase(test_concat, "concat");
     suite.addCase(test_split, "split");
     suite.addCase(test_forEach, "forEach");
+    suite.addCase(test_len, "len");
+
     return suite;
 };
