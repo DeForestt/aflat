@@ -121,6 +121,24 @@ private bool test_get(adr _arg) : test.case {
     );
 };
 
+private bool test_isNumeric(adr _arg) : test.case {
+    let s1 = new string("1234");
+    let s2 = new string("Hello");
+    return (
+        test.require(s1.isNumeric(), "Identifies numeric") &
+        test.require(s2.isNumeric() == false, "Identifies non-numeric")
+    );
+};
+
+private bool test_toInt(adr _arg) : test.case {
+    let s1 = new string("1234");
+    let s2 = new string("Hello");
+    return (
+        test.require(s1.toInt() == 1234, "Converts numeric") &
+        test.require(s2.toInt() == 0, "Converts non-numeric")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
@@ -132,6 +150,8 @@ export TestSuite getSuite() {
     suite.addCase(test_len, "len");
     suite.addCase(test_copy, "copy");
     suite.addCase(test_get, "get");
+    suite.addCase(test_isNumeric, "isNumeric");
+    suite.addCase(test_toInt, "toInt");
 
     return suite;
 };
