@@ -110,6 +110,17 @@ private bool test_copy(adr _arg) : test.case {
     );
 };
 
+private bool test_get(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = s1.get();
+
+    return (
+        test.require(s1 == s2, "Both strings are equal.") &
+        test.require(s1.cstr() == s2.cstr(), "Both strings point to the same buffer.") &
+        test.require(s1.getRefcount() == 2, "get increases the refcount.")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
@@ -120,6 +131,7 @@ export TestSuite getSuite() {
     suite.addCase(test_forEach, "forEach");
     suite.addCase(test_len, "len");
     suite.addCase(test_copy, "copy");
+    suite.addCase(test_get, "get");
 
     return suite;
 };
