@@ -1,6 +1,6 @@
 # Documentation For AFlat Programming Language
 ## Trust the programmer philosophy
-AFlat aims to trust that developers know what they are doing.  It allows and encourages things that many other modern languages do not, such as pointer arythmatic, memory managment, and so on.
+AFlat aims to trust that developers know what they are doing.  It allows and encourages things that many other modern languages do not, such as pointer asthmatic, memory management, and so on. While aflat does allow some developers to do some dangerous things, it also provides optional safety features that can be used to prevent some of the more dangerous things.  AFlat is not a language for everyone, but it is a language for careful developers who want to have more control over their code and their programs.
 <br>
 
 ## Types
@@ -10,14 +10,14 @@ A 4 byte signed int
 int i = 0;
 ```
 ### float
-A 4 byte signed floating point value
+A 4 byte floating point value
 ```js
 float f = 0.3;
 ```
 ### long
-An 8 byte signed int any long litteral must begin with a #
+An 8 byte signed integer
 ```js
-long l = #12;
+long l = 12;
 ```
 ### short
 A 2 byte integer
@@ -30,17 +30,29 @@ A 1 byte bool
 bool b = false;
 ```
 ### adr
-An 8 bit memory address.  In aflat, pointers point to any type
+An 8 bit memory address.  In aflat, pointers point to any type so you can have a pointer to an int, a pointer to a float, and so on.  This is different from C where pointers point to a specific type.  This is done to allow for more flexibility in the language. Because of this, pointers in aflat are a bit dangerous. It is suggested to use boxing instead of pointers wherever possible.
 ```js
 adr a = NULL;
 ```
+### generic
+The generic type is essentially the same as the adr type, but it is used to indicate that the pointer is meant to point to some object. This is meant to be used with a function or class that needs to preform operations on any sort of reference type object. The generic type also suppresses implicit casting, which is useful when you want to make sure that the pointer is pointing to the correct type.
+```js
+generic g = NULL;
+```
+
+### type inference
+Aflat supports type inference at declaration with the `let` keyword. This should not be used when declaring a numeric type such as short, int, or long.  Because aflat returns type `number` from an int literal.  The number type is a union of all numeric types and will break your code if it is tied to a variable.  You should also take note that implicit casting will not happen when using type inference.
+
+```js
+let i = "hello"; // this will assign an adr to i
+```
 
 ## User Defined Types...
-Any Type Defined by a user will be an 8 bit memory refrence to the given type
+Any Type Defined by a user will be an 8 bit memory reference to the given type
 ```js
 Type a = new Type();
 ```
-A user defined type can be cast to and from an adr... be careful! This is not type safe!
+A user defined type can be cast to and from an adr or generic... be careful! This is not type safe!
 ```js
 adr b = NULL;
 Type a = b;
