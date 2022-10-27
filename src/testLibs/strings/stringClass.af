@@ -139,6 +139,30 @@ private bool test_toInt(adr _arg) : test.case {
     );
 };
 
+private bool test_toLower(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = s1.toLower();
+    return (
+        test.require(s2 == "hello", "Converts to lower case")
+    );
+};
+
+private bool test_toUpper(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = s1.toUpper();
+    return (
+        test.require(s2 == "HELLO", "Converts to upper case")
+    );
+};
+
+private bool test_Title(adr _arg) : test.case {
+    let s1 = new string("hello world");
+    let s2 = s1.title();
+    return (
+        test.require(s2 == "Hello World", "Converts to title case")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
@@ -152,6 +176,9 @@ export TestSuite getSuite() {
     suite.addCase(test_get, "get");
     suite.addCase(test_isNumeric, "isNumeric");
     suite.addCase(test_toInt, "toInt");
+    suite.addCase(test_toLower, "toLower");
+    suite.addCase(test_toUpper, "toUpper");
+    suite.addCase(test_Title, "title");
 
     return suite;
 };
