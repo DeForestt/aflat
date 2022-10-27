@@ -163,6 +163,14 @@ private bool test_Title(adr _arg) : test.case {
     );
 };
 
+private bool test_replaceChar(adr _arg) : test.case {
+    let s1 = new string("Hello World");
+    let s2 = s1.replaceChar('o', 'a');
+    return (
+        test.require(s2 == "Hella Warld", "Replaces characters")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
@@ -179,6 +187,7 @@ export TestSuite getSuite() {
     suite.addCase(test_toLower, "toLower");
     suite.addCase(test_toUpper, "toUpper");
     suite.addCase(test_Title, "title");
+    suite.addCase(test_replaceChar, "replaceChar");
 
     return suite;
 };
