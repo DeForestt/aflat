@@ -3,6 +3,7 @@
 import {case, require} from "ATest.af" under test;
 import TestSuite from "ATest.af";
 import string from "String";
+import { print } from "String" under stl;
 import {str_comp} from "strings" under st;
 import List from "Collections";
 
@@ -180,6 +181,15 @@ private bool test_find(adr _arg) : test.case {
     );
 };
 
+private bool test_replace(adr _arg) : test.case {
+    let s1 = new string("Hello World World");
+    let s2 = s1.replace("World", "Universe");
+    stl.print(s2);
+    return (
+        test.require(s2 == "Hello Universe Universe", "Replaces a string")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
@@ -197,6 +207,8 @@ export TestSuite getSuite() {
     suite.addCase(test_toUpper, "toUpper");
     suite.addCase(test_Title, "title");
     suite.addCase(test_replaceChar, "replaceChar");
+    suite.addCase(test_find, "find");
+    suite.addCase(test_replace, "replace");
 
     return suite;
 };
