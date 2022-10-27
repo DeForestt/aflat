@@ -171,6 +171,15 @@ private bool test_replaceChar(adr _arg) : test.case {
     );
 };
 
+private bool test_find(adr _arg) : test.case {
+    let s1 = new string("Hello World World");
+    return (
+        test.require(s1.find("World", 0) == 6, "Finds a string") &
+        test.require(s1.find("Worlds", 0) == -1, "Does not find a string") &
+        test.require(s1.find("World", 7) == 12, "Finds a string after a given index")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
