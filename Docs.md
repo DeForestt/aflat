@@ -89,7 +89,7 @@ int add(int a, * int b){
 };
 ```
 ### The main Function
-The main function is the entry point for aflat.  It is the first function called when aflat is run. It can take optional arguments int argc and adr argv for commandline arguments.
+The main function is the entry point for aflat.  It is the first function called when aflat is run. It can take optional arguments int argc and adr argv for command line arguments.
 ```js
 int main(int argc, adr argv){
     // do stuff
@@ -136,8 +136,9 @@ int main(){
     return 0;
 };
 ```
-### Annonymous Functions
-Functions can be defined without a name. Annonymous functions.If the function body only has one statment, the curly braces are not requiered.
+### Anonymous Functions
+Functions can be defined without a name. Antonymous functions.If the function body only has one statement, the curly braces are not required. Because aflat does not know the return type for anonymous functions, type inference cannot be used to determine the type.  The compiler will assume that whatever you know what you are doing and will not check the return type.  Be careful!
+
 ```js
 [<parameters>]=>{
     <function body>
@@ -151,16 +152,16 @@ int main(){
         return a + b;
     };
 
-    int i = add(1, 2);
+    int i = add(1, 2); // aflat assumes that the return type is int
 
     return 0;
 };
 ```
 ### Function Access
 Functions under the global scope can be public(default), private, or export.
-    - Public functions are globaly accessable to the linker. This is necissary if using a header file.
-    - Private functions are only accessable within the Module to avoid naming conflicts with other modules.
-    - Export can be explicetly imported for use in another module and avoid naming conflicts during linking.
+    - Public functions are globally accessible to the linker. This is necessary if using a header file.
+    - Private functions are only accessible within the Module to avoid naming conflicts with other modules.
+    - Export can be explicitly imported for use in another module and avoid naming conflicts during linking.
 
 ### Function Decorators
 Functions can be decorated with functions. Functions that are decorated with a function must have a single refrence argument with the name _arg.  This can point to an object with multiple properties if needed.  The decorator function must take two arguments, adr foo and adr _arg.
@@ -193,7 +194,7 @@ Declarations are used to define variables.  They are used to define variables an
 ```
 ### Declare and assign
 ```bnf
-<declaration> ::= <type> <identifier> = <expression>;
+<declaration> ::= <type or let> <identifier> = <expression>;
 ```
 ### Assign
 ```bnf
@@ -218,7 +219,7 @@ Returns the address of the variable
 ```bnf
 <import> ::= import {<function>, <function>} from "path" under <ident>
             | import <Class>, <Class> from "path";
-            | import * from "path" under <ident>;
+            | import * from "path" under <ident>; // try to avoid this
 ```
 Import functions or classes from modules;
 ## Expressions
@@ -237,6 +238,7 @@ eg: `123.456`
 <string literal> ::= "*<char>"
 ```
 eg: `"hello"`
+The string literal returns an adr. like a char * in C.
 
 ### Not expr
 ```bnf
@@ -250,11 +252,6 @@ eg: `!(a == b)`
 ```
 eg: `'a'`
 
-### Long Literal
-```bnf
-<long literal> ::= #<int literal>
-```
-eg: `#123`
 
 ### Identifier
 ```bnf
@@ -262,13 +259,11 @@ eg: `#123`
 ```
 eg: `foo`
 
-### Compund Expression
+### Compound Expression
 ```bnf
 <compound expression> ::= <expression> <operator> <expression>
 ```
 eg: `1 + 2 * 3`
-Please note that compound expressions are evaluated recursively as follows.
-`1 + 2 * 3 + 4 + 5` -> `1 + (2 * (3 + (4 * 5)))`
 
 ### Parenthetical Expression
 ```bnf
@@ -276,7 +271,7 @@ Please note that compound expressions are evaluated recursively as follows.
 ```
 eg: `(1 + 2) * 3`
 
-This can be used to override the recursion of compound expressions.
+This can be used to override the order of operations.
 
 ### Function Call
 ```bnf
@@ -328,7 +323,7 @@ if <expression> {
 ```
 - The condition is evaluated before the code is executed.  If the condition is true, the code is executed. Condition must be a bool
 
-- Boolian conditional oporators are
+- Boolean conditional operators are
     - `==`
     - `!=`
     - `>`
@@ -337,11 +332,11 @@ if <expression> {
     - `<=`
 
 
-- Logical oporators are.  all logical oporators are handled bitwize
+- Logical operators are.  all logical operators are handled operators aflat does not have logical operators, the bitwise operators are used instead.
     - | or
     - & and
 
-if statments can be used with else statements.  The syntax is:
+if statements can be used with else statements.  The syntax is:
 ```c
 if <expr> {
     <code to execute if condition is true>
@@ -549,7 +544,44 @@ Carpenter: I am building a house
 Generic worker working...
 ```
 
-- Keep in mind that when calling function pointer that are a part of a class, the first parameter is the pointer to the object. The function can be created with a veriable named my or self.
+- Keep in mind that when calling function pointer that are a part of a class, the first parameter is the pointer to the object. The function can be created with a variable named my or self.
+
+### Class Modifiers
+There are two class modifiers currently implemented: `safe` and `dynamic`
+
+#### safe
+A safe class cannot be passed as an argument to a function or returned from a function as an l value.  This is useful for keeping track of object ownership.  The syntax is:
+```js
+safe class <class name> signs <parent class>{
+    <contract>
+    <class variable declarations>
+    <class functions>
+};
+```
+if there is a get() method defined in the class, that method will be implicitly called when attempting to access a safe object.
+
+#### dynamic
+A dynamic class MUST be instantiated on the heap with the new keyword.  If implicit casting is used, it will default to declaring on the heap. The syntax is:
+
+```js
+dynamic class <class name> signs <parent class>{
+    <contract>
+    <class variable declarations>
+    <class functions>
+};
+```
+
+### The object life cycle
+When an object is created, the following steps are taken:
+1. The object is allocated on the heap or the stack depending on if new was used.
+2. The init function is called if present. (All initial value assignments are prepended onto the init function)
+
+When an object goes out of scope, the following steps are taken:
+1. The endScope function is called if present.
+
+When an object is deleted, the following steps are taken:
+1. The destructor function is called if present.
+2. The memory for the function is freed.
 
 ## Working with header files
 Much like in c or c++, aflat supports a header and source file interface; The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
