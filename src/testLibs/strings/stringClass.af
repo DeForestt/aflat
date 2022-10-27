@@ -1,0 +1,240 @@
+.needs <std>
+
+import {case, require} from "ATest.af" under test;
+import TestSuite from "ATest.af";
+import string from "String";
+import { print } from "String" under stl;
+import {str_comp} from "strings" under st;
+import List from "Collections";
+
+private bool test_compare(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    return (
+        test.require(s1 == "Hello", "s1 == Hello")
+    );
+};
+
+private bool test_at(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    return (
+        test.require(s1.at(0) == 'H', "s1.at(0) == 'H'") &
+        test.require(s1.at(1) == 'e', "s1.at(1) == 'e'") &
+        test.require(s1.at(2) == 'l', "s1.at(2) == 'l'") &
+        test.require(s1.at(3) == 'l', "s1.at(3) == 'l'") &
+        test.require(s1.at(4) == 'o', "s1.at(4) == 'o'")
+    );
+};
+
+private bool test_cstr(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    return (
+        test.require(st.str_comp(s1.cstr(), "Hello") == 1, "s1.cstr() == Hello")
+    );
+};
+
+private bool test_concat(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = new string("World");
+    return (
+        test.require(s1 + s2 == "HelloWorld", "Hello + World == HelloWorld")
+    );
+};
+
+private bool test_split(adr _arg) : test.case {
+    let s1 = new string("Hello World");
+    let l1 = s1.split(' ');
+    string part1 = l1.get(0);
+    string part2 = l1.get(1);
+    return (
+        test.require(l1.getCount() == 2, "split gets the correct item count from split.") &
+        test.require(part1 == "Hello", "split gets the correct first item.") &
+        test.require(part2 == "World", "split gets the correct second item.")
+    );
+};
+
+int callCount = 0;
+List chars = NULL;
+
+class Char {
+    char c = c;
+    Char init(char c) {
+        return my;
+    };
+};
+
+private bool test_forEach(adr _arg) : test.case {
+    callCount = 0;
+    chars = new List(Char);
+    const let loopTracker = [char c] => {
+        callCount = callCount + 1;
+        List l = chars;
+        l.pushBack(Char(c));
+    };
+
+    let s1 = new string("1234");
+    s1.forEach(loopTracker);
+    List l = chars;
+
+    Char c1 = l.get(0);
+    Char c2 = l.get(1);
+    Char c3 = l.get(2);
+    Char c4 = l.get(3);
+
+    return (
+        test.require(callCount == 4, "forEach calls the callback the correct number of times.") &
+        test.require(c1.c == '1', "forEach gets the correct first item.") &
+        test.require(c2.c == '2', "forEach gets the correct second item.") &
+        test.require(c3.c == '3', "forEach gets the correct third item.") &
+        test.require(c4.c == '4', "forEach gets the correct fourth item.")
+    );
+};
+
+private bool test_len(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = new string("");
+    return (
+        test.require(s1.len() == 5, "s1.len() == 5") &
+        test.require(s2.len() == 0, "s2.len() == 0")
+    );
+};
+
+private bool test_copy(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = s1.copy();
+
+    adr s1Addr = s1;
+    adr s2Addr = s2;
+    return (
+        test.require(s1 == s2, "Both strings are equal.") &
+        test.require(s1.cstr() != s2.cstr(), "Both strings do not point to the same buffer.") &
+        test.require(s1Addr != s2Addr, "Both are not the same object.")
+    );
+};
+
+private bool test_get(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = s1.get();
+
+    return (
+        test.require(s1 == s2, "Both strings are equal.") &
+        test.require(s1.cstr() == s2.cstr(), "Both strings point to the same buffer.") &
+        test.require(s1.getRefcount() == 2, "get increases the refcount.")
+    );
+};
+
+private bool test_isNumeric(adr _arg) : test.case {
+    let s1 = new string("1234");
+    let s2 = new string("Hello");
+    return (
+        test.require(s1.isNumeric(), "Identifies numeric") &
+        test.require(s2.isNumeric() == false, "Identifies non-numeric")
+    );
+};
+
+private bool test_toInt(adr _arg) : test.case {
+    let s1 = new string("1234");
+    let s2 = new string("Hello");
+    return (
+        test.require(s1.toInt() == 1234, "Converts numeric") &
+        test.require(s2.toInt() == 0, "Converts non-numeric")
+    );
+};
+
+private bool test_toLower(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = s1.toLower();
+    return (
+        test.require(s2 == "hello", "Converts to lower case")
+    );
+};
+
+private bool test_toUpper(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = s1.toUpper();
+    return (
+        test.require(s2 == "HELLO", "Converts to upper case")
+    );
+};
+
+private bool test_Title(adr _arg) : test.case {
+    let s1 = new string("hello world");
+    let s2 = s1.title();
+    return (
+        test.require(s2 == "Hello World", "Converts to title case")
+    );
+};
+
+private bool test_replaceChar(adr _arg) : test.case {
+    let s1 = new string("Hello World");
+    let s2 = s1.replaceChar('o', 'a');
+    return (
+        test.require(s2 == "Hella Warld", "Replaces characters")
+    );
+};
+
+private bool test_find(adr _arg) : test.case {
+    let s1 = new string("Hello World World");
+    return (
+        test.require(s1.find("World", 0) == 6, "Finds a string") &
+        test.require(s1.find("Worlds", 0) == -1, "Does not find a string") &
+        test.require(s1.find("World", 7) == 12, "Finds a string after a given index")
+    );
+};
+
+private bool test_replace(adr _arg) : test.case {
+    let s1 = new string("Hello World World");
+    let s2 = s1.replace("World", "Universe");
+    return (
+        test.require(s2 == "Hello Universe Universe", "Replaces a string")
+    );
+};
+
+private bool test_subString(adr _arg) : test.case {
+    let s1 = new string("Hello World");
+    let s2 = s1.subString(0, 5);
+    return (
+        test.require(s2 == "Hello", "Gets a substring")
+    );
+};
+
+private bool test_trim(adr _arg) : test.case {
+    let s1 = new string(" Hello World ");
+    let s2 = new string("!!!!Hello World!!!!");
+    return (
+        test.require(s1.trim() == "Hello World", "Trims a string") &
+        test.require(s2.trim('!') == "Hello World", "Trims a string with a given character")
+    );
+};
+
+private bool test_indexOf(adr _arg) : test.case {
+    let s1 = new string("Hello World");
+    return (
+        test.require(s1.indexOf('o') == 4, "Finds a character") &
+        test.require(s1.indexOf('a') == -1, "Does not find a character")
+    );
+};
+
+export TestSuite getSuite() {
+    let suite = new TestSuite("string class");
+    suite.addCase(test_compare, "compare");
+    suite.addCase(test_at, "at");
+    suite.addCase(test_cstr, "cstr");
+    suite.addCase(test_concat, "concat");
+    suite.addCase(test_split, "split");
+    suite.addCase(test_forEach, "forEach");
+    suite.addCase(test_len, "len");
+    suite.addCase(test_copy, "copy");
+    suite.addCase(test_get, "get");
+    suite.addCase(test_isNumeric, "isNumeric");
+    suite.addCase(test_toInt, "toInt");
+    suite.addCase(test_toLower, "toLower");
+    suite.addCase(test_toUpper, "toUpper");
+    suite.addCase(test_Title, "title");
+    suite.addCase(test_replaceChar, "replaceChar");
+    suite.addCase(test_find, "find");
+    suite.addCase(test_replace, "replace");
+    suite.addCase(test_subString, "subString");
+    suite.addCase(test_trim, "trim");
+    suite.addCase(test_indexOf, "indexOf");
+    return suite;
+};

@@ -644,6 +644,7 @@ safe dynamic class string {
     };
 
     string replace(string sub, string n) {
+        // find all occurences of sub in my
         int myLen = str.len(my.head);
         int subLen = str.len(sub.head);
         int nLen = str.len(n.head);
@@ -658,6 +659,17 @@ safe dynamic class string {
                 newHead = newHead + myLen - i;
                 i = myLen;
             } else {
+                // check if there is enough space
+                if newHead + index - i + nLen > save + newLen {
+                    // not enough space
+                    // reallocate
+                    int newNewLen = newLen + 100;
+                    adr newNewHead = realloc(save, newNewLen + 1);
+                    newHead = newNewHead + (newHead - save);
+                    save = newNewHead;
+                    newLen = newNewLen;
+                };
+
                 memcpy(newHead, my.head + i, index - i);
                 newHead = newHead + index - i;
                 memcpy(newHead, n.head, nLen);
@@ -670,6 +682,7 @@ safe dynamic class string {
         free(save);
         return newString;
     };
+
     string subString(int start, int end) {
         int length = my.len();
         if (start < 0) | (start > length) | (end < 0) | (end > length) | (start > end) return new string("");
@@ -677,7 +690,7 @@ safe dynamic class string {
         char[10] newHead = malloc(newLength + 1);
         memcpy(newHead, my.head + start, newLength);
         newHead[newLength] = '\0';
-        return newHead;
+        return new string(newHead);
     };
 
     string trim(* char ch) {
