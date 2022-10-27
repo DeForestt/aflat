@@ -203,10 +203,11 @@ export int str_find(adr in, char find){
     int i = 0;
     int len = len(in);
     while(i < len){
-        in = in + 1;
+        
 		char b = in as char;
         if(b == find){return i};
         i = i + 1;
+		in = in + 1;
     };
     return -1;
 };
@@ -252,6 +253,7 @@ export float charToFloat(char a){
     return result;
 };
 
+// deprecated
 export int str_toFloat(adr input){
 	char[20] whole;
 	char[20] decimal;
@@ -297,11 +299,13 @@ export int str_toFloat(adr input){
 	return ret;
 };
 
+// deprecated
 export int sPrintFloat(adr input){
 	io.printFloat(input);
 	return 0;
 };
 
+// deprecated
 export int float_toString(adr input, adr obuff, int signed){
 
 	if(input == #0){
