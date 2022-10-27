@@ -184,9 +184,16 @@ private bool test_find(adr _arg) : test.case {
 private bool test_replace(adr _arg) : test.case {
     let s1 = new string("Hello World World");
     let s2 = s1.replace("World", "Universe");
-    stl.print(s2);
     return (
         test.require(s2 == "Hello Universe Universe", "Replaces a string")
+    );
+};
+
+private bool test_subString(adr _arg) : test.case {
+    let s1 = new string("Hello World");
+    let s2 = s1.subString(0, 5);
+    return (
+        test.require(s2 == "Hello", "Gets a substring")
     );
 };
 
@@ -209,6 +216,7 @@ export TestSuite getSuite() {
     suite.addCase(test_replaceChar, "replaceChar");
     suite.addCase(test_find, "find");
     suite.addCase(test_replace, "replace");
+    suite.addCase(test_subString, "subString");
 
     return suite;
 };

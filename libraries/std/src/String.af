@@ -682,6 +682,7 @@ safe dynamic class string {
         free(save);
         return newString;
     };
+
     string subString(int start, int end) {
         int length = my.len();
         if (start < 0) | (start > length) | (end < 0) | (end > length) | (start > end) return new string("");
@@ -689,7 +690,7 @@ safe dynamic class string {
         char[10] newHead = malloc(newLength + 1);
         memcpy(newHead, my.head + start, newLength);
         newHead[newLength] = '\0';
-        return newHead;
+        return new string(newHead);
     };
 
     string trim(* char ch) {
