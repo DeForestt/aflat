@@ -4,6 +4,7 @@ import {case, require} from "ATest.af" under test;
 import TestSuite from "ATest.af";
 import string from "String";
 import {str_comp} from "strings" under st;
+import List from "Collections";
 
 private bool test_compare(adr _arg) : test.case {
     let s1 = new string("Hello");
@@ -38,11 +39,62 @@ private bool test_concat(adr _arg) : test.case {
     );
 };
 
+private bool test_split(adr _arg) : test.case {
+    let s1 = new string("Hello World");
+    let l1 = s1.split(' ');
+    string part1 = l1.get(0);
+    string part2 = l1.get(1);
+    return (
+        test.require(l1.getCount() == 2, "split gets the correct item count from split.") &
+        test.require(part1 == "Hello", "split gets the correct first item.") &
+        test.require(part2 == "World", "split gets the correct second item.")
+    );
+};
+
+int callCount = 0;
+List chars = NULL;
+
+class Char {
+    char c = c;
+    Char init(char c) {
+        return my;
+    };
+};
+
+private bool test_forEach(adr _arg) : test.case {
+    callCount = 0;
+    chars = new List(Char);
+    const let loopTracker = [char c] => {
+        callCount = callCount + 1;
+        List l = chars;
+        l.pushBack(Char(c));
+    };
+
+    let s1 = new string("1234");
+    s1.forEach(loopTracker);
+    List l = chars;
+
+    Char c1 = l.get(0);
+    Char c2 = l.get(1);
+    Char c3 = l.get(2);
+    Char c4 = l.get(3);
+
+    return (
+        test.require(callCount == 4, "forEach calls the callback the correct number of times.") &
+        test.require(c1.c == '1', "forEach gets the correct first item.") &
+        test.require(c2.c == '2', "forEach gets the correct second item.") &
+        test.require(c3.c == '3', "forEach gets the correct third item.") &
+        test.require(c4.c == '4', "forEach gets the correct fourth item.")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
     suite.addCase(test_at, "at");
     suite.addCase(test_cstr, "cstr");
     suite.addCase(test_concat, "concat");
+    suite.addCase(test_split, "split");
+    suite.addCase(test_forEach, "forEach");
     return suite;
 };
