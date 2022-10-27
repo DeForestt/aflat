@@ -583,6 +583,7 @@ When an object is deleted, the following steps are taken:
 1. The destructor function is called if present.
 2. The memory for the function is freed.
 
+
 ## Working with header files
 Much like in c or c++, aflat supports a header and source file interface; The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
 
@@ -680,7 +681,9 @@ The list of standard modules is as follows:
 - strings
     - Functions to deal with strings and convert between other types and strings
 - String
-    - provides the Standard String objec
+    - provides the Standard string object
+- ATest
+  - Provides the testing framework for Aflat
 
 
 
@@ -704,7 +707,7 @@ The package manager is used to create a project.  The syntax is:
 ```bash
 aflat make <project name>
 ```
-The project name is will be the name of the directory that will be created. It will create a head, src, and bin directory.  The head directory will contain the header files for the project.  The src directory will contain the source files for the project.  The bin directory will contain the compiled object files for the project.  It will also create an aflat.cfg file wich will contain settings for the compiler.
+The project name is will be the name of the directory that will be created. It will create a head, src, and bin directory.  The head directory will contain the header files for the project.  The src directory will contain the source files for the project.  The bin directory will contain the compiled object files for the project.  It will also create an aflat.cfg file which will contain settings for the compiler.
 
 ## Building a Project
 The project can be built with the following syntax:
@@ -720,9 +723,16 @@ aflat run
 ```
 This will compile all of the source files in the src directory and call gcc to link them into an executable.  The executable will be placed in the bin directory.  The executable will then be run.
 
-## Bootstrapping a Module
-The package manager is used to create a module.  The syntax is:
+## Bootstrapping a src/header pair (just don't use this)
+The package manager is used to create a src/header pair.  The syntax is:
 ```bash
-aflat add <module name>
+aflat add <src/header name>
 ```
 This will create a header and source file in their respective directories.  It will also create and entry in the aflat.cfg file telling the compiler to compile the new source file.
+
+## Bootstrapping a module
+The package manager is used to create a module.  The syntax is:
+```bash
+aflat module <module name>
+```
+This will create a source file in the src directory.  It will also create and entry in the aflat.cfg file telling the compiler to compile the new source file.
