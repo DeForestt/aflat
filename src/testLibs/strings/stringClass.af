@@ -97,6 +97,19 @@ private bool test_len(adr _arg) : test.case {
     );
 };
 
+private bool test_copy(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = s1.copy();
+
+    adr s1Addr = s1;
+    adr s2Addr = s2;
+    return (
+        test.require(s1 == s2, "Both strings are equal.") &
+        test.require(s1.cstr() != s2.cstr(), "Both strings do not point to the same buffer.") &
+        test.require(s1Addr != s2Addr, "Both are not the same object.")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
@@ -106,6 +119,7 @@ export TestSuite getSuite() {
     suite.addCase(test_split, "split");
     suite.addCase(test_forEach, "forEach");
     suite.addCase(test_len, "len");
+    suite.addCase(test_copy, "copy");
 
     return suite;
 };
