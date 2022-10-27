@@ -1,0 +1,133 @@
+.needs <std>
+
+import {case, require} from "ATest.af" under test;
+import TestSuite from "ATest.af";
+import { len, str_comp, str_concat, str_toInt, int_toString, int_toStringL0, str_find, str_split,str_subString, str_reverse } from "strings" under st;
+import { str_at, char_isDigit} from "strings" under st;
+private bool testLen(adr _arg) : test.case {
+    return (
+        test.require(st.len("abc") == 3, "len abc == 3") &
+        test.require(st.len("a") == 1, "len a == 1") &
+        test.require(st.len("") == 0, "len \"\" == 0")
+    );
+};
+
+private bool testStrComp(adr _arg) : test.case {
+    return (
+        test.require(st.str_comp("abc", "abc") == 1, "abc == abc") &
+        test.require(st.str_comp("abc", "ab") == 0, "abc != ab") &
+        test.require(st.str_comp("abc", "abd") == 0, "abc != abd") &
+        test.require(st.str_comp("abc", "abcd") == 0, "abc != abcd") &
+        test.require(st.str_comp("abc", "a") == 0, "abc != a") 
+    );
+};
+
+private bool testStr_concat(adr _arg) : test.case {
+    char[7] buf;
+    st.str_concat("abc", "def", buf);
+    return (
+        test.require(st.str_comp(buf, "abcdef") == 1, "abc + def == abcdef")
+    );
+};
+
+private bool testToInt(adr _arg) : test.case {
+    return (
+        test.require(st.str_toInt("123") == 123, "123 == 123") &
+        test.require(st.str_toInt("0") == 0, "0 == 0") &
+        test.require(st.str_toInt("1") == 1, "1 == 1") &
+        test.require(st.str_toInt("1234567890") == 1234567890, "1234567890 == 1234567890")
+    );
+};
+
+private bool testInt_toString(adr _arg) : test.case {
+    char[11] buf;
+    st.int_toString(123, buf);
+    return (
+        test.require(st.str_comp(buf, "123") == 1, "123 == 123")
+    );
+};
+
+private bool testInt_toStringL0(adr _arg) : test.case {
+    char[11] buf;
+    st.int_toStringL0(1, buf, 2);
+
+    char[11] buf2;
+    st.int_toStringL0(123, buf2, 5);
+
+    return (
+        test.require(st.str_comp(buf, "01") == 1, "1 == 01") &
+        test.require(st.str_comp(buf2, "00123") == 1, "123 == 00123")
+    );
+};
+
+private bool testStr_find(adr _arg) : test.case {
+    return (
+        test.require(st.str_find("abc", 'a') == 0, "a in abc") &
+        test.require(st.str_find("abc", 'c') == 2, "c in abc") &
+        test.require(st.str_find("abc", 'd') == -1, "d not in abc") &
+        test.require(st.str_find("abc", 'b') == 1, "b in abc")
+    );
+};
+
+private bool testStr_split(adr _arg) : test.case {
+    char[10] buf;
+    char[10] buf2;
+    st.str_split("adc", 'd', buf, buf2);
+    return (
+        test.require(st.str_comp(buf, "a") == 1, "abc split b 1 == a") &
+        test.require(st.str_comp(buf2, "c") == 1, "abc split b 2 == c")
+    );
+};
+
+private bool testStr_substr(adr _arg) : test.case {
+    char[10] buf;
+    st.str_subString(0, 1, "abc", buf);
+    return (
+        test.require(st.str_comp(buf, "a") == 1, "abc substr 0,1 == a") &
+        test.require(st.str_comp(buf, "b") == 0, "abc substr 0,1 != b")
+    );
+};
+
+private bool testStr_reverse(adr _arg) : test.case {
+    char[10] buf;
+    st.str_reverse("abc", buf);
+    return (
+        test.require(st.str_comp(buf, "cba") == 1, "abc reverse == cba")
+    );
+};
+
+private bool testStr_at(adr _arg) : test.case {
+    return (
+        test.require(st.str_at("abc", 0) == 'a', "abc at 0 == a") &
+        test.require(st.str_at("abc", 1) == 'b', "abc at 1 == b") &
+        test.require(st.str_at("abc", 2) == 'c', "abc at 2 == c")
+    );
+};
+
+private bool testChar_isDigit(adr _arg) : test.case {
+    return (
+        test.require(st.char_isDigit('0'), "0 is digit") &
+        test.require(st.char_isDigit('1'), "1 is digit") &
+        test.require(st.char_isDigit('2'), "2 is digit") &
+        test.require(st.char_isDigit('a') == false, "a is not digit") &
+        test.require(st.char_isDigit('b') == false, "b is not digit") &
+        test.require(st.char_isDigit('c') == false, "c is not digit")
+    );
+};
+
+export TestSuite getSuite() {
+    let suite = new TestSuite("Test strings library");
+    suite.addCase(testLen, "len");
+    suite.addCase(testStrComp, "str_comp");
+    suite.addCase(testStr_concat, "str_concat");
+    suite.addCase(testToInt, "str_toInt");
+    suite.addCase(testInt_toString, "int_toString");
+    suite.addCase(testInt_toStringL0, "int_toStringL0");
+    suite.addCase(testStr_find, "str_find");
+    suite.addCase(testStr_split, "str_split");
+    suite.addCase(testStr_substr, "str_substr");
+    suite.addCase(testStr_reverse, "str_reverse");
+    suite.addCase(testStr_at, "str_at");
+    suite.addCase(testChar_isDigit, "char_isDigit");
+    return suite;
+};
