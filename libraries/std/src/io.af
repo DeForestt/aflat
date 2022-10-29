@@ -3,6 +3,8 @@
 
 import {ascii, len} from "strings" under str;
 import {exp, longExp} from "math" under math;
+import string from "String";
+import { print } from "String" under st;
 export int printInt(int i);
 
 private int charToColor(char c){
@@ -326,4 +328,33 @@ export int printFloat(adr f){
 export int clear(){
         print("\e[1;1H\e[2J");
         return 0;
+};
+
+export int fPrint(adr fmt, * adr args) {
+    string s = fmt;
+
+    for int i = 0; i < s.len(); i++ {
+        if s.at(i) == '%' {
+            i++;
+            if s.at(i) == 'a' {
+                print(args as adr);
+                args = args + adr;
+            } else if s.at(i) == 'c' {
+                printChar(args as char);
+                args = args + char;
+            } else if s.at(i) == 'd' {
+                printInt(args as int);
+                args = args + int;
+            } else if s.at(i) == 's' {
+                st.print(args as string);
+                args = args + adr;
+            } else {
+                printChar('%');
+                printChar(s.at(i));
+            };
+        } else {
+            printChar(s.at(i));
+        };
+    };
+    return 0;
 };
