@@ -3023,11 +3023,11 @@ void gen::CodeGenerator::genImport(ast::Import* imp, asmc::File& OutputFile) {
       // parse the file
       parse::Parser p = parse::Parser();
       ast::Statment* statment = p.parseStmt(tokens);
+      auto low = parse::lower::Lowerer(statment);
       added = statment;
     }
     for (std::string ident : imp->imports) {
       ast::Statment* statment = extract(ident, added, id);
-      auto lower = parse::lower::Lowerer(statment);
       if (statment == nullptr)
         this->alert("Identifier " + ident + " not found to import");
       OutputFile << this->GenSTMT(statment);
