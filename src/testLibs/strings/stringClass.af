@@ -214,6 +214,19 @@ private bool test_indexOf(adr _arg) : test.case {
     );
 };
 
+private bool test_push(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = s1.push(' ');
+    let s3 = s2.push('W');
+    let s4 = s3.push('o');
+    let s5 = s4.push('r');
+    let s6 = s5.push('l');
+    let s7 = s6.push('d');
+    return (
+        test.require(s7 == "Hello World", "Pushes a character")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
@@ -236,5 +249,6 @@ export TestSuite getSuite() {
     suite.addCase(test_subString, "subString");
     suite.addCase(test_trim, "trim");
     suite.addCase(test_indexOf, "indexOf");
+    suite.addCase(test_push, "push");
     return suite;
 };
