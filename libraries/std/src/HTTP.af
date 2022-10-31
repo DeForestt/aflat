@@ -2,10 +2,10 @@
 .needs <asm>
 .needs <request>
 
-import LinkedList from "Collections";
-import String from "String";
+import List from "Collections";
+import String, string from "String";
 import {len, int_toString} from "strings" under str;
-import {print, printInt} from "io" under io;
+import {print, printInt, fPrint, printHex} from "io" under io;
 import {worker} from "concurrency" under async;
 import {printString} from "String" under st;
 
@@ -51,27 +51,27 @@ class HTTPHeader {
     };
 };
 
-class HTTPResponce {
-    const private LinkedList headers = new LinkedList();
+class HTTPResponse {
+    const private List headers = new List(HTTPHeader);
     private bool switch = false;
-    String origin = origin;
-    String body = new String("");
-    String version;
-    String statusCode;
-    String statusMessage;
+    string origin = new string("");
+    string body = new string("");
+    string version;
+    string statusCode;
+    string statusMessage;
 
-    int parse(String rsp) {
-        LinkedList lines = rsp.split('\r');
-        String firstLine = lines.get(0);
+    private int parse(adr rsi) {
+        string rsp = new string(rsi);
+        my.origin = rsp;
+
+        let lines = rsp.split('\r');
+        string firstLine = lines.get(0);
         firstLine.trim();
-        LinkedList firstLineParts = firstLine.split(' ');
+        let firstLineParts = firstLine.split(' ');
 
-        if (firstLineParts.size() != 3) {
-            io.print("\n\nFirst line of HTTP response is not valid: ");
-            st.printString(firstLine);
-            io.print("\n");
-            io.printInt(firstLineParts.size());
-            io.print("\n");
+        if (firstLineParts.getCount() != 3) {
+            
+            io.fPrint("First line of response is invalid: %s \nlist size: %d\n", {firstLine, firstLineParts.getCount()});
             return -1;
         };
         my.version = firstLineParts.get(0);
@@ -79,8 +79,8 @@ class HTTPResponce {
         my.statusMessage = firstLineParts.get(2);
         my.switch = false;
 
-        lines.forEach([String line, int index, HTTPResponce this] => {
-            if line.equal("\n") {
+        lines.forEach([string line, int index, HTTPResponse this] => {
+            if line == "\n" {
                 this.switch = true;
                 return 0;
             };
@@ -89,42 +89,41 @@ class HTTPResponce {
                 return 0;
 
             if this.switch {
-                this.body = this.body.concat(line);
-                this.body = this.body.stitch("\r");
+                this.body = this.body + line + "\r";
                 return 0;
             };
 
-            LinkedList sections = line.split(':');
-            if sections.size() < 2{
-                io.print("\n\nHeader line is not valid: ");
-                st.printString(line);
-                io.print("\n");
+            let sections = line.split(':');
+            if sections.getCount() < 2{
+                io.fPrint("Invalid header: %s\n", {line});
                 return 0;
             };
 
-            String key = sections.get(0);
-            String value = sections.get(1);
+            string key = sections.get(0);
+            string value = sections.get(1);
 
-            if sections.size() > 2 {
-                for int i = 2; i < sections.size(); i = i + 1 {
-                    value = value.stitch(":");
-                    value = value.concat(sections.get(i));
+            if sections.getCount() > 2 {
+                for int i = 2; i < sections.getCount(); i = i + 1 {
+                    value = value + ":";
+                    string t = sections.get(i);
+                    value = value + t;
                 };
             };
             key = key.trim();
             value = value.trim();
-            HTTPHeader n = new HTTPHeader(key.getPrimitive(), value.getPrimitive());
-            this.headers.append(n);
+            HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
+            this.headers.pushBack(n);
         }, my);
         return 0;
     };
 
-    HTTPResponce init(* String origin) {
-        if origin != NULL
-            my.parse(origin);
+
+    HTTPResponse init(adr rsp) {
+        my.parse(rsp);
         return my;
     };
 
+    
     adr getHeader(adr key) {
         adr args = malloc(adr);
         args =: key;
@@ -150,7 +149,7 @@ class HTTPRequest {
     const private HTTPMethod method = method;
     private adr host;
     private adr endpoint;
-    const private LinkedList headers = new LinkedList();
+    const private List headers = new List(HTTPHeader);
     private adr body = "\r\n";
 
     HTTPRequest init(HTTPMethod method) {
@@ -171,7 +170,7 @@ class HTTPRequest {
 
     int addHeader(adr key, adr value) {
         HTTPHeader header = new HTTPHeader(key, value);
-        my.headers.append(header);
+        my.headers.pushBack(header);
     };
 
     int setBody(adr body) {
@@ -182,48 +181,42 @@ class HTTPRequest {
         my.addHeader("Content-Length", contentLen);
     };
 
-    public String getHeaders() {
-        String res = new String("");
-        my.headers.forEach([HTTPHeader header, int i, adr strptr] => {
-            String buffer = strptr as String;
-            buffer = buffer.stitch(header.key);
-            buffer = buffer.stitch(": ");
-            buffer = buffer.stitch(header.value);
-            buffer = buffer.stitch("\r\n");
-            strptr =: buffer;
+    public string getHeaders() {
+        string res = new string("");
+        my.headers.forEach([HTTPHeader header, int i, string buffer] => {
+            buffer = buffer + header.key;
+            buffer = buffer + ": ";
+            buffer = buffer + header.value;
+            buffer = buffer + "\r\n";
+            buffer.get();
             return 0;
-        }, ?res);
+        }, res);
         return res;
     };
 
-    String toString() {
-        String res = new String("");
-        res = res.stitch(methodToString(my.method));
-        res = res.stitch(" ");
-        res = res.stitch(my.endpoint);
-        res = res.stitch(" ");
-        res = res.stitch("HTTP/1.1");
-        res = res.stitch("\r\n");
-        res = res.stitch("Host: ");
-        res = res.stitch(my.host);
-        res = res.stitch("\r\n");
-        res = res.concat(my.getHeaders());
-        res = res.stitch("\r\n");
-        res = res.stitch(my.body);
+    string toString() {
+        string res = new string("");
+        res = res + methodToString(my.method);
+        res = res + " ";
+        res = res + my.endpoint + " HTTP/1.1";
+        res = res + "\r\nHost: ";
+        res = res + my.host;
+        res = res + "\r\n";
+        res = res + my.getHeaders();
+        res = res + "\r\n";
+        res = res + my.body;
         return res;
     };
 
-    HTTPResponce send(int bufferSize) {
-        String msg = my.toString();
+    HTTPResponse send(int bufferSize) {
+        string msg = my.toString();
         adr buffer = malloc(bufferSize);
         adr host = my.host;
         adr endpoint = my.endpoint;
-        adr msg_prim = msg.getPrimitive();
+        adr msg_prim = msg.cstr();
         request(host, endpoint, "80", msg_prim, buffer, bufferSize);
-        String res = new String(buffer);
-        free(buffer);
-        HTTPResponce rsp = new HTTPResponce(res);
-        return rsp;
+        let res = new string(buffer);
+        return new HTTPResponse(buffer);
     };
 };
 
