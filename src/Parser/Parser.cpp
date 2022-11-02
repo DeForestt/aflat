@@ -1240,6 +1240,20 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         }
       }
       output = newExpr;
+    } else if (obj.meta == "if") {
+      auto ifExpr = new ast::IfExpr();
+      ifExpr->logicalLine = obj.lineCount;
+      ifExpr->expr = this->parseExpr(tokens);
+      ifExpr->trueExpr = this->parseExpr(tokens);
+      // check for else
+      if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr &&
+          dynamic_cast<lex::LObj *>(tokens.peek())->meta == "else") {
+        tokens.pop();
+        ifExpr->falseExpr = this->parseExpr(tokens);
+      } else {
+        ifExpr->falseExpr = nullptr;
+      }
+      output = ifExpr;
     } else if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
       auto aobj = *dynamic_cast<lex::LObj *>(tokens.peek());
       if (aobj.meta == "as") {
