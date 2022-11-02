@@ -713,6 +713,17 @@ safe dynamic class string {
         return -1;
     };
 
+    string push(char ch) {
+        int length = my.len();
+        char[10] newHead = malloc(length + 2);
+        memcpy(newHead, my.head, length);
+        adr next = newHead + length;
+        next =: ch;
+        next = next + 1;
+        next =: '\0';
+        return new string(newHead);
+    };
+
     int endScope() {
         my.refcount = my.refcount - 1;
         if my.refcount == 0 {
