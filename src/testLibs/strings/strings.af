@@ -9,7 +9,7 @@ import { str_at, char_isDigit} from "strings" under st;
 private bool testLen(adr _arg) : test.case {
     return (
         test.require(st.len("abc") == 3, str.fString("Expected len(\"abc\") == 2; got %d", {st.len("abc")})) &
-        test.require(st.len("a") == 1, "len a == 1") &
+        test.require(st.len("a") == 1, str.fString("Expected len(\"abc\") == 1; got %d"), {st.len("a")} ) &
         test.require(st.len("") == 0, "len \"\" == 0")
     );
 };
