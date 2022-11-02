@@ -766,3 +766,38 @@ export string readString(* string prompt) {
     free(save);
     return n.copy();
 };
+
+export string fString(string fmt, * adr args) {
+    string newString = new string("");
+    for int i = 0; i < fmt.len(); i++ {
+        if fmt.at(i) == '%' {
+            i++;
+            if fmt.at(i) == 'a' {
+                newString = newString + args as adr;
+                args = args + adr;
+            } else if fmt.at(i) == 'c' {
+                newString = newString.push(args as char);
+                args = args + char;
+            } else if fmt.at(i) == 'd' {
+                char[10] buff;
+                str.int_toString(args as int, buff);
+                adr buffAdr = buff;
+                newString = newString + buffAdr;
+                args = args + int;
+            } else if fmt.at(i) == 's' {
+                newString = newString + args as string;
+                args = args + adr;
+            } else if fmt.at(i) == 'b' {
+                bool b = args as bool;
+                newString = newString + (if b "true" else "false");
+                args = args + bool;
+            } else {
+                newString = newString.push('%');
+                newString = newString.push(fmt.at(i));
+            };
+        } else {
+            newString = newString.push(fmt.at(i));
+        };
+    };
+    return newString.copy();
+};
