@@ -41,9 +41,3 @@ int memcpy(adr dst,adr src, int size);
 int panic(adr msg);
 int assert(bool cond, * adr message);
 int sleep(int seconds, * int nanoseconds);
-
-
-// The following functions are not part of the standard library, but are not type checked
-
-const let pick = [bool cond, adr a, adr b] =>
-    if cond return a else return b;
