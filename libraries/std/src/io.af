@@ -348,6 +348,14 @@ export int fPrint(adr fmt, * adr args) {
             } else if s.at(i) == 's' {
                 st.print(args as string);
                 args = args + adr;
+            } else if s.at(i) == 'b' {
+                bool b = args as bool;
+                if b print("true")
+                else print("false");
+                args = args + bool;
+            } else if s.at(i) == 'h' {
+                printHex(args as adr);
+                args = args + adr;
             } else {
                 printChar('%');
                 printChar(s.at(i));
