@@ -1,9 +1,9 @@
 .needs <std>
 .needs <asm>
-import {print, printInt} from "io" under io;
+import {print, printInt, fPrint} from "io" under io;
 import LinkedList from "Collections";
-import String from "String";
-import {printString} from "String" under str;
+import String, string from "String";
+import {printString, print} from "String" under str;
 
 // keep track of passes and failures
 int passes = 0;
@@ -32,12 +32,12 @@ export bool case(adr foo, adr _arg) {
     requires = 0;
 };
 
-export bool require(bool result, adr describe) {
+export bool require(bool result, string describe) {
     if result {
         passes = passes + 1;
         return true;
     } else {
-        io.print("\n\tTest require: "); io.print(describe); io.print(": ");
+        io.fPrint("\n\tTest require: %s: ", {describe});
         io.print("FAIL\n", 'r');
         // print ' ' to stdErr
         sys_write(2, " ", 1);
