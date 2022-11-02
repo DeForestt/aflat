@@ -3,7 +3,7 @@
 import {case, require} from "ATest.af" under test;
 import TestSuite from "ATest.af";
 import string from "String";
-import { print } from "String" under stl;
+import { print, fString } from "String" under stl;
 import {str_comp} from "strings" under st;
 import List from "Collections";
 
@@ -227,6 +227,16 @@ private bool test_push(adr _arg) : test.case {
     );
 };
 
+private bool test_fString(adr _arg) : test.case {
+    let s1 = new string("Hello");
+    let s2 = new string("World");
+    let s3 = new string("Hello World");
+    let s4 = stl.fString("%s %s %d%c", {s1, s2, 2, '!'});
+    return (
+        test.require(s4 == "Hello World 2!", "Formats a string")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
@@ -250,5 +260,6 @@ export TestSuite getSuite() {
     suite.addCase(test_trim, "trim");
     suite.addCase(test_indexOf, "indexOf");
     suite.addCase(test_push, "push");
+    suite.addCase(test_fString, "fString");
     return suite;
 };
