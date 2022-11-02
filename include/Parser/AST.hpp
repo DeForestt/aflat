@@ -351,6 +351,14 @@ class Not : public Expr {
  public:
   Expr* expr;
 };
+
+class IfExpr : public Expr {
+  public:
+  Expr* expr;
+  Expr* trueExpr;
+  Expr* falseExpr;
+};
+
 }  // namespace ast
 
 #endif
