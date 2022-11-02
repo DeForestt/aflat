@@ -741,3 +741,28 @@ export int print(string obj) {
     io.print(obj.cstr());
     return 0;
 };
+
+export string readString(* string prompt) {
+    if prompt != NULL print(prompt);
+    adr buff = malloc(1);
+    adr save = buff;
+    int buffSize = 1;
+    adr pointer;
+    char input = ' ';
+    char nl = '\n';
+    char null = '\0';
+    int i = 0;
+    while(input != nl){
+        sys_read(0, ?input, 1);
+        buff = buff + i;
+        buff =: input;
+        if(input == nl){buff =: null};
+        buffSize = buffSize + 1;
+        save = realloc(save, buffSize);
+        buff = save;
+        i = i + 1;
+    };
+    string n = buff;
+    free(save);
+    return n.copy();
+};
