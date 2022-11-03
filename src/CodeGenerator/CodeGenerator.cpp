@@ -1455,6 +1455,81 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
     output.access = this->registers["%rax"]->get(asmc::QWord);
     output.size = asmc::QWord;
     output.type = "adr";
+  } else if (dynamic_cast<ast::IfExpr*>(expr) != nullptr) {
+    auto ifExpr = dynamic_cast<ast::IfExpr*>(expr);
+
+    asmc::Lable* lable1 = new asmc::Lable();
+    lable1->logicalLine = ifExpr->logicalLine;
+    lable1->lable = ".L" + this->nameTable.head->data.ident.ident +
+                  std::to_string(this->lablecount);
+    this->lablecount++;
+    asmc::Lable* lable2 = new asmc::Lable();
+    lable2->logicalLine = ifExpr->logicalLine;
+    lable2->lable = ".L" + this->nameTable.head->data.ident.ident +
+                  std::to_string(this->lablecount);
+    this->lablecount++;
+
+
+    gen::Expr cond = this->GenExpr(ifExpr->expr, OutputFile);
+    ast::Type boolType = ast::Type();
+    boolType.typeName = "bool";
+    boolType.opType = asmc::Hard;
+    boolType.size = asmc::Byte;
+    this->canAssign(boolType, cond.type);
+
+    asmc::Mov *mov = new asmc::Mov();
+    mov->logicalLine = this->logicalLine;
+    mov->from = cond.access;
+    mov->to = this->registers["%eax"]->get(asmc::Byte);
+    mov->size = asmc::Byte;
+    OutputFile.text << mov;
+    
+    asmc::Cmp *cmp = new asmc::Cmp();
+    cmp->logicalLine = this->logicalLine;
+    cmp->from = "$0";
+    cmp->to = this->registers["%eax"]->get(asmc::Byte);
+    cmp->size = asmc::Byte;
+
+    OutputFile.text << cmp;
+
+    asmc::Je *je = new asmc::Je();
+    je->logicalLine = this->logicalLine;
+    je->to = lable1->lable;
+    OutputFile.text << je;
+
+    gen::Expr trueExpr = this->GenExpr(ifExpr->trueExpr, OutputFile);
+    asmc::Mov *mov2 = new asmc::Mov();
+    mov2->logicalLine = this->logicalLine;
+    mov2->from = trueExpr.access;
+    mov2->to = this->registers["%eax"]->get(trueExpr.size);
+    mov2->size = trueExpr.size;
+    OutputFile.text << mov2;
+
+    asmc::Jmp *jmp = new asmc::Jmp();
+    jmp->logicalLine = this->logicalLine;
+    jmp->to = lable2->lable;
+    OutputFile.text << jmp;
+
+    OutputFile.text << lable1;
+    if (!ifExpr->falseExpr) this->alert("if expression must have a false branch");
+    gen::Expr falseExpr = this->GenExpr(ifExpr->falseExpr, OutputFile);
+    asmc::Mov *mov3 = new asmc::Mov();
+    mov3->logicalLine = this->logicalLine;
+    mov3->from = falseExpr.access;
+    mov3->to = this->registers["%eax"]->get(falseExpr.size);
+    mov3->size = falseExpr.size;
+    OutputFile.text << mov3;
+
+    OutputFile.text << lable2;
+
+    ast::Type type = ast::Type();
+    type.typeName = trueExpr.type;
+    this->canAssign(type, falseExpr.type);
+
+    output.access = this->registers["%eax"]->get(trueExpr.size);
+    output.size = trueExpr.size;
+    output.type = trueExpr.type;
+
   } else {
     this->alert("Unhandled expression");
   }
@@ -3023,11 +3098,11 @@ void gen::CodeGenerator::genImport(ast::Import* imp, asmc::File& OutputFile) {
       // parse the file
       parse::Parser p = parse::Parser();
       ast::Statment* statment = p.parseStmt(tokens);
+      auto low = parse::lower::Lowerer(statment);
       added = statment;
     }
     for (std::string ident : imp->imports) {
       ast::Statment* statment = extract(ident, added, id);
-      auto lower = parse::lower::Lowerer(statment);
       if (statment == nullptr)
         this->alert("Identifier " + ident + " not found to import");
       OutputFile << this->GenSTMT(statment);
