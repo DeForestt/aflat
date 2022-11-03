@@ -748,53 +748,60 @@ Next we will add an addGrade function that will add an assignment to the student
 
 ```js
 // Add Grade
-int addGrade(LinkedList roster){
-	io.print("Enter the student's ID: ");
-	String id = str.getString(); // Get the student's ID from the user.
-	int index = id.toInt(); // Convert the ID to an integer.
-	if index >= roster.size() { // If the ID is greater than the size of the list, then the student doesn't exist.
-		io.print("Student not found.");
-		return 0; // quit the function
-	};
-	Student student = roster.get(index); // use the LinkedList.get() function to get the student from the list at the index.
-	io.print("Enter the assignment's name: ");
-	String name = str.getString(); // Get the assignment's name from the user.
-	io.print("Enter the assignment's grade: ");
-	String grade = str.getString(); // Get the assignment's grade from the user.
-	int intGrade = grade.toInt();
+int addGrade(List roster) {
+	let id = st.readString("Enter student id or name: ");
 	
-	Assignment assignment = new Assignment(intGrade, name.getPrimitive()); // Create a new Assignment object.
-	student.addAssignment(assignment); // Add the assignment to the student.
+	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => return s.id == i.toInt(), id)
+		else roster.findFirst([Student s, string i] => return s.name == i, id);
 
-	return 0;
+	// above we use the ternary operator to check if the id is numeric.  If it is, we search for the student by id.  If it is not, we search for the student by name.
+
+	if student == NULL {
+		io.print("Student not found.\n");
+		let junk = st.readString("Press enter to continue...");
+		return 1;
+	};
+
+	let assignment = st.readString("Enter assignment name: ");
+	let grade = st.readString(st.fString("Enter %s's grade: ", {student.name}));
+	if !grade.isNumeric() {
+		io.print("Grade must be a number.\n");
+		let junk = st.readString("Press enter to continue...");
+		return 1;
+	};
+	student.addAssignment(Assignment(grade.toInt(), assignment));
 };
+
 ```
 
 Now we can call it from the main function.  and we can call the addGrade function to the main function and add the exit option.
 
 ```js
-	while true { // we use while true to repeat the menu until the user chooses to exit.
+int main(){
+	let roster = List(Student);
 
-		// print all students in the list
-		roster.forEach([Student s, int index] => {
-			s.printInfo();
+	while true {
+		io.print("\n--Student Roster--\n");
+		roster.forEach([Student s]=>{
+			io.fPrint("%s\n", {s.getInfo()}); // We use the getInfo() method to print the student's information.
 		});
+		io.print("--------------------\n");
+		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n "); // We print the menu.
+		let input = st.readString("> Enter a command: "); // We read the user's input.
 
-
-		// Print out a menu of options.
-		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n> ");
-		String choice = str.getString();
-		if choice == "1"{
-			addStudent(roster);
-		} else if choice == "2"{
-			addGrade(roster);
-		} else if choice == "quit" {
-			return 0; // quit
-		} else {
-			io.print("Invalid choice.\n");
+		if input == "1"
+			addStudent(roster)
+		else if input == "2"
+			addGrade(roster)
+		else if input == "quit"
+			return 0
+		else {
+			io.print("Invalid command\n");
+			let junk = st.readString("Press enter to continue...");
 		};
-		io.print("\n\n");
+		io.clear(); // This clears the screen.
 	};
+};
 ```
 
 All togeather, the main module should look like this:
@@ -803,71 +810,63 @@ All togeather, the main module should look like this:
 .needs <std>
 
 import * from "io" under io;
+import string from "String";
+import {readString, fString} from "String" under st;
+import List from "Collections";
 import Student from "./src/Student";  // First we import the Student class from the Student module.
 import Assignment from "./src/Assignment";  // Then we import the Assignment class from the Assignment module.
-import LinkedList from "Collections";
-import String from "String";
-import * from "String" under str;
 
-// This a function to add a student to the list.
-int addStudent(LinkedList roster){
-	io.print("Enter the student's name: ");
-	String name = str.getString();
-	int id = roster.size();
-	int average = 0;
-	Student student = new Student(id, name.getPrimitive(), average);
-	roster.append(student);
+int addStudent(List roster) {
+	let name = st.readString("Enter student name: ");
+	let id = roster.getCount() + 1;
+	roster.pushBack(Student(id, name, 0));
 };
 
-// Add Grade
-int addGrade(LinkedList roster){
-	io.print("Enter the student's ID: ");
-	String id = str.getString(); // Get the student's ID from the user.
-	int index = id.toInt(); // Convert the ID to an integer.
-	if index >= roster.size() { // If the ID is greater than the size of the list, then the student doesn't exist.
-		io.print("Student not found.");
-		return 0; // quit the function
-	};
-	Student student = roster.get(index); // use the LinkedList.get() function to get the student from the list at the index.
-	io.print("Enter the assignment's name: ");
-	String name = str.getString(); // Get the assignment's name from the user.
-	io.print("Enter the assignment's grade: ");
-	String grade = str.getString(); // Get the assignment's grade from the user.
-	int intGrade = grade.toInt();
-	
-	Assignment assignment = new Assignment(intGrade, name.getPrimitive()); // Create a new Assignment object.
-	student.addAssignment(assignment); // Add the assignment to the student.
+int addGrade(List roster) {
+	let id = st.readString("Enter student id or name: ");
+	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => return s.id == i.toInt(), id)
+		else roster.findFirst([Student s, string i] => return s.name == i, id);
 
-	return 0;
+	if (student == NULL) {
+		io.print("Student not found.\n");
+		let junk = st.readString("Press enter to continue...");
+		return 1;
+	};
+
+	let assignment = st.readString("Enter assignment name: ");
+	let grade = st.readString(st.fString("Enter %s's grade: ", {student.name}));
+	if (!grade.isNumeric()) {
+		io.print("Grade must be a number.\n");
+		let junk = st.readString("Press enter to continue...");
+		return 1;
+	};
+	student.addAssignment(Assignment(grade.toInt(), assignment));
 };
 
 int main(){
-	LinkedList roster = LinkedList();
+	let roster = List(Student);
 
-
-	while true { // we use while true to repeat the menu until the user chooses to exit.
-
-		// print all students in the list
-		roster.forEach([Student s, int index] => {
-			s.printInfo();
+	while true {
+		io.print("\n--Student Roster--\n");
+		roster.forEach([Student s]=>{
+			io.fPrint("%s\n", {s.getInfo()}); // We use the getInfo() method to print the student's information.
 		});
+		io.print("--------------------\n");
+		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n "); // We print the menu.
+		let input = st.readString("> Enter a command: "); // We read the user's input.
 
-
-		// Print out a menu of options.
-		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n> ");
-		String choice = str.getString();
-		if choice == "1"{
-			addStudent(roster);
-		} else if choice == "2"{
-			addGrade(roster);
-		} else if choice == "quit" {
-			return 0; // quit
-		} else {
-			io.print("Invalid choice.\n");
+		if input == "1"
+			addStudent(roster)
+		else if input == "2"
+			addGrade(roster)
+		else if input == "quit"
+			return 0
+		else {
+			io.print("Invalid command\n");
+			let junk = st.readString("Press enter to continue...");
 		};
-		io.print("\n\n");
+		io.clear();
 	};
-	return 0;
 };
 ```
 
