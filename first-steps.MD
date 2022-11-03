@@ -440,23 +440,21 @@ this will create a new file called 'Student.af' in the src folder. Copy the Stud
 ```js
 .needs <std>
 import * from "io" under io;
+import string from "String";
 
 class Student {
 	int id;
-	adr name;
+	string name = "";
 	int average;
-
-	Student init(int id, adr name, int average){
+	
+	Student init(int id, string name, int average){
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
 	};
 
 	int printInfo(){
-		io.print("Student information:\n");
-		io.print("\tID: "); io.printInt(my.id); io.print("\n"); // notice that 'my' is used again to access the fields of the class
-		io.print("\tName: "); io.print(my.name); io.print("\n");
-		io.print("\tAverage: "); io.printInt(my.average); io.print("\n");
+		io.fPrint("Student: %s id: %d average: %d\n", {my.name, my.id, my.average});
 	};
 };
 ```
@@ -465,25 +463,22 @@ Now it can bee imported into our main program the same way we would import any c
 
 ```js
 .needs <std>
-
 import * from "io" under io;
-import LinkedList from "Collections";  // First we import the LinkedList class from the Collections module.
+import string from "String";
+import List from "Collections";
 import Student from "./src/Student";  // Then we import the Student class from the Student module.
 
-int main(){
-	LinkedList roster = LinkedList();
-	Student s = new Student(1, "John Doe", 90); // we will talk more about when to use 'new' later on.
-	roster.append(s); 
-	s = new Student(2, "Jane Doe", 80);
-	roster.append(s);
+
+
+int main() {
+	List roster = List(Student);
+	roster.pushBack(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
+	roster.pushBack(Student(2, "Jane Doe", 80));
 
 	// We can use the 'forEach' method of the LinkedList class to iterate through the list.
-	roster.forEach([Student student] => {
-		student.printInfo();
-		io.print("\n");
-	});  // I know that the 'forEach' method can look a bit confusing. For now, just know that it iterates through the list and calls the function you pass to it.
-
-	return 0;
+	roster.forEach([Student s] => {
+		s.printInfo();
+	});// I know that the 'forEach' method can look a bit confusing. For now, just know that it iterates through the list and calls the function you pass to it.
 };
 ```
 
@@ -491,7 +486,7 @@ We should see that the code is much easier to look at, and we get the same outpu
 
 ## A Class Challenge
 Now that we know how to make modules and classes, see if you can create an Assignment module. with an Assignment class.  The assignment class should have the following fields:
-	- adr name
+	- string name
 	- int grade
 The constructor should take in the name and the grade and set the fields.
 
@@ -501,26 +496,24 @@ Now that we have the Assignment class, add a list of assignments as a field in o
 ```js
 .needs <std>
 import * from "io" under io;
-import Assignment from "./src/Assignment"; // Here, we import the assignment class
-import LinkedList from "Collections"; // We also need to import the LinkedList class
+import string from "String";
+import List from "Collections";
+import Assignment from "./src/Assignment";
 
 class Student {
 	int id;
-	adr name;
+	string name = "";
 	int average;
-    LinkedList assignments = new LinkedList(); // Notice that we create a new linkedList object and initialize it to an empty list
-
-	Student init(int id, adr name, int average){
+    List assignments = new List(Assignment);
+	
+	Student init(int id, string name, int average){
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
 	};
 
 	int printInfo(){
-		io.print("Student information:\n");
-		io.print("\tID: "); io.printInt(my.id); io.print("\n"); // notice that 'my' is used again to access the fields of the class
-		io.print("\tName: "); io.print(my.name); io.print("\n");
-		io.print("\tAverage: "); io.printInt(my.average); io.print("\n");
+		io.fPrint("Student: %s id: %d average: %d\n", {my.name, my.id, my.average});
 	};
 };
 ```
@@ -530,48 +523,46 @@ Now we should create a method to add an assignment to the student's list of assi
 ```js
 .needs <std>
 import * from "io" under io;
-import Assignment from "./src/Assignment"; // Here, we import the assignment class
-import LinkedList from "Collections"; // We also need to import the LinkedList class
+import string from "String";
+import List from "Collections";
+import Assignment from "./src/Assignment";
 
 class Student {
 	int id;
-	adr name;
+	string name = "";
 	int average;
-    LinkedList assignments = new LinkedList(); // Notice that we create a new linkedList object and initialize it to an empty list
-
-	Student init(int id, adr name, int average){
-		my.id = id;
+    List assignments = new List(Assignment);
+	
+	Student init(int id, string name, int average){
+		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
 	};
 
 	int printInfo(){
-		io.print("Student information:\n");
-		io.print("\tID: "); io.printInt(my.id); io.print("\n"); // notice that 'my' is used again to access the fields of the class
-		io.print("\tName: "); io.print(my.name); io.print("\n");
-		io.print("\tAverage: "); io.printInt(my.average); io.print("\n");
+		io.fPrint("Student: %s id: %d average: %d\n", {my.name, my.id, my.average});
 	};
 
-    int addAssignment(Assignment a){
-        my.assignments.append(a);
+    int addAssignment(Assignment assignment){
+        my.assignments.pushBack(assignment);
     };
 };
 ```
 
-We chould also add a way to update the student's average each time we add an assignment. here is how we change the addAssignment method:
+We should also add a way to update the student's average each time we add an assignment. here is how we change the addAssignment method:
 We will need to add a total variable to the student class.  This variable will keep track of the total of all the assignments.
 
 ```js
-int total; // add this code to the student class
+int totalPoints = 0; // add this code to the student class
 ```
 
 now we can calculate the average by dividing the total by the number of assignments.
 ```js
-    int addAssignment(Assignment a){
-        my.assignments.append(a);
-        my.total = my.total + a.grade;
-        int count = my.assignments.size();
-        my.average = my.total / count;
+    int addAssignment(Assignment assignment){
+        my.assignments.pushBack(assignment);
+        my.totalPoints = my.totalPoints + assignment.grade;
+		int count = my.assignments.getCount();
+        my.average = my.totalPoints / count;
     };
 ```
 
@@ -581,17 +572,15 @@ Now lets rewrite our main program to use our new student module.
 .needs <std>
 
 import * from "io" under io;
+import string from "String";
 import Student from "./src/Student";  // First we import the Student class from the Student module.
 import Assignment from "./src/Assignment";  // Then we import the Assignment class from the Assignment module.
 
 int main(){
-	Student s = new Student(1, "John Doe", 0);
+	let s = new Student(1, "John Doe", 0);
 
-	Assignment a1 = new Assignment(100, "Math test");
-	Assignment a2 = new Assignment(90, "English test");
-
-	s.addAssignment(a1);
-	s.addAssignment(a2);
+	s.addAssignment(Assignment(100, "Math test"));
+	s.addAssignment(Assignment(90, "English test"));
 	s.printInfo();
 	return 0;
 };
@@ -600,31 +589,37 @@ int main(){
 Now we can see that the updated average is correct. Try adding some more assignments and see if the average is still correct.
 
 ## Encapsulation
-You may have noticed that there is no reason for anything outside of the student class to update the average.  What if a student finds our main module and adds code to update his grade... we cant have that.  That is why we use encapsulation.  We can hide the average field from the rest of the code by makeing it private. as follows:
+You may have noticed that there is no reason for anything outside of the student class to update the average.  What if a student finds our main module and adds code to update his grade... we cant have that.  That is why we use encapsulation.  We can hide the average field from the rest of the code by making it private. as follows:
 
 ```js
+.needs <std>
+import * from "io" under io;
+import string from "String";
+import List from "Collections";
+import Assignment from "./src/Assignment";
+
 class Student {
 	int id;
-	adr name;
-	private int total; // we can also make total private since it is not used anywhere else
+	string name = "";
 	private int average;
-    LinkedList assignments = new LinkedList(); // Notice that we create a new linkedList object and initialize it to an empty list
-
-	Student init(int id, adr name, int average){
-		my.id = id;
+    List assignments = new List(Assignment);
+    private int totalPoints = 0;
+	
+	Student init(int id, string name, int average){
+		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
 	};
 
 	int printInfo(){
-		io.print("Student information:\n");
-		io.print("\tID: "); io.printInt(my.id); io.print("\n"); // notice that 'my' is used again to access the fields of the class
-		io.print("\tName: "); io.print(my.name); io.print("\n");
-		io.print("\tAverage: "); io.printInt(my.average); io.print("\n");
+		io.fPrint("Student: %s id: %d average: %d\n", {my.name, my.id, my.average});
 	};
 
-    int addAssignment(Assignment a){
-        my.assignments.append(a);
+    int addAssignment(Assignment assignment){
+        my.assignments.pushBack(assignment);
+        my.totalPoints = my.totalPoints + assignment.grade;
+		int count = my.assignments.getCount();
+        my.average = my.totalPoints / count;
     };
 };
 ```
@@ -691,36 +686,28 @@ int main(){
 	};
 };
 ```
-Note that the Student.printInfo method has been changed to the following for formatting reasons: 
+We will add a new getInfo method to the student class.  This method will return a string with all of the student information.
 ```js
-	int printInfo(){
-		io.print("ID: "); io.printInt(my.id); // notice that 'my' is used again to access the fields of the class
-		io.print("\tName: "); io.print(my.name);
-		io.print("\tAverage: "); io.printInt(my.average);
-		io.print("\n");
-	};
+string getInfo(){
+	return str.fFormat("Student: %s id: %d average: %d\n", {my.name, my.id, my.average});
+};
 ```
 
 now we will print out a menu to the user: 
 
 ```js
 int main(){
-	LinkedList roster = LinkedList();
+	let roster = List(Student);
 
-
-	while true { // we use while true to repeat the menu until the user chooses to exit.
-
-		// print all students in the list
-		roster.forEach([Student s, int index] => {
-			s.printInfo();
+	while true {
+		io.print("\n--Student Roster--\n");
+		roster.forEach([Student s]=>{
+			io.fPrint("%s\n", {s.getInfo()}); // We use the getInfo() method to print the student's information.
 		});
-
-
-		// Print out a menu of options.
-		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n> ");
-		String choice = str.getString();
+		io.print("--------------------\n");
+		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
+		let input = st.readString("Enter a command: "); // We read the user's input.
 	};
-	return 0;
 };
 ```
 
@@ -728,36 +715,33 @@ Now we need to create a function to add a student to the roster.  The function w
 
 ```js
 // This a function to add a student to the list.
-int addStudent(LinkedList roster){
-	io.print("Enter the student's name: ");
-	String name = str.getString();
-	int id = roster.size();
-	int average = 0;
-	Student student = new Student(id, name.getPrimitive(), average);
-	roster.append(student);
+int addStudent(List roster) {
+	let name = st.readString("Enter student name: ");
+	let id = roster.getCount() + 1;
+	roster.pushBack(Student(id, name, 0));
 };
 ```
 
 Now we can call it from the main loop.
 
 ```js
-	while true { // we use while true to repeat the menu until the user chooses to exit.
+int main(){
+	let roster = List(Student);
 
-		// print all students in the list
-		roster.forEach([Student s, int index] => {
-			s.printInfo();
+	while true {
+		io.print("\n--Student Roster--\n");
+		roster.forEach([Student s]=>{
+			io.fPrint("%s\n", {s.getInfo()}); // We use the getInfo() method to print the student's information.
 		});
+		io.print("--------------------\n");
+		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n "); // We print the menu.
+		let input = st.readString("> Enter a command: "); // We read the user's input.
 
-
-		// Print out a menu of options.
-		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n> ");
-		String choice = str.getString();
-		if choice == "1"{
+		if input == "1"
 			addStudent(roster);
-		} else {
-			io.print("Invalid choice.\n");
-		};
+
 	};
+};
 ```
 
 Next we will add an addGrade function that will add an assignment to the student. This should go under the imports and over the main function.
