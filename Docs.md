@@ -1,6 +1,6 @@
 # Documentation For AFlat Programming Language
 ## Trust the programmer philosophy
-AFlat aims to trust that developers know what they are doing.  It allows and encourages things that many other modern languages do not, such as pointer arythmatic, memory managment, and so on.
+AFlat aims to trust that developers know what they are doing.  It allows and encourages things that many other modern languages do not, such as pointer asthmatic, memory management, and so on. While aflat does allow some developers to do some dangerous things, it also provides optional safety features that can be used to prevent some of the more dangerous things.  AFlat is not a language for everyone, but it is a language for careful developers who want to have more control over their code and their programs.
 <br>
 
 ## Types
@@ -10,14 +10,14 @@ A 4 byte signed int
 int i = 0;
 ```
 ### float
-A 4 byte signed floating point value
+A 4 byte floating point value
 ```js
 float f = 0.3;
 ```
 ### long
-An 8 byte signed int any long litteral must begin with a #
+An 8 byte signed integer
 ```js
-long l = #12;
+long l = 12;
 ```
 ### short
 A 2 byte integer
@@ -30,17 +30,29 @@ A 1 byte bool
 bool b = false;
 ```
 ### adr
-An 8 bit memory address.  In aflat, pointers point to any type
+An 8 bit memory address.  In aflat, pointers point to any type so you can have a pointer to an int, a pointer to a float, and so on.  This is different from C where pointers point to a specific type.  This is done to allow for more flexibility in the language. Because of this, pointers in aflat are a bit dangerous. It is suggested to use boxing instead of pointers wherever possible.
 ```js
 adr a = NULL;
 ```
+### generic
+The generic type is essentially the same as the adr type, but it is used to indicate that the pointer is meant to point to some object. This is meant to be used with a function or class that needs to preform operations on any sort of reference type object. The generic type also suppresses implicit casting, which is useful when you want to make sure that the pointer is pointing to the correct type.
+```js
+generic g = NULL;
+```
+
+### type inference
+Aflat supports type inference at declaration with the `let` keyword. This should not be used when declaring a numeric type such as short, int, or long.  Because aflat returns type `number` from an int literal.  The number type is a union of all numeric types and will break your code if it is tied to a variable.  You should also take note that implicit casting will not happen when using type inference.
+
+```js
+let i = "hello"; // this will assign an adr to i
+```
 
 ## User Defined Types...
-Any Type Defined by a user will be an 8 bit memory refrence to the given type
+Any Type Defined by a user will be an 8 bit memory reference to the given type
 ```js
 Type a = new Type();
 ```
-A user defined type can be cast to and from an adr... be careful! This is not type safe!
+A user defined type can be cast to and from an adr or generic... be careful! This is not type safe!
 ```js
 adr b = NULL;
 Type a = b;
@@ -77,7 +89,7 @@ int add(int a, * int b){
 };
 ```
 ### The main Function
-The main function is the entry point for aflat.  It is the first function called when aflat is run. It can take optional arguments int argc and adr argv for commandline arguments.
+The main function is the entry point for aflat.  It is the first function called when aflat is run. It can take optional arguments int argc and adr argv for command line arguments.
 ```js
 int main(int argc, adr argv){
     // do stuff
@@ -124,8 +136,9 @@ int main(){
     return 0;
 };
 ```
-### Annonymous Functions
-Functions can be defined without a name. Annonymous functions.If the function body only has one statment, the curly braces are not requiered.
+### Anonymous Functions
+Functions can be defined without a name. Antonymous functions.If the function body only has one statement, the curly braces are not required. Because aflat does not know the return type for anonymous functions, type inference cannot be used to determine the type.  The compiler will assume that whatever you know what you are doing and will not check the return type.  Be careful!
+
 ```js
 [<parameters>]=>{
     <function body>
@@ -139,16 +152,16 @@ int main(){
         return a + b;
     };
 
-    int i = add(1, 2);
+    int i = add(1, 2); // aflat assumes that the return type is int
 
     return 0;
 };
 ```
 ### Function Access
 Functions under the global scope can be public(default), private, or export.
-    - Public functions are globaly accessable to the linker. This is necissary if using a header file.
-    - Private functions are only accessable within the Module to avoid naming conflicts with other modules.
-    - Export can be explicetly imported for use in another module and avoid naming conflicts during linking.
+    - Public functions are globally accessible to the linker. This is necessary if using a header file.
+    - Private functions are only accessible within the Module to avoid naming conflicts with other modules.
+    - Export can be explicitly imported for use in another module and avoid naming conflicts during linking.
 
 ### Function Decorators
 Functions can be decorated with functions. Functions that are decorated with a function must have a single refrence argument with the name _arg.  This can point to an object with multiple properties if needed.  The decorator function must take two arguments, adr foo and adr _arg.
@@ -181,7 +194,7 @@ Declarations are used to define variables.  They are used to define variables an
 ```
 ### Declare and assign
 ```bnf
-<declaration> ::= <type> <identifier> = <expression>;
+<declaration> ::= <type or let> <identifier> = <expression>;
 ```
 ### Assign
 ```bnf
@@ -206,7 +219,7 @@ Returns the address of the variable
 ```bnf
 <import> ::= import {<function>, <function>} from "path" under <ident>
             | import <Class>, <Class> from "path";
-            | import * from "path" under <ident>;
+            | import * from "path" under <ident>; // try to avoid this
 ```
 Import functions or classes from modules;
 ## Expressions
@@ -225,6 +238,7 @@ eg: `123.456`
 <string literal> ::= "*<char>"
 ```
 eg: `"hello"`
+The string literal returns an adr. like a char * in C.
 
 ### Not expr
 ```bnf
@@ -238,11 +252,6 @@ eg: `!(a == b)`
 ```
 eg: `'a'`
 
-### Long Literal
-```bnf
-<long literal> ::= #<int literal>
-```
-eg: `#123`
 
 ### Identifier
 ```bnf
@@ -250,13 +259,11 @@ eg: `#123`
 ```
 eg: `foo`
 
-### Compund Expression
+### Compound Expression
 ```bnf
 <compound expression> ::= <expression> <operator> <expression>
 ```
 eg: `1 + 2 * 3`
-Please note that compound expressions are evaluated recursively as follows.
-`1 + 2 * 3 + 4 + 5` -> `1 + (2 * (3 + (4 * 5)))`
 
 ### Parenthetical Expression
 ```bnf
@@ -264,7 +271,7 @@ Please note that compound expressions are evaluated recursively as follows.
 ```
 eg: `(1 + 2) * 3`
 
-This can be used to override the recursion of compound expressions.
+This can be used to override the order of operations.
 
 ### Function Call
 ```bnf
@@ -316,7 +323,7 @@ if <expression> {
 ```
 - The condition is evaluated before the code is executed.  If the condition is true, the code is executed. Condition must be a bool
 
-- Boolian conditional oporators are
+- Boolean conditional operators are
     - `==`
     - `!=`
     - `>`
@@ -325,11 +332,11 @@ if <expression> {
     - `<=`
 
 
-- Logical oporators are.  all logical oporators are handled bitwize
+- Logical operators are.  all logical operators are handled operators aflat does not have logical operators, the bitwise operators are used instead.
     - | or
     - & and
 
-if statments can be used with else statements.  The syntax is:
+if statements can be used with else statements.  The syntax is:
 ```c
 if <expr> {
     <code to execute if condition is true>
@@ -537,7 +544,45 @@ Carpenter: I am building a house
 Generic worker working...
 ```
 
-- Keep in mind that when calling function pointer that are a part of a class, the first parameter is the pointer to the object. The function can be created with a veriable named my or self.
+- Keep in mind that when calling function pointer that are a part of a class, the first parameter is the pointer to the object. The function can be created with a variable named my or self.
+
+### Class Modifiers
+There are two class modifiers currently implemented: `safe` and `dynamic`
+
+#### safe
+A safe class cannot be passed as an argument to a function or returned from a function as an l value.  This is useful for keeping track of object ownership.  The syntax is:
+```js
+safe class <class name> signs <parent class>{
+    <contract>
+    <class variable declarations>
+    <class functions>
+};
+```
+if there is a get() method defined in the class, that method will be implicitly called when attempting to access a safe object.
+
+#### dynamic
+A dynamic class MUST be instantiated on the heap with the new keyword.  If implicit casting is used, it will default to declaring on the heap. The syntax is:
+
+```js
+dynamic class <class name> signs <parent class>{
+    <contract>
+    <class variable declarations>
+    <class functions>
+};
+```
+
+### The object life cycle
+When an object is created, the following steps are taken:
+1. The object is allocated on the heap or the stack depending on if new was used.
+2. The init function is called if present. (All initial value assignments are prepended onto the init function)
+
+When an object goes out of scope, the following steps are taken:
+1. The endScope function is called if present.
+
+When an object is deleted, the following steps are taken:
+1. The destructor function is called if present.
+2. The memory for the function is freed.
+
 
 ## Working with header files
 Much like in c or c++, aflat supports a header and source file interface; The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
@@ -636,7 +681,9 @@ The list of standard modules is as follows:
 - strings
     - Functions to deal with strings and convert between other types and strings
 - String
-    - provides the Standard String objec
+    - provides the Standard string object
+- ATest
+  - Provides the testing framework for Aflat
 
 
 
@@ -660,7 +707,7 @@ The package manager is used to create a project.  The syntax is:
 ```bash
 aflat make <project name>
 ```
-The project name is will be the name of the directory that will be created. It will create a head, src, and bin directory.  The head directory will contain the header files for the project.  The src directory will contain the source files for the project.  The bin directory will contain the compiled object files for the project.  It will also create an aflat.cfg file wich will contain settings for the compiler.
+The project name is will be the name of the directory that will be created. It will create a head, src, and bin directory.  The head directory will contain the header files for the project.  The src directory will contain the source files for the project.  The bin directory will contain the compiled object files for the project.  It will also create an aflat.cfg file which will contain settings for the compiler.
 
 ## Building a Project
 The project can be built with the following syntax:
@@ -676,9 +723,16 @@ aflat run
 ```
 This will compile all of the source files in the src directory and call gcc to link them into an executable.  The executable will be placed in the bin directory.  The executable will then be run.
 
-## Bootstrapping a Module
-The package manager is used to create a module.  The syntax is:
+## Bootstrapping a src/header pair (just don't use this)
+The package manager is used to create a src/header pair.  The syntax is:
 ```bash
-aflat add <module name>
+aflat add <src/header name>
 ```
 This will create a header and source file in their respective directories.  It will also create and entry in the aflat.cfg file telling the compiler to compile the new source file.
+
+## Bootstrapping a module
+The package manager is used to create a module.  The syntax is:
+```bash
+aflat module <module name>
+```
+This will create a source file in the src directory.  It will also create and entry in the aflat.cfg file telling the compiler to compile the new source file.
