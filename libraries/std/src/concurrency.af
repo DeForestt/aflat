@@ -3,6 +3,7 @@
 
 import {len, int_toStringL0, str_toInt} from "strings" under str;
 import String from "String.af";
+import * from "io" under io;
 
 class Thread {
     contract {
@@ -69,6 +70,21 @@ class Result{
 
     public int kill() {
         return my.p.kill();
+    };
+
+    public int timeout(int time, * int nano) {
+        // create a new process that waits for time and then kills the process
+
+        Process timeout = Process([adr args]=>{
+            int[3] arg = args;
+            sleep(arg[0], arg[1]);        
+            if sys_kill(arg[2], 2) == 0 {
+                io.print("timeout: killed process");
+            };
+            sys_exit(0);
+        });
+        int[3] arg = {time, nano, my.p.getPid()};
+        return 0;
     };
 };
 
@@ -147,6 +163,7 @@ bool input@MProcess(adr message){
 
 adr output@MProcess(){
     Pipe outbox = my.outbox;
+
     // read header message from pipe
     adr header = malloc(5);
     outbox.read(header, 5);

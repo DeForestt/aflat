@@ -1,0 +1,53 @@
+.needs <asm>
+.needs <std>
+
+import { worker } from "concurrency" under async;
+import Result from "concurrency";
+import string from "String";
+import { fString } from "String" under st;
+import * from "io" under io;
+
+private adr getenv(adr name);
+
+
+export int execve(adr path, * adr argv, * adr envp){
+    if envp == NULL{
+        const let USER = st.fString("USER=%a", {getenv("USER")});
+        const let HOME = st.fString("HOME=%a", {getenv("HOME")});
+        const let PATH = st.fString("PATH=%a", {getenv("PATH")});
+        const let SHELL = st.fString("SHELL=%a", {getenv("SHELL")});
+        envp = {USER.cstr(), HOME.cstr(), PATH.cstr(), SHELL.cstr(), NULL};
+    };
+    return sys_execve(path, argv, envp);
+};
+
+export adr execWorker(adr _arg) : async.worker {
+    const adr[3] arg = _arg;
+    execve(arg[0], arg[1], arg[2]);
+    return NULL;
+};
+
+export int exec(adr path, * adr argv, * adr envp) {
+    int pid = sys_fork();
+    if pid == 0 {
+        execve(path, argv, envp);
+        sys_exit(0);
+    } else {
+        int status;
+        sys_wait(pid, ?status, 0, NULL);
+        return status;
+    };
+};
+
+export int system(adr cmd) {
+    const let argv = {"/bin/sh", "-c", cmd, NULL};
+    return exec("/bin/sh", argv, NULL);
+};
+
+export adr envVar(adr name) {
+    return getenv(name);
+};
+
+export bool isSet(adr name) {
+    return getenv(name) != NULL;
+};

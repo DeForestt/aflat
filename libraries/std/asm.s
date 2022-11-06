@@ -21,6 +21,7 @@
 .global sys_accept
 .global sys_sendto
 .global sys_connect
+.global sys_execve
 
 
 brk:
@@ -252,3 +253,14 @@ sys_connect:
     syscall
     leave
     ret
+
+sys_execve:
+    pushq	%rbp
+    movq	%rsp, %rbp
+    pushq	%rbx
+    subq	$16, %rsp
+    movq    $59, %rax
+    syscall
+    leave
+    ret
+    
