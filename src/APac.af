@@ -10,6 +10,7 @@ import Result from "concurrency";
 import HTTPRequest, HTTPMethod, HTTPResponse from "HTTP";
 import {requestWorker} from "HTTP" under http;
 import List from "Collections";
+import Package from "./src/Package";
 
 const let VERSION = "0.1.0";
 
@@ -45,7 +46,9 @@ adr installPackage(string _arg) : async.worker {
     Result loading = loadingBar();
     let res = req.send(1000000);
     loading.kill();
-    io.fPrint("%s\n", {res.body});
+    
+    let package = Package(res.body);
+    return NULL;
 };
 
 int main(int argc, adr argv) {
