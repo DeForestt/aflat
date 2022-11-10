@@ -5,6 +5,7 @@ import { createFile } from "files" under fs;
 import string from "String";
 import { fString } from "String" under st;
 import { system } from "System" under sys;
+import List from "Collections";
 
 import { fPrint } from "io" under io;
 
@@ -33,6 +34,8 @@ class Package {
 
         my.code = json.subString(codeLoc + 1, authorLoc - 2);
 
+        io.fPrint("code: %s", {my.code});
+
         authorLoc = json.find("\"", authorLoc + 9);
 
         int versionLoc = json.find("\"version\":", authorLoc);
@@ -41,8 +44,32 @@ class Package {
     };
 
     bool install() {
-        string path = st.fString("./src/modules/%s.af", {my.name});
-        io.fPrint("Path: %s", {path});
+        const let PATH = st.fString("./src/modules/%s.af", {my.name});
+
+        let packageFile = fs.createFile(PATH.cstr());
+        if (packageFile == NULL){
+            sys.system("mkdir ./src/modules");
+            packageFile = fs.createFile(PATH.cstr());
+            if (packageFile == NULL) {
+                io.fPrint("Error: Could not create file %s", {PATH});
+                return false;
+            };
+        };
+        packageFile.write(my.code.cstr());
+        // use bash to replace '\"' with '"'
+        let s = st.fString("s/%c%c%c%c/%c\"/g", {'\\', '\\', '\\', '"', '\\'});
+        string cmd = st.fString("sed -i '%s' %s", {s, PATH});
+        sys.system(cmd.cstr());
+
+        // replace '\n'
+        let s2 = st.fString("s/%c%c/%c/g", {'\\', 'n', '\n'});
+        string cmd2 = st.fString("sed -i '%s' %s", {s2, PATH});
+        sys.system(cmd2.cstr());
+
+        // replace '\t'
+        let s3 = st.fString("s/%c%c/%c/g", {'\\', 't', '\t'});
+        string cmd3 = st.fString("sed -i '%s' %s", {s3, PATH});
+        sys.system(cmd3.cstr());
     };
 
 };
