@@ -2,7 +2,7 @@
 
 import string from "String";
 import List from "Collections";
-import fPrint from "io" under io;
+import {fPrint} from "io" under io;
 
 class Arg {
     string name = "";
@@ -27,7 +27,6 @@ class ArgsList {
         int j = 0;
         adr tv = tagVals[j];
         while (tv != NULL) {
-            io.fPrint("TagVals[%d]: %a\n", {j, tagVals[j]});
             string v = tagVals[j];
             tags.pushBack(v);
             j++;
@@ -40,7 +39,6 @@ class ArgsList {
             string arg = args[i];
             if (arg.at(0) == '-') {
                 let subArg = arg.subString(1, arg.len());
-                io.fPrint("subArg: %s\n", {subArg});
                 if (tags.findFirst([string s, string y] => return s == y, subArg) != NULL) {
                     if (i + 1 < argc) {
                         string val = args[i + 1];
@@ -51,6 +49,7 @@ class ArgsList {
                     };
                 } else {
                     io.fPrint("Error: Unknown tag: %s\n", {subArg});
+                    return NULL;
                 };
             } else {
                 my.tagLessArgs.pushBack(arg.copy());
@@ -65,7 +64,7 @@ class ArgsList {
         if (arg != NULL) {
             return arg.value;
         } else {
-            return "";
+            return new string("");
         };
     };
 
@@ -73,7 +72,11 @@ class ArgsList {
         if (index < my.tagLessArgs.getCount()) {
             return my.tagLessArgs.get(index);
         } else {
-            return "";
+            return new string("");
         };
+    };
+
+    bool has(string name) {
+        return my.args.findFirst([Arg a, string n] => return a.name == n, name) != NULL;
     };
 };
