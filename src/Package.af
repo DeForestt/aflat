@@ -21,12 +21,9 @@ class Package {
         int descriptionLoc = json.find("\"description\":", nameLoc);
         
         my.name = json.subString(nameLoc + 1, descriptionLoc - 2);
-        io.fPrint("desCLoc: %d", {descriptionLoc});
         
         descriptionLoc = json.find("\"", descriptionLoc + 14);
         int codeLoc = json.find("\"code\":", descriptionLoc);
-
-        io.fPrint("\nDescirption Loc: %d, codeLoc: %d\n", {descriptionLoc + 1, codeLoc});
 
 
         my.description = json.subString(descriptionLoc + 1, codeLoc - 2);
@@ -41,6 +38,11 @@ class Package {
         int versionLoc = json.find("\"version\":", authorLoc);
 
         my.author = json.subString(authorLoc + 1, versionLoc - 2);
+    };
+
+    bool install() {
+        string path = st.fString("./src/modules/%s.af", {my.name});
+        io.fPrint("Path: %s", {path});
     };
 
 };
