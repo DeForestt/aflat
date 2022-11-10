@@ -1,3 +1,25 @@
-int main() {
+.needs <std>
+
+import LinkedList from "Collections";
+import { getArgsList, getArg, findArg, findTaglessArg } from "CLArgs" under cl;
+import CLArg from "CLArgs";
+import string from "String";
+import fPrint from "io" under io;
+
+
+int main(int argc, adr argv) {
+    const adr[0] args = argv;
+
+    if argc < 2 {
+        io.fPrint("Usage: %a <args> <file>\n", {args[0]});
+        return 1;
+    };
+
+    LinkedList argsList = cl.getArgsList(argc, args);
+    io.fPrint("Args count: %d\n", {argsList.size()});
+    CLArg first = argsList.get(0);
+    io.fPrint("First arg: %s, %s\n", {first.key, first.value});
+    string fName = cl.getArg(argsList, "nan");
+    io.fPrint("File name: %s\n", {fName});
     return 0;
 };

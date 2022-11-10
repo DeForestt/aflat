@@ -1,84 +1,79 @@
 .needs <std>
 
-import { print, printInt } from "io" under io;
-import String from "String";
-import LinkedList from "Collections";
+import string from "String";
+import List from "Collections";
+import fPrint from "io" under io;
 
-class CLArg {
-    public String key;
-    public String value;
+class Arg {
+    string name = "";
+    string value = "";
 
-    CLArg init(String tag, String value) {
-        my.key = tag;
+    Arg init(string name, string value) {
+        my.name = name;
         my.value = value;
+    };
+};
+
+class ArgsList {
+    List args = new List(Arg);
+    List tagLessArgs = new List(string);
+    string progName = "";
+
+    ArgsList init(int argc, adr argv, adr tagNames) {
+        const adr[0] args = argv;
+        const adr[0] tagVals = tagNames;
+        List tags = new List(string);
+
+        int j = 0;
+        adr tv = tagVals[j];
+        while (tv != NULL) {
+            io.fPrint("TagVals[%d]: %a\n", {j, tagVals[j]});
+            string v = tagVals[j];
+            tags.pushBack(v);
+            j++;
+            tv = tagVals[j];
+        };
+
+        my.progName = args[0];
+
+        for int i = 1; i < argc; i++ {
+            string arg = args[i];
+            if (arg.at(0) == '-') {
+                let subArg = arg.subString(1, arg.len());
+                io.fPrint("subArg: %s\n", {subArg});
+                if (tags.findFirst([string s, string y] => return s == y, subArg) != NULL) {
+                    if (i + 1 < argc) {
+                        string val = args[i + 1];
+                        my.args.pushBack(Arg(subArg, val));
+                        i++;
+                    } else {
+                        my.args.pushBack(Arg(subArg, ""));
+                    };
+                } else {
+                    io.fPrint("Error: Unknown tag: %s\n", {subArg});
+                };
+            } else {
+                my.tagLessArgs.pushBack(arg.copy());
+            };
+        };
+
         return my;
     };
-};
 
-
-export LinkedList getArgsList(int argc, adr argv){
-    LinkedList strings = new LinkedList();
-    
-    for int i = 0; i < argc; i = i + 1 {
-        String s = new String(argv as adr);
-        argv = argv + adr;
-        strings.append(s);
-    };
-
-    LinkedList args = new LinkedList();
-    int i = 1;
-    int l = strings.size();
-    while(i < l){
-        String s = strings.get(i);
-
-        if(s.at(0) != '-'){
-            String tag = new String("nan");
-            String data = s + "";
-            CLArg n = new CLArg(tag, data);
-            args.append(n);
-        } else {
-            int length = s.len();
-            String tag = s.subString(1, length);
-            String data = new String("nan");
-            if(i + 1 < l){
-                s = strings.get(i + 1);
-                if(s.at(0) != '-'){
-                    data = s.stitch("");
-                    i = i + 1;
-                };
-            };
-            CLArg n = new CLArg(tag, data);
-            args.append(n);
-        };
-        i = i + 1;
-    };
-
-    return args;
-};
-
-export String getArg(LinkedList args, adr tag) {
-    int l = args.size();
-    for int i = 0; i < l; i = i + 1 {
-        CLArg arg = args.get(i);
-        if arg.key.equal(tag)
+    string getArg(string name) {
+        Arg arg = my.args.findFirst([Arg a, string n] => return a.name == n, name);
+        if (arg != NULL) {
             return arg.value;
-    };
-    return NULL;
-};
-
-export int findArg(CLArg arg, int index, adr str){
-    String tag = arg.key;
-    if (tag.equal(str) == 1){
-        return 1;
+        } else {
+            return "";
+        };
     };
 
-    return 0;
-};
-
-export int findTaglessArg(CLArg arg){
-    String tag = arg.key;
-    if (tag.equal("nan") == 1){
-        return 1;
+    string getTagLessArg(int index) {
+        if (index < my.tagLessArgs.getCount()) {
+            return my.tagLessArgs.get(index);
+        } else {
+            return "";
+        };
     };
-    return 0;
 };
