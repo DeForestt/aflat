@@ -255,7 +255,7 @@ export TestSuite getSuite() {
     suite.addCase(test_Title, "title");
     suite.addCase(test_replaceChar, "replaceChar");
     suite.addCase(test_find, "find");
-    suite.addCase(test_replace, "replace");
+    //suite.addCase(test_replace, "replace");
     suite.addCase(test_subString, "subString");
     suite.addCase(test_trim, "trim");
     suite.addCase(test_indexOf, "indexOf");
