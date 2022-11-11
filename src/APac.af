@@ -11,19 +11,9 @@ import HTTPRequest, HTTPMethod, HTTPResponse from "HTTP";
 import {requestWorker} from "HTTP" under http;
 import List from "Collections";
 import Package from "./src/Package";
+import { loadingBar } from "./src/modules/LoadingBar" under load;
 
 const let VERSION = "0.1.0";
-
-adr loadingBar(adr _arg) : async.worker {
-	while (true) {
-		io.fPrint("Loading: ");
-		for int j = 0; j < 10; j = j + 1 {
-			io.fPrint(".");
-			sleep(0, 500000000);
-		};
-		io.fPrint("\r                                 \r");
-	};
-};
 
 
 adr getPackageID(){
@@ -48,7 +38,7 @@ adr installPackage(string _arg) : async.worker {
 	req.addHeader("Content-Type", "application/json");
 	req.addHeader("Connection", "Keep-Alive");
 
-    Result loading = loadingBar();
+    Result loading = load.loadingBar();
     let res = req.send(1000000);
     loading.kill();
 
@@ -72,11 +62,12 @@ adr installPackage(string _arg) : async.worker {
     req2.addHeader("Content-Type", "text/plain");
     req2.addHeader("Connection", "Keep-Alive");
 
-    Result loading2 = loadingBar();
+    Result loading2 = load.loadingBar();
     let res2 = req2.send(1000000);
     loading2.kill();
 
-    io.fPrint("Package:\n%s\n", {res2.body});
+    let package = Package(res2.body, _package);
+    package.install();
 
     return NULL;
 };
