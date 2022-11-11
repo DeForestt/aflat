@@ -90,15 +90,13 @@ int read@File(adr pointer, char delim){
 };
 
 string readToEnd@File(){
-        fstat stat = new fstat();
+        fstat stat = fstat();
         sys_fstat(my.file, stat);
         adr buffer = malloc(1 + stat.st_size);
         sys_read(my.file, buffer, 0 + stat.st_size);
         adr pointer = buffer + (0 + stat.st_size);
         pointer =: '\0';
         string text = new string(buffer);
-        free(buffer);
-        delete stat;
         return text;
 };
 

@@ -1,0 +1,94 @@
+.needs <std>
+
+import LinkedList from "Collections";
+import ArgsList from "CLArgs";
+import string from "String";
+import {fString} from "String" under st;
+import fPrint from "io" under io;
+import { worker } from "concurrency" under async;
+import Result from "concurrency";
+import HTTPRequest, HTTPMethod, HTTPResponse from "HTTP";
+import {requestWorker} from "HTTP" under http;
+import List from "Collections";
+import Package from "./src/Package";
+
+const let VERSION = "0.1.0";
+
+adr loadingBar(adr _arg) : async.worker {
+	while (true) {
+		io.fPrint("Loading: ");
+		for int j = 0; j < 10; j = j + 1 {
+			io.fPrint(".");
+			sleep(0, 500000000);
+		};
+		io.fPrint("\r                                 \r");
+	};
+};
+
+
+adr installPackage(string _arg) : async.worker {
+    const let _package = _arg;
+    io.fPrint("Installing Package: %s\n", {_package});
+
+    let req = HTTPRequest(HTTPMethod.GET);
+
+    req.setHost("api.aflatlang.com");
+    const let endpoint = st.fString("/modules?name=%s", {_package});
+	req.setEndpoint(endpoint.cstr());
+	req.addHeader("User-Agent", "Mozilla/4.0 (compatible; MSIE5.01; Windows NT)");
+	req.addHeader("Host", "api.aflatlang.com");
+	req.addHeader("Accept-Language", "en-us");
+	req.addHeader("Accept-Encoding", "gzip, deflate");
+	req.addHeader("X-Powered-By", "AFLAT");
+	req.addHeader("Content-Type", "application/json");
+	req.addHeader("Connection", "Keep-Alive");
+
+    Result loading = loadingBar();
+    let res = req.send(1000000);
+    loading.kill();
+
+    let package = Package(res.body);
+    package.install();
+    return NULL;
+};
+
+int main(int argc, adr argv) {
+    const adr[0] args = argv;
+
+    if argc < 2 {
+        io.fPrint("Usage: %a <args> <file>\n", {args[0]});
+        return 1;
+    };
+
+    ArgsList argsList = ArgsList(argc, argv, {
+        "h", "-help", // help
+        "v", "-version", // version
+        "i", "-install", // install
+        NULL // must be NULL terminated
+    });
+
+    if argsList.has("h") {
+        io.fPrint("Usage: %a <args> <file>\n", {args[0]});
+        return 0;
+    };
+
+    if argsList.has("v") | argsList.has("-version") {
+        io.fPrint("Version: %a\n", {VERSION});
+        return 0;
+    };
+
+    if argsList.has("i") | argsList.has("-install") {
+        string package = argsList.getArg("i");
+        if package == "" {
+            package = argsList.getArg("-install");
+        };
+        if package == "" {
+            io.fPrint("Usage: %s -i <package>\n", {argsList.progName});
+            return 1;
+        };
+        Result install = installPackage(package);
+        install.get();
+        io.fPrint("\nPackage %s installed\n", {package});
+    };
+    return 0;
+};
