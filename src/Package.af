@@ -11,34 +11,11 @@ import { fPrint } from "io" under io;
 
 class Package {
     string name = "undef";
-    string version = "undef";
-    string description = "undef";
-    string author = "undef";
-    string code = "undef";
+    string body = "undef";
 
-    Package init(string json) {
-        int nameLoc = json.find("\"name\":", 0);
-        nameLoc = json.find("\"", nameLoc + 7);
-        int descriptionLoc = json.find("\"description\":", nameLoc);
-        
-        my.name = json.subString(nameLoc + 1, descriptionLoc - 2);
-        
-        descriptionLoc = json.find("\"", descriptionLoc + 14);
-        int codeLoc = json.find("\"code\":", descriptionLoc);
-
-
-        my.description = json.subString(descriptionLoc + 1, codeLoc - 2);
-
-        codeLoc = json.find("\"", codeLoc + 7);
-        int authorLoc = json.find("\"author\":", codeLoc);
-
-        my.code = json.subString(codeLoc + 1, authorLoc - 2);
-
-        authorLoc = json.find("\"", authorLoc + 9);
-
-        int versionLoc = json.find("\"version\":", authorLoc);
-
-        my.author = json.subString(authorLoc + 1, versionLoc - 2);
+    Package init(string body, string name) {
+        my.name = name;
+        my.body = body;
     };
 
     bool install() {
@@ -53,11 +30,7 @@ class Package {
                 return false;
             };
         };
-        packageFile.write(my.code.cstr());
-        // use bash to replace '\"' with '"'
-        let s = st.fString("s/%c%c%c%c/%c\"/g", {'\\', '\\', '\\', '"', '\\'});
-        string cmd = st.fString("sed -i '%s' %s", {s, PATH});
-        sys.system(cmd.cstr());
+        packageFile.write(my.body.cstr());
 
         const let confFile = fs.openFile("./aflat.cfg");
         if (confFile == NULL) {
@@ -75,7 +48,7 @@ class Package {
             if (text == "") io.fPrint("")
             else buffer = st.fString("%s%a\n", {buffer, configList.get(i)});
         };
-        buffer = st.fString("%sm %s", {buffer, my.name});
+        buffer = st.fString("%sm modules/%s", {buffer, my.name});
         let confFile2 = fs.createFile("./aflat.cfg");
         confFile2.write(buffer.cstr());
     };

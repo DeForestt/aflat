@@ -11,18 +11,13 @@ import HTTPRequest, HTTPMethod, HTTPResponse from "HTTP";
 import {requestWorker} from "HTTP" under http;
 import List from "Collections";
 import Package from "./src/Package";
+import { loadingBar } from "./src/modules/LoadingBar" under load;
 
 const let VERSION = "0.1.0";
 
-adr loadingBar(adr _arg) : async.worker {
-	while (true) {
-		io.fPrint("Loading: ");
-		for int j = 0; j < 10; j = j + 1 {
-			io.fPrint(".");
-			sleep(0, 500000000);
-		};
-		io.fPrint("\r                                 \r");
-	};
+
+adr getPackageID(){
+    return 1;
 };
 
 
@@ -43,12 +38,37 @@ adr installPackage(string _arg) : async.worker {
 	req.addHeader("Content-Type", "application/json");
 	req.addHeader("Connection", "Keep-Alive");
 
-    Result loading = loadingBar();
+    Result loading = load.loadingBar();
     let res = req.send(1000000);
     loading.kill();
 
-    let package = Package(res.body);
+    // find the package id
+    let idIndex = res.body.find("\"id\":", 0) + 5;
+    let openQuote = res.body.find("\"", idIndex);
+    let closeQuote = res.body.find("\"", openQuote + 1);
+
+    let id = res.body.subString(openQuote + 1, closeQuote);
+    io.fPrint("Package ID: %s\n", {id});
+
+    let req2 = HTTPRequest(HTTPMethod.GET);
+    req2.setHost("api.aflatlang.com");
+    const let endpoint2 = st.fString("/modules/%s", {id});
+    req2.setEndpoint(endpoint2.cstr());
+    req2.addHeader("User-Agent", "Mozilla/4.0 (compatible; MSIE5.01; Windows NT)");
+    req2.addHeader("Host", "api.aflatlang.com");
+    req2.addHeader("Accept-Language", "en-us");
+    req2.addHeader("Accept-Encoding", "gzip, deflate");
+    req2.addHeader("X-Powered-By", "AFLAT");
+    req2.addHeader("Content-Type", "text/plain");
+    req2.addHeader("Connection", "Keep-Alive");
+
+    Result loading2 = load.loadingBar();
+    let res2 = req2.send(1000000);
+    loading2.kill();
+
+    let package = Package(res2.body, _package);
     package.install();
+
     return NULL;
 };
 
