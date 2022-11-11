@@ -31,7 +31,7 @@ jobs:
  
     - name: Build
       # Build your program with the given configuration
-      run: cmake --build build &&  bash ./rebuild-libs.sh && ./bin/aflat test > test.txt
+      run: cmake --build build &&  bash ./rebuild-libs.sh && ./bin/aflat test > test.txt && ./bin/aflat build
 
     - name: Test
       working-directory: ${{github.workspace}}/bin

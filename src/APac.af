@@ -46,6 +46,7 @@ adr installPackage(string _arg) : async.worker {
     Result loading = loadingBar();
     let res = req.send(1000000);
     loading.kill();
+
     let package = Package(res.body);
     package.install();
     return NULL;
@@ -87,6 +88,7 @@ int main(int argc, adr argv) {
         };
         Result install = installPackage(package);
         install.get();
+        io.fPrint("\nPackage %s installed\n", {package});
     };
     return 0;
 };

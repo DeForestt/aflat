@@ -1,7 +1,7 @@
 .needs <std>
 
 import File from "files";
-import { createFile } from "files" under fs;
+import { createFile, openFile } from "files" under fs;
 import string from "String";
 import { fString } from "String" under st;
 import { system } from "System" under sys;
@@ -34,8 +34,6 @@ class Package {
 
         my.code = json.subString(codeLoc + 1, authorLoc - 2);
 
-        io.fPrint("code: %s", {my.code});
-
         authorLoc = json.find("\"", authorLoc + 9);
 
         int versionLoc = json.find("\"version\":", authorLoc);
@@ -61,15 +59,25 @@ class Package {
         string cmd = st.fString("sed -i '%s' %s", {s, PATH});
         sys.system(cmd.cstr());
 
-        // replace '\n'
-        let s2 = st.fString("s/%c%c/%c/g", {'\\', 'n', '\n'});
-        string cmd2 = st.fString("sed -i '%s' %s", {s2, PATH});
-        sys.system(cmd2.cstr());
+        const let confFile = fs.openFile("./aflat.cfg");
+        if (confFile == NULL) {
+            io.fPrint("Error: Could not open aflat.cfg");
+            return false;
+        };
+        
+        let configList = confFile.toList('\n');
+        confFile.close();
+        let buffer = new string("");
 
-        // replace '\t'
-        let s3 = st.fString("s/%c%c/%c/g", {'\\', 't', '\t'});
-        string cmd3 = st.fString("sed -i '%s' %s", {s3, PATH});
-        sys.system(cmd3.cstr());
+        for int i = 0; i < configList.getCount(); i++ {
+            let text = new string(configList.get(i));
+           // io.fPrint("text: %s...", {text});
+            if (text == "") io.fPrint("")
+            else buffer = st.fString("%s%a\n", {buffer, configList.get(i)});
+        };
+        buffer = st.fString("%sm %s", {buffer, my.name});
+        let confFile2 = fs.createFile("./aflat.cfg");
+        confFile2.write(buffer.cstr());
     };
 
 };
