@@ -21,7 +21,6 @@ class PackageQuery {
     string author = author;
 
     PackageQuery init(adr name, adr version, adr author) {
-        io.fPrint("PackageQuery init %s\n", {my.name});
         return my;
     };
 
@@ -38,13 +37,10 @@ class PackageQuery {
 };
 
 string getBodyFromID(string id) {
-    io.fPrint("installing package ID: %s\n", {id});
-
     let req = HTTPRequest(HTTPMethod.GET);
 
     req.setHost("api.aflatlang.com");
     const let endpoint = st.fString("/modules/%s", {id});
-    io.fPrint("Endpoint: %s\n", {endpoint});
 	req.setEndpoint(endpoint.cstr());
 	req.addHeader("User-Agent", "Mozilla/4.0 (compatible; MSIE5.01; Windows NT)");
 	req.addHeader("Host", "api.aflatlang.com");
@@ -59,15 +55,13 @@ string getBodyFromID(string id) {
     return res.body;
 };
 
-adr installPackage(PackageQuery _arg){
+adr installPackage(PackageQuery _arg) {
     const let _package = _arg;
-    io.fPrint("Installing Package: %s\n", {_package.name});
+    io.fPrint("Searching for Package: %s\n", {_package.name});
 
     let req = HTTPRequest(HTTPMethod.GET);
-
     req.setHost("api.aflatlang.com");
     const let endpoint = st.fString("/modules%s", {_package.getQuery()});
-    io.fPrint("Endpoint: %s\n", {endpoint});
 	req.setEndpoint(endpoint.cstr());
 	req.addHeader("User-Agent", "Mozilla/4.0 (compatible; MSIE5.01; Windows NT)");
 	req.addHeader("Host", "api.aflatlang.com");
@@ -104,6 +98,7 @@ adr installPackage(PackageQuery _arg){
     let name = res.body.subString(openQuote2 + 1, closeQuote2);
     let version = res.body.subString(openQuote3 + 1, closeQuote3);
     let author = res.body.subString(openQuote4 + 1, closeQuote4);
+    loading.kill();
 
     if !(name == _package.name) {
         io.fPrint("Package not found\n");
@@ -113,10 +108,9 @@ adr installPackage(PackageQuery _arg){
     string body = getBodyFromID(id);
 
     let package = Package(body, _package.name);
-    package.install();
-    loading.kill();
+    let updated = package.install();
 
-    io.fPrint("Successfully installed package: %s\n", {_package.name});
+    io.fPrint("\rSuccessfully %a package: %s\n", {if updated "updated" else "installed" ,_package.name});
     io.fPrint("Package ID: %s\n", {id});
     io.fPrint("Package Name: %s\n", {name});
     io.fPrint("Package Version: %s\n", {version});
@@ -168,13 +162,8 @@ int main(int argc, adr argv) {
             };
         };
 
-        io.fPrint("Installing Package: %s\n", {package});
-
         PackageQuery query = new PackageQuery(package.cstr(), version.cstr(), author.cstr());
-        io.fPrint("Query: %s\n", {query.getQuery()});
-
-        Result install = installPackage(query);
-        io.fPrint("\nPackage %s installed\n", {package});
+        installPackage(query);
     };
 
     if argsList.has("h") {

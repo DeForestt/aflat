@@ -20,6 +20,7 @@ class Package {
 
     bool install() {
         const let PATH = st.fString("./src/modules/%s.af", {my.name});
+        const let cfgTxt = st.fString("m modules/%s", {my.name});
 
         let packageFile = fs.createFile(PATH.cstr());
         if (packageFile == NULL){
@@ -41,16 +42,19 @@ class Package {
         let configList = confFile.toList('\n');
         confFile.close();
         let buffer = new string("");
-
+        bool updated = false;
         for int i = 0; i < configList.getCount(); i++ {
             let text = new string(configList.get(i));
-           // io.fPrint("text: %s...", {text});
-            if (text == "") io.fPrint("")
-            else buffer = st.fString("%s%a\n", {buffer, configList.get(i)});
+
+            if !(text == "") buffer = st.fString("%s%a\n", {buffer, configList.get(i)});
+
+            if (text == cfgTxt) {
+                updated = true;
+            };
         };
-        buffer = st.fString("%sm modules/%s", {buffer, my.name});
+        if !updated  buffer = st.fString("%s%s", {buffer, cfgTxt});
         let confFile2 = fs.createFile("./aflat.cfg");
         confFile2.write(buffer.cstr());
+        return updated;
     };
-
 };
