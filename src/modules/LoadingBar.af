@@ -12,4 +12,4 @@ export adr loadingBar(adr _arg) : async.worker {
 		};
 		io.fPrint("\r                                 \r");
 	};
-};
+};

@@ -15,20 +15,32 @@ import { loadingBar } from "./src/modules/LoadingBar" under load;
 
 const let VERSION = "0.1.0";
 
+class PackageQuery {
+    string name = name;
+    string version = version;
+    string author = author;
 
-adr getPackageID(){
-    return 1;
+    PackageQuery init(adr name, adr version, adr author) {
+        return my;
+    };
+
+    string getQuery() {
+        string query = st.fString("?name=%s", {my.name});
+        if !(my.version == "") {
+            query = st.fString("%s&version=%s", {query, my.version});
+        };
+        if !(my.author == "") {
+            query = st.fString("%s&author=%s", {query, my.author});
+        };
+        return query.copy();
+    };
 };
 
-
-adr installPackage(string _arg) : async.worker {
-    const let _package = _arg;
-    io.fPrint("Installing Package: %s\n", {_package});
-
+string getBodyFromID(string id) {
     let req = HTTPRequest(HTTPMethod.GET);
 
     req.setHost("api.aflatlang.com");
-    const let endpoint = st.fString("/modules?name=%s", {_package});
+    const let endpoint = st.fString("/modules/%s", {id});
 	req.setEndpoint(endpoint.cstr());
 	req.addHeader("User-Agent", "Mozilla/4.0 (compatible; MSIE5.01; Windows NT)");
 	req.addHeader("Host", "api.aflatlang.com");
@@ -38,38 +50,76 @@ adr installPackage(string _arg) : async.worker {
 	req.addHeader("Content-Type", "application/json");
 	req.addHeader("Connection", "Keep-Alive");
 
-    Result loading = load.loadingBar();
     let res = req.send(1000000);
-    loading.kill();
+
+    return res.body;
+};
+
+int installPackage(PackageQuery _arg) {
+    const let _package = _arg;
+    const let cname = _package.name.copy();
+    io.fPrint("Searching for Package: %s\n", {_package.name});
+
+    let req = HTTPRequest(HTTPMethod.GET);
+    req.setHost("api.aflatlang.com");
+    const let endpoint = st.fString("/modules%s", {_package.getQuery()});
+	req.setEndpoint(endpoint.cstr());
+	req.addHeader("User-Agent", "Mozilla/4.0 (compatible; MSIE5.01; Windows NT)");
+	req.addHeader("Host", "api.aflatlang.com");
+	req.addHeader("Accept-Language", "en-us");
+	req.addHeader("Accept-Encoding", "gzip, deflate");
+	req.addHeader("X-Powered-By", "AFLAT");
+	req.addHeader("Content-Type", "application/json");
+	req.addHeader("Connection", "Keep-Alive");
+
+    // Result loading = load.loadingBar();
+    let res = req.send(1000000);
+
+    io.fPrint("", {res.body});
 
     // find the package id
     let idIndex = res.body.find("\"id\":", 0) + 5;
     let openQuote = res.body.find("\"", idIndex);
     let closeQuote = res.body.find("\"", openQuote + 1);
 
+    // find the package name
+    let nameIndex = res.body.find("\"name\":", 0) + 7;
+    let openQuote2 = res.body.find("\"", nameIndex);
+    let closeQuote2 = res.body.find("\"", openQuote2 + 1);
+
+    // find the package version
+    let versionIndex = res.body.find("\"version\":", 0) + 10;
+    let openQuote3 = res.body.find("\"", versionIndex);
+    let closeQuote3 = res.body.find("\"", openQuote3 + 1);
+
+    // find the package author
+    let authorIndex = res.body.find("\"author\":", 0) + 9;
+    let openQuote4 = res.body.find("\"", authorIndex);
+    let closeQuote4 = res.body.find("\"", openQuote4 + 1);
+
     let id = res.body.subString(openQuote + 1, closeQuote);
+    let name = res.body.subString(openQuote2 + 1, closeQuote2);
+    let version = res.body.subString(openQuote3 + 1, closeQuote3);
+    let author = res.body.subString(openQuote4 + 1, closeQuote4);
+    // loading.kill();
+
+    if !(name == cname) {
+        io.fPrint("Package not found\n");
+        return 1;
+    };
+
+    string body = getBodyFromID(id);
+
+    let package = Package(body, name);
+    let updated = package.install();
+
+    io.fPrint("\rSuccessfully %a package: %s\n", {if updated "updated" else "installed" , name});
     io.fPrint("Package ID: %s\n", {id});
+    io.fPrint("Package Name: %s\n", {name});
+    io.fPrint("Package Version: %s\n", {version});
+    io.fPrint("Package Author: %s\n", {author});
 
-    let req2 = HTTPRequest(HTTPMethod.GET);
-    req2.setHost("api.aflatlang.com");
-    const let endpoint2 = st.fString("/modules/%s", {id});
-    req2.setEndpoint(endpoint2.cstr());
-    req2.addHeader("User-Agent", "Mozilla/4.0 (compatible; MSIE5.01; Windows NT)");
-    req2.addHeader("Host", "api.aflatlang.com");
-    req2.addHeader("Accept-Language", "en-us");
-    req2.addHeader("Accept-Encoding", "gzip, deflate");
-    req2.addHeader("X-Powered-By", "AFLAT");
-    req2.addHeader("Content-Type", "text/plain");
-    req2.addHeader("Connection", "Keep-Alive");
-
-    Result loading2 = load.loadingBar();
-    let res2 = req2.send(1000000);
-    loading2.kill();
-
-    let package = Package(res2.body, _package);
-    package.install();
-
-    return NULL;
+    return 0;
 };
 
 int main(int argc, adr argv) {
@@ -84,8 +134,40 @@ int main(int argc, adr argv) {
         "h", "-help", // help
         "v", "-version", // version
         "i", "-install", // install
+        "a", "-author", // author
         NULL // must be NULL terminated
     });
+
+    if argsList.has("i") | argsList.has("-install") {
+        string package = argsList.getArg("i");
+        string version = "";
+        string author = "";
+
+        if package == "" {
+            package = argsList.getArg("-install");
+        };
+        if package == "" {
+            io.fPrint("Usage: %s -i <package>\n", {argsList.progName});
+            return 1;
+        };
+
+        if argsList.has("v") | argsList.has("-version") {
+            version = argsList.getArg("v");
+            if version == "" {
+                version = argsList.getArg("-version");
+            };
+        };
+
+        if argsList.has("a") | argsList.has("-author") {
+            author = argsList.getArg("a");
+            if author == "" {
+                author = argsList.getArg("-author");
+            };
+        };
+
+        PackageQuery query = new PackageQuery(package.cstr(), version.cstr(), author.cstr());
+        return installPackage(query);
+    };
 
     if argsList.has("h") {
         io.fPrint("Usage: %a <args> <file>\n", {args[0]});
@@ -95,20 +177,6 @@ int main(int argc, adr argv) {
     if argsList.has("v") | argsList.has("-version") {
         io.fPrint("Version: %a\n", {VERSION});
         return 0;
-    };
-
-    if argsList.has("i") | argsList.has("-install") {
-        string package = argsList.getArg("i");
-        if package == "" {
-            package = argsList.getArg("-install");
-        };
-        if package == "" {
-            io.fPrint("Usage: %s -i <package>\n", {argsList.progName});
-            return 1;
-        };
-        Result install = installPackage(package);
-        install.get();
-        io.fPrint("\nPackage %s installed\n", {package});
     };
     return 0;
 };
