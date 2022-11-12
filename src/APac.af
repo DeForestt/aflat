@@ -75,7 +75,7 @@ int installPackage(PackageQuery _arg) {
     // Result loading = load.loadingBar();
     let res = req.send(1000000);
 
-    io.fPrint("Body: %s\n", {res.body});
+    io.fPrint("", {res.body});
 
     // find the package id
     let idIndex = res.body.find("\"id\":", 0) + 5;
