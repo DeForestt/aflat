@@ -7,7 +7,7 @@ import String, string from "String";
 import {len, int_toString} from "strings" under str;
 import {print, printInt, fPrint, printHex} from "io" under io;
 import {worker} from "concurrency" under async;
-import {printString} from "String" under st;
+import {printString, fString} from "String" under st;
 
 enum HTTPMethod {
     GET,
@@ -69,7 +69,7 @@ class HTTPResponse {
         firstLine.trim();
         let firstLineParts = firstLine.split(' ');
 
-        if (firstLineParts.getCount() != 3) {
+        if (firstLineParts.getCount() < 3) {
             
             io.fPrint("First line of response is invalid: %s \nlist size: %d\n", {firstLine, firstLineParts.getCount()});
             return -1;
@@ -77,6 +77,11 @@ class HTTPResponse {
         my.version = firstLineParts.get(0);
         my.statusCode = firstLineParts.get(1);
         my.statusMessage = firstLineParts.get(2);
+
+        for int i = 3; i < firstLineParts.getCount(); i++ {
+            my.statusMessage = st.fString("%s %s", {my.statusMessage, firstLineParts.get(i)});
+        };
+
         my.switch = false;
 
         lines.forEach([string line, int index, HTTPResponse this] => {
