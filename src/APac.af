@@ -55,8 +55,9 @@ string getBodyFromID(string id) {
     return res.body;
 };
 
-adr installPackage(PackageQuery _arg) {
+int installPackage(PackageQuery _arg) {
     const let _package = _arg;
+    const let cname = _package.name.copy();
     io.fPrint("Searching for Package: %s\n", {_package.name});
 
     let req = HTTPRequest(HTTPMethod.GET);
@@ -71,8 +72,10 @@ adr installPackage(PackageQuery _arg) {
 	req.addHeader("Content-Type", "application/json");
 	req.addHeader("Connection", "Keep-Alive");
 
-    Result loading = load.loadingBar();
+    // Result loading = load.loadingBar();
     let res = req.send(1000000);
+
+    io.fPrint("Body: %s\n", {res.body});
 
     // find the package id
     let idIndex = res.body.find("\"id\":", 0) + 5;
@@ -98,25 +101,25 @@ adr installPackage(PackageQuery _arg) {
     let name = res.body.subString(openQuote2 + 1, closeQuote2);
     let version = res.body.subString(openQuote3 + 1, closeQuote3);
     let author = res.body.subString(openQuote4 + 1, closeQuote4);
-    loading.kill();
+    // loading.kill();
 
-    if !(name == _package.name) {
+    if !(name == cname) {
         io.fPrint("Package not found\n");
-        return NULL;
+        return 1;
     };
 
     string body = getBodyFromID(id);
 
-    let package = Package(body, _package.name);
+    let package = Package(body, name);
     let updated = package.install();
 
-    io.fPrint("\rSuccessfully %a package: %s\n", {if updated "updated" else "installed" ,_package.name});
+    io.fPrint("\rSuccessfully %a package: %s\n", {if updated "updated" else "installed" , name});
     io.fPrint("Package ID: %s\n", {id});
     io.fPrint("Package Name: %s\n", {name});
     io.fPrint("Package Version: %s\n", {version});
     io.fPrint("Package Author: %s\n", {author});
 
-    return NULL;
+    return 0;
 };
 
 int main(int argc, adr argv) {
@@ -163,7 +166,7 @@ int main(int argc, adr argv) {
         };
 
         PackageQuery query = new PackageQuery(package.cstr(), version.cstr(), author.cstr());
-        installPackage(query);
+        return installPackage(query);
     };
 
     if argsList.has("h") {
