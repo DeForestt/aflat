@@ -126,6 +126,12 @@ int main(int argc, adr argv) {
         NULL // must be NULL terminated
     });
 
+    if argsList == NULL {
+        io.fPrint("Usage: %a <args> <file>\n", {args[0]});
+        io.fPrint("Try  `%a --help`  for more information\n", {args[0]});
+        return 1;
+    };
+
     if argsList.has("i") | argsList.has("-install") {
         string package = argsList.getArg("i");
         string version = "";
@@ -166,13 +172,24 @@ int main(int argc, adr argv) {
         return installPackage(query);
     };
 
-    if argsList.has("h") {
-        io.fPrint("Usage: %a <args> <file>\n", {args[0]});
+    if argsList.has("v") | argsList.has("-version") {
+        io.fPrint("Version: %a\n", {VERSION});
         return 0;
     };
 
-    if argsList.has("v") | argsList.has("-version") {
-        io.fPrint("Version: %a\n", {VERSION});
+    if argsList.has("h") | argsList.has("-help") {
+        // print help
+        io.fPrint("Usage: %s <args> <file>\n", {argsList.progName});
+        io.fPrint("Args:\n");
+        io.fPrint("    -h, --help: print this help\n");
+        io.fPrint("    -v, --version: print version\n");
+        io.fPrint("    -i, --install: install package\n");
+        io.fPrint("        -a, --author: author of package\n");
+        io.fPrint("        -u, --under: install package and save with a different name\n");
+        io.fPrint("        -v, --version: version of package\n");
+        io.fPrint("        eg: %s -i <package> -a <author> -u <under> -v <version>\n", {argsList.progName});
+        io.fPrint("        eg: %s -i LoadingBar -a dthompson -u load -v 1.0.0\n", {argsList.progName});
+
         return 0;
     };
     return 0;
