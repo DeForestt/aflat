@@ -3,9 +3,14 @@
 import { fPrint } from "io" under io;
 import { worker } from "concurrency" under async;
 
+/*
+ * An asynchronous Loading Bar that can be displayed when processing 
+ * a long-running task. Returns a Result object that can be killed when 
+ * the process is done. Displays param 1 `_arg` when run;
+ */
 export adr loadingBar(adr _arg) : async.worker {
 	while (true) {
-		io.fPrint("Loading: ");
+		io.fPrint("%a", { if _arg != NULL _arg else "Loading: "});
 		for int j = 0; j < 10; j = j + 1 {
 			io.fPrint(".");
 			sleep(0, 500000000);
