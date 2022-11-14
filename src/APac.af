@@ -11,6 +11,7 @@ import HTTPRequest, HTTPMethod, HTTPResponse from "HTTP";
 import {requestWorker} from "HTTP" under http;
 import List from "Collections";
 import Package from "./src/Package";
+import { getString } from "./src/modules/JSONParse" under json;
 import { loadingBar } from "./src/modules/LoadingBar" under load;
 
 const let VERSION = "0.1.0";
@@ -19,8 +20,9 @@ class PackageQuery {
     string name = name;
     string version = version;
     string author = author;
+    string u = u;
 
-    PackageQuery init(adr name, adr version, adr author) {
+    PackageQuery init(adr name, adr version, adr author, adr u) {
         return my;
     };
 
@@ -58,6 +60,7 @@ string getBodyFromID(string id) {
 int installPackage(PackageQuery _arg) {
     const let _package = _arg;
     const let cname = _package.name.copy();
+    const let cunder = _package.u.copy();
     io.fPrint("Searching for Package: %s\n", {_package.name});
 
     let req = HTTPRequest(HTTPMethod.GET);
@@ -77,30 +80,10 @@ int installPackage(PackageQuery _arg) {
 
     io.fPrint("", {res.body});
 
-    // find the package id
-    let idIndex = res.body.find("\"id\":", 0) + 5;
-    let openQuote = res.body.find("\"", idIndex);
-    let closeQuote = res.body.find("\"", openQuote + 1);
-
-    // find the package name
-    let nameIndex = res.body.find("\"name\":", 0) + 7;
-    let openQuote2 = res.body.find("\"", nameIndex);
-    let closeQuote2 = res.body.find("\"", openQuote2 + 1);
-
-    // find the package version
-    let versionIndex = res.body.find("\"version\":", 0) + 10;
-    let openQuote3 = res.body.find("\"", versionIndex);
-    let closeQuote3 = res.body.find("\"", openQuote3 + 1);
-
-    // find the package author
-    let authorIndex = res.body.find("\"author\":", 0) + 9;
-    let openQuote4 = res.body.find("\"", authorIndex);
-    let closeQuote4 = res.body.find("\"", openQuote4 + 1);
-
-    let id = res.body.subString(openQuote + 1, closeQuote);
-    let name = res.body.subString(openQuote2 + 1, closeQuote2);
-    let version = res.body.subString(openQuote3 + 1, closeQuote3);
-    let author = res.body.subString(openQuote4 + 1, closeQuote4);
+    let id = json.getString("id", res.body);
+    let name = json.getString("name", res.body);
+    let version = json.getString("version", res.body);
+    let author = json.getString("author", res.body);
     // loading.kill();
 
     if !(name == cname) {
@@ -110,10 +93,14 @@ int installPackage(PackageQuery _arg) {
 
     string body = getBodyFromID(id);
 
-    let package = Package(body, name);
-    let updated = package.install();
+    if !(cunder == name) {
+        io.fPrint("Renaming %s to %s\n", {name, cunder});
+    };
 
-    io.fPrint("\rSuccessfully %a package: %s\n", {if updated "updated" else "installed" , name});
+    let package = Package(body, cunder);
+    let updated = !package.install();
+
+    io.fPrint("\rSuccessfully %a package: %s\n", {if updated "updated" else "installed" , cunder});
     io.fPrint("Package ID: %s\n", {id});
     io.fPrint("Package Name: %s\n", {name});
     io.fPrint("Package Version: %s\n", {version});
@@ -135,6 +122,7 @@ int main(int argc, adr argv) {
         "v", "-version", // version
         "i", "-install", // install
         "a", "-author", // author
+        "u", "-under", // under
         NULL // must be NULL terminated
     });
 
@@ -142,6 +130,8 @@ int main(int argc, adr argv) {
         string package = argsList.getArg("i");
         string version = "";
         string author = "";
+        string u = "";
+        u = package;
 
         if package == "" {
             package = argsList.getArg("-install");
@@ -165,7 +155,14 @@ int main(int argc, adr argv) {
             };
         };
 
-        PackageQuery query = new PackageQuery(package.cstr(), version.cstr(), author.cstr());
+        if argsList.has("u") | argsList.has("-under") {
+            u = argsList.getArg("u");
+            if u == "" {
+                u = argsList.getArg("-under");
+            };
+        };
+
+        PackageQuery query = new PackageQuery(package.cstr(), version.cstr(), author.cstr(), u.cstr());
         return installPackage(query);
     };
 
