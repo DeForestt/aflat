@@ -40,12 +40,15 @@ class ArgsList {
             if (arg.at(0) == '-') {
                 let subArg = arg.subString(1, arg.len());
                 if (tags.findFirst([string s, string y] => return s == y, subArg) != NULL) {
+
                     if (i + 1 < argc) {
                         string val = args[i + 1];
                         my.args.pushBack(Arg(subArg, val));
                         i++;
                     } else {
-                        my.args.pushBack(Arg(subArg, ""));
+                        let val = new string("");
+                        let ag = Arg(subArg, val);
+                        my.args.pushBack(ag);
                     };
                 } else {
                     io.fPrint("Error: Unknown tag: %s\n", {subArg});
