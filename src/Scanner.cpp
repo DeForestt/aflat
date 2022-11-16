@@ -27,6 +27,15 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
         i++;
         sym->lineCount = lineCount;
         tokens << sym;
+      } else if (input[i] == 0 && input[i + 1] == 'x') {
+        i += 2;
+        auto intLit = new lex::INT();
+        intLit->value = "";
+        while (std::isxdigit(input[i])) {
+          intLit->value += input[i];
+          i++;
+        }
+        tokens << intLit;
       } else {
         auto IntLit = new lex::INT();
         IntLit->value = input[i];
