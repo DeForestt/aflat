@@ -41,3 +41,4 @@ int memcpy(adr dst,adr src, int size);
 int panic(adr msg);
 int assert(bool cond, * adr message);
 int sleep(int seconds, * int nanoseconds);
+adr _fCstr(adr fmt, * adr args);
