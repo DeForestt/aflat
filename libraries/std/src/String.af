@@ -643,7 +643,9 @@ safe dynamic class string {
         return -1;
     };
 
-    string replace(string sub, string n) {
+    string replace(adr substr, adr ns) {
+        let sub = new string(substr);
+        let n = new string(ns);
         // find all occurences of sub in my
         int myLen = str.len(my.head);
         int subLen = str.len(sub.head);
