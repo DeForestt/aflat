@@ -781,7 +781,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
     // swap the placeholders with correct wildcard
     std::string::size_type pos = 0;
     for ( auto expr : str.args) {
-      pos = strlit->val.find("{}", 0);
+      pos = strlit->val.find("%%%", 0);
       if (pos == std::string::npos) 
         this->alert("too many arguments for format string");
       
@@ -789,15 +789,15 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
       auto exp = this->GenExpr(expr, file);
 
       if (exp.type == "adr")
-        strlit->val.replace(pos, 2, "%a");
+        strlit->val.replace(pos, 3, "%a");
       else if (exp.type == "int" || exp.type == "number")
-        strlit->val.replace(pos, 2, "%d");
+        strlit->val.replace(pos, 3, "%d");
       else if (exp.type == "string")
-        strlit->val.replace(pos, 2, "%s");
+        strlit->val.replace(pos, 3, "%s");
       else if (exp.type == "bool")
-        strlit->val.replace(pos, 2, "%b");
+        strlit->val.replace(pos, 3, "%b");
       else if (exp.type == "char")
-        strlit->val.replace(pos, 2, "%c");
+        strlit->val.replace(pos, 3, "%c");
       else
         this->alert("unable to format type of " + exp.type);
 
