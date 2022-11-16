@@ -806,6 +806,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
 
     call->call->Args << list;
     output = this->GenExpr(call, OutputFile);
+    output.type = "string";
   } else if (dynamic_cast<ast::FloatLiteral*>(expr) != nullptr) {
     ast::FloatLiteral* floatlit = dynamic_cast<ast::FloatLiteral*>(expr);
     asmc::FloatLiteral* fltlit = new asmc::FloatLiteral();
