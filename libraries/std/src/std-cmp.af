@@ -2,6 +2,8 @@
 .needs <asm>
 
 import * from "io" under io;
+import string from "String" under string;
+import { fString } from "String" under st;
 
 Block head = NULL;
 
@@ -98,4 +100,11 @@ int sleep(int seconds, * int nanoseconds){
     sys_nsleep(t);
     free(t);
     return 0;
+};
+
+/*
+ * _FCstr utility function to format a c string
+ */
+adr _fCstr(adr fmt, * adr args) {
+    return st.fString(fmt, args);
 };

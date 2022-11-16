@@ -246,7 +246,6 @@ int sleep(int seconds, * int nanoseconds){
 /*
  * _FCstr utility function to format a c string
  */
-
 adr _fCstr(adr fmt, * adr args) {
     return st.fString(fmt, args);
 };
