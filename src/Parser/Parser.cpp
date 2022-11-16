@@ -1136,40 +1136,27 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     fslit->val = fstringObj.value;
     
     // find each { and } and parse the expression in between
-    std::string::size_type lastPos = 0;
     while (true) {
-      std::string::size_type pos = fstringObj.value.find('{', lastPos);
+      std::string::size_type pos = fstringObj.value.find('{' , 0);
       if (pos == std::string::npos) {
         break;
       }
-      std::string::size_type pos2 = fstringObj.value.find('}', pos);
+      std::string::size_type pos2 = fstringObj.value.find('}', 0);
       if (pos2 == std::string::npos) 
         throw err::Exception("Line: " + std::to_string(fstringObj.lineCount) +
                              " unTerminated Fstring.  Please terminate with: }");
       std::string expr = fstringObj.value.substr(pos + 1, pos2 - pos - 1);
-      // remove the { and } from the string and replace with {}
-      auto tokens = lexer.Scan(expr);
-      auto exprAst = this->parseExpr(tokens);
+
+      // replace with %%% to avoid parsing errors
+      fstringObj.value.replace(pos, pos2 - pos + 1, "%%%");
+      
+      auto tokes = lexer.Scan(expr);
+      tokes.invert();
+      auto exprAst = this->parseExpr(tokes);
       fslit->args.push_back(exprAst);
-      lastPos = pos2 + 1;
     }
 
-    // replace all of the { and } with {} in fslit->val
-    lastPos = 0;
-
-    while (true) {
-      std::string::size_type pos = fslit->val.find('{', lastPos);
-      if (pos == std::string::npos) {
-        break;
-      }
-      std::string::size_type pos2 = fslit->val.find('}', pos);
-      if (pos2 == std::string::npos) 
-        throw err::Exception("Line: " + std::to_string(fstringObj.lineCount) +
-                             " unTerminated Fstring.  Please terminate with: }");
-      fslit->val.replace(pos, pos2 - pos + 1, "{}");
-      lastPos = pos2 + 1;
-    }
-
+    fslit->val = fstringObj.value;
     output = fslit;
   } else if (dynamic_cast<lex::INT *>(tokens.peek()) != nullptr) {
     auto intObj = *dynamic_cast<lex::INT *>(tokens.pop());
@@ -1216,7 +1203,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
           throw err::Exception(
               "Line: " + std::to_string(tokens.peek()->lineCount) +
               " Expected, Ident after dot.");
-        if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
+        if (tokens.count > 0 && dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
           sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
         } else
           break;
