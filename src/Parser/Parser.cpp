@@ -1127,6 +1127,31 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     slit->logicalLine = stringObj.lineCount;
     slit->val = stringObj.value;
     output = slit;
+  } else if (dynamic_cast<lex::FStringObj *>(tokens.peek()) ) {
+    lex::Lexer lexer = lex::Lexer();
+    auto fstringObj = *dynamic_cast<lex::FStringObj *>(tokens.peek());
+    tokens.pop();
+    auto *fslit = new ast::FStringLiteral();
+    fslit->logicalLine = fstringObj.lineCount;
+    
+    // find each { and } and parse the expression in between
+    std::string::size_type lastPos = 0;
+    while (true) {
+      std::string::size_type pos = fstringObj.value.find('{', lastPos);
+      if (pos == std::string::npos) {
+        break;
+      }
+      std::string::size_type pos2 = fstringObj.value.find('}', pos);
+      if (pos2 == std::string::npos) 
+        throw err::Exception("Line: " + std::to_string(fstringObj.lineCount) +
+                             " unTerminated Fstring.  Please terminate with: }");
+      std::string expr = fstringObj.value.substr(pos + 1, pos2 - pos - 1);
+      auto tokens = lexer.Scan(expr);
+      auto exprAst = this->parseExpr(tokens);
+      fslit->args.push_back(exprAst);
+      lastPos = pos2 + 1;
+    }
+    output = fslit;
   } else if (dynamic_cast<lex::INT *>(tokens.peek()) != nullptr) {
     auto intObj = *dynamic_cast<lex::INT *>(tokens.pop());
     auto ilit = new ast::IntLiteral();
