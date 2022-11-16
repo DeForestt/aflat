@@ -116,6 +116,44 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
       }
       i++;
       tokens.push(stringObj);
+    } else if (input[i] == '`') {
+      auto *stringObj = new FStringObj();
+      stringObj->value = "";
+      i++;
+      while (input[i] != '`') {
+        if (input[i] == '\n' || input[i] == '\t' || input[i] == '\r') {
+          lineCount++;
+          i++;
+        }
+        if (input[i] == '\\') {
+          i++;
+          if (input[i] == 'n') {
+            stringObj->value += "\\n";
+          } else if (input[i] == 't') {
+            stringObj->value += '\t';
+          } else if (input[i] == '\\') {
+            stringObj->value += 0x5C;
+          } else if (input[i] == '`') {
+            stringObj->value += "`";
+          } else if (input[i] == '\'') {
+            stringObj->value += "\\'";
+          } else if (input[i] == 'r') {
+            stringObj->value += '\r';
+          } else if (input[i] == '0') {
+            stringObj->value += '\0';
+          } else if (input[i] == 'e') {
+            stringObj->value += 0x1B;
+          } else {
+            throw err::Exception("Invalid token: " + stringObj->value +
+                                 " on line " + std::to_string(lineCount));
+          }
+        } else if (input[i] != '\n' && input[i] != '\t' && input[i] != '\r') {
+          stringObj->value += input[i];
+        }
+        i++;
+      }
+      i++;
+      tokens.push(stringObj);
     } else if (input[i] == '\'') {
       auto charobj = new CharObj();
       i++;
