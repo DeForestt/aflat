@@ -780,9 +780,14 @@ export string fString(string fmt, * adr args) {
                 args = args + char;
             } else if fmt.at(i) == 'd' {
                 char[10] buff;
-                str.int_toString(args as int, buff);
-                adr buffAdr = buff;
-                newString = newString + buffAdr;
+                int n = args as int;
+                if n == 0 {
+                    newString = newString.push('0');
+                } else {
+                    str.int_toString(n, buff);
+                    adr buffAdr = buff;
+                    newString = newString + buffAdr;
+                };
                 args = args + int;
             } else if fmt.at(i) == 's' {
                 newString = newString + args as string;
