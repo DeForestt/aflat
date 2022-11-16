@@ -761,6 +761,51 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
     output.access = "$" + lable->lable;
     output.size = asmc::QWord;
     output.type = "adr";
+  } else if (dynamic_cast<ast::FStringLiteral*>(expr) != nullptr) {
+    ast::FStringLiteral str = *dynamic_cast<ast::FStringLiteral*>(expr);
+
+    auto call = new ast::CallExpr();
+    call->call = new ast::Call();
+    call->call->ident = "_fCstr";
+    call->call->logicalLine = this->logicalLine;
+    call->logicalLine = this->logicalLine;
+
+    ast::StringLiteral* strlit = new ast::StringLiteral();
+    strlit->val = str.val;
+    strlit->logicalLine = this->logicalLine;
+    call->call->Args << strlit;
+
+    ast::StructList * list = new ast::StructList();
+    list->logicalLine = this->logicalLine;
+
+    // swap the placeholders with correct wildcard
+    std::string::size_type pos = 0;
+    for ( auto expr : str.args) {
+      pos = strlit->val.find("{}", 0);
+      if (pos == std::string::npos) 
+        this->alert("too many arguments for format string");
+      
+      asmc::File file;
+      auto exp = this->GenExpr(expr, file);
+
+      if (exp.type == "adr")
+        strlit->val.replace(pos, 2, "%a");
+      else if (exp.type == "int" || exp.type == "number")
+        strlit->val.replace(pos, 2, "%d");
+      else if (exp.type == "string")
+        strlit->val.replace(pos, 2, "%s");
+      else if (exp.type == "bool")
+        strlit->val.replace(pos, 2, "%b");
+      else if (exp.type == "char")
+        strlit->val.replace(pos, 2, "%c");
+      else
+        this->alert("unable to format type of " + exp.type);
+
+      list->args << expr;
+    };
+
+    call->call->Args << list;
+    output = this->GenExpr(call, OutputFile);
   } else if (dynamic_cast<ast::FloatLiteral*>(expr) != nullptr) {
     ast::FloatLiteral* floatlit = dynamic_cast<ast::FloatLiteral*>(expr);
     asmc::FloatLiteral* fltlit = new asmc::FloatLiteral();

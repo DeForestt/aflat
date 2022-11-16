@@ -32,6 +32,11 @@ public:
   string value;
 };
 
+class FStringObj : public Token {
+public:
+  string value;
+};
+
 class CharObj : public Token {
 public:
   char value;

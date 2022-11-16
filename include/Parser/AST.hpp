@@ -285,6 +285,12 @@ class StringLiteral : public Expr {
   std::string val;
 };
 
+class FStringLiteral : public Expr {
+ public:
+  std::string val;
+  std::vector<Expr*> args;
+};
+
 class IntLiteral : public Expr {
  public:
   int val;

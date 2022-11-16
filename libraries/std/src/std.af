@@ -2,6 +2,8 @@
 .needs <asm>
 
 import * from "io" under io;
+import string from "String";
+import { fString } from "String" under st;
 
 Block head = NULL;
 
@@ -239,4 +241,16 @@ int sleep(int seconds, * int nanoseconds){
     sys_nsleep(t);
     free(t);
     return 0;
+};
+
+/*
+ * _FCstr utility function to format a c string
+ */
+
+adr _fCstr(adr fmt, * adr args) {
+    string s = st.fString(fmt, args);
+    adr cstr = malloc(s.len() + 1);
+    memcpy(cstr, s.cstr(), s.len() + 1);
+    const let get = [adr p] => return p;
+    return get(cstr);
 };
