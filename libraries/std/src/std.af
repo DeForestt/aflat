@@ -248,9 +248,5 @@ int sleep(int seconds, * int nanoseconds){
  */
 
 adr _fCstr(adr fmt, * adr args) {
-    string s = st.fString(fmt, args);
-    adr cstr = malloc(s.len() + 1);
-    memcpy(cstr, s.cstr(), s.len() + 1);
-    const let get = [adr p] => return p;
-    return get(cstr);
+    return st.fString(fmt, args);
 };
