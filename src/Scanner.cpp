@@ -1,6 +1,6 @@
 #include "Scanner.hpp"
 #include "Exceptions.hpp"
-
+#include <iostream>
 #include <ctype.h>
 
 LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
@@ -27,14 +27,15 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
         i++;
         sym->lineCount = lineCount;
         tokens << sym;
-      } else if (input[i] == 0 && input[i + 1] == 'x') {
+      } else if (input[i] == '0' && input[i + 1] == 'x') {
         i += 2;
         auto intLit = new lex::INT();
-        intLit->value = "";
+        intLit->value = "0x";
         while (std::isxdigit(input[i])) {
           intLit->value += input[i];
           i++;
         }
+        intLit->lineCount = lineCount;
         tokens << intLit;
       } else {
         auto IntLit = new lex::INT();
@@ -55,7 +56,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
                                  " on line " + std::to_string(lineCount));
           }
 
-          auto *FloatLit = new lex::FloatLit();
+          auto FloatLit = new lex::FloatLit();
           FloatLit->value = IntLit->value;
           FloatLit->lineCount = lineCount;
           tokens << FloatLit;

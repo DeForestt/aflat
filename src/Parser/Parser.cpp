@@ -1131,7 +1131,13 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     auto intObj = *dynamic_cast<lex::INT *>(tokens.pop());
     auto ilit = new ast::IntLiteral();
     ilit->logicalLine = intObj.lineCount;
-    ilit->val = std::stoi(intObj.value);
+    // check if the int is a hex
+    if (intObj.value[0] == '0' && intObj.value[1] == 'x') {
+      ilit->val = std::stoi(intObj.value, nullptr, 16);
+    } else {
+      ilit->val = std::stoi(intObj.value);
+    }
+
     output = ilit;
   } else if (dynamic_cast<lex::FloatLit *>(tokens.peek()) != nullptr) {
     auto floatObj = *dynamic_cast<lex::FloatLit *>(tokens.pop());
@@ -1142,8 +1148,13 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
   } else if (dynamic_cast<lex::Long *>(tokens.peek()) != nullptr) {
     auto intObj = *dynamic_cast<lex::Long *>(tokens.pop());
     auto ilit = new ast::LongLiteral();
-    ilit->logicalLine = intObj.lineCount;
-    ilit->val = std::stoi(intObj.value);
+
+    if (intObj.value[0] == '0' && intObj.value[1] == 'x') {
+      ilit->val = std::stoi(intObj.value, nullptr, 16);
+    } else {
+      ilit->val = std::stoi(intObj.value);
+    }
+
     output = ilit;
   } else if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto obj = *dynamic_cast<lex::LObj *>(tokens.pop());
