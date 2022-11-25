@@ -28,6 +28,8 @@ class Symbol {
   bool readOnly = false;
   bool mask;
   int byteMod;
+  bool usable = true;
+  int underscores = 0;
 };
 
 class Type {

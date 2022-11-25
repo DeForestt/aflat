@@ -2146,6 +2146,8 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
       }
       int byteMod = gen::scope::ScopeManager::getInstance()->assign(
           dec->Ident, dec->type, dec->mask, decAssign->mute);
+      auto s = gen::scope::ScopeManager::getInstance()->get(dec->Ident);
+      s->usable = false;
 
       auto mov2 = new asmc::Mov();
       mov2->logicalLine = decAssign->logicalLine;
@@ -2167,6 +2169,7 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
 
       OutputFile.text << mov2;
       OutputFile.text << mov;
+      s->usable = true;
     } else {
       // add the decAssign to the class default list
       this->scope->defaultValues.push_back(*decAssign);

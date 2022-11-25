@@ -40,10 +40,13 @@ int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type,
                                      bool mask, bool mut = true) {
   auto sym = gen::Symbol();
 
-  // if the symbol is already in the stack, throw an error
   for (int i = 0; i < this->stack.size(); i++) {
     if (this->stack[i].symbol == symbol && symbol != "") {
-      throw err::Exception("Redefinition of symbol: " + symbol);
+      // add an underscore to the front of the symbol
+      if (this->stack[i].type.typeName == type.typeName) throw err::Exception (
+        "Cannot shadow symbol \"" + symbol + "\" with the same type");
+      this->stack[i].symbol = "~" + this->stack[i].symbol;
+      this->stack[i].underscores++;
     }
   }
 
@@ -91,6 +94,15 @@ void gen::scope::ScopeManager::popScope(CodeGenerator *callback,
       if (desc) {
         OutputFile << *desc;
       }
+      // find any symbols that have the same name and remove an underscore
+      for (int i = 0; i < this->stack.size(); i++) {
+        if (this->stack[i].symbol == sym.symbol && sym.symbol != "") {
+          if (this->stack[i].underscores > 0) {
+            this->stack[i].symbol = this->stack[i].symbol.substr(1);
+            this->stack[i].underscores--;
+          }
+        }
+      }
     }
     this->stack.pop_back();
   }
@@ -106,6 +118,7 @@ void gen::scope::ScopeManager::softPop(CodeGenerator *callback,
                                        asmc::File &OutputFile) {
   int size = (this->pleading.size() > 0 && this->pleading.back().pleading)? this->scopeStack.back() : this->SStackSize;
   int pos = this->stack.size() - 1;
+
   for (int i = 0; i < size; i++) {
     gen::Symbol sym = this->stack.at(pos);
     if (sym.symbol != "" && sym.symbol != "my") {
@@ -136,14 +149,15 @@ int gen::scope::ScopeManager::getStackAlignment() {
 };
 
 gen::Symbol *gen::scope::ScopeManager::get(std::string symbol) {
-  for (int i = 0; i < this->stack.size(); i++) {
+
+  for (int i = this->stack.size() - 1; i >= 0; i--) {
     if (this->stack[i].symbol == symbol) {
-      return &this->stack[i];
+      if (this->stack[i].usable) return &this->stack[i];
     }
   }
 
   // search global stack
-  for (int i = 0; i < this->globalStack.size(); i++) {
+  for (int i = this->globalStack.size() - 1; i >= 0; i--) {
     if (this->globalStack[i].symbol == symbol) {
       return &this->globalStack[i];
     }
