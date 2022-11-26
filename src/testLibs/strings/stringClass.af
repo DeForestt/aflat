@@ -237,6 +237,16 @@ private bool test_fString(adr _arg) : test.case {
     );
 };
 
+private bool test_sort(adr _arg) : test.case {
+    let s1 = new string("Hello World");
+    let expected = new string(" HWdellloor");
+    let s2 = s1.sort();
+    return (
+        test.require(s2 == expected, `Could not sort a string {s2}`) &
+        test.require(s2.len() == s1.len(), "Sorted string has the same length as the original")
+    );
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
     suite.addCase(test_compare, "compare");
@@ -261,5 +271,6 @@ export TestSuite getSuite() {
     suite.addCase(test_indexOf, "indexOf");
     suite.addCase(test_push, "push");
     suite.addCase(test_fString, "fString");
+    suite.addCase(test_sort, "sort");
     return suite;
 };

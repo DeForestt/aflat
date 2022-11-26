@@ -610,7 +610,6 @@ safe dynamic class string {
         return newString;
     };
 
-
     string replaceChar(char old, char n) {
         char[10] newHead = malloc(my.len() + 1);
         int length = my.len();
@@ -724,6 +723,41 @@ safe dynamic class string {
         next = next + 1;
         next =: '\0';
         return new string(newHead);
+    };
+
+    string insert(int i, string n) {
+        int length = my.len();
+        int nLength = n.len();
+        char[10] newHead = malloc(length + nLength + 1);
+        memcpy(newHead, my.head, i);
+        memcpy(newHead + i, n.head, nLength);
+        memcpy(newHead + i + nLength, my.head + i, length - i);
+        newHead[length + nLength] = '\0';
+        return new string(newHead);
+    };
+
+    string sort() {
+        string newString = new string("");
+        for int i = 0; i < my.len(); i = i + 1 {
+            char c = my.at(i);
+            int j = 0;
+            bool brk = false;
+            while (!brk) {
+                if (j == newString.len()) {
+                    newString = newString.push(c);
+                    brk = true;
+                } else {
+                    char c2 = newString.at(j);
+                    if (c < c2) {
+                        newString = newString.insert(j, `{c}`);
+                        brk = true;
+                    } else {
+                        j = j + 1;
+                    };
+                };
+            };
+        };
+        return newString;
     };
 
     int endScope() {
