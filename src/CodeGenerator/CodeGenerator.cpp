@@ -1779,6 +1779,10 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statment* STMT) {
     this->genImport(dynamic_cast<ast::Import*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Delete*>(STMT) != nullptr) {
     this->genDelete(dynamic_cast<ast::Delete*>(STMT), OutputFile);
+  } else if (dynamic_cast<ast::Continue *>(STMT)) {
+    this->genContinue(dynamic_cast<ast::Continue *>(STMT), OutputFile);
+  } else if (dynamic_cast<ast::Break *>(STMT)) {
+    this->genBreak(dynamic_cast<ast::Break *>(STMT), OutputFile);
   } else {
     OutputFile.text.push(new asmc::nop());
   }
@@ -2979,11 +2983,11 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
 
   gen::scope::ScopeManager::getInstance()->pushScope(true);
   OutputFile << this->GenSTMT(loop->Run);
+  OutputFile.text << lable2;
   OutputFile << this->GenSTMT(loop->increment);
   this->breakContext.pop();
   this->continueContext.pop();
   gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
-  OutputFile.text << lable2;
 
   gen::Expr expr = this->GenExpr(loop->expr, OutputFile);
   
@@ -3231,6 +3235,31 @@ void gen::CodeGenerator::genDelete(ast::Delete* del, asmc::File& OutputFile) {
     OutputFile << std::get<3>(resolved);
 }
 
+void gen::CodeGenerator::genContinue(ast::Continue* cont, asmc::File& OutputFile) {
+  if (this->continueContext.size() == 0)
+    this->alert("Attempted to continue outside of a loop");
+  if (this->continueContext.size() < cont->level)
+    this->alert("Attempted to continue deeper than the current loop");
+  
+  int index = this->continueContext.size() - cont->level;
+  asmc::Jmp* jmp = new asmc::Jmp();
+  jmp->logicalLine = cont->logicalLine;
+  jmp->to = this->continueContext.get(index);
+  OutputFile.text << jmp;
+}
+
+void gen::CodeGenerator::genBreak(ast::Break* brk, asmc::File& OutputFile) {
+  if (this->breakContext.size() == 0)
+    this->alert("Attempted to break outside of a loop");
+  if (this->breakContext.size() < brk->level)
+    this->alert("Attempted to break deeper than the current loop");
+  
+  int index = this->breakContext.size() - brk->level;
+  asmc::Jmp* jmp = new asmc::Jmp();
+  jmp->logicalLine = brk->logicalLine;
+  jmp->to = this->breakContext.get(index);
+  OutputFile.text << jmp;
+}
 #pragma endregion
 
 asmc::File * gen::CodeGenerator::deScope(gen::Symbol &sym) {
