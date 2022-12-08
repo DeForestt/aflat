@@ -129,6 +129,10 @@ class CodeGenerator {
   ast::Expr * imply(ast::Expr * expr, std::string typeName);
   bool canAssign(ast::Type type, std::string typeName, bool strict = false);
   std::string moduleId;
+
+  links::LinkedList<std::string> breakContext;
+  links::LinkedList<std::string> continueContext;
+
   std::tuple<std::string, gen::Symbol, bool, asmc::File> resolveSymbol(
       std::string ident, links::LinkedList<std::string> modList,
       asmc::File& OutputFile, links::LinkedList<ast::Expr*> indicies,
