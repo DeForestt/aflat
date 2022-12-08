@@ -3241,7 +3241,7 @@ void gen::CodeGenerator::genContinue(ast::Continue* cont, asmc::File& OutputFile
   if (this->continueContext.size() < cont->level)
     this->alert("Attempted to continue deeper than the current loop");
   
-  int index = this->continueContext.size() - cont->level;
+  int index = cont->level - 1;
   asmc::Jmp* jmp = new asmc::Jmp();
   jmp->logicalLine = cont->logicalLine;
   jmp->to = this->continueContext.get(index);
@@ -3254,7 +3254,7 @@ void gen::CodeGenerator::genBreak(ast::Break* brk, asmc::File& OutputFile) {
   if (this->breakContext.size() < brk->level)
     this->alert("Attempted to break deeper than the current loop");
   
-  int index = this->breakContext.size() - brk->level;
+  int index = brk->level - 1;
   asmc::Jmp* jmp = new asmc::Jmp();
   jmp->logicalLine = brk->logicalLine;
   jmp->to = this->breakContext.get(index);
