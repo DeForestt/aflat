@@ -3257,7 +3257,7 @@ void gen::CodeGenerator::genBreak(ast::Break* brk, asmc::File& OutputFile) {
   int index = brk->level - 1;
   asmc::Jmp* jmp = new asmc::Jmp();
   jmp->logicalLine = brk->logicalLine;
-  jmp->to = this->breakContext.get(index);
+  jmp->to = this->breakContext.get(index); 
   OutputFile.text << jmp;
 }
 #pragma endregion
