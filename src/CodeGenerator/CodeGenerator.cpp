@@ -2976,7 +2976,6 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   continueLable->lable = ".L" + this->nameTable.head->data.ident.ident +
                          std::to_string(this->lablecount);
   this->lablecount++;
-
   OutputFile << this->GenSTMT(loop->declare);
   asmc::Jmp* jmp = new asmc::Jmp();
   jmp->to = lable2->lable;
