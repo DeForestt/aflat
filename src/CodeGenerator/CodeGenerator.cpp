@@ -2971,6 +2971,12 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
                       std::to_string(this->lablecount);
   this->lablecount++;
 
+  asmc::Lable* continueLable = new asmc::Lable();
+  continueLable->logicalLine = loop->logicalLine;
+  continueLable->lable = ".L" + this->nameTable.head->data.ident.ident +
+                         std::to_string(this->lablecount);
+  this->lablecount++;
+
   OutputFile << this->GenSTMT(loop->declare);
   asmc::Jmp* jmp = new asmc::Jmp();
   jmp->to = lable2->lable;
@@ -2979,12 +2985,13 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   OutputFile.text << lable1;
 
   this->breakContext.push(breakLable->lable);
-  this->continueContext.push(lable2->lable);
+  this->continueContext.push(continueLable->lable);
 
   gen::scope::ScopeManager::getInstance()->pushScope(true);
   OutputFile << this->GenSTMT(loop->Run);
-  OutputFile.text << lable2;
+  OutputFile.text << continueLable;
   OutputFile << this->GenSTMT(loop->increment);
+  OutputFile.text << lable2;
   this->breakContext.pop();
   this->continueContext.pop();
   gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
