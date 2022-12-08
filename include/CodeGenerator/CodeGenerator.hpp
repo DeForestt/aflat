@@ -129,6 +129,10 @@ class CodeGenerator {
   ast::Expr * imply(ast::Expr * expr, std::string typeName);
   bool canAssign(ast::Type type, std::string typeName, bool strict = false);
   std::string moduleId;
+
+  links::LinkedList<std::string> breakContext;
+  links::LinkedList<std::string> continueContext;
+
   std::tuple<std::string, gen::Symbol, bool, asmc::File> resolveSymbol(
       std::string ident, links::LinkedList<std::string> modList,
       asmc::File& OutputFile, links::LinkedList<ast::Expr*> indicies,
@@ -154,6 +158,8 @@ class CodeGenerator {
   void genDec(ast::Dec* inc, asmc::File& OutputFile);
   void genImport(ast::Import* imp, asmc::File& OutputFile);
   void genDelete(ast::Delete* del, asmc::File& OutputFile);
+  void genBreak(ast::Break* brk, asmc::File& OutputFile);
+  void genContinue(ast::Continue* cont, asmc::File& OutputFile);
 
  public:
   asmc::File GenSTMT(ast::Statment* stmt);

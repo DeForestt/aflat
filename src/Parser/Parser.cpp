@@ -825,6 +825,20 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
 
       del->modList = modList;
       output = del;
+    } else if (obj.meta == "continue") {
+      auto count = 1;
+      if (dynamic_cast<lex::INT *>(tokens.peek()) != nullptr) {
+        count = std::stoi(dynamic_cast<lex::INT *>(tokens.pop())->value);
+      }
+      output = new ast::Continue(count);
+      output->logicalLine = obj.lineCount;
+    } else if (obj.meta == "break") {
+            auto count = 1;
+      if (dynamic_cast<lex::INT *>(tokens.peek()) != nullptr) {
+        count = std::stoi(dynamic_cast<lex::INT *>(tokens.pop())->value);
+      }
+      output = new ast::Break(count);
+      output->logicalLine = obj.lineCount;
     } else if (obj.meta == "else") {
       throw err::Exception(
           "Line: " + std::to_string(tokens.peek()->lineCount) +

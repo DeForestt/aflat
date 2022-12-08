@@ -126,6 +126,20 @@ class UDeffType : public Member, public Statment {
   Statment* statment;
 };
 
+class Continue : public Statment {
+  public:
+  int level = 1;
+  Continue() = default;
+  Continue(int level) : level(level) {};
+};
+
+class Break : public Statment {
+  public:
+  int level = 1;
+  Break() = default;
+  Break(int level) : level(level) {};
+};
+
 class Declare : public Arg, public Statment {
  public:
   ast::ScopeMod scope;
