@@ -2994,7 +2994,7 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   this->breakContext.pop();
   this->continueContext.pop();
   gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
-
+  OutputFile.text << lable2;
   gen::Expr expr = this->GenExpr(loop->expr, OutputFile);
   
 
