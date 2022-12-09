@@ -2990,11 +2990,10 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   OutputFile << this->GenSTMT(loop->Run);
   OutputFile.text << continueLable;
   OutputFile << this->GenSTMT(loop->increment);
-  OutputFile.text << lable2;
   this->breakContext.pop();
   this->continueContext.pop();
   gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
-
+  OutputFile.text << lable2;
   gen::Expr expr = this->GenExpr(loop->expr, OutputFile);
   
 
