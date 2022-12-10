@@ -389,10 +389,16 @@ export String consume(adr pattern, * adr message){
 safe dynamic class string {
     private adr head;
     private int refcount = 1;
+    private bool permanent = false;
 
     string init(adr head) {
         my.head = malloc(str.len(head) + 1);
         memcpy(my.head, head, str.len(head) + 1);
+        return my;
+    };
+
+    string seal() {
+        my.permanent = true;
         return my;
     };
 
@@ -484,7 +490,7 @@ safe dynamic class string {
     };
 
     List split(char delim) {
-        List list = new List(string, 1, string.del);
+        List list = new List(string, 1, string.del, string.seal);
         int myLen = str.len(my.head);
         adr buff = malloc(1);
         adr save = buff;

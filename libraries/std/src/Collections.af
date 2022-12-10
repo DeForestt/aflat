@@ -499,8 +499,9 @@ class List {
     private int size = size;
     private int count = 0;
     private adr delFunc = delFunc;
+    private adr ini = ini;
 
-    List init(int typeSize, * int size, * adr delFunc){
+    List init(int typeSize, * int size, * adr delFunc, * adr ini) {
         if size == 0 {
             my.size = 1;
             my.head = malloc(typeSize);
@@ -515,6 +516,11 @@ class List {
         };
 
         memcpy(my.head + (my.count * my.typeSize), value, my.typeSize);
+
+        if my.ini != NULL {
+            my.ini(my.head + (my.count * my.typeSize));
+        };
+
         my.count = my.count + 1;
         return my.count;
     };
