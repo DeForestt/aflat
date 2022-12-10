@@ -619,6 +619,14 @@ class List {
         return result;
     };
 
+    int reduce(adr func, * adr args) {
+        int res = 0;
+        for int i = 0; i < my.count; i = i + 1 {
+            res = func(res, my.get(i), i, args);
+        };
+        return res;
+    };
+
     int del() {
         if my.delFunc != NULL
             my.forEach(my.delFunc);
