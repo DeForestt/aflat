@@ -292,6 +292,7 @@ class Var : public Expr {
   std::string Ident;
   links::LinkedList<ast::Expr*> indecies;
   links::LinkedList<std::string> modList;
+  bool internal = false;
 };
 
 class StringLiteral : public Expr {
