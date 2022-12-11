@@ -70,10 +70,11 @@ export int report() {
 class TestSuite {
     LinkedList cases = new LinkedList();
     LinkedList args = new LinkedList();
+    adr beforAll = beforAll;
 
     String name = new String(name);
 
-    TestSuite init(adr name) {
+    TestSuite init(adr name, * adr beforAll) {
         return my;
     };
 
@@ -88,6 +89,12 @@ class TestSuite {
         for int i = 0; i < my.cases.size(); i++ {
             adr foo = my.cases.get(i);
             adr _arg = my.args.get(i);
+            
+            if my.beforAll != NULL {
+                let beforAll = my.beforAll;
+                beforAll(_arg);
+            };
+
             foo(_arg);
         };
         return 0;
