@@ -9,42 +9,44 @@ import {printString, print} from "String" under str;
 int passes = 0;
 int failures = 0;
 
-int requires = 0;
+int requiresPass = 0;
+int requiresFail = 0;
 
 export bool case(adr foo, adr _arg) {
-	io.print("Test Case "); io.print(_arg); io.print(": ");
-
 	bool result = foo(_arg);
 
 	if result {
 		io.print("OK\n", 'g');
         passes = passes + 1;
-        io.print("\n----------------------------------------------------\n");
-		return true;
 	} else {
 		io.print("FAIL\n", 'r');
-        // print ' ' to stdErr
-        sys_write(2, " ", 1);
         failures = failures + 1;
-        io.print("\n----------------------------------------------------\n");
-		return false;
 	};
-    requires = 0;
+
+    for int i = 0; i < requiresFail; i++ {
+        io.print("-", 'r');
+    };
+    
+    for int i = 0; i < requiresPass; i++ {
+        io.print("+", 'g');
+    };
+
+    io.print("\n----------------------------------------------------\n");
+    requiresPass = 0;
+    requiresFail = 0;
+    return result;
 };
 
 export bool require(bool result, string describe) {
     if result {
-        passes = passes + 1;
+        requiresPass = requiresPass + 1;
         return true;
     } else {
         io.fPrint("\n\tTest require: %s: ", {describe});
         io.print("FAIL\n", 'r');
-        // print ' ' to stdErr
-        sys_write(2, " ", 1);
-        failures = failures + 1;
+        requiresFail = requiresFail + 1;
         return false;
     };
-    requires = requires + 1;
 };
 
 export int report() {
@@ -61,6 +63,7 @@ export int report() {
     io.print("\n");
     
     if failures > 0 {
+        sys_write(2, " ", 1);
         return 1;
     } else {
         return 0;
@@ -68,14 +71,19 @@ export int report() {
 };
 
 class TestSuite {
-    LinkedList cases = new LinkedList();
-    LinkedList args = new LinkedList();
-    adr beforAll = beforAll;
+    private LinkedList cases = new LinkedList();
+    private LinkedList args = new LinkedList();
+    private adr beforeAll = beforeAll;
+    adr fixture = NULL;
 
-    String name = new String(name);
+    string name = new string(name);
 
-    TestSuite init(adr name, * adr beforAll) {
+    TestSuite init(adr name, * adr beforeAll) {
         return my;
+    };
+
+    void setFixture(adr fixture) {
+        my.fixture = fixture;
     };
 
     int addCase(adr foo, adr _arg) {
@@ -85,17 +93,17 @@ class TestSuite {
     };
 
     int run() {
-        io.print("\n\nRunning test suite: "); str.printString(my.name); io.print("\n\n\n");
+        str.print(`\n\nRunning test suite: {my.name}\n\n\n`);
         for int i = 0; i < my.cases.size(); i++ {
             adr foo = my.cases.get(i);
             adr _arg = my.args.get(i);
-            
-            if my.beforAll != NULL {
-                let beforAll = my.beforAll;
-                beforAll(_arg);
+            str.print(`Running test case: {_arg}: `);
+            if my.beforeAll != NULL {
+                let beforeAll = my.beforeAll;
+                beforeAll(my.fixture);
             };
 
-            foo(_arg);
+            foo(my.fixture);
         };
         return 0;
     };
