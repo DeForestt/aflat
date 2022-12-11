@@ -74,11 +74,12 @@ class TestSuite {
     private LinkedList cases = new LinkedList();
     private LinkedList args = new LinkedList();
     private adr beforeAll = beforeAll;
+    private adr cleanup = cleanup;
     adr fixture = NULL;
 
     string name = new string(name);
 
-    TestSuite init(adr name, * adr beforeAll) {
+    TestSuite init(adr name, * adr beforeAll * adr cleanup) {
         return my;
     };
 
@@ -106,6 +107,15 @@ class TestSuite {
             foo(my.fixture);
         };
         return 0;
+    };
+
+    void del() {
+        delete my.cases;
+        delete my.args;
+        if my.cleanup != NULL {
+            let cleanup = my.cleanup;
+            cleanup(my.fixture);
+        };
     };
 
 };
