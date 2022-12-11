@@ -65,19 +65,15 @@ ast::Statment *Lower::lowerFunction(ast::Function *func) {
       ast::Function *dec =
           this->findFunction(this->root, func->decorator, fromClass);
       if (dec == nullptr) {
-        ast::Class *cl = this->findClass(this->root, func->decorator);
-        if (!cl)
-          throw err::Exception("No Function " + func->decorator + " found");
-
         if (!this->inclass)
           throw err::Exception("Can't use a class as a decorator outside a class");
 
         ast::Declare *declare = new ast::Declare;
         declare->Ident = newFunc->ident.ident;
         declare->type.size = asmc::QWord;
-        declare->type.typeName = cl->ident.ident;
+        declare->type.typeName = func->decorator;
         declare->mut = false;
-        declare->TypeName = cl->ident.ident;
+        declare->TypeName = func->decorator;
 
         ast::DecAssign *decAssign = new ast::DecAssign;
         decAssign->declare = declare;
@@ -156,7 +152,7 @@ ast::Class *Lower::findClass(ast::Statment *stmt, std::string ident) {
       return this->findClass(seq->Statment1, ident);
     if (this->findClass(seq->Statment2, ident) != nullptr)
       return this->findClass(seq->Statment2, ident);
-    seq->Statment2 = this->lower(seq->Statment2);
+    //seq->Statment2 = this->lower(seq->Statment2);
   } else if (dynamic_cast<ast::Class *>(stmt) != nullptr) {
     auto cl = dynamic_cast<ast::Class *>(stmt);
     if (cl->ident.ident == ident)
