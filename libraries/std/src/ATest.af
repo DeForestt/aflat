@@ -115,7 +115,7 @@ class Mockable {
 		my.mockImpl = NULL;
 	};
 
-	private any _call(adr ref, * any arg1, * any arg2, * any arg3, * any arg4) {
+	any _call(adr ref, * any arg1, * any arg2, * any arg3, * any arg4) {
 		my.callCount = my.callCount + 1;
 		let mockImpl = my.mockImpl;
 		let foo = my.foo;
