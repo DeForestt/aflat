@@ -22,7 +22,13 @@ export bool case(adr foo, adr _arg) {
 		io.print("FAIL\n", 'r');
         failures = failures + 1;
 	};
+    
+    if requiresPass > 0
+        str.print(`{requiresPass} requires passed.\n`);
 
+    if requiresFail > 0
+        str.print(`{requiresFail} requires failed.\n`);
+        
     for int i = 0; i < requiresFail; i++ {
         io.print("-", 'r');
     };
@@ -79,7 +85,7 @@ class TestSuite {
 
     string name = new string(name);
 
-    TestSuite init(adr name, * adr beforeAll * adr cleanup) {
+    TestSuite init(adr name, * adr beforeAll, * adr cleanup) {
         return my;
     };
 
