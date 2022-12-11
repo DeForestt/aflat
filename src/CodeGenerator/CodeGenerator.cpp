@@ -351,7 +351,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
                                    bool strict = false) {
   if (type.typeName == typeName) return true;
   if (typeName == "void") this->alert("cannot use void function as value");
-  if (typeName == "--std--flex--function" || typeName == "any") return true;
+  if (typeName == "--std--flex--function" || typeName == "any" || type.typeName == "any") return true;
   if (type.typeName == "int" && typeName == "float") return true;
   if (type.typeName == "float" && typeName == "int") return true;
   if (type.typeName == "short" && typeName == "number") return true;
@@ -2598,7 +2598,9 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
             var->Ident = ident;
             var->modList = call->modList;
             var->internal = true;
+            call->Args.invert();
             call->Args.push(var);
+            call->Args.invert();
           }
           break;
         }

@@ -94,3 +94,52 @@ class TestSuite {
     };
 
 };
+
+class Mockable {
+	private adr foo = foo;
+	private adr mockImpl = NULL;
+	private bool mock = false;
+	private int callCount = 0;
+
+	Mockable init(adr foo) {
+		return my;
+	};
+
+	void mock(adr mockImpl) {
+		my.mockImpl = mockImpl;
+		my.mock = true;
+	};
+
+	void unMock() {
+		my.mock = false;
+		my.mockImpl = NULL;
+	};
+
+	private any _call(adr ref, * any arg1, * any arg2, * any arg3, * any arg4) {
+		my.callCount = my.callCount + 1;
+		let mockImpl = my.mockImpl;
+		let foo = my.foo;
+		if (my.mock) {
+			return mockImpl(ref, arg1, arg2, arg3, arg4);
+		} else {
+			return foo(ref, arg1, arg2, arg3, arg4);
+		};
+	};
+
+	bool wasCalled() {
+		return my.callCount > 0;
+	};
+
+	int getCallCount() {
+		return my.callCount;
+	};
+
+	void resetCallCount() {
+		my.callCount = 0;
+	};
+
+	void reset() {
+		my.resetCallCount();
+		my.unMock();
+	};
+};
