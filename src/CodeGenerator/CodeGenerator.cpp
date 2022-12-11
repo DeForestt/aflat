@@ -350,12 +350,17 @@ gen::CodeGenerator::resolveSymbol(std::string ident,
 bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
                                    bool strict = false) {
   if (type.typeName == typeName) return true;
-  if (typeName == "--std--flex--function") return true;
+  if (typeName == "void") this->alert("cannot use void function as value");
+  if (typeName == "--std--flex--function" || typeName == "any") return true;
   if (type.typeName == "int" && typeName == "float") return true;
   if (type.typeName == "float" && typeName == "int") return true;
   if (type.typeName == "short" && typeName == "number") return true;
   if (type.typeName == "int" && typeName == "number") return true;
   if (type.typeName == "long" && typeName == "number") return true;
+  if (type.typeName == "number" && typeName == "short") return true;
+  if (type.typeName == "number" && typeName == "int") return true;
+  if (type.typeName == "number" && typeName == "long") return true;
+  if (type.typeName == "number" && typeName == "float") return true;
 
   if (typeName != "generic") {
     // search the type list for the type
@@ -564,7 +569,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
       ast::Function func = this->GenCall(call, OutputFile);
       output.type = func.type.typeName;
       output.size = func.type.size;
-      if (size != asmc::AUTO && func.flex) output.size = size;
+      if (size != asmc::AUTO && (func.flex || func.type.typeName == "any")) output.size = size;
       output.access = this->registers["%rax"]->get(output.size);
       if (func.type.typeName == "float"){
         output.access = this->registers["%xmm0"]->get(output.size);
@@ -575,7 +580,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
     ast::Var var = *dynamic_cast<ast::Var*>(expr);
 
     std::tuple<std::string, gen::Symbol, bool, asmc::File> resolved =
-        this->resolveSymbol(var.Ident, var.modList, OutputFile, var.indecies);
+        this->resolveSymbol(var.Ident, var.modList, OutputFile, var.indecies, var.internal);
 
     if (std::get<2>(resolved) == false) {
       std::string ident = var.Ident;
@@ -2144,6 +2149,9 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
       };
 
       if (dec->type.typeName == "let") {
+        if (expr.type == "generic" || expr.type == "any" || expr.type == "let") {
+          alert("Cannot infer type of variable because the expression is of type " + expr.type);
+        }
         dec->type.typeName = expr.type;
         dec->type.size = expr.size;
         dec->type.opType = expr.op;
@@ -2418,28 +2426,53 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
       if (smbl == nullptr)
         smbl = this->GlobalSymbolTable.search<std::string>(searchSymbol, ident);
       if (smbl != nullptr) {
-        ast::Var* var = new ast::Var();
-        var->logicalLine = call->logicalLine;
-        var->Ident = smbl->symbol;
-        var->modList = links::LinkedList<std::string>();
+        if (smbl->type.typeName == "adr") {
+          ast::Var* var = new ast::Var();
+          var->logicalLine = call->logicalLine;
+          var->Ident = smbl->symbol;
+          var->modList = links::LinkedList<std::string>();
 
-        gen::Expr exp1 = this->GenExpr(var, OutputFile);
+          gen::Expr exp1 = this->GenExpr(var, OutputFile);
 
-        asmc::Mov* mov = new asmc::Mov();
-        mov->logicalLine = call->logicalLine;
-        mov->size = exp1.size;
-        mov->from = exp1.access;
-        mov->to = this->registers["%r11"]->get(exp1.size);
-        OutputFile.text << mov;
+          asmc::Mov* mov = new asmc::Mov();
+          mov->logicalLine = call->logicalLine;
+          mov->size = exp1.size;
+          mov->from = exp1.access;
+          mov->to = this->registers["%r11"]->get(exp1.size);
+          OutputFile.text << mov;
 
-        func = new ast::Function();
-        func->logicalLine = call->logicalLine;
-        func->ident.ident = '*' + this->registers["%r11"]->get(exp1.size);
-        func->type.arraySize = 0;
-        func->type.size = asmc::QWord;
-        func->type.typeName = "--std--flex--function";
-        func->flex = true;
-        checkArgs = false;
+          func = new ast::Function();
+          func->logicalLine = call->logicalLine;
+          func->ident.ident = '*' + this->registers["%r11"]->get(exp1.size);
+          func->type.arraySize = 0;
+          func->type.size = asmc::QWord;
+          func->type.typeName = "--std--flex--function";
+          func->flex = true;
+          checkArgs = false;
+        } else {
+            // find the type of the object
+            auto type = *this->typeList[smbl->type.typeName];
+            if (type == nullptr) alert("type not found " + smbl->type.typeName);
+            auto cl = dynamic_cast<gen::Class*>(type);
+            if (cl == nullptr) alert("type is not a class " + smbl->type.typeName);
+            func = cl->nameTable["_call"];
+            if (func == nullptr) alert("cannot preform call on type " + smbl->type.typeName + " because it does not implement the _call function");
+            func->ident.ident = "pub_" + smbl->type.typeName + "__call";
+
+            auto var = new ast::Var();
+            var->logicalLine = call->logicalLine;
+            var->Ident = smbl->symbol;
+
+            auto exp1 = this->GenExpr(var, OutputFile);
+
+            auto mov = new asmc::Mov();
+            mov->logicalLine = call->logicalLine;
+            mov->size = exp1.size;
+            mov->from = exp1.access;
+            mov->to = this->intArgs[intArgsCounter].get(exp1.size);
+            OutputFile.text << mov;
+            intArgsCounter++;
+        }
       };
     }
   } else {
@@ -2453,6 +2486,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
     // get the type of the original function
     gen::Type* type = *this->typeList[last.typeName];
 
+    int modCount = 0;
     while (call->modList.pos != nullptr) {
       bool addpub = true;
       if (this->typeList[last.typeName] == nullptr)
@@ -2467,6 +2501,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
           func = parent->nameTable[call->modList.touch()];
           if (func != nullptr) pubname = parent->Ident;
         }
+        bool shift = true;
         if (func == nullptr) {
           std::string id = call->modList.touch();
           mods.push(id);
@@ -2502,7 +2537,22 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
             addpub = false;
           } else if (sym == nullptr) {
             alert("cannot find function " + call->modList.touch());
-          };
+          } else if (call->modList.pos->next == nullptr ) {
+            // find the type of the object
+            auto type = *this->typeList[sym->type.typeName];
+            if (type == nullptr) alert("type not found " + sym->type.typeName);
+            auto cl = dynamic_cast<gen::Class*>(type);
+            if (cl == nullptr) alert("type is not a class " + sym->type.typeName);
+            auto f = cl->nameTable["_call"];
+            if (f == nullptr) alert("cannot preform call on type " + sym->type.typeName + " because it does not implement the _call function");
+            func = new ast::Function();
+            func->ident = f->ident;
+            func->type = f->type;
+            func->req = f->req;
+            func->argTypes = f->argTypes;
+            pubname = sym->type.typeName;
+            shift = false;
+          }
         }
         if (func != nullptr) {
           call->modList.shift();
@@ -2512,7 +2562,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
           ref->logicalLine = call->logicalLine;
           ref->Ident = my;
           ref->modList = call->modList;
-          ref->internal = true;
+          if (shift) ref->internal = true;
           mod = "pub_" + pubname + "_";
           if (!addpub) mod = "";
           gen::Expr exp;
@@ -2538,12 +2588,25 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
           OutputFile.text << push;
           OutputFile.text << mov;
           OutputFile.text << mov2;
+
+          if (!shift) {
+            call->modList.shift();
+            call->modList.invert();
+            call->modList.reset();
+            auto var = new ast::Var();
+            var->logicalLine = call->logicalLine;
+            var->Ident = ident;
+            var->modList = call->modList;
+            var->internal = true;
+            call->Args.push(var);
+          }
           break;
         }
       }
       mods.push(call->modList.shift());
       last = sym->type;
       allMods += sym->symbol + ".";
+      modCount++;
     };
   };
 

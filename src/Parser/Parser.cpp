@@ -18,6 +18,8 @@ parse::Parser::Parser(int mutability = 0) {
   this->addType("float", asmc::Float, asmc::DWord);
   this->addType("bool", asmc::Hard, asmc::Byte);
   this->addType("generic", asmc::Hard, asmc::QWord, true);
+  this->addType("void", asmc::Hard, asmc::QWord);
+  this->addType("any", asmc::Hard, asmc::QWord, true);
   // create a dummy type for let
   this->addType("let", asmc::Hard, asmc::QWord, true); 
 }
