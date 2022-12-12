@@ -7,7 +7,7 @@ import String, string from "String";
 import {len, int_toString} from "strings" under str;
 import {print, printInt, fPrint, printHex} from "io" under io;
 import {worker} from "concurrency" under async;
-import {printString, fString} from "String" under st;
+import {printString, fString, print} from "String" under st;
 
 enum HTTPMethod {
     GET,
@@ -20,7 +20,7 @@ enum HTTPMethod {
     CONNECT
 };
 
-private adr listen(short port, int bufferSize, adr callback, adr args) {
+export adr listen(short port, int bufferSize, adr callback, adr args) {
     _aflat_server_spinUp(port, bufferSize, callback, args);
 };
 
@@ -45,6 +45,27 @@ export adr methodToString(HTTPMethod method) {
         return "UNKNOWN";
 };
 
+export HTTPMethod stringToMethod(string method) {
+    if method == "GET"
+        return HTTPMethod.GET
+    else if method == "POST"
+        return HTTPMethod.POST
+    else if method == "PUT"
+        return HTTPMethod.PUT
+    else if method == "DELETE"
+        return HTTPMethod.DELETE
+    else if method == "HEAD"
+        return HTTPMethod.HEAD
+    else if method == "OPTIONS"
+        return HTTPMethod.OPTIONS
+    else if method == "TRACE"
+        return HTTPMethod.TRACE
+    else if method == "CONNECT"
+        return HTTPMethod.CONNECT
+    else
+        return HTTPMethod.GET;
+};
+
 class HTTPHeader {
     const adr key = key;
     const adr value = value;
@@ -61,7 +82,9 @@ class HTTPMessage {
     string body = new string("");
     string version;
     string statusCode;
+    string endpoint = "";
     string statusMessage;
+    HTTPMethod method;
 
     private int parse(adr rsi) {
         string rsp = new string(rsi);
@@ -125,9 +148,67 @@ class HTTPMessage {
         return 0;
     };
 
+    private void parseReq(adr rsi) {
+        string rsp = new string(rsi);
+        my.origin = rsp;
 
-    HTTPMessage init(adr rsp) {
-        my.parse(rsp);
+        let lines = rsp.split('\r');
+        string firstLine = lines.get(0);
+        firstLine.trim();
+        let firstLineParts = firstLine.split(' ');
+
+        if firstLineParts.getCount() < 3 {
+            
+            io.fPrint("First line of response is invalid: %s \nlist size: %d\n", {firstLine, firstLineParts.getCount()});
+            return;
+        };
+
+        string method = firstLineParts.get(0);
+        my.endpoint = firstLineParts.get(1);
+        my.version = firstLineParts.get(2);
+        my.method = stringToMethod(method);
+
+        my.switch = false;
+
+        lines.forEach([string line, int index, HTTPMessage this] => {
+            if line == "\n" {
+                this.switch = true;
+                return 0;
+            };
+            
+            if index == 0
+                return 0;
+
+            if this.switch {
+                this.body = this.body + line + "\r\n";
+                return 0;
+            };
+
+            let sections = line.split(':');
+            if sections.getCount() < 2{
+                io.fPrint("Invalid header: %s\n", {line});
+                return 0;
+            };
+
+            string key = sections.get(0);
+            string value = sections.get(1);
+
+            if sections.getCount() > 2 {
+                for int i = 2; i < sections.getCount(); i = i + 1 {
+                    value = value + ":";
+                    string t = sections.get(i);
+                    value = value + t;
+                };
+            };
+            key = key.trim();
+            value = value.trim();
+            HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
+            this.headers.pushBack(n);
+        }, my); 
+    };
+
+    HTTPMessage init(adr rsp, * bool isReq) {
+        if isReq my.parseReq(rsp) else my.parse(rsp);
         return my;
     };
 
@@ -227,6 +308,71 @@ class HTTPRequest {
         return new HTTPMessage(buffer);
     };
 };
+
+class EndPointStruct {
+    adr foo = foo;
+    string path = path;
+    HTTPMethod method = method;
+
+    EndPointStruct init(adr foo, string path, HTTPMethod method) {
+        return my;
+    };
+
+    adr _call(adr ref, HTTPMessage msg, * any arg2, * any arg3, * any arg4) {
+        return my.foo(ref, msg, arg2, arg3, arg4);
+    };
+};
+
+class HTTPServer {
+    private List endpoints = new List(EndPointStruct);
+    
+    HTTPServer init() {
+        return my;
+    };
+
+    private string get404Error() {
+        string res = new string("");
+        res = res + "HTTP/1.1 404 Not Found\r\n";
+        res = res + "Content-Type: text/html\r\n";
+        res = res + "Content-Length: 0\r\n";
+        res = res + "\r\n";
+        res = res + "<html><body><h1>404 Not Found</h1></body></html>\r\n";
+        return res;
+    };
+
+    void registerEndpoint(adr foo, string path, HTTPMethod method) {
+        EndPointStruct eps = new EndPointStruct(foo, path, method);
+        my.endpoints.pushBack(eps);
+        return;
+    };
+
+    bool processRequests(adr req, adr rsp) {
+        st.print("Processing request:\n");
+        st.print({req});
+        // HTTPMessage msg = new HTTPMessage(req);
+        // string path = msg.endpoint;
+        // HTTPMethod method = msg.method;
+        // for int i = 0; i < my.endpoints.getCount(); i = i + 1 {
+        //     EndPointStruct eps = my.endpoints.get(i);
+        //     if (eps.path == path) & (eps.method == method) {
+        //         HTTPMessage rs = new HTTPMessage(req);
+        //         let ret = eps(NULL, rs);
+        //         rsp =: ret;
+        //         delete msg;
+        //         return true;
+        //     };
+        // };
+        st.print("404 Not Found\n");
+        const let err = my.get404Error();
+        rsp =: "HTTP/1.1 404 Not Found\r\n<html><body><h1>404 Not Found</h1></body></html>\r\n";
+        return false;
+    };
+
+    bool start(short port) {
+        listen(port, 10000000, HTTPServer.processRequests, my);
+    };
+};
+
 
 export adr requestWorker(HTTPRequest _arg) : async.worker {
     return _arg.send(10000000);

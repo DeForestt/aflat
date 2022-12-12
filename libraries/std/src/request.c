@@ -54,8 +54,7 @@ int request(char *host, char *path, char *port, char * msg, char * response, int
 #define SIZE 1024
 #define BACKLOG 10  // Passed to listen()
 
-
-int _aflat_server_spinUp(short port, int requestSize, char* (*requestHandler)(char*, char**, void*), void* data) {
+int _aflat_server_spinUp(short port, int requestSize, char* (*requestHandler)(char*, char**)) {
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
     struct sockaddr_in serverAddress;
@@ -76,13 +75,10 @@ int _aflat_server_spinUp(short port, int requestSize, char* (*requestHandler)(ch
         char request[requestSize];
         char** response = malloc(sizeof(char*));
         bzero(request, requestSize);
-        bzero(response, requestSize);
         read(clientSocket, &request, sizeof(request) - 1);
-        requestHandler(request, response, data);
+        requestHandler(request, response);
         send(clientSocket, *response, strlen(*response), 0);
-        close(clientSocket);
         free(response);
     }
     return 0;
 }
-
