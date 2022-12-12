@@ -460,8 +460,16 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
       }
     } else if (obj.meta == "return") {
       auto ret = new ast::Return;
-      ret->expr = this->parseExpr(tokens);
-      ret->logicalLine = obj.lineCount;
+      if (!(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+          dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ';')) {
+            ret->expr = this->parseExpr(tokens);
+            ret->logicalLine = obj.lineCount;
+          } else {
+            auto nu = new ast::Var();
+            nu->Ident = "NULL";
+            nu->logicalLine = obj.lineCount;
+            ret->expr = nu;
+          };
       output = ret;
     } else if (obj.meta == "push") {
       auto push = new ast::Push;
