@@ -115,9 +115,11 @@ class Function : public Member, public Statment {
   ast::Op op;
   int req;
   std::vector<ast::Type> argTypes;
+  links::LinkedList<Expr*> decoratorArgs;
   bool isLambda = false;
   bool flex = false;
   bool mask;
+  
 };
 
 class UDeffType : public Member, public Statment {

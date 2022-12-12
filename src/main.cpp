@@ -393,7 +393,7 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
 
     if (config.debug)
       system(
-          ("gcc -g -no-pie -S ./src/" + path + ".c -o ./bin/" + path + ".s")
+          ("gcc -g -no-pie -S -lefence ./src/" + path + ".c -o ./bin/" + path + ".s")
               .c_str());
     else
       system(("gcc -S -no-pie ./src/" + path + ".c -o ./bin/" + path + ".s")
