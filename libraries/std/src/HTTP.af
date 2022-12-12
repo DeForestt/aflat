@@ -151,7 +151,7 @@ class HTTPResponse {
 };
 
 class HTTPRequest {
-    const private HTTPMethod method = method;
+    private HTTPMethod method = method;
     private adr host;
     private adr endpoint;
     const private List headers = new List(HTTPHeader);
@@ -166,6 +166,10 @@ class HTTPRequest {
     int setHost(adr host) {
         my.host = host;
         return 0;
+    };
+
+    void setMethod(HTTPMethod method) {
+        my.method = method;
     };
 
     int setEndpoint(adr endpoint) {
