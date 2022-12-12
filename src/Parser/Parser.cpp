@@ -354,6 +354,34 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
                         "Line: " + std::to_string(tokens.peek()->lineCount));
                   sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
                 };
+                if (sym.Sym == '(') {
+                  tokens.pop();
+                  bool pop = false;
+                  if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+                      dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ')') {
+                      auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
+                      if (symp->Sym != ')')
+                        throw err::Exception("Expected closed perenth got " + symp->Sym);
+                    } else {
+                      do {
+                        if (pop)
+                          tokens.pop();
+                        func->decoratorArgs.push(this->parseExpr(tokens));
+                        pop = true;
+                      } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+                              dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',');
+                      if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
+                        auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
+                        if (symp->Sym != ')')
+                          throw err::Exception("Expected closed perenth got " +
+                                              symp->Sym);
+                      }
+                    }
+                };
+                if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)
+                  throw err::Exception(
+                      "Line: " + std::to_string(tokens.peek()->lineCount) + "Expected a symbol");
+                sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
               }
               if (sym.Sym == '{') {
                 tokens.pop();

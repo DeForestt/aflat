@@ -85,6 +85,7 @@ ast::Statment *Lower::lowerFunction(ast::Function *func) {
         ast::Var *var = new ast::Var;
         var->Ident = func->ident.ident;
         newExpr->args.append(var);
+        newExpr->args.istitch(func->decoratorArgs);
         newExpr->type = declare->type;
         decAssign->expr = newExpr;
 
