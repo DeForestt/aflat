@@ -94,7 +94,7 @@ class HTTPResponse {
                 return 0;
 
             if this.switch {
-                this.body = this.body + line + "\r";
+                this.body = this.body + line + "\r\n";
                 return 0;
             };
 

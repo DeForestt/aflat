@@ -490,7 +490,7 @@ safe dynamic class string {
     };
 
     List split(char delim) {
-        List list = new List(string, 1, string.del, string.seal);
+        List list = new List(string, 1, string.del);
         int myLen = str.len(my.head);
         adr buff = malloc(1);
         adr save = buff;
