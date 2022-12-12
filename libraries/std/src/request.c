@@ -51,6 +51,41 @@ int request(char *host, char *path, char *port, char * msg, char * response, int
     return 1;
 }
 
+#define SIZE 1024
+#define BACKLOG 10  // Passed to listen()
+
+
+int _aflat_server_spinUp(short port, int requestSize, char* (*requestHandler)(char*, char**)) {
+    int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+
+    struct sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(port);
+    serverAddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK); //inet_addr("127.0.0.1");
+    bind(serverSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress));
+
+    int listening = listen(serverSocket, BACKLOG);
+    if (listening < 0) {
+        printf("Error: The server is not listening.\n");
+        return 1;
+    }
+    int clientSocket;
+
+    while(1) {
+        clientSocket = accept(serverSocket, NULL, NULL);
+        char request[requestSize];
+        char** response = malloc(sizeof(char*));
+        bzero(request, requestSize);
+        bzero(response, requestSize);
+        read(clientSocket, &request, sizeof(request) - 1);
+        requestHandler(request, response);
+        send(clientSocket, *response, strlen(*response), 0);
+        close(clientSocket);
+        free(response);
+    }
+    return 0;
+}
+
 // int main(int argc, char *argv[])
 // {
 //     char *host = "api.aflatlang.com";

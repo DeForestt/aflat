@@ -51,7 +51,7 @@ class HTTPHeader {
     };
 };
 
-class HTTPResponse {
+class HTTPMessage {
     const private List headers = new List(HTTPHeader);
     private bool switch = false;
     string origin = new string("");
@@ -84,7 +84,7 @@ class HTTPResponse {
 
         my.switch = false;
 
-        lines.forEach([string line, int index, HTTPResponse this] => {
+        lines.forEach([string line, int index, HTTPMessage this] => {
             if line == "\n" {
                 this.switch = true;
                 return 0;
@@ -123,7 +123,7 @@ class HTTPResponse {
     };
 
 
-    HTTPResponse init(adr rsp) {
+    HTTPMessage init(adr rsp) {
         my.parse(rsp);
         return my;
     };
@@ -213,7 +213,7 @@ class HTTPRequest {
         return res;
     };
 
-    HTTPResponse send(int bufferSize) {
+    HTTPMessage send(int bufferSize) {
         string msg = my.toString();
         adr buffer = malloc(bufferSize);
         adr host = my.host;
@@ -221,7 +221,7 @@ class HTTPRequest {
         adr msg_prim = msg.cstr();
         request(host, endpoint, "80", msg_prim, buffer, bufferSize);
         let res = new string(buffer);
-        return new HTTPResponse(buffer);
+        return new HTTPMessage(buffer);
     };
 };
 

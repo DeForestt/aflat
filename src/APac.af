@@ -7,7 +7,7 @@ import {fString} from "String" under st;
 import fPrint from "io" under io;
 import { worker } from "concurrency" under async;
 import Result from "concurrency";
-import HTTPRequest, HTTPMethod, HTTPResponse from "HTTP";
+import HTTPRequest, HTTPMethod, HTTPMessage from "HTTP";
 import {requestWorker} from "HTTP" under http;
 import List from "Collections";
 import Package from "./src/Package";
