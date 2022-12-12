@@ -20,6 +20,9 @@ enum HTTPMethod {
     CONNECT
 };
 
+private adr listen(short port, int bufferSize, adr callback, adr args) {
+    _aflat_server_spinUp(port, bufferSize, callback, args);
+};
 
 export adr methodToString(HTTPMethod method) {
     if method == HTTPMethod.GET 

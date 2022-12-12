@@ -55,7 +55,7 @@ int request(char *host, char *path, char *port, char * msg, char * response, int
 #define BACKLOG 10  // Passed to listen()
 
 
-int _aflat_server_spinUp(short port, int requestSize, char* (*requestHandler)(char*, char**)) {
+int _aflat_server_spinUp(short port, int requestSize, char* (*requestHandler)(char*, char**, void*), void* data) {
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
     struct sockaddr_in serverAddress;
@@ -78,7 +78,7 @@ int _aflat_server_spinUp(short port, int requestSize, char* (*requestHandler)(ch
         bzero(request, requestSize);
         bzero(response, requestSize);
         read(clientSocket, &request, sizeof(request) - 1);
-        requestHandler(request, response);
+        requestHandler(request, response, data);
         send(clientSocket, *response, strlen(*response), 0);
         close(clientSocket);
         free(response);
@@ -86,19 +86,3 @@ int _aflat_server_spinUp(short port, int requestSize, char* (*requestHandler)(ch
     return 0;
 }
 
-// int main(int argc, char *argv[])
-// {
-//     char *host = "api.aflatlang.com";
-//     char *path = "/";
-//     char *port = "80";
-//     char *msg = "GET / HTTP/1.1\r\n"
-//     "User-Agent: Mozilla/4.0 (compatible; MSIE5.01; Windows NT)\r\n"
-//     "Host: www.tutorialspoint.com\r\n"
-//     "Accept-Language: en-us\r\n"
-//     "Accept-Encoding: gzip, deflate\r\n"
-//     "Connection: Keep-Alive\r\n\r\n";
-//     char response[10000];
-//     request(host, path, port, msg, response, 10000);
-//     printf("%s", response);
-//     return 0;
-// }
