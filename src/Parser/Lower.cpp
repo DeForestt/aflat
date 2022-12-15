@@ -4,6 +4,23 @@
 
 typedef parse::lower::Lowerer Lower;
 
+links::LinkedList<ast::Expr *> convertsArgs(ast::Statment* STMT) {
+  links::LinkedList<ast::Expr *> args;
+  if (dynamic_cast<ast::Sequence*>(STMT) != nullptr) {
+    ast::Sequence* sequence = dynamic_cast<ast::Sequence*>(STMT);
+    args.istitch(convertsArgs(sequence->Statment1));
+    args.istitch(convertsArgs(sequence->Statment2));
+  } else if (dynamic_cast<ast::Declare*>(STMT) != nullptr) {
+    auto declare = dynamic_cast<ast::Declare*>(STMT);
+    auto var = new ast::Var;
+    var->Ident = declare->Ident;
+    var->logicalLine = declare->logicalLine;
+
+    args.push(var);
+  }
+  return args;
+}
+
 Lower::Lowerer(ast::Statment *root) {
   this->root = root;
   this->curr = root;
@@ -49,14 +66,15 @@ ast::Statment *Lower::lowerFunction(ast::Function *func) {
 
     auto fpoint = new ast::Var;
     fpoint->Ident = func->ident.ident;
-    auto Arg = new ast::Var;
-    Arg->Ident = "_arg";
+
+    auto args = convertsArgs(func->args);
 
     auto call = new ast::CallExpr;
     call->call = new ast::Call;
     call->call->Args = links::LinkedList<ast::Expr *>();
     call->call->Args.push(fpoint);
-    call->call->Args.push(Arg);
+    call->call->Args.istitch(func->decoratorArgs);
+    call->call->Args.istitch(args);
 
     if (func->decNSP == "") {
 
