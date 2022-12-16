@@ -1680,11 +1680,11 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(
   return table;
 }
 
-void gen::CodeGenerator::GenArgs(ast::Statment* STMT, asmc::File& OutputFile, bool touch = false) {
+void gen::CodeGenerator::GenArgs(ast::Statment* STMT, asmc::File& OutputFile) {
   if (dynamic_cast<ast::Sequence*>(STMT) != nullptr) {
     ast::Sequence* sequence = dynamic_cast<ast::Sequence*>(STMT);
-    this->GenArgs(sequence->Statment1, OutputFile, touch);
-    this->GenArgs(sequence->Statment2, OutputFile, touch);
+    this->GenArgs(sequence->Statment1, OutputFile);
+    this->GenArgs(sequence->Statment2, OutputFile);
   } else if (dynamic_cast<ast::Declare*>(STMT) != nullptr) {
     /*
         movl $0x0, -[SymbolT + size](rdp)
@@ -1709,10 +1709,6 @@ void gen::CodeGenerator::GenArgs(ast::Statment* STMT, asmc::File& OutputFile, bo
 
       int mod = gen::scope::ScopeManager::getInstance()->assign(
           arg->Ident, arg->type, false, arg->mut);
-      
-      if (touch) {
-        gen::scope::ScopeManager::getInstance()->get(arg->Ident);
-      };
 
       mov->size = size;
       mov->to = "-" + std::to_string(mod) + +"(%rbp)";
@@ -1920,7 +1916,7 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
       OutputFile.text << movy;
       this->intArgsCounter++;
     };
-    this->GenArgs(func->args, OutputFile, func->ident.ident == "init");
+    this->GenArgs(func->args, OutputFile);
     if (!isLambda && func->scope == ast::Public) OutputFile.linker.push(link);
 
     // if the function is 'init' and scope is a class, add the default value
@@ -2025,8 +2021,6 @@ void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
       Symbol.type = dec->type;
       Symbol.symbol = dec->Ident;
       Symbol.mutable_ = dec->mut;
-      Symbol.refCount = 1;
-      Symbol.assignCount = 0;
       Table->push(Symbol);
       // if the symbol is public add it to the public symbol table
       if (dec->scope == ast::Public && this->scope != nullptr)
