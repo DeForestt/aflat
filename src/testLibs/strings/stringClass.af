@@ -7,14 +7,14 @@ import { print, fString } from "String" under stl;
 import {str_comp} from "strings" under st;
 import List from "Collections";
 
-private bool test_compare(adr _arg) : test.case {
+private bool test_compare(adr _arg) : test.case("compare") {
     let s1 = new string("Hello");
     return (
         test.require(s1 == "Hello", "s1 == Hello")
     );
 };
 
-private bool test_at(adr _arg) : test.case {
+private bool test_at(adr _arg) : test.case("at") {
     let s1 = new string("Hello");
     return (
         test.require(s1.at(0) == 'H', "s1.at(0) == 'H'") &
@@ -25,14 +25,14 @@ private bool test_at(adr _arg) : test.case {
     );
 };
 
-private bool test_cstr(adr _arg) : test.case {
+private bool test_cstr(adr _arg) : test.case("cstr") {
     let s1 = new string("Hello");
     return (
         test.require(st.str_comp(s1.cstr(), "Hello") == 1, "s1.cstr() == Hello")
     );
 };
 
-private bool test_concat(adr _arg) : test.case {
+private bool test_concat(adr _arg) : test.case("concat") {
     let s1 = new string("Hello");
     let s2 = new string("World");
     return (
@@ -40,7 +40,7 @@ private bool test_concat(adr _arg) : test.case {
     );
 };
 
-private bool test_split(adr _arg) : test.case {
+private bool test_split(adr _arg) : test.case("split") {
     let s1 = new string("Hello World");
     let l1 = s1.split(' ');
     string part1 = l1.get(0);
@@ -62,7 +62,7 @@ class Char {
     };
 };
 
-private bool test_forEach(adr _arg) : test.case {
+private bool test_forEach(adr _arg) : test.case("forEach") {
     callCount = 0;
     chars = new List(Char);
     const let loopTracker = [char c] => {
@@ -89,7 +89,7 @@ private bool test_forEach(adr _arg) : test.case {
     );
 };
 
-private bool test_len(adr _arg) : test.case {
+private bool test_len(adr _arg) : test.case("len") {
     let s1 = new string("Hello");
     let s2 = new string("");
     return (
@@ -98,7 +98,7 @@ private bool test_len(adr _arg) : test.case {
     );
 };
 
-private bool test_copy(adr _arg) : test.case {
+private bool test_copy(adr _arg) : test.case("copy") {
     let s1 = new string("Hello");
     let s2 = s1.copy();
 
@@ -111,7 +111,7 @@ private bool test_copy(adr _arg) : test.case {
     );
 };
 
-private bool test_get(adr _arg) : test.case {
+private bool test_get(adr _arg) : test.case("get") {
     let s1 = new string("Hello");
     let s2 = s1.get();
 
@@ -122,7 +122,7 @@ private bool test_get(adr _arg) : test.case {
     );
 };
 
-private bool test_isNumeric(adr _arg) : test.case {
+private bool test_isNumeric(adr _arg) : test.case("isNumeric") {
     let s1 = new string("1234");
     let s2 = new string("Hello");
     return (
@@ -131,7 +131,7 @@ private bool test_isNumeric(adr _arg) : test.case {
     );
 };
 
-private bool test_toInt(adr _arg) : test.case {
+private bool test_toInt(adr _arg) : test.case("toInt") {
     let s1 = new string("1234");
     let s2 = new string("Hello");
     return (
@@ -140,7 +140,7 @@ private bool test_toInt(adr _arg) : test.case {
     );
 };
 
-private bool test_toLower(adr _arg) : test.case {
+private bool test_toLower(adr _arg) : test.case("toLower") {
     let s1 = new string("Hello");
     let s2 = s1.toLower();
     return (
@@ -148,7 +148,7 @@ private bool test_toLower(adr _arg) : test.case {
     );
 };
 
-private bool test_toUpper(adr _arg) : test.case {
+private bool test_toUpper(adr _arg) : test.case("toUpper") {
     let s1 = new string("Hello");
     let s2 = s1.toUpper();
     return (
@@ -156,7 +156,7 @@ private bool test_toUpper(adr _arg) : test.case {
     );
 };
 
-private bool test_Title(adr _arg) : test.case {
+private bool test_Title(adr _arg) : test.case("Title") {
     let s1 = new string("hello world");
     let s2 = s1.title();
     return (
@@ -164,7 +164,7 @@ private bool test_Title(adr _arg) : test.case {
     );
 };
 
-private bool test_replaceChar(adr _arg) : test.case {
+private bool test_replaceChar(adr _arg) : test.case("replaceChar") {
     let s1 = new string("Hello World");
     let s2 = s1.replaceChar('o', 'a');
     return (
@@ -172,7 +172,7 @@ private bool test_replaceChar(adr _arg) : test.case {
     );
 };
 
-private bool test_find(adr _arg) : test.case {
+private bool test_find(adr _arg) : test.case("find") {
     let s1 = new string("Hello World World");
     return (
         test.require(s1.find("World", 0) == 6, "Finds a string") &
@@ -181,7 +181,7 @@ private bool test_find(adr _arg) : test.case {
     );
 };
 
-private bool test_replace(adr _arg) : test.case {
+private bool test_replace(adr _arg) : test.case("replace") {
     let s1 = new string("Hello World World");
     let s2 = s1.replace("World", "Universe");
     return (
@@ -189,7 +189,7 @@ private bool test_replace(adr _arg) : test.case {
     );
 };
 
-private bool test_subString(adr _arg) : test.case {
+private bool test_subString(adr _arg) : test.case("subString") {
     let s1 = new string("Hello World");
     let s2 = s1.subString(0, 5);
     return (
@@ -197,7 +197,7 @@ private bool test_subString(adr _arg) : test.case {
     );
 };
 
-private bool test_trim(adr _arg) : test.case {
+private bool test_trim(adr _arg) : test.case("trim") {
     let s1 = new string(" Hello World ");
     let s2 = new string("!!!!Hello World!!!!");
     return (
@@ -206,7 +206,7 @@ private bool test_trim(adr _arg) : test.case {
     );
 };
 
-private bool test_indexOf(adr _arg) : test.case {
+private bool test_indexOf(adr _arg) : test.case("indexOf") {
     let s1 = new string("Hello World");
     return (
         test.require(s1.indexOf('o') == 4, "Finds a character") &
@@ -214,7 +214,7 @@ private bool test_indexOf(adr _arg) : test.case {
     );
 };
 
-private bool test_push(adr _arg) : test.case {
+private bool test_push(adr _arg) : test.case("push") {
     let s1 = new string("Hello");
     let s2 = s1.push(' ');
     let s3 = s2.push('W');
@@ -227,7 +227,7 @@ private bool test_push(adr _arg) : test.case {
     );
 };
 
-private bool test_fString(adr _arg) : test.case {
+private bool test_fString(adr _arg) : test.case("fString") {
     let s1 = new string("Hello");
     let s2 = new string("World");
     let s3 = new string("Hello World");
@@ -237,7 +237,7 @@ private bool test_fString(adr _arg) : test.case {
     );
 };
 
-private bool test_sort(adr _arg) : test.case {
+private bool test_sort(adr _arg) : test.case("sort") {
     let s1 = new string("Hello World");
     let expected = new string(" HWdellloor");
     let s2 = s1.sort();
@@ -249,28 +249,28 @@ private bool test_sort(adr _arg) : test.case {
 
 export TestSuite getSuite() {
     let suite = new TestSuite("string class");
-    suite.addCase(test_compare, "compare");
-    suite.addCase(test_at, "at");
-    suite.addCase(test_cstr, "cstr");
-    suite.addCase(test_concat, "concat");
-    suite.addCase(test_split, "split");
-    suite.addCase(test_forEach, "forEach");
-    suite.addCase(test_len, "len");
-    suite.addCase(test_copy, "copy");
-    suite.addCase(test_get, "get");
-    suite.addCase(test_isNumeric, "isNumeric");
-    suite.addCase(test_toInt, "toInt");
-    suite.addCase(test_toLower, "toLower");
-    suite.addCase(test_toUpper, "toUpper");
-    suite.addCase(test_Title, "title");
-    suite.addCase(test_replaceChar, "replaceChar");
-    suite.addCase(test_find, "find");
-    suite.addCase(test_replace, "replace");
-    suite.addCase(test_subString, "subString");
-    suite.addCase(test_trim, "trim");
-    suite.addCase(test_indexOf, "indexOf");
-    suite.addCase(test_push, "push");
-    suite.addCase(test_fString, "fString");
-    suite.addCase(test_sort, "sort");
+    suite.addCase(test_compare);
+    suite.addCase(test_at);
+    suite.addCase(test_cstr);
+    suite.addCase(test_concat);
+    suite.addCase(test_split);
+    suite.addCase(test_forEach);
+    suite.addCase(test_len);
+    suite.addCase(test_copy);
+    suite.addCase(test_get);
+    suite.addCase(test_isNumeric);
+    suite.addCase(test_toInt);
+    suite.addCase(test_toLower);
+    suite.addCase(test_toUpper);
+    suite.addCase(test_Title);
+    suite.addCase(test_replaceChar);
+    suite.addCase(test_find);
+    suite.addCase(test_replace);
+    suite.addCase(test_subString);
+    suite.addCase(test_trim);
+    suite.addCase(test_indexOf);
+    suite.addCase(test_push);
+    suite.addCase(test_fString);
+    suite.addCase(test_sort);
     return suite;
 };

@@ -12,8 +12,9 @@ int failures = 0;
 int requiresPass = 0;
 int requiresFail = 0;
 
-export bool case(adr foo, adr _arg) {
-	bool result = foo(_arg);
+export bool case(adr foo, adr name, * any _arg, * adr _arg2, * adr arg3, * adr arg4) {
+    str.print(`\nRunning Test Case {name}: `);
+	bool result = foo(_arg, _arg2, arg3, arg4);
 
 	if result {
 		io.print("OK\n", 'g');
@@ -78,7 +79,7 @@ export int report() {
 
 class TestSuite {
     private LinkedList cases = new LinkedList();
-    private LinkedList args = new LinkedList();
+    private LinkedList fixtures = new LinkedList();
     private adr beforeAll = beforeAll;
     private adr cleanup = cleanup;
     adr fixture = NULL;
@@ -89,35 +90,40 @@ class TestSuite {
         return my;
     };
 
-    void setFixture(adr fixture) {
-        my.fixture = fixture;
+    void addFixture(adr fixture) {
+        if my.fixture < 4 {
+            my.fixtures.append(fixture);
+        } else {
+            str.print(`Too many fixtures for testSuite {my.name} only 4 allowed\n`);
+            panic("Exceeded max fixtures exiting tests");
+        };
     };
 
-    int addCase(adr foo, adr _arg) {
+    int addCase(adr foo) {
         my.cases.append(foo);
-        my.args.append(_arg);
         return 0;
     };
 
     int run() {
+        adr[4] fixtures = {NULL, NULL, NULL, NULL};
+        for int i = 0; i < my.fixtures.size(); i++ {
+            fixtures[i] = my.fixtures.get(i);
+        };
         str.print(`\n\nRunning test suite: {my.name}\n\n\n`);
         for int i = 0; i < my.cases.size(); i++ {
             adr foo = my.cases.get(i);
-            adr _arg = my.args.get(i);
-            str.print(`Running test case: {_arg}: `);
             if my.beforeAll != NULL {
                 let beforeAll = my.beforeAll;
-                beforeAll(my.fixture);
+                beforeAll(fixtures[0], fixtures[1], fixtures[2], fixtures[3]);
             };
 
-            foo(my.fixture);
+            foo(fixtures[0], fixtures[1], fixtures[2], fixtures[3]);
         };
         return 0;
     };
 
     void del() {
         delete my.cases;
-        delete my.args;
         if my.cleanup != NULL {
             let cleanup = my.cleanup;
             cleanup(my.fixture);
