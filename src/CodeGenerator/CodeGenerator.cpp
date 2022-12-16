@@ -2405,6 +2405,7 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
   OutputFile.text << mov2;
   OutputFile.text << mov;
   OutputFile << std::get<3>(resolved);
+  if (assign->modList.count == 0)
   scope::ScopeManager::getInstance()->addAssign(fin->symbol);
 }
 
