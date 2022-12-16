@@ -5,49 +5,49 @@ import * from "io" under io;
 import string from "String" under string;
 import { fString } from "String" under st;
 
-Block head = NULL;
+Block __head = NULL;
 
 //helpers
 
-Block findFreeBlock(Block last, int size) {
+Block findFreeBlock(const Block __last, const int __size) {
     // this function is not available in compatiblity mode
     panic("findFreeBlock is not available in compatibility mode");
 };
 
-Block requestSpace(Block last, int size){
+Block requestSpace(const Block __last, const int __size){
     // this function is not availible in compatiblity mode
     panic("requestSpace is not availible in compatiblity mode");
 };
 
-Time newTime(adr count){
-    Time this = malloc(Time);
+Time newTime(const adr count){
+    const Time this = malloc(Time);
     this.amount = count;
     return this;
 };
 
-Block getBlock(adr ptr){
+Block getBlock(const adr __ptr){
     // this function is not available in compatiblity mode
     panic("getBlock is not available in compatibility mode");
 };
 
-int splitBlock(Block block, int size){
+int splitBlock(const Block __block, const int __size){
     // this function is not available in compatiblity mode
     panic("splitBlock is not available in compatibility mode");
 };
 
-int defragment(Block block){
+int defragment(const Block __block){
     // this function is not available in compatiblity mode
     panic("defragment is not available in compatibility mode");
 };
 
-int deFragAll(Block head){
+int deFragAll(const Block __head){
     // this function is not available in compatiblity mode
     panic("deFragAll is not available in compatibility mode");
 };
 
 // add in mallock_usable_size
 int malloc_usable_size(adr ptr);
-int blockSize(adr ptr) {
+int blockSize(const adr ptr) {
     // this function is not available in compatiblity mode
     return malloc_usable_size(ptr);
 };
@@ -57,8 +57,8 @@ int inspectHeap() {
     panic("inspectHeap is not available in compatibility mode");
 };
 
-Bit newBit(int value){
-	Bit b = malloc(Bit);
+Bit newBit(const int value){
+	const Bit b = malloc(Bit);
 	b.value = value;
 	b.last = NULL;
 	b.next = NULL;
@@ -66,7 +66,7 @@ Bit newBit(int value){
 };
 
 Times newTimes(){
-    Times t = malloc(Times);
+    const Times t = malloc(Times);
     t.tms_cstime = 0;
     t.tms_cutime = 0;
     t.tms_stime = 0;
@@ -74,13 +74,13 @@ Times newTimes(){
     return t;
 };
 
-int panic(adr msg){
+int panic(const adr msg){
     io.print("Panic: ", 'r'); io.print(msg);
     io.print("\n");
     sys_exit(1);
 };
 
-int assert(bool cond, * adr message){
+int assert(const bool cond, * const adr message){
     if !cond {
         io.print("Failed assert: ");
         if message != NULL
@@ -91,10 +91,10 @@ int assert(bool cond, * adr message){
     return 0;
 };
 
-int sleep(int seconds, * int nanoseconds){
-    long sec = #0 + seconds;
-    long nsec = #0 + nanoseconds;
-    TimeSpec t = new TimeSpec();
+int sleep(const int seconds, * const int nanoseconds){
+    const long sec = #0 + seconds;
+    const long nsec = #0 + nanoseconds;
+    const TimeSpec t = new TimeSpec();
     t.tv_sec = sec;
     t.tv_nsec = nsec;
     sys_nsleep(t);
@@ -105,6 +105,6 @@ int sleep(int seconds, * int nanoseconds){
 /*
  * _FCstr utility function to format a c string
  */
-adr _fCstr(adr fmt, * adr args) {
+adr _fCstr(const adr fmt, * const adr args) {
     return st.fString(fmt, args);
 };

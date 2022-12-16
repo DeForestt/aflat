@@ -8,7 +8,7 @@ class Arg {
     string name = "";
     string value = "";
 
-    Arg init(string name, string value) {
+    Arg init(const string name, const string value) {
         my.name = name;
         my.value = value;
     };
@@ -19,15 +19,15 @@ class ArgsList {
     List tagLessArgs = new List(string);
     string progName = "";
 
-    ArgsList init(int argc, adr argv, adr tagNames) {
+    ArgsList init(const int argc, const adr argv, const adr tagNames) {
         const adr[0] args = argv;
         const adr[0] tagVals = tagNames;
-        List tags = new List(string);
+        const List tags = new List(string);
 
         int j = 0;
         adr tv = tagVals[j];
         while (tv != NULL) {
-            string v = tagVals[j];
+            const string v = tagVals[j];
             tags.pushBack(v);
             j++;
             tv = tagVals[j];
@@ -36,18 +36,18 @@ class ArgsList {
         my.progName = args[0];
 
         for int i = 1; i < argc; i++ {
-            string arg = args[i];
+            const string arg = args[i];
             if (arg.at(0) == '-') {
-                let subArg = arg.subString(1, arg.len());
-                if (tags.findFirst([string s, string y] => return s == y, subArg) != NULL) {
+                const let subArg = arg.subString(1, arg.len());
+                if (tags.findFirst([const string s, const string y] => return s == y, subArg) != NULL) {
 
                     if (i + 1 < argc) {
-                        string val = args[i + 1];
+                        const string val = args[i + 1];
                         my.args.pushBack(Arg(subArg, val));
                         i++;
                     } else {
-                        let val = new string("");
-                        let ag = Arg(subArg, val);
+                        const let val = new string("");
+                        const let ag = Arg(subArg, val);
                         my.args.pushBack(ag);
                     };
                 } else {
@@ -62,8 +62,8 @@ class ArgsList {
         return my;
     };
 
-    string getArg(string name) {
-        Arg arg = my.args.findFirst([Arg a, string n] => return a.name == n, name);
+    string getArg(const string name) {
+        const Arg arg = my.args.findFirst([const Arg a, const string n] => return a.name == n, name);
         if (arg != NULL) {
             return arg.value;
         } else {
@@ -71,7 +71,7 @@ class ArgsList {
         };
     };
 
-    string getTagLessArg(int index) {
+    string getTagLessArg(const int index) {
         if (index < my.tagLessArgs.getCount()) {
             return my.tagLessArgs.get(index);
         } else {
@@ -79,7 +79,7 @@ class ArgsList {
         };
     };
 
-    bool has(string name) {
-        return my.args.findFirst([Arg a, string n] => return a.name == n, name) != NULL;
+    bool has(const string name) {
+        return my.args.findFirst([const Arg a, const string n] => return a.name == n, name) != NULL;
     };
 };

@@ -143,7 +143,14 @@ void gen::CodeGenerator::alert(std::string message, bool error = true) {
     std::cout << message << std::endl;
     throw err::Exception(message);
   } else {
-    std::cout << "Warning: " << message << std::endl;
+    std::cout << "Warning: on line " << this->logicalLine << ": ";
+    if (this->scope != nullptr) {
+      std::cout << "in class " << this->scope->Ident << ": ";
+    }
+    if (!this->globalScope && this->currentFunction != nullptr) {
+      std::cout << "in function " << this->currentFunction->ident.ident << ": ";
+    }
+    std::cout << message << std::endl;
   }
 };
 
@@ -343,7 +350,6 @@ gen::CodeGenerator::resolveSymbol(std::string ident,
     access = '(' + this->registers["%r12"]->get(asmc::QWord) + ')';
     retSym.type = *retSym.type.typeHint;
   };
-
   return std::make_tuple(access, retSym, true, pops);
 };
 
@@ -2065,7 +2071,7 @@ void gen::CodeGenerator::genDecArr(ast::DecArr* dec, asmc::File& OutputFile) {
   links::LinkedList<gen::Symbol>* Table;
   if (this->scope == nullptr || this->inFunction) {
     int bMod = gen::scope::ScopeManager::getInstance()->assign("." + dec->ident,
-                                                               type, false);
+                                                               type, false, false);
     // create a pointer to the array
     ast::Type adr;
     adr.arraySize = 1;
@@ -2160,6 +2166,7 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
           dec->Ident, dec->type, dec->mask, decAssign->mute);
       auto s = gen::scope::ScopeManager::getInstance()->get(dec->Ident);
       s->usable = false;
+      s->refCount--;
 
       auto mov2 = new asmc::Mov();
       mov2->logicalLine = decAssign->logicalLine;
@@ -2372,6 +2379,7 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
   asmc::Size size;
   std::string output = std::get<0>(resolved);
   if (assign->refrence == true) {
+    // 
     asmc::Mov* m1 = new asmc::Mov;
     m1->logicalLine = assign->logicalLine;
     m1->from = output;
@@ -2392,6 +2400,8 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
   OutputFile.text << mov2;
   OutputFile.text << mov;
   OutputFile << std::get<3>(resolved);
+  if (assign->modList.count == 0 && !assign->refrence)
+  scope::ScopeManager::getInstance()->addAssign(fin->symbol);
 }
 
 ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
@@ -3203,6 +3213,7 @@ void gen::CodeGenerator::genInc(ast::Inc* inc, asmc::File& OutputFile) {
   add->op1 = "$1";
   add->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
   OutputFile.text << add;
+  gen::scope::ScopeManager::getInstance()->addAssign(inc->ident);
 }
 
 void gen::CodeGenerator::genDec(ast::Dec* inc, asmc::File& OutputFile) {
@@ -3215,6 +3226,7 @@ void gen::CodeGenerator::genDec(ast::Dec* inc, asmc::File& OutputFile) {
   sub->op1 = "$-1";
   sub->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
   OutputFile.text << sub;
+  gen::scope::ScopeManager::getInstance()->addAssign(inc->ident);
 }
 
 void gen::CodeGenerator::genImport(ast::Import* imp, asmc::File& OutputFile) {

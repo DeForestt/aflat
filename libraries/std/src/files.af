@@ -38,23 +38,21 @@ class File{
     int close();
 };
 
-export File createFile(adr fileName){
-        File file = malloc(File);
+export File createFile(const adr fileName){
+        const File file = malloc(File);
         file.file = sys_create(fileName, #511);
-        int test;
-        test = file.file;
+        const int test = file.file;
         if(test < 1){
                 return NULL;
         };
         return file;
 };
 
-export File openFile(adr fileName){
-        File file = malloc(File);
-        long flag = #2;
+export File openFile(const adr fileName){
+        const File file = malloc(File);
+        const long flag = #2;
         file.file = sys_open(fileName, flag, #777);
-        int test;
-        test = file.file;
+        const int test = file.file;
         if(test < 0){
                 return NULL;
         };
@@ -66,18 +64,17 @@ int close@File(){
         return sys_close(my.file);
 };
 
-int write@File(adr text){
-        int length = str.len(text);
-        int ret = sys_write(my.file, text, length);
+int write@File(const adr text){
+        const int length = str.len(text);
+        const int ret = sys_write(my.file, text, length);
         return ret;
 };
 
-int read@File(adr pointer, char delim){
-        char input;
-        input = '\0';
-        char null = '\0';
+int read@File(adr pointer, const char delim){
+        const char input = '\0';
+        const char null = '\0';
         while(input != delim){
-                int eof = sys_read(my.file, ?input, 1);
+                const int eof = sys_read(my.file, ?input, 1);
                 char inp;
                 inp = input;
                 pointer =: inp;
@@ -90,27 +87,26 @@ int read@File(adr pointer, char delim){
 };
 
 string readToEnd@File(){
-        fstat stat = fstat();
+        const fstat stat = fstat();
         sys_fstat(my.file, stat);
-        adr buffer = malloc(1 + stat.st_size);
+        const adr buffer = malloc(1 + stat.st_size);
         sys_read(my.file, buffer, 0 + stat.st_size);
-        adr pointer = buffer + (0 + stat.st_size);
+        const adr pointer = buffer + (0 + stat.st_size);
         pointer =: '\0';
-        string text = new string(buffer);
+        const string text = new string(buffer);
         return text;
 };
 
-Array toArray@File(char delim){
-	Array a = new Array(adr, 0);
+Array toArray@File(const char delim){
+	const Array a = new Array(adr, 0);
 	adr ibuff = malloc(256);
 	
 	int eof = my.read(ibuff, delim);
-        int size;
-	
+        int size = 0;
         while (eof != 1){
-		size = a.size;
+                size = a.size;
 		a.extend(1);
-		adr pointer = a.at(size);
+		const adr pointer = a.at(size);
                 pointer =: ibuff;
                 ibuff = malloc(256);
 		eof = my.read(ibuff, delim);
@@ -118,15 +114,15 @@ Array toArray@File(char delim){
 
         size = a.size;
         a.extend(1);
-        adr pointer = a.at(size);
+        const adr pointer = a.at(size);
         pointer =: ibuff;
         ibuff = malloc(256);
 
         return a;
 };
 
-LinkedList toLinkedList@File(char delim){
-        LinkedList l = new LinkedList;
+LinkedList toLinkedList@File(const char delim){
+        const LinkedList l = new LinkedList;
         adr ibuff = malloc(256);
         
         int eof = my.read(ibuff, delim);
@@ -138,12 +134,10 @@ LinkedList toLinkedList@File(char delim){
         };
 
         l.append(ibuff);
-
-
         return l;
 };
 
-private int clearChar(adr pointer, int size){
+private int clearChar(adr pointer, const int size){
         int i = 0;
         while(i < size){
                 pointer =: '\0';
@@ -152,9 +146,9 @@ private int clearChar(adr pointer, int size){
         };
 };
 
-List toList@File(char delim){
-        List l = new List(256, 1);
-        char[256] ibuff;
+List toList@File(const char delim){
+        const List l = new List(256, 1);
+        const char[256] ibuff;
         
         int eof = my.read(ibuff, delim);
 

@@ -53,69 +53,68 @@ bool isNumeric@String(){
     return true;
 };
 
-String init@String(adr value){
+String init@String(const adr value){
     int length = str.len(value);
     length = length + 1;
     my.head = malloc(length);
-    adr head = my.head;
+    const adr head = my.head;
     memcpy(head, value, length);
 };
 
-String concat@String(String s){
-    int mylen = str.len(my.head);
+String concat@String(const String s){
+    const int mylen = str.len(my.head);
     int slen = str.len(s.head);
     slen = slen + 1;
-    int length = mylen + slen;
+    const int length = mylen + slen;
     adr newhead = malloc(length);
-    adr ret = newhead;
+    const adr ret = newhead;
     memcpy(newhead, my.head, mylen);
     newhead = newhead + mylen;
     memcpy(newhead, s.head, slen);
-    String newString = new String(ret);
+    const String newString = new String(ret);
     free(ret);
     return newString;
 };
 
-String stitch@String(adr value){
-    int mylen = str.len(my.head);
+String stitch@String(const adr value){
+    const int mylen = str.len(my.head);
     int slen = str.len(value);
     slen = slen + 1;
-    int length = mylen + slen;
+    const int length = mylen + slen;
     adr newhead = malloc(length);
-    adr ret = newhead;
+    const adr ret = newhead;
     memcpy(newhead, my.head, mylen);
     newhead = newhead + mylen;
     memcpy(newhead, value, slen);
-    String newString = new String(ret);
+    const String newString = new String(ret);
     free(ret);
     return newString;
 };
 
-String subString@String(int start, int end){
+String subString@String(const int start, const int end){
     adr head = my.head;
-    int mylen = str.len(head);
     int length = end - start;
     length = length;
     adr newhead = malloc(length + 1);
-    adr ret = newhead;
+    const adr ret = newhead;
     head = head + start;
     memcpy(newhead, head, length);
     newhead = newhead + length;
     newhead =: '\0';
-    String newString = new String(ret);
+    const String newString = new String(ret);
     free(ret);
     return newString;
 };
 
-bool compare@String(String s){
-    adr strin = s.head;
-    adr mystring = my.head;
-    int comp = str.str_comp(strin, mystring);
+bool compare@String(const String s){
+    const adr strin = s.head;
+    const adr mystring = my.head;
+    const int comp = str.str_comp(strin, mystring);
     return comp == 1;
 };
 
-bool equal@String(adr s){
-    int comp = str.str_comp(my.head, s);
+bool equal@String(const adr s){
+    const int comp = str.str_comp(my.head, s);
     return comp == 1;
 };
 
@@ -123,29 +122,29 @@ adr getPrimitive@String(){
     return my.head;
 };
 
-char at@String(int index){
-    char ch = str.str_at(my.head, index);
+char at@String(const int index){
+    const char ch = str.str_at(my.head, index);
     return ch;
 };
 
-int indexOf@String(char ch){
-    int index = str.str_find(my.head, ch);
+int indexOf@String(const char ch){
+    const int index = str.str_find(my.head, ch);
     return index;
 };
 
 int del@String(){
-    adr head = my.head;
+    const adr head = my.head;
     free(head);
 };
 
-int loop@String(const adr foo, * adr args){
-    adr head = my.head;
-    adr bar = foo;
-    int length = str.len(head);
+int loop@String(const adr foo, * const adr args){
+    const adr head = my.head;
+    const adr bar = foo;
+    const int length = str.len(head);
     int i = 0;
     while(i < length){
-        char ch = str.str_at(head, i);
-        int brk = bar(ch, i, args);
+        const char ch = str.str_at(head, i);
+        const int brk = bar(ch, i, args);
         i = i + 1;
         if(brk == 1){
             return 0;
@@ -154,8 +153,8 @@ int loop@String(const adr foo, * adr args){
     return 0;
 };
 
-export String printString(String s){
-    adr head = s.getPrimitive();
+export String printString(const String s){
+    const adr head = s.getPrimitive();
     io.print(head);
     return s;
 };
@@ -164,10 +163,9 @@ export String getString(){
     adr buff = malloc(1);
     adr save = buff;
     int buffSize = 1;
-    adr pointer;
-    char input = ' ';
-    char nl = '\n';
-    char null = '\0';
+    const char input = ' ';
+    const char nl = '\n';
+    const char null = '\0';
     int i = 0;
     while(input != nl){
         sys_read(0, ?input, 1);
@@ -179,12 +177,12 @@ export String getString(){
         buff = save;
         i = i + 1;
     };
-    String s = new String(save);
+    const String s = new String(save);
     free(save);
     return s;
 };
 
-String copy@String(String s){
+String copy@String(const String s){
     delete my;
     return s;
 };
@@ -192,7 +190,7 @@ String copy@String(String s){
 String trim@String( * char ch){
     if ch == '\0'
         ch = ' ';
-    int length = my.len();
+    const int length = my.len();
     int i = 0;
     char test = my.at(i);
     while(test == ch){
@@ -209,17 +207,17 @@ String trim@String( * char ch){
     };
     j = j + 1;
     
-    String newString = my.subString(i, j);
+    const String newString = my.subString(i, j);
 
     return newString;
 };
 
-String replace@String(char o, char n){
+String replace@String(const char o, const char n){
     adr newhead = malloc(my.len());
-    adr save = newhead;
+    const adr save = newhead;
     int length = my.len();
     length = length + 1;
-    adr head = my.head;
+    const adr head = my.head;
     memcpy(newhead, head, length);
     int i = 0;
     while(i < length){
@@ -229,17 +227,16 @@ String replace@String(char o, char n){
         };
         i = i + 1;
     };
-    String newString = new String(save);
+    const String newString = new String(save);
     free(save);
     return newString;
 };
 
 String toLower@String(){
     adr newhead = malloc(my.len());
-    adr save = newhead;
+    const adr save = newhead;
     int length = my.len();
     length = length + 1;
-    adr head = my.head;
     int i = 0;
     while(i < length){
         char c = my.at(i);
@@ -248,17 +245,16 @@ String toLower@String(){
         newhead = newhead + 1;
         i = i + 1;
     };
-    String newString = new String(save);
+    const String newString = new String(save);
     free(save);
     return newString;
 };
 
 String toUpper@String(){
     adr newhead = malloc(my.len());
-    adr save = newhead;
+    const adr save = newhead;
     int length = my.len();
     length = length + 1;
-    adr head = my.head;
     int i = 0;
     while(i < length){
         char c = my.at(i);
@@ -267,28 +263,27 @@ String toUpper@String(){
         newhead = newhead + 1;
         i = i + 1;
     };
-    String newString = new String(save);
+    const String newString = new String(save);
     free(save);
     return newString;
 };
 
 LinkedList split@String(* char c){
-    LinkedList list = new LinkedList(String.del, true);
+    const LinkedList list = new LinkedList(String.del, true);
     if c == '\0'
         c = ' ';
-    adr head = my.head;
-    int length = my.len();
+    const int length = my.len();
     int newStringStart = 0;
     for int i = 0; i < length; i++ {
-        char ch = my.at(i);
+        const char ch = my.at(i);
         if ch == c {
-            int newStringEnd = i;
-            String newString = my.subString(newStringStart, newStringEnd);
+            const int newStringEnd = i;
+            const String newString = my.subString(newStringStart, newStringEnd);
             list.append(newString);
             newStringStart = newStringEnd + 1;
         };
     };
-    String newString = my.subString(newStringStart, length);
+    const String newString = my.subString(newStringStart, length);
     list.append(newString);
     return list;
 };
@@ -328,7 +323,7 @@ private char upper(char c){
     return c;
 };
 
-private bool match(char c, char p) {
+private bool match(const char c, const char p) {
     if p == '.' return true;
     if p == '*' return true;
     if p == 'd' return
@@ -354,8 +349,8 @@ private bool match(char c, char p) {
     return false;
 };
 
-export bool matches(String input, adr pattern){
-    String pString = new String(pattern);
+export bool matches(const String input, const adr pattern){
+    const String pString = new String(pattern);
 
     int i = 0;
     int j = 0;
@@ -363,8 +358,8 @@ export bool matches(String input, adr pattern){
     if pString.len() != input.len() return false;
     
     while i < input.len() & j < pString.len() {
-        char pChar = pString.at(j);
-        char iChar = input.at(i);
+        const char pChar = pString.at(j);
+        const char iChar = input.at(i);
         if !match(iChar, pChar) return false;
         i++;
         j++;
@@ -373,7 +368,7 @@ export bool matches(String input, adr pattern){
     return true;
 };
 
-export String consume(adr pattern, * adr message){
+export String consume(const adr pattern, * const adr message){
     const String input = getString();
     if matches(input, pattern)
         return input;
@@ -391,7 +386,7 @@ safe dynamic class string {
     private int refcount = 1;
     private bool permanent = false;
 
-    string init(adr head) {
+    string init(const adr head) {
         my.head = malloc(str.len(head) + 1);
         memcpy(my.head, head, str.len(head) + 1);
         return my;
@@ -406,7 +401,7 @@ safe dynamic class string {
         free(my.head);
     };
 
-    bool compare<<==>>(string other) {
+    bool compare<<==>>(const string other) {
         return str.str_comp(my.head, other.head) == 1;
     };
 
@@ -415,7 +410,7 @@ safe dynamic class string {
         return my;
     };
 
-    string cpy<<=>>(string other) {
+    string cpy<<=>>(const string other) {
         free(my.head);
         other.refcount = other.refcount - 1;
         my.refcount = my.refcount - 1;
@@ -431,8 +426,8 @@ safe dynamic class string {
         return my;
     };
 
-    char at(int index) {
-        char[10] buff = my.head;
+    char at(const int index) {
+        const char[10] buff = my.head;
         return buff[index];
     };
 
@@ -440,17 +435,16 @@ safe dynamic class string {
         return my.head;
     };
 
-    bool input(adr prompt) {
+    bool input(const adr prompt) {
         free(my.head);
         if prompt != NULL
             io.print(prompt);
         adr buff = malloc(1);
         adr save = buff;
         int buffSize = 1;
-        adr pointer;
-        char input = ' ';
-        char nl = '\n';
-        char null = '\0';
+        const char input = ' ';
+        const char nl = '\n';
+        const char null = '\0';
         int i = 0;
         while(input != nl){
             sys_read(0, ?input, 1);
@@ -470,13 +464,13 @@ safe dynamic class string {
         return my.refcount;
     };
     
-    string concat<<+>>(string other) {
-        int myLen = str.len(my.head);
-        int otherLen = str.len(other.head);
-        adr newHead = malloc(myLen + otherLen + 1);
+    string concat<<+>>(const string other) {
+        const int myLen = str.len(my.head);
+        const int otherLen = str.len(other.head);
+        const adr newHead = malloc(myLen + otherLen + 1);
         memcpy(newHead, my.head, myLen);
         memcpy(newHead + myLen, other.head, otherLen + 1);
-        string newString = new string(newHead);
+        const string newString = new string(newHead);
         free(newHead);
         other.refcount = other.refcount - 1;
         my.refcount = my.refcount - 1;
@@ -489,20 +483,20 @@ safe dynamic class string {
         return newString;
     };
 
-    List split(char delim) {
-        List list = new List(string, 1, string.del);
-        int myLen = str.len(my.head);
+    List split(const char delim) {
+        const List list = new List(string, 1, string.del);
+        const int myLen = str.len(my.head);
         adr buff = malloc(1);
         adr save = buff;
         int buffSize = 1;
 
         for int i = 0; i < myLen; i = i + 1 {
-            adr curr = my.head + i;
-            char c = curr as char;
+            const adr curr = my.head + i;
+            const char c = curr as char;
             if (c == delim) {
                 buff = buff + 1;
                 buff =: '\0';
-                let s = new string(save);
+                const let s = new string(save);
                 list.pushBack(s);
                 //free(save);
                 buffSize = 1;
@@ -516,18 +510,19 @@ safe dynamic class string {
         };
         buff = buff + 1;
         buff =: '\0';
-        let s = new string(save);
+        const let s = new string(save);
         list.pushBack(s.get());
         free(save);
         return list;
     };
 
-    int forEach(adr func, * adr args) {
-        int myLen = str.len(my.head);
+    int forEach(const adr func, * const adr args) {
+        const int myLen = str.len(my.head);
         for int i = 0; i < myLen; i = i + 1 {
-            adr curr = my.head + i;
-            char c = curr as char;
-            func(c, i, args);
+            const adr curr = my.head + i;
+            const char c = curr as char;
+            const int br = func(c, i, args);
+            if br == 1 break;
         };
         return 0;
     };
@@ -541,10 +536,10 @@ safe dynamic class string {
     };
 
     bool isNumeric() {
-        int myLen = str.len(my.head);
+        const int myLen = str.len(my.head);
         for int i = 0; i < myLen; i = i + 1 {
-            adr curr = my.head + i;
-            char c = curr as char;
+            const adr curr = my.head + i;
+            const char c = curr as char;
             if (c < '0' | c > '9') return false;
         };
         return true;
@@ -557,8 +552,8 @@ safe dynamic class string {
 
     string toUpper() {
         adr newhead = malloc(my.len() + 1);
-        adr save = newhead;
-        int length = my.len();
+        const adr save = newhead;
+        const int length = my.len();
         int i = 0;
         while(i < length){
             char c = my.at(i);
@@ -568,15 +563,15 @@ safe dynamic class string {
             i = i + 1;
         };
         newhead =: '\0';
-        string newString = save;
+        const string newString = save;
         free(save);
         return newString;
     };
 
     string toLower() {
         adr newhead = malloc(my.len() + 1);
-        adr save = newhead;
-        int length = my.len();
+        const adr save = newhead;
+        const int length = my.len();
         int i = 0;
         while(i < length){
             char c = my.at(i);
@@ -586,15 +581,15 @@ safe dynamic class string {
             i = i + 1;
         };
         newhead =: '\0';
-        string newString = save;
+        const string newString = save;
         free(save);
         return newString;
     };
 
     string title() {
         adr newhead = malloc(my.len() + 1);
-        adr save = newhead;
-        int length = my.len();
+        const adr save = newhead;
+        const int length = my.len();
         int i = 0;
         bool space = true;
         while(i < length){
@@ -611,33 +606,33 @@ safe dynamic class string {
             i = i + 1;
         };
         newhead =: '\0';
-        string newString = save;
+        const string newString = save;
         free(save);
         return newString;
     };
 
-    string replaceChar(char old, char n) {
+    string replaceChar(const char old, const char n) {
         char[10] newHead = malloc(my.len() + 1);
-        int length = my.len();
+        const int length = my.len();
         memcpy(newHead, my.head, length + 1);
         for int i = 0; i < length; i = i + 1 {
-            char c = newHead[i];
+            const char c = newHead[i];
             if (c == old) newHead[i] = n;
         };
-        string newString = newHead;
+        const string newString = newHead;
         free(newHead);
         return newString;
     };
 
-    int find(string sub, int start) {
-        int myLen = str.len(my.head);
-        int subLen = str.len(sub.head);
+    int find(const string sub, const int start) {
+        const int myLen = str.len(my.head);
+        const int subLen = str.len(sub.head);
         if (subLen > myLen) return -1;
         for int i = start; i < myLen - subLen + 1; i = i + 1 {
             bool found = true;
             for int j = 0; j < subLen; j = j + 1 {
-                char c1 = my.at(i + j);
-                char c2 = sub.at(j);
+                const char c1 = my.at(i + j);
+                const char c2 = sub.at(j);
                 if (c1 != c2) {
                     found = false;
                     j = subLen;
@@ -648,19 +643,19 @@ safe dynamic class string {
         return -1;
     };
 
-    string replace(adr substr, adr ns) {
-        let sub = new string(substr);
-        let n = new string(ns);
+    string replace(const adr substr, const adr ns) {
+        const let sub = new string(substr);
+        const let n = new string(ns);
         // find all occurences of sub in my
-        int myLen = str.len(my.head);
-        int subLen = str.len(sub.head);
-        int nLen = str.len(n.head);
+        const int myLen = str.len(my.head);
+        const int subLen = str.len(sub.head);
+        const int nLen = str.len(n.head);
         int newLen = myLen - subLen + nLen;
         adr newHead = malloc(newLen + 1);
         adr save = newHead;
         int i = 0;
         while(i < myLen) {
-            int index = my.find(sub, i);
+            const int index = my.find(sub, i);
             if (index == -1) {
                 memcpy(newHead, my.head + i, myLen - i);
                 newHead = newHead + myLen - i;
@@ -670,8 +665,8 @@ safe dynamic class string {
                 if newHead + index - i + nLen > save + newLen {
                     // not enough space
                     // reallocate
-                    int newNewLen = newLen + 100;
-                    adr newNewHead = realloc(save, newNewLen + 1);
+                    const int newNewLen = newLen + 100;
+                    const adr newNewHead = realloc(save, newNewLen + 1);
                     newHead = newNewHead + (newHead - save);
                     save = newNewHead;
                     newLen = newNewLen;
@@ -685,15 +680,15 @@ safe dynamic class string {
             };
         };
         newHead =: '\0';
-        string newString = save;
+        const string newString = save;
         free(save);
         return newString;
     };
 
-    string subString(int start, int end) {
-        int length = my.len();
+    string subString(const int start, const int end) {
+        const int length = my.len();
         if (start < 0) | (start > length) | (end < 0) | (end > length) | (start > end) return new string("");
-        int newLength = end - start;
+        const int newLength = end - start;
         char[10] newHead = malloc(newLength + 1);
         memcpy(newHead, my.head + start, newLength);
         newHead[newLength] = '\0';
@@ -712,17 +707,17 @@ safe dynamic class string {
         return my.subString(start, end + 1);
     };
 
-    int indexOf(char ch) {
-        int length = my.len();
+    int indexOf(const char ch) {
+        const int length = my.len();
         for int i = 0; i < length; i = i + 1 {
             if (my.at(i) == ch) return i;
         };
         return -1;
     };
 
-    string push(char ch) {
-        int length = my.len();
-        char[10] newHead = malloc(length + 2);
+    string push(const char ch) {
+        const int length = my.len();
+        const char[10] newHead = malloc(length + 2);
         memcpy(newHead, my.head, length);
         adr next = newHead + length;
         next =: ch;
@@ -731,9 +726,9 @@ safe dynamic class string {
         return new string(newHead);
     };
 
-    string insert(int i, string n) {
-        int length = my.len();
-        int nLength = n.len();
+    string insert(const int i, const string n) {
+        const int length = my.len();
+        const int nLength = n.len();
         char[10] newHead = malloc(length + nLength + 1);
         memcpy(newHead, my.head, i);
         memcpy(newHead + i, n.head, nLength);
@@ -745,7 +740,7 @@ safe dynamic class string {
     string sort() {
         string newString = new string("");
         for int i = 0; i < my.len(); i = i + 1 {
-            char c = my.at(i);
+            const char c = my.at(i);
             int j = 0;
             bool brk = false;
             while (!brk) {
@@ -753,7 +748,7 @@ safe dynamic class string {
                     newString = newString.push(c);
                     brk = true;
                 } else {
-                    char c2 = newString.at(j);
+                    const char c2 = newString.at(j);
                     if (c < c2) {
                         newString = newString.insert(j, `{c}`);
                         brk = true;
@@ -775,24 +770,23 @@ safe dynamic class string {
     };
 };
 
-export string create_string(adr head) {
+export string create_string(const adr head) {
     return new string(head);
 };
 
-export int print(string obj) {
+export int print(const string obj) {
     io.print(obj.cstr());
     return 0;
 };
 
-export string readString(* string prompt) {
+export string readString( *const string prompt) {
     if prompt != NULL print(prompt);
     adr buff = malloc(1);
     adr save = buff;
     int buffSize = 1;
-    adr pointer;
-    char input = ' ';
-    char nl = '\n';
-    char null = '\0';
+    const char input = ' ';
+    const char nl = '\n';
+    const char null = '\0';
     int i = 0;
     while(input != nl){
         sys_read(0, ?input, 1);
@@ -804,12 +798,12 @@ export string readString(* string prompt) {
         buff = save;
         i = i + 1;
     };
-    string n = buff;
+    const string n = buff;
     free(save);
     return n.copy();
 };
 
-export string fString(string fmt, * adr args) {
+export string fString(const string fmt, * adr args) {
     string newString = new string("");
     for int i = 0; i < fmt.len(); i++ {
         if fmt.at(i) == '%' {
@@ -821,13 +815,13 @@ export string fString(string fmt, * adr args) {
                 newString = newString.push(args as char);
                 args = args + char;
             } else if fmt.at(i) == 'd' {
-                char[10] buff;
-                int n = args as int;
+                const char[10] buff;
+                const int n = args as int;
                 if n == 0 {
                     newString = newString.push('0');
                 } else {
                     str.int_toString(n, buff);
-                    adr buffAdr = buff;
+                    const adr buffAdr = buff;
                     newString = newString + buffAdr;
                 };
                 args = args + int;
@@ -835,7 +829,7 @@ export string fString(string fmt, * adr args) {
                 newString = newString + args as string;
                 args = args + adr;
             } else if fmt.at(i) == 'b' {
-                bool b = args as bool;
+                const bool b = args as bool;
                 newString = newString + (if b "true" else "false");
                 args = args + bool;
             } else {

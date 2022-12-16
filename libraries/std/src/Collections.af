@@ -39,7 +39,7 @@ class LinkedList {
     public LinkedList copy<<=>>(adr list);
     int del(){
         if (my.delFunc != NULL) {
-            adr foo = my.delFunc;
+            const adr foo = my.delFunc;
             my.forEach(foo);
         };
         if (my.cleanUp) {
@@ -78,11 +78,11 @@ class BinTree {
     private BinTree left = NULL;
     private BinTree right = NULL;
 
-    public BinTree init(Keyed data) {
+    public BinTree init(const Keyed data) {
         return my;
     };
 
-    public bool insert(Keyed data) {
+    public bool insert(const Keyed data) {
         if data.key == my.data.key return false;
 
         if data.key < my.data.key {
@@ -100,7 +100,7 @@ class BinTree {
         return true;
     };
 
-    public adr find(int key) {
+    public adr find(const int key) {
         if my.data.key == key return my.data;
 
         if key < my.data.key {
@@ -113,7 +113,7 @@ class BinTree {
     };
 
     public LinkedList traverse() {
-        LinkedList list = new LinkedList();
+        const LinkedList list = new LinkedList();
         list.append(my.data);
         if my.left != NULL list.stitch(my.left.traverse());
         if my.right != NULL list.stitch(my.right.traverse());
@@ -126,7 +126,7 @@ class BinTree {
 
         if my.left != NULL {
             if my.left.right != NULL {
-                BinTree temp = my.left.right;
+                const BinTree temp = my.left.right;
                 my.left.right = NULL;
                 my.left = temp;
             };
@@ -134,7 +134,7 @@ class BinTree {
 
         if my.right != NULL {
             if my.right.left != NULL {
-                BinTree temp = my.right.left;
+                const BinTree temp = my.right.left;
                 my.right.left = NULL;
                 my.right = temp;
             };
@@ -144,7 +144,7 @@ class BinTree {
     };
 };
 
-adr reduce@LinkedList(adr foo, * adr args){
+adr reduce@LinkedList(const adr foo, * const adr args){
     adr result = my.head.data;
     ListNode node = my.head.next;
     while(node != NULL){
@@ -154,13 +154,12 @@ adr reduce@LinkedList(adr foo, * adr args){
     return result;
 };
 
-int forEach@LinkedList(adr foo, * adr arg){
+int forEach@LinkedList(const adr foo, * const adr arg){
     ListNode curr = my.head;
     int i = 0;
     while(curr != NULL){
-        adr data;
-        data = curr.data;
-        int cont = foo(data, i, arg);
+        const adr data = curr.data;
+        const int cont = foo(data, i, arg);
         if(cont == 1){
             return 1;
         };
@@ -170,14 +169,13 @@ int forEach@LinkedList(adr foo, * adr arg){
     return 0;
 };
 
-LinkedList where@LinkedList(adr foo, * adr arg){
-    LinkedList newList = new LinkedList();
+LinkedList where@LinkedList(const adr foo, *const adr arg){
+    const LinkedList newList = new LinkedList();
     ListNode curr = my.head;
     int i = 0;
     while(curr != NULL){
-        adr data;
-        data = curr.data;
-        bool boo = foo(data, i, arg);
+        const adr data = curr.data;
+        const bool boo = foo(data, i, arg);
         if(boo == true){
             newList.append(data);
         };
@@ -187,12 +185,12 @@ LinkedList where@LinkedList(adr foo, * adr arg){
     return newList;
 };
 
-LinkedList init@LinkedList(* adr delFunc, * bool cleanUp){
+LinkedList init@LinkedList( *const adr delFunc, *const bool cleanUp){
     my.head = NULL;
     return my;
 };
 
-int drop@LinkedList(int index){
+int drop@LinkedList(const int index){
     if index < 0 | index > my.size() {
         return -1;
     };
@@ -207,7 +205,7 @@ int drop@LinkedList(int index){
     int i = 0;
     while(curr != NULL){
         if i == index - 1 {
-            ListNode next = curr.next;
+            const ListNode next = curr.next;
             curr.next = next.next;
             return 0;
         };
@@ -217,9 +215,8 @@ int drop@LinkedList(int index){
     return -1;
 };
 
-int stitch@LinkedList(LinkedList ln){
-    ListNode curr;
-    curr = my.head;
+int stitch@LinkedList(const LinkedList ln){
+    ListNode curr = my.head;
     while(curr.next != NULL){
         curr = curr.next;
     };
@@ -227,14 +224,12 @@ int stitch@LinkedList(LinkedList ln){
     return 0;
 };
 
-generic get@LinkedList(int index){
+generic get@LinkedList(const int index){
     if (index < 0){
         return NULL;
     };
-    ListNode myHead;
-    myHead = my.head;
-    ListNode myIndex;
-    myIndex = myHead;
+    const ListNode myHead = my.head;
+    ListNode myIndex = myHead;
 
     int i = 0;
     while(i < index){
@@ -245,14 +240,12 @@ generic get@LinkedList(int index){
     return myIndex.data;
 };
 
-int append@LinkedList(adr data){
-    ListNode ln = new ListNode();
+int append@LinkedList(const adr data){
+    const ListNode ln = new ListNode();
     ln.data = data;
     ln.next = NULL;
 
-    ListNode head = my.head;
-
-    if(head == NULL){
+    if(my.head == NULL){
         my.head = ln;
         return 0;
     };
@@ -268,12 +261,12 @@ int append@LinkedList(adr data){
     return 0;
 };
 
-int insert@LinkedList(adr data, int index){
+int insert@LinkedList(const adr data, const int index){
     if (index < 0 | index > my.size()){
         return -1;
     };
 
-    ListNode ln = new ListNode();
+    const ListNode ln = new ListNode();
     ln.data = data;
     ln.next = NULL;
 
@@ -290,15 +283,14 @@ int insert@LinkedList(adr data, int index){
     for int i = 0; i < index - 1 ; i = i + 1
         curr = curr.next;
     
-    ListNode next = curr.next;
+    const ListNode next = curr.next;
     curr.next = ln;
     ln.next = next;
     return 0;
 };
 
 int size@LinkedList(){
-    ListNode curr;
-    curr = my.head;
+    ListNode curr = my.head;
     int i = 0;
     while (curr != NULL) {
         curr = curr.next;
@@ -307,16 +299,16 @@ int size@LinkedList(){
     return i;
 };
 
-LinkedList sort@LinkedList(adr foo, adr arg){
-    LinkedList n = new LinkedList();
+LinkedList sort@LinkedList(const adr foo, const adr arg){
+    const LinkedList n = new LinkedList();
     ListNode curr = my.head;
     while(curr != NULL){
-        adr data = curr.data;
+        const adr data = curr.data;
         int i = 0;
         bool loop = true;
         while(i < n.size() & loop){
-            adr data2 = n.get(i);
-            bool cmp = foo(data, data2, arg);
+            const adr data2 = n.get(i);
+            const bool cmp = foo(data, data2, arg);
             if(cmp == true){
                 n.insert(data, i);
                 loop = false;
@@ -331,15 +323,13 @@ LinkedList sort@LinkedList(adr foo, adr arg){
     return n;
 };
 
-LinkedList map@LinkedList(adr foo, adr arg){
-    LinkedList newList = new LinkedList();
+LinkedList map@LinkedList(const adr foo, const adr arg){
+    const LinkedList newList = new LinkedList();
     ListNode curr = my.head;
     int i = 0;
     while(curr != NULL){
-        adr data;
-        data = curr.data;
-        adr newData;
-        newData = foo(data, i, arg);
+        const adr data = curr.data;
+        const adr newData = foo(data, i, arg);
         newList.append(newData);
         curr = curr.next;
         i = i + 1;
@@ -347,25 +337,20 @@ LinkedList map@LinkedList(adr foo, adr arg){
     return newList;
 };
 
-LinkedList copy@LinkedList(LinkedList list){
+LinkedList copy@LinkedList(const LinkedList list){
     my.erace();
     return list;
 };
 
-private int forEachArray(Array my, adr foo, adr arg){
-    int size;
-    size = my.size;
-    adr element;
-    int tSize;
-    tSize = my.typeSize;
+private int forEachArray(const Array my, const adr foo, const adr arg){
     adr curr;
 
     int i;
-    for i = 0; i < size; i = i + 1 {
-        int offset = i * tSize;
+    for i = 0; i < my.size; i = i + 1 {
+        const int offset = i * my.typeSize;
         curr = my.head;
         curr = curr + offset;
-        int brk = foo(curr, i, arg);
+        const int brk = foo(curr, i, arg);
         if (brk == 1){
             return 0;
         };
@@ -373,14 +358,13 @@ private int forEachArray(Array my, adr foo, adr arg){
     return 0;
 };
 
-int find@LinkedList(adr foo, adr arg){
+int find@LinkedList(const adr foo, const adr arg){
     ListNode curr;
     curr = my.head;
     int i = 0;
     while(curr != NULL){
-        adr data;
-        data = curr.data;
-        bool brk = foo(data, i, arg);
+        const adr data = curr.data;
+        const bool brk = foo(data, i, arg);
         if (brk == true){
             return i;
         };
@@ -390,33 +374,28 @@ int find@LinkedList(adr foo, adr arg){
     return -1;
 };
 
-private Array whereArray(Array my, adr foo, adr arg){
-    Array a = new Array(adr, 0);
-    int size;
-    int tSize;
-    tSize = my.typeSize;
-    size = my.size;
+private Array whereArray(const Array my, const adr foo, const adr arg){
+    const Array a = new Array(adr, 0);
     int i;
-    for i = 0; i < size; i = i + 1 {
-        int offset = i * tSize;
-        adr curr;
-        curr = my.head;
+    for i = 0; i < my.size; i = i + 1 {
+        const int offset = i * my.typeSize;
+        adr curr = my.head;
         curr = curr + offset;
         adr save; save = curr;
-        bool boo = foo(curr, i, arg);
+        const bool boo = foo(curr, i, arg);
         if (boo == true){
             a.extend(1);
             int msize;
             msize = a.size;
             msize = msize - 1;
-            adr point = a.at(msize);
+            const adr point = a.at(msize);
             point =: save;
         };
     };
     return a;
 };
 
-Array init@Array(int typeSize, int size){
+Array init@Array(const int typeSize, int size){
     my.size = size;
     my.typeSize = typeSize;
     
@@ -427,10 +406,10 @@ Array init@Array(int typeSize, int size){
     return my;
 };
 
-adr at@Array(int index){
+adr at@Array(const int index){
     int tSize;
     tSize = my.typeSize;
-    int offset = index * tSize;
+    const int offset = index * tSize;
     adr curr;
     curr = my.head;
     curr = curr + offset;
@@ -443,8 +422,7 @@ int del@Array(){
 };
 
 int erace@LinkedList(){
-    ListNode curr;
-    curr = my.head;
+    ListNode curr = my.head;
     while(curr != NULL){
         ListNode temp;
         temp = curr.next;
@@ -458,13 +436,10 @@ int erace@LinkedList(){
 
 LinkedList reverse@LinkedList(){
     // flip all of the node pointers
-    ListNode curr;
-    curr = my.head;
-    ListNode prev;
-    prev = NULL;
+    ListNode curr = my.head;
+    ListNode prev = NULL;
     while(curr != NULL){
-        ListNode temp;
-        temp = curr.next;
+        const ListNode temp = curr.next;
         curr.next = prev;
         prev = curr;
         curr = temp;
@@ -501,7 +476,7 @@ class List {
     private adr delFunc = delFunc;
     private adr ini = ini;
 
-    List init(int typeSize, * int size, * adr delFunc, * adr ini) {
+    List init(const int typeSize, *const int size, *const adr delFunc, *const adr ini) {
         if size == 0 {
             my.size = 1;
             my.head = malloc(typeSize);
@@ -509,7 +484,7 @@ class List {
         return my;
     };
 
-    int pushBack(adr value) {
+    int pushBack(const adr value) {
         if my.count == my.size {
             my.size = my.size * 2;
             my.head = realloc(my.head, my.typeSize * my.size);
@@ -525,7 +500,7 @@ class List {
         return my.count;
     };
 
-    generic get(int index) {
+    generic get(const int index) {
         if index >= my.count {
             return NULL;
         };
@@ -550,16 +525,16 @@ class List {
         return my.get(my.count - 1);
     };
 
-    int forEach(adr func, * adr args) {
+    int forEach(const adr func, * const adr args) {
         for int i = 0; i < my.count; i = i + 1 {
             func(my.get(i), i, args);
         };
         return 0;
     };
 
-    generic findFirst(adr func, * adr args) {
+    generic findFirst(const adr func, * const adr args) {
         for int i = 0; i < my.count; i = i + 1 {
-            bool brk = func(my.get(i), args);
+            const bool brk = func(my.get(i), args);
             if brk == true {
                 return my.get(i);
             };
@@ -567,7 +542,7 @@ class List {
         return NULL;
     };
 
-    int set(int index, adr value) {
+    int set(const int index, const adr value) {
         if index >= my.count {
             return 1;
         };
@@ -576,7 +551,7 @@ class List {
         return 0;
     };
 
-    int insert(int index, adr value) {
+    int insert(const int index, const adr value) {
         if index > my.count {
             return 1;
         };
@@ -591,13 +566,13 @@ class List {
         my.count = my.count + 1;
     };
 
-    int drop(int index) {
+    int drop(const int index) {
         if index >= my.count {
             return 1;
         };
 
         if my.delFunc != NULL {
-            adr delFunc = my.delFunc;
+            const adr delFunc = my.delFunc;
             delFunc(my.get(index));
         };
 
@@ -605,19 +580,19 @@ class List {
         my.count = my.count - 1;
     };
 
-    List map(int newTypeSize ,adr func, * adr args) {
-        let result = new List(newTypeSize, my.count);
+    List map(const int newTypeSize ,const adr func, * const adr args) {
+        const let result = new List(newTypeSize, my.count);
         for int i = 0; i < my.count; i = i + 1 {
-            adr res = func(my.get(i), i, args);
+            const adr res = func(my.get(i), i, args);
             result.pushBack(res);
         };
         return result;
     };
 
-    List where(adr func, * adr args) {
-        let result = new List(my.typeSize, my.count);
+    List where(const adr func, * const adr args) {
+        const let result = new List(my.typeSize, my.count);
         for int i = 0; i < my.count; i = i + 1 {
-            bool res = func(my.get(i), i, args);
+            const bool res = func(my.get(i), i, args);
             if res {
                 result.pushBack(my.get(i));
             };
@@ -625,7 +600,7 @@ class List {
         return result;
     };
 
-    int reduce(adr func, * adr args) {
+    int reduce(const adr func, * const adr args) {
         int res = 0;
         for int i = 0; i < my.count; i = i + 1 {
             res = func(res, my.get(i), i, args);

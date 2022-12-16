@@ -3,13 +3,13 @@
 import {toInt, toChar, printFloat, printInt, print} from "io" under io;
 import {exp} from "math" under math;
 
-export char ascii(int input){
-	adr caster = ?input;
+export char ascii(const int input){
+	const adr caster = ?input;
 	return caster as char;
 };
 
 export int len(adr input){
-	char null = ascii(0);
+	const char null = ascii(0);
     int i = 0;
 	while(input as char != null ){
         i = i + 1;
@@ -19,8 +19,8 @@ export int len(adr input){
 };
 
 export int str_comp(adr str1, adr str2){
-        int len1 = len(str1);
-        int len2 = len(str2);
+        const int len1 = len(str1);
+        const int len2 = len(str2);
 
         if(len1 != len2){ return 0; };
 
@@ -28,8 +28,8 @@ export int str_comp(adr str1, adr str2){
 
         while(i < len1){
                 i = i + 1;
-                char ch1 = str1 as char;
-                char ch2 = str2 as char;
+                const char ch1 = str1 as char;
+                const char ch2 = str2 as char;
                 if (ch1 != ch2){return 0;};
                 str2 = str2 + 1;
                 str1 = str1 + 1;
@@ -39,7 +39,7 @@ export int str_comp(adr str1, adr str2){
 };
 
 export int str_concat(adr str1, adr str2, adr pointer){
-    char null = '\0';
+    const char null = '\0';
     char loader;
     while(str1 as char != null){
         loader = str1 as char;
@@ -62,21 +62,20 @@ export int str_concat(adr str1, adr str2, adr pointer){
 
 export int str_toInt(adr input){
     int mul = 1;
-    char ch1 = input as char;
+    const char ch1 = input as char;
     if(ch1 == '-'){
         mul = -1;
         input = input + #1;
     };
     
-    char null = ascii(0);
     int factor = 0;
-    int size = len(input);
+    const int size = len(input);
     int result = 0;
     int i = size - 1;
     while(i > -1){
         factor = math.exp(10, i);
-        char ch2 = input as char;
-        int num = io.toInt(ch2);
+        const char ch2 = input as char;
+        const int num = io.toInt(ch2);
         factor = factor * num;
         result = result + factor;
         i = i - 1;
@@ -88,10 +87,10 @@ export int str_toInt(adr input){
 
 export int int_toString(int input, adr buffer){
         int h = 0;
-        int ten = 10;
+        const int ten = 10;
         int factor = 0;
         int i = 0;
-        char null = ascii(0);
+        const char null = ascii(0);
 
         if (input == 0){
                 buffer =: '0';
@@ -129,13 +128,12 @@ export int int_toString(int input, adr buffer){
         return 0;
 };
 
-export int int_toStringL0(int input, adr buffer, int size){
+export int int_toStringL0(int input, adr buffer, const int size){
 	// load the buffer with the string representation of the input with leading zeros
 	int h = 0;
-	int ten = 10;
+	const int ten = 10;
 	int factor = 0;
 	int i = 0;
-	char null = ascii(0);
 
 	// find the digits in the number
 	h = input * 1;
@@ -163,7 +161,7 @@ export int int_toStringL0(int input, adr buffer, int size){
 
 	if (input == 0){
 		buffer =: '0';
-		buffer =: null;
+		buffer =: '\0';
 		buffer = buffer + #1;
 		return 0;
 	};
@@ -196,15 +194,14 @@ export int int_toStringL0(int input, adr buffer, int size){
 		i = i - 1;
 	};
 
-	buffer =: null;
+	buffer =: '\0';
 };
 
-export int str_find(adr in, char find){
+export int str_find(adr in, const char find){
     int i = 0;
-    int len = len(in);
-    while(i < len){
-        
-		char b = in as char;
+    const int len = len(in);
+    while(i < len){    
+		const char b = in as char;
         if(b == find){return i};
         i = i + 1;
 		in = in + 1;
@@ -212,8 +209,8 @@ export int str_find(adr in, char find){
     return -1;
 };
 
-export int str_split(adr str, char sep, adr buff1, adr buff2){
-	char null = ascii(0);
+export int str_split(adr str, const char sep, adr buff1, const adr buff2){
+	const char null = ascii(0);
 	char check = str as char;
 
 	while(check != sep){
@@ -238,7 +235,7 @@ export int str_split(adr str, char sep, adr buff1, adr buff2){
 	return 0;
 };
 
-export float charToFloat(char a){
+export float charToFloat(const char a){
     float result = 0.00;
     if (a == '0'){result = 0.00;};
     if (a == '1'){result = 1.00;};
@@ -255,8 +252,8 @@ export float charToFloat(char a){
 
 // deprecated
 export int str_toFloat(adr input){
-	char[20] whole;
-	char[20] decimal;
+	const char[20] whole;
+	const char[20] decimal;
 
 	str_split(input, '.', whole, decimal);
 	int len = len(whole);
@@ -272,17 +269,17 @@ export int str_toFloat(adr input){
 	i = 0;
 
 	float temp = 0.00;
-	char nullChar = ascii(0);
+	const char nullChar = ascii(0);
 	char inChar = input as char;
-	float ten = 10.0;
-	while (inChar!= nullChar){
+	const float ten = 10.0;
+	while (inChar != nullChar){
 		if (inChar == '.'){
 			factor = 0.1;
 		};
 
 		if (inChar != '.'){
 			temp = charToFloat(inChar);
-			float adder = result + 0.00;
+			const float adder = result + 0.00;
 			result = temp * factor;
 			result = result + adder;
 			factor = factor / ten;
@@ -292,31 +289,31 @@ export int str_toFloat(adr input){
 		inChar = input as char;
 		i = i + 1;
 	};
-	adr cast = ?result;
+	const adr cast = ?result;
 	float cleas = 0.0;
 	cleas = cleas * cleas;
-	int ret = cast as int;
+	const int ret = cast as int;
 	return ret;
 };
 
 // deprecated
-export int sPrintFloat(adr input){
+export int sPrintFloat(const adr input){
 	io.printFloat(input);
 	return 0;
 };
 
 // deprecated
-export int float_toString(adr input, adr obuff, int signed){
+export int float_toString(const adr input, const adr obuff, const int signed){
 
 	if(input == #0){
 		return -1;
 	};
 
-	int percision = 6;
+	const int percision = 6;
 
 	adr mySign = "";
 	// as input into a newBitint
-	int inputInt = input as int;
+	const int inputInt = input as int;
 	if (inputInt == 0){
 		io.printInt(0);
 		return 0;
@@ -324,7 +321,7 @@ export int float_toString(adr input, adr obuff, int signed){
 
 	//get the sign bit of the float
 	
-	int sign = inputInt >> 31;
+	const int sign = inputInt >> 31;
 	
 	//get the exponent of the float
 	
@@ -338,14 +335,13 @@ export int float_toString(adr input, adr obuff, int signed){
 
 
 	//load the manissa bits into a linked list
-	Bit head = newBit(0);
+	const Bit head = newBit(0);
 
 	//printInt(head.value);
-	Bit current;
-	current = head;
+	Bit current = head;
 	int j = 0;
 	while(j < 23){
-		Bit newBit= newBit(mantissa & 1);
+		const Bit newBit= newBit(mantissa & 1);
 		//printInt(newBit.value);
 		current.next = newBit;
 		newBit.last = current;
@@ -354,7 +350,7 @@ export int float_toString(adr input, adr obuff, int signed){
 		j = j + 1;
 	};
 	
-	Bit newBit= newBit(1);
+	const Bit newBit = newBit(1);
 	current.next = newBit;
 	newBit.last = current;
 	current = newBit;
@@ -383,7 +379,7 @@ export int float_toString(adr input, adr obuff, int signed){
 	int i = 0;
 	while(factor > -1){
 		if (current.value == 1){
-			int append = math.exp(2, factor);
+			const int append = math.exp(2, factor);
 			result = result + append;
 		};
 		current = current.last;
@@ -393,7 +389,7 @@ export int float_toString(adr input, adr obuff, int signed){
 
 	factor = math.exp(10, percision);
 	factor = factor * 5;
-	int two = 2;
+	const int two = 2;
 	int decimalPlacess = 0;
 
 	while(i < 23){
@@ -406,7 +402,7 @@ export int float_toString(adr input, adr obuff, int signed){
 	};
 
 	push ?mySign; io.printInt(result); io.print("."); io.printInt(decimalPlacess);
-    char[10] rstring;
+    const char[10] rstring;
     int_toString(result, rstring);
     str_concat(mySign, rstring, obuff);
     str_concat(obuff, ".", obuff);
@@ -416,10 +412,10 @@ export int float_toString(adr input, adr obuff, int signed){
 	return 0;	
 };
 
-export adr str_subString(int start, int length, adr str, adr buff) {
+export adr str_subString(const int start, const int length, adr str, const adr buff) {
 	adr cleanStart = NULL;
 	cleanStart = ?start;
-	int go = cleanStart as int;
+	const int go = cleanStart as int;
 	str = str + go;
 
 	adr point;
@@ -428,7 +424,7 @@ export adr str_subString(int start, int length, adr str, adr buff) {
 	int i = 0;
 
 	while (i < length) {
-		char ch = str as char;
+		const char ch = str as char;
 		point =: ch;
 		point = point + #1;
 		str = str + #1;
@@ -439,9 +435,9 @@ export adr str_subString(int start, int length, adr str, adr buff) {
 	return buff;
 };
 
-export adr str_reverse(adr in, adr buff){
-	int length = len(in);
-	adr buffPtr; buffPtr = buff;
+export adr str_reverse(const adr in, adr buff){
+	const int length = len(in);
+	const adr buffPtr = buff;
 	
 	
 	for int i = length - 1; i > -1; i = i - 1 {
@@ -449,7 +445,7 @@ export adr str_reverse(adr in, adr buff){
 		adr pointer;
 		pointer = in + i;
 		
-		char ch = pointer as char;
+		const char ch = pointer as char;
 		buff =: ch;
 		buff = buff + 1;
 	};
@@ -459,20 +455,20 @@ export adr str_reverse(adr in, adr buff){
 	return buffPtr;
 };
 
-export char str_at(adr str, int i){
+export char str_at(adr str, const int i){
 	for int j = 0; j < i; j = j + 1; {
 		str = str + #1;
 	};
-	char ch = str as char;
+	const char ch = str as char;
 	return ch;
 };
 
-export int str_forEach(adr s, adr foo, adr args){
-	int in = len(s);
+export int str_forEach(const adr s, const adr foo, const adr args){
+	const int in = len(s);
 	int i;
 	for i = 0; i < in; i = i + 1; {
-		char c = str_at(s, i);
-		int break = foo(c, i, args);
+		const char c = str_at(s, i);
+		const int break = foo(c, i, args);
 		if (break == 1) {
 			return break;
 		};
@@ -480,7 +476,7 @@ export int str_forEach(adr s, adr foo, adr args){
 	return 0;
 };
 
-export bool char_isDigit(char c) {
+export bool char_isDigit(const char c) {
   return c >= '0' & c <= '9';
 };
 
@@ -489,8 +485,8 @@ export int hex_toInt(adr hex){
 	int i = 0;
 	char ch = hex as char;
 	while (ch != '\0'){
-		int temp = io.toInt(ch);
-		int adder = result * 16;
+		const int temp = io.toInt(ch);
+		const int adder = result * 16;
 		result = temp + adder;
 		hex = hex + 1;
 		ch = hex as char;

@@ -12,9 +12,9 @@ int failures = 0;
 int requiresPass = 0;
 int requiresFail = 0;
 
-export bool case(adr foo, adr name, * any _arg, * adr _arg2, * adr arg3, * adr arg4) {
+export bool case(const adr foo, const adr name, * const any _arg, * const adr _arg2, * const adr arg3, * const adr arg4) {
     str.print(`\nRunning Test Case {name}: `);
-	bool result = foo(_arg, _arg2, arg3, arg4);
+	const bool result = foo(_arg, _arg2, arg3, arg4);
 
 	if result {
 		io.print("OK\n", 'g');
@@ -44,7 +44,7 @@ export bool case(adr foo, adr name, * any _arg, * adr _arg2, * adr arg3, * adr a
     return result;
 };
 
-export bool require(bool result, string describe) {
+export bool require(const bool result, const string describe) {
     if result {
         requiresPass = requiresPass + 1;
         return true;
@@ -82,16 +82,15 @@ class TestSuite {
     private LinkedList fixtures = new LinkedList();
     private adr beforeAll = beforeAll;
     private adr cleanup = cleanup;
-    adr fixture = NULL;
 
     string name = new string(name);
 
-    TestSuite init(adr name, * adr beforeAll, * adr cleanup) {
+    TestSuite init(const adr name, * const adr beforeAll, * const adr cleanup) {
         return my;
     };
 
-    void addFixture(adr fixture) {
-        if my.fixture < 4 {
+    void addFixture(const adr fixture) {
+        if my.fixtures.size() < 4 {
             my.fixtures.append(fixture);
         } else {
             str.print(`Too many fixtures for testSuite {my.name} only 4 allowed\n`);
@@ -99,21 +98,22 @@ class TestSuite {
         };
     };
 
-    int addCase(adr foo) {
+    int addCase(const adr foo) {
         my.cases.append(foo);
         return 0;
     };
 
     int run() {
+        str.print(`\n\nRunning test suite: {my.beforeAll}\n\n\n`);
         adr[4] fixtures = {NULL, NULL, NULL, NULL};
         for int i = 0; i < my.fixtures.size(); i++ {
             fixtures[i] = my.fixtures.get(i);
         };
         str.print(`\n\nRunning test suite: {my.name}\n\n\n`);
         for int i = 0; i < my.cases.size(); i++ {
-            adr foo = my.cases.get(i);
+            const adr foo = my.cases.get(i);
             if my.beforeAll != NULL {
-                let beforeAll = my.beforeAll;
+                const let beforeAll = my.beforeAll;
                 beforeAll(fixtures[0], fixtures[1], fixtures[2], fixtures[3]);
             };
 
@@ -123,10 +123,14 @@ class TestSuite {
     };
 
     void del() {
+        adr[4] fixtures = {NULL, NULL, NULL, NULL};
+        for int i = 0; i < my.fixtures.size(); i++ {
+            fixtures[i] = my.fixtures.get(i);
+        };
         delete my.cases;
         if my.cleanup != NULL {
-            let cleanup = my.cleanup;
-            cleanup(my.fixture);
+            const let cleanup = my.cleanup;
+            cleanup(fixtures[0], fixtures[1], fixtures[2], fixtures[3]);
         };
     };
 
@@ -138,11 +142,11 @@ class Mockable {
 	private bool mock = false;
 	private int callCount = 0;
 
-	Mockable init(adr foo) {
+	Mockable init(const adr foo) {
 		return my;
 	};
 
-	void mock(adr mockImpl) {
+	void mock(const adr mockImpl) {
 		my.mockImpl = mockImpl;
 		my.mock = true;
 	};
@@ -152,10 +156,10 @@ class Mockable {
 		my.mockImpl = NULL;
 	};
 
-	any _call(adr ref, * any arg1, * any arg2, * any arg3, * any arg4) {
+	any _call(const adr ref, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
 		my.callCount = my.callCount + 1;
-		let mockImpl = my.mockImpl;
-		let foo = my.foo;
+		const let mockImpl = my.mockImpl;
+		const let foo = my.foo;
 		if (my.mock) {
 			return mockImpl(ref, arg1, arg2, arg3, arg4);
 		} else {

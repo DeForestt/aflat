@@ -31,7 +31,7 @@ class DateTime{
     private int epochToDate();
 };
 
-private int daysInMonth(int month, int year){
+private int daysInMonth(const int month, const int year){
     if month == 2 {
         if year % 4 == 0 {
             if year % 100 == 0 {
@@ -52,7 +52,7 @@ private int daysInMonth(int month, int year){
     return 31;
 };
 
-private int daysInYear(int year){
+private int daysInYear(const int year){
     if year % 4 == 0 {
         if year % 100 == 0 {
             if year % 400 == 0 {
@@ -65,7 +65,7 @@ private int daysInYear(int year){
     return 365;
 };
 
-private int daysSinceJan1(int month, int day, int year){
+private int daysSinceJan1(const int month, const int day, const int year){
     int days = 0;
     for int i = 1; i < month; i++
         days = days + daysInMonth(i, year);
@@ -74,7 +74,7 @@ private int daysSinceJan1(int month, int day, int year){
     return days;
 };
 
-private int dateRelativeTo(int month, int day, int year, int relYear){
+private int dateRelativeTo(const int month, const int day, const int year, const int relYear){
     int days = daysSinceJan1(month, day, year);
     for int i = relYear; i < year; i++
         days = days + daysInYear(i);
@@ -82,7 +82,7 @@ private int dateRelativeTo(int month, int day, int year, int relYear){
 };
 
 private int epochToDate@DateTime(){
-    int epoch = my.seconds;
+    const int epoch = my.seconds;
     int days = epoch / 86400;
     int year = 1970;
     int month = 1;
@@ -103,10 +103,10 @@ private int epochToDate@DateTime(){
 
     // now calculate the time
     int time = epoch % 86400;
-    int hour = time / 3600;
+    const int hour = time / 3600;
     time = time % 3600;
-    int minute = time / 60;
-    int second = time % 60;
+    const int minute = time / 60;
+    const int second = time % 60;
     my.hour = hour;
     my.minute = minute;
     my.second = second;
@@ -114,12 +114,12 @@ private int epochToDate@DateTime(){
 };
 
 
-private int dayOfWeek(int month, int day, int year){
-    int days = dateRelativeTo(month, day, year, 1) + 1;
+private int dayOfWeek(const int month, const int day, const int year){
+    const int days = dateRelativeTo(month, day, year, 1) + 1;
     return days % 7;
 };
 
-private adr dowToString(int dow){
+private adr dowToString(const int dow){
     if dow == 0
         return "Sunday";
     if dow == 1
@@ -138,7 +138,7 @@ private adr dowToString(int dow){
 };
 
 
-DateTime init@DateTime(int seconds){
+DateTime init@DateTime(const int seconds){
     my.seconds = seconds;
     my.epochToDate();
 };
@@ -190,21 +190,21 @@ export DateTime Now(* int timeZone){
     return new DateTime(seconds);
 };
 
-export DateTime mmddyyyyToDate(String input, * char splitChar){
+export DateTime mmddyyyyToDate(const String input, * char splitChar){
     if splitChar == '\0'
         splitChar = '-';
-    LinkedList l = input.split(splitChar);
+    const LinkedList l = input.split(splitChar);
     assert(l.size() == 3, "Invalid date format passed to mmddyyyyToDate");
 
-    String monthString = l.get(0);
-    String dayString = l.get(1);
-    String yearString = l.get(2);
+    const String monthString = l.get(0);
+    const String dayString = l.get(1);
+    const String yearString = l.get(2);
 
-    int month = monthString.toInt();
-    int day = dayString.toInt();
-    int year = yearString.toInt();
+    const int month = monthString.toInt();
+    const int day = dayString.toInt();
+    const int year = yearString.toInt();
 
-    int relDays = dateRelativeTo(month, day, year, 1970);
-    int seconds = relDays * 86400;
+    const int relDays = dateRelativeTo(month, day, year, 1970);
+    const int seconds = relDays * 86400;
     return new DateTime(seconds);
 }; 

@@ -9,9 +9,8 @@ Block head = NULL;
 
 //helpers
 
-Block findFreeBlock(Block last, int size) {
-  Block current;
-  current = head;
+Block findFreeBlock(const Block __last, int size) {
+  Block current = head;
   size = size - 1;
   while (current != NULL) {
     if(current.free == 1){
@@ -23,10 +22,10 @@ Block findFreeBlock(Block last, int size) {
   return NULL;
 };
 
-Block requestSpace(Block last, int size){
-    Block block = brk(NULL);
-    int nsize = size + Block;
-    adr i = brk(block + nsize);
+Block requestSpace(const Block last, const int size){
+    const Block block = brk(NULL);
+    const int nsize = size + Block;
+    const adr i = brk(block + nsize);
 
     if(i < #0){return NULL};
 
@@ -40,8 +39,8 @@ Block requestSpace(Block last, int size){
     return block;
 };
 
-Time newTime(adr count){
-    Time this = malloc(Time);
+Time newTime(const adr count){
+    const Time this = malloc(Time);
     this.amount = count;
     return this;
 };
@@ -51,8 +50,8 @@ Block getBlock(adr ptr){
     return ptr;
 };
 
-int splitBlock(Block block, int size){
-    int test = size + Block;
+int splitBlock(const Block block, const int size){
+    const int test = size + Block;
     int currSize = block.size;
     if (block.size > test){
         Block nBlock = block;
@@ -61,23 +60,23 @@ int splitBlock(Block block, int size){
         currSize = currSize - 16;
         nBlock.size = currSize - size;
         nBlock.free = 1;
-        Block next = block.next;
+        const Block next = block.next;
         nBlock.next = next;
         block.next = nBlock;
         block.size = size;
     };
 };
 
-int defragment(Block block){
-    Block next = block.next;
+int defragment(const Block block){
+    const Block next = block.next;
     if (block.next == NULL){return 0};
     if (block.free != 1){
         return 0;
     };
     if (next.free == 1){
-        int nextSize = next.size;
-        int currSize = block.size;
-        Block newNext = next.next;
+        const int nextSize = next.size;
+        const int currSize = block.size;
+        const Block newNext = next.next;
         block.size = currSize + nextSize + Block;
         block.next = newNext;
         return 1;
@@ -85,7 +84,7 @@ int defragment(Block block){
     return 0;
 };
 
-int deFragAll(Block head){
+int deFragAll(const Block head){
     Block current = head;
     while (current != NULL){
         int check = defragment(current);
@@ -98,10 +97,10 @@ int deFragAll(Block head){
 };
 
 //Interface
-int memcpy (adr dst, adr src, int size){
+int memcpy (adr dst, adr src, const int size){
     int i = 0;
     while(i < size){
-        byte b = src as byte;
+        const byte b = src as byte;
         dst =: b;
         dst = dst + #1;
         src = src + #1;
@@ -110,27 +109,27 @@ int memcpy (adr dst, adr src, int size){
     return 0;
 };
 
-int free(adr ptr){
+int free(const adr ptr){
     if(ptr == NULL){
         return 0;
     };
     
-    Block block = getBlock(ptr);
+    const Block block = getBlock(ptr);
     block.free = 1;
     deFragAll(head);
     return 0;
 };
 
-int blockSize(adr ptr) {
+int blockSize(const adr ptr) {
     if (ptr == NULL){
         return 0;
     };
 
-    Block block = getBlock(ptr);
+    const Block block = getBlock(ptr);
     return block.size;
 };
 
-adr malloc(int size){
+adr malloc(const int size){
 
     Block block;
 
@@ -161,29 +160,27 @@ adr malloc(int size){
     return block;
 };
 
-adr realloc(adr ptr, int size){
+adr realloc(const adr ptr, const int size){
     if (ptr == #0){
         return malloc(size);
     };
 
-    Block block = getBlock(ptr);
-    int nsize = size - 1;
+    const Block block = getBlock(ptr);
+    const int nsize = size - 1;
     if(block.size > nsize){
         return ptr;
     };
     
-    adr new_ptr = malloc(size);
+    const adr new_ptr = malloc(size);
     if (new_ptr == #0){return #0;};
-    int bsize;
-    bsize = block.size;
+    const int bsize = block.size;
     memcpy(new_ptr, ptr, bsize);
     free(ptr);
     return new_ptr;
 };
 
 int inspectHeap() {
-    Block current;
-    current = head;
+    Block current = head;
     io.print("Heap:\n");
     io.print("HEAD --> ");
     while (current != NULL){
@@ -198,8 +195,8 @@ int inspectHeap() {
     return 0;
 };
 
-Bit newBit(int value){
-	Bit b = malloc(Bit);
+Bit newBit(const int value){
+	const Bit b = malloc(Bit);
 	b.value = value;
 	b.last = NULL;
 	b.next = NULL;
@@ -207,7 +204,7 @@ Bit newBit(int value){
 };
 
 Times newTimes(){
-    Times t = malloc(Times);
+    const Times t = malloc(Times);
     t.tms_cstime = 0;
     t.tms_cutime = 0;
     t.tms_stime = 0;
@@ -215,13 +212,13 @@ Times newTimes(){
     return t;
 };
 
-int panic(adr msg){
+int panic(const adr msg){
     io.print("Panic: ", 'r'); io.print(msg);
     io.print("\n");
     sys_exit(1);
 };
 
-int assert(bool cond, * adr message){
+int assert(const bool cond, * const adr message){
     if !cond {
         io.print("Failed assert: ");
         if message != NULL
@@ -232,10 +229,10 @@ int assert(bool cond, * adr message){
     return 0;
 };
 
-int sleep(int seconds, * int nanoseconds){
-    long sec = #0 + seconds;
-    long nsec = #0 + nanoseconds;
-    TimeSpec t = new TimeSpec();
+int sleep(const int seconds, *const int nanoseconds){
+    const long sec = #0 + seconds;
+    const long nsec = #0 + nanoseconds;
+    const TimeSpec t = new TimeSpec();
     t.tv_sec = sec;
     t.tv_nsec = nsec;
     sys_nsleep(t);
@@ -246,6 +243,6 @@ int sleep(int seconds, * int nanoseconds){
 /*
  * _FCstr utility function to format a c string
  */
-adr _fCstr(adr fmt, * adr args) {
+adr _fCstr(const adr fmt, * const adr args) {
     return st.fString(fmt, args);
 };
