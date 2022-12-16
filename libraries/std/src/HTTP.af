@@ -20,11 +20,11 @@ enum HTTPMethod {
     CONNECT
 };
 
-export adr listen(short port, int bufferSize, adr callback, adr args) {
+export adr listen(const short port, const int bufferSize, const adr callback, const adr args) {
     _aflat_server_spinUp(port, bufferSize, callback, args);
 };
 
-export adr methodToString(HTTPMethod method) {
+export adr methodToString(const HTTPMethod method) {
     if method == HTTPMethod.GET 
         return "GET"
     else if method == HTTPMethod.POST
@@ -45,7 +45,7 @@ export adr methodToString(HTTPMethod method) {
         return "UNKNOWN";
 };
 
-export HTTPMethod stringToMethod(string method) {
+export HTTPMethod stringToMethod(const string method) {
     if method == "GET"
         return HTTPMethod.GET
     else if method == "POST"
@@ -70,7 +70,7 @@ class HTTPHeader {
     const adr key = key;
     const adr value = value;
 
-    HTTPHeader init(adr key, adr value) {
+    HTTPHeader init(const adr key, const adr value) {
         return my;
     };
 };
@@ -86,17 +86,16 @@ class HTTPMessage {
     string statusMessage;
     HTTPMethod method;
 
-    private int parse(adr rsi) {
-        string rsp = new string(rsi);
+    private int parse(const adr rsi) {
+        const string rsp = new string(rsi);
         my.origin = rsp;
 
-        let lines = rsp.split('\r');
-        string firstLine = lines.get(0);
+        const let lines = rsp.split('\r');
+        const string firstLine = lines.get(0);
         firstLine.trim();
-        let firstLineParts = firstLine.split(' ');
+        const let firstLineParts = firstLine.split(' ');
 
-        if (firstLineParts.getCount() < 3) {
-            
+        if (firstLineParts.getCount() < 3) { 
             io.fPrint("First line of response is invalid: %s \nlist size: %d\n", {firstLine, firstLineParts.getCount()});
             return -1;
         };
@@ -110,7 +109,7 @@ class HTTPMessage {
 
         my.switch = false;
 
-        lines.forEach([string line, int index, HTTPMessage this] => {
+        lines.forEach([const string line, const int index, const HTTPMessage this] => {
             if line == "\n" {
                 this.switch = true;
                 return 0;
@@ -124,7 +123,7 @@ class HTTPMessage {
                 return 0;
             };
 
-            let sections = line.split(':');
+            const let sections = line.split(':');
             if sections.getCount() < 2{
                 io.fPrint("Invalid header: %s\n", {line});
                 return 0;
@@ -136,41 +135,40 @@ class HTTPMessage {
             if sections.getCount() > 2 {
                 for int i = 2; i < sections.getCount(); i = i + 1 {
                     value = value + ":";
-                    string t = sections.get(i);
+                    const string t = sections.get(i);
                     value = value + t;
                 };
             };
             key = key.trim();
             value = value.trim();
-            HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
+            const HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
             this.headers.pushBack(n);
         }, my);
         return 0;
     };
 
-    private void parseReq(adr rsi) {
-        string rsp = new string(rsi);
+    private void parseReq(const adr rsi) {
+        const string rsp = new string(rsi);
         my.origin = rsp;
 
-        let lines = rsp.split('\r');
-        string firstLine = lines.get(0);
+        const let lines = rsp.split('\r');
+        const string firstLine = lines.get(0);
         firstLine.trim();
-        let firstLineParts = firstLine.split(' ');
+        const let firstLineParts = firstLine.split(' ');
 
-        if firstLineParts.getCount() < 3 {
-            
+        if firstLineParts.getCount() < 3 {            
             io.fPrint("First line of response is invalid: %s \nlist size: %d\n", {firstLine, firstLineParts.getCount()});
             return;
         };
 
-        string method = firstLineParts.get(0);
+        const string method = firstLineParts.get(0);
         my.endpoint = firstLineParts.get(1);
         my.version = firstLineParts.get(2);
         my.method = stringToMethod(method);
 
         my.switch = false;
 
-        lines.forEach([string line, int index, HTTPMessage this] => {
+        lines.forEach([const string line, const int index, const HTTPMessage this] => {
             if line == "\n" {
                 this.switch = true;
                 return 0;
@@ -184,7 +182,7 @@ class HTTPMessage {
                 return 0;
             };
 
-            let sections = line.split(':');
+            const let sections = line.split(':');
             if sections.getCount() < 2{
                 io.fPrint("Invalid header: %s\n", {line});
                 return 0;
@@ -196,28 +194,27 @@ class HTTPMessage {
             if sections.getCount() > 2 {
                 for int i = 2; i < sections.getCount(); i = i + 1 {
                     value = value + ":";
-                    string t = sections.get(i);
+                    const string t = sections.get(i);
                     value = value + t;
                 };
             };
             key = key.trim();
             value = value.trim();
-            HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
+            const HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
             this.headers.pushBack(n);
         }, my); 
     };
 
-    HTTPMessage init(adr rsp, * bool isReq) {
+    HTTPMessage init(const adr rsp, * const bool isReq) {
         if isReq my.parseReq(rsp) else my.parse(rsp);
         return my;
     };
 
-    
-    adr getHeader(adr key) {
-        adr args = malloc(adr);
+    adr getHeader(const adr key) {
+        const adr args = malloc(adr);
         args =: key;
-        my.headers.forEach([HTTPHeader header, int index, adr arg] => {
-            adr comp = arg as adr;
+        my.headers.forEach([const HTTPHeader header, const int __index, const adr arg] => {
+            const adr comp = arg as adr;
             String a = new String(header.key);
             a = a.trim('\n');
             a = a.trim('\r');
@@ -229,7 +226,7 @@ class HTTPMessage {
             };
             delete a;
         }, args);
-        adr ret = args as adr;
+        const adr ret = args as adr;
         return ret;
     };
 };
@@ -241,42 +238,42 @@ class HTTPRequest {
     const private List headers = new List(HTTPHeader);
     private adr body = "\r\n";
 
-    HTTPRequest init(HTTPMethod method) {
+    HTTPRequest init(const HTTPMethod method) {
         my.host = "";
         my.endpoint = "/";
         return my;
     };
 
-    int setHost(adr host) {
+    int setHost(const adr host) {
         my.host = host;
         return 0;
     };
 
-    void setMethod(HTTPMethod method) {
+    void setMethod(const HTTPMethod method) {
         my.method = method;
     };
 
-    int setEndpoint(adr endpoint) {
+    int setEndpoint(const adr endpoint) {
         my.endpoint = endpoint;
         return 0;
     };
 
-    int addHeader(adr key, adr value) {
-        HTTPHeader header = new HTTPHeader(key, value);
+    int addHeader(const adr key, const adr value) {
+        const HTTPHeader header = new HTTPHeader(key, value);
         my.headers.pushBack(header);
     };
 
-    int setBody(adr body) {
+    void setBody(const adr body) {
         my.body = body;
-        adr contentLen = malloc(10);
-        int size = str.len(body);
+        const adr contentLen = malloc(10);
+        const int size = str.len(body);
         str.int_toString(size, contentLen);
         my.addHeader("Content-Length", contentLen);
     };
 
     public string getHeaders() {
-        string res = new string("");
-        my.headers.forEach([HTTPHeader header, int i, string buffer] => {
+        const string res = new string("");
+        my.headers.forEach([const HTTPHeader header, const int __i, string buffer] => {
             buffer = buffer + header.key;
             buffer = buffer + ": ";
             buffer = buffer + header.value;
@@ -301,14 +298,14 @@ class HTTPRequest {
         return res;
     };
 
-    HTTPMessage send(int bufferSize) {
-        string msg = my.toString();
-        adr buffer = malloc(bufferSize);
-        adr host = my.host;
-        adr endpoint = my.endpoint;
-        adr msg_prim = msg.cstr();
+    HTTPMessage send(const int bufferSize) {
+        const string msg = my.toString();
+        const adr buffer = malloc(bufferSize);
+        const adr host = my.host;
+        const adr endpoint = my.endpoint;
+        const adr msg_prim = msg.cstr();
         request(host, endpoint, "80", msg_prim, buffer, bufferSize);
-        let res = new string(buffer);
+        const let res = new string(buffer);
         return new HTTPMessage(buffer);
     };
 };
@@ -318,11 +315,11 @@ class EndPointStruct {
     string path = path;
     HTTPMethod method = method;
 
-    EndPointStruct init(adr foo, string path, HTTPMethod method) {
+    EndPointStruct init(const adr foo, const string path, const HTTPMethod method) {
         return my;
     };
 
-    adr _call(adr ref, HTTPMessage msg, * any arg2, * any arg3, * any arg4) {
+    adr _call(const adr ref, const HTTPMessage msg, * const any arg2, * const any arg3, * const any arg4) {
         return my.foo(ref, msg, arg2, arg3, arg4);
     };
 };
@@ -344,13 +341,13 @@ class HTTPServer {
         return res;
     };
 
-    void registerEndpoint(adr foo, string path, HTTPMethod method) {
-        EndPointStruct eps = new EndPointStruct(foo, path, method);
+    void registerEndpoint(const adr foo, const string path, const HTTPMethod method) {
+        const EndPointStruct eps = new EndPointStruct(foo, path, method);
         my.endpoints.pushBack(eps);
         return;
     };
 
-    bool processRequests(adr req, adr rsp) {
+    bool processRequests(const adr req, const adr rsp) {
         st.print("Processing request:\n");
         st.print({req});
         // HTTPMessage msg = new HTTPMessage(req);
@@ -372,12 +369,12 @@ class HTTPServer {
         return false;
     };
 
-    bool start(short port) {
+    void start(const short port) {
         listen(port, 10000000, HTTPServer.processRequests, my);
     };
 };
 
 
-export adr requestWorker(HTTPRequest _arg) : async.worker {
+export adr requestWorker(const HTTPRequest _arg) : async.worker {
     return _arg.send(10000000);
 };
