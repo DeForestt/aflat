@@ -7,7 +7,7 @@ import string from "String";
 import { print } from "String" under st;
 export int printInt(int i);
 
-private int charToColor(char c){
+private int charToColor(const char c){
         if c == 'B' return 30;
         if c == 'r' return 31;
         if c == 'g' return 32;
@@ -19,9 +19,9 @@ private int charToColor(char c){
 };
 
 export int readString(adr pointer){
-        char input = ' ';
-        char nl = '\n';
-        char null = '\0';
+        const char input = ' ';
+        const char nl = '\n';
+        const char null = '\0';
         while(input != nl){
                 sys_read(0, ?input, 1);
                 pointer =: input;
@@ -32,21 +32,21 @@ export int readString(adr pointer){
         return  0;
 };
 
-export int printChar(char c){
+export int printChar(const char c){
         sys_write(1, ?c, 1);
         return 0;
 };
 
 private int clearInput(){
-        char nl = str.ascii(10);
-        char buffer = ' ';
+        const char nl = str.ascii(10);
+        const char buffer = ' ';
         while (buffer != nl)
                 sys_read(0, ?buffer, 1);
         return 0;
 };
 
-export int print(adr input, * char color){
-        int len = str.len(input);
+export int print(const adr input, * const char color){
+        const int len = str.len(input);
         if color != '\0' {
                 print("\e[");
                 printInt(charToColor(color));
@@ -58,7 +58,7 @@ export int print(adr input, * char color){
         return 0;
 };
 
-export char toChar(int input){
+export char toChar(const int input){
         char output = '0';
         if(input > 9){output = 'X'};
         if(input == 0){output = '0'};
@@ -81,7 +81,7 @@ export char toChar(int input){
         return output;
 };
 
-private char longtoChar(long input){
+private char longtoChar(const long input){
         if input == #0 return '0';
         if input == #1 return '1';
         if input == #2 return '2';
@@ -102,7 +102,7 @@ private char longtoChar(long input){
         return 'X';
 };
 
-export int toInt(char input){
+export int toInt(const char input){
         if(input == '0'){return 0};
         if(input == '1'){return 1};
         if(input == '2'){return 2};
@@ -122,12 +122,12 @@ export int toInt(char input){
         return -1;
 };
 
-export int pullInt(int sigfigs){
+export int pullInt(const int sigfigs){
         int i = sigfigs - 1;
         int value = 0;
         int h = 0;
         int factor = 0;
-        char input;
+        const char input;
         while (i > -1){
                 sys_read(0, ?input, 1);
                 h = toInt(input);
@@ -142,7 +142,7 @@ export int pullInt(int sigfigs){
 
 export int printInt(int input){
         int h = 0;
-        int ten = 10;
+        const int ten = 10;
         int factor = 0;
         int i = 0;
 
@@ -178,7 +178,7 @@ export int printInt(int input){
 
 export int printUnsignedInt(int input){
         int h = 0;
-        int ten = 10;
+        const int ten = 10;
         int factor = 0;
         int i = 0;
 
@@ -232,7 +232,7 @@ export int printHex(adr input){
         while (i > -1){
                 factor = math.longExp(16, i);
                 h = input / factor;
-                char out = longtoChar(h);
+                const char out = longtoChar(h);
                 printChar(out);
                 h = h * factor;
                 input = input - h;
@@ -243,7 +243,7 @@ export int printHex(adr input){
 
 export int printLong(long input){
         long h = 0;
-        long ten = 10;
+        const long ten = 10;
         long factor = 0;
         int i = 0;
 
@@ -267,7 +267,7 @@ export int printLong(long input){
         while (i > -1){
                 factor = math.longExp(10, i);
                 h = input / factor;
-                char out = longtoChar(h);
+                const char out = longtoChar(h);
                 printChar(out);
                 h = h * factor;
                 input = input - h;
@@ -276,11 +276,11 @@ export int printLong(long input){
         return 0;
 };
 
-export int printFloat(adr f){
+export int printFloat(const adr f){
 	// use bit manipulation to convert float to int
 	int i = f as int;
 	// get sign
-	int sign = i >> 31;
+	const int sign = i >> 31;
 	// get exponent
 	i = f as int;
 	int exponent = (i >> 23) & 255;
@@ -291,7 +291,7 @@ export int printFloat(adr f){
 	// denormalize
 	if exponent == 0 {
 		exponent = 1;
-		int man = mantissa << 1;
+		const int man = mantissa << 1;
 		mantissa = man;
 	} else {
 		exponent = exponent - 127;
@@ -299,7 +299,7 @@ export int printFloat(adr f){
 	};
 
 	// calculate float
-	int whole = mantissa >> (23 - exponent);
+	const int whole = mantissa >> (23 - exponent);
 	// get fractional part
 	int frac = mantissa & (8388607 >> exponent);
 	// calculate fractional part
@@ -308,8 +308,8 @@ export int printFloat(adr f){
 	int fracCount = 0;
 	// ffffffff = 4294967295
 	while (frac != 0) & (frac <= 429496729) {
-		int nfrac = frac << 1;
-		int bit = nfrac >> 23;
+		const int nfrac = frac << 1;
+		const int bit = nfrac >> 23;
 		frac = nfrac;
 		fracPart = fracPart + (bit * mul);
 		frac = frac & 8388607;
@@ -330,8 +330,8 @@ export int clear(){
         return 0;
 };
 
-export int fPrint(adr fmt, * adr args) {
-    string s = fmt;
+export int fPrint(const adr fmt, * adr args) {
+    const string s = fmt;
 
     for int i = 0; i < s.len(); i++ {
         if s.at(i) == '%' {
@@ -349,7 +349,7 @@ export int fPrint(adr fmt, * adr args) {
                 st.print(args as string);
                 args = args + adr;
             } else if s.at(i) == 'b' {
-                bool b = args as bool;
+                const bool b = args as bool;
                 if b print("true")
                 else print("false");
                 args = args + bool;
