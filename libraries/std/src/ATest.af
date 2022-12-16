@@ -12,7 +12,8 @@ int failures = 0;
 int requiresPass = 0;
 int requiresFail = 0;
 
-export bool case(adr foo, adr _arg) {
+export bool case(adr foo, adr name, adr _arg) {
+    str.print(`\nRunning Test Case {name}: `);
 	bool result = foo(_arg);
 
 	if result {
@@ -78,7 +79,6 @@ export int report() {
 
 class TestSuite {
     private LinkedList cases = new LinkedList();
-    private LinkedList args = new LinkedList();
     private adr beforeAll = beforeAll;
     private adr cleanup = cleanup;
     adr fixture = NULL;
@@ -93,9 +93,8 @@ class TestSuite {
         my.fixture = fixture;
     };
 
-    int addCase(adr foo, adr _arg) {
+    int addCase(adr foo) {
         my.cases.append(foo);
-        my.args.append(_arg);
         return 0;
     };
 
@@ -103,8 +102,6 @@ class TestSuite {
         str.print(`\n\nRunning test suite: {my.name}\n\n\n`);
         for int i = 0; i < my.cases.size(); i++ {
             adr foo = my.cases.get(i);
-            adr _arg = my.args.get(i);
-            str.print(`Running test case: {_arg}: `);
             if my.beforeAll != NULL {
                 let beforeAll = my.beforeAll;
                 beforeAll(my.fixture);
@@ -117,7 +114,6 @@ class TestSuite {
 
     void del() {
         delete my.cases;
-        delete my.args;
         if my.cleanup != NULL {
             let cleanup = my.cleanup;
             cleanup(my.fixture);
