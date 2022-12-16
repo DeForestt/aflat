@@ -57,6 +57,9 @@ public:
   // Assign a new symbol and return the byteMod
   int assign(std::string symbol, ast::Type type, bool mask, bool mut = true);
 
+  // Add to a symbols assign count
+  void addAssign(std::string symbol);
+
   // Get a symbol
   gen::Symbol *get(std::string symbol);
 

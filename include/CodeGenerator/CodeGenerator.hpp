@@ -30,6 +30,8 @@ class Symbol {
   int byteMod;
   bool usable = true;
   int underscores = 0;
+  int refCount = 0;
+  int assignCount = 0;
 };
 
 class Type {

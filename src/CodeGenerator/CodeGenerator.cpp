@@ -143,7 +143,14 @@ void gen::CodeGenerator::alert(std::string message, bool error = true) {
     std::cout << message << std::endl;
     throw err::Exception(message);
   } else {
-    std::cout << "Warning: " << message << std::endl;
+    std::cout << "Warning: on line " << this->logicalLine << ": ";
+    if (this->scope != nullptr) {
+      std::cout << "in class " << this->scope->Ident << ": ";
+    }
+    if (!this->globalScope && this->currentFunction != nullptr) {
+      std::cout << "in function " << this->currentFunction->ident.ident << ": ";
+    }
+    std::cout << message << std::endl;
   }
 };
 
@@ -343,7 +350,6 @@ gen::CodeGenerator::resolveSymbol(std::string ident,
     access = '(' + this->registers["%r12"]->get(asmc::QWord) + ')';
     retSym.type = *retSym.type.typeHint;
   };
-
   return std::make_tuple(access, retSym, true, pops);
 };
 
@@ -2160,6 +2166,7 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
           dec->Ident, dec->type, dec->mask, decAssign->mute);
       auto s = gen::scope::ScopeManager::getInstance()->get(dec->Ident);
       s->usable = false;
+      s->refCount--;
 
       auto mov2 = new asmc::Mov();
       mov2->logicalLine = decAssign->logicalLine;
@@ -2392,6 +2399,7 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
   OutputFile.text << mov2;
   OutputFile.text << mov;
   OutputFile << std::get<3>(resolved);
+  scope::ScopeManager::getInstance()->addAssign(fin->symbol);
 }
 
 ast::Function gen::CodeGenerator::GenCall(ast::Call* call,

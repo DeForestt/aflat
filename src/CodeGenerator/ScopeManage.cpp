@@ -59,6 +59,7 @@ int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type,
   sym.type = type;
   sym.byteMod = this->stackPos;
   sym.mutable_ = mut;
+  sym.refCount = 0;
   this->stack.push_back(sym);
   this->SStackSize++;
 
@@ -90,6 +91,18 @@ void gen::scope::ScopeManager::popScope(CodeGenerator *callback,
                       this->stack.back().type.arraySize;
     gen::Symbol sym = this->stack.back();
     if (sym.symbol != "" && sym.symbol != "my") {
+      // if the symboe has only numberes in it then it is a temp variable
+
+      if (sym.refCount < 1 && sym.symbol.find_first_not_of("0123456789") != std::string::npos
+      && sym.symbol.find("lambda") == std::string::npos) {
+        callback->alert("Symbol \"" + sym.symbol + "\" is assigned but never "
+                        "used please consider removing it.", false);
+      };
+      if (sym.assignCount < 1 && sym.mutable_ && sym.symbol.find("lambda") == std::string::npos
+      && sym.symbol.find_first_not_of("0123456789") != std::string::npos) {
+        callback->alert("Symbol \"" + sym.symbol + "\" is mutable but never "
+                        "assigned please consider making it immutable.", false);
+      };
       auto desc = callback->deScope(sym);
       if (desc) {
         OutputFile << *desc;
@@ -152,7 +165,10 @@ gen::Symbol *gen::scope::ScopeManager::get(std::string symbol) {
 
   for (int i = this->stack.size() - 1; i >= 0; i--) {
     if (this->stack[i].symbol == symbol) {
-      if (this->stack[i].usable) return &this->stack[i];
+      if (this->stack[i].usable) { 
+        this->stack[i].refCount++;
+        return &this->stack[i];
+      };
     }
   }
 
@@ -164,4 +180,14 @@ gen::Symbol *gen::scope::ScopeManager::get(std::string symbol) {
   }
 
   return nullptr;
+};
+
+void gen::scope::ScopeManager::addAssign(std::string symbol) {
+  for (int i = this->stack.size() - 1; i >= 0; i--) {
+    if (this->stack[i].symbol == symbol) {
+      this->stack[i].assignCount++;
+      // cancel the ref that was added when getting the symbol
+      this->stack[i].refCount--;
+    }
+  }
 };
