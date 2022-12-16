@@ -10,7 +10,7 @@ import * from "io" under io;
 private adr getenv(adr name);
 
 
-export int execve(adr path, * adr argv, * adr envp){
+export int execve(const adr path, * const adr argv, * adr envp){
     if envp == NULL{
         const let USER = st.fString("USER=%a", {getenv("USER")});
         const let HOME = st.fString("HOME=%a", {getenv("HOME")});
@@ -21,33 +21,33 @@ export int execve(adr path, * adr argv, * adr envp){
     return sys_execve(path, argv, envp);
 };
 
-export adr execWorker(adr _arg) : async.worker {
+export adr execWorker(const adr _arg) : async.worker {
     const adr[3] arg = _arg;
     execve(arg[0], arg[1], arg[2]);
     return NULL;
 };
 
-export int exec(adr path, * adr argv, * adr envp) {
-    int pid = sys_fork();
+export int exec(const adr path, * const adr argv, * const adr envp) {
+    const int pid = sys_fork();
     if pid == 0 {
         execve(path, argv, envp);
         sys_exit(0);
     } else {
-        int status;
+        const int status;
         sys_wait(pid, ?status, 0, NULL);
         return status;
     };
 };
 
-export int system(adr cmd) {
+export int system(const adr cmd) {
     const let argv = {"/bin/sh", "-c", cmd, NULL};
     return exec("/bin/sh", argv, NULL);
 };
 
-export adr envVar(adr name) {
+export adr envVar(const adr name) {
     return getenv(name);
 };
 
-export bool isSet(adr name) {
+export bool isSet(const adr name) {
     return getenv(name) != NULL;
 };
