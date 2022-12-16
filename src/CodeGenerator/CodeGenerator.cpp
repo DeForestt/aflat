@@ -2071,7 +2071,7 @@ void gen::CodeGenerator::genDecArr(ast::DecArr* dec, asmc::File& OutputFile) {
   links::LinkedList<gen::Symbol>* Table;
   if (this->scope == nullptr || this->inFunction) {
     int bMod = gen::scope::ScopeManager::getInstance()->assign("." + dec->ident,
-                                                               type, false);
+                                                               type, false, false);
     // create a pointer to the array
     ast::Type adr;
     adr.arraySize = 1;
