@@ -60,7 +60,7 @@ class FD {
 class Result{
     private MProcess p = p;
 
-    Result init(MProcess p){
+    Result init(const MProcess p){
         return my;
     };
 
@@ -72,18 +72,19 @@ class Result{
         return my.p.kill();
     };
 
-    public int timeout(int time, * int nano) {
+    public int timeout(const int time, *const int nano) {
         // create a new process that waits for time and then kills the process
 
-        Process timeout = Process([adr args]=>{
-            int[3] arg = args;
+        const Process timeout = Process([const adr args]=>{
+            const int[3] arg = args;
             sleep(arg[0], arg[1]);        
             if sys_kill(arg[2], 2) == 0 {
                 io.print("timeout: killed process");
             };
             sys_exit(0);
         });
-        int[3] arg = {time, nano, my.p.getPid()};
+        const int[3] arg = {time, nano, my.p.getPid()};
+        timeout.start(arg);
         return 0;
     };
 };
@@ -92,36 +93,36 @@ class WorkArgs {
     public adr func = bar;
     public adr args = args;
 
-    WorkArgs init(adr bar, adr args){
+    WorkArgs init(const adr bar, const adr args){
         return my;
     };
 
     adr run() {
-        adr func = my.func;
+        const adr func = my.func;
         return func(my.args);
     };
 };
 
-Message init@Message(adr body){
+Message init@Message(const adr body){
     my.len = blockSize(body);
     my.body = body;
 };
 
-Process init@Process(adr bar){
+Process init@Process(const adr bar){
     my.foo = bar;
     my.pid = 0;
 };
 
-MProcess init@MProcess(adr bar){
+MProcess init@MProcess(const adr bar){
     my.foo = bar;
     my.pid = 0;
     my.inbox = new Pipe();
     my.outbox = new Pipe();
 };
 
-int start@Process(adr args){
+int start@Process(const adr args){
     my.pid = sys_fork();
-    adr bar = my.foo;
+    const adr bar = my.foo;
     if(my.pid == 0){
         bar(args);
         sys_exit(0);
@@ -129,9 +130,9 @@ int start@Process(adr args){
     return 0;
 };
 
-int start@MProcess(adr args){
+int start@MProcess(const adr args){
     my.pid = sys_fork();
-    adr bar = my.foo;
+    const adr bar = my.foo;
     if my.pid == 0 {
         bar(args, my.inbox, my.outbox);
         sys_exit(0);
@@ -144,107 +145,105 @@ int getPid@Thread(){
 };
 
 bool isRunning@Process(){
-    int status = sys_kill(my.pid, 0); // 0 means no signal
+    const int status = sys_kill(my.pid, 0); // 0 means no signal
     return status >= 0;
 };
 
-bool input@MProcess(adr message){
-    Message m = Message(message);
-    Pipe pipe = my.inbox;
+bool input@MProcess(const adr message){
+    const Message m = Message(message);
+    const Pipe pipe = my.inbox;
 
-    adr header = malloc(5);
+    const adr header = malloc(5);
     str.int_toStringL0(m.len, header, 5);
-    int p = pipe.write(header, 5);
-    p = pipe.write(m.body, m.len);
+    pipe.write(header, 5);
+    pipe.write(m.body, m.len);
     free(header);
 
     return true;
 };
 
 adr output@MProcess(){
-    Pipe outbox = my.outbox;
+    const Pipe outbox = my.outbox;
 
     // read header message from pipe
-    adr header = malloc(5);
+    const adr header = malloc(5);
     outbox.read(header, 5);
-    int mlen = str.str_toInt(header);
+    const int mlen = str.str_toInt(header);
     free(header);
 
     // read body from pipe
-    adr mbody = malloc(mlen + 1);
-    adr pbody = mbody + mlen;
+    const adr mbody = malloc(mlen + 1);
+    const adr pbody = mbody + mlen;
     pbody =: '\0';
     outbox.read(mbody, mlen);
 
     return mbody;
 };
 
-export Message readPipe(Pipe pipe){
-    adr header = malloc(5);
+export Message readPipe(const Pipe pipe){
+    const adr header = malloc(5);
     pipe.read(header, 5);
-    int mlen = str.str_toInt(header);
+    const int mlen = str.str_toInt(header);
     free(header);
 
     // read body from pipe
     adr mbody = malloc(mlen + 1);
 
     pipe.read(mbody, mlen);
-    Message m = Message(mbody);
+    const Message m = Message(mbody);
     mbody = mbody + mlen;
     mbody =: '\0';
     return m;
 };
 
-int writePipe@Message(Pipe pipe){
-    adr header = malloc(5);
+int writePipe@Message(const Pipe pipe){
+    const adr header = malloc(5);
     str.int_toStringL0(my.len, header, 5);
-    int p = pipe.write(header, 5);
-    p = pipe.write(my.body, my.len);
+    pipe.write(header, 5);
+    pipe.write(my.body, my.len);
     free(header);
     return 0;
 };
 
 Pipe init@Pipe(){
-    FD fd = FD();
+    const FD fd = FD();
     sys_pipe(fd);
     my.out = fd.out;
     my.in = fd.in;
 };
 
-int read@Pipe(adr buf, int size){
-    int fd;
-    fd = my.out;
-    int ret = sys_read(fd, buf, size);
+int read@Pipe(const adr buf, const int size){
+    const int fd = my.out;
+    const int ret = sys_read(fd, buf, size);
     return ret;
 };
 
-int write@Pipe(adr buf, int size){
-    int fd;
-    fd = my.in;
-    int ret = sys_write(fd, buf, size);
+int write@Pipe(const adr buf, const int size){
+    const int fd = my.in;
+    const int ret = sys_write(fd, buf, size);
     return ret;
 };
 
-export int exit(int status){
+export int exit(const int status){
     sys_exit(status);
     return 0;
 };
 
-export int wait(Thread p){
+export int wait(const Thread p){
     sys_wait(p.getPid(), NULL, 0, NULL);
     return 0;
 };
 
-// Start a function as a concurrant process
-export adr worker(adr foo, adr _arg) {
+// Start a function as a concurrent process
+export adr worker(const adr foo, const adr _arg) {
     
-    MProcess p = new MProcess([WorkArgs args, Pipe inbox, Pipe outbox] => {
-        adr res = args.run();
-        Message msg = new Message(res);
+    const MProcess p = new MProcess([const WorkArgs args, const Pipe __inbox, const Pipe outbox] => {
+        const adr res = args.run();
+        const Message msg = new Message(res);
         msg.writePipe(outbox);
     });
-    Result ret = new Result(p);
-    WorkArgs pArgs = new WorkArgs(foo, _arg);
+    const Result ret = new Result(p);
+    const WorkArgs pArgs = new WorkArgs(foo, _arg);
     p.start(pArgs);
     return ret; 
 };
