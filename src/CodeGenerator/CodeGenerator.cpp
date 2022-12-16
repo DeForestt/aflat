@@ -3211,6 +3211,7 @@ void gen::CodeGenerator::genInc(ast::Inc* inc, asmc::File& OutputFile) {
   add->op1 = "$1";
   add->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
   OutputFile.text << add;
+  gen::scope::ScopeManager::getInstance()->addAssign(inc->ident);
 }
 
 void gen::CodeGenerator::genDec(ast::Dec* inc, asmc::File& OutputFile) {
@@ -3223,6 +3224,7 @@ void gen::CodeGenerator::genDec(ast::Dec* inc, asmc::File& OutputFile) {
   sub->op1 = "$-1";
   sub->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
   OutputFile.text << sub;
+  gen::scope::ScopeManager::getInstance()->addAssign(inc->ident);
 }
 
 void gen::CodeGenerator::genImport(ast::Import* imp, asmc::File& OutputFile) {
