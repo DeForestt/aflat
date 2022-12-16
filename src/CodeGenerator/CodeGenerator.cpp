@@ -2379,6 +2379,7 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
   asmc::Size size;
   std::string output = std::get<0>(resolved);
   if (assign->refrence == true) {
+    // 
     asmc::Mov* m1 = new asmc::Mov;
     m1->logicalLine = assign->logicalLine;
     m1->from = output;
@@ -2399,7 +2400,7 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
   OutputFile.text << mov2;
   OutputFile.text << mov;
   OutputFile << std::get<3>(resolved);
-  if (assign->modList.count == 0)
+  if (assign->modList.count == 0 && !assign->refrence)
   scope::ScopeManager::getInstance()->addAssign(fin->symbol);
 }
 
