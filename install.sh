@@ -31,7 +31,7 @@ fi
 
 # Check for ~/.aflat directory
 if [ -d ~/.aflat ]; then
-  (cd ~/.aflat/aflat && git pull && cd build && cmake . && cd .. && cmake --build build && bash rebuild-libs.sh && aflat build)
+  (cd ~/.aflat/aflat && git pull && make && bash rebuild-libs.sh && aflat build > aflatBuildLog.log)
   echo 'aflat updated'
   exit
 fi
@@ -41,7 +41,7 @@ mkdir ~/.aflat
 (cd ~/.aflat && git clone https://github.com/DeForestt/aflat.git)
 
 # Build aflat
-(cd ~/.aflat/aflat && mkdir bin && mkdir build && cd build && cmake ../. && cd .. && cmake --build build> buildLog.log)
+(cd ~/.aflat/aflat && mkdir bin && make ../. && cd .. && cmake --build build > buildLog.log)
 
 # Build libs
 (cd ~/.aflat/aflat && bash rebuild-libs.sh)
