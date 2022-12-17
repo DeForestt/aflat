@@ -90,16 +90,17 @@ void gen::scope::ScopeManager::popScope(CodeGenerator *callback,
     this->stackPos -= sizeToInt(this->stack.back().type.size) *
                       this->stack.back().type.arraySize;
     gen::Symbol sym = this->stack.back();
-    if (sym.symbol != "" && sym.symbol != "my") {
+    if (sym.symbol != ""
+    && sym.symbol != "my"
+    && sym.symbol.find("lambda") == std::string::npos
+    && sym.symbol.find_first_not_of("0123456789") != std::string::npos) {
       // if the symboe has only numberes in it then it is a temp variable
       if (sym.symbol[0] != '~'){
-        if (sym.refCount < 1 && sym.symbol.find_first_not_of("0123456789") != std::string::npos
-        && sym.symbol.find("lambda") == std::string::npos && sym.symbol.substr(0,2) != "__") {
+        if (sym.refCount < 1 && sym.symbol.substr(0,2) != "__") {
           callback->alert("Symbol \"" + sym.symbol + "\" is assigned but never "
                           "used please consider removing it. If this is a placeholder var prefix with `__`", false);
         };
-        if (sym.assignCount < 1 && sym.mutable_ && sym.symbol.find("lambda") == std::string::npos
-        && sym.symbol.find_first_not_of("0123456789") != std::string::npos) {
+        if (sym.assignCount < 1 && sym.mutable_) {
           callback->alert("Symbol \"" + sym.symbol + "\" is mutable but never "
                           "assigned please consider making it immutable.", false);
         };
