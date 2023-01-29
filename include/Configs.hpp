@@ -18,7 +18,7 @@ struct Config {
     std::string testFile;
     std::string entryPoint;
     std::string outPutFile = "./bin/a.out";
-    Mutibility mutibility = Mutibility::Promiscuous;
+    Mutibility mutibility = Mutibility::Strict;
     bool debug = false;
     bool compatibility = false;
     bool asm_ = false;
