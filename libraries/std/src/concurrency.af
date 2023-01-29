@@ -68,6 +68,11 @@ class Result{
         return my.p.output();
     };
 
+    public adr then(const adr func, * const any arg1, * const any arg2, * const any arg3, * const any arg4) {
+        const adr res = my.p.output();
+        return func(res, arg1, arg2, arg3, arg4);
+    };
+
     public int kill() {
         return my.p.kill();
     };
@@ -91,15 +96,18 @@ class Result{
 
 class WorkArgs {
     public adr func = bar;
-    public adr args = args;
+    public adr arg1 = arg1;
+    public adr arg2 = arg2;
+    public adr arg3 = arg3;
+    public adr arg4 = arg4;
 
-    WorkArgs init(const adr bar, const adr args){
+    WorkArgs init(const adr bar, *const adr arg1, *const adr arg2, *const adr arg3, *const adr arg4){
         return my;
     };
 
     adr run() {
         const adr func = my.func;
-        return func(my.args);
+        return func(my.arg1, my.arg2, my.arg3, my.arg4);
     };
 };
 
@@ -235,7 +243,7 @@ export int wait(const Thread p){
 };
 
 // Start a function as a concurrent process
-export adr worker(const adr foo, const adr _arg) {
+export adr worker(const adr foo, *const adr arg1, *const adr arg2, *const adr arg3, *const adr arg4) {
     
     const MProcess p = new MProcess([const WorkArgs args, const Pipe __inbox, const Pipe outbox] => {
         const adr res = args.run();
@@ -243,7 +251,7 @@ export adr worker(const adr foo, const adr _arg) {
         msg.writePipe(outbox);
     });
     const Result ret = new Result(p);
-    const WorkArgs pArgs = new WorkArgs(foo, _arg);
+    const WorkArgs pArgs = new WorkArgs(foo, arg1, arg2, arg3, arg4);
     p.start(pArgs);
     return ret; 
 };
