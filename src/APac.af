@@ -57,7 +57,7 @@ string getBodyFromID(string id) {
     return res.body;
 };
 
-int installPackage(PackageQuery pkg) {
+adr installPackage(PackageQuery pkg) : async.worker {
     const let _package = pkg;
     const let cname = _package.name.copy();
     const let cunder = _package.u.copy();
@@ -106,7 +106,7 @@ int installPackage(PackageQuery pkg) {
     io.fPrint("Package Version: %s\n", {version});
     io.fPrint("Package Author: %s\n", {author});
 
-    return 0;
+    return NULL;
 };
 
 int main(int argc, adr argv) {
@@ -169,7 +169,10 @@ int main(int argc, adr argv) {
         };
 
         PackageQuery query = new PackageQuery(package.cstr(), version.cstr(), author.cstr(), u.cstr());
-        return installPackage(query);
+        Result inst = installPackage(query);
+        inst.get();
+        return 0;
+
     };
 
     if argsList.has("v") | argsList.has("-version") {
