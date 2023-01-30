@@ -8,7 +8,7 @@ import fPrint from "io" under io;
 import { worker } from "concurrency" under async;
 import Result from "concurrency";
 import HTTPRequest, HTTPMethod, HTTPMessage from "HTTP";
-import {requestWorker} from "HTTP" under http;
+import { requestWorker } from "HTTP" under http;
 import List from "Collections";
 import Package from "./src/Package";
 import { getString } from "./src/modules/JSONParse" under json;
@@ -75,7 +75,6 @@ adr installPackage(PackageQuery pkg) : async.worker {
 	req.addHeader("Content-Type", "application/json");
 	req.addHeader("Connection", "Keep-Alive");
 
-    // Result loading = load.loadingBar();
     let res = req.send(1000000);
 
     io.fPrint("", {res.body});
@@ -84,7 +83,6 @@ adr installPackage(PackageQuery pkg) : async.worker {
     let name = json.getString("name", res.body);
     let version = json.getString("version", res.body);
     let author = json.getString("author", res.body);
-    // loading.kill();
 
     if !(name == cname) {
         io.fPrint("Package not found\n");
