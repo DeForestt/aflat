@@ -27,7 +27,7 @@ class PackageQuery {
     };
 
     string getQuery() {
-        string query = st.fString("?name=%s", {my.name});
+        mutable string query = st.fString("?name=%s", {my.name});
         if !(my.version == "") {
             query = st.fString("%s&version=%s", {query, my.version});
         };
@@ -57,8 +57,8 @@ string getBodyFromID(string id) {
     return res.body;
 };
 
-int installPackage(PackageQuery _arg) {
-    const let _package = _arg;
+int installPackage(PackageQuery pkg) {
+    const let _package = pkg;
     const let cname = _package.name.copy();
     const let cunder = _package.u.copy();
     io.fPrint("Searching for Package: %s\n", {_package.name});
@@ -133,10 +133,10 @@ int main(int argc, adr argv) {
     };
 
     if argsList.has("i") | argsList.has("-install") {
-        string package = argsList.getArg("i");
-        string version = "";
-        string author = "";
-        string u = "";
+        mutable string package = argsList.getArg("i");
+        mutable string version = "";
+        mutable string author = "";
+        mutable string u = "";
         u = package;
 
         if package == "" {

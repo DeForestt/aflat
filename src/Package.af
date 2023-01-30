@@ -10,8 +10,8 @@ import List from "Collections";
 import { fPrint } from "io" under io;
 
 class Package {
-    string name = "undef";
-    string body = "undef";
+    mutable string name = "undef";
+    mutable string body = "undef";
 
     Package init(string body, string name) {
         my.name = name;
@@ -19,10 +19,10 @@ class Package {
     };
 
     bool install() {
-        const let PATH = st.fString("./src/modules/%s.af", {my.name});
-        const let cfgTxt = st.fString("m modules/%s", {my.name});
+        let PATH = st.fString("./src/modules/%s.af", {my.name});
+        let cfgTxt = st.fString("m modules/%s", {my.name});
 
-        let packageFile = fs.createFile(PATH.cstr());
+        mutable let packageFile = fs.createFile(PATH.cstr());
         if (packageFile == NULL){
             sys.system("mkdir ./src/modules");
             packageFile = fs.createFile(PATH.cstr());
@@ -41,8 +41,8 @@ class Package {
         
         let configList = confFile.toList('\n');
         confFile.close();
-        let buffer = new string("");
-        bool updated = false;
+        mutable let buffer = new string("");
+        mutable bool updated = false;
         for int i = 0; i < configList.getCount(); i++ {
             let text = new string(configList.get(i));
 
