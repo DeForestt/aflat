@@ -8,7 +8,7 @@ import fPrint from "io" under io;
 import { worker } from "concurrency" under async;
 import Result from "concurrency";
 import HTTPRequest, HTTPMethod, HTTPMessage from "HTTP";
-import {requestWorker} from "HTTP" under http;
+import { requestWorker } from "HTTP" under http;
 import List from "Collections";
 import Package from "./src/Package";
 import { getString } from "./src/modules/JSONParse" under json;
@@ -27,7 +27,7 @@ class PackageQuery {
     };
 
     string getQuery() {
-        string query = st.fString("?name=%s", {my.name});
+        mutable string query = st.fString("?name=%s", {my.name});
         if !(my.version == "") {
             query = st.fString("%s&version=%s", {query, my.version});
         };
@@ -57,8 +57,8 @@ string getBodyFromID(string id) {
     return res.body;
 };
 
-int installPackage(PackageQuery _arg) {
-    const let _package = _arg;
+adr installPackage(PackageQuery pkg) : async.worker {
+    const let _package = pkg;
     const let cname = _package.name.copy();
     const let cunder = _package.u.copy();
     io.fPrint("Searching for Package: %s\n", {_package.name});
@@ -75,7 +75,6 @@ int installPackage(PackageQuery _arg) {
 	req.addHeader("Content-Type", "application/json");
 	req.addHeader("Connection", "Keep-Alive");
 
-    // Result loading = load.loadingBar();
     let res = req.send(1000000);
 
     io.fPrint("", {res.body});
@@ -84,7 +83,6 @@ int installPackage(PackageQuery _arg) {
     let name = json.getString("name", res.body);
     let version = json.getString("version", res.body);
     let author = json.getString("author", res.body);
-    // loading.kill();
 
     if !(name == cname) {
         io.fPrint("Package not found\n");
@@ -106,7 +104,7 @@ int installPackage(PackageQuery _arg) {
     io.fPrint("Package Version: %s\n", {version});
     io.fPrint("Package Author: %s\n", {author});
 
-    return 0;
+    return NULL;
 };
 
 int main(int argc, adr argv) {
@@ -133,10 +131,10 @@ int main(int argc, adr argv) {
     };
 
     if argsList.has("i") | argsList.has("-install") {
-        string package = argsList.getArg("i");
-        string version = "";
-        string author = "";
-        string u = "";
+        mutable string package = argsList.getArg("i");
+        mutable string version = "";
+        mutable string author = "";
+        mutable string u = "";
         u = package;
 
         if package == "" {
@@ -169,7 +167,10 @@ int main(int argc, adr argv) {
         };
 
         PackageQuery query = new PackageQuery(package.cstr(), version.cstr(), author.cstr(), u.cstr());
-        return installPackage(query);
+        Result inst = installPackage(query);
+        inst.get();
+        return 0;
+
     };
 
     if argsList.has("v") | argsList.has("-version") {

@@ -11,10 +11,10 @@ import { worker } from "concurrency" under async;
 export adr loadingBar(adr _arg) : async.worker {
 	while (true) {
 		io.fPrint("%a", { if _arg != NULL _arg else "Loading: "});
-		for int j = 0; j < 10; j = j + 1 {
+		for mutable int j = 0; j < 10; j = j + 1 {
 			io.fPrint(".");
 			sleep(0, 500000000);
 		};
 		io.fPrint("\r                                 \r");
 	};
-};
+};
