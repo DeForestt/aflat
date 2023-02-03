@@ -1,0 +1,31 @@
+.needs <std>
+import string from "String";
+
+/*
+A class that represents the result of a function.  It can either be error or success. and will return the value if it is success.
+You will be sacrificing type safety for error handling.
+*/
+dynamic safe class Product {
+	private mutable any value = value;
+	private mutable bool success = error == NULL;
+	private mutable adr error = error;
+
+	public Product init(any value, *adr error) {
+		return my;
+	};
+
+	public any resolve(adr accept, adr reject, * any arg) {
+		if my.success
+			return accept(my.value, arg)
+		else
+			return reject(new string(my.error), arg);
+	};
+};
+
+export Product accept(any value) {
+	return new Product(value, NULL);
+};
+
+export Product reject(string error) {
+	return new Product(NULL, error.cstr());
+};
