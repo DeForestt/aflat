@@ -9,23 +9,41 @@ dynamic safe class Product {
 	private mutable any value = value;
 	private mutable bool success = error == NULL;
 	private mutable adr error = error;
+	private mutable int refcount = 1;
 
-	public Product init(any value, *adr error) {
+	public Product init(const any value, *const adr error) {
 		return my;
 	};
 
-	public any resolve(adr accept, adr reject, * any arg) {
+	public any resolve(const adr accept, const adr reject, * const any arg) {
 		if my.success
 			return accept(my.value, arg)
 		else
 			return reject(new string(my.error), arg);
 	};
+
+	public any _call(const adr accept, const adr reject, *const any arg) {
+		return my.resolve(accept, reject, arg);
+	};
+
+	int endScope() {
+        my.refcount = my.refcount - 1;
+        if my.refcount == 0 {
+            delete my;
+        };
+        return 0;
+    };
+
+	Product get() {
+		my.refcount = my.refcount + 1;
+		return my;
+	};
 };
 
-export Product accept(any value) {
+export Product accept(const any value) {
 	return new Product(value, NULL);
 };
 
-export Product reject(string error) {
+export Product reject(const string error) {
 	return new Product(NULL, error.cstr());
 };

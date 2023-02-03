@@ -15,4 +15,5 @@ aflat ./libraries/std/src/ATest.af ./libraries/std/ATest.s
 aflat ./libraries/std/src/HTTP.af ./libraries/std/HTTP.s
 aflat ./libraries/std/src/CLArgs.af ./libraries/std/CLArgs.s
 aflat ./libraries/std/src/System.af ./libraries/std/System.s
+aflat ./libraries/std/src/Utils/Product.af ./libraries/std/Utils_Product.s
 gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c
