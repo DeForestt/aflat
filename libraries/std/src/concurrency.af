@@ -243,7 +243,7 @@ export int wait(const Thread p){
 };
 
 // Start a function as a concurrent process
-export adr worker(const adr foo, *const adr arg1, *const adr arg2, *const adr arg3, *const adr arg4) {
+export adr worker(const adr foo, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
     
     const MProcess p = new MProcess([const WorkArgs args, const Pipe __inbox, const Pipe outbox] => {
         const adr res = args.run();
@@ -256,10 +256,10 @@ export adr worker(const adr foo, *const adr arg1, *const adr arg2, *const adr ar
     return ret; 
 };
 
-export adr makeShared(const int size, * const adr constructor) {
+export adr makeShared(const int size, * const adr constructor, * const any arg1, * const any arg2, * const any arg3, * const any arg4) {
     const adr val = mmap(NULL, size, 1 | 2, 1 | 32, -1, 0);
     if constructor != NULL {
-        constructor(val);
+        constructor(val, arg1, arg2, arg3, arg4);
     };
     return val;
 };
