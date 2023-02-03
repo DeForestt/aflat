@@ -255,3 +255,7 @@ export adr worker(const adr foo, *const adr arg1, *const adr arg2, *const adr ar
     p.start(pArgs);
     return ret; 
 };
+
+export adr makeShared(const int size) {
+    return mmap(NULL, size, 1 | 2, 1 | 32, -1, 0);
+};
