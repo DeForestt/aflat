@@ -78,13 +78,13 @@ export int report() {
     };
 };
 
-export any benchmarked(const adr foo, * mutable adr functionName, *const  adr arg1, *const adr arg2, *const adr arg3, *const adr arg4) {
+export any benchmarked(const adr foo, * mutable adr functionName, *const  any arg1, *const any arg2, *const any arg3, *const any arg4) {
 	if (functionName == NULL) {
 		functionName = "function";
 	};
-	int start = dt.mills();
-	any res = foo(arg1, arg2, arg3, arg4);
-	int end = dt.mills();
+	const int start = dt.mills();
+	const any res = foo(arg1, arg2, arg3, arg4);
+	const int end = dt.mills();
 	str.print(`\n {functionName} runtime: {end - start}ms\n`);
 	return res;
 };
