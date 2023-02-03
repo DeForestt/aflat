@@ -78,7 +78,7 @@ export int report() {
     };
 };
 
-export any benchmarked(adr foo, * mutable adr functionName, *adr arg1, * adr arg2, * adr arg3, * adr arg4) {
+export any benchmarked(const adr foo, * mutable adr functionName, *const  adr arg1, *const adr arg2, *const adr arg3, *const adr arg4) {
 	if (functionName == NULL) {
 		functionName = "function";
 	};
