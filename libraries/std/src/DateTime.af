@@ -207,4 +207,18 @@ export DateTime mmddyyyyToDate(const String input, * char splitChar){
     const int relDays = dateRelativeTo(month, day, year, 1970);
     const int seconds = relDays * 86400;
     return new DateTime(seconds);
-}; 
+};
+
+private int longToInt(const long l) {
+    const int[2] buffer;
+    buffer =: l;
+    return buffer[0];
+};
+
+export int mills() {
+    const TimeSpec ts = TimeSpec();
+    sys_clock_gettime(1, ts);
+    long ms = ts.tv_sec * 1000;
+    ms = ms + (ts.tv_nsec / 1000000);
+    return longToInt(ms);
+};

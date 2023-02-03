@@ -22,3 +22,4 @@ int sys_accept(int s, adr upeer_sockaddr, adr upeer_addrlen);
 int sys_sendto(int s, adr buf, int len, int flags, adr to, int tolen);
 int sys_connect(int s, adr name, int namelen);
 int sys_execve(adr name, adr argv, adr env);
+int sys_clock_gettime(int clk_id, adr tp);

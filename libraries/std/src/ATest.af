@@ -4,6 +4,7 @@ import {print, printInt, fPrint} from "io" under io;
 import LinkedList from "Collections";
 import String, string from "String";
 import {printString, print} from "String" under str;
+import { mills } from "DateTime" under dt;
 
 // keep track of passes and failures
 int passes = 0;
@@ -75,6 +76,17 @@ export int report() {
     } else {
         return 0;
     };
+};
+
+export any benchmarked(adr foo, * mutable adr functionName, *adr arg1, * adr arg2, * adr arg3, * adr arg4) {
+	if (functionName == NULL) {
+		functionName = "function";
+	};
+	int start = dt.mills();
+	any res = foo(arg1, arg2, arg3, arg4);
+	int end = dt.mills();
+	str.print(`\n {functionName} runtime: {end - start}ms\n`);
+	return res;
 };
 
 class TestSuite {

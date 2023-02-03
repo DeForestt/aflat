@@ -22,6 +22,7 @@
 .global sys_sendto
 .global sys_connect
 .global sys_execve
+.global sys_clock_gettime
 
 
 brk:
@@ -263,4 +264,13 @@ sys_execve:
     syscall
     leave
     ret
-    
+
+sys_clock_gettime:
+    pushq	%rbp
+    movq	%rsp, %rbp
+    pushq	%rbx
+    subq	$16, %rsp
+    movq    $228, %rax
+    syscall
+    leave
+    ret
