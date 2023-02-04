@@ -5,6 +5,7 @@ import string from "String";
 import { fString } from "String" under st;
 import { fPrint } from "io" under io;
 import List from "Collections";
+import Product from "Utils/Product";
 
 /*
  * Take in a string and a json string and return a string
@@ -34,7 +35,9 @@ export int getInt(string key, string json) {
     if !value.isNumeric() {
         return 0;
     };
-    return value.toInt();
+    let ret = value.toInt();
+    int ret = ret.resolve([int val] => return val, [] => return 0);
+    return ret;
 };
 
 /*

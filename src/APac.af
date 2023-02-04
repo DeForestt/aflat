@@ -12,7 +12,6 @@ import { requestWorker } from "HTTP" under http;
 import List from "Collections";
 import Package from "./src/Package";
 import { getString } from "./src/modules/JSONParse" under json;
-import { loadingBar } from "./src/modules/LoadingBar" under load;
 
 const let VERSION = "0.1.0";
 

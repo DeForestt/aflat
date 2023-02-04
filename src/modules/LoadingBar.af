@@ -1,20 +1,77 @@
 
 .needs <std>
-import { fPrint } from "io" under io;
-import { worker } from "concurrency" under async;
+import { worker, makeShared } from "concurrency" under async;
+import Result from "concurrency";
+import { print } from "String" under str;
+import string from "String";
 
-/*
- * An asynchronous Loading Bar that can be displayed when processing 
- * a long-running task. Returns a Result object that can be killed when 
- * the process is done. Displays param 1 `_arg` when run;
- */
-export adr loadingBar(adr _arg) : async.worker {
-	while (true) {
-		io.fPrint("%a", { if _arg != NULL _arg else "Loading: "});
-		for mutable int j = 0; j < 10; j = j + 1 {
-			io.fPrint(".");
-			sleep(0, 500000000);
+private adr runLoadingBar(adr bar);
+
+class LoadingBar {
+	int max = max;
+	mutable int resolution = resolution;
+	private mutable int current = 0;
+	private mutable bool kill = false;
+	private mutable bool updated = true;
+    private mutable Result result = NULL;
+
+	LoadingBar init(int max, * int resolution) {
+		if resolution == 0 my.resolution = 20;
+		return my;
+	};
+
+	void update() {
+		my.current = my.current + 1;
+		my.updated = true;
+	};
+
+	void print() {
+		if !my.updated {
+			return;
 		};
-		io.fPrint("\r                                 \r");
+		my.updated = false;
+
+		// map current to resolution
+		int current = my.current * my.resolution / my.max;
+		
+		mutable let strBuff = `\rLoading: [`;
+		for int i = 0; i < my.resolution; i++ {
+			if i < current {
+				strBuff = `{strBuff}#`;
+			} else {
+				strBuff = `{strBuff} `;
+			};
+		};
+		strBuff = `{strBuff}] {my.current * 100 / my.max}% `;
+		str.print(strBuff);
+	};
+
+	void kill() {
+		my.kill = true;
+        if my.result != NULL {
+            my.result.get();
+        };
+	};
+
+	bool isKilled() {
+		return my.kill;
+	};
+
+    void run() {
+        my.result = runLoadingBar(my);
+    };
+};
+
+private adr runLoadingBar(LoadingBar bar) : async.worker {
+	while true {
+		bar.print();
+		if bar.isKilled() {
+			break;
+		};
 	};
 };
+
+export LoadingBar createLoadingBar(int max, * int resolution) {
+	return async.makeShared(LoadingBar, LoadingBar.init, max, resolution);
+};
+
