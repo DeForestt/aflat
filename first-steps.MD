@@ -58,23 +58,21 @@ When you show your program to your friends, it will be nice to have the program 
 
 ```js
 .needs <std>
-import * from "io" under io;
 import string from "String";
-import { readString } from "String" under st;
+import { readString, print } from "String" under st;
 
 int main(){
 	let name = st.readString("What is your name? ");
-	io.fPrint("Hello, %s.\nFrom the AFlat Team.\n", {name});
+	st.print(`Hello, {name}.\nFrom the AFlat Team.\n`);
 	return 0;
 };
 ```
 
 Lets walk take a look at the new lines.
 - The first new line is the `import string from "String";` command.  This tells AFlat to import the `string` data type from the `String` library.
-- The second new line is the `import { readString } from "String" under st;` command.  This tells AFlat to import the `readString` function from the `String` library.  The under command tells AFlat that the `readString` function should be imported under the name `st`.  Any functions called from this library must start with `st.`.  Importing functions by name is recommended rather than importing * which can sometimes lead to undefined behavior (this is a bug that we are working on fixing).
+- The second new line is the `import { readString, print } from "String" under st;` command.  This tells AFlat to import the `readString` function from the `String` library.  The under command tells AFlat that the `readString` function should be imported under the name `st`.  Any functions called from this library must start with `st.`. It also imports the `print` function under the same namespace. Importing functions by name is recommended rather than importing * which can sometimes lead to undefined behavior (this is a bug that we are working on fixing).
 - The third new line is the `let name = st.readString("What is your name? ");` command.  This tells AFlat to create a new variable called `name` and assign it the value returned by the `st.readString` function. The `let` keyword allows AFlat to infer the type of the new variable. The `st.readString` function takes an optional string as an argument and returns a string.  The string that is passed to the `st.readString` function is the prompt that is printed to the standard output.
-- The last new line is the `io.fPrint("Hello, %s.\nFrom the AFlat Team.\n", {name});` command.  This tells AFlat to call the `io.fPrint` function.  The `io.fPrint` function takes a string and a list of arguments.  The string can contain format specifiers.  The format specifiers are replaced by the arguments in the list in sequential order.  The `%s` format specifier indicates that the argument should be printed as a `string`. `{name}` is the list of arguments.
-
+- The last new line is the ``st.print(`Hello, {name}.\nFrom the AFlat Team.\n`);`` command.  This tells AFlat to call the `st.print` function.  The `st.print` function takes a string as an argument and prints it to the standard output.  The string that is passed to the `st.print` function is the string that is printed to the standard output.  The `{name}` is a placeholder for the value of the `name` variable.  The `\n` is a newline character.
 run the program with `aflat run` and see what happens.
 
 ## If else statements
