@@ -1,9 +1,11 @@
 .needs <asm>
 .needs <std>
 
-import String from "String";
+import String, string from "String";
 import ICollection from "Collections";
 import LinkedList from "Collections";
+import Product from "Utils/Product";
+import { accept, reject } from "Utils/Product" under pr;
 
 class DateTime{
     private int seconds;
@@ -190,11 +192,12 @@ export DateTime Now(* int timeZone){
     return new DateTime(seconds);
 };
 
-export DateTime mmddyyyyToDate(const String input, * char splitChar){
+export Product mmddyyyyToDate(const String input, * char splitChar){
     if splitChar == '\0'
         splitChar = '-';
     const LinkedList l = input.split(splitChar);
-    assert(l.size() == 3, "Invalid date format passed to mmddyyyyToDate");
+    if l.size() != 3
+        return pr.reject("Invalid date format passed to mmddyyyyToDate");
 
     const String monthString = l.get(0);
     const String dayString = l.get(1);
@@ -206,7 +209,7 @@ export DateTime mmddyyyyToDate(const String input, * char splitChar){
 
     const int relDays = dateRelativeTo(month, day, year, 1970);
     const int seconds = relDays * 86400;
-    return new DateTime(seconds);
+    return pr.accept(new DateTime(seconds));
 };
 
 private int longToInt(const long l) {

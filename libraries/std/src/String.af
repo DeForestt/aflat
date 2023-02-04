@@ -3,6 +3,8 @@
 
 import ICollection from "Collections";
 import LinkedList, List from "Collections";
+import Product from "Utils/Product";
+import {accept, reject} from "Utils/Product" under prod;
 
 import * from "strings" under str;
 import {print, printInt} from "io" under io;
@@ -545,9 +547,9 @@ safe dynamic class string {
         return true;
     };
 
-    int toInt() {
-        if !my.isNumeric() return 0;
-        return str.str_toInt(my.head);
+    Product toInt() {
+        if !my.isNumeric() return prod.reject("Not a number");
+        return prod.accept(str.str_toInt(my.head));
     };
 
     string toUpper() {
