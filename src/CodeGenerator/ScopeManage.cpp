@@ -95,7 +95,7 @@ void gen::scope::ScopeManager::popScope(CodeGenerator *callback,
     && sym.symbol.find("lambda") == std::string::npos
     && sym.symbol.find_first_not_of("0123456789") != std::string::npos) {
       // if the symboe has only numberes in it then it is a temp variable
-      if (sym.symbol[0] != '~'){
+      if (sym.symbol[0] != '~' && sym.symbol[0] != '$') {
         if (sym.refCount < 1 && sym.symbol.substr(0,2) != "__") {
           callback->alert("Symbol \"" + sym.symbol + "\" is assigned but never "
                           "used please consider removing it. If this is a placeholder var prefix with `__`", false);

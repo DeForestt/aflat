@@ -58,6 +58,7 @@ enum ScopeMod { Public, Private, Static, Export };
 class Expr : public Statment {
  public:
   virtual std::string toString() { return ""; };
+  Expr * extention = nullptr;
 };
 
 class ConditionalExpr {
