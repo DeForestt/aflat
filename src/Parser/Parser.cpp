@@ -1655,9 +1655,9 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
   }
   
   // check if the next token is a dot go to extend the expression
-  if (tokens.count > 0) if (dynamic_cast<lex::Symbol *>(tokens.peek()) != nullptr) {
-    auto sym = *dynamic_cast<lex::Symbol *>(tokens.peek());
-    if (sym.meta == ".") {
+  if (tokens.count > 0) if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
+    auto sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (sym.Sym == '.') {
       tokens.pop();
       auto next = this->parseExpr(tokens);
       output->extention = next;

@@ -229,7 +229,7 @@ void build(std::string path, std::string output, cfg::Mutibility mutability, boo
       if (inst->logicalLine != logicalLine && debug && dynamic_cast<asmc::Lable*>(inst) == nullptr && inst->logicalLine > 0) {
         logicalLine = inst->logicalLine;
       }
-      
+      if (debug)
       if (inst->logicalLine > 0 && dynamic_cast<asmc::Define *>(inst) == nullptr) ofs << ".line " << inst->logicalLine - 1 << "\n";
       else if (logicalLine > 0 && dynamic_cast<asmc::Define *>(inst) != nullptr) ofs << ".line " << logicalLine - 1 << "\n";
       auto str = inst->toString();

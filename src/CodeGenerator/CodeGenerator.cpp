@@ -1590,8 +1590,45 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
   } else {
     this->alert("Unhandled expression");
   }
+
+  if (expr->extention != nullptr) {
+    auto type = ast::Type();
+    type.typeName = output.type;
+    type.size = output.size;
+
+    const auto tempName = "$" + std::to_string(this->tempCount++) + "_temp";
+
+    auto mod = gen::scope::ScopeManager::getInstance()->assign(tempName, type, false);
+    auto mov2 = new asmc::Mov();
+    mov2->logicalLine = this->logicalLine;
+    mov2->from = output.access;
+    mov2->to = "-" + std::to_string(mod) + "(%rbp)";
+    mov2->size = output.size;
+    mov2->op = output.op;
+    OutputFile.text << mov2;
+  
+    auto call = dynamic_cast<ast::CallExpr*>(expr->extention);
+    auto var = dynamic_cast<ast::Var*>(expr->extention);
+
+    if (call != nullptr) {
+      call->call->modList.invert();
+      call->call->modList.push(call->call->ident);
+      call->call->modList.invert();
+      call->call->ident = tempName;
+    } else if (var != nullptr) {
+      var->modList.invert();
+      var->modList.push(var->Ident);
+      var->modList.invert();
+      var->Ident = tempName;
+    } else {
+      this->alert("Cannot extend an expression of this type");
+    }
+
+    output = this->GenExpr(expr->extention, OutputFile, size);
+  }
+
   return output;
-};
+}
 
 ast::Expr * gen::CodeGenerator::imply(ast::Expr * expr, std::string typeName) {
   // find the type
