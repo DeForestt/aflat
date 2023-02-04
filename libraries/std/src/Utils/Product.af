@@ -22,10 +22,6 @@ dynamic safe class Product {
 			return reject(new string(my.error), arg);
 	};
 
-	public any _call(const adr accept, const adr reject, *const any arg) {
-		return my.resolve(accept, reject, arg);
-	};
-
 	int endScope() {
         my.refcount = my.refcount - 1;
         if my.refcount == 0 {
