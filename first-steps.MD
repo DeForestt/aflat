@@ -73,7 +73,7 @@ Lets walk take a look at the new lines.
 - The second new line is the `import { readString, print } from "String" under st;` command.  This tells AFlat to import the `readString` function from the `String` library.  The under command tells AFlat that the `readString` function should be imported under the name `st`.  Any functions called from this library must start with `st.`. It also imports the `print` function under the same namespace. Importing functions by name is recommended rather than importing * which can sometimes lead to undefined behavior (this is a bug that we are working on fixing).
 - The third new line is the `let name = st.readString("What is your name? ");` command.  This tells AFlat to create a new variable called `name` and assign it the value returned by the `st.readString` function. The `let` keyword allows AFlat to infer the type of the new variable. The `st.readString` function takes an optional string as an argument and returns a string.  The string that is passed to the `st.readString` function is the prompt that is printed to the standard output.
 - The last new line is the ``st.print(`Hello, {name}.\nFrom the AFlat Team.\n`);`` command.  This tells AFlat to call the `st.print` function.  The `st.print` function takes a string as an argument and prints it to the standard output.  The string that is passed to the `st.print` function is the string that is printed to the standard output.  The `{name}` is a placeholder for the value of the `name` variable.  The `\n` is a newline character.
-run the program with `aflat run` and see what happens.
+- Run the program with `aflat run` and see what happens.
 
 ## If else statements
 I take it back.  We don't want other people to see our program... in fact, we want to make sure that the program is only run if the user enters the correct name.  We can do this by adding an if else statement.
@@ -81,17 +81,16 @@ I take it back.  We don't want other people to see our program... in fact, we wa
 ```js
 .needs <std>
 
-import * from "io" under io;
 import string from "String";
-import { readString } from "String" under st;
+import { readString, print } from "String" under st;
 
 int main(){
 	let name = st.readString("What is your name? ");
 
 	if name == "Name" {
-		io.fPrint("Hello, %s.\nFrom the AFlat Team.\n", {name});
+		st.print(`Hello, {name}. \nFrom the AFlat Team.\n`);
 	} else {
-		io.print("I don't know you... \nGo away!\n");
+		st.print("I don't know you... \nGo away!\n");
 	};
 	return 0;
 };
@@ -105,23 +104,23 @@ Now we will make a simple guessing game.  The program will ask the user to guess
 
 ```js
 .needs <std>
-import * from "io" under io;
 import string from "String";
-import { readString } from "String" under st;
+import { readString, print } from "String" under st;
+import Product from "Utils/Product";
 
 int main(){
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
 	int secret = 42;	// one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
 	
 	let guess = st.readString("Enter your guess: "); // get the string that the user entered
-	let guessInt = guess.toInt(); // the String object provides a toInt() function that converts the string to an integer.
+	int guessInt = guess.toInt().resolve([int val] => return val, [string err] => panic(err.cstr())); // convert the string to an int.  If the string is not a number, then panic with the error message.
 
 	if guessInt == secret // now that we have the same type we can compare them with the '==' operator
-		io.print("You guessed it!\n")
+		st.print("You guessed it!\n")
 	else if guessInt < secret // we can check if the guess is too low with the '<' operator
-		io.print("Too low!\n")
+		st.print("Too low!\n")
 	else
-		io.print("Too high!\n");
+		st.print("Too high!\n");
 	
 	// notice that the curly braces are not needed in the if statement.  The curly braces are only needed when there is a block of code to be executed.
 
@@ -134,26 +133,26 @@ This game is a bit too hard.  We cannot expect to guess the number in just one t
 
 ```js
 .needs <std>
-import * from "io" under io;
 import string from "String";
-import { readString } from "String" under st;
+import { readString, print } from "String" under st;
+import Product from "Utils/Product";
 
 int main(){
+	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
 	int secret = 42;	// one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
-	
-	for int i = 0; i < 10; i = i + 1 {
+	for mutable int i = 0; i < 10; i = i + 1 {
 		let guess = st.readString("Enter your guess: "); // get the string that the user entered
-		let guessInt = guess.toInt(); // the String object provides a toInt() function that converts the string to an integer.
+		int guessInt = guess.toInt().resolve([int val] => return val, [string err] => panic(err.cstr())); // convert the string to an int.  If the string is not a number, then panic with the error message.
 
-		if guessInt == secret { // now that we have the same type we can compare them with the '==' operator
-			io.print("You guessed it!\n");
+		if guessInt == secret {// now that we have the same type we can compare them with the '==' operator
+			st.print("You guessed it!\n");
 			return 0;
 		} else if guessInt < secret // we can check if the guess is too low with the '<' operator
-			io.print("Too low!\n")
+			st.print("Too low!\n")
 		else
-			io.print("Too high!\n");
+			st.print("Too high!\n");
 	};
-	io.fPrint("The secret number was %d you ran out of guesses.\n", {secret}); // we can use the fPrint function to print a formatted string. %d is a placeholder for an integer.
+	st.print(`The secret number was {secret}\n`); // we can use the backtick to create a string that can contain variables.  The variables are surrounded by {} and the variable name is inside the braces.  The variable name is evaluated and the result is inserted into the string.  The string is then converted to a string and printed.
 	
 	// notice that the curly braces are not needed in the if statement.  The curly braces are only needed when there is a block of code to be executed.
 
@@ -176,28 +175,30 @@ This game gets boring quickly.  We need to make sure that the program doesn't al
 
 ```js
 .needs <std>
-import * from "io" under io;
 import string from "String";
-import { readString } from "String" under st;
+import { readString, print } from "String" under st;
+import Product from "Utils/Product";
 import Random from "math";
 
 int main(){
-	let r = Random();
-	int secret = r.nextInt(100);
-	
-	for int i = 0; i < 10; i = i + 1 {
-		let guess = st.readString("Enter your guess: ");
-		let guessInt = guess.toInt();
+	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
+	int secret = Random().nextInt(100);
+	for mutable int i = 0; i < 10; i = i + 1 {
+		let guess = st.readString("Enter your guess: "); // get the string that the user entered
+		int guessInt = guess.toInt().resolve([int val] => return val, [string err] => panic(err.cstr())); // convert the string to an int.  If the string is not a number, then panic with the error message.
 
-		if guessInt == secret {
-			io.print("You guessed it!\n");
+		if guessInt == secret { // now that we have the same type we can compare them with the '==' operator
+			st.print("You guessed it!\n");
 			return 0;
-		} else if guessInt < secret
-			io.print("Too low!\n")
+		} else if guessInt < secret // we can check if the guess is too low with the '<' operator
+			st.print("Too low!\n")
 		else
-			io.print("Too high!\n");
+			st.print("Too high!\n");
 	};
-	io.fPrint("The secret number was %d you ran out of guesses.\n", {secret});
+	st.print(`The secret number was {secret}\n`); // we can use the backtick to create a string that can contain variables.  The variables are surrounded by {} and the variable name is inside the braces.  The variable name is evaluated and the result is inserted into the string.  The string is then converted to a string and printed.
+	
+	// notice that the curly braces are not needed in the if statement.  The curly braces are only needed when there is a block of code to be executed.
+
 	return 0;
 };
 ```
@@ -210,22 +211,23 @@ Lets go back to the program we wrote in the if else section.  Now that we know h
 
 ```js
 .needs <std>
-import * from "io" under io;
 import string from "String";
-import { readString } from "String" under st;
+import { readString, print } from "String" under st;
 import Random from "math";
 
 int main() {
-	let r = Random();
 	// adr is a pointer.  In this case, it points to a char.  Think of it as a char* in C.
 	adr[7] greetings = {"Hello", "Hi", "Hey", "Howdy", "Greetings", "Salutations", "Yo"}; // array of greetings
 
 	string name = st.readString("What is your name? ");
 
+	let greeting = greetings[Random().nextInt(7)]; // pick a random greeting
+
 	if name == "Name"
-		io.fPrint("%a, %s!\nFrom the AFlat team.\n", {greetings[r.nextInt(7)], name}) // The %a is a placeholder for a char * string.
+		st.print(`{greeting}, {name}!\nFrom the AFlat team\n`) // use the greeting and name
 	else
-		io.print("I don't know you... \nGo away!\n");
+		st.print("I don't know you... go away!\n");
+	
 	return 0;
 };
 ```
@@ -256,13 +258,13 @@ class <classname> {
 };
 ```
 
-A class can contain fields and methods.  Fie lds are data Types that are stored in the class.  Methods are functions that can act on the data in the class. Lets create a student class.
+A class can contain fields and methods.  Fields are data that is stored in the class.  Methods are functions that can act on the data in the class. Lets create a student class.
 
 ```js
 class Student {
-	int id;
-	adr name;
-	int Average;
+	mutable int id; // variables need to be tagged as mutable if they are going to be changed otherwise the compiler will throw an error
+	mutable string name = "";
+	mutable int average;
 };
 ```
 Lets see if we can use the class in a program.
@@ -270,13 +272,13 @@ Lets see if we can use the class in a program.
 ```js
 .needs <std>
 
-import * from "io" under io;
 import string from "String";
+import { print } from "String" under str;
 
 class Student {
-	int id;
-	string name = "";
-	int average;
+	mutable int id;
+	mutable string name = "";
+	mutable int average;
 };
 
 int main() {
@@ -284,17 +286,14 @@ int main() {
 	s.id = 1;
 	s.name = "John";
 	s.average = 90;
-	io.fPrint("Student: %s id: %d average: %d\n", {s.name, s.id, s.average});
+	str.print(`Student: {s.name} id: {s.id} average: {s.average}\n`);
 };
 ```
 
 Take a look at the output.  It should look something like this.
 
 ```
-Student information:
-	ID: 1
-	Name: John Doe
-	Average: 90
+Student: John id: 1 average: 90
 ```
 
 ## Class constructors
@@ -302,16 +301,17 @@ A class constructor is a function that is called when an object is created from 
 
 ```js
 .needs <std>
-import * from "io" under io;
+
 import string from "String";
+import { print } from "String" under str;
 
 class Student {
-	int id;
-	string name = "";
-	int average;
-	
+	mutable int id;
+	mutable string name = "";
+	mutable int average;
+
 	Student init(int id, string name, int average){
-		io.print("The constructor has just been called!!!\n");
+		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
@@ -319,8 +319,8 @@ class Student {
 };
 
 int main() {
-	Student s = Student(1, "John Doe", 90);
-	io.fPrint("Student: %s id: %d average: %d\n", {s.name, s.id, s.average});
+	Student s = Student(1, "John", 90);
+	str.print(`Student: {s.name} id: {s.id} average: {s.average}`);
 };
 ```
 
@@ -329,16 +329,17 @@ lets add another student.
 
 ```js
 .needs <std>
-import * from "io" under io;
+
 import string from "String";
+import { print } from "String" under str;
 
 class Student {
-	int id;
-	string name = "";
-	int average;
-	
+	mutable int id;
+	mutable string name = "";
+	mutable int average;
+
 	Student init(int id, string name, int average){
-		io.print("The constructor has just been called!!!\n");
+		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
@@ -348,8 +349,8 @@ class Student {
 int main() {
 	Student JohnDoe = Student(1, "John Doe", 90);
 	Student JaneDoe = Student(2, "Jane Doe", 95);
-	io.fPrint("Student: %s id: %d average: %d\n", {JohnDoe.name, JohnDoe.id, JohnDoe.average});
-	io.fPrint("Student: %s id: %d average: %d\n", {JaneDoe.name, JaneDoe.id, JaneDoe.average});
+	str.print(`Student: {JohnDoe.name} id: {JohnDoe.id} average: {JohnDoe.average}\n`);
+	str.print(`Student: {JaneDoe.name} id: {JaneDoe.id} average: {JaneDoe.average}\n`);
 };
 ```
 
@@ -357,23 +358,24 @@ The constructor made creating our objects much easier, but we still have some re
 
 ```js
 .needs <std>
-import * from "io" under io;
+
 import string from "String";
+import { print } from "String" under str;
 
 class Student {
-	int id;
-	string name = "";
-	int average;
-	
+	mutable int id;
+	mutable string name = "";
+	mutable int average;
+
 	Student init(int id, string name, int average){
-		io.print("The constructor has just been called!!!\n");
+		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
 	};
 
-	int printInfo(){
-		io.fPrint("Student: %s id: %d average: %d\n", {my.name, my.id, my.average});
+	void printInfo() {
+		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 };
 
@@ -392,23 +394,25 @@ The code that we have here is great, but we can see how it can become very long 
 
 ```js
 .needs <std>
-import * from "io" under io;
+
 import string from "String";
+import { print } from "String" under str;
 import List from "Collections";
 
 class Student {
-	int id;
-	string name = "";
-	int average;
-	
+	mutable int id;
+	mutable string name = "";
+	mutable int average;
+
 	Student init(int id, string name, int average){
+		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
 	};
 
-	int printInfo(){
-		io.fPrint("Student: %s id: %d average: %d\n", {my.name, my.id, my.average});
+	void printInfo() {
+		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 };
 
@@ -421,7 +425,7 @@ int main() {
 	roster.forEach([Student s] => {
 		s.printInfo();
 	}); // I know that the 'forEach' method can look a bit confusing. For now, just know that it iterates through the list and calls the function you pass to it.
-};
+};;
 ```
 
 Now we can add as many students as we want to the roster, and keep the code clean.  Try adding a few more students to the roster.
@@ -437,22 +441,24 @@ this will create a new file called 'Student.af' in the src folder. Copy the Stud
 
 ```js
 .needs <std>
-import * from "io" under io;
 import string from "String";
+import { print } from "String" under str;
 
 class Student {
-	int id;
-	string name = "";
-	int average;
-	
+	mutable int id;
+	mutable string name = "";
+	mutable int average;
+
 	Student init(int id, string name, int average){
+		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
 	};
+	
 
-	int printInfo(){
-		io.fPrint("Student: %s id: %d average: %d\n", {my.name, my.id, my.average});
+	void printInfo() {
+		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 };
 ```
@@ -461,7 +467,6 @@ Now it can bee imported into our main program the same way we would import any c
 
 ```js
 .needs <std>
-import * from "io" under io;
 import string from "String";
 import List from "Collections";
 import Student from "./src/Student";  // Then we import the Student class from the Student module.
@@ -493,25 +498,27 @@ Now that we have the Assignment class, add a list of assignments as a field in o
 
 ```js
 .needs <std>
-import * from "io" under io;
 import string from "String";
 import List from "Collections";
 import Assignment from "./src/Assignment";
+import { print } from "String" under str;
 
 class Student {
-	int id;
-	string name = "";
-	int average;
-    List assignments = new List(Assignment);
-	
+	mutable int id;
+	mutable string name = "";
+	mutable int average;
+	List assignments = new List(Assignment);
+
 	Student init(int id, string name, int average){
+		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
 	};
+	
 
-	int printInfo(){
-		io.fPrint("Student: %s id: %d average: %d\n", {my.name, my.id, my.average});
+	void printInfo() {
+		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 };
 ```
@@ -520,28 +527,30 @@ Now we should create a method to add an assignment to the student's list of assi
 
 ```js
 .needs <std>
-import * from "io" under io;
 import string from "String";
 import List from "Collections";
 import Assignment from "./src/Assignment";
+import { print } from "String" under str;
 
 class Student {
-	int id;
-	string name = "";
-	int average;
-    List assignments = new List(Assignment);
-	
+	mutable int id;
+	mutable string name = "";
+	mutable int average;
+	List assignments = new List(Assignment);
+
 	Student init(int id, string name, int average){
+		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
 	};
+	
 
-	int printInfo(){
-		io.fPrint("Student: %s id: %d average: %d\n", {my.name, my.id, my.average});
+	void printInfo() {
+		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 
-    int addAssignment(Assignment assignment){
+	void addAssignment(Assignment assignment){
         my.assignments.pushBack(assignment);
     };
 };
@@ -551,12 +560,12 @@ We should also add a way to update the student's average each time we add an ass
 We will need to add a total variable to the student class.  This variable will keep track of the total of all the assignments.
 
 ```js
-int totalPoints = 0; // add this code to the student class
+mutable int totalPoints = 0; // add this code to the student class
 ```
 
 now we can calculate the average by dividing the total by the number of assignments.
 ```js
-    int addAssignment(Assignment assignment){
+    void addAssignment(Assignment assignment){
         my.assignments.pushBack(assignment);
         my.totalPoints = my.totalPoints + assignment.grade;
 		int count = my.assignments.getCount();
@@ -569,16 +578,17 @@ Now lets rewrite our main program to use our new student module.
 ```js
 .needs <std>
 
-import * from "io" under io;
 import string from "String";
-import Student from "./src/Student";  // First we import the Student class from the Student module.
-import Assignment from "./src/Assignment";  // Then we import the Assignment class from the Assignment module.
+import { print } from "String" under str;
+import List from "Collections";
+import Student from "./src/Student";
+import Assignment from "./src/Assignment";
 
 int main(){
 	let s = new Student(1, "John Doe", 0);
 
-	s.addAssignment(Assignment(100, "Math test"));
-	s.addAssignment(Assignment(90, "English test"));
+	s.addAssignment(Assignment("Math test", 100));
+	s.addAssignment(Assignment("English test", 90));
 	s.printInfo();
 	return 0;
 };
@@ -591,29 +601,30 @@ You may have noticed that there is no reason for anything outside of the student
 
 ```js
 .needs <std>
-import * from "io" under io;
 import string from "String";
 import List from "Collections";
 import Assignment from "./src/Assignment";
+import { print } from "String" under str;
 
 class Student {
-	int id;
-	string name = "";
-	private int average;
-    List assignments = new List(Assignment);
-    private int totalPoints = 0;
-	
+	mutable int id;
+	mutable string name = "";
+	private mutable int average;
+	private mutable int totalPoints = 0;
+	List assignments = new List(Assignment);
+
 	Student init(int id, string name, int average){
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
 	};
+	
 
-	int printInfo(){
-		io.fPrint("Student: %s id: %d average: %d\n", {my.name, my.id, my.average});
+	void printInfo() {
+		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 
-    int addAssignment(Assignment assignment){
+    void addAssignment(Assignment assignment){
         my.assignments.pushBack(assignment);
         my.totalPoints = my.totalPoints + assignment.grade;
 		int count = my.assignments.getCount();
@@ -639,12 +650,11 @@ Now lets build out a student roster system. Delete everything in the main module
 ```js
 .needs <std>
 
-import * from "io" under io;
-import Student from "./src/Student";  // First we import the Student class from the Student module.
-import Assignment from "./src/Assignment";  // Then we import the Assignment class from the Assignment module.
-import LinkedList from "Collections";
-import String from "String";
-import * from "String" under str;
+import string from "String";
+import { print } from "String" under str;
+import List from "Collections";
+import Student from "./src/Student";
+import Assignment from "./src/Assignment";
 
 ```
 
@@ -653,7 +663,7 @@ Now we will make our main method and create the student roster list
 
 ```js
 int main(){
-	LinkedList roster = new LinkedList();
+	List roster = new List(Student);
 };
 ```
 
@@ -661,7 +671,7 @@ Now we should add an infinite loop to our main method.  This loop will keep runn
 
 ```js
 int main(){
-	LinkedList roster = new LinkedList();
+	List roster = new List(Student);
 
 	while true { // things inside of this loop will run forever
 
@@ -673,12 +683,12 @@ Inside of the loop you can print out all of the student information.  You can us
 
 ```js
 int main(){
-	LinkedList roster = new LinkedList();
+	List roster = new List(Student);
 
 	while true { // things inside of this loop will run forever
 		
 		// print all students in the list
-		roster.forEach([Student s, int index] => {
+		roster.forEach([Student s] => {
 			s.printInfo();
 		});
 	};
@@ -686,8 +696,8 @@ int main(){
 ```
 We will add a new getInfo method to the student class.  This method will return a string with all of the student information.
 ```js
-string getInfo(){
-	return str.fFormat("Student: %s id: %d average: %d\n", {my.name, my.id, my.average});
+string getInfo() {
+	return `Student: {my.name} id: {my.id} average: {my.average}\n`;
 };
 ```
 
@@ -698,13 +708,13 @@ int main(){
 	let roster = List(Student);
 
 	while true {
-		io.print("\n--Student Roster--\n");
+		str.print("\n--Student Roster--\n");
 		roster.forEach([Student s]=>{
-			io.fPrint("%s\n", {s.getInfo()}); // We use the getInfo() method to print the student's information.
+			str.print(`{s.getInfo()}\n`); // We use the getInfo() method to print the student's information.
 		});
-		io.print("--------------------\n");
-		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
-		let input = st.readString("Enter a command: "); // We read the user's input.
+		str.print("--------------------\n");
+		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
+		let input = str.readString("Enter a command: "); // We read the user's input.
 	};
 };
 ```
@@ -713,8 +723,8 @@ Now we need to create a function to add a student to the roster.  The function w
 
 ```js
 // This a function to add a student to the list.
-int addStudent(List roster) {
-	let name = st.readString("Enter student name: ");
+void addStudent(List roster) {
+	let name = str.readString("Enter student name: ");
 	let id = roster.getCount() + 1;
 	roster.pushBack(Student(id, name, 0));
 };
@@ -727,17 +737,16 @@ int main(){
 	let roster = List(Student);
 
 	while true {
-		io.print("\n--Student Roster--\n");
+		str.print("\n--Student Roster--\n");
 		roster.forEach([Student s]=>{
-			io.fPrint("%s\n", {s.getInfo()}); // We use the getInfo() method to print the student's information.
+			str.print(`{s.getInfo()}\n`); // We use the getInfo() method to print the student's information.
 		});
-		io.print("--------------------\n");
-		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n "); // We print the menu.
-		let input = st.readString("> Enter a command: "); // We read the user's input.
+		str.print("--------------------\n");
+		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
+		let input = str.readString("Enter a command: "); // We read the user's input.
 
 		if input == "1"
 			addStudent(roster);
-
 	};
 };
 ```
@@ -746,28 +755,30 @@ Next we will add an addGrade function that will add an assignment to the student
 
 ```js
 // Add Grade
-int addGrade(List roster) {
-	let id = st.readString("Enter student id or name: ");
+bool addGrade(List roster) {
+	let id = str.readString("Enter student id or name: ");
 	
-	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => return s.id == i.toInt(), id)
+	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => { return s.id == i.toInt().resolve([int value] => return value, NULL) }, id)
 		else roster.findFirst([Student s, string i] => return s.name == i, id);
 
 	// above we use the ternary operator to check if the id is numeric.  If it is, we search for the student by id.  If it is not, we search for the student by name.
 
 	if student == NULL {
-		io.print("Student not found.\n");
-		let junk = st.readString("Press enter to continue...");
-		return 1;
+		str.print("Student not found.\n");
+		let junk = str.readString("Press enter to continue...");
+		return false;
 	};
 
-	let assignment = st.readString("Enter assignment name: ");
-	let grade = st.readString(st.fString("Enter %s's grade: ", {student.name}));
+	let assignment = str.readString("Enter assignment name: ");
+	let grade = str.readString( `Enter {student.name}'s grade:`);
 	if !grade.isNumeric() {
-		io.print("Grade must be a number.\n");
-		let junk = st.readString("Press enter to continue...");
-		return 1;
+		str.print("Grade must be a number.\n");
+		let junk = str.readString("Press enter to continue...");
+		return false;
 	};
-	student.addAssignment(Assignment(grade.toInt(), assignment));
+	student.addAssignment(Assignment(assignment, grade.toInt().resolve([int value] => return value, NULL))); // We use the resolve() method to get the value of the Product.
+	// We will talk more about products later.
+	return true;
 };
 
 ```
@@ -779,13 +790,14 @@ int main(){
 	let roster = List(Student);
 
 	while true {
-		io.print("\n--Student Roster--\n");
+		io.clear(); // We clear the screen.
+		str.print("\n--Student Roster--\n");
 		roster.forEach([Student s]=>{
-			io.fPrint("%s\n", {s.getInfo()}); // We use the getInfo() method to print the student's information.
+			str.print(`{s.getInfo()}\n`); // We use the getInfo() method to print the student's information.
 		});
-		io.print("--------------------\n");
-		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n "); // We print the menu.
-		let input = st.readString("> Enter a command: "); // We read the user's input.
+		str.print("--------------------\n");
+		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
+		let input = str.readString("Enter a command: "); // We read the user's input.
 
 		if input == "1"
 			addStudent(roster)
@@ -794,64 +806,72 @@ int main(){
 		else if input == "quit"
 			return 0
 		else {
-			io.print("Invalid command\n");
-			let junk = st.readString("Press enter to continue...");
+			str.print("Invalid command\n");
+			let junk = str.readString("Press enter to continue...");
 		};
-		io.clear(); // This clears the screen.
 	};
 };
 ```
 
-All togeather, the main module should look like this:
+All together, the main module should look like this:
 
 ```js
 .needs <std>
 
-import * from "io" under io;
+import { clear } from "io" under io;
 import string from "String";
-import {readString, fString} from "String" under st;
+import { print, readString } from "String" under str;
 import List from "Collections";
-import Student from "./src/Student";  // First we import the Student class from the Student module.
-import Assignment from "./src/Assignment";  // Then we import the Assignment class from the Assignment module.
+import Student from "./src/Student";
+import Assignment from "./src/Assignment";
+import Product from "Utils/Product";
 
-int addStudent(List roster) {
-	let name = st.readString("Enter student name: ");
-	let id = roster.getCount() + 1;
-	roster.pushBack(Student(id, name, 0));
-};
-
-int addGrade(List roster) {
-	let id = st.readString("Enter student id or name: ");
-	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => return s.id == i.toInt(), id)
+// Add Grade
+bool addGrade(List roster) {
+	let id = str.readString("Enter student id or name: ");
+	
+	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => { return s.id == i.toInt().resolve([int value] => return value, NULL) }, id)
 		else roster.findFirst([Student s, string i] => return s.name == i, id);
 
-	if (student == NULL) {
-		io.print("Student not found.\n");
-		let junk = st.readString("Press enter to continue...");
-		return 1;
+	// above we use the ternary operator to check if the id is numeric.  If it is, we search for the student by id.  If it is not, we search for the student by name.
+
+	if student == NULL {
+		str.print("Student not found.\n");
+		let junk = str.readString("Press enter to continue...");
+		return false;
 	};
 
-	let assignment = st.readString("Enter assignment name: ");
-	let grade = st.readString(st.fString("Enter %s's grade: ", {student.name}));
-	if (!grade.isNumeric()) {
-		io.print("Grade must be a number.\n");
-		let junk = st.readString("Press enter to continue...");
-		return 1;
+	let assignment = str.readString("Enter assignment name: ");
+	let grade = str.readString( `Enter {student.name}'s grade:`);
+	if !grade.isNumeric() {
+		str.print("Grade must be a number.\n");
+		let junk = str.readString("Press enter to continue...");
+		return false;
 	};
-	student.addAssignment(Assignment(grade.toInt(), assignment));
+	student.addAssignment(Assignment(assignment, grade.toInt().resolve([int value] => return value, NULL))); // We use the resolve() method to get the value of the Product.
+	// We will talk more about products later.
+	return true;
+};
+
+// This a function to add a student to the list.
+void addStudent(List roster) {
+	let name = str.readString("Enter student name: ");
+	let id = roster.getCount() + 1;
+	roster.pushBack(Student(id, name, 0));
 };
 
 int main(){
 	let roster = List(Student);
 
 	while true {
-		io.print("\n--Student Roster--\n");
+		io.clear(); // We clear the screen.
+		str.print("\n--Student Roster--\n");
 		roster.forEach([Student s]=>{
-			io.fPrint("%s\n", {s.getInfo()}); // We use the getInfo() method to print the student's information.
+			str.print(`{s.getInfo()}\n`); // We use the getInfo() method to print the student's information.
 		});
-		io.print("--------------------\n");
-		io.print("Menu : 1. Add a student | 2. Add Grade | quit\n "); // We print the menu.
-		let input = st.readString("> Enter a command: "); // We read the user's input.
+		str.print("--------------------\n");
+		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
+		let input = str.readString("Enter a command: "); // We read the user's input.
 
 		if input == "1"
 			addStudent(roster)
@@ -860,10 +880,9 @@ int main(){
 		else if input == "quit"
 			return 0
 		else {
-			io.print("Invalid command\n");
-			let junk = st.readString("Press enter to continue...");
+			str.print("Invalid command\n");
+			let junk = str.readString("Press enter to continue...");
 		};
-		io.clear();
 	};
 };
 ```
@@ -872,5 +891,109 @@ Play around with the program and see how it works.
 
 As a side project, see if you can add a way to view all of the assignments in a students assignment list.
 
+## Error Handling in AFlat
+The aflat standard library offers a way to handle errors using `Products`.  Products are good to use because they force you to handle errors.  The downside of using products is that you lose type safety.  Because AFlat does not support generics, the resolve() method simply trust that the user knows the correct type.  Be careful when using products because you can easily get the wrong type and aflat will still compile.
+
+### Importing and Using Products
+To use products, you must import the product class from the `Utils/Products` module.  Then you can create a product by calling the Product constructor.  The Product constructor takes two arguments, the first is the value and the second is the error.  If there is no error, the second argument can be omitted or set to NULL. You should also import the `accept()` and `reject()` methods from the `Utils/Products` module.  These methods are used to create products.
+
+example of a function that returns a product:
+
+```js
+Product divide(int a, int b) {
+	if b == 0
+		return pr.reject("Cannot divide by zero");
+	return pr.accept(a / b);
+};
+```
+
+When you call a function that returns a product, you call the `resolve()` method on the product.  The resolve method takes two arguments, the first is a function that is called if the product is accepted and the second is a function that is called if the product is rejected.  The first argument is called with the value of the product and the second argument is called with the error of the product. A second arbitrary argument can be passed to the resolve method.  This argument is passed to the function that is called as the second argument.
+
+example of calling a function that returns a product:
+
+```js
+int main() {
+	bool hasError = false;
+	// notice that the type must be specified explicitly because Products do not supply any type information.
+	int result = divide(10, 0).resolve([int value] => return value, [string error, adr err] => {
+		str.print(`{error}\n`);
+		err =: true; // We store the error state in the pointer passed to the function.
+		return 0;
+	}, ?hasError); // ? is used to pass a pointer to a variable. This passes the address of the hasError variable to the function.
+	if !hasError
+		str.print(`Result: {result}\n`);
+	return 0;
+};
+```
+
+### Adding Error Handling to the Student Roster
+We will add error handling to the addGrade function.  We will also add a way to remove a student from the roster. Instead of returning a boolean, we will return a product.  We can then resolve or reject the product based on the result of the function.
+
+Lets take a look at the updated addGrade function:
+```js
+// Add Grade
+Product addGrade(List roster) {
+	let id = str.readString("Enter student id or name: ");
+	
+	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => { return s.id == i.toInt().resolve([int value] => return value, NULL) }, id)
+		else roster.findFirst([Student s, string i] => return s.name == i, id);
+
+	// above we use the ternary operator to check if the id is numeric.  If it is, we search for the student by id.  If it is not, we search for the student by name.
+
+	if student == NULL {
+		return pr.reject("Student not found."); // We return a Product with an error message.
+	};
+
+	let assignment = str.readString("Enter assignment name: ");
+	let grade = str.readString( `Enter {student.name}'s grade:`);
+	string errorMsg = "";
+	int grade = grade.toInt().resolve([int value] => return value, [string error, mutable string msg] => { // We shadow the grade variable with an int since we wont need the product anymore.
+		msg = error;
+		return 0;
+	}, errorMsg);
+	if errorMsg != "" {
+		return pr.reject(errorMsg); // We return a Product with an error message.
+	};
+
+	student.addAssignment(Assignment(assignment, grade)); // We use the resolve() method to get the value of the Product.
+	// We will talk more about products later.
+	return pr.accept(NULL); // We return a Product with a value of NULL.
+};
+```
+
+Now we need to update the main function to handle the product.
+
+```js
+	int main(){
+	let roster = List(Student);
+
+	while true {
+		io.clear(); // We clear the screen.
+		str.print("\n--Student Roster--\n");
+		roster.forEach([Student s]=>{
+			str.print(`{s.getInfo()}\n`); // We use the getInfo() method to print the student's information.
+		});
+		str.print("--------------------\n");
+		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
+		let input = str.readString("Enter a command: "); // We read the user's input.
+
+		if input == "1"
+			addStudent(roster)
+		else if input == "2"
+			adr __junk = addGrade(roster).
+				resolve([] => return NULL, [string error] => { // We use the resolve() method to handle the Product.
+					str.print(`Error: {error}\n`);
+					let __junk = str.readString("Press enter to continue...");
+					return NULL;
+				})
+		else if input == "quit"
+			return 0
+		else {
+			str.print("Invalid command\n");
+			let __junk = str.readString("Press enter to continue...");
+		};
+	};
+};
+```
 ## Done So Soon?
 Don't worry, more tutorial to come...
