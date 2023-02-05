@@ -22,6 +22,10 @@ dynamic safe class Product {
 			return reject(new string(my.error), arg);
 	};
 
+	public bool hasError() {
+		return my.success == true;
+	};
+
 	int endScope() {
         my.refcount = my.refcount - 1;
         if my.refcount == 0 {
