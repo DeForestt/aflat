@@ -1,9 +1,10 @@
 .needs <asm>
 .needs <std>
 
-import String, string from "String";
+import string from "String";
+import {print} from "String" under str;
 import ICollection from "Collections";
-import LinkedList from "Collections";
+import List from "Collections";
 import Product from "Utils/Product";
 import { accept, reject } from "Utils/Product" under pr;
 
@@ -192,23 +193,37 @@ export DateTime Now(* int timeZone){
     return new DateTime(seconds);
 };
 
-export Product mmddyyyyToDate(const String input, * char splitChar){
-    if splitChar == '\0'
-        splitChar = '-';
-    const LinkedList l = input.split(splitChar);
-    if l.size() != 3
-        return pr.reject("Invalid date format passed to mmddyyyyToDate");
+export Product mmddyyyyToDate(const string input, *mutable char splitChar){
+    if splitChar == '\0' splitChar = '-';
+    const List l = input.split(splitChar);
+    if l.getCount() != 3 {
+        str.print(`Invalid date format: {l.getCount()}`);
+        return pr.reject("Invalid date format")
+    };
+    const string month = l.get(0);
+    const string day = l.get(1);
+    const string year = l.get(2);
 
-    const String monthString = l.get(0);
-    const String dayString = l.get(1);
-    const String yearString = l.get(2);
+    const string err = "";
+    const int month = month.toInt().resolve([const int value] => return value, [const string error, string e] => {
+        e = `{e}Month: {error} `;
+        return 0;
+    }, err);
+    
+    const int day = day.toInt().resolve([const int value] => return value, [const string error, string e] => {
+        e = `{e}Day: {error} `;
+        return 0;
+    }, err);
 
-    const int month = monthString.toInt();
-    const int day = dayString.toInt();
-    const int year = yearString.toInt();
+    const int year = year.toInt().resolve([const int value] => return value, [const string error, string e] => {
+        e = `{e}Year: {error}`;
+        return 0;
+    }, err);
 
-    const int relDays = dateRelativeTo(month, day, year, 1970);
-    const int seconds = relDays * 86400;
+    if err.len() > 0 return pr.reject(err);
+
+    const int seconds = dateRelativeTo(month, day, year, 1970) * 86400;
+
     return pr.accept(new DateTime(seconds));
 };
 
@@ -224,4 +239,4 @@ export int mills() {
     long ms = ts.tv_sec * 1000;
     ms = ms + (ts.tv_nsec / 1000000);
     return longToInt(ms);
-};
+}; 
