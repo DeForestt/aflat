@@ -6,6 +6,7 @@ import string from "String";
 import { print, fString } from "String" under stl;
 import {str_comp} from "strings" under st;
 import List from "Collections";
+import Product from "Utils/Product";
 
 private bool test_compare() : test.case("compare") {
     let s1 = new string("Hello");
@@ -52,8 +53,7 @@ private bool test_split() : test.case("split") {
     );
 };
 
-int callCount = 0;
-List chars = NULL;
+mutable int callCount = 0;
 
 class Char {
     char c = c;
@@ -63,30 +63,28 @@ class Char {
 };
 
 private bool test_forEach() : test.case("forEach") {
-    // callCount = 0;
-    // chars = new List(Char);
-    // const let loopTracker = [char c] => {
-    //     callCount = callCount + 1;
-    //     List l = chars;
-    //     l.pushBack(Char(c));
-    // };
+    callCount = 0;
+    List chars = new List(Char);
+    const let loopTracker = [char c, int __index, List list] => {
+        callCount = callCount + 1;
+        list.pushBack(new Char(c));
+        return 0;
+    };
 
-    // let s1 = new string("1234");
-    // s1.forEach(loopTracker);
-    // List l = chars;
+    let s1 = new string("1234");
+    s1.forEach(loopTracker, chars);
 
-    // Char c1 = l.get(0);
-    // Char c2 = l.get(1);
-    // Char c3 = l.get(2);
-    // Char c4 = l.get(3);
+    Char c1 = chars.get(0);
+    Char c2 = chars.get(1);
+    Char c3 = chars.get(2);
+    Char c4 = chars.get(3);
 
     return (
-        true
-        // test.require(callCount == 4, "forEach calls the callback the correct number of times.") &
-        // test.require(c1.c == '1', "forEach gets the correct first item.") &
-        // test.require(c2.c == '2', "forEach gets the correct second item.") &
-        // test.require(c3.c == '3', "forEach gets the correct third item.") &
-        // test.require(c4.c == '4', "forEach gets the correct fourth item.")
+        test.require(callCount == 4, `Should have called the loop tracker 4 times. Called {callCount} times.`) &
+        test.require(c1.c == '1', `The first char should be 1 got {c1.c}`) &
+        test.require(c2.c == '2', `The second char should be 2 got {c2.c}`) &
+        test.require(c3.c == '3', `The third char should be 3 got {c3.c}`) &
+        test.require(c4.c == '4', `The fourth char should be 4 got {c4.c}`)
     );
 };
 
@@ -135,9 +133,13 @@ private bool test_isNumeric() : test.case("isNumeric") {
 private bool test_toInt() : test.case("toInt") {
     let s1 = new string("1234");
     let s2 = new string("Hello");
+
+    Product s1 = s1.toInt();
+    Product s2 = s2.toInt();
     return (
-        test.require(s1.toInt() == 1234, "Converts numeric") &
-        test.require(s2.toInt() == 0, "Converts non-numeric")
+        test.require(s2.hasError(), "Identifies non-numeric") &
+        test.require(s1.hasError() == false, "Identifies numeric") &
+        test.require(s1.resolve([int result] => return result, NULL) == 1234, "Converts to int")
     );
 };
 

@@ -22,8 +22,22 @@ dynamic safe class Product {
 			return reject(new string(my.error), arg);
 	};
 
+	public any value(const adr onError, * const any arg) {
+		if my.success
+			return my.value
+		else
+			return onError(new string(my.error), arg);
+	};
+
+	public string getError() {
+		if my.success
+			return `No error.`
+		else
+			return `{my.error}`;
+	};
+
 	public bool hasError() {
-		return my.success == true;
+		return my.success != true;
 	};
 
 	int endScope() {
