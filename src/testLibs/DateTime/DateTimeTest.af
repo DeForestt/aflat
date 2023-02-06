@@ -5,15 +5,21 @@ import TestSuite from "ATest.af";
 import string from "String";
 import List from "Collections";
 import Product from "Utils/Product";
+import {print} from "String" under str;
 
 import {mmddyyyyToDate, Now} from "DateTime" under dt;
 import DateTime from "DateTime";
 
 private bool test_mmddyyyyToDate() : test.case("mmddyyyyToDate") {
-    string invalidDateError = dt.mmddyyyyToDate("invalid").resolve(NULL);
+    let invalid = dt.mmddyyyyToDate("invalid");
+    string errorCode = invalid.resolve(
+        [] => return `valid`,
+        [string error] => return error
+    );
+    str.print(errorCode);
     return (
-        test.require(dt.mmddyyyyToDate("invalid").hasError(), "invalid date should return error") &
-        test.require(invalidDateError)
+        test.require(invalid.hasError(), "invalid date should return error") &
+        test.require(errorCode == "Invalid date format", `error message should be 'Invalid date format', got '{errorCode}'`)
     );
 };
 

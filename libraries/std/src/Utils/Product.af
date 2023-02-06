@@ -29,11 +29,11 @@ dynamic safe class Product {
 			return onError(new string(my.error), arg);
 	};
 
-	public string error() {
+	public string getError() {
 		if my.success
-			return NULL
+			return `No error.`
 		else
-			return new string(my.error);
+			return `{my.error}`;
 	};
 
 	public bool hasError() {
