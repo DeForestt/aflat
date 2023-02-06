@@ -12,14 +12,17 @@ import DateTime from "DateTime";
 
 private bool test_mmddyyyyToDate() : test.case("mmddyyyyToDate") {
     let invalid = dt.mmddyyyyToDate("01-m3-2019");
-    string errorCode = invalid.resolve(
-        [] => return `valid`,
-        [string error] => return error
-    );
+    let invalid2 = dt.mmddyyyyToDate("Not a date");
+    let valid = dt.mmddyyyyToDate("01-03-2019");
+    DateTime v = valid.value(NULL);
     str.print(errorCode);
     return (
         test.require(invalid.hasError(), "invalid date should return error") &
-        test.require(errorCode == "Invalid date format", `error message should be 'Invalid date format', got '{errorCode}'`)
+        test.require(invalid2.hasError(), "Non-date should be an error") &
+        test.require(!valid.hasError(), "valid date should not return error") &
+        test.require(v.getYear() == 2019, "year should be 2019") &
+        test.require(v.getMonth() == 1, "month should be 1") &
+        test.require(v.getDay() == 3, "day should be 3")
     );
 };
 

@@ -1,6 +1,5 @@
 .needs <std>
 import string from "String";
-import { print } from "String" under str;
 
 /*
 A class that represents the result of a function.  It can either be error or success. and will return the value if it is success.
