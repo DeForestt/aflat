@@ -1,0 +1,26 @@
+.needs <std>
+
+import {case, require} from "ATest.af" under test;
+import TestSuite from "ATest.af";
+import string from "String";
+import List from "Collections";
+import Product from "Utils/Product";
+
+import {mmddyyyyToDate, Now} from "DateTime" under dt;
+import DateTime from "DateTime";
+
+private bool test_mmddyyyyToDate() : test.case("mmddyyyyToDate") {
+    string invalidDateError = dt.mmddyyyyToDate("invalid").resolve(NULL);
+    return (
+        test.require(dt.mmddyyyyToDate("invalid").hasError(), "invalid date should return error") &
+        test.require(invalidDateError)
+    );
+};
+
+export TestSuite getSuite() {
+    let suite = new TestSuite("DateTime");
+
+    suite.addCase(test_mmddyyyyToDate);    
+
+    return suite;
+};
