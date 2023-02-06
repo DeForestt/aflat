@@ -23,7 +23,7 @@ dynamic safe class Product {
 	};
 
 	public bool hasError() {
-		return my.success == true;
+		return my.success != true;
 	};
 
 	int endScope() {
