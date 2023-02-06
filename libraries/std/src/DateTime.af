@@ -197,7 +197,6 @@ export Product mmddyyyyToDate(const string input, *mutable char splitChar){
     if splitChar == '\0' splitChar = '-';
     const List l = input.split(splitChar);
     if l.getCount() != 3 {
-        str.print(`Invalid date format: {l.getCount()}`);
         return pr.reject("Invalid date format")
     };
     const string month = l.get(0);
