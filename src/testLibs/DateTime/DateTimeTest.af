@@ -11,7 +11,7 @@ import {mmddyyyyToDate, Now} from "DateTime" under dt;
 import DateTime from "DateTime";
 
 private bool test_mmddyyyyToDate() : test.case("mmddyyyyToDate") {
-    let invalid = dt.mmddyyyyToDate("invalid");
+    let invalid = dt.mmddyyyyToDate("01-m3-2019");
     string errorCode = invalid.resolve(
         [] => return `valid`,
         [string error] => return error
