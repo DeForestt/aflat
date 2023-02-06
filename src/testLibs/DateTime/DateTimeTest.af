@@ -40,11 +40,34 @@ private bool test_Now() : test.case("Now") {
     );
 };
 
+private bool test_getHour(DateTime date) : test.case("getHour") {
+    return (
+        test.require(date.getHour() == 0, `Hour should be 0, but was {date.getHour()}`)
+    );
+};
+
+private bool test_getHours(DateTime date) : test.case("getHours") {
+    let hoursSinceEpoch = 429552;
+    return (
+        test.require(date.getHours() == hoursSinceEpoch, `Hours should be {hoursSinceEpoch}, but was {date.getHours()}`)
+    );
+};
+
 export TestSuite getSuite() {
-    let suite = new TestSuite("DateTime");
+    let suite = new TestSuite("DateTime", [DateTime date] => {
+        DateTime testDate = dt.mmddyyyyToDate("01-02-2019").value([] => return NULL);
+        date.init(testDate.getSeconds());
+    });
+
+    let date = dt.Now();
+    suite.addFixture(date);
 
     suite.addCase(test_mmddyyyyToDate);
     suite.addCase(test_Now);
+    suite.addCase(test_getHour);
+    suite.addCase(test_getHours);
+    suite.addCase(test_getMinute);
+    suite.addCase(test_getMinutes);
 
     return suite;
 };
