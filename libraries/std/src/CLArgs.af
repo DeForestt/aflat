@@ -3,6 +3,8 @@
 import string from "String";
 import List from "Collections";
 import {fPrint} from "io" under io;
+import Product from "Utils/Product";
+import { accept, reject } from "Utils/Product" under pt;
 
 class Arg {
     string name = "";
@@ -62,20 +64,20 @@ class ArgsList {
         return my;
     };
 
-    string getArg(const string name) {
+    Product getArg(const string name) {
         const Arg arg = my.args.findFirst([const Arg a, const string n] => return a.name == n, name);
-        if (arg != NULL) {
-            return arg.value;
+        if arg != NULL {
+            return pt.accept(arg.value);
         } else {
-            return new string("");
+            return pt.reject("No such arg");
         };
     };
 
-    string getTagLessArg(const int index) {
+    Product getTagLessArg(const int index) {
         if (index < my.tagLessArgs.getCount()) {
-            return my.tagLessArgs.get(index);
+            return pt.accept(my.tagLessArgs.get(index));
         } else {
-            return new string("");
+            return pt.reject("Index out of range");
         };
     };
 
