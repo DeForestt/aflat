@@ -863,5 +863,5 @@ export int readInt(const string prompt, * int tries) {
 export string itos(int i) {
     const char[256] buff;
     str.int_toString(i, buff);
-    return `{buffAdr}`;
+    return `{buff}`;
 };
