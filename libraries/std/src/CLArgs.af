@@ -73,11 +73,11 @@ class ArgsList {
         };
     };
 
-    string getTagLessArg(const int index) {
+    Product getTagLessArg(const int index) {
         if (index < my.tagLessArgs.getCount()) {
-            return my.tagLessArgs.get(index);
+            return pt.accept(my.tagLessArgs.get(index));
         } else {
-            return new string("");
+            return pt.reject("Index out of range");
         };
     };
 
