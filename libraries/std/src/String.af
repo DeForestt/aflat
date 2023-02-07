@@ -844,3 +844,24 @@ export string fString(const string fmt, * adr args) {
     };
     return newString.copy();
 };
+
+export int readInt(const string prompt, * int tries) {
+	if tries <= 0
+		tries = 3;
+	const string val = readString(prompt);
+	return val.toInt().resolve(
+		[const int val] => return val,
+		[const string err, int t] => {
+			t = t - 1;
+			if t == 0 panic("Failed to enter an integer");
+			return readInt(`{err} please try again ({t} tries left): `, t);
+		},
+		tries
+	);
+};
+
+export string itos(int i) {
+    const char[256] buff;
+    str.int_toString(i, buff);
+    return `{buffAdr}`;
+};
