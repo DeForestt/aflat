@@ -30,7 +30,7 @@ class File{
     int file;
 
     int write(adr text);
-    void writeBytes(adr pointer, int size) {
+    void writeBytes(const adr pointer, const int size) {
         sys_write(my.file, pointer, size);
     };
     int read(adr pointer, char delim);
