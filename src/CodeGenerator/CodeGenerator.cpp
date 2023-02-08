@@ -367,6 +367,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   if (type.typeName == "number" && typeName == "int") return true;
   if (type.typeName == "number" && typeName == "long") return true;
   if (type.typeName == "number" && typeName == "float") return true;
+  if (type.typeName == "number" && typeName == "byte") return true;
 
   if (typeName != "generic") {
     // search the type list for the type
