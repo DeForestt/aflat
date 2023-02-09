@@ -1,7 +1,6 @@
 .needs <std.gs>
 
-import DateTime from "DateTime.af";
-import {Now} from "DateTime" under dt;
+import {Now, mills} from "DateTime" under dt;
 import {hex_toInt} from "strings" under str;
 import * from "io" under io;
 
@@ -15,14 +14,13 @@ class Random {
 		int result = my.seed;
 		if result < 0
 		 	result = result  * -1;
+		result = result * dt.mills();
 		return result % n;
 	};
 
 	Random init(){
-		const DateTime now = dt.Now();
-		my.seed = now.getSeconds();
+		my.seed = dt.mills();
 
-		delete now;
 		for int i = 0; i < my.nextInt(10); i++
 			my.nextInt(100);
 	};
