@@ -38,10 +38,10 @@ export int exp(const int base, const int pow){
 	return output;
 };
 
-export int floatToInt(const adr f){
-	int i = f as int;
+export int floatToInt(const float f){
+	int i = f;
 	const int sign = i >> 31;
-	i = f as int;
+	i = f;
 	int exponent = (i >> 23) & 255;
 	int mantissa = i & 8388607;
 
@@ -58,6 +58,15 @@ export int floatToInt(const adr f){
 	if sign == 1
 		whole = whole * -1;
 	return whole;
+};
+
+export float intToFloat(const int i){
+	// for now, we will cheat by using a for loop
+	// TODO: implement this properly
+	float f = 0.0;
+	for int j = 0; j < i; j++
+		f = f + 1.0;
+	return f;
 };
 
 export int sqrt(const int n){
