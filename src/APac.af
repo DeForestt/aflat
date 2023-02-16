@@ -6,7 +6,7 @@ import string from "String";
 import {fString, print} from "String" under st;
 import { fPrint } from "io" under io;
 import { worker } from "concurrency" under async;
-import Result from "concurrency";
+import AsyncResult from "concurrency";
 import HTTPRequest, HTTPMethod, HTTPMessage from "HTTP";
 import { requestWorker } from "HTTP" under http;
 import List from "Collections";
