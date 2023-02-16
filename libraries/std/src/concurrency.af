@@ -57,14 +57,26 @@ class FD {
   public int in;
 };
 
-class Result{
+safe dynamic class AsyncResult{
     private MProcess p = p;
+    private int refcount = 1;
 
-    Result init(const MProcess p){
+    AsyncResult init(const MProcess p){
         return my;
     };
+    
+    AsyncResult get() {
+		my.refcount = my.refcount + 1;
+		return my;
+	};
 
-    public adr get() {
+    void del() {
+        my.p.kill();
+        const MProcess p = my.p;
+        delete p;
+    };
+
+    public adr resolve() {
         return my.p.output();
     };
 
@@ -91,6 +103,13 @@ class Result{
         const int[3] arg = {time, nano, my.p.getPid()};
         timeout.start(arg);
         return 0;
+    };
+
+    void endScope() {
+        my.refcount = my.refcount - 1;
+        if my.refcount == 0 {
+            delete my;
+        };
     };
 };
 
@@ -250,7 +269,7 @@ export adr worker(const adr foo, *const any arg1, *const any arg2, *const any ar
         const Message msg = new Message(res);
         msg.writePipe(outbox);
     });
-    const Result ret = new Result(p);
+    const AsyncResult ret = new AsyncResult(p);
     const WorkArgs pArgs = new WorkArgs(foo, arg1, arg2, arg3, arg4);
     p.start(pArgs);
     return ret; 
