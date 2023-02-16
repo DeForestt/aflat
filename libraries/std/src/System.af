@@ -2,7 +2,7 @@
 .needs <std>
 
 import { worker } from "concurrency" under async;
-import Result from "concurrency";
+import AsyncResult from "concurrency";
 import string from "String";
 import { fString } from "String" under st;
 import * from "io" under io;

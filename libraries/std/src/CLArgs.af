@@ -3,8 +3,8 @@
 import string from "String";
 import List from "Collections";
 import {fPrint} from "io" under io;
-import Product from "Utils/Product";
-import { accept, reject } from "Utils/Product" under pt;
+import Result from "Utils/Result";
+import { accept, reject } from "Utils/Result" under pt;
 
 class Arg {
     string name = "";
@@ -64,7 +64,7 @@ class ArgsList {
         return my;
     };
 
-    Product getArg(const string name) {
+    Result getArg(const string name) {
         const Arg arg = my.args.findFirst([const Arg a, const string n] => return a.name == n, name);
         if arg != NULL {
             return pt.accept(arg.value);
@@ -73,7 +73,7 @@ class ArgsList {
         };
     };
 
-    Product getTagLessArg(const int index) {
+    Result getTagLessArg(const int index) {
         if (index < my.tagLessArgs.getCount()) {
             return pt.accept(my.tagLessArgs.get(index));
         } else {

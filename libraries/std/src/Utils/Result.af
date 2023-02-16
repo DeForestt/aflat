@@ -5,21 +5,26 @@ import string from "String";
 A class that represents the result of a function.  It can either be error or success. and will return the value if it is success.
 You will be sacrificing type safety for error handling.
 */
-dynamic safe class Product {
+dynamic safe class Result {
 	private mutable any value = value;
 	private mutable bool success = error == NULL;
 	private mutable adr error = error;
 	private mutable int refcount = 1;
 
-	public Product init(const any value, *const adr error) {
+	Result get() {
+		my.refcount = my.refcount + 1;
 		return my;
 	};
 
-	public any resolve(const adr accept, const adr reject, * const any arg) {
+	public Result init(const any value, *const adr error) {
+		return my;
+	};
+
+	public any resolve(const adr acc, const adr rej, * const any arg) {
 		if my.success
-			return accept(my.value, arg)
+			return acc(my.value, arg)
 		else
-			return reject(new string(my.error), arg);
+			return rej(new string(my.error), arg);
 	};
 
 	public any value(const adr onError, * const any arg) {
@@ -40,24 +45,19 @@ dynamic safe class Product {
 		return my.success != true;
 	};
 
-	int endScope() {
+	void endScope() {
         my.refcount = my.refcount - 1;
         if my.refcount == 0 {
             delete my;
         };
-        return 0;
+        return;
     };
-
-	Product get() {
-		my.refcount = my.refcount + 1;
-		return my;
-	};
 };
 
-export Product accept(const any value) {
-	return new Product(value, NULL);
+export Result accept(const any value) {
+	return new Result(value, NULL);
 };
 
-export Product reject(const string error) {
-	return new Product(NULL, error.cstr());
+export Result reject(const string error) {
+	return new Result(NULL, error.cstr());
 };

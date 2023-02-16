@@ -4,7 +4,7 @@ import {case, require} from "ATest.af" under test;
 import TestSuite from "ATest.af";
 import string from "String";
 import List from "Collections";
-import Product from "Utils/Product";
+import Result from "Utils/Result";
 import {print} from "String" under str;
 
 import {mmddyyyyToDate, Now} from "DateTime" under dt;

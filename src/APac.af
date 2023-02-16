@@ -12,7 +12,7 @@ import { requestWorker } from "HTTP" under http;
 import List from "Collections";
 import Package from "./src/Package";
 import { getString } from "./src/modules/JSONParse" under json;
-import Product from "Utils/Product";
+import Result from "Utils/Result";
 
 const let VERSION = "0.1.0";
 

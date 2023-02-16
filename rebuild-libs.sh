@@ -15,7 +15,7 @@ aflat ./libraries/std/src/ATest.af ./libraries/std/ATest.s
 aflat ./libraries/std/src/HTTP.af ./libraries/std/HTTP.s
 aflat ./libraries/std/src/CLArgs.af ./libraries/std/CLArgs.s
 aflat ./libraries/std/src/System.af ./libraries/std/System.s
-aflat ./libraries/std/src/Utils/Product.af ./libraries/std/Product.s
-# rename Product.s to Utils_Product.s
-mv ./libraries/std/Product.s ./libraries/std/Utils_Product.s
+aflat ./libraries/std/src/Utils/Result.af ./libraries/std/Result.s
+# rename Result.s to Utils_Result.s
+mv ./libraries/std/Result.s ./libraries/std/Utils_Result.s
 gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c

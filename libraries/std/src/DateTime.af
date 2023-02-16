@@ -5,8 +5,8 @@ import string from "String";
 import {print} from "String" under str;
 import ICollection from "Collections";
 import List from "Collections";
-import Product from "Utils/Product";
-import { accept, reject } from "Utils/Product" under pr;
+import Result from "Utils/Result";
+import { accept, reject } from "Utils/Result" under pr;
 
 class DateTime{
     private int seconds;
@@ -193,7 +193,7 @@ export DateTime Now(* int timeZone){
     return new DateTime(seconds);
 };
 
-export Product mmddyyyyToDate(const string input, *mutable char splitChar){
+export Result mmddyyyyToDate(const string input, *mutable char splitChar){
     if splitChar == '\0' splitChar = '-';
     const List l = input.split(splitChar);
     if l.getCount() != 3 {

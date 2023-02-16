@@ -6,7 +6,7 @@ import string from "String";
 import { print, fString } from "String" under stl;
 import {str_comp} from "strings" under st;
 import List from "Collections";
-import Product from "Utils/Product";
+import Result from "Utils/Result";
 
 private bool test_compare() : test.case("compare") {
     let s1 = new string("Hello");
@@ -134,8 +134,8 @@ private bool test_toInt() : test.case("toInt") {
     let s1 = new string("1234");
     let s2 = new string("Hello");
 
-    Product s1 = s1.toInt();
-    Product s2 = s2.toInt();
+    Result s1 = s1.toInt();
+    Result s2 = s2.toInt();
     return (
         test.require(s2.hasError(), "Identifies non-numeric") &
         test.require(s1.hasError() == false, "Identifies numeric") &
