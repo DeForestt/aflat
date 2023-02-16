@@ -3,8 +3,8 @@
 
 import ICollection from "Collections";
 import LinkedList, List from "Collections";
-import Product from "Utils/Product";
-import {accept, reject} from "Utils/Product" under prod;
+import Result from "Utils/Result";
+import {accept, reject} from "Utils/Result" under prod;
 import { exp } from "math" under math;
 
 import * from "strings" under str;
@@ -548,7 +548,7 @@ safe dynamic class string {
         return true;
     };
 
-    Product toInt() {
+    Result toInt() {
         if !my.isNumeric() return prod.reject("Not a number");
         return prod.accept(str.str_toInt(my.head));
     };

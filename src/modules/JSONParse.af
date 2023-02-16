@@ -5,7 +5,7 @@ import string from "String";
 import { fString } from "String" under st;
 import { fPrint } from "io" under io;
 import List from "Collections";
-import Product from "Utils/Product";
+import Result from "Utils/Result";
 
 /*
  * Take in a string and a json string and return a string

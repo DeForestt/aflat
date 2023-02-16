@@ -96,7 +96,7 @@ int main(){
 };
 ```
 
-The if statment will check if the two strings are equal. If they are equal, then the program statement will be executed.  If they are not equal, then the else statement will be executed.  Keep in mind that the else statement is optional. Also Keep in mind that if the if statement is only one line, then the curly braces are optional.
+The if statment will check if the two strings are equal. If they are equal, then the program statement will be executed.  If they are not equal, then the else statement will be executed.  Keep in mind that the else statement is optional. Alsoinit Keep in mind that if the if statement is only one line, then the curly braces are optional.
 
 
 ## Guessing Game
@@ -106,7 +106,7 @@ Now we will make a simple guessing game.  The program will ask the user to guess
 .needs <std>
 import string from "String";
 import { readString, print } from "String" under st;
-import Product from "Utils/Product";
+import Result from "Utils/Result";
 
 int main(){
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
@@ -135,7 +135,7 @@ This game is a bit too hard.  We cannot expect to guess the number in just one t
 .needs <std>
 import string from "String";
 import { readString, print } from "String" under st;
-import Product from "Utils/Product";
+import Result from "Utils/Result";
 
 int main(){
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
@@ -177,7 +177,7 @@ This game gets boring quickly.  We need to make sure that the program doesn't al
 .needs <std>
 import string from "String";
 import { readString, print } from "String" under st;
-import Product from "Utils/Product";
+import Result from "Utils/Result";
 import Random from "math";
 
 int main(){
@@ -776,7 +776,7 @@ bool addGrade(List roster) {
 		let junk = str.readString("Press enter to continue...");
 		return false;
 	};
-	student.addAssignment(Assignment(assignment, grade.toInt().resolve([int value] => return value, NULL))); // We use the resolve() method to get the value of the Product.
+	student.addAssignment(Assignment(assignment, grade.toInt().resolve([int value] => return value, NULL))); // We use the resolve() method to get the value of the Result.
 	// We will talk more about products later.
 	return true;
 };
@@ -824,7 +824,7 @@ import { print, readString } from "String" under str;
 import List from "Collections";
 import Student from "./src/Student";
 import Assignment from "./src/Assignment";
-import Product from "Utils/Product";
+import Result from "Utils/Result";
 
 // Add Grade
 bool addGrade(List roster) {
@@ -848,7 +848,7 @@ bool addGrade(List roster) {
 		let junk = str.readString("Press enter to continue...");
 		return false;
 	};
-	student.addAssignment(Assignment(assignment, grade.toInt().resolve([int value] => return value, NULL))); // We use the resolve() method to get the value of the Product.
+	student.addAssignment(Assignment(assignment, grade.toInt().resolve([int value] => return value, NULL))); // We use the resolve() method to get the value of the Result.
 	// We will talk more about products later.
 	return true;
 };
@@ -892,15 +892,15 @@ Play around with the program and see how it works.
 As a side project, see if you can add a way to view all of the assignments in a students assignment list.
 
 ## Error Handling in AFlat
-The aflat standard library offers a way to handle errors using `Products`.  Products are good to use because they force you to handle errors.  The downside of using products is that you lose type safety.  Because AFlat does not support generics, the resolve() method simply trust that the user knows the correct type.  Be careful when using products because you can easily get the wrong type and aflat will still compile.
+The aflat standard library offers a way to handle errors using `Results`.  Results are good to use because they force you to handle errors.  The downside of using products is that you lose type safety.  Because AFlat does not support generics, the resolve() method simply trust that the user knows the correct type.  Be careful when using products because you can easily get the wrong type and aflat will still compile.
 
-### Importing and Using Products
-To use products, you must import the product class from the `Utils/Products` module.  Then you can create a product by calling the Product constructor.  The Product constructor takes two arguments, the first is the value and the second is the error.  If there is no error, the second argument can be omitted or set to NULL. You should also import the `accept()` and `reject()` methods from the `Utils/Products` module.  These methods are used to create products.
+### Importing and Using Results
+To use products, you must import the product class from the `Utils/Results` module.  Then you can create a product by calling the Result constructor.  The Result constructor takes two arguments, the first is the value and the second is the error.  If there is no error, the second argument can be omitted or set to NULL. You should also import the `accept()` and `reject()` methods from the `Utils/Results` module.  These methods are used to create products.
 
 example of a function that returns a product:
 
 ```js
-Product divide(int a, int b) {
+Result divide(int a, int b) {
 	if b == 0
 		return pr.reject("Cannot divide by zero");
 	return pr.accept(a / b);
@@ -914,7 +914,7 @@ example of calling a function that returns a product:
 ```js
 int main() {
 	bool hasError = false;
-	// notice that the type must be specified explicitly because Products do not supply any type information.
+	// notice that the type must be specified explicitly because Results do not supply any type information.
 	int result = divide(10, 0).resolve([int value] => return value, [string error, adr err] => {
 		str.print(`{error}\n`);
 		err =: true; // We store the error state in the pointer passed to the function.
@@ -932,7 +932,7 @@ We will add error handling to the addGrade function.  We will also add a way to 
 Lets take a look at the updated addGrade function:
 ```js
 // Add Grade
-Product addGrade(List roster) {
+Result addGrade(List roster) {
 	let id = str.readString("Enter student id or name: ");
 	
 	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => { return s.id == i.toInt().resolve([int value] => return value, NULL) }, id)
@@ -941,7 +941,7 @@ Product addGrade(List roster) {
 	// above we use the ternary operator to check if the id is numeric.  If it is, we search for the student by id.  If it is not, we search for the student by name.
 
 	if student == NULL {
-		return pr.reject("Student not found."); // We return a Product with an error message.
+		return pr.reject("Student not found."); // We return a Result with an error message.
 	};
 
 	let assignment = str.readString("Enter assignment name: ");
@@ -952,12 +952,12 @@ Product addGrade(List roster) {
 		return 0;
 	}, errorMsg);
 	if errorMsg != "" {
-		return pr.reject(errorMsg); // We return a Product with an error message.
+		return pr.reject(errorMsg); // We return a Result with an error message.
 	};
 
-	student.addAssignment(Assignment(assignment, grade)); // We use the resolve() method to get the value of the Product.
+	student.addAssignment(Assignment(assignment, grade)); // We use the resolve() method to get the value of the Result.
 	// We will talk more about products later.
-	return pr.accept(NULL); // We return a Product with a value of NULL.
+	return pr.accept(NULL); // We return a Result with a value of NULL.
 };
 ```
 
@@ -981,7 +981,7 @@ Now we need to update the main function to handle the product.
 			addStudent(roster)
 		else if input == "2"
 			adr __junk = addGrade(roster).
-				resolve([] => return NULL, [string error] => { // We use the resolve() method to handle the Product.
+				resolve([] => return NULL, [string error] => { // We use the resolve() method to handle the Result.
 					str.print(`Error: {error}\n`);
 					let __junk = str.readString("Press enter to continue...");
 					return NULL;

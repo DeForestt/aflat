@@ -417,7 +417,7 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
   linker.insert(linker.begin(), libPath + "ATest.s");
   linker.insert(linker.begin(), libPath + "CLArgs.s");
   linker.insert(linker.begin(), libPath + "System.s");
-  linker.insert(linker.begin(), libPath + "Utils_Product.s");
+  linker.insert(linker.begin(), libPath + "Utils_Result.s");
 
   // run gcc on the linkerList
   std::string linkerList = "";
