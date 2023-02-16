@@ -899,8 +899,9 @@ export int readInt(const string prompt, * int tries) {
 	if tries <= 0
 		tries = 3;
 	const string val = readString(prompt);
-	return val.toInt().resolve(
-		[const int val] => return val,
+    const Result res = val.toInt();
+	const int ret = res.resolve(
+		[const int x] => return x,
 		[const string err, int t] => {
 			t = t - 1;
 			if t == 0 panic("Failed to enter an integer");
@@ -908,6 +909,8 @@ export int readInt(const string prompt, * int tries) {
 		},
 		tries
 	);
+    prompt.endScope(); // I don't know why this is needed, endScope() should be called automatically on prompt.
+    return ret;
 };
 
 export string itos(const int i) {
