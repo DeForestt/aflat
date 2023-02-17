@@ -46,19 +46,19 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
     bool saveGlobal = this->globalScope;
     this->globalScope = false;
 
-    auto lable = new asmc::Label;
-    lable->logicalLine = func->logicalLine;
+    auto label = new asmc::Label;
+    label->logicalLine = func->logicalLine;
     if (this->scope == nullptr || func->isLambda)
-      lable->label = func->ident.ident;
+      label->label = func->ident.ident;
     else
-      lable->label = "pub_" + scope->Ident + "_" + func->ident.ident;
+      label->label = "pub_" + scope->Ident + "_" + func->ident.ident;
     if (func->scopeName != "global") {
-      lable->label = "pub_" + func->scopeName + "_" + func->ident.ident;
-      gen::Type* tscope = *this->typeList[func->scopeName];
-      if (tscope == nullptr) alert("Failed to locate function Scope");
-      if (dynamic_cast<gen::Class*>(tscope) == nullptr)
+      label->label = "pub_" + func->scopeName + "_" + func->ident.ident;
+      gen::Type* tScope = *this->typeList[func->scopeName];
+      if (tScope == nullptr) alert("Failed to locate function Scope");
+      if (dynamic_cast<gen::Class*>(tScope) == nullptr)
         alert("Can only scope to  a class");
-      this->scope = dynamic_cast<gen::Class*>(tscope);
+      this->scope = dynamic_cast<gen::Class*>(tScope);
     }
 
     asmc::Push* push = new asmc::Push();
@@ -74,14 +74,14 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
       auto link = new asmc::LinkTask();
       link->logicalLine = func->logicalLine;
       link->command = "global";
-      link->operand = this->moduleId + '.' + lable->label;
+      link->operand = this->moduleId + '.' + label->label;
       OutputFile.linker.push(link);
-      auto lable2 = new asmc::Label();
-      lable2->label = this->moduleId + '.' + lable->label;
-      OutputFile.text << lable2;
+      auto label2 = new asmc::Label();
+      label2->label = this->moduleId + '.' + label->label;
+      OutputFile.text << label2;
     }
 
-    OutputFile.text.push(lable);
+    OutputFile.text.push(label);
     OutputFile.text.push(push);
     OutputFile.text.push(mov);
     // push the callee preserved registers
@@ -98,10 +98,10 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
     auto link = new asmc::LinkTask();
     link->logicalLine = func->logicalLine;
     link->command = "global";
-    link->operand = lable->label;
+    link->operand = label->label;
 
     if (this->scope != nullptr && !func->isLambda) {
-      // add the opoect to the arguments of the function
+      // add the opo to the arguments of the function
       int offset = this->getBytes(asmc::QWord);
       int size = asmc::QWord;
       gen::Symbol symbol;
@@ -220,7 +220,7 @@ void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
       Table = &this->scope->SymbolTable;
 
       if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
-        alert("redefined veriable: " + dec->Ident);
+        alert("redefined variable: " + dec->Ident);
       gen::Symbol Symbol;
       if (Table->head == nullptr) {
         Symbol.byteMod = offset;
@@ -239,11 +239,11 @@ void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
   } else {
     Table = &this->GlobalSymbolTable;
     auto var = new asmc::LinkTask();
-    auto lable = new asmc::Label();
+    auto label = new asmc::Label();
     if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
-      alert("redefined global veriable: " + dec->Ident);
+      alert("redefined global variable: " + dec->Ident);
 
-    lable->label = dec->Ident;
+    label->label = dec->Ident;
     if (dec->type.size = asmc::QWord) {
       var->command = "quad";
     };
@@ -252,7 +252,7 @@ void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
     Symbol.type = dec->type;
     Symbol.symbol = dec->Ident;
     Symbol.mutable_ = dec->mut;
-    OutputFile.bss << lable;
+    OutputFile.bss << label;
     OutputFile.bss << var;
     Table->push(Symbol);
   }
@@ -307,7 +307,7 @@ void gen::CodeGenerator::genDecArr(ast::DecArr* dec, asmc::File& OutputFile) {
     Table = &this->scope->SymbolTable;
 
     if (Table->search<std::string>(searchSymbol, dec->ident) != nullptr)
-      alert("redefined veriable:" + dec->ident);
+      alert("redefined variable:" + dec->ident);
 
     gen::Symbol Symbol;
 
@@ -401,7 +401,7 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
     } else {
       // add the decAssign to the class default list
       this->scope->defaultValues.push_back(*decAssign);
-      // genorate the declare
+      // generate the declare
       dec->mut = decAssign->mute;
       OutputFile << this->GenSTMT(dec);
     }
@@ -414,9 +414,9 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
     Table = &this->GlobalSymbolTable;
 
     auto var = new asmc::LinkTask();
-    auto lable = new asmc::Label();
+    auto label = new asmc::Label();
 
-    lable->label = dec->Ident;
+    label->label = dec->Ident;
     if (dec->type.size = asmc::QWord) {
       var->command = "quad";
     }
@@ -426,10 +426,10 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
     };
     var->operand = exp.access.erase(0, 1);
     Symbol.type.opType = exp.op;
-    OutputFile.data << lable;
+    OutputFile.data << label;
     OutputFile.data << var;
     if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
-      alert("redefined veriable:" + dec->Ident);
+      alert("redefined variable:" + dec->Ident);
     Table->push(Symbol);
   };
 }
@@ -526,7 +526,7 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
                           assign->indices);
 
   if (!std::get<2>(resolved)) {
-    alert("undefined veriable:" + assign->Ident);
+    alert("undefined variable:" + assign->Ident);
   }
 
   Symbol* symbol = &std::get<1>(resolved);
@@ -707,7 +707,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
 
     int modCount = 0;
     while (call->modList.pos != nullptr) {
-      bool addpub = true;
+      bool addPub = true;
       if (this->typeList[last.typeName] == nullptr)
         alert("type not found " + last.typeName);
       type = *this->typeList[last.typeName];
@@ -753,7 +753,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
             checkArgs = false;
             func->type.size = asmc::QWord;
             func->flex = true;
-            addpub = false;
+            addPub = false;
           } else if (sym == nullptr) {
             alert("cannot find function " + call->modList.touch());
           } else if (call->modList.pos->next == nullptr ) {
@@ -783,7 +783,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
           ref->modList = call->modList;
           if (shift) ref->internal = true;
           mod = "pub_" + pubname + "_";
-          if (!addpub) mod = "";
+          if (!addPub) mod = "";
           gen::Expr exp;
           exp = this->GenExpr(ref, OutputFile);
           asmc::Mov* mov = new asmc::Mov();
@@ -894,7 +894,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
   call->Args.invert();
   call->Args.reset();
   links::LinkedList<ast::Expr*> args;
-  std::vector<asmc::Instruction*> overflawArgs;
+  std::vector<asmc::Instruction*> overflowArgs;
   int i = 0;
   if (call->Args.trail() < func->req)
     alert("Too few arguments for function: " + ident +
@@ -1009,7 +1009,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
   }
 
   // add the overflow arguments
-  for (auto inst : overflawArgs) {
+  for (auto inst : overflowArgs) {
     OutputFile.text << inst;
   }
 
@@ -1031,7 +1031,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
   ast::Function ret = *func;
   return ret;
 }
-// Depricated
+// Deprecated
 void gen::CodeGenerator::genPush(ast::Push* push, asmc::File& OutputFile) {
   asmc::Mov* count = new asmc::Mov;
   count->logicalLine = push->logicalLine;
@@ -1068,7 +1068,7 @@ void gen::CodeGenerator::genPush(ast::Push* push, asmc::File& OutputFile) {
   OutputFile.text << syscall;
 };
 
-// Depricated
+// Deprecated
 void gen::CodeGenerator::genPull(ast::Pull* pull, asmc::File& OutputFile) {
   asmc::Mov* count = new asmc::Mov;
   count->logicalLine = pull->logicalLine;
@@ -1106,9 +1106,9 @@ void gen::CodeGenerator::genIf(ast::If* ifStmt, asmc::File& OutputFile) {
   // push a new scope
   gen::scope::ScopeManager::getInstance()->pushScope(false);
 
-  asmc::Label* lable1 = new asmc::Label();
-  lable1->logicalLine = ifStmt->logicalLine;
-  lable1->label = ".L" + this->nameTable.head->data.ident.ident +
+  asmc::Label* label1 = new asmc::Label();
+  label1->logicalLine = ifStmt->logicalLine;
+  label1->label = ".L" + this->nameTable.head->data.ident.ident +
                   std::to_string(this->labelCount);
   this->labelCount++;
 
@@ -1137,7 +1137,7 @@ void gen::CodeGenerator::genIf(ast::If* ifStmt, asmc::File& OutputFile) {
   cmp->to = mov1->to;
   cmp->size = expr.size;
 
-  je->to = lable1->label;
+  je->to = label1->label;
 
   OutputFile.text << mov1;
   OutputFile.text << cmp;
@@ -1154,7 +1154,7 @@ void gen::CodeGenerator::genIf(ast::If* ifStmt, asmc::File& OutputFile) {
     jmp->to = end->label;
     gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
     OutputFile.text << jmp;
-    OutputFile.text << lable1;
+    OutputFile.text << label1;
 
     gen::scope::ScopeManager::getInstance()->pushScope(true);
     OutputFile << this->GenSTMT(ifStmt->elseStatement);
@@ -1162,45 +1162,45 @@ void gen::CodeGenerator::genIf(ast::If* ifStmt, asmc::File& OutputFile) {
     OutputFile.text << end;
   } else {
     gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
-    OutputFile.text << lable1;
+    OutputFile.text << label1;
   };
 }
 
 void gen::CodeGenerator::genWhile(ast::While* loop, asmc::File& OutputFile) {
   gen::scope::ScopeManager::getInstance()->pushScope(true);
 
-  asmc::Label* lable1 = new asmc::Label();
-  lable1->logicalLine = loop->logicalLine;
-  lable1->label = ".L" + this->nameTable.head->data.ident.ident +
+  asmc::Label* label1 = new asmc::Label();
+  label1->logicalLine = loop->logicalLine;
+  label1->label = ".L" + this->nameTable.head->data.ident.ident +
                   std::to_string(this->labelCount);
   this->labelCount++;
 
-  asmc::Label* lable2 = new asmc::Label();
-  lable2->logicalLine = loop->logicalLine;
-  lable2->label = ".L" + this->nameTable.head->data.ident.ident +
+  asmc::Label* label2 = new asmc::Label();
+  label2->logicalLine = loop->logicalLine;
+  label2->label = ".L" + this->nameTable.head->data.ident.ident +
                   std::to_string(this->labelCount);
   this->labelCount++;
 
-  asmc::Label* breakLable = new asmc::Label();
-  breakLable->logicalLine = loop->logicalLine;
-  breakLable->label = ".L" + this->nameTable.head->data.ident.ident +
+  asmc::Label* breakLabel = new asmc::Label();
+  breakLabel->logicalLine = loop->logicalLine;
+  breakLabel->label = ".L" + this->nameTable.head->data.ident.ident +
                       std::to_string(this->labelCount);
   this->labelCount++;
 
   asmc::Jmp* jmp = new asmc::Jmp();
   jmp->logicalLine = loop->logicalLine;
-  jmp->to = lable2->label;
+  jmp->to = label2->label;
   OutputFile.text << jmp;
 
-  OutputFile.text << lable1;
-  this->breakContext.push(breakLable->label);
-  this->continueContext.push(lable2->label);
+  OutputFile.text << label1;
+  this->breakContext.push(breakLabel->label);
+  this->continueContext.push(label2->label);
   OutputFile << this->GenSTMT(loop->stmt);
   this->breakContext.pop();
   this->continueContext.pop();
   gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
 
-  OutputFile.text << lable2;
+  OutputFile.text << label2;
 
   gen::Expr expr = this->GenExpr(loop->expr, OutputFile);
 
@@ -1226,56 +1226,56 @@ void gen::CodeGenerator::genWhile(ast::While* loop, asmc::File& OutputFile) {
   cmp->from = "$1";
   cmp->to = mov->to;
   cmp->size = expr.size;
-  je->to = lable1->label;
+  je->to = label1->label;
 
   OutputFile.text << mov;
   OutputFile.text << cmp;
   OutputFile.text << je;
-  OutputFile.text << breakLable;
+  OutputFile.text << breakLabel;
 }
 
 void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   gen::scope::ScopeManager::getInstance()->pushScope(true);
 
-  asmc::Label* lable1 = new asmc::Label();
-  lable1->logicalLine = loop->logicalLine;
-  lable1->label = ".L" + this->nameTable.head->data.ident.ident +
+  asmc::Label* label1 = new asmc::Label();
+  label1->logicalLine = loop->logicalLine;
+  label1->label = ".L" + this->nameTable.head->data.ident.ident +
                   std::to_string(this->labelCount);
   this->labelCount++;
 
-  asmc::Label* lable2 = new asmc::Label();
-  lable2->logicalLine = loop->logicalLine;
-  lable2->label = ".L" + this->nameTable.head->data.ident.ident +
+  asmc::Label* label2 = new asmc::Label();
+  label2->logicalLine = loop->logicalLine;
+  label2->label = ".L" + this->nameTable.head->data.ident.ident +
                   std::to_string(this->labelCount);
   this->labelCount++;
 
-  asmc::Label* breakLable = new asmc::Label();
-  breakLable->logicalLine = loop->logicalLine;
-  breakLable->label = ".L" + this->nameTable.head->data.ident.ident +
+  asmc::Label* breakLabel = new asmc::Label();
+  breakLabel->logicalLine = loop->logicalLine;
+  breakLabel->label = ".L" + this->nameTable.head->data.ident.ident +
                       std::to_string(this->labelCount);
   this->labelCount++;
 
-  asmc::Label* continueLable = new asmc::Label();
-  continueLable->logicalLine = loop->logicalLine;
-  continueLable->label = ".L" + this->nameTable.head->data.ident.ident +
+  asmc::Label* continueLabel = new asmc::Label();
+  continueLabel->logicalLine = loop->logicalLine;
+  continueLabel->label = ".L" + this->nameTable.head->data.ident.ident +
                          std::to_string(this->labelCount);
   this->labelCount++;
   OutputFile << this->GenSTMT(loop->declare);
   asmc::Jmp* jmp = new asmc::Jmp();
-  jmp->to = lable2->label;
+  jmp->to = label2->label;
   OutputFile.text << jmp;
 
-  OutputFile.text << lable1;
+  OutputFile.text << label1;
 
-  this->breakContext.push(breakLable->label);
-  this->continueContext.push(continueLable->label);
+  this->breakContext.push(breakLabel->label);
+  this->continueContext.push(continueLabel->label);
 
   gen::scope::ScopeManager::getInstance()->pushScope(true);
   OutputFile << this->GenSTMT(loop->Run);
-  OutputFile.text << continueLable;
+  OutputFile.text << continueLabel;
   OutputFile << this->GenSTMT(loop->increment);
   gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
-  OutputFile.text << lable2;
+  OutputFile.text << label2;
   this->breakContext.pop();
   this->continueContext.pop();
 
@@ -1300,7 +1300,7 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   cmp->logicalLine = loop->logicalLine;
   asmc::Je* je = new asmc::Je();
   je->logicalLine = loop->logicalLine;
-  je->to = lable1->label;
+  je->to = label1->label;
 
   cmp->from = "$1";
   cmp->to = mov->to;
@@ -1309,7 +1309,7 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   OutputFile.text << mov;
   OutputFile.text << cmp;
   OutputFile.text << je;
-  OutputFile.text << breakLable;
+  OutputFile.text << breakLabel;
   scope::ScopeManager::getInstance()->popScope(this, OutputFile);
 }
 
@@ -1465,15 +1465,15 @@ void gen::CodeGenerator::genImport(ast::Import* imp, asmc::File& OutputFile) {
       tokens.invert();
       // parse the file
       parse::Parser p = parse::Parser();
-      ast::Statement* statment = p.parseStmt(tokens);
-      auto low = parse::lower::Lowerer(statment);
-      added = statment;
+      ast::Statement* statement = p.parseStmt(tokens);
+      auto low = parse::lower::Lowerer(statement);
+      added = statement;
     }
     for (std::string ident : imp->imports) {
-      ast::Statement* statment = extract(ident, added, id);
-      if (statment == nullptr)
+      ast::Statement* statement = extract(ident, added, id);
+      if (statement == nullptr)
         this->alert("Identifier " + ident + " not found to import");
-      OutputFile << this->GenSTMT(statment);
+      OutputFile << this->GenSTMT(statement);
     }
     this->nameSpaceTable.insert(imp->nameSpace, id);
 }
