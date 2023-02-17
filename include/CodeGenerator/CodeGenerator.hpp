@@ -45,7 +45,7 @@ class Type {
   // The private Symbol table will hold all public and private symbols
   // This is used internally
   links::LinkedList<Symbol> SymbolTable;
-  static bool compair(Type* t, std::string ident);
+  static bool compare(Type* t, std::string ident);
   virtual int poly() { return 0; };
   int size;
 };
@@ -62,9 +62,9 @@ class Class : public Type {
   // The private Name table will hold all public and private functions
   // This is used internally
   links::SLinkedList<ast::Function, std::string> nameTable;
-  ast::Statment* contract;
+  ast::Statement* contract;
   std::vector<ast::DecAssign> defaultValues;
-  static bool compair(Type* t, std::string ident);
+  static bool compare(Type* t, std::string ident);
   gen::Class* parent = nullptr;
 };
 
@@ -81,8 +81,8 @@ class Enum : public Type {
   Enum();
 
   links::SLinkedList<EnumValue, std::string> values;
-  static bool compair(Type* t, std::string ident);
-  static bool compairEnum(EnumValue e, std::string ident);
+  static bool compare(Type* t, std::string ident);
+  static bool compareEnum(EnumValue e, std::string ident);
 };
 
 
@@ -92,12 +92,12 @@ class CodeGenerator {
   gen::Class* scope;
   ast::Type returnType;
   int scopePop = 0;
-  int lablecount = 0;
+  int labelCount = 0;
   int intArgsCounter;
   int selectReg = 0;
   bool globalScope = true;
   bool inFunction = false;
-  HashMap<ast::Statment*> includedMemo;
+  HashMap<ast::Statement*> includedMemo;
   HashMap<std::string> nameSpaceTable;
   ast::Function* currentFunction = nullptr;
 #pragma endregion
@@ -121,13 +121,13 @@ class CodeGenerator {
                                asmc::Register("r9", "r9d", "r9w", "r9b")};
   int logicalLine = 0;
   int tempCount = 0;
-  void GenArgs(ast::Statment* STMT, asmc::File& OutputFile);
+  void GenArgs(ast::Statement* STMT, asmc::File& OutputFile);
   ast::Function GenCall(ast::Call* call, asmc::File& OutputFile);
   Expr GenExpr(ast::Expr* expr, asmc::File& OutputFile,
                asmc::Size size = asmc::AUTO);
   gen::Expr prepareCompound(ast::Compound compound, asmc::File& OutputFile,
                             bool isDiv = false);
-  gen::Expr genArithmatic(asmc::ArithInst*, ast::Compound compound,
+  gen::Expr genArithmetic(asmc::ArithInst*, ast::Compound compound,
                           asmc::File& OutputFile);
   ast::Expr * imply(ast::Expr * expr, std::string typeName);
   bool canAssign(ast::Type type, std::string typeName, bool strict = false);
@@ -153,7 +153,7 @@ class CodeGenerator {
   void genPull(ast::Pull* pull, asmc::File& OutputFile);
   void genIf(ast::If* ifStmt, asmc::File& OutputFile);
   void genWhile(ast::While* loop, asmc::File& OutputFile);
-  void genFor(ast::For* loop, asmc::File& OPutputFile);
+  void genFor(ast::For* loop, asmc::File& OutputFile);
   void genUDef(ast::UDeffType* udef, asmc::File& OutputFile);
   void genClass(ast::Class* deff, asmc::File& OutputFile);
   void genEnum(ast::Enum* deff, asmc::File& OutputFile);
@@ -165,9 +165,9 @@ class CodeGenerator {
   void genContinue(ast::Continue* cont, asmc::File& OutputFile);
 
  public:
-  asmc::File GenSTMT(ast::Statment* stmt);
+  asmc::File GenSTMT(ast::Statement* stmt);
   links::LinkedList<gen::Symbol> GenTable(
-      ast::Statment* STMT, links::LinkedList<gen::Symbol>& table);
+      ast::Statement* STMT, links::LinkedList<gen::Symbol>& table);
   // a function for warnings or errors
   void alert(std::string message, bool error = true);
   CodeGenerator(std::string moduleId);

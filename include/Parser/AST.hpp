@@ -18,7 +18,7 @@ class Ident {
   std::string ident;
 };
 
-class Statment {
+class Statement {
  public:
   bool locked = false;
   int logicalLine = 0;
@@ -55,7 +55,7 @@ enum Op {
 // Enum to represent the scope of a variable
 enum ScopeMod { Public, Private, Static, Export };
 
-class Expr : public Statment {
+class Expr : public Statement {
  public:
   virtual std::string toString() { return ""; };
   Expr * extention = nullptr;
@@ -76,7 +76,7 @@ class Type {
   int arraySize = 1;
   static bool compair(Type t, std::string name);
   Type* typeHint = nullptr;
-  links::LinkedList<int> indecies;
+  links::LinkedList<int> indices;
   bool isGeneric = false;
   bool safeType = false;
   Type() = default;
@@ -93,17 +93,17 @@ class Program {
   ProgramMember members;
 };
 
-class Class : public Statment {
+class Class : public Statement {
  public:
   Ident ident;
   std::string base;
-  Statment* contract;
-  Statment* statment;
+  Statement* contract;
+  Statement* statement;
   bool safeType = false;
   bool dynamic = false;
 };
 
-class Function : public Member, public Statment {
+class Function : public Member, public Statement {
  public:
   ast::ScopeMod scope;
   Type type;
@@ -111,8 +111,8 @@ class Function : public Member, public Statment {
   std::string decorator = "";
   std::string decNSP = "";
   Ident ident;
-  Statment* args;
-  Statment* statment;
+  Statement* args;
+  Statement* statement;
   ast::Op op;
   int req;
   std::vector<ast::Type> argTypes;
@@ -123,27 +123,27 @@ class Function : public Member, public Statment {
   
 };
 
-class UDeffType : public Member, public Statment {
+class UDeffType : public Member, public Statement {
  public:
   Ident ident;
-  Statment* statment;
+  Statement* statement;
 };
 
-class Continue : public Statment {
+class Continue : public Statement {
   public:
   int level = 1;
   Continue() = default;
   Continue(int level) : level(level) {};
 };
 
-class Break : public Statment {
+class Break : public Statement {
   public:
   int level = 1;
   Break() = default;
   Break(int level) : level(level) {};
 };
 
-class Declare : public Arg, public Statment {
+class Declare : public Arg, public Statement {
  public:
   ast::ScopeMod scope;
   std::string Ident;
@@ -153,7 +153,7 @@ class Declare : public Arg, public Statment {
   Type type;
 };
 
-class Argument : public Arg, public Statment {
+class Argument : public Arg, public Statement {
  public:
   std::string Ident;
   Type type;
@@ -169,46 +169,46 @@ class CharLiteral : public Expr {
   char value;
 };
 
-class If : public Statment {
+class If : public Statement {
  public:
   Expr* expr;
-  Statment* statment;
-  Statment* elseStatment;
-  Statment* elseIf;
+  Statement* statement;
+  Statement* elseStatement;
+  Statement* elseIf;
 };
 
-class DecAssign : public Statment {
+class DecAssign : public Statement {
  public:
   Declare* declare;
   bool mute = true;
   Expr* expr;
 };
 
-class Assign : public Statment {
+class Assign : public Statement {
  public:
   std::string Ident;
-  bool refrence = false;
+  bool reference = false;
   bool override = false;
   Expr* expr;
   links::LinkedList<std::string> modList;
   links::LinkedList<ast::Expr*> indices;
 };
 
-class While : public Statment {
+class While : public Statement {
  public:
   Expr* expr;
-  Statment* stmt;
+  Statement* stmt;
 };
 
-class For : public Statment {
+class For : public Statement {
  public:
-  Statment* declare;
+  Statement* declare;
   ast::Expr* expr;
-  Statment* increment;
-  Statment* Run;
+  Statement* increment;
+  Statement* Run;
 };
 
-class Call : public Statment {
+class Call : public Statement {
  public:
   std::string ident;
   links::LinkedList<Expr*> Args;
@@ -216,36 +216,36 @@ class Call : public Statment {
   std::string publify = "";
 };
 
-class Delete : public Statment {
+class Delete : public Statement {
  public:
   std::string ident;
   links::LinkedList<std::string> modList;
 };
 
-class Sequence : public Statment {
+class Sequence : public Statement {
  public:
-  Statment* Statment1;
-  Statment* Statment2;
+  Statement* Statement1;
+  Statement* Statement2;
 };
 
-class Iflush : public Statment {};
+class Iflush : public Statement {};
 
-class CWrite : public Statment {
- public:
-  Expr* expr;
-};
-
-class Push : public Statment {
+class CWrite : public Statement {
  public:
   Expr* expr;
 };
 
-class Pull : public Statment {
+class Push : public Statement {
  public:
   Expr* expr;
 };
 
-class DecArr : public Statment {
+class Pull : public Statement {
+ public:
+  Expr* expr;
+};
+
+class DecArr : public Statement {
  public:
   std::string ident;
   ast::Type type;
@@ -255,36 +255,36 @@ class DecArr : public Statment {
   links::LinkedList<Expr*> indices;
 };
 
-class DecAssignArr : public Statment {
+class DecAssignArr : public Statement {
  public:
   DecArr* declare;
   bool mute = true;
   Expr* expr;
 };
 
-class Inc : public Statment {
+class Inc : public Statement {
  public:
   std::string ident;
 };
 
-class Dec : public Statment {
+class Dec : public Statement {
  public:
   std::string ident;
 };
 
-class Return : public Statment {
+class Return : public Statement {
  public:
   Expr* expr;
 };
 
-class Import : public Statment {
+class Import : public Statement {
  public:
   std::vector<std::string> imports;
   std::string path;
   std::string nameSpace;
 };
 
-class Enum : public Statment {
+class Enum : public Statement {
   public:
   std::string Ident;
   std::vector<std::string> values;
@@ -293,7 +293,7 @@ class Enum : public Statment {
 class Var : public Expr {
  public:
   std::string Ident;
-  links::LinkedList<ast::Expr*> indecies;
+  links::LinkedList<ast::Expr*> indices;
   links::LinkedList<std::string> modList;
   bool internal = false;
 };
@@ -331,14 +331,14 @@ class Compound : public Expr {
   Expr* expr2;
 };
 
-class Refrence : public Expr {
+class Reference : public Expr {
  public:
   std::string Ident;
   links::LinkedList<std::string> modList;
   bool internal = false;
 };
 
-class DeRefence : public Expr {
+class DeReference : public Expr {
  public:
   std::string Ident;
   links::LinkedList<std::string> modList;

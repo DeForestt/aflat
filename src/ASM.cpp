@@ -4,7 +4,7 @@ std::string asmc::Instruction::toString() { return (""); }
 
 std::string asmc::SysCall::toString() { return "\tsyscall\t\n"; }
 
-std::string asmc::Lable::toString() { return this->lable + ":\n"; }
+std::string asmc::Label::toString() { return this->label + ":\n"; }
 
 std::string asmc::Sete::toString() { return "\tsete\t" + this->op + "\n"; }
 

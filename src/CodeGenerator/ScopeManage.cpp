@@ -1,43 +1,29 @@
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
+#include "CodeGenerator/Utils.hpp"
 
-gen::scope::ScopeManager *gen::scope::ScopeManager::instance = nullptr;
+typedef gen::scope::ScopeManager ScopeManager;
 
-#pragma region Helper Functions
+ScopeManager *ScopeManager::instance = nullptr;
 
-int sizeToInt(asmc::Size size) {
-  switch (size) {
-  case asmc::Size::Byte:
-    return 1;
-  case asmc::Size::Word:
-    return 2;
-  case asmc::Size::DWord:
-    return 4;
-  case asmc::Size::QWord:
-    return 8;
-  default:
-    return 0;
-  }
-}
-
-#pragma endregion
-
-gen::scope::ScopeManager::ScopeManager() {
+ScopeManager::ScopeManager() {
   this->stackPos = 0;
   this->maxStackPos = 0;
   this->scopeStack.push_back(0);
 }
 
-void gen::scope::ScopeManager::reset() {
+void ScopeManager::reset() {
   this->stackPos = 0;
   this->maxStackPos = 0;
   this->scopeStack.clear();
   this->scopeStack.push_back(0);
 }
 
-int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type,
+int ScopeManager::assign(std::string symbol, ast::Type type,
                                      bool mask, bool mut = true) {
+  
+  using namespace gen::utils;
   auto sym = gen::Symbol();
 
   for (int i = 0; i < this->stack.size(); i++) {
@@ -68,7 +54,7 @@ int gen::scope::ScopeManager::assign(std::string symbol, ast::Type type,
   return sym.byteMod;
 }
 
-void gen::scope::ScopeManager::pushScope(bool func) { 
+void ScopeManager::pushScope(bool func) { 
   this->scopeStack.push_back(0);
   this->pleading.push_back({this->SStackSize, func});
   if (func) {
@@ -76,9 +62,10 @@ void gen::scope::ScopeManager::pushScope(bool func) {
   }
 };
 
-void gen::scope::ScopeManager::popScope(CodeGenerator *callback,
+void ScopeManager::popScope(CodeGenerator *callback,
                                         asmc::File &OutputFile,
                                         bool fPop = false) {
+  using namespace gen::utils;
   int size = this->scopeStack.back();
   for (int i = 0; i < size; i++) {
     if (!fPop) {
@@ -94,7 +81,7 @@ void gen::scope::ScopeManager::popScope(CodeGenerator *callback,
     && sym.symbol != "my"
     && sym.symbol.find("lambda") == std::string::npos
     && sym.symbol.find_first_not_of("0123456789") != std::string::npos) {
-      // if the symboe has only numberes in it then it is a temp variable
+      // if the symbol has only numbers in it then it is a temp variable
       if (sym.symbol[0] != '~' && sym.symbol[0] != '$') {
         if (sym.refCount < 1 && sym.symbol.substr(0,2) != "__") {
           callback->alert("Symbol \"" + sym.symbol + "\" is assigned but never "
@@ -129,7 +116,7 @@ void gen::scope::ScopeManager::popScope(CodeGenerator *callback,
   if (this->pleading.size() > 0) this->pleading.pop_back();
 };
 
-void gen::scope::ScopeManager::softPop(CodeGenerator *callback,
+void ScopeManager::softPop(CodeGenerator *callback,
                                        asmc::File &OutputFile) {
   int size = (this->pleading.size() > 0 && this->pleading.back().pleading)? this->scopeStack.back() : this->SStackSize;
   int pos = this->stack.size() - 1;
@@ -148,7 +135,7 @@ void gen::scope::ScopeManager::softPop(CodeGenerator *callback,
 
 
 
-int gen::scope::ScopeManager::getStackAlignment() {
+int ScopeManager::getStackAlignment() {
   // align the stack
   if (this->maxStackPos < this->stackPos)
     this->maxStackPos = this->stackPos;
@@ -163,7 +150,7 @@ int gen::scope::ScopeManager::getStackAlignment() {
   return align;
 };
 
-gen::Symbol *gen::scope::ScopeManager::get(std::string symbol) {
+gen::Symbol *ScopeManager::get(std::string symbol) {
 
   for (int i = this->stack.size() - 1; i >= 0; i--) {
     if (this->stack[i].symbol == symbol) {
@@ -184,7 +171,7 @@ gen::Symbol *gen::scope::ScopeManager::get(std::string symbol) {
   return nullptr;
 };
 
-void gen::scope::ScopeManager::addAssign(std::string symbol) {
+void ScopeManager::addAssign(std::string symbol) {
   for (int i = this->stack.size() - 1; i >= 0; i--) {
     if (this->stack[i].symbol == symbol) {
       this->stack[i].assignCount++;

@@ -75,9 +75,9 @@ int getOpPriority(ast::Op op) {
  * as a Statment parameters: LinkedList<Token> &tokens - the list of tokens to
  * parse return: AST::Statement - the parsed statement
  */
-ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
+ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
                                         bool singleStmt = false) {
-  ast::Statment *output = new ast::Statment;
+  ast::Statement *output = new ast::Statement;
   if (tokens.head == nullptr) {
     return output;
   };
@@ -385,12 +385,12 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
               }
               if (sym.Sym == '{') {
                 tokens.pop();
-                func->statment = this->parseStmt(tokens);
+                func->statement = this->parseStmt(tokens);
                 func->logicalLine = obj.lineCount;
                 output = func;
                 delete (dec);
               } else {
-                func->statment = nullptr;
+                func->statement = nullptr;
                 func->logicalLine = obj.lineCount;
                 output = func;
                 delete (dec);
@@ -486,21 +486,21 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
     } else if (obj.meta == "if") {
       auto ifstmt = new ast::If;
       ifstmt->elseIf = nullptr;
-      ifstmt->elseStatment = nullptr;
+      ifstmt->elseStatement = nullptr;
       ifstmt->expr = this->parseExpr(tokens);
       ifstmt->logicalLine = obj.lineCount;
       auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (sym != nullptr) {
         if (sym->Sym == '{') {
           tokens.pop();
-          ifstmt->statment = this->parseStmt(tokens);
+          ifstmt->statement = this->parseStmt(tokens);
           output = ifstmt;
         } else
           throw err::Exception(
               "Line: " + std::to_string(tokens.peek()->lineCount) +
               " Unopened If");
       } else if (dynamic_cast<lex::LObj *>(tokens.peek())) {
-        ifstmt->statment = this->parseStmt(tokens, true);
+        ifstmt->statement = this->parseStmt(tokens, true);
         output = ifstmt;
       } else
         throw err::Exception(
@@ -514,14 +514,14 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
           if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
             sym = dynamic_cast<lex::OpSym *>(tokens.pop());
             if (sym->Sym == '{') {
-              ifstmt->elseStatment = this->parseStmt(tokens);
+              ifstmt->elseStatement = this->parseStmt(tokens);
               output = ifstmt;
             } else
               throw err::Exception(
                   "Line: " + std::to_string(tokens.peek()->lineCount) +
                   " Unopened Else");
           } else if (dynamic_cast<lex::LObj *>(tokens.peek())) {
-            ifstmt->elseStatment = this->parseStmt(tokens, true);
+            ifstmt->elseStatement = this->parseStmt(tokens, true);
             output = ifstmt;
           } else
             throw err::Exception(
@@ -621,7 +621,7 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
         throw err::Exception(
             "Line: " + std::to_string(tokens.peek()->lineCount) +
             " Unopened UDeffType");
-      stc->statment = this->parseStmt(tokens);
+      stc->statement = this->parseStmt(tokens);
       this->addType(stc->ident.ident, asmc::Hard, asmc::QWord);
       output = stc;
     } else if (obj.meta == "class") {
@@ -697,7 +697,7 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
         item->contract = nullptr;
       item->safeType = safeType;
       item->dynamic = dynamicType;
-      item->statment = this->parseStmt(tokens);
+      item->statement = this->parseStmt(tokens);
       output = item;
     } else if (obj.meta == "enum") {
       auto item = new ast::Enum();
@@ -935,7 +935,7 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
           if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
             auto s2 = dynamic_cast<lex::OpSym *>(tokens.peek());
             if (s2->Sym == ':') {
-              assign->refrence = true;
+              assign->reference = true;
               tokens.pop();
             };
           };
@@ -1019,8 +1019,8 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
 
     if (obj.Sym == ';') {
       auto s = new ast::Sequence;
-      s->Statment1 = output;
-      s->Statment2 = this->parseStmt(tokens);
+      s->Statement1 = output;
+      s->Statement2 = this->parseStmt(tokens);
       this->Output = *s;
       return s;
     } else if (obj.Sym == '}') {
@@ -1047,11 +1047,11 @@ ast::Statment *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
   return output;
 }
 
-ast::Statment *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens,
+ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens,
                                         char delimn, char close,
                                         std::vector<ast::Type> &types,
                                         int &requiered) {
-  auto output = new ast::Statment();
+  auto output = new ast::Statement();
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym == nullptr) {
     requiered++;
@@ -1112,8 +1112,8 @@ ast::Statment *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens,
 
     if (obj.Sym == delimn) {
       auto s = new ast::Sequence;
-      s->Statment1 = output;
-      s->Statment2 = this->parseArgs(tokens, delimn, close, types, requiered);
+      s->Statement1 = output;
+      s->Statement2 = this->parseArgs(tokens, delimn, close, types, requiered);
       return s;
     } else if (obj.Sym == close) {
       return output;
@@ -1288,7 +1288,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     auto *var = new ast::Var();
     var->Ident = obj.meta;
     var->modList = modList;
-    var->indecies = indecies;
+    var->indices = indecies;
     var->logicalLine = obj.lineCount;
     output = var;
     if (obj.meta == "new") {
@@ -1351,7 +1351,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     } else if (tokens.count > 0 && dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
       auto aobj = *dynamic_cast<lex::LObj *>(tokens.peek());
       if (aobj.meta == "as") {
-        auto deRef = new ast::DeRefence();
+        auto deRef = new ast::DeReference();
         deRef->logicalLine = aobj.lineCount;
         tokens.pop();
         if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
@@ -1407,7 +1407,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       } else {
         auto var = new ast::Var();
         var->Ident = obj.meta;
-        var->indecies = indecies;
+        var->indices = indecies;
         var->modList = modList;
         var->logicalLine = obj.lineCount;
         output = var;
@@ -1427,7 +1427,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     output = charlit;
   } else if (dynamic_cast<lex::Ref *>(tokens.peek()) != nullptr) {
     tokens.pop();
-    auto ref = new ast::Refrence();
+    auto ref = new ast::Reference();
     if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
       auto obj = *dynamic_cast<lex::LObj *>(tokens.pop());
       ref->Ident = obj.meta;
@@ -1491,9 +1491,9 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
           dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '{') {
         tokens.pop();
-        lambda->function->statment = this->parseStmt(tokens);
+        lambda->function->statement = this->parseStmt(tokens);
       } else
-        lambda->function->statment = this->parseStmt(tokens, true);
+        lambda->function->statement = this->parseStmt(tokens, true);
 
       ast::Type Adr = ast::Type();
       Adr.typeName = "any";

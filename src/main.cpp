@@ -226,7 +226,7 @@ void build(std::string path, std::string output, cfg::Mutibility mutability, boo
 
     while (file.text.head != nullptr) {
       auto inst = file.text.pop();
-      if (inst->logicalLine != logicalLine && debug && dynamic_cast<asmc::Lable*>(inst) == nullptr && inst->logicalLine > 0) {
+      if (inst->logicalLine != logicalLine && debug && dynamic_cast<asmc::Label*>(inst) == nullptr && inst->logicalLine > 0) {
         logicalLine = inst->logicalLine;
       }
       if (debug)

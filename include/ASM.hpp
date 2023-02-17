@@ -19,9 +19,9 @@ class Instruction {
   int logicalLine = 0;
 };
 
-class Lable : public Instruction {
+class Label : public Instruction {
  public:
-  std::string lable;
+  std::string label;
   std::string toString();
 };
 
@@ -311,7 +311,7 @@ class Register {
   // a linked list of int process id's that are using this register
   links::LinkedList<int> users;
   std::string get(asmc::Size wants);
-  static bool compair(Register R, std::string input) {
+  static bool compare(Register R, std::string input) {
     if (input == R.qWord || input == R.dWord || input == R.word ||
         input == R.byte) {
       return true;
