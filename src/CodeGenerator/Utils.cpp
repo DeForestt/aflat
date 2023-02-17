@@ -54,7 +54,7 @@ ast::Statement* gen::utils::extract(std::string ident, ast::Statement* stmt, std
   if (dynamic_cast<ast::Sequence*>(stmt) != nullptr) {
     ast::Sequence* seq = dynamic_cast<ast::Sequence*>(stmt);
     ast::Statement* temp = extract(ident, seq->Statement1, id);
-    if (ident != "*" & temp != nullptr) {
+    if (ident != "*" && temp != nullptr) {
       return temp;
     } else if (ident != "*") {
       return extract(ident, seq->Statement2, id);
