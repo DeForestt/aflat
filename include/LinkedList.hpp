@@ -1,15 +1,9 @@
-/* This linked list class will be nessisary for carrying and
-manipulating the strings being built.*/
 #ifndef LINKS
 #define LINKS
 
 #include "Exceptions.hpp"
 
 namespace links {
-
-/*The Node is a genaric class used to hold values
-in the linked list.  It is generic in case I want to
-use it for somthing else in the futer.*/
 
 template <typename T> class Node {
 public:
@@ -29,7 +23,7 @@ public:
   /*Push a new value to the top of the list*/
   void push(T value);
 
-  /*push with oporator*/
+  /*push with operator*/
   void operator<<(T value);
 
   /*Insert at an index*/
@@ -40,7 +34,7 @@ public:
   /*Reverses the direction of the list*/
   void invert();
 
-  /*attatches the head of another linked list to the tail of this one*/
+  /*attaches the head of another linked list to the tail of this one*/
   void stitch(links::LinkedList<T> l);
 
   /*stitches the head of this linked list to the tail of another one and sets
@@ -59,15 +53,15 @@ public:
   /*like size but from the pos*/
   int trail();
 
-  /*Pop removes the top eleent for the list
-  Behaves likle a stack*/
+  /*Pop removes the top element for the list
+  Behaves like a stack*/
   T pop();
 
-  /*Observes the first node on the list and returns its value withou
+  /*Observes the first node on the list and returns its value without
   popping it.*/
   T peek();
 
-  /*search acording to passed in logic*/
+  /*search with passed in logic*/
   template <typename Z> T *search(bool (*foo)(T, Z), Z input);
 
   /*search for a value*/
@@ -225,7 +219,6 @@ template <typename T>
 void links::LinkedList<T>::insert_top(T value, int index) {
   Node<T> *curr = this->head;
   int i = 0;
-  int count = this->size();
   while (curr != nullptr) {
     if (i == index) {
       Node<T> *New = new Node<T>();
@@ -269,10 +262,10 @@ template <typename T> void links::LinkedList<T>::invert() {
 template <typename T> T links::LinkedList<T>::pop() {
   this->count -= 1;
   T data = this->head->data;
-  Node<T> *poper = this->head;
+  Node<T> *popper = this->head;
   this->head = this->head->next;
   this->pos = this->head;
-  delete poper;
+  delete popper;
   return data;
 }
 

@@ -57,7 +57,7 @@ enum ScopeMod { Public, Private, Static, Export };
 
 class Expr : public Statement {
  public:
-  virtual std::string toString() { return ""; };
+  virtual std::string toString() override { return ""; };
   Expr * extention = nullptr;
 };
 
@@ -74,13 +74,13 @@ class Type {
   asmc::Size size;
   asmc::OpType opType = asmc::Hard;
   int arraySize = 1;
-  static bool compair(Type t, std::string name);
+  static bool compare(Type t, std::string name);
   Type* typeHint = nullptr;
   links::LinkedList<int> indices;
   bool isGeneric = false;
   bool safeType = false;
   Type() = default;
-  Type(std::string typeName, asmc::Size size) : typeName(typeName), size(size) {};
+  Type(const std::string &typeName, const asmc::Size &size) : typeName(typeName), size(size) {};
 };
 
 class Arg {
@@ -133,14 +133,14 @@ class Continue : public Statement {
   public:
   int level = 1;
   Continue() = default;
-  Continue(int level) : level(level) {};
+  explicit Continue(int level) : level(level) {};
 };
 
 class Break : public Statement {
   public:
   int level = 1;
   Break() = default;
-  Break(int level) : level(level) {};
+  explicit Break(int level) : level(level) {};
 };
 
 class Declare : public Arg, public Statement {

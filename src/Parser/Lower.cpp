@@ -62,8 +62,6 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
 
     func->ident.ident = "_" + func->ident.ident;
 
-    bool fromClass = false;
-
     auto fpoint = new ast::Var;
     fpoint->Ident = func->ident.ident;
 
@@ -77,6 +75,7 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
     call->call->Args.istitch(args);
 
     if (func->decNSP == "") {
+      bool fromClass = false;
 
       call->call->ident = func->decorator;
 

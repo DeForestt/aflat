@@ -1,5 +1,3 @@
-/* This linked list class will be nessisary for carrying and
-manipulating the strings being built.*/
 #ifndef LINK
 #define LINK
 
@@ -22,7 +20,7 @@ public:
   /*Reverses the direction of the list*/
   void invert();
 
-  /*Sattatches the head of another linked list to the tail of this one*/
+  /*attaches the head of another linked list to the tail of this one*/
   void stitch(links::SLinkedList<T, Z> l);
 
   /*stitches the head of this linked list to the tail of another one and sets
@@ -32,11 +30,11 @@ public:
   /*clears the list and sets the head to nullptr*/
   void clear();
 
-  /*Pop removes the top eleent for the list
-  Behaves likle a stack*/
+  /*Pop removes the top element for the list
+  Behaves like a stack*/
   T pop();
 
-  /*Observes the first node on the list and returns its value withou
+  /*Observes the first node on the list and returns its value without
   popping it.*/
   T peek();
 
@@ -64,6 +62,7 @@ T *links::SLinkedList<T, Z>::operator[](Z input) {
 
 template <typename T, typename Z> links::SLinkedList<T, Z>::SLinkedList() {
   this->count = 0;
+  this->foo = nullptr;
   head = nullptr;
 }
 
@@ -110,9 +109,9 @@ template <typename T, typename Z> void links::SLinkedList<T, Z>::invert() {
 template <typename T, typename Z> T links::SLinkedList<T, Z>::pop() {
   this->count -= 1;
   T data = this->head->data;
-  Node<T> *poper = this->head;
+  Node<T> *popper = this->head;
   this->head = this->head->next;
-  delete poper;
+  delete popper;
   return data;
 }
 
