@@ -97,11 +97,11 @@ void ScopeManager::popScope(CodeGenerator *callback,
         OutputFile << *desc;
       }
       // find any symbols that have the same name and remove an underscore
-      for (int i = 0; i < this->stack.size(); i++) {
-        if (this->stack[i].symbol == sym.symbol && sym.symbol != "") {
-          if (this->stack[i].underscores > 0) {
-            this->stack[i].symbol = this->stack[i].symbol.substr(1);
-            this->stack[i].underscores--;
+      for (int j = 0; j < this->stack.size(); j++) {
+        if (this->stack[j].symbol == sym.symbol && sym.symbol != "") {
+          if (this->stack[j].underscores > 0) {
+            this->stack[j].symbol = this->stack[j].symbol.substr(1);
+            this->stack[j].underscores--;
           }
         }
       }
