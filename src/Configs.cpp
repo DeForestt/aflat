@@ -46,11 +46,11 @@ cfg::Config cfg::getConfig(std::string content) {
             } else if (setting.substr(0, 3) == "mut") {
                 auto mut = setting.substr(4);
                 if (mut == "promiscuous") {
-                    config.mutibility = cfg::Mutibility::Promiscuous;
+                    config.mutability = cfg::Mutability::Promiscuous;
                 } else if (mut == "strict") {
-                    config.mutibility = cfg::Mutibility::Strict;
+                    config.mutability = cfg::Mutability::Strict;
                 } else if (mut == "safe") {
-                    config.mutibility = cfg::Mutibility::Safe;
+                    config.mutability = cfg::Mutability::Safe;
                 }
             }
         }
