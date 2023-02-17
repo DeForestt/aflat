@@ -17,13 +17,14 @@
 #include <thread>
 #include <unistd.h>
 #include <vector>
+#include <numeric>
 
 std::string preProcess(std::string input);
 std::string getExePath();
 void buildTemplate(std::string value);
-void build(std::string path, std::string output, cfg::Mutibility mutibility, bool debug);
-void runConfig(std::string path, std::string libPath, char pmode = 'e');
-void runConfig(cfg::Config config, std::string libPath, char pmode);
+void build(std::string path, std::string output, cfg::Mutability mutability, bool debug);
+void runConfig(cfg::Config &config, const std::string &libPath, char pmode);
+void runConfig(cfg::Config &config, const std::string &libPath);
 
 int main(int argc, char *argv[]) {
   // Usage error
@@ -144,7 +145,7 @@ int main(int argc, char *argv[]) {
   else
     outputFile = argv[2];
   if (std::filesystem::exists(value)) {
-    build(value, outputFile, cfg::Mutibility::Promiscuous, true);
+    build(value, outputFile, cfg::Mutability::Promiscuous, true);
   } else {
     std::cout << "File " << value << " does not exist\n";
     return 1;
@@ -152,7 +153,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void build(std::string path, std::string output, cfg::Mutibility mutability, bool debug) {
+void build(std::string path, std::string output, cfg::Mutability mutability, bool debug) {
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;
 
@@ -226,7 +227,7 @@ void build(std::string path, std::string output, cfg::Mutibility mutability, boo
 
     while (file.text.head != nullptr) {
       auto inst = file.text.pop();
-      if (inst->logicalLine != logicalLine && debug && dynamic_cast<asmc::Lable*>(inst) == nullptr && inst->logicalLine > 0) {
+      if (inst->logicalLine != logicalLine && debug && dynamic_cast<asmc::Label*>(inst) == nullptr && inst->logicalLine > 0) {
         logicalLine = inst->logicalLine;
       }
       if (debug)
@@ -254,7 +255,7 @@ void build(std::string path, std::string output, cfg::Mutibility mutability, boo
       ofs << file.bss.pop()->toString();
     }
     ofs.close();
-  } catch (err::Exception e) {
+  } catch (err::Exception &e) {
     std::cout << std::endl
               << "Exception in " << path << ": " << e.errorMsg << std::endl
               << std::endl;
@@ -281,18 +282,12 @@ std::string getExePath() {
  * return value:    void
  */
 void buildTemplate(std::string value) {
-  auto filename = getExePath();
-  auto exepath = filename.substr(0, filename.find_last_of("/"));
-  auto libPath =
-      exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std";
   std::filesystem::create_directories(value);
   std::filesystem::create_directories(value + "/src");
   std::filesystem::create_directories(value + "/src/test");
   std::filesystem::create_directories(value + "/head");
   std::filesystem::create_directories(value + "/bin");
 
-  auto cwd = std::filesystem::current_path();
-  auto root = cwd.string() + "/" + value;
   std::ofstream outfile(value + "/src/main.af");
   outfile << ".needs <std>\n";
 
@@ -333,14 +328,19 @@ void buildTemplate(std::string value) {
   outfile.close();
 }
 
-void runConfig(cfg::Config config, std::string libPath, char pmode) {
+void runConfig(cfg::Config &config, const std::string &libPath) {
+  runConfig(config, libPath, 'e');
+}
+
+void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   std::vector<std::string> linker;
   std::vector<std::string> pathList;
 
-    std::string ofile = config.outPutFile;
+  std::string ofile = config.outPutFile;
 
   if (pmode == 'e') {
-    config.modules.push_back(config.entryPoint);
+    const auto entryPoint = config.entryPoint;
+    config.modules.push_back(entryPoint);
   } else if (pmode == 't') {
     config.modules.push_back(config.testFile);
   }
@@ -353,20 +353,16 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
      addPath = path.substr(0, path.find_last_of("/"));
    }
 
-    bool found = false;
-    for (auto path : pathList) {
-      if (path == addPath) {
-        found = true;
-        break;
-      }
-    }
+    const bool found = std::any_of(pathList.begin(), pathList.end(), [&](const std::string &searchPath) {
+      return searchPath == addPath;
+    });
 
     if (!found && addPath != "") {
       std::filesystem::create_directories("./bin/" + addPath);
       pathList.push_back(addPath);
     }
 
-    build("./src/" + path + ".af", "./bin/" + path + ".s", config.mutibility, config.debug);
+    build("./src/" + path + ".af", "./bin/" + path + ".s", config.mutability, config.debug);
     linker.push_back("./bin/" + path + ".s");
   }
 
@@ -378,13 +374,9 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
       addPath = path.substr(0, path.find_last_of("/"));
     }
 
-    bool found = false;
-    for (auto path : pathList) {
-      if (path == addPath) {
-        found = true;
-        break;
-      }
-    }
+    const bool found = std::any_of(pathList.begin(), pathList.end(), [&](const std::string &searchPath) {
+      return searchPath == addPath;
+    });
 
     if (!found && addPath != "") {
       std::filesystem::create_directories("./bin/" + addPath);
@@ -418,12 +410,13 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
   linker.insert(linker.begin(), libPath + "CLArgs.s");
   linker.insert(linker.begin(), libPath + "System.s");
   linker.insert(linker.begin(), libPath + "Utils_Result.s");
+  linker.insert(linker.begin(), libPath + "Utils_Functions.s");
 
   // run gcc on the linkerList
   std::string linkerList = "";
-  for (auto &s : linker) {
+  
+  for (auto &s : linker)
     linkerList += s + " ";
-  }
 
   if (pmode == 't') {
     ofile = "./bin/a.test ";
@@ -435,7 +428,7 @@ void runConfig(cfg::Config config, std::string libPath, char pmode) {
   }
 
   system(gcc.c_str());
-  linker.erase(linker.begin(), linker.begin() + 16);
+  linker.erase(linker.begin(), linker.begin() + 17);
 
   if (!config.asm_) for (auto &s : linker) {
     std::filesystem::remove(s);

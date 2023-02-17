@@ -5,7 +5,7 @@
 namespace cfg
 {
 
-enum Mutibility {
+enum Mutability {
     Promiscuous = 0,
     Strict = 1,
     Safe = 2
@@ -18,7 +18,7 @@ struct Config {
     std::string testFile;
     std::string entryPoint;
     std::string outPutFile = "./bin/a.out";
-    Mutibility mutibility = Mutibility::Strict;
+    Mutability mutability = Mutability::Strict;
     bool debug = false;
     bool compatibility = false;
     bool asm_ = false;

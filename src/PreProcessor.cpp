@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <numeric>
 
 // helper functons
 
@@ -139,9 +140,12 @@ std::string PreProcessor::Include(std::string line, std::string libPath) {
         return this->PreProcess(output, libPath);
       output = this->PreProcess(output, libPath);
       output.reserve(output.size());
-      for (auto ch : output)
-        if (ch != '\n')
-          cleanPut += ch;
+      cleanPut = std::accumulate(output.begin(), output.end(), std::string(),
+                                 [](std::string &a, char b) {
+                                   if (b != '\n')
+                                      a += b;
+                                    return a;
+                                  });
       return this->PreProcess(cleanPut, libPath);
     }
     return "";
@@ -153,7 +157,6 @@ std::string PreProcessor::Include(std::string line, std::string libPath) {
 /*Replaced defined value with value*/
 void PreProcessor::ReplaceDefined(std::string &code) {
   // loop through line by spaces
-  std::string output;
   std::stringstream input_stringstream(code);
   std::string word;
   while (getline(input_stringstream, word, ' ')) {

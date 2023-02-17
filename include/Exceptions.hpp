@@ -7,7 +7,7 @@ namespace err {
 class Exception {
 public:
   std::string errorMsg;
-  Exception(std::string msg);
+  explicit Exception(std::string msg);
 };
 } // namespace err
 

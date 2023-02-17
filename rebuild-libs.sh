@@ -18,4 +18,6 @@ aflat ./libraries/std/src/System.af ./libraries/std/System.s
 aflat ./libraries/std/src/Utils/Result.af ./libraries/std/Result.s
 # rename Result.s to Utils_Result.s
 mv ./libraries/std/Result.s ./libraries/std/Utils_Result.s
+aflat ./libraries/std/src/Utils/Functions.af ./libraries/std/Functions.s
+mv ./libraries/std/Functions.s ./libraries/std/Utils_Functions.s
 gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c

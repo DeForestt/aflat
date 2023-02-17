@@ -1,0 +1,17 @@
+.needs <std>
+
+class Function {
+	const private adr foo = foo;
+	const private adr captures = captures;
+
+	Function init(const adr foo, * const adr captures) {
+		return my;
+	};
+
+	public any _call(*const any arg1,  *const any arg2, *const any arg3, *const any arg4, *const any arg5) {
+		const let foo = my.foo;
+		const let captures = my.captures;
+		if captures == NULL return foo(arg1, arg2, arg3, arg4, arg5);
+		return foo(captures, arg1, arg2, arg3, arg4, arg5);
+	};
+};
