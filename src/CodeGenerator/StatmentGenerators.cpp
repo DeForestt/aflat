@@ -102,8 +102,6 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
 
     if (this->scope != nullptr && !func->isLambda) {
       // add the opo to the arguments of the function
-      int offset = this->getBytes(asmc::QWord);
-      int size = asmc::QWord;
       gen::Symbol symbol;
       auto movy = new asmc::Mov();
       movy->logicalLine = func->logicalLine;
@@ -154,18 +152,18 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
         // if the function name is init then we need to alert to return 'my'
         if (func->ident.ident == "init") {
           gen::Symbol* my = gen::scope::ScopeManager::getInstance()->get("my");
-          asmc::Mov* mov = new asmc::Mov();
-          mov->logicalLine = func->logicalLine;
-          mov->size = asmc::QWord;
-          mov->from = '-' + std::to_string(my->byteMod) + "(%rbp)";
+          asmc::Mov* movMy = new asmc::Mov();
+          movMy->logicalLine = func->logicalLine;
+          movMy->size = asmc::QWord;
+          movMy->from = '-' + std::to_string(my->byteMod) + "(%rbp)";
           ;
-          mov->to = this->registers["%rax"]->get(asmc::QWord);
+          movMy->to = this->registers["%rax"]->get(asmc::QWord);
           // pop rbx
           asmc::Pop* pop = new asmc::Pop();
           pop->logicalLine = func->logicalLine;
           pop->op = "%rbx";
           file.text.push(pop);
-          file.text.push(mov);
+          file.text.push(movMy);
         }
         asmc::Return* ret = new asmc::Return();
         ret->logicalLine = func->logicalLine;
@@ -193,7 +191,6 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
     this->scope = saveScope;
     this->globalScope = saveGlobal;
     this->inFunction = saveIn;
-    bool funcPop = !isLambda;
     gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile, true);
   }
   this->intArgsCounter = saveIntArgs;
@@ -279,7 +276,7 @@ void gen::CodeGenerator::genDecArr(ast::DecArr* dec, asmc::File& OutputFile) {
   dec->type.arraySize = index;
   links::LinkedList<gen::Symbol>* Table;
   if (this->scope == nullptr || this->inFunction) {
-    int bMod = gen::scope::ScopeManager::getInstance()->assign("." + dec->ident,
+    gen::scope::ScopeManager::getInstance()->assign("." + dec->ident,
                                                                type, false, false);
     // create a pointer to the array
     ast::Type adr;
@@ -347,10 +344,6 @@ void gen::CodeGenerator::genDecArr(ast::DecArr* dec, asmc::File& OutputFile) {
 void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
                                       asmc::File& OutputFile) {
   ast::Declare* dec = decAssign->declare;
-  int offset = this->getBytes(dec->type.size);
-
-  links::LinkedList<gen::Symbol>* Table;
-  Table = &this->SymbolTable;
 
   if (!this->globalScope) {
     if (this->scope == nullptr || this->inFunction) {
@@ -411,7 +404,7 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
     Symbol.type = dec->type;
     Symbol.symbol = dec->Ident;
     Symbol.mutable_ = decAssign->mute;
-    Table = &this->GlobalSymbolTable;
+    auto Table = &this->GlobalSymbolTable;
 
     auto var = new asmc::LinkTask();
     auto label = new asmc::Label();
@@ -433,7 +426,7 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
     Table->push(Symbol);
   };
 }
- 
+
 void gen::CodeGenerator::genDecAssignArr(ast::DecAssignArr* decAssign,
                                          asmc::File& OutputFile) {
   ast::DecArr* dec = decAssign->declare;
@@ -517,10 +510,6 @@ void gen::CodeGenerator::genReturn(ast::Return* ret, asmc::File& OutputFile) {
 
 void gen::CodeGenerator::genAssign(ast::Assign* assign,
                                    asmc::File& OutputFile) {
-  bool global = false;
-
-  links::LinkedList<gen::Symbol>* Table = &this->SymbolTable;
-
   std::tuple<std::string, gen::Symbol, bool, asmc::File> resolved =
       this->resolveSymbol(assign->Ident, assign->modList, OutputFile,
                           assign->indices);
@@ -583,7 +572,6 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
   mov->from = mov2->to;
 
   assign->modList.invert();
-  int tbyte = 0;
 
   asmc::Size size;
   std::string output = std::get<0>(resolved);
@@ -622,14 +610,12 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
   call->modList.reset();
   std::string ident = call->ident;
 
-  std::string nsp = "";
+  std::string nsp;
   if (this->nameSpaceTable.contains(ident)) {
     nsp = this->nameSpaceTable.get(ident) + ".";
     ident = nsp + call->modList.shift();
   };
 
-  links::LinkedList<gen::Symbol>* Table;
-  Table = &this->SymbolTable;
   links::LinkedList<std::string> mods = links::LinkedList<std::string>();
   // first push rdx
   links::LinkedList<std::string> stack;
@@ -703,16 +689,15 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
     ast::Type last = sym->type;
     std::string my = sym->symbol;
     // get the type of the original function
-    gen::Type* type = *this->typeList[last.typeName];
 
     int modCount = 0;
     while (call->modList.pos != nullptr) {
-      bool addPub = true;
       if (this->typeList[last.typeName] == nullptr)
         alert("type not found " + last.typeName);
-      type = *this->typeList[last.typeName];
+      auto type = *this->typeList[last.typeName];
       gen::Class* cl = dynamic_cast<gen::Class*>(type);
       if (cl != nullptr) {
+        bool addPub = true;
         pubname = cl->Ident;
         func = cl->nameTable[call->modList.touch()];
         gen::Class* parent = cl->parent;
@@ -758,11 +743,11 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
             alert("cannot find function " + call->modList.touch());
           } else if (call->modList.pos->next == nullptr ) {
             // find the type of the object
-            auto type = *this->typeList[sym->type.typeName];
-            if (type == nullptr) alert("type not found " + sym->type.typeName);
-            auto cl = dynamic_cast<gen::Class*>(type);
-            if (cl == nullptr) alert("type is not a class " + sym->type.typeName);
-            auto f = cl->nameTable["_call"];
+            auto objectType = *this->typeList[sym->type.typeName];
+            if (objectType == nullptr) alert("type not found " + sym->type.typeName);
+            auto objectClass = dynamic_cast<gen::Class*>(objectType);
+            if (objectClass == nullptr) alert("type is not a class " + sym->type.typeName);
+            auto f = objectClass->nameTable["_call"];
             if (f == nullptr) alert("cannot preform call on type " + sym->type.typeName + " because it does not implement the _call function");
             func = new ast::Function();
             func->ident = f->ident;
@@ -899,14 +884,13 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
   if (call->Args.trail() < func->req)
     alert("Too few arguments for function: " + ident +
           " expected: " + std::to_string(func->argTypes.size()) +
-          " got: " + std::to_string(i + 1));
+          " got: 1");
 
   while (call->Args.trail() > 0) {
     args.push(call->Args.touch());
     ast::Expr * rem = call->Args.touch();
     gen::Expr exp = this->GenExpr(call->Args.shift(), OutputFile);
     if (!exp.passable) this->alert("Cannot pass an lvalue of safe type " + exp.type + " to a function");
-    bool run;
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
         alert("Too many arguments for function: " + ident +
@@ -956,12 +940,12 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
       mov3->to = this->registers["%eax"]->get(asmc::DWord);
       OutputFile.text << mov3;
 
-      asmc::Push* push = new asmc::Push();
-      push->logicalLine = call->logicalLine;
+      asmc::Push* pushArg = new asmc::Push();
+      pushArg->logicalLine = call->logicalLine;
 
-      push->op = this->intArgs[argsCounter].get(asmc::QWord);
+      pushArg->op = this->intArgs[argsCounter].get(asmc::QWord);
 
-      OutputFile.text << push;
+      OutputFile.text << pushArg;
 
       asmc::Mov* mov4 = new asmc::Mov();
       mov4->logicalLine = call->logicalLine;
@@ -974,8 +958,8 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
       mov->logicalLine = call->logicalLine;
       asmc::Mov* mov2 = new asmc::Mov();
       mov2->logicalLine = call->logicalLine;
-      asmc::Push* push = new asmc::Push();
-      push->logicalLine = call->logicalLine;
+      asmc::Push* pushArg = new asmc::Push();
+      pushArg->logicalLine = call->logicalLine;
       mov->size = exp.size;
       mov2->size = exp.size;
 
@@ -983,10 +967,10 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
       mov->to = this->registers["%eax"]->get(exp.size);
       mov2->from = this->registers["%eax"]->get(exp.size);
       mov2->to = this->intArgs[argsCounter].get(exp.size);
-      push->op = this->intArgs[argsCounter].get(asmc::QWord);
+      pushArg->op = this->intArgs[argsCounter].get(asmc::QWord);
       stack << this->intArgs[argsCounter].get(asmc::QWord);
 
-      OutputFile.text << push;
+      OutputFile.text << pushArg;
       OutputFile.text << mov;
       OutputFile.text << mov2;
     };
@@ -1439,7 +1423,6 @@ void gen::CodeGenerator::genDec(ast::Dec* inc, asmc::File& OutputFile) {
 }
 
 void gen::CodeGenerator::genImport(ast::Import* imp, asmc::File& OutputFile) {
-  bool standard = false;
     if (imp->path.find("./") == std::string::npos) {
       imp->path = getLibPath("src") + imp->path;
     };
@@ -1466,7 +1449,6 @@ void gen::CodeGenerator::genImport(ast::Import* imp, asmc::File& OutputFile) {
       // parse the file
       parse::Parser p = parse::Parser();
       ast::Statement* statement = p.parseStmt(tokens);
-      auto low = parse::lower::Lowerer(statement);
       added = statement;
     }
     for (std::string ident : imp->imports) {
