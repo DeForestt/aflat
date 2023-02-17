@@ -1,12 +1,10 @@
-#include "CodeGenerator/CodeGenerator.hpp"
-
 #include <unistd.h>
-
 #include <chrono>
 #include <fstream>
 #include <iostream>
 
 #include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/CodeGenerator.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
 #include "Parser/Lower.hpp"
@@ -14,7 +12,7 @@
 
 bool gen::Enum::compairEnum(gen::Enum::EnumValue e, std::string ident) {
   return e.name == ident;
-};
+}
 
 gen::Enum::Enum() {
   this->values.foo = gen::Enum::compairEnum;
