@@ -23,7 +23,7 @@ std::string preProcess(std::string input);
 std::string getExePath();
 void buildTemplate(std::string value);
 void build(std::string path, std::string output, cfg::Mutability mutability, bool debug);
-void runConfig(std::string &path, const std::string &libPath, char pmode);
+void runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 void runConfig(cfg::Config &config, const std::string &libPath);
 
 int main(int argc, char *argv[]) {
@@ -412,9 +412,10 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   linker.insert(linker.begin(), libPath + "Utils_Result.s");
 
   // run gcc on the linkerList
-  std::string linkerList = std::accumulate(linker.begin(), linker.end(), [](const std::string &a, const std::string &b) {
-      return a + " " + b;
-  });
+  std::string linkerList = "";
+  
+  for (auto &s : linker)
+    linkerList += s + " ";
 
   if (pmode == 't') {
     ofile = "./bin/a.test ";

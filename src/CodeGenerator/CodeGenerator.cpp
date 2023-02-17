@@ -321,7 +321,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
         if (cl->nameTable.count > 0){
           ast::Function * init = cl->nameTable["init"];
           if (init) {
-            if (init->argTypes.size() == 1 && init->argTypes[0].typeName == typeName) {
+            if (init->req == 1 && init->argTypes[0].typeName == typeName) {
               return false;
             }
           }

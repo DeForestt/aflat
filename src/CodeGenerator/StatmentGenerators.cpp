@@ -660,10 +660,13 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
             if (type == nullptr) alert("type not found " + smbl->type.typeName);
             auto cl = dynamic_cast<gen::Class*>(type);
             if (cl == nullptr) alert("type is not a class " + smbl->type.typeName);
-            func = cl->nameTable["_call"];
-            if (func == nullptr) alert("cannot preform call on type " + smbl->type.typeName + " because it does not implement the _call function");
+            auto f = cl->nameTable["_call"];
+            if (f == nullptr) alert("cannot preform call on type " + smbl->type.typeName + " because it does not implement the _call function");
+            func = new ast::Function();
             func->ident.ident = "pub_" + smbl->type.typeName + "__call";
-
+            func->type = f->type;
+            func->req = f->req;
+            func->argTypes = f->argTypes;
             auto var = new ast::Var();
             var->logicalLine = call->logicalLine;
             var->Ident = smbl->symbol;
@@ -674,9 +677,9 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
             mov->logicalLine = call->logicalLine;
             mov->size = exp1.size;
             mov->from = exp1.access;
-            mov->to = this->intArgs[intArgsCounter].get(exp1.size);
+            mov->to = this->intArgs[argsCounter].get(exp1.size);
             OutputFile.text << mov;
-            intArgsCounter++;
+            argsCounter++;
         }
       };
     }
