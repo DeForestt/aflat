@@ -1,7 +1,12 @@
 #include "catch.hpp"
 #include "CodeGenerator/MockCodeGenerator.hpp"
 
-bool compairFunc(ast::Function F, std::string input);
+bool compareFunc(ast::Function F, std::string input) {
+  if (input == F.ident.ident) {
+    return true;
+  }
+  return false;
+}
 
 TEST_CASE("canAssign will not assign to types with different names", "[canAssign]") {
     auto testType = ast::Type();
@@ -35,7 +40,7 @@ TEST_CASE("cannAssign returns false if it can implicit cast", "[canAssign]") {
 
     testType.typeName = "testType";
     cl->Ident = "testType";
-    cl->nameTable.foo = compairFunc;
+    cl->nameTable.foo = compareFunc;
     init.argTypes.push_back(constType);
     cl->nameTable.push(init);
     mockGen.addType(testGenType);
