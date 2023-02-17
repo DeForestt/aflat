@@ -1,5 +1,6 @@
 .needs <std>
 import string from "String";
+import Function from "Utils/Functions";
 
 /*
 A class that represents the result of a function.  It can either be error or success. and will return the value if it is success.
@@ -20,14 +21,14 @@ dynamic safe class Result {
 		return my;
 	};
 
-	public any resolve(const adr acc, const adr rej, * const any arg) {
+	public any resolve(const Function acc, const Function rej, * const any arg, * const any arg2) {
 		if my.success
-			return acc(my.value, arg)
+			return acc(my.value, arg, arg2)
 		else
-			return rej(new string(my.error), arg);
+			return rej(new string(my.error), arg, arg2);
 	};
 
-	public any value(const adr onError, * const any arg) {
+	public any value(const Function onError, * const any arg) {
 		if my.success
 			return my.value
 		else
