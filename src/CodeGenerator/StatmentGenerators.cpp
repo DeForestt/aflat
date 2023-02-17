@@ -433,7 +433,7 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
     Table->push(Symbol);
   };
 }
-
+ 
 void gen::CodeGenerator::genDecAssignArr(ast::DecAssignArr* decAssign,
                                          asmc::File& OutputFile) {
   ast::DecArr* dec = decAssign->declare;
