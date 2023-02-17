@@ -46,5 +46,5 @@ TEST_CASE("cannAssign returns false if it can implicit cast", "[canAssign]") {
     mockGen.addType(testGenType);
     mockGen.addType(cl);
 
-    CHECK(!mockGen.canAssign(testType, "takes"));
+    CHECK_THROWS(!mockGen.canAssign(testType, "takes"));
 }
