@@ -120,7 +120,7 @@ gen::CodeGenerator::resolveSymbol(std::string ident,
   modList.invert();
   modList.reset();
 
-  std::string nsp = "";
+  std::string nsp;
   if (this->nameSpaceTable.contains(ident)) {
     nsp = this->nameSpaceTable.get(ident) + ".";
     if (modList.count == 0)
@@ -384,7 +384,6 @@ gen::Expr gen::CodeGenerator::genArithmetic(asmc::ArithInst* inst,
   std::string to2 = this->registers["%rdi"]->get(expr.size);
 
   output.access = this->registers["%rax"]->get(expr.size);
-  std::string retTo = this->registers["%rdi"]->get(expr.size);
 
   if (expr.op == asmc::Float) {
     to1 = this->registers["%xmm1"]->get(asmc::DWord);
@@ -520,7 +519,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
 
     if (std::get<2>(resolved) == false) {
       std::string ident = var.Ident;
-      std::string nsp = "";
+      std::string nsp;
       var.modList.invert();
       var.modList.reset();
       if (this->nameSpaceTable.contains(var.Ident)) {
@@ -624,7 +623,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
       if (t) {
         gen::Class* cl = dynamic_cast<gen::Class*>(*t);
         if (cl) {
-          if (cl->safeType & sym.symbol != "my"){
+          if (cl->safeType && sym.symbol != "my"){
             output.passable = false;
             if (cl->nameTable["get"] != nullptr){
               ast::Call * callGet = new ast::Call();
@@ -720,7 +719,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
     list->logicalLine = this->logicalLine;
 
     // swap the placeholders with correct wildcard
-    std::string::size_type pos = 0;
+    std::string::size_type pos;
     for ( auto expr : str.args) {
       pos = strLit->val.find("%%%", 0);
       if (pos == std::string::npos) 
@@ -1662,14 +1661,10 @@ void gen::CodeGenerator::GenArgs(ast::Statement* STMT, asmc::File& OutputFile) {
       alert("AFlat compiler cannot handle more than 6 int / pointer arguments.");
     } else {
       asmc::Size size;
-      int offset = 0;
       gen::Symbol symbol;
       asmc::Mov* mov = new asmc::Mov();
       mov->logicalLine = this->logicalLine;
 
-      links::LinkedList<gen::Symbol>* Table = &this->SymbolTable;
-
-      offset = this->getBytes(arg->type.size);
       size = arg->type.size;
       arg->type.arraySize = 1;
       mov->from = this->intArgs[intArgsCounter].get(arg->type.size);
@@ -1791,18 +1786,15 @@ asmc::File * gen::CodeGenerator::deScope(gen::Symbol &sym) {
   lea->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
   // ASMC::Mov * mov = new ASMC::Mov();
   file->text << lea;
-  std::string pointer = registers["%rax"]->get(asmc::QWord);
 
   // call the destructor
-  if (endScope != nullptr) {
-    ast::Call* callDel = new ast::Call();
-    callDel->logicalLine = this->logicalLine;
-    callDel->ident = sym.symbol;
-    callDel->Args = LinkedList<ast::Expr*>();
-    callDel->modList = links::LinkedList<std::string>();
-    callDel->modList.push("endScope");
-    file->operator<<(this->GenSTMT(callDel));
-  };
+  ast::Call* callDel = new ast::Call();
+  callDel->logicalLine = this->logicalLine;
+  callDel->ident = sym.symbol;
+  callDel->Args = LinkedList<ast::Expr*>();
+  callDel->modList = links::LinkedList<std::string>();
+  callDel->modList.push("endScope");
+  file->operator<<(this->GenSTMT(callDel));
 
   return file;
 }
