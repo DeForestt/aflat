@@ -301,11 +301,11 @@ void buildTemplate(std::string value) {
   outfile << "import {case, report, require} from \"ATest.af\" under test;\n"
              "import string from \"String\";\n"
              "import TestSuite from \"ATest.af\";\n\n"
-             "bool simpleTest(adr _arg) : test.case(\"simpleTest\") {\n"
+             "bool simpleTest() : test.case(\"simpleTest\") {\n"
 	           "\ttest.require(3 != 3, \"3 is 3\");\n"
 	           "\treturn 1 == 1;\n};\n\n";
   
-  outfile << "bool simpleFail(adr _arg) : test.case(\"simpleFail\") {\n"
+  outfile << "bool simpleFail() : test.case(\"simpleFail\") {\n"
 	           "\treturn 1 == 2;\n"
              "};\n\n";
 
