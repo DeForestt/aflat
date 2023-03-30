@@ -1,5 +1,6 @@
 .needs <std>
 import string from "String";
+import List from "Collections";
 import {str_at, len} from "strings" under st;
 
 class MapNode {
@@ -89,6 +90,18 @@ class MapNode {
 
         return NULL;
     };
+
+    public List keys() {
+        const List keys = new List(adr);
+        keys.pushBack(my.key.cstr());
+        if my.left != NULL {
+            keys.stitch(my.left.keys());
+        };
+        if my.right != NULL {
+            keys.stitch(my.right.keys());
+        };
+        return keys;
+    };
 };
 
 class Map {
@@ -136,5 +149,13 @@ class Map {
 
     any _call(const adr key) {
         return my.get(key);
+    };
+
+    List keys() {
+        if my.root == NULL {
+            return new List(adr);
+        } else {
+            return my.root.keys();
+        };
     };
 };
