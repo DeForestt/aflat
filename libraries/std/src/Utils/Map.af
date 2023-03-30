@@ -1,0 +1,135 @@
+.needs <std>
+import string from "String";
+import {str_at, len} from "strings" under st;
+
+class MapNode {
+    mutable private MapNode left = NULL;
+    mutable private MapNode right = NULL;
+    mutable private any data = data;
+    private string key = key;
+    int hash = my.hash(key);
+
+    public int hash(adr key) {
+        // string hash algorithm
+        mutable int hash = 0;
+        for int i = 0; i < st.len(key); i++ {
+            hash = (hash * 31) + st.str_at(key, i);
+        };
+        return hash;
+    };
+
+
+    public MapNode init(adr key, any data) {
+        return my;
+    };
+
+    public bool input(adr key, any data) {
+        if my.key == key {
+            my.data = data;
+            return true;
+        };
+        
+        let newNode = new MapNode(key, data);
+
+        if my.hash < newNode.hash {
+            if my.right == NULL {
+                my.right = newNode;
+                return true;
+            } else {
+                return my.right.input(key, data);
+            };
+        } else {
+            if my.left == NULL {
+                my.left = newNode;
+                return true;
+            } else {
+                return my.left.input(key, data);
+            };
+        };
+    };
+
+    public int normalize() {
+        if my.left != NULL my.left.normalize();
+        if my.right != NULL my.right.normalize();
+
+        if my.left != NULL {
+            if my.left.right != NULL {
+                MapNode temp = my.left.right;
+                my.left.right = NULL;
+                my.left = temp;
+            };
+        };
+
+        if my.right != NULL {
+            if my.right.left != NULL {
+                MapNode temp = my.right.left;
+                my.right.left = NULL;
+                my.right = temp;
+            };
+        };
+
+        return 0;
+    };
+
+    public any get(adr key) {
+        if my.key == key {
+            return my.data;
+        };
+
+        if my.hash < my.hash(key) {
+            if my.right != NULL {
+                return my.right.get(key);
+            };
+        } else {
+            if my.left != NULL {
+                return my.left.get(key);
+            };
+        };
+
+        return NULL;
+    };
+};
+
+class Map {
+    private mutable MapNode root = NULL;
+
+    public Map init(* adr data) {
+        if data == NULL {
+            return my;
+        };
+
+
+        mutable int i = 0;
+        mutable adr pointer = data;
+        while pointer as adr != NULL {
+            let key = pointer as adr;
+            pointer = pointer + adr;
+            let value = pointer as adr;
+            pointer = pointer +  adr;
+            if i == 0 {
+                my.root = new MapNode(key, value);
+            } else {
+                my.root.input(key, value);
+            };
+            i++;
+        };
+
+        return my;
+    };
+
+    void set(adr key, any data) {
+        if my.root == NULL {
+            my.root = new MapNode(key, data);
+        } else {
+            my.root.input(key, data);
+        };
+    };
+
+    any get(adr key) {
+        if my.root == NULL {
+            return NULL;
+        } else {
+            return my.root.get(key);
+        };
+    };
+};
