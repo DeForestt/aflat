@@ -608,6 +608,12 @@ class List {
         return res;
     };
 
+    void stitch(const List other) {
+        for int i = 0; i < other.count; i = i + 1 {
+            my.pushBack(other.get(i));
+        };
+    };
+
     int del() {
         if my.delFunc != NULL
             my.forEach(my.delFunc);
