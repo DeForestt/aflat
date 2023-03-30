@@ -6,6 +6,7 @@ class MapNode {
     mutable private MapNode left = NULL;
     mutable private MapNode right = NULL;
     mutable private any data = data;
+    
     const private string key = key;
     const int hash = my.hash(key);
 
