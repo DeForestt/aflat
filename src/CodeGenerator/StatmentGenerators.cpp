@@ -1447,11 +1447,13 @@ void gen::CodeGenerator::genImport(ast::Import* imp, asmc::File& OutputFile) {
                                      std::istreambuf_iterator<char>());
       lex::Lexer l = lex::Lexer();
       PreProcessor pp = PreProcessor();
+
       auto tokens = l.Scan(pp.PreProcess(text, getLibPath("head")));
       tokens.invert();
       // parse the file
       parse::Parser p = parse::Parser();
       ast::Statement* statement = p.parseStmt(tokens);
+      auto Lowerer = parse::lower::Lowerer(statement);
       added = statement;
     }
     for (std::string ident : imp->imports) {
