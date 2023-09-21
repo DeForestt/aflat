@@ -1,0 +1,17 @@
+.needs <std>
+
+/*
+ * Decorate a class method to be treated as a read-only calculated property.
+ */
+class Property {
+    adr foo = foo;
+    any context = context;
+
+    Property init(adr foo, any context){
+        return my;
+    };
+
+    any get() {
+        return my.foo(my.context);
+    };
+};
