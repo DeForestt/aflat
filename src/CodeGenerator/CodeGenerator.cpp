@@ -634,7 +634,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
               ast::CallExpr * callExpr = new ast::CallExpr();
               callExpr->call = callGet;
               callExpr->logicalLine = var.logicalLine;
-              output = this->GenExpr(callExpr, OutputFile);
+              output = this->GenExpr(callExpr, OutputFile, size);
               callGet->modList.pop();
               cont = false;
             }
