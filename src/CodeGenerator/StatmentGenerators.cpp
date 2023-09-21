@@ -524,12 +524,25 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
 
   // check if the symbol is a class
   gen::Type** t = this->typeList[symbol->type.typeName];
-  if (t != nullptr && assign->modList.count == 0) {
+  if (t != nullptr) {
     gen::Class* cl = dynamic_cast<gen::Class*>(*t);
     if (cl != nullptr) {
+      if (cl->safeType && symbol->symbol != "my" && !assign->override){
+            if (cl->nameTable["_set"] != nullptr){
+              ast::Call * callGet = new ast::Call();
+              callGet->ident = assign->Ident;
+              callGet->modList = assign->modList;
+              callGet->modList << "_set";
+              callGet->logicalLine = assign->logicalLine;
+              callGet->Args.push(assign->expr);
+              OutputFile << this->GenSTMT(callGet);
+              return;
+            }
+          }
+      if (assign->modList.count == 0 && !assign->override) {
       // check if the class has an overloaded operator =
-      ast::Function* func = cl->overloadTable[ast::Equ];
-      if (func != nullptr) {
+        ast::Function* func = cl->overloadTable[ast::Equ];
+        if (func != nullptr) {
         // call the overloaded operator =
         ast::Var* v = new ast::Var();
         v->Ident = assign->Ident;
@@ -544,6 +557,7 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
         callExpr->call = call;
         assign->expr = callExpr;
       };
+      }
     }
   }
 

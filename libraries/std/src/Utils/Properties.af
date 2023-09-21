@@ -39,7 +39,7 @@ safe dynamic class Property {
         return getter(my.context);
     };
 
-    void set(const any value) {
+    void _set(const any value) {
         const let setter = my.args.setter;
         setter(my.context, value);
     };
