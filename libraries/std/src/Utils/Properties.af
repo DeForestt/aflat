@@ -3,7 +3,7 @@
 /*
  * Decorate a class method to be treated as a read-only calculated property.
  */
-class Property {
+safe dynamic class Property {
     private const adr foo = foo;
     private const any context = context;
 
