@@ -1,0 +1,18 @@
+.needs <std>
+
+/*
+ * Decorate a class method to be treated as a read-only calculated property.
+ */
+safe dynamic class Property {
+    private const adr foo = foo;
+    private const any context = context;
+
+    Property init(const adr foo, const any context){
+        return my;
+    };
+
+    any get() {
+        const let foo = my.foo;
+        return foo(my.context);
+    };
+};
