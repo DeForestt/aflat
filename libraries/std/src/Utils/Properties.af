@@ -12,6 +12,7 @@ safe dynamic class Property {
     };
 
     any get() {
-        return my.foo(my.context);
+        const let foo = my.foo;
+        return foo(my.context);
     };
 };
