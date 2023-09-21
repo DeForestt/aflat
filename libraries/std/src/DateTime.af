@@ -6,6 +6,7 @@ import {print} from "String" under str;
 import ICollection from "Collections";
 import List from "Collections";
 import Result from "Utils/Result";
+import Function from "Utils/Functions";
 import { accept, reject } from "Utils/Result" under pr;
 
 class DateTime{
