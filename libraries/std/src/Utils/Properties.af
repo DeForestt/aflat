@@ -4,10 +4,10 @@
  * Decorate a class method to be treated as a read-only calculated property.
  */
 class Property {
-    adr foo = foo;
-    any context = context;
+    const adr foo = foo;
+    const any context = context;
 
-    Property init(adr foo, any context){
+    Property init(const adr foo, const any context){
         return my;
     };
 
