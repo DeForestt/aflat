@@ -3,16 +3,44 @@
 /*
  * Decorate a class method to be treated as a read-only calculated property.
  */
-safe dynamic class Property {
+safe dynamic class Computed {
     private const adr foo = foo;
     private const any context = context;
 
-    Property init(const adr foo, const any context){
+    Computed init(const adr foo, const any context){
         return my;
     };
 
     any get() {
         const let foo = my.foo;
         return foo(my.context);
+    };
+};
+
+class PropertyArgs {
+    mutable const adr getter;
+    mutable const adr setter;
+};
+
+/*
+ * Decorate a class method to be treated as a read-write calculated property.
+ */
+safe dynamic class Property {
+    private mutable PropertyArgs args;
+    private const any context = context;
+
+    Property init(const adr foo, const any context){
+        my.args = foo();
+        return my;
+    };
+
+    any get() {
+        const let getter = my.args.getter;
+        return getter(my.context);
+    };
+
+    void set(const any value) {
+        const let setter = my.args.setter;
+        setter(my.context, value);
     };
 };
