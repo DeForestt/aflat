@@ -282,6 +282,7 @@ class Import : public Statement {
   std::vector<std::string> imports;
   std::string path;
   std::string nameSpace;
+  bool classes = false;
 };
 
 class Enum : public Statement {

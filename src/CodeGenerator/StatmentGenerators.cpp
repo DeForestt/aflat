@@ -1469,14 +1469,19 @@ void gen::CodeGenerator::genImport(ast::Import* imp, asmc::File& OutputFile) {
       ast::Statement* statement = p.parseStmt(tokens);
       auto Lowerer = parse::lower::Lowerer(statement);
       added = statement;
+      this->includedMemo.insert(imp->path, added);
+      this->ImportsOnly(added);
     }
     for (std::string ident : imp->imports) {
+      if (this->includedClasses.contains(id + "::" + ident))
+        continue;
+      this->includedClasses.insert(id + "::" + ident, nullptr);
       ast::Statement* statement = extract(ident, added, id);
       if (statement == nullptr)
         this->alert("Identifier " + ident + " not found to import");
       OutputFile << this->GenSTMT(statement);
     }
-    this->nameSpaceTable.insert(imp->nameSpace, id);
+    if (!imp->classes) this->nameSpaceTable.insert(imp->nameSpace, id);
 }
 
 void gen::CodeGenerator::genDelete(ast::Delete* del, asmc::File& OutputFile) {
@@ -1553,4 +1558,5 @@ void gen::CodeGenerator::genBreak(ast::Break* brk, asmc::File& OutputFile) {
   jmp->to = this->breakContext.get(index); 
   OutputFile.text << jmp;
 }
+
 #pragma endregion

@@ -1763,6 +1763,21 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement* STMT) {
   return OutputFile;
 }
 
+asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement* STMT) {
+    asmc::File OutputFile = asmc::File();
+    if (STMT->locked)
+      OutputFile.text.push(new asmc::nop());
+    else if (dynamic_cast<ast::Sequence*>(STMT) != nullptr) {
+      this->ImportsOnly(dynamic_cast<ast::Sequence*>(STMT)->Statement1);
+      this->ImportsOnly(dynamic_cast<ast::Sequence*>(STMT)->Statement2);
+    } else if (dynamic_cast<ast::Import*>(STMT) != nullptr) {
+      auto imp = dynamic_cast<ast::Import*>(STMT);
+      if (imp->classes)
+        this->genImport(dynamic_cast<ast::Import*>(STMT), OutputFile);
+    }
+    return OutputFile;
+}
+
 asmc::File * gen::CodeGenerator::deScope(gen::Symbol &sym) {
   
   asmc::File* file = new asmc::File();
