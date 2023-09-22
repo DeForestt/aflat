@@ -1,4 +1,5 @@
 .needs <std>
+import Function from "Utils/Functions"
 
 /*
  * Decorate a class method to be treated as a read-only calculated property.
@@ -18,8 +19,8 @@ safe dynamic class Computed {
 };
 
 class PropertyArgs {
-    mutable const adr getter;
-    mutable const adr setter;
+    const Function getter;
+    const Function setter;
 };
 
 /*
