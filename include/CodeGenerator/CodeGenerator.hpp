@@ -98,6 +98,7 @@ class CodeGenerator {
   bool globalScope = true;
   bool inFunction = false;
   HashMap<ast::Statement*> includedMemo;
+  HashMap<ast::Statement*> includedClasses;
   HashMap<std::string> nameSpaceTable;
   ast::Function* currentFunction = nullptr;
 #pragma endregion
@@ -166,6 +167,7 @@ class CodeGenerator {
 
  public:
   asmc::File GenSTMT(ast::Statement* stmt);
+  asmc::File ImportsOnly(ast::Statement* stmt);
   links::LinkedList<gen::Symbol> GenTable(
       ast::Statement* STMT, links::LinkedList<gen::Symbol>& table);
   // a function for warnings or errors

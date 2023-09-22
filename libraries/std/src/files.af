@@ -5,7 +5,7 @@
 import ICollection from "Collections";
 import Array from "Collections";
 import LinkedList, List from "Collections";
-import len from "strings" under str;
+import {len} from "strings" under str;
 import string from "String";
 
 class fstat{
