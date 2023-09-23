@@ -1,6 +1,8 @@
 .needs <std>
 
 import * from "io" under io;
+import string from "String" under string;
+import Property from "Utils/Properties" under Property;
 
 class ICollection{
     contract {
@@ -53,7 +55,6 @@ class LinkedList {
             curr = next;
         };
     };
-
 };
 
 class Array signs ICollection{
@@ -475,6 +476,7 @@ class List {
     private int count = 0;
     private adr delFunc = delFunc;
     private adr ini = ini;
+    public adr stringFunc = NULL;
 
     List init(const int typeSize, *const int size, *const adr delFunc, *const adr ini) {
         if size == 0 {
@@ -612,6 +614,26 @@ class List {
         for int i = 0; i < other.count; i = i + 1 {
             my.pushBack(other.get(i));
         };
+    };
+
+    string toString() {
+        if my.stringFunc == NULL {
+            const string ret = `List TypeSize: {my.typeSize} Size: {my.size} Count: {my.count}`;
+            return ret;
+        };
+
+        const adr stringFunc = my.stringFunc;
+        mutable string ret = `List TypeSize: {my.typeSize} Size: {my.size} Count: {my.count} [`;
+        for int i = 0; i < my.count; i = i + 1 {
+            const adr data = my.get(i);
+            const string str = stringFunc(data);
+            ret = ret + str;
+            if i != my.count - 1 {
+                ret = ret + ", ";
+            };
+        };
+        ret = ret + "]";
+        return ret;
     };
 
     int del() {
