@@ -29,6 +29,7 @@ class DateTime{
     public int getSecond();
     public int getHour();
     public int getMinute();
+    public string toString();
 
     private int Copy<<=>>(DateTime);
     
@@ -240,3 +241,7 @@ export int mills() {
     ms = ms + (ts.tv_nsec / 1000000);
     return longToInt(ms);
 }; 
+string toString@DateTime(){
+    const string dow = dowToString(dayOfWeek(my.month, my.day, my.year));
+    return `{dow}, {my.month}/{my.day}/{my.year} {my.hour}:{my.minute}:{my.second}`;
+};
