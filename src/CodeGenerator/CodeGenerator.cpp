@@ -724,9 +724,29 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
       pos = strLit->val.find("%%%", 0);
       if (pos == std::string::npos) 
         this->alert("too many arguments for format string");
-      
+
       asmc::File file;
+
+
       auto exp = this->GenExpr(expr, file);
+      
+      gen::Type** t = this->typeList[exp.type];
+      if (t) {
+        gen::Class* cl = dynamic_cast<gen::Class*>(*t);
+        if (cl && cl->Ident != "string") {
+          if (cl->nameTable["toString"] == nullptr)
+            this->alert("class " + cl->Ident + " does not contain toString method and cannot be used in format string");
+          ast::CallExpr* call = new ast::CallExpr();
+          call->call = new ast::Call();
+          call->call->ident = "toString";
+          call->call->logicalLine = this->logicalLine;
+          call->logicalLine = this->logicalLine;
+          call->call->Args << expr;
+          call->call->publify = cl->Ident;
+          expr = call;
+        }
+        exp = this->GenExpr(expr, file);
+      }
 
       if (exp.type == "adr")
         strLit->val.replace(pos, 3, "%a");
@@ -738,8 +758,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
         strLit->val.replace(pos, 3, "%b");
       else if (exp.type == "char")
         strLit->val.replace(pos, 3, "%c");
-      else
+      else {
         this->alert("unable to format type of " + exp.type);
+      }
 
       list->args << expr;
     };
