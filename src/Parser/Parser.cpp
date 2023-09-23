@@ -740,6 +740,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
       imp->logicalLine = obj.lineCount;
       auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (sym != nullptr) {
+        imp->classes = false;
         if (sym->Sym == '{') {
           do {
             tokens.pop();
@@ -770,6 +771,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
               " Unexpected Token");
       } else {
         bool first = true;
+        imp->classes = true;
         do {
           if (!first)
             tokens.pop();

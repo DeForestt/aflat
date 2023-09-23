@@ -106,7 +106,6 @@ Now we will make a simple guessing game.  The program will ask the user to guess
 .needs <std>
 import string from "String";
 import { readString, print } from "String" under st;
-import Result from "Utils/Result";
 
 int main(){
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
@@ -135,7 +134,6 @@ This game is a bit too hard.  We cannot expect to guess the number in just one t
 .needs <std>
 import string from "String";
 import { readString, print } from "String" under st;
-import Result from "Utils/Result";
 
 int main(){
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
@@ -177,7 +175,6 @@ This game gets boring quickly.  We need to make sure that the program doesn't al
 .needs <std>
 import string from "String";
 import { readString, print } from "String" under st;
-import Result from "Utils/Result";
 import Random from "math";
 
 int main(){
