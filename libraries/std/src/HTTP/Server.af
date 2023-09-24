@@ -32,7 +32,9 @@ class Server {
                 const Endpoint e = self.endpoints.get(i);
                 if e.method == msg.method & e.path == msg.endpoint {
                     const HTTPResponce response = e.imp(msg);
-                    return response.toString().cstr();
+                    const let val = response.toString().cstr();
+                    delete response;
+                    return val;
                 };
             };
             return "HTTP/1.1 404 Not Found\r\n<html><body><h1>404 Not Found</h1></body></html>\r\n"
