@@ -895,6 +895,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
 
   call->Args.invert();
   call->Args.reset();
+  
   links::LinkedList<ast::Expr*> args;
   std::vector<asmc::Instruction*> overflowArgs;
   int i = 0;

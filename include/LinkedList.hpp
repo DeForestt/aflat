@@ -53,6 +53,9 @@ public:
   /*like size but from the pos*/
   int trail();
 
+  /*set the nth items next to nullptr*/
+  void terminate(int n);
+
   /*Pop removes the top element for the list
   Behaves like a stack*/
   T pop();
@@ -106,6 +109,14 @@ template <typename T> int links::LinkedList<T>::trail() {
   return count;
 }
 
+template <typename T> void links::LinkedList<T>::terminate(int n) {
+  Node<T> *temp = head;
+  for (int i = 0; i < n; i++) {
+    temp = temp->next;
+  }
+  temp->next = nullptr;
+}
+
 template <typename T> T links::LinkedList<T>::get(int index) {
   if (index < 0 || index > this->size()) {
     throw err::Exception("Index Out of Bounds");
@@ -137,6 +148,9 @@ template <typename T> T *links::LinkedList<T>::append(T input) {
 
 template <typename T> void links::LinkedList<T>::reset() {
   this->pos = this->head;
+  if (this->trail() > this->count) {
+    this->terminate(this->count - 1);
+  }
 }
 
 template <typename T>
