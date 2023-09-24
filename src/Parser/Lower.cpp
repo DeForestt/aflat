@@ -105,7 +105,7 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
         my->Ident = "my";
         newExpr->args.push(var);
         newExpr->args.push(my);
-        func->decoratorArgs.invert();
+        func->decoratorArgs.reset();
         newExpr->args.istitch(func->decoratorArgs);
         newExpr->type = declare->type;
         decAssign->expr = newExpr;
