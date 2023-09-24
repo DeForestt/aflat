@@ -31,13 +31,12 @@ class Server {
             for int i = 0; i < self.endpoints.getCount(); i++ {
                 const Endpoint e = self.endpoints.get(i);
                 if e.method == msg.method & e.path == msg.endpoint {
-                    const HTTPResponce response = e.imp(msg);
-                    const let val = response.toString().cstr();
-                    delete response;
-                    return val;
+                    const let handler = e.imp;
+                    const HTTPResponce response = handler(e, msg);
+                    return response.toString().cstr();
                 };
             };
-            return "HTTP/1.1 404 Not Found\r\n<html><body><h1>404 Not Found</h1></body></html>\r\n"
+            return "HTTP/1.1 404 Not Found\r\n<html><body><h1>404 Not Found</h1></body></html>\r\n";
         }, my);
     };
 };
