@@ -413,6 +413,8 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   linker.insert(linker.begin(), libPath + "Utils_Functions.s");
   linker.insert(linker.begin(), libPath + "Utils_Map.s");
   linker.insert(linker.begin(), libPath + "Utils_Properties.s");
+  linker.insert(linker.begin(), libPath + "HTTP_Endpoint.s");
+  linker.insert(linker.begin(), libPath + "HTTP_Server.s");
 
   // run gcc on the linkerList
   std::string linkerList = "";
@@ -430,7 +432,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   }
 
   system(gcc.c_str());
-  linker.erase(linker.begin(), linker.begin() + 19);
+  linker.erase(linker.begin(), linker.begin() + 21);
 
   if (!config.asm_) for (auto &s : linker) {
     std::filesystem::remove(s);

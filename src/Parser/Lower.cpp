@@ -91,6 +91,7 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
         declare->type.typeName = func->decorator;
         declare->mut = false;
         declare->TypeName = func->decorator;
+        declare->scope = func->scope;
 
         ast::DecAssign *decAssign = new ast::DecAssign;
         decAssign->declare = declare;

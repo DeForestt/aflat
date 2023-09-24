@@ -207,7 +207,6 @@ class HTTPMessage {
 
     HTTPMessage init(const adr rsp, * const bool isReq) {
         if isReq my.parseReq(rsp) else my.parse(rsp);
-        return my;
     };
 
     adr getHeader(const adr key) {
@@ -307,6 +306,54 @@ class HTTPRequest {
         request(host, endpoint, "80", msg_prim, buffer, bufferSize);
         const let res = new string(buffer);
         return new HTTPMessage(buffer);
+    };
+};
+
+class HTTPResponce {
+    const private List headers = new List(HTTPHeader);
+    const private adr statusMessage = statusMessage;
+    const private adr statusCode = statusCode;
+    private adr body = body;
+    
+    HTTPResponce init(const adr body, const adr statusCode, const adr statusMessage) {
+        return my;
+    };
+
+    void addHeader(const adr key, const adr value) {
+        const HTTPHeader header = new HTTPHeader(key, value);
+        my.headers.pushBack(header);
+        return;
+    };
+
+    void setBody(const adr body) {
+        my.body = body;
+    };
+
+    string getHeaders() {
+        const string res = new string("");
+        my.headers.forEach([const HTTPHeader header, const int __i, string buffer] => {
+            buffer = buffer + header.key;
+            buffer = buffer + ": ";
+            buffer = buffer + header.value;
+            buffer = buffer + "\r\n";
+            buffer.get();
+            return 0;
+        }, res);
+        return res;
+    };
+
+    string toString() {
+        string res = new string("");
+        res = res + "HTTP/1.1 ";
+        res = res + my.statusCode;
+        res = res + " ";
+        res = res + my.statusMessage;
+        res = res + "\r\n";
+        res = res + my.getHeaders();
+        res = res + "\r\n";
+        res = res + my.body;
+        res = res + "\r\n";
+        return res;
     };
 };
 
