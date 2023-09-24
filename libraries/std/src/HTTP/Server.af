@@ -1,0 +1,41 @@
+.needs <std>
+.needs <server>
+import Endpoint from "HTTP/Endpoint";
+import List from "Collections";
+import HTTPMessage, HTTPMethod, HTTPResponce from "HTTP";
+import {methodToString} from "HTTP" under http;
+import string from "String";
+import {print} from "String" under str;
+import {printHex} from "io" under io;
+
+class Server {
+    contract {
+        const List endpoints = new List(Endpoint);
+        int port = 8080;
+    };
+
+    Server init(* const int port) {
+        if port != 0 my.port = port;
+        return my;
+    };
+
+    void addEndpoint(const Endpoint endpoint) {
+        my.endpoints.stringFunc = Endpoint.toString;
+        my.endpoints.pushBack(endpoint);
+    };
+
+    void listen() {
+        str.print(`listening on port: {my.port}\n`);
+        serve(my.port, [const adr msg, const Server self] => {
+            const HTTPMessage msg = new HTTPMessage(msg, true);
+            for int i = 0; i < self.endpoints.getCount(); i++ {
+                const Endpoint e = self.endpoints.get(i);
+                if e.method == msg.method & e.path == msg.endpoint {
+                    const HTTPResponce response = e.imp(msg);
+                    return response.toString().cstr();
+                };
+            };
+            return "HTTP/1.1 404 Not Found\r\n<html><body><h1>404 Not Found</h1></body></html>\r\n"
+        }, my);
+    };
+};

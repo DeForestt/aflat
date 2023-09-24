@@ -1,0 +1,20 @@
+.needs <std>
+import string from "String";
+import Server from "HTTP/Server";
+import HTTPMethod from "HTTP";
+import {methodToString} from "HTTP" under http;
+import {print} from "String" under str;
+import {printHex, printInt} from "io" under io;
+
+class Endpoint {
+    const adr imp = imp;
+    const string path = path;
+    const HTTPMethod method = method;
+    Endpoint init(const adr imp, const Server context, const string path, const HTTPMethod method) {
+        context.addEndpoint(my);
+    };
+    
+    string toString() {
+        return `{http.methodToString(my.method)} {my.path}`;
+    };
+};
