@@ -32,7 +32,7 @@ class Server {
                 const Endpoint e = self.endpoints.get(i);
                 if e.method == msg.method & e.path == msg.endpoint {
                     const let handler = e.imp;
-                    const HTTPResponce response = handler(e, msg);
+                    const HTTPResponce response = handler(self, msg);
                     return response.toString().cstr();
                 };
             };
