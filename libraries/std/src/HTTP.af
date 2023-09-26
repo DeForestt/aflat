@@ -17,7 +17,8 @@ enum HTTPMethod {
     HEAD,
     OPTIONS,
     TRACE,
-    CONNECT
+    CONNECT,
+    PATCH
 };
 
 export adr listen(const short port, const int bufferSize, const adr callback, const adr args) {
@@ -62,6 +63,8 @@ export HTTPMethod stringToMethod(const string method) {
         return HTTPMethod.TRACE
     else if method == "CONNECT"
         return HTTPMethod.CONNECT
+    else if method == "PATCH"
+        return HTTPMethod.PATCH 
     else
         return HTTPMethod.GET;
 };

@@ -1,0 +1,89 @@
+.needs <std>
+import Endpoint from "HTTP/Endpoint";
+import Server from "HTTP/Server";
+import string from "String";
+import HTTPMethod, HTTPResponce, HTTPMessage from "HTTP";
+
+class GET signs Endpoint {
+    GET init(const adr imp, const Server context, const string path) {
+        my.method = HTTPMethod.GET;
+        context.addEndpoint(my);
+    };
+
+    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+        const let imp = my.imp;
+        return imp(context, msg);
+    };
+};
+
+class POST signs Endpoint {
+    POST init(const adr imp, const Server context, const string path) {
+        my.method = HTTPMethod.POST;
+        context.addEndpoint(my);
+    };
+
+    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+        const let imp = my.imp;
+        return imp(context, msg);
+    };
+};
+
+class PUT signs Endpoint {
+    PUT init(const adr imp, const Server context, const string path) {
+        my.method = HTTPMethod.PUT;
+        context.addEndpoint(my);
+    };
+
+    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+        const let imp = my.imp;
+        return imp(context, msg);
+    };
+};
+
+class DELETE signs Endpoint {
+    DELETE init(const adr imp, const Server context, const string path) {
+        my.method = HTTPMethod.DELETE;
+        context.addEndpoint(my);
+    };
+
+    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+        const let imp = my.imp;
+        return imp(context, msg);
+    };
+};
+
+class PATCH signs Endpoint {
+    PATCH init(const adr imp, const Server context, const string path) {
+        my.method = HTTPMethod.PATCH;
+        context.addEndpoint(my);
+    };
+
+    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+        const let imp = my.imp;
+        return imp(context, msg);
+    };
+};
+
+class OPTIONS signs Endpoint {
+    OPTIONS init(const adr imp, const Server context, const string path) {
+        my.method = HTTPMethod.OPTIONS;
+        context.addEndpoint(my);
+    };
+
+    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+        const let imp = my.imp;
+        return imp(context, msg);
+    };
+};
+
+class HEAD signs Endpoint {
+    HEAD init(const adr imp, const Server context, const string path) {
+        my.method = HTTPMethod.HEAD;
+        context.addEndpoint(my);
+    };
+
+    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+        const let imp = my.imp;
+        return imp(context, msg);
+    };
+};
