@@ -7,10 +7,14 @@ import {print} from "String" under str;
 import {printHex, printInt} from "io" under io;
 
 class Endpoint {
-    const adr imp = imp;
-    const string path = path;
-    const HTTPMethod method = method;
+    contract {
+        const adr imp = imp;
+        const string path = path;
+        HTTPMethod method;
+    };
+    
     Endpoint init(const adr imp, const Server context, const string path, const HTTPMethod method) {
+        my.method = method;
         context.addEndpoint(my);
     };
     

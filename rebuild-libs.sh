@@ -26,4 +26,5 @@ aflat ./libraries/std/src/Utils/Properties.af ./libraries/std/Properties.s
 mv ./libraries/std/Properties.s ./libraries/std/Utils_Properties.s
 aflat ./libraries/std/src/HTTP/Endpoint.af ./libraries/std/HTTP_Endpoint.s
 aflat ./libraries/std/src/HTTP/Server.af ./libraries/std/HTTP_Server.s
+aflat ./libraries/std/src/HTTP/Endpoints.af ./libraries/std/HTTP_Endpoints.s
 gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c

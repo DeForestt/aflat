@@ -401,6 +401,7 @@ safe dynamic class string {
     };
 
     int del(){
+        if my.permanent return 0;
         free(my.head);
     };
 
@@ -423,7 +424,6 @@ safe dynamic class string {
             free(other.head);
             free(other);
         } else if (my.refcount == 0) {
-            free(my.head);
             delete my;
         };
         return my;
@@ -436,6 +436,14 @@ safe dynamic class string {
 
     adr cstr() {
         return my.head;
+    };
+
+    /*
+     * copy the string into a buffer
+     */
+    int copyTo(const adr buff) {
+        memcpy(buff, my.head, str.len(my.head) + 1);
+        return 0;
     };
 
     bool input(const adr prompt) {
@@ -765,6 +773,7 @@ safe dynamic class string {
     };
 
     int endScope() {
+        if my.permanent return 0;
         my.refcount = my.refcount - 1;
         if my.refcount == 0 {
             delete my;
