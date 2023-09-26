@@ -1,7 +1,7 @@
 .needs <std>
 import string from "String";
 import Server from "HTTP/Server";
-import HTTPMethod from "HTTP";
+import HTTPMethod, HTTPResponce, HTTPMessage from "HTTP";
 import {methodToString} from "HTTP" under http;
 import {print} from "String" under str;
 import {printHex, printInt} from "io" under io;
@@ -16,5 +16,10 @@ class Endpoint {
     
     string toString() {
         return `{http.methodToString(my.method)} {my.path}`;
+    };
+
+    HTTPResponce _call(const any context, * const HTTPMessage msg) {
+        const let imp = my.imp;
+        return imp(context, msg);
     };
 };
