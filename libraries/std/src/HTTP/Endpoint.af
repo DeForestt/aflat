@@ -18,7 +18,7 @@ class Endpoint {
         return `{http.methodToString(my.method)} {my.path}`;
     };
 
-    HTTPResponce _call(const any context, * const HTTPMessage msg) {
+    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
