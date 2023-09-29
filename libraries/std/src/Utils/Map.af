@@ -100,6 +100,7 @@ class MapNode {
         if my.right != NULL {
             keys.stitch(my.right.keys());
         };
+        keys.stringFunc = [const adr val] => return new string(val);
         return keys;
     };
 };
