@@ -3,6 +3,7 @@
 .needs <request>
 
 import List from "Collections";
+import Map from "Utils/Map";
 import String, string from "String";
 import {len, int_toString} from "strings" under str;
 import {print, printInt, fPrint, printHex} from "io" under io;
@@ -81,6 +82,7 @@ class HTTPHeader {
 class HTTPMessage {
     const private List headers = new List(HTTPHeader);
     private bool switch = false;
+    const public Map query = new Map();
     string origin = new string("");
     string body = new string("");
     string version;
@@ -150,6 +152,36 @@ class HTTPMessage {
         return 0;
     };
 
+    private void updateMap(const string mq) {
+        const string key = mq.subString(0, mq.indexOf('='));
+        const string value = if mq.indexOf('&') == -1
+            mq.subString(mq.indexOf('=') + 1, mq.len())
+        else
+            mq.subString(mq.indexOf('=') + 1, mq.indexOf('&'));
+
+        const let valptr = malloc(str.len(value) + 1);
+        memcpy(valptr, value.cstr(), str.len(value.cstr()) + 1);
+        my.query.set(key.cstr(), valptr);
+    };
+
+    private void updateQueryMap(const string qstring){
+        string mq = qstring;
+        let cont = true;
+        while cont {
+            if mq.indexOf('=') == -1 {
+                cont = false;
+                break;
+            };
+            
+            my.updateMap(mq);
+            if mq.indexOf('&') == -1 {
+                cont = false;
+            } else {
+                mq = mq.subString(mq.indexOf('&') + 1, mq.len());
+            };
+        };
+    };
+
     private void parseReq(const adr rsi) {
         const string rsp = new string(rsi);
         my.origin = rsp;
@@ -168,6 +200,12 @@ class HTTPMessage {
         my.endpoint = firstLineParts.get(1);
         my.version = firstLineParts.get(2);
         my.method = stringToMethod(method);
+
+        if my.endpoint.indexOf('?') != -1 {
+            const string query = my.endpoint.subString(my.endpoint.indexOf('?') + 1, my.endpoint.len());
+            my.endpoint = my.endpoint.subString(0, my.endpoint.indexOf('?'));
+            my.updateQueryMap(query);
+        };
 
         my.switch = false;
 
