@@ -30,7 +30,7 @@ class Server {
             const HTTPMessage msg = new HTTPMessage(msg, true);
             for int i = 0; i < self.endpoints.getCount(); i++ {
                 const Endpoint e = self.endpoints.get(i);
-                if e.method == msg.method & e.path == msg.endpoint {
+                if http.methodToString(e.method) == http.methodToString(msg.method) & e.path == msg.endpoint {
                     const let handler = e.imp;
                     const HTTPResponce response = handler(self, msg);
                     return response.toString().cstr();
