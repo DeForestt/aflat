@@ -1,5 +1,6 @@
 .needs <std>
 import string from "String";
+import {print} from "String" under str;
 import List from "Collections";
 import {str_at, len} from "strings" under st;
 

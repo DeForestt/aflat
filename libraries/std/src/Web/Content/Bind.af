@@ -1,0 +1,34 @@
+.needs <std>
+import Content from "Web/Content";
+import string from "String";
+import Computed from "Utils/Properties";
+import {print} from "String" under str;
+
+safe dynamic class Bind {
+    private const Content context = context;
+    private const adr preproces = preprocess;
+    private mutable string name = name;
+    private mutable string value = "None";
+
+    public adr key() : Computed {
+        return my.name.cstr();
+    };
+
+    public adr val() : Computed {
+        return my.value.cstr();
+    };
+
+    Bind init(const adr preprocess, const Content context, const adr name) {
+        my.name = new string("{{") + my.name + new string("}}");
+        my.context.bindings.pushBack(my);
+    };
+
+    adr get() {
+        return my.value;
+    };
+
+    void _set(const any value) {
+        const adr foo = my.preproces;
+        my.value = new string(foo(my.context, value));
+    };
+};
