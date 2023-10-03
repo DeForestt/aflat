@@ -1,0 +1,41 @@
+.needs <std>
+import string from "String";
+import {print} from "String" under str;
+import List from "Collections";
+import Bind from "Web/Content/Bind";
+import Computed from "Utils/Properties";
+import {openFile} from "files" under fs;
+import File from "files";
+
+class Content {
+    contract {
+        mutable string content = "";
+        mutable string cleanContent = "";
+        const List bindings = new List(Bind);
+    };
+
+    void loadFile(const adr fileName) {
+        const string content = "";
+		const let f = fs.openFile(fileName);
+		const let data = f.toList('\n');
+		data.forEach([const adr val, const int __index, mutable string buffer] => 
+		buffer = buffer + val + "\n", content);
+		my.cleanContent = content;
+		my.content = content;
+		return;
+    };
+
+    Content init() {
+        return my;
+    };
+
+    adr render() {
+        my.content = my.cleanContent;
+        my.bindings.forEach([const Bind binding, const int __index, const Content self] => {
+            const adr key = binding.key;
+            const adr val = binding.val;
+            self.content = self.content.replace(key, val);
+        }, my);
+        return my.content.cstr();
+    };
+};
