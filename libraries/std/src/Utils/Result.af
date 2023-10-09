@@ -10,7 +10,7 @@ You will be sacrificing type safety for error handling.
 dynamic safe class Result {
 	private mutable any value = value;
 	private mutable bool success = error == NULL;
-	private mutable string error = error;
+	private mutable string error = if error == NULL "No error." else error;
 	private mutable int refcount = 1;
 
 	Result get() {
