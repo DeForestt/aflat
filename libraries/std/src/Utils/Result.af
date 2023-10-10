@@ -1,6 +1,7 @@
 .needs <std>
 import string from "String";
 import Function from "Utils/Functions";
+import Computed from "Utils/Properties";
 
 /*
 A class that represents the result of a function.  It can either be error or success. and will return the value if it is success.
@@ -9,7 +10,7 @@ You will be sacrificing type safety for error handling.
 dynamic safe class Result {
 	private mutable any value = value;
 	private mutable bool success = error == NULL;
-	private mutable adr error = error;
+	private mutable string error = if error == NULL "No error." else error;
 	private mutable int refcount = 1;
 
 	Result get() {
@@ -32,14 +33,14 @@ dynamic safe class Result {
 		if my.success
 			return my.value
 		else
-			return onError(new string(my.error), arg);
+			return onError(my.error.copy(), arg);
 	};
 
 	public string getError() {
 		if my.success
 			return `No error.`
 		else
-			return `{my.error}`;
+			return my.error.copy();
 	};
 
 	public bool hasError() {
