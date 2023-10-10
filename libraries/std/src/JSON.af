@@ -1,0 +1,196 @@
+.needs <std>
+.needs <std>
+import string from "String";
+import { fString, print } from "String" under st;
+import { fPrint } from "io" under io;
+import List from "Collections";
+import Result from "Utils/Result";
+import { accept, reject } from "Utils/Result" under r;
+import JSONProperty from "JSON/Property";
+import {printHex, printInt} from "io" under io;
+import {int_toString} from "strings" under str;
+
+enum JSONType {
+    String,
+    Int,
+    List,
+    Object,
+    Boolean,
+};
+
+class JSONValue {
+    const JSONType type = type;
+    const any value = value;
+
+    JSONValue init(const any value, const JSONType type){
+        return my;
+    };
+};
+
+private string parseInt(const int val){
+    if val == 0
+        return `0`;
+    const char[120] buffer;
+    str.int_toString(val, buffer);
+    return `{buffer}`;
+};
+
+private string parseList(const List val);
+
+class JSONObject {
+    contract {
+        const List properties = new List(JSONProperty);
+    };
+
+    JSONObject init(){
+        return my;
+    };
+    
+    JSONObject addInt(const string key, const int value) {
+        const let __prop = new JSONProperty(
+            [const JSONObject __context, const int val] => {
+                return val;
+            },
+            my,
+            key,
+            JSONType.Int
+        );
+        const JSONProperty prop = my.properties.get(0);
+        const prop = value;
+        return my;
+    };
+
+    JSONObject addString(const string key, const string value) {
+        const let __prop = new JSONProperty(
+            [const JSONObject __context, const adr val] => {
+                return val;
+            },
+            my,
+            key,
+            JSONType.String
+        );
+        const JSONProperty prop = my.properties.back();
+        const let pointer = malloc(value.len() + 1);
+        value.copyTo(pointer);
+        prop = pointer;
+        return my;
+    };
+
+    JSONObject addObject(const string key, const JSONObject value) {
+        const let __prop = new JSONProperty(
+            [const JSONObject __context, const JSONObject val] => {
+                return val;
+            },
+            my,
+            key,
+            JSONType.Object
+        );
+        const JSONProperty prop = my.properties.back();
+        prop = value;
+        return my;
+    };
+
+    JSONObject addList(const string key, const List value) {
+        const let __prop = new JSONProperty(
+            [const JSONObject __context, const List val] => {
+                return val;
+            },
+            my,
+            key,
+            JSONType.List
+        );
+        const JSONProperty prop = my.properties.back();
+        prop = value;
+    };
+
+    JSONObject addBool(const string key, const bool val) {
+        const let __prop = new JSONProperty(
+            [const JSONObject __context, const bool arg] => {
+                return arg;
+            },
+            my,
+            key,
+            JSONType.Boolean
+        );
+        const JSONProperty prop = my.properties.back();
+        const prop = val;
+    };
+
+    private void updateWithString(mutable string result, const string key, const adr value) {
+        result = st.fString("%s\"%s\": \"%a\"", {result, key, value});
+    };
+
+    string toString() {
+        mutable string result = "{";
+        for int i = 0; i < my.properties.getCount(); i++ {
+            const JSONProperty prop = my.properties.get(i);
+            if i != 0 {
+                result = `{result}, `;
+            };
+            if prop.type == JSONType.String {
+                const adr p = prop;
+                my.updateWithString(result, prop.key, p);
+            } else if prop.type == JSONType.Int {
+                const result = st.fString("%s\"%s\": %s", {result, prop.key.copy(), parseInt(prop)});
+            } else if prop.type == JSONType.Object {
+                const JSONObject value = prop;
+                result = st.fString("%s\"%s\": %s", {result, prop.key.copy(), value.toString()});
+            } else if prop.type == JSONType.List {
+                const List value = prop;
+                result = st.fString("%s\"%s\": %s", {result, prop.key.copy(), parseList(value)});
+            } else if prop.type == JSONType.Boolean {
+                const adr pin = prop;
+                const let pointer = ?pin;
+                const bool b = pointer as bool;
+                result = st.fString("%s\"%s\": %s", {result, prop.key.copy(), `{b}`});
+            } else {
+                result = result + "\"" + prop.key + "\": cannot stringify type"; 
+            };
+        };
+        result = result + "}";
+        return result;
+    };
+
+    Result set(const string key, const any value) {
+        for int i = 0; i < my.properties.getCount(); i++ {
+            const JSONProperty prop = my.properties.get(i);
+            if prop.key == key {
+                prop = value;
+                return r.accept(NULL);
+            };
+        };
+        r.reject("No such key");
+    };
+};
+
+
+private string parseList(const List val){
+    mutable string result = "[";
+    for int i = 0; i < val.getCount(); i++ {
+        if i != 0 {
+            result = `{result}, `;
+        };
+        JSONValue value = val.get(i);
+        if value.type == JSONType.String {
+            const adr p = value.value;
+            result = st.fString("%s\"%a\"", {result, p});
+        } else if value.type == JSONType.Int {
+            result = st.fString("%s%s", {result, parseInt(value.value)});
+        } else if value.type == JSONType.Object {
+            const JSONObject object = value.value;
+            result = st.fString("%s%s", {result, object.toString()});
+        } else if value.type == JSONType.Boolean {
+            const adr pin = value.value;
+            const let pointer = ?pin;
+            const bool b = pointer as bool;
+            result = st.fString("%s%s", {result, `{b}`});
+        } else if value.type == JSONType.List {
+            const List value = value.value;
+            result = st.fString("%s%s", {result, parseList(value)});
+        } else {
+            result = result + "cannot stringify type"; 
+        };
+    };
+    result = result + "]";
+    return result;
+};
