@@ -418,6 +418,9 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   linker.insert(linker.begin(), libPath + "HTTP_Endpoints.s");
   linker.insert(linker.begin(), libPath + "Web_Content.s");
   linker.insert(linker.begin(), libPath + "Web_Content_Bind.s");
+  linker.insert(linker.begin(), libPath + "JSON.s");
+  linker.insert(linker.begin(), libPath + "JSON_Parse.s");
+  linker.insert(linker.begin(), libPath + "JSON_Property.s");
 
   // run gcc on the linkerList
   std::string linkerList = "";
@@ -435,7 +438,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   }
 
   system(gcc.c_str());
-  linker.erase(linker.begin(), linker.begin() + 24);
+  linker.erase(linker.begin(), linker.begin() + 27);
 
   if (!config.asm_) for (auto &s : linker) {
     std::filesystem::remove(s);

@@ -1,0 +1,34 @@
+.needs <std>
+
+import string from "String";
+import {print} from "String" under str;
+import JSONType, JSONObject from "JSON";
+import {printHex, print} from "io" under io;
+
+safe class JSONProperty {
+    mutable any value;
+    const string key = key.copy();
+    const JSONType type = type;
+    const adr process = process;
+    const JSONObject context = context;
+
+    JSONProperty init(const adr process, const JSONObject context, const string key, const JSONType type) {
+        my.context.properties.pushBack(my);
+        const adr new_me = my.context.properties.back();
+        free(my);
+        return new_me;
+    };
+
+    void _set(const any value) {
+        const let foo = my.process;
+        my.value = foo(my.context, value);
+    };
+
+    any get() {
+        return my.value;
+    };
+
+    adr ref() {
+        return my;
+    };
+};
