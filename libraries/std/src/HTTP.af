@@ -161,6 +161,8 @@ class HTTPMessage {
 
         const let valptr = malloc(str.len(value) + 1);
         memcpy(valptr, value.cstr(), str.len(value.cstr()) + 1);
+        const let endPointer = valptr + str.len(value.cstr());
+        endPointer =: '\0';
         my.query.set(key.cstr(), valptr);
     };
 
