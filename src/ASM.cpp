@@ -134,15 +134,58 @@ std::string asmc::FloatLiteral::toString() {
 }
 
 std::string asmc::Add::toString() {
+  std::string size = "";
+  switch (this->size) {
+    case asmc::Byte:
+      size = "b";
+      break;
+    case asmc::Word:
+      size = "w";
+      break;
+    case asmc::DWord:
+      size = "l";
+      break;
+    case asmc::QWord:
+      size = "q";
+      break;
+    case asmc::AUTO:
+      size = "q";
+      break;
+    default:
+      size = "";
+      break;
+  }
+
   if (this->opType == asmc::Float)
     return "\taddss\t" + this->op1 + ", " + this->op2 + "\n";
-  return "\tadd\t" + this->op1 + ", " + this->op2 + "\n";
+  return "\tadd" + size + "\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
 std::string asmc::Sub::toString() {
+  std::string size = "";
+  switch (this->size) {
+    case asmc::Byte:
+      size = "b";
+      break;
+    case asmc::Word:
+      size = "w";
+      break;
+    case asmc::DWord:
+      size = "l";
+      break;
+    case asmc::QWord:
+      size = "q";
+      break;
+    case asmc::AUTO:
+      size = "q";
+      break;
+    default:
+      size = "";
+      break;
+  }
   if (this->opType == asmc::Float)
     return "\tsubss\t" + this->op1 + ", " + this->op2 + "\n";
-  return "\tsub\t" + this->op1 + ", " + this->op2 + "\n";
+  return "\tsub"+ size + "\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
 std::string asmc::Mul::toString() {
