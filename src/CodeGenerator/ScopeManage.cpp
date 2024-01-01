@@ -92,9 +92,11 @@ void ScopeManager::popScope(CodeGenerator *callback,
                           "assigned please consider making it immutable.", false);
         };
       }
-      auto desc = callback->deScope(sym);
-      if (desc) {
-        OutputFile << *desc;
+      if (!fPop) {
+        auto desc = callback->deScope(sym);
+        if (desc) {
+          OutputFile << *desc;
+        }
       }
       // find any symbols that have the same name and remove an underscore
       for (int j = 0; j < this->stack.size(); j++) {
