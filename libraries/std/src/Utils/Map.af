@@ -156,16 +156,13 @@ class Map {
         return my;
     };
 
-    bool set(const adr key, const any data) {
-        bool success = false;
+    Map set(const adr key, const any data) {
         if my.root == NULL {
             my.root = new MapNode(key, data);
-            return true;
         } else {
-            success = my.root.input(key, data);
+            my.root.input(key, data);
         };
-        my.root.normalize();
-        return success;
+        return my;
     };
 
     any get(const adr key) {
