@@ -734,8 +734,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
       if (t) {
         gen::Class* cl = dynamic_cast<gen::Class*>(*t);
         if (cl && cl->Ident != "string") {
-          if (cl->nameTable["toString"] == nullptr)
-            this->alert("class " + cl->Ident + " does not contain toString method and cannot be used in format string");
+          if (cl->nameTable["toString"] == nullptr) {
+            if (cl->parent != nullptr) {
+              if (cl->parent->nameTable["toString"] == nullptr) {
+                this->alert("class " + cl->Ident + " does not contain a toString method");
+              } else {
+                cl = cl->parent;
+              }
+            } else {
+              this->alert("class " + cl->Ident + " does not contain a toString method");
+            }
+          }
+
           ast::CallExpr* call = new ast::CallExpr();
           call->call = new ast::Call();
           call->call->ident = "toString";
