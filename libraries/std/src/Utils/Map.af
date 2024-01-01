@@ -188,4 +188,8 @@ class Map {
             return my.root.keys();
         };
     };
+
+    bool has(const adr key) {
+        return my.get(key) != NULL;
+    };
 };
