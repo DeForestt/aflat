@@ -1525,21 +1525,92 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       notExpr->logicalLine = eq.lineCount;
       output = notExpr;
     } else if (eq.Sym == '{') {
-      auto structList = new ast::StructList();
-      lex::OpSym *symp;
-      do {
-        tokens.pop();
-        structList->args.push(this->parseExpr(tokens));
-        symp = dynamic_cast<lex::OpSym *>(tokens.peek());
-      } while (symp != nullptr && symp->Sym == ',');
 
-      if (symp == nullptr || symp->Sym != '}')
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Need an } to end struct not a symbol");
-      tokens.pop();
-      structList->logicalLine = eq.lineCount;
-      output = structList;
+      auto save_token = tokens.pop();
+      auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (sym != nullptr && sym->Sym == '}') {
+        tokens.pop();
+        auto newExpr = new ast::NewExpr();
+        newExpr->logicalLine = eq.lineCount;
+        newExpr->type.typeName = "Map";
+        output = newExpr;
+      } else {
+        // std::cout << "Creating Map or Struct List" << std::endl;
+        // tokens.push(save_token);
+        auto first_arg = this->parseExpr(tokens);
+        sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+        if (sym != nullptr && (sym->Sym == ',' || sym->Sym == '}')) {
+          auto structList = new ast::StructList();
+          structList->args.push(first_arg);
+          lex::OpSym *symp;
+
+          if (sym->Sym == ',') {
+            do {
+              tokens.pop();
+              structList->args.push(this->parseExpr(tokens));
+              symp = dynamic_cast<lex::OpSym *>(tokens.peek());
+            } while (symp != nullptr && symp->Sym == ',');
+
+          if (symp == nullptr || symp->Sym != '}')
+            throw err::Exception(
+                "Line: " + std::to_string(tokens.peek()->lineCount) +
+                " Need an } to end struct not a symbol");
+          }
+          
+          tokens.pop();
+          structList->logicalLine = eq.lineCount;
+          output = structList;
+        } else {
+          if (sym->Sym != ':')
+            throw err::Exception(
+                "Line: " + std::to_string(sym->lineCount) +
+                " Need an : to start map not " + sym->Sym);
+          
+          auto newExpr = new ast::NewExpr();
+          newExpr->logicalLine = eq.lineCount;
+          newExpr->type.typeName = "Map";
+
+          ast::CallExpr *lastSet = new ast::CallExpr();
+          lastSet->logicalLine = eq.lineCount;
+          lastSet->call = new ast::Call();
+          lastSet->call->ident = "set";
+          lastSet->call->modList = links::LinkedList<std::string>();
+          lastSet->call->Args = links::LinkedList<ast::Expr *>();
+          lastSet->call->Args.push(first_arg);
+          tokens.pop();
+          lastSet->call->Args.push(this->parseExpr(tokens));
+          sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+          newExpr->extention = lastSet;
+
+          while (sym != nullptr && sym->Sym == ',') {
+            tokens.pop();
+            auto nextSet = new ast::CallExpr();
+            nextSet->logicalLine = eq.lineCount;
+            nextSet->call = new ast::Call();
+            nextSet->call->ident = "set";
+            nextSet->call->modList = links::LinkedList<std::string>();
+            nextSet->call->Args = links::LinkedList<ast::Expr *>();
+            nextSet->call->Args.push(this->parseExpr(tokens));
+            sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+            if (sym == nullptr || sym->Sym != ':')
+              throw err::Exception(
+                  "Line: " + std::to_string(tokens.peek()->lineCount) +
+                  " Map key not followed by :");
+            tokens.pop();
+            nextSet->call->Args.push(this->parseExpr(tokens));
+            lastSet->extention = nextSet;
+            lastSet = nextSet;
+            sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+          }
+
+          if (sym == nullptr || sym->Sym != '}')
+            throw err::Exception(
+                "Line: " + std::to_string(tokens.peek()->lineCount) +
+                " Need an } to end map not a symbol");
+          tokens.pop();
+          output = newExpr;
+        }
+      }
     }
   } else
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
