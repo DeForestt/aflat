@@ -97,6 +97,7 @@ class CodeGenerator {
   int selectReg = 0;
   bool globalScope = true;
   bool inFunction = false;
+  bool returnFlag = false;
   HashMap<ast::Statement*> includedMemo;
   HashMap<ast::Statement*> includedClasses;
   HashMap<std::string> nameSpaceTable;

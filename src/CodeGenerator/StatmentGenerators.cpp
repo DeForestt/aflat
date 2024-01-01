@@ -143,31 +143,21 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
     asmc::File file = this->GenSTMT(func->statement);
     // check if the last statement is a return statement
     if (file.text.count > 0) {
-      asmc::Instruction* last = file.text.peek();
-      while (dynamic_cast<asmc::nop*>(last) != nullptr) {
-        file.text.pop();
-        last = file.text.peek();
-      };
-      if (dynamic_cast<asmc::Return*>(last) == nullptr) {
+      if (!this->currentFunction->has_return) {
         // if the function name is init then we need to alert to return 'my'
         if (func->ident.ident == "init") {
-          gen::Symbol* my = gen::scope::ScopeManager::getInstance()->get("my");
-          asmc::Mov* movMy = new asmc::Mov();
-          movMy->logicalLine = func->logicalLine;
-          movMy->size = asmc::QWord;
-          movMy->from = '-' + std::to_string(my->byteMod) + "(%rbp)";
-          ;
-          movMy->to = this->registers["%rax"]->get(asmc::QWord);
-          // pop rbx
-          asmc::Pop* pop = new asmc::Pop();
-          pop->logicalLine = func->logicalLine;
-          pop->op = "%rbx";
-          file.text.push(pop);
-          file.text.push(movMy);
-        }
-        asmc::Return* ret = new asmc::Return();
-        ret->logicalLine = func->logicalLine;
-        file.text.push(ret);
+
+          auto returnStmt = new ast::Return();
+          returnStmt->logicalLine = func->logicalLine;
+          auto var = new ast::Var();
+          var->Ident = "my";
+          returnStmt->expr = var;
+          OutputFile << this->GenSTMT(returnStmt);
+        } else {
+          asmc::Return* ret = new asmc::Return();
+          ret->logicalLine = func->logicalLine;
+          file.text.push(ret);
+        };
       }
     } else {
       auto pop = new asmc::Pop();

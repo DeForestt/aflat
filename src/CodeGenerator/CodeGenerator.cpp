@@ -1711,6 +1711,7 @@ void gen::CodeGenerator::GenArgs(ast::Statement* STMT, asmc::File& OutputFile) {
   }
 }
 
+
 asmc::File gen::CodeGenerator::GenSTMT(ast::Statement* STMT) {
   asmc::File OutputFile = asmc::File();
   this->logicalLine = STMT->logicalLine;
@@ -1755,6 +1756,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement* STMT) {
     OutputFile << this->GenSTMT(assign);
   } else if (dynamic_cast<ast::Return*>(STMT) != nullptr) {
     this->genReturn(dynamic_cast<ast::Return*>(STMT), OutputFile);
+    this->currentFunction->has_return = true;
   } else if (dynamic_cast<ast::Assign*>(STMT) != nullptr) {
     this->genAssign(dynamic_cast<ast::Assign*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Call*>(STMT) != nullptr) {
@@ -1765,10 +1767,13 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement* STMT) {
     this->genPull(dynamic_cast<ast::Pull*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::If*>(STMT) != nullptr) {
     this->genIf(dynamic_cast<ast::If*>(STMT), OutputFile);
+    this->currentFunction->has_return = false;
   } else if (dynamic_cast<ast::While*>(STMT) != nullptr) {
     this->genWhile(dynamic_cast<ast::While*>(STMT), OutputFile);
+    this->currentFunction->has_return = false;
   } else if (dynamic_cast<ast::For*>(STMT) != nullptr) {
     this->genFor(dynamic_cast<ast::For*>(STMT), OutputFile);
+    this->currentFunction->has_return = false;
   } else if (dynamic_cast<ast::UDeffType*>(STMT) != nullptr) {
     this->genUDef(dynamic_cast<ast::UDeffType*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Class*>(STMT) != nullptr) {
