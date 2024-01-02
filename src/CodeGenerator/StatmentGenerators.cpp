@@ -665,9 +665,20 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
             auto cl = dynamic_cast<gen::Class*>(type);
             if (cl == nullptr) alert("type is not a class " + smbl->type.typeName);
             auto f = cl->nameTable["_call"];
-            if (f == nullptr) alert("cannot preform call on type " + smbl->type.typeName + " because it does not implement the _call function");
+            auto tname = smbl->type.typeName;
+            if (f == nullptr) {
+              // check the parent
+              auto parent = cl->parent;
+              if (parent != nullptr) {
+                f = parent->nameTable["_call"];
+                tname = parent->Ident;
+                if (f == nullptr) alert("cannot preform call on type " + smbl->type.typeName + " because it does not implement the _call function");
+              } else {
+                alert("cannot preform call on type " + smbl->type.typeName + " because it does not implement the _call function");
+              }
+            }
             func = new ast::Function();
-            func->ident.ident = "pub_" + smbl->type.typeName + "__call";
+            func->ident.ident = "pub_" + tname + "__call";
             func->type = f->type;
             func->req = f->req;
             func->argTypes = f->argTypes;
