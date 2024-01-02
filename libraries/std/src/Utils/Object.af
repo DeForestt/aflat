@@ -63,7 +63,12 @@ safe dynamic class Field {
         if my.accessors.has("set") {
             const adr setter = my.accessors.get("set");
             const any val = setter(my.context, value);
-            my.context.set(my.name.cstr(), val);
+
+            if my.accessors.has("get") {
+                const adr getter = my.accessors.get("get");
+                const any newVal = getter(my.context);
+                my.context.set(my.name.cstr(), newVal);
+            } else my.context.set(my.name.cstr(), val);
         } else {
             panic(`Field {my.name} has no setter`.cstr());
         };
