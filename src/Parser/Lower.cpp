@@ -60,7 +60,7 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
     newFunc->scopeName = func->scopeName;
     newFunc->type = func->type;
 
-    func->ident.ident = "_" + func->ident.ident;
+    func->ident.ident = ".temp__graft_" + func->ident.ident;
 
     auto fpoint = new ast::Var;
     fpoint->Ident = func->ident.ident;

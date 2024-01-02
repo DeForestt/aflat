@@ -45,8 +45,8 @@ safe dynamic class Field {
     private const Object context = context;
     private const string name = name;
 
-    Field init(const adr foo, const Object context, const string name) {
-        my.context.set(name.cstr(), NULL);
+    Field init(const adr foo, const Object context, const string name, * const any initial_value) {
+        my.context.set(name.cstr(), initial_value);
         return my;
     };
 
@@ -55,7 +55,7 @@ safe dynamic class Field {
             const adr getter = my.accessors.get("get");
             return getter(my.context);
         } else {
-            panic(`Field {my.name} has no getter`.cstr());
+            panic(`Attempt to read write-only field {my.name}`.cstr());
         };
     };
 
@@ -70,7 +70,7 @@ safe dynamic class Field {
                 my.context.set(my.name.cstr(), newVal);
             } else my.context.set(my.name.cstr(), val);
         } else {
-            panic(`Field {my.name} has no setter`.cstr());
+            panic(`Attempt to write to read-only field {my.name}`.cstr());
         };
     };
 };
