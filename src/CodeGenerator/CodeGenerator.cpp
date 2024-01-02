@@ -511,6 +511,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
         output.op = asmc::Float;
       }
     }
+    if (exprCall->typeCast != "") {
+      if (output.type != "any" && output.type != "adr" && output.type != "generic")
+        this->alert("Can only explicitly cast to a type from any, adr, or generic");
+      output.type = exprCall->typeCast;
+    }
+
   } else if (dynamic_cast<ast::Var*>(expr) != nullptr) {
     ast::Var var = *dynamic_cast<ast::Var*>(expr);
 
@@ -665,6 +671,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
       };
     }
 
+    if (var.typeCast != "") {
+      if (output.type != "any" && output.type != "adr" && output.type != "generic")
+        this->alert("Can only explicitly cast to a type from any, adr, or generic");
+      output.type = var.typeCast;
+    }
   } else if (dynamic_cast<ast::Reference*>(expr) != nullptr) {
     ast::Reference ref = *dynamic_cast<ast::Reference*>(expr);
 
@@ -1288,6 +1299,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
       pop2->op = this->registers["%rdi"]->get(asmc::QWord);
       OutputFile.text << pop2;
     }
+
+    if (comp.typeCast != "") {
+      if (output.type != "any" && output.type != "adr" && output.type != "generic")
+        this->alert("Can only explicitly cast to a type from any, adr, or generic");
+      output.type = comp.typeCast;
+    }
   } else if (dynamic_cast<ast::Lambda*>(expr) != nullptr) {
     ast::Lambda lambda = *dynamic_cast<ast::Lambda*>(expr);
     ast::Function* func = lambda.function;
@@ -1591,7 +1608,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
 
     output = this->GenExpr(expr->extention, OutputFile, size);
   }
-
+  
   return output;
 }
 

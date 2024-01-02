@@ -1724,6 +1724,18 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     }
   }
   
+  if (tokens.count > 0) if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
+    auto sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (sym.Sym == '$') {
+      tokens.pop();
+      auto typeName = dynamic_cast<lex::LObj *>(tokens.pop());
+      if (typeName == nullptr)
+        throw err::Exception(
+            "Line: " + std::to_string(sym.lineCount) +
+            " Expected typename after in cast");
+      output->typeCast = typeName->meta;
+    }
+  }
   // check if the next token is a dot go to extend the expression
   if (tokens.count > 0) if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
     auto sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
