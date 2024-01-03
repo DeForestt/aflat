@@ -1815,7 +1815,6 @@ asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement* STMT) {
 }
 
 asmc::File * gen::CodeGenerator::deScope(gen::Symbol &sym) {
-  
   asmc::File* file = new asmc::File();
   gen::Type** type = this->typeList[sym.type.typeName];
   if (type == nullptr)
@@ -1830,13 +1829,14 @@ asmc::File * gen::CodeGenerator::deScope(gen::Symbol &sym) {
   if (endScope == nullptr)
     return nullptr;
 
-  // get the address of the object to delete
-  asmc::Lea* lea = new asmc::Lea();
-  lea->logicalLine = this->logicalLine;
-  lea->to = this->registers["%rax"]->get(asmc::QWord);
-  lea->from = '-' + std::to_string(sym.byteMod) + "(%rbp)";
-  // ASMC::Mov * mov = new ASMC::Mov();
-  file->text << lea;
+  // push rax to preserve return value
+  asmc::Push* push = new asmc::Push();
+  push->logicalLine = this->logicalLine;
+  push->op = this->registers["%rax"]->get(asmc::QWord);
+  file->text << push;
+
+
+
 
   // call the destructor
   ast::Call* callDel = new ast::Call();
@@ -1846,6 +1846,12 @@ asmc::File * gen::CodeGenerator::deScope(gen::Symbol &sym) {
   callDel->modList = links::LinkedList<std::string>();
   callDel->modList.push("endScope");
   file->operator<<(this->GenSTMT(callDel));
+
+  // pop rax
+  asmc::Pop* pop = new asmc::Pop();
+  pop->logicalLine = this->logicalLine;
+  pop->op = this->registers["%rax"]->get(asmc::QWord);
+  file->text << pop;
 
   return file;
 }
