@@ -120,6 +120,7 @@ class Function : public Member, public Statement {
   bool isLambda = false;
   bool flex = false;
   bool mask;
+  bool has_return = false;
   
 };
 

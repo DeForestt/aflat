@@ -1,4 +1,6 @@
 .needs <std>
+import Map from "Utils/Map";
+import {print, printHex} from "io" under io;
 
 /*
  * Decorate a class method to be treated as a read-only calculated property.
@@ -8,6 +10,7 @@ safe dynamic class Computed {
     private const any context = context;
 
     Computed init(const adr foo, const any context){
+        const int __i = 0;
         return my;
     };
 
@@ -17,30 +20,35 @@ safe dynamic class Computed {
     };
 };
 
-class PropertyArgs {
-    mutable const adr getter;
-    mutable const adr setter;
-};
 
 /*
  * Decorate a class method to be treated as a read-write calculated property.
  */
 safe dynamic class Property {
-    private mutable PropertyArgs args;
+    private mutable adr getter;
+    private mutable adr setter;
     private const any context = context;
 
     Property init(const adr foo, const any context){
-        my.args = foo();
+        const Map access = foo();
+        my.getter = access.get("get");
+        my.setter = access.get("set");
         return my;
     };
 
     any get() {
-        const let getter = my.args.getter;
+        const adr getter = my.getter;
+        if (getter == NULL) panic("Attempt to read from a property without a getter.");
         return getter(my.context);
     };
 
     void _set(const any value) {
-        const let setter = my.args.setter;
+        const adr setter = my.setter;
+        if (setter == NULL) panic("Attempt to write to a property without a setter.");
         setter(my.context, value);
+    };
+
+    adr ref() {
+        return my;
     };
 };
