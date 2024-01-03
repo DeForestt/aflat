@@ -146,7 +146,6 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
       if (!this->currentFunction->has_return) {
         // if the function name is init then we need to alert to return 'my'
         if (func->ident.ident == "init") {
-
           auto returnStmt = new ast::Return();
           returnStmt->logicalLine = func->logicalLine;
           auto var = new ast::Var();
@@ -475,8 +474,6 @@ void gen::CodeGenerator::genReturn(ast::Return* ret, asmc::File& OutputFile) {
     from = this->GenExpr(imp, OutputFile);
   };
 
-  scope::ScopeManager::getInstance()->softPop(this, OutputFile);
-
   if (from.op != asmc::Float){
     auto pop = new asmc::Pop();
     pop->logicalLine = ret->logicalLine;
@@ -493,6 +490,9 @@ void gen::CodeGenerator::genReturn(ast::Return* ret, asmc::File& OutputFile) {
   mov->size = from.size;
   mov->op = from.op;
   OutputFile.text << mov;
+
+  scope::ScopeManager::getInstance()->softPop(this, OutputFile);
+
   auto re = new asmc::Return();
   re->logicalLine = ret->logicalLine;
   OutputFile.text << re;
