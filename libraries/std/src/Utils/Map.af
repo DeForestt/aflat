@@ -2,7 +2,7 @@
 import string from "String";
 import {print} from "String" under str;
 import List from "Collections";
-import {str_at, len} from "strings" under st;
+import {str_at, len, str_comp} from "strings" under st;
 
 class MapNode {
     mutable private MapNode left = NULL;
@@ -10,7 +10,7 @@ class MapNode {
     mutable private any data = data;
     
     const private string key = key;
-    const int hash = my.hash(key);
+    const int hashVal = my.hash(key);
 
     public int hash(const adr key) {
         // string hash algorithm
@@ -34,7 +34,7 @@ class MapNode {
         
         const let newNode = new MapNode(key, data);
 
-        if my.hash < newNode.hash {
+        if my.hashVal < newNode.hashVal {
             if my.right == NULL {
                 my.right = newNode;
                 return true;
@@ -74,12 +74,35 @@ class MapNode {
         return 0;
     };
 
+    private any bruteGet(const adr key) {
+        if my.key == key {
+            return my.data;
+        };
+
+        if my.left != NULL {
+            const any left = my.left.bruteGet(key);
+            if left != NULL {
+                return left;
+            };
+        };
+
+        if my.right != NULL {
+            const any right = my.right.bruteGet(key);
+            if right != NULL {
+                return right;
+            };
+        };
+
+        str.print("Key not found: \n");
+        return NULL;
+    };
+
     public any get(const adr key) {
         if my.key == key {
             return my.data;
         };
 
-        if my.hash < my.hash(key) {
+        if my.hash(my.key.cstr()) < my.hash(key) {
             if my.right != NULL {
                 return my.right.get(key);
             };
@@ -89,7 +112,7 @@ class MapNode {
             };
         };
 
-        return NULL;
+        return my.bruteGet(key);
     };
 
     public List keys() {
@@ -133,18 +156,20 @@ class Map {
         return my;
     };
 
-    void set(const adr key, const any data) {
+    Map set(const adr key, const any data) {
         if my.root == NULL {
             my.root = new MapNode(key, data);
         } else {
             my.root.input(key, data);
         };
+        return my;
     };
 
     any get(const adr key) {
         if my.root == NULL {
             return NULL;
         } else {
+            my.root.normalize();
             return my.root.get(key);
         };
     };
@@ -159,5 +184,9 @@ class Map {
         } else {
             return my.root.keys();
         };
+    };
+
+    bool has(const adr key) {
+        return my.get(key) != NULL;
     };
 };
