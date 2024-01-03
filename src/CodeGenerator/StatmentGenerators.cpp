@@ -151,7 +151,7 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
           auto var = new ast::Var();
           var->Ident = "my";
           returnStmt->expr = var;
-          OutputFile << this->GenSTMT(returnStmt);
+          file << this->GenSTMT(returnStmt);
         } else {
           asmc::Return* ret = new asmc::Return();
           ret->logicalLine = func->logicalLine;
