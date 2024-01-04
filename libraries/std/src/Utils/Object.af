@@ -1,0 +1,76 @@
+.needs <std>
+import string from "String";
+import Map from "Utils/Map";
+import Result from "Utils/Result";
+import { accept, reject } from "Utils/Result" under res;
+
+class Object {
+    contract {
+        private string _typeName = __typeName__;
+        private Map _fields = new Map();
+        private adr _validate = NULL;
+    };
+
+    public string type() {
+        return my._typeName;
+    };
+
+    public void setValidation(const adr validator) {
+        my._validate = validator;
+    };
+
+    public any _call(const adr key){
+        return my._fields.get(key);
+    };
+
+    public Result set(const adr key, const any value) {
+        mutable let valid = true;
+        if my._validate != NULL {
+            valid = my._validate(key, value);
+        };
+        if valid {
+            my._fields.set(key, value);
+            res.accept(value);
+        } else
+            res.reject("Invalid value");
+    };
+
+    public Object init() {
+        return my;
+    };
+};
+
+safe dynamic class Field {
+    private const Map accessors = foo();
+    private const Object context = context;
+    private const string name = name;
+
+    Field init(const adr foo, const Object context, const string name, * const any initial_value) {
+        my.context.set(name.cstr(), initial_value);
+        return my;
+    };
+
+    public any get() {
+        if my.accessors.has("get") {
+            const adr getter = my.accessors.get("get");
+            return getter(my.context);
+        } else {
+            panic(`Attempt to read write-only field {my.name}`.cstr());
+        };
+    };
+
+    public void _set(const any value) {
+        if my.accessors.has("set") {
+            const adr setter = my.accessors.get("set");
+            const any val = setter(my.context, value);
+
+            if my.accessors.has("get") {
+                const adr getter = my.accessors.get("get");
+                const any newVal = getter(my.context);
+                my.context.set(my.name.cstr(), newVal);
+            } else my.context.set(my.name.cstr(), val);
+        } else {
+            panic(`Attempt to write to read-only field {my.name}`.cstr());
+        };
+    };
+};
