@@ -59,6 +59,7 @@ class Expr : public Statement {
  public:
   virtual std::string toString() override { return ""; };
   Expr * extention = nullptr;
+  std::string typeCast = "";
 };
 
 class ConditionalExpr {

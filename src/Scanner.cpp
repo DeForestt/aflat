@@ -343,9 +343,12 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
       andBit->Sym = input[i];
       tokens << andBit;
       i++;
-    }
-
-    else {
+    } else if (input[i] == '$') {
+      auto dollar = new OpSym;
+      dollar->Sym = input[i];
+      tokens << dollar;
+      i++;
+    } else {
       /// Unknown token
       throw err::Exception("Unknown token on line " +
                            std::to_string(lineCount));
