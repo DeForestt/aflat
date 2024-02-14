@@ -76,12 +76,19 @@ class Type {
   asmc::OpType opType = asmc::Hard;
   int arraySize = 1;
   static bool compare(Type t, std::string name);
-  Type* typeHint = nullptr;
   links::LinkedList<int> indices;
   bool isGeneric = false;
   bool safeType = false;
   Type() = default;
   Type(const std::string &typeName, const asmc::Size &size) : typeName(typeName), size(size) {};
+};
+
+class FunctionPointerType : public Type {
+  public:
+    std::vector<Type> args;
+    Type returnType;
+    FunctionPointerType() = default;
+    FunctionPointerType(const std::vector<Type> &args, const Type &returnType) : args(args), returnType(returnType) {};
 };
 
 class Arg {
