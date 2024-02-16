@@ -79,16 +79,16 @@ class Type {
   links::LinkedList<int> indices;
   bool isGeneric = false;
   bool safeType = false;
+
+  struct FPointerArgs {
+    std::string typeName;
+    int req;
+    std::vector<ast::Type> argTypes;
+    std::string id;
+  };
+
   Type() = default;
   Type(const std::string &typeName, const asmc::Size &size) : typeName(typeName), size(size) {};
-};
-
-class FunctionPointerType : public Type {
-  public:
-    std::vector<Type> args;
-    Type returnType;
-    FunctionPointerType() = default;
-    FunctionPointerType(const std::vector<Type> &args, const Type &returnType) : args(args), returnType(returnType) {};
 };
 
 class Arg {
@@ -129,7 +129,6 @@ class Function : public Member, public Statement {
   bool flex = false;
   bool mask;
   bool has_return = false;
-  
 };
 
 class UDeffType : public Member, public Statement {
