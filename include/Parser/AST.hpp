@@ -79,13 +79,16 @@ class Type {
   links::LinkedList<int> indices;
   bool isGeneric = false;
   bool safeType = false;
+  ast::Type * typeHint;
 
   struct FPointerArgs {
-    std::string typeName;
+    std::string returnType;
     int req;
     std::vector<ast::Type> argTypes;
     std::string id;
   };
+
+  FPointerArgs fPointerArgs;
 
   Type() = default;
   Type(const std::string &typeName, const asmc::Size &size) : typeName(typeName), size(size) {};
