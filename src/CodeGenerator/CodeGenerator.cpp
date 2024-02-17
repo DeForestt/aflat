@@ -623,9 +623,24 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
         output.access = "$0";
         output.type = "bool";
       } else if (this->nameTable[ident] != nullptr) {
+        auto func = this->nameTable[ident];
+        auto typeName = func->type.typeName + "~";
+        for (auto arg : func->argTypes) {
+          typeName += arg.typeName + ",";
+        }
+        if (func->argTypes.size() > 0) typeName.pop_back();
+        typeName += "~";
+
+        auto newType = new ast::Type(typeName, asmc::QWord);
+        newType->fPointerArgs.returnType = &func->type;
+        newType->fPointerArgs.argTypes = func->argTypes;
+        newType->fPointerArgs.isFPointer = true;
+
+        this->TypeList.push(*newType);
+
         output.size = asmc::QWord;
         output.access = '$' + this->nameTable[ident]->ident.ident;
-        output.type = "adr";
+        output.type = typeName;
       } else if (this->scope != nullptr &&
                  this->scope->nameTable[ident] != nullptr) {
         output.size = asmc::QWord;
