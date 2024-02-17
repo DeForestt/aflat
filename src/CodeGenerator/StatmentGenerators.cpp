@@ -669,11 +669,14 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
           func->type.arraySize = 0;
           func->type.size = asmc::QWord;
           func->type.typeName = "--std--flex--function";
+          checkArgs = false;
+          func->flex = true;
           if (smbl->type.fPointerArgs.returnType != nullptr) {
             func->type = *smbl->type.fPointerArgs.returnType;
+            func->argTypes = smbl->type.fPointerArgs.argTypes;
+            func->req = func->argTypes.size();
+            checkArgs = true;
           }
-          func->flex = true;
-          checkArgs = false;
         } else {
             // find the type of the object
             auto type = *this->typeList[smbl->type.typeName];
