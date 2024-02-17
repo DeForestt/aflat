@@ -1091,12 +1091,49 @@ ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens
 
     if (typeList[obj.meta] != nullptr) {
       auto dec = new ast::Declare();
+      const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
+      if (sym != nullptr && sym->meta == "<") {
+        auto callTypeList = std::vector<ast::Type>();
+        // we will create a new typeName that reflects the argumentTypes and the return type
+        std::string typeName = obj.meta + "~";
+        tokens.pop();
+        while (true) {
+          const auto closeSym = dynamic_cast<lex::Symbol *>(tokens.peek());
+          if (closeSym != nullptr && closeSym->meta == ">") {
+            tokens.pop();
+            break;
+          }
+          const auto type = dynamic_cast<lex::LObj *>(tokens.pop());
+          if (type == nullptr)
+            throw err::Exception("Type expected on line " + std::to_string(tokens.peek()->lineCount));
+          typeName += type->meta;
+          callTypeList.push_back(*typeList[type->meta]);
+          
+          const auto comma = dynamic_cast<lex::OpSym *>(tokens.peek());
+          if (comma != nullptr && comma->Sym == ',') {
+            tokens.pop();
+            typeName += ",";
+          } else {
+            const auto closeSym = dynamic_cast<lex::Symbol *>(tokens.peek());
+            if (closeSym != nullptr && closeSym->meta == ">") {
+              tokens.pop();
+              break;
+            }
+            throw err::Exception("Expected , or > on line " + std::to_string(tokens.peek()->lineCount));
+          }
+        }
+        dec->type = ast::Type(typeName + "~", asmc::QWord);
+        dec->type.fPointerArgs.returnType = typeList[obj.meta];
+        dec->type.fPointerArgs.argTypes = callTypeList;
+        dec->type.fPointerArgs.isFPointer = true;
+      } else {
+          dec->type = *typeList[obj.meta];
+      }
       // ensures the the current token is an Ident
       if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
         auto Ident = *dynamic_cast<lex::LObj *>(tokens.peek());
         tokens.pop();
         dec->Ident = Ident.meta;
-        dec->type = *typeList[obj.meta];
         dec->mut = isMutable;
         output = dec;
         types.push_back(dec->type);
@@ -1104,6 +1141,7 @@ ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens
     } else
       throw err::Exception("Line: " + std::to_string(obj.lineCount) +
                            " expected type got " + obj.meta);
+   
   }
 
   if (tokens.head == nullptr) {

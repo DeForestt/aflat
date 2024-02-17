@@ -76,10 +76,22 @@ class Type {
   asmc::OpType opType = asmc::Hard;
   int arraySize = 1;
   static bool compare(Type t, std::string name);
-  Type* typeHint = nullptr;
   links::LinkedList<int> indices;
   bool isGeneric = false;
   bool safeType = false;
+  ast::Type * typeHint;
+
+  struct FPointerArgs {
+    ast::Type * returnType = nullptr;
+    int req;
+    std::vector<ast::Type> argTypes;
+    std::string id;
+    asmc::Size size;
+    bool isFPointer = false;
+  };
+
+  FPointerArgs fPointerArgs;
+
   Type() = default;
   Type(const std::string &typeName, const asmc::Size &size) : typeName(typeName), size(size) {};
 };
@@ -122,7 +134,6 @@ class Function : public Member, public Statement {
   bool flex = false;
   bool mask;
   bool has_return = false;
-  
 };
 
 class UDeffType : public Member, public Statement {
