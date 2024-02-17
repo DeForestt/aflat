@@ -336,6 +336,22 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   if (type.size == asmc::QWord && (typeName == "adr" || typeName == "generic")) return true;
   if (strict && (type.typeName == "adr" || typeName == "generic")) return true;
 
+    // compare two function pointers
+  if (type.fPointerArgs.returnType != nullptr
+      && typeName.find("~") != std::string::npos) {
+        // we need to check return type and args
+        auto type2 = this->TypeList[typeName];
+        if (type2 == nullptr) return false;
+        if (type2->fPointerArgs.returnType == nullptr) return false;
+        this->canAssign(*type2->fPointerArgs.returnType, type.fPointerArgs.returnType->typeName);
+        if (type2->fPointerArgs.argTypes.size() != type.fPointerArgs.argTypes.size())
+          alert("Cannot FP assign type " + type.typeName + " to " + typeName);
+        for (int i = 0; i < type.fPointerArgs.argTypes.size(); i++){
+          this->canAssign(type.fPointerArgs.argTypes[i], type2->fPointerArgs.argTypes[i].typeName);
+        };
+        return true;
+      };
+
   if (!strict) alert("Cannot assign type " + type.typeName + " to " + typeName);
   alert("Cannot return type " + typeName + " from " + type.typeName);
   return false;
