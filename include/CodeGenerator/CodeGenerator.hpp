@@ -102,6 +102,8 @@ class CodeGenerator {
   HashMap<ast::Statement*> includedClasses;
   HashMap<std::string> nameSpaceTable;
   ast::Function* currentFunction = nullptr;
+  std::string lambdaReturns = "";
+  asmc::Size lambdaSize = asmc::AUTO;
 #pragma endregion
 
 #pragma region Item Lists

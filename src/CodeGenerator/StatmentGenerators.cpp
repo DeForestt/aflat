@@ -352,6 +352,12 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
         dec->type.typeName = expr.type;
         dec->type.size = expr.size;
         dec->type.opType = expr.op;
+        if (expr.type.find("~") != std::string::npos) {
+          // find the type in TypeList
+          auto t = this->TypeList[expr.type];
+          if (t == nullptr) alert("Function Pointer type not found" + expr.type);
+          dec->type = *t;
+        }
       }
       int byteMod = gen::scope::ScopeManager::getInstance()->assign(
           dec->Ident, dec->type, dec->mask, decAssign->mute);
@@ -448,6 +454,13 @@ void gen::CodeGenerator::genReturn(ast::Return* ret, asmc::File& OutputFile) {
   mov->logicalLine = ret->logicalLine;
 
   gen::Expr from = this->GenExpr(ret->expr, OutputFile);
+
+  if (this->currentFunction->isLambda && this->lambdaReturns == "void"){
+    // adopt the new return type
+    this->lambdaReturns = from.type;
+    this->lambdaSize = from.size;
+    this->returnType = ast::Type(from.type, from.size);
+  }
 
   if (!from.passable){
     alert("cannot return an lvalue reference to safe type " + from.type);
@@ -635,7 +648,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
       if (smbl == nullptr)
         smbl = this->GlobalSymbolTable.search<std::string>(searchSymbol, ident);
       if (smbl != nullptr) {
-        if (smbl->type.typeName == "adr") {
+        if (smbl->type.typeName == "adr" || smbl->type.fPointerArgs.isFPointer) {
           ast::Var* var = new ast::Var();
           var->logicalLine = call->logicalLine;
           var->Ident = smbl->symbol;
@@ -656,6 +669,9 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
           func->type.arraySize = 0;
           func->type.size = asmc::QWord;
           func->type.typeName = "--std--flex--function";
+          if (smbl->type.fPointerArgs.returnType != nullptr) {
+            func->type = *smbl->type.fPointerArgs.returnType;
+          }
           func->flex = true;
           checkArgs = false;
         } else {

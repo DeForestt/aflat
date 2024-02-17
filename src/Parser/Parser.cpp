@@ -1121,7 +1121,8 @@ ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens
           }
         }
         dec->type = ast::Type(typeName + "~", asmc::QWord);
-        dec->type.fPointerArgs.returnType = dec->type.typeName;
+        dec->type.fPointerArgs.returnType = typeList[obj.meta];
+        dec->type.fPointerArgs.isFPointer = true;
       } else {
           dec->type = *typeList[obj.meta];
       }

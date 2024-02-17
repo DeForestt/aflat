@@ -82,11 +82,12 @@ class Type {
   ast::Type * typeHint;
 
   struct FPointerArgs {
-    std::string returnType;
+    ast::Type * returnType = nullptr;
     int req;
     std::vector<ast::Type> argTypes;
     std::string id;
     asmc::Size size;
+    bool isFPointer = false;
   };
 
   FPointerArgs fPointerArgs;

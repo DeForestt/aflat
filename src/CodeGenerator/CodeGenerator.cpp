@@ -106,6 +106,7 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId) {
   this->nameSpaceTable = HashMap<std::string>();
   this->globalScope = true;
   this->typeList.foo = gen::Type::compare;
+  this->TypeList.foo = ast::Type::compare;
   this->moduleId = moduleId;
   this->scope = nullptr;
 }
@@ -284,6 +285,8 @@ gen::CodeGenerator::resolveSymbol(std::string ident,
 bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
                                    bool strict = false) {
   if (type.typeName == typeName) return true;
+  if (type.fPointerArgs.returnType != nullptr && typeName == "adr") return true;
+  if (type.typeName == "adr" && typeName.find("~") != std::string::npos) return true;
   if (typeName == "void") this->alert("cannot use void function as value");
   if (typeName == "--std--flex--function" || typeName == "any" || type.typeName == "any") return true;
   if (type.typeName == "int" && typeName == "float") return true;
@@ -321,7 +324,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
         if (cl->nameTable.count > 0){
           ast::Function * init = cl->nameTable["init"];
           if (init) {
-            if (init->req == 1 && init->argTypes[0].typeName == typeName) {
+            if (init->req == 1 && this->canAssign(init->argTypes[0], typeName)) {
               return false;
             }
           }
@@ -1335,19 +1338,36 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
     ast::Type saveRetType = this->returnType;
 
     this->returnType.typeName = "--std--flex--function";
-
+    auto saveLambdaReturns = this->lambdaReturns = "void";
+    auto saveLambdaSize = this->lambdaSize = asmc::QWord;
     OutputFile.lambdas->operator<<(this->GenSTMT(func));
 
     this->returnType = saveRetType;
 
     this->nameTable.pop();
 
+    auto typeName = lambdaReturns + "~";
+    for (auto arg : func->argTypes) {
+      typeName += arg.typeName;
+      typeName += ",";
+    }
+    // remove the last comma if it exists
+    if (typeName[typeName.size() - 1] == ',') typeName.pop_back();
+    typeName += "~";
+    auto type = new ast::Type(typeName, asmc::QWord);
+    type->fPointerArgs.argTypes = func->argTypes;
+    type->fPointerArgs.returnType = new ast::Type(lambdaReturns, this->lambdaSize);
+    type->fPointerArgs.isFPointer = true;
+    this->TypeList.push(*type);
+
     this->inFunction = inFunc;
     this->globalScope = gScope;
+    this->lambdaReturns = saveLambdaReturns;
+    this->lambdaSize = saveLambdaSize;
 
     output.access = "$" + id;
     output.size = asmc::QWord;
-    output.type = "adr";
+    output.type = typeName;
   } else if (dynamic_cast<ast::NewExpr*>(expr) != nullptr) {
     ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr*>(expr);
     ast::Function* malloc = this->nameTable["malloc"];
