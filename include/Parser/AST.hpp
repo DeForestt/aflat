@@ -86,6 +86,7 @@ class Type {
     int req;
     std::vector<ast::Type> argTypes;
     std::string id;
+    asmc::Size size;
   };
 
   FPointerArgs fPointerArgs;
