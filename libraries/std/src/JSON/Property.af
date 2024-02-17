@@ -12,7 +12,7 @@ safe class JSONProperty {
     const adr process = process;
     const JSONObject context = context;
 
-    JSONProperty init(const adr process, const JSONObject context, const string key, const JSONType type) {
+    JSONProperty init(const any<JSONObject, any> process, const JSONObject context, const string key, const JSONType type) {
         my.context.properties.pushBack(my);
         const adr new_me = my.context.properties.back();
         free(my);

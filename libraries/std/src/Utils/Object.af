@@ -15,7 +15,7 @@ class Object {
         return my._typeName;
     };
 
-    public void setValidation(const adr validator) {
+    public void setValidation(const bool<adr, any> validator) {
         my._validate = validator;
     };
 
@@ -45,7 +45,7 @@ safe dynamic class Field {
     private const Object context = context;
     private const string name = name;
 
-    Field init(const adr foo, const Object context, const string name, * const any initial_value) {
+    Field init(const Map<> foo, const Object context, const string name, * const any initial_value) {
         my.context.set(name.cstr(), initial_value);
         return my;
     };

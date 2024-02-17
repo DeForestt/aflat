@@ -13,7 +13,7 @@ class Endpoint {
         HTTPMethod method;
     };
     
-    Endpoint init(const adr imp, const Server context, const string path, const HTTPMethod method) {
+    Endpoint init(const any<Server, HTTPMessage> imp, const Server context, const string path, const HTTPMethod method) {
         my.method = method;
         context.addEndpoint(my);
     };

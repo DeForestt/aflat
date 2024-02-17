@@ -336,6 +336,22 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   if (type.size == asmc::QWord && (typeName == "adr" || typeName == "generic")) return true;
   if (strict && (type.typeName == "adr" || typeName == "generic")) return true;
 
+    // compare two function pointers
+  if (type.fPointerArgs.returnType != nullptr
+      && typeName.find("~") != std::string::npos) {
+        // we need to check return type and args
+        auto type2 = this->TypeList[typeName];
+        if (type2 == nullptr) return false;
+        if (type2->fPointerArgs.returnType == nullptr) return false;
+        this->canAssign(*type2->fPointerArgs.returnType, type.fPointerArgs.returnType->typeName);
+        if (type2->fPointerArgs.argTypes.size() != type.fPointerArgs.argTypes.size())
+          alert("Cannot FP assign type " + type.typeName + " to " + typeName);
+        for (int i = 0; i < type.fPointerArgs.argTypes.size(); i++){
+          this->canAssign(type.fPointerArgs.argTypes[i], type2->fPointerArgs.argTypes[i].typeName);
+        };
+        return true;
+      };
+
   if (!strict) alert("Cannot assign type " + type.typeName + " to " + typeName);
   alert("Cannot return type " + typeName + " from " + type.typeName);
   return false;
@@ -607,9 +623,24 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
         output.access = "$0";
         output.type = "bool";
       } else if (this->nameTable[ident] != nullptr) {
+        auto func = this->nameTable[ident];
+        auto typeName = func->type.typeName + "~";
+        for (auto arg : func->argTypes) {
+          typeName += arg.typeName + ",";
+        }
+        if (func->argTypes.size() > 0) typeName.pop_back();
+        typeName += "~";
+
+        auto newType = new ast::Type(typeName, asmc::QWord);
+        newType->fPointerArgs.returnType = &func->type;
+        newType->fPointerArgs.argTypes = func->argTypes;
+        newType->fPointerArgs.isFPointer = true;
+
+        this->TypeList.push(*newType);
+
         output.size = asmc::QWord;
         output.access = '$' + this->nameTable[ident]->ident.ident;
-        output.type = "adr";
+        output.type = typeName;
       } else if (this->scope != nullptr &&
                  this->scope->nameTable[ident] != nullptr) {
         output.size = asmc::QWord;

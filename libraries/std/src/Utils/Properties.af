@@ -29,7 +29,7 @@ safe dynamic class Property {
     private mutable adr setter;
     private const any context = context;
 
-    Property init(const adr foo, const any context){
+    Property init(const Map<> foo, const any context){
         const Map access = foo();
         my.getter = access.get("get");
         my.setter = access.get("set");
