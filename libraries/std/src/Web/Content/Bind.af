@@ -18,7 +18,7 @@ safe dynamic class Bind {
         return my.value.cstr();
     };
 
-    Bind init(const adr preprocess, const Content context, const adr name) {
+    Bind init(const adr<Content, any> preprocess, const Content context, const adr name) {
         my.name = new string("{{") + my.name + new string("}}");
         my.context.bindings.pushBack(my);
     };
