@@ -510,6 +510,10 @@ class List {
         return my.head + (index * my.typeSize);
     };
 
+    generic _call(const int index) {
+        return my.get(index);
+    };
+
     generic popBack() {
         if my.count == 0 {
             return NULL;
