@@ -606,7 +606,7 @@ class List {
         return result;
     };
 
-    int reduce(const adr func, * const adr args) {
+    int reduce(const int<int, any, ?int, ?any> func, * const adr args) {
         int res = 0;
         for int i = 0; i < my.count; i = i + 1 {
             res = func(res, my.get(i), i, args);
