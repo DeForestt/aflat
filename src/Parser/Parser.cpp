@@ -1104,13 +1104,13 @@ ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens
             tokens.pop();
             break;
           }
+          if (dynamic_cast<lex::Ref *>(tokens.peek()) == nullptr) requiredCount++; else tokens.pop();
           const auto type = dynamic_cast<lex::LObj *>(tokens.pop());
           if (type == nullptr)
             throw err::Exception("Type expected on line " + std::to_string(tokens.peek()->lineCount));
           typeName += type->meta;
           callTypeList.push_back(*typeList[type->meta]);
-          const auto question = dynamic_cast<lex::Ref *>(tokens.peek());
-          if (question == nullptr) requiredCount++; else tokens.pop();
+          
           
           const auto comma = dynamic_cast<lex::OpSym *>(tokens.peek());
           if (comma != nullptr && comma->Sym == ',') {
