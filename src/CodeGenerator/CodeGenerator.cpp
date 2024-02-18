@@ -107,6 +107,8 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId) {
   this->globalScope = true;
   this->typeList.foo = gen::Type::compare;
   this->TypeList.foo = ast::Type::compare;
+  auto nullType = new ast::Type("NULLTYPE", asmc::QWord);
+  this->TypeList.push(*nullType);
   this->moduleId = moduleId;
   this->scope = nullptr;
 }
@@ -287,6 +289,10 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   if (type.typeName == typeName) return true;
   if (type.fPointerArgs.returnType != nullptr && typeName == "adr") return true;
   if (type.typeName == "adr" && typeName.find("~") != std::string::npos) return true;
+  if (typeName == "void" && type.typeName == "NULLTYPE") return true;
+  if (typeName == "NULLTYPE" && type.typeName == "void") return true;
+  if (typeName == "generic" && type.typeName == "NULLTYPE") return true;
+  if (typeName == "NULLTYPE" && type.typeName == "generic") return true;
   if (typeName == "void") this->alert("cannot use void function as value");
   if (typeName == "--std--flex--function" || typeName == "any" || type.typeName == "any") return true;
   if (type.typeName == "int" && typeName == "float") return true;
@@ -621,6 +627,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
         output.size = asmc::QWord;
         output.access = "$0";
         output.type = "generic";
+      } else if (var.Ident == "**void_type**") {
+        output.size = asmc::QWord;
+        output.access = "$0";
+        output.type = "void";
       } else if (var.Ident == "true") {
         output.size = asmc::Byte;
         output.access = "$1";
