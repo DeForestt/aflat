@@ -531,7 +531,7 @@ class List {
         return my.get(my.count - 1);
     };
 
-    int forEach(const void<any, ?int, ?any> func, * const adr args) {
+    int forEach(const any<any, ?int, ?any> func, * const adr args) {
         for int i = 0; i < my.count; i = i + 1 {
             func(my.get(i), i, args);
         };
