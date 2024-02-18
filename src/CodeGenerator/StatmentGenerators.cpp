@@ -674,7 +674,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
           if (smbl->type.fPointerArgs.returnType != nullptr) {
             func->type = *smbl->type.fPointerArgs.returnType;
             func->argTypes = smbl->type.fPointerArgs.argTypes;
-            func->req = func->argTypes.size();
+            func->req = smbl->type.fPointerArgs.requiredArgs;
             checkArgs = true;
           }
         } else {

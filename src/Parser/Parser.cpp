@@ -1097,6 +1097,7 @@ ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens
         // we will create a new typeName that reflects the argumentTypes and the return type
         std::string typeName = obj.meta + "~";
         tokens.pop();
+        int requiredCount = 0;
         while (true) {
           const auto closeSym = dynamic_cast<lex::Symbol *>(tokens.peek());
           if (closeSym != nullptr && closeSym->meta == ">") {
@@ -1108,6 +1109,8 @@ ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens
             throw err::Exception("Type expected on line " + std::to_string(tokens.peek()->lineCount));
           typeName += type->meta;
           callTypeList.push_back(*typeList[type->meta]);
+          const auto question = dynamic_cast<lex::Ref *>(tokens.peek());
+          if (question == nullptr) requiredCount++; else tokens.pop();
           
           const auto comma = dynamic_cast<lex::OpSym *>(tokens.peek());
           if (comma != nullptr && comma->Sym == ',') {
@@ -1126,6 +1129,7 @@ ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens
         dec->type.fPointerArgs.returnType = typeList[obj.meta];
         dec->type.fPointerArgs.argTypes = callTypeList;
         dec->type.fPointerArgs.isFPointer = true;
+        dec->type.fPointerArgs.requiredArgs = requiredCount;
       } else {
           dec->type = *typeList[obj.meta];
       }

@@ -83,7 +83,7 @@ class Type {
 
   struct FPointerArgs {
     ast::Type * returnType = nullptr;
-    int req;
+    int requiredArgs = 0;
     std::vector<ast::Type> argTypes;
     std::string id;
     asmc::Size size;
