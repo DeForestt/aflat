@@ -344,11 +344,18 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
         if (type2 == nullptr) return false;
         if (type2->fPointerArgs.returnType == nullptr) return false;
         this->canAssign(*type2->fPointerArgs.returnType, type.fPointerArgs.returnType->typeName);
-        if (type2->fPointerArgs.argTypes.size() != type.fPointerArgs.argTypes.size())
-          alert("Cannot FP assign type " + type.typeName + " to " + typeName);
-        for (int i = 0; i < type.fPointerArgs.argTypes.size(); i++){
+        // type two should have at least as many required args as type
+        if (type2->fPointerArgs.requiredArgs < type.fPointerArgs.requiredArgs) return false;
+        for (int i = 0; i < type.fPointerArgs.requiredArgs; i++) {
           this->canAssign(type.fPointerArgs.argTypes[i], type2->fPointerArgs.argTypes[i].typeName);
         };
+
+        // now check the types of any extra optional args
+        if (type2->fPointerArgs.argTypes.size() > type.fPointerArgs.requiredArgs) {
+          for (int i = type.fPointerArgs.requiredArgs - 1; i < type2->fPointerArgs.argTypes.size(); i++) {
+            this->canAssign(type.fPointerArgs.argTypes[i], type2->fPointerArgs.argTypes[i].typeName);
+          }
+        }
         return true;
       };
 
@@ -1389,6 +1396,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
     type->fPointerArgs.argTypes = func->argTypes;
     type->fPointerArgs.returnType = new ast::Type(lambdaReturns, this->lambdaSize);
     type->fPointerArgs.isFPointer = true;
+    type->fPointerArgs.requiredArgs = func->req;
     this->TypeList.push(*type);
 
     this->inFunction = inFunc;
