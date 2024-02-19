@@ -86,7 +86,7 @@ adr installPackage(PackageQuery pkg) : async.worker {
 
     if !(name == cname) {
         io.fPrint("Package not found\n");
-        return 1;
+        return NULL;
     };
 
     string body = getBodyFromID(id);
@@ -131,12 +131,16 @@ int main(int argc, adr argv) {
     };
 
     if argsList.has("i") | argsList.has("-install") {
-        string package = argsList.getArg("i").value([string __err, ArgsList args] => {
-            return args.getArg("-install").value([string err] => {
-                st.print(err);
+        mutable string package = argsList.getArg("i").value([] => {
+            return new string("");
+        });
+
+        if package == "" {
+            package = argsList.getArg("-install").value([] => {
                 return new string("");
             });
-        });
+        };
+
         mutable string version = "";
         mutable string author = "";
         mutable string u = "";
@@ -148,30 +152,39 @@ int main(int argc, adr argv) {
         };
 
         if argsList.has("v") | argsList.has("-version") {
-            version = argsList.getArg("v").value([string __err, ArgsList args] => {
-                return args.getArg("-version").value([string err] => {
-                    st.print(err);
+            version = argsList.getArg("v").value([] => {
+                return new string("");
+            });
+
+            if version == "" {
+                version = argsList.getArg("-version").value([] => {
                     return new string("");
                 });
-            });
+            };
         };
 
         if argsList.has("a") | argsList.has("-author") {
-            author = argsList.getArg("a").value([string __err, ArgsList args] => {
-                return args.getArg("-author").value([string err] => {
-                    st.print(err);
-                    return new string("");
-                });
+            author = argsList.getArg("a").value([] => {
+                return "";
             });
+
+            if author == "" {
+                author = argsList.getArg("-author").value([] => {
+                    return "";
+                });
+            };
         };
 
         if argsList.has("u") | argsList.has("-under") {
-            u = argsList.getArg("u").value([string __err, ArgsList args] => {
-                return args.getArg("-under").value([string err] => {
-                    st.print(err);
-                    return new string("");
-                });
+            u = argsList.getArg("u").value([] => {
+                return "";
             });
+
+            if u == "" {
+                u = argsList.getArg("-under").value([] => {
+                    return "";
+                });
+            };
         };
 
         PackageQuery query = new PackageQuery(package.cstr(), version.cstr(), author.cstr(), u.cstr());
