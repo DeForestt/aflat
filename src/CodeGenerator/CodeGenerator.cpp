@@ -652,6 +652,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
         newType->fPointerArgs.returnType = &func->type;
         newType->fPointerArgs.argTypes = func->argTypes;
         newType->fPointerArgs.isFPointer = true;
+        newType->fPointerArgs.requiredArgs = func->req;
 
         this->TypeList.push(*newType);
 
