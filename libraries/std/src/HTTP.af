@@ -117,21 +117,21 @@ class HTTPMessage {
         lines.forEach([const string line, const int index, const HTTPMessage this] => {
             if line == "\n" {
                 this.switch = true;
-                return 0;
+                return;
             };
             
             if index == 0
-                return 0;
+                return;
 
             if this.switch {
                 this.body = this.body + line + "\r\n";
-                return 0;
+                return;
             };
 
             const let sections = line.split(':');
             if sections.getCount() < 2{
                 io.fPrint("Invalid header: %s\n", {line});
-                return 0;
+                return;
             };
 
             string key = sections.get(0);
@@ -214,21 +214,21 @@ class HTTPMessage {
         lines.forEach([const string line, const int index, const HTTPMessage this] => {
             if line == "\n" {
                 this.switch = true;
-                return 0;
+                return;
             };
             
             if index == 0
-                return 0;
+                return;
 
             if this.switch {
                 this.body = this.body + line + "\r\n";
-                return 0;
+                return;
             };
 
             const let sections = line.split(':');
             if sections.getCount() < 2{
                 io.fPrint("Invalid header: %s\n", {line});
-                return 0;
+                return;
             };
 
             string key = sections.get(0);
@@ -264,7 +264,7 @@ class HTTPMessage {
             if a.equal(comp) {
                 arg =: header.value;
                 delete a;
-                return 1;
+                return;
             };
             delete a;
         }, args);
@@ -321,7 +321,7 @@ class HTTPRequest {
             buffer = buffer + header.value;
             buffer = buffer + "\r\n";
             buffer.get();
-            return 0;
+            return;
         }, res);
         return res;
     };
@@ -380,7 +380,7 @@ class HTTPResponce {
             buffer = buffer + header.value;
             buffer = buffer + "\r\n";
             buffer.get();
-            return 0;
+            return;
         }, res);
         return res;
     };

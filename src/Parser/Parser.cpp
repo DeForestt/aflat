@@ -466,7 +466,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
             ret->logicalLine = obj.lineCount;
           } else {
             auto nu = new ast::Var();
-            nu->Ident = "NULL";
+            nu->Ident = "**void_type**";
             nu->logicalLine = obj.lineCount;
             ret->expr = nu;
           };
