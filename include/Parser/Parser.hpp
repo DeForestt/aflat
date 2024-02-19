@@ -25,6 +25,9 @@ private:
   ast::Statement *parseArgs(links::LinkedList<lex::Token *> &tokens, char delimn,
                            char close, std::vector<ast::Type> &types,
                            int &requiered);
+
+  ast::Type parseFPointerType(links::LinkedList<lex::Token *> &tokens, const std::string typeName);
+
   ast::ConditionalExpr *parseCondition(links::LinkedList<lex::Token *> &tokens);
 };
 }; // namespace parse

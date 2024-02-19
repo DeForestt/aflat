@@ -203,13 +203,20 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
     if (typeList[obj.meta] != nullptr) {
       ast::Declare *dec = new ast::Declare();
 
+      // check if we need to make a function pointer
+      const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
+      if (sym != nullptr && sym->meta == "<") {
+        dec->type = this->parseFPointerType(tokens, obj.meta);
+      } else {
+        dec->type = *this->typeList[obj.meta];
+      }
+
       // ensures the the current token is an Ident
       if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
         bool mask = false;
         auto Ident = *dynamic_cast<lex::LObj *>(tokens.peek());
         tokens.pop();
         dec->Ident = Ident.meta;
-        dec->type = *this->typeList[obj.meta];
         dec->mask = mask;
         dec->scope = scope;
         dec->mut = isMutable;
@@ -1057,7 +1064,12 @@ ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens
   auto output = new ast::Statement();
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym == nullptr) {
-    required++;
+    // a question mark is also acceptable as a marjer for optional
+    if (dynamic_cast<lex::Ref *>(tokens.peek()) == nullptr) {
+      required++;
+    } else {
+      tokens.pop();
+    }
   } else if (sym->Sym == '*')
     tokens.pop();
 
@@ -1093,43 +1105,7 @@ ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens
       auto dec = new ast::Declare();
       const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
       if (sym != nullptr && sym->meta == "<") {
-        auto callTypeList = std::vector<ast::Type>();
-        // we will create a new typeName that reflects the argumentTypes and the return type
-        std::string typeName = obj.meta + "~";
-        tokens.pop();
-        int requiredCount = 0;
-        while (true) {
-          const auto closeSym = dynamic_cast<lex::Symbol *>(tokens.peek());
-          if (closeSym != nullptr && closeSym->meta == ">") {
-            tokens.pop();
-            break;
-          }
-          if (dynamic_cast<lex::Ref *>(tokens.peek()) == nullptr) requiredCount++; else tokens.pop();
-          const auto type = dynamic_cast<lex::LObj *>(tokens.pop());
-          if (type == nullptr)
-            throw err::Exception("Type expected on line " + std::to_string(tokens.peek()->lineCount));
-          typeName += type->meta;
-          callTypeList.push_back(*typeList[type->meta]);
-          
-          
-          const auto comma = dynamic_cast<lex::OpSym *>(tokens.peek());
-          if (comma != nullptr && comma->Sym == ',') {
-            tokens.pop();
-            typeName += ",";
-          } else {
-            const auto closeSym = dynamic_cast<lex::Symbol *>(tokens.peek());
-            if (closeSym != nullptr && closeSym->meta == ">") {
-              tokens.pop();
-              break;
-            }
-            throw err::Exception("Expected , or > on line " + std::to_string(tokens.peek()->lineCount));
-          }
-        }
-        dec->type = ast::Type(typeName + "~", asmc::QWord);
-        dec->type.fPointerArgs.returnType = typeList[obj.meta];
-        dec->type.fPointerArgs.argTypes = callTypeList;
-        dec->type.fPointerArgs.isFPointer = true;
-        dec->type.fPointerArgs.requiredArgs = requiredCount;
+        dec->type = this->parseFPointerType(tokens, obj.meta);
       } else {
           dec->type = *typeList[obj.meta];
       }
@@ -1165,6 +1141,47 @@ ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens
     }
   }
   return output;
+}
+
+ast::Type parse::Parser::parseFPointerType(links::LinkedList<lex::Token *> &tokens, const std::string typeName) {
+  tokens.pop();
+  auto callTypeList = std::vector<ast::Type>();
+  std::string newTypeName = "~" + typeName;
+  int requiredCount = 0;
+  while (true) {
+    const auto closeSym = dynamic_cast<lex::Symbol *>(tokens.peek());
+    if (closeSym != nullptr && closeSym->meta == ">") {
+      tokens.pop();
+      break;
+    }
+    if (dynamic_cast<lex::Ref *>(tokens.peek()) == nullptr) requiredCount++; else tokens.pop();
+    const auto type = dynamic_cast<lex::LObj *>(tokens.pop());
+    if (type == nullptr)
+      throw err::Exception("Type expected on line " + std::to_string(tokens.peek()->lineCount));
+    newTypeName += type->meta;
+    callTypeList.push_back(*typeList[type->meta]);
+    
+    const auto comma = dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (comma != nullptr && comma->Sym == ',') {
+      tokens.pop();
+      newTypeName += ",";
+    } else {
+      const auto closeSym = dynamic_cast<lex::Symbol *>(tokens.peek());
+      if (closeSym != nullptr && closeSym->meta == ">") {
+        tokens.pop();
+        break;
+      }
+      throw err::Exception("Expected , or > on line " + std::to_string(tokens.peek()->lineCount));
+    }
+  }
+
+  auto type = ast::Type(newTypeName + "~", asmc::QWord);
+  type.fPointerArgs.returnType = typeList[typeName];
+  type.fPointerArgs.argTypes = callTypeList;
+  type.fPointerArgs.isFPointer = true;
+  type.fPointerArgs.requiredArgs = requiredCount;
+
+  return type;
 }
 
 ast::ConditionalExpr *
@@ -1514,22 +1531,21 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)
         throw err::Exception(
             "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Need an > to start lambda not a symbol");
+            " Need an => to start lambda not a symbol");
       if ((dynamic_cast<lex::OpSym *>(tokens.pop())->Sym != '='))
         throw err::Exception(
             "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " GOT: " + dynamic_cast<lex::OpSym *>(tokens.pop())->Sym +
-            " Need an > to start lambda");
+            " Need an => to start lambda");
 
       if (dynamic_cast<lex::Symbol *>(tokens.peek()) == nullptr)
         throw err::Exception(
             "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Need an > to start lambda not a symbol");
+            " Need an => to start lambda not a symbol");
       if ((dynamic_cast<lex::Symbol *>(tokens.pop())->meta != ">"))
         throw err::Exception(
             "Line: " + std::to_string(tokens.peek()->lineCount) +
             " GOT: " + dynamic_cast<lex::OpSym *>(tokens.pop())->Sym +
-            " Need an > to start lambda");
+            " Need an => to start lambda");
 
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
           dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '{') {
