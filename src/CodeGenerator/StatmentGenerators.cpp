@@ -242,6 +242,15 @@ void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
     OutputFile.bss << var;
     Table->push(Symbol);
   }
+
+  if (dec->type.fPointerArgs.isFPointer) {
+    auto newType = new ast::Type();
+    newType->typeName = dec->TypeName;
+    newType->size = asmc::QWord;
+    newType->fPointerArgs = dec->type.fPointerArgs;
+    this->TypeList.push(*newType);
+  }
+
 }
 
 void gen::CodeGenerator::genDecArr(ast::DecArr* dec, asmc::File& OutputFile) {
@@ -355,7 +364,7 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
         if (expr.type.find("~") != std::string::npos) {
           // find the type in TypeList
           auto t = this->TypeList[expr.type];
-          if (t == nullptr) alert("Function Pointer type not found" + expr.type);
+          if (t == nullptr) alert("Function Pointer type not found " + expr.type + " on line " + std::to_string(decAssign->logicalLine));
           dec->type = *t;
         }
       }
@@ -420,6 +429,14 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
       alert("redefined variable:" + dec->Ident);
     Table->push(Symbol);
   };
+
+  if (dec->type.fPointerArgs.isFPointer && this->typeList[dec->TypeName] == nullptr) {
+    auto newType = new ast::Type();
+    newType->typeName = dec->TypeName;
+    newType->size = asmc::QWord;
+    newType->fPointerArgs = dec->type.fPointerArgs;
+    this->TypeList.push(*newType);
+  }
 }
 
 void gen::CodeGenerator::genDecAssignArr(ast::DecAssignArr* decAssign,
@@ -616,6 +633,14 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
   OutputFile << std::get<3>(resolved);
   if (assign->modList.count == 0 && !assign->reference)
   scope::ScopeManager::getInstance()->addAssign(fin->symbol);
+
+  if (this->TypeList[fin->type.typeName] == nullptr) {
+    auto t = new ast::Type();
+    t->typeName = fin->type.typeName;
+    t->size = fin->type.size;
+    t->fPointerArgs = fin->type.fPointerArgs;
+    this->TypeList.push(*t);
+  }
 }
 
 ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
@@ -748,7 +773,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
           mods.push(id);
           sym = cl->SymbolTable.search<std::string>(searchSymbol,
                                                     call->modList.touch());
-          if (sym != nullptr && sym->type.typeName == "adr") {
+          if (sym != nullptr && (sym->type.typeName == "adr" || sym->type.fPointerArgs.isFPointer)) {
             call->modList.touch();
             ast::Var* var = new ast::Var();
             var->logicalLine = call->logicalLine;
@@ -775,6 +800,14 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
             checkArgs = false;
             func->type.size = asmc::QWord;
             func->flex = true;
+
+            if (sym->type.fPointerArgs.returnType != nullptr) {
+              func->type = *sym->type.fPointerArgs.returnType;
+              func->argTypes = sym->type.fPointerArgs.argTypes;
+              func->req = sym->type.fPointerArgs.requiredArgs;
+              checkArgs = true;
+            }
+
             addPub = false;
           } else if (sym == nullptr) {
             alert("cannot find function " + call->modList.touch());
