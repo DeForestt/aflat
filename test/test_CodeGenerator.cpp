@@ -14,7 +14,7 @@ TEST_CASE("canAssign will not assign to types with different names", "[canAssign
 
     testType.typeName = "testType";
 
-    CHECK_THROWS(mockGen.canAssign(testType, "int"));
+    CHECK_THROWS(mockGen.canAssign(testType, "int", "ERROR"));
 }
 
 TEST_CASE("canAssign assigns types with the same name", "[canAssing]") {
@@ -23,7 +23,7 @@ TEST_CASE("canAssign assigns types with the same name", "[canAssing]") {
 
     testType.typeName = "testType";
     
-    CHECK(mockGen.canAssign(testType, "testType"));
+    CHECK(mockGen.canAssign(testType, "testType", "ERROR"));
 }
 
 TEST_CASE("cannAssign returns false if it can implicit cast", "[canAssign]") {
@@ -46,5 +46,5 @@ TEST_CASE("cannAssign returns false if it can implicit cast", "[canAssign]") {
     mockGen.addType(testGenType);
     mockGen.addType(cl);
 
-    CHECK_THROWS(!mockGen.canAssign(testType, "takes"));
+    CHECK_THROWS(!mockGen.canAssign(testType, "takes", "ERROR"));
 }
