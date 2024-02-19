@@ -62,6 +62,10 @@ class LoadingBar {
     };
 };
 
+export adr createLoadingBar(int max, * int resolution) {
+	return async.makeShared(LoadingBar, LoadingBar.init, max, resolution);
+};
+
 private adr runLoadingBar(LoadingBar bar) : async.worker {
 	while true {
 		bar.print();
@@ -71,7 +75,5 @@ private adr runLoadingBar(LoadingBar bar) : async.worker {
 	};
 };
 
-export LoadingBar createLoadingBar(int max, * int resolution) {
-	return async.makeShared(LoadingBar, LoadingBar.init, max, resolution);
-};
+
 
