@@ -6,10 +6,10 @@ import {print, printHex} from "io" under io;
  * Decorate a class method to be treated as a read-only calculated property.
  */
 safe dynamic class Computed {
-    private const adr foo = foo;
+    private const any<any> foo = foo;
     private const any context = context;
 
-    Computed init(const adr foo, const any context){
+    Computed init(const any<any> foo, const any context){
         const int __i = 0;
         return my;
     };
@@ -25,8 +25,8 @@ safe dynamic class Computed {
  * Decorate a class method to be treated as a read-write calculated property.
  */
 safe dynamic class Property {
-    private mutable adr getter;
-    private mutable adr setter;
+    private mutable any<any> getter;
+    private mutable void<any, any> setter;
     private const any context = context;
 
     Property init(const Map<> foo, const any context){
@@ -37,13 +37,13 @@ safe dynamic class Property {
     };
 
     any get() {
-        const adr getter = my.getter;
+        const let getter = my.getter;
         if (getter == NULL) panic("Attempt to read from a property without a getter.");
         return getter(my.context);
     };
 
     void _set(const any value) {
-        const adr setter = my.setter;
+        const let setter = my.setter;
         if (setter == NULL) panic("Attempt to write to a property without a setter.");
         setter(my.context, value);
     };
