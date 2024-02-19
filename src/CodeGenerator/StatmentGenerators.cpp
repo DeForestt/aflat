@@ -350,7 +350,7 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
       gen::Expr expr =
           this->GenExpr(decAssign->expr, OutputFile, dec->type.size);
 
-      if (dec->type.typeName != "let" && !this->canAssign(dec->type, expr.type)){
+      if (dec->type.typeName != "let" && !this->canAssign(dec->type, expr.type, "cannot assign type {} cannot be assigned to type {}")) {
         expr = this->GenExpr(imply(decAssign->expr, dec->type.typeName), OutputFile);
       };
 
@@ -418,7 +418,7 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
       var->command = "quad";
     }
     gen::Expr exp = this->GenExpr(decAssign->expr, OutputFile);
-    if (!this->canAssign(dec->type, exp.type)){
+    if (!this->canAssign(dec->type, exp.type, "cannot assign type {} cannot be assigned to type {}")){
       exp = this->GenExpr(imply(decAssign->expr, dec->type.typeName), OutputFile);
     };
     var->operand = exp.access.erase(0, 1);
@@ -499,7 +499,7 @@ void gen::CodeGenerator::genReturn(ast::Return* ret, asmc::File& OutputFile) {
   };
 
 
-  if(!this->canAssign(this->returnType, from.type, true)){
+  if(!this->canAssign(this->returnType, from.type, "the return type of this function is {} but the expression returns {}")){
     auto imp = imply(ret->expr, this->returnType.typeName);
     from = this->GenExpr(imp, OutputFile);
   };
@@ -588,7 +588,7 @@ void gen::CodeGenerator::genAssign(ast::Assign* assign,
   gen::Expr expr = this->GenExpr(assign->expr, OutputFile, symbol->type.size);
 
   if(!assign->reference){
-    if (!this->canAssign(symbol->type, expr.type)){
+    if (!this->canAssign(symbol->type, expr.type, "symbol of type {} cannot be assigned to type {}")) {
       expr = this->GenExpr(imply(assign->expr,symbol->type.typeName), OutputFile);
     }
   }
@@ -957,6 +957,13 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
           " expected: " + std::to_string(func->argTypes.size()) +
           " got: 1");
 
+  // create a string of argTypes
+  std::string argTypesString = "";
+  for (auto arg : func->argTypes) {
+    argTypesString += arg.typeName + ", ";
+  }
+  if (argTypesString.size() > 1) argTypesString = argTypesString.substr(0, argTypesString.size() - 2);
+
   while (call->Args.trail() > 0) {
     args.push(call->Args.touch());
     ast::Expr * rem = call->Args.touch();
@@ -968,7 +975,7 @@ ast::Function gen::CodeGenerator::GenCall(ast::Call* call,
               " expected: " + std::to_string(func->argTypes.size()) +
               " got: " + std::to_string(i + 1));
       };
-      if (!canAssign(func->argTypes.at(i), exp.type)) {
+      if (!canAssign(func->argTypes.at(i), exp.type, "cannot pass type {} to function expecting type {} the argument type(s) are (" + argTypesString + ")")) {
         ast::Expr * init = imply(rem, func->argTypes.at(i).typeName);
         exp = this->GenExpr(init, OutputFile);
       };
@@ -1172,7 +1179,7 @@ void gen::CodeGenerator::genIf(ast::If* ifStmt, asmc::File& OutputFile) {
   ast::Type t = ast::Type();
   t.typeName = "bool";
   t.size = asmc::Byte;
-  this->canAssign(t, expr.type);
+  this->canAssign(t, expr.type, "if conditions must be of type {}, {} was given.");
 
   asmc::Mov* mov1 = new asmc::Mov();
   mov1->logicalLine = ifStmt->logicalLine;
@@ -1262,7 +1269,7 @@ void gen::CodeGenerator::genWhile(ast::While* loop, asmc::File& OutputFile) {
   ast::Type t = ast::Type();
   t.typeName = "bool";
   t.size = asmc::Byte;
-  this->canAssign(t, expr.type);
+  this->canAssign(t, expr.type, "while conditions must be of type {}, {} was given.");
 
   asmc::Mov* mov = new asmc::Mov();
   mov->logicalLine = loop->logicalLine;
@@ -1340,7 +1347,7 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   ast::Type t = ast::Type();
   t.typeName = "bool";
   t.size = asmc::Byte;
-  this->canAssign(t, expr.type);
+  this->canAssign(t, expr.type, "for conditions must be of type {}, {} was given.");
 
   asmc::Mov* mov = new asmc::Mov();
   mov->logicalLine = loop->logicalLine;
@@ -1470,7 +1477,7 @@ void gen::CodeGenerator::genEnum(ast::Enum* deff, asmc::File& OutputFile) {
 void gen::CodeGenerator::genInc(ast::Inc* inc, asmc::File& OutputFile) {
   gen::Symbol* sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);
   if (sym == nullptr) this->alert("Identifier not found to increment");
-  this->canAssign(sym->type, "int");
+  this->canAssign(sym->type, "int", "cannot increment type {} only int can be incremented");
 
   asmc::Add* add = new asmc::Add();
   add->logicalLine = inc->logicalLine;
@@ -1483,7 +1490,7 @@ void gen::CodeGenerator::genInc(ast::Inc* inc, asmc::File& OutputFile) {
 void gen::CodeGenerator::genDec(ast::Dec* inc, asmc::File& OutputFile) {
   gen::Symbol* sym = gen::scope::ScopeManager::getInstance()->get(inc->ident);
   if (sym == nullptr) this->alert("Identifier not found to increment");
-  this->canAssign(sym->type, "int");
+  this->canAssign(sym->type, "int", "cannot increment type {} only int can be incremented");
 
   asmc::Sub* sub = new asmc::Sub();
   sub->logicalLine = inc->logicalLine;

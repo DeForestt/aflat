@@ -134,7 +134,7 @@ class CodeGenerator {
   gen::Expr genArithmetic(asmc::ArithInst*, ast::Compound compound,
                           asmc::File& OutputFile);
   ast::Expr * imply(ast::Expr * expr, std::string typeName);
-  bool canAssign(ast::Type type, std::string typeName, bool strict = false);
+  bool canAssign(ast::Type type, std::string typeName, std::string fmt, bool strict = false);
   std::string moduleId;
 
   links::LinkedList<std::string> breakContext;

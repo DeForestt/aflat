@@ -4,8 +4,8 @@ namespace test
 {
     namespace mockGen
     {
-        bool mockGen::CodeGenerator::canAssign(ast::Type type, std::string typeName, bool strict = false) {
-            return gen::CodeGenerator::canAssign(type, typeName, strict);
+        bool mockGen::CodeGenerator::canAssign(ast::Type type, std::string typeName, std::string fmt, bool strict = false) {
+            return gen::CodeGenerator::canAssign(type, typeName, fmt, strict);
         }
 
         CodeGenerator::CodeGenerator(std::string moduleId) : gen::CodeGenerator(moduleId) {

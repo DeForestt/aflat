@@ -27,7 +27,7 @@ Block requestSpace(const Block last, const int size){
     const int nsize = size + Block;
     const adr i = brk(block + nsize);
 
-    if(i < #0){return NULL};
+    if(i < NULL){return NULL};
 
     if (last != NULL){
         last.next = block;
@@ -135,7 +135,7 @@ adr malloc(const int size){
 
     if(size < 0){return NULL};
 
-    if(head == #0){
+    if(head == NULL){
         block = requestSpace(NULL, size);
         head = block;
         block = block + #16;
@@ -150,9 +150,9 @@ adr malloc(const int size){
     };
 
     block = findFreeBlock(head, size);
-    if (block == #0){
+    if (block == NULL){
         block = requestSpace(last, size);
-        if(block == #0){return #0};
+        if(block == NULL){return NULL};
     };
     block.free = 0;
     splitBlock(block, size);
@@ -161,7 +161,7 @@ adr malloc(const int size){
 };
 
 adr realloc(const adr ptr, const int size){
-    if (ptr == #0){
+    if (ptr == NULL){
         return malloc(size);
     };
 
@@ -172,7 +172,7 @@ adr realloc(const adr ptr, const int size){
     };
     
     const adr new_ptr = malloc(size);
-    if (new_ptr == #0){return #0;};
+    if (new_ptr == NULL){return NULL;};
     const int bsize = block.size;
     memcpy(new_ptr, ptr, bsize);
     free(ptr);
@@ -230,8 +230,8 @@ int assert(const bool cond, * const adr message){
 };
 
 int sleep(const int seconds, *const int nanoseconds){
-    const long sec = #0 + seconds;
-    const long nsec = #0 + nanoseconds;
+    const long sec = NULL + seconds;
+    const long nsec = NULL + nanoseconds;
     const TimeSpec t = new TimeSpec();
     t.tv_sec = sec;
     t.tv_nsec = nsec;

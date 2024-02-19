@@ -9,6 +9,7 @@
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
 #include "Parser/Lower.hpp"
+#include "Utils.hpp"
 
 using namespace gen::utils;
 
@@ -200,7 +201,7 @@ gen::CodeGenerator::resolveSymbol(std::string ident,
   gen::Symbol retSym = *modSym;
 
   if (indicies.trail() != 0) {
-    this->canAssign(modSym->type, "adr");
+    this->canAssign(modSym->type, "adr", "the given type {} is not subscriptable");
 
     if (modSym->type.indices.trail() != indicies.trail())
       alert("invalid index count");
@@ -284,7 +285,7 @@ gen::CodeGenerator::resolveSymbol(std::string ident,
   return std::make_tuple(access, retSym, true, pops);
 };
 
-bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
+bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName, std::string fmt,
                                    bool strict = false) {
   if (type.typeName == typeName) return true;
   if (type.fPointerArgs.returnType != nullptr && typeName == "adr") return true;
@@ -330,7 +331,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
         if (cl->nameTable.count > 0){
           ast::Function * init = cl->nameTable["init"];
           if (init) {
-            if (init->req == 1 && this->canAssign(init->argTypes[0], typeName)) {
+            if (init->req == 1 && this->canAssign(init->argTypes[0], typeName, fmt)) {
               return false;
             }
           }
@@ -349,24 +350,23 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
         auto type2 = this->TypeList[typeName];
         if (type2 == nullptr) return false;
         if (type2->fPointerArgs.returnType == nullptr) return false;
-        this->canAssign(*type2->fPointerArgs.returnType, type.fPointerArgs.returnType->typeName);
+        this->canAssign(*type2->fPointerArgs.returnType, type.fPointerArgs.returnType->typeName, fmt);
         // type two should have at least as many required args as type
         if (type2->fPointerArgs.requiredArgs < type.fPointerArgs.requiredArgs) return false;
         for (int i = 0; i < type.fPointerArgs.requiredArgs; i++) {
-          this->canAssign(type.fPointerArgs.argTypes[i], type2->fPointerArgs.argTypes[i].typeName);
+          this->canAssign(type.fPointerArgs.argTypes[i], type2->fPointerArgs.argTypes[i].typeName, fmt);
         };
 
         // now check the types of any extra optional args
         if (type2->fPointerArgs.argTypes.size() > type.fPointerArgs.requiredArgs) {
           for (int i = type.fPointerArgs.requiredArgs - 1; i < type2->fPointerArgs.argTypes.size(); i++) {
-            this->canAssign(type.fPointerArgs.argTypes[i], type2->fPointerArgs.argTypes[i].typeName);
+            this->canAssign(type.fPointerArgs.argTypes[i], type2->fPointerArgs.argTypes[i].typeName, fmt);
           }
         }
         return true;
       };
 
-  if (!strict) alert("Cannot assign type " + type.typeName + " to " + typeName);
-  alert("Cannot return type " + typeName + " from " + type.typeName);
+  alert(format("Type mismatch on line {}: " + fmt, this->logicalLine, type.typeName, typeName));
   return false;
 }
 
@@ -1497,7 +1497,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
     boolType.typeName = "bool";
     boolType.opType = asmc::Hard;
     boolType.size = asmc::Byte;
-    this->canAssign(boolType, expr.type);
+    this->canAssign(boolType, expr.type, "the not operator can only be used with bool types. Cannot resolve {} and {}");
 
     OutputFile.text << movzbl;
     OutputFile.text << xr;
@@ -1584,7 +1584,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
     boolType.typeName = "bool";
     boolType.opType = asmc::Hard;
     boolType.size = asmc::Byte;
-    this->canAssign(boolType, cond.type);
+    this->canAssign(boolType, cond.type, "if condition must be a bool cannot resolve {} and {}");
 
     asmc::Mov *mov = new asmc::Mov();
     mov->logicalLine = this->logicalLine;
@@ -1633,7 +1633,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr* expr, asmc::File& OutputFile, a
 
     ast::Type type = ast::Type();
     type.typeName = trueExpr.type;
-    this->canAssign(type, falseExpr.type);
+    this->canAssign(type, falseExpr.type, "if expression must return the same type cannot resolve {} and {}");
 
     output.access = this->registers["%eax"]->get(trueExpr.size);
     output.size = trueExpr.size;
