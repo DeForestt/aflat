@@ -1146,7 +1146,7 @@ ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens
 ast::Type parse::Parser::parseFPointerType(links::LinkedList<lex::Token *> &tokens, const std::string typeName) {
   tokens.pop();
   auto callTypeList = std::vector<ast::Type>();
-  std::string newTypeName = "~" + typeName;
+  std::string newTypeName = typeName + "~";
   int requiredCount = 0;
   while (true) {
     const auto closeSym = dynamic_cast<lex::Symbol *>(tokens.peek());
