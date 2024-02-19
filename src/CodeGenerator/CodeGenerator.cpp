@@ -1709,7 +1709,7 @@ ast::Expr * gen::CodeGenerator::imply(ast::Expr * expr, std::string typeName) {
       }
     }
   }
-  this->alert("Cannot imply type");
+  this->alert("Cannot imply type " + typeName + " from expression of type at line " + std::to_string(expr->logicalLine));
 }
 
 links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(
