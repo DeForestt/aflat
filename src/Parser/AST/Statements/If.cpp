@@ -26,7 +26,6 @@ namespace ast
         throw err::Exception(
             "Line: " + std::to_string(tokens.peek()->lineCount) +
             " Unopened If");
-      // check for else
       if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
         auto elseObj = *dynamic_cast<lex::LObj *>(tokens.peek());
         if (elseObj.meta == "else") {
