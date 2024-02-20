@@ -466,18 +466,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
                              "Unparsable token found");
       }
     } else if (obj.meta == "return") {
-      auto ret = new ast::Return;
-      if (!(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-          dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ';')) {
-            ret->expr = this->parseExpr(tokens);
-            ret->logicalLine = obj.lineCount;
-          } else {
-            auto nu = new ast::Var();
-            nu->Ident = "**void_type**";
-            nu->logicalLine = obj.lineCount;
-            ret->expr = nu;
-          };
-      output = ret;
+      output = new ast::Return(tokens, *this);
     } else if (obj.meta == "push") {
       auto push = new ast::Push;
       push->expr = this->parseExpr(tokens);

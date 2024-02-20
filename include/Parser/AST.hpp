@@ -6,6 +6,11 @@
 
 #include "ASM.hpp"
 #include "LinkedList.hpp"
+#include "Scanner.hpp"
+
+namespace parse {
+  class Parser;
+};
 
 namespace ast {
 class ProgramMember {
@@ -288,6 +293,9 @@ class Dec : public Statement {
 class Return : public Statement {
  public:
   Expr* expr;
+
+  Return() = default;
+  Return(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
 };
 
 class Import : public Statement {
