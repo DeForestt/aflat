@@ -187,14 +187,6 @@ class CharLiteral : public Expr {
   char value;
 };
 
-class If : public Statement {
- public:
-  Expr* expr;
-  Statement* statement;
-  Statement* elseStatement;
-  Statement* elseIf;
-};
-
 class DecAssign : public Statement {
  public:
   Declare* declare;
@@ -288,14 +280,6 @@ class Inc : public Statement {
 class Dec : public Statement {
  public:
   std::string ident;
-};
-
-class Return : public Statement {
- public:
-  Expr* expr;
-
-  Return() = default;
-  Return(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
 };
 
 class Import : public Statement {

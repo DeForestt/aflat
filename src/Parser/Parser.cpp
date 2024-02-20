@@ -2,6 +2,7 @@
 #include "Exceptions.hpp"
 #include <iostream>
 #include "Parser/AST.hpp"
+#include "Parser/AST/Statements.hpp"
 
 ast::Expr *prioritizeExpr(ast::Expr *expr);
 
@@ -480,56 +481,9 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
       if (singleStmt)
         return output;
     } else if (obj.meta == "if") {
-      auto ifStmt = new ast::If;
-      ifStmt->elseIf = nullptr;
-      ifStmt->elseStatement = nullptr;
-      ifStmt->expr = this->parseExpr(tokens);
-      ifStmt->logicalLine = obj.lineCount;
-      auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
-      if (sym != nullptr) {
-        if (sym->Sym == '{') {
-          tokens.pop();
-          ifStmt->statement = this->parseStmt(tokens);
-          output = ifStmt;
-        } else
-          throw err::Exception(
-              "Line: " + std::to_string(tokens.peek()->lineCount) +
-              " Unopened If");
-      } else if (dynamic_cast<lex::LObj *>(tokens.peek())) {
-        ifStmt->statement = this->parseStmt(tokens, true);
-        output = ifStmt;
-      } else
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Unopened If");
-      // check for else
-      if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
-        auto elseObj = *dynamic_cast<lex::LObj *>(tokens.peek());
-        if (elseObj.meta == "else") {
-          tokens.pop();
-          if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
-            sym = dynamic_cast<lex::OpSym *>(tokens.pop());
-            if (sym->Sym == '{') {
-              ifStmt->elseStatement = this->parseStmt(tokens);
-              output = ifStmt;
-            } else
-              throw err::Exception(
-                  "Line: " + std::to_string(tokens.peek()->lineCount) +
-                  " Unopened Else");
-          } else if (dynamic_cast<lex::LObj *>(tokens.peek())) {
-            ifStmt->elseStatement = this->parseStmt(tokens, true);
-            output = ifStmt;
-          } else
-            throw err::Exception(
-                "Line: " + std::to_string(tokens.peek()->lineCount) +
-                " Unopened Else");
-        } else
-          throw err::Exception(
-              "Line: " + std::to_string(tokens.peek()->lineCount) +
-              " Unclosed if");
-      }
+       output = new ast::If(tokens, *this);
       if (singleStmt)
-        return ifStmt;
+        return output;
     } else if (obj.meta == "while") {
       auto loop = new ast::While;
 
