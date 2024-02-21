@@ -260,12 +260,6 @@ class Import : public Statement {
   bool classes = false;
 };
 
-class Enum : public Statement {
-  public:
-  std::string Ident;
-  std::vector<std::string> values;
-};
-
 class Var : public Expr {
  public:
   std::string Ident;
