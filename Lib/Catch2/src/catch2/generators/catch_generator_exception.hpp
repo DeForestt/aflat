@@ -19,9 +19,7 @@ namespace Catch {
         const char* const m_msg = "";
 
     public:
-        GeneratorException(const char* msg):
-            m_msg(msg)
-        {}
+        GeneratorException( const char* msg ): m_msg( msg ) {}
 
         const char* what() const noexcept override final;
     };

@@ -9,7 +9,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/internal/catch_console_colour.hpp>
 #include <catch2/internal/catch_istream.hpp>
-
 #include <sstream>
 
 namespace {
@@ -23,34 +22,35 @@ namespace {
 
     class TestStringStream : public Catch::IStream {
         std::stringstream m_stream;
+
     public:
-        std::ostream& stream() override {
-            return m_stream;
-        }
+        std::ostream& stream() override { return m_stream; }
 
         std::string str() const { return m_stream.str(); }
     };
-}
+} // namespace
 
-TEST_CASE("ColourGuard behaviour", "[console-colours]") {
+TEST_CASE( "ColourGuard behaviour", "[console-colours]" ) {
     TestStringStream streamWrapper;
     TestColourImpl colourImpl( &streamWrapper );
     auto& stream = streamWrapper.stream();
 
-    SECTION("ColourGuard is disengaged by default") {
+    SECTION( "ColourGuard is disengaged by default" ) {
         { auto guard = colourImpl.guardColour( Catch::Colour::Red ); }
 
         REQUIRE( streamWrapper.str().empty() );
     }
 
-    SECTION("ColourGuard is engaged by op<<") {
-        stream << "1\n" << colourImpl.guardColour( Catch::Colour::Red ) << "2\n";
+    SECTION( "ColourGuard is engaged by op<<" ) {
+        stream << "1\n"
+               << colourImpl.guardColour( Catch::Colour::Red ) << "2\n";
         stream << "3\n";
 
-        REQUIRE( streamWrapper.str() == "1\nUsing code: 2\n2\nUsing code: 0\n3\n" );
+        REQUIRE( streamWrapper.str() ==
+                 "1\nUsing code: 2\n2\nUsing code: 0\n3\n" );
     }
 
-    SECTION("ColourGuard can be engaged explicitly") {
+    SECTION( "ColourGuard can be engaged explicitly" ) {
         {
             auto guard =
                 colourImpl.guardColour( Catch::Colour::Red ).engage( stream );

@@ -13,15 +13,12 @@
  * and preprocessor token pasting.
  */
 
-
 #include <catch2/catch_test_macros.hpp>
 
 namespace {
     struct Hidden {};
 
-    bool operator==(Hidden, Hidden) { return true; }
-}
+    bool operator==( Hidden, Hidden ) { return true; }
+} // namespace
 
-TEST_CASE("DisableStringification") {
-    REQUIRE( Hidden{} == Hidden{} );
-}
+TEST_CASE( "DisableStringification" ) { REQUIRE( Hidden{} == Hidden{} ); }

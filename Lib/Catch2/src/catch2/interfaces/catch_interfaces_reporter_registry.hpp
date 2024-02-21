@@ -10,10 +10,9 @@
 
 #include <catch2/internal/catch_case_insensitive_comparisons.hpp>
 #include <catch2/internal/catch_unique_ptr.hpp>
-
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
 namespace Catch {
 
@@ -28,11 +27,13 @@ namespace Catch {
 
     class IReporterRegistry {
     public:
-        using FactoryMap = std::map<std::string, IReporterFactoryPtr, Detail::CaseInsensitiveLess>;
+        using FactoryMap = std::
+            map<std::string, IReporterFactoryPtr, Detail::CaseInsensitiveLess>;
         using Listeners = std::vector<Detail::unique_ptr<EventListenerFactory>>;
 
         virtual ~IReporterRegistry(); // = default
-        virtual IEventListenerPtr create( std::string const& name, ReporterConfig&& config ) const = 0;
+        virtual IEventListenerPtr create( std::string const& name,
+                                          ReporterConfig&& config ) const = 0;
         virtual FactoryMap const& getFactories() const = 0;
         virtual Listeners const& getListeners() const = 0;
     };

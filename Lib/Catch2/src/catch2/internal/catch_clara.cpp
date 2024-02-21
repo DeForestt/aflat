@@ -6,13 +6,12 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
+#include <algorithm>
 #include <catch2/internal/catch_clara.hpp>
 #include <catch2/internal/catch_console_width.hpp>
 #include <catch2/internal/catch_platform.hpp>
 #include <catch2/internal/catch_string_manip.hpp>
 #include <catch2/internal/catch_textflow.hpp>
-
-#include <algorithm>
 #include <ostream>
 
 namespace {
@@ -144,160 +143,159 @@ namespace Catch {
 
             bool BoundFlagRefBase::isFlag() const { return true; }
 
-} // namespace Detail
+        } // namespace Detail
 
-        Detail::InternalParseResult Arg::parse(std::string const&,
-                                               Detail::TokenStream const& tokens) const {
+        Detail::InternalParseResult
+        Arg::parse( std::string const&,
+                    Detail::TokenStream const& tokens ) const {
             auto validationResult = validate();
-            if (!validationResult)
-                return Detail::InternalParseResult(validationResult);
+            if ( !validationResult )
+                return Detail::InternalParseResult( validationResult );
 
             auto remainingTokens = tokens;
             auto const& token = *remainingTokens;
-            if (token.type != Detail::TokenType::Argument)
-                return Detail::InternalParseResult::ok(Detail::ParseState(
-                    ParseResultType::NoMatch, remainingTokens));
+            if ( token.type != Detail::TokenType::Argument )
+                return Detail::InternalParseResult::ok( Detail::ParseState(
+                    ParseResultType::NoMatch, remainingTokens ) );
 
-            assert(!m_ref->isFlag());
+            assert( !m_ref->isFlag() );
             auto valueRef =
-                static_cast<Detail::BoundValueRefBase*>(m_ref.get());
+                static_cast<Detail::BoundValueRefBase*>( m_ref.get() );
 
-            auto result = valueRef->setValue(remainingTokens->token);
-            if (!result)
-                return Detail::InternalParseResult(result);
+            auto result = valueRef->setValue( remainingTokens->token );
+            if ( !result )
+                return Detail::InternalParseResult( result );
             else
-                return Detail::InternalParseResult::ok(Detail::ParseState(
-                    ParseResultType::Matched, ++remainingTokens));
+                return Detail::InternalParseResult::ok( Detail::ParseState(
+                    ParseResultType::Matched, ++remainingTokens ) );
         }
 
-        Opt::Opt(bool& ref) :
-            ParserRefImpl(std::make_shared<Detail::BoundFlagRef>(ref)) {}
+        Opt::Opt( bool& ref ):
+            ParserRefImpl( std::make_shared<Detail::BoundFlagRef>( ref ) ) {}
 
         std::vector<Detail::HelpColumns> Opt::getHelpColumns() const {
             std::ostringstream oss;
             bool first = true;
-            for (auto const& opt : m_optNames) {
-                if (first)
+            for ( auto const& opt : m_optNames ) {
+                if ( first )
                     first = false;
                 else
                     oss << ", ";
                 oss << opt;
             }
-            if (!m_hint.empty())
+            if ( !m_hint.empty() )
                 oss << " <" << m_hint << '>';
             return { { oss.str(), m_description } };
         }
 
-        bool Opt::isMatch(std::string const& optToken) const {
-            auto normalisedToken = normaliseOpt(optToken);
-            for (auto const& name : m_optNames) {
-                if (normaliseOpt(name) == normalisedToken)
+        bool Opt::isMatch( std::string const& optToken ) const {
+            auto normalisedToken = normaliseOpt( optToken );
+            for ( auto const& name : m_optNames ) {
+                if ( normaliseOpt( name ) == normalisedToken )
                     return true;
             }
             return false;
         }
 
-        Detail::InternalParseResult Opt::parse(std::string const&,
-                                       Detail::TokenStream const& tokens) const {
+        Detail::InternalParseResult
+        Opt::parse( std::string const&,
+                    Detail::TokenStream const& tokens ) const {
             auto validationResult = validate();
-            if (!validationResult)
-                return Detail::InternalParseResult(validationResult);
+            if ( !validationResult )
+                return Detail::InternalParseResult( validationResult );
 
             auto remainingTokens = tokens;
-            if (remainingTokens &&
-                remainingTokens->type == Detail::TokenType::Option) {
+            if ( remainingTokens &&
+                 remainingTokens->type == Detail::TokenType::Option ) {
                 auto const& token = *remainingTokens;
-                if (isMatch(token.token)) {
-                    if (m_ref->isFlag()) {
-                        auto flagRef =
-                            static_cast<Detail::BoundFlagRefBase*>(
-                                m_ref.get());
-                        auto result = flagRef->setFlag(true);
-                        if (!result)
-                            return Detail::InternalParseResult(result);
-                        if (result.value() ==
-                            ParseResultType::ShortCircuitAll)
-                            return Detail::InternalParseResult::ok(Detail::ParseState(
-                                result.value(), remainingTokens));
+                if ( isMatch( token.token ) ) {
+                    if ( m_ref->isFlag() ) {
+                        auto flagRef = static_cast<Detail::BoundFlagRefBase*>(
+                            m_ref.get() );
+                        auto result = flagRef->setFlag( true );
+                        if ( !result )
+                            return Detail::InternalParseResult( result );
+                        if ( result.value() ==
+                             ParseResultType::ShortCircuitAll )
+                            return Detail::InternalParseResult::ok(
+                                Detail::ParseState( result.value(),
+                                                    remainingTokens ) );
                     } else {
-                        auto valueRef =
-                            static_cast<Detail::BoundValueRefBase*>(
-                                m_ref.get());
+                        auto valueRef = static_cast<Detail::BoundValueRefBase*>(
+                            m_ref.get() );
                         ++remainingTokens;
-                        if (!remainingTokens)
+                        if ( !remainingTokens )
                             return Detail::InternalParseResult::runtimeError(
-                                "Expected argument following " +
-                                token.token);
+                                "Expected argument following " + token.token );
                         auto const& argToken = *remainingTokens;
-                        if (argToken.type != Detail::TokenType::Argument)
+                        if ( argToken.type != Detail::TokenType::Argument )
                             return Detail::InternalParseResult::runtimeError(
-                                "Expected argument following " +
-                                token.token);
-                        const auto result = valueRef->setValue(argToken.token);
-                        if (!result)
-                            return Detail::InternalParseResult(result);
-                        if (result.value() ==
-                            ParseResultType::ShortCircuitAll)
-                            return Detail::InternalParseResult::ok(Detail::ParseState(
-                                result.value(), remainingTokens));
+                                "Expected argument following " + token.token );
+                        const auto result =
+                            valueRef->setValue( argToken.token );
+                        if ( !result )
+                            return Detail::InternalParseResult( result );
+                        if ( result.value() ==
+                             ParseResultType::ShortCircuitAll )
+                            return Detail::InternalParseResult::ok(
+                                Detail::ParseState( result.value(),
+                                                    remainingTokens ) );
                     }
-                    return Detail::InternalParseResult::ok(Detail::ParseState(
-                        ParseResultType::Matched, ++remainingTokens));
+                    return Detail::InternalParseResult::ok( Detail::ParseState(
+                        ParseResultType::Matched, ++remainingTokens ) );
                 }
             }
-            return Detail::InternalParseResult::ok(
-                Detail::ParseState(ParseResultType::NoMatch, remainingTokens));
+            return Detail::InternalParseResult::ok( Detail::ParseState(
+                ParseResultType::NoMatch, remainingTokens ) );
         }
 
         Detail::Result Opt::validate() const {
-            if (m_optNames.empty())
-                return Detail::Result::logicError("No options supplied to Opt");
-            for (auto const& name : m_optNames) {
-                if (name.empty())
+            if ( m_optNames.empty() )
+                return Detail::Result::logicError(
+                    "No options supplied to Opt" );
+            for ( auto const& name : m_optNames ) {
+                if ( name.empty() )
                     return Detail::Result::logicError(
-                        "Option name cannot be empty");
+                        "Option name cannot be empty" );
 #ifdef CATCH_PLATFORM_WINDOWS
-                if (name[0] != '-' && name[0] != '/')
+                if ( name[0] != '-' && name[0] != '/' )
                     return Detail::Result::logicError(
-                        "Option name must begin with '-' or '/'");
+                        "Option name must begin with '-' or '/'" );
 #else
-                if (name[0] != '-')
+                if ( name[0] != '-' )
                     return Detail::Result::logicError(
-                        "Option name must begin with '-'");
+                        "Option name must begin with '-'" );
 #endif
             }
             return ParserRefImpl::validate();
         }
 
-        ExeName::ExeName() :
-            m_name(std::make_shared<std::string>("<executable>")) {}
+        ExeName::ExeName():
+            m_name( std::make_shared<std::string>( "<executable>" ) ) {}
 
-        ExeName::ExeName(std::string& ref) : ExeName() {
-            m_ref = std::make_shared<Detail::BoundValueRef<std::string>>(ref);
+        ExeName::ExeName( std::string& ref ): ExeName() {
+            m_ref = std::make_shared<Detail::BoundValueRef<std::string>>( ref );
         }
 
         Detail::InternalParseResult
-            ExeName::parse(std::string const&,
-                           Detail::TokenStream const& tokens) const {
+        ExeName::parse( std::string const&,
+                        Detail::TokenStream const& tokens ) const {
             return Detail::InternalParseResult::ok(
-                Detail::ParseState(ParseResultType::NoMatch, tokens));
+                Detail::ParseState( ParseResultType::NoMatch, tokens ) );
         }
 
-        ParserResult ExeName::set(std::string const& newName) {
-            auto lastSlash = newName.find_last_of("\\/");
-            auto filename = (lastSlash == std::string::npos)
-                ? newName
-                : newName.substr(lastSlash + 1);
+        ParserResult ExeName::set( std::string const& newName ) {
+            auto lastSlash = newName.find_last_of( "\\/" );
+            auto filename = ( lastSlash == std::string::npos )
+                                ? newName
+                                : newName.substr( lastSlash + 1 );
 
             *m_name = filename;
-            if (m_ref)
-                return m_ref->setValue(filename);
+            if ( m_ref )
+                return m_ref->setValue( filename );
             else
-                return ParserResult::ok(ParseResultType::Matched);
+                return ParserResult::ok( ParseResultType::Matched );
         }
-
-
-
 
         Parser& Parser::operator|=( Parser const& other ) {
             m_options.insert( m_options.end(),
@@ -426,20 +424,19 @@ namespace Catch {
             return result;
         }
 
-        Args::Args(int argc, char const* const* argv) :
-            m_exeName(argv[0]), m_args(argv + 1, argv + argc) {}
+        Args::Args( int argc, char const* const* argv ):
+            m_exeName( argv[0] ), m_args( argv + 1, argv + argc ) {}
 
-        Args::Args(std::initializer_list<std::string> args) :
-            m_exeName(*args.begin()),
-            m_args(args.begin() + 1, args.end()) {}
-
+        Args::Args( std::initializer_list<std::string> args ):
+            m_exeName( *args.begin() ),
+            m_args( args.begin() + 1, args.end() ) {}
 
         Help::Help( bool& showHelpFlag ):
             Opt( [&]( bool flag ) {
                 showHelpFlag = flag;
                 return ParserResult::ok( ParseResultType::ShortCircuitAll );
             } ) {
-            static_cast<Opt&> ( *this )(
+            static_cast<Opt&>( *this )(
                 "display usage information" )["-?"]["-h"]["--help"]
                 .optional();
         }

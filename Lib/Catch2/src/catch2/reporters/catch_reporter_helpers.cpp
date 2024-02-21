@@ -6,32 +6,31 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
-#include <catch2/reporters/catch_reporter_helpers.hpp>
+#include <algorithm>
+#include <catch2/catch_test_case_info.hpp>
+#include <catch2/catch_tostring.hpp>
 #include <catch2/interfaces/catch_interfaces_config.hpp>
+#include <catch2/internal/catch_console_colour.hpp>
 #include <catch2/internal/catch_console_width.hpp>
 #include <catch2/internal/catch_errno_guard.hpp>
-#include <catch2/internal/catch_textflow.hpp>
 #include <catch2/internal/catch_reusable_string_stream.hpp>
 #include <catch2/internal/catch_string_manip.hpp>
-#include <catch2/internal/catch_console_colour.hpp>
-#include <catch2/catch_tostring.hpp>
-#include <catch2/catch_test_case_info.hpp>
-
-#include <algorithm>
+#include <catch2/internal/catch_textflow.hpp>
+#include <catch2/reporters/catch_reporter_helpers.hpp>
 #include <cfloat>
 #include <cstdio>
-#include <ostream>
 #include <iomanip>
+#include <ostream>
 
 namespace Catch {
 
     namespace {
-        void listTestNamesOnly(std::ostream& out,
-                               std::vector<TestCaseHandle> const& tests) {
-            for (auto const& test : tests) {
+        void listTestNamesOnly( std::ostream& out,
+                                std::vector<TestCaseHandle> const& tests ) {
+            for ( auto const& test : tests ) {
                 auto const& testCaseInfo = test.getTestCaseInfo();
 
-                if (startsWith(testCaseInfo.name, '#')) {
+                if ( startsWith( testCaseInfo.name, '#' ) ) {
                     out << '"' << testCaseInfo.name << '"';
                 } else {
                     out << testCaseInfo.name;
@@ -42,7 +41,6 @@ namespace Catch {
             out << std::flush;
         }
     } // end unnamed namespace
-
 
     // Because formatting using c++ streams is stateful, drop down to C is
     // required Alternatively we could use stringstream, but its performance
@@ -58,8 +56,8 @@ namespace Catch {
         // Save previous errno, to prevent sprintf from overwriting it
         ErrnoGuard guard;
 #ifdef _MSC_VER
-        size_t printedLength = static_cast<size_t>(
-            sprintf_s( buffer, "%.3f", duration ) );
+        size_t printedLength =
+            static_cast<size_t>( sprintf_s( buffer, "%.3f", duration ) );
 #else
         size_t printedLength = static_cast<size_t>(
             std::snprintf( buffer, maxDoubleSize, "%.3f", duration ) );
@@ -81,20 +79,20 @@ namespace Catch {
     std::string serializeFilters( std::vector<std::string> const& filters ) {
         // We add a ' ' separator between each filter
         size_t serialized_size = filters.size() - 1;
-        for (auto const& filter : filters) {
+        for ( auto const& filter : filters ) {
             serialized_size += filter.size();
         }
 
         std::string serialized;
-        serialized.reserve(serialized_size);
+        serialized.reserve( serialized_size );
         bool first = true;
 
-        for (auto const& filter : filters) {
-            if (!first) {
-                serialized.push_back(' ');
+        for ( auto const& filter : filters ) {
+            if ( !first ) {
+                serialized.push_back( ' ' );
             }
             first = false;
-            serialized.append(filter);
+            serialized.append( filter );
         }
 
         return serialized;
@@ -134,18 +132,20 @@ namespace Catch {
                            TextFlow::Column( desc.description )
                                .initialIndent( 0 )
                                .indent( 2 )
-                               .width( CATCH_CONFIG_CONSOLE_WIDTH - maxNameLen - 8 )
+                               .width( CATCH_CONFIG_CONSOLE_WIDTH - maxNameLen -
+                                       8 )
                     << '\n';
             }
         }
         out << '\n' << std::flush;
     }
 
-    void defaultListListeners( std::ostream& out,
-                               std::vector<ListenerDescription> const& descriptions ) {
+    void defaultListListeners(
+        std::ostream& out,
+        std::vector<ListenerDescription> const& descriptions ) {
         out << "Registered listeners:\n";
 
-        if(descriptions.empty()) {
+        if ( descriptions.empty() ) {
             return;
         }
 
@@ -192,45 +192,53 @@ namespace Catch {
                                .width( CATCH_CONFIG_CONSOLE_WIDTH - 10 );
             out << str << wrapper << '\n';
         }
-        out << pluralise(tags.size(), "tag"_sr) << "\n\n" << std::flush;
+        out << pluralise( tags.size(), "tag"_sr ) << "\n\n" << std::flush;
     }
 
-    void defaultListTests(std::ostream& out, ColourImpl* streamColour, std::vector<TestCaseHandle> const& tests, bool isFiltered, Verbosity verbosity) {
+    void defaultListTests( std::ostream& out,
+                           ColourImpl* streamColour,
+                           std::vector<TestCaseHandle> const& tests,
+                           bool isFiltered,
+                           Verbosity verbosity ) {
         // We special case this to provide the equivalent of old
         // `--list-test-names-only`, which could then be used by the
         // `--input-file` option.
-        if (verbosity == Verbosity::Quiet) {
-            listTestNamesOnly(out, tests);
+        if ( verbosity == Verbosity::Quiet ) {
+            listTestNamesOnly( out, tests );
             return;
         }
 
-        if (isFiltered) {
+        if ( isFiltered ) {
             out << "Matching test cases:\n";
         } else {
             out << "All available test cases:\n";
         }
 
-        for (auto const& test : tests) {
+        for ( auto const& test : tests ) {
             auto const& testCaseInfo = test.getTestCaseInfo();
-            Colour::Code colour = testCaseInfo.isHidden()
-                ? Colour::SecondaryText
-                : Colour::None;
-            auto colourGuard = streamColour->guardColour( colour ).engage( out );
+            Colour::Code colour =
+                testCaseInfo.isHidden() ? Colour::SecondaryText : Colour::None;
+            auto colourGuard =
+                streamColour->guardColour( colour ).engage( out );
 
-            out << TextFlow::Column(testCaseInfo.name).indent(2) << '\n';
-            if (verbosity >= Verbosity::High) {
-                out << TextFlow::Column(Catch::Detail::stringify(testCaseInfo.lineInfo)).indent(4) << '\n';
+            out << TextFlow::Column( testCaseInfo.name ).indent( 2 ) << '\n';
+            if ( verbosity >= Verbosity::High ) {
+                out << TextFlow::Column(
+                           Catch::Detail::stringify( testCaseInfo.lineInfo ) )
+                           .indent( 4 )
+                    << '\n';
             }
-            if (!testCaseInfo.tags.empty() &&
-                verbosity > Verbosity::Quiet) {
-                out << TextFlow::Column(testCaseInfo.tagsAsString()).indent(6) << '\n';
+            if ( !testCaseInfo.tags.empty() && verbosity > Verbosity::Quiet ) {
+                out << TextFlow::Column( testCaseInfo.tagsAsString() )
+                           .indent( 6 )
+                    << '\n';
             }
         }
 
-        if (isFiltered) {
-            out << pluralise(tests.size(), "matching test case"_sr);
+        if ( isFiltered ) {
+            out << pluralise( tests.size(), "matching test case"_sr );
         } else {
-            out << pluralise(tests.size(), "test case"_sr);
+            out << pluralise( tests.size(), "test case"_sr );
         }
         out << "\n\n" << std::flush;
     }

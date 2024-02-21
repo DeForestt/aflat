@@ -8,18 +8,16 @@
 #ifndef CATCH_REPORTER_SONARQUBE_HPP_INCLUDED
 #define CATCH_REPORTER_SONARQUBE_HPP_INCLUDED
 
-#include <catch2/reporters/catch_reporter_cumulative_base.hpp>
-
-#include <catch2/internal/catch_xmlwriter.hpp>
 #include <catch2/internal/catch_move_and_forward.hpp>
+#include <catch2/internal/catch_xmlwriter.hpp>
+#include <catch2/reporters/catch_reporter_cumulative_base.hpp>
 
 namespace Catch {
 
     class SonarQubeReporter final : public CumulativeReporterBase {
     public:
-        SonarQubeReporter(ReporterConfig&& config)
-        : CumulativeReporterBase(CATCH_MOVE(config))
-        , xml(m_stream) {
+        SonarQubeReporter( ReporterConfig&& config ):
+            CumulativeReporterBase( CATCH_MOVE( config ) ), xml( m_stream ) {
             m_preferences.shouldRedirectStdOut = true;
             m_preferences.shouldReportAllAssertions = true;
             m_shouldStoreSuccesfulAssertions = false;
@@ -41,20 +39,23 @@ namespace Catch {
 
         void writeRun( TestRunNode const& groupNode );
 
-        void writeTestFile(std::string const& filename, std::vector<TestCaseNode const*> const& testCaseNodes);
+        void
+        writeTestFile( std::string const& filename,
+                       std::vector<TestCaseNode const*> const& testCaseNodes );
 
-        void writeTestCase(TestCaseNode const& testCaseNode);
+        void writeTestCase( TestCaseNode const& testCaseNode );
 
-        void writeSection(std::string const& rootName, SectionNode const& sectionNode, bool okToFail);
+        void writeSection( std::string const& rootName,
+                           SectionNode const& sectionNode,
+                           bool okToFail );
 
-        void writeAssertions(SectionNode const& sectionNode, bool okToFail);
+        void writeAssertions( SectionNode const& sectionNode, bool okToFail );
 
-        void writeAssertion(AssertionStats const& stats, bool okToFail);
+        void writeAssertion( AssertionStats const& stats, bool okToFail );
 
     private:
         XmlWriter xml;
     };
-
 
 } // end namespace Catch
 

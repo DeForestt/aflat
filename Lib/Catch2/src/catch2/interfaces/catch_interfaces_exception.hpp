@@ -10,20 +10,22 @@
 
 #include <catch2/interfaces/catch_interfaces_registry_hub.hpp>
 #include <catch2/internal/catch_unique_ptr.hpp>
-
 #include <string>
 #include <vector>
 
 namespace Catch {
-    using exceptionTranslateFunction = std::string(*)();
+    using exceptionTranslateFunction = std::string ( * )();
 
     class IExceptionTranslator;
-    using ExceptionTranslators = std::vector<Detail::unique_ptr<IExceptionTranslator const>>;
+    using ExceptionTranslators =
+        std::vector<Detail::unique_ptr<IExceptionTranslator const>>;
 
     class IExceptionTranslator {
     public:
         virtual ~IExceptionTranslator(); // = default
-        virtual std::string translate( ExceptionTranslators::const_iterator it, ExceptionTranslators::const_iterator itEnd ) const = 0;
+        virtual std::string
+        translate( ExceptionTranslators::const_iterator it,
+                   ExceptionTranslators::const_iterator itEnd ) const = 0;
     };
 
     class IExceptionTranslatorRegistry {

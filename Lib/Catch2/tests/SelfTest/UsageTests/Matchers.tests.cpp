@@ -6,18 +6,17 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
-#include <catch2/catch_test_macros.hpp>
+#include <algorithm>
 #include <catch2/catch_template_test_macros.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_predicate.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
-#include <catch2/matchers/catch_matchers_vector.hpp>
 #include <catch2/matchers/catch_matchers_templated.hpp>
-
-#include <algorithm>
-#include <exception>
+#include <catch2/matchers/catch_matchers_vector.hpp>
 #include <cmath>
+#include <exception>
 #include <list>
 #include <sstream>
 
@@ -189,31 +188,36 @@ TEST_CASE( "Matchers can be (AllOf) composed with the && operator",
            "[matchers][operators][operator&&]" ) {
     CHECK_THAT( testStringForMatching(),
                 ContainsSubstring( "string" ) && ContainsSubstring( "abc" ) &&
-                    ContainsSubstring( "substring" ) && ContainsSubstring( "contains" ) );
+                    ContainsSubstring( "substring" ) &&
+                    ContainsSubstring( "contains" ) );
 }
 
 TEST_CASE( "Matchers can be (AnyOf) composed with the || operator",
            "[matchers][operators][operator||]" ) {
     CHECK_THAT( testStringForMatching(),
-                ContainsSubstring( "string" ) || ContainsSubstring( "different" ) ||
+                ContainsSubstring( "string" ) ||
+                    ContainsSubstring( "different" ) ||
                     ContainsSubstring( "random" ) );
     CHECK_THAT( testStringForMatching2(),
-                ContainsSubstring( "string" ) || ContainsSubstring( "different" ) ||
+                ContainsSubstring( "string" ) ||
+                    ContainsSubstring( "different" ) ||
                     ContainsSubstring( "random" ) );
 }
 
 TEST_CASE( "Matchers can be composed with both && and ||",
            "[matchers][operators][operator||][operator&&]" ) {
-    CHECK_THAT( testStringForMatching(),
-                ( ContainsSubstring( "string" ) || ContainsSubstring( "different" ) ) &&
-                    ContainsSubstring( "substring" ) );
+    CHECK_THAT(
+        testStringForMatching(),
+        ( ContainsSubstring( "string" ) || ContainsSubstring( "different" ) ) &&
+            ContainsSubstring( "substring" ) );
 }
 
 TEST_CASE( "Matchers can be composed with both && and || - failing",
            "[matchers][operators][operator||][operator&&][.failing]" ) {
-    CHECK_THAT( testStringForMatching(),
-                ( ContainsSubstring( "string" ) || ContainsSubstring( "different" ) ) &&
-                    ContainsSubstring( "random" ) );
+    CHECK_THAT(
+        testStringForMatching(),
+        ( ContainsSubstring( "string" ) || ContainsSubstring( "different" ) ) &&
+            ContainsSubstring( "random" ) );
 }
 
 TEST_CASE( "Matchers can be negated (Not) with the ! operator",
@@ -235,7 +239,9 @@ template <typename T> struct CustomAllocator : private std::allocator<T> {
     using const_reference = const T&;
     using value_type = T;
 
-    template <typename U> struct rebind { using other = CustomAllocator<U>; };
+    template <typename U> struct rebind {
+        using other = CustomAllocator<U>;
+    };
 
     using propagate_on_container_move_assignment = std::true_type;
     using is_always_equal = std::true_type;
@@ -469,7 +475,7 @@ TEST_CASE( "Floating point matchers: float", "[matchers][floating-point]" ) {
     }
     SECTION( "ULPs" ) {
         REQUIRE_THAT( 1.f, WithinULP( 1.f, 0 ) );
-        REQUIRE_THAT(-1.f, WithinULP( -1.f, 0 ) );
+        REQUIRE_THAT( -1.f, WithinULP( -1.f, 0 ) );
 
         REQUIRE_THAT( nextafter( 1.f, 2.f ), WithinULP( 1.f, 1 ) );
         REQUIRE_THAT( 0.f, WithinULP( nextafter( 0.f, 1.f ), 1 ) );

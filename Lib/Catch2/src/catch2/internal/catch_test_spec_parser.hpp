@@ -9,21 +9,20 @@
 #define CATCH_TEST_SPEC_PARSER_HPP_INCLUDED
 
 #ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wpadded"
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wpadded"
 #endif
 
 #include <catch2/catch_test_spec.hpp>
-
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace Catch {
 
     class ITagAliasRegistry;
 
     class TestSpecParser {
-        enum Mode{ None, Name, QuotedName, Tag, EscapedName };
+        enum Mode { None, Name, QuotedName, Tag, EscapedName };
         Mode m_mode = None;
         Mode lastMode = None;
         bool m_exclusion = false;
@@ -64,19 +63,18 @@ namespace Catch {
         // Adds the current pattern as a tag
         void addTagPattern();
 
-        inline void addCharToPattern(char c) {
+        inline void addCharToPattern( char c ) {
             m_substring += c;
             m_patternName += c;
             m_realPatternPos++;
         }
-
     };
     TestSpec parseTestSpec( std::string const& arg );
 
 } // namespace Catch
 
 #ifdef __clang__
-#pragma clang diagnostic pop
+#    pragma clang diagnostic pop
 #endif
 
 #endif // CATCH_TEST_SPEC_PARSER_HPP_INCLUDED

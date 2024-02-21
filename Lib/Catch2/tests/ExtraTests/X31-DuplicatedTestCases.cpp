@@ -12,5 +12,5 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-TEST_CASE("A test case with duplicated name and tags", "[tag1][tag2]") {}
-TEST_CASE("A test case with duplicated name and tags", "[tag1][tag2]") {}
+TEST_CASE( "A test case with duplicated name and tags", "[tag1][tag2]" ) {}
+TEST_CASE( "A test case with duplicated name and tags", "[tag1][tag2]" ) {}

@@ -10,22 +10,22 @@
 
 #include <catch2/internal/catch_platform.hpp>
 
-#if defined(CATCH_PLATFORM_WINDOWS)
+#if defined( CATCH_PLATFORM_WINDOWS )
 
 // We might end up with the define made globally through the compiler,
 // and we don't want to trigger warnings for this
-#if !defined(NOMINMAX)
-#  define NOMINMAX
-#endif
-#if !defined(WIN32_LEAN_AND_MEAN)
-#  define WIN32_LEAN_AND_MEAN
-#endif
+#    if !defined( NOMINMAX )
+#        define NOMINMAX
+#    endif
+#    if !defined( WIN32_LEAN_AND_MEAN )
+#        define WIN32_LEAN_AND_MEAN
+#    endif
 
-#ifdef __AFXDLL
-#include <AfxWin.h>
-#else
-#include <windows.h>
-#endif
+#    ifdef __AFXDLL
+#        include <AfxWin.h>
+#    else
+#        include <windows.h>
+#    endif
 
 #endif // defined(CATCH_PLATFORM_WINDOWS)
 

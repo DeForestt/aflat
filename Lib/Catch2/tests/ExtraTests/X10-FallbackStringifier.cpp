@@ -7,7 +7,7 @@
 // SPDX-License-Identifier: BSL-1.0
 
 /**\file
- * Test that the user can define custom fallbackStringifier 
+ * Test that the user can define custom fallbackStringifier
  *
  * This is done by defining a custom fallback stringifier that prints
  * out a specific string, and then asserting (to cause stringification)
@@ -17,19 +17,14 @@
 #include <string>
 
 // A catch-all stringifier
-template <typename T>
-std::string fallbackStringifier(T const&) {
+template <typename T> std::string fallbackStringifier( T const& ) {
     return "{ !!! }";
 }
 
 #include <catch2/catch_test_macros.hpp>
 
 struct foo {
-    explicit operator bool() const {
-        return true;
-    }
+    explicit operator bool() const { return true; }
 };
 
-TEST_CASE("aa") {
-    REQUIRE(foo{});
-}
+TEST_CASE( "aa" ) { REQUIRE( foo{} ); }

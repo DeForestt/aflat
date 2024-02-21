@@ -15,21 +15,21 @@
  * casings of the name.
  */
 
-#include <catch2/reporters/catch_reporter_streaming_base.hpp>
 #include <catch2/reporters/catch_reporter_registrars.hpp>
-
+#include <catch2/reporters/catch_reporter_streaming_base.hpp>
 #include <iostream>
 #include <utility>
 
 class TestReporter : public Catch::StreamingReporterBase {
 public:
-    TestReporter(Catch::ReporterConfig&& _config):
-        StreamingReporterBase(std::move(_config)) {
+    TestReporter( Catch::ReporterConfig&& _config ):
+        StreamingReporterBase( std::move( _config ) ) {
         std::cout << "TestReporter constructed\n";
     }
 
     static std::string getDescription() {
-        return "Reporter for testing casing handling in reporter registration/selection";
+        return "Reporter for testing casing handling in reporter "
+               "registration/selection";
     }
 
     ~TestReporter() override;
@@ -37,5 +37,4 @@ public:
 
 TestReporter::~TestReporter() = default;
 
-CATCH_REGISTER_REPORTER("testReporterCASED", TestReporter)
-
+CATCH_REGISTER_REPORTER( "testReporterCASED", TestReporter )

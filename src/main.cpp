@@ -1,28 +1,31 @@
+#include <unistd.h>
+
+#include <algorithm>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <numeric>
+#include <sstream>
+#include <thread>
+#include <vector>
+
 #include "ASM.hpp"
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "Configs.hpp"
 #include "Exceptions.hpp"
 #include "LinkedList.hpp"
 #include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
-#include "Configs.hpp"
 #include "Utils.hpp"
-#include <algorithm>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <thread>
-#include <unistd.h>
-#include <vector>
-#include <numeric>
 
 std::string preProcess(std::string input);
 std::string getExePath();
 void buildTemplate(std::string value);
-void build(std::string path, std::string output, cfg::Mutability mutability, bool debug);
+void build(std::string path, std::string output, cfg::Mutability mutability,
+           bool debug);
 void runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 void runConfig(cfg::Config &config, const std::string &libPath);
 
@@ -53,7 +56,7 @@ int main(int argc, char *argv[]) {
   if (value == "build") {
     std::ifstream ifs("aflat.cfg");
     std::string content((std::istreambuf_iterator<char>(ifs)),
-                    (std::istreambuf_iterator<char>()));
+                        (std::istreambuf_iterator<char>()));
     cfg::Config config = cfg::getConfig(content);
     runConfig(config, libPathA, 'e');
     return 0;
@@ -61,7 +64,7 @@ int main(int argc, char *argv[]) {
   if (value == "run") {
     std::ifstream ifs("aflat.cfg");
     std::string content((std::istreambuf_iterator<char>(ifs)),
-                    (std::istreambuf_iterator<char>()));
+                        (std::istreambuf_iterator<char>()));
     cfg::Config config = cfg::getConfig(content);
     runConfig(config, libPathA, 'e');
     auto of = config.outPutFile;
@@ -74,7 +77,7 @@ int main(int argc, char *argv[]) {
   if (value == "test") {
     std::ifstream ifs("aflat.cfg");
     std::string content((std::istreambuf_iterator<char>(ifs)),
-                    (std::istreambuf_iterator<char>()));
+                        (std::istreambuf_iterator<char>()));
     cfg::Config config = cfg::getConfig(content);
     runConfig(config, libPathA, 't');
     system("./bin/a.test");
@@ -119,7 +122,7 @@ int main(int argc, char *argv[]) {
 
     // Read the last line of the config file
     std::fstream cFile("./aflat.cfg", std::fstream::in | std::fstream::out);
-    cFile.seekg(-1, cFile.end); // move the the end
+    cFile.seekg(-1, cFile.end);  // move the the end
     char c;
     cFile.get(c);
     cFile.close();
@@ -135,7 +138,10 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   if (value == "update") {
-    std::string update_command = "curl -s https://raw.githubusercontent.com/DeForestt/aflat/main/install.sh | bash";
+    std::string update_command =
+        "curl -s "
+        "https://raw.githubusercontent.com/"
+        "DeForestt/aflat/main/install.sh | bash";
     system(update_command.c_str());
     return 0;
   }
@@ -153,7 +159,8 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void build(std::string path, std::string output, cfg::Mutability mutability, bool debug) {
+void build(std::string path, std::string output, cfg::Mutability mutability,
+           bool debug) {
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;
 
@@ -220,27 +227,36 @@ void build(std::string path, std::string output, cfg::Mutability mutability, boo
     // text section output
     ofs << "\n\n.text\n\n";
     // write the .file directive if in debug mode
-    if (debug){
+    if (debug) {
       ofs << ".file\t\"" << path << "\"\n";
     }
     int logicalLine = -1;
 
     while (file.text.head != nullptr) {
       auto inst = file.text.pop();
-      if (inst->logicalLine != logicalLine && debug && dynamic_cast<asmc::Label*>(inst) == nullptr && inst->logicalLine > 0) {
+      if (inst->logicalLine != logicalLine && debug &&
+          dynamic_cast<asmc::Label *>(inst) == nullptr &&
+          inst->logicalLine > 0) {
         logicalLine = inst->logicalLine;
       }
       if (debug)
-      if (inst->logicalLine > 0 && dynamic_cast<asmc::Define *>(inst) == nullptr) ofs << ".line " << inst->logicalLine - 1 << "\n";
-      else if (logicalLine > 0 && dynamic_cast<asmc::Define *>(inst) != nullptr) ofs << ".line " << logicalLine - 1 << "\n";
+        if (inst->logicalLine > 0 &&
+            dynamic_cast<asmc::Define *>(inst) == nullptr)
+          ofs << ".line " << inst->logicalLine - 1 << "\n";
+        else if (logicalLine > 0 &&
+                 dynamic_cast<asmc::Define *>(inst) != nullptr)
+          ofs << ".line " << logicalLine - 1 << "\n";
       auto str = inst->toString();
       // replace '\n' with "\n .line " + line number
       // while(str.find('\n') != std::string::npos){
       //   auto index = str.find('\n');
-      //   str = str.substr(0, index) + "\n.line " + std::to_string(inst->logicalLine) + "\n" + str.substr(index + 1);
+      //   str = str.substr(0, index) + "\n.line " +
+      //   std::to_string(inst->logicalLine) + "\n" + str.substr(index +
+      //   1);
       // }
       if (dynamic_cast<asmc::Define *>(inst) == nullptr) ofs << str;
-      //if (debug && dynamic_cast<asmc::Define *>(inst) != nullptr) ofs << inst->toString();
+      // if (debug && dynamic_cast<asmc::Define *>(inst) != nullptr) ofs <<
+      // inst->toString();
     }
 
     // data section output
@@ -302,20 +318,20 @@ void buildTemplate(std::string value) {
              "import string from \"String\";\n"
              "import TestSuite from \"ATest.af\";\n\n"
              "bool simpleTest() : test.case(\"simpleTest\") {\n"
-	           "\ttest.require(3 != 3, \"3 is 3\");\n"
-	           "\treturn 1 == 1;\n};\n\n";
-  
+             "\ttest.require(3 != 3, \"3 is 3\");\n"
+             "\treturn 1 == 1;\n};\n\n";
+
   outfile << "bool simpleFail() : test.case(\"simpleFail\") {\n"
-	           "\treturn 1 == 2;\n"
+             "\treturn 1 == 2;\n"
              "};\n\n";
 
   outfile << "int main() {\n"
-	           "\tTestSuite suite = new TestSuite(\"Simple Test Suite\");\n"
-	           "\tsuite.addCase(simpleTest);\n"
-	           "\tsuite.addCase(simpleFail);\n"
-	           "\tsuite.run();\n"
-	           "\ttest.report();\n"
-	           "\treturn 0;\n"
+             "\tTestSuite suite = new TestSuite(\"Simple Test Suite\");\n"
+             "\tsuite.addCase(simpleTest);\n"
+             "\tsuite.addCase(simpleFail);\n"
+             "\tsuite.run();\n"
+             "\ttest.report();\n"
+             "\treturn 0;\n"
              "};";
   outfile.close();
 
@@ -346,23 +362,24 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   }
 
   for (auto mod : config.modules) {
-   std::string path = mod;
-   std::string addPath = "";
+    std::string path = mod;
+    std::string addPath = "";
 
-   if (path.find("/") != std::string::npos) {
-     addPath = path.substr(0, path.find_last_of("/"));
-   }
+    if (path.find("/") != std::string::npos) {
+      addPath = path.substr(0, path.find_last_of("/"));
+    }
 
-    const bool found = std::any_of(pathList.begin(), pathList.end(), [&](const std::string &searchPath) {
-      return searchPath == addPath;
-    });
+    const bool found = std::any_of(
+        pathList.begin(), pathList.end(),
+        [&](const std::string &searchPath) { return searchPath == addPath; });
 
     if (!found && addPath != "") {
       std::filesystem::create_directories("./bin/" + addPath);
       pathList.push_back(addPath);
     }
 
-    build("./src/" + path + ".af", "./bin/" + path + ".s", config.mutability, config.debug);
+    build("./src/" + path + ".af", "./bin/" + path + ".s", config.mutability,
+          config.debug);
     linker.push_back("./bin/" + path + ".s");
   }
 
@@ -374,9 +391,9 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       addPath = path.substr(0, path.find_last_of("/"));
     }
 
-    const bool found = std::any_of(pathList.begin(), pathList.end(), [&](const std::string &searchPath) {
-      return searchPath == addPath;
-    });
+    const bool found = std::any_of(
+        pathList.begin(), pathList.end(),
+        [&](const std::string &searchPath) { return searchPath == addPath; });
 
     if (!found && addPath != "") {
       std::filesystem::create_directories("./bin/" + addPath);
@@ -384,21 +401,24 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     }
 
     if (config.debug)
-      system(
-          ("gcc -g -no-pie -S -lefence ./src/" + path + ".c -o ./bin/" + path + ".s")
-              .c_str());
+      system(("gcc -g -no-pie -S -lefence ./src/" + path + ".c -o ./bin/" +
+              path + ".s")
+                 .c_str());
     else
       system(("gcc -S -no-pie ./src/" + path + ".c -o ./bin/" + path + ".s")
                  .c_str());
 
     linker.push_back("./bin/" + path + ".s");
   }
-  
+
   linker.insert(linker.begin(), libPath + "io.s");
   linker.insert(linker.begin(), libPath + "Collections.s");
   linker.insert(linker.begin(), libPath + "math.s");
   linker.insert(linker.begin(), libPath + "strings.s");
-  if (config.compatibility) linker.insert(linker.begin(), libPath + "std-cmp.s"); else linker.insert(linker.begin(), libPath + "std.s");
+  if (config.compatibility)
+    linker.insert(linker.begin(), libPath + "std-cmp.s");
+  else
+    linker.insert(linker.begin(), libPath + "std.s");
   linker.insert(linker.begin(), libPath + "concurrency.s");
   linker.insert(linker.begin(), libPath + "files.s");
   linker.insert(linker.begin(), libPath + "asm.s");
@@ -425,9 +445,8 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
 
   // run gcc on the linkerList
   std::string linkerList = "";
-  
-  for (auto &s : linker)
-    linkerList += s + " ";
+
+  for (auto &s : linker) linkerList += s + " ";
 
   if (pmode == 't') {
     ofile = "./bin/a.test ";
@@ -441,9 +460,10 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   system(gcc.c_str());
   linker.erase(linker.begin(), linker.begin() + 28);
 
-  if (!config.asm_) for (auto &s : linker) {
-    std::filesystem::remove(s);
-  }
+  if (!config.asm_)
+    for (auto &s : linker) {
+      std::filesystem::remove(s);
+    }
 
   // remove the paths from the pathList
   for (auto &s : pathList) {

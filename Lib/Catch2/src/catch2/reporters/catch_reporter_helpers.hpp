@@ -8,12 +8,11 @@
 #ifndef CATCH_REPORTER_HELPERS_HPP_INCLUDED
 #define CATCH_REPORTER_HELPERS_HPP_INCLUDED
 
+#include <catch2/interfaces/catch_interfaces_config.hpp>
+#include <catch2/internal/catch_list.hpp>
 #include <iosfwd>
 #include <string>
 #include <vector>
-
-#include <catch2/internal/catch_list.hpp>
-#include <catch2/interfaces/catch_interfaces_config.hpp>
 
 namespace Catch {
 
@@ -53,8 +52,9 @@ namespace Catch {
      * Lists listeners descriptions to the provided stream in user-friendly
      * format
      */
-    void defaultListListeners( std::ostream& out,
-                               std::vector<ListenerDescription> const& descriptions );
+    void defaultListListeners(
+        std::ostream& out,
+        std::vector<ListenerDescription> const& descriptions );
 
     /**
      * Lists tag information to the provided stream in user-friendly format
@@ -63,7 +63,9 @@ namespace Catch {
      * bases. The output should be backwards compatible with the output of
      * Catch2 v2 binaries.
      */
-    void defaultListTags( std::ostream& out, std::vector<TagInfo> const& tags, bool isFiltered );
+    void defaultListTags( std::ostream& out,
+                          std::vector<TagInfo> const& tags,
+                          bool isFiltered );
 
     /**
      * Lists test case information to the provided stream in user-friendly

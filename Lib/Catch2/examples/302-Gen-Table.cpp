@@ -1,6 +1,6 @@
 // 302-Gen-Table.cpp
-// Shows how to use table to run a test many times with different inputs. Lifted from examples on
-// issue #850.
+// Shows how to use table to run a test many times with different inputs. Lifted
+// from examples on issue #850.
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
@@ -12,13 +12,13 @@ struct TestSubject {
     size_t GetLength( const std::string& input ) const { return input.size(); }
 };
 
-
-TEST_CASE("Table allows pre-computed test inputs and outputs", "[example][generator]") {
+TEST_CASE( "Table allows pre-computed test inputs and outputs",
+           "[example][generator]" ) {
     using std::make_tuple;
     // do setup here as normal
     TestSubject subj;
 
-    SECTION("This section is run for each row in the table") {
+    SECTION( "This section is run for each row in the table" ) {
         std::string test_input;
         size_t expected_output;
         std::tie( test_input, expected_output ) =
@@ -34,12 +34,12 @@ TEST_CASE("Table allows pre-computed test inputs and outputs", "[example][genera
                   make_tuple( "four", 4 ) } ) );
 
         // run the test
-        auto result = subj.GetLength(test_input);
+        auto result = subj.GetLength( test_input );
         // capture the input data to go with the outputs.
-        CAPTURE(test_input);
+        CAPTURE( test_input );
         // check it matches the pre-calculated data
-        REQUIRE(result == expected_output);
-    }   // end section
+        REQUIRE( result == expected_output );
+    } // end section
 }
 
 /* Possible simplifications where less legacy toolchain support is needed:

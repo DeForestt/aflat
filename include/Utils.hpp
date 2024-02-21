@@ -2,9 +2,8 @@
 
 #include <string>
 
-namespace utils
-{
+namespace utils {
 
 std::string remove_char(std::string str, char ch);
 
-} // namespace utils
+}  // namespace utils

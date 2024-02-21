@@ -9,7 +9,7 @@
 #include "Scanner.hpp"
 
 namespace parse {
-  class Parser;
+class Parser;
 };
 
 namespace ast {
@@ -68,15 +68,15 @@ enum ScopeMod { Public, Private, Static, Export };
 class Expr : public Statement {
  public:
   virtual std::string toString() override { return ""; };
-  Expr * extention = nullptr;
+  Expr *extention = nullptr;
   std::string typeCast = "";
 };
 
 class ConditionalExpr {
  public:
-  Expr* expr1;
+  Expr *expr1;
   Op op;
-  Expr* expr2;
+  Expr *expr2;
 };
 
 class Type {
@@ -89,10 +89,10 @@ class Type {
   links::LinkedList<int> indices;
   bool isGeneric = false;
   bool safeType = false;
-  Type * typeHint;
+  Type *typeHint;
 
   struct FPointerArgs {
-    Type * returnType = nullptr;
+    Type *returnType = nullptr;
     int requiredArgs = 0;
     std::vector<Type> argTypes;
     std::string id;
@@ -103,7 +103,8 @@ class Type {
   FPointerArgs fPointerArgs;
 
   Type() = default;
-  Type(const std::string &typeName, const asmc::Size &size) : typeName(typeName), size(size) {};
+  Type(const std::string &typeName, const asmc::Size &size)
+      : typeName(typeName), size(size){};
 };
 
 class Arg {
@@ -116,7 +117,6 @@ class Program {
   ProgramMember members;
 };
 
-
 class Argument : public Arg, public Statement {
  public:
   std::string Ident;
@@ -125,7 +125,7 @@ class Argument : public Arg, public Statement {
 
 class ParenExpr : public Expr {
  public:
-  Expr* expr;
+  Expr *expr;
 };
 
 class CharLiteral : public Expr {
@@ -135,25 +135,25 @@ class CharLiteral : public Expr {
 
 class Sequence : public Statement {
  public:
-  Statement* Statement1;
-  Statement* Statement2;
+  Statement *Statement1;
+  Statement *Statement2;
 };
 
 class Iflush : public Statement {};
 
 class CWrite : public Statement {
  public:
-  Expr* expr;
+  Expr *expr;
 };
 
 class Push : public Statement {
  public:
-  Expr* expr;
+  Expr *expr;
 };
 
 class Pull : public Statement {
  public:
-  Expr* expr;
+  Expr *expr;
 };
 
 class DecArr : public Statement {
@@ -163,20 +163,20 @@ class DecArr : public Statement {
   int count;
   bool mut = true;
   ScopeMod scope;
-  links::LinkedList<Expr*> indices;
+  links::LinkedList<Expr *> indices;
 };
 
 class DecAssignArr : public Statement {
  public:
-  DecArr* declare;
+  DecArr *declare;
   bool mute = true;
-  Expr* expr;
+  Expr *expr;
 };
 
 class Var : public Expr {
  public:
   std::string Ident;
-  links::LinkedList<Expr*> indices;
+  links::LinkedList<Expr *> indices;
   links::LinkedList<std::string> modList;
   bool internal = false;
 };
@@ -189,7 +189,7 @@ class StringLiteral : public Expr {
 class FStringLiteral : public Expr {
  public:
   std::string val;
-  std::vector<Expr*> args;
+  std::vector<Expr *> args;
 };
 
 class IntLiteral : public Expr {
@@ -209,9 +209,9 @@ class LongLiteral : public Expr {
 
 class Compound : public Expr {
  public:
-  Expr* expr1;
+  Expr *expr1;
   Op op;
-  Expr* expr2;
+  Expr *expr2;
 };
 
 class Reference : public Expr {
@@ -230,40 +230,40 @@ class DeReference : public Expr {
 
 class CallExpr : public Expr {
  public:
-  Call* call;
+  Call *call;
 };
 
 class parenExpr : public Expr {
  public:
-  Expr* expr;
+  Expr *expr;
 };
 
 class Lambda : public Expr {
  public:
-  Function* function;
+  Function *function;
 };
 
 class NewExpr : public Expr {
  public:
   Type type;
-  links::LinkedList<Expr*> args;
+  links::LinkedList<Expr *> args;
 };
 
 class StructList : public Expr {
  public:
-  links::LinkedList<Expr*> args;
+  links::LinkedList<Expr *> args;
 };
 
 class Not : public Expr {
  public:
-  Expr* expr;
+  Expr *expr;
 };
 
 class IfExpr : public Expr {
-  public:
-  Expr* expr;
-  Expr* trueExpr;
-  Expr* falseExpr;
+ public:
+  Expr *expr;
+  Expr *trueExpr;
+  Expr *falseExpr;
 };
 
 }  // namespace ast

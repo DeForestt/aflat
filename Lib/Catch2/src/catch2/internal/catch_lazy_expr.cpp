@@ -6,17 +6,19 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
-#include <catch2/internal/catch_lazy_expr.hpp>
 #include <catch2/internal/catch_decomposer.hpp>
+#include <catch2/internal/catch_lazy_expr.hpp>
 
 namespace Catch {
 
-    auto operator << (std::ostream& os, LazyExpression const& lazyExpr) -> std::ostream& {
-        if (lazyExpr.m_isNegated)
+    auto operator<<( std::ostream& os, LazyExpression const& lazyExpr )
+        -> std::ostream& {
+        if ( lazyExpr.m_isNegated )
             os << '!';
 
-        if (lazyExpr) {
-            if (lazyExpr.m_isNegated && lazyExpr.m_transientExpression->isBinaryExpression())
+        if ( lazyExpr ) {
+            if ( lazyExpr.m_isNegated &&
+                 lazyExpr.m_transientExpression->isBinaryExpression() )
                 os << '(' << *lazyExpr.m_transientExpression << ')';
             else
                 os << *lazyExpr.m_transientExpression;

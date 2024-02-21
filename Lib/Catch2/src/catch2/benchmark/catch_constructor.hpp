@@ -11,57 +11,54 @@
 #define CATCH_CONSTRUCTOR_HPP_INCLUDED
 
 #include <catch2/internal/catch_move_and_forward.hpp>
-
 #include <type_traits>
 
 namespace Catch {
     namespace Benchmark {
         namespace Detail {
-            template <typename T, bool Destruct>
-            struct ObjectStorage
-            {
+            template <typename T, bool Destruct> struct ObjectStorage {
                 ObjectStorage() = default;
 
-                ObjectStorage(const ObjectStorage& other)
-                {
-                    new(&data) T(other.stored_object());
+                ObjectStorage( const ObjectStorage& other ) {
+                    new ( &data ) T( other.stored_object() );
                 }
 
-                ObjectStorage(ObjectStorage&& other)
-                {
-                    new(data) T(CATCH_MOVE(other.stored_object()));
+                ObjectStorage( ObjectStorage&& other ) {
+                    new ( data ) T( CATCH_MOVE( other.stored_object() ) );
                 }
 
                 ~ObjectStorage() { destruct_on_exit<T>(); }
 
-                template <typename... Args>
-                void construct(Args&&... args)
-                {
-                    new (data) T(CATCH_FORWARD(args)...);
+                template <typename... Args> void construct( Args&&... args ) {
+                    new ( data ) T( CATCH_FORWARD( args )... );
                 }
 
                 template <bool AllowManualDestruction = !Destruct>
-                std::enable_if_t<AllowManualDestruction> destruct()
-                {
+                std::enable_if_t<AllowManualDestruction> destruct() {
                     stored_object().~T();
                 }
 
             private:
-                // If this is a constructor benchmark, destruct the underlying object
+                // If this is a constructor benchmark, destruct the underlying
+                // object
                 template <typename U>
-                void destruct_on_exit(std::enable_if_t<Destruct, U>* = nullptr) { destruct<true>(); }
+                void
+                destruct_on_exit( std::enable_if_t<Destruct, U>* = nullptr ) {
+                    destruct<true>();
+                }
                 // Otherwise, don't
                 template <typename U>
-                void destruct_on_exit(std::enable_if_t<!Destruct, U>* = nullptr) { }
+                void
+                destruct_on_exit( std::enable_if_t<!Destruct, U>* = nullptr ) {}
 
                 T& stored_object() {
-                    return *static_cast<T*>(static_cast<void*>(data));
+                    return *static_cast<T*>( static_cast<void*>( data ) );
                 }
 
                 T const& stored_object() const {
-                    return *static_cast<T const*>(static_cast<void const*>(data));
+                    return *static_cast<T const*>(
+                        static_cast<void const*>( data ) );
                 }
-
 
                 alignas( T ) unsigned char data[sizeof( T )]{};
             };

@@ -13,11 +13,10 @@
  * output.
  */
 
-#include <catch2/catch_test_macros.hpp>
-#include <catch2/reporters/catch_reporter_streaming_base.hpp>
-#include <catch2/reporters/catch_reporter_registrars.hpp>
-
 #include <algorithm>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/reporters/catch_reporter_streaming_base.hpp>
 #include <iostream>
 #include <string>
 #include <utility>
@@ -26,13 +25,11 @@
 class TestReporter : public Catch::StreamingReporterBase {
 public:
     TestReporter( Catch::ReporterConfig&& _config ):
-        StreamingReporterBase( std::move(_config) ) {
+        StreamingReporterBase( std::move( _config ) ) {
         std::cout << "X29 - TestReporter constructed\n";
     }
 
-    static std::string getDescription() {
-        return "X29 test reporter";
-    }
+    static std::string getDescription() { return "X29 test reporter"; }
 
     void testRunStarting( Catch::TestRunInfo const& ) override {
         std::vector<std::pair<std::string, std::string>> options;
@@ -42,7 +39,9 @@ public:
         std::sort( options.begin(), options.end() );
         bool first = true;
         for ( auto const& kv : options ) {
-            if ( !first ) { std::cout << "::"; }
+            if ( !first ) {
+                std::cout << "::";
+            }
             std::cout << kv.first << "=" << kv.second;
             first = false;
         }

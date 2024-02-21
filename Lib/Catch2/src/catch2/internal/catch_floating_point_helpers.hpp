@@ -8,23 +8,20 @@
 #ifndef CATCH_FLOATING_POINT_HELPERS_HPP_INCLUDED
 #define CATCH_FLOATING_POINT_HELPERS_HPP_INCLUDED
 
-#include <catch2/internal/catch_polyfills.hpp>
-
 #include <cassert>
+#include <catch2/internal/catch_polyfills.hpp>
 #include <cmath>
 #include <cstdint>
-#include <utility>
 #include <limits>
+#include <utility>
 
 namespace Catch {
     namespace Detail {
 
-        uint32_t convertToBits(float f);
-        uint64_t convertToBits(double d);
+        uint32_t convertToBits( float f );
+        uint64_t convertToBits( double d );
 
     } // end namespace Detail
-
-
 
 #if defined( __GNUC__ ) || defined( __clang__ )
 #    pragma GCC diagnostic push
@@ -51,9 +48,9 @@ namespace Catch {
      * \pre `!isnan( rhs )`
      * \pre floating point numbers are represented in IEEE-754 format
      */
-    template <typename FP>
-    uint64_t ulpDistance( FP lhs, FP rhs ) {
-        assert( std::numeric_limits<FP>::is_iec559 &&
+    template <typename FP> uint64_t ulpDistance( FP lhs, FP rhs ) {
+        assert(
+            std::numeric_limits<FP>::is_iec559 &&
             "ulpDistance assumes IEEE-754 format for floating point types" );
         assert( !Catch::isnan( lhs ) &&
                 "Distance between NaN and number is not meaningful" );
@@ -62,14 +59,20 @@ namespace Catch {
 
         // We want X == Y to imply 0 ULP distance even if X and Y aren't
         // bit-equal (-0 and 0), or X - Y != 0 (same sign infinities).
-        if ( lhs == rhs ) { return 0; }
+        if ( lhs == rhs ) {
+            return 0;
+        }
 
         // We need a properly typed positive zero for type inference.
         static constexpr FP positive_zero{};
 
         // We want to ensure that +/- 0 is always represented as positive zero
-        if ( lhs == positive_zero ) { lhs = positive_zero; }
-        if ( rhs == positive_zero ) { rhs = positive_zero; }
+        if ( lhs == positive_zero ) {
+            lhs = positive_zero;
+        }
+        if ( rhs == positive_zero ) {
+            rhs = positive_zero;
+        }
 
         // If arguments have different signs, we can handle them by summing
         // how far are they from 0 each.
@@ -96,7 +99,6 @@ namespace Catch {
 #if defined( __GNUC__ ) || defined( __clang__ )
 #    pragma GCC diagnostic pop
 #endif
-
 
 } // end namespace Catch
 

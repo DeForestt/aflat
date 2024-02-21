@@ -13,7 +13,6 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
-
 #include <catch2/reporters/catch_reporter_registrars.hpp>
 #include <catch2/reporters/catch_reporter_streaming_base.hpp>
 
@@ -25,7 +24,7 @@ namespace {
 
         static std::string getDescription() { return "X35 test reporter"; }
     };
-}
+} // namespace
 
 CATCH_REGISTER_REPORTER( "test-reporter", TestReporter )
 CATCH_REGISTER_REPORTER( "test-reporter", TestReporter )

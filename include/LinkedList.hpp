@@ -5,14 +5,16 @@
 
 namespace links {
 
-template <typename T> class Node {
-public:
+template <typename T>
+class Node {
+ public:
   T data;
   Node *next = nullptr;
 };
 
-template <typename T> class LinkedList {
-public:
+template <typename T>
+class LinkedList {
+ public:
   bool (*foo)(T, T);
   int count;
 
@@ -65,7 +67,8 @@ public:
   T peek();
 
   /*search with passed in logic*/
-  template <typename Z> T *search(bool (*foo)(T, Z), Z input);
+  template <typename Z>
+  T *search(bool (*foo)(T, Z), Z input);
 
   /*search for a value*/
   T *operator[](T input);
@@ -87,9 +90,10 @@ public:
 
   void reset();
 };
-} // namespace links
+}  // namespace links
 
-template <typename T> int links::LinkedList<T>::size() {
+template <typename T>
+int links::LinkedList<T>::size() {
   int count = 0;
   Node<T> *temp = head;
   while (temp != nullptr) {
@@ -99,7 +103,8 @@ template <typename T> int links::LinkedList<T>::size() {
   return count;
 }
 
-template <typename T> int links::LinkedList<T>::trail() {
+template <typename T>
+int links::LinkedList<T>::trail() {
   int count = 0;
   Node<T> *temp = pos;
   while (temp != nullptr) {
@@ -109,7 +114,8 @@ template <typename T> int links::LinkedList<T>::trail() {
   return count;
 }
 
-template <typename T> void links::LinkedList<T>::terminate(int n) {
+template <typename T>
+void links::LinkedList<T>::terminate(int n) {
   Node<T> *temp = head;
   for (int i = 0; i < n; i++) {
     temp = temp->next;
@@ -117,7 +123,8 @@ template <typename T> void links::LinkedList<T>::terminate(int n) {
   temp->next = nullptr;
 }
 
-template <typename T> T links::LinkedList<T>::get(int index) {
+template <typename T>
+T links::LinkedList<T>::get(int index) {
   if (index < 0 || index > this->size()) {
     throw err::Exception("Index Out of Bounds");
     ;
@@ -129,7 +136,8 @@ template <typename T> T links::LinkedList<T>::get(int index) {
   return current->data;
 }
 
-template <typename T> T *links::LinkedList<T>::append(T input) {
+template <typename T>
+T *links::LinkedList<T>::append(T input) {
   Node<T> *temp = new Node<T>;
   temp->data = input;
   temp->next = nullptr;
@@ -146,7 +154,8 @@ template <typename T> T *links::LinkedList<T>::append(T input) {
   return &temp->data;
 }
 
-template <typename T> void links::LinkedList<T>::reset() {
+template <typename T>
+void links::LinkedList<T>::reset() {
   this->pos = this->head;
   if (this->trail() > this->count) {
     this->terminate(this->count - 1);
@@ -157,10 +166,8 @@ template <typename T>
 template <typename Z>
 T *links::LinkedList<T>::search(bool (*foo)(T, Z), Z input) {
   links::Node<T> *pointer = this->head;
-  if (this->head == nullptr)
-    return nullptr;
-  if ((*foo)(this->head->data, input))
-    return &this->head->data;
+  if (this->head == nullptr) return nullptr;
+  if ((*foo)(this->head->data, input)) return &this->head->data;
   while (pointer->next != nullptr) {
     pointer = pointer->next;
     if (foo(pointer->data, input)) {
@@ -170,12 +177,11 @@ T *links::LinkedList<T>::search(bool (*foo)(T, Z), Z input) {
   return nullptr;
 }
 
-template <typename T> T *links::LinkedList<T>::operator[](T input) {
+template <typename T>
+T *links::LinkedList<T>::operator[](T input) {
   links::Node<T> *pointer = this->head;
-  if (this->head == nullptr)
-    return nullptr;
-  if ((*foo)(this->head->data, input))
-    return &this->head->data;
+  if (this->head == nullptr) return nullptr;
+  if ((*foo)(this->head->data, input)) return &this->head->data;
   while (pointer->next != nullptr) {
     pointer = pointer->next;
     if (foo(pointer->data, input)) {
@@ -185,12 +191,14 @@ template <typename T> T *links::LinkedList<T>::operator[](T input) {
   return nullptr;
 }
 
-template <typename T> links::LinkedList<T>::LinkedList() {
+template <typename T>
+links::LinkedList<T>::LinkedList() {
   this->count = 0;
   head = nullptr;
 }
 
-template <typename T> void links::LinkedList<T>::clear() {
+template <typename T>
+void links::LinkedList<T>::clear() {
   if (this->count > 0) {
     while (this->count > 0) {
       this->pop();
@@ -201,7 +209,8 @@ template <typename T> void links::LinkedList<T>::clear() {
   this->pos = nullptr;
 }
 
-template <typename T> void links::LinkedList<T>::push(T value) {
+template <typename T>
+void links::LinkedList<T>::push(T value) {
   this->count += 1;
   Node<T> *push = new Node<T>();
   push->next = this->head;
@@ -210,7 +219,8 @@ template <typename T> void links::LinkedList<T>::push(T value) {
   this->pos = this->head;
 }
 
-template <typename T> void links::LinkedList<T>::insert(T value, int index) {
+template <typename T>
+void links::LinkedList<T>::insert(T value, int index) {
   Node<T> *curr = this->head;
   int i = 0;
   int count = this->size();
@@ -249,7 +259,8 @@ void links::LinkedList<T>::insert_top(T value, int index) {
   throw err::Exception("Index Out of Range");
 }
 
-template <typename T> void links::LinkedList<T>::operator<<(T value) {
+template <typename T>
+void links::LinkedList<T>::operator<<(T value) {
   this->count += 1;
   Node<T> *push = new Node<T>();
   push->next = this->head;
@@ -257,7 +268,8 @@ template <typename T> void links::LinkedList<T>::operator<<(T value) {
   this->head = push;
 }
 
-template <typename T> void links::LinkedList<T>::invert() {
+template <typename T>
+void links::LinkedList<T>::invert() {
   Node<T> *prev = nullptr;
   Node<T> *curr = this->head;
   Node<T> *next = nullptr;
@@ -273,7 +285,8 @@ template <typename T> void links::LinkedList<T>::invert() {
   this->pos = this->head;
 }
 
-template <typename T> T links::LinkedList<T>::pop() {
+template <typename T>
+T links::LinkedList<T>::pop() {
   this->count -= 1;
   T data = this->head->data;
   Node<T> *popper = this->head;
@@ -283,26 +296,29 @@ template <typename T> T links::LinkedList<T>::pop() {
   return data;
 }
 
-template <typename T> T links::LinkedList<T>::shift() {
-  if (this->pos == nullptr)
-    throw err::Exception("Position Pointer is null");
+template <typename T>
+T links::LinkedList<T>::shift() {
+  if (this->pos == nullptr) throw err::Exception("Position Pointer is null");
 
   T data = this->pos->data;
   this->pos = this->pos->next;
   return data;
 }
 
-template <typename T> T links::LinkedList<T>::peek() {
+template <typename T>
+T links::LinkedList<T>::peek() {
   return this->head->data;
 }
 
-template <typename T> T links::LinkedList<T>::touch() {
+template <typename T>
+T links::LinkedList<T>::touch() {
   if (this->pos == nullptr)
     throw err::Exception("Position Pointer is null cannot touch");
   return this->pos->data;
 };
 
-template <typename T> void links::LinkedList<T>::place(T value) {
+template <typename T>
+void links::LinkedList<T>::place(T value) {
   // get the index of pos
   int index = 0;
   Node<T> *curr = this->head;
@@ -314,7 +330,8 @@ template <typename T> void links::LinkedList<T>::place(T value) {
   this->insert_top(value, index);
 };
 
-template <typename T> void links::LinkedList<T>::stitch(LinkedList<T> l) {
+template <typename T>
+void links::LinkedList<T>::stitch(LinkedList<T> l) {
   links::Node<T> *pointer = head;
   this->count += l.count;
   if (pointer == nullptr) {
@@ -327,7 +344,8 @@ template <typename T> void links::LinkedList<T>::stitch(LinkedList<T> l) {
   }
 }
 
-template <typename T> void links::LinkedList<T>::istitch(LinkedList<T> l) {
+template <typename T>
+void links::LinkedList<T>::istitch(LinkedList<T> l) {
   links::Node<T> *pointer = l.head;
   this->count += l.count;
   if (pointer == nullptr) {

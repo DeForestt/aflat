@@ -12,11 +12,10 @@
 #include <catch2/interfaces/catch_interfaces_reporter.hpp>
 #include <catch2/interfaces/catch_interfaces_reporter_factory.hpp>
 #include <catch2/internal/catch_compiler_capabilities.hpp>
+#include <catch2/internal/catch_move_and_forward.hpp>
 #include <catch2/internal/catch_unique_name.hpp>
 #include <catch2/internal/catch_unique_ptr.hpp>
-#include <catch2/internal/catch_move_and_forward.hpp>
 #include <catch2/internal/catch_void_type.hpp>
-
 #include <type_traits>
 
 namespace Catch {
@@ -27,9 +26,7 @@ namespace Catch {
         struct has_description : std::false_type {};
 
         template <typename T>
-        struct has_description<
-            T,
-            void_t<decltype( T::getDescription() )>>
+        struct has_description<T, void_t<decltype( T::getDescription() )>>
             : std::true_type {};
 
         //! Indirection for reporter registration, so that the error handling is
@@ -42,11 +39,10 @@ namespace Catch {
     class IEventListener;
     using IEventListenerPtr = Detail::unique_ptr<IEventListener>;
 
-    template <typename T>
-    class ReporterFactory : public IReporterFactory {
+    template <typename T> class ReporterFactory : public IReporterFactory {
 
         IEventListenerPtr create( ReporterConfig&& config ) const override {
-            return Detail::make_unique<T>( CATCH_MOVE(config) );
+            return Detail::make_unique<T>( CATCH_MOVE( config ) );
         }
 
         std::string getDescription() const override {
@@ -54,9 +50,7 @@ namespace Catch {
         }
     };
 
-
-    template<typename T>
-    class ReporterRegistrar {
+    template <typename T> class ReporterRegistrar {
     public:
         explicit ReporterRegistrar( std::string const& name ) {
             registerReporterImpl( name,
@@ -64,8 +58,7 @@ namespace Catch {
         }
     };
 
-    template<typename T>
-    class ListenerRegistrar {
+    template <typename T> class ListenerRegistrar {
 
         class TypedListenerFactory : public EventListenerFactory {
             StringRef m_listenerName;
@@ -86,9 +79,7 @@ namespace Catch {
                 return Detail::make_unique<T>( config );
             }
 
-            StringRef getName() const override {
-                return m_listenerName;
-            }
+            StringRef getName() const override { return m_listenerName; }
 
             std::string getDescription() const override {
                 return getDescriptionImpl( Detail::has_description<T>{} );
@@ -96,13 +87,14 @@ namespace Catch {
         };
 
     public:
-        ListenerRegistrar(StringRef listenerName) {
-            getMutableRegistryHub().registerListener( Detail::make_unique<TypedListenerFactory>(listenerName) );
+        ListenerRegistrar( StringRef listenerName ) {
+            getMutableRegistryHub().registerListener(
+                Detail::make_unique<TypedListenerFactory>( listenerName ) );
         }
     };
-}
+} // namespace Catch
 
-#if !defined(CATCH_CONFIG_DISABLE)
+#if !defined( CATCH_CONFIG_DISABLE )
 
 #    define CATCH_REGISTER_REPORTER( name, reporterType )                      \
         CATCH_INTERNAL_START_WARNINGS_SUPPRESSION                              \
@@ -124,8 +116,8 @@ namespace Catch {
 
 #else // CATCH_CONFIG_DISABLE
 
-#define CATCH_REGISTER_REPORTER(name, reporterType)
-#define CATCH_REGISTER_LISTENER(listenerType)
+#    define CATCH_REGISTER_REPORTER( name, reporterType )
+#    define CATCH_REGISTER_LISTENER( listenerType )
 
 #endif // CATCH_CONFIG_DISABLE
 

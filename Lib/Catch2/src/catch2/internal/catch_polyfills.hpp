@@ -9,8 +9,8 @@
 #define CATCH_POLYFILLS_HPP_INCLUDED
 
 namespace Catch {
-    bool isnan(float f);
-    bool isnan(double d);
-}
+    bool isnan( float f );
+    bool isnan( double d );
+} // namespace Catch
 
 #endif // CATCH_POLYFILLS_HPP_INCLUDED
