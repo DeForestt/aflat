@@ -131,13 +131,6 @@ class Function : public Member, public Statement {
   bool has_return = false;
 };
 
-class Continue : public Statement {
-  public:
-  int level = 1;
-  Continue() = default;
-  explicit Continue(int level) : level(level) {};
-};
-
 class Break : public Statement {
   public:
   int level = 1;
