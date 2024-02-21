@@ -15,6 +15,7 @@ namespace parse {
 namespace ast {
 
 class Call;
+class Declare;
 
 class ProgramMember {
  public:
@@ -132,16 +133,6 @@ class Function : public Member, public Statement {
   bool flex = false;
   bool mask;
   bool has_return = false;
-};
-
-class Declare : public Arg, public Statement {
- public:
-  ScopeMod scope;
-  std::string Ident;
-  std::string TypeName;
-  bool mut = true;
-  bool mask;
-  Type type;
 };
 
 class Argument : public Arg, public Statement {

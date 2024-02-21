@@ -1729,10 +1729,10 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(
 
     int offset = this->getBytes(arg->type.size);
 
-    if (table.search<std::string>(searchSymbol, arg->Ident) != nullptr)
-      alert("redefined variable:" + arg->Ident);
+    if (table.search<std::string>(searchSymbol, arg->ident) != nullptr)
+      alert("redefined variable:" + arg->ident);
 
-    symbol.symbol = arg->Ident;
+    symbol.symbol = arg->ident;
     if (table.head == nullptr) {
       symbol.byteMod = offset;
     } else {
@@ -1793,7 +1793,7 @@ void gen::CodeGenerator::GenArgs(ast::Statement* STMT, asmc::File& OutputFile) {
       mov->from = this->intArgs[intArgsCounter].get(arg->type.size);
 
       int mod = gen::scope::ScopeManager::getInstance()->assign(
-          arg->Ident, arg->type, false, arg->mut);
+          arg->ident, arg->type, false, arg->mut);
 
       mov->size = size;
       mov->to = "-" + std::to_string(mod) + +"(%rbp)";
@@ -1840,7 +1840,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement* STMT) {
 
     ast::DecAssign* assign = new ast::DecAssign();
     assign->declare = new ast::Declare();
-    assign->declare->Ident = dec->ident;
+    assign->declare->ident = dec->ident;
     assign->declare->type = adr;
     assign->expr = decAssign->expr;
     assign->mute = decAssign->mute;

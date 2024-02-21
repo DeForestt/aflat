@@ -202,30 +202,19 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
 
     // Declare a variable
     if (typeList[obj.meta] != nullptr) {
-      ast::Declare *dec = new ast::Declare();
+      
 
       // check if we need to make a function pointer
       const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
-      if (sym != nullptr && sym->meta == "<") {
-        dec->type = this->parseFPointerType(tokens, obj.meta);
-      } else {
-        dec->type = *this->typeList[obj.meta];
-      }
+      const auto type = (sym != nullptr && sym->meta == "<") ? this->parseFPointerType(tokens, obj.meta) : *this->typeList[obj.meta];
 
       // ensures the the current token is an Ident
       if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
-        bool mask = false;
-        auto Ident = *dynamic_cast<lex::LObj *>(tokens.peek());
-        tokens.pop();
-        dec->Ident = Ident.meta;
-        dec->mask = mask;
-        dec->scope = scope;
-        dec->mut = isMutable;
-        dec->logicalLine = obj.lineCount;
-        output = dec;
-        auto overload = ast::Op::None;
+        const auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
+        output = new ast::Declare(ident.meta, scope, obj.meta, isMutable, type);
         if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
           auto sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+          auto overload = ast::Op::None;
           std::string scopeName = "global";
           if (sym.Sym == '<') {
             tokens.pop();
@@ -320,11 +309,11 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
           // Checking for Parenthesis to see if it is a function
           if (sym.Sym == '(') {
             tokens.pop();
+            auto id = new lex::LObj();
             auto *func = new ast::Function();
-            func->ident.ident = dec->Ident;
-            func->type = dec->type;
+            func->ident.ident = ident.meta;
+            func->type = type;
             func->scopeName = scopeName;
-            func->mask = mask;
             func->scope = scope;
             func->op = overload;
             func->req = 0;
@@ -396,12 +385,10 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
                 func->statement = this->parseStmt(tokens);
                 func->logicalLine = obj.lineCount;
                 output = func;
-                delete (dec);
               } else {
                 func->statement = nullptr;
                 func->logicalLine = obj.lineCount;
                 output = func;
-                delete (dec);
               };
             } else
               throw err::Exception(
@@ -410,7 +397,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
           } else if (sym.Sym == '=') {
             tokens.pop();
             auto assign = new ast::DecAssign;
-            assign->declare = dec;
+            assign->declare = dynamic_cast<ast::Declare *>(output);
             assign->mute = isMutable;
             assign->expr = this->parseExpr(tokens);
             assign->logicalLine = obj.lineCount;
@@ -692,9 +679,9 @@ ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens
       }
       // ensures the the current token is an Ident
       if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
-        auto Ident = *dynamic_cast<lex::LObj *>(tokens.peek());
+        auto ident = *dynamic_cast<lex::LObj *>(tokens.peek());
         tokens.pop();
-        dec->Ident = Ident.meta;
+        dec->ident = ident.meta;
         dec->mut = isMutable;
         output = dec;
         types.push_back(dec->type);

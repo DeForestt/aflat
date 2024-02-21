@@ -19,3 +19,4 @@
 #include "Parser/AST/Statements/Call.hpp"
 #include "Parser/AST/Statements/Inc.hpp"
 #include "Parser/AST/Statements/Dec.hpp"
+#include "Parser/AST/Statements/Declare.hpp"

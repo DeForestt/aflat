@@ -135,7 +135,7 @@ void gen::CodeGenerator::genFunction(ast::Function* func,
         assign.override = true;
         assign.expr = it.expr;
         assign.modList = LinkedList<std::string>();
-        assign.modList.push(it.declare->Ident);
+        assign.modList.push(it.declare->ident);
         OutputFile << this->GenSTMT(&assign);
       }
     }
@@ -193,11 +193,11 @@ void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
   if (!this->globalScope) {
     // if the there  is no scope use the scope manager otherwise use the scope
     if (this->scope == nullptr || this->inFunction) {
-      auto mod = gen::scope::ScopeManager::getInstance()->assign(dec->Ident, dec->type,
-                                                      dec->mask, dec->mut);
+      auto mod = gen::scope::ScopeManager::getInstance()->assign(dec->ident, dec->type,
+                                                      false, dec->mut);
       auto def = new asmc::Define();
       def->logicalLine = dec->logicalLine;
-      def->name = dec->Ident;
+      def->name = dec->ident;
       def->type = dec->type.size;
       def->value = "-" + std::to_string(mod) + "(%rbp)";
       OutputFile.text << def;
@@ -205,8 +205,8 @@ void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
       // add the symbol to the class symbol table
       Table = &this->scope->SymbolTable;
 
-      if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
-        alert("redefined variable: " + dec->Ident);
+      if (Table->search<std::string>(searchSymbol, dec->ident) != nullptr)
+        alert("redefined variable: " + dec->ident);
       gen::Symbol Symbol;
       if (Table->head == nullptr) {
         Symbol.byteMod = offset;
@@ -214,7 +214,7 @@ void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
         Symbol.byteMod = Table->head->data.byteMod + offset;
       }
       Symbol.type = dec->type;
-      Symbol.symbol = dec->Ident;
+      Symbol.symbol = dec->ident;
       Symbol.mutable_ = dec->mut;
       Table->push(Symbol);
       // if the symbol is public add it to the public symbol table
@@ -226,17 +226,17 @@ void gen::CodeGenerator::genDeclare(ast::Declare* dec, asmc::File& OutputFile) {
     Table = &this->GlobalSymbolTable;
     auto var = new asmc::LinkTask();
     auto label = new asmc::Label();
-    if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
-      alert("redefined global variable: " + dec->Ident);
+    if (Table->search<std::string>(searchSymbol, dec->ident) != nullptr)
+      alert("redefined global variable: " + dec->ident);
 
-    label->label = dec->Ident;
+    label->label = dec->ident;
     if (dec->type.size = asmc::QWord) {
       var->command = "quad";
     };
     gen::Symbol Symbol;
 
     Symbol.type = dec->type;
-    Symbol.symbol = dec->Ident;
+    Symbol.symbol = dec->ident;
     Symbol.mutable_ = dec->mut;
     OutputFile.bss << label;
     OutputFile.bss << var;
@@ -290,7 +290,7 @@ void gen::CodeGenerator::genDecArr(ast::DecArr* dec, asmc::File& OutputFile) {
     ast::DecAssign* assign = new ast::DecAssign();
     auto _dec = ast::Declare();
     assign->declare = &_dec;
-    assign->declare->Ident = dec->ident;
+    assign->declare->ident = dec->ident;
     assign->declare->type = adr;
     assign->expr = ref;
     assign->mute = dec->mut;
@@ -330,7 +330,7 @@ void gen::CodeGenerator::genDecArr(ast::DecArr* dec, asmc::File& OutputFile) {
     ast::DecAssign* assign = new ast::DecAssign();
     auto __dec = ast::Declare();
     assign->declare = &__dec;
-    assign->declare->Ident = dec->ident;
+    assign->declare->ident = dec->ident;
     assign->declare->type = adr;
     assign->expr = ref;
     assign->mute = dec->mut;
@@ -369,8 +369,8 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
         }
       }
       int byteMod = gen::scope::ScopeManager::getInstance()->assign(
-          dec->Ident, dec->type, dec->mask, decAssign->mute);
-      auto s = gen::scope::ScopeManager::getInstance()->get(dec->Ident);
+          dec->ident, dec->type, false, decAssign->mute);
+      auto s = gen::scope::ScopeManager::getInstance()->get(dec->ident);
       s->usable = false;
       s->refCount--;
 
@@ -406,14 +406,14 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
     gen::Symbol Symbol;
 
     Symbol.type = dec->type;
-    Symbol.symbol = dec->Ident;
+    Symbol.symbol = dec->ident;
     Symbol.mutable_ = decAssign->mute;
     auto Table = &this->GlobalSymbolTable;
 
     auto var = new asmc::LinkTask();
     auto label = new asmc::Label();
 
-    label->label = dec->Ident;
+    label->label = dec->ident;
     if (dec->type.size = asmc::QWord) {
       var->command = "quad";
     }
@@ -425,8 +425,8 @@ void gen::CodeGenerator::genDecAssign(ast::DecAssign* decAssign,
     Symbol.type.opType = exp.op;
     OutputFile.data << label;
     OutputFile.data << var;
-    if (Table->search<std::string>(searchSymbol, dec->Ident) != nullptr)
-      alert("redefined variable:" + dec->Ident);
+    if (Table->search<std::string>(searchSymbol, dec->ident) != nullptr)
+      alert("redefined variable:" + dec->ident);
     Table->push(Symbol);
   };
 
@@ -458,7 +458,7 @@ void gen::CodeGenerator::genDecAssignArr(ast::DecAssignArr* decAssign,
 
   ast::DecAssign* assign = new ast::DecAssign();
   assign->declare = new ast::Declare();
-  assign->declare->Ident = dec->ident;
+  assign->declare->ident = dec->ident;
   assign->declare->type = adr;
   assign->expr = decAssign->expr;
   assign->mute = decAssign->mute;
