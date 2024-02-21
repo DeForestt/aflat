@@ -21,3 +21,4 @@
 #include "Parser/AST/Statements/Dec.hpp"
 #include "Parser/AST/Statements/Declare.hpp"
 #include "Parser/AST/Statements/Function.hpp"
+#include "Parser/AST/Statements/DecAssign.hpp"

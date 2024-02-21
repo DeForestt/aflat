@@ -313,12 +313,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
             output = new ast::Function(ident.meta, scope, type, overload, scopeName, tokens, *this);
           } else if (sym.Sym == '=') {
             tokens.pop();
-            auto assign = new ast::DecAssign;
-            assign->declare = new ast::Declare(ident.meta, scope, obj.meta, isMutable, type);
-            assign->mute = isMutable;
-            assign->expr = this->parseExpr(tokens);
-            assign->logicalLine = obj.lineCount;
-            output = assign;
+            output = new ast::DecAssign(new ast::Declare(ident.meta, scope, obj.meta, isMutable, type), isMutable, tokens, *this);
           }
         } else {
           output = new ast::Declare(ident.meta, scope, obj.meta, isMutable, type);

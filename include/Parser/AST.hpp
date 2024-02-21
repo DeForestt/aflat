@@ -133,13 +133,6 @@ class CharLiteral : public Expr {
   char value;
 };
 
-class DecAssign : public Statement {
- public:
-  Declare* declare;
-  bool mute = true;
-  Expr* expr;
-};
-
 class Sequence : public Statement {
  public:
   Statement* Statement1;
