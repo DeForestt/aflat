@@ -196,12 +196,6 @@ class Call : public Statement {
   std::string publify = "";
 };
 
-class Delete : public Statement {
- public:
-  std::string ident;
-  links::LinkedList<std::string> modList;
-};
-
 class Sequence : public Statement {
  public:
   Statement* Statement1;

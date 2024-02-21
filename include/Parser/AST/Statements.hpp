@@ -12,3 +12,4 @@
 #include "Parser/AST/Statements/Class.hpp"
 #include "Parser/AST/Statements/Enum.hpp"
 #include "Parser/AST/Statements/Import.hpp"
+#include "Parser/AST/Statements/Delete.hpp"

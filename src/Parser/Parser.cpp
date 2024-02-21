@@ -495,34 +495,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
     } else if (obj.meta == "import") {
       output = new ast::Import(tokens, *this);
     } else if (obj.meta == "delete") {
-      auto del = new ast::Delete();
-      del->logicalLine = obj.lineCount;
-      auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
-      if (ident == nullptr)
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Expected Ident");
-
-      del->ident = ident->meta;
-      links::LinkedList<std::string> modList;
-      auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
-      while (sym != nullptr && sym->Sym == '.') {
-        tokens.pop();
-        if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
-          auto mod = *dynamic_cast<lex::LObj *>(tokens.pop());
-          modList << mod.meta;
-        } else
-          throw err::Exception("Expected, Ident after dot. on line " +
-                               std::to_string(sym->lineCount));
-        if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
-          sym = dynamic_cast<lex::OpSym *>(tokens.peek());
-        } else
-          throw err::Exception("expected assignment operator got on line " +
-                               std::to_string(sym->lineCount) + " " + sym->Sym);
-      }
-
-      del->modList = modList;
-      output = del;
+      output = new ast::Delete(tokens, *this);
     } else if (obj.meta == "continue") {
       auto count = 1;
       if (dynamic_cast<lex::INT *>(tokens.peek()) != nullptr) {
