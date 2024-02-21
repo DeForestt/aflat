@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/Lower.hpp"
@@ -547,13 +548,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         alert("Class " + call->ident + " not found");
       }
     } else {
-      ast::Function func = this->GenCall(call, OutputFile);
-      output.type = func.type.typeName;
-      output.size = func.type.size;
-      if (size != asmc::AUTO && (func.flex || func.type.typeName == "any"))
+      auto callGen = call->generate(*this);
+      OutputFile << callGen.file;
+      output = callGen.expr.value();
+      if (size != asmc::AUTO &&
+          (output.type == "any" || output.type == "--std--flex--function"))
         output.size = size;
       output.access = this->registers["%rax"]->get(output.size);
-      if (func.type.typeName == "float") {
+      if (output.type == "float") {
         output.access = this->registers["%xmm0"]->get(output.size);
         output.op = asmc::Float;
       }
