@@ -214,10 +214,11 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
         
         auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
         if (sym && sym->Sym != ';') {
-          auto sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
+          auto sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
           auto overload = ast::Op::None;
           std::string scopeName = "global";
           if (sym.Sym == '<') {
+            tokens.pop();
             auto *next = dynamic_cast<lex::OpSym *>(tokens.peek());
             if (next != nullptr) {
               if (next->Sym == '>') {
@@ -288,6 +289,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
             sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
           }
           if (sym.Sym == '@') {
+            tokens.pop();
             if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
               auto scopeObj = *dynamic_cast<lex::LObj *>(tokens.pop());
               scopeName = scopeObj.meta;
