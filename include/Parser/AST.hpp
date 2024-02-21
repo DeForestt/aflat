@@ -12,6 +12,12 @@ namespace parse {
 class Parser;
 };
 
+namespace gen
+{
+  class CodeGenerator;
+} // namespace gen
+
+
 namespace ast {
 
 class Call;
@@ -33,6 +39,11 @@ class Statement {
   bool locked = false;
   int logicalLine = 0;
   virtual std::string toString() { return ""; };
+  virtual asmc::File generate(gen::CodeGenerator &generator) { 
+    asmc::File file;
+    file.text << new asmc::nop();
+    return file;
+   };
 };
 
 class Member {
