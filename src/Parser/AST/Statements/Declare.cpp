@@ -72,5 +72,6 @@ asmc::File const Declare::generate(gen::CodeGenerator &generator) {
     newType->fPointerArgs = this->type.fPointerArgs;
     generator.TypeList.push(*newType);
   }
+  return OutputFile;
 }
 }  // namespace ast
