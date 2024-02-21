@@ -158,7 +158,7 @@ class CodeGenerator {
   void genIf(ast::If* ifStmt, asmc::File& OutputFile);
   void genWhile(ast::While* loop, asmc::File& OutputFile);
   void genFor(ast::For* loop, asmc::File& OutputFile);
-  void genUDef(ast::UDeffType* udef, asmc::File& OutputFile);
+  void genUDef(ast::Struct* udef, asmc::File& OutputFile);
   void genClass(ast::Class* deff, asmc::File& OutputFile);
   void genEnum(ast::Enum* deff, asmc::File& OutputFile);
   void genInc(ast::Inc* inc, asmc::File& OutputFile);

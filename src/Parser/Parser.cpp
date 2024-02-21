@@ -487,28 +487,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
     } else if (obj.meta == "for") {
       output = new ast::For(tokens, *this);
     } else if (obj.meta == "struct") {
-      ast::UDeffType *stc = new ast::UDeffType();
-      stc->logicalLine = obj.lineCount;
-      if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
-        auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
-        stc->ident.ident = ident.meta;
-      } else
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " struct needs Ident");
-      if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
-        auto op = *dynamic_cast<lex::OpSym *>(tokens.pop());
-        if (op.Sym != '{')
-          throw err::Exception(
-              "Line: " + std::to_string(tokens.peek()->lineCount) +
-              " Unopened UDeffType");
-      } else
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Unopened UDeffType");
-      stc->statement = this->parseStmt(tokens);
-      this->addType(stc->ident.ident, asmc::Hard, asmc::QWord);
-      output = stc;
+      output = new ast::Struct(tokens, *this);
     } else if (obj.meta == "class") {
       auto item = new ast::Class();
       item->logicalLine = obj.lineCount;

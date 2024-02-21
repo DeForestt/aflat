@@ -141,12 +141,6 @@ class Function : public Member, public Statement {
   bool has_return = false;
 };
 
-class UDeffType : public Member, public Statement {
- public:
-  Ident ident;
-  Statement* statement;
-};
-
 class Continue : public Statement {
   public:
   int level = 1;

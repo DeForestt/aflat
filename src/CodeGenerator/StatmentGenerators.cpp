@@ -1375,7 +1375,7 @@ void gen::CodeGenerator::genFor(ast::For* loop, asmc::File& OutputFile) {
   scope::ScopeManager::getInstance()->popScope(this, OutputFile);
 }
 
-void gen::CodeGenerator::genUDef(ast::UDeffType* udef, asmc::File& OutputFile) {
+void gen::CodeGenerator::genUDef(ast::Struct* udef, asmc::File& OutputFile) {
   gen::Type* type = new gen::Type();
   bool saveScope = this->globalScope;
   this->globalScope = false;

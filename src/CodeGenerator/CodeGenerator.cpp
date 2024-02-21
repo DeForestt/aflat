@@ -1866,8 +1866,8 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement* STMT) {
   } else if (dynamic_cast<ast::For*>(STMT) != nullptr) {
     this->genFor(dynamic_cast<ast::For*>(STMT), OutputFile);
     this->currentFunction->has_return = false;
-  } else if (dynamic_cast<ast::UDeffType*>(STMT) != nullptr) {
-    this->genUDef(dynamic_cast<ast::UDeffType*>(STMT), OutputFile);
+  } else if (dynamic_cast<ast::Struct*>(STMT) != nullptr) {
+    this->genUDef(dynamic_cast<ast::Struct*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Class*>(STMT) != nullptr) {
     this->genClass(dynamic_cast<ast::Class*>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Enum*>(STMT)) {
