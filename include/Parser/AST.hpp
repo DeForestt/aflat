@@ -37,7 +37,7 @@ class Statement {
   bool locked = false;
   int logicalLine = 0;
   virtual std::string toString() { return ""; };
-  virtual asmc::File generate(gen::CodeGenerator &generator) {
+  virtual asmc::File const generate(gen::CodeGenerator &generator) {
     asmc::File file;
     file.text << new asmc::nop();
     return file;
