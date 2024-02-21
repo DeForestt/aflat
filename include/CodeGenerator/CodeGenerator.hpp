@@ -87,7 +87,7 @@ class Enum : public Type {
 };
 
 class CodeGenerator {
- protected:
+ public:
 #pragma region State Variables
   gen::Class *scope;
   ast::Type returnType;
@@ -169,7 +169,6 @@ class CodeGenerator {
   void genBreak(ast::Break *brk, asmc::File &OutputFile);
   void genContinue(ast::Continue *cont, asmc::File &OutputFile);
 
- public:
   asmc::File GenSTMT(ast::Statement *stmt);
   asmc::File ImportsOnly(ast::Statement *stmt);
   links::LinkedList<gen::Symbol> GenTable(
