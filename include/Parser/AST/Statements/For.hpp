@@ -12,7 +12,7 @@ namespace ast
     class For : public Statement {
         public:
         Statement* declare;
-        ast::Expr* expr;
+        Expr* expr;
         Statement* increment;
         Statement* Run;
         For() = default;

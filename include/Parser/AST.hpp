@@ -13,6 +13,9 @@ namespace parse {
 };
 
 namespace ast {
+
+class Call;
+
 class ProgramMember {
  public:
   virtual std::string toString() { return ""; };
@@ -84,12 +87,12 @@ class Type {
   links::LinkedList<int> indices;
   bool isGeneric = false;
   bool safeType = false;
-  ast::Type * typeHint;
+  Type * typeHint;
 
   struct FPointerArgs {
-    ast::Type * returnType = nullptr;
+    Type * returnType = nullptr;
     int requiredArgs = 0;
-    std::vector<ast::Type> argTypes;
+    std::vector<Type> argTypes;
     std::string id;
     asmc::Size size;
     bool isFPointer = false;
@@ -113,7 +116,7 @@ class Program {
 
 class Function : public Member, public Statement {
  public:
-  ast::ScopeMod scope;
+  ScopeMod scope;
   Type type;
   std::string scopeName = "";
   std::string decorator = "";
@@ -121,9 +124,9 @@ class Function : public Member, public Statement {
   Ident ident;
   Statement* args;
   Statement* statement;
-  ast::Op op;
+  Op op;
   int req;
-  std::vector<ast::Type> argTypes;
+  std::vector<Type> argTypes;
   links::LinkedList<Expr*> decoratorArgs;
   bool isLambda = false;
   bool flex = false;
@@ -133,7 +136,7 @@ class Function : public Member, public Statement {
 
 class Declare : public Arg, public Statement {
  public:
-  ast::ScopeMod scope;
+  ScopeMod scope;
   std::string Ident;
   std::string TypeName;
   bool mut = true;
@@ -190,10 +193,10 @@ class Pull : public Statement {
 class DecArr : public Statement {
  public:
   std::string ident;
-  ast::Type type;
+  Type type;
   int count;
   bool mut = true;
-  ast::ScopeMod scope;
+  ScopeMod scope;
   links::LinkedList<Expr*> indices;
 };
 
@@ -204,20 +207,10 @@ class DecAssignArr : public Statement {
   Expr* expr;
 };
 
-class Inc : public Statement {
- public:
-  std::string ident;
-};
-
-class Dec : public Statement {
- public:
-  std::string ident;
-};
-
 class Var : public Expr {
  public:
   std::string Ident;
-  links::LinkedList<ast::Expr*> indices;
+  links::LinkedList<Expr*> indices;
   links::LinkedList<std::string> modList;
   bool internal = false;
 };
@@ -266,12 +259,12 @@ class DeReference : public Expr {
  public:
   std::string Ident;
   links::LinkedList<std::string> modList;
-  ast::Type type;
+  Type type;
 };
 
 class CallExpr : public Expr {
  public:
-  ast::Call* call;
+  Call* call;
 };
 
 class parenExpr : public Expr {
@@ -281,18 +274,18 @@ class parenExpr : public Expr {
 
 class Lambda : public Expr {
  public:
-  ast::Function* function;
+  Function* function;
 };
 
 class NewExpr : public Expr {
  public:
-  ast::Type type;
+  Type type;
   links::LinkedList<Expr*> args;
 };
 
 class StructList : public Expr {
  public:
-  links::LinkedList<ast::Expr*> args;
+  links::LinkedList<Expr*> args;
 };
 
 class Not : public Expr {

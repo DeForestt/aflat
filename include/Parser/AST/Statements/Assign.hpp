@@ -13,8 +13,8 @@ namespace ast {
             bool override = false;
             Expr* expr;
             links::LinkedList<std::string> modList;
-            links::LinkedList<ast::Expr*> indices;
+            links::LinkedList<Expr *> indices;
             Assign() = default;
-            Assign(const std::string &ident, const links::LinkedList<ast::Expr*> &indices, links::LinkedList<std::string> modList, links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
+            Assign(const std::string &ident, const links::LinkedList<Expr*> &indices, links::LinkedList<std::string> modList, links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
     };
 }

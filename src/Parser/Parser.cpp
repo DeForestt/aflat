@@ -558,29 +558,11 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
         } else if (sym.Sym == '(') {
           output = new ast::Call(obj.meta, this->parseCallArgsList(tokens),
                                  modList);
-          output.logicalLine = obj.lineCount;
+          output->logicalLine = obj.lineCount;
         } else if (sym.Sym == '+') {
-          auto s = dynamic_cast<lex::OpSym *>(tokens.peek());
-          if (s != nullptr && s->Sym == '+') {
-            tokens.pop();
-            auto inc = new ast::Inc();
-            inc->logicalLine = obj.lineCount;
-            inc->ident = obj.meta;
-            output = inc;
-          } else
-            throw err::Exception("Expected ++ on line " +
-                                 std::to_string(sym.lineCount));
+          output = new ast::Inc(obj.meta, tokens);
         } else if (sym.Sym == '-') {
-          lex::OpSym *s = dynamic_cast<lex::OpSym *>(tokens.peek());
-          if (s != nullptr && s->Sym == '-') {
-            tokens.pop();
-            auto inc = new ast::Dec();
-            inc->logicalLine = obj.lineCount;
-            inc->ident = obj.meta;
-            output = inc;
-          } else
-            throw err::Exception("Expected -- on line " +
-                                 std::to_string(sym.lineCount));
+          output = new ast::Dec(obj.meta, tokens);
         } else
           throw err::Exception("Line: " + std::to_string(obj.lineCount) +
                                " expected assignment operator after " +
@@ -637,7 +619,7 @@ links::LinkedList<ast::Expr *> parse::Parser::parseCallArgsList(links::LinkedLis
   links::LinkedList<ast::Expr *> args;
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
     dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ')') {
-    tokens.pop()
+    tokens.pop();
   } else {
     bool pop = false;
     do {

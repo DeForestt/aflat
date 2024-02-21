@@ -13,7 +13,7 @@ namespace ast {
             links::LinkedList<std::string> modList;
             std::string publify = "";
             Call() = default;
-            Call(const std::string &ident, links::LinkedList<Expr*> &args, links::LinkedList<std::string> modList) : ident(ident), Args(args), modList(modList) {}
+            Call(const std::string &ident, const links::LinkedList<Expr*> &args, links::LinkedList<std::string> modList) : ident(ident), Args(args), modList(modList) {}
     };
 
 } // namespace ast

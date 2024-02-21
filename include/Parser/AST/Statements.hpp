@@ -17,3 +17,5 @@
 #include "Parser/AST/Statements/Break.hpp"
 #include "Parser/AST/Statements/Assign.hpp"
 #include "Parser/AST/Statements/Call.hpp"
+#include "Parser/AST/Statements/Inc.hpp"
+#include "Parser/AST/Statements/Dec.hpp"
