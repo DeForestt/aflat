@@ -13,6 +13,6 @@ namespace ast {
             std::string nameSpace;
             bool classes = false;
             Import() = default;
-            Import(links::LinkedList<lex::Token *> tokens, parse::Parser &parser);
+            Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
     };
 };

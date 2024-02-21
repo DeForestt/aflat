@@ -531,7 +531,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
       output = new ast::Continue(count);
       output->logicalLine = obj.lineCount;
     } else if (obj.meta == "break") {
-      auto count = 1;
+            auto count = 1;
       if (dynamic_cast<lex::INT *>(tokens.peek()) != nullptr) {
         count = std::stoi(dynamic_cast<lex::INT *>(tokens.pop())->value);
       }
