@@ -556,33 +556,9 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
         if (sym.Sym == '=') {
           output = new ast::Assign(obj.meta, indices, modList, tokens, *this);
         } else if (sym.Sym == '(') {
-          auto call = new ast::Call();
-          call->ident = obj.meta;
-          call->modList = modList;
-          call->logicalLine = obj.lineCount;
-          
-          if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-              dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ')') {
-            auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
-            if (symp->Sym != ')')
-              throw err::Exception("Expected closed parenthesis got " + symp->Sym);
-          } else {
-            bool pop = false;
-            do {
-              if (pop)
-                tokens.pop();
-              call->Args.push(this->parseExpr(tokens));
-              pop = true;
-            } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-                     dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',');
-            if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
-              auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
-              if (symp->Sym != ')')
-                throw err::Exception("Expected closed parenthesis got " +
-                                     symp->Sym);
-            }
-          }
-          output = call;
+          output = new ast::Call(obj.meta, this->parseCallArgsList(tokens),
+                                 modList);
+          output.logicalLine = obj.lineCount;
         } else if (sym.Sym == '+') {
           auto s = dynamic_cast<lex::OpSym *>(tokens.peek());
           if (s != nullptr && s->Sym == '+') {
@@ -655,6 +631,29 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
     }
   }
   return output;
+}
+
+links::LinkedList<ast::Expr *> parse::Parser::parseCallArgsList(links::LinkedList<lex::Token *> &tokens) {
+  links::LinkedList<ast::Expr *> args;
+  if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+    dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ')') {
+    tokens.pop()
+  } else {
+    bool pop = false;
+    do {
+      if (pop)
+        tokens.pop();
+      args.push(this->parseExpr(tokens));
+      pop = true;
+    } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+              dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',');
+    if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
+      auto sym = dynamic_cast<lex::OpSym *>(tokens.pop());
+      if (sym->Sym != ')')
+        throw err::Exception("Expected closed parenthesis got " + sym->Sym);
+    }
+  }
+  return args;
 }
 
 ast::Statement *parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens,

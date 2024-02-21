@@ -164,14 +164,6 @@ class DecAssign : public Statement {
   Expr* expr;
 };
 
-class Call : public Statement {
- public:
-  std::string ident;
-  links::LinkedList<Expr*> Args;
-  links::LinkedList<std::string> modList;
-  std::string publify = "";
-};
-
 class Sequence : public Statement {
  public:
   Statement* Statement1;

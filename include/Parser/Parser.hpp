@@ -26,6 +26,7 @@ public:
   links::SLinkedList<ast::Type, std::string> typeList;
   ast::Type parseFPointerType(links::LinkedList<lex::Token *> &tokens, const std::string typeName);
   ast::ConditionalExpr *parseCondition(links::LinkedList<lex::Token *> &tokens);
+  links::LinkedList<ast::Expr *> parseCallArgsList(links::LinkedList<lex::Token *> &tokens);
 };
 }; // namespace parse
 
