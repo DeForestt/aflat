@@ -17,5 +17,6 @@ class Declare : public Arg, public Statement {
   Declare(const std::string &ident, const ScopeMod &scope,
           const std::string &TypeName, const bool mut, const Type &type)
       : ident(ident), scope(scope), TypeName(TypeName), mut(mut), type(type){};
+  asmc::File const generate(gen::CodeGenerator &generator) override;
 };
 };  // namespace ast
