@@ -11,6 +11,7 @@ class DecAssign : public Statement {
   Declare *declare;
   bool mute = true;
   Expr *expr;
+  asmc::File const generate(gen::CodeGenerator &generator) override;
   DecAssign() = default;
   DecAssign(Declare *declare, const bool mute,
             links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
