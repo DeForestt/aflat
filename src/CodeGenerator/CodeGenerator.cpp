@@ -1875,7 +1875,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
   } else if (dynamic_cast<ast::Break *>(STMT)) {
     this->genBreak(dynamic_cast<ast::Break *>(STMT), OutputFile);
   } else {
-    OutputFile << STMT->generate(*this);
+    OutputFile << STMT->generate(*this).file;
   }
 
   return OutputFile;

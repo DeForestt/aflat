@@ -1,24 +1,17 @@
 #ifndef GEN
 #define GEN
 
+#include <optional>
 #include <tuple>
 
 #include "ASM.hpp"
+#include "CodeGenerator/Expr.hpp"
 #include "HashMap.hpp"
 #include "LinkedList.hpp"
 #include "LinkedListS.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/Parser.hpp"
 namespace gen {
-
-class Expr {
- public:
-  asmc::OpType op = asmc::Hard;
-  std::string access;
-  std::string type = "";
-  asmc::Size size;
-  bool passable = true;
-};
 
 class Symbol {
  public:

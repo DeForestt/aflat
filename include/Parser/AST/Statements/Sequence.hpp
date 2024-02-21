@@ -10,7 +10,7 @@ class Sequence : public Statement {
  public:
   Statement *Statement1;
   Statement *Statement2;
-  asmc::File const generate(gen::CodeGenerator &generator) override;
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   Sequence() = default;
 };
 

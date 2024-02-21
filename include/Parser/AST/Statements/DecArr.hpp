@@ -15,7 +15,7 @@ class DecArr : public Statement {
   ScopeMod scope;
   links::LinkedList<Expr *> indices;
   DecArr() = default;
-  asmc::File const generate(gen::CodeGenerator &generator) override;
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 
 }  // namespace ast

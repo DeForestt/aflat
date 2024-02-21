@@ -30,6 +30,6 @@ class Function : public Member, public Statement {
   Function(const string &ident, const ScopeMod &scope, const Type &type,
            const Op op, const std::string &scopeName,
            links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
-  asmc::File const generate(gen::CodeGenerator &generator) override;
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 };  // namespace ast

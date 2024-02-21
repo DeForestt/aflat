@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "ASM.hpp"
+#include "CodeGenerator/GenerationResult.hpp"
 #include "LinkedList.hpp"
 #include "Scanner.hpp"
 
@@ -14,7 +15,7 @@ class Parser;
 
 namespace gen {
 class CodeGenerator;
-}  // namespace gen
+};  // namespace gen
 
 namespace ast {
 
@@ -38,10 +39,10 @@ class Statement {
   bool locked = false;
   int logicalLine = 0;
   virtual std::string toString() { return ""; };
-  virtual asmc::File const generate(gen::CodeGenerator &generator) {
+  virtual gen::GenerationResult const generate(gen::CodeGenerator &generator) {
     asmc::File file;
     file.text << new asmc::nop();
-    return file;
+    return {file, std::nullopt};
   };
 };
 

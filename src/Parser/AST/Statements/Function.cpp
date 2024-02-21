@@ -88,8 +88,8 @@ Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
                          " Need terminating symbol or open symbol");
 }
 
-asmc::File const Function::generate(gen::CodeGenerator &generator) {
-  asmc::File outputFile;
+gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
+  asmc::File file;
   ast::Function *saveFunc = generator.currentFunction;
   int saveIntArgs = generator.intArgsCounter;
   bool isLambda = this->isLambda;
@@ -144,24 +144,24 @@ asmc::File const Function::generate(gen::CodeGenerator &generator) {
       link->logicalLine = this->logicalLine;
       link->command = "global";
       link->operand = generator.moduleId + '.' + label->label;
-      outputFile.linker.push(link);
+      file.linker.push(link);
       auto label2 = new asmc::Label();
       label2->label = generator.moduleId + '.' + label->label;
-      outputFile.text << label2;
+      file.text << label2;
     }
 
-    outputFile.text.push(label);
-    outputFile.text.push(push);
-    outputFile.text.push(mov);
+    file.text.push(label);
+    file.text.push(push);
+    file.text.push(mov);
     // push the callee preserved registers
     auto push2 = new asmc::Push();
     push2->logicalLine = this->logicalLine;
     push2->op = "%rbx";
-    outputFile.text.push(push2);
+    file.text.push(push2);
     auto push3 = new asmc::Push();
     push3->logicalLine = this->logicalLine;
 
-    int AlignmentLoc = outputFile.text.count;
+    int AlignmentLoc = file.text.count;
     generator.intArgsCounter = 0;
     generator.returnType = this->type;
     auto link = new asmc::LinkTask();
@@ -189,11 +189,11 @@ asmc::File const Function::generate(gen::CodeGenerator &generator) {
 
       movy->size = asmc::QWord;
       movy->to = "-" + std::to_string(byteMod) + +"(%rbp)";
-      outputFile.text << movy;
+      file.text << movy;
       generator.intArgsCounter++;
     };
-    generator.GenArgs(this->args, outputFile);
-    if (!isLambda && this->scope == ast::Public) outputFile.linker.push(link);
+    generator.GenArgs(this->args, file);
+    if (!isLambda && this->scope == ast::Public) file.linker.push(link);
 
     // if the function is 'init' and scope is a class, add the default value
     if (this->ident.ident == "init" && generator.scope != nullptr) {
@@ -205,13 +205,13 @@ asmc::File const Function::generate(gen::CodeGenerator &generator) {
         assign.expr = it.expr;
         assign.modList = LinkedList<std::string>();
         assign.modList.push(it.declare->ident);
-        outputFile << generator.GenSTMT(&assign);
+        file << generator.GenSTMT(&assign);
       }
     }
 
-    asmc::File file = generator.GenSTMT(this->statement);
+    asmc::File statement = generator.GenSTMT(this->statement);
     // check if the last statement is a return statement
-    if (file.text.count > 0) {
+    if (statement.text.count > 0) {
       if (!generator.currentFunction->has_return) {
         // if the function name is init then we need to alert to return
         // 'my'
@@ -221,23 +221,23 @@ asmc::File const Function::generate(gen::CodeGenerator &generator) {
           auto var = new ast::Var();
           var->Ident = "my";
           returnStmt->expr = var;
-          file << generator.GenSTMT(returnStmt);
+          statement << generator.GenSTMT(returnStmt);
         } else {
           asmc::Return *ret = new asmc::Return();
           ret->logicalLine = this->logicalLine;
-          file.text.push(ret);
+          statement.text.push(ret);
         };
       }
     } else {
       auto pop = new asmc::Pop();
       pop->logicalLine = this->logicalLine;
       pop->op = "%rbx";
-      file.text.push(pop);
+      statement.text.push(pop);
       auto ret = new asmc::Return();
       ret->logicalLine = this->logicalLine;
-      file.text.push(ret);
+      statement.text.push(ret);
     }
-    outputFile << file;
+    file << statement;
 
     auto sub = new asmc::Subq;
     sub->logicalLine = this->logicalLine;
@@ -245,17 +245,16 @@ asmc::File const Function::generate(gen::CodeGenerator &generator) {
         "$" + std::to_string(
                   gen::scope::ScopeManager::getInstance()->getStackAlignment());
     sub->op2 = generator.registers["%rsp"]->get(asmc::QWord);
-    outputFile.text.insert(sub, AlignmentLoc + 1);
+    file.text.insert(sub, AlignmentLoc + 1);
 
     generator.scope = saveScope;
     generator.globalScope = saveGlobal;
     generator.inFunction = saveIn;
-    gen::scope::ScopeManager::getInstance()->popScope(&generator, outputFile,
-                                                      true);
+    gen::scope::ScopeManager::getInstance()->popScope(&generator, file, true);
   }
 
   generator.intArgsCounter = saveIntArgs;
   generator.currentFunction = saveFunc;
-  return outputFile;
+  return {file, std::nullopt};
 };
 }  // namespace ast

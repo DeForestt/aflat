@@ -4,8 +4,9 @@
 #include "Parser/AST/Statements/DecAssignArr.hpp"
 
 namespace ast {
-asmc::File const DecAssignArr::generate(gen::CodeGenerator &generator) {
-  asmc::File OutputFile;
+gen::GenerationResult const DecAssignArr::generate(
+    gen::CodeGenerator &generator) {
+  asmc::File file;
   ast::DecArr *dec = this->declare;
   ast::Type adr;
   adr.arraySize = 1;
@@ -30,7 +31,7 @@ asmc::File const DecAssignArr::generate(gen::CodeGenerator &generator) {
   assign->expr = this->expr;
   assign->mute = this->mute;
   assign->declare->scope = dec->scope;
-  OutputFile << assign->generate(generator);
-  return OutputFile;
+  file << assign->generate(generator).file;
+  return {file, std::nullopt};
 }
 }  // namespace ast

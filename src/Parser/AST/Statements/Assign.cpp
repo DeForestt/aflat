@@ -24,7 +24,7 @@ Assign::Assign(const std::string &ident,
   this->indices = indices;
 }
 
-asmc::File const Assign::generate(gen::CodeGenerator &generator) {
+gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   asmc::File file;
   auto resolved =
       generator.resolveSymbol(this->Ident, this->modList, file, this->indices);
@@ -51,7 +51,7 @@ asmc::File const Assign::generate(gen::CodeGenerator &generator) {
           callGet->logicalLine = this->logicalLine;
           callGet->Args.push(this->expr);
           file << generator.GenSTMT(callGet);
-          return file;
+          return {file, std::nullopt};
         }
       }
       if (this->modList.count == 0 && !this->override) {
@@ -140,6 +140,6 @@ asmc::File const Assign::generate(gen::CodeGenerator &generator) {
     generator.TypeList.push(*t);
   }
 
-  return file;
+  return {file, std::nullopt};
 }
 }  // namespace ast

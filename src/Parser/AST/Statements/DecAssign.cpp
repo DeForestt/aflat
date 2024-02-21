@@ -14,22 +14,21 @@ DecAssign::DecAssign(Declare *declare, const bool mute,
   this->logicalLine = this->expr->logicalLine;
 }
 
-asmc::File const DecAssign::generate(gen::CodeGenerator &generator) {
-  asmc::File outputFile;
+gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
+  asmc::File file;
   ast::Declare *dec = this->declare;
   if (!generator.globalScope) {
     if (generator.scope == nullptr || generator.inFunction) {
       auto mov = new asmc::Mov();
       mov->logicalLine = this->logicalLine;
-      gen::Expr expr =
-          generator.GenExpr(this->expr, outputFile, dec->type.size);
+      gen::Expr expr = generator.GenExpr(this->expr, file, dec->type.size);
 
       if (dec->type.typeName != "let" &&
           !generator.canAssign(
               dec->type, expr.type,
               "cannot assign type {} cannot be assigned to type {}")) {
         expr = generator.GenExpr(
-            generator.imply(this->expr, dec->type.typeName), outputFile);
+            generator.imply(this->expr, dec->type.typeName), file);
       };
 
       if (dec->type.typeName == "let") {
@@ -76,15 +75,15 @@ asmc::File const DecAssign::generate(gen::CodeGenerator &generator) {
 
       mov->from = mov2->to;
 
-      outputFile.text << mov2;
-      outputFile.text << mov;
+      file.text << mov2;
+      file.text << mov;
       s->usable = true;
     } else {
       // add the this to the class default list
       generator.scope->defaultValues.push_back(*this);
       // generate the declare
       dec->mut = this->mute;
-      outputFile << generator.GenSTMT(dec);
+      file << generator.GenSTMT(dec);
     }
   } else {
     gen::Symbol Symbol;
@@ -101,17 +100,17 @@ asmc::File const DecAssign::generate(gen::CodeGenerator &generator) {
     if (dec->type.size = asmc::QWord) {
       var->command = "quad";
     }
-    gen::Expr exp = generator.GenExpr(this->expr, outputFile);
+    gen::Expr exp = generator.GenExpr(this->expr, file);
     if (!generator.canAssign(
             dec->type, exp.type,
             "cannot assign type {} cannot be assigned to type {}")) {
       exp = generator.GenExpr(generator.imply(this->expr, dec->type.typeName),
-                              outputFile);
+                              file);
     };
     var->operand = exp.access.erase(0, 1);
     Symbol.type.opType = exp.op;
-    outputFile.data << label;
-    outputFile.data << var;
+    file.data << label;
+    file.data << var;
     if (Table->search<std::string>(gen::utils::searchSymbol, dec->ident) !=
         nullptr)
       generator.alert("redefined variable:" + dec->ident);
@@ -126,7 +125,7 @@ asmc::File const DecAssign::generate(gen::CodeGenerator &generator) {
     newType->fPointerArgs = dec->type.fPointerArgs;
     generator.TypeList.push(*newType);
   }
-  return outputFile;
+  return {file, std::nullopt};
 }
 
 }  // namespace ast

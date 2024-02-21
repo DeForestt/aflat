@@ -3,10 +3,10 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 
 namespace ast {
-asmc::File const Sequence::generate(gen::CodeGenerator &generator) {
+gen::GenerationResult const Sequence::generate(gen::CodeGenerator &generator) {
   asmc::File file;
   file << generator.GenSTMT(Statement1);
   file << generator.GenSTMT(Statement2);
-  return file;
+  return {file, std::nullopt};
 }
 }  // namespace ast

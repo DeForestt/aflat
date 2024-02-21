@@ -5,8 +5,8 @@
 #include "CodeGenerator/Utils.hpp"
 
 namespace ast {
-asmc::File const Declare::generate(gen::CodeGenerator &generator) {
-  asmc::File OutputFile;
+gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
+  asmc::File file;
   int offset = generator.getBytes(this->type.size);
   links::LinkedList<gen::Symbol> *Table;
 
@@ -21,7 +21,7 @@ asmc::File const Declare::generate(gen::CodeGenerator &generator) {
       def->name = this->ident;
       def->type = this->type.size;
       def->value = "-" + std::to_string(mod) + "(%rbp)";
-      OutputFile.text << def;
+      file.text << def;
     } else {
       // add the symbol to the class symbol table
       Table = &generator.scope->SymbolTable;
@@ -60,8 +60,8 @@ asmc::File const Declare::generate(gen::CodeGenerator &generator) {
     Symbol.type = this->type;
     Symbol.symbol = this->ident;
     Symbol.mutable_ = this->mut;
-    OutputFile.bss << label;
-    OutputFile.bss << var;
+    file.bss << label;
+    file.bss << var;
     Table->push(Symbol);
   }
 
@@ -72,6 +72,6 @@ asmc::File const Declare::generate(gen::CodeGenerator &generator) {
     newType->fPointerArgs = this->type.fPointerArgs;
     generator.TypeList.push(*newType);
   }
-  return OutputFile;
+  return {file, std::nullopt};
 }
 }  // namespace ast

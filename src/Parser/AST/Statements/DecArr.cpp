@@ -5,8 +5,8 @@
 #include "CodeGenerator/Utils.hpp"
 
 namespace ast {
-asmc::File const DecArr::generate(gen::CodeGenerator &generator) {
-  asmc::File OutputFile;
+gen::GenerationResult const DecArr::generate(gen::CodeGenerator &generator) {
+  asmc::File file;
   int offset = generator.getBytes(this->type.size);
   int index = 1;
   this->indices.reset();
@@ -49,7 +49,7 @@ asmc::File const DecArr::generate(gen::CodeGenerator &generator) {
     assign->mute = this->mut;
     assign->declare->scope = this->scope;
 
-    OutputFile << generator.GenSTMT(assign);
+    file << generator.GenSTMT(assign);
   } else {
     Table = &generator.scope->SymbolTable;
 
@@ -88,8 +88,8 @@ asmc::File const DecArr::generate(gen::CodeGenerator &generator) {
     assign->expr = ref;
     assign->mute = this->mut;
     assign->declare->scope = this->scope;
-    OutputFile << generator.GenSTMT(assign);
+    file << generator.GenSTMT(assign);
   }
-  return OutputFile;
+  return {file, std::nullopt};
 }
 };  // namespace ast

@@ -23,7 +23,7 @@ Return::Return(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   };
 }
 
-asmc::File const Return::generate(gen::CodeGenerator &generator) {
+gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   asmc::File file;
   auto mov = new asmc::Mov();
   mov->logicalLine = this->logicalLine;
@@ -87,6 +87,6 @@ asmc::File const Return::generate(gen::CodeGenerator &generator) {
   auto re = new asmc::Return();
   re->logicalLine = this->logicalLine;
   file.text << re;
-  return file;
+  return {file, std::nullopt};
 }
 }  // namespace ast

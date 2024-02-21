@@ -11,6 +11,6 @@ class DecAssignArr : public Statement {
   DecArr *declare;
   bool mute = true;
   Expr *expr;
-  asmc::File const generate(gen::CodeGenerator &generator) override;
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 }  // namespace ast
