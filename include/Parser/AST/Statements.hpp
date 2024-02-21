@@ -23,3 +23,4 @@
 #include "Parser/AST/Statements/Return.hpp"
 #include "Parser/AST/Statements/Struct.hpp"
 #include "Parser/AST/Statements/While.hpp"
+#include "Parser/AST/Statements/Sequence.hpp"

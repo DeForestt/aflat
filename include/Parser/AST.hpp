@@ -133,12 +133,6 @@ class CharLiteral : public Expr {
   char value;
 };
 
-class Sequence : public Statement {
- public:
-  Statement *Statement1;
-  Statement *Statement2;
-};
-
 class Iflush : public Statement {};
 
 class CWrite : public Statement {
