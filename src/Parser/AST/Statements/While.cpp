@@ -18,8 +18,8 @@ namespace ast
           this->stmt = parser.parseStmt(tokens);
         } else
           throw err::Exception(
-              "Line: " + std::to_string(tokens.peek()->lineCount) +
-              " Unopened loop");
+              "Line: " + std::to_string(sym->lineCount) +
+              " un - opened while loop, expected '{' got " + sym->Sym + " instead");
       } else
         this->stmt = parser.parseStmt(tokens, true);
     }
