@@ -14,3 +14,4 @@
 #include "Parser/AST/Statements/Import.hpp"
 #include "Parser/AST/Statements/Delete.hpp"
 #include "Parser/AST/Statements/Continue.hpp"
+#include "Parser/AST/Statements/Break.hpp"

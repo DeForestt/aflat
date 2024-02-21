@@ -131,13 +131,6 @@ class Function : public Member, public Statement {
   bool has_return = false;
 };
 
-class Break : public Statement {
-  public:
-  int level = 1;
-  Break() = default;
-  explicit Break(int level) : level(level) {};
-};
-
 class Declare : public Arg, public Statement {
  public:
   ast::ScopeMod scope;
