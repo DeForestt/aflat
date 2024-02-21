@@ -164,16 +164,6 @@ class DecAssign : public Statement {
   Expr* expr;
 };
 
-class Assign : public Statement {
- public:
-  std::string Ident;
-  bool reference = false;
-  bool override = false;
-  Expr* expr;
-  links::LinkedList<std::string> modList;
-  links::LinkedList<ast::Expr*> indices;
-};
-
 class Call : public Statement {
  public:
   std::string ident;

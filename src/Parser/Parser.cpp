@@ -554,21 +554,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
         }
 
         if (sym.Sym == '=') {
-          auto assign = new ast::Assign();
-          if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
-            auto s2 = dynamic_cast<lex::OpSym *>(tokens.peek());
-            if (s2->Sym == ':') {
-              assign->reference = true;
-              tokens.pop();
-            };
-          };
-
-          assign->Ident = obj.meta;
-          assign->modList = modList;
-          assign->expr = this->parseExpr(tokens);
-          assign->indices = indices;
-          assign->logicalLine = obj.lineCount;
-          output = assign;
+          output = new ast::Assign(obj.meta, indices, modList, tokens, *this);
         } else if (sym.Sym == '(') {
           auto call = new ast::Call();
           call->ident = obj.meta;

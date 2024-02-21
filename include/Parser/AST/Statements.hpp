@@ -15,3 +15,4 @@
 #include "Parser/AST/Statements/Delete.hpp"
 #include "Parser/AST/Statements/Continue.hpp"
 #include "Parser/AST/Statements/Break.hpp"
+#include "Parser/AST/Statements/Assign.hpp"
