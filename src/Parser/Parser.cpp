@@ -493,106 +493,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
     } else if (obj.meta == "enum") {
       output = new ast::Enum(tokens, *this);
     } else if (obj.meta == "import") {
-      auto imp = new ast::Import();
-      imp->logicalLine = obj.lineCount;
-      auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
-      if (sym != nullptr) {
-        imp->classes = false;
-        if (sym->Sym == '{') {
-          do {
-            tokens.pop();
-            auto importObj = dynamic_cast<lex::LObj *>(tokens.pop());
-            if (importObj != nullptr) {
-              imp->imports.push_back(importObj->meta);
-            } else {
-              throw err::Exception(
-                  "Line: " + std::to_string(tokens.peek()->lineCount) +
-                  " Expected Ident");
-            }
-          } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-                   dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',');
-          if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-              dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '}') {
-            tokens.pop();
-          } else {
-            throw err::Exception(
-                "Line: " + std::to_string(tokens.peek()->lineCount) +
-                " Expected }");
-          }
-        } else if (sym->Sym == '*') {
-          tokens.pop();
-          imp->imports.push_back("*");
-        } else
-          throw err::Exception(
-              "Line: " + std::to_string(tokens.peek()->lineCount) +
-              " Unexpected Token");
-      } else {
-        bool first = true;
-        imp->classes = true;
-        do {
-          if (!first)
-            tokens.pop();
-          else
-            first = false;
-
-          auto nt = dynamic_cast<lex::LObj *>(tokens.peek());
-          if (nt != nullptr) {
-            imp->imports.push_back(nt->meta);
-            auto t = ast::Type();
-            t.size = asmc::QWord;
-            t.typeName = nt->meta;
-            t.opType = asmc::Hard;
-            this->typeList << t;
-            tokens.pop();
-          } else {
-            throw err::Exception(
-                "Line: " + std::to_string(tokens.peek()->lineCount) +
-                " Expected Ident");
-          }
-        } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-                 dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',');
-      }
-
-      // check from from keyword
-      lex::LObj *from = dynamic_cast<lex::LObj *>(tokens.pop());
-      if (from == nullptr || from->meta != "from") {
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Expected from");
-      };
-
-      ast::StringLiteral *str =
-          dynamic_cast<ast::StringLiteral *>(this->parseExpr(tokens));
-      if (str != nullptr) {
-        imp->path = str->val;
-      } else {
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Expected StringLiteral");
-      }
-
-      // check for under keyword
-      auto under = dynamic_cast<lex::LObj *>(tokens.peek());
-      if (under != nullptr) {
-        if (under->meta == "under") {
-          tokens.pop();
-          auto ident = dynamic_cast<lex::LObj *>(tokens.peek());
-          if (ident != nullptr) {
-            imp->nameSpace = ident->meta;
-            tokens.pop();
-          } else {
-            throw err::Exception(
-                "Line: " + std::to_string(tokens.peek()->lineCount) +
-                " Expected Ident");
-          }
-        }
-      } else {
-        std::string id = imp->path.substr(imp->path.find_last_of('/') + 1,
-                                          imp->path.find_last_of('.'));
-        imp->nameSpace = id;
-      }
-
-      output = imp;
+      output = new ast::Import(tokens, *this);
     } else if (obj.meta == "delete") {
       auto del = new ast::Delete();
       del->logicalLine = obj.lineCount;
@@ -630,7 +531,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
       output = new ast::Continue(count);
       output->logicalLine = obj.lineCount;
     } else if (obj.meta == "break") {
-            auto count = 1;
+      auto count = 1;
       if (dynamic_cast<lex::INT *>(tokens.peek()) != nullptr) {
         count = std::stoi(dynamic_cast<lex::INT *>(tokens.pop())->value);
       }

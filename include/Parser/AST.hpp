@@ -252,14 +252,6 @@ class Dec : public Statement {
   std::string ident;
 };
 
-class Import : public Statement {
- public:
-  std::vector<std::string> imports;
-  std::string path;
-  std::string nameSpace;
-  bool classes = false;
-};
-
 class Var : public Expr {
  public:
   std::string Ident;
