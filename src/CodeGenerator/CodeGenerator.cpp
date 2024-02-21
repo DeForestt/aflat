@@ -1841,9 +1841,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
 
   if (STMT->locked)
     OutputFile.text.push(new asmc::nop());
-  else if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
-    this->genSequence(dynamic_cast<ast::Sequence *>(STMT), OutputFile);
-  } else if (dynamic_cast<ast::Function *>(STMT)) {
+  else if (dynamic_cast<ast::Function *>(STMT)) {
     this->genFunction(dynamic_cast<ast::Function *>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Declare *>(STMT) != nullptr) {
     this->genDeclare(dynamic_cast<ast::Declare *>(STMT), OutputFile);
@@ -1916,7 +1914,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
   } else if (dynamic_cast<ast::Break *>(STMT)) {
     this->genBreak(dynamic_cast<ast::Break *>(STMT), OutputFile);
   } else {
-    OutputFile.text.push(new asmc::nop());
+    OutputFile << STMT->generate(*this);
   }
 
   return OutputFile;
