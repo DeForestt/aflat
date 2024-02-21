@@ -31,5 +31,6 @@ class Function : public Member, public Statement {
            const Op op, const std::string &scopeName,
            links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
+  gen::Expr toExpr(gen::CodeGenerator &generator);
 };
 };  // namespace ast

@@ -12,6 +12,7 @@ class Call : public Statement {
   links::LinkedList<Expr *> Args;
   links::LinkedList<std::string> modList;
   std::string publify = "";
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   Call() = default;
   Call(const std::string &ident, const links::LinkedList<Expr *> &args,
        links::LinkedList<std::string> modList)

@@ -257,4 +257,16 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
   generator.currentFunction = saveFunc;
   return {file, std::nullopt};
 };
+
+gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
+  gen::Expr output;
+  output.type = this->type.typeName;
+  output.size = this->type.size;
+  output.access = generator.registers["%rax"]->get(output.size);
+  if (this->type.typeName == "float") {
+    output.access = generator.registers["%xmm0"]->get(output.size);
+    output.op = asmc::Float;
+  }
+  return output;
+};
 }  // namespace ast
