@@ -13,4 +13,5 @@ class Sequence : public Statement {
   asmc::File const generate(gen::CodeGenerator &generator) override;
   Sequence() = default;
 };
+
 };  // namespace ast
