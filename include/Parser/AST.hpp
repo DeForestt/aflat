@@ -204,14 +204,6 @@ class Assign : public Statement {
   links::LinkedList<ast::Expr*> indices;
 };
 
-class For : public Statement {
- public:
-  Statement* declare;
-  ast::Expr* expr;
-  Statement* increment;
-  Statement* Run;
-};
-
 class Call : public Statement {
  public:
   std::string ident;

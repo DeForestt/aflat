@@ -481,61 +481,11 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
       if (singleStmt)
         return output;
     } else if (obj.meta == "if") {
-       output = new ast::If(tokens, *this);
-      if (singleStmt)
-        return output;
+      output = new ast::If(tokens, *this);
     } else if (obj.meta == "while") {
       output = new ast::While(tokens, *this);
     } else if (obj.meta == "for") {
-      auto loop = new ast::For;
-      loop->declare = this->parseStmt(tokens, true);
-      loop->logicalLine = obj.lineCount;
-      auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
-
-      if (sym == nullptr)
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Unterminated for loop initializer");
-      if (sym->Sym != ';')
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            "unterminated for loop initializer");
-
-      tokens.pop();
-
-      loop->expr = this->parseExpr(tokens);
-
-      sym = dynamic_cast<lex::OpSym *>(tokens.peek());
-      if (sym == nullptr)
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Unterminated for loop condition");
-      if (sym->Sym != ';')
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            "unterminated for loop condition");
-      tokens.pop();
-
-      loop->increment = this->parseStmt(tokens, true);
-
-      sym = dynamic_cast<lex::OpSym *>(tokens.peek());
-      if (sym != nullptr) {
-        if (sym->Sym == ';') {
-          tokens.pop();
-        };
-        sym = dynamic_cast<lex::OpSym *>(tokens.peek());
-        if (sym != nullptr) {
-          if (sym->Sym == '{') {
-            tokens.pop();
-            loop->Run = this->parseStmt(tokens);
-          } else
-            throw err::Exception(
-                "Line: " + std::to_string(tokens.peek()->lineCount) +
-                " Unopened for loop body");
-        }
-      } else
-        loop->Run = this->parseStmt(tokens, true);
-      output = loop;
+      output = new ast::For(tokens, *this);
     } else if (obj.meta == "struct") {
       ast::UDeffType *stc = new ast::UDeffType();
       stc->logicalLine = obj.lineCount;
