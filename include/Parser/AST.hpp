@@ -204,12 +204,6 @@ class Assign : public Statement {
   links::LinkedList<ast::Expr*> indices;
 };
 
-class While : public Statement {
- public:
-  Expr* expr;
-  Statement* stmt;
-};
-
 class For : public Statement {
  public:
   Statement* declare;

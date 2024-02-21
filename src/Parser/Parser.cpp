@@ -485,22 +485,7 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
       if (singleStmt)
         return output;
     } else if (obj.meta == "while") {
-      auto loop = new ast::While;
-
-      loop->expr = this->parseExpr(tokens);
-      loop->logicalLine = obj.lineCount;
-      auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
-      if (sym != nullptr) {
-        if (sym->Sym == '{') {
-          tokens.pop();
-          loop->stmt = this->parseStmt(tokens);
-        } else
-          throw err::Exception(
-              "Line: " + std::to_string(tokens.peek()->lineCount) +
-              " Unopened loop");
-      } else
-        loop->stmt = this->parseStmt(tokens, true);
-      output = loop;
+      output = new ast::While(tokens, *this);
     } else if (obj.meta == "for") {
       auto loop = new ast::For;
       loop->declare = this->parseStmt(tokens, true);

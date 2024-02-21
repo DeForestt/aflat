@@ -6,3 +6,4 @@
 #pragma once
 #include "Parser/AST/Statements/Return.hpp"
 #include "Parser/AST/Statements/If.hpp"
+#include "Parser/AST/Statements/While.hpp"
