@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Parser/AST.hpp"
+#include "Parser/AST/Statements.hpp"
 
 namespace parse {
 namespace lower {

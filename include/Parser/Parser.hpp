@@ -22,13 +22,9 @@ public:
                            int &requiered);
   void addType(std::string name, asmc::OpType opType, asmc::Size size);
   void addType(std::string name, asmc::OpType opType, asmc::Size size, bool isGeneric);
-
-private:
   int mutability;
   links::SLinkedList<ast::Type, std::string> typeList;
-
   ast::Type parseFPointerType(links::LinkedList<lex::Token *> &tokens, const std::string typeName);
-
   ast::ConditionalExpr *parseCondition(links::LinkedList<lex::Token *> &tokens);
 };
 }; // namespace parse

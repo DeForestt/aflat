@@ -9,3 +9,4 @@
 #include "Parser/AST/Statements/While.hpp"
 #include "Parser/AST/Statements/For.hpp"
 #include "Parser/AST/Statements/Struct.hpp"
+#include "Parser/AST/Statements/Class.hpp"

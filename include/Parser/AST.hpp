@@ -111,16 +111,6 @@ class Program {
   ProgramMember members;
 };
 
-class Class : public Statement {
- public:
-  Ident ident;
-  std::string base;
-  Statement* contract;
-  Statement* statement;
-  bool safeType = false;
-  bool dynamic = false;
-};
-
 class Function : public Member, public Statement {
  public:
   ast::ScopeMod scope;
