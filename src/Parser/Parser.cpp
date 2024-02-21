@@ -211,13 +211,13 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
       // ensures the the current token is an Ident
       if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
         const auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
-        output = new ast::Declare(ident.meta, scope, obj.meta, isMutable, type);
-        if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
-          auto sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+        
+        auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+        if (sym && sym->Sym != ';') {
+          auto sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
           auto overload = ast::Op::None;
           std::string scopeName = "global";
           if (sym.Sym == '<') {
-            tokens.pop();
             auto *next = dynamic_cast<lex::OpSym *>(tokens.peek());
             if (next != nullptr) {
               if (next->Sym == '>') {
@@ -288,7 +288,6 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
             sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
           }
           if (sym.Sym == '@') {
-            tokens.pop();
             if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
               auto scopeObj = *dynamic_cast<lex::LObj *>(tokens.pop());
               scopeName = scopeObj.meta;
@@ -309,100 +308,18 @@ ast::Statement *parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens
           // Checking for Parenthesis to see if it is a function
           if (sym.Sym == '(') {
             tokens.pop();
-            auto id = new lex::LObj();
-            auto *func = new ast::Function();
-            func->ident.ident = ident.meta;
-            func->type = type;
-            func->scopeName = scopeName;
-            func->scope = scope;
-            func->op = overload;
-            func->req = 0;
-            func->args =
-                this->parseArgs(tokens, ',', ')', func->argTypes, func->req);
-            if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
-              sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-
-              // Check for a ':'
-              if (sym.Sym == ':') {
-                // make the next word a decorator.
-                tokens.pop();
-                auto *decor = dynamic_cast<lex::LObj *>(tokens.pop());
-                if (decor == nullptr)
-                  throw err::Exception(
-                      "Line: " + std::to_string(tokens.peek()->lineCount) +
-                      "Expected Identifier after ':'");
-                func->decorator = decor->meta;
-
-                if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)
-                  throw err::Exception(
-                      "Line: " + std::to_string(tokens.peek()->lineCount));
-                sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                if (sym.Sym == '.') {
-                  tokens.pop();
-                  auto *lob = dynamic_cast<lex::LObj *>(tokens.pop());
-                  if (lob == nullptr)
-                    throw err::Exception(
-                        "Line: " + std::to_string(tokens.peek()->lineCount) +
-                        "Expected Identifier after '.'");
-                  func->decNSP = func->decorator;
-                  func->decorator = lob->meta;
-                  if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)
-                    throw err::Exception(
-                        "Line: " + std::to_string(tokens.peek()->lineCount));
-                  sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-                };
-                if (sym.Sym == '(') {
-                  tokens.pop();
-                  if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-                      dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ')') {
-                      auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
-                      if (symp->Sym != ')')
-                        throw err::Exception("Expected closed parenthesis got " + symp->Sym);
-                    } else {
-                      bool pop = false;
-                      do {
-                        if (pop)
-                          tokens.pop();
-                        func->decoratorArgs.push(this->parseExpr(tokens));
-                        pop = true;
-                      } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-                              dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',');
-                      if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
-                        auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
-                        if (symp->Sym != ')')
-                          throw err::Exception("Expected closed parenthesis got " +
-                                              symp->Sym);
-                      }
-                    }
-                };
-                if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)
-                  throw err::Exception(
-                      "Line: " + std::to_string(tokens.peek()->lineCount) + "Expected a symbol");
-                sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
-              }
-              if (sym.Sym == '{') {
-                tokens.pop();
-                func->statement = this->parseStmt(tokens);
-                func->logicalLine = obj.lineCount;
-                output = func;
-              } else {
-                func->statement = nullptr;
-                func->logicalLine = obj.lineCount;
-                output = func;
-              };
-            } else
-              throw err::Exception(
-                  "Line: " + std::to_string(tokens.peek()->lineCount) +
-                  " Need terminating symbol or open symbol");
+            output = new ast::Function(ident.meta, scope, type, overload, scopeName, tokens, *this);
           } else if (sym.Sym == '=') {
             tokens.pop();
             auto assign = new ast::DecAssign;
-            assign->declare = dynamic_cast<ast::Declare *>(output);
+            assign->declare = new ast::Declare(ident.meta, scope, obj.meta, isMutable, type);
             assign->mute = isMutable;
             assign->expr = this->parseExpr(tokens);
             assign->logicalLine = obj.lineCount;
             output = assign;
           }
+        } else {
+          output = new ast::Declare(ident.meta, scope, obj.meta, isMutable, type);
         }
 
       } else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {

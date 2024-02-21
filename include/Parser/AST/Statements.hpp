@@ -20,3 +20,4 @@
 #include "Parser/AST/Statements/Inc.hpp"
 #include "Parser/AST/Statements/Dec.hpp"
 #include "Parser/AST/Statements/Declare.hpp"
+#include "Parser/AST/Statements/Function.hpp"

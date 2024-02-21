@@ -16,6 +16,7 @@ namespace ast {
 
 class Call;
 class Declare;
+class Function;
 
 class ProgramMember {
  public:
@@ -115,25 +116,6 @@ class Program {
   ProgramMember members;
 };
 
-class Function : public Member, public Statement {
- public:
-  ScopeMod scope;
-  Type type;
-  std::string scopeName = "";
-  std::string decorator = "";
-  std::string decNSP = "";
-  Ident ident;
-  Statement* args;
-  Statement* statement;
-  Op op;
-  int req;
-  std::vector<Type> argTypes;
-  links::LinkedList<Expr*> decoratorArgs;
-  bool isLambda = false;
-  bool flex = false;
-  bool mask;
-  bool has_return = false;
-};
 
 class Argument : public Arg, public Statement {
  public:
