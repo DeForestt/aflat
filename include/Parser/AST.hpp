@@ -21,6 +21,7 @@ namespace ast {
 class Call;
 class Declare;
 class Function;
+class DecArr;
 
 class ProgramMember {
  public:
@@ -157,16 +158,6 @@ class Push : public Statement {
 class Pull : public Statement {
  public:
   Expr *expr;
-};
-
-class DecArr : public Statement {
- public:
-  std::string ident;
-  Type type;
-  int count;
-  bool mut = true;
-  ScopeMod scope;
-  links::LinkedList<Expr *> indices;
 };
 
 class DecAssignArr : public Statement {

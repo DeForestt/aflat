@@ -1841,9 +1841,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
 
   if (STMT->locked)
     OutputFile.text.push(new asmc::nop());
-  else if (dynamic_cast<ast::DecArr *>(STMT) != nullptr) {
-    this->genDecArr(dynamic_cast<ast::DecArr *>(STMT), OutputFile);
-  } else if (dynamic_cast<ast::DecAssign *>(STMT) != nullptr) {
+  else if (dynamic_cast<ast::DecAssign *>(STMT) != nullptr) {
     this->genDecAssign(dynamic_cast<ast::DecAssign *>(STMT), OutputFile);
   } else if (dynamic_cast<ast::DecAssignArr *>(STMT)) {
     ast::DecAssignArr *decAssign = dynamic_cast<ast::DecAssignArr *>(STMT);
