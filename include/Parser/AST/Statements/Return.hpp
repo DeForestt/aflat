@@ -8,6 +8,7 @@ class Return : public Statement {
  public:
   Expr *expr;
 
+  asmc::File const generate(gen::CodeGenerator &generateor) override;
   Return() = default;
   Return(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
 };
