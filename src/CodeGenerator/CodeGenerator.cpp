@@ -1841,9 +1841,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
 
   if (STMT->locked)
     OutputFile.text.push(new asmc::nop());
-  else if (dynamic_cast<ast::Call *>(STMT) != nullptr) {
-    this->GenCall(dynamic_cast<ast::Call *>(STMT), OutputFile);
-  } else if (dynamic_cast<ast::Push *>(STMT) != nullptr) {
+  else if (dynamic_cast<ast::Push *>(STMT) != nullptr) {
     this->genPush(dynamic_cast<ast::Push *>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Pull *>(STMT) != nullptr) {
     this->genPull(dynamic_cast<ast::Pull *>(STMT), OutputFile);

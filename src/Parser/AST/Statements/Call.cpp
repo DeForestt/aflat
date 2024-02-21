@@ -6,6 +6,11 @@
 
 namespace ast {
 gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
+  auto flexFunction = ast::Function();
+  auto callFunction = ast::Function();
+  auto shiftedFunction = ast::Function();
+  auto publifyedFunction = ast::Function();
+
   auto file = asmc::File();
   std::string mod = "";
   ast::Function *func;
@@ -51,7 +56,6 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           mov->to = generator.registers["%r11"]->get(exp1.size);
           file.text << mov;
 
-          auto flexFunction = ast::Function();
           func = &flexFunction;
           func->logicalLine = this->logicalLine;
           func->ident.ident = '*' + generator.registers["%r11"]->get(exp1.size);
@@ -94,7 +98,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
                               "function");
             }
           }
-          auto callFunction = ast::Function();
+
           func = &callFunction;
           func->ident.ident = "pub_" + tname + "__call";
           func->type = f->type;
@@ -166,7 +170,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
             file.text << mov;
 
             //
-            auto flexFunction = ast::Function();
+
             func = &flexFunction;
             func->logicalLine = this->logicalLine;
             func->ident.ident =
@@ -201,7 +205,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
                               sym->type.typeName +
                               " because it does not implement the _call "
                               "function");
-            auto shiftedFunction = ast::Function();
+
             func = &shiftedFunction;
             func->ident = f->ident;
             func->type = f->type;
@@ -270,7 +274,6 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   };
 
   if (this->publify != "") {
-    auto publifyedFunction = ast::Function();
     func = &publifyedFunction;
     func->ident.ident = "pub_" + this->publify + "_" + ident;
     func->type.typeName = this->publify;
