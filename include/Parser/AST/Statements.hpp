@@ -13,6 +13,7 @@
 #include "Parser/AST/Statements/Dec.hpp"
 #include "Parser/AST/Statements/DecArr.hpp"
 #include "Parser/AST/Statements/DecAssign.hpp"
+#include "Parser/AST/Statements/DecAssignArr.hpp"
 #include "Parser/AST/Statements/Declare.hpp"
 #include "Parser/AST/Statements/Delete.hpp"
 #include "Parser/AST/Statements/Enum.hpp"

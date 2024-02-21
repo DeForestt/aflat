@@ -160,13 +160,6 @@ class Pull : public Statement {
   Expr *expr;
 };
 
-class DecAssignArr : public Statement {
- public:
-  DecArr *declare;
-  bool mute = true;
-  Expr *expr;
-};
-
 class Var : public Expr {
  public:
   std::string Ident;

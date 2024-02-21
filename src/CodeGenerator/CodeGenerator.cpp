@@ -1841,33 +1841,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
 
   if (STMT->locked)
     OutputFile.text.push(new asmc::nop());
-  else if (dynamic_cast<ast::DecAssignArr *>(STMT)) {
-    ast::DecAssignArr *decAssign = dynamic_cast<ast::DecAssignArr *>(STMT);
-    ast::DecArr *dec = decAssign->declare;
-    ast::Type adr;
-    adr.arraySize = 1;
-    dec->indices.reset();
-    while (dec->indices.pos != nullptr) {
-      ast::IntLiteral *lit =
-          dynamic_cast<ast::IntLiteral *>(dec->indices.shift());
-      if (lit == nullptr) alert("array index must be an integer");
-      adr.indices.push(lit->val);
-    }
-    adr.indices.invert();
-    adr.opType = asmc::Hard;
-    adr.size = asmc::QWord;
-    adr.typeName = "adr";
-    adr.typeHint = &dec->type;
-
-    ast::DecAssign *assign = new ast::DecAssign();
-    assign->declare = new ast::Declare();
-    assign->declare->ident = dec->ident;
-    assign->declare->type = adr;
-    assign->expr = decAssign->expr;
-    assign->mute = decAssign->mute;
-    assign->declare->scope = dec->scope;
-    OutputFile << this->GenSTMT(assign);
-  } else if (dynamic_cast<ast::Return *>(STMT) != nullptr) {
+  else if (dynamic_cast<ast::Return *>(STMT) != nullptr) {
     this->genReturn(dynamic_cast<ast::Return *>(STMT), OutputFile);
     this->currentFunction->has_return = true;
   } else if (dynamic_cast<ast::Assign *>(STMT) != nullptr) {
