@@ -1,4 +1,5 @@
 #include "Parser/Lower.hpp"
+#include "Parser/AST/Statements.hpp"
 #include "memory.h"
 #include <iostream>
 
@@ -13,7 +14,7 @@ links::LinkedList<ast::Expr *> convertsArgs(ast::Statement* STMT) {
   } else if (dynamic_cast<ast::Declare*>(STMT) != nullptr) {
     auto declare = dynamic_cast<ast::Declare*>(STMT);
     auto var = new ast::Var;
-    var->Ident = declare->Ident;
+    var->Ident = declare->ident;
     var->logicalLine = declare->logicalLine;
 
     args.push(var);
@@ -86,7 +87,7 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
           throw err::Exception("Can't use a class as a decorator outside a class");
 
         ast::Declare *declare = new ast::Declare;
-        declare->Ident = newFunc->ident.ident;
+        declare->ident = newFunc->ident.ident;
         declare->type.size = asmc::QWord;
         declare->type.typeName = func->decorator;
         declare->mut = false;

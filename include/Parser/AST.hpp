@@ -6,8 +6,18 @@
 
 #include "ASM.hpp"
 #include "LinkedList.hpp"
+#include "Scanner.hpp"
+
+namespace parse {
+  class Parser;
+};
 
 namespace ast {
+
+class Call;
+class Declare;
+class Function;
+
 class ProgramMember {
  public:
   virtual std::string toString() { return ""; };
@@ -79,12 +89,12 @@ class Type {
   links::LinkedList<int> indices;
   bool isGeneric = false;
   bool safeType = false;
-  ast::Type * typeHint;
+  Type * typeHint;
 
   struct FPointerArgs {
-    ast::Type * returnType = nullptr;
+    Type * returnType = nullptr;
     int requiredArgs = 0;
-    std::vector<ast::Type> argTypes;
+    std::vector<Type> argTypes;
     std::string id;
     asmc::Size size;
     bool isFPointer = false;
@@ -106,65 +116,6 @@ class Program {
   ProgramMember members;
 };
 
-class Class : public Statement {
- public:
-  Ident ident;
-  std::string base;
-  Statement* contract;
-  Statement* statement;
-  bool safeType = false;
-  bool dynamic = false;
-};
-
-class Function : public Member, public Statement {
- public:
-  ast::ScopeMod scope;
-  Type type;
-  std::string scopeName = "";
-  std::string decorator = "";
-  std::string decNSP = "";
-  Ident ident;
-  Statement* args;
-  Statement* statement;
-  ast::Op op;
-  int req;
-  std::vector<ast::Type> argTypes;
-  links::LinkedList<Expr*> decoratorArgs;
-  bool isLambda = false;
-  bool flex = false;
-  bool mask;
-  bool has_return = false;
-};
-
-class UDeffType : public Member, public Statement {
- public:
-  Ident ident;
-  Statement* statement;
-};
-
-class Continue : public Statement {
-  public:
-  int level = 1;
-  Continue() = default;
-  explicit Continue(int level) : level(level) {};
-};
-
-class Break : public Statement {
-  public:
-  int level = 1;
-  Break() = default;
-  explicit Break(int level) : level(level) {};
-};
-
-class Declare : public Arg, public Statement {
- public:
-  ast::ScopeMod scope;
-  std::string Ident;
-  std::string TypeName;
-  bool mut = true;
-  bool mask;
-  Type type;
-};
 
 class Argument : public Arg, public Statement {
  public:
@@ -180,59 +131,6 @@ class ParenExpr : public Expr {
 class CharLiteral : public Expr {
  public:
   char value;
-};
-
-class If : public Statement {
- public:
-  Expr* expr;
-  Statement* statement;
-  Statement* elseStatement;
-  Statement* elseIf;
-};
-
-class DecAssign : public Statement {
- public:
-  Declare* declare;
-  bool mute = true;
-  Expr* expr;
-};
-
-class Assign : public Statement {
- public:
-  std::string Ident;
-  bool reference = false;
-  bool override = false;
-  Expr* expr;
-  links::LinkedList<std::string> modList;
-  links::LinkedList<ast::Expr*> indices;
-};
-
-class While : public Statement {
- public:
-  Expr* expr;
-  Statement* stmt;
-};
-
-class For : public Statement {
- public:
-  Statement* declare;
-  ast::Expr* expr;
-  Statement* increment;
-  Statement* Run;
-};
-
-class Call : public Statement {
- public:
-  std::string ident;
-  links::LinkedList<Expr*> Args;
-  links::LinkedList<std::string> modList;
-  std::string publify = "";
-};
-
-class Delete : public Statement {
- public:
-  std::string ident;
-  links::LinkedList<std::string> modList;
 };
 
 class Sequence : public Statement {
@@ -261,10 +159,10 @@ class Pull : public Statement {
 class DecArr : public Statement {
  public:
   std::string ident;
-  ast::Type type;
+  Type type;
   int count;
   bool mut = true;
-  ast::ScopeMod scope;
+  ScopeMod scope;
   links::LinkedList<Expr*> indices;
 };
 
@@ -275,39 +173,10 @@ class DecAssignArr : public Statement {
   Expr* expr;
 };
 
-class Inc : public Statement {
- public:
-  std::string ident;
-};
-
-class Dec : public Statement {
- public:
-  std::string ident;
-};
-
-class Return : public Statement {
- public:
-  Expr* expr;
-};
-
-class Import : public Statement {
- public:
-  std::vector<std::string> imports;
-  std::string path;
-  std::string nameSpace;
-  bool classes = false;
-};
-
-class Enum : public Statement {
-  public:
-  std::string Ident;
-  std::vector<std::string> values;
-};
-
 class Var : public Expr {
  public:
   std::string Ident;
-  links::LinkedList<ast::Expr*> indices;
+  links::LinkedList<Expr*> indices;
   links::LinkedList<std::string> modList;
   bool internal = false;
 };
@@ -356,12 +225,12 @@ class DeReference : public Expr {
  public:
   std::string Ident;
   links::LinkedList<std::string> modList;
-  ast::Type type;
+  Type type;
 };
 
 class CallExpr : public Expr {
  public:
-  ast::Call* call;
+  Call* call;
 };
 
 class parenExpr : public Expr {
@@ -371,18 +240,18 @@ class parenExpr : public Expr {
 
 class Lambda : public Expr {
  public:
-  ast::Function* function;
+  Function* function;
 };
 
 class NewExpr : public Expr {
  public:
-  ast::Type type;
+  Type type;
   links::LinkedList<Expr*> args;
 };
 
 class StructList : public Expr {
  public:
-  links::LinkedList<ast::Expr*> args;
+  links::LinkedList<Expr*> args;
 };
 
 class Not : public Expr {
