@@ -12,5 +12,6 @@ class Struct : public Member, public Statement {
   Statement *statement;
   Struct() = default;
   Struct(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 }  // namespace ast
