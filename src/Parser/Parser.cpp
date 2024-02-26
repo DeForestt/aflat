@@ -364,7 +364,7 @@ ast::Statement *parse::Parser::parseStmt(
           }
         } else if (sym->Sym == '{') {
           tokens.pop();
-          output = new ast::Destructure(tokens, *this);
+          output = new ast::Destructure(isMutable, tokens, *this);
         } else
           throw err::Exception(
               "Line: " + std::to_string(tokens.peek()->lineCount) +

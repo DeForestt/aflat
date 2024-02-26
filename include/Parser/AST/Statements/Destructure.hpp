@@ -11,7 +11,10 @@ class Destructure : public Statement {
  public:
   std::vector<std::string> identifiers;
   ast::Expr *expr;
+  bool mute;
   Destructure() = default;
-  Destructure(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
+  Destructure(const bool mute, links::LinkedList<lex::Token *> &tokens,
+              parse::Parser &parser);
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 };  // namespace ast
