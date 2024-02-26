@@ -32,6 +32,7 @@ jobs:
       - name: Install clang-format
         run: sudo apt-get install -y clang-format
       - name: Check code formatting
+        working-directory: ${{github.workspace}}
         run: |
           find . -regex '.*\.\(cpp\|hpp\|c\|h\)' -exec clang-format -style=file -i {} \+
           git diff --exit-code
