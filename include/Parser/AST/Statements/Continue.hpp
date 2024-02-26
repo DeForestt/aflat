@@ -14,5 +14,6 @@ class Continue : public Statement {
   // copy constructor
   Continue(const Continue &other) : level(other.level){};
   Continue(links::LinkedList<lex::Token *> &tokens);
+  gen::GenerationResult const generate(gen::CodeGenerator &generator);
 };
 }  // namespace ast

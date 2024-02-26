@@ -1843,9 +1843,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
 
   if (STMT->locked)
     OutputFile.text.push(new asmc::nop());
-  else if (dynamic_cast<ast::Continue *>(STMT)) {
-    this->genContinue(dynamic_cast<ast::Continue *>(STMT), OutputFile);
-  } else if (dynamic_cast<ast::Break *>(STMT)) {
+  else if (dynamic_cast<ast::Break *>(STMT)) {
     this->genBreak(dynamic_cast<ast::Break *>(STMT), OutputFile);
   } else {
     OutputFile << STMT->generate(*this).file;
