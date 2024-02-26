@@ -1,5 +1,7 @@
 #include "Parser/AST/Statements/Enum.hpp"
 
+#include "CodeGenerator/CodeGenerator.hpp"
+
 namespace ast {
 /**
  * @brief Construct a new Enum object
@@ -36,5 +38,16 @@ Enum::Enum(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
                          " Unclosed Enum");
   tokens.pop();
   parser.typeList << ast::Type(this->Ident, asmc::DWord);
+}
+
+gen::GenerationResult const Enum::generate(gen::CodeGenerator &generator) {
+  gen::Enum *type = new gen::Enum();
+  type->Ident = this->Ident;
+  int i = 0;
+  for (std::string s : this->values)
+    type->values << gen::Enum::EnumValue(s, i++);
+
+  generator.typeList.push(type);
+  return {asmc::File(), std::nullopt};
 }
 }  // namespace ast

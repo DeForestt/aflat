@@ -13,5 +13,6 @@ class Enum : public Statement {
   std::vector<std::string> values;
   Enum() = default;
   Enum(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 }  // namespace ast
