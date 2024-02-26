@@ -11,6 +11,7 @@ class Dec : public Statement {
   std::string ident;
   Dec() = default;
   Dec(const std::string &ident, links::LinkedList<lex::Token *> &tokens);
+  gen::GenerationResult const generate(gen::CodeGenerator &generator);
 };
 
 }  // namespace ast
