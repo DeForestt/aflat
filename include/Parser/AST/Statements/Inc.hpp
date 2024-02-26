@@ -11,6 +11,7 @@ class Inc : public Statement {
   std::string ident;
   Inc() = default;
   Inc(const std::string &ident, links::LinkedList<lex::Token *> &tokens);
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 
 }  // namespace ast

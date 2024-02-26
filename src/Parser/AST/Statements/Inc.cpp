@@ -1,5 +1,8 @@
 #include "Parser/AST/Statements/Inc.hpp"
 
+#include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/ScopeManager.hpp"
+
 namespace ast {
 Inc::Inc(const std::string &ident, links::LinkedList<lex::Token *> &tokens)
     : ident(ident) {
@@ -14,4 +17,22 @@ Inc::Inc(const std::string &ident, links::LinkedList<lex::Token *> &tokens)
   }
   this->logicalLine = tokens.pop()->lineCount;
 }
+
+gen::GenerationResult const Inc::generate(gen::CodeGenerator &generator) {
+  asmc::File OutputFile = asmc::File();
+  gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(this->ident);
+  if (sym == nullptr) generator.alert("Identifier not found to increment");
+  generator.canAssign(
+      sym->type, "int",
+      "type {} does not support incrementing please us int instead");
+
+  asmc::Add *add = new asmc::Add();
+  add->logicalLine = this->logicalLine;
+  add->op1 = "$1";
+  add->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
+  OutputFile.text << add;
+  gen::scope::ScopeManager::getInstance()->addAssign(this->ident);
+  return {OutputFile, std::nullopt};
+}
+
 }  // namespace ast
