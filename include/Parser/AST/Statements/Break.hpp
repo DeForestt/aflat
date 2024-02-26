@@ -14,5 +14,6 @@ class Break : public Statement {
   // copy constructor
   Break(const Break &other) : level(other.level){};
   Break(links::LinkedList<lex::Token *> &tokens);
+  gen::GenerationResult const generate(gen::CodeGenerator &generator);
 };
 }  // namespace ast
