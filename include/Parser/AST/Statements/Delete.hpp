@@ -12,5 +12,6 @@ class Delete : public Statement {
   links::LinkedList<std::string> modList;
   Delete() = default;
   Delete(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
+  gen::GenerationResult const generate(gen::CodeGenerator &generator);
 };
 }  // namespace ast

@@ -1843,9 +1843,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
 
   if (STMT->locked)
     OutputFile.text.push(new asmc::nop());
-  else if (dynamic_cast<ast::Import *>(STMT) != nullptr) {
-    this->genImport(dynamic_cast<ast::Import *>(STMT), OutputFile);
-  } else if (dynamic_cast<ast::Delete *>(STMT) != nullptr) {
+  else if (dynamic_cast<ast::Delete *>(STMT) != nullptr) {
     this->genDelete(dynamic_cast<ast::Delete *>(STMT), OutputFile);
   } else if (dynamic_cast<ast::Continue *>(STMT)) {
     this->genContinue(dynamic_cast<ast::Continue *>(STMT), OutputFile);

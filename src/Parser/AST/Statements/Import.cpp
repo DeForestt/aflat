@@ -1,6 +1,13 @@
 #include "Parser/AST/Statements/Import.hpp"
 
+#include <fstream>
+
+#include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Utils.hpp"
+#include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
+#include "PreProcessor.hpp"
 
 namespace ast {
 Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
@@ -98,5 +105,51 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
                                        this->path.find_last_of('.'));
     this->nameSpace = id;
   }
+}
+
+gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
+  auto OutputFile = asmc::File();
+  if (this->path.find("./") == std::string::npos) {
+    this->path = gen::utils::getLibPath("src") + this->path;
+  };
+
+  if (this->path.substr(this->path.length() - 3, 3) != ".af") {
+    this->path = this->path + ".af";
+  };
+
+  std::string id = this->path.substr(this->path.find_last_of("/") + 1);
+  // remove the .af extension
+  id = id.substr(0, id.find_last_of("."));
+  ast::Statement *added;
+  if (generator.includedMemo.contains(this->path))
+    added = generator.includedMemo.get(this->path);
+  else {
+    // scan the file
+    std::ifstream file(this->path);
+    std::string text = std::string((std::istreambuf_iterator<char>(file)),
+                                   std::istreambuf_iterator<char>());
+    lex::Lexer l = lex::Lexer();
+    PreProcessor pp = PreProcessor();
+
+    auto tokens = l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head")));
+    tokens.invert();
+    // parse the file
+    parse::Parser p = parse::Parser();
+    ast::Statement *statement = p.parseStmt(tokens);
+    auto Lowerer = parse::lower::Lowerer(statement);
+    added = statement;
+    generator.includedMemo.insert(this->path, added);
+    generator.ImportsOnly(added);
+  }
+  for (std::string ident : this->imports) {
+    if (generator.includedClasses.contains(id + "::" + ident)) continue;
+    generator.includedClasses.insert(id + "::" + ident, nullptr);
+    ast::Statement *statement = gen::utils::extract(ident, added, id);
+    if (statement == nullptr)
+      generator.alert("Identifier " + ident + " not found to import");
+    OutputFile << generator.GenSTMT(statement);
+  }
+  if (!this->classes) generator.nameSpaceTable.insert(this->nameSpace, id);
+  return {OutputFile, std::nullopt};
 }
 }  // namespace ast

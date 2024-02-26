@@ -30,4 +30,5 @@ Delete::Delete(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 
   this->modList = modList;
 }
+
 }  // namespace ast
