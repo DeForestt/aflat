@@ -34,5 +34,5 @@ jobs:
       - name: Check code formatting
         working-directory: ${{github.workspace}}
         run: |
-          find . -path ./Lib -prune -o -path ./test/catch.hpp -prune -o -regex '.*\.\(cpp\|hpp)' -exec clang-format -style=file -i {} \+ -exec git add {} \+
+          find . -path ./Lib -prune -o -path ./test/catch.hpp -prune -o -regex '.*\.\(cpp\|hpp\)' -exec clang-format -style=file -i {} \+ -exec git add {} \+
           git diff --cached --exit-code
