@@ -27,6 +27,6 @@ gen::GenerationResult const Break::generate(gen::CodeGenerator &generator) {
   jmp->to = generator.breakContext.get(index);
   OutputFile.text << jmp;
   return {OutputFile, std::nullopt};
-};
+}
 
 };  // namespace ast

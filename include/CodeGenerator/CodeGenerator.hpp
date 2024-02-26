@@ -139,29 +139,6 @@ class CodeGenerator {
       asmc::File &OutputFile, links::LinkedList<ast::Expr *> indicies,
       bool internal = false);
 
-  void genSequence(ast::Sequence *seq, asmc::File &OutputFile);
-  void genFunction(ast::Function *func, asmc::File &OutputFile);
-  void genDeclare(ast::Declare *dec, asmc::File &OutputFile);
-  void genDecAssign(ast::DecAssign *decAssign, asmc::File &OutputFile);
-  void genDecArr(ast::DecArr *dec, asmc::File &OutputFile);
-  void genDecAssignArr(ast::DecAssignArr *decAssign, asmc::File &OutputFile);
-  void genReturn(ast::Return *ret, asmc::File &OutputFile);
-  void genAssign(ast::Assign *assign, asmc::File &OutputFile);
-  void genPush(ast::Push *push, asmc::File &OutputFile);
-  void genPull(ast::Pull *pull, asmc::File &OutputFile);
-  void genIf(ast::If *ifStmt, asmc::File &OutputFile);
-  void genWhile(ast::While *loop, asmc::File &OutputFile);
-  void genFor(ast::For *loop, asmc::File &OutputFile);
-  void genUDef(ast::Struct *udef, asmc::File &OutputFile);
-  void genClass(ast::Class *deff, asmc::File &OutputFile);
-  void genEnum(ast::Enum *deff, asmc::File &OutputFile);
-  void genInc(ast::Inc *inc, asmc::File &OutputFile);
-  void genDec(ast::Dec *inc, asmc::File &OutputFile);
-  void genImport(ast::Import *imp, asmc::File &OutputFile);
-  void genDelete(ast::Delete *del, asmc::File &OutputFile);
-  void genBreak(ast::Break *brk, asmc::File &OutputFile);
-  void genContinue(ast::Continue *cont, asmc::File &OutputFile);
-
   asmc::File GenSTMT(ast::Statement *stmt);
   asmc::File ImportsOnly(ast::Statement *stmt);
   links::LinkedList<gen::Symbol> GenTable(
