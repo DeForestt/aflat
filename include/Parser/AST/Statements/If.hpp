@@ -17,5 +17,6 @@ class If : public Statement {
   Statement *elseIf;
   If() = default;
   If(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 }  // namespace ast
