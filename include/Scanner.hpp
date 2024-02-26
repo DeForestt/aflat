@@ -1,8 +1,9 @@
 #ifndef LEX
 #define LEX
 
-#include "LinkedList.hpp"
 #include <string>
+
+#include "LinkedList.hpp"
 
 using links::LinkedList;
 using std::string;
@@ -10,64 +11,64 @@ using std::string;
 namespace lex {
 
 class Token {
-public:
+ public:
   int lineCount;
   virtual ~Token() = default;
 };
 
 class Symbol : public Token {
-public:
+ public:
   string meta;
 };
 
 class LObj : public Token {
-public:
+ public:
   string meta;
 };
 
 class Ref : public Token {};
 
 class StringObj : public Token {
-public:
+ public:
   string value;
 };
 
 class FStringObj : public Token {
-public:
+ public:
   string value;
 };
 
 class CharObj : public Token {
-public:
+ public:
   char value;
 };
 
 class OpSym : public Token {
-public:
+ public:
   char Sym;
 };
 
 class INT : public Token {
-public:
+ public:
   string value;
 };
 
 class Long : public Token {
-public:
+ public:
   string value;
 };
 
 class FloatLit : public Token {
-public:
+ public:
   string value;
 };
 
 /*This will take apart the string and breake it down into "Words"
 that the parser will be able to understand*/
 class Lexer {
-public:
+ public:
   LinkedList<Token *> Scan(string input);
 };
 
-}; // namespace lex
+};  // namespace lex
 #endif

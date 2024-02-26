@@ -6,10 +6,10 @@
 namespace parse {
 namespace lower {
 class Lowerer {
-public:
+ public:
   Lowerer(ast::Statement *root);
 
-private:
+ private:
   ast::Statement *root;
   ast::Statement *curr;
   bool inclass = false;
@@ -21,5 +21,5 @@ private:
                               bool &fromClass);
   ast::Class *findClass(ast::Statement *stmt, std::string ident);
 };
-} // namespace lower
-} // namespace parse
+}  // namespace lower
+}  // namespace parse

@@ -218,7 +218,7 @@ class Return : public Instruction {
 };
 
 class Define : public Instruction {
-  public:
+ public:
   std::string name;
   std::string value;
   int type;
@@ -232,7 +232,6 @@ class ArithInst : public Instruction {
   asmc::Size size;
   asmc::OpType opType = asmc::Hard;
 };
-
 
 class Add : public ArithInst {
  public:
@@ -283,12 +282,12 @@ class Sar : public ArithInst {
 
 class File {
  public:
-  links::LinkedList<Instruction*> text = links::LinkedList<Instruction*>();
-  links::LinkedList<Instruction*> bss = links::LinkedList<Instruction*>();
-  links::LinkedList<Instruction*> data = links::LinkedList<Instruction*>();
-  links::LinkedList<Instruction*> linker = links::LinkedList<Instruction*>();
+  links::LinkedList<Instruction *> text = links::LinkedList<Instruction *>();
+  links::LinkedList<Instruction *> bss = links::LinkedList<Instruction *>();
+  links::LinkedList<Instruction *> data = links::LinkedList<Instruction *>();
+  links::LinkedList<Instruction *> linker = links::LinkedList<Instruction *>();
   bool hasLambda = false;
-  File* lambdas;
+  File *lambdas;
   void operator<<(asmc::File file);
   void operator>>(asmc::File file);
   void cstitch(asmc::File file);

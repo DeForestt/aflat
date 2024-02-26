@@ -64,7 +64,6 @@ std::string asmc::Movzbl::toString() {
 }
 
 std::string asmc::Cmp::toString() {
-
   std::string size = "";
   switch (this->size) {
     case asmc::Byte:
@@ -86,9 +85,9 @@ std::string asmc::Cmp::toString() {
       size = "";
       break;
   }
-  
+
   std::string command = "\tcmp";
-  if (this->op == asmc::Float){
+  if (this->op == asmc::Float) {
     command = "\tucomiss";
     size = "";
   };
@@ -185,7 +184,7 @@ std::string asmc::Sub::toString() {
   }
   if (this->opType == asmc::Float)
     return "\tsubss\t" + this->op1 + ", " + this->op2 + "\n";
-  return "\tsub"+ size + "\t" + this->op1 + ", " + this->op2 + "\n";
+  return "\tsub" + size + "\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
 std::string asmc::Mul::toString() {
@@ -305,7 +304,7 @@ std::string asmc::Subq::toString() {
   return "\tsubq\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
-std::string asmc::Push::toString() { 
+std::string asmc::Push::toString() {
   std::string size = "q";
   switch (this->size) {
     case asmc::Byte:
@@ -327,10 +326,10 @@ std::string asmc::Push::toString() {
       size = "q";
       break;
   }
-  return "\tpushq\t" + this->op + "\n"; 
-  }
+  return "\tpushq\t" + this->op + "\n";
+}
 
-std::string asmc::Pop::toString() { 
+std::string asmc::Pop::toString() {
   std::string size = "q";
   switch (this->size) {
     case asmc::Byte:
@@ -410,9 +409,9 @@ void asmc::File::collect() {
 asmc::File::File() {
   this->hasLambda = false;
   this->lambdas = nullptr;
-  this->linker = links::LinkedList<asmc::Instruction*>();
-  this->text = links::LinkedList<asmc::Instruction*>();
-  this->bss = links::LinkedList<asmc::Instruction*>();
+  this->linker = links::LinkedList<asmc::Instruction *>();
+  this->text = links::LinkedList<asmc::Instruction *>();
+  this->bss = links::LinkedList<asmc::Instruction *>();
 };
 
 asmc::Register::Register(std::string _qWord, std::string _dWord,

@@ -5,10 +5,10 @@
 
 namespace err {
 class Exception {
-public:
+ public:
   std::string errorMsg;
   explicit Exception(std::string msg);
 };
-} // namespace err
+}  // namespace err
 
-#endif // ERR
+#endif  // ERR

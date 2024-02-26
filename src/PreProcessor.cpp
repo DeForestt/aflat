@@ -1,10 +1,11 @@
 #include "PreProcessor.hpp"
+
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <numeric>
+#include <sstream>
 
 // helper functons
 
@@ -18,13 +19,11 @@ std::string slice(std::string &str) {
 
 std::string trim(std::string str) {
   // remove trailing white space
-  while (!str.empty() && std::isspace(str.back()))
-    str.pop_back();
+  while (!str.empty() && std::isspace(str.back())) str.pop_back();
 
   // return residue after leading white space
   std::size_t pos = 0;
-  while (pos < str.size() && std::isspace(str[pos]))
-    ++pos;
+  while (pos < str.size() && std::isspace(str[pos])) ++pos;
   return str.substr(pos);
 }
 
@@ -136,16 +135,14 @@ std::string PreProcessor::Include(std::string line, std::string libPath) {
     if (std::find(this->includes.begin(), this->includes.end(), path) ==
         this->includes.end()) {
       this->includes.push_back(path);
-      if (this->debug)
-        return this->PreProcess(output, libPath);
+      if (this->debug) return this->PreProcess(output, libPath);
       output = this->PreProcess(output, libPath);
       output.reserve(output.size());
       cleanPut = std::accumulate(output.begin(), output.end(), std::string(),
                                  [](std::string &a, char b) {
-                                   if (b != '\n')
-                                      a += b;
-                                    return a;
-                                  });
+                                   if (b != '\n') a += b;
+                                   return a;
+                                 });
       return this->PreProcess(cleanPut, libPath);
     }
     return "";

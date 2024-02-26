@@ -6,14 +6,11 @@ namespace ast {
  * @class DecAssign
  * @brief Represents a declaration and assignment statement.
  */
-class DecAssign : public Statement {
+class DecAssignArr : public Statement {
  public:
-  Declare *declare;
+  DecArr *declare;
   bool mute = true;
   Expr *expr;
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
-  DecAssign() = default;
-  DecAssign(Declare *declare, const bool mute,
-            links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
 };
 }  // namespace ast

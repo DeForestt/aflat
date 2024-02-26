@@ -7,35 +7,32 @@ on:
     branches: [ "main" ]
 
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
 
 jobs:
   build:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: create Build Dir
-      run: mkdir build
+      - uses: actions/checkout@v3
+      - name: create Build Dir
+        run: mkdir build
+      - name: Configure CMake
+        working-directory: ${{github.workspace}}/build
+        run: cmake ..
+      - name: Build
+        run: cmake --build build && bash ./rebuild-libs.sh && ./bin/aflat build
+      - name: Test
+        working-directory: ${{github.workspace}}/bin
+        run: ./test 
 
-    - name: Configure CMake
-      working-directory: ${{github.workspace}}/build
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake ..
- 
-    - name: Build
-      # Build your program with the given configuration
-      run: cmake --build build &&  bash ./rebuild-libs.sh && ./bin/aflat build
-
-    - name: Test
-      working-directory: ${{github.workspace}}/bin
-      # Execute tests defined by the CMake configuration.  
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ./test 
-      
+  check-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install clang-format with npm
+        run: npm install -g clang-format
+      - name: Check code formatting
+        working-directory: ${{github.workspace}}
+        run: |
+          find . -path ./Lib -prune -o -path ./test/catch.hpp -prune -o -regex '.*\.\(cpp\|hpp\)' -exec clang-format -style=file -i {} \+ -exec git add {} \+
+          git diff --cached --exit-code

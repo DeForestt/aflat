@@ -1,15 +1,17 @@
 #include "Scanner.hpp"
-#include "Exceptions.hpp"
-#include <iostream>
+
 #include <ctype.h>
+
+#include <iostream>
+
+#include "Exceptions.hpp"
 
 LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
   LinkedList<lex::Token *> tokens = LinkedList<lex::Token *>();
   int i = 0;
   int lineCount = 1;
   while (i < input.length()) {
-    if (input[i] == '\n')
-      lineCount++;
+    if (input[i] == '\n') lineCount++;
     if (std::isalpha(input[i]) || input[i] == '_') {
       auto l_obj = new LObj();
       l_obj->meta = "";
@@ -63,10 +65,8 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
         } else
           tokens << IntLit;
       }
-
     } else if (input[i] == '#') {
-
-      auto*IntLit = new lex::Long();
+      auto *IntLit = new lex::Long();
       i++;
 
       while (std::isdigit(input[i])) {
@@ -75,7 +75,6 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
       }
       IntLit->lineCount = lineCount;
       tokens.push(IntLit);
-
     } else if (std::isspace(input[i])) {
       i++;
     } else if (input[i] == '\"') {
@@ -182,8 +181,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
       } else
         charobj->value = input[i];
       i++;
-      if (input[i] != '\'')
-        throw err::Exception("Unterminated Char Value");
+      if (input[i] != '\'') throw err::Exception("Unterminated Char Value");
       tokens << charobj;
       i++;
     } else if (input[i] == ';') {
