@@ -19,19 +19,22 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/reporters/catch_reporter_event_listener.hpp>
 #include <catch2/reporters/catch_reporter_registrars.hpp>
+
 #include <iostream>
 
 namespace {
-    class NonCapturingListener : public Catch::EventListenerBase {
+	class NonCapturingListener : public Catch::EventListenerBase {
     public:
         NonCapturingListener( Catch::IConfig const* config ):
             EventListenerBase( config ) {
             m_preferences.shouldRedirectStdOut = false;
             std::cerr << "X24 - NonCapturingListener initialized.\n";
-        }
-    };
-} // namespace
+		}
+	};
+}
 
 CATCH_REGISTER_LISTENER( NonCapturingListener )
 
-TEST_CASE( "Writes to stdout" ) { std::cout << "X24 - FooBarBaz\n"; }
+TEST_CASE( "Writes to stdout" ) {
+	std::cout << "X24 - FooBarBaz\n";
+}

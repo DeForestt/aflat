@@ -48,11 +48,8 @@ SCENARIO( "vectors can be sized and resized", "[vector]" ) {
 }
 
 // Compile & run:
-// - g++ -std=c++14 -Wall -I$(CATCH_SINGLE_INCLUDE) -o
-// 120-Bdd-ScenarioGivenWhenThen 120-Bdd-ScenarioGivenWhenThen.cpp &&
-// 120-Bdd-ScenarioGivenWhenThen --success
-// - cl -EHsc -I%CATCH_SINGLE_INCLUDE% 120-Bdd-ScenarioGivenWhenThen.cpp &&
-// 120-Bdd-ScenarioGivenWhenThen --success
+// - g++ -std=c++14 -Wall -I$(CATCH_SINGLE_INCLUDE) -o 120-Bdd-ScenarioGivenWhenThen 120-Bdd-ScenarioGivenWhenThen.cpp && 120-Bdd-ScenarioGivenWhenThen --success
+// - cl -EHsc -I%CATCH_SINGLE_INCLUDE% 120-Bdd-ScenarioGivenWhenThen.cpp && 120-Bdd-ScenarioGivenWhenThen --success
 
 // Expected compact output (all assertions):
 //
@@ -60,16 +57,16 @@ SCENARIO( "vectors can be sized and resized", "[vector]" ) {
 // 120-Bdd-ScenarioGivenWhenThen.cpp:12: passed: v.size() == 5 for: 5 == 5
 // 120-Bdd-ScenarioGivenWhenThen.cpp:13: passed: v.capacity() >= 5 for: 5 >= 5
 // 120-Bdd-ScenarioGivenWhenThen.cpp:19: passed: v.size() == 10 for: 10 == 10
-// 120-Bdd-ScenarioGivenWhenThen.cpp:20: passed: v.capacity() >= 10 for: 10 >=
-// 10 120-Bdd-ScenarioGivenWhenThen.cpp:12: passed: v.size() == 5 for: 5 == 5
+// 120-Bdd-ScenarioGivenWhenThen.cpp:20: passed: v.capacity() >= 10 for: 10 >= 10
+// 120-Bdd-ScenarioGivenWhenThen.cpp:12: passed: v.size() == 5 for: 5 == 5
 // 120-Bdd-ScenarioGivenWhenThen.cpp:13: passed: v.capacity() >= 5 for: 5 >= 5
 // 120-Bdd-ScenarioGivenWhenThen.cpp:27: passed: v.size() == 0 for: 0 == 0
 // 120-Bdd-ScenarioGivenWhenThen.cpp:28: passed: v.capacity() >= 5 for: 5 >= 5
 // 120-Bdd-ScenarioGivenWhenThen.cpp:12: passed: v.size() == 5 for: 5 == 5
 // 120-Bdd-ScenarioGivenWhenThen.cpp:13: passed: v.capacity() >= 5 for: 5 >= 5
 // 120-Bdd-ScenarioGivenWhenThen.cpp:35: passed: v.size() == 5 for: 5 == 5
-// 120-Bdd-ScenarioGivenWhenThen.cpp:36: passed: v.capacity() >= 10 for: 10 >=
-// 10 120-Bdd-ScenarioGivenWhenThen.cpp:12: passed: v.size() == 5 for: 5 == 5
+// 120-Bdd-ScenarioGivenWhenThen.cpp:36: passed: v.capacity() >= 10 for: 10 >= 10
+// 120-Bdd-ScenarioGivenWhenThen.cpp:12: passed: v.size() == 5 for: 5 == 5
 // 120-Bdd-ScenarioGivenWhenThen.cpp:13: passed: v.capacity() >= 5 for: 5 >= 5
 // 120-Bdd-ScenarioGivenWhenThen.cpp:43: passed: v.size() == 5 for: 5 == 5
 // 120-Bdd-ScenarioGivenWhenThen.cpp:44: passed: v.capacity() >= 5 for: 5 >= 5

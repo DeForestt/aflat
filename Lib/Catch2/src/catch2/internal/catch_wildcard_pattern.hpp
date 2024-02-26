@@ -9,9 +9,11 @@
 #define CATCH_WILDCARD_PATTERN_HPP_INCLUDED
 
 #include <catch2/internal/catch_case_sensitive.hpp>
+
 #include <string>
 
-namespace Catch {
+namespace Catch
+{
     class WildcardPattern {
         enum WildcardPosition {
             NoWildcard = 0,
@@ -21,8 +23,8 @@ namespace Catch {
         };
 
     public:
-        WildcardPattern( std::string const& pattern,
-                         CaseSensitive caseSensitivity );
+
+        WildcardPattern( std::string const& pattern, CaseSensitive caseSensitivity );
         bool matches( std::string const& str ) const;
 
     private:
@@ -31,6 +33,6 @@ namespace Catch {
         WildcardPosition m_wildcard = NoWildcard;
         std::string m_pattern;
     };
-} // namespace Catch
+}
 
 #endif // CATCH_WILDCARD_PATTERN_HPP_INCLUDED

@@ -10,14 +10,14 @@
 
 namespace Catch {
 
-    AssertionResultData::AssertionResultData(
-        ResultWas::OfType _resultType, LazyExpression const& _lazyExpression ):
-        lazyExpression( _lazyExpression ), resultType( _resultType ) {}
+    AssertionResultData::AssertionResultData(ResultWas::OfType _resultType, LazyExpression const & _lazyExpression):
+        lazyExpression(_lazyExpression),
+        resultType(_resultType) {}
 
     std::string AssertionResultData::reconstructExpression() const {
 
-        if ( reconstructedExpression.empty() ) {
-            if ( lazyExpression ) {
+        if( reconstructedExpression.empty() ) {
+            if( lazyExpression ) {
                 ReusableStringStream rss;
                 rss << lazyExpression;
                 reconstructedExpression = rss.str();
@@ -26,9 +26,10 @@ namespace Catch {
         return reconstructedExpression;
     }
 
-    AssertionResult::AssertionResult( AssertionInfo const& info,
-                                      AssertionResultData const& data ):
-        m_info( info ), m_resultData( data ) {}
+    AssertionResult::AssertionResult( AssertionInfo const& info, AssertionResultData const& data )
+    :   m_info( info ),
+        m_resultData( data )
+    {}
 
     // Result was a success
     bool AssertionResult::succeeded() const {
@@ -37,8 +38,7 @@ namespace Catch {
 
     // Result was a success, or failure is suppressed
     bool AssertionResult::isOk() const {
-        return Catch::isOk( m_resultData.resultType ) ||
-               shouldSuppressFailure( m_info.resultDisposition );
+        return Catch::isOk( m_resultData.resultType ) || shouldSuppressFailure( m_info.resultDisposition );
     }
 
     ResultWas::OfType AssertionResult::getResultType() const {
@@ -55,13 +55,12 @@ namespace Catch {
 
     std::string AssertionResult::getExpression() const {
         // Possibly overallocating by 3 characters should be basically free
-        std::string expr;
-        expr.reserve( m_info.capturedExpression.size() + 3 );
-        if ( isFalseTest( m_info.resultDisposition ) ) {
+        std::string expr; expr.reserve(m_info.capturedExpression.size() + 3);
+        if (isFalseTest(m_info.resultDisposition)) {
             expr += "!(";
         }
         expr += m_info.capturedExpression;
-        if ( isFalseTest( m_info.resultDisposition ) ) {
+        if (isFalseTest(m_info.resultDisposition)) {
             expr += ')';
         }
         return expr;
@@ -69,11 +68,10 @@ namespace Catch {
 
     std::string AssertionResult::getExpressionInMacro() const {
         std::string expr;
-        if ( m_info.macroName.empty() )
-            expr = static_cast<std::string>( m_info.capturedExpression );
+        if( m_info.macroName.empty() )
+            expr = static_cast<std::string>(m_info.capturedExpression);
         else {
-            expr.reserve( m_info.macroName.size() +
-                          m_info.capturedExpression.size() + 4 );
+            expr.reserve( m_info.macroName.size() + m_info.capturedExpression.size() + 4 );
             expr += m_info.macroName;
             expr += "( ";
             expr += m_info.capturedExpression;
@@ -88,7 +86,9 @@ namespace Catch {
 
     std::string AssertionResult::getExpandedExpression() const {
         std::string expr = m_resultData.reconstructExpression();
-        return expr.empty() ? getExpression() : expr;
+        return expr.empty()
+                ? getExpression()
+                : expr;
     }
 
     StringRef AssertionResult::getMessage() const {

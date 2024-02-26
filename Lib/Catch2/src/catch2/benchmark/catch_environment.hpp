@@ -15,7 +15,8 @@
 
 namespace Catch {
     namespace Benchmark {
-        template <typename Duration> struct EnvironmentEstimate {
+        template <typename Duration>
+        struct EnvironmentEstimate {
             Duration mean;
             OutlierClassification outliers;
 
@@ -24,7 +25,8 @@ namespace Catch {
                 return { mean, outliers };
             }
         };
-        template <typename Clock> struct Environment {
+        template <typename Clock>
+        struct Environment {
             using clock_type = Clock;
             EnvironmentEstimate<FloatDuration<Clock>> clock_resolution;
             EnvironmentEstimate<FloatDuration<Clock>> clock_cost;

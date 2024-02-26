@@ -26,7 +26,7 @@ namespace Catch {
         // so that we can insert them into the main vector at the right place
         size_t m_insertedListeners = 0;
 
-        void updatePreferences( IEventListener const& reporterish );
+        void updatePreferences(IEventListener const& reporterish);
 
     public:
         using IEventListener::IEventListener;
@@ -35,6 +35,7 @@ namespace Catch {
         void addReporter( IEventListenerPtr&& reporter );
 
     public: // IEventListener
+
         void noMatchingTestCases( StringRef unmatchedSpec ) override;
         void fatalErrorEncountered( StringRef error ) override;
         void reportInvalidTestSpec( StringRef arg ) override;
@@ -46,26 +47,24 @@ namespace Catch {
 
         void testRunStarting( TestRunInfo const& testRunInfo ) override;
         void testCaseStarting( TestCaseInfo const& testInfo ) override;
-        void testCasePartialStarting( TestCaseInfo const& testInfo,
-                                      uint64_t partNumber ) override;
+        void testCasePartialStarting(TestCaseInfo const& testInfo, uint64_t partNumber) override;
         void sectionStarting( SectionInfo const& sectionInfo ) override;
         void assertionStarting( AssertionInfo const& assertionInfo ) override;
 
         void assertionEnded( AssertionStats const& assertionStats ) override;
         void sectionEnded( SectionStats const& sectionStats ) override;
-        void testCasePartialEnded( TestCaseStats const& testInfo,
-                                   uint64_t partNumber ) override;
+        void testCasePartialEnded(TestCaseStats const& testInfo, uint64_t partNumber) override;
         void testCaseEnded( TestCaseStats const& testCaseStats ) override;
         void testRunEnded( TestRunStats const& testRunStats ) override;
 
         void skipTest( TestCaseInfo const& testInfo ) override;
 
-        void listReporters(
-            std::vector<ReporterDescription> const& descriptions ) override;
-        void listListeners(
-            std::vector<ListenerDescription> const& descriptions ) override;
-        void listTests( std::vector<TestCaseHandle> const& tests ) override;
-        void listTags( std::vector<TagInfo> const& tags ) override;
+        void listReporters(std::vector<ReporterDescription> const& descriptions) override;
+        void listListeners(std::vector<ListenerDescription> const& descriptions) override;
+        void listTests(std::vector<TestCaseHandle> const& tests) override;
+        void listTags(std::vector<TagInfo> const& tags) override;
+
+
     };
 
 } // end namespace Catch

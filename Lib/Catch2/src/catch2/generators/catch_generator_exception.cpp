@@ -10,6 +10,8 @@
 
 namespace Catch {
 
-    const char* GeneratorException::what() const noexcept { return m_msg; }
+    const char* GeneratorException::what() const noexcept {
+        return m_msg;
+    }
 
 } // end namespace Catch

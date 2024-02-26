@@ -8,6 +8,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/internal/catch_stringref.hpp>
+
 #include <cstring>
 
 TEST_CASE( "StringRef", "[Strings][StringRef]" ) {
@@ -28,29 +29,29 @@ TEST_CASE( "StringRef", "[Strings][StringRef]" ) {
         auto rawChars = s.data();
         REQUIRE( std::strcmp( rawChars, "hello" ) == 0 );
 
-        REQUIRE( s.data() == rawChars );
+        REQUIRE(s.data() == rawChars);
     }
     SECTION( "From sub-string" ) {
-        StringRef original = StringRef( "original string" ).substr( 0, 8 );
+        StringRef original = StringRef( "original string" ).substr(0, 8);
         REQUIRE( original == "original" );
 
-        REQUIRE_NOTHROW( original.data() );
+        REQUIRE_NOTHROW(original.data());
     }
     SECTION( "Copy construction is shallow" ) {
         StringRef original = StringRef( "original string" );
         StringRef copy = original;
-        REQUIRE( original.begin() == copy.begin() );
+        REQUIRE(original.begin() == copy.begin());
     }
     SECTION( "Copy assignment is shallow" ) {
         StringRef original = StringRef( "original string" );
         StringRef copy;
         copy = original;
-        REQUIRE( original.begin() == copy.begin() );
+        REQUIRE(original.begin() == copy.begin());
     }
 
     SECTION( "Substrings" ) {
         StringRef s = "hello world!";
-        StringRef ss = s.substr( 0, 5 );
+        StringRef ss = s.substr(0, 5);
 
         SECTION( "zero-based substring" ) {
             REQUIRE( ss.empty() == false );
@@ -59,7 +60,7 @@ TEST_CASE( "StringRef", "[Strings][StringRef]" ) {
             REQUIRE( ss == "hello" );
         }
 
-        SECTION( "non-zero-based substring" ) {
+        SECTION( "non-zero-based substring") {
             ss = s.substr( 6, 6 );
             REQUIRE( ss.size() == 6 );
             REQUIRE( std::strcmp( ss.data(), "world!" ) == 0 );
@@ -74,28 +75,27 @@ TEST_CASE( "StringRef", "[Strings][StringRef]" ) {
             REQUIRE( s.data() == ss.data() );
         }
 
-        SECTION( "Past the end substring" ) {
-            REQUIRE( s.substr( s.size() + 1, 123 ).empty() );
+        SECTION("Past the end substring") {
+            REQUIRE(s.substr(s.size() + 1, 123).empty());
         }
 
-        SECTION( "Substring off the end are trimmed" ) {
-            ss = s.substr( 6, 123 );
-            REQUIRE( std::strcmp( ss.data(), "world!" ) == 0 );
+        SECTION("Substring off the end are trimmed") {
+            ss = s.substr(6, 123);
+            REQUIRE(std::strcmp(ss.data(), "world!") == 0);
         }
-        SECTION( "substring start after the end is empty" ) {
-            REQUIRE( s.substr( 1'000'000, 1 ).empty() );
+        SECTION("substring start after the end is empty") {
+            REQUIRE(s.substr(1'000'000, 1).empty());
         }
     }
 
     SECTION( "Comparisons are deep" ) {
         char buffer1[] = "Hello";
         char buffer2[] = "Hello";
-        CHECK( reinterpret_cast<char*>( buffer1 ) !=
-               reinterpret_cast<char*>( buffer2 ) );
+        CHECK(reinterpret_cast<char*>(buffer1) != reinterpret_cast<char*>(buffer2));
 
-        StringRef left( buffer1 ), right( buffer2 );
+        StringRef left(buffer1), right(buffer2);
         REQUIRE( left == right );
-        REQUIRE( left != left.substr( 0, 3 ) );
+        REQUIRE(left != left.substr(0, 3));
     }
 
     SECTION( "from std::string" ) {
@@ -129,84 +129,84 @@ TEST_CASE( "StringRef", "[Strings][StringRef]" ) {
         }
         SECTION( "assigned" ) {
             std::string stdStr;
-            stdStr = static_cast<std::string>( sr );
+            stdStr = static_cast<std::string>(sr);
             REQUIRE( stdStr == "a stringref" );
             REQUIRE( stdStr.size() == sr.size() );
         }
     }
 
-    SECTION( "std::string += StringRef" ) {
+    SECTION("std::string += StringRef") {
         StringRef sr = "the stringref contents";
-        std::string lhs( "some string += " );
+        std::string lhs("some string += ");
         lhs += sr;
-        REQUIRE( lhs == "some string += the stringref contents" );
+        REQUIRE(lhs == "some string += the stringref contents");
     }
-    SECTION( "StringRef + StringRef" ) {
+    SECTION("StringRef + StringRef") {
         StringRef sr1 = "abraka", sr2 = "dabra";
         std::string together = sr1 + sr2;
-        REQUIRE( together == "abrakadabra" );
+        REQUIRE(together == "abrakadabra");
     }
 }
 
-TEST_CASE( "StringRef at compilation time",
-           "[Strings][StringRef][constexpr]" ) {
+TEST_CASE("StringRef at compilation time", "[Strings][StringRef][constexpr]") {
     using Catch::StringRef;
-    SECTION( "Simple constructors" ) {
+    SECTION("Simple constructors") {
         constexpr StringRef empty{};
-        STATIC_REQUIRE( empty.size() == 0 );
-        STATIC_REQUIRE( empty.begin() == empty.end() );
+        STATIC_REQUIRE(empty.size() == 0);
+        STATIC_REQUIRE(empty.begin() == empty.end());
 
         constexpr char const* const abc = "abc";
 
-        constexpr StringRef stringref( abc, 3 );
-        STATIC_REQUIRE( stringref.size() == 3 );
-        STATIC_REQUIRE( stringref.data() == abc );
-        STATIC_REQUIRE( stringref.begin() == abc );
-        STATIC_REQUIRE( stringref.begin() != stringref.end() );
-        STATIC_REQUIRE( stringref.substr( 10, 0 ).empty() );
-        STATIC_REQUIRE( stringref.substr( 2, 1 ).data() == abc + 2 );
-        STATIC_REQUIRE( stringref[1] == 'b' );
+        constexpr StringRef stringref(abc, 3);
+        STATIC_REQUIRE(stringref.size() == 3);
+        STATIC_REQUIRE(stringref.data() == abc);
+        STATIC_REQUIRE(stringref.begin() == abc);
+        STATIC_REQUIRE(stringref.begin() != stringref.end());
+        STATIC_REQUIRE(stringref.substr(10, 0).empty());
+        STATIC_REQUIRE(stringref.substr(2, 1).data() == abc + 2);
+        STATIC_REQUIRE(stringref[1] == 'b');
 
-        constexpr StringRef shortened( abc, 2 );
-        STATIC_REQUIRE( shortened.size() == 2 );
-        STATIC_REQUIRE( shortened.data() == abc );
-        STATIC_REQUIRE( shortened.begin() != shortened.end() );
+
+        constexpr StringRef shortened(abc, 2);
+        STATIC_REQUIRE(shortened.size() == 2);
+        STATIC_REQUIRE(shortened.data() == abc);
+        STATIC_REQUIRE(shortened.begin() != shortened.end());
     }
-    SECTION( "UDL construction" ) {
+    SECTION("UDL construction") {
         constexpr auto sr1 = "abc"_catch_sr;
-        STATIC_REQUIRE_FALSE( sr1.empty() );
-        STATIC_REQUIRE( sr1.size() == 3 );
+        STATIC_REQUIRE_FALSE(sr1.empty());
+        STATIC_REQUIRE(sr1.size() == 3);
 
         using Catch::operator"" _sr;
         constexpr auto sr2 = ""_sr;
-        STATIC_REQUIRE( sr2.empty() );
-        STATIC_REQUIRE( sr2.size() == 0 );
+        STATIC_REQUIRE(sr2.empty());
+        STATIC_REQUIRE(sr2.size() == 0);
     }
 }
 
-TEST_CASE( "StringRef::compare", "[Strings][StringRef][approvals]" ) {
+TEST_CASE("StringRef::compare", "[Strings][StringRef][approvals]") {
     using Catch::StringRef;
 
-    SECTION( "Same length on both sides" ) {
-        StringRef sr1( "abcdc" );
-        StringRef sr2( "abcdd" );
-        StringRef sr3( "abcdc" );
+    SECTION("Same length on both sides") {
+        StringRef sr1("abcdc");
+        StringRef sr2("abcdd");
+        StringRef sr3("abcdc");
 
-        REQUIRE( sr1.compare( sr2 ) < 0 );
-        REQUIRE( sr2.compare( sr1 ) > 0 );
-        REQUIRE( sr1.compare( sr3 ) == 0 );
-        REQUIRE( sr3.compare( sr1 ) == 0 );
+        REQUIRE(sr1.compare(sr2) < 0);
+        REQUIRE(sr2.compare(sr1) > 0);
+        REQUIRE(sr1.compare(sr3) == 0);
+        REQUIRE(sr3.compare(sr1) == 0);
     }
-    SECTION( "Different lengths" ) {
-        StringRef sr1( "def" );
-        StringRef sr2( "deff" );
-        StringRef sr3( "ab" );
+    SECTION("Different lengths") {
+        StringRef sr1("def");
+        StringRef sr2("deff");
+        StringRef sr3("ab");
 
-        REQUIRE( sr1.compare( sr2 ) < 0 );
-        REQUIRE( sr2.compare( sr1 ) > 0 );
-        REQUIRE( sr1.compare( sr3 ) > 0 );
-        REQUIRE( sr2.compare( sr3 ) > 0 );
-        REQUIRE( sr3.compare( sr1 ) < 0 );
-        REQUIRE( sr3.compare( sr2 ) < 0 );
+        REQUIRE(sr1.compare(sr2) < 0);
+        REQUIRE(sr2.compare(sr1) > 0);
+        REQUIRE(sr1.compare(sr3) > 0);
+        REQUIRE(sr2.compare(sr3) > 0);
+        REQUIRE(sr3.compare(sr1) < 0);
+        REQUIRE(sr3.compare(sr2) < 0);
     }
 }

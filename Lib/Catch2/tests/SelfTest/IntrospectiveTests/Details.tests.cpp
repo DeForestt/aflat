@@ -7,39 +7,35 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/internal/catch_case_insensitive_comparisons.hpp>
 #include <catch2/internal/catch_enforce.hpp>
+#include <catch2/internal/catch_case_insensitive_comparisons.hpp>
 #include <catch2/internal/catch_optional.hpp>
 
-#if defined( _MSC_VER )
-#    pragma warning( push )
-#    pragma warning( \
-        disable : 4702 ) // unreachable code in the macro expansions
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable:4702) // unreachable code in the macro expansions
 #endif
 
-TEST_CASE( "Check that our error handling macros throw the right exceptions",
-           "[!throws][internals][approvals]" ) {
-    REQUIRE_THROWS_AS( CATCH_INTERNAL_ERROR( "" ), std::logic_error );
-    REQUIRE_THROWS_AS( CATCH_ERROR( "" ), std::domain_error );
-    REQUIRE_THROWS_AS( CATCH_RUNTIME_ERROR( "" ), std::runtime_error );
-    REQUIRE_THROWS_AS( []() { CATCH_ENFORCE( false, "" ); }(),
-                       std::domain_error );
-    REQUIRE_NOTHROW( []() { CATCH_ENFORCE( true, "" ); }() );
+TEST_CASE("Check that our error handling macros throw the right exceptions", "[!throws][internals][approvals]") {
+    REQUIRE_THROWS_AS(CATCH_INTERNAL_ERROR(""), std::logic_error);
+    REQUIRE_THROWS_AS(CATCH_ERROR(""), std::domain_error);
+    REQUIRE_THROWS_AS(CATCH_RUNTIME_ERROR(""), std::runtime_error);
+    REQUIRE_THROWS_AS([](){CATCH_ENFORCE(false, "");}(), std::domain_error);
+    REQUIRE_NOTHROW([](){CATCH_ENFORCE(true, "");}());
 }
 
-#if defined( _MSC_VER )
-#    pragma warning( pop ) // unreachable code in the macro expansions
+#if defined(_MSC_VER)
+#pragma warning(pop) // unreachable code in the macro expansions
 #endif
 
-TEST_CASE( "CaseInsensitiveLess is case insensitive",
-           "[comparisons][string-case]" ) {
+TEST_CASE("CaseInsensitiveLess is case insensitive", "[comparisons][string-case]") {
     Catch::Detail::CaseInsensitiveLess lt;
     SECTION( "Degenerate cases" ) {
         REQUIRE( lt( "", "a" ) );
         REQUIRE_FALSE( lt( "a", "a" ) );
         REQUIRE_FALSE( lt( "", "" ) );
     }
-    SECTION( "Plain comparisons" ) {
+    SECTION("Plain comparisons") {
         REQUIRE( lt( "a", "b" ) );
         REQUIRE( lt( "a", "B" ) );
         REQUIRE( lt( "A", "b" ) );
@@ -64,7 +60,7 @@ TEST_CASE( "CaseInsensitiveEqualsTo is case insensitive",
     }
 }
 
-TEST_CASE( "Optional comparison ops", "[optional][approvals]" ) {
+TEST_CASE("Optional comparison ops", "[optional][approvals]") {
     using Catch::Optional;
 
     Optional<int> a, b;
@@ -79,7 +75,7 @@ TEST_CASE( "Optional comparison ops", "[optional][approvals]" ) {
         REQUIRE( a != b );
     }
     SECTION(
-        "non-empty optionals are equal if the contained elements are equal" ) {
+        "non-empty optionals are equal if the contained elements are equal") {
         a = 1;
         b = 2;
         REQUIRE( a != b );

@@ -6,8 +6,7 @@
 
 // SPDX-License-Identifier: BSL-1.0
 /** \file
- * This is a convenience header for Catch2. It includes **all** of Catch2
- * headers.
+ * This is a convenience header for Catch2. It includes **all** of Catch2 headers.
  *
  * Generally the Catch2 users should use specific includes they need,
  * but this header can be used instead for ease-of-experimentation, or

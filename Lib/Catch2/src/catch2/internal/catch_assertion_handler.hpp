@@ -9,9 +9,10 @@
 #define CATCH_ASSERTION_HANDLER_HPP_INCLUDED
 
 #include <catch2/catch_assertion_info.hpp>
-#include <catch2/interfaces/catch_interfaces_capture.hpp>
 #include <catch2/internal/catch_decomposer.hpp>
+#include <catch2/interfaces/catch_interfaces_capture.hpp>
 #include <catch2/internal/catch_lazy_expr.hpp>
+
 #include <string>
 
 namespace Catch {
@@ -30,22 +31,25 @@ namespace Catch {
         IResultCapture& m_resultCapture;
 
     public:
-        AssertionHandler( StringRef macroName,
-                          SourceLineInfo const& lineInfo,
-                          StringRef capturedExpression,
-                          ResultDisposition::Flags resultDisposition );
+        AssertionHandler
+            (   StringRef macroName,
+                SourceLineInfo const& lineInfo,
+                StringRef capturedExpression,
+                ResultDisposition::Flags resultDisposition );
         ~AssertionHandler() {
             if ( !m_completed ) {
                 m_resultCapture.handleIncomplete( m_assertionInfo );
             }
         }
 
-        template <typename T> void handleExpr( ExprLhs<T> const& expr ) {
+
+        template<typename T>
+        void handleExpr( ExprLhs<T> const& expr ) {
             handleExpr( expr.makeUnaryExpr() );
         }
         void handleExpr( ITransientExpression const& expr );
 
-        void handleMessage( ResultWas::OfType resultType, StringRef message );
+        void handleMessage(ResultWas::OfType resultType, StringRef message);
 
         void handleExceptionThrownAsExpected();
         void handleUnexpectedExceptionNotThrown();
@@ -60,9 +64,7 @@ namespace Catch {
         auto allowThrows() const -> bool;
     };
 
-    void handleExceptionMatchExpr( AssertionHandler& handler,
-                                   std::string const& str,
-                                   StringRef matcherString );
+    void handleExceptionMatchExpr( AssertionHandler& handler, std::string const& str, StringRef matcherString );
 
 } // namespace Catch
 

@@ -8,8 +8,9 @@
 #ifndef CATCH_INTERFACES_GENERATORTRACKER_HPP_INCLUDED
 #define CATCH_INTERFACES_GENERATORTRACKER_HPP_INCLUDED
 
-#include <catch2/internal/catch_stringref.hpp>
 #include <catch2/internal/catch_unique_ptr.hpp>
+#include <catch2/internal/catch_stringref.hpp>
+
 #include <string>
 
 namespace Catch {
@@ -38,9 +39,8 @@ namespace Catch {
             GeneratorUntypedBase() = default;
             // Generation of copy ops is deprecated (and Clang will complain)
             // if there is a user destructor defined
-            GeneratorUntypedBase( GeneratorUntypedBase const& ) = default;
-            GeneratorUntypedBase&
-            operator=( GeneratorUntypedBase const& ) = default;
+            GeneratorUntypedBase(GeneratorUntypedBase const&) = default;
+            GeneratorUntypedBase& operator=(GeneratorUntypedBase const&) = default;
 
             virtual ~GeneratorUntypedBase(); // = default;
 
@@ -56,9 +56,7 @@ namespace Catch {
              */
             bool countedNext();
 
-            std::size_t currentElementIndex() const {
-                return m_currentElementIndex;
-            }
+            std::size_t currentElementIndex() const { return m_currentElementIndex; }
 
             /**
              * Returns generator's current element as user-friendly string.
@@ -75,8 +73,7 @@ namespace Catch {
              */
             StringRef currentElementAsString() const;
         };
-        using GeneratorBasePtr =
-            Catch::Detail::unique_ptr<GeneratorUntypedBase>;
+        using GeneratorBasePtr = Catch::Detail::unique_ptr<GeneratorUntypedBase>;
 
     } // namespace Generators
 
@@ -84,10 +81,8 @@ namespace Catch {
     public:
         virtual ~IGeneratorTracker(); // = default;
         virtual auto hasGenerator() const -> bool = 0;
-        virtual auto getGenerator() const
-            -> Generators::GeneratorBasePtr const& = 0;
-        virtual void
-        setGenerator( Generators::GeneratorBasePtr&& generator ) = 0;
+        virtual auto getGenerator() const -> Generators::GeneratorBasePtr const& = 0;
+        virtual void setGenerator( Generators::GeneratorBasePtr&& generator ) = 0;
     };
 
 } // namespace Catch

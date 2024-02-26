@@ -5,26 +5,26 @@
 //        https://www.boost.org/LICENSE_1_0.txt)
 
 // SPDX-License-Identifier: BSL-1.0
-#include <algorithm>
-#include <catch2/catch_test_case_info.hpp>
-#include <catch2/catch_test_spec.hpp>
-#include <catch2/interfaces/catch_interfaces_registry_hub.hpp>
+#include <catch2/internal/catch_test_case_registry_impl.hpp>
+
 #include <catch2/internal/catch_context.hpp>
 #include <catch2/internal/catch_enforce.hpp>
-#include <catch2/internal/catch_move_and_forward.hpp>
+#include <catch2/interfaces/catch_interfaces_registry_hub.hpp>
 #include <catch2/internal/catch_random_number_generator.hpp>
 #include <catch2/internal/catch_run_context.hpp>
 #include <catch2/internal/catch_sharding.hpp>
+#include <catch2/catch_test_case_info.hpp>
+#include <catch2/catch_test_spec.hpp>
+#include <catch2/internal/catch_move_and_forward.hpp>
 #include <catch2/internal/catch_test_case_info_hasher.hpp>
-#include <catch2/internal/catch_test_case_registry_impl.hpp>
+
+#include <algorithm>
 #include <set>
 
 namespace Catch {
 
-    std::vector<TestCaseHandle>
-    sortTests( IConfig const& config,
-               std::vector<TestCaseHandle> const& unsortedTestCases ) {
-        switch ( config.runOrder() ) {
+    std::vector<TestCaseHandle> sortTests( IConfig const& config, std::vector<TestCaseHandle> const& unsortedTestCases ) {
+        switch (config.runOrder()) {
         case TestRunOrder::Declared:
             return unsortedTestCases;
 
@@ -35,21 +35,20 @@ namespace Catch {
                 sorted.end(),
                 []( TestCaseHandle const& lhs, TestCaseHandle const& rhs ) {
                     return lhs.getTestCaseInfo() < rhs.getTestCaseInfo();
-                } );
+                }
+            );
             return sorted;
         }
         case TestRunOrder::Randomized: {
-            seedRng( config );
-            using TestWithHash =
-                std::pair<TestCaseInfoHasher::hash_t, TestCaseHandle>;
+            seedRng(config);
+            using TestWithHash = std::pair<TestCaseInfoHasher::hash_t, TestCaseHandle>;
 
             TestCaseInfoHasher h{ config.rngSeed() };
             std::vector<TestWithHash> indexed_tests;
-            indexed_tests.reserve( unsortedTestCases.size() );
+            indexed_tests.reserve(unsortedTestCases.size());
 
-            for ( auto const& handle : unsortedTestCases ) {
-                indexed_tests.emplace_back( h( handle.getTestCaseInfo() ),
-                                            handle );
+            for (auto const& handle : unsortedTestCases) {
+                indexed_tests.emplace_back(h(handle.getTestCaseInfo()), handle);
             }
 
             std::sort( indexed_tests.begin(),
@@ -63,28 +62,25 @@ namespace Catch {
                        } );
 
             std::vector<TestCaseHandle> randomized;
-            randomized.reserve( indexed_tests.size() );
+            randomized.reserve(indexed_tests.size());
 
-            for ( auto const& indexed : indexed_tests ) {
-                randomized.push_back( indexed.second );
+            for (auto const& indexed : indexed_tests) {
+                randomized.push_back(indexed.second);
             }
 
             return randomized;
         }
         }
 
-        CATCH_INTERNAL_ERROR( "Unknown test order value!" );
+        CATCH_INTERNAL_ERROR("Unknown test order value!");
     }
 
     bool isThrowSafe( TestCaseHandle const& testCase, IConfig const& config ) {
         return !testCase.getTestCaseInfo().throws() || config.allowThrows();
     }
 
-    bool matchTest( TestCaseHandle const& testCase,
-                    TestSpec const& testSpec,
-                    IConfig const& config ) {
-        return testSpec.matches( testCase.getTestCaseInfo() ) &&
-               isThrowSafe( testCase, config );
+    bool matchTest( TestCaseHandle const& testCase, TestSpec const& testSpec, IConfig const& config ) {
+        return testSpec.matches( testCase.getTestCaseInfo() ) && isThrowSafe( testCase, config );
     }
 
     void
@@ -93,51 +89,39 @@ namespace Catch {
                                TestCaseInfo const* rhs ) {
             return *lhs < *rhs;
         };
-        std::set<TestCaseInfo const*, decltype( testInfoCmp )> seenTests(
-            testInfoCmp );
+        std::set<TestCaseInfo const*, decltype(testInfoCmp)> seenTests(testInfoCmp);
         for ( auto const& test : tests ) {
             const auto infoPtr = &test.getTestCaseInfo();
             const auto prev = seenTests.insert( infoPtr );
             CATCH_ENFORCE(
                 prev.second,
-                "error: test case \""
-                    << infoPtr->name << "\", with tags \""
+                "error: test case \"" << infoPtr->name << "\", with tags \""
                     << infoPtr->tagsAsString() << "\" already defined.\n"
                     << "\tFirst seen at " << ( *prev.first )->lineInfo << "\n"
                     << "\tRedefined at " << infoPtr->lineInfo );
         }
     }
 
-    std::vector<TestCaseHandle>
-    filterTests( std::vector<TestCaseHandle> const& testCases,
-                 TestSpec const& testSpec,
-                 IConfig const& config ) {
+    std::vector<TestCaseHandle> filterTests( std::vector<TestCaseHandle> const& testCases, TestSpec const& testSpec, IConfig const& config ) {
         std::vector<TestCaseHandle> filtered;
         filtered.reserve( testCases.size() );
-        for ( auto const& testCase : testCases ) {
-            if ( ( !testSpec.hasFilters() &&
-                   !testCase.getTestCaseInfo().isHidden() ) ||
-                 ( testSpec.hasFilters() &&
-                   matchTest( testCase, testSpec, config ) ) ) {
-                filtered.push_back( testCase );
+        for (auto const& testCase : testCases) {
+            if ((!testSpec.hasFilters() && !testCase.getTestCaseInfo().isHidden()) ||
+                (testSpec.hasFilters() && matchTest(testCase, testSpec, config))) {
+                filtered.push_back(testCase);
             }
         }
-        return createShard(
-            filtered, config.shardCount(), config.shardIndex() );
+        return createShard(filtered, config.shardCount(), config.shardIndex());
     }
-    std::vector<TestCaseHandle> const&
-    getAllTestCasesSorted( IConfig const& config ) {
-        return getRegistryHub().getTestCaseRegistry().getAllTestsSorted(
-            config );
+    std::vector<TestCaseHandle> const& getAllTestCasesSorted( IConfig const& config ) {
+        return getRegistryHub().getTestCaseRegistry().getAllTestsSorted( config );
     }
 
-    void
-    TestRegistry::registerTest( Detail::unique_ptr<TestCaseInfo> testInfo,
-                                Detail::unique_ptr<ITestInvoker> testInvoker ) {
-        m_handles.emplace_back( testInfo.get(), testInvoker.get() );
-        m_viewed_test_infos.push_back( testInfo.get() );
-        m_owned_test_infos.push_back( CATCH_MOVE( testInfo ) );
-        m_invokers.push_back( CATCH_MOVE( testInvoker ) );
+    void TestRegistry::registerTest(Detail::unique_ptr<TestCaseInfo> testInfo, Detail::unique_ptr<ITestInvoker> testInvoker) {
+        m_handles.emplace_back(testInfo.get(), testInvoker.get());
+        m_viewed_test_infos.push_back(testInfo.get());
+        m_owned_test_infos.push_back(CATCH_MOVE(testInfo));
+        m_invokers.push_back(CATCH_MOVE(testInvoker));
     }
 
     std::vector<TestCaseInfo*> const& TestRegistry::getAllInfos() const {
@@ -147,20 +131,22 @@ namespace Catch {
     std::vector<TestCaseHandle> const& TestRegistry::getAllTests() const {
         return m_handles;
     }
-    std::vector<TestCaseHandle> const&
-    TestRegistry::getAllTestsSorted( IConfig const& config ) const {
-        if ( m_sortedFunctions.empty() )
+    std::vector<TestCaseHandle> const& TestRegistry::getAllTestsSorted( IConfig const& config ) const {
+        if( m_sortedFunctions.empty() )
             enforceNoDuplicateTestCases( m_handles );
 
-        if ( m_currentSortOrder != config.runOrder() ||
-             m_sortedFunctions.empty() ) {
+        if(  m_currentSortOrder != config.runOrder() || m_sortedFunctions.empty() ) {
             m_sortedFunctions = sortTests( config, m_handles );
             m_currentSortOrder = config.runOrder();
         }
         return m_sortedFunctions;
     }
 
+
+
     ///////////////////////////////////////////////////////////////////////////
-    void TestInvokerAsFunction::invoke() const { m_testAsFunction(); }
+    void TestInvokerAsFunction::invoke() const {
+        m_testAsFunction();
+    }
 
 } // end namespace Catch

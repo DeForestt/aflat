@@ -25,18 +25,15 @@ namespace Catch {
                 virtual ~ChronometerConcept(); // = default;
 
                 ChronometerConcept() = default;
-                ChronometerConcept( ChronometerConcept const& ) = default;
-                ChronometerConcept&
-                operator=( ChronometerConcept const& ) = default;
+                ChronometerConcept(ChronometerConcept const&) = default;
+                ChronometerConcept& operator=(ChronometerConcept const&) = default;
             };
             template <typename Clock>
             struct ChronometerModel final : public ChronometerConcept {
                 void start() override { started = Clock::now(); }
                 void finish() override { finished = Clock::now(); }
 
-                ClockDuration<Clock> elapsed() const {
-                    return finished - started;
-                }
+                ClockDuration<Clock> elapsed() const { return finished - started; }
 
                 TimePoint<Clock> started;
                 TimePoint<Clock> finished;
@@ -45,25 +42,26 @@ namespace Catch {
 
         struct Chronometer {
         public:
-            template <typename Fun> void measure( Fun&& fun ) {
-                measure( CATCH_FORWARD( fun ), is_callable<Fun( int )>() );
-            }
+            template <typename Fun>
+            void measure(Fun&& fun) { measure(CATCH_FORWARD(fun), is_callable<Fun(int)>()); }
 
             int runs() const { return repeats; }
 
-            Chronometer( Detail::ChronometerConcept& meter, int repeats_ ):
-                impl( &meter ), repeats( repeats_ ) {}
+            Chronometer(Detail::ChronometerConcept& meter, int repeats_)
+                : impl(&meter)
+                , repeats(repeats_) {}
 
         private:
-            template <typename Fun> void measure( Fun&& fun, std::false_type ) {
-                measure( [&fun]( int ) { return fun(); }, std::true_type() );
+            template <typename Fun>
+            void measure(Fun&& fun, std::false_type) {
+                measure([&fun](int) { return fun(); }, std::true_type());
             }
 
-            template <typename Fun> void measure( Fun&& fun, std::true_type ) {
+            template <typename Fun>
+            void measure(Fun&& fun, std::true_type) {
                 Detail::optimizer_barrier();
                 impl->start();
-                for ( int i = 0; i < repeats; ++i )
-                    invoke_deoptimized( fun, i );
+                for (int i = 0; i < repeats; ++i) invoke_deoptimized(fun, i);
                 impl->finish();
                 Detail::optimizer_barrier();
             }

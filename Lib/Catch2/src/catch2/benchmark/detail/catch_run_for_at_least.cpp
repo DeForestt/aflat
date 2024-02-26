@@ -7,8 +7,8 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #include <catch2/benchmark/detail/catch_run_for_at_least.hpp>
-#include <catch2/internal/catch_enforce.hpp>
 #include <exception>
+#include <catch2/internal/catch_enforce.hpp>
 
 namespace Catch {
     namespace Benchmark {
@@ -18,14 +18,13 @@ namespace Catch {
             };
 
             const char* optimized_away_error::what() const noexcept {
-                return "could not measure benchmark, maybe it was optimized "
-                       "away";
+                return "could not measure benchmark, maybe it was optimized away";
             }
 
             void throw_optimized_away_error() {
-                Catch::throw_exception( optimized_away_error{} );
+                Catch::throw_exception(optimized_away_error{});
             }
 
         } // namespace Detail
-    }     // namespace Benchmark
+    } // namespace Benchmark
 } // namespace Catch

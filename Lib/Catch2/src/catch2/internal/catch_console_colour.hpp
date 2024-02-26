@@ -9,8 +9,9 @@
 #define CATCH_CONSOLE_COLOUR_HPP_INCLUDED
 
 #include <catch2/internal/catch_unique_ptr.hpp>
-#include <cstdint>
+
 #include <iosfwd>
+#include <cstdint>
 
 namespace Catch {
 
@@ -59,7 +60,6 @@ namespace Catch {
     protected:
         //! The associated stream of this ColourImpl instance
         IStream* m_stream;
-
     public:
         ColourImpl( IStream* stream ): m_stream( stream ) {}
 
@@ -72,7 +72,8 @@ namespace Catch {
 
         public:
             //! Does **not** engage the guard/start the colour
-            ColourGuard( Colour::Code code, ColourImpl const* colour );
+            ColourGuard( Colour::Code code,
+                         ColourImpl const* colour );
 
             ColourGuard( ColourGuard const& rhs ) = delete;
             ColourGuard& operator=( ColourGuard const& rhs ) = delete;
@@ -105,12 +106,13 @@ namespace Catch {
             }
             //! Engages the guard and starts using colour
             friend std::ostream& operator<<( std::ostream& lhs,
-                                             ColourGuard&& guard ) {
+                                            ColourGuard&& guard) {
                 guard.engageImpl( lhs );
                 return lhs;
             }
 
             void engageImpl( std::ostream& stream );
+
         };
 
         virtual ~ColourImpl(); // = default
@@ -126,8 +128,7 @@ namespace Catch {
         virtual void use( Colour::Code colourCode ) const = 0;
     };
 
-    //! Provides ColourImpl based on global config and target compilation
-    //! platform
+    //! Provides ColourImpl based on global config and target compilation platform
     Detail::unique_ptr<ColourImpl> makeColourImpl( ColourMode colourSelection,
                                                    IStream* stream );
 

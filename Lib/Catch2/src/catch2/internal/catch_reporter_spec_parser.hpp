@@ -11,6 +11,7 @@
 #include <catch2/internal/catch_console_colour.hpp>
 #include <catch2/internal/catch_optional.hpp>
 #include <catch2/internal/catch_stringref.hpp>
+
 #include <map>
 #include <string>
 #include <vector>
@@ -24,7 +25,7 @@ namespace Catch {
         std::vector<std::string> splitReporterSpec( StringRef reporterSpec );
 
         Optional<ColourMode> stringToColourMode( StringRef colourMode );
-    } // namespace Detail
+    }
 
     /**
      * Structured reporter spec that a reporter can be created from
@@ -48,10 +49,11 @@ namespace Catch {
         }
 
     public:
-        ReporterSpec( std::string name,
-                      Optional<std::string> outputFileName,
-                      Optional<ColourMode> colourMode,
-                      std::map<std::string, std::string> customOptions );
+        ReporterSpec(
+            std::string name,
+            Optional<std::string> outputFileName,
+            Optional<ColourMode> colourMode,
+            std::map<std::string, std::string> customOptions );
 
         std::string const& name() const { return m_name; }
 
@@ -78,6 +80,6 @@ namespace Catch {
      */
     Optional<ReporterSpec> parseReporterSpec( StringRef reporterSpec );
 
-} // namespace Catch
+}
 
 #endif // CATCH_REPORTER_SPEC_PARSER_HPP_INCLUDED

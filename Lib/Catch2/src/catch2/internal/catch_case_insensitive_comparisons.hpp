@@ -14,12 +14,14 @@ namespace Catch {
     namespace Detail {
         //! Provides case-insensitive `op<` semantics when called
         struct CaseInsensitiveLess {
-            bool operator()( StringRef lhs, StringRef rhs ) const;
+            bool operator()( StringRef lhs,
+                             StringRef rhs ) const;
         };
 
         //! Provides case-insensitive `op==` semantics when called
         struct CaseInsensitiveEqualTo {
-            bool operator()( StringRef lhs, StringRef rhs ) const;
+            bool operator()( StringRef lhs,
+                             StringRef rhs ) const;
         };
 
     } // namespace Detail

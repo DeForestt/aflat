@@ -8,41 +8,42 @@
 #ifndef CATCH_REPORTER_JUNIT_HPP_INCLUDED
 #define CATCH_REPORTER_JUNIT_HPP_INCLUDED
 
-#include <catch2/catch_timer.hpp>
-#include <catch2/internal/catch_xmlwriter.hpp>
+
 #include <catch2/reporters/catch_reporter_cumulative_base.hpp>
+#include <catch2/internal/catch_xmlwriter.hpp>
+#include <catch2/catch_timer.hpp>
 
 namespace Catch {
 
     class JunitReporter final : public CumulativeReporterBase {
     public:
-        JunitReporter( ReporterConfig&& _config );
+        JunitReporter(ReporterConfig&& _config);
 
         ~JunitReporter() override = default;
 
         static std::string getDescription();
 
-        void testRunStarting( TestRunInfo const& runInfo ) override;
+        void testRunStarting(TestRunInfo const& runInfo) override;
 
-        void testCaseStarting( TestCaseInfo const& testCaseInfo ) override;
-        void assertionEnded( AssertionStats const& assertionStats ) override;
+        void testCaseStarting(TestCaseInfo const& testCaseInfo) override;
+        void assertionEnded(AssertionStats const& assertionStats) override;
 
-        void testCaseEnded( TestCaseStats const& testCaseStats ) override;
+        void testCaseEnded(TestCaseStats const& testCaseStats) override;
 
         void testRunEndedCumulative() override;
 
     private:
-        void writeRun( TestRunNode const& testRunNode, double suiteTime );
+        void writeRun(TestRunNode const& testRunNode, double suiteTime);
 
-        void writeTestCase( TestCaseNode const& testCaseNode );
+        void writeTestCase(TestCaseNode const& testCaseNode);
 
         void writeSection( std::string const& className,
                            std::string const& rootName,
                            SectionNode const& sectionNode,
                            bool testOkToFail );
 
-        void writeAssertions( SectionNode const& sectionNode );
-        void writeAssertion( AssertionStats const& stats );
+        void writeAssertions(SectionNode const& sectionNode);
+        void writeAssertion(AssertionStats const& stats);
 
         XmlWriter xml;
         Timer suiteTimer;

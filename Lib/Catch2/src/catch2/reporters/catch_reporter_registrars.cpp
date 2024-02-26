@@ -6,8 +6,9 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
-#include <catch2/internal/catch_compiler_capabilities.hpp>
 #include <catch2/reporters/catch_reporter_registrars.hpp>
+
+#include <catch2/internal/catch_compiler_capabilities.hpp>
 
 namespace Catch {
     namespace Detail {

@@ -5,14 +5,15 @@
 //        https://www.boost.org/LICENSE_1_0.txt)
 
 // SPDX-License-Identifier: BSL-1.0
-#include <algorithm>
-#include <catch2/catch_test_case_info.hpp>
-#include <catch2/interfaces/catch_interfaces_registry_hub.hpp>
-#include <catch2/internal/catch_compiler_capabilities.hpp>
-#include <catch2/internal/catch_move_and_forward.hpp>
-#include <catch2/internal/catch_string_manip.hpp>
-#include <catch2/internal/catch_test_case_registry_impl.hpp>
 #include <catch2/internal/catch_test_registry.hpp>
+#include <catch2/internal/catch_compiler_capabilities.hpp>
+#include <catch2/catch_test_case_info.hpp>
+#include <catch2/internal/catch_test_case_registry_impl.hpp>
+#include <catch2/interfaces/catch_interfaces_registry_hub.hpp>
+#include <catch2/internal/catch_string_manip.hpp>
+#include <catch2/internal/catch_move_and_forward.hpp>
+
+#include <algorithm>
 #include <iterator>
 
 namespace Catch {
@@ -47,25 +48,23 @@ namespace Catch {
         }
     } // namespace
 
-    Detail::unique_ptr<ITestInvoker>
-    makeTestInvoker( void ( *testAsFunction )() ) {
+    Detail::unique_ptr<ITestInvoker> makeTestInvoker( void(*testAsFunction)() ) {
         return Detail::make_unique<TestInvokerAsFunction>( testAsFunction );
     }
 
-    AutoReg::AutoReg( Detail::unique_ptr<ITestInvoker> invoker,
-                      SourceLineInfo const& lineInfo,
-                      StringRef classOrMethod,
-                      NameAndTags const& nameAndTags ) noexcept {
+    AutoReg::AutoReg( Detail::unique_ptr<ITestInvoker> invoker, SourceLineInfo const& lineInfo, StringRef classOrMethod, NameAndTags const& nameAndTags ) noexcept {
         CATCH_TRY {
-            getMutableRegistryHub().registerTest(
-                makeTestCaseInfo(
-                    extractClassName( classOrMethod ), nameAndTags, lineInfo ),
-                CATCH_MOVE( invoker ) );
-        }
-        CATCH_CATCH_ALL {
-            // Do not throw when constructing global objects, instead register
-            // the exception to be processed later
+            getMutableRegistryHub()
+                    .registerTest(
+                        makeTestCaseInfo(
+                            extractClassName( classOrMethod ),
+                            nameAndTags,
+                            lineInfo),
+                        CATCH_MOVE(invoker)
+                    );
+        } CATCH_CATCH_ALL {
+            // Do not throw when constructing global objects, instead register the exception to be processed later
             getMutableRegistryHub().registerStartupException();
         }
     }
-} // namespace Catch
+}

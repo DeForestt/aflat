@@ -8,17 +8,18 @@
 #ifndef CATCH_RUN_CONTEXT_HPP_INCLUDED
 #define CATCH_RUN_CONTEXT_HPP_INCLUDED
 
+#include <catch2/interfaces/catch_interfaces_reporter.hpp>
+#include <catch2/internal/catch_test_registry.hpp>
+#include <catch2/internal/catch_fatal_condition_handler.hpp>
+#include <catch2/catch_test_case_info.hpp>
+#include <catch2/catch_message.hpp>
+#include <catch2/catch_totals.hpp>
+#include <catch2/internal/catch_test_case_tracker.hpp>
 #include <catch2/catch_assertion_info.hpp>
 #include <catch2/catch_assertion_result.hpp>
-#include <catch2/catch_message.hpp>
-#include <catch2/catch_test_case_info.hpp>
-#include <catch2/catch_totals.hpp>
-#include <catch2/interfaces/catch_interfaces_reporter.hpp>
-#include <catch2/internal/catch_fatal_condition_handler.hpp>
-#include <catch2/internal/catch_move_and_forward.hpp>
 #include <catch2/internal/catch_optional.hpp>
-#include <catch2/internal/catch_test_case_tracker.hpp>
-#include <catch2/internal/catch_test_registry.hpp>
+#include <catch2/internal/catch_move_and_forward.hpp>
+
 #include <string>
 
 namespace Catch {
@@ -33,44 +34,46 @@ namespace Catch {
 
     public:
         RunContext( RunContext const& ) = delete;
-        RunContext& operator=( RunContext const& ) = delete;
+        RunContext& operator =( RunContext const& ) = delete;
 
-        explicit RunContext( IConfig const* _config,
-                             IEventListenerPtr&& reporter );
+        explicit RunContext( IConfig const* _config, IEventListenerPtr&& reporter );
 
         ~RunContext() override;
 
-        Totals runTest( TestCaseHandle const& testCase );
+        Totals runTest(TestCaseHandle const& testCase);
 
     public: // IResultCapture
-        // Assertion handlers
-        void handleExpr( AssertionInfo const& info,
-                         ITransientExpression const& expr,
-                         AssertionReaction& reaction ) override;
-        void handleMessage( AssertionInfo const& info,
-                            ResultWas::OfType resultType,
-                            StringRef message,
-                            AssertionReaction& reaction ) override;
-        void handleUnexpectedExceptionNotThrown(
-            AssertionInfo const& info, AssertionReaction& reaction ) override;
-        void handleUnexpectedInflightException(
-            AssertionInfo const& info,
-            std::string const& message,
-            AssertionReaction& reaction ) override;
-        void handleIncomplete( AssertionInfo const& info ) override;
-        void handleNonExpr( AssertionInfo const& info,
-                            ResultWas::OfType resultType,
-                            AssertionReaction& reaction ) override;
 
-        bool sectionStarted( SectionInfo const& sectionInfo,
-                             Counts& assertions ) override;
+        // Assertion handlers
+        void handleExpr
+                (   AssertionInfo const& info,
+                    ITransientExpression const& expr,
+                    AssertionReaction& reaction ) override;
+        void handleMessage
+                (   AssertionInfo const& info,
+                    ResultWas::OfType resultType,
+                    StringRef message,
+                    AssertionReaction& reaction ) override;
+        void handleUnexpectedExceptionNotThrown
+                (   AssertionInfo const& info,
+                    AssertionReaction& reaction ) override;
+        void handleUnexpectedInflightException
+                (   AssertionInfo const& info,
+                    std::string const& message,
+                    AssertionReaction& reaction ) override;
+        void handleIncomplete
+                (   AssertionInfo const& info ) override;
+        void handleNonExpr
+                (   AssertionInfo const &info,
+                    ResultWas::OfType resultType,
+                    AssertionReaction &reaction ) override;
+
+        bool sectionStarted( SectionInfo const& sectionInfo, Counts& assertions ) override;
 
         void sectionEnded( SectionEndInfo const& endInfo ) override;
         void sectionEndedEarly( SectionEndInfo const& endInfo ) override;
 
-        auto acquireGeneratorTracker( StringRef generatorName,
-                                      SourceLineInfo const& lineInfo )
-            -> IGeneratorTracker& override;
+        auto acquireGeneratorTracker( StringRef generatorName, SourceLineInfo const& lineInfo ) -> IGeneratorTracker& override;
 
         void benchmarkPreparing( StringRef name ) override;
         void benchmarkStarting( BenchmarkInfo const& info ) override;
@@ -99,22 +102,24 @@ namespace Catch {
         bool aborting() const;
 
     private:
-        void runCurrentTest( std::string& redirectedCout,
-                             std::string& redirectedCerr );
+
+        void runCurrentTest( std::string& redirectedCout, std::string& redirectedCerr );
         void invokeActiveTestCase();
 
         void resetAssertionInfo();
         bool testForMissingAssertions( Counts& assertions );
 
         void assertionEnded( AssertionResult const& result );
-        void reportExpr( AssertionInfo const& info,
-                         ResultWas::OfType resultType,
-                         ITransientExpression const* expr,
-                         bool negated );
+        void reportExpr
+                (   AssertionInfo const &info,
+                    ResultWas::OfType resultType,
+                    ITransientExpression const *expr,
+                    bool negated );
 
         void populateReaction( AssertionReaction& reaction );
 
     private:
+
         void handleUnfinishedSections();
 
         TestRunInfo m_runInfo;
@@ -127,8 +132,7 @@ namespace Catch {
         Totals m_totals;
         IEventListenerPtr m_reporter;
         std::vector<MessageInfo> m_messages;
-        std::vector<ScopedMessage>
-            m_messageScopes; /* Keeps owners of so-called unscoped messages. */
+        std::vector<ScopedMessage> m_messageScopes; /* Keeps owners of so-called unscoped messages. */
         AssertionInfo m_lastAssertionInfo;
         std::vector<SectionEndInfo> m_unfinishedSections;
         std::vector<ITracker*> m_activeSections;
@@ -139,7 +143,7 @@ namespace Catch {
         bool m_includeSuccessfulResults;
     };
 
-    void seedRng( IConfig const& config );
+    void seedRng(IConfig const& config);
     unsigned int rngSeed();
 } // end namespace Catch
 

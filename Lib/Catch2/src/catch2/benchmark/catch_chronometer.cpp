@@ -13,5 +13,5 @@ namespace Catch {
         namespace Detail {
             ChronometerConcept::~ChronometerConcept() = default;
         } // namespace Detail
-    }     // namespace Benchmark
+    } // namespace Benchmark
 } // namespace Catch

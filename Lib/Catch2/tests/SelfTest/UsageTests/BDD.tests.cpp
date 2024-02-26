@@ -23,18 +23,21 @@ namespace {
         int d_counter;
     };
 
-} // namespace
+}
 
-SCENARIO( "Do that thing with the thing", "[Tags]" ) {
-    GIVEN( "This stuff exists" ) {
+
+SCENARIO("Do that thing with the thing", "[Tags]") {
+    GIVEN("This stuff exists") {
         // make stuff exist
-        AND_GIVEN( "And some assumption" ) {
+        AND_GIVEN("And some assumption") {
             // Validate assumption
-            WHEN( "I do this" ) {
+            WHEN("I do this") {
                 // do this
-                THEN( "it should do this" ) {
-                    REQUIRE( itDoesThis() );
-                    AND_THEN( "do that" ) { REQUIRE( itDoesThat() ); }
+                THEN("it should do this") {
+                    REQUIRE(itDoesThis());
+                    AND_THEN("do that") {
+                        REQUIRE(itDoesThat());
+                    }
                 }
             }
         }
@@ -74,37 +77,29 @@ SCENARIO( "Vector resizing affects size and capacity",
     }
 }
 
-SCENARIO( "This is a really long scenario name to see how the list command "
-          "deals with wrapping",
-          "[very long tags][lots][long][tags][verbose]"
-          "[one very long tag name that should cause line wrapping writing out "
-          "using the list command]"
-          "[anotherReallyLongTagNameButThisOneHasNoObviousWrapPointsSoShouldSpl"
-          "itWithinAWordUsingADashCharacter]" ) {
-    GIVEN( "A section name that is so long that it cannot fit in a single "
-           "console width" ) {
-        WHEN( "The test headers are printed as part of the normal running of "
-              "the scenario" ) {
-            THEN( "The, deliberately very long and overly verbose (you see "
-                  "what I did there?) section names must wrap, along with an "
-                  "indent" ) {
-                SUCCEED( "boo!" );
+SCENARIO("This is a really long scenario name to see how the list command deals with wrapping",
+         "[very long tags][lots][long][tags][verbose]"
+                 "[one very long tag name that should cause line wrapping writing out using the list command]"
+                 "[anotherReallyLongTagNameButThisOneHasNoObviousWrapPointsSoShouldSplitWithinAWordUsingADashCharacter]") {
+    GIVEN("A section name that is so long that it cannot fit in a single console width") {
+        WHEN("The test headers are printed as part of the normal running of the scenario") {
+            THEN("The, deliberately very long and overly verbose (you see what I did there?) section names must wrap, along with an indent") {
+                SUCCEED("boo!");
             }
         }
     }
 }
 
-SCENARIO_METHOD(
-    Fixture,
-    "BDD tests requiring Fixtures to provide commonly-accessed data or methods",
-    "[bdd][fixtures]" ) {
-    const int before( counter() );
-    GIVEN( "No operations precede me" ) {
-        REQUIRE( before == 0 );
-        WHEN( "We get the count" ) {
-            const int after( counter() );
-            THEN( "Subsequently values are higher" ) {
-                REQUIRE( after > before );
+SCENARIO_METHOD(Fixture,
+                "BDD tests requiring Fixtures to provide commonly-accessed data or methods",
+                "[bdd][fixtures]") {
+    const int before(counter());
+    GIVEN("No operations precede me") {
+        REQUIRE(before == 0);
+        WHEN("We get the count") {
+            const int after(counter());
+            THEN("Subsequently values are higher") {
+                REQUIRE(after > before);
             }
         }
     }

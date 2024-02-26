@@ -8,10 +8,10 @@
 #ifndef CATCH_STRINGREF_HPP_INCLUDED
 #define CATCH_STRINGREF_HPP_INCLUDED
 
-#include <cassert>
 #include <cstddef>
-#include <iosfwd>
 #include <string>
+#include <iosfwd>
+#include <cassert>
 
 namespace Catch {
 
@@ -34,57 +34,65 @@ namespace Catch {
 
         StringRef( char const* rawChars ) noexcept;
 
-        constexpr StringRef( char const* rawChars, size_type size ) noexcept:
-            m_start( rawChars ), m_size( size ) {}
+        constexpr StringRef( char const* rawChars, size_type size ) noexcept
+        :   m_start( rawChars ),
+            m_size( size )
+        {}
 
-        StringRef( std::string const& stdString ) noexcept:
-            m_start( stdString.c_str() ), m_size( stdString.size() ) {}
+        StringRef( std::string const& stdString ) noexcept
+        :   m_start( stdString.c_str() ),
+            m_size( stdString.size() )
+        {}
 
         explicit operator std::string() const {
-            return std::string( m_start, m_size );
+            return std::string(m_start, m_size);
         }
 
     public: // operators
-        auto operator==( StringRef other ) const noexcept -> bool;
-        auto operator!=( StringRef other ) const noexcept -> bool {
-            return !( *this == other );
+        auto operator == ( StringRef other ) const noexcept -> bool;
+        auto operator != (StringRef other) const noexcept -> bool {
+            return !(*this == other);
         }
 
-        constexpr auto operator[]( size_type index ) const noexcept -> char {
-            assert( index < m_size );
+        constexpr auto operator[] ( size_type index ) const noexcept -> char {
+            assert(index < m_size);
             return m_start[index];
         }
 
-        bool operator<( StringRef rhs ) const noexcept;
+        bool operator<(StringRef rhs) const noexcept;
 
     public: // named queries
-        constexpr auto empty() const noexcept -> bool { return m_size == 0; }
-        constexpr auto size() const noexcept -> size_type { return m_size; }
+        constexpr auto empty() const noexcept -> bool {
+            return m_size == 0;
+        }
+        constexpr auto size() const noexcept -> size_type {
+            return m_size;
+        }
 
         // Returns a substring of [start, start + length).
-        // If start + length > size(), then the substring is [start, start +
-        // size()). If start > size(), then the substring is empty.
-        constexpr StringRef substr( size_type start,
-                                    size_type length ) const noexcept {
-            if ( start < m_size ) {
+        // If start + length > size(), then the substring is [start, start + size()).
+        // If start > size(), then the substring is empty.
+        constexpr StringRef substr(size_type start, size_type length) const noexcept {
+            if (start < m_size) {
                 const auto shortened_size = m_size - start;
-                return StringRef( m_start + start,
-                                  ( shortened_size < length ) ? shortened_size
-                                                              : length );
+                return StringRef(m_start + start, (shortened_size < length) ? shortened_size : length);
             } else {
                 return StringRef();
             }
         }
 
         // Returns the current start pointer. May not be null-terminated.
-        constexpr char const* data() const noexcept { return m_start; }
+        constexpr char const* data() const noexcept {
+            return m_start;
+        }
 
         constexpr const_iterator begin() const { return m_start; }
         constexpr const_iterator end() const { return m_start + m_size; }
 
-        friend std::string& operator+=( std::string& lhs, StringRef sr );
-        friend std::ostream& operator<<( std::ostream& os, StringRef sr );
-        friend std::string operator+( StringRef lhs, StringRef rhs );
+
+        friend std::string& operator += (std::string& lhs, StringRef sr);
+        friend std::ostream& operator << (std::ostream& os, StringRef sr);
+        friend std::string operator+(StringRef lhs, StringRef rhs);
 
         /**
          * Provides a three-way comparison with rhs
@@ -95,15 +103,13 @@ namespace Catch {
         int compare( StringRef rhs ) const;
     };
 
-    constexpr auto operator""_sr( char const* rawChars,
-                                  std::size_t size ) noexcept -> StringRef {
+
+    constexpr auto operator ""_sr( char const* rawChars, std::size_t size ) noexcept -> StringRef {
         return StringRef( rawChars, size );
     }
 } // namespace Catch
 
-constexpr auto operator""_catch_sr( char const* rawChars,
-                                    std::size_t size ) noexcept
-    -> Catch::StringRef {
+constexpr auto operator ""_catch_sr( char const* rawChars, std::size_t size ) noexcept -> Catch::StringRef {
     return Catch::StringRef( rawChars, size );
 }
 

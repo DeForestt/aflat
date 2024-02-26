@@ -5,10 +5,12 @@
 //        https://www.boost.org/LICENSE_1_0.txt)
 
 // SPDX-License-Identifier: BSL-1.0
+#include <catch2/reporters/catch_reporter_cumulative_base.hpp>
+
+#include <catch2/internal/catch_move_and_forward.hpp>
+
 #include <algorithm>
 #include <cassert>
-#include <catch2/internal/catch_move_and_forward.hpp>
-#include <catch2/reporters/catch_reporter_cumulative_base.hpp>
 
 namespace Catch {
     namespace {
@@ -48,25 +50,22 @@ namespace Catch {
         }
 
         AssertionStats const& AssertionOrBenchmarkResult::asAssertion() const {
-            assert( m_assertion.some() );
+            assert(m_assertion.some());
 
             return *m_assertion;
         }
-        BenchmarkStats<> const&
-        AssertionOrBenchmarkResult::asBenchmark() const {
-            assert( m_benchmark.some() );
+        BenchmarkStats<> const& AssertionOrBenchmarkResult::asBenchmark() const {
+            assert(m_benchmark.some());
 
             return *m_benchmark;
         }
 
-    } // namespace Detail
+    }
 
     CumulativeReporterBase::~CumulativeReporterBase() = default;
 
-    void CumulativeReporterBase::benchmarkEnded(
-        BenchmarkStats<> const& benchmarkStats ) {
-        m_sectionStack.back()->assertionsAndBenchmarks.emplace_back(
-            benchmarkStats );
+    void CumulativeReporterBase::benchmarkEnded(BenchmarkStats<> const& benchmarkStats) {
+        m_sectionStack.back()->assertionsAndBenchmarks.emplace_back(benchmarkStats);
     }
 
     void
@@ -120,8 +119,7 @@ namespace Catch {
         sectionNode.assertionsAndBenchmarks.emplace_back( assertionStats );
     }
 
-    void
-    CumulativeReporterBase::sectionEnded( SectionStats const& sectionStats ) {
+    void CumulativeReporterBase::sectionEnded( SectionStats const& sectionStats ) {
         assert( !m_sectionStack.empty() );
         SectionNode& node = *m_sectionStack.back();
         node.stats = sectionStats;
@@ -132,19 +130,17 @@ namespace Catch {
         TestCaseStats const& testCaseStats ) {
         auto node = Detail::make_unique<TestCaseNode>( testCaseStats );
         assert( m_sectionStack.size() == 0 );
-        node->children.push_back( CATCH_MOVE( m_rootSection ) );
-        m_testCases.push_back( CATCH_MOVE( node ) );
+        node->children.push_back( CATCH_MOVE(m_rootSection) );
+        m_testCases.push_back( CATCH_MOVE(node) );
 
         assert( m_deepestSection );
         m_deepestSection->stdOut = testCaseStats.stdOut;
         m_deepestSection->stdErr = testCaseStats.stdErr;
     }
 
-    void
-    CumulativeReporterBase::testRunEnded( TestRunStats const& testRunStats ) {
-        assert(
-            !m_testRun &&
-            "CumulativeReporterBase assumes there can only be one test run" );
+
+    void CumulativeReporterBase::testRunEnded( TestRunStats const& testRunStats ) {
+        assert(!m_testRun && "CumulativeReporterBase assumes there can only be one test run");
         m_testRun = Detail::make_unique<TestRunNode>( testRunStats );
         m_testRun->children.swap( m_testCases );
         testRunEndedCumulative();

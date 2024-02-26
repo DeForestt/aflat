@@ -19,26 +19,29 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/reporters/catch_reporter_event_listener.hpp>
 #include <catch2/reporters/catch_reporter_registrars.hpp>
+
 #include <iostream>
 
 namespace {
-    class CapturingListener : public Catch::EventListenerBase {
+	class CapturingListener : public Catch::EventListenerBase {
     public:
         CapturingListener( Catch::IConfig const* config ):
             EventListenerBase( config ) {
             m_preferences.shouldRedirectStdOut = true;
             std::cerr << "CapturingListener initialized\n";
-        }
+		}
 
-        void
+		void
         testCaseEnded( Catch::TestCaseStats const& testCaseStats ) override {
             if ( testCaseStats.stdOut.empty() ) {
                 std::cerr << "X25 - ERROR: empty stdout\n";
             }
         }
-    };
-} // namespace
+	};
+}
 
 CATCH_REGISTER_LISTENER( CapturingListener )
 
-TEST_CASE( "Writes to stdout" ) { std::cout << "X25 - FooBarBaz\n"; }
+TEST_CASE( "Writes to stdout" ) {
+	std::cout << "X25 - FooBarBaz\n";
+}

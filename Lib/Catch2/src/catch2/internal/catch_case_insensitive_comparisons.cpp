@@ -6,9 +6,10 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
-#include <algorithm>
 #include <catch2/internal/catch_case_insensitive_comparisons.hpp>
 #include <catch2/internal/catch_string_manip.hpp>
+
+#include <algorithm>
 
 namespace Catch {
     namespace Detail {
@@ -16,20 +17,17 @@ namespace Catch {
         bool CaseInsensitiveLess::operator()( StringRef lhs,
                                               StringRef rhs ) const {
             return std::lexicographical_compare(
-                lhs.begin(),
-                lhs.end(),
-                rhs.begin(),
-                rhs.end(),
+                lhs.begin(), lhs.end(),
+                rhs.begin(), rhs.end(),
                 []( char l, char r ) { return toLower( l ) < toLower( r ); } );
         }
 
-        bool CaseInsensitiveEqualTo::operator()( StringRef lhs,
-                                                 StringRef rhs ) const {
+        bool
+        CaseInsensitiveEqualTo::operator()( StringRef lhs,
+                                            StringRef rhs ) const {
             return std::equal(
-                lhs.begin(),
-                lhs.end(),
-                rhs.begin(),
-                rhs.end(),
+                lhs.begin(), lhs.end(),
+                rhs.begin(), rhs.end(),
                 []( char l, char r ) { return toLower( l ) == toLower( r ); } );
         }
 

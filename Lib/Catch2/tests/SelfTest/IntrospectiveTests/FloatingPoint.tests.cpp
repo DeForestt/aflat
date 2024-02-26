@@ -6,11 +6,12 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
-#include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_template_test_macros.hpp>
 #include <catch2/internal/catch_floating_point_helpers.hpp>
 
-TEST_CASE( "convertToBits", "[floating-point][conversion]" ) {
+
+TEST_CASE("convertToBits", "[floating-point][conversion]") {
     using Catch::Detail::convertToBits;
 
     CHECK( convertToBits( 0.f ) == 0 );
@@ -21,10 +22,7 @@ TEST_CASE( "convertToBits", "[floating-point][conversion]" ) {
     CHECK( convertToBits( std::numeric_limits<double>::denorm_min() ) == 1 );
 }
 
-TEMPLATE_TEST_CASE( "type-shared ulpDistance tests",
-                    "[floating-point][ulp][approvals]",
-                    float,
-                    double ) {
+TEMPLATE_TEST_CASE("type-shared ulpDistance tests", "[floating-point][ulp][approvals]", float, double) {
     using FP = TestType;
     using Catch::ulpDistance;
 
@@ -66,7 +64,7 @@ TEMPLATE_TEST_CASE( "type-shared ulpDistance tests",
                         -FP{ 1. } - std::numeric_limits<FP>::epsilon() ) == 1 );
 }
 
-TEST_CASE( "UlpDistance", "[floating-point][ulp][approvals]" ) {
+TEST_CASE("UlpDistance", "[floating-point][ulp][approvals]") {
     using Catch::ulpDistance;
 
     CHECK( ulpDistance( 1., 2. ) == 0x10'00'00'00'00'00'00 );

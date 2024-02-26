@@ -13,27 +13,31 @@
 #include <catch2/generators/catch_generators_adapters.hpp>
 #include <catch2/generators/catch_generators_random.hpp>
 
-TEST_CASE( "Generate random doubles across different ranges",
-           "[generator][example][advanced]" ) {
+TEST_CASE("Generate random doubles across different ranges",
+          "[generator][example][advanced]") {
     // Workaround for old libstdc++
     using record = std::tuple<double, double>;
     // Set up 3 ranges to generate numbers from
-    auto r1 = GENERATE( table<double, double>(
-        { record{ 3, 4 }, record{ -4, -3 }, record{ 10, 1000 } } ) );
+    auto r1 = GENERATE(table<double, double>({
+        record{3, 4},
+        record{-4, -3},
+        record{10, 1000}
+    }));
 
-    auto r2( r1 );
+    auto r2(r1);
 
     // This will take r1 by reference and r2 by value.
     // Note that there are no advantages for doing so in this example,
     // it is done only for expository purposes.
-    auto number = Catch::Generators::generate(
-        "custom capture generator", CATCH_INTERNAL_LINEINFO, [&r1, r2] {
+    auto number = Catch::Generators::generate( "custom capture generator", CATCH_INTERNAL_LINEINFO,
+        [&r1, r2]{
             using namespace Catch::Generators;
-            return makeGenerators(
-                take( 50, random( std::get<0>( r1 ), std::get<1>( r2 ) ) ) );
-        } );
+            return makeGenerators(take(50, random(std::get<0>(r1), std::get<1>(r2))));
+        }
+    );
 
-    REQUIRE( std::abs( number ) > 0 );
+    REQUIRE(std::abs(number) > 0);
 }
 
 // Compiling and running this file will result in 150 successful assertions
+

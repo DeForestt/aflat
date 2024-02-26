@@ -10,21 +10,21 @@
 #include <catch2/generators/catch_generators.hpp>
 #include <catch2/internal/catch_test_case_tracker.hpp>
 
+
 using namespace Catch;
 
 namespace {
-    Catch::TestCaseTracking::NameAndLocation
-    makeNAL( std::string const& name ) {
-        return Catch::TestCaseTracking::NameAndLocation(
-            name, Catch::SourceLineInfo( "", 0 ) );
-    }
-} // namespace
+Catch::TestCaseTracking::NameAndLocation makeNAL( std::string const& name ) {
+    return Catch::TestCaseTracking::NameAndLocation( name, Catch::SourceLineInfo("",0) );
+}
+}
 
 TEST_CASE( "Tracker" ) {
 
     TrackerContext ctx;
     ctx.startRun();
     ctx.startCycle();
+
 
     ITracker& testCase = SectionTracker::acquire( ctx, makeNAL( "Testcase" ) );
     REQUIRE( testCase.isOpen() );
@@ -54,8 +54,7 @@ TEST_CASE( "Tracker" ) {
 
         SECTION( "re-enter after failed section" ) {
             ctx.startCycle();
-            ITracker& testCase2 =
-                SectionTracker::acquire( ctx, makeNAL( "Testcase" ) );
+            ITracker& testCase2 = SectionTracker::acquire( ctx, makeNAL( "Testcase" ) );
             REQUIRE( testCase2.isOpen() );
 
             ITracker& s1b = SectionTracker::acquire( ctx, makeNAL( "S1" ) );
@@ -68,8 +67,7 @@ TEST_CASE( "Tracker" ) {
         }
         SECTION( "re-enter after failed section and find next section" ) {
             ctx.startCycle();
-            ITracker& testCase2 =
-                SectionTracker::acquire( ctx, makeNAL( "Testcase" ) );
+            ITracker& testCase2 = SectionTracker::acquire( ctx, makeNAL( "Testcase" ) );
             REQUIRE( testCase2.isOpen() );
 
             ITracker& s1b = SectionTracker::acquire( ctx, makeNAL( "S1" ) );
@@ -98,8 +96,7 @@ TEST_CASE( "Tracker" ) {
 
         SECTION( "Re-enter - skips S1 and enters S2" ) {
             ctx.startCycle();
-            ITracker& testCase2 =
-                SectionTracker::acquire( ctx, makeNAL( "Testcase" ) );
+            ITracker& testCase2 = SectionTracker::acquire( ctx, makeNAL( "Testcase" ) );
             REQUIRE( testCase2.isOpen() );
 
             ITracker& s1b = SectionTracker::acquire( ctx, makeNAL( "S1" ) );
@@ -110,7 +107,7 @@ TEST_CASE( "Tracker" ) {
 
             REQUIRE( ctx.completedCycle() == false );
 
-            SECTION( "Successfully close S2" ) {
+            SECTION ("Successfully close S2") {
                 s2b.close();
                 REQUIRE( ctx.completedCycle() );
 
@@ -120,7 +117,7 @@ TEST_CASE( "Tracker" ) {
                 testCase2.close();
                 REQUIRE( testCase2.isSuccessfullyCompleted() );
             }
-            SECTION( "fail S2" ) {
+            SECTION ("fail S2") {
                 s2b.fail();
                 REQUIRE( ctx.completedCycle() );
 
@@ -132,8 +129,7 @@ TEST_CASE( "Tracker" ) {
 
                 // Need a final cycle
                 ctx.startCycle();
-                ITracker& testCase3 =
-                    SectionTracker::acquire( ctx, makeNAL( "Testcase" ) );
+                ITracker& testCase3 = SectionTracker::acquire( ctx, makeNAL( "Testcase" ) );
                 REQUIRE( testCase3.isOpen() );
 
                 ITracker& s1c = SectionTracker::acquire( ctx, makeNAL( "S1" ) );
@@ -170,24 +166,28 @@ static bool previouslyRunNested = false;
 
 TEST_CASE( "#1394", "[.][approvals][tracker]" ) {
     // -- Don't re-run after specified section is done
-    REQUIRE( previouslyRun == false );
+    REQUIRE(previouslyRun == false);
 
-    SECTION( "RunSection" ) { previouslyRun = true; }
+    SECTION( "RunSection" ) {
+        previouslyRun = true;
+    }
     SECTION( "SkipSection" ) {
         // cause an error if this section is called because it shouldn't be
-        REQUIRE( 1 == 0 );
+        REQUIRE(1 == 0);
     }
 }
 
 TEST_CASE( "#1394 nested", "[.][approvals][tracker]" ) {
-    REQUIRE( previouslyRunNested == false );
+    REQUIRE(previouslyRunNested == false);
 
     SECTION( "NestedRunSection" ) {
-        SECTION( "s1" ) { previouslyRunNested = true; }
+        SECTION( "s1" ) {
+            previouslyRunNested = true;
+        }
     }
     SECTION( "NestedSkipSection" ) {
         // cause an error if this section is called because it shouldn't be
-        REQUIRE( 1 == 0 );
+        REQUIRE(1 == 0);
     }
 }
 
@@ -195,52 +195,60 @@ TEST_CASE( "#1394 nested", "[.][approvals][tracker]" ) {
 // previously only run the first subsection, instead of running all of them.
 // This allows us to check that `"#1670 regression check" -c A` leads to
 // 2 successful assertions.
-TEST_CASE( "#1670 regression check", "[.approvals][tracker]" ) {
-    SECTION( "A" ) {
-        SECTION( "1" ) SUCCEED();
-        SECTION( "2" ) SUCCEED();
+TEST_CASE("#1670 regression check", "[.approvals][tracker]") {
+    SECTION("A") {
+        SECTION("1") SUCCEED();
+        SECTION("2") SUCCEED();
     }
-    SECTION( "B" ) {
-        SECTION( "1" ) SUCCEED();
-        SECTION( "2" ) SUCCEED();
+    SECTION("B") {
+        SECTION("1") SUCCEED();
+        SECTION("2") SUCCEED();
     }
 }
 
 // #1938 required a rework on how generator tracking works, so that `GENERATE`
 // supports being sandwiched between two `SECTION`s. The following tests check
 // various other scenarios through checking output in approval tests.
-TEST_CASE( "#1938 - GENERATE after a section", "[.][regression][generators]" ) {
-    SECTION( "A" ) { SUCCEED( "A" ); }
-    auto m = GENERATE( 1, 2, 3 );
-    SECTION( "B" ) { REQUIRE( m ); }
+TEST_CASE("#1938 - GENERATE after a section", "[.][regression][generators]") {
+    SECTION("A") {
+        SUCCEED("A");
+    }
+    auto m = GENERATE(1, 2, 3);
+    SECTION("B") {
+        REQUIRE(m);
+    }
 }
 
-TEST_CASE( "#1938 - flat generate", "[.][regression][generators]" ) {
-    auto m = GENERATE( 1, 2, 3 );
-    REQUIRE( m );
+TEST_CASE("#1938 - flat generate", "[.][regression][generators]") {
+    auto m = GENERATE(1, 2, 3);
+    REQUIRE(m);
 }
 
-TEST_CASE( "#1938 - nested generate", "[.][regression][generators]" ) {
-    auto m = GENERATE( 1, 2, 3 );
-    auto n = GENERATE( 1, 2, 3 );
-    REQUIRE( m );
-    REQUIRE( n );
+TEST_CASE("#1938 - nested generate", "[.][regression][generators]") {
+    auto m = GENERATE(1, 2, 3);
+    auto n = GENERATE(1, 2, 3);
+    REQUIRE(m);
+    REQUIRE(n);
 }
 
-TEST_CASE( "#1938 - mixed sections and generates",
-           "[.][regression][generators]" ) {
-    auto i = GENERATE( 1, 2 );
-    SECTION( "A" ) { SUCCEED( "A" ); }
-    auto j = GENERATE( 3, 4 );
-    SECTION( "B" ) { SUCCEED( "B" ); }
-    auto k = GENERATE( 5, 6 );
-    CAPTURE( i, j, k );
+TEST_CASE("#1938 - mixed sections and generates", "[.][regression][generators]") {
+    auto i = GENERATE(1, 2);
+    SECTION("A") {
+        SUCCEED("A");
+    }
+    auto j = GENERATE(3, 4);
+    SECTION("B") {
+        SUCCEED("B");
+    }
+    auto k = GENERATE(5, 6);
+    CAPTURE(i, j, k);
     SUCCEED();
 }
 
-TEST_CASE( "#1938 - Section followed by flat generate",
-           "[.][regression][generators]" ) {
-    SECTION( "A" ) { REQUIRE( 1 ); }
-    auto m = GENERATE( 2, 3 );
-    REQUIRE( m );
+TEST_CASE("#1938 - Section followed by flat generate", "[.][regression][generators]") {
+    SECTION("A") {
+        REQUIRE(1);
+    }
+    auto m = GENERATE(2, 3);
+    REQUIRE(m);
 }

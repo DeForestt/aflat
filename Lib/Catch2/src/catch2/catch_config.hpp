@@ -10,11 +10,12 @@
 
 #include <catch2/catch_test_spec.hpp>
 #include <catch2/interfaces/catch_interfaces_config.hpp>
+#include <catch2/internal/catch_unique_ptr.hpp>
 #include <catch2/internal/catch_optional.hpp>
+#include <catch2/internal/catch_stringref.hpp>
 #include <catch2/internal/catch_random_seed_generation.hpp>
 #include <catch2/internal/catch_reporter_spec_parser.hpp>
-#include <catch2/internal/catch_stringref.hpp>
-#include <catch2/internal/catch_unique_ptr.hpp>
+
 #include <chrono>
 #include <map>
 #include <string>
@@ -59,7 +60,7 @@ namespace Catch {
         bool allowZeroTests = false;
 
         int abortAfter = -1;
-        uint32_t rngSeed = generateRandomSeed( GenerateFrom::Default );
+        uint32_t rngSeed = generateRandomSeed(GenerateFrom::Default);
 
         unsigned int shardCount = 1;
         unsigned int shardIndex = 0;
@@ -88,8 +89,10 @@ namespace Catch {
         std::vector<std::string> sectionsToRun;
     };
 
+
     class Config : public IConfig {
     public:
+
         Config() = default;
         Config( ConfigData const& data );
         ~Config() override; // = default in the cpp file

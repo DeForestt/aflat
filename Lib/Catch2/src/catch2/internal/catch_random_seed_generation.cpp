@@ -6,8 +6,10 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
-#include <catch2/internal/catch_enforce.hpp>
 #include <catch2/internal/catch_random_seed_generation.hpp>
+
+#include <catch2/internal/catch_enforce.hpp>
+
 #include <ctime>
 #include <random>
 
@@ -25,7 +27,7 @@ namespace Catch {
             return static_cast<std::uint32_t>( std::random_device{}() );
 
         default:
-            CATCH_ERROR( "Unknown generation method" );
+            CATCH_ERROR("Unknown generation method");
         }
     }
 

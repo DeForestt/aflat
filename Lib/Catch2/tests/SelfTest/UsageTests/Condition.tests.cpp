@@ -7,13 +7,12 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #ifdef __clang__
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wpadded"
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wpadded"
 // Wdouble-promotion is not supported until 3.8
-#    if ( __clang_major__ > 3 ) || \
-        ( __clang_major__ == 3 && __clang_minor__ > 7 )
-#        pragma clang diagnostic ignored "-Wdouble-promotion"
-#    endif
+#   if (__clang_major__ > 3) || (__clang_major__ == 3 && __clang_minor__ > 7)
+#       pragma clang diagnostic ignored "-Wdouble-promotion"
+#   endif
 #endif
 
 #include <catch2/catch_approx.hpp>
@@ -21,9 +20,9 @@
 
 using Catch::Approx;
 
-#include <cstdint>
-#include <limits>
 #include <string>
+#include <limits>
+#include <cstdint>
 
 namespace {
 
@@ -39,11 +38,12 @@ namespace {
 
 } // end unnamed namespace
 
-// The "failing" tests all use the CHECK macro, which continues if the specific
-// test fails. This allows us to see all results, even if an earlier check fails
+// The "failing" tests all use the CHECK macro, which continues if the specific test fails.
+// This allows us to see all results, even if an earlier check fails
 
 // Equality tests
-TEST_CASE( "Equality checks that should succeed" ) {
+TEST_CASE( "Equality checks that should succeed" )
+{
     TestData data;
 
     REQUIRE( data.int_seven == 7 );
@@ -57,7 +57,8 @@ TEST_CASE( "Equality checks that should succeed" ) {
     REQUIRE( x == Approx( 1.3 ) );
 }
 
-TEST_CASE( "Equality checks that should fail", "[.][failing][!mayfail]" ) {
+TEST_CASE( "Equality checks that should fail", "[.][failing][!mayfail]" )
+{
     TestData data;
 
     CHECK( data.int_seven == 6 );
@@ -78,18 +79,20 @@ TEST_CASE( "Equality checks that should fail", "[.][failing][!mayfail]" ) {
 }
 
 // Needed to test junit reporter's handling of mayfail test cases and sections
-TEST_CASE( "Mayfail test case with nested sections", "[!mayfail]" ) {
-    SECTION( "A" ) {
-        SECTION( "1" ) { FAIL(); }
-        SECTION( "2" ) { FAIL(); }
+TEST_CASE("Mayfail test case with nested sections", "[!mayfail]") {
+    SECTION("A") {
+        SECTION("1") { FAIL(); }
+        SECTION("2") { FAIL(); }
     }
-    SECTION( "B" ) {
-        SECTION( "1" ) { FAIL(); }
-        SECTION( "2" ) { FAIL(); }
+    SECTION("B") {
+        SECTION("1") { FAIL(); }
+        SECTION("2") { FAIL(); }
     }
 }
 
-TEST_CASE( "Inequality checks that should succeed" ) {
+
+TEST_CASE( "Inequality checks that should succeed" )
+{
     TestData data;
 
     REQUIRE( data.int_seven != 6 );
@@ -105,7 +108,8 @@ TEST_CASE( "Inequality checks that should succeed" ) {
     REQUIRE( data.str_hello.size() != 6 );
 }
 
-TEST_CASE( "Inequality checks that should fail", "[.][failing][!shouldfail]" ) {
+TEST_CASE( "Inequality checks that should fail", "[.][failing][!shouldfail]" )
+{
     TestData data;
 
     CHECK( data.int_seven != 7 );
@@ -116,7 +120,8 @@ TEST_CASE( "Inequality checks that should fail", "[.][failing][!shouldfail]" ) {
 }
 
 // Ordering comparison tests
-TEST_CASE( "Ordering comparison checks that should succeed" ) {
+TEST_CASE( "Ordering comparison checks that should succeed" )
+{
     TestData data;
 
     REQUIRE( data.int_seven < 8 );
@@ -142,7 +147,8 @@ TEST_CASE( "Ordering comparison checks that should succeed" ) {
     REQUIRE( data.str_hello > "a" );
 }
 
-TEST_CASE( "Ordering comparison checks that should fail", "[.][failing]" ) {
+TEST_CASE( "Ordering comparison checks that should fail", "[.][failing]" )
+{
     TestData data;
 
     CHECK( data.int_seven > 7 );
@@ -171,12 +177,13 @@ TEST_CASE( "Ordering comparison checks that should fail", "[.][failing]" ) {
 }
 
 #ifdef __clang__
-#    pragma clang diagnostic pop
+#   pragma clang diagnostic pop
 #endif
 
+
 // Comparisons with int literals
-TEST_CASE(
-    "Comparisons with int literals don't warn when mixing signed/ unsigned" ) {
+TEST_CASE( "Comparisons with int literals don't warn when mixing signed/ unsigned" )
+{
     int i = 1;
     unsigned int ui = 2;
     long l = 3;
@@ -198,27 +205,28 @@ TEST_CASE(
     REQUIRE( 5 == c );
     REQUIRE( 6 == uc );
 
-    REQUIRE( ( std::numeric_limits<uint32_t>::max )() > ul );
+    REQUIRE( (std::numeric_limits<uint32_t>::max)() > ul );
 }
 
 // Disable warnings about sign conversions for the next two tests
 // (as we are deliberately invoking them)
 // - Currently only disabled for GCC/ LLVM. Should add VC++ too
-#ifdef __GNUC__
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wsign-compare"
-#    pragma GCC diagnostic ignored "-Wsign-conversion"
+#ifdef  __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 #ifdef _MSC_VER
-#    pragma warning( disable : 4389 ) // '==' : signed/unsigned mismatch
+#pragma warning(disable:4389) // '==' : signed/unsigned mismatch
 #endif
 
-TEST_CASE( "comparisons between int variables" ) {
-    long long_var = 1L;
-    unsigned char unsigned_char_var = 1;
-    unsigned short unsigned_short_var = 1;
-    unsigned int unsigned_int_var = 1;
-    unsigned long unsigned_long_var = 1L;
+TEST_CASE( "comparisons between int variables" )
+{
+    long            long_var = 1L;
+    unsigned char    unsigned_char_var = 1;
+    unsigned short    unsigned_short_var = 1;
+    unsigned int    unsigned_int_var = 1;
+    unsigned long    unsigned_long_var = 1L;
 
     REQUIRE( long_var == unsigned_char_var );
     REQUIRE( long_var == unsigned_short_var );
@@ -226,11 +234,12 @@ TEST_CASE( "comparisons between int variables" ) {
     REQUIRE( long_var == unsigned_long_var );
 }
 
-TEST_CASE( "comparisons between const int variables" ) {
-    const unsigned char unsigned_char_var = 1;
-    const unsigned short unsigned_short_var = 1;
-    const unsigned int unsigned_int_var = 1;
-    const unsigned long unsigned_long_var = 1L;
+TEST_CASE( "comparisons between const int variables" )
+{
+    const unsigned char     unsigned_char_var = 1;
+    const unsigned short    unsigned_short_var = 1;
+    const unsigned int      unsigned_int_var = 1;
+    const unsigned long     unsigned_long_var = 1L;
 
     REQUIRE( unsigned_char_var == 1 );
     REQUIRE( unsigned_short_var == 1 );
@@ -238,28 +247,30 @@ TEST_CASE( "comparisons between const int variables" ) {
     REQUIRE( unsigned_long_var == 1 );
 }
 
-TEST_CASE( "Comparisons between unsigned ints and negative signed ints match "
-           "c++ standard behaviour" ) {
+TEST_CASE( "Comparisons between unsigned ints and negative signed ints match c++ standard behaviour" )
+{
     CHECK( ( -1 > 2u ) );
     CHECK( -1 > 2u );
 
     CHECK( ( 2u < -1 ) );
     CHECK( 2u < -1 );
 
-    const int minInt = ( std::numeric_limits<int>::min )();
+    const int minInt = (std::numeric_limits<int>::min)();
     CHECK( ( minInt > 2u ) );
     CHECK( minInt > 2u );
 }
 
-TEST_CASE( "Comparisons between ints where one side is computed" ) {
-    CHECK( 54 == 6 * 9 );
+TEST_CASE( "Comparisons between ints where one side is computed" )
+{
+     CHECK( 54 == 6*9 );
 }
 
-#ifdef __GNUC__
-#    pragma GCC diagnostic pop
+#ifdef  __GNUC__
+#pragma GCC diagnostic pop
 #endif
 
-TEST_CASE( "Pointers can be compared to null" ) {
+TEST_CASE( "Pointers can be compared to null" )
+{
     TestData* p = nullptr;
     TestData* pNULL = nullptr;
 
@@ -285,12 +296,13 @@ TEST_CASE( "Pointers can be compared to null" ) {
 
 // Not (!) tests
 // The problem with the ! operator is that it has right-to-left associativity.
-// This means we can't isolate it when we decompose. The simple REQUIRE( !false
-// ) form, therefore, cannot have the operand value extracted. The test will
-// work correctly, and the situation is detected and a warning issued. An
-// alternative form of the macros (CHECK_FALSE and REQUIRE_FALSE) can be used
-// instead to capture the operand value.
-TEST_CASE( "'Not' checks that should succeed" ) {
+// This means we can't isolate it when we decompose. The simple REQUIRE( !false ) form, therefore,
+// cannot have the operand value extracted. The test will work correctly, and the situation
+// is detected and a warning issued.
+// An alternative form of the macros (CHECK_FALSE and REQUIRE_FALSE) can be used instead to capture
+// the operand value.
+TEST_CASE( "'Not' checks that should succeed" )
+{
     bool falseValue = false;
 
     REQUIRE( false == false );
@@ -301,11 +313,12 @@ TEST_CASE( "'Not' checks that should succeed" ) {
     REQUIRE( !falseValue );
     REQUIRE_FALSE( falseValue );
 
-    REQUIRE( !( 1 == 2 ) );
+    REQUIRE( !(1 == 2) );
     REQUIRE_FALSE( 1 == 2 );
 }
 
-TEST_CASE( "'Not' checks that should fail", "[.][failing]" ) {
+TEST_CASE( "'Not' checks that should fail", "[.][failing]" )
+{
     bool trueValue = true;
 
     CHECK( false != false );
@@ -316,6 +329,6 @@ TEST_CASE( "'Not' checks that should fail", "[.][failing]" ) {
     CHECK( !trueValue );
     CHECK_FALSE( trueValue );
 
-    CHECK( !( 1 == 1 ) );
+    CHECK( !(1 == 1) );
     CHECK_FALSE( 1 == 1 );
 }

@@ -8,9 +8,10 @@
 #ifndef CATCH_OUTPUT_REDIRECT_HPP_INCLUDED
 #define CATCH_OUTPUT_REDIRECT_HPP_INCLUDED
 
-#include <catch2/internal/catch_compiler_capabilities.hpp>
 #include <catch2/internal/catch_platform.hpp>
 #include <catch2/internal/catch_reusable_string_stream.hpp>
+#include <catch2/internal/catch_compiler_capabilities.hpp>
+
 #include <cstdio>
 #include <iosfwd>
 #include <string>
@@ -23,15 +24,13 @@ namespace Catch {
         std::streambuf* m_prevBuf;
 
     public:
-        RedirectedStream( std::ostream& originalStream,
-                          std::ostream& redirectionStream );
+        RedirectedStream( std::ostream& originalStream, std::ostream& redirectionStream );
         ~RedirectedStream();
     };
 
     class RedirectedStdOut {
         ReusableStringStream m_rss;
         RedirectedStream m_cout;
-
     public:
         RedirectedStdOut();
         auto str() const -> std::string;
@@ -44,7 +43,6 @@ namespace Catch {
         ReusableStringStream m_rss;
         RedirectedStream m_cerr;
         RedirectedStream m_clog;
-
     public:
         RedirectedStdErr();
         auto str() const -> std::string;
@@ -52,15 +50,13 @@ namespace Catch {
 
     class RedirectedStreams {
     public:
-        RedirectedStreams( RedirectedStreams const& ) = delete;
-        RedirectedStreams& operator=( RedirectedStreams const& ) = delete;
-        RedirectedStreams( RedirectedStreams&& ) = delete;
-        RedirectedStreams& operator=( RedirectedStreams&& ) = delete;
+        RedirectedStreams(RedirectedStreams const&) = delete;
+        RedirectedStreams& operator=(RedirectedStreams const&) = delete;
+        RedirectedStreams(RedirectedStreams&&) = delete;
+        RedirectedStreams& operator=(RedirectedStreams&&) = delete;
 
-        RedirectedStreams( std::string& redirectedCout,
-                           std::string& redirectedCerr );
+        RedirectedStreams(std::string& redirectedCout, std::string& redirectedCerr);
         ~RedirectedStreams();
-
     private:
         std::string& m_redirectedCout;
         std::string& m_redirectedCerr;
@@ -68,7 +64,7 @@ namespace Catch {
         RedirectedStdErr m_redirectedStdErr;
     };
 
-#if defined( CATCH_CONFIG_NEW_CAPTURE )
+#if defined(CATCH_CONFIG_NEW_CAPTURE)
 
     // Windows's implementation of std::tmpfile is terrible (it tries
     // to create a file inside system folder, thus requiring elevated
@@ -76,10 +72,10 @@ namespace Catch {
     // create the file ourselves there.
     class TempFile {
     public:
-        TempFile( TempFile const& ) = delete;
-        TempFile& operator=( TempFile const& ) = delete;
-        TempFile( TempFile&& ) = delete;
-        TempFile& operator=( TempFile&& ) = delete;
+        TempFile(TempFile const&) = delete;
+        TempFile& operator=(TempFile const&) = delete;
+        TempFile(TempFile&&) = delete;
+        TempFile& operator=(TempFile&&) = delete;
 
         TempFile();
         ~TempFile();
@@ -89,19 +85,21 @@ namespace Catch {
 
     private:
         std::FILE* m_file = nullptr;
-#    if defined( _MSC_VER )
+    #if defined(_MSC_VER)
         char m_buffer[L_tmpnam] = { 0 };
-#    endif
+    #endif
     };
+
 
     class OutputRedirect {
     public:
-        OutputRedirect( OutputRedirect const& ) = delete;
-        OutputRedirect& operator=( OutputRedirect const& ) = delete;
-        OutputRedirect( OutputRedirect&& ) = delete;
-        OutputRedirect& operator=( OutputRedirect&& ) = delete;
+        OutputRedirect(OutputRedirect const&) = delete;
+        OutputRedirect& operator=(OutputRedirect const&) = delete;
+        OutputRedirect(OutputRedirect&&) = delete;
+        OutputRedirect& operator=(OutputRedirect&&) = delete;
 
-        OutputRedirect( std::string& stdout_dest, std::string& stderr_dest );
+
+        OutputRedirect(std::string& stdout_dest, std::string& stderr_dest);
         ~OutputRedirect();
 
     private:

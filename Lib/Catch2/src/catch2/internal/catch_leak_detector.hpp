@@ -15,5 +15,5 @@ namespace Catch {
         ~LeakDetector();
     };
 
-} // namespace Catch
+}
 #endif // CATCH_LEAK_DETECTOR_HPP_INCLUDED

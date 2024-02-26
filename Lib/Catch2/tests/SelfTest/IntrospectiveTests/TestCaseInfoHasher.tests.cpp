@@ -6,17 +6,16 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
-#include <catch2/catch_test_case_info.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_test_case_info.hpp>
 #include <catch2/internal/catch_test_case_info_hasher.hpp>
 
-static constexpr Catch::SourceLineInfo dummySourceLineInfo =
-    CATCH_INTERNAL_LINEINFO;
+static constexpr Catch::SourceLineInfo dummySourceLineInfo = CATCH_INTERNAL_LINEINFO;
 
 using Catch::TestCaseInfo;
 using Catch::TestCaseInfoHasher;
 
-TEST_CASE( "Hashers with same seed produce same hash", "[test-case-hash]" ) {
+TEST_CASE("Hashers with same seed produce same hash", "[test-case-hash]") {
     TestCaseInfo dummy( "", { "name", "[a-tag]" }, dummySourceLineInfo );
 
     TestCaseInfoHasher h1( 0x12345678 );
@@ -27,7 +26,7 @@ TEST_CASE( "Hashers with same seed produce same hash", "[test-case-hash]" ) {
 
 TEST_CASE(
     "Hashers with different seed produce different hash with same test case",
-    "[test-case-hash]" ) {
+    "[test-case-hash]") {
     TestCaseInfo dummy( "", { "name", "[a-tag]" }, dummySourceLineInfo );
 
     TestCaseInfoHasher h1( 0x12345678 );
@@ -36,8 +35,8 @@ TEST_CASE(
     REQUIRE( h1( dummy ) != h2( dummy ) );
 }
 
-TEST_CASE( "Hashing test case produces same hash across multiple calls",
-           "[test-case-hash]" ) {
+TEST_CASE("Hashing test case produces same hash across multiple calls",
+          "[test-case-hash]") {
     TestCaseInfo dummy( "", { "name", "[a-tag]" }, dummySourceLineInfo );
 
     TestCaseInfoHasher h( 0x12345678 );
@@ -45,18 +44,16 @@ TEST_CASE( "Hashing test case produces same hash across multiple calls",
     REQUIRE( h( dummy ) == h( dummy ) );
 }
 
-TEST_CASE( "Hashing different test cases produces different result",
-           "[test-case-hash]" ) {
+TEST_CASE("Hashing different test cases produces different result", "[test-case-hash]") {
     TestCaseInfoHasher h( 0x12345678 );
-    SECTION( "Different test name" ) {
-        TestCaseInfo dummy1(
-            "class", { "name-1", "[a-tag]" }, dummySourceLineInfo );
+    SECTION("Different test name") {
+        TestCaseInfo dummy1( "class", { "name-1", "[a-tag]" }, dummySourceLineInfo );
         TestCaseInfo dummy2(
             "class", { "name-2", "[a-tag]" }, dummySourceLineInfo );
 
         REQUIRE( h( dummy1 ) != h( dummy2 ) );
     }
-    SECTION( "Different classname" ) {
+    SECTION("Different classname") {
         TestCaseInfo dummy1(
             "class-1", { "name", "[a-tag]" }, dummySourceLineInfo );
         TestCaseInfo dummy2(
@@ -64,7 +61,7 @@ TEST_CASE( "Hashing different test cases produces different result",
 
         REQUIRE( h( dummy1 ) != h( dummy2 ) );
     }
-    SECTION( "Different tags" ) {
+    SECTION("Different tags") {
         TestCaseInfo dummy1(
             "class", { "name", "[a-tag]" }, dummySourceLineInfo );
         TestCaseInfo dummy2(

@@ -11,4 +11,4 @@
 namespace Catch {
     IRegistryHub::~IRegistryHub() = default;
     IMutableRegistryHub::~IMutableRegistryHub() = default;
-} // namespace Catch
+}

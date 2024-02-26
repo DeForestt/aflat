@@ -9,12 +9,13 @@
 #define CATCH_TEST_SPEC_HPP_INCLUDED
 
 #ifdef __clang__
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wpadded"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpadded"
 #endif
 
 #include <catch2/internal/catch_unique_ptr.hpp>
 #include <catch2/internal/catch_wildcard_pattern.hpp>
+
 #include <string>
 #include <vector>
 
@@ -32,27 +33,22 @@ namespace Catch {
             virtual ~Pattern();
             virtual bool matches( TestCaseInfo const& testCase ) const = 0;
             std::string const& name() const;
-
         private:
             std::string const m_name;
         };
 
         class NamePattern : public Pattern {
         public:
-            explicit NamePattern( std::string const& name,
-                                  std::string const& filterString );
+            explicit NamePattern( std::string const& name, std::string const& filterString );
             bool matches( TestCaseInfo const& testCase ) const override;
-
         private:
             WildcardPattern m_wildcardPattern;
         };
 
         class TagPattern : public Pattern {
         public:
-            explicit TagPattern( std::string const& tag,
-                                 std::string const& filterString );
+            explicit TagPattern( std::string const& tag, std::string const& filterString );
             bool matches( TestCaseInfo const& testCase ) const override;
-
         private:
             std::string m_tag;
         };
@@ -75,19 +71,18 @@ namespace Catch {
 
         bool hasFilters() const;
         bool matches( TestCaseInfo const& testCase ) const;
-        Matches matchesByFilter( std::vector<TestCaseHandle> const& testCases,
-                                 IConfig const& config ) const;
-        const vectorStrings& getInvalidSpecs() const;
+        Matches matchesByFilter( std::vector<TestCaseHandle> const& testCases, IConfig const& config ) const;
+        const vectorStrings & getInvalidSpecs() const;
 
     private:
         std::vector<Filter> m_filters;
         std::vector<std::string> m_invalidSpecs;
         friend class TestSpecParser;
     };
-} // namespace Catch
+}
 
 #ifdef __clang__
-#    pragma clang diagnostic pop
+#pragma clang diagnostic pop
 #endif
 
 #endif // CATCH_TEST_SPEC_HPP_INCLUDED

@@ -8,21 +8,23 @@
 #ifndef CATCH_REPORTER_TEAMCITY_HPP_INCLUDED
 #define CATCH_REPORTER_TEAMCITY_HPP_INCLUDED
 
-#include <catch2/catch_timer.hpp>
 #include <catch2/reporters/catch_reporter_streaming_base.hpp>
+#include <catch2/catch_timer.hpp>
+
 #include <cstring>
 
 #ifdef __clang__
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wpadded"
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wpadded"
 #endif
 
 namespace Catch {
 
     class TeamCityReporter final : public StreamingReporterBase {
     public:
-        TeamCityReporter( ReporterConfig&& _config ):
-            StreamingReporterBase( CATCH_MOVE( _config ) ) {
+        TeamCityReporter( ReporterConfig&& _config )
+        :   StreamingReporterBase( CATCH_MOVE(_config) )
+        {
             m_preferences.shouldRedirectStdOut = true;
         }
 
@@ -36,19 +38,20 @@ namespace Catch {
         void testRunStarting( TestRunInfo const& groupInfo ) override;
         void testRunEnded( TestRunStats const& testGroupStats ) override;
 
-        void assertionEnded( AssertionStats const& assertionStats ) override;
 
-        void sectionStarting( SectionInfo const& sectionInfo ) override {
+        void assertionEnded(AssertionStats const& assertionStats) override;
+
+        void sectionStarting(SectionInfo const& sectionInfo) override {
             m_headerPrintedForThisSection = false;
             StreamingReporterBase::sectionStarting( sectionInfo );
         }
 
-        void testCaseStarting( TestCaseInfo const& testInfo ) override;
+        void testCaseStarting(TestCaseInfo const& testInfo) override;
 
-        void testCaseEnded( TestCaseStats const& testCaseStats ) override;
+        void testCaseEnded(TestCaseStats const& testCaseStats) override;
 
     private:
-        void printSectionHeader( std::ostream& os );
+        void printSectionHeader(std::ostream& os);
 
         bool m_headerPrintedForThisSection = false;
         Timer m_testTimer;
@@ -57,7 +60,7 @@ namespace Catch {
 } // end namespace Catch
 
 #ifdef __clang__
-#    pragma clang diagnostic pop
+#   pragma clang diagnostic pop
 #endif
 
 #endif // CATCH_REPORTER_TEAMCITY_HPP_INCLUDED

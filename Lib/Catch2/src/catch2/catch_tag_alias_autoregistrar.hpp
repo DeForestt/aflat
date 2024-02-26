@@ -9,26 +9,21 @@
 #define CATCH_TAG_ALIAS_AUTOREGISTRAR_HPP_INCLUDED
 
 #include <catch2/internal/catch_compiler_capabilities.hpp>
-#include <catch2/internal/catch_source_line_info.hpp>
 #include <catch2/internal/catch_unique_name.hpp>
+#include <catch2/internal/catch_source_line_info.hpp>
 
 namespace Catch {
 
     struct RegistrarForTagAliases {
-        RegistrarForTagAliases( char const* alias,
-                                char const* tag,
-                                SourceLineInfo const& lineInfo );
+        RegistrarForTagAliases( char const* alias, char const* tag, SourceLineInfo const& lineInfo );
     };
 
 } // end namespace Catch
 
-#define CATCH_REGISTER_TAG_ALIAS( alias, spec )                             \
-    CATCH_INTERNAL_START_WARNINGS_SUPPRESSION                               \
-    CATCH_INTERNAL_SUPPRESS_GLOBALS_WARNINGS                                \
-    namespace {                                                             \
-        Catch::RegistrarForTagAliases INTERNAL_CATCH_UNIQUE_NAME(           \
-            AutoRegisterTagAlias )( alias, spec, CATCH_INTERNAL_LINEINFO ); \
-    }                                                                       \
+#define CATCH_REGISTER_TAG_ALIAS( alias, spec ) \
+    CATCH_INTERNAL_START_WARNINGS_SUPPRESSION \
+    CATCH_INTERNAL_SUPPRESS_GLOBALS_WARNINGS \
+    namespace{ Catch::RegistrarForTagAliases INTERNAL_CATCH_UNIQUE_NAME( AutoRegisterTagAlias )( alias, spec, CATCH_INTERNAL_LINEINFO ); } \
     CATCH_INTERNAL_STOP_WARNINGS_SUPPRESSION
 
 #endif // CATCH_TAG_ALIAS_AUTOREGISTRAR_HPP_INCLUDED

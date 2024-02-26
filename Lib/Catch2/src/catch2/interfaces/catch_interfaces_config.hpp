@@ -10,6 +10,7 @@
 
 #include <catch2/internal/catch_noncopyable.hpp>
 #include <catch2/internal/catch_stringref.hpp>
+
 #include <chrono>
 #include <iosfwd>
 #include <string>
@@ -17,20 +18,30 @@
 
 namespace Catch {
 
-    enum class Verbosity { Quiet = 0, Normal, High };
-
-    struct WarnAbout {
-        enum What {
-            Nothing = 0x00,
-            //! A test case or leaf section did not run any assertions
-            NoAssertions = 0x01,
-            //! A command line test spec matched no test cases
-            UnmatchedTestSpec = 0x02,
-        };
+    enum class Verbosity {
+        Quiet = 0,
+        Normal,
+        High
     };
 
-    enum class ShowDurations { DefaultForReporter, Always, Never };
-    enum class TestRunOrder { Declared, LexicographicallySorted, Randomized };
+    struct WarnAbout { enum What {
+        Nothing = 0x00,
+        //! A test case or leaf section did not run any assertions
+        NoAssertions = 0x01,
+        //! A command line test spec matched no test cases
+        UnmatchedTestSpec = 0x02,
+    }; };
+
+    enum class ShowDurations {
+        DefaultForReporter,
+        Always,
+        Never
+    };
+    enum class TestRunOrder {
+        Declared,
+        LexicographicallySorted,
+        Randomized
+    };
     enum class ColourMode : std::uint8_t {
         //! Let Catch2 pick implementation based on platform detection
         PlatformDefault,
@@ -41,14 +52,12 @@ namespace Catch {
         //! Don't use any colour
         None
     };
-    struct WaitForKeypress {
-        enum When {
-            Never,
-            BeforeStart = 1,
-            BeforeExit = 2,
-            BeforeStartAndExit = BeforeStart | BeforeExit
-        };
-    };
+    struct WaitForKeypress { enum When {
+        Never,
+        BeforeStart = 1,
+        BeforeExit = 2,
+        BeforeStartAndExit = BeforeStart | BeforeExit
+    }; };
 
     class TestSpec;
     class IStream;
@@ -86,6 +95,6 @@ namespace Catch {
         virtual unsigned int benchmarkResamples() const = 0;
         virtual std::chrono::milliseconds benchmarkWarmupTime() const = 0;
     };
-} // namespace Catch
+}
 
 #endif // CATCH_INTERFACES_CONFIG_HPP_INCLUDED

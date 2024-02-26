@@ -9,13 +9,16 @@
 #define CATCH_LIST_HPP_INCLUDED
 
 #include <catch2/internal/catch_stringref.hpp>
+
 #include <set>
 #include <string>
+
 
 namespace Catch {
 
     class IEventListener;
     class Config;
+
 
     struct ReporterDescription {
         std::string name, description;
@@ -26,7 +29,7 @@ namespace Catch {
     };
 
     struct TagInfo {
-        void add( StringRef spelling );
+        void add(StringRef spelling);
         std::string all() const;
 
         std::set<StringRef> spellings;

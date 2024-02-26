@@ -8,17 +8,18 @@
 #ifndef CATCH_VOID_TYPE_HPP_INCLUDED
 #define CATCH_VOID_TYPE_HPP_INCLUDED
 
+
 namespace Catch {
     namespace Detail {
 
-        template <typename...> struct make_void {
-            using type = void;
-        };
+        template <typename...>
+        struct make_void { using type = void; };
 
         template <typename... Ts>
         using void_t = typename make_void<Ts...>::type;
 
     } // namespace Detail
 } // namespace Catch
+
 
 #endif // CATCH_VOID_TYPE_HPP_INCLUDED

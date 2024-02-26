@@ -18,15 +18,18 @@ namespace Catch {
         template <typename Clock>
         using ClockDuration = typename Clock::duration;
         template <typename Clock>
-        using FloatDuration =
-            std::chrono::duration<double, typename Clock::period>;
+        using FloatDuration = std::chrono::duration<double, typename Clock::period>;
 
-        template <typename Clock> using TimePoint = typename Clock::time_point;
+        template <typename Clock>
+        using TimePoint = typename Clock::time_point;
 
         using default_clock = std::chrono::steady_clock;
 
-        template <typename Clock> struct now {
-            TimePoint<Clock> operator()() const { return Clock::now(); }
+        template <typename Clock>
+        struct now {
+            TimePoint<Clock> operator()() const {
+                return Clock::now();
+            }
         };
 
         using fp_seconds = std::chrono::duration<double, std::ratio<1>>;

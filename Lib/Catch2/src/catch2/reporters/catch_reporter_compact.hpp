@@ -8,7 +8,9 @@
 #ifndef CATCH_REPORTER_COMPACT_HPP_INCLUDED
 #define CATCH_REPORTER_COMPACT_HPP_INCLUDED
 
+
 #include <catch2/reporters/catch_reporter_streaming_base.hpp>
+
 
 namespace Catch {
 
@@ -24,11 +26,12 @@ namespace Catch {
 
         void testRunStarting( TestRunInfo const& _testInfo ) override;
 
-        void assertionEnded( AssertionStats const& _assertionStats ) override;
+        void assertionEnded(AssertionStats const& _assertionStats) override;
 
-        void sectionEnded( SectionStats const& _sectionStats ) override;
+        void sectionEnded(SectionStats const& _sectionStats) override;
 
-        void testRunEnded( TestRunStats const& _testRunStats ) override;
+        void testRunEnded(TestRunStats const& _testRunStats) override;
+
     };
 
 } // end namespace Catch

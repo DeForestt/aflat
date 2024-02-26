@@ -5,10 +5,10 @@
 //        https://www.boost.org/LICENSE_1_0.txt)
 
 // SPDX-License-Identifier: BSL-1.0
-#include <catch2/internal/catch_move_and_forward.hpp>
-#include <catch2/internal/catch_run_context.hpp>
 #include <catch2/internal/catch_section.hpp>
+#include <catch2/internal/catch_run_context.hpp>
 #include <catch2/internal/catch_uncaught_exceptions.hpp>
+#include <catch2/internal/catch_move_and_forward.hpp>
 
 namespace Catch {
 
@@ -18,16 +18,15 @@ namespace Catch {
             getResultCapture().sectionStarted( m_info, m_assertions ) ) {
         // Non-"included" sections will not use the timing information
         // anyway, so don't bother with the potential syscall.
-        if ( m_sectionIncluded ) {
+        if (m_sectionIncluded) {
             m_timer.start();
         }
     }
 
     Section::~Section() {
-        if ( m_sectionIncluded ) {
-            SectionEndInfo endInfo{
-                m_info, m_assertions, m_timer.getElapsedSeconds() };
-            if ( uncaught_exceptions() )
+        if( m_sectionIncluded ) {
+            SectionEndInfo endInfo{ m_info, m_assertions, m_timer.getElapsedSeconds() };
+            if( uncaught_exceptions() )
                 getResultCapture().sectionEndedEarly( endInfo );
             else
                 getResultCapture().sectionEnded( endInfo );
@@ -35,6 +34,9 @@ namespace Catch {
     }
 
     // This indicates whether the section should be executed or not
-    Section::operator bool() const { return m_sectionIncluded; }
+    Section::operator bool() const {
+        return m_sectionIncluded;
+    }
+
 
 } // end namespace Catch

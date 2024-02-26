@@ -6,10 +6,12 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
-#include <algorithm>
+#include <catch2/internal/catch_reporter_spec_parser.hpp>
+
 #include <catch2/interfaces/catch_interfaces_config.hpp>
 #include <catch2/internal/catch_move_and_forward.hpp>
-#include <catch2/internal/catch_reporter_spec_parser.hpp>
+
+#include <algorithm>
 
 namespace Catch {
 
@@ -18,7 +20,7 @@ namespace Catch {
             StringRef key, value;
         };
 
-        kvPair splitKVPair( StringRef kvString ) {
+        kvPair splitKVPair(StringRef kvString) {
             auto splitPos = static_cast<size_t>( std::distance(
                 kvString.begin(),
                 std::find( kvString.begin(), kvString.end(), '=' ) ) );
@@ -26,7 +28,7 @@ namespace Catch {
             return { kvString.substr( 0, splitPos ),
                      kvString.substr( splitPos + 1, kvString.size() ) };
         }
-    } // namespace
+    }
 
     namespace Detail {
         std::vector<std::string> splitReporterSpec( StringRef reporterSpec ) {
@@ -93,6 +95,7 @@ namespace Catch {
         }
     } // namespace Detail
 
+
     bool operator==( ReporterSpec const& lhs, ReporterSpec const& rhs ) {
         return lhs.m_name == rhs.m_name &&
                lhs.m_outputFileName == rhs.m_outputFileName &&
@@ -123,8 +126,7 @@ namespace Catch {
                     return {};
                 }
 
-                auto ret = kvPairs.emplace( std::string( kv.key ),
-                                            std::string( kv.value ) );
+                auto ret = kvPairs.emplace( std::string(kv.key), std::string(kv.value) );
                 if ( !ret.second ) {
                     // Duplicated key. We might want to handle this differently,
                     // e.g. by overwriting the existing value?
@@ -158,7 +160,7 @@ namespace Catch {
                              CATCH_MOVE( kvPairs ) };
     }
 
-    ReporterSpec::ReporterSpec(
+ReporterSpec::ReporterSpec(
         std::string name,
         Optional<std::string> outputFileName,
         Optional<ColourMode> colourMode,
