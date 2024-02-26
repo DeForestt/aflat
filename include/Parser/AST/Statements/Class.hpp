@@ -17,5 +17,6 @@ class Class : public Statement {
   Class() = default;
   Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
         bool safeType, bool dynamic);
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 };  // namespace ast

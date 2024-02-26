@@ -1,5 +1,7 @@
 #include "Parser/AST/Statements/Class.hpp"
 
+#include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/Utils.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/Parser.hpp"
 
@@ -75,4 +77,85 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
   this->dynamic = dynamic;
   this->statement = parser.parseStmt(tokens);
 };
+
+gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
+  asmc::File OutputFile;
+  gen::Class *type = new gen::Class();
+  bool saveScope = generator.globalScope;
+  generator.globalScope = false;
+  type->Ident = this->ident.ident;
+  type->nameTable.foo = gen::utils::compareFunc;
+  type->safeType = this->safeType;
+  type->dynamic = this->dynamic;
+  generator.scope = type;
+  type->overloadTable.foo = [](ast::Function func, ast::Op op) {
+    if (func.op == op) {
+      return true;
+    }
+    return false;
+  };
+  type->SymbolTable;
+  generator.typeList.push(type);
+  // write any signed contracts
+  if (this->base != "") {
+    gen::Type **T = generator.typeList[this->base];
+    if (T != nullptr) {
+      gen::Class *base = dynamic_cast<gen::Class *>(*T);
+      asmc::File contractFile;
+      if (base != nullptr) {
+        // check if the base class has a contract
+        if (base->contract == nullptr)
+          err::Exception("Base class does not have a contract");
+        // if my contact is not nullptr stitch it with the base
+        if (this->contract != nullptr) {
+          ast::Sequence *seq = new ast::Sequence();
+          seq->Statement1 = this->contract;
+          seq->Statement2 = base->contract;
+          type->contract = seq;
+          type->parent = base;
+          contractFile = generator.GenSTMT(seq);
+          OutputFile << contractFile;
+        } else {
+          type->contract = base->contract;
+          type->parent = base;
+          contractFile = generator.GenSTMT(base->contract);
+          OutputFile << contractFile;
+          type->contract = this->contract;
+        }
+      } else
+        generator.alert("Base class is not a class");
+    } else
+      generator.alert("Base class not found");
+  } else if (this->contract != nullptr) {
+    asmc::File contractFile = generator.GenSTMT(this->contract);
+    OutputFile << contractFile;
+    type->contract = this->contract;
+  }
+  asmc::File file = generator.GenSTMT(this->statement);
+  if (gen::utils::extract("init", this->statement) == nullptr &&
+      generator.scope->defaultValues.size() > 0) {
+    ast::Function *func = new ast::Function();
+    func->logicalLine = this->logicalLine;
+    ast::Return *ret = new ast::Return();
+    ret->logicalLine = this->logicalLine;
+    ast::Var *var = new ast::Var();
+    var->logicalLine = this->logicalLine;
+    var->Ident = "my";
+    var->modList = links::LinkedList<std::string>();
+    ret->expr = var;
+    func->ident.ident = "init";
+    func->scope = ast::Private;
+    func->statement = ret;
+    func->args = nullptr;
+    ast::Type t;
+    t.typeName = "adr";
+    t.size = asmc::QWord;
+    func->type = t;
+    file << generator.GenSTMT(func);
+  }
+  OutputFile << file;
+  generator.globalScope = saveScope;
+  generator.scope = nullptr;
+  return {OutputFile, std::nullopt};
+}
 }  // namespace ast
