@@ -214,6 +214,7 @@ ast::Statement *parse::Parser::parseStmt(
       const auto refSym = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (refSym && refSym->Sym == '&') {
         type.isReference = true;
+        type.refSize = type.size;
         type.size = asmc::QWord;
         tokens.pop();
       }
@@ -605,6 +606,7 @@ ast::Statement *parse::Parser::parseArgs(
       const auto refSym = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (refSym && refSym->Sym == '&') {
         dec->type.isReference = true;
+        dec->type.refSize = dec->type.size;
         dec->type.size = asmc::QWord;
         tokens.pop();
       }

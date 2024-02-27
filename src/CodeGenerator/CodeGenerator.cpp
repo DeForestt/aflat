@@ -576,6 +576,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                             var.internal);
 
     if (std::get<2>(resolved) == false) {
+      const auto symbol = std::get<1>(resolved);
+
       std::string ident = var.Ident;
       std::string nsp;
       var.modList.invert();
@@ -696,51 +698,63 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       var.modList.reset();
     } else {
       gen::Symbol sym = std::get<1>(resolved);
-      output.size = sym.type.size;
-      output.op = sym.type.opType;
-      output.type = sym.type.typeName;
 
-      // check if the symbol type is a class
-      auto cont = true;
-      gen::Type **t = this->typeList[sym.type.typeName];
-      if (t) {
-        gen::Class *cl = dynamic_cast<gen::Class *>(*t);
-        if (cl) {
-          if (cl->safeType && sym.symbol != "my") {
-            output.passable = false;
-            if (cl->nameTable["get"] != nullptr) {
-              ast::Call *callGet = new ast::Call();
-              callGet->ident = var.Ident;
-              callGet->modList = var.modList;
-              callGet->modList << "get";
-              callGet->logicalLine = var.logicalLine;
-              ast::CallExpr *callExpr = new ast::CallExpr();
-              callExpr->call = callGet;
-              callExpr->logicalLine = var.logicalLine;
-              output = this->GenExpr(callExpr, OutputFile, size);
-              callGet->modList.pop();
-              cont = false;
+      if (sym.type.isReference) {
+        // turn this into a de-reference
+        auto deref = new ast::DeReference();
+        deref->Ident = var.Ident;
+        deref->modList = var.modList;
+        deref->logicalLine = var.logicalLine;
+        deref->type = sym.type;
+        deref->type.size = sym.type.refSize;
+        output = this->GenExpr(deref, OutputFile);
+      } else {
+        output.size = sym.type.size;
+        output.op = sym.type.opType;
+        output.type = sym.type.typeName;
+
+        // check if the symbol type is a class
+        auto cont = true;
+        gen::Type **t = this->typeList[sym.type.typeName];
+        if (t) {
+          gen::Class *cl = dynamic_cast<gen::Class *>(*t);
+          if (cl) {
+            if (cl->safeType && sym.symbol != "my") {
+              output.passable = false;
+              if (cl->nameTable["get"] != nullptr) {
+                ast::Call *callGet = new ast::Call();
+                callGet->ident = var.Ident;
+                callGet->modList = var.modList;
+                callGet->modList << "get";
+                callGet->logicalLine = var.logicalLine;
+                ast::CallExpr *callExpr = new ast::CallExpr();
+                callExpr->call = callGet;
+                callExpr->logicalLine = var.logicalLine;
+                output = this->GenExpr(callExpr, OutputFile, size);
+                callGet->modList.pop();
+                cont = false;
+              }
             }
           }
         }
+
+        // mov output to r15
+        if (cont) {
+          asmc::Mov *mov = new asmc::Mov();
+          std::string move2 = (output.op == asmc::Float)
+                                  ? this->registers["%xmm0"]->get(asmc::QWord)
+                                  : this->registers["%r15"]->get(output.size);
+
+          mov->to = move2;
+          mov->from = std::get<0>(resolved);
+          mov->size = output.size;
+          mov->op = output.op;
+          mov->logicalLine = this->logicalLine;
+          OutputFile.text << mov;
+          output.access = mov->to;
+          OutputFile << std::get<3>(resolved);
+        };
       }
-
-      // mov output to r15
-      if (cont) {
-        asmc::Mov *mov = new asmc::Mov();
-        std::string move2 = (output.op == asmc::Float)
-                                ? this->registers["%xmm0"]->get(asmc::QWord)
-                                : this->registers["%r15"]->get(output.size);
-
-        mov->to = move2;
-        mov->from = std::get<0>(resolved);
-        mov->size = output.size;
-        mov->op = output.op;
-        mov->logicalLine = this->logicalLine;
-        OutputFile.text << mov;
-        output.access = mov->to;
-        OutputFile << std::get<3>(resolved);
-      };
     }
 
     if (var.typeCast != "") {
