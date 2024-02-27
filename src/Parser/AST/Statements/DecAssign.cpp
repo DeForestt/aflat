@@ -19,6 +19,19 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
   ast::Declare *dec = this->declare;
   if (!generator.globalScope) {
     if (generator.scope == nullptr || generator.inFunction) {
+      if (dec->type.isReference) {
+        auto var = dynamic_cast<ast::Var *>(this->expr);
+        if (!var) {
+          generator.alert("A reference can only point to an lvalue");
+        }
+        // create a reference rather than a var
+        ast::Reference *ref = new ast::Reference();
+        ref->Ident = var->Ident;
+        ref->modList = var->modList;
+        ref->logicalLine = var->logicalLine;
+        this->expr = ref;
+      }
+
       auto mov = new asmc::Mov();
       mov->logicalLine = this->logicalLine;
       gen::Expr expr = generator.GenExpr(this->expr, file, dec->type.size);
