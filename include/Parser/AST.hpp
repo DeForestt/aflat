@@ -101,6 +101,7 @@ class Type {
   bool isGeneric = false;
   bool safeType = false;
   Type *typeHint;
+  bool isReference = false;
 
   struct FPointerArgs {
     Type *returnType = nullptr;
