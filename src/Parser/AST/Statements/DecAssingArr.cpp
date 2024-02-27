@@ -24,7 +24,8 @@ gen::GenerationResult const DecAssignArr::generate(
   adr.typeHint = &dec->type;
 
   const auto declare =
-      new ast::Declare(dec->ident, dec->scope, "adr", this->mute, adr);
+      new ast::Declare(dec->ident, dec->scope, "adr", this->mute, adr, "",
+                       links::LinkedList<std::string>());
 
   auto assign = new ast::DecAssign();
   assign->declare = declare;

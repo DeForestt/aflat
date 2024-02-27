@@ -10,6 +10,19 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
   int offset = generator.getBytes(this->type.size);
   links::LinkedList<gen::Symbol> *Table;
 
+  if (this->requestType != "") {
+    asmc::File dumby;
+    auto resolved =
+        generator.resolveSymbol(this->requestType, this->modList, dumby,
+                                links::LinkedList<ast::Expr *>());
+    if (!std::get<2>(resolved)) {
+      generator.alert("it appears the the symbol " + this->requestType +
+                      " is not defined in the current scope therefore its type "
+                      "cannot be resolved");
+    }
+    this->type = std::get<1>(resolved).type;
+  }
+
   if (!generator.globalScope) {
     // if the there  is no scope use the scope manager otherwise use the
     // scope

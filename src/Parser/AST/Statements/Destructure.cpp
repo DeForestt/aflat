@@ -54,7 +54,7 @@ gen::GenerationResult const Destructure::generate(
 
   auto letType = ast::Type("let", asmc::QWord);
   auto decl = new ast::Declare(temp_ident, ast::ScopeMod::Public, "let", false,
-                               letType);
+                               letType, "", links::LinkedList<std::string>());
   auto decAssign = new ast::DecAssign();
   decAssign->declare = decl;
   decAssign->expr = expr;
@@ -66,8 +66,8 @@ gen::GenerationResult const Destructure::generate(
     var->Ident = temp_ident;
     var->modList.push(ident);
 
-    auto decl =
-        new ast::Declare(ident, ast::ScopeMod::Public, "let", mute, letType);
+    auto decl = new ast::Declare(ident, ast::ScopeMod::Public, "let", mute,
+                                 letType, "", links::LinkedList<std::string>());
     auto decAssign = new ast::DecAssign();
     decAssign->declare = decl;
     decAssign->mute = mute;
