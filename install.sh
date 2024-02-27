@@ -40,6 +40,11 @@ fi
 mkdir ~/.aflat
 (cd ~/.aflat && git clone https://github.com/DeForestt/aflat.git)
 
+# Check for boost
+if ! [ -x "$(command -v boost)" ]; then
+  echo 'Error: boost is not installed. Please install boost' >&2
+fi
+
 # Build aflat
 (cd ~/.aflat/aflat && mkdir bin && make ../. && cd .. && cmake --build build > buildLog.log)
 
