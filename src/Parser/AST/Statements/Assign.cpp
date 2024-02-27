@@ -143,8 +143,9 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
     mov->to = output;
   };
 
-  if (!fin->mutable_ && !this->override) {
-    generator.alert("cannot this to const " + fin->symbol);
+  if (!fin->mutable_ && !this->override &&
+      !(this->reference && !fin->type.isReference)) {
+    generator.alert("cannot assign to const " + fin->symbol);
   }
 
   mov2->logicalLine = this->logicalLine;
@@ -154,6 +155,10 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   file << std::get<3>(resolved);
   if (this->modList.count == 0)
     gen::scope::ScopeManager::getInstance()->addAssign(fin->symbol);
+
+  if (this->modList.count == 0 && this->reference) {
+    gen::scope::ScopeManager::getInstance()->get(fin->symbol);
+  }
 
   if (generator.TypeList[fin->type.typeName] == nullptr) {
     auto t = new ast::Type();

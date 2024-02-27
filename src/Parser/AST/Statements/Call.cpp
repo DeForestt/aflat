@@ -361,6 +361,23 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
       if (func->argTypes.at(i).isReference) {
         auto toReg = new ast::Reference();
         auto var = dynamic_cast<ast::Var *>(arg);
+        auto sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
+        if (!sym) {
+          sym = generator.GlobalSymbolTable.search<std::string>(
+              gen::utils::searchSymbol, var->Ident);
+        }
+
+        if (!sym) {
+          generator.alert("cannot find symbol: " + var->Ident);
+        }
+        if (sym->mutable_ == false && func->mutability[i]) {
+          generator.alert(
+              "cannot pass a const reference to a mutable "
+              "argument: " +
+              var->Ident);
+        } else if (func->mutability[i]) {
+          gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
+        }
         if (!var) {
           generator.alert("A reference can only point to an lvalue");
         }

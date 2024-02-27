@@ -20,7 +20,8 @@ class Parser {
   ast::Expr *parseExpr(links::LinkedList<lex::Token *> &tokens);
   ast::Statement *parseArgs(links::LinkedList<lex::Token *> &tokens,
                             char delimn, char close,
-                            std::vector<ast::Type> &types, int &requiered);
+                            std::vector<ast::Type> &types, int &requiered,
+                            std::vector<bool> &mutability);
   void addType(std::string name, asmc::OpType opType, asmc::Size size);
   void addType(std::string name, asmc::OpType opType, asmc::Size size,
                bool isGeneric);
