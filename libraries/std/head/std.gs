@@ -43,3 +43,4 @@ int assert(bool cond, * adr message);
 int sleep(int seconds, * int nanoseconds);
 adr _fCstr(adr fmt, * adr args);
 adr mmap(adr addr, int len, int prot, int flags, int fd, int offset);
+adr create(const int size, ? const any value);
