@@ -29,7 +29,9 @@ int ScopeManager::assign(std::string symbol, ast::Type type, bool mask,
     if (this->stack[i].symbol == symbol && symbol != "") {
       // add an underscore to the front of the symbol
       if (this->stack[i].type.typeName == type.typeName)
-        this->stack[i].symbol = "~" + this->stack[i].symbol;
+        throw err::Exception("Cannot shadow symbol \"" + symbol +
+                             "\" with the same type");
+      this->stack[i].symbol = "~" + this->stack[i].symbol;
       this->stack[i].underscores++;
     }
   }

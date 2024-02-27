@@ -362,9 +362,6 @@ ast::Statement *parse::Parser::parseStmt(
             assign->logicalLine = obj.lineCount;
             output = assign;
           }
-        } else if (sym->Sym == '{') {
-          tokens.pop();
-          output = new ast::Destructure(isMutable, tokens, *this);
         } else
           throw err::Exception(
               "Line: " + std::to_string(tokens.peek()->lineCount) +
@@ -490,6 +487,7 @@ ast::Statement *parse::Parser::parseStmt(
              tokens.head->next != nullptr) {
     auto obj = *dynamic_cast<lex::OpSym *>(tokens.peek());
     tokens.pop();
+
     if (obj.Sym == ';') {
       auto s = new ast::Sequence;
       s->Statement1 = output;
