@@ -42,10 +42,10 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   auto symbol = &std::get<1>(resolved);
 
   auto fin = symbol;
+  const auto var = dynamic_cast<ast::Var *>(this->expr);
 
   if (symbol->type.isReference) {
     if (this->to) {
-      const auto var = dynamic_cast<ast::Var *>(this->expr);
       if (!var) {
         generator.alert("A reference can only point to an lvalue");
       }
@@ -56,7 +56,6 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
       ref->logicalLine = var->logicalLine;
       this->expr = ref;
       this->override = true;  // we can set a reference even if it is const
-
       auto resolve =
           generator.resolveSymbol(var->Ident, var->modList, file, var->indices);
       if (!std::get<2>(resolve)) {
@@ -71,7 +70,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
           gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
         }
       }
-    } else {
+    } else if (!(var && var->clean)) {
       this->reference = true;
     }
   }

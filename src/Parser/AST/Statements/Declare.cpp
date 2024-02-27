@@ -27,14 +27,8 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
       cl->Ident = boost::uuids::to_string(boost::uuids::random_generator()());
       int byteMod = 0;
       for (auto sym : inScope) {
-        auto newSym = gen::Symbol();
-        newSym.type = sym.type;
-        newSym.type.isReference = true;
-        newSym.type.refSize = sym.type.size;
-        newSym.type.size = asmc::QWord;
-        newSym.symbol = sym.symbol;
-        newSym.mutable_ = sym.mutable_;
-        byteMod += generator.getBytes(asmc::QWord);
+        auto newSym = sym;
+        byteMod += generator.getBytes(sym.type.size);
         newSym.byteMod = byteMod;
         cl->SymbolTable.push(newSym);
         cl->publicSymbols.push(newSym);

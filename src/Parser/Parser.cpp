@@ -886,7 +886,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     auto obj = *dynamic_cast<lex::LObj *>(tokens.pop());
     links::LinkedList<std::string> modList;
     links::LinkedList<ast::Expr *> indices;
-
+    auto clean = false;
     if (tokens.count > 0)
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
         lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -927,6 +927,9 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
                   " Expected ]");
             }
           }
+        } else if (sym.Sym == '@') {
+          clean = true;
+          tokens.pop();
         }
       }
 
@@ -935,6 +938,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     var->modList = modList;
     var->indices = indices;
     var->logicalLine = obj.lineCount;
+    var->clean = clean;
     output = var;
     if (obj.meta == "new") {
       auto newExpr = new ast::NewExpr();

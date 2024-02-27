@@ -17,31 +17,35 @@ DecAssign::DecAssign(Declare *declare, const bool mute,
 gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
   asmc::File file;
   ast::Declare *dec = this->declare;
+  bool allowAdr = false;
   if (!generator.globalScope) {
     if (generator.scope == nullptr || generator.inFunction) {
       if (dec->type.isReference) {
         auto var = dynamic_cast<ast::Var *>(this->expr);
-        if (!var) {
+        if (var && !var->clean) {
           generator.alert("A reference can only point to an lvalue");
+          ast::Reference *ref = new ast::Reference();
+          ref->Ident = var->Ident;
+          ref->modList = var->modList;
+          ref->logicalLine = var->logicalLine;
+          this->expr = ref;
+        } else {
+          if (!var) allowAdr = true;
         }
-        // create a reference rather than a var
-        ast::Reference *ref = new ast::Reference();
-        ref->Ident = var->Ident;
-        ref->modList = var->modList;
-        ref->logicalLine = var->logicalLine;
-        this->expr = ref;
       }
 
       auto mov = new asmc::Mov();
       mov->logicalLine = this->logicalLine;
       gen::Expr expr = generator.GenExpr(this->expr, file, dec->type.size);
 
+      const auto testType =
+          allowAdr ? ast::Type("adr", asmc::QWord) : dec->type;
       if (dec->type.typeName != "let" &&
           !generator.canAssign(
-              dec->type, expr.type,
+              testType, expr.type,
               "cannot assign type {} cannot be assigned to type {}")) {
-        expr = generator.GenExpr(
-            generator.imply(this->expr, dec->type.typeName), file);
+        expr = generator.GenExpr(generator.imply(this->expr, testType.typeName),
+                                 file);
       };
 
       if (dec->type.typeName == "let") {

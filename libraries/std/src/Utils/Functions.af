@@ -4,7 +4,7 @@ class Function {
 	const private adr foo = foo;
 	const private adr captures = captures;
 
-	Function init(const adr foo, * const adr captures) {
+	Function init(const adr foo, * const any captures) {
 		return my;
 	};
 

@@ -670,14 +670,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         cl->Ident = boost::uuids::to_string(boost::uuids::random_generator()());
         int byteMod = 0;
         for (auto sym : inScope) {
-          auto newSym = gen::Symbol();
-          newSym.type = sym.type;
-          newSym.type.isReference = true;
-          newSym.type.refSize = sym.type.size;
-          newSym.type.size = asmc::QWord;
-          newSym.symbol = sym.symbol;
-          newSym.mutable_ = sym.mutable_;
-          byteMod += this->getBytes(asmc::QWord);
+          auto newSym = sym;
+          byteMod += this->getBytes(sym.type.size);
           newSym.byteMod = byteMod;
           cl->SymbolTable.push(newSym);
           cl->publicSymbols.push(newSym);
@@ -716,9 +710,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           auto var = new ast::Var();
           assign->Ident = tempDecl->ident;
           assign->modList.push(sym.symbol);
-          assign->to = true;
           var->Ident = sym.symbol;
+          if (sym.type.isReference) var->clean = true;
           assign->expr = var;
+          assign->override = true;
           assign->logicalLine = this->logicalLine;
           OutputFile << assign->generate(*this).file;
         }
@@ -762,7 +757,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     } else {
       gen::Symbol sym = std::get<1>(resolved);
 
-      if (sym.type.isReference) {
+      if (sym.type.isReference && !var.clean) {
         // turn this into a de-reference
         auto deref = new ast::DeReference();
         deref->Ident = var.Ident;
@@ -1921,14 +1916,8 @@ void gen::CodeGenerator::GenArgs(ast::Statement *STMT, asmc::File &OutputFile) {
               boost::uuids::to_string(boost::uuids::random_generator()());
           int byteMod = 0;
           for (auto sym : inScope) {
-            auto newSym = gen::Symbol();
-            newSym.type = sym.type;
-            newSym.type.isReference = true;
-            newSym.type.refSize = sym.type.size;
-            newSym.type.size = asmc::QWord;
-            newSym.symbol = sym.symbol;
-            newSym.mutable_ = sym.mutable_;
-            byteMod += this->getBytes(asmc::QWord);
+            auto newSym = sym;
+            byteMod += this->getBytes(sym.type.size);
             newSym.byteMod = byteMod;
             cl->SymbolTable.push(newSym);
             cl->publicSymbols.push(newSym);

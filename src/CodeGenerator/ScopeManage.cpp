@@ -27,10 +27,10 @@ int ScopeManager::assign(std::string symbol, ast::Type type, bool mask,
 
   for (int i = 0; i < this->stack.size(); i++) {
     if (this->stack[i].symbol == symbol && symbol != "") {
-      // add an underscore to the front of the symbol
-      if (this->stack[i].type.typeName == type.typeName)
-        throw err::Exception("Cannot shadow symbol \"" + symbol +
-                             "\" with the same type");
+      // // add an underscore to the front of the symbol
+      // if (this->stack[i].type.typeName == type.typeName)
+      //   throw err::Exception("Cannot shadow symbol \"" + symbol +
+      //                        "\" with the same type");
       this->stack[i].symbol = "~" + this->stack[i].symbol;
       this->stack[i].underscores++;
     }
