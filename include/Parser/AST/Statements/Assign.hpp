@@ -14,6 +14,7 @@ class Assign : public Statement {
   Expr *expr;
   links::LinkedList<std::string> modList;
   links::LinkedList<Expr *> indices;
+  bool to = false;
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   Assign() = default;
   Assign(const std::string &ident, const links::LinkedList<Expr *> &indices,

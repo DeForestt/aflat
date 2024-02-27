@@ -207,10 +207,16 @@ ast::Statement *parse::Parser::parseStmt(
     if (typeList[obj.meta] != nullptr) {
       // check if we need to make a function pointer
       const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
-      const auto type = (sym != nullptr && sym->meta == "<")
-                            ? this->parseFPointerType(tokens, obj.meta)
-                            : *this->typeList[obj.meta];
+      auto type = (sym != nullptr && sym->meta == "<")
+                      ? this->parseFPointerType(tokens, obj.meta)
+                      : *this->typeList[obj.meta];
 
+      const auto refSym = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (refSym && refSym->Sym == '&') {
+        type.isReference = true;
+        type.size = asmc::QWord;
+        tokens.pop();
+      }
       // ensures the the current token is an Ident
       if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
         const auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
@@ -595,6 +601,14 @@ ast::Statement *parse::Parser::parseArgs(
       } else {
         dec->type = *typeList[obj.meta];
       }
+
+      const auto refSym = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (refSym && refSym->Sym == '&') {
+        dec->type.isReference = true;
+        dec->type.size = asmc::QWord;
+        tokens.pop();
+      }
+
       // ensures the the current token is an Ident
       if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
         auto ident = *dynamic_cast<lex::LObj *>(tokens.peek());
