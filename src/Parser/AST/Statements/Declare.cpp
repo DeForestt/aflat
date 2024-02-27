@@ -1,5 +1,9 @@
 #include "Parser/AST/Statements/Declare.hpp"
 
+#include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
@@ -15,12 +19,34 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
     auto resolved =
         generator.resolveSymbol(this->requestType, this->modList, dumby,
                                 links::LinkedList<ast::Expr *>());
-    if (!std::get<2>(resolved)) {
-      generator.alert("it appears the the symbol " + this->requestType +
-                      " is not defined in the current scope therefore its type "
-                      "cannot be resolved");
+    if (std::get<2>(resolved)) {
+      this->type = std::get<1>(resolved).type;
+    } else if (this->requestType == "state") {
+      gen::Class *cl = new gen::Class();
+      auto inScope = gen::scope::ScopeManager::getInstance()->getScope();
+      cl->Ident = boost::uuids::to_string(boost::uuids::random_generator()());
+      int byteMod = 0;
+      for (auto sym : inScope) {
+        auto newSym = gen::Symbol();
+        newSym.type = sym.type;
+        newSym.type.isReference = true;
+        newSym.type.refSize = sym.type.size;
+        newSym.type.size = asmc::QWord;
+        newSym.symbol = sym.symbol;
+        newSym.mutable_ = sym.mutable_;
+        byteMod += generator.getBytes(asmc::QWord);
+        newSym.byteMod = byteMod;
+        cl->SymbolTable.push(newSym);
+        cl->publicSymbols.push(newSym);
+      }
+
+      generator.typeList.push(cl);
+      this->type = ast::Type(cl->Ident, asmc::QWord);
+    } else {
+      generator.alert("The symbol " + this->requestType +
+                      " is not defined in the current scope so its type cannot "
+                      "be resolved");
     }
-    this->type = std::get<1>(resolved).type;
   }
 
   if (!generator.globalScope) {

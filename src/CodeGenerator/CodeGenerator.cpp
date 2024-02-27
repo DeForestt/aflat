@@ -694,8 +694,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         call->ident = cl->Ident;
         call->logicalLine = this->logicalLine;
 
-        auto callExpr = new ast::CallExpr();
-        callExpr->call = call;
+        auto callExpr = new ast::NewExpr();
+        callExpr->type = tempDecl->type;
         callExpr->logicalLine = this->logicalLine;
 
         auto tempDecAssign = new ast::DecAssign();
@@ -1912,12 +1912,35 @@ void gen::CodeGenerator::GenArgs(ast::Statement *STMT, asmc::File &OutputFile) {
         auto resolved =
             this->resolveSymbol(arg->requestType, arg->modList, dumby,
                                 links::LinkedList<ast::Expr *>());
-        if (!std::get<2>(resolved)) {
-          this->alert("it appears the the symbol " + arg->requestType +
-                      " is not defined in the current scope therefore its type "
-                      "cannot be resolved");
+        if (std::get<2>(resolved)) {
+          arg->type = std::get<1>(resolved).type;
+        } else if (arg->requestType == "state") {
+          gen::Class *cl = new gen::Class();
+          auto inScope = gen::scope::ScopeManager::getInstance()->getScope();
+          cl->Ident =
+              boost::uuids::to_string(boost::uuids::random_generator()());
+          int byteMod = 0;
+          for (auto sym : inScope) {
+            auto newSym = gen::Symbol();
+            newSym.type = sym.type;
+            newSym.type.isReference = true;
+            newSym.type.refSize = sym.type.size;
+            newSym.type.size = asmc::QWord;
+            newSym.symbol = sym.symbol;
+            newSym.mutable_ = sym.mutable_;
+            byteMod += this->getBytes(asmc::QWord);
+            newSym.byteMod = byteMod;
+            cl->SymbolTable.push(newSym);
+            cl->publicSymbols.push(newSym);
+          }
+
+          this->typeList.push(cl);
+          arg->type = ast::Type(cl->Ident, asmc::QWord);
+        } else {
+          alert("The symbol " + arg->requestType +
+                " is not defined in the current scope so its type cannot be "
+                "resolved");
         }
-        arg->type = std::get<1>(resolved).type;
       }
 
       size = arg->type.size;
