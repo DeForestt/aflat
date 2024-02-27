@@ -2,6 +2,9 @@
 
 #include <unistd.h>
 
+#include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -158,7 +161,7 @@ gen::CodeGenerator::resolveSymbol(std::string ident,
     OutputFile.text << push;
     while (modList.trail() > checkTo) {
       if (this->typeList[last.typeName] == nullptr)
-        alert("type not found " + last.typeName);
+        alert("type not found to resolve " + last.typeName);
       gen::Type type = **this->typeList[last.typeName];
       std::string sto = modList.touch();
       if (this->scope == *this->typeList[last.typeName]) {
@@ -661,6 +664,66 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.size = asmc::Byte;
         output.access = "$0";
         output.type = "bool";
+      } else if (this->inFunction && var.Ident == "state") {
+        auto inScope = gen::scope::ScopeManager::getInstance()->getScope();
+        gen::Class *cl = new gen::Class();
+        cl->Ident = boost::uuids::to_string(boost::uuids::random_generator()());
+        int byteMod = 0;
+        for (auto sym : inScope) {
+          auto newSym = gen::Symbol();
+          newSym.type = sym.type;
+          newSym.type.isReference = true;
+          newSym.type.refSize = sym.type.size;
+          newSym.type.size = asmc::QWord;
+          newSym.symbol = sym.symbol;
+          newSym.mutable_ = sym.mutable_;
+          byteMod += this->getBytes(asmc::QWord);
+          newSym.byteMod = byteMod;
+          cl->SymbolTable.push(newSym);
+          cl->publicSymbols.push(newSym);
+        }
+
+        this->typeList.push(cl);
+        auto tempDecl = new ast::Declare();
+        tempDecl->type = ast::Type(cl->Ident, asmc::QWord);
+        tempDecl->ident =
+            "***" + boost::uuids::to_string(boost::uuids::random_generator()());
+        tempDecl->mut = false;
+
+        auto call = new ast::Call();
+        call->ident = cl->Ident;
+        call->logicalLine = this->logicalLine;
+
+        auto callExpr = new ast::CallExpr();
+        callExpr->call = call;
+        callExpr->logicalLine = this->logicalLine;
+
+        auto tempDecAssign = new ast::DecAssign();
+        tempDecAssign->declare = tempDecl;
+        tempDecAssign->expr = callExpr;
+        tempDecAssign->mute = false;
+        tempDecAssign->logicalLine = this->logicalLine;
+
+        OutputFile << tempDecAssign->generate(*this).file;
+
+        auto tempVar = new ast::Var();
+        tempVar->Ident = tempDecl->ident;
+        tempVar->logicalLine = this->logicalLine;
+
+        // now we assign all the values to the new object
+        for (auto sym : inScope) {
+          auto assign = new ast::Assign();
+          auto var = new ast::Var();
+          assign->Ident = tempDecl->ident;
+          assign->modList.push(sym.symbol);
+          assign->to = true;
+          var->Ident = sym.symbol;
+          assign->expr = var;
+          assign->logicalLine = this->logicalLine;
+          OutputFile << assign->generate(*this).file;
+        }
+
+        output = this->GenExpr(tempVar, OutputFile);
       } else if (this->nameTable[ident] != nullptr) {
         auto func = this->nameTable[ident];
         auto typeName = func->type.typeName + "~";
@@ -916,8 +979,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.type = "int";
   } else if (dynamic_cast<ast::DeReference *>(expr)) {
     ast::DeReference deRef = *dynamic_cast<ast::DeReference *>(expr);
-    gen::Symbol *sym =
-        gen::scope::ScopeManager::getInstance()->get(deRef.Ident);
+
+    auto resolved =
+        this->resolveSymbol(deRef.Ident, deRef.modList, OutputFile,
+                            links::LinkedList<ast::Expr *>(), false);
+
+    if (!std::get<2>(resolved)) {
+      alert("variable not found to deRef" + deRef.Ident);
+    }
+
+    gen::Symbol *sym = &std::get<1>(resolved);
 
     asmc::Mov *mov = new asmc::Mov();
     asmc::Mov *mov2 = new asmc::Mov();
@@ -926,7 +997,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     mov2->logicalLine = this->logicalLine;
 
     mov->size = asmc::QWord;
-    mov->from = '-' + std::to_string(sym->byteMod) + "(%rbp)";
+    mov->from = std::get<0>(resolved);
     mov->to = this->registers["%rax"]->get(asmc::QWord);
 
     mov2->from = "(" + this->registers["%rax"]->get(asmc::QWord) + ")";
@@ -1835,6 +1906,19 @@ void gen::CodeGenerator::GenArgs(ast::Statement *STMT, asmc::File &OutputFile) {
       gen::Symbol symbol;
       asmc::Mov *mov = new asmc::Mov();
       mov->logicalLine = this->logicalLine;
+
+      if (arg->requestType != "") {
+        asmc::File dumby;
+        auto resolved =
+            this->resolveSymbol(arg->requestType, arg->modList, dumby,
+                                links::LinkedList<ast::Expr *>());
+        if (!std::get<2>(resolved)) {
+          this->alert("it appears the the symbol " + arg->requestType +
+                      " is not defined in the current scope therefore its type "
+                      "cannot be resolved");
+        }
+        arg->type = std::get<1>(resolved).type;
+      }
 
       size = arg->type.size;
       arg->type.arraySize = 1;

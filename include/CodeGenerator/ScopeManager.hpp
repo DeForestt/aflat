@@ -61,6 +61,9 @@ class ScopeManager {
   // Get a symbol
   gen::Symbol *get(std::string symbol);
 
+  // Get all of the symbols in the current scope as a vector
+  std::vector<gen::Symbol> getScope();
+
   // push a new scope
   void pushScope(bool func);
 

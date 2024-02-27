@@ -173,6 +173,16 @@ gen::Symbol *ScopeManager::get(std::string symbol) {
   return nullptr;
 };
 
+std::vector<gen::Symbol> ScopeManager::getScope() {
+  std::vector<gen::Symbol> scope;
+  for (int i = this->stack.size() - 1; i >= 0; i--) {
+    if (this->stack[i].symbol != "") {
+      scope.push_back(this->stack[i]);
+    }
+  }
+  return scope;
+};
+
 void ScopeManager::addAssign(std::string symbol) {
   for (int i = this->stack.size() - 1; i >= 0; i--) {
     if (this->stack[i].symbol == symbol) {
