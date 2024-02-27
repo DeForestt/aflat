@@ -81,7 +81,7 @@ gen::GenerationResult const Destructure::generate(
         symbol->type, "", links::LinkedList<std::string>());
     auto decAssign = new ast::DecAssign();
     decAssign->declare = decl;
-    decAssign->mute = symbol->mutable_;
+    decAssign->mute = mutable_;
     decAssign->expr = var;
     decAssign->logicalLine = this->logicalLine;
     file << decAssign->generate(generator).file;

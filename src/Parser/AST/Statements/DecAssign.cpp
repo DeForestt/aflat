@@ -23,7 +23,6 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       if (dec->type.isReference) {
         auto var = dynamic_cast<ast::Var *>(this->expr);
         if (var && !var->clean) {
-          generator.alert("A reference can only point to an lvalue");
           ast::Reference *ref = new ast::Reference();
           ref->Ident = var->Ident;
           ref->modList = var->modList;
