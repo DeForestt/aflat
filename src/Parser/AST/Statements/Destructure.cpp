@@ -54,7 +54,7 @@ gen::GenerationResult const Destructure::generate(
 
   auto letType = ast::Type("let", asmc::QWord);
   auto decl = new ast::Declare(temp_ident, ast::ScopeMod::Public, "let", false,
-                               letType);
+                               letType, "", links::LinkedList<std::string>());
   auto decAssign = new ast::DecAssign();
   decAssign->declare = decl;
   decAssign->expr = expr;
@@ -64,13 +64,24 @@ gen::GenerationResult const Destructure::generate(
   for (auto &ident : identifiers) {
     const auto var = new ast::Var();
     var->Ident = temp_ident;
+    var->clean = true;
     var->modList.push(ident);
 
-    auto decl =
-        new ast::Declare(ident, ast::ScopeMod::Public, "let", mute, letType);
+    asmc::File dump = asmc::File();
+    auto resolved = generator.resolveSymbol(temp_ident, var->modList, dump,
+                                            links::LinkedList<ast::Expr *>());
+    if (!std::get<2>(resolved)) {
+      generator.alert(ident + " is does not exist on the type");
+    }
+    auto symbol = &std::get<1>(resolved);
+    const auto mutable_ =
+        this->mute && (symbol->mutable_ || !symbol->type.isReference);
+    auto decl = new ast::Declare(
+        ident, ast::ScopeMod::Public, symbol->type.typeName, symbol->mutable_,
+        symbol->type, "", links::LinkedList<std::string>());
     auto decAssign = new ast::DecAssign();
     decAssign->declare = decl;
-    decAssign->mute = mute;
+    decAssign->mute = mutable_;
     decAssign->expr = var;
     decAssign->logicalLine = this->logicalLine;
     file << decAssign->generate(generator).file;

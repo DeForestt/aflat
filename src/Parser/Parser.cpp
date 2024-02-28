@@ -25,6 +25,8 @@ parse::Parser::Parser(int mutability = 0) {
   this->addType("any", asmc::Hard, asmc::QWord, true);
   // create a dummy type for let
   this->addType("let", asmc::Hard, asmc::QWord, true);
+  // create a dummy type for typeOf
+  this->addType("typeOf", asmc::Hard, asmc::QWord, true);
 }
 
 void parse::Parser::addType(std::string name, asmc::OpType opType,
@@ -211,6 +213,39 @@ ast::Statement *parse::Parser::parseStmt(
                       ? this->parseFPointerType(tokens, obj.meta)
                       : *this->typeList[obj.meta];
 
+      std::string requestType = "";
+      links::LinkedList<std::string> modList;
+      // Handle typeOf
+      if (obj.meta == "typeOf") {
+        auto OpenParen = dynamic_cast<lex::OpSym *>(tokens.pop());
+        if (!OpenParen || OpenParen->Sym != '(') {
+          throw err::Exception("Expected '(' after typeOf on line " +
+                               std::to_string(obj.lineCount));
+        }
+        auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
+        if (!ident)
+          throw err::Exception("Expected identifier after typeOf on line " +
+                               std::to_string(obj.lineCount));
+        requestType = ident->meta;
+
+        auto dot = dynamic_cast<lex::OpSym *>(tokens.peek());
+        while (dot && dot->Sym == '.') {
+          tokens.pop();
+          auto mod = dynamic_cast<lex::LObj *>(tokens.pop());
+          if (!mod)
+            throw err::Exception("Expected identifier after typeOf on line " +
+                                 std::to_string(obj.lineCount));
+          modList << mod->meta;
+          dot = dynamic_cast<lex::OpSym *>(tokens.peek());
+        }
+
+        auto CloseParen = dynamic_cast<lex::OpSym *>(tokens.pop());
+        if (!CloseParen || CloseParen->Sym != ')') {
+          throw err::Exception("Expected ')' after typeOf on line " +
+                               std::to_string(obj.lineCount));
+        }
+      }
+
       const auto refSym = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (refSym && refSym->Sym == '&') {
         type.isReference = true;
@@ -322,12 +357,13 @@ ast::Statement *parse::Parser::parseStmt(
           } else if (sym.Sym == '=') {
             tokens.pop();
             output = new ast::DecAssign(
-                new ast::Declare(ident.meta, scope, obj.meta, isMutable, type),
+                new ast::Declare(ident.meta, scope, obj.meta, isMutable, type,
+                                 requestType, modList),
                 isMutable, tokens, *this);
           }
         } else {
-          output =
-              new ast::Declare(ident.meta, scope, obj.meta, isMutable, type);
+          output = new ast::Declare(ident.meta, scope, obj.meta, isMutable,
+                                    type, requestType, modList);
         }
       } else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
         auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -604,6 +640,39 @@ ast::Statement *parse::Parser::parseArgs(
         dec->type = *typeList[obj.meta];
       }
 
+      std::string requestType = "";
+      links::LinkedList<std::string> modList;
+      // Handle typeOf
+      if (obj.meta == "typeOf") {
+        auto OpenParen = dynamic_cast<lex::OpSym *>(tokens.pop());
+        if (!OpenParen || OpenParen->Sym != '(') {
+          throw err::Exception("Expected '(' after typeOf on line " +
+                               std::to_string(obj.lineCount));
+        }
+        auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
+        if (!ident)
+          throw err::Exception("Expected identifier after typeOf on line " +
+                               std::to_string(obj.lineCount));
+        requestType = ident->meta;
+
+        auto dot = dynamic_cast<lex::OpSym *>(tokens.peek());
+        while (dot && dot->Sym == '.') {
+          tokens.pop();
+          auto mod = dynamic_cast<lex::LObj *>(tokens.pop());
+          if (!mod)
+            throw err::Exception("Expected identifier after typeOf on line " +
+                                 std::to_string(obj.lineCount));
+          modList << mod->meta;
+          dot = dynamic_cast<lex::OpSym *>(tokens.peek());
+        }
+
+        auto CloseParen = dynamic_cast<lex::OpSym *>(tokens.pop());
+        if (!CloseParen || CloseParen->Sym != ')') {
+          throw err::Exception("Expected ')' after typeOf on line " +
+                               std::to_string(obj.lineCount));
+        }
+      }
+
       const auto refSym = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (refSym && refSym->Sym == '&') {
         dec->type.isReference = true;
@@ -618,6 +687,8 @@ ast::Statement *parse::Parser::parseArgs(
         tokens.pop();
         dec->ident = ident.meta;
         dec->mut = isMutable;
+        dec->requestType = requestType;
+        dec->modList = modList;
         output = dec;
         types.push_back(dec->type);
         mutability.push_back(isMutable);
@@ -815,7 +886,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     auto obj = *dynamic_cast<lex::LObj *>(tokens.pop());
     links::LinkedList<std::string> modList;
     links::LinkedList<ast::Expr *> indices;
-
+    auto clean = false;
     if (tokens.count > 0)
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
         lex::OpSym sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -856,6 +927,9 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
                   " Expected ]");
             }
           }
+        } else if (sym.Sym == '@') {
+          clean = true;
+          tokens.pop();
         }
       }
 
@@ -864,6 +938,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     var->modList = modList;
     var->indices = indices;
     var->logicalLine = obj.lineCount;
+    var->clean = clean;
     output = var;
     if (obj.meta == "new") {
       auto newExpr = new ast::NewExpr();

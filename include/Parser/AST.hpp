@@ -168,6 +168,7 @@ class Var : public Expr {
   std::string Ident;
   links::LinkedList<Expr *> indices;
   links::LinkedList<std::string> modList;
+  bool clean = false;
   bool internal = false;
 };
 

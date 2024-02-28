@@ -246,3 +246,13 @@ int sleep(const int seconds, *const int nanoseconds){
 adr _fCstr(const adr fmt, * const adr args) {
     return st.fString(fmt, args);
 };
+
+adr create(const int size, ? const any value) {
+    const adr ptr = malloc(size);
+    if (ptr == NULL) {
+        return NULL;
+    };
+    
+    memcpy(ptr, ?value, size);
+    return ptr;
+};
