@@ -101,6 +101,8 @@ class Type {
   bool isGeneric = false;
   bool safeType = false;
   Type *typeHint;
+  bool isReference = false;
+  asmc::Size refSize;
 
   struct FPointerArgs {
     Type *returnType = nullptr;

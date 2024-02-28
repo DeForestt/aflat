@@ -207,10 +207,17 @@ ast::Statement *parse::Parser::parseStmt(
     if (typeList[obj.meta] != nullptr) {
       // check if we need to make a function pointer
       const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
-      const auto type = (sym != nullptr && sym->meta == "<")
-                            ? this->parseFPointerType(tokens, obj.meta)
-                            : *this->typeList[obj.meta];
+      auto type = (sym != nullptr && sym->meta == "<")
+                      ? this->parseFPointerType(tokens, obj.meta)
+                      : *this->typeList[obj.meta];
 
+      const auto refSym = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (refSym && refSym->Sym == '&') {
+        type.isReference = true;
+        type.refSize = type.size;
+        type.size = asmc::QWord;
+        tokens.pop();
+      }
       // ensures the the current token is an Ident
       if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
         const auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
@@ -545,7 +552,8 @@ links::LinkedList<ast::Expr *> parse::Parser::parseCallArgsList(
 
 ast::Statement *parse::Parser::parseArgs(
     links::LinkedList<lex::Token *> &tokens, char deliminator, char close,
-    std::vector<ast::Type> &types, int &required) {
+    std::vector<ast::Type> &types, int &required,
+    std::vector<bool> &mutability) {
   auto output = new ast::Statement();
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym == nullptr) {
@@ -574,7 +582,7 @@ ast::Statement *parse::Parser::parseArgs(
       obj = *dynamic_cast<lex::LObj *>(tokens.peek());
       tokens.pop();
     } else if (obj.meta == "mutable") {
-      if (mutability == 2)
+      if (this->mutability == 2)
         throw err::Exception(
             "Cannot use a mutable variable in safe "
             "mode, please set config "
@@ -595,6 +603,15 @@ ast::Statement *parse::Parser::parseArgs(
       } else {
         dec->type = *typeList[obj.meta];
       }
+
+      const auto refSym = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (refSym && refSym->Sym == '&') {
+        dec->type.isReference = true;
+        dec->type.refSize = dec->type.size;
+        dec->type.size = asmc::QWord;
+        tokens.pop();
+      }
+
       // ensures the the current token is an Ident
       if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
         auto ident = *dynamic_cast<lex::LObj *>(tokens.peek());
@@ -603,6 +620,7 @@ ast::Statement *parse::Parser::parseArgs(
         dec->mut = isMutable;
         output = dec;
         types.push_back(dec->type);
+        mutability.push_back(isMutable);
       }
     } else
       throw err::Exception("Line: " + std::to_string(obj.lineCount) +
@@ -619,8 +637,8 @@ ast::Statement *parse::Parser::parseArgs(
     if (obj.Sym == deliminator) {
       auto s = new ast::Sequence;
       s->Statement1 = output;
-      s->Statement2 =
-          this->parseArgs(tokens, deliminator, close, types, required);
+      s->Statement2 = this->parseArgs(tokens, deliminator, close, types,
+                                      required, mutability);
       return s;
     } else if (obj.Sym == close) {
       return output;
@@ -1022,8 +1040,9 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       ast::Lambda *lambda = new ast::Lambda();
       lambda->function = new ast::Function();
       lambda->function->req = 0;
-      lambda->function->args = this->parseArgs(
-          tokens, ',', ']', lambda->function->argTypes, lambda->function->req);
+      lambda->function->args =
+          this->parseArgs(tokens, ',', ']', lambda->function->argTypes,
+                          lambda->function->req, lambda->function->mutability);
 
       lambda->logicalLine = eq.lineCount;
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)

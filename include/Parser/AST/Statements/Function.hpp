@@ -21,6 +21,7 @@ class Function : public Member, public Statement {
   int req = 0;
   std::vector<Type> argTypes;
   links::LinkedList<Expr *> decoratorArgs;
+  std::vector<bool> mutability;
   bool isLambda = false;
   bool flex = false;
   bool mask;

@@ -15,8 +15,14 @@ Assign::Assign(const std::string &ident,
     if (s2->Sym == ':') {
       this->reference = true;
       tokens.pop();
-    };
-  };
+    }
+  } else if (dynamic_cast<lex::Symbol *>(tokens.peek()) != nullptr) {
+    auto s2 = dynamic_cast<lex::Symbol *>(tokens.peek());
+    if (s2->meta == ">") {
+      this->to = true;
+      tokens.pop();
+    }
+  }
 
   this->Ident = ident;
   this->modList = modList;
@@ -36,6 +42,23 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   auto symbol = &std::get<1>(resolved);
 
   auto fin = symbol;
+
+  if (symbol->type.isReference) {
+    if (this->to) {
+      const auto var = dynamic_cast<ast::Var *>(this->expr);
+      if (!var) {
+        generator.alert("A reference can only point to an lvalue");
+      }
+      // create a reference rather than a var
+      ast::Reference *ref = new ast::Reference();
+      ref->Ident = var->Ident;
+      ref->modList = var->modList;
+      ref->logicalLine = var->logicalLine;
+      this->expr = ref;
+    } else {
+      this->reference = true;
+    }
+  }
 
   // check if the symbol is a class
   gen::Type **t = generator.typeList[symbol->type.typeName];
@@ -82,7 +105,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   mov2->logicalLine = this->logicalLine;
   gen::Expr expr = generator.GenExpr(this->expr, file, symbol->type.size);
 
-  if (!this->reference) {
+  if (!this->reference || symbol->type.isReference) {
     if (!generator.canAssign(
             symbol->type, expr.type,
             "symbol of type {} cannot be assigned to type {}")) {
@@ -120,8 +143,9 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
     mov->to = output;
   };
 
-  if (!this->reference && !fin->mutable_ && !this->override) {
-    generator.alert("cannot this to const " + fin->symbol);
+  if (!fin->mutable_ && !this->override &&
+      !(this->reference && !fin->type.isReference)) {
+    generator.alert("cannot assign to const " + fin->symbol);
   }
 
   mov2->logicalLine = this->logicalLine;
@@ -129,8 +153,12 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   file.text << mov2;
   file.text << mov;
   file << std::get<3>(resolved);
-  if (this->modList.count == 0 && !this->reference)
+  if (this->modList.count == 0)
     gen::scope::ScopeManager::getInstance()->addAssign(fin->symbol);
+
+  if (this->modList.count == 0 && this->reference) {
+    gen::scope::ScopeManager::getInstance()->get(fin->symbol);
+  }
 
   if (generator.TypeList[fin->type.typeName] == nullptr) {
     auto t = new ast::Type();

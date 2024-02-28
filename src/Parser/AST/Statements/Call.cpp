@@ -355,7 +355,39 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   while (this->Args.trail() > 0) {
     args.push(this->Args.touch());
     ast::Expr *rem = this->Args.touch();
-    gen::Expr exp = generator.GenExpr(this->Args.shift(), file);
+    ast::Expr *arg = this->Args.shift();
+    // check if the argument is a reference
+    if (checkArgs) {
+      if (func->argTypes.at(i).isReference) {
+        auto toReg = new ast::Reference();
+        auto var = dynamic_cast<ast::Var *>(arg);
+        auto sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
+        if (!sym) {
+          sym = generator.GlobalSymbolTable.search<std::string>(
+              gen::utils::searchSymbol, var->Ident);
+        }
+
+        if (!sym) {
+          generator.alert("cannot find symbol: " + var->Ident);
+        }
+        if (sym->mutable_ == false && func->mutability[i]) {
+          generator.alert(
+              "cannot pass a const reference to a mutable "
+              "argument: " +
+              var->Ident);
+        } else if (func->mutability[i]) {
+          gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
+        }
+        if (!var) {
+          generator.alert("A reference can only point to an lvalue");
+        }
+        toReg->Ident = var->Ident;
+        toReg->modList = var->modList;
+        toReg->logicalLine = var->logicalLine;
+        arg = toReg;
+      }
+    }
+    gen::Expr exp = generator.GenExpr(arg, file);
     if (!exp.passable)
       generator.alert("Cannot pass an lvalue of safe type " + exp.type +
                       " to a function");
