@@ -55,6 +55,22 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
       ref->modList = var->modList;
       ref->logicalLine = var->logicalLine;
       this->expr = ref;
+      this->override = true;  // we can set a reference even if it is const
+
+      auto resolve =
+          generator.resolveSymbol(var->Ident, var->modList, file, var->indices);
+      if (!std::get<2>(resolve)) {
+        generator.alert("undefined variable:" + var->Ident);
+      } else {
+        auto sym = &std::get<1>(resolve);
+        if (!sym->mutable_ && symbol->mutable_) {
+          generator.alert("A reference to the const variable " + var->Ident +
+                          " cannot be assigned to a mutable variable" +
+                          "it is important to keep mutability consistent");
+        } else if (sym->mutable_ && symbol->mutable_) {
+          gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
+        }
+      }
     } else {
       this->reference = true;
     }
