@@ -3,6 +3,7 @@
 
 import {len, int_toStringL0, str_toInt} from "strings" under str;
 import String from "String.af";
+import Function from "Utils/Functions";
 import * from "io" under io;
 
 class Thread {
@@ -263,7 +264,6 @@ export int wait(const Thread p){
 
 // Start a function as a concurrent process
 export adr worker(const adr foo, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
-    
     const MProcess p = new MProcess([const WorkArgs args, const Pipe __inbox, const Pipe outbox] => {
         const adr res = args.run();
         const Message msg = new Message(res);
@@ -273,6 +273,17 @@ export adr worker(const adr foo, *const any arg1, *const any arg2, *const any ar
     const WorkArgs pArgs = new WorkArgs(foo, arg1, arg2, arg3, arg4);
     p.start(pArgs);
     return ret; 
+};
+
+export AsyncResult do(const Function foo) {
+    const MProcess p = new MProcess([const Function fn, const Pipe __inbox, const Pipe outbox] => {
+        const adr res = fn();
+        const Message msg = new Message(res);
+        msg.writePipe(outbox);
+    });
+    const let ret = new AsyncResult(p);
+    p.start(foo);
+    return ret;
 };
 
 export generic makeShared(const int size, * const adr constructor, * const any arg1, * const any arg2, * const any arg3, * const any arg4) {
