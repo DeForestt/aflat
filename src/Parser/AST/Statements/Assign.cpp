@@ -44,7 +44,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   auto fin = symbol;
   const auto var = dynamic_cast<ast::Var *>(this->expr);
 
-  if (symbol->type.isReference) {
+  if (symbol->type.isReference && !this->override) {
     if (this->to) {
       if (!var) {
         generator.alert("A reference can only point to an lvalue");
