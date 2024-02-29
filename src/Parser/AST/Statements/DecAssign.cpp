@@ -24,12 +24,26 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
         auto var = dynamic_cast<ast::Var *>(this->expr);
         if (var && !var->clean) {
           ast::Reference *ref = new ast::Reference();
+          asmc::File file;
+          auto resolved = generator.resolveSymbol(
+              var->Ident, var->modList, file, links::LinkedList<ast::Expr *>());
+          if (!std::get<2>(resolved)) {
+            generator.alert("Variable " + var->Ident + " not found");
+          }
+
+          if (dec->mut && !std::get<1>(resolved).mutable_) {
+            generator.alert(
+                "Cannot create a mutable reference to a immutable "
+                "variable " +
+                var->Ident);
+          }
+
           ref->Ident = var->Ident;
           ref->modList = var->modList;
           ref->logicalLine = var->logicalLine;
           this->expr = ref;
         } else {
-          if (!var) allowAdr = true;
+          if (!var) allowAdr;
         }
       }
 
