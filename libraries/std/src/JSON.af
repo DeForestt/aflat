@@ -170,7 +170,7 @@ private string parseList(const List val){
         if i != 0 {
             result = `{result}, `;
         };
-        JSONValue value = val.get(i);
+        const JSONValue value = val.get(i);
         if value.type == JSONType.String {
             const adr p = value.value;
             result = st.fString("%s\"%a\"", {result, p});

@@ -100,8 +100,7 @@ class HTTPMessage {
         firstLine.trim();
         const let firstLineParts = firstLine.split(' ');
 
-        if (firstLineParts.getCount() < 3) { 
-            io.fPrint("First line of response is invalid: %s \nlist size: %d\n", {firstLine, firstLineParts.getCount()});
+        if (firstLineParts.getCount() < 3) {
             return -1;
         };
         my.version = firstLineParts.get(0);
@@ -130,7 +129,6 @@ class HTTPMessage {
 
             const let sections = line.split(':');
             if sections.getCount() < 2{
-                io.fPrint("Invalid header: %s\n", {line});
                 return;
             };
 
@@ -194,7 +192,6 @@ class HTTPMessage {
         const let firstLineParts = firstLine.split(' ');
 
         if firstLineParts.getCount() < 3 {            
-            io.fPrint("First line of response is invalid: %s \nlist size: %d\n", {firstLine, firstLineParts.getCount()});
             return;
         };
 
