@@ -1,6 +1,7 @@
 .needs <std>
 import string from "String";
 import Server from "HTTP/Server";
+import Map from "Utils/Map";
 import HTTPMethod, HTTPResponce, HTTPMessage from "HTTP";
 import {methodToString} from "HTTP" under http;
 import {print} from "String" under str;
@@ -25,5 +26,55 @@ class Endpoint {
     HTTPResponce _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
+    };
+};
+
+class Endpoints {
+    Endpoints init(const Map<Server> imp, const Server context, const string path) {
+        const let endpoints = imp(context);
+        if endpoints.has("GET") {
+            const let get = new Endpoint(endpoints.get("GET"), context, path, HTTPMethod.GET);
+            context.addEndpoint(get);
+        };
+
+        if endpoints.has("POST") {
+            const let post = new Endpoint(endpoints.get("POST"), context, path, HTTPMethod.POST);
+            context.addEndpoint(post);
+        };
+
+        if endpoints.has("PUT") {
+            const let put = new Endpoint(endpoints.get("PUT"), context, path, HTTPMethod.PUT);
+            context.addEndpoint(put);
+        };
+
+        if endpoints.has("DELETE") {
+            const let del = new Endpoint(endpoints.get("DELETE"), context, path, HTTPMethod.DELETE);
+            context.addEndpoint(del);
+        };
+
+        if endpoints.has("PATCH") {
+            const let patch = new Endpoint(endpoints.get("PATCH"), context, path, HTTPMethod.PATCH);
+            context.addEndpoint(patch);
+        };
+
+        if endpoints.has("OPTIONS") {
+            const let options = new Endpoint(endpoints.get("OPTIONS"), context, path, HTTPMethod.OPTIONS);
+            context.addEndpoint(options);
+        };
+
+        if endpoints.has("HEAD") {
+            const let head = new Endpoint(endpoints.get("HEAD"), context, path, HTTPMethod.HEAD);
+            context.addEndpoint(head);
+        };
+
+        if endpoints.has("TRACE") {
+            const let trace = new Endpoint(endpoints.get("TRACE"), context, path, HTTPMethod.TRACE);
+            context.addEndpoint(trace);
+        };
+
+        if endpoints.has("CONNECT") {
+            const let connect = new Endpoint(endpoints.get("CONNECT"), context, path, HTTPMethod.CONNECT);
+            context.addEndpoint(connect);
+        };
     };
 };
