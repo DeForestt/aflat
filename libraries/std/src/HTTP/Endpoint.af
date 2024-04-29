@@ -3,6 +3,7 @@ import string from "String";
 import Server from "HTTP/Server";
 import Map from "Utils/Map";
 import HTTPMethod, HTTPResponce, HTTPMessage from "HTTP";
+import List from "Collections";
 import {methodToString} from "HTTP" under http;
 import {print} from "String" under str;
 import {printHex, printInt} from "io" under io;
@@ -31,7 +32,6 @@ class Endpoint {
 
 class Endpoints {
     int id = 0;
-
     Endpoints init(const Map<Server> imp, const Server context, const string path) {
         const let endpoints = imp(context);
         if endpoints.has("GET") {

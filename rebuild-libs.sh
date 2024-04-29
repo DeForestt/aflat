@@ -27,6 +27,7 @@ mv ./libraries/std/Properties.s ./libraries/std/Utils_Properties.s
 aflat ./libraries/std/src/Utils/Object.af ./libraries/std/Object.s
 mv ./libraries/std/Object.s ./libraries/std/Utils_Object.s
 aflat ./libraries/std/src/HTTP/Endpoint.af ./libraries/std/HTTP_Endpoint.s
+aflat ./libraries/std/src/HTTP/Middleware.af ./libraries/std/HTTP_Middleware.s
 aflat ./libraries/std/src/HTTP/Server.af ./libraries/std/HTTP_Server.s
 aflat ./libraries/std/src/HTTP/Endpoints.af ./libraries/std/HTTP_Endpoints.s
 aflat ./libraries/std/src/Web/Content.af ./libraries/std/Web_Content.s

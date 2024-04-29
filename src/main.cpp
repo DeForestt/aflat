@@ -437,6 +437,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   linker.insert(linker.begin(), libPath + "HTTP_Endpoint.s");
   linker.insert(linker.begin(), libPath + "HTTP_Server.s");
   linker.insert(linker.begin(), libPath + "HTTP_Endpoints.s");
+  linker.insert(linker.begin(), libPath + "HTTP_Middleware.s");
   linker.insert(linker.begin(), libPath + "Web_Content.s");
   linker.insert(linker.begin(), libPath + "Web_Content_Bind.s");
   linker.insert(linker.begin(), libPath + "JSON.s");
@@ -458,7 +459,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   }
 
   system(gcc.c_str());
-  linker.erase(linker.begin(), linker.begin() + 28);
+  linker.erase(linker.begin(), linker.begin() + 29);
 
   if (!config.asm_)
     for (auto &s : linker) {

@@ -8,10 +8,12 @@ import {methodToString} from "HTTP" under http;
 import string from "String";
 import {print} from "String" under str;
 import {printHex} from "io" under io;
+import Middleware from "HTTP/Middleware";
 
 class Server {
     contract {
         const List endpoints = new List(Endpoint);
+        const List middlewares = new List(Middleware);
         int port = 8080;
     };
 
@@ -25,6 +27,11 @@ class Server {
         my.endpoints.pushBack(endpoint);
     };
 
+    void addMiddleware(const Middleware middleware) {
+        my.middlewares.stringFunc = Middleware.toString;
+        my.middlewares.pushBack(middleware);
+    };
+
     void listen() {
         str.print(`listening on port: {my.port}\n`);
         serve(my.port, [const adr msg, const Server self] => {
@@ -33,7 +40,15 @@ class Server {
                 const Endpoint e = self.endpoints.get(i);
                 if http.methodToString(e.method) == http.methodToString(msg.method) & e.path == msg.endpoint {
                     const let handler = e.imp;
-                    const Result response = handler(self, msg);
+                    mutable any data = msg;
+
+                    for int k = 0; k < self.middlewares.getCount(); k++ {
+                        const Middleware m = self.middlewares.get(k);
+                        const adr implementation = m.implementation;
+                        data = implementation(self, data);
+                    };
+
+                    const Result response = handler(self, data);
                     if response.hasError() {
                         const string error = response.getError();
                         const HTTPResponce fail = new HTTPResponce(error.cstr(), "500", "Internal Server Error");
