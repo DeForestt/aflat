@@ -30,6 +30,8 @@ class Endpoint {
 };
 
 class Endpoints {
+    int id = 0;
+
     Endpoints init(const Map<Server> imp, const Server context, const string path) {
         const let endpoints = imp(context);
         if endpoints.has("GET") {
