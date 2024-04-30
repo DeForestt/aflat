@@ -19,6 +19,7 @@
 #include "Parser/AST/Statements/Destructure.hpp"
 #include "Parser/AST/Statements/Enum.hpp"
 #include "Parser/AST/Statements/For.hpp"
+#include "Parser/AST/Statements/ForEach.hpp"
 #include "Parser/AST/Statements/Function.hpp"
 #include "Parser/AST/Statements/If.hpp"
 #include "Parser/AST/Statements/Import.hpp"

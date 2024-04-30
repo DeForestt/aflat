@@ -1,0 +1,63 @@
+.needs <std>
+import Result from "Utils/Result";
+import Function from "Utils/Functions";
+import { accept, reject } from "Utils/Result" under std;
+
+class Iterator {
+    contract {
+        Result<> _next = NULL;
+        Result<> _peek = NULL;
+    };
+
+    Iterator init() {
+        return my;
+    };
+
+    Result next() {
+        if my._next == NULL
+            panic("No next function attached to iterator.");
+        
+        return my._next();
+    };
+
+    Result peek() {
+        if my._peek == NULL
+            panic("No peek function attached to iterator.");
+        
+        return my._peek();
+    };
+};
+
+// All this class does is provide a convenient way to attach a next function to an iterator. Using a decorator.
+class Next {
+    int value;
+
+    Next init(const Result<> foo, const Iterator context) {
+        if context._next != NULL
+            panic("Cannot overwrite next function on iterator.");
+        context._next = foo;
+        return my;
+    };
+};
+
+// All this class does is provide a convenient way to attach a peek function to an iterator. Using a decorator.
+class Peek {
+    int value;
+
+    Peek init(const Result<> foo, const Iterator context) {
+        if context._peek != NULL
+            panic("Cannot overwrite peek function on iterator.");
+        context._peek = foo;
+        return my;
+    };
+};
+
+export void forEach(const Iterator iterator, const void<any, ?any> callback, ?const any args) {
+    while true {
+        const Result result = iterator.next();
+        if result.hasError()
+            break;
+
+        callback(result.value([] => panic("Failed to resolve")), args);
+    };
+};

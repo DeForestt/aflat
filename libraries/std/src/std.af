@@ -3,6 +3,9 @@
 
 import * from "io" under io;
 import string from "String";
+import Iterator from "Collections/Iterator";
+import Result from "Utils/Result";
+import { accept, reject } from "Utils/Result" under res;
 import { fString } from "String" under st;
 
 Block head = NULL;
@@ -255,4 +258,14 @@ adr create(const int size, ? const any value) {
     
     memcpy(ptr, ?value, size);
     return ptr;
+};
+
+void _fEachOr(const Iterator iterator, const void<any, ?any> callback, ?const any args) {
+    while true {
+        const Result result = iterator.next();
+        if result.hasError()
+            break;
+
+        callback(result.value([] => panic("Failed to resolve")), args);
+    };
 };
