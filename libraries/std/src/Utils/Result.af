@@ -10,7 +10,7 @@ You will be sacrificing type safety for error handling.
 dynamic safe class Result {
 	private mutable any value = value;
 	private mutable bool success = error == NULL;
-	private mutable string error = if error == NULL "No error." else error;
+	private mutable string error = if error == NULL `No error.` else new string(error);
 	private mutable int refcount = 1;
 
 	Result get() {
@@ -26,7 +26,7 @@ dynamic safe class Result {
 		if my.success
 			return acc(my.value, arg, arg2)
 		else
-			return rej(new string(my.error), arg, arg2);
+			return rej(my.error, arg, arg2);
 	};
 
 	public any value(const Function onError, * const any arg) {

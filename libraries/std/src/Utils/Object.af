@@ -74,3 +74,16 @@ safe dynamic class Field {
         };
     };
 };
+
+export Result match(const Object obj, const Map cases, ? const any args) {
+    if !cases.has(obj.type().cstr()) {
+        if cases.has("_") {
+            const adr defaultCase = cases.get("_");
+            return res.accept(defaultCase(obj, args));
+        } else {
+            return res.reject("Match map does not contain a case for the object type");
+        };
+    };
+    const adr case = cases.get(obj.type().cstr());
+    return res.accept(case(obj, args));
+};
