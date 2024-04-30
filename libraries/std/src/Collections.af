@@ -1,8 +1,9 @@
 .needs <std>
 
 import * from "io" under io;
-import string from "String" under string;
-import Property from "Utils/Properties" under Property;
+import string from "String";
+import Result from "Utils/Result";
+import Property from "Utils/Properties";
 
 class ICollection{
     contract {

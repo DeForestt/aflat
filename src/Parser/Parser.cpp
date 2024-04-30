@@ -435,6 +435,8 @@ ast::Statement *parse::Parser::parseStmt(
       output = new ast::While(tokens, *this);
     } else if (obj.meta == "for") {
       output = new ast::For(tokens, *this);
+    } else if (obj.meta == "foreach") {
+      output = new ast::ForEach(tokens, *this);
     } else if (obj.meta == "struct") {
       output = new ast::Struct(tokens, *this);
     } else if (obj.meta == "class") {
