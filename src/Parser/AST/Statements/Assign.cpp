@@ -71,6 +71,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
         }
       }
     } else if (!(var && var->clean)) {
+      std::cout << "assigning clean var to reference" << std::endl;
       this->reference = true;
     }
   }

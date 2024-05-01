@@ -41,6 +41,10 @@ gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
   // the __fEachOr should be defined in the standard library this is the
   // obviscated name for the forEach function
   auto state = new ast::Var();
+  auto decAssign = new DecAssign();
+  decAssign->declare = new Declare();
+  decAssign->declare->ident = "*stis*";
+  decAssign->expr = state;
   state->Ident = "state";
   call->ident = "_fEachOr";
   call->Args.push(this->iterator);

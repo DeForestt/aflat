@@ -71,7 +71,7 @@ gen::GenerationResult const Destructure::generate(
     auto resolved = generator.resolveSymbol(temp_ident, var->modList, dump,
                                             links::LinkedList<ast::Expr *>());
     if (!std::get<2>(resolved)) {
-      generator.alert(ident + " is does not exist on the type");
+      generator.alert(ident + " does not exist on the type");
     }
     auto symbol = &std::get<1>(resolved);
     const auto mutable_ =

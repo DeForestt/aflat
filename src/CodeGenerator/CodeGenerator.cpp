@@ -669,9 +669,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         gen::Class *cl = new gen::Class();
         cl->Ident = boost::uuids::to_string(boost::uuids::random_generator()());
         int byteMod = 0;
-        for (auto sym : inScope) {
-          auto newSym = sym;
-          byteMod += this->getBytes(sym.type.size);
+        for (auto sym = inScope.rbegin(); sym != inScope.rend(); ++sym) {
+          auto newSym = *sym;
+
+          byteMod += this->getBytes(sym->type.size);
           newSym.byteMod = byteMod;
           cl->SymbolTable.push(newSym);
           cl->publicSymbols.push(newSym);
@@ -1495,7 +1496,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     auto saveLambdaReturns = this->lambdaReturns = "void";
     auto saveLambdaSize = this->lambdaSize = asmc::QWord;
 
-    gen::scope::ScopeManager::getInstance()->pushScope(false);
+    gen::scope::ScopeManager::getInstance()->pushScope(true);
     OutputFile.lambdas->operator<<(this->GenSTMT(func));
     gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
 
@@ -1918,9 +1919,10 @@ void gen::CodeGenerator::GenArgs(ast::Statement *STMT, asmc::File &OutputFile) {
           cl->Ident =
               boost::uuids::to_string(boost::uuids::random_generator()());
           int byteMod = 0;
-          for (auto sym : inScope) {
-            auto newSym = sym;
-            byteMod += this->getBytes(sym.type.size);
+          for (auto sym = inScope.rbegin(); sym != inScope.rend(); sym++) {
+            auto newSym = *sym;
+
+            byteMod += this->getBytes(sym->type.size);
             newSym.byteMod = byteMod;
             cl->SymbolTable.push(newSym);
             cl->publicSymbols.push(newSym);
