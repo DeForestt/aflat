@@ -4,6 +4,8 @@ import * from "io" under io;
 import string from "String";
 import Result from "Utils/Result";
 import Property from "Utils/Properties";
+import Iterator from "Collections/Iterator";
+import Scroller from "Collections/Scroller";
 
 class ICollection{
     contract {
@@ -639,6 +641,10 @@ class List {
         };
         ret = ret + "]";
         return ret;
+    };
+
+    Scroller scroll() {
+        return new Scroller(my);
     };
 
     int del() {

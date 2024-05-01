@@ -37,4 +37,6 @@ aflat ./libraries/std/src/JSON/Parse.af ./libraries/std/Parse.s
 mv ./libraries/std/Parse.s ./libraries/std/JSON_Parse.s
 aflat ./libraries/std/src/JSON/Property.af ./libraries/std/JSON_Property.s
 aflat ./libraries/std/src/Collections/Iterator.af ./libraries/std/Iterator.s
+aflat ./libraries/std/src/Collections/Scroller.af ./libraries/std/Scroller.s
+aflat ./libraries/std/src/Collections/Enumerator.af ./libraries/std/Enumerator.s
 gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c

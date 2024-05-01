@@ -1,0 +1,32 @@
+.needs <std>
+
+import Iterator, Next, Peek from "Collections/Iterator";
+import Result from "Utils/Result";
+import {accept, reject} from "Utils/Result" under res;
+import Map from "Utils/Map";
+
+class Enumerator signs Iterator {
+    private const Iterator iterator = iterator;
+    int index = 0;
+
+    Result next() : Next {
+        const int i = my.index;
+        my.index = my.index + 1;
+        const let val = my.iterator.next();
+        if val.hasError() return val;
+        const any val = val.value([] => panic("Iterator returned empty value"));
+        const let map = {
+            "value": val,
+            "index": i
+        };
+        return res.accept(map);
+    };
+
+    Enumerator init(const Iterator iterator) {
+       return my;
+    };
+};
+
+export Enumerator enumerate(const Iterator iterator) {
+    return new Enumerator(iterator);
+};
