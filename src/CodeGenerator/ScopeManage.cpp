@@ -62,6 +62,17 @@ void ScopeManager::pushScope(bool func) {
   }
 };
 
+std::string removeTildes(const std::string &input) {
+  // Find the first character that is not a tilde
+  size_t start = input.find_first_not_of('~');
+
+  // If no non-tilde character is found, return an empty string
+  if (start == std::string::npos) return "";
+
+  // Create a substring from the first non-tilde character to the end
+  return input.substr(start);
+}
+
 void ScopeManager::popScope(CodeGenerator *callback, asmc::File &OutputFile,
                             bool fPop = false) {
   using namespace gen::utils;
@@ -103,7 +114,8 @@ void ScopeManager::popScope(CodeGenerator *callback, asmc::File &OutputFile,
       }
       // find any symbols that have the same name and remove an underscore
       for (int j = 0; j < this->stack.size(); j++) {
-        if (this->stack[j].symbol == sym.symbol && sym.symbol != "") {
+        if (removeTildes(this->stack[j].symbol) == sym.symbol &&
+            sym.symbol != "") {
           if (this->stack[j].underscores > 0) {
             this->stack[j].symbol = this->stack[j].symbol.substr(1);
             this->stack[j].underscores--;

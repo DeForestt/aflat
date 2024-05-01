@@ -40,9 +40,12 @@ gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
   auto call = new Call();
   // the __fEachOr should be defined in the standard library this is the
   // obviscated name for the forEach function
+  auto state = new ast::Var();
+  state->Ident = "state";
   call->ident = "_fEachOr";
   call->Args.push(this->iterator);
   call->Args.push(this->lambda);
+  call->Args.push(state);
   return call->generate(generator);
 }
 }  // namespace ast

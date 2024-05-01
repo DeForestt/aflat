@@ -1494,7 +1494,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     this->returnType.typeName = "--std--flex--function";
     auto saveLambdaReturns = this->lambdaReturns = "void";
     auto saveLambdaSize = this->lambdaSize = asmc::QWord;
+
+    gen::scope::ScopeManager::getInstance()->pushScope(false);
     OutputFile.lambdas->operator<<(this->GenSTMT(func));
+    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
 
     this->returnType = saveRetType;
 
