@@ -2,6 +2,7 @@
 import Result from "Utils/Result";
 import Function from "Utils/Functions";
 import { accept, reject } from "Utils/Result" under std;
+import Map from "Utils/Map";
 
 class Iterator {
     contract {
@@ -49,15 +50,5 @@ class Peek {
             panic("Cannot overwrite peek function on iterator.");
         context._peek = foo;
         return my;
-    };
-};
-
-export void forEach(const Iterator iterator, const void<any, ?any> callback, ?const any args) {
-    while true {
-        const Result result = iterator.next();
-        if result.hasError()
-            break;
-
-        callback(result.value([] => panic("Failed to resolve")), args);
     };
 };
