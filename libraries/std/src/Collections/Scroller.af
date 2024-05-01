@@ -1,0 +1,31 @@
+.needs <std>
+
+import Iterator, Next, Peek from "Collections/Iterator";
+import List from "Collections";
+import Result from "Utils/Result";
+import { accept, reject } from "Utils/Result" under res;
+
+class Scroller signs Iterator {
+    private int index = 0;
+    private List list = list;
+
+    Result next() : Next {
+        if my.index < my.list.getCount() {
+            const int i = my.index;
+            my.index = my.index + 1;
+            return res.accept(my.list.get(i));
+        };
+        return res.reject("End of list");
+    };
+
+    Result peek() : Peek {
+        if my.index < my.list.getCount() {
+            return res.accept(my.list.get(my.index));
+        };
+        return res.reject("End of list");
+    };
+
+    Scroller init(const List list) {
+        return my;
+    };
+};

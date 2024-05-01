@@ -444,6 +444,8 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   linker.insert(linker.begin(), libPath + "JSON_Parse.s");
   linker.insert(linker.begin(), libPath + "JSON_Property.s");
   linker.insert(linker.begin(), libPath + "Iterator.s");
+  linker.insert(linker.begin(), libPath + "Enumerator.s");
+  linker.insert(linker.begin(), libPath + "Scroller.s");
 
   // run gcc on the linkerList
   std::string linkerList = "";
@@ -460,7 +462,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   }
 
   system(gcc.c_str());
-  linker.erase(linker.begin(), linker.begin() + 30);
+  linker.erase(linker.begin(), linker.begin() + 32);
 
   if (!config.asm_)
     for (auto &s : linker) {
