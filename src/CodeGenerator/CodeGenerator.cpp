@@ -665,13 +665,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.access = "$0";
         output.type = "bool";
       } else if (this->inFunction && var.Ident == "state") {
-        auto inScope = gen::scope::ScopeManager::getInstance()->getScope();
+        auto inScope = gen::scope::ScopeManager::getInstance()->getScope(true);
         gen::Class *cl = new gen::Class();
         cl->Ident = boost::uuids::to_string(boost::uuids::random_generator()());
         int byteMod = 0;
-        for (auto sym : inScope) {
-          auto newSym = sym;
-          byteMod += this->getBytes(sym.type.size);
+        for (auto sym = inScope.rbegin(); sym != inScope.rend(); ++sym) {
+          auto newSym = *sym;
+          if (sym->mutable_) {
+            gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
+          }
+          byteMod += this->getBytes(sym->type.size);
           newSym.byteMod = byteMod;
           cl->SymbolTable.push(newSym);
           cl->publicSymbols.push(newSym);
@@ -1494,7 +1497,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     this->returnType.typeName = "--std--flex--function";
     auto saveLambdaReturns = this->lambdaReturns = "void";
     auto saveLambdaSize = this->lambdaSize = asmc::QWord;
+
+    gen::scope::ScopeManager::getInstance()->pushScope(true);
     OutputFile.lambdas->operator<<(this->GenSTMT(func));
+    gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
 
     this->returnType = saveRetType;
 
@@ -1911,13 +1917,15 @@ void gen::CodeGenerator::GenArgs(ast::Statement *STMT, asmc::File &OutputFile) {
           arg->type = std::get<1>(resolved).type;
         } else if (arg->requestType == "state") {
           gen::Class *cl = new gen::Class();
-          auto inScope = gen::scope::ScopeManager::getInstance()->getScope();
+          auto inScope =
+              gen::scope::ScopeManager::getInstance()->getScope(false);
           cl->Ident =
               boost::uuids::to_string(boost::uuids::random_generator()());
           int byteMod = 0;
-          for (auto sym : inScope) {
-            auto newSym = sym;
-            byteMod += this->getBytes(sym.type.size);
+          for (auto sym = inScope.rbegin(); sym != inScope.rend(); sym++) {
+            auto newSym = *sym;
+
+            byteMod += this->getBytes(sym->type.size);
             newSym.byteMod = byteMod;
             cl->SymbolTable.push(newSym);
             cl->publicSymbols.push(newSym);

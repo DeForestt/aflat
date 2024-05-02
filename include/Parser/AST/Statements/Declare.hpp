@@ -13,6 +13,7 @@ class Declare : public Arg, public Statement {
   std::string TypeName;
   std::string requestType;
   links::LinkedList<std::string> modList;
+  bool mask = false;
   bool mut = true;
   Type type;
   Declare() = default;

@@ -19,7 +19,7 @@ class Symbol {
   ast::Type type;
   bool mutable_ = true;
   bool readOnly = false;
-  bool mask;
+  bool mask = false;
   int byteMod;
   bool usable = true;
   int underscores = 0;

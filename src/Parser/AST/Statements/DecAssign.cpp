@@ -82,7 +82,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
         }
       }
       int byteMod = gen::scope::ScopeManager::getInstance()->assign(
-          dec->ident, dec->type, false, this->mute);
+          dec->ident, dec->type, this->declare->mask, this->mute);
       auto s = gen::scope::ScopeManager::getInstance()->get(dec->ident);
       s->usable = false;
       s->refCount--;

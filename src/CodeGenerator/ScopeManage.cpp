@@ -62,6 +62,17 @@ void ScopeManager::pushScope(bool func) {
   }
 };
 
+std::string removeTildes(const std::string &input) {
+  // Find the first character that is not a tilde
+  size_t start = input.find_first_not_of('~');
+
+  // If no non-tilde character is found, return an empty string
+  if (start == std::string::npos) return "";
+
+  // Create a substring from the first non-tilde character to the end
+  return input.substr(start);
+}
+
 void ScopeManager::popScope(CodeGenerator *callback, asmc::File &OutputFile,
                             bool fPop = false) {
   using namespace gen::utils;
@@ -80,7 +91,7 @@ void ScopeManager::popScope(CodeGenerator *callback, asmc::File &OutputFile,
         sym.symbol.find("lambda") == std::string::npos &&
         sym.symbol.find_first_not_of("0123456789") != std::string::npos) {
       // if the symbol has only numbers in it then it is a temp variable
-      if (sym.symbol[0] != '~' && sym.symbol[0] != '$') {
+      if (sym.symbol[0] != '~' && sym.symbol[0] != '$' && !sym.mask) {
         if (sym.refCount < 1 && sym.symbol.substr(0, 2) != "__") {
           callback->alert("Symbol \"" + sym.symbol +
                               "\" is assigned but never "
@@ -103,7 +114,8 @@ void ScopeManager::popScope(CodeGenerator *callback, asmc::File &OutputFile,
       }
       // find any symbols that have the same name and remove an underscore
       for (int j = 0; j < this->stack.size(); j++) {
-        if (this->stack[j].symbol == sym.symbol && sym.symbol != "") {
+        if (removeTildes(this->stack[j].symbol) == sym.symbol &&
+            sym.symbol != "") {
           if (this->stack[j].underscores > 0) {
             this->stack[j].symbol = this->stack[j].symbol.substr(1);
             this->stack[j].underscores--;
@@ -173,22 +185,23 @@ gen::Symbol *ScopeManager::get(std::string symbol) {
   return nullptr;
 };
 
-std::vector<gen::Symbol> ScopeManager::getScope() {
+std::vector<gen::Symbol> ScopeManager::getScope(const bool used) {
   std::vector<gen::Symbol> scope;
   for (int i = this->stack.size() - 1; i >= 0; i--) {
     if (this->stack[i].symbol != "") {
+      if (used) this->stack[i].refCount++;
       scope.push_back(this->stack[i]);
     }
   }
   return scope;
 };
 
-void ScopeManager::addAssign(std::string symbol) {
+void ScopeManager::addAssign(std::string symbol, bool get = true) {
   for (int i = this->stack.size() - 1; i >= 0; i--) {
     if (this->stack[i].symbol == symbol) {
       this->stack[i].assignCount++;
       // cancel the ref that was added when getting the symbol
-      this->stack[i].refCount--;
+      if (get) this->stack[i].refCount--;
     }
   }
 };
