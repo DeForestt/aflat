@@ -151,8 +151,8 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
     m1->logicalLine = this->logicalLine;
     m1->from = output;
     m1->size = asmc::QWord;
-    m1->to = generator.registers["%eax"]->get(asmc::QWord);
-    mov->to = "(" + generator.registers["%eax"]->get(asmc::QWord) + ")";
+    m1->to = generator.registers["%r11"]->get(asmc::QWord);
+    mov->to = "(" + generator.registers["%r11"]->get(asmc::QWord) + ")";
     file.text << m1;
   } else {
     mov->to = output;
