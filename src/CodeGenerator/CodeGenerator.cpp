@@ -96,6 +96,8 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId) {
   this->registers << asmc::Register("rdi", "edi", "di", "dil");
   this->registers << asmc::Register("rsp", "esp", "sp", "spl");
   this->registers << asmc::Register("rbp", "ebp", "bp", "bpl");
+  this->registers << asmc::Register("r8", "r8d", "r8w", "r8b");
+  this->registers << asmc::Register("r9", "r9d", "r9w", "r9b");
   this->registers << asmc::Register("r11", "r11d", "r11w", "r11b");
   this->registers << asmc::Register("r12", "r12d", "r12w", "r12b");
   this->registers << asmc::Register("r13", "r13d", "r13w", "r13b");

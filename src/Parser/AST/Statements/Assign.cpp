@@ -145,14 +145,28 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
 
   asmc::Size size;
   std::string output = std::get<0>(resolved);
+  asmc::Pop *pop = nullptr;
   if (this->reference == true) {
     //
     asmc::Mov *m1 = new asmc::Mov;
     m1->logicalLine = this->logicalLine;
     m1->from = output;
     m1->size = asmc::QWord;
-    m1->to = generator.registers["%eax"]->get(asmc::QWord);
-    mov->to = "(" + generator.registers["%eax"]->get(asmc::QWord) + ")";
+    m1->to = generator.registers["%r9"]->get(asmc::QWord);
+    mov->to = "(" + generator.registers["%r9"]->get(asmc::QWord) + ")";
+
+    asmc::Push *push = new asmc::Push();
+    push->logicalLine = this->logicalLine;
+    push->size = asmc::QWord;
+    push->op = generator.registers["%r9"]->get(asmc::QWord);
+    file.text << push;
+
+    pop = new asmc::Pop();
+    pop->logicalLine = this->logicalLine;
+    pop->size = asmc::QWord;
+    pop->op = generator.registers["%r11"]->get(asmc::QWord);
+
+    file.text << push;
     file.text << m1;
   } else {
     mov->to = output;
@@ -167,6 +181,9 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   mov->logicalLine = this->logicalLine;
   file.text << mov2;
   file.text << mov;
+  if (pop != nullptr) {
+    file.text << pop;
+  }
   file << std::get<3>(resolved);
   if (this->modList.count == 0)
     gen::scope::ScopeManager::getInstance()->addAssign(fin->symbol);
