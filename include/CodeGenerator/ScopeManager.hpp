@@ -56,13 +56,13 @@ class ScopeManager {
   int assign(std::string symbol, ast::Type type, bool mask, bool mut = true);
 
   // Add to a symbols assign count
-  void addAssign(std::string symbol);
+  void addAssign(std::string symbol, const bool get = true);
 
   // Get a symbol
   gen::Symbol *get(std::string symbol);
 
   // Get all of the symbols in the current scope as a vector
-  std::vector<gen::Symbol> getScope();
+  std::vector<gen::Symbol> getScope(const bool used);
 
   // push a new scope
   void pushScope(bool func);

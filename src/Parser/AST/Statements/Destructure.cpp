@@ -80,10 +80,14 @@ gen::GenerationResult const Destructure::generate(
         ident, ast::ScopeMod::Public, symbol->type.typeName, symbol->mutable_,
         symbol->type, "", links::LinkedList<std::string>());
     auto decAssign = new ast::DecAssign();
+    if (mutable_ && symbol->mutable_) {
+      gen::scope::ScopeManager::getInstance()->addAssign(symbol->symbol, false);
+    }
     decAssign->declare = decl;
     decAssign->mute = mutable_;
     decAssign->expr = var;
     decAssign->logicalLine = this->logicalLine;
+    decAssign->declare->mask = true;
     file << decAssign->generate(generator).file;
   }
   return {file, std::nullopt};

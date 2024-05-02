@@ -23,7 +23,7 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
       this->type = std::get<1>(resolved).type;
     } else if (this->requestType == "state") {
       gen::Class *cl = new gen::Class();
-      auto inScope = gen::scope::ScopeManager::getInstance()->getScope();
+      auto inScope = gen::scope::ScopeManager::getInstance()->getScope(false);
       cl->Ident = boost::uuids::to_string(boost::uuids::random_generator()());
       int byteMod = 0;
       for (auto sym : inScope) {
