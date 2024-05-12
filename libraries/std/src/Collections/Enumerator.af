@@ -27,6 +27,38 @@ class Enumerator signs Iterator {
     };
 };
 
+safe dynamic class Range signs Iterator {
+    private const int start = start;
+    private const int end = end;
+    private mutable int step = step;
+    private mutable int index = start;
+
+    private mutable int refcount = 1;
+
+    Result next() : Next {
+        if my.index >= my.end {
+            return res.reject("End of range");
+        };
+        const let val = my.index;
+        my.index = my.index + my.step;
+        return res.accept(val);
+    };
+
+    Range init(const int start, const int end, ? const int step) {
+        my.step = if step == 0 1 else step;
+        return my;
+    };
+
+    Range get() {
+        my.refcount = my.refcount + 1;
+        return my;
+    };
+};
+
+export Range range(const int start, const int end, ? const int step) {
+    return new Range(start, end, step);
+};
+
 export Enumerator enumerate(const Iterator iterator) {
     return new Enumerator(iterator);
 };
