@@ -1,0 +1,193 @@
+.needs <std>
+import {case, require} from "ATest.af" under test;
+import TestSuite from "ATest.af";
+import string from "String";
+
+import List from "Collections";
+
+private bool test_getCount() : test.case("getCount") {
+    let l = new List(adr);
+    l.pushBack("1");
+    l.pushBack("2");
+    l.pushBack("3");
+
+    return test.require(l.getCount() == 3, `Expected list count to be 3, got {l.getCount()}`);
+};
+
+private bool test_pushBack() : test.case("pushBack") {
+    let l = new List(string);
+    l.pushBack(`1`);
+    string result = l.get(0);
+    return (
+        test.require(l.getCount() == 1, `Expected list count to be 1, got {l.getCount()}`) &
+        test.require(result == `1`, `Expected list[0] to be '1', got {result}`)
+    );
+};
+
+private bool test_get_call_syntax() : test.case("get call syntax") {
+    let l = new List(string);
+    l.pushBack(`1`);
+    string result = l(0);
+    return test.require(result == `1`, `Expected list[0] to be '1', got {result}`);
+};
+
+private bool test_popBack() : test.case("popBack") {
+    let l = new List(string);
+    l.pushBack(`1`);
+    l.pushBack(`2`);
+    l.pushBack(`3`);
+    l.popBack();
+    string result = l(1);
+    return (
+        test.require(l.getCount() == 2, `Expected list count to be 2, got {l.getCount()}`) &
+        test.require(result == `2`, `Expected list[1] to be '2', got {result}`)
+    );
+};
+
+private bool test_back() : test.case("back") {
+    let l = new List(string);
+    l.pushBack(`1`);
+    l.pushBack(`2`);
+    l.pushBack(`3`);
+    string result = l.back();
+    return (
+        test.require(result == `3`, `Expected list.back() to be '3', got {result}`) &
+        test.require(l.getCount() == 3, `Expected list count to be 3, got {l.getCount()}`)
+    );
+};
+
+private bool test_forEach() : test.case("forEach") {
+    let l = new List(string);
+    l.pushBack(`1`);
+    l.pushBack(`2`);
+    l.pushBack(`3`);
+    string result = "";
+
+    l.forEach([string val, int __index, mutable string acc] => acc = acc + val, result);
+
+    return test.require(result == `123`, `Expected list.forEach() to be '123', got {result}`);
+};
+
+private bool test_findFirst() : test.case("findFirst") {
+    let l = new List(adr);
+    l.pushBack(create(int, 1));
+    l.pushBack(create(int, 2));
+    l.pushBack(create(int, 3));
+    l.pushBack(create(int, 4));
+    l.pushBack(create(int, 5));
+
+    int& result = l.findFirst([int &val] => return val == 3);
+    int& firstDivisibleByTwo = l.findFirst([int &val] => return (val % 2) == 0 & val != 2);
+
+    return (
+        test.require(result == 3, `Expected list.findFirst() to be 3, got {result}`) &
+        test.require(firstDivisibleByTwo == 4, `Expected list.findFirst() to be 4, got {firstDivisibleByTwo}`)
+    );
+};
+
+private bool test_set() : test.case("set") {
+    let l = new List(string);
+    l.pushBack(`1`);
+    l.pushBack(`2`);
+    l.pushBack(`3`);
+    l.set(1, `4`);
+    string result = l(1);
+    return test.require(result == `4`, `Expected list[1] to be '4', got {result}`);
+};
+
+private bool test_insert() : test.case("insert") {
+    let l = new List(string);
+    l.pushBack(`1`);
+    l.pushBack(`2`);
+    l.pushBack(`3`);
+    l.insert(1, `4`);
+    string result = l(1);
+    return (
+        test.require(result == `4`, `Expected list[1] to be '4', got {result}`) &
+        test.require(l.getCount() == 4, `Expected list count to be 4, got {l.getCount()}`)
+    );
+};
+
+private bool test_drop() : test.case("drop") {
+    let l = new List(string);
+    l.pushBack(`1`);
+    l.pushBack(`2`);
+    l.pushBack(`3`);
+    l.drop(1);
+    string result = l(1);
+    return (
+        test.require(result == `3`, `Expected list[1] to be '3', got {result}`) &
+        test.require(l.getCount() == 2, `Expected list count to be 2, got {l.getCount()}`)
+    );
+};
+
+private bool test_map() : test.case("map") {
+    let l = new List(adr);
+    l.pushBack(create(int, 1));
+    l.pushBack(create(int, 2));
+
+    let result = l.map(adr, [int &val] => {
+        int v = val * 2;
+        return create(int, v);
+    });
+
+    int& first = result.get(0);
+    int& second = result.get(1);
+
+    return (
+        test.require(result.getCount() == 2, `Expected list count to be 2, got {result.getCount()}`) &
+        test.require(first == 2, `Expected list[0] to be 2, got {first}`) &
+        test.require(second == 4, `Expected list[1] to be 4, got {second}`)
+    );
+};
+
+private bool test_where() : test.case("where") {
+    let l = new List(adr);
+    l.pushBack(create(int, 1));
+    l.pushBack(create(int, 2));
+    l.pushBack(create(int, 3));
+    l.pushBack(create(int, 4));
+    l.pushBack(create(int, 5));
+
+    let result = l.where([int &val] => return val % 2 == 0);
+
+    int& first = result.get(0);
+    int& second = result.get(1);
+
+    return (
+        test.require(result.getCount() == 2, `Expected list count to be 2, got {result.getCount()}`) &
+        test.require(first == 2, `Expected list[0] to be 2, got {first}`) &
+        test.require(second == 4, `Expected list[1] to be 4, got {second}`)
+    );
+};
+
+private bool test_reduce() : test.case("reduce") {
+    let l = new List(adr);
+    l.pushBack(create(int, 1));
+    l.pushBack(create(int, 2));
+    l.pushBack(create(int, 3));
+    l.pushBack(create(int, 4));
+    l.pushBack(create(int, 5));
+
+    int result = l.reduce([int acc, int &val] => return acc + val);
+
+    return test.require(result == 15, `Expected list.reduce() to be 15, got {result}`);
+};
+
+export TestSuite getSuite() {
+    let suite = new TestSuite("List Test Suite");
+    suite.addCase(test_getCount);
+    suite.addCase(test_pushBack);
+    suite.addCase(test_get_call_syntax);
+    suite.addCase(test_popBack);
+    suite.addCase(test_back);
+    suite.addCase(test_forEach);
+    suite.addCase(test_findFirst);
+    suite.addCase(test_set);
+    suite.addCase(test_insert);
+    suite.addCase(test_drop);
+    suite.addCase(test_map);
+    suite.addCase(test_where);
+    suite.addCase(test_reduce);
+    return suite;
+};
