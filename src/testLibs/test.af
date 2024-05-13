@@ -6,14 +6,17 @@ import TestSuite from "ATest.af";
 import { getSuite } from "./src/testLibs/strings/strings" under st1;
 import { getSuite } from "./src/testLibs/strings/stringClass" under string_class;
 import { getSuite } from "./src/testLibs/DateTime/DateTimeTest" under dt;
+import { getSuite } from "./src/testLibs/Collections/ListTest" under list;
 
 int main() {
     TestSuite stringsLib = st1.getSuite();
     let stringClass = string_class.getSuite();
     let dateTime = dt.getSuite();
+    let l = list.getSuite();
 
     stringsLib.run();
     stringClass.run();
     dateTime.run();
+    l.run();
     return test.report();
 };

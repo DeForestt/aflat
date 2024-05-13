@@ -599,7 +599,7 @@ class List {
     };
 
     List where(const adr func, * const adr args) {
-        const let result = new List(my.typeSize, my.count);
+        const let result = new List(my.typeSize, my.count, my.delFunc, my.ini);
         for int i = 0; i < my.count; i = i + 1 {
             const bool res = func(my.get(i), i, args);
             if res {
