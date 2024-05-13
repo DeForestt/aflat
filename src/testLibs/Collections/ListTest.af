@@ -4,6 +4,10 @@ import TestSuite from "ATest.af";
 import string from "String";
 
 import List from "Collections";
+import Scroller from "Collections/Scroller";
+import Enumerator from "Collections/Enumerator";
+import Map from "Utils/Map";
+import { enumerate } from "Collections/Enumerator" under en;
 
 private bool test_getCount() : test.case("getCount") {
     let l = new List(adr);
@@ -174,6 +178,47 @@ private bool test_reduce() : test.case("reduce") {
     return test.require(result == 15, `Expected list.reduce() to be 15, got {result}`);
 };
 
+private bool test_stitch() : test.case("stitch") {
+    let list1 = new List(string);
+    let list2 = new List(string);
+
+    list1.pushBack(`1`);
+    list1.pushBack(`2`);
+    list1.pushBack(`3`);
+    list2.pushBack(`4`);
+    list2.pushBack(`5`);
+
+    list1.stitch(list2);
+
+    string res1 = list1.get(3);
+    string res2 = list1.get(4);
+
+    return (
+        test.require(list1.getCount() == 5, `Expected list1 count to be 5, got {list1.getCount()}`) &
+        test.require(res1 == `4`, `Expected list1[3] to be '4', got {res1}`) &
+        test.require(res2 == `5`, `Expected list1[4] to be '5', got {res2}`)
+    );
+};
+
+private bool test_scroll() : test.case("scroll") {
+    let l = new List(adr);
+    l.pushBack(create(int, 0));
+    l.pushBack(create(int, 1));
+    l.pushBack(create(int, 2));
+
+    mutable bool pass = true;
+    mutable bool& passRef = pass;
+
+    foreach Map values : en.enumerate(l.scroll()) {
+        int index = values("index");
+        int& value = values("value");
+
+        passRef = passRef & test.require(value == index, `Expected value to be {index}, got {value}`);
+    };
+
+    return pass;
+};
+
 export TestSuite getSuite() {
     let suite = new TestSuite("List Test Suite");
     suite.addCase(test_getCount);
@@ -189,5 +234,7 @@ export TestSuite getSuite() {
     suite.addCase(test_map);
     suite.addCase(test_where);
     suite.addCase(test_reduce);
+    suite.addCase(test_stitch);
+    suite.addCase(test_scroll);
     return suite;
 };
