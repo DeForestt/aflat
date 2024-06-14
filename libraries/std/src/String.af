@@ -4,6 +4,7 @@
 import ICollection from "Collections";
 import LinkedList, List from "Collections";
 import Result from "Utils/Result";
+import Function from "Utils/Functions";
 import {accept, reject} from "Utils/Result" under prod;
 import { exp } from "math" under math;
 
