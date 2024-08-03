@@ -430,6 +430,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   linker.insert(linker.begin(), libPath + "CLArgs.s");
   linker.insert(linker.begin(), libPath + "System.s");
   linker.insert(linker.begin(), libPath + "Utils_Result.s");
+  linker.insert(linker.begin(), libPath + "Utils_Option.s");
   linker.insert(linker.begin(), libPath + "Utils_Functions.s");
   linker.insert(linker.begin(), libPath + "Utils_Map.s");
   linker.insert(linker.begin(), libPath + "Utils_Properties.s");
@@ -462,7 +463,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   }
 
   system(gcc.c_str());
-  linker.erase(linker.begin(), linker.begin() + 32);
+  linker.erase(linker.begin(), linker.begin() + 33);
 
   if (!config.asm_)
     for (auto &s : linker) {
