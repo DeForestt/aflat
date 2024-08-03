@@ -6,12 +6,15 @@ import Render from "Utils/Error/Render";
 class Error {
 	contract {
 		private const string _typeName = __typeName__;
-		private mutable adr _render;
+		private mutable string<> _render = NULL;
 	};
 
     private const string message = message.copy();
 
     public void setRender(const string<> render) {
+        if my._render != NULL
+            panic("Render already set.");
+
         my._render = render;
     };
 
@@ -24,6 +27,8 @@ class Error {
     };
 
     public string render() {
+        if my._render == NULL
+            return `Error: {my._typeName}`;
         return my._render();
     };
 
