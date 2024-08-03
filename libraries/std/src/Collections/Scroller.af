@@ -13,14 +13,14 @@ class Scroller signs Iterator {
         if my.index < my.list.getCount() {
             const int i = my.index;
             my.index = my.index + 1;
-            return res.accept(my.list.get(i));
+            return res.accept(my.list.get(i).expect("Currupted list"));
         };
         return res.reject("End of list");
     };
 
     Result peek() : Peek {
         if my.index < my.list.getCount() {
-            return res.accept(my.list.get(my.index));
+            return res.accept(my.list.get(my.index).expect("Currupted list"));
         };
         return res.reject("End of list");
     };

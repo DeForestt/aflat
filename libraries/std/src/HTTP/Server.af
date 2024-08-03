@@ -37,13 +37,13 @@ class Server {
         serve(my.port, [const adr msg, const Server self] => {
             const HTTPMessage msg = new HTTPMessage(msg, true);
             for int i = 0; i < self.endpoints.getCount(); i++ {
-                const Endpoint e = self.endpoints.get(i);
+                const Endpoint e = self.endpoints.get(i).expect("Endpoint count currupted");
                 if http.methodToString(e.method) == http.methodToString(msg.method) & e.path == msg.endpoint {
                     const let handler = e.imp;
                     mutable any data = msg;
 
                     for int k = 0; k < self.middlewares.getCount(); k++ {
-                        const Middleware m = self.middlewares.get(k);
+                        const Middleware m = self.middlewares.get(k).expect("Middleware count currupted");
                         const adr implementation = m.implementation;
                         data = implementation(self, data);
                     };

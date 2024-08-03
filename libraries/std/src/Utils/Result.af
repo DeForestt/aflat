@@ -36,6 +36,13 @@ dynamic safe padantic class Result {
 			return onError(my.error.copy(), arg);
 	};
 
+	public any expect(const string message) {
+		if my.success
+			return my.value
+		else
+			panic(message.cstr());
+	};
+
 	public string getError() {
 		if my.success
 			return `No error.`

@@ -65,23 +65,16 @@ class ArgsList {
     };
 
     Result getArg(const string name) {
-        const Arg arg = my.args.findFirst([const Arg a, const string n] => return a.name == n, name);
-        if arg != NULL {
-            return pt.accept(arg.value);
-        } else {
-            return pt.reject("No such arg");
-        };
+        return my.args.findFirst([const Arg a, const string n] => return a.name == n, name).resolve(
+            [const Arg a] => return pt.accept(a),
+            [] => return pt.reject("No such arg")
+        );
     };
 
     Result getTagLessArg(const int index) {
-        if (index < my.tagLessArgs.getCount()) {
-            return pt.accept(my.tagLessArgs.get(index));
-        } else {
-            return pt.reject("Index out of range");
-        };
-    };
-
-    bool has(const string name) {
-        return my.args.findFirst([const Arg a, const string n] => return a.name == n, name) != NULL;
+        return my.tagLessArgs.get(index).resolve(
+            [const string a] => return pt.accept(a),
+            [const string e] => return pt.reject("Tagless arg does not exist")
+        ),
     };
 };
