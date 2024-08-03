@@ -30,4 +30,8 @@ class Error {
     public bool is(const string type) {
         return my._typeName == type;
     };
+
+    public string toString() {
+        return my.render();
+    };
 };

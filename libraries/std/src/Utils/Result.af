@@ -2,6 +2,7 @@
 import string from "String";
 import Function from "Utils/Functions";
 import Computed from "Utils/Properties";
+import Error from "Utils/Error";
 
 
 /*
