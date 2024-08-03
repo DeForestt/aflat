@@ -534,6 +534,14 @@ class List {
         return my.get(my.count - 1);
     };
 
+    void pushValue(const any value) {
+        if (my.typeSize > 8 )
+            panic("Cannot push a reference by value");
+        const let v = create(my.typeSize, value);
+        my.pushBack(v);
+        free(v);
+    };
+
     int forEach(const any<any, ?int, ?any> func, * const adr args) {
         for int i = 0; i < my.count; i = i + 1 {
             func(my.get(i), i, args);
