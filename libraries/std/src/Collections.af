@@ -6,6 +6,10 @@ import Result from "Utils/Result";
 import Property from "Utils/Properties";
 import Iterator from "Collections/Iterator";
 import Scroller from "Collections/Scroller";
+import Option from "Utils/Option";
+import Result from "Utils/Result";
+import {accept, reject} from "Utils/Result" under res;
+import {some, none} from "Utils/Option" under opt;
 
 class ICollection{
     contract {
@@ -505,33 +509,36 @@ class List {
         return my.count;
     };
 
-    generic get(const int index) {
-        if index >= my.count {
-            return NULL;
+    Result get(const int index) {
+        if index >= my.count | index < 0 {
+            return res.reject(`Index {index} out of bounds of list size {my.count}`);
         };
 
-        return my.head + (index * my.typeSize);
+        const adr val = my.head + (index * my.typeSize);
+
+        return res.accept(val);
     };
 
-    generic _call(const int index) {
+    Result _call(const int index) {
         return my.get(index);
     };
 
-    generic popBack() {
+    Option popBack() {
         if my.count == 0 {
-            return NULL;
+            return opt.none();
         };
 
         my.count = my.count - 1;
-        return my.head + (my.count * my.typeSize);
+        const adr val = my.head + (my.count * my.typeSize);
+        return opt.some(val);
     };
 
     int getCount() {
         return my.count;
     };
 
-    generic back() {
-        return my.get(my.count - 1);
+    Option back() {
+        return my.get(my.count - 1).resolve(opt.some, opt.none);
     };
 
     void pushValue(const any value) {
@@ -542,21 +549,27 @@ class List {
         free(v);
     };
 
+    private any unwrapGet(const int i) {
+        return my.get(i).expect(`Failed to get value at index {i} from list`);
+    };
+
     int forEach(const any<any, ?int, ?any> func, * const adr args) {
         for int i = 0; i < my.count; i = i + 1 {
-            func(my.get(i), i, args);
+            const adr val = my.unwrapGet(i);
+            func(val, i, args);
         };
         return 0;
     };
 
-    generic findFirst(const bool<any, ?any> func, * const adr args) {
+    Option findFirst(const bool<any, ?any> func, * const adr args) {
         for int i = 0; i < my.count; i = i + 1 {
-            const bool brk = func(my.get(i), args);
+            const any val = my.unwrapGet(i);
+            const bool brk = func(val, args);
             if brk == true {
-                return my.get(i);
+                return val;
             };
         };
-        return NULL;
+        return opt.none();
     };
 
     int set(const int index, const adr value) {
@@ -600,8 +613,8 @@ class List {
     List map(const int newTypeSize ,const adr func, * const adr args) {
         const let result = new List(newTypeSize, my.count);
         for int i = 0; i < my.count; i = i + 1 {
-            const adr res = func(my.get(i), i, args);
-            result.pushBack(res);
+            const adr re = func(my.get(i), i, args);
+            result.pushBack(re);
         };
         return result;
     };
@@ -609,25 +622,26 @@ class List {
     List where(const adr func, * const adr args) {
         const let result = new List(my.typeSize, my.count, my.delFunc, my.ini);
         for int i = 0; i < my.count; i = i + 1 {
-            const bool res = func(my.get(i), i, args);
-            if res {
-                result.pushBack(my.get(i));
+            const any val = my.unwrapGet(i);
+            const bool re = func(val, i, args);
+            if re {
+                result.pushBack(val);
             };
         };
         return result;
     };
 
     int reduce(const int<int, any, ?int, ?any> func, * const adr args) {
-        int res = 0;
+        int re = 0;
         for int i = 0; i < my.count; i = i + 1 {
-            res = func(res, my.get(i), i, args);
+            re = func(re, my.unwrapGet(i), i, args);
         };
-        return res;
+        return re;
     };
 
     void stitch(const List other) {
         for int i = 0; i < other.count; i = i + 1 {
-            my.pushBack(other.get(i));
+            my.pushBack(other.unwrapGet(i));
         };
     };
 
@@ -640,7 +654,7 @@ class List {
         const adr stringFunc = my.stringFunc;
         mutable string ret = `List TypeSize: {my.typeSize} Size: {my.size} Count: {my.count} [`;
         for int i = 0; i < my.count; i = i + 1 {
-            const adr data = my.get(i);
+            const adr data = my.unwrapGet(i);
             const string str = stringFunc(data);
             ret = ret + str;
             if i != my.count - 1 {

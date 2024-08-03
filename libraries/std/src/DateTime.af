@@ -201,9 +201,9 @@ export Result mmddyyyyToDate(const string input, *mutable char splitChar){
     if l.getCount() != 3 {
         return pr.reject("Invalid date format")
     };
-    const string month = l.get(0);
-    const string day = l.get(1);
-    const string year = l.get(2);
+    const string month = l.get(0).expect("Invalid date format");
+    const string day = l.get(1).expect("Invalid date format");
+    const string year = l.get(2).expect("Invalid date format");
 
     const string err = "";
     const int month = month.toInt().resolve([const int value] => return value, [const string error, string e] => {

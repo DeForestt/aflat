@@ -322,14 +322,16 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     // search the type list for the type
     gen::Type **udef = this->typeList[typeName];
     if (udef != nullptr) {
-      if (type.typeName == "adr") return true;
       // if the type is a class
       gen::Class *cl = dynamic_cast<gen::Class *>(*udef);
       if (cl != nullptr) {
+        if (type.typeName == "adr" && !cl->padantic) return true;
         gen::Class *parent = cl->parent;
         if (parent != nullptr) {
           if (parent->Ident == type.typeName) return true;
         }
+      } else {
+        if (type.typeName == "adr") return true;
       }
     }
 
@@ -351,7 +353,8 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     }
   }
 
-  if (type.size == asmc::QWord && (typeName == "adr" || typeName == "generic"))
+  if (type.size == asmc::QWord &&
+      (typeName == "adr" || typeName == "generic") && !type.padantic)
     return true;
   if (strict && (type.typeName == "adr" || typeName == "generic")) return true;
 

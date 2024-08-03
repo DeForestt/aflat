@@ -55,7 +55,7 @@ class JSONObject {
             key,
             JSONType.Int
         );
-        const JSONProperty prop = my.properties.get(0);
+        const JSONProperty prop = my.properties.back().orElse([] => panic("No properties found when adding int to JSONObject"));
         const prop = value;
         return my;
     };
@@ -69,7 +69,7 @@ class JSONObject {
             key,
             JSONType.String
         );
-        const JSONProperty prop = my.properties.back();
+        const JSONProperty prop = my.properties.back().orElse([] => panic("No properties found when adding string to JSONObject"));
         const let pointer = malloc(value.len() + 1);
         value.copyTo(pointer);
         prop = pointer;
@@ -85,7 +85,7 @@ class JSONObject {
             key,
             JSONType.Object
         );
-        const JSONProperty prop = my.properties.back();
+        const JSONProperty prop = my.properties.back().orElse([] => panic("No properties found when adding object to JSONObject"));
         prop = value;
         return my;
     };
@@ -99,7 +99,7 @@ class JSONObject {
             key,
             JSONType.List
         );
-        const JSONProperty prop = my.properties.back();
+        const JSONProperty prop = my.properties.back().orElse([] => panic("No properties found when adding list to JSONObject"));
         prop = value;
     };
 
@@ -112,7 +112,7 @@ class JSONObject {
             key,
             JSONType.Boolean
         );
-        const JSONProperty prop = my.properties.back();
+        const JSONProperty prop = my.properties.back().orElse([] => panic("No properties found when adding bool to JSONObject"));
         const prop = val;
     };
 
@@ -123,7 +123,7 @@ class JSONObject {
     string toString() {
         mutable string result = "{";
         for int i = 0; i < my.properties.getCount(); i++ {
-            const JSONProperty prop = my.properties.get(i);
+            const JSONProperty prop = my.properties.get(i).expect("Currupted json properties count while serializing");
             if i != 0 {
                 result = `{result}, `;
             };
@@ -153,7 +153,7 @@ class JSONObject {
 
     Result set(const string key, const any value) {
         for int i = 0; i < my.properties.getCount(); i++ {
-            const JSONProperty prop = my.properties.get(i);
+            const JSONProperty prop = my.properties.get(i).expect("Currupted json properties count");
             if prop.key == key {
                 prop = value;
                 return r.accept(NULL);
@@ -170,7 +170,7 @@ private string parseList(const List val){
         if i != 0 {
             result = `{result}, `;
         };
-        const JSONValue value = val.get(i);
+        const JSONValue value = val.get(i).expect("Currupted json list");
         if value.type == JSONType.String {
             const adr p = value.value;
             result = st.fString("%s\"%a\"", {result, p});

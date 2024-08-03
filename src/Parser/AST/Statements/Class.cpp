@@ -7,7 +7,7 @@
 
 namespace ast {
 Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
-             bool safe, bool dynamic) {
+             bool safe, bool dynamic, bool padantic) {
   this->logicalLine = tokens.peek()->lineCount;
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
@@ -75,6 +75,7 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
     this->contract = nullptr;
   this->safeType = safe;
   this->dynamic = dynamic;
+  this->padantic = padantic;
   this->statement = parser.parseStmt(tokens);
 };
 
@@ -87,6 +88,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   type->nameTable.foo = gen::utils::compareFunc;
   type->safeType = this->safeType;
   type->dynamic = this->dynamic;
+  type->padantic = this->padantic;
   generator.scope = type;
   type->overloadTable.foo = [](ast::Function func, ast::Op op) {
     if (func.op == op) {

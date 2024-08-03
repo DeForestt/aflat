@@ -2,6 +2,7 @@
 import string from "String";
 import Map from "Utils/Map";
 import Result from "Utils/Result";
+import Option from "Utils/Option";
 import { accept, reject } from "Utils/Result" under res;
 
 class Object {
@@ -50,27 +51,28 @@ safe dynamic class Field {
         return my;
     };
 
-    public any get() {
+    public Result get() {
         if my.accessors.has("get") {
-            const adr getter = my.accessors.get("get");
-            return getter(my.context);
+            const adr getter = my.accessors.get("get").or(NULL);
+            return res.accept(getter(my.context));
         } else {
-            panic(`Attempt to read write-only field {my.name}`.cstr());
+            return res.reject(`Attempt to read write-only field {my.name}`);
         };
     };
 
-    public void _set(const any value) {
+    public Result _set(const any value) {
         if my.accessors.has("set") {
-            const adr setter = my.accessors.get("set");
+            const adr setter = my.accessors.get("set").or(NULL);
             const any val = setter(my.context, value);
 
             if my.accessors.has("get") {
-                const adr getter = my.accessors.get("get");
+                const adr getter = my.accessors.get("get").or(NULL);
                 const any newVal = getter(my.context);
                 my.context.set(my.name.cstr(), newVal);
             } else my.context.set(my.name.cstr(), val);
+            return res.accept(val);
         } else {
-            panic(`Attempt to write to read-only field {my.name}`.cstr());
+            return res.reject(`Attempt to write read-only field {my.name}`);
         };
     };
 };
@@ -78,12 +80,12 @@ safe dynamic class Field {
 export Result match(const Object obj, const Map cases, ? const any args) {
     if !cases.has(obj.type().cstr()) {
         if cases.has("_") {
-            const adr defaultCase = cases.get("_");
+            const adr defaultCase = cases.get("_").or(NULL);
             return res.accept(defaultCase(obj, args));
         } else {
             return res.reject("Match map does not contain a case for the object type");
         };
     };
-    const adr case = cases.get(obj.type().cstr());
+    const adr case = cases.get(obj.type().cstr()).or(NULL);
     return res.accept(case(obj, args));
 };

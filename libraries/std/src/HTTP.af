@@ -96,16 +96,16 @@ class HTTPMessage {
         my.origin = rsp;
 
         const let lines = rsp.split('\r');
-        const string firstLine = lines.get(0);
+        const string firstLine = lines.get(0).expect("Invalid HTTP message");
         firstLine.trim();
         const let firstLineParts = firstLine.split(' ');
 
         if (firstLineParts.getCount() < 3) {
             return -1;
         };
-        my.version = firstLineParts.get(0);
-        my.statusCode = firstLineParts.get(1);
-        my.statusMessage = firstLineParts.get(2);
+        my.version = firstLineParts.get(0).expect("Invalid HTTP message");
+        my.statusCode = firstLineParts.get(1).expect("Invalid HTTP message");
+        my.statusMessage = firstLineParts.get(2).expect("Invalid HTTP message");
 
         for int i = 3; i < firstLineParts.getCount(); i++ {
             my.statusMessage = st.fString("%s %s", {my.statusMessage, firstLineParts.get(i)});
@@ -132,13 +132,13 @@ class HTTPMessage {
                 return;
             };
 
-            string key = sections.get(0);
-            string value = sections.get(1);
+            string key = sections.get(0).expect("Invalid HTTP message");
+            string value = sections.get(1).expect("Invalid HTTP message");
 
             if sections.getCount() > 2 {
                 for int i = 2; i < sections.getCount(); i = i + 1 {
                     value = value + ":";
-                    const string t = sections.get(i);
+                    const string t = sections.get(i).expect("Invalid HTTP message");
                     value = value + t;
                 };
             };
@@ -187,7 +187,7 @@ class HTTPMessage {
         my.origin = rsp;
 
         const let lines = rsp.split('\r');
-        const string firstLine = lines.get(0);
+        const string firstLine = lines.get(0).expect("Invalid HTTP message");
         firstLine.trim();
         const let firstLineParts = firstLine.split(' ');
 
@@ -195,9 +195,9 @@ class HTTPMessage {
             return;
         };
 
-        const string method = firstLineParts.get(0);
-        my.endpoint = firstLineParts.get(1);
-        my.version = firstLineParts.get(2);
+        const string method = firstLineParts.get(0).expect("Invalid HTTP message");
+        my.endpoint = firstLineParts.get(1).expect("Invalid HTTP message");
+        my.version = firstLineParts.get(2).expect("Invalid HTTP message");
         my.method = stringToMethod(method);
 
         if my.endpoint.indexOf('?') != -1 {
@@ -228,13 +228,13 @@ class HTTPMessage {
                 return;
             };
 
-            string key = sections.get(0);
-            string value = sections.get(1);
+            string key = sections.get(0).expect("Invalid HTTP message");
+            string value = sections.get(1).expect("Invalid HTTP message");
 
             if sections.getCount() > 2 {
                 for int i = 2; i < sections.getCount(); i = i + 1 {
                     value = value + ":";
-                    const string t = sections.get(i);
+                    const string t = sections.get(i).expect("Invalid HTTP message");
                     value = value + t;
                 };
             };

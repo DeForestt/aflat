@@ -14,7 +14,7 @@ safe class JSONProperty {
 
     JSONProperty init(const any<JSONObject, any> process, const JSONObject context, const string key, const JSONType type) {
         my.context.properties.pushBack(my);
-        const adr new_me = my.context.properties.back();
+        const adr new_me = my.context.properties.back().orElse([] => panic("No properties found when adding int to JSONObject"));
         free(my);
         my = new_me;
     };

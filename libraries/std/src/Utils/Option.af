@@ -1,0 +1,54 @@
+.needs <std>
+import Function from "Utils/Functions";
+
+dynamic safe padantic class Option {
+    private mutable any value = value;
+    private mutable bool hasValue = hasValue;
+    private mutable int refcount = 1;
+
+    Option get() {
+        my.refcount = my.refcount + 1;
+        return my;
+    };
+
+    Option init(const bool hasValue, *const any value) {
+        return my;
+    };
+
+    // The connonical way to work with an Option is to use the resolve function
+    // it requires two functions, one for the case where the value exists, and one for the case where it does not
+    public any resolve(const Function acc, const Function rej, * const any arg, * const any arg2) {
+        if my.hasValue
+            return acc(my.value, arg, arg2)
+        else
+            return rej(NULL, arg, arg2);
+    };
+
+    // returns a value if it exists, otherwise preforms a function
+    public any orElse(const Function onNone, * const any arg) {
+        if my.hasValue
+            return my.value
+        else
+            return onNone(NULL, arg);
+    };
+
+    // returns a value if it exists, otherwise returns a default value
+    public any or(const any defaultValue) {
+        if my.hasValue
+            return my.value
+        else
+            return defaultValue;
+    };
+
+    public bool isSome() {
+        return my.hasValue;
+    };
+};
+
+export Option some(const any value) {
+    return new Option(true, value);
+};
+
+export Option none() {
+    return new Option(false);
+};

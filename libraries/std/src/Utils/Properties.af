@@ -1,5 +1,6 @@
 .needs <std>
 import Map from "Utils/Map";
+import Option from "Utils/Option";
 import {print, printHex} from "io" under io;
 
 /*
@@ -31,8 +32,8 @@ safe dynamic class Property {
 
     Property init(const Map<> foo, const any context){
         const Map access = foo();
-        my.getter = access.get("get");
-        my.setter = access.get("set");
+        my.getter = access.get("get").or(NULL);
+        my.setter = access.get("set").or(NULL);
         return my;
     };
 
