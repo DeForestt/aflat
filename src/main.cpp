@@ -435,6 +435,8 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   linker.insert(linker.begin(), libPath + "Utils_Map.s");
   linker.insert(linker.begin(), libPath + "Utils_Properties.s");
   linker.insert(linker.begin(), libPath + "Utils_Object.s");
+  linker.insert(linker.begin(), libPath + "Utils_Error.s");
+  linker.insert(linker.begin(), libPath + "Error_Render.s");
   linker.insert(linker.begin(), libPath + "HTTP_Endpoint.s");
   linker.insert(linker.begin(), libPath + "HTTP_Server.s");
   linker.insert(linker.begin(), libPath + "HTTP_Endpoints.s");
@@ -463,7 +465,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   }
 
   system(gcc.c_str());
-  linker.erase(linker.begin(), linker.begin() + 33);
+  linker.erase(linker.begin(), linker.begin() + 35);
 
   if (!config.asm_)
     for (auto &s : linker) {

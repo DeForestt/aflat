@@ -1,0 +1,33 @@
+.needs <std>
+
+import string from "String";
+import Render from "Utils/Error/Render";
+
+class Error {
+	contract {
+		private const string _typeName = __typeName__;
+		private mutable adr _render;
+	};
+
+    private const string message = message.copy();
+
+    public void setRender(const string<> render) {
+        my._render = render;
+    };
+
+    private string stdErrorMessage() : Render {
+        return `Error: {my.message}`;   
+    };
+
+    Error init(const string message) {
+        return my;
+    };
+
+    public string render() {
+        return my._render();
+    };
+
+    public bool is(const string type) {
+        return my._typeName == type;
+    };
+};
