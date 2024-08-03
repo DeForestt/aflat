@@ -1,3 +1,7 @@
 dynamic safe padantic class Option {
     int a = 0;
+
+    Option init(const int a) {
+        my.a = a;
+    };
 };

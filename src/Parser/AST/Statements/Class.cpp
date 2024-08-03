@@ -88,6 +88,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   type->nameTable.foo = gen::utils::compareFunc;
   type->safeType = this->safeType;
   type->dynamic = this->dynamic;
+  type->padantic = this->padantic;
   generator.scope = type;
   type->overloadTable.foo = [](ast::Function func, ast::Op op) {
     if (func.op == op) {

@@ -31,7 +31,7 @@ class Bit{
 
 Bit newBit(int value);
 
-int free(adr ptr);
+int free(any ptr);
 int blockSize(adr ptr);
 Time newTime(adr size);
 adr malloc(int size);

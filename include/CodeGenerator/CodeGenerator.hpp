@@ -48,6 +48,8 @@ class Class : public Type {
   bool dynamic = false;
   bool safeType =
       false;  // if true, this class cannot be passed as an argument.
+  bool padantic = false;  // if true, this class cannot be assigned to a void
+                          // pointer (`adr`)
   // The public Name table will hold all public functions
   // This is to be used externally
   links::SLinkedList<ast::Function, std::string> publicNameTable;

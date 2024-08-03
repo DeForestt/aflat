@@ -54,9 +54,8 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       const auto testType =
           allowAdr ? ast::Type("adr", asmc::QWord) : dec->type;
       if (dec->type.typeName != "let" &&
-          !generator.canAssign(
-              testType, expr.type,
-              "cannot assign type {} cannot be assigned to type {}")) {
+          !generator.canAssign(testType, expr.type,
+                               "type {} cannot be assigned to type {}")) {
         expr = generator.GenExpr(generator.imply(this->expr, testType.typeName),
                                  file);
       };
