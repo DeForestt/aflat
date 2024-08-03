@@ -40,7 +40,7 @@ dynamic safe padantic class Option {
             return defaultValue;
     };
 
-    public bool hasValue() {
+    public bool isSome() {
         return my.hasValue;
     };
 };

@@ -1,6 +1,8 @@
 .needs <std>
 import List from "Collections";
 import string from "String";
+import Option from "Utils/Option";
+import {none, some} from "Utils/Option" under opt;
 import {str_at, len, str_comp} from "strings" under st;
 
 class MapNode {
@@ -163,15 +165,20 @@ class Map {
         return my;
     };
 
-    any get(const adr key) {
+    Option get(const adr key) {
         if my.root == NULL {
-            return NULL;
+            return opt.none();
         } else {
-            return my.root.get(key);
+            const any val = my.root.get(key);
+            if val == NULL {
+                return opt.none();
+            } else {
+                return opt.some(val);
+            };
         };
     };
 
-    any _call(const adr key) {
+    Option _call(const adr key) {
         return my.get(key);
     };
 
@@ -184,6 +191,6 @@ class Map {
     };
 
     bool has(const adr key) {
-        return my.get(key) != NULL;
+        return my.get(key).isSome();
     };
 };
