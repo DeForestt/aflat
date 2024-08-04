@@ -1,0 +1,62 @@
+.needs <std>
+
+import string from "String";
+import Render from "Utils/Error/Render";
+import Option from "Utils/Option";
+import Map from "Utils/Map";
+
+padantic class Error {
+	contract {
+		private const string _typeName = __typeName__;
+		private mutable string<> _render = NULL;
+	};
+
+    private const string message = message.copy();
+
+    public void setRender(const string<> render) {
+        if my._render != NULL
+            panic("Render already set.");
+
+        my._render = render;
+    };
+
+    private string stdErrorMessage() : Render {
+        return `{my._typeName}: {my.message}`;   
+    };
+
+    Error init(const string message) {
+        return my;
+    };
+
+    public string render() {
+        if my._render == NULL
+            return `Error: {my._typeName}`;
+        return my._render();
+    };
+
+    public bool is(const string type) {
+        return my._typeName == type;
+    };
+
+    public string toString() {
+        return my.render();
+    };
+    
+    public string kind() {
+        return my._typeName;
+    };
+
+    public any match(const Map cases) {
+        if cases.has(my._typeName.cstr()) {
+            const adr foo = cases.get(my._typeName.cstr()).orElse(
+                [] => panic("No case for error type")
+            );
+            return foo(my);
+        } else {
+            const adr foo = cases.get("_").orElse(
+                [] => panic("No \"_\" case in match")
+            );
+            return foo(my);
+        };
+    };
+};

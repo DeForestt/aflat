@@ -318,6 +318,12 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   if (type.typeName == "number" && typeName == "float") return true;
   if (type.typeName == "number" && typeName == "byte") return true;
 
+  gen::Type **expected = this->typeList[type.typeName];
+  gen::Class *cl = nullptr;
+  if (expected) {
+    cl = dynamic_cast<gen::Class *>(*expected);
+  }
+
   if (typeName != "generic") {
     // search the type list for the type
     gen::Type **udef = this->typeList[typeName];
@@ -335,27 +341,24 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
       }
     }
 
-    // search if the expected type is the class
-    gen::Type **expected = this->typeList[type.typeName];
-    if (expected) {
-      gen::Class *cl = dynamic_cast<gen::Class *>(*expected);
-      if (cl) {
-        if (cl->nameTable.count > 0) {
-          ast::Function *init = cl->nameTable["init"];
-          if (init) {
-            if (init->req == 1 &&
-                this->canAssign(init->argTypes[0], typeName, fmt)) {
-              return false;
-            }
+    if (cl) {
+      if (cl->nameTable.count > 0) {
+        ast::Function *init = cl->nameTable["init"];
+        if (init) {
+          if (init->req == 1 &&
+              this->canAssign(init->argTypes[0], typeName, fmt)) {
+            return false;
           }
         }
       }
     }
   }
 
-  if (type.size == asmc::QWord &&
-      (typeName == "adr" || typeName == "generic") && !type.padantic)
+  if ((type.size == asmc::QWord &&
+       (typeName == "adr" || typeName == "generic")) &&
+      (!cl || !cl->padantic))
     return true;
+
   if (strict && (type.typeName == "adr" || typeName == "generic")) return true;
 
   // compare two function pointers

@@ -7,7 +7,21 @@ import ICollection from "Collections";
 import List from "Collections";
 import Result from "Utils/Result";
 import Function from "Utils/Functions";
+import Error from "Utils/Error";
+import Render from "Utils/Error/Render";
 import { accept, reject } from "Utils/Result" under pr;
+
+class DateTimeError signs Error {
+    const string message = message.copy();
+
+    string stdErrorMessage() : Render {
+        return `{my._typeName}: message`;
+    };
+
+    DateTimeError init(const string message) {
+        return my;
+    };
+};
 
 class DateTime{
     private int seconds;
@@ -199,7 +213,7 @@ export Result mmddyyyyToDate(const string input, *mutable char splitChar){
     if splitChar == '\0' splitChar = '-';
     const List l = input.split(splitChar);
     if l.getCount() != 3 {
-        return pr.reject("Invalid date format")
+        return pr.reject(new DateTimeError("Invalid date format"));
     };
     const string month = l.get(0).expect("Invalid date format");
     const string day = l.get(1).expect("Invalid date format");
@@ -221,7 +235,7 @@ export Result mmddyyyyToDate(const string input, *mutable char splitChar){
         return 0;
     }, err);
 
-    if err.len() > 0 return pr.reject(err);
+    if err.len() > 0 return pr.reject(new DateTimeError(err));
 
     const int seconds = dateRelativeTo(month, day, year, 1970) * 86400;
 

@@ -3,7 +3,9 @@
 import Iterator, Next, Peek from "Collections/Iterator";
 import List from "Collections";
 import Result from "Utils/Result";
+import string from "String";
 import { accept, reject } from "Utils/Result" under res;
+import EndOfRange from "Collections/Enumerator";
 
 class Scroller signs Iterator {
     private int index = 0;
@@ -15,14 +17,14 @@ class Scroller signs Iterator {
             my.index = my.index + 1;
             return res.accept(my.list.get(i).expect("Currupted list"));
         };
-        return res.reject("End of list");
+        return res.reject(new EndOfRange());
     };
 
     Result peek() : Peek {
         if my.index < my.list.getCount() {
             return res.accept(my.list.get(my.index).expect("Currupted list"));
         };
-        return res.reject("End of list");
+        return res.reject(new EndOfRange());
     };
 
     Scroller init(const List list) {
