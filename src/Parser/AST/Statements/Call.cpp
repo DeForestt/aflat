@@ -397,11 +397,12 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
                         " expected: " + std::to_string(func->argTypes.size()) +
                         " got: " + std::to_string(i + 1));
       };
-      if (!generator.canAssign(
-              func->argTypes.at(i), exp.type,
-              "cannot pass type {} to function expecting type {} "
-              "the argument type(s) are (" +
-                  argTypesString + ")")) {
+      if (!generator.canAssign(func->argTypes.at(i), exp.type,
+                               "function " + ident +
+                                   " expected type `{}` but received type `{}` "
+                                   "these types are irreconcilable "
+                                   "the argument type(s) are (" +
+                                   argTypesString + ")")) {
         ast::Expr *init = generator.imply(rem, func->argTypes.at(i).typeName);
         exp = generator.GenExpr(init, file);
       };
