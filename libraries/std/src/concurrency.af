@@ -77,7 +77,7 @@ safe dynamic padantic class AsyncResult{
         delete p;
     };
 
-    public adr resolve() {
+    public adr await() {
         return my.p.output();
     };
 
