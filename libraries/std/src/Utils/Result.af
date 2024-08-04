@@ -48,10 +48,7 @@ dynamic safe padantic class Result {
 	};
 
 	public Error getError() {
-		if my.success
-			return NULL
-		else
-			return my.error;
+		return my.error;
 	};
 
 	public bool hasError() {
@@ -83,7 +80,7 @@ dynamic safe padantic class Result {
 };
 
 export Result accept(const any value) {
-	return new Result(value, NULL);
+	return new Result(value);
 };
 
 export Result reject(const Error error) {

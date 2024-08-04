@@ -124,6 +124,10 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
           OutputFile << contractFile;
           type->contract = this->contract;
         }
+        // set class constraints to at least the base class constraints
+        type->safeType = type->safeType || base->safeType;
+        type->dynamic = type->dynamic || base->dynamic;
+        type->padantic = type->padantic || base->padantic;
       } else
         generator.alert("Base class is not a class");
     } else
