@@ -6,6 +6,7 @@ import LinkedList, List from "Collections";
 import Result from "Utils/Result";
 import {accept, reject} from "Utils/Result" under prod;
 import { exp } from "math" under math;
+import Error from "Utils/Error";
 
 import * from "strings" under str;
 import {print, printInt} from "io" under io;
@@ -557,7 +558,7 @@ safe dynamic class string {
     };
 
     Result toInt() {
-        if !my.isNumeric() return prod.reject("Not a number");
+        if !my.isNumeric() return prod.reject(new Error("Attempt to convert non-numeric string to int"));
         return prod.accept(str.str_toInt(my.head));
     };
 

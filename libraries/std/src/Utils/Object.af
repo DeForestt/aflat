@@ -4,6 +4,7 @@ import Map from "Utils/Map";
 import Result from "Utils/Result";
 import Option from "Utils/Option";
 import { accept, reject } from "Utils/Result" under res;
+import Error from "Utils/Error";
 
 class Object {
     contract {
@@ -33,7 +34,7 @@ class Object {
             my._fields.set(key, value);
             res.accept(value);
         } else
-            res.reject("Invalid value");
+            res.reject(new Error("Validation failed"));
     };
 
     public Object init() {
@@ -56,7 +57,7 @@ safe dynamic class Field {
             const adr getter = my.accessors.get("get").or(NULL);
             return res.accept(getter(my.context));
         } else {
-            return res.reject(`Attempt to read write-only field {my.name}`);
+            return res.reject(new Error(`Attempt to read write-only field {my.name}`));
         };
     };
 
@@ -72,7 +73,7 @@ safe dynamic class Field {
             } else my.context.set(my.name.cstr(), val);
             return res.accept(val);
         } else {
-            return res.reject(`Attempt to write read-only field {my.name}`);
+            return res.reject(new Error(`Attempt to write read-only field {my.name}`));
         };
     };
 };
@@ -83,7 +84,7 @@ export Result match(const Object obj, const Map cases, ? const any args) {
             const adr defaultCase = cases.get("_").or(NULL);
             return res.accept(defaultCase(obj, args));
         } else {
-            return res.reject("Match map does not contain a case for the object type");
+            return res.reject(new Error("No case for object type"));
         };
     };
     const adr case = cases.get(obj.type().cstr()).or(NULL);

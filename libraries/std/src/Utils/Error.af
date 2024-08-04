@@ -21,7 +21,7 @@ padantic class Error {
     };
 
     private string stdErrorMessage() : Render {
-        return `Error: {my.message}`;   
+        return `{my._typeName}: {my.message}`;   
     };
 
     Error init(const string message) {

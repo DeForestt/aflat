@@ -4,6 +4,20 @@ import Iterator, Next, Peek from "Collections/Iterator";
 import Result from "Utils/Result";
 import {accept, reject} from "Utils/Result" under res;
 import Map from "Utils/Map";
+import string from "String";
+import Error from "Utils/Error";
+
+class EndOfRange signs Error {
+    const string message = "End of range";
+
+    string stdErrorMessage() : Render {
+        return `{my._typeName}: {my.message}`;
+    };
+
+    EndOfRange init() {
+        return my;
+    };
+};
 
 class Enumerator signs Iterator {
     private const Iterator iterator = iterator;
@@ -37,7 +51,7 @@ safe dynamic class Range signs Iterator {
 
     Result next() : Next {
         if my.index >= my.end {
-            return res.reject("End of range");
+            return res.reject(new EndOfRange());
         };
         const let val = my.index;
         my.index = my.index + my.step;

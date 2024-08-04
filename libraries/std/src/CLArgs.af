@@ -3,8 +3,22 @@
 import string from "String";
 import List from "Collections";
 import {fPrint} from "io" under io;
+import Error from "Utils/Error";
+import Render from "Utils/Error/Render";
 import Result from "Utils/Result";
 import { accept, reject } from "Utils/Result" under pt;
+
+class ArgparseError signs Error {
+    const string message = message.copy();
+
+    string stdErrorMessage() : Render {
+        return `{my._typeName}: {my.message}`;
+    };
+
+    ArgparseError init(const string message) {
+        return my;
+    };
+};
 
 class Arg {
     string name = "";
@@ -67,14 +81,14 @@ class ArgsList {
     Result getArg(const string name) {
         return my.args.findFirst([const Arg a, const string n] => return a.name == n, name).resolve(
             [const Arg a] => return pt.accept(a),
-            [] => return pt.reject("No such arg")
+            [] => return pt.reject(new ArgparseError("Arg does not exist"))
         );
     };
 
     Result getTagLessArg(const int index) {
         return my.tagLessArgs.get(index).resolve(
             [const string a] => return pt.accept(a),
-            [const string e] => return pt.reject("Tagless arg does not exist")
+            [const string e] => return pt.reject(new ArgparseError("Arg does not exist"))
         ),
     };
 };

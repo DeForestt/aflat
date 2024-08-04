@@ -9,6 +9,8 @@ import { accept, reject } from "Utils/Result" under r;
 import JSONProperty from "JSON/Property";
 import {printHex, printInt} from "io" under io;
 import {int_toString} from "strings" under str;
+import Error from "Utils/Error";
+import Render from "Utils/Error/Render";
 
 enum JSONType {
     String,
@@ -36,6 +38,30 @@ private string parseInt(const int val){
 };
 
 private string parseList(const List val);
+
+class JSONParserError signs Error {
+    const string message = message.copy();
+
+    string stdErrorMessage() : Render {
+        return `{my._typeName}: {my.message}`;
+    };
+
+    JSONParserError init(const string message) {
+        return my;
+    };
+};
+
+class JSONError signs Error {
+    const string message = message.copy();
+
+    string stdErrorMessage() : Render {
+        return `{my._typeName}: {my.message}`;
+    };
+
+    JSONError init(const string message) {
+        return my;
+    };
+};
 
 class JSONObject {
     contract {
@@ -159,7 +185,7 @@ class JSONObject {
                 return r.accept(NULL);
             };
         };
-        r.reject("No such key");
+        r.reject(new JSONError("No such key found"));
     };
 };
 
