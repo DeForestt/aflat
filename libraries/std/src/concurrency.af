@@ -58,7 +58,7 @@ class FD {
   public int in;
 };
 
-safe dynamic class AsyncResult{
+safe dynamic padantic class AsyncResult{
     private MProcess p = p;
     private int refcount = 1;
 
@@ -77,7 +77,7 @@ safe dynamic class AsyncResult{
         delete p;
     };
 
-    public adr resolve() {
+    public adr await() {
         return my.p.output();
     };
 
@@ -263,7 +263,7 @@ export int wait(const Thread p){
 };
 
 // Start a function as a concurrent process
-export adr worker(const adr foo, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
+export AsyncResult worker(const adr foo, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
     const MProcess p = new MProcess([const WorkArgs args, const Pipe __inbox, const Pipe outbox] => {
         const adr res = args.run();
         const Message msg = new Message(res);

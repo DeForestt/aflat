@@ -462,6 +462,6 @@ class HTTPServer {
 };
 
 
-export adr requestWorker(const HTTPRequest _arg) : async.worker {
+export any requestWorker(const HTTPRequest _arg) : async.worker {
     return _arg.send(10000000);
 };
