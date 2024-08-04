@@ -21,10 +21,10 @@ export int execve(const adr path, * const adr argv, * adr envp){
     return sys_execve(path, argv, envp);
 };
 
-export adr execWorker(const adr _arg) : async.worker {
+export any execWorker(const adr _arg) : async.worker {
     const adr[3] arg = _arg;
     execve(arg[0], arg[1], arg[2]);
-    return NULL;
+    return "success";
 };
 
 export int exec(const adr path, * const adr argv, * const adr envp) {
