@@ -2,8 +2,10 @@
 
 import string from "String";
 import Render from "Utils/Error/Render";
+import Option from "Utils/Option";
+import Map from "Utils/Map";
 
-class Error {
+padantic class Error {
 	contract {
 		private const string _typeName = __typeName__;
 		private mutable string<> _render = NULL;
@@ -38,5 +40,23 @@ class Error {
 
     public string toString() {
         return my.render();
+    };
+    
+    public string kind() {
+        return my._typeName;
+    };
+
+    public any match(const Map cases) {
+        if cases.has(my._typeName.cstr()) {
+            const adr foo = cases.get(my._typeName.cstr()).orElse(
+                [] => panic("No case for error type")
+            );
+            return foo(my);
+        } else {
+            const adr foo = cases.get("_").orElse(
+                [] => panic("No \"_\" case in match")
+            );
+            return foo(my);
+        };
     };
 };

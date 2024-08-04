@@ -2,7 +2,9 @@
 import string from "String";
 import Function from "Utils/Functions";
 import Computed from "Utils/Properties";
+import Option from "Utils/Option";
 import Error from "Utils/Error";
+import Map from "Utils/Map";
 
 
 /*
@@ -12,7 +14,7 @@ You will be sacrificing type safety for error handling.
 dynamic safe padantic class Result {
 	private mutable any value = value;
 	private mutable bool success = error == NULL;
-	private mutable string error = if error == NULL `No error.` else new string(error);
+	private mutable Error error = error;
 	private mutable int refcount = 1;
 
 	Result get() {
@@ -20,7 +22,7 @@ dynamic safe padantic class Result {
 		return my;
 	};
 
-	public Result init(const any value, *const adr error) {
+	public Result init(const any value, *const Error error) {
 		return my;
 	};
 
@@ -35,7 +37,7 @@ dynamic safe padantic class Result {
 		if my.success
 			return my.value
 		else
-			return onError(my.error.copy(), arg);
+			return onError(my.error, arg);
 	};
 
 	public any expect(const string message) {
@@ -45,11 +47,11 @@ dynamic safe padantic class Result {
 			panic(message.cstr());
 	};
 
-	public string getError() {
+	public Error getError() {
 		if my.success
-			return `No error.`
+			return NULL
 		else
-			return my.error.copy();
+			return my.error;
 	};
 
 	public bool hasError() {
@@ -63,12 +65,27 @@ dynamic safe padantic class Result {
         };
         return;
     };
+
+	any match(const Map cases) {
+		if my.success {
+			if cases.has("ok") {
+				const adr foo = cases.get("ok").orElse(
+					[] => panic("No case for ok")
+				);
+				return foo(my.value);
+			} else {
+				panic("No case for ok");
+			};
+		};
+
+		return my.error.match(cases);
+	};
 };
 
 export Result accept(const any value) {
 	return new Result(value, NULL);
 };
 
-export Result reject(const string error) {
-	return new Result(NULL, error.cstr());
+export Result reject(const Error error) {
+	return new Result(NULL, error);
 };
