@@ -62,6 +62,7 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
     newFunc->scope = func->scope;
     newFunc->scopeName = func->scopeName;
     newFunc->type = func->type;
+    newFunc->mutability = func->mutability;
 
     func->ident.ident = ".temp__graft_" + func->ident.ident;
 
