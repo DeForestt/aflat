@@ -1,5 +1,7 @@
 .needs <std>
 import Function from "Utils/Functions";
+import Map from "Utils/Map";
+import string from "String";
 
 dynamic safe padantic class Option {
     private mutable any value = value;
@@ -11,7 +13,7 @@ dynamic safe padantic class Option {
         return my;
     };
 
-    Option init(const bool hasValue, *const any value) {
+    Option init(const bool hasValue, * const any value) {
         return my;
     };
 
@@ -32,6 +34,13 @@ dynamic safe padantic class Option {
             return onNone(NULL, arg);
     };
 
+    // match function is the new canonical way to work with an Option it will use a named match rather than 2 anonymous functions
+    public any match(const Map cases, *const any arg, *const any arg2) {
+        const let some_none = if my.hasValue "some" else "none";
+        const adr foo = cases(some_none).orElse([] => panic("un-handled option case"));
+        return foo(my.value, arg, arg2);
+    };
+
     // returns a value if it exists, otherwise returns a default value
     public any or(const any defaultValue) {
         if my.hasValue
@@ -43,6 +52,13 @@ dynamic safe padantic class Option {
     public bool isSome() {
         return my.hasValue;
     };
+
+    public string toString() {
+        if my.hasValue
+            return "Option: Some"
+        else
+            return "Option: None";
+    };
 };
 
 export Option some(const any value) {
@@ -50,5 +66,5 @@ export Option some(const any value) {
 };
 
 export Option none() {
-    return new Option(false);
+    return new Option(false, NULL);
 };

@@ -7,6 +7,8 @@ import Iterator from "Collections/Iterator";
 import Result from "Utils/Result";
 import { accept, reject } from "Utils/Result" under res;
 import { fString } from "String" under st;
+import Option from "Utils/Option";
+import { some, none } from "Utils/Option" under opt;
 
 Block head = NULL;
 
@@ -250,7 +252,7 @@ adr _fCstr(const adr fmt, * const adr args) {
     return st.fString(fmt, args);
 };
 
-adr create(const int size, ? const any value) {
+adr create(const int size, * const any value) {
     const adr ptr = malloc(size);
     if (ptr == NULL) {
         return NULL;
@@ -260,7 +262,7 @@ adr create(const int size, ? const any value) {
     return ptr;
 };
 
-void _fEachOr(const Iterator iterator, const void<any, ?any> callback, ?const any args) {
+void _fEachOr(const Iterator iterator, const void<any, *any> callback, *const any args) {
     while true {
         const Result result = iterator.next();
         if result.hasError()
@@ -268,4 +270,12 @@ void _fEachOr(const Iterator iterator, const void<any, ?any> callback, ?const an
 
         callback(result.value([] => panic("Failed to resolve")), args);
     };
+};
+
+/*
+ * _toOption utility function to convert a value to an Option
+ */
+Option _toOption(const any value) {
+    if value == NULL return opt.none();
+    return opt.some(value);
 };

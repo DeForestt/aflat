@@ -120,7 +120,8 @@ class CodeGenerator {
                                asmc::Register("r9", "r9d", "r9w", "r9b")};
   int logicalLine = 0;
   int tempCount = 0;
-  void GenArgs(ast::Statement *STMT, asmc::File &OutputFile);
+  asmc::File GenArgs(ast::Statement *STMT, asmc::File &OutputFile,
+                     const ast::Function &func, int &index);
   ast::Function GenCall(ast::Call *call, asmc::File &OutputFile);
   Expr GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                asmc::Size size = asmc::AUTO);
@@ -131,6 +132,7 @@ class CodeGenerator {
   ast::Expr *imply(ast::Expr *expr, std::string typeName);
   bool canAssign(ast::Type type, std::string typeName, std::string fmt,
                  bool strict = false);
+
   std::string moduleId;
 
   links::LinkedList<std::string> breakContext;

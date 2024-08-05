@@ -46,17 +46,17 @@ padantic class Error {
         return my._typeName;
     };
 
-    public any match(const Map cases) {
+    public any match(const Map cases, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
         if cases.has(my._typeName.cstr()) {
             const adr foo = cases.get(my._typeName.cstr()).orElse(
                 [] => panic("No case for error type")
             );
-            return foo(my);
+            return foo(my, arg1, arg2, arg3, arg4);
         } else {
             const adr foo = cases.get("_").orElse(
                 [] => panic("No \"_\" case in match")
             );
-            return foo(my);
+            return foo(my, arg1, arg2, arg3, arg4);
         };
     };
 };

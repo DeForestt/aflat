@@ -19,6 +19,8 @@ class Function : public Member, public Statement {
   Statement *statement;
   Op op;
   int req = 0;
+  std::vector<int> optConvertionIndices;  // indices of optional arguments that
+                                          // need to be converted
   std::vector<Type> argTypes;
   links::LinkedList<Expr *> decoratorArgs;
   std::vector<bool> mutability;

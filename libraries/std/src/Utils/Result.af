@@ -63,19 +63,19 @@ dynamic safe padantic class Result {
         return;
     };
 
-	any match(const Map cases) {
+	any match(const Map cases, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
 		if my.success {
 			if cases.has("ok") {
 				const adr foo = cases.get("ok").orElse(
 					[] => panic("No case for ok")
 				);
-				return foo(my.value);
+				return foo(my.value, arg1, arg2, arg3, arg4);
 			} else {
 				panic("No case for ok");
 			};
 		};
 
-		return my.error.match(cases);
+		return my.error.match(cases, arg1, arg2, arg3, arg4);
 	};
 };
 

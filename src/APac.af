@@ -27,7 +27,7 @@ class PackageQuery {
     };
 
     string getQuery() {
-        mutable string query = st.fString("?name=%s", {my.name});
+        mutable string query = st.fString("*name=%s", {my.name});
         if !(my.version == "") {
             query = st.fString("%s&version=%s", {query, my.version});
         };

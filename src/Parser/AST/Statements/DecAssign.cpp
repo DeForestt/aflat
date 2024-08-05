@@ -53,11 +53,14 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
 
       const auto testType =
           allowAdr ? ast::Type("adr", asmc::QWord) : dec->type;
-      if (dec->type.typeName != "let" &&
-          !generator.canAssign(testType, expr.type,
-                               "type {} cannot be assigned to type {}")) {
-        expr = generator.GenExpr(generator.imply(this->expr, testType.typeName),
-                                 file);
+      if (!dec->trust) {
+        if (dec->type.typeName != "let" &&
+                !generator.canAssign(testType, expr.type,
+                                     "type {} cannot be assigned to type {}"),
+            dec->trust) {
+          expr = generator.GenExpr(
+              generator.imply(this->expr, testType.typeName), file);
+        };
       };
 
       if (dec->type.typeName == "let") {
@@ -80,6 +83,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
           dec->type = *t;
         }
       }
+
       int byteMod = gen::scope::ScopeManager::getInstance()->assign(
           dec->ident, dec->type, this->declare->mask, this->mute);
       auto s = gen::scope::ScopeManager::getInstance()->get(dec->ident);

@@ -58,7 +58,7 @@ safe dynamic class Range signs Iterator {
         return res.accept(val);
     };
 
-    Range init(const int start, const int end, ? const int step) {
+    Range init(const int start, const int end, * const int step) {
         my.step = if step == 0 1 else step;
         return my;
     };
@@ -69,7 +69,7 @@ safe dynamic class Range signs Iterator {
     };
 };
 
-export Range range(const int start, const int end, ? const int step) {
+export Range range(const int start, const int end, * const int step) {
     return new Range(start, end, step);
 };
 

@@ -6,6 +6,8 @@ import Bind from "Web/Content/Bind";
 import Computed from "Utils/Properties";
 import {openFile} from "files" under fs;
 import File from "files";
+import Error from "Utils/Error";
+import Result from "Utils/Result";
 
 class Content {
     contract {
@@ -16,7 +18,10 @@ class Content {
 
     void loadFile(const adr fileName) {
         const string content = "";
-		const let f = fs.openFile(fileName);
+		const File f = fs.openFile(fileName).match({
+            "ok": [const File file] => return file.readToEnd(),
+            "_": [const Error error] => panic(`Error reading file: {error}`)
+        });
 		const let data = f.toList('\n');
 		data.forEach([const adr val, const int __index, mutable string buffer] => 
 		buffer = buffer + val + "\n", content);

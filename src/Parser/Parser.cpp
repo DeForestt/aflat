@@ -594,16 +594,18 @@ links::LinkedList<ast::Expr *> parse::Parser::parseCallArgsList(
 
 ast::Statement *parse::Parser::parseArgs(
     links::LinkedList<lex::Token *> &tokens, char deliminator, char close,
-    std::vector<ast::Type> &types, int &required,
-    std::vector<bool> &mutability) {
+    std::vector<ast::Type> &types, int &required, std::vector<bool> &mutability,
+    std::vector<int> &optConvertionIndices) {
   auto output = new ast::Statement();
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym == nullptr) {
-    // a question mark is also acceptable as a marjer for optional
+    // a question mark denotes an optional argument that is implicitly converted
+    // from `NULL` or `VALUE` to `Option<VALUE>`
     if (dynamic_cast<lex::Ref *>(tokens.peek()) == nullptr) {
       required++;
     } else {
       tokens.pop();
+      optConvertionIndices.push_back(types.size());
     }
   } else if (sym->Sym == '*')
     tokens.pop();
@@ -714,8 +716,9 @@ ast::Statement *parse::Parser::parseArgs(
     if (obj.Sym == deliminator) {
       auto s = new ast::Sequence;
       s->Statement1 = output;
-      s->Statement2 = this->parseArgs(tokens, deliminator, close, types,
-                                      required, mutability);
+      s->Statement2 =
+          this->parseArgs(tokens, deliminator, close, types, required,
+                          mutability, optConvertionIndices);
       return s;
     } else if (obj.Sym == close) {
       return output;
@@ -730,16 +733,23 @@ ast::Type parse::Parser::parseFPointerType(
   auto callTypeList = std::vector<ast::Type>();
   std::string newTypeName = typeName + "~";
   int requiredCount = 0;
+  std::vector<int> optConvertionIndices;
   while (true) {
     const auto closeSym = dynamic_cast<lex::Symbol *>(tokens.peek());
     if (closeSym != nullptr && closeSym->meta == ">") {
       tokens.pop();
       break;
     }
-    if (dynamic_cast<lex::Ref *>(tokens.peek()) == nullptr)
-      requiredCount++;
-    else
+    if (dynamic_cast<lex::Ref *>(tokens.peek()) == nullptr) {
+      if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+          dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '*')
+        tokens.pop();
+      else
+        requiredCount++;
+    } else {
       tokens.pop();
+      optConvertionIndices.push_back(callTypeList.size());
+    }
     const auto type = dynamic_cast<lex::LObj *>(tokens.pop());
     if (type == nullptr)
       throw err::Exception("Type expected on line " +
@@ -1121,9 +1131,9 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       ast::Lambda *lambda = new ast::Lambda();
       lambda->function = new ast::Function();
       lambda->function->req = 0;
-      lambda->function->args =
-          this->parseArgs(tokens, ',', ']', lambda->function->argTypes,
-                          lambda->function->req, lambda->function->mutability);
+      lambda->function->args = this->parseArgs(
+          tokens, ',', ']', lambda->function->argTypes, lambda->function->req,
+          lambda->function->mutability, lambda->function->optConvertionIndices);
 
       lambda->logicalLine = eq.lineCount;
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)

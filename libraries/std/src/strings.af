@@ -463,7 +463,7 @@ export char str_at(adr str, const int i){
 	return ch;
 };
 
-export int str_forEach(const adr s, const int<char, ?int, ?any> foo, const adr args){
+export int str_forEach(const adr s, const int<char, *int, any> foo, const adr args){
 	const int in = len(s);
 	int i;
 	for i = 0; i < in; i = i + 1; {

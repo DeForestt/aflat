@@ -200,9 +200,9 @@ class HTTPMessage {
         my.version = firstLineParts.get(2).expect("Invalid HTTP message");
         my.method = stringToMethod(method);
 
-        if my.endpoint.indexOf('?') != -1 {
-            const string query = my.endpoint.subString(my.endpoint.indexOf('?') + 1, my.endpoint.len());
-            my.endpoint = my.endpoint.subString(0, my.endpoint.indexOf('?'));
+        if my.endpoint.indexOf('*') != -1 {
+            const string query = my.endpoint.subString(my.endpoint.indexOf('*') + 1, my.endpoint.len());
+            my.endpoint = my.endpoint.subString(0, my.endpoint.indexOf('*'));
             my.updateQueryMap(query);
         };
 

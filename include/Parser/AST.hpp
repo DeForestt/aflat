@@ -108,6 +108,7 @@ class Type {
   struct FPointerArgs {
     Type *returnType = nullptr;
     int requiredArgs = 0;
+    std::vector<int> optConvertionIndices;
     std::vector<Type> argTypes;
     std::string id;
     asmc::Size size;

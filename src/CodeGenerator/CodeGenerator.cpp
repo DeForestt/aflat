@@ -293,7 +293,7 @@ gen::CodeGenerator::resolveSymbol(std::string ident,
 };
 
 bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
-                                   std::string fmt, bool strict = false) {
+                                   std::string fmt, bool strict) {
   if (type.typeName == typeName) return true;
   if (type.fPointerArgs.returnType != nullptr && typeName == "adr") return true;
   if (type.typeName == "adr" && typeName.find("~") != std::string::npos)
@@ -323,6 +323,14 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   if (expected) {
     cl = dynamic_cast<gen::Class *>(*expected);
   }
+
+  if ((type.size == asmc::QWord &&
+       (typeName == "adr" || typeName == "generic")) &&
+      (strict || !cl || !cl->padantic)) {
+    return true;
+  }
+
+  if (strict && (type.typeName == "adr" || typeName == "generic")) return true;
 
   if (typeName != "generic") {
     // search the type list for the type
@@ -354,13 +362,6 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     }
   }
 
-  if ((type.size == asmc::QWord &&
-       (typeName == "adr" || typeName == "generic")) &&
-      (!cl || !cl->padantic))
-    return true;
-
-  if (strict && (type.typeName == "adr" || typeName == "generic")) return true;
-
   // compare two function pointers
   if (type.fPointerArgs.returnType != nullptr &&
       typeName.find("~") != std::string::npos) {
@@ -386,6 +387,14 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
                         type2->fPointerArgs.argTypes[i].typeName, fmt);
       }
     }
+
+    // Check that the optional convertion indices are the same
+    for (int i = 0; i < type.fPointerArgs.optConvertionIndices.size(); i++) {
+      if (type.fPointerArgs.optConvertionIndices[i] !=
+          type2->fPointerArgs.optConvertionIndices[i])
+        return false;
+    }
+
     return true;
   };
 
@@ -1896,11 +1905,14 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(
   return table;
 }
 
-void gen::CodeGenerator::GenArgs(ast::Statement *STMT, asmc::File &OutputFile) {
+asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
+                                       asmc::File &OutputFile,
+                                       const ast::Function &func, int &index) {
+  asmc::File output;
   if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
     ast::Sequence *sequence = dynamic_cast<ast::Sequence *>(STMT);
-    this->GenArgs(sequence->Statement1, OutputFile);
-    this->GenArgs(sequence->Statement2, OutputFile);
+    output << this->GenArgs(sequence->Statement1, OutputFile, func, index);
+    output << this->GenArgs(sequence->Statement2, OutputFile, func, index);
   } else if (dynamic_cast<ast::Declare *>(STMT) != nullptr) {
     /*
         movl $0x0, -[SymbolT + size](rdp)
@@ -1960,8 +1972,40 @@ void gen::CodeGenerator::GenArgs(ast::Statement *STMT, asmc::File &OutputFile) {
       mov->to = "-" + std::to_string(mod) + +"(%rbp)";
       OutputFile.text << mov;
       intArgsCounter++;
+
+      // check if the index is in the functions optConvertionIndices
+      if (std::find(func.optConvertionIndices.begin(),
+                    func.optConvertionIndices.end(),
+                    index) != func.optConvertionIndices.end()) {
+        auto var = new ast::Var();
+        var->Ident = arg->ident;
+        var->logicalLine = arg->logicalLine;
+
+        auto call = new ast::CallExpr();
+        call->logicalLine = arg->logicalLine;
+        call->call = new ast::Call();
+        call->call->logicalLine = arg->logicalLine;
+        call->call->ident = "_toOption";
+        call->call->Args.push(var);
+
+        auto decAssign = new ast::DecAssign();
+        decAssign->logicalLine = arg->logicalLine;
+        decAssign->expr = call;
+        decAssign->declare = new ast::Declare();
+        decAssign->declare->ident = arg->ident;
+        decAssign->declare->type = ast::Type("Option", asmc::QWord);
+        decAssign->declare->TypeName = "Option";
+        decAssign->declare->mut = arg->mut;
+        decAssign->mute = arg->mut;
+        decAssign->expr = call;
+        decAssign->declare->trust = true;
+
+        output << decAssign->generate(*this).file;
+      }
+      index++;
     }
   }
+  return output;
 }
 
 asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {

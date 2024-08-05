@@ -11,7 +11,7 @@ Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
     : scope(scope), type(type), op(op), scopeName(scopeName) {
   this->ident.ident = ident;
   this->args = parser.parseArgs(tokens, ',', ')', this->argTypes, this->req,
-                                this->mutability);
+                                this->mutability, this->optConvertionIndices);
 
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
     auto sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -193,8 +193,11 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       file.text << movy;
       generator.intArgsCounter++;
     };
-    generator.GenArgs(this->args, file);
+    int counter = 0;
+    auto argmute = generator.GenArgs(this->args, file, *this, counter);
     if (!isLambda && this->scope == ast::Public) file.linker.push(link);
+
+    file << argmute;
 
     // if the function is 'init' and scope is a class, add the default value
     if (this->ident.ident == "init" && generator.scope != nullptr) {
