@@ -7,6 +7,10 @@ import Array from "Collections";
 import LinkedList, List from "Collections";
 import {len} from "strings" under str;
 import string from "String";
+import Result from "Utils/Result";
+import Error from "Utils/Error";
+import Render from "Utils/Error/Render";
+import { accept, reject } from "Utils/Result" under res;
 
 class fstat{
     long st_dev;
@@ -41,26 +45,39 @@ class File{
     int close();
 };
 
-export File createFile(const adr fileName){
+class FileError signs Error {
+        private string renderMessage() : Render {
+                return `File Error`;
+        };
+
+        FileError init() {
+                return my;
+        };
+};
+
+export Result createFile(const adr fileName){
         const File file = malloc(File);
         file.file = sys_create(fileName, #511);
         const int test = file.file;
-        if(test < 1){
-                return NULL;
+        if(test < 1) {
+                free(file);
+                return res.reject(new FileError());
         };
-        return file;
+
+        return res.accept(file);
 };
 
-export File openFile(const adr fileName){
+export Result openFile(const adr fileName){
         const File file = malloc(File);
         const long flag = #2;
         file.file = sys_open(fileName, flag, #777);
         const int test = file.file;
         if(test < 0){
-                return NULL;
+                free(file);
+                return res.reject(new FileError());
         };
         file.fileName = fileName;
-        return file;
+        return res.accept(file);
 };
 
 int close@File(){
