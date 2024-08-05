@@ -68,6 +68,8 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
             func->type = *smbl->type.fPointerArgs.returnType;
             func->argTypes = smbl->type.fPointerArgs.argTypes;
             func->req = smbl->type.fPointerArgs.requiredArgs;
+            func->optConvertionIndices =
+                smbl->type.fPointerArgs.optConvertionIndices;
             checkArgs = true;
           }
         } else {
@@ -103,6 +105,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           func->ident.ident = "pub_" + tname + "__call";
           func->type = f->type;
           func->req = f->req;
+          func->optConvertionIndices = f->optConvertionIndices;
           func->argTypes = f->argTypes;
           auto var = new ast::Var();
           var->logicalLine = this->logicalLine;
@@ -185,6 +188,8 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
               func->type = *sym->type.fPointerArgs.returnType;
               func->argTypes = sym->type.fPointerArgs.argTypes;
               func->req = sym->type.fPointerArgs.requiredArgs;
+              func->optConvertionIndices =
+                  sym->type.fPointerArgs.optConvertionIndices;
               checkArgs = true;
             }
 
@@ -211,6 +216,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
             func->type = f->type;
             func->req = f->req;
             func->argTypes = f->argTypes;
+            func->optConvertionIndices = f->optConvertionIndices;
             pubname = sym->type.typeName;
             shift = false;
           }

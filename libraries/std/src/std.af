@@ -252,7 +252,7 @@ adr _fCstr(const adr fmt, * const adr args) {
     return st.fString(fmt, args);
 };
 
-adr create(const int size, ? const any value) {
+adr create(const int size, * const any value) {
     const adr ptr = malloc(size);
     if (ptr == NULL) {
         return NULL;
@@ -262,7 +262,7 @@ adr create(const int size, ? const any value) {
     return ptr;
 };
 
-void _fEachOr(const Iterator iterator, const void<any, ?any> callback, ?const any args) {
+void _fEachOr(const Iterator iterator, const void<any, *any> callback, *const any args) {
     while true {
         const Result result = iterator.next();
         if result.hasError()

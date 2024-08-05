@@ -63,7 +63,7 @@ dynamic safe padantic class Result {
         return;
     };
 
-	any match(const Map cases, ?const any arg1, ?const any arg2, ?const any arg3, ?const any arg4) {
+	any match(const Map cases, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
 		if my.success {
 			if cases.has("ok") {
 				const adr foo = cases.get("ok").orElse(

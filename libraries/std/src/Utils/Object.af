@@ -78,7 +78,7 @@ safe dynamic class Field {
     };
 };
 
-export Result match(const Object obj, const Map cases, ? const any args) {
+export Result match(const Object obj, const Map cases, * const any args) {
     if !cases.has(obj.type().cstr()) {
         if cases.has("_") {
             const adr defaultCase = cases.get("_").or(NULL);

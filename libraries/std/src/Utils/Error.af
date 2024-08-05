@@ -46,7 +46,7 @@ padantic class Error {
         return my._typeName;
     };
 
-    public any match(const Map cases, ?const any arg1, ?const any arg2, ?const any arg3, ?const any arg4) {
+    public any match(const Map cases, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
         if cases.has(my._typeName.cstr()) {
             const adr foo = cases.get(my._typeName.cstr()).orElse(
                 [] => panic("No case for error type")

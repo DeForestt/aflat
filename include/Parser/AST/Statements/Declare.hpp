@@ -15,6 +15,7 @@ class Declare : public Arg, public Statement {
   links::LinkedList<std::string> modList;
   bool mask = false;
   bool mut = true;
+  bool trust = false;
   Type type;
   Declare() = default;
   Declare(const std::string &ident, const ScopeMod &scope,
