@@ -106,13 +106,17 @@ Now we will make a simple guessing game.  The program will ask the user to guess
 .needs <std>
 import string from "String";
 import { readString, print } from "String" under st;
+import Error from "Utils/Error"; // we need to import the Error type to use it in the match call for error handling
 
 int main(){
-	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
-	int secret = 42;	// one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
+		// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
+	int secret = 42; // one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
 	
 	let guess = st.readString("Enter your guess: "); // get the string that the user entered
-	int guessInt = guess.toInt().resolve([int val] => return val, [string err] => panic(err.cstr())); // convert the string to an int.  If the string is not a number, then panic with the error message.
+	int guessInt = guess.toInt().match({
+		"ok": [int i] => return i,
+		"_": [Error w] => panic(`Error converting string to int: {w}`.cstr())
+	}); // convert the string to an int.  If the conversion fails, panic with an error message.
 
 	if guessInt == secret // now that we have the same type we can compare them with the '==' operator
 		st.print("You guessed it!\n")
@@ -134,24 +138,29 @@ This game is a bit too hard.  We cannot expect to guess the number in just one t
 .needs <std>
 import string from "String";
 import { readString, print } from "String" under st;
+import Error from "Utils/Error";
 
 int main(){
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
-	int secret = 42;	// one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
+	int secret = 42; // one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
+	
 	for mutable int i = 0; i < 10; i = i + 1 {
 		let guess = st.readString("Enter your guess: "); // get the string that the user entered
-		int guessInt = guess.toInt().resolve([int val] => return val, [string err] => panic(err.cstr())); // convert the string to an int.  If the string is not a number, then panic with the error message.
+		int guessInt = guess.toInt().match({
+			"ok": [int i] => return i,
+			"_": [Error w] => panic(`Error converting string to int: {w}`.cstr())
+		}); // convert the string to an int.  If the conversion fails, panic with an error message.
+		// this is the main error handling mechanism in aflat. Note that the match method name is a convention and not a keyword.
+		// it may be added to the language in the future.
 
-		if guessInt == secret {// now that we have the same type we can compare them with the '==' operator
-			st.print("You guessed it!\n");
-			return 0;
-		} else if guessInt < secret // we can check if the guess is too low with the '<' operator
+		if guessInt == secret // now that we have the same type we can compare them with the '==' operator
+			st.print("You guessed it!\n")
+		else if guessInt < secret // we can check if the guess is too low with the '<' operator
 			st.print("Too low!\n")
 		else
 			st.print("Too high!\n");
 	};
 	st.print(`The secret number was {secret}\n`); // we can use the backtick to create a string that can contain variables.  The variables are surrounded by {} and the variable name is inside the braces.  The variable name is evaluated and the result is inserted into the string.  The string is then converted to a string and printed.
-	
 	// notice that the curly braces are not needed in the if statement.  The curly braces are only needed when there is a block of code to be executed.
 
 	return 0;
@@ -175,25 +184,30 @@ This game gets boring quickly.  We need to make sure that the program doesn't al
 .needs <std>
 import string from "String";
 import { readString, print } from "String" under st;
+import Error from "Utils/Error";
 import Random from "math";
 
 int main(){
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
-	int secret = Random().nextInt(100);
+	int secret = Random().nextInt(100); // generate a random number between 0 and 99
+	
 	for mutable int i = 0; i < 10; i = i + 1 {
 		let guess = st.readString("Enter your guess: "); // get the string that the user entered
-		int guessInt = guess.toInt().resolve([int val] => return val, [string err] => panic(err.cstr())); // convert the string to an int.  If the string is not a number, then panic with the error message.
+		int guessInt = guess.toInt().match({
+			"ok": [int i] => return i,
+			"_": [Error w] => panic(`Error converting string to int: {w}`.cstr())
+		}); // convert the string to an int.  If the conversion fails, panic with an error message.
+		// this is the main error handling mechanism in aflat. Note that the match method name is a convention and not a keyword.
+		// it may be added to the language in the future.
 
-		if guessInt == secret { // now that we have the same type we can compare them with the '==' operator
-			st.print("You guessed it!\n");
-			return 0;
-		} else if guessInt < secret // we can check if the guess is too low with the '<' operator
+		if guessInt == secret // now that we have the same type we can compare them with the '==' operator
+			st.print("You guessed it!\n")
+		else if guessInt < secret // we can check if the guess is too low with the '<' operator
 			st.print("Too low!\n")
 		else
 			st.print("Too high!\n");
 	};
 	st.print(`The secret number was {secret}\n`); // we can use the backtick to create a string that can contain variables.  The variables are surrounded by {} and the variable name is inside the braces.  The variable name is evaluated and the result is inserted into the string.  The string is then converted to a string and printed.
-	
 	// notice that the curly braces are not needed in the if statement.  The curly braces are only needed when there is a block of code to be executed.
 
 	return 0;
@@ -202,48 +216,6 @@ int main(){
 
 Now we have imported the Random class from the math library.  The Random class has a nextInt(int n) function that returns a random number between 0 and n.
 
-
-## Arrays
-Lets go back to the program we wrote in the if else section.  Now that we know how to use random, we can make it a little bit more interesting.  Lets make the program select a random greeting to greet the user.
-
-```js
-.needs <std>
-import string from "String";
-import { readString, print } from "String" under st;
-import Random from "math";
-
-int main() {
-	// adr is a pointer.  In this case, it points to a char.  Think of it as a char* in C.
-	adr[7] greetings = {"Hello", "Hi", "Hey", "Howdy", "Greetings", "Salutations", "Yo"}; // array of greetings
-
-	string name = st.readString("What is your name? ");
-
-	let greeting = greetings[Random().nextInt(7)]; // pick a random greeting
-
-	if name == "Name"
-		st.print(`{greeting}, {name}!\nFrom the AFlat team\n`) // use the greeting and name
-	else
-		st.print("I don't know you... go away!\n");
-	
-	return 0;
-};
-```
-
-What we have on line 8 is an array.  In aflat an array is declared as follows `<typename>[count] name`
-
-examples:
-```js
-int[5] myArray;
-adr[5] myArray;
-String[5] myArray;
-```
-
-Elements of an array are accessed by index.  The index is the number of the element.  The first element is 0, the second is 1, and so on.
-
-```js
-myArray[0] = "Hello";
-myArray[1] = "World";
-```
 
 
 ## Classes
@@ -292,6 +264,34 @@ Take a look at the output.  It should look something like this.
 ```
 Student: John id: 1 average: 90
 ```
+
+## Struct literals
+We can also use a struct literal to create the object as follows:
+
+```js
+.needs <std>
+
+import string from "String";
+import { print } from "String" under str;
+
+class Student {
+	mutable int id;
+	mutable string name = "";
+	mutable int average;
+};
+
+int main() {
+	Student s = {
+		1,
+		`John`,
+		90
+	}; // This is a struct literal.  It is a way of statically creating an object.  The values are separated by commas and enclosed in curly braces.
+	str.print(`Student: {s.name} id: {s.id} average: {s.average}\n`);
+};
+```
+
+**Note:** Keep in mind that using Struct Literals in this way is inherently unsafe. If the order of the fields in the struct changes, the code will break. It is recommended to use the constructor method to create objects.
+**Just Don't Do This!**
 
 ## Class constructors
 A class constructor is a function that is called when an object is created from the class.  The constructor is used to initialize the object.  The constructor is the first function that is called when an object is created from the class.  The name of a constructor function must be 'init'.
@@ -395,6 +395,7 @@ The code that we have here is great, but we can see how it can become very long 
 import string from "String";
 import { print } from "String" under str;
 import List from "Collections";
+import Scroller from "Collections/Scroller"; // We need to import the Scroller class to iterate over the list
 
 class Student {
 	mutable int id;
@@ -418,23 +419,23 @@ int main() {
 	roster.pushBack(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
 	roster.pushBack(Student(2, "Jane Doe", 80));
 
-	// We can use the 'forEach' method of the LinkedList class to iterate through the list.
-	roster.forEach([Student s] => {
-		s.printInfo();
-	}); // I know that the 'forEach' method can look a bit confusing. For now, just know that it iterates through the list and calls the function you pass to it.
-};;
+	// this is a foreach loop that iterates over an iterable object
+	foreach Student student : roster.scroll() { // A List is not an iterable object, calling the `scroll` method makes it iterable and allows us to use the foreach loop
+		student.printInfo(); 
+	};
+};
 ```
 
 Now we can add as many students as we want to the roster, and keep the code clean.  Try adding a few more students to the roster.
 
 ## Modules
-It is helpful to hide our classes in another file, It helps to give us less to look at when we are working on the program.  in order to create a module, we can type the following in the terminal: 
+It is helpful to hide our classes in another file, It helps to give us less to look at when we are working on the program.  In order to create a module, we can type the following in the terminal: 
 
 ```bash
 aflat module Student
 ```
 
-this will create a new file called 'Student.af' in the src folder. Copy the Student class from the previous section and paste it into the new file. 
+This will create a new file called 'Student.af' in the src folder. Copy the Student class from the previous section and paste it into the new file. 
 
 ```js
 .needs <std>
@@ -465,20 +466,20 @@ Now it can bee imported into our main program the same way we would import any c
 ```js
 .needs <std>
 import string from "String";
+import { print } from "String" under str;
 import List from "Collections";
-import Student from "./src/Student";  // Then we import the Student class from the Student module.
-
-
+import Scroller from "Collections/Scroller"; // We need to import the Scroller class to iterate over the list
+import Student from "./src/Student"; // Then we import the Student class from the Student module. Note that for project level imports, we need to use the relative path to the project root
 
 int main() {
 	List roster = List(Student);
 	roster.pushBack(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
 	roster.pushBack(Student(2, "Jane Doe", 80));
 
-	// We can use the 'forEach' method of the LinkedList class to iterate through the list.
-	roster.forEach([Student s] => {
-		s.printInfo();
-	});// I know that the 'forEach' method can look a bit confusing. For now, just know that it iterates through the list and calls the function you pass to it.
+	// this is a foreach loop that iterates over an iterable object
+	foreach Student student : roster.scroll() { // A List is not an iterable object, calling the `scroll` method makes it iterable and allows us to use the foreach loop
+		student.printInfo(); 
+	};
 };
 ```
 
@@ -491,7 +492,7 @@ Now that we know how to make modules and classes, see if you can create an Assig
 The constructor should take in the name and the grade and set the fields.
 
 ## Adding to the student class
-Now that we have the Assignment class, add a list of assignments as a field in our student class.  The list should be a LinkedList.  Our new student module should look like this:
+Now that we have the Assignment class, add a list of assignments as a field in our student class.  The list should be a List.  Our new student module should look like this:
 
 ```js
 .needs <std>

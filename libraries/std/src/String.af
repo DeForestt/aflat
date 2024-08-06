@@ -9,7 +9,7 @@ import { exp } from "math" under math;
 import Error from "Utils/Error";
 
 import * from "strings" under str;
-import {print, printInt} from "io" under io;
+import {print, printInt, printHex} from "io" under io;
 
 private char lower(char c);
 private char upper(char c);
@@ -792,7 +792,7 @@ export int print(const string obj) {
     return 0;
 };
 
-export string readString( *const string prompt) {
+export string readString(*const string prompt) {
     if prompt != NULL print(prompt);
     adr buff = malloc(1);
     adr save = buff;
@@ -811,7 +811,7 @@ export string readString( *const string prompt) {
         buff = save;
         i = i + 1;
     };
-    const string n = buff;
+    const string n = new string(buff);
     free(save);
     return n.copy();
 };
@@ -871,7 +871,7 @@ export string fString(const string fmt, * adr args) {
         if fmt.at(i) == '%' {
             i++;
             if fmt.at(i) == 'a' {
-                newString = newString + args as adr;
+                newString = newString + new String(args as adr);
                 args = args + adr;
             } else if fmt.at(i) == 'c' {
                 newString = newString.push(args as char);
@@ -884,7 +884,7 @@ export string fString(const string fmt, * adr args) {
                 } else {
                     str.int_toString(n, buff);
                     const adr buffAdr = buff;
-                    newString = newString + buffAdr;
+                    newString = newString + new string(buffAdr);
                 };
                 args = args + int;
             } else if fmt.at(i) == 's' {
