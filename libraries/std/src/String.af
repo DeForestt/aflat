@@ -391,9 +391,7 @@ safe dynamic class string {
     private bool permanent = false;
 
     string init(const adr head) {
-        io.print("string::init obj: "); io.printHex(head); io.print("\n");
         my.head = malloc(str.len(head) + 1);
-        io.print("sting::init head: "); io.printHex(my.head); io.print("\n");
         memcpy(my.head, head, str.len(head) + 1);
         return my;
     };
