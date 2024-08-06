@@ -811,7 +811,7 @@ export string readString(*const string prompt) {
         buff = save;
         i = i + 1;
     };
-    const string n = buff;
+    const string n = new string(buff);
     free(save);
     return n.copy();
 };
