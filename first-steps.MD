@@ -106,13 +106,17 @@ Now we will make a simple guessing game.  The program will ask the user to guess
 .needs <std>
 import string from "String";
 import { readString, print } from "String" under st;
+import Error from "Utils/Error"; // we need to import the Error type to use it in the match call for error handling
 
 int main(){
-	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
-	int secret = 42;	// one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
+		// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
+	int secret = 42; // one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
 	
 	let guess = st.readString("Enter your guess: "); // get the string that the user entered
-	int guessInt = guess.toInt().resolve([int val] => return val, [string err] => panic(err.cstr())); // convert the string to an int.  If the string is not a number, then panic with the error message.
+	int guessInt = guess.toInt().match({
+		"ok": [int i] => return i,
+		"_": [Error w] => panic(`Error converting string to int: {w}`.cstr())
+	}); // convert the string to an int.  If the conversion fails, panic with an error message.
 
 	if guessInt == secret // now that we have the same type we can compare them with the '==' operator
 		st.print("You guessed it!\n")
@@ -134,24 +138,29 @@ This game is a bit too hard.  We cannot expect to guess the number in just one t
 .needs <std>
 import string from "String";
 import { readString, print } from "String" under st;
+import Error from "Utils/Error";
 
 int main(){
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
-	int secret = 42;	// one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
+	int secret = 42; // one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
+	
 	for mutable int i = 0; i < 10; i = i + 1 {
 		let guess = st.readString("Enter your guess: "); // get the string that the user entered
-		int guessInt = guess.toInt().resolve([int val] => return val, [string err] => panic(err.cstr())); // convert the string to an int.  If the string is not a number, then panic with the error message.
+		int guessInt = guess.toInt().match({
+			"ok": [int i] => return i,
+			"_": [Error w] => panic(`Error converting string to int: {w}`.cstr())
+		}); // convert the string to an int.  If the conversion fails, panic with an error message.
+		// this is the main error handling mechanism in aflat. Note that the match method name is a convention and not a keyword.
+		// it may be added to the language in the future.
 
-		if guessInt == secret {// now that we have the same type we can compare them with the '==' operator
-			st.print("You guessed it!\n");
-			return 0;
-		} else if guessInt < secret // we can check if the guess is too low with the '<' operator
+		if guessInt == secret // now that we have the same type we can compare them with the '==' operator
+			st.print("You guessed it!\n")
+		else if guessInt < secret // we can check if the guess is too low with the '<' operator
 			st.print("Too low!\n")
 		else
 			st.print("Too high!\n");
 	};
 	st.print(`The secret number was {secret}\n`); // we can use the backtick to create a string that can contain variables.  The variables are surrounded by {} and the variable name is inside the braces.  The variable name is evaluated and the result is inserted into the string.  The string is then converted to a string and printed.
-	
 	// notice that the curly braces are not needed in the if statement.  The curly braces are only needed when there is a block of code to be executed.
 
 	return 0;
@@ -175,25 +184,30 @@ This game gets boring quickly.  We need to make sure that the program doesn't al
 .needs <std>
 import string from "String";
 import { readString, print } from "String" under st;
+import Error from "Utils/Error";
 import Random from "math";
 
 int main(){
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
-	int secret = Random().nextInt(100);
+	int secret = Random().nextInt(100); // generate a random number between 0 and 99
+	
 	for mutable int i = 0; i < 10; i = i + 1 {
 		let guess = st.readString("Enter your guess: "); // get the string that the user entered
-		int guessInt = guess.toInt().resolve([int val] => return val, [string err] => panic(err.cstr())); // convert the string to an int.  If the string is not a number, then panic with the error message.
+		int guessInt = guess.toInt().match({
+			"ok": [int i] => return i,
+			"_": [Error w] => panic(`Error converting string to int: {w}`.cstr())
+		}); // convert the string to an int.  If the conversion fails, panic with an error message.
+		// this is the main error handling mechanism in aflat. Note that the match method name is a convention and not a keyword.
+		// it may be added to the language in the future.
 
-		if guessInt == secret { // now that we have the same type we can compare them with the '==' operator
-			st.print("You guessed it!\n");
-			return 0;
-		} else if guessInt < secret // we can check if the guess is too low with the '<' operator
+		if guessInt == secret // now that we have the same type we can compare them with the '==' operator
+			st.print("You guessed it!\n")
+		else if guessInt < secret // we can check if the guess is too low with the '<' operator
 			st.print("Too low!\n")
 		else
 			st.print("Too high!\n");
 	};
 	st.print(`The secret number was {secret}\n`); // we can use the backtick to create a string that can contain variables.  The variables are surrounded by {} and the variable name is inside the braces.  The variable name is evaluated and the result is inserted into the string.  The string is then converted to a string and printed.
-	
 	// notice that the curly braces are not needed in the if statement.  The curly braces are only needed when there is a block of code to be executed.
 
 	return 0;
