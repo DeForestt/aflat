@@ -324,14 +324,6 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     cl = dynamic_cast<gen::Class *>(*expected);
   }
 
-  if ((type.size == asmc::QWord &&
-       (typeName == "adr" || typeName == "generic")) &&
-      (strict || !cl || !cl->padantic)) {
-    return true;
-  }
-
-  if (strict && (type.typeName == "adr" || typeName == "generic")) return true;
-
   if (typeName != "generic") {
     // search the type list for the type
     gen::Type **udef = this->typeList[typeName];
@@ -349,7 +341,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
       }
     }
 
-    if (cl) {
+    if (cl && !strict) {
       if (cl->nameTable.count > 0) {
         ast::Function *init = cl->nameTable["init"];
         if (init) {
@@ -361,6 +353,14 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
       }
     }
   }
+
+  if ((type.size == asmc::QWord &&
+       (typeName == "adr" || typeName == "generic")) &&
+      (strict || !cl || !cl->padantic)) {
+    return true;
+  }
+
+  if (strict && (type.typeName == "adr" || typeName == "generic")) return true;
 
   // compare two function pointers
   if (type.fPointerArgs.returnType != nullptr &&

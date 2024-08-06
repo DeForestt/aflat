@@ -391,7 +391,9 @@ safe dynamic class string {
     private bool permanent = false;
 
     string init(const adr head) {
+        io.print("string::init obj: "); io.printHex(head); io.print("\n");
         my.head = malloc(str.len(head) + 1);
+        io.print("sting::init head: "); io.printHex(my.head); io.print("\n");
         memcpy(my.head, head, str.len(head) + 1);
         return my;
     };
@@ -792,7 +794,7 @@ export int print(const string obj) {
     return 0;
 };
 
-export string readString( *const string prompt) {
+export string readString(*const string prompt) {
     if prompt != NULL print(prompt);
     adr buff = malloc(1);
     adr save = buff;
