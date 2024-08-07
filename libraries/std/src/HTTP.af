@@ -188,7 +188,7 @@ class HTTPMessage {
 
         const let lines = rsp.split('\r');
         const string firstLine = lines.get(0).expect("Invalid HTTP message");
-        firstLine.trim();
+        // firstLine.trim();
         const let firstLineParts = firstLine.split(' ');
 
         if firstLineParts.getCount() < 3 {            
