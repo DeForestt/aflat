@@ -98,7 +98,7 @@ class JSONObject {
         const JSONProperty prop = my.properties.back().orElse([] => panic("No properties found when adding string to JSONObject"));
         const let pointer = malloc(value.len() + 1);
         value.copyTo(pointer);
-        prop = pointer;
+        prop = value.copy();
         return my;
     };
 
@@ -142,8 +142,8 @@ class JSONObject {
         const prop = val;
     };
 
-    private void updateWithString(mutable string result, const string key, const adr value) {
-        result = st.fString("%s\"%s\": \"%a\"", {result, key, value});
+    private void updateWithString(mutable string result, const string key, const string value) {
+        result = st.fString("%s\"%s\": \"%s\"", {result, key, value});
     };
 
     string toString() {
@@ -154,10 +154,11 @@ class JSONObject {
                 result = `{result}, `;
             };
             if prop.type == JSONType.String {
-                const adr p = prop;
+                const string p = prop;
                 my.updateWithString(result, prop.key, p);
             } else if prop.type == JSONType.Int {
-                const result = st.fString("%s\"%s\": %s", {result, prop.key.copy(), parseInt(prop)});
+                const int val = prop;
+                result = st.fString("%s\"%s\": %d", {result, prop.key.copy(), val});
             } else if prop.type == JSONType.Object {
                 const JSONObject value = prop;
                 result = st.fString("%s\"%s\": %s", {result, prop.key.copy(), value.toString()});

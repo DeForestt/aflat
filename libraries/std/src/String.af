@@ -431,8 +431,7 @@ safe dynamic class string {
     };
 
     char at(const int index) {
-        const char[10] buff = my.head;
-        return buff[index];
+        return str.str_at(my.head, index);
     };
 
     adr cstr() {
@@ -714,7 +713,7 @@ safe dynamic class string {
         int start = 0;
         int end = my.len() - 1;
 
-        while (my.at(start) == ch){start = start + 1;};
+        while (my.at(start) == ch) start = start + 1;
         while (my.at(end) == ch) end = end - 1;
         return my.subString(start, end + 1);
     };
