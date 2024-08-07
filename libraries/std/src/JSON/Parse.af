@@ -73,7 +73,7 @@ export List getList(const string key, const string json) {
     const int openCount = 1;
     const int closeCount = 0;
 
-    mutable string listBuffer = "";
+    mutable string listBuffer = new string("");
     const List ret = new List(string);
     
     const let flush = [mutable string s] => {

@@ -98,7 +98,7 @@ class JSONObject {
         const JSONProperty prop = my.properties.back().orElse([] => panic("No properties found when adding string to JSONObject"));
         const let pointer = malloc(value.len() + 1);
         value.copyTo(pointer);
-        prop = pointer;
+        prop = value.copy();
         return my;
     };
 
@@ -142,22 +142,23 @@ class JSONObject {
         const prop = val;
     };
 
-    private void updateWithString(mutable string result, const string key, const adr value) {
-        result = st.fString("%s\"%s\": \"%a\"", {result, key, value});
+    private void updateWithString(mutable string result, const string key, const string value) {
+        result = st.fString("%s\"%s\": \"%s\"", {result, key, value});
     };
 
     string toString() {
-        mutable string result = "{";
+        mutable string result = new string("{");
         for int i = 0; i < my.properties.getCount(); i++ {
             const JSONProperty prop = my.properties.get(i).expect("Currupted json properties count while serializing");
             if i != 0 {
                 result = `{result}, `;
             };
             if prop.type == JSONType.String {
-                const adr p = prop;
+                const string p = prop;
                 my.updateWithString(result, prop.key, p);
             } else if prop.type == JSONType.Int {
-                const result = st.fString("%s\"%s\": %s", {result, prop.key.copy(), parseInt(prop)});
+                const int val = prop;
+                result = st.fString("%s\"%s\": %d", {result, prop.key.copy(), val});
             } else if prop.type == JSONType.Object {
                 const JSONObject value = prop;
                 result = st.fString("%s\"%s\": %s", {result, prop.key.copy(), value.toString()});
@@ -191,7 +192,7 @@ class JSONObject {
 
 
 private string parseList(const List val){
-    mutable string result = "[";
+    mutable string result = new string("[");
     for int i = 0; i < val.getCount(); i++ {
         if i != 0 {
             result = `{result}, `;

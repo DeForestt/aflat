@@ -596,6 +596,14 @@ ast::Statement *parse::Parser::parseArgs(
     links::LinkedList<lex::Token *> &tokens, char deliminator, char close,
     std::vector<ast::Type> &types, int &required, std::vector<bool> &mutability,
     std::vector<int> &optConvertionIndices) {
+  return this->parseArgs(tokens, deliminator, close, types, required,
+                         mutability, optConvertionIndices, false);
+}
+
+ast::Statement *parse::Parser::parseArgs(
+    links::LinkedList<lex::Token *> &tokens, char deliminator, char close,
+    std::vector<ast::Type> &types, int &required, std::vector<bool> &mutability,
+    std::vector<int> &optConvertionIndices, bool foreach) {
   auto output = new ast::Statement();
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym == nullptr) {
@@ -708,21 +716,30 @@ ast::Statement *parse::Parser::parseArgs(
 
   if (tokens.head == nullptr) {
     throw err::Exception("unterminated function call");
-  } else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-             tokens.head->next != nullptr) {
-    auto obj = *dynamic_cast<lex::OpSym *>(tokens.peek());
+  }
+
+  auto obj = dynamic_cast<lex::OpSym *>(tokens.peek());
+  auto lobj = dynamic_cast<lex::LObj *>(tokens.peek());
+
+  if ((obj || (lobj && foreach)) && tokens.head->next != nullptr) {
+    auto obj = dynamic_cast<lex::OpSym *>(tokens.peek());
+    auto lobj = dynamic_cast<lex::LObj *>(tokens.peek());
     tokens.pop();
 
-    if (obj.Sym == deliminator) {
+    if (obj && obj->Sym == deliminator) {
       auto s = new ast::Sequence;
       s->Statement1 = output;
       s->Statement2 =
           this->parseArgs(tokens, deliminator, close, types, required,
                           mutability, optConvertionIndices);
       return s;
-    } else if (obj.Sym == close) {
+    } else if (obj && obj->Sym == close) {
+      return output;
+    } else if (lobj && lobj->meta == "in") {
       return output;
     }
+  } else {
+    throw err::Exception("Expected a symbol or a declaration");
   }
   return output;
 }

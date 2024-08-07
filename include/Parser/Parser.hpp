@@ -18,6 +18,14 @@ class Parser {
                             bool singleStmt = false);
   Parser(int mutability = 0);
   ast::Expr *parseExpr(links::LinkedList<lex::Token *> &tokens);
+
+  ast::Statement *parseArgs(links::LinkedList<lex::Token *> &tokens,
+                            char delimn, char close,
+                            std::vector<ast::Type> &types, int &requiered,
+                            std::vector<bool> &mutability,
+                            std::vector<int> &optConvertionIndices,
+                            bool forEach);
+
   ast::Statement *parseArgs(links::LinkedList<lex::Token *> &tokens,
                             char delimn, char close,
                             std::vector<ast::Type> &types, int &requiered,
