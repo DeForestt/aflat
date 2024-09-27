@@ -19,7 +19,6 @@
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
-#include "Utils.hpp"
 
 std::string preProcess(std::string input);
 std::string getExePath();
