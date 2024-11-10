@@ -23,11 +23,11 @@ class Content {
             "ok": [const File file] => return file,
             "_": [const Error error] => panic(`Error reading file: {error}`.cstr())
         });
-		const let data = f.toList('\n');
 
-        const string content = ``;
-		data.forEach([const adr val, const int __index, mutable string buffer] => 
-		buffer = buffer + val + "\n", content);
+    const string content = f.readToEnd();
+    
+		// data.forEach([const adr val, const int __index, mutable string buffer] => 
+		// buffer = buffer + val + "\n", content);
 
 		my.cleanContent = content;
 		my.content = content;
