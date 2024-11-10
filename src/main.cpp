@@ -223,8 +223,6 @@ void build(std::string path, std::string output, cfg::Mutability mutability,
     while (file.linker.head != nullptr) {
       ofs << file.linker.pop()->toString();
     }
-    // add gnu section notes
-    ofs << "\n\n.section .note.GNU-stack,\"\",@progbit";
     // text section output
     ofs << "\n\n.text\n\n";
     // write the .file directive if in debug mode
@@ -402,11 +400,11 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     }
 
     if (config.debug)
-      system(("gcc -g -no-pie -S -lefence ./src/" + path + ".c -o ./bin/" +
+      system(("gcc -g -no-pie -z noexecstack -S -lefence ./src/" + path + ".c -o ./bin/" +
               path + ".s")
                  .c_str());
     else
-      system(("gcc -S -no-pie ./src/" + path + ".c -o ./bin/" + path + ".s")
+      system(("gcc -S -no-pie -z noexecstack ./src/" + path + ".c -o ./bin/" + path + ".s")
                  .c_str());
 
     linker.push_back("./bin/" + path + ".s");
@@ -460,9 +458,9 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     ofile = "./bin/a.test ";
   };
 
-  auto gcc = "gcc -no-pie -o " + ofile + " " + linkerList;
+  auto gcc = "gcc -no-pie -z noexecstack -o " + ofile + " " + linkerList;
   if (config.debug) {
-    gcc = "gcc -O0 -g -no-pie -o " + ofile + " " + linkerList;
+    gcc = "gcc -O0 -g -no-pie -z noexecstack -o " + ofile + " " + linkerList;
   }
 
   system(gcc.c_str());
