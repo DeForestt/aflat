@@ -400,11 +400,12 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     }
 
     if (config.debug)
-      system(("gcc -g -no-pie -z noexecstack -S -lefence ./src/" + path + ".c -o ./bin/" +
-              path + ".s")
+      system(("gcc -g -no-pie -z noexecstack -S -lefence ./src/" + path +
+              ".c -o ./bin/" + path + ".s")
                  .c_str());
     else
-      system(("gcc -S -no-pie -z noexecstack ./src/" + path + ".c -o ./bin/" + path + ".s")
+      system(("gcc -S -no-pie -z noexecstack ./src/" + path + ".c -o ./bin/" +
+              path + ".s")
                  .c_str());
 
     linker.push_back("./bin/" + path + ".s");
