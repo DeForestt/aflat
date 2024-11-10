@@ -9,7 +9,7 @@ import string from "String";
 import {print} from "String" under str;
 import {printHex} from "io" under io;
 import Middleware from "HTTP/Middleware";
-
+import Error from "Utils/Error";
 class Server {
     contract {
         const List endpoints = new List(Endpoint);
@@ -50,8 +50,9 @@ class Server {
 
                     const Result response = handler(self, data);
                     if response.hasError() {
-                        // const Error error = response.getError();
-                        const HTTPResponce fail = new HTTPResponce("Server Error", "500", "Internal Server Error");
+                        const Error error = response.getError();
+                        const let val = error.render();
+                        const HTTPResponce fail = new HTTPResponce(val.cstr(), "500", "Internal Server Error");
                         return fail.toString().cstr();
                     };
                     const HTTPResponce responce = response.value([] => return new HTTPResponce("Unknown Error", "500", "Internal Server Error"));
