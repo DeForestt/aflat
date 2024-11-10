@@ -223,7 +223,8 @@ void build(std::string path, std::string output, cfg::Mutability mutability,
     while (file.linker.head != nullptr) {
       ofs << file.linker.pop()->toString();
     }
-
+    // add gnu section notes
+    ofs << "\n\n.section .note.GNU-stack,\"\",@progbit";
     // text section output
     ofs << "\n\n.text\n\n";
     // write the .file directive if in debug mode
