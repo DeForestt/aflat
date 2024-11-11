@@ -190,3 +190,38 @@ List toList@File(const char delim){
         return l;
 };
 
+
+safe dynamic padantic class FileManager {
+  private const File f = createFile(filename).value([] => return NULL);
+  private mutable int refcount = 1;
+
+  FileManager init(const adr filename) {
+    return my;
+  };
+  
+  int del() {
+    my.f.close();
+    delete my.f;
+  };
+
+  
+  File _call() {
+    my.refcount = my.refcount - 1;
+    return my.f;
+  };
+
+  void endScope() {
+    my.refcount = my.refcount - 1;
+    if (my.refcount == 0) {
+      my.del();
+      free(my);
+    };
+  };
+  
+  FileManager get() {
+    my.refcount = my.refcount + 1;
+    return my;
+  };
+
+};
+
