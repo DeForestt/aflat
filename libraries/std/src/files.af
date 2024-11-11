@@ -7,6 +7,8 @@ import Array from "Collections";
 import LinkedList, List from "Collections";
 import {len} from "strings" under str;
 import string from "String";
+import {print} from "String" under st;
+import {printLong, printHex, printInt} from "io" under io;
 import Result from "Utils/Result";
 import Error from "Utils/Error";
 import Render from "Utils/Error/Render";
@@ -106,11 +108,17 @@ int read@File(adr pointer, const char delim){
         return  0;
 };
 
+fstat newFstat(const int file) {
+  const let stat = new fstat();
+  sys_fstat(file, stat);
+  return stat;
+};
+
 string readToEnd@File(){
-        const fstat stat = fstat();
-        sys_fstat(my.file, stat);
+        const int file = my.file;
+        const fstat stat = newFstat(file);
         const adr buffer = malloc(1 + stat.st_size);
-        sys_read(my.file, buffer, 0 + stat.st_size);
+        sys_read(file, buffer, 0 + stat.st_size);
         const adr pointer = buffer + (0 + stat.st_size);
         pointer =: '\0';
         const string text = new string(buffer);
