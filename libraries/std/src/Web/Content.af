@@ -24,13 +24,8 @@ class Content {
             "_": [const Error error] => panic(`Error reading file: {error}`.cstr())
         });
 
-    const string content = f.readToEnd();
-    
-		// data.forEach([const adr val, const int __index, mutable string buffer] => 
-		// buffer = buffer + val + "\n", content);
-
-		my.cleanContent = content;
-		my.content = content;
+		my.cleanContent = f.readToEnd();
+		my.content = my.cleanContent.cstr();
 		return;
     };
 
