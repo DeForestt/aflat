@@ -57,7 +57,7 @@ class Server {
                     subMsg = subMsg.subString(0, wildE.len());
                 };
 
-                if http.methodToString(e.method) == http.methodToString(msg.method) & wildE == subMsg {
+                if e.method == msg.method & wildE == subMsg {
                     const let handler = e.imp;
                     Result response;
 
