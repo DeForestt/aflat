@@ -1,13 +1,13 @@
 .needs <std>
 
 import Server from "HTTP/Server";
-import HTTPRequest from "HTTP";
+import HTTPMessage from "HTTP";
 import string from "String";
 
 class Middleware {
-    const any<Server, HTTPRequest> implementation = implementation;
+    const any<Server, HTTPMessage> implementation = implementation;
     
-    Middleware init(const any<Server, HTTPRequest> implementation, * const Server server) {
+    Middleware init(const any<Server, HTTPMessage> implementation, * const Server server) {
         if server != NULL
             server.addMiddleware(my);
         return my;

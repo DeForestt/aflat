@@ -37,18 +37,19 @@ class Server {
         str.print(`listening on port: {my.port}\n`);
         serve(my.port, [const adr msg, const Server self] => {
             const HTTPMessage msg = new HTTPMessage(msg, true);
+            const string method = http.methodToString(msg.method);
+            mutable any data = msg;
+
+            for int k = 0; k < self.middlewares.getCount(); k++ {
+                const Middleware m = self.middlewares.get(k).expect("Middleware count currupted");
+                const adr implementation = m.implementation;
+                data = implementation(self, data);
+            };
+
             for int i = 0; i < self.endpoints.getCount(); i++ {
                 const Endpoint e = self.endpoints.get(i).expect("Endpoint count currupted");
                 if http.methodToString(e.method) == http.methodToString(msg.method) & e.path == msg.endpoint {
                     const let handler = e.imp;
-                    mutable any data = msg;
-
-                    for int k = 0; k < self.middlewares.getCount(); k++ {
-                        const Middleware m = self.middlewares.get(k).expect("Middleware count currupted");
-                        const adr implementation = m.implementation;
-                        data = implementation(self, data);
-                    };
-
                     const Result response = handler(self, data);
 
                     const HTTPResponce r = response.match({
@@ -66,7 +67,8 @@ class Server {
                     return r.toString().cstr();
                 };
             };
-            return "HTTP/1.1 404 Not Found\r\n<html><body><h1>404 Not Found</h1></body></html>\r\n";
+            const HTTPResponce r = new HTTPResponce(`Endpoint {msg.endpoint}: Method {method} not implemented`, "501", "Not Implemented");
+            return r.toString().cstr();
         }, my);
     };
 };

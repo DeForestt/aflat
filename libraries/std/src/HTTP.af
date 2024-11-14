@@ -106,25 +106,25 @@ export adr listen(const short port, const int bufferSize, const adr callback, co
     _aflat_server_spinUp(port, bufferSize, callback, args);
 };
 
-export adr methodToString(const HTTPMethod method) {
+export string methodToString(const HTTPMethod method) {
     if method == HTTPMethod.GET 
-        return "GET"
+        return `GET`
     else if method == HTTPMethod.POST
-        return "POST"
+        return `POST`
     else if method == HTTPMethod.PUT
-        return "PUT"
+        return `PUT`
     else if method == HTTPMethod.DELETE
-        return "DELETE"
+        return `DELETE`
     else if method == HTTPMethod.HEAD
-        return "HEAD"
+        return `HEAD`
     else if method == HTTPMethod.OPTIONS
-        return "OPTIONS"
+        return `OPTIONS`
     else if method == HTTPMethod.TRACE
-        return "TRACE"
+        return `TRACE`
     else if method == HTTPMethod.CONNECT
-        return "CONNECT"
+        return `CONNECT`
     else
-        return "UNKNOWN";
+        return `UNKNOWN`;
 };
 
 export HTTPMethod stringToMethod(const string method) {
@@ -280,9 +280,9 @@ class HTTPMessage {
         my.version = firstLineParts.get(2).expect("Invalid HTTP message");
         my.method = stringToMethod(method);
 
-        if my.endpoint.indexOf('*') != -1 {
-            const string query = my.endpoint.subString(my.endpoint.indexOf('*') + 1, my.endpoint.len());
-            my.endpoint = my.endpoint.subString(0, my.endpoint.indexOf('*'));
+        if my.endpoint.indexOf('?') != -1 {
+            const string query = my.endpoint.subString(my.endpoint.indexOf('?') + 1, my.endpoint.len());
+            my.endpoint = my.endpoint.subString(0, my.endpoint.indexOf('?'));
             my.updateQueryMap(query);
         };
 

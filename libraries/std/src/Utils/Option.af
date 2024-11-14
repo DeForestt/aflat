@@ -38,7 +38,8 @@ dynamic safe padantic class Option {
     public any match(const Map cases, *const any arg, *const any arg2) {
         const let some_none = if my.hasValue "some" else "none";
         const adr foo = cases(some_none).orElse([] => panic("un-handled option case"));
-        return foo(my.value, arg, arg2);
+        return if my.hasValue foo(my.value, arg, arg2) else  
+        foo(arg, arg2);
     };
 
     // returns a value if it exists, otherwise returns a default value
