@@ -57,7 +57,7 @@ string getBodyFromID(string id) {
     return res.body;
 };
 
-adr installPackage(PackageQuery pkg) : async.worker {
+any installPackage(PackageQuery pkg) : async.worker {
     const let _package = pkg;
     const let cname = _package.name.copy();
     const let cunder = _package.u.copy();

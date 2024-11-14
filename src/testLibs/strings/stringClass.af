@@ -44,8 +44,8 @@ private bool test_concat() : test.case("concat") {
 private bool test_split() : test.case("split") {
     let s1 = new string("Hello World");
     let l1 = s1.split(' ');
-    string part1 = l1.get(0);
-    string part2 = l1.get(1);
+    string part1 = l1.get(0).expect("Failed to get first part of split.");
+    string part2 = l1.get(1).expect("Failed to get second part of split.");
     return (
         test.require(l1.getCount() == 2, "split gets the correct item count from split.") &
         test.require(part1 == "Hello", "split gets the correct first item.") &
@@ -74,10 +74,10 @@ private bool test_forEach() : test.case("forEach") {
     let s1 = new string("1234");
     s1.forEach(loopTracker, chars);
 
-    Char c1 = chars.get(0);
-    Char c2 = chars.get(1);
-    Char c3 = chars.get(2);
-    Char c4 = chars.get(3);
+    Char c1 = chars.get(0).expect("Failed to get first char.");
+    Char c2 = chars.get(1).expect("Failed to get second char.");
+    Char c3 = chars.get(2).expect("Failed to get third char.");
+    Char c4 = chars.get(3).expect("Failed to get fourth char.");
 
     return (
         test.require(callCount == 4, `Should have called the loop tracker 4 times. Called {callCount} times.`) &

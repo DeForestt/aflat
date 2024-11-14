@@ -13,7 +13,7 @@ class LoadingBar {
 	private mutable int current = 0;
 	private mutable bool kill = false;
 	private mutable bool updated = true;
-    private mutable AsyncResult result = NULL;
+    private mutable AsyncResult result;
 
 	LoadingBar init(int max, * int resolution) {
 		if resolution == 0 my.resolution = 20;
@@ -49,7 +49,7 @@ class LoadingBar {
 	void kill() {
 		my.kill = true;
         if my.result != NULL {
-            my.result.resolve();
+            my.result.await();
         };
 	};
 
@@ -66,13 +66,14 @@ export adr createLoadingBar(int max, * int resolution) {
 	return async.makeShared(LoadingBar, LoadingBar.init, max, resolution);
 };
 
-private adr runLoadingBar(LoadingBar bar) : async.worker {
+private any runLoadingBar(LoadingBar bar) : async.worker {
 	while true {
 		bar.print();
 		if bar.isKilled() {
 			break;
 		};
 	};
+	return NULL;
 };
 
 
