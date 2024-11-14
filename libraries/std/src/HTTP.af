@@ -5,10 +5,90 @@
 import List from "Collections";
 import Map from "Utils/Map";
 import String, string from "String";
+import Error from "Utils/Error";
 import {len, int_toString} from "strings" under str;
 import {print, printInt, fPrint, printHex} from "io" under io;
 import {worker} from "concurrency" under async;
 import {printString, fString, print} from "String" under st;
+
+class NotFoundError signs Error {
+    // 404 Not Found
+    const string message = message.copy();
+
+    string stdErrorMessage() : Render {
+        return `{my.message}`;
+    };
+
+    NotFoundError init(const string message) {
+        return my;
+    };
+};
+
+class ForbiddenError signs Error {
+    // 403 Forbidden
+    const string message = message.copy();
+
+    string stdErrorMessage() : Render {
+        return `{my.message}`;
+    };
+
+    ForbiddenError init(const string message) {
+        return my;
+    };
+};
+
+class BadRequestError signs Error {
+    // 400 Bad Request
+    const string message = message.copy();
+
+    string stdErrorMessage() : Render {
+        return `{my.message}`;
+    };
+
+    BadRequestError init(const string message) {
+        return my;
+    };
+};
+
+class NotImplementedError signs Error {
+    // 501 Not Implemented
+    const string message = message.copy();
+
+    string stdErrorMessage() : Render {
+        return `{my.message}`;
+    };
+
+    NotImplementedError init(const string message) {
+        return my;
+    };
+};
+
+class InternalServerError signs Error {
+    // 500 Internal Server Error
+    const string message = message.copy();
+
+    string stdErrorMessage() : Render {
+        return `{my.message}`;
+    };
+
+    InternalServerError init(const string message) {
+        return my;
+    };
+};
+
+class OtherHTTPError signs Error {
+    // Other HTTP Error
+    const adr message = message.copy().cstr();
+    const adr code = code.copy().cstr();
+
+    string stdErrorMessage() : Render {
+        return `{my.message}`;
+    };
+
+    OtherHTTPError init(const string message, const string code) {
+        return my;
+    };
+};
 
 enum HTTPMethod {
     GET,

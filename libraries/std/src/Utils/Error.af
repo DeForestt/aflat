@@ -9,6 +9,7 @@ padantic class Error {
 	contract {
 		private const string _typeName = __typeName__;
 		private mutable string<> _render = NULL;
+        const adr data = NULL;
 	};
 
     private const string message = message.copy();

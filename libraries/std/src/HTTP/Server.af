@@ -2,7 +2,7 @@
 .needs <server>
 import Endpoint from "HTTP/Endpoint";
 import List from "Collections";
-import HTTPMessage, HTTPMethod, HTTPResponce from "HTTP";
+import HTTPMessage, HTTPMethod, HTTPResponce, NotFoundError, ForbiddenError, BadRequestError, InternalServerError, OtherHTTPError, NotImplementedError from "HTTP";
 import Result from "Utils/Result";
 import {methodToString} from "HTTP" under http;
 import string from "String";
@@ -10,6 +10,7 @@ import {print} from "String" under str;
 import {printHex} from "io" under io;
 import Middleware from "HTTP/Middleware";
 import Error from "Utils/Error";
+import Map from "Utils/Map";
 class Server {
     contract {
         const List endpoints = new List(Endpoint);
@@ -49,14 +50,20 @@ class Server {
                     };
 
                     const Result response = handler(self, data);
-                    if response.hasError() {
-                        const Error error = response.getError();
-                        const let val = error.render();
-                        const HTTPResponce fail = new HTTPResponce(val.cstr(), "500", "Internal Server Error");
-                        return fail.toString().cstr();
-                    };
-                    const HTTPResponce responce = response.value([] => return new HTTPResponce("Unknown Error", "500", "Internal Server Error"));
-                    return responce.toString().cstr();
+
+                    const HTTPResponce r = response.match({
+                        "ok": [const HTTPResponce res] => return res,
+                        "NotFoundError": [const NotFoundError err] => return new HTTPResponce(err.render().cstr(), "404", "Not Found"),
+                        "ForbiddenError": [const ForbiddenError err] => return new HTTPResponce(err.render().cstr(), "403", "Forbidden"),
+                        "BadRequestError": [const BadRequestError err] => return new HTTPResponce(err.render().cstr(), "400", "Bad Request"),
+                        "NotImplementedError": [const NotImplementedError err] => return new HTTPResponce(err.render().cstr(), "501", "Not Implemented"),
+                        "_": [const Error err] => {
+                            const let val = err.render();
+                            return new HTTPResponce(val.cstr(), "500", "Internal Server Error");
+                        }
+                    });
+
+                    return r.toString().cstr();
                 };
             };
             return "HTTP/1.1 404 Not Found\r\n<html><body><h1>404 Not Found</h1></body></html>\r\n";
