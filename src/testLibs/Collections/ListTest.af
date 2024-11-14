@@ -21,7 +21,7 @@ private bool test_getCount() : test.case("getCount") {
 private bool test_pushBack() : test.case("pushBack") {
     let l = new List(string);
     l.pushBack(`1`);
-    string result = l.get(0);
+    string result = l.get(0).expect("Failed to get value from list");
     return (
         test.require(l.getCount() == 1, `Expected list count to be 1, got {l.getCount()}`) &
         test.require(result == `1`, `Expected list[0] to be '1', got {result}`)
@@ -31,7 +31,7 @@ private bool test_pushBack() : test.case("pushBack") {
 private bool test_get_call_syntax() : test.case("get call syntax") {
     let l = new List(string);
     l.pushBack(`1`);
-    string result = l(0);
+    string result = l(0).expect("Failed to get value from list");
     return test.require(result == `1`, `Expected list[0] to be '1', got {result}`);
 };
 
@@ -40,8 +40,8 @@ private bool test_popBack() : test.case("popBack") {
     l.pushBack(`1`);
     l.pushBack(`2`);
     l.pushBack(`3`);
-    l.popBack();
-    string result = l(1);
+    l.popBack().expect("Failed to pop value from list");
+    string result = l(1).expect("Failed to get value from list");
     return (
         test.require(l.getCount() == 2, `Expected list count to be 2, got {l.getCount()}`) &
         test.require(result == `2`, `Expected list[1] to be '2', got {result}`)
@@ -53,7 +53,7 @@ private bool test_back() : test.case("back") {
     l.pushBack(`1`);
     l.pushBack(`2`);
     l.pushBack(`3`);
-    string result = l.back();
+    string result = l.back().expect("Failed to get value from list");
     return (
         test.require(result == `3`, `Expected list.back() to be '3', got {result}`) &
         test.require(l.getCount() == 3, `Expected list count to be 3, got {l.getCount()}`)

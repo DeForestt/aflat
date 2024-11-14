@@ -22,10 +22,10 @@ class Package {
         let PATH = st.fString("./src/modules/%s.af", {my.name});
         let cfgTxt = st.fString("m modules/%s", {my.name});
 
-        mutable let packageFile = fs.createFile(PATH.cstr());
+        mutable File packageFile = fs.createFile(PATH.cstr()).expect("Could not create file");
         if (packageFile == NULL){
             sys.system("mkdir ./src/modules");
-            packageFile = fs.createFile(PATH.cstr());
+            packageFile = fs.createFile(PATH.cstr()).expect("Could not create file");
             if (packageFile == NULL) {
                 io.fPrint("Error: Could not create file %s", {PATH});
                 return false;
@@ -33,18 +33,14 @@ class Package {
         };
         packageFile.write(my.body.cstr());
 
-        const let confFile = fs.openFile("./aflat.cfg");
-        if (confFile == NULL) {
-            io.fPrint("Error: Could not open aflat.cfg");
-            return false;
-        };
+        const File confFile = fs.openFile("./aflat.cfg").expect("Could not open aflat.cfg");
         
         let configList = confFile.toList('\n');
         confFile.close();
         mutable let buffer = new string("");
         mutable bool updated = false;
         for int i = 0; i < configList.getCount(); i++ {
-            let text = new string(configList.get(i));
+            let text = new string(configList.get(i).expect("Could not get config line"));
 
             if !(text == "") buffer = st.fString("%s%a\n", {buffer, configList.get(i)});
 
@@ -53,7 +49,7 @@ class Package {
             };
         };
         if !updated  buffer = st.fString("%s%s", {buffer, cfgTxt});
-        let confFile2 = fs.createFile("./aflat.cfg");
+        File confFile2 = fs.createFile("./aflat.cfg").expect("Could not create file");
         confFile2.write(buffer.cstr());
         return updated;
     };

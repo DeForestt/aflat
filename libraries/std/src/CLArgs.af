@@ -85,10 +85,17 @@ class ArgsList {
         );
     };
 
+    bool has(const string name) {
+        return my.getArg(name).match({
+            "ok": [] => return true,
+            "_": [] => return false
+        });
+    };
+
     Result getTagLessArg(const int index) {
         return my.tagLessArgs.get(index).resolve(
             [const string a] => return pt.accept(a),
             [const string e] => return pt.reject(new ArgparseError("Arg does not exist"))
-        ),
+        );
     };
 };
