@@ -43,15 +43,15 @@ export string getJson(const string key, const string json) {
     const let newString = json.subString(start, json.len());
     const let newStart = newString.find("{", 0);
     const let afterOpen = newString.subString(newStart + 1, newString.len());
-    const int openCount = 1;
-    const int closeCount = 0;
+    int openCount = 1;
+    int closeCount = 0;
 
-    for int i = 0; i < afterOpen.len(); i++ {
+    for int i = 0; i < afterOpen.len(); i = i + 1 {
         const char c = afterOpen.at(i);
         if c == '{' {
-            openCount++;
+            openCount = openCount + 1;
         } else if c == '}' {
-            closeCount++;
+            closeCount = closeCount + 1;
         };
         if openCount == closeCount {
             const let value = afterOpen.subString(0, i);
@@ -70,8 +70,8 @@ export List getList(const string key, const string json) {
     const let newString = json.subString(start, json.len());
     const let newStart = newString.find("[", 0);
     const let afterOpen = newString.subString(newStart + 1, newString.len());
-    const int openCount = 1;
-    const int closeCount = 0;
+    int openCount = 1;
+    int closeCount = 0;
 
     mutable string listBuffer = new string("");
     const List ret = new List(string);
@@ -83,13 +83,14 @@ export List getList(const string key, const string json) {
 
     mutable let inQuote = false;
     mutable let inObject = false;
+    
 
-    for int i = 0; i < afterOpen.len(); i++ {
+    for int i = 0; i < afterOpen.len(); i = i + 1 {
         const char c = afterOpen.at(i);
         if c == '[' {
-            openCount++;
+            openCount = openCount + 1;
         } else if c == ']' {
-            closeCount++;
+            closeCount = closeCount + 1;
         };
 
         if (c == '"') & (openCount - closeCount == 1) & (!inObject) {
