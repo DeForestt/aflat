@@ -48,9 +48,25 @@ class Server {
 
             for int i = 0; i < self.endpoints.getCount(); i++ {
                 const Endpoint e = self.endpoints.get(i).expect("Endpoint count currupted");
-                if http.methodToString(e.method) == http.methodToString(msg.method) & e.path == msg.endpoint {
+
+                string wildE = e.path.copy();
+                string subMsg = msg.endpoint.copy();
+
+                if wildE.find("/:*", 0) != -1 {
+                    wildE = wildE.subString(0, wildE.find("/:*", 0));
+                    subMsg = subMsg.subString(0, wildE.len());
+                };
+
+                if http.methodToString(e.method) == http.methodToString(msg.method) & wildE == subMsg {
                     const let handler = e.imp;
-                    const Result response = handler(self, data);
+                    Result response;
+
+                    if wildE == msg.endpoint {
+                        response = handler(self, data, NULL);
+                    } else {
+                        const let path = msg.endpoint.subString(wildE.len() + 1, msg.endpoint.len());
+                        response = handler(self, data, path);
+                    };
 
                     const HTTPResponce r = response.match({
                         "ok": [const HTTPResponce res] => return res,
@@ -67,7 +83,7 @@ class Server {
                     return r.toString().cstr();
                 };
             };
-            const HTTPResponce r = new HTTPResponce(`Endpoint {msg.endpoint}: Method {method} not implemented`, "501", "Not Implemented");
+            const HTTPResponce r = new HTTPResponce(`Endpoint {msg.endpoint}: Method {method} not implemented`.cstr(), "501", "Not Implemented");
             return r.toString().cstr();
         }, my);
     };
