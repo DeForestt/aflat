@@ -40,13 +40,13 @@ class Server {
             const string method = http.methodToString(msg.method);
             mutable any data = msg;
 
-            for int k = 0; k < self.middlewares.getCount(); k++ {
+            for int k = 0; k < self.middlewares.getCount(); k = k + 1 {
                 const Middleware m = self.middlewares.get(k).expect("Middleware count currupted");
                 const adr implementation = m.implementation;
                 data = implementation(self, data);
             };
 
-            for int i = 0; i < self.endpoints.getCount(); i++ {
+            for int i = 0; i < self.endpoints.getCount(); i = i + 1 {
                 const Endpoint e = self.endpoints.get(i).expect("Endpoint count currupted");
 
                 string wildE = e.path.copy();
