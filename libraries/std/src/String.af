@@ -654,10 +654,7 @@ safe dynamic class string {
         return -1;
     };
 
-    string replace(const adr substr, const adr ns) {
-        const let sub = new string(substr);
-        const let n = new string(ns);
-        // find all occurences of sub in my
+    string replace(const string sub, const string n) {
         const int myLen = str.len(my.head);
         const int subLen = str.len(sub.head);
         const int nLen = str.len(n.head);
@@ -691,7 +688,7 @@ safe dynamic class string {
             };
         };
         newHead =: '\0';
-        const string newString = save;
+        const string newString = new string(save);
         free(save);
         return newString;
     };

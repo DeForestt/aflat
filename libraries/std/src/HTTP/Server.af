@@ -1,6 +1,6 @@
 .needs <std>
 .needs <server>
-import Endpoint from "HTTP/Endpoint";
+import Endpoint, NotFoundImpl from "HTTP/Endpoint";
 import List from "Collections";
 import HTTPMessage, HTTPMethod, HTTPResponce, NotFoundError, ForbiddenError, BadRequestError, InternalServerError, OtherHTTPError, NotImplementedError from "HTTP";
 import Result from "Utils/Result";
@@ -15,6 +15,7 @@ class Server {
     contract {
         const List endpoints = new List(Endpoint);
         const List middlewares = new List(Middleware);
+        mutable NotFoundImpl notFound = NULL;
         int port = 8080;
     };
 
@@ -28,6 +29,10 @@ class Server {
         my.endpoints.pushBack(endpoint);
     };
 
+    void setNotFound(const NotFoundImpl notFound) {
+        my.notFound = notFound;
+    };
+
     void addMiddleware(const Middleware middleware) {
         my.middlewares.stringFunc = Middleware.toString;
         my.middlewares.pushBack(middleware);
@@ -38,11 +43,13 @@ class Server {
         serve(my.port, [const adr msg, const Server self] => {
             const HTTPMessage msg = new HTTPMessage(msg, true);
             const string method = http.methodToString(msg.method);
-            mutable any data = msg;
+            const string endpoint = msg.endpoint;
+            mutable HTTPMessage data = msg;
 
             for int k = 0; k < self.middlewares.getCount(); k = k + 1 {
                 const Middleware m = self.middlewares.get(k).expect("Middleware count currupted");
-                const adr implementation = m.implementation;
+                const adr implementation = m.implementations.get("before").or(NULL);
+                if implementation == NULL continue;
                 data = implementation(self, data);
             };
 
@@ -68,7 +75,7 @@ class Server {
                         response = handler(self, data, path);
                     };
 
-                    const HTTPResponce r = response.match({
+                    HTTPResponce r = response.match({
                         "ok": [const HTTPResponce res] => return res,
                         "NotFoundError": [const NotFoundError err] => return new HTTPResponce(err.render().cstr(), "404", "Not Found"),
                         "ForbiddenError": [const ForbiddenError err] => return new HTTPResponce(err.render().cstr(), "403", "Forbidden"),
@@ -80,10 +87,25 @@ class Server {
                         }
                     });
 
+                    for int j = 0; j < self.middlewares.getCount(); j = j + 1 {
+                        const Middleware m = self.middlewares.get(j).expect("Middleware count currupted");
+                        const adr implementation = m.implementations.get("after").or(NULL);
+                        if implementation == NULL continue;
+                        r = implementation(self, data, r);
+                    };
+
                     return r.toString().cstr();
                 };
             };
-            const HTTPResponce r = new HTTPResponce(`Endpoint {msg.endpoint}: Method {method} not implemented`.cstr(), "501", "Not Implemented");
+            
+            if self.notFound != NULL {
+                const let notFound = self.notFound;
+                const let handler = notFound.imp;
+                const HTTPResponce r = handler(self, data);
+                return r.toString().cstr();
+            };
+
+            const HTTPResponce r = new HTTPResponce(`Endpoint: [{method}] {endpoint} not implemented`.cstr(), "501", "Not Implemented");
             return r.toString().cstr();
         }, my);
     };
