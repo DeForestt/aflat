@@ -3,11 +3,11 @@
 import Server from "HTTP/Server";
 import HTTPMessage from "HTTP";
 import string from "String";
+import Map from "Map";
 
 class Middleware {
-    const any<Server, HTTPMessage> implementation = implementation;
-    
-    Middleware init(const any<Server, HTTPMessage> implementation, * const Server server) {
+    const Map implementations = implementations(server); 
+    Middleware init(const any<Server> implementations, * const Server server) {
         if server != NULL
             server.addMiddleware(my);
         return my;

@@ -170,7 +170,7 @@ class HTTPMessage {
     string endpoint = "";
     string statusMessage;
     HTTPMethod method;
-
+    Map metadata = new Map();
     private int parse(const adr rsi) {
         const string rsp = new string(rsi);
         my.origin = rsp;
@@ -473,6 +473,24 @@ class HTTPResponce {
         res = res + "\r\n";
         res = res + my.body;
         res = res + "\r\n";
+        return res;
+    };
+
+    string getBody() {
+        string res = new string("");
+        res = res + my.body;
+        return res;
+    };
+
+    string getStatusCode() {
+        string res = new string("");
+        res = res + my.statusCode;
+        return res;
+    };
+
+    string getStatusMessage() {
+        string res = new string("");
+        res = res + my.statusMessage;
         return res;
     };
 };
