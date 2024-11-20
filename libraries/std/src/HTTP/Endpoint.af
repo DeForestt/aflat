@@ -80,3 +80,17 @@ class Endpoints {
         };
     };
 };
+
+// class for When Endpoint is not found
+class NotFoundImpl {
+    const adr imp = imp;
+    NotFoundImpl init(const adr imp, const Server context) {
+        context.setNotFound(my);
+        return my;
+    };
+
+    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+        const let imp = my.imp;
+        return imp(context, msg);
+    };
+};
