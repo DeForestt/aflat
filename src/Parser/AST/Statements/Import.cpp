@@ -128,8 +128,9 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     std::ifstream file(this->path);
     // check if the file exists
     if (!file.is_open()) {
-      //switch the filename path to be mod.af
-      this->path = this->path.substr(0, this->path.find_last_of(".")) + "/mod.af";
+      // switch the filename path to be mod.af
+      this->path =
+          this->path.substr(0, this->path.find_last_of(".")) + "/mod.af";
       file.open(this->path);
       if (!file.is_open()) {
         generator.alert("File " + this->path + " not found");

@@ -10,26 +10,23 @@
 #include <catch2/generators/catch_generators_adapters.hpp>
 #include <catch2/generators/catch_generators_random.hpp>
 
-TEST_CASE("Generate random doubles across different ranges",
-          "[generator][example][advanced]") {
+TEST_CASE( "Generate random doubles across different ranges",
+           "[generator][example][advanced]" ) {
     // Workaround for old libstdc++
     using record = std::tuple<double, double>;
     // Set up 3 ranges to generate numbers from
-    auto r = GENERATE(table<double, double>({
-        record{3, 4},
-        record{-4, -3},
-        record{10, 1000}
-    }));
+    auto r = GENERATE( table<double, double>(
+        { record{ 3, 4 }, record{ -4, -3 }, record{ 10, 1000 } } ) );
 
     // This will not compile (intentionally), because it accesses a variable
     // auto number = GENERATE(take(50, random(std::get<0>(r), std::get<1>(r))));
 
-   // GENERATE_COPY copies all variables mentioned inside the expression
-   // thus this will work.
-    auto number = GENERATE_COPY(take(50, random(std::get<0>(r), std::get<1>(r))));
+    // GENERATE_COPY copies all variables mentioned inside the expression
+    // thus this will work.
+    auto number = GENERATE_COPY(
+        take( 50, random( std::get<0>( r ), std::get<1>( r ) ) ) );
 
-    REQUIRE(std::abs(number) > 0);
+    REQUIRE( std::abs( number ) > 0 );
 }
 
 // Compiling and running this file will result in 150 successful assertions
-
