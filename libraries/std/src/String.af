@@ -431,6 +431,7 @@ safe dynamic class string {
     };
 
     char at(const int index) {
+        if index < 0 | index >= str.len(my.head) return '\0';
         return str.str_at(my.head, index);
     };
 
@@ -537,7 +538,7 @@ safe dynamic class string {
         };
         return 0;
     };
-
+    
     int len() {
         return str.len(my.head);
     };
