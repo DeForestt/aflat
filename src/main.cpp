@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
         std::getline(ifs, line);
         if (line[0] == 'm') {
           // append after the 'm '
-          content += "m " + id  + "/" + line.substr(2) + "\n";
+          content += "m " + id + "/" + line.substr(2) + "\n";
           std::cout << "m " + id + "/" + line.substr(2) + "\n";
         }
       }
@@ -99,14 +99,14 @@ int main(int argc, char *argv[]) {
     std::ifstream ifs("aflat.cfg");
     std::string content((std::istreambuf_iterator<char>(ifs)),
                         (std::istreambuf_iterator<char>()));
-    
-        std::vector<std::string> files;
+
+    std::vector<std::string> files;
     for (const auto &entry : std::filesystem::directory_iterator(".")) {
       if (entry.path().string().find(".aflat.cfg") != std::string::npos) {
         files.push_back(entry.path().string());
       }
     }
-        // add each line that starts with 'm' to the modules list
+    // add each line that starts with 'm' to the modules list
     for (auto file : files) {
       std::string id = file.substr(0, file.find(".aflat.cfg"));
       std::ifstream ifs(file);
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
         std::getline(ifs, line);
         if (line[0] == 'm') {
           // append after the 'm '
-          content += "m " + id  + "/" + line.substr(2) + "\n";
+          content += "m " + id + "/" + line.substr(2) + "\n";
           std::cout << "m " + id + "/" + line.substr(2) + "\n";
         }
       }
@@ -414,8 +414,7 @@ void libTemplate(std::string value) {
 
   std::ofstream outfile(value + "/" + value + "/mod.af");
   outfile << ".needs <std>\n";
-  outfile
-      << "export int "  << value << "(){\n\treturn 0;\n};\n";
+  outfile << "export int " << value << "(){\n\treturn 0;\n};\n";
   outfile.close();
 
   outfile = std::ofstream(value + "/aflat.cfg");
@@ -456,7 +455,6 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       std::filesystem::create_directories("./bin/" + addPath);
       pathList.push_back(addPath);
     }
-
 
     build("./src/" + path + ".af", "./bin/" + path + ".s", config.mutability,
           config.debug);
