@@ -193,10 +193,33 @@ int main(int argc, char *argv[]) {
   if (value == "update") {
     std::string update_command =
         "curl -s "
-        "https://raw.githubusercontent.com/"
-        "DeForestt/aflat/main/install.sh | bash";
+        "https://aflat-server.fly.dev/"
+        "install.sh | bash";
     system(update_command.c_str());
     return 0;
+  }
+  if (value == "clean") {
+    std::filesystem::remove_all("./bin");
+    return 0;
+  } 
+  if (value == "install") {
+    // install a package from a git repository
+    if (argc < 3) {
+      std::cout << "Usage: aflat install <git repository>\n";
+      return 1;
+    }
+    std::string gitRepo = argv[2];
+    // if repo starts with 'https://' remove it
+    if (gitRepo.find("https://") != std::string::npos) {
+      gitRepo = gitRepo.substr(8);
+    }
+
+    std::string install_command =
+    "curl -s "
+    "https://aflat-server.fly.dev/"
+    "api/package/" +
+    gitRepo + " | bash";
+    system(install_command.c_str());
   }
   std::string outputFile;
   if (argc == 2)
