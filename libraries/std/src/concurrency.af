@@ -6,6 +6,17 @@ import String from "String.af";
 import Function from "Utils/Functions";
 import * from "io" under io;
 
+class AsyncOutput {
+    bool okay;
+    any data;
+
+    AsyncOutput init(const bool okay, const any data) {
+        my.okay = okay;
+        my.data = data;
+        return my;
+    };
+};
+
 class Thread {
     contract {
         private int pid;
@@ -177,60 +188,39 @@ bool isRunning@Process(){
     return status >= 0;
 };
 
-bool input@MProcess(const adr message){
-    const Message m = Message(message);
-    const Pipe pipe = my.inbox;
 
-    const adr header = malloc(5);
-    str.int_toStringL0(m.len, header, 5);
-    pipe.write(header, 5);
-    pipe.write(m.body, m.len);
-    free(header);
-
-    return true;
-};
-
-adr output@MProcess(){
-    const Pipe outbox = my.outbox;
-
-    // read header message from pipe
-    const adr header = malloc(5);
-    outbox.read(header, 5);
-    const int mlen = str.str_toInt(header);
-    free(header);
-
-    // read body from pipe
-    const adr mbody = malloc(mlen + 1);
-    const adr pbody = mbody + mlen;
-    pbody =: '\0';
-    outbox.read(mbody, mlen);
-
-    return mbody;
-};
 
 export Message readPipe(const Pipe pipe){
-    const adr header = malloc(5);
-    pipe.read(header, 5);
-    const int mlen = str.str_toInt(header);
-    free(header);
-
+    const byte[4] header;
+    pipe.read(header, 4);
+    const int mlen = header as int;
     // read body from pipe
-    adr mbody = malloc(mlen + 1);
+    const adr mbody = malloc(mlen);
 
     pipe.read(mbody, mlen);
     const Message m = Message(mbody);
-    mbody = mbody + mlen;
-    mbody =: '\0';
     return m;
 };
 
 int writePipe@Message(const Pipe pipe){
-    const adr header = malloc(5);
-    str.int_toStringL0(my.len, header, 5);
-    pipe.write(header, 5);
+    const int l = my.len;
+    pipe.write(?l, 4);
     pipe.write(my.body, my.len);
-    free(header);
     return 0;
+};
+
+bool input@MProcess(const adr message){
+    const Message m = Message(message);
+    const Pipe pipe = my.inbox;
+    m.writePipe(pipe);
+    return true;
+};
+
+
+adr output@MProcess(){
+    const Pipe outbox = my.outbox;
+    const Message m = readPipe(outbox);
+    return m.body;
 };
 
 Pipe init@Pipe(){
