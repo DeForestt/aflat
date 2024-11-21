@@ -3,7 +3,7 @@
 import Server from "HTTP/Server";
 import HTTPMessage from "HTTP";
 import string from "String";
-import Map from "Map";
+import Map from "Utils/Map";
 
 class Middleware {
     const Map implementations = implementations(server); 
