@@ -87,7 +87,6 @@ int main(int argc, char *argv[]) {
         if (line[0] == 'm') {
           // append after the 'm '
           content += "m " + id + "/" + line.substr(2) + "\n";
-          std::cout << "m " + id + "/" + line.substr(2) + "\n";
         }
       }
     };
@@ -116,7 +115,6 @@ int main(int argc, char *argv[]) {
         if (line[0] == 'm') {
           // append after the 'm '
           content += "m " + id + "/" + line.substr(2) + "\n";
-          std::cout << "m " + id + "/" + line.substr(2) + "\n";
         }
       }
     };
