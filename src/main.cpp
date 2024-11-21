@@ -24,6 +24,7 @@
 std::string preProcess(std::string input);
 std::string getExePath();
 void buildTemplate(std::string value);
+void libTemplate(std::string value);
 void build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug);
 void runConfig(cfg::Config &config, const std::string &libPath, char pmode);
@@ -44,19 +45,52 @@ int main(int argc, char *argv[]) {
   std::string value = argv[1];
 
   if (value == "make") {
-    if (argc != 3) {
+    if (argc < 3 || argc > 4) {
       std::cout << "Usage: aflat <make> <project name>\n";
       return 1;
     }
-    std::cout << "creating " << argv[2] << '\n';
-    std::string pName = argv[2];
-    buildTemplate(pName);
+    if (argc == 3) {
+      std::cout << "creating " << argv[2] << '\n';
+      std::string pName = argv[2];
+      buildTemplate(pName);
+      return 0;
+    }
+
+    if (argc == 4) {
+      if (std::string(argv[3]) == "lib") {
+        std::cout << "creating " << argv[2] << '\n';
+        std::string pName = argv[2];
+        libTemplate(pName);
+        return 0;
+      }
+    }
     return 0;
   }
   if (value == "build") {
     std::ifstream ifs("aflat.cfg");
     std::string content((std::istreambuf_iterator<char>(ifs)),
                         (std::istreambuf_iterator<char>()));
+    // Find any file that fits *.aflat.cfg
+    std::vector<std::string> files;
+    for (const auto &entry : std::filesystem::directory_iterator(".")) {
+      if (entry.path().string().find(".aflat.cfg") != std::string::npos) {
+        files.push_back(entry.path().string());
+      }
+    }
+    // add each line that starts with 'm' to the modules list
+    for (auto file : files) {
+      std::string id = file.substr(0, file.find(".aflat.cfg"));
+      std::ifstream ifs(file);
+      while (ifs) {
+        std::string line;
+        std::getline(ifs, line);
+        if (line[0] == 'm') {
+          // append after the 'm '
+          content += "m " + id + "/" + line.substr(2) + "\n";
+          std::cout << "m " + id + "/" + line.substr(2) + "\n";
+        }
+      }
+    };
     cfg::Config config = cfg::getConfig(content);
     runConfig(config, libPathA, 'e');
     return 0;
@@ -65,6 +99,27 @@ int main(int argc, char *argv[]) {
     std::ifstream ifs("aflat.cfg");
     std::string content((std::istreambuf_iterator<char>(ifs)),
                         (std::istreambuf_iterator<char>()));
+
+    std::vector<std::string> files;
+    for (const auto &entry : std::filesystem::directory_iterator(".")) {
+      if (entry.path().string().find(".aflat.cfg") != std::string::npos) {
+        files.push_back(entry.path().string());
+      }
+    }
+    // add each line that starts with 'm' to the modules list
+    for (auto file : files) {
+      std::string id = file.substr(0, file.find(".aflat.cfg"));
+      std::ifstream ifs(file);
+      while (ifs) {
+        std::string line;
+        std::getline(ifs, line);
+        if (line[0] == 'm') {
+          // append after the 'm '
+          content += "m " + id + "/" + line.substr(2) + "\n";
+          std::cout << "m " + id + "/" + line.substr(2) + "\n";
+        }
+      }
+    };
     cfg::Config config = cfg::getConfig(content);
     runConfig(config, libPathA, 'e');
     auto of = config.outPutFile;
@@ -194,6 +249,12 @@ void build(std::string path, std::string output, cfg::Mutability mutability,
       outputID = outputID.substr(outputID.find_last_of("/") + 1);
     }
 
+    // if output id = mod then switch to the parent directory
+    if (outputID == "mod") {
+      outputID = output.substr(0, output.find_last_of("/"));
+      outputID = outputID.substr(outputID.find_last_of("/") + 1);
+    }
+
     gen::CodeGenerator genny(outputID);
     auto file = genny.GenSTMT(Prog);
     file.collect();
@@ -305,8 +366,6 @@ void buildTemplate(std::string value) {
 
   std::ofstream outfile(value + "/src/main.af");
   outfile << ".needs <std>\n";
-
-  outfile << "import * from \"io\" under io;\n\n";
   outfile
       << "int main(){\n\tio.print(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
   outfile.close();
@@ -341,6 +400,26 @@ void buildTemplate(std::string value) {
   outfile << "e main\n";
   outfile << "t test/test\n";
   outfile.close();
+}
+
+/*
+ * function name: LibTemplate
+ * description:   creates a template file for the user to write their library
+ * parameters:    std::string value - the name of the library to be created
+ * return value:  void
+ */
+void libTemplate(std::string value) {
+  std::filesystem::create_directories(value);
+  std::filesystem::create_directories(value + "/src");
+
+  std::ofstream outfile(value + "/" + value + "/mod.af");
+  outfile << ".needs <std>\n";
+  outfile << "export int " << value << "(){\n\treturn 0;\n};\n";
+  outfile.close();
+
+  outfile = std::ofstream(value + "/aflat.cfg");
+  outfile << "; Aflat Config File\n";
+  outfile << "m " << value << "/mod\n";
 }
 
 void runConfig(cfg::Config &config, const std::string &libPath) {
@@ -467,13 +546,14 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   system(gcc.c_str());
   linker.erase(linker.begin(), linker.begin() + 35);
 
-  if (!config.asm_)
+  if (!config.asm_) {
     for (auto &s : linker) {
       std::filesystem::remove(s);
     }
 
-  // remove the paths from the pathList
-  for (auto &s : pathList) {
-    std::filesystem::remove_all("./bin/" + s);
+    // remove the paths from the pathList
+    for (auto &s : pathList) {
+      std::filesystem::remove_all("./bin/" + s);
+    }
   }
 }
