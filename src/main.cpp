@@ -383,7 +383,7 @@ void buildTemplate(std::string value) {
 
   std::ofstream outfile(value + "/src/main.af");
   outfile << ".needs <std>\n";
-  outfile << "import {print} from \"io\" under io";
+  outfile << "import {print} from \"io\" under io;\n\n";
   outfile
       << "int main(){\n\tio.print(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
   outfile.close();
