@@ -4,9 +4,6 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <numeric>
-#include <sstream>
-#include <thread>
 #include <vector>
 
 #include "ASM.hpp"
@@ -19,7 +16,6 @@
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
-#include "Utils.hpp"
 
 std::string preProcess(std::string input);
 std::string getExePath();
@@ -387,6 +383,7 @@ void buildTemplate(std::string value) {
 
   std::ofstream outfile(value + "/src/main.af");
   outfile << ".needs <std>\n";
+  outfile << "import {print} from \"io\" under io";
   outfile
       << "int main(){\n\tio.print(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
   outfile.close();
@@ -432,15 +429,49 @@ void buildTemplate(std::string value) {
 void libTemplate(std::string value) {
   std::filesystem::create_directories(value);
   std::filesystem::create_directories(value + "/src");
+  std::filesystem::create_directories(value + "/src/test");
+  std::filesystem::create_directories(value + "/bin");
 
-  std::ofstream outfile(value + "/" + value + "/mod.af");
+  std::ofstream outfile(value + "/src/mod.af");
   outfile << ".needs <std>\n";
-  outfile << "export int " << value << "(){\n\treturn 0;\n};\n";
+  outfile << "export int " << value << "(int a, int b){\n\treturn a + b;\n};\n";
   outfile.close();
 
   outfile = std::ofstream(value + "/aflat.cfg");
   outfile << "; Aflat Config File\n";
-  outfile << "m " << value << "/mod\n";
+  outfile << "m mod\n";
+  outfile << "t test/test\n";
+  outfile.close();
+
+  outfile = std::ofstream(value + "/src/test/test.af");
+  outfile << ".needs <std>\n\n";
+  outfile << "import {case, report, require} from \"ATest.af\" under test;\n"
+             "import string from \"String\";\n"
+             "import TestSuite from \"ATest.af\";\n"
+             "import {"
+          << value << "} from \"src/mod\" under lib"
+          << ";\n\n"
+             "bool test_"
+          << value << "() : test.case(\"test_" << value
+          << "\") "
+             "{\n"
+             "\t return test.require("
+          << value
+          << "(1, 2) == 3, \"1 + 2 = 3\");"
+             "\n};\n\n"
+             "int main() {\n"
+             "\tTestSuite suite = new TestSuite(\""
+          << value
+          << " Test Suite\");\n"
+             "\tsuite.addCase(test_"
+          << value
+          << ");\n"
+             "\tsuite.run();\n"
+             "\ttest.report();\n"
+             "\treturn 0;\n"
+             "};";
+
+  outfile.close();
 }
 
 void runConfig(cfg::Config &config, const std::string &libPath) {
