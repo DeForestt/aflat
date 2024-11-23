@@ -8,7 +8,15 @@ project(aflat VERSION 1.1.0)
 
 file(GLOB_RECURSE aflat_SRC
     src/*.cpp
-) 
+)
+
+list(REMOVE_ITEM aflat_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/main.lsp.cpp)
+
+file(GLOB_RECURSE lsp_SRC
+  src/*.cpp
+)
+
+list(REMOVE_ITEM lsp_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
 # add boost
 find_package(Boost 1.71.0 REQUIRED)
@@ -16,8 +24,10 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 add_definitions(${GCC_COMPILER_FLAGS})
 add_executable(aflat ${aflat_SRC})
+add_executable(aflat_lsp ${lsp_SRC})
 
 target_include_directories(aflat PRIVATE include/) 
+target_include_directories(aflat_lsp PRIVATE include/)
 
 # Testing -->
 file(GLOB_RECURSE testing_Modules
@@ -27,6 +37,7 @@ file(GLOB_RECURSE testing_Modules
 )
 
 list(REMOVE_ITEM testing_Modules ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
+list(REMOVE_ITEM testing_Modules ${CMAKE_CURRENT_SOURCE_DIR}/src/main.lsp.cpp)
 
 message (STATUS ${testing_Modules})
 add_executable(test ${testing_Modules})
