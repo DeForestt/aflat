@@ -92,7 +92,7 @@ ast::Statement *parse::Parser::parseStmt(
     auto obj = *dynamic_cast<lex::LObj *>(tokens.peek());
     auto safeType = false;
     auto dynamicType = false;
-    auto padantic = false;
+    auto pedantic = false;
     auto scope = ast::Public;
     tokens.pop();
 
@@ -102,15 +102,15 @@ ast::Statement *parse::Parser::parseStmt(
     else
       isMutable = false;
 
-    if (obj.meta == "safe" || obj.meta == "dynamic" || obj.meta == "padantic") {
+    if (obj.meta == "safe" || obj.meta == "dynamic" || obj.meta == "pedantic") {
       while (obj.meta == "safe" || obj.meta == "dynamic" ||
-             obj.meta == "padantic") {
+             obj.meta == "pedantic") {
         if (obj.meta == "safe")
           safeType = true;
         else if (obj.meta == "dynamic")
           dynamicType = true;
-        else if (obj.meta == "padantic")
-          padantic = true;
+        else if (obj.meta == "pedantic")
+          pedantic = true;
         if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
           obj = *dynamic_cast<lex::LObj *>(tokens.peek());
           tokens.pop();
@@ -444,7 +444,7 @@ ast::Statement *parse::Parser::parseStmt(
     } else if (obj.meta == "struct") {
       output = new ast::Struct(tokens, *this);
     } else if (obj.meta == "class") {
-      output = new ast::Class(tokens, *this, safeType, dynamicType, padantic);
+      output = new ast::Class(tokens, *this, safeType, dynamicType, pedantic);
     } else if (obj.meta == "enum") {
       output = new ast::Enum(tokens, *this);
     } else if (obj.meta == "import") {

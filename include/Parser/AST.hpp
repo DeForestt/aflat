@@ -100,7 +100,7 @@ class Type {
   links::LinkedList<int> indices;
   bool isGeneric = false;
   bool safeType = false;
-  bool padantic = false;
+  bool pedantic = false;
   Type *typeHint;
   bool isReference = false;
   asmc::Size refSize;

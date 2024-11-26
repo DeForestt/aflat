@@ -7,7 +7,7 @@
 
 namespace ast {
 Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
-             bool safe, bool dynamic, bool padantic) {
+             bool safe, bool dynamic, bool pedantic) {
   this->logicalLine = tokens.peek()->lineCount;
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
@@ -75,7 +75,7 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
     this->contract = nullptr;
   this->safeType = safe;
   this->dynamic = dynamic;
-  this->padantic = padantic;
+  this->pedantic = pedantic;
   this->statement = parser.parseStmt(tokens);
 };
 
@@ -88,7 +88,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   type->nameTable.foo = gen::utils::compareFunc;
   type->safeType = this->safeType;
   type->dynamic = this->dynamic;
-  type->padantic = this->padantic;
+  type->pedantic = this->pedantic;
   generator.scope = type;
   type->overloadTable.foo = [](ast::Function func, ast::Op op) {
     if (func.op == op) {
@@ -127,7 +127,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
         // set class constraints to at least the base class constraints
         type->safeType = type->safeType || base->safeType;
         type->dynamic = type->dynamic || base->dynamic;
-        type->padantic = type->padantic || base->padantic;
+        type->pedantic = type->pedantic || base->pedantic;
       } else
         generator.alert("Base class is not a class");
     } else

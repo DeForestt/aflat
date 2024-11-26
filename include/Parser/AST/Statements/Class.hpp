@@ -14,10 +14,10 @@ class Class : public Statement {
   Statement *statement;
   bool safeType = false;
   bool dynamic = false;
-  bool padantic = false;
+  bool pedantic = false;
   Class() = default;
   Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
-        bool safeType, bool dynamic, bool padantic);
+        bool safeType, bool dynamic, bool pedantic);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 };  // namespace ast

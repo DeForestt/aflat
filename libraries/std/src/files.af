@@ -191,21 +191,32 @@ List toList@File(const char delim){
 };
 
 
-safe dynamic padantic class FileManager {
-  private const File f = createFile(filename).value([] => return NULL);
+safe dynamic pedantic class FileManager {
   private mutable int refcount = 1;
+  private mutable bool usable = true;
+  private mutable File f = createFile(filename).value([const FileManager this] => {
+        this.usable = false;
+        return NULL;
+  });
 
   FileManager init(const adr filename) {
     return my;
   };
   
   int del() {
-    my.f.close();
-    delete my.f;
+        if (my.usable) {
+                my.f.close();
+                delete my.f;
+        };
+        return 0;
   };
 
   
   File _call() {
+    if !my.usable {
+        // undefined behavior
+        panic("Attempted to use an unusable file");  
+    };
     my.refcount = my.refcount - 1;
     return my.f;
   };
@@ -221,6 +232,27 @@ safe dynamic padantic class FileManager {
   FileManager get() {
     my.refcount = my.refcount + 1;
     return my;
+  };
+
+/// Copy assignment operator for the FileManager class.
+/// 
+/// This operator performs a deep copy of the `other` FileManager object to the current instance.
+/// If the current instance is usable, it closes and deletes the existing file before copying.
+/// The `other` FileManager object is invalidated after the copy.
+/// 
+/// @param other The FileManager object to copy from.
+/// @return The current instance of FileManager after the copy.
+  FileManager cpy<<=>>(const FileManager other) {
+        if (my.usable) {
+            my.f.close();
+            delete my.f;
+        };
+        my.f = other.f;
+        my.usable = other.usable;
+        // invalidate the other
+        other.usable = false;
+        other.f = NULL;
+        return my;
   };
 
 };
