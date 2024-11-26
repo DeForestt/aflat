@@ -69,7 +69,7 @@ class FD {
   public int in;
 };
 
-safe dynamic padantic class AsyncResult{
+safe dynamic pedantic class AsyncResult{
     private MProcess p = p;
     private int refcount = 1;
 

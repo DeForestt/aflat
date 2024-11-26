@@ -3,7 +3,7 @@ import Function from "Utils/Functions";
 import Map from "Utils/Map";
 import string from "String";
 
-dynamic safe padantic class Option {
+dynamic safe pedantic class Option {
     private mutable any value = value;
     private mutable bool hasValue = hasValue;
     private mutable int refcount = 1;

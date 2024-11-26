@@ -11,7 +11,7 @@ import Map from "Utils/Map";
 A class that represents the result of a function.  It can either be error or success. and will return the value if it is success.
 You will be sacrificing type safety for error handling.
 */
-dynamic safe padantic class Result {
+dynamic safe pedantic class Result {
 	private mutable any value = value;
 	private mutable bool success = error == NULL;
 	private mutable Error error = error;

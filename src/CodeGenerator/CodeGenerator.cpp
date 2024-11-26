@@ -331,7 +331,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
       // if the type is a class
       gen::Class *cl = dynamic_cast<gen::Class *>(*udef);
       if (cl != nullptr) {
-        if (type.typeName == "adr" && !cl->padantic) return true;
+        if (type.typeName == "adr" && !cl->pedantic) return true;
         gen::Class *parent = cl->parent;
         if (parent != nullptr) {
           if (parent->Ident == type.typeName) return true;
@@ -356,7 +356,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
 
   if ((type.size == asmc::QWord &&
        (typeName == "adr" || typeName == "generic")) &&
-      (strict || !cl || !cl->padantic)) {
+      (strict || !cl || !cl->pedantic)) {
     return true;
   }
 
