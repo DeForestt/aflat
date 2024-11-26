@@ -234,14 +234,6 @@ safe dynamic pedantic class FileManager {
     return my;
   };
 
-/// Copy assignment operator for the FileManager class.
-/// 
-/// This operator performs a deep copy of the `other` FileManager object to the current instance.
-/// If the current instance is usable, it closes and deletes the existing file before copying.
-/// The `other` FileManager object is invalidated after the copy.
-/// 
-/// @param other The FileManager object to copy from.
-/// @return The current instance of FileManager after the copy.
   FileManager cpy<<=>>(const FileManager other) {
         if (my.usable) {
             my.f.close();
