@@ -5,27 +5,52 @@ BIN     := bin
 SRC     := src
 INCLUDE := include
 
-LIBRARIES   :=
-EXECUTABLE  := aflat
+LIBRARIES := -pthread
 
+# Define executables
+EXECUTABLE     := aflat
+EXECUTABLE_LSP := aflat_lsp
+
+# Source files (excluding the main files)
+SOURCES := $(filter-out $(SRC)/main.cpp $(SRC)/main.lsp.cpp, $(wildcard $(SRC)/*.cpp)) \
+           $(wildcard $(SRC)/CodeGenerator/*.cpp) \
+           $(wildcard $(SRC)/Parser/*.cpp) \
+           $(wildcard $(SRC)/Parser/AST/Statements/*.cpp)
+
+MAIN_SRC       := $(SRC)/main.cpp
+MAIN_LSP_SRC   := $(SRC)/main.lsp.cpp
+
+# GDB debugger
 GDB := gdb
 
+.PHONY: all clean libs debug
 
-all: $(BIN)/$(EXECUTABLE)
+# Default target builds both executables
+all: $(BIN)/$(EXECUTABLE) $(BIN)/$(EXECUTABLE_LSP)
 
-run: all
+# Run the main executable
+run: $(BIN)/$(EXECUTABLE)
 	clear
 	./$(BIN)/$(EXECUTABLE)
 
-$(BIN)/$(EXECUTABLE): $(SRC)/*.cpp $(SRC)/CodeGenerator/*.cpp $(SRC)/Parser/*.cpp $(SRC)/Parser/AST/Statements/*.cpp
-	$(CXX) $(CXX_FLAGS) -I $(INCLUDE) $^ -o $@ $(LIBRARIES) -pthread;
+# Build aflat
+$(BIN)/$(EXECUTABLE): $(MAIN_SRC) $(SOURCES)
+	$(CXX) $(CXX_FLAGS) -I $(INCLUDE) $^ -o $@ $(LIBRARIES)
 	bash ./rebuild-libs.sh
-	
 
+# Build aflat_lsp
+$(BIN)/$(EXECUTABLE_LSP): $(MAIN_LSP_SRC) $(SOURCES)
+	$(CXX) $(CXX_FLAGS) -I $(INCLUDE) $^ -o $@ $(LIBRARIES)
+	bash ./rebuild-libs.sh
+
+# Clean the build directory
 clean:
-	-rm $(BIN)/*
+	-rm -f $(BIN)/*
 
+# Rebuild libraries
 libs:
 	bash ./rebuild-libs.sh
 
+# Debug the main executable
 debug: $(GDB) ./$(BIN)/$(EXECUTABLE)
+
