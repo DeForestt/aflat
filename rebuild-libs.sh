@@ -30,6 +30,8 @@ aflat ./libraries/std/src/Utils/Object.af ./libraries/std/Object.s
 mv ./libraries/std/Object.s ./libraries/std/Utils_Object.s
 aflat ./libraries/std/src/Utils/Error.af ./libraries/std/Error.s
 mv ./libraries/std/Error.s ./libraries/std/Utils_Error.s
+aflat ./libraries/std/src/Utils/Defer.af ./libraries/std/Defer.s
+mv ./libraries/std/Defer.s ./libraries/std/Utils_Defer.s
 aflat ./libraries/std/src/Utils/Error/Render.af ./libraries/std/Error_Render.s
 aflat ./libraries/std/src/HTTP/Endpoint.af ./libraries/std/HTTP_Endpoint.s
 aflat ./libraries/std/src/HTTP/Middleware.af ./libraries/std/HTTP_Middleware.s
