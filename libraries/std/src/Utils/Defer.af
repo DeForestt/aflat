@@ -1,0 +1,21 @@
+.needs <std>
+import Function from "Utils/Functions";
+
+safe dynamic class Defer {
+    private const Function _fn = fn;
+    private mutable bool dismissed = false;
+
+    Defer init(const Function fn) {
+        return my;
+    };
+
+    void dismiss() {
+        my.dismissed = true;
+    };
+
+    int endScope() {
+        if !my.dismissed
+            my._fn();
+        delete my;
+    };
+};
