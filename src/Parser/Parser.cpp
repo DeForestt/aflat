@@ -689,12 +689,20 @@ ast::Statement *parse::Parser::parseArgs(
         }
       }
 
+      // check if the type is a reference
       const auto refSym = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (refSym && refSym->Sym == '&') {
-        dec->type.isReference = true;
-        dec->type.refSize = dec->type.size;
-        dec->type.size = asmc::QWord;
+        // check if the type is an rval reference
         tokens.pop();
+        if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+            dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '&') {
+          tokens.pop();
+          dec->type.isRvalue = true;
+        } else {
+          dec->type.isReference = true;
+          dec->type.refSize = dec->type.size;
+          dec->type.size = asmc::QWord;
+        }
       }
 
       // ensures the the current token is an Ident

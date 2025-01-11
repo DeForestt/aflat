@@ -103,6 +103,7 @@ class Type {
   bool pedantic = false;
   Type *typeHint;
   bool isReference = false;
+  bool isRvalue = false;
   asmc::Size refSize;
 
   struct FPointerArgs {
