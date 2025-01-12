@@ -120,7 +120,7 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId) {
   this->scope = nullptr;
 }
 
-std::tuple<std::string, gen::Symbol, bool, asmc::File>
+std::tuple<std::string, gen::Symbol, bool, asmc::File, gen::Symbol *>
 gen::CodeGenerator::resolveSymbol(std::string ident,
                                   links::LinkedList<std::string> modList,
                                   asmc::File &OutputFile,
@@ -145,7 +145,8 @@ gen::CodeGenerator::resolveSymbol(std::string ident,
     sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, ident);
     global = true;
   }
-  if (sym == nullptr) return std::make_tuple("", gen::Symbol(), false, pops);
+  if (sym == nullptr)
+    return std::make_tuple("", gen::Symbol(), false, pops, nullptr);
 
   std::string access = "";
   if (global)
@@ -289,7 +290,7 @@ gen::CodeGenerator::resolveSymbol(std::string ident,
     access = '(' + this->registers["%r12"]->get(asmc::QWord) + ')';
     retSym.type = *retSym.type.typeHint;
   };
-  return std::make_tuple(access, retSym, true, pops);
+  return std::make_tuple(access, retSym, true, pops, modSym);
 };
 
 bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
@@ -591,9 +592,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   } else if (dynamic_cast<ast::Var *>(expr) != nullptr) {
     ast::Var var = *dynamic_cast<ast::Var *>(expr);
 
-    std::tuple<std::string, gen::Symbol, bool, asmc::File> resolved =
-        this->resolveSymbol(var.Ident, var.modList, OutputFile, var.indices,
-                            var.internal);
+    auto resolved = this->resolveSymbol(var.Ident, var.modList, OutputFile,
+                                        var.indices, var.internal);
 
     if (std::get<2>(resolved) == false) {
       const auto symbol = std::get<1>(resolved);
@@ -776,6 +776,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       var.modList.reset();
     } else {
       gen::Symbol sym = std::get<1>(resolved);
+      if (sym.sold != -1) {
+        alert("variable " + var.Ident + " was sold on line " +
+              std::to_string(sym.sold) + " and cannot be used");
+      }
 
       if (sym.type.isReference && !var.clean) {
         // turn this into a de-reference
@@ -794,7 +798,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         // check if the symbol type is a class
         auto cont = true;
         gen::Type **t = this->typeList[sym.type.typeName];
-        if (t) {
+        if (t && !var.selling) {
           gen::Class *cl = dynamic_cast<gen::Class *>(*t);
           if (cl) {
             if (cl->safeType && sym.symbol != "my") {
@@ -843,10 +847,56 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
             "or generic");
       output.type = var.typeCast;
     }
+  } else if (dynamic_cast<ast::Buy *>(expr) != nullptr) {
+    auto buy = dynamic_cast<ast::Buy *>(expr);
+    // for now, we will onlt support buying of a variable (lvalue)
+    auto var = dynamic_cast<ast::Var *>(buy->expr);
+    if (var == nullptr) {
+      this->alert("buying of non-variable not supported");
+    }
+
+    auto resolved =
+        this->resolveSymbol(var->Ident, var->modList, OutputFile,
+                            links::LinkedList<ast::Expr *>(), false);
+
+    if (std::get<2>(resolved) == false) {
+      this->alert("variable not found " + var->Ident);
+    }
+
+    gen::Symbol *sym = &std::get<1>(resolved);
+
+    // find the _sell function if it exists
+    gen::Type **type = this->typeList[sym->type.typeName];
+    if (type != nullptr) {
+      gen::Class *classType = dynamic_cast<gen::Class *>(*type);
+      if (classType != nullptr) {
+        // check if the class has a destructor
+        ast::Function *destructor = classType->nameTable["_sell"];
+
+        if (destructor != nullptr) {
+          ast::Call *call = new ast::Call();
+          call->ident = var->Ident;
+          call->modList = var->modList;
+          call->modList.push("_sell");
+          call->Args = LinkedList<ast::Expr *>();
+          ast::CallExpr *callExpr = new ast::CallExpr();
+          callExpr->call = call;
+          callExpr->logicalLine = this->logicalLine;
+          output = this->GenExpr(callExpr, OutputFile);
+        }
+      } else {
+        output = this->GenExpr(var, OutputFile);
+      }
+    } else {
+      output = this->GenExpr(var, OutputFile);
+    }
+
+    // set the symbol to sold...
+    std::get<4>(resolved)->sold = this->logicalLine;
   } else if (dynamic_cast<ast::Reference *>(expr) != nullptr) {
     ast::Reference ref = *dynamic_cast<ast::Reference *>(expr);
 
-    std::tuple<std::string, gen::Symbol, bool, asmc::File> resolved =
+    auto resolved =
         this->resolveSymbol(ref.Ident, ref.modList, OutputFile,
                             links::LinkedList<ast::Expr *>(), ref.internal);
 
@@ -2035,6 +2085,7 @@ asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
 }
 
 asmc::File *gen::CodeGenerator::deScope(gen::Symbol &sym) {
+  if (sym.sold != -1) return nullptr;
   asmc::File *file = new asmc::File();
   gen::Type **type = this->typeList[sym.type.typeName];
   if (type == nullptr) return nullptr;

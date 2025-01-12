@@ -80,6 +80,7 @@ class Expr : public Statement {
  public:
   virtual std::string toString() override { return ""; };
   Expr *extention = nullptr;
+  bool selling = false;
   std::string typeCast = "";
 };
 
@@ -103,6 +104,7 @@ class Type {
   bool pedantic = false;
   Type *typeHint;
   bool isReference = false;
+  bool isRvalue = false;
   asmc::Size refSize;
 
   struct FPointerArgs {
@@ -172,6 +174,11 @@ class Var : public Expr {
   links::LinkedList<std::string> modList;
   bool clean = false;
   bool internal = false;
+};
+
+class Buy : public Expr {
+ public:
+  Expr *expr;
 };
 
 class StringLiteral : public Expr {

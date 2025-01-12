@@ -367,6 +367,9 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
       if (func->argTypes.at(i).isReference) {
         auto toReg = new ast::Reference();
         auto var = dynamic_cast<ast::Var *>(arg);
+        if (var == nullptr) {
+          generator.alert("Attempted to pass an rvalue to a reference");
+        }
         auto sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
         if (!sym) {
           sym = generator.GlobalSymbolTable.search<std::string>(
@@ -391,6 +394,14 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         toReg->modList = var->modList;
         toReg->logicalLine = var->logicalLine;
         arg = toReg;
+      }
+      if (func->argTypes.at(i).isRvalue) {
+        // make sure that its not a var
+        auto var = dynamic_cast<ast::Var *>(arg);
+        if (var != nullptr) {
+          generator.alert("Attempted to pass an lvalue (" + var->Ident +
+                          ") to an rvalue");
+        }
       }
     }
     gen::Expr exp = generator.GenExpr(arg, file);

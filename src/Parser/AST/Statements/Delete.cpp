@@ -36,13 +36,15 @@ Delete::Delete(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 
 gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
   asmc::File OutputFile;
-  std::tuple<std::string, gen::Symbol, bool, asmc::File> resolved =
-      generator.resolveSymbol(this->ident, this->modList, OutputFile,
-                              links::LinkedList<ast::Expr *>());
+  auto resolved = generator.resolveSymbol(
+      this->ident, this->modList, OutputFile, links::LinkedList<ast::Expr *>());
   if (!std::get<2>(resolved))
     generator.alert("Identifier " + this->ident + " not found to delete");
 
   gen::Symbol *sym = &std::get<1>(resolved);
+  if (sym->sold != -1)
+    generator.alert("Variable " + this->ident + " was sold on line " +
+                    std::to_string(sym->sold) + " and cannot be deleted");
 
   ast::Function *free = generator.nameTable["free"];
   if (free == nullptr)
@@ -55,13 +57,13 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
     gen::Class *classType = dynamic_cast<gen::Class *>(*type);
     if (classType != nullptr) {
       // check if the class has a destructor
-      ast::Function *destructor = classType->nameTable["this"];
+      ast::Function *destructor = classType->nameTable["del"];
 
       if (destructor != nullptr) {
         ast::Call *call = new ast::Call();
         call->ident = this->ident;
         call->modList = LinkedList<std::string>();
-        call->modList.push("this");
+        call->modList.push("del");
         call->Args = LinkedList<ast::Expr *>();
 
         OutputFile << generator.GenSTMT(call);
