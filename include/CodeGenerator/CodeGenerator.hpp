@@ -22,6 +22,7 @@ class Symbol {
   bool mask = false;
   int byteMod;
   bool usable = true;
+  int sold = -1;
   int underscores = 0;
   int refCount = 0;
   int assignCount = 0;
@@ -138,10 +139,10 @@ class CodeGenerator {
   links::LinkedList<std::string> breakContext;
   links::LinkedList<std::string> continueContext;
 
-  std::tuple<std::string, gen::Symbol, bool, asmc::File> resolveSymbol(
-      std::string ident, links::LinkedList<std::string> modList,
-      asmc::File &OutputFile, links::LinkedList<ast::Expr *> indicies,
-      bool internal = false);
+  std::tuple<std::string, gen::Symbol, bool, asmc::File, gen::Symbol *>
+  resolveSymbol(std::string ident, links::LinkedList<std::string> modList,
+                asmc::File &OutputFile, links::LinkedList<ast::Expr *> indicies,
+                bool internal = false);
 
   asmc::File GenSTMT(ast::Statement *stmt);
   asmc::File ImportsOnly(ast::Statement *stmt);

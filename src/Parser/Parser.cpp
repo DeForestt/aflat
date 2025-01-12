@@ -1300,6 +1300,15 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
           output = newExpr;
         }
       }
+    } else if (eq.Sym == '$') {
+      // This is the buy operator it will cast an lvalue to an rvalue by
+      // invalidating the lvalue and calling any possible move constructor
+      tokens.pop();
+      auto buy = new ast::Buy();
+      buy->expr = this->parseExpr(tokens);
+      buy->expr->selling = true;
+      buy->logicalLine = eq.lineCount;
+      output = buy;
     }
   } else
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
