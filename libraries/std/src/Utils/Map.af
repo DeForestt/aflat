@@ -156,11 +156,12 @@ class Map {
         return my;
     };
 
-    Map set(const adr key, const any data) {
+    Map set(const adr key, const any &&data) {
+        const any counterfit_data = data; // we make a counterfit data so we can sell it twice
         if my.root == NULL {
-            my.root = new MapNode(key, data);
+            my.root = new MapNode(key, $data);
         } else {
-            my.root.input(key, data);
+            my.root.input(key, $counterfit_data);
         };
         return my;
     };

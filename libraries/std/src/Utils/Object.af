@@ -25,14 +25,14 @@ class Object {
         return my._fields.get(key);
     };
 
-    public Result set(const adr key, const any value) {
+    public Result set(const adr key, const any &&value) {
         mutable let valid = true;
         if my._validate != NULL {
             valid = my._validate(key, value);
         };
         if valid {
-            my._fields.set(key, value);
-            res.accept(value);
+            my._fields.set(key, $value);
+            res.accept(my._fields.get(key));
         } else
             res.reject(new Error("Validation failed"));
     };
@@ -48,7 +48,7 @@ safe dynamic class Field {
     private const string name = name;
 
     Field init(const Map<> foo, const Object context, const string name, * const any initial_value) {
-        my.context.set(name.cstr(), initial_value);
+        my.context.set(name.cstr(), $initial_value);
         return my;
     };
 
@@ -69,9 +69,9 @@ safe dynamic class Field {
             if my.accessors.has("get") {
                 const adr getter = my.accessors.get("get").or(NULL);
                 const any newVal = getter(my.context);
-                my.context.set(my.name.cstr(), newVal);
-            } else my.context.set(my.name.cstr(), val);
-            return res.accept(val);
+                my.context.set(my.name.cstr(), $newVal);
+            } else my.context.set(my.name.cstr(), $val);
+            return res.accept(NULL);
         } else {
             return res.reject(new Error(`Attempt to write read-only field {my.name}`));
         };

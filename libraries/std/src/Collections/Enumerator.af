@@ -30,8 +30,8 @@ class Enumerator signs Iterator {
         if val.hasError() return val;
         const any val = val.value([] => panic("Iterator returned empty value"));
         const let map = {
-            "value": val,
-            "index": i
+            "value": $val,
+            "index": $i
         };
         return res.accept(map);
     };
