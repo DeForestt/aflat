@@ -1,5 +1,7 @@
 #include "ASM.hpp"
 
+#include <iostream>
+
 std::string asmc::Instruction::toString() { return (""); }
 
 std::string asmc::SysCall::toString() { return "\tsyscall\t\n"; }
@@ -437,6 +439,6 @@ std::string asmc::Register::get(asmc::Size wants) {
       return this->byte;
       break;
     default:
-      throw err::Exception("Unknown register size");
+      throw err::Exception("Unknown register size " + std::to_string(wants));
   };
 }

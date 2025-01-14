@@ -2,6 +2,7 @@
 
 #include <unistd.h>
 
+#include <boost/stacktrace.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -63,6 +64,14 @@ std::string getUUID() {
   }
   return uuid;
 };
+
+void gen::CodeGenerator::alertWithStacktrace(std::string message, bool error) {
+  // Print stack trace using Boost
+  std::cout << "Stack trace:\n" << boost::stacktrace::stacktrace() << std::endl;
+
+  // Call the existing alert function for message and context
+  this->alert(message, error);
+}
 
 void gen::CodeGenerator::alert(std::string message, bool error = true) {
   if (error) {
@@ -883,7 +892,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           callExpr->call = call;
           callExpr->logicalLine = this->logicalLine;
           output = this->GenExpr(callExpr, OutputFile);
-        }
+        } else
+          output = this->GenExpr(var, OutputFile);
       } else {
         output = this->GenExpr(var, OutputFile);
       }

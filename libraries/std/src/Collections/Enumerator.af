@@ -41,7 +41,7 @@ class Enumerator signs Iterator {
     };
 };
 
-safe dynamic class Range signs Iterator {
+safe class Range signs Iterator {
     private const int start = start;
     private const int end = end;
     private mutable int step = step;
