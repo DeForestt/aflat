@@ -2,10 +2,10 @@
 import Function from "Utils/Functions";
 
 safe dynamic class Defer {
-    private const Function _fn = fn;
+    private const Function fn = fn;
     private mutable bool dismissed = false;
 
-    Defer init(const Function fn) {
+    Defer init(const Function &&fn) {
         return my;
     };
 
@@ -15,7 +15,7 @@ safe dynamic class Defer {
 
     int endScope() {
         if !my.dismissed
-            my._fn();
+            my.fn();
         delete my;
     };
 };

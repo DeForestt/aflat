@@ -150,6 +150,7 @@ class CodeGenerator {
       ast::Statement *STMT, links::LinkedList<gen::Symbol> &table);
   // a function for warnings or errors
   void alert(std::string message, bool error = true);
+  void alertWithStacktrace(std::string message, bool error = true);
   CodeGenerator(std::string moduleId);
   asmc::File *deScope(gen::Symbol &sym);
 };
