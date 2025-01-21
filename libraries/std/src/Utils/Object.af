@@ -32,9 +32,9 @@ class Object {
         };
         if valid {
             my._fields.set(key, $value);
-            res.accept(my._fields.get(key));
+            return res.accept(my._fields.get(key));
         } else
-            res.reject(new Error("Validation failed"));
+            return res.reject(new Error("Validation failed"));
     };
 
     public Object init() {
