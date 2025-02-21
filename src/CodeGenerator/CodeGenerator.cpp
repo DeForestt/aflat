@@ -860,7 +860,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                             links::LinkedList<ast::Expr *>(), false);
 
     if (std::get<2>(resolved) == false) {
-      this->alert("variable not found " + var->Ident);
+      this->alert("attemptted to buy an undeclared variable: " + var->Ident);
     }
 
     gen::Symbol *sym = &std::get<1>(resolved);
@@ -883,6 +883,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           callExpr->call = call;
           callExpr->logicalLine = this->logicalLine;
           output = this->GenExpr(callExpr, OutputFile);
+        } else {
+          // just sell it normally
+          output = this->GenExpr(var, OutputFile);
         }
       } else {
         output = this->GenExpr(var, OutputFile);
