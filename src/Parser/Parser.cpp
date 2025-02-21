@@ -1303,8 +1303,6 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         newExpr->type.typeName = "Map";
         output = newExpr;
       } else {
-        // std::cout << "Creating Map or Struct List" << std::endl;
-        // tokens.push(save_token);
         auto first_arg = this->parseExpr(tokens);
         sym = dynamic_cast<lex::OpSym *>(tokens.peek());
         if (sym != nullptr && (sym->Sym == ',' || sym->Sym == '}')) {
@@ -1315,6 +1313,11 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
           if (sym->Sym == ',') {
             do {
               tokens.pop();
+              auto checkEnd = dynamic_cast<lex::OpSym *>(tokens.peek());
+              if (checkEnd != nullptr && checkEnd->Sym == '}') {
+                symp = checkEnd;
+                break;
+              }
               structList->args.push(this->parseExpr(tokens));
               symp = dynamic_cast<lex::OpSym *>(tokens.peek());
             } while (symp != nullptr && symp->Sym == ',');
@@ -1351,6 +1354,13 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
 
           while (sym != nullptr && sym->Sym == ',') {
             tokens.pop();
+
+            auto checkEnd = dynamic_cast<lex::OpSym *>(tokens.peek());
+            if (checkEnd != nullptr && checkEnd->Sym == '}') {
+              sym = checkEnd;
+              break;
+            }
+
             auto nextSet = new ast::CallExpr();
             nextSet->logicalLine = eq.lineCount;
             nextSet->call = new ast::Call();

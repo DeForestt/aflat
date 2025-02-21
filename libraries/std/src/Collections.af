@@ -10,6 +10,8 @@ import Option from "Utils/Option";
 import Result from "Utils/Result";
 import {accept, reject} from "Utils/Result" under res;
 import {some, none} from "Utils/Option" under opt;
+import Error from "Utils/Error";
+import Render from "Utils/Error/Render";
 
 class ICollection{
     contract {
@@ -476,6 +478,18 @@ int extend@Array(int amount){
     return  amount;
 };
 
+class IndexOutOfRangeError signs Error {
+    const string message = message.copy();
+
+    string stdErrorMessage() : Render {
+        return `{my._typeName}: {my.message}`;
+    };
+
+    IndexOutOfRangeError init(const string message) {
+        return my;
+    };
+}
+
 class List {
     private adr head = malloc(typeSize * size);
     private int typeSize = typeSize;
@@ -511,16 +525,16 @@ class List {
 
     Result get(const int index) {
         if index >= my.count | index < 0 {
-            return res.reject(`Index {index} out of bounds of list size {my.count}`);
+            res.reject(new IndexOutOfRangeError(`Index {index} out of range`))
         };
 
         const adr val = my.head + (index * my.typeSize);
 
-        return res.accept(val);
+        res.accept(val)
     };
 
     Result _call(const int index) {
-        return my.get(index);
+        my.get(index)
     };
 
     Option popBack() {
