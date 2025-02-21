@@ -518,19 +518,75 @@ ast::Statement *parse::Parser::parseStmt(
           output = new ast::Inc(obj.meta, tokens);
         } else if (sym.Sym == '-') {
           output = new ast::Dec(obj.meta, tokens);
-        } else
-          throw err::Exception("Line: " + std::to_string(obj.lineCount) +
-                               " expected assignment operator after " +
-                               obj.meta);
-      } else
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " expected Assignment operator after " + obj.meta);
+        } else {
+          // lets write everythig back to the tokens...
+          auto s = new lex::OpSym();
+          s->Sym = sym.Sym;
+          tokens.push(s);
+          for (int i = 0; i < modList.size(); i++) {
+            auto s = new lex::LObj();
+            s->meta = modList.pop();
+            tokens.push(s);
+          }
+
+          auto name = new lex::LObj();
+          name->meta = obj.meta;
+          tokens.push(name);
+
+          auto ret = new ast::Return();
+          ret->logicalLine = obj.lineCount;
+          ret->expr = this->parseExpr(tokens);
+          output = ret;
+        }
+      } else {
+        // also an implicit return
+        auto var = new ast::Var;
+        var->Ident = obj.meta;
+        var->logicalLine = obj.lineCount;
+        auto ret = new ast::Return;
+        ret->logicalLine = obj.lineCount;
+        ret->expr = var;
+        output = ret;
+      }
+    }
+  } else if (tokens.peek() && tokens.count > 0) {
+    auto close_curl = dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (!close_curl || (close_curl->Sym != '}' && close_curl->Sym != ';')) {
+      output = new ast::Return(tokens, *this);
+      // if the next token is not a semicolon, add one
+      if (tokens.peek()) {
+        auto opSym = dynamic_cast<lex::OpSym *>(tokens.peek());
+        if (!opSym || opSym->Sym != ';') {
+          auto semicolon = new lex::OpSym();
+          semicolon->Sym = ';';
+          tokens.push(semicolon);
+        }
+      }
     }
   }
 
   if (singleStmt) {
-    return output;
+    auto call = dynamic_cast<ast::Call *>(output);
+
+    if (!call) return output;
+
+    if (tokens.peek()) {
+      // implicit return exceptions
+      // 1. if the next token is a semicolon, it is internal and should not be
+      // an implicit return
+      // 2. if the next token is an else, it is internal and should not be an
+      // implicit return
+      auto OpSym = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (OpSym && OpSym->Sym == ';') return output;
+      auto els = dynamic_cast<lex::LObj *>(tokens.peek());
+      if (els && els->meta == "else") return output;
+    }
+    auto ret = new ast::Return;
+    auto callExpr = new ast::CallExpr;
+    callExpr->call = call;
+    ret->expr = callExpr;
+    this->Output = *ret;
+    return ret;
   }
   if (tokens.head == nullptr) {
     this->Output = *output;
@@ -542,28 +598,35 @@ ast::Statement *parse::Parser::parseStmt(
     if (obj.Sym == ';') {
       auto s = new ast::Sequence;
       s->Statement1 = output;
-      s->Statement2 = this->parseStmt(tokens);
+      s->Statement2 = this->parseStmt(tokens, false);
       this->Output = *s;
       return s;
     } else if (obj.Sym == '}') {
       this->Output = *output;
+      // if the output is a call, we need to return it
+      // note that this will only work if you omit the semicolon
+      if (dynamic_cast<ast::Call *>(output) != nullptr) {
+        auto ret = new ast::Return;
+        auto callExpr = new ast::CallExpr;
+        callExpr->call = dynamic_cast<ast::Call *>(output);
+        ret->expr = callExpr;
+        return ret;
+      }
       return output;
     } else if (obj.Sym == '!') {
       this->Output = *output;
       return output;
     }
-  } else {
-    if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-        tokens.head->next == nullptr) {
-      auto obj = *dynamic_cast<lex::OpSym *>(tokens.peek());
-      tokens.pop();
-      if (obj.Sym == '}') {
-        this->Output = *output;
-        return nullptr;
-      } else if (obj.Sym == ';') {
-        this->Output = *output;
-        return output;
-      }
+  } else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+             tokens.head->next == nullptr) {
+    auto obj = *dynamic_cast<lex::OpSym *>(tokens.peek());
+    tokens.pop();
+    if (obj.Sym == '}') {
+      this->Output = *output;
+      return nullptr;
+    } else if (obj.Sym == ';') {
+      this->Output = *output;
+      return output;
     }
   }
   return output;
@@ -723,7 +786,8 @@ ast::Statement *parse::Parser::parseArgs(
   }
 
   if (tokens.head == nullptr) {
-    throw err::Exception("unterminated function call");
+    std::cout << "no tokens in call too " << sym->Sym << std::endl;
+    throw err::Exception("Expected a symbol or a declaration");
   }
 
   auto obj = dynamic_cast<lex::OpSym *>(tokens.peek());
