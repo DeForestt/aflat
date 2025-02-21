@@ -352,5 +352,9 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
                            std::to_string(lineCount));
     }
   }
+  auto last_semi = new lex::OpSym;
+  last_semi->Sym = ';';
+  last_semi->lineCount = lineCount;
+  tokens.push(last_semi);
   return tokens;
 }
