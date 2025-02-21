@@ -534,7 +534,7 @@ class List {
     };
 
     Result _call(const int index) {
-        return my.get(index);
+        my.get(index)
     };
 
     Option popBack() {
