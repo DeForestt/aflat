@@ -612,6 +612,20 @@ ast::Statement *parse::Parser::parseStmt(
         ret->expr = callExpr;
         return ret;
       }
+      // check if the next token is a semicolon if not, treat it like a swquence
+      if (tokens.peek()) {
+        auto opSym = dynamic_cast<lex::OpSym *>(tokens.peek());
+        if (!opSym || (opSym->Sym != ';' && opSym->Sym != ')' &&
+                       opSym->Sym != ',' && opSym->Sym != '}')) {
+          // check for else
+          auto els = dynamic_cast<lex::LObj *>(tokens.peek());
+          if (!els || els->meta != "else") {
+            auto semicolon = new lex::OpSym();
+            semicolon->Sym = ';';
+            tokens.push(semicolon);
+          }
+        }
+      }
       return output;
     } else if (obj.Sym == '!') {
       this->Output = *output;
