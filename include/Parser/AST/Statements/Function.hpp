@@ -11,7 +11,7 @@ class Function : public Member, public Statement {
  public:
   ScopeMod scope;
   Type type;
-  std::string scopeName = "";
+  std::string scopeName = "global";
   std::string decorator = "";
   std::string decNSP = "";
   Ident ident;
@@ -29,13 +29,20 @@ class Function : public Member, public Statement {
   bool mask;
   bool has_return = false;
   bool optional = false;
+  bool autoType = false;
 
   Function() = default;
   Function(const string &ident, const ScopeMod &scope, const Type &type,
            const Op op, const std::string &scopeName,
            links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
            bool optional);
+  Function(const ScopeMod &scope, links::LinkedList<lex::Token *> &tokens,
+           parse::Parser &parser);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   gen::Expr toExpr(gen::CodeGenerator &generator);
+
+ private:
+  void parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
+                         parse::Parser &parser);
 };
 };  // namespace ast

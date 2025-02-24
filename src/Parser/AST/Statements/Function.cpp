@@ -2,21 +2,11 @@
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "Scanner.hpp"
 
 namespace ast {
-Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
-                   const Op op, const std::string &scopeName,
-                   links::LinkedList<lex::Token *> &tokens,
-                   parse::Parser &parser, bool optional)
-    : scope(scope),
-      type(type),
-      op(op),
-      scopeName(scopeName),
-      optional(optional) {
-  this->ident.ident = ident;
-  this->args = parser.parseArgs(tokens, ',', ')', this->argTypes, this->req,
-                                this->mutability, this->optConvertionIndices);
-
+void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
+                                 parse::Parser &parser) {
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
     auto sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
 
@@ -55,8 +45,8 @@ Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
             dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ')') {
           auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
           if (symp->Sym != ')')
-            throw err::Exception("Expected closed parenthesis got " +
-                                 symp->Sym);
+            throw err::Exception(
+                &"Expected closed parenthesis got "[symp->Sym]);
         } else {
           bool pop = false;
           do {
@@ -68,8 +58,8 @@ Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
           if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
             auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
             if (symp->Sym != ')')
-              throw err::Exception("Expected closed parenthesis got " +
-                                   symp->Sym);
+              throw err::Exception(
+                  &"Expected closed parenthesis got "[symp->Sym]);
           }
         }
       };
@@ -91,6 +81,75 @@ Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
   } else
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
                          " Need terminating symbol or open symbol");
+}
+
+Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
+                   const Op op, const std::string &scopeName,
+                   links::LinkedList<lex::Token *> &tokens,
+                   parse::Parser &parser, bool optional)
+    : scope(scope),
+      type(type),
+      op(op),
+      scopeName(scopeName),
+      optional(optional) {
+  this->ident.ident = ident;
+  this->args = parser.parseArgs(tokens, ',', ')', this->argTypes, this->req,
+                                this->mutability, this->optConvertionIndices);
+
+  parseFunctionBody(tokens, parser);
+}
+
+Function::Function(const ScopeMod &scope,
+                   links::LinkedList<lex::Token *> &tokens,
+                   parse::Parser &parser)
+    : scope(scope) {
+  // updated function syntax
+  // func <ident>(<args>) -> <type> { <body> }
+
+  const auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
+  if (ident == nullptr)
+    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+                         " Expected Identifier in function declaration");
+
+  this->ident.ident = ident->meta;
+  this->logicalLine = tokens.peek()->lineCount;
+
+  auto openBracket = dynamic_cast<lex::OpSym *>(tokens.pop());
+  if (openBracket == nullptr || openBracket->Sym != '(')
+    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+                         "Expected '('");
+  this->args = parser.parseArgs(tokens, ',', ')', this->argTypes, this->req,
+                                this->mutability, this->optConvertionIndices);
+
+  auto dash = dynamic_cast<lex::OpSym *>(tokens.peek());
+  if (dash && dash->Sym == '-') {
+    tokens.pop();
+    auto arrow = dynamic_cast<lex::Symbol *>(tokens.peek());
+    if (arrow == nullptr || arrow->meta != ">")
+      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+                           "Expected '->'");
+    tokens.pop();
+    auto typeName = dynamic_cast<lex::LObj *>(tokens.pop());
+    if (typeName == nullptr)
+      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+                           "Expected Identifier");
+    auto type = parser.typeList[typeName->meta];
+    if (type == nullptr)
+      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+                           "Type not found");
+    this->type = *type;
+  } else {
+    this->type = *parser.typeList["void"];
+    this->autoType = true;
+  }
+
+  auto optional = dynamic_cast<lex::Ref *>(tokens.peek());
+  if (optional != nullptr) {
+    this->optional = true;
+    tokens.pop();
+  }
+
+  parseFunctionBody(tokens, parser);
 }
 
 gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
