@@ -62,128 +62,153 @@ You will see more about this in the class section.
 ## Functions
 
 ### Syntax
-Functions in aflat are defined with the following syntax:
+Functions in AFlat are now defined with the following syntax:
+
 ```c
-<access> <return Type> <function name> : <decorator name> (<arguments>){
+fn <function name>(<arguments>) -> <return type>? {
     <function body>
 };
 ```
-- Functions can be defined with a return type of any of the above types.  Note that there is no return type for void functions.
-- If a function does not return a value with the `return` keyword, a return statement with no value is implied. *
-    - Keep in mind that this is unsafe as the function will 'return' whatever value is currently in the EAX register.
-- For now functions can only have up to 6 arguments.  This is due to not passing arguments on the stack and only using the registers.
 
-Example:
+- The `fn` keyword is now used to define functions.
+- Return types are optional; if omitted, they are inferred where possible.
+- If a function has an optional return type (denoted with `?`), it is automatically wrapped in `Option`.
+- If a function does not return a value with the `return` keyword, a return statement with no value is implied. In the case of `Option`, `return;` will return `none`.
+- Functions are still limited to six arguments due to register-based argument passing.
+- **The old syntax is still supported for backwards compatibility.**
+
+#### Example:
 ```js
-int add(int a, int b){
+fn add(int a, int b) -> int {
     return a + b;
 };
 ```
 
-- A function can have an optional argument by using the * opporator before. If the argument is not given, it will be passed as `NULL`
+#### Optional Arguments
+- **`*` (Nullable Argument):** An argument prefixed with `*` is considered nullable and defaults to `NULL` or a type-specific default.
+- **`?` (Optional Argument):** An argument prefixed with `?` is considered optional and is automatically wrapped in `Option`.
 
 Example:
 ```js
-int add(int a, * int b){
-    return a + b; // b will have the value 0 if no argument is passed there
+fn add(int a, *int b) -> int {
+    return a + b; // b defaults to 0 if not provided
+};
+
+fn maybeDivide(int a, ?int b) -> int? {
+    if b == 0 return;
+    return a / b;
 };
 ```
-### The main Function
-The main function is the entry point for aflat.  It is the first function called when aflat is run. It can take optional arguments int argc and adr argv for command line arguments.
+
+### The `main` Function
+The `main` function is the entry point for AFlat programs. It can optionally take `argc` and `argv` for command-line arguments.
+
 ```js
-int main(int argc, adr argv){
+fn main(int argc, adr argv) -> int {
     // do stuff
     return 0;
 };
 ```
 
-It can also be implemented as follows if you do not need to pass command line arguments:
+It can also be defined without parameters if command-line arguments are not needed:
 ```js
-int main(){
+fn main() -> int {
     // do stuff
     return 0;
 };
 ```
+
 ### Function Pointers
-The name of a function without parenthesis returns a pointer to the function.  This is useful for passing functions as arguments to other functions.
+The name of a function without parentheses returns a pointer to the function, allowing functions to be passed as arguments.
+
 ```js
-int add(int a, int b){
+fn add(int a, int b) -> int {
     return a + b;
 };
 
-int main(){
+fn main() -> int {
     adr foo = add;
     int i = foo(1, 2);
     return 0;
 };
 ```
+
 ### Calling Functions
-Functions can be called with the following syntax:
+Functions are called using the following syntax:
 ```c
 <function name>(<arguments>);
 ```
-- The aflat compiler will check the number and type of arguments for functions when called, but not for function pointers.
-- Function Pointers can be called with the same syntax.
+- The AFlat compiler checks argument count and types for function calls, but not for function pointers.
+- Function pointers can be called using the same syntax.
 
-example:
+Example:
 ```js
-int add(int a, int b){
+fn add(int a, int b) -> int {
     return a + b;
 };
 
-int main(){
-    int i = add(1, 2); // Be careful with function pointers! they are not type safe!
+fn main() -> int {
+    int i = add(1, 2);
     return 0;
 };
 ```
-### Anonymous Functions
-Functions can be defined without a name. Antonymous functions.If the function body only has one statement, the curly braces are not required. Because aflat does not know the return type for anonymous functions, type inference cannot be used to determine the type.  The compiler will assume that whatever you know what you are doing and will not check the return type.  Be careful!
 
+### Anonymous Functions
+Anonymous functions allow defining functions inline without a name. The syntax follows:
 ```js
-[<parameters>]=>{
+[<parameters>] => {
     <function body>
 };
 ```
-example:
-```js
-int main(){
+- Type inference is **not** performed on anonymous functions; they assume the developer knows the expected return type.
 
-    adr add = [int a, int b]=>{
+Example:
+```js
+fn main() -> int {
+    adr add = [int a, int b] => {
         return a + b;
     };
 
-    int i = add(1, 2); // aflat assumes that the return type is int
-
+    int i = add(1, 2);
     return 0;
 };
 ```
+
 ### Function Access
-Functions under the global scope can be public(default), private, or export.
-    - Public functions are globally accessible to the linker. This is necessary if using a header file.
-    - Private functions are only accessible within the Module to avoid naming conflicts with other modules.
-    - Export can be explicitly imported for use in another module and avoid naming conflicts during linking.
+Functions at the global scope can have different access levels:
+- **Public** (default) – Globally accessible.
+- **Private** – Accessible only within the module.
+- **Export** – Explicitly imported for use in another module to avoid conflicts.
 
 ### Function Decorators
-Functions can be decorated with functions. Functions that are decorated with a function must have a single refrence argument with the name _arg.  This can point to an object with multiple properties if needed.  The decorator function must take two arguments, adr foo and adr _arg.
+Functions can be decorated using decorators, which must take a single reference argument `_arg`. The decorator function must accept two arguments: `adr foo` (the function) and `adr _arg`.
+
+Example:
 ```js
 adr decorator(adr foo, adr _arg) {
     io.print("Hello from Decorator");
     return foo(_arg);
 };
 
-int decorated(adr _arg) : decorator {
+fn decorated(adr _arg) : decorator {
     io.print("Hello from Decorated");
     return 0;
 };
 
-int main() {
+fn main() -> int {
     decorated();
+    return 0;
 };
 ```
 
-The above example will print "Hello from Decorator" and then "Hello from Decorated" when the decorated function is called.
+**Output:**
+```
+Hello from Decorator
+Hello from Decorated
+```
 
-Class Decorators are also supported. And will be documented in the class section.
+Class decorators are also supported and are documented in the class section.
+
 
 ## Statements
 
@@ -660,7 +685,7 @@ example:
 ```js
 import Player from "./src/GameEngin";
 
-int game(){
+int game() {
     Player p1 = Player();
 };
 ```
