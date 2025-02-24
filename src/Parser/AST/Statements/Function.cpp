@@ -7,8 +7,12 @@ namespace ast {
 Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
                    const Op op, const std::string &scopeName,
                    links::LinkedList<lex::Token *> &tokens,
-                   parse::Parser &parser)
-    : scope(scope), type(type), op(op), scopeName(scopeName) {
+                   parse::Parser &parser, bool optional)
+    : scope(scope),
+      type(type),
+      op(op),
+      scopeName(scopeName),
+      optional(optional) {
   this->ident.ident = ident;
   this->args = parser.parseArgs(tokens, ',', ')', this->argTypes, this->req,
                                 this->mutability, this->optConvertionIndices);
@@ -264,8 +268,8 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
 
 gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
   gen::Expr output;
-  output.type = this->type.typeName;
-  output.size = this->type.size;
+  output.type = this->optional ? "Option" : this->type.typeName;
+  output.size = this->optional ? asmc::QWord : this->type.size;
   output.access = generator.registers["%rax"]->get(output.size);
   if (this->type.typeName == "float") {
     output.access = generator.registers["%xmm0"]->get(output.size);
