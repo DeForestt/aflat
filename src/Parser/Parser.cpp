@@ -5,6 +5,7 @@
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/AST/Statements.hpp"
+#include "Scanner.hpp"
 
 ast::Expr *prioritizeExpr(ast::Expr *expr);
 
@@ -217,6 +218,13 @@ ast::Statement *parse::Parser::parseStmt(
                       ? this->parseFPointerType(tokens, obj.meta)
                       : *this->typeList[obj.meta];
 
+      const auto ref = dynamic_cast<lex::Ref *>(tokens.peek());
+      bool optional = false;
+      if (ref) {
+        tokens.pop();
+        optional = true;
+      }
+
       std::string requestType = "";
       links::LinkedList<std::string> modList;
       // Handle typeOf
@@ -357,7 +365,7 @@ ast::Statement *parse::Parser::parseStmt(
           if (sym.Sym == '(') {
             tokens.pop();
             output = new ast::Function(ident.meta, scope, type, overload,
-                                       scopeName, tokens, *this);
+                                       scopeName, tokens, *this, optional);
           } else if (sym.Sym == '=') {
             tokens.pop();
             output = new ast::DecAssign(

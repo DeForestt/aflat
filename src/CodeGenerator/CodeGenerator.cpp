@@ -6,16 +6,12 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
-#include <fstream>
 #include <iostream>
 
 #include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
-#include "Parser/Lower.hpp"
-#include "PreProcessor.hpp"
 #include "Scanner.hpp"
-#include "Utils.hpp"
 
 using namespace gen::utils;
 

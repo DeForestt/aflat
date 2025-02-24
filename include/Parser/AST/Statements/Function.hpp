@@ -28,11 +28,13 @@ class Function : public Member, public Statement {
   bool flex = false;
   bool mask;
   bool has_return = false;
+  bool optional = false;
 
   Function() = default;
   Function(const string &ident, const ScopeMod &scope, const Type &type,
            const Op op, const std::string &scopeName,
-           links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
+           links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
+           bool optional);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   gen::Expr toExpr(gen::CodeGenerator &generator);
 };

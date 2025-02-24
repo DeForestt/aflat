@@ -2,6 +2,7 @@
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "Parser/AST/Statements/Call.hpp"
 #include "Parser/Parser.hpp"
 
 namespace ast {
@@ -28,7 +29,25 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   auto mov = new asmc::Mov();
   mov->logicalLine = this->logicalLine;
 
+  auto trashFile = asmc::File();
+
   gen::Expr from = generator.GenExpr(this->expr, file);
+
+  if (generator.currentFunction->optional) {
+    if (!generator.canAssign(generator.returnType, from.type,
+                             "the return type of this function is {} but the "
+                             "expression returns {}")) {
+      auto imp = generator.imply(this->expr, generator.returnType.typeName);
+      this->expr = imp;
+    }
+    auto optionConvertion = new ast::Call();
+    optionConvertion->ident = "_toOption";
+    optionConvertion->Args.push(this->expr);
+    auto call = new ast::CallExpr();
+    call->call = optionConvertion;
+    call->logicalLine = this->logicalLine;
+    from = generator.GenExpr(call, file);
+  }
 
   if (generator.currentFunction->isLambda &&
       generator.lambdaReturns == "void") {
@@ -58,7 +77,8 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     file.text << push;
   };
 
-  if (!generator.canAssign(generator.returnType, from.type,
+  if (!generator.currentFunction->optional &&
+      !generator.canAssign(generator.returnType, from.type,
                            "the return type of this function is {} but the "
                            "expression returns {}")) {
     auto imp = generator.imply(this->expr, generator.returnType.typeName);
