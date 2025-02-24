@@ -430,6 +430,8 @@ ast::Statement *parse::Parser::parseStmt(
       }
     } else if (obj.meta == "return") {
       output = new ast::Return(tokens, *this);
+    } else if (obj.meta == "fn") {
+      output = new ast::Function(scope, tokens, *this);
     } else if (obj.meta == "push") {
       auto push = new ast::Push;
       push->expr = this->parseExpr(tokens);

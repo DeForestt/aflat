@@ -2,6 +2,7 @@
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "Parser/AST.hpp"
 #include "Parser/AST/Statements/Call.hpp"
 #include "Parser/Parser.hpp"
 
@@ -20,6 +21,7 @@ Return::Return(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
     auto nu = new ast::Var();
     nu->Ident = "**void_type**";
     nu->logicalLine = tokens.peek()->lineCount;
+    this->empty = true;
     this->expr = nu;
   };
 }
@@ -34,11 +36,18 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   gen::Expr from = generator.GenExpr(this->expr, file);
 
   if (generator.currentFunction->optional) {
-    if (!generator.canAssign(generator.returnType, from.type,
+    if (!this->empty &&
+        !generator.canAssign(generator.returnType, from.type,
                              "the return type of this function is {} but the "
                              "expression returns {}")) {
       auto imp = generator.imply(this->expr, generator.returnType.typeName);
       this->expr = imp;
+    }
+    if (this->empty) {
+      auto nu = new ast::Var();
+      nu->Ident = "NULL";
+      nu->logicalLine = this->logicalLine;
+      this->expr = nu;
     }
     auto optionConvertion = new ast::Call();
     optionConvertion->ident = "_toOption";
@@ -54,6 +63,28 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     // adopt the new return type
     generator.lambdaReturns = from.type;
     generator.lambdaSize = from.size;
+    generator.returnType = ast::Type(from.type, from.size);
+  }
+
+  if (generator.currentFunction->autoType) {
+    generator.currentFunction->autoType = false;
+    generator.currentFunction->type = ast::Type(from.type, from.size);
+
+    // need to find it in the nameTable or the scope nameTable
+    if (generator.scope == nullptr) {
+      generator.nameTable[generator.currentFunction->ident.ident]->type =
+          ast::Type(from.type, from.size);
+    } else {
+      generator.scope->nameTable[generator.currentFunction->ident.ident]->type =
+          ast::Type(from.type, from.size);
+      const auto pub =
+          generator.scope
+              ->publicNameTable[generator.currentFunction->ident.ident];
+      if (pub != nullptr) {
+        pub->type = ast::Type(from.type, from.size);
+      }
+    }
+
     generator.returnType = ast::Type(from.type, from.size);
   }
 

@@ -7,6 +7,7 @@ class Expr;
 class Return : public Statement {
  public:
   Expr *expr;
+  bool empty = false;
 
   gen::GenerationResult const generate(gen::CodeGenerator &generateor) override;
   Return() = default;
