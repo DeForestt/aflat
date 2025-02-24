@@ -95,8 +95,10 @@ fn add(int a, *int b) -> int {
 };
 
 fn maybeDivide(int a, ?int b) -> int? {
-    if b == 0 return;
-    return a / b;
+    b.map({
+        "some": [int x] => return a / x,
+        "none": [] => return NULL
+    })
 };
 ```
 

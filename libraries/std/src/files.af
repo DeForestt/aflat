@@ -69,7 +69,7 @@ export Result createFile(const adr fileName){
         return res.accept(file);
 };
 
-export Result openFile(const adr fileName){
+export Result openFile(const adr fileName) {
         const File file = malloc(File);
         const long flag = #2;
         file.file = sys_open(fileName, flag, #777);

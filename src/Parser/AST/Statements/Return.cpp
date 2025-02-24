@@ -36,26 +36,28 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   gen::Expr from = generator.GenExpr(this->expr, file);
 
   if (generator.currentFunction->optional) {
-    if (!this->empty &&
-        !generator.canAssign(generator.returnType, from.type,
-                             "the return type of this function is {} but the "
-                             "expression returns {}")) {
-      auto imp = generator.imply(this->expr, generator.returnType.typeName);
-      this->expr = imp;
+    if (from.type != "Option") {
+      if (!this->empty &&
+          !generator.canAssign(generator.returnType, from.type,
+                               "the return type of this function is {} but the "
+                               "expression returns {}")) {
+        auto imp = generator.imply(this->expr, generator.returnType.typeName);
+        this->expr = imp;
+      }
+      if (this->empty) {
+        auto nu = new ast::Var();
+        nu->Ident = "NULL";
+        nu->logicalLine = this->logicalLine;
+        this->expr = nu;
+      }
+      auto optionConvertion = new ast::Call();
+      optionConvertion->ident = "_toOption";
+      optionConvertion->Args.push(this->expr);
+      auto call = new ast::CallExpr();
+      call->call = optionConvertion;
+      call->logicalLine = this->logicalLine;
+      from = generator.GenExpr(call, file);
     }
-    if (this->empty) {
-      auto nu = new ast::Var();
-      nu->Ident = "NULL";
-      nu->logicalLine = this->logicalLine;
-      this->expr = nu;
-    }
-    auto optionConvertion = new ast::Call();
-    optionConvertion->ident = "_toOption";
-    optionConvertion->Args.push(this->expr);
-    auto call = new ast::CallExpr();
-    call->call = optionConvertion;
-    call->logicalLine = this->logicalLine;
-    from = generator.GenExpr(call, file);
   }
 
   if (generator.currentFunction->isLambda &&
