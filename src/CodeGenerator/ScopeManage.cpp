@@ -87,12 +87,12 @@ void ScopeManager::popScope(CodeGenerator *callback, asmc::File &OutputFile,
     this->stackPos -= sizeToInt(this->stack.back().type.size) *
                       this->stack.back().type.arraySize;
     gen::Symbol sym = this->stack.back();
-    if (sym.symbol != "" && sym.symbol != "my" &&
-        sym.symbol.find("lambda") == std::string::npos &&
+    if (sym.symbol != "" && sym.symbol.find("lambda") == std::string::npos &&
         sym.symbol.find_first_not_of("0123456789") != std::string::npos) {
       // if the symbol has only numbers in it then it is a temp variable
       if (sym.symbol[0] != '~' && sym.symbol[0] != '$' && !sym.mask) {
-        if (sym.refCount < 1 && sym.symbol.substr(0, 2) != "__") {
+        if (sym.refCount < 1 && sym.symbol.substr(0, 2) != "__" &&
+            sym.symbol != "my") {
           callback->alert("Symbol \"" + sym.symbol +
                               "\" is assigned but never "
                               "used please consider removing it. If this is a "
