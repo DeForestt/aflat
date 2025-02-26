@@ -42,12 +42,13 @@ class Content {
             str.print(line);
         };
 
-        // for int i = 0; i < my.bindings.getCount(); i = i + 1 {
-        //     const Bind binding = my.bindings.get(i).expect("Binding count corrupted");
-        //     const string key = binding.key;
-        //     const string val = binding.val;
-        //     buffer = buffer.replace(key, val);
-        // };
+        for int i = 0; i < my.bindings.getCount(); i = i + 1 {
+            const Bind binding = my.bindings.get(i).expect("Binding count corrupted");
+            const string key = binding.key;
+            const string val = binding.val;
+            buffer = buffer.replace(key, val);
+        };
+        
         return my;
         return buffer.cstr();
     };
