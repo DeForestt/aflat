@@ -1,0 +1,27 @@
+.needs <std> 
+
+class RefCounted {
+	private mutable int refCount = 0;
+	private mutable bool locked = false;
+
+	fn get() -> Self {
+		my.refCount = my.refCount + 1;
+		return my;
+	};  
+
+	fn endScope() {
+		if my.locked return;
+		my.refCount = my.refCount - 1;
+		if (my.refCount <= 0) {
+			delete my;
+		};
+	};
+
+	fn lock() {
+		my.locked = true;
+	};
+
+	fn unlock() {
+		my.locked = false;
+	};
+};
