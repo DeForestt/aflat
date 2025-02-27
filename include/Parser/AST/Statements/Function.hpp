@@ -15,6 +15,7 @@ class Function : public Member, public Statement {
   std::string scopeName = "global";
   std::string decorator = "";
   std::string decNSP = "";
+  bool hidden = false;
   Ident ident;
   Statement *args;
   Statement *statement;
@@ -59,6 +60,7 @@ class Function : public Member, public Statement {
         useType(Other.useType) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;
+    this->hidden = this->hidden;
   }
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   gen::Expr toExpr(gen::CodeGenerator &generator);

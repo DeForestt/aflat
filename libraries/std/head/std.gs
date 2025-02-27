@@ -46,5 +46,3 @@ adr mmap(adr addr, int len, int prot, int flags, int fd, int offset);
 adr create(const int size, ? const any value);
 void _fEachOr(const adr iterator, const adr callback, *const any args);
 adr _toOption(const any value);
-
-import RefCounted from "Memory";
