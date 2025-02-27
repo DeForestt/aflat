@@ -11,6 +11,11 @@
 #include "Scanner.hpp"
 
 namespace parse {
+struct Annotation {
+  std::string name;
+  std::vector<std::string> args;
+};
+
 class Parser {
  public:
   ast::Statement Output;
