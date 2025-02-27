@@ -172,7 +172,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       if (!this->isLambda) generator.scope->publicNameTable << *this;
   }
 
-  if (this->statement != nullptr) {
+  if (this->statement != nullptr && !this->hidden) {
     gen::scope::ScopeManager::getInstance()->pushScope(true);
     generator.currentFunction = this;
     bool saveIn = generator.inFunction;

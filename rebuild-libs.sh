@@ -16,6 +16,7 @@ aflat ./libraries/std/src/HTTP.af ./libraries/std/HTTP.s
 aflat ./libraries/std/src/CLArgs.af ./libraries/std/CLArgs.s
 aflat ./libraries/std/src/System.af ./libraries/std/System.s
 aflat ./libraries/std/src/Utils/Result.af ./libraries/std/Result.s
+aflat ./libraries/std/src/Memory.af ./libraries/std/Memory.s
 # rename Result.s to Utils_Result.s
 mv ./libraries/std/Result.s ./libraries/std/Utils_Result.s
 aflat ./libraries/std/src/Utils/Functions.af ./libraries/std/Functions.s

@@ -11,8 +11,9 @@ void gen::utils::shellStatement(ast::Statement *stmt) {
     shellStatement(seq->Statement2);
   } else if (dynamic_cast<ast::Function *>(stmt)) {
     ast::Function *func = dynamic_cast<ast::Function *>(stmt);
-    delete func->statement;
-    func->statement = nullptr;
+    // delete func->statement;
+    // func->statement = nullptr;
+    func->hidden = true;
   }
 }
 
@@ -67,6 +68,7 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
     ast::Class *cls = dynamic_cast<ast::Class *>(stmt);
     if (cls->ident.ident == ident) {
       shellStatement(cls->statement);
+      cls->includer = true;
       return stmt;
     }
   } else if (dynamic_cast<ast::Enum *>(stmt)) {
@@ -110,6 +112,7 @@ ast::Sequence *gen::utils::extractAllFunctions(ast::Statement *stmt) {
     auto f = new ast::Function(*func, false);
     f->locked = false;
     f->useType = f->type;
+    f->hidden = false;
     auto sequence = new ast::Sequence();
     sequence->Statement1 = f;
     sequence->Statement2 = nullptr;

@@ -16,6 +16,7 @@ class Class : public Statement {
   bool safeType = false;
   bool dynamic = false;
   bool pedantic = false;
+  bool includer = false;
   Class() = default;
   Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
         bool safeType, bool dynamic, bool pedantic,
