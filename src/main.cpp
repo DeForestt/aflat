@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
   if (value == "update") {
     std::string update_command =
         "curl -s "
-        "https://aflat-server.fly.dev/"
+        "https://raw.githubusercontent.com/DeForestt/aflat/refs/heads/main/"
         "install.sh | bash";
     system(update_command.c_str());
     return 0;
@@ -581,6 +581,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   linker.insert(linker.begin(), libPath + "Enumerator.s");
   linker.insert(linker.begin(), libPath + "Scroller.s");
   linker.insert(linker.begin(), libPath + "Utils_Defer.s");
+  linker.insert(linker.begin(), libPath + "Memory.s");
 
   // run gcc on the linkerList
   std::string linkerList = "";
@@ -597,7 +598,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   }
 
   system(gcc.c_str());
-  linker.erase(linker.begin(), linker.begin() + 36);
+  linker.erase(linker.begin(), linker.begin() + 37);
 
   if (!config.asm_) {
     for (auto &s : linker) {
