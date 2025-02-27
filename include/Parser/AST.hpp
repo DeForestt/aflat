@@ -11,7 +11,8 @@
 
 namespace parse {
 class Parser;
-};
+struct Annotation;
+};  // namespace parse
 
 namespace gen {
 class CodeGenerator;

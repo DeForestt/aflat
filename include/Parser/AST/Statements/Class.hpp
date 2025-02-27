@@ -10,6 +10,7 @@ class Class : public Statement {
  public:
   Ident ident;
   std::string base;
+  std::vector<parse::Annotation> annotations;
   Statement *contract;
   Statement *statement;
   bool safeType = false;
@@ -17,7 +18,8 @@ class Class : public Statement {
   bool pedantic = false;
   Class() = default;
   Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
-        bool safeType, bool dynamic, bool pedantic);
+        bool safeType, bool dynamic, bool pedantic,
+        std::vector<parse::Annotation> &annotations);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 };  // namespace ast

@@ -90,6 +90,31 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
   return nullptr;
 }
 
+ast::Sequence *gen::utils::extractAllFunctions(ast::Statement *stmt) {
+  // recursively traverse the statement tree and return a new tree with all the
+  // functions
+  if (stmt == nullptr) return nullptr;
+  if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
+    ast::Sequence *seq = dynamic_cast<ast::Sequence *>(stmt);
+    ast::Statement *temp = extractAllFunctions(seq->Statement1);
+    if (temp != nullptr) {
+      auto sequence = new ast::Sequence();
+      sequence->Statement1 = temp;
+      sequence->Statement2 = extractAllFunctions(seq->Statement2);
+      return sequence;
+    } else {
+      return extractAllFunctions(seq->Statement2);
+    }
+  } else if (dynamic_cast<ast::Function *>(stmt)) {
+    ast::Function *func = dynamic_cast<ast::Function *>(stmt);
+    auto sequence = new ast::Sequence();
+    sequence->Statement1 = func;
+    sequence->Statement2 = nullptr;
+    return sequence;
+  }
+  return nullptr;
+}
+
 std::string gen::utils::getLibPath(std::string lib) {
   char result[200];
   ssize_t count = readlink("/proc/self/exe", result, 200);

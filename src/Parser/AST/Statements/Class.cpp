@@ -7,7 +7,9 @@
 
 namespace ast {
 Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
-             bool safe, bool dynamic, bool pedantic) {
+             bool safe, bool dynamic, bool pedantic,
+             std::vector<parse::Annotation> &annotations) {
+  this->annotations = annotations;
   this->logicalLine = tokens.peek()->lineCount;
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
