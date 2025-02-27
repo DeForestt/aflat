@@ -1,6 +1,8 @@
 .needs <std>
 import Function from "Utils/Functions";
+import RefCounted from "Memory";
 
+@Apply(RefCounted)
 safe dynamic class Defer {
     private const Function _fn = fn;
     private mutable bool dismissed = false;
@@ -13,9 +15,8 @@ safe dynamic class Defer {
         my.dismissed = true;
     };
 
-    int endScope() {
+    int del() {
         if !my.dismissed
             my._fn();
-        delete my;
     };
 };

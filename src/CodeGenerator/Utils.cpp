@@ -68,6 +68,7 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
     ast::Class *cls = dynamic_cast<ast::Class *>(stmt);
     if (cls->ident.ident == ident) {
       shellStatement(cls->statement);
+      cls->includer = true;
       return stmt;
     }
   } else if (dynamic_cast<ast::Enum *>(stmt)) {

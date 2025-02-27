@@ -177,6 +177,10 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
     OutputFile << generator.GenSTMT(hoist);
   }
 
+  if (this->includer) {
+    gen::utils::shellStatement(this->statement);
+  }
+
   asmc::File file = generator.GenSTMT(this->statement);
 
   if (gen::utils::extract("init", this->statement) == nullptr &&
