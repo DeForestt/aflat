@@ -235,16 +235,21 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
 
     if (generator.scope != nullptr && !this->isLambda) {
       // add the opo to the arguments of the function
+      gen::Symbol symbol;
       auto movy = new asmc::Mov();
       movy->logicalLine = this->logicalLine;
       movy->from = generator.intArgs[generator.intArgsCounter].get(asmc::QWord);
 
+      symbol.symbol = "my";
+      symbol.mutable_ = false;
+
       auto ty = ast::Type();
       ty.typeName = generator.scope->Ident;
       ty.size = asmc::QWord;
+      symbol.type = ty;
 
-      int byteMod = gen::scope::ScopeManager::getInstance()->assign(
-          "my", ty, false, false);
+      int byteMod =
+          gen::scope::ScopeManager::getInstance()->assign("my", ty, false);
 
       movy->size = asmc::QWord;
       movy->to = "-" + std::to_string(byteMod) + +"(%rbp)";
