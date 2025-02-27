@@ -60,6 +60,7 @@ class Class : public Type {
   // This is used internally
   links::SLinkedList<ast::Function, std::string> nameTable;
   ast::Statement *contract;
+  ast::Statement *body;
   std::vector<ast::DecAssign> defaultValues;
   static bool compare(Type *t, std::string ident);
   gen::Class *parent = nullptr;

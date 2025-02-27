@@ -17,6 +17,8 @@ ast::Statement *extract(std::string ident, ast::Statement *stmt,
                         std::string id);
 ast::Statement *extract(std::string ident, ast::Statement *stmt);
 ast::Sequence *extractAllFunctions(ast::Statement *stmt);
+ast::Sequence *extractAllDeclarations(ast::Statement *stmt);
+ast::Sequence *copyAllFunctionShells(ast::Statement *stmt);
 void shellStatement(ast::Statement *stmt);
 std::string getLibPath(std::string lib);
 

@@ -82,12 +82,31 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
 };
 
 gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
+  // check class Annotations for @Apply(Class) ... Composition
+  std::vector<gen::Class *> applys;
+
+  for (auto &annotations : this->annotations) {
+    if (annotations.name == "Apply") {
+      if (annotations.args.size() != 1)
+        generator.alert("@Apply needs 1 argument");
+      auto ident = annotations.args[0];
+      // find the class in the typeList
+      gen::Type **T = generator.typeList[ident];
+      if (T == nullptr) generator.alert("Class not found");
+      gen::Class *base = dynamic_cast<gen::Class *>(*T);
+      if (base == nullptr) generator.alert("Class not found");
+      applys.push_back(base);
+    }
+  }
+
   asmc::File OutputFile;
   gen::Class *type = new gen::Class();
+  type->body = this->statement;  // save the body in case of composition
   bool saveScope = generator.globalScope;
   generator.globalScope = false;
   type->Ident = this->ident.ident;
   type->nameTable.foo = gen::utils::compareFunc;
+  type->publicNameTable.foo = gen::utils::compareFunc;
   type->safeType = this->safeType;
   type->dynamic = this->dynamic;
   type->pedantic = this->pedantic;
@@ -139,7 +158,27 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
     OutputFile << contractFile;
     type->contract = this->contract;
   }
+
+  for (auto &apply : applys) {
+    Sequence *seq = new Sequence();
+
+    seq->Statement1 = gen::utils::extractAllDeclarations(apply->body);
+    seq->Statement2 = gen::utils::extractAllFunctions(apply->body);
+    auto seq2 = new Sequence();
+    seq2->Statement1 = seq;
+    seq2->Statement2 = type->body;
+
+    type->body = seq2;
+    this->statement = seq2;
+  };
+
+  auto hoist = gen::utils::copyAllFunctionShells(this->statement);
+  if (hoist != nullptr) {
+    OutputFile << generator.GenSTMT(hoist);
+  }
+
   asmc::File file = generator.GenSTMT(this->statement);
+
   if (gen::utils::extract("init", this->statement) == nullptr &&
       generator.scope->defaultValues.size() > 0) {
     ast::Function *func = new ast::Function();
@@ -164,6 +203,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   OutputFile << file;
   generator.globalScope = saveScope;
   generator.scope = nullptr;
+
   return {OutputFile, std::nullopt};
 }
 }  // namespace ast

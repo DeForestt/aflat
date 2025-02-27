@@ -11,6 +11,7 @@ class Function : public Member, public Statement {
  public:
   ScopeMod scope;
   Type type;
+  Type useType = Type("", asmc::QWord);
   std::string scopeName = "global";
   std::string decorator = "";
   std::string decNSP = "";
@@ -38,6 +39,27 @@ class Function : public Member, public Statement {
            bool optional);
   Function(const ScopeMod &scope, links::LinkedList<lex::Token *> &tokens,
            parse::Parser &parser);
+  Function(const Function &Other, bool locked)
+      : scope(Other.scope),
+        type(Other.type),
+        op(Other.op),
+        scopeName(Other.scopeName),
+        ident(Other.ident),
+        args(Other.args),
+        statement(Other.statement),
+        decorator(Other.decorator),
+        decoratorArgs(Other.decoratorArgs),
+        argTypes(Other.argTypes),
+        optConvertionIndices(Other.optConvertionIndices),
+        mutability(Other.mutability),
+        isLambda(Other.isLambda),
+        mask(Other.mask),
+        has_return(Other.has_return),
+        optional(Other.optional),
+        useType(Other.useType) {
+    this->logicalLine = Other.logicalLine;
+    this->locked = locked;
+  }
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   gen::Expr toExpr(gen::CodeGenerator &generator);
 

@@ -15,5 +15,11 @@ class DecAssign : public Statement {
   DecAssign() = default;
   DecAssign(Declare *declare, const bool mute,
             links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
+
+  DecAssign(const DecAssign &other)
+      : declare(other.declare), mute(other.mute), expr(other.expr) {
+    this->logicalLine = other.logicalLine;
+  }
+  void debug();
 };
 }  // namespace ast

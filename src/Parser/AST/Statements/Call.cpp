@@ -62,6 +62,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           func->type.arraySize = 0;
           func->type.size = asmc::QWord;
           func->type.typeName = "--std--flex--function";
+          func->useType = func->type;
           checkArgs = false;
           func->flex = true;
           if (smbl->type.fPointerArgs.returnType != nullptr) {
@@ -72,6 +73,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
                 smbl->type.fPointerArgs.optConvertionIndices;
             checkArgs = true;
           }
+          func->useType = func->type;
         } else {
           // find the type of the object
           auto type = *generator.typeList[smbl->type.typeName];
@@ -183,6 +185,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
             checkArgs = false;
             func->type.size = asmc::QWord;
             func->flex = true;
+            func->useType = func->type;
 
             if (sym->type.fPointerArgs.returnType != nullptr) {
               func->type = *sym->type.fPointerArgs.returnType;
@@ -192,6 +195,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
                   sym->type.fPointerArgs.optConvertionIndices;
               checkArgs = true;
             }
+            func->useType = func->type;
 
             addPub = false;
           } else if (sym == nullptr) {

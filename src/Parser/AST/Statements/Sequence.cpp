@@ -5,8 +5,8 @@
 namespace ast {
 gen::GenerationResult const Sequence::generate(gen::CodeGenerator &generator) {
   asmc::File file;
-  file << generator.GenSTMT(Statement1);
-  file << generator.GenSTMT(Statement2);
+  if (Statement1) file << generator.GenSTMT(Statement1);
+  if (Statement2) file << generator.GenSTMT(Statement2);
   return {file, std::nullopt};
 }
 }  // namespace ast
