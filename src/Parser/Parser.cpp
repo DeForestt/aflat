@@ -24,6 +24,7 @@ parse::Parser::Parser(int mutability = 0) {
   this->addType("generic", asmc::Hard, asmc::QWord, true);
   this->addType("void", asmc::Hard, asmc::QWord);
   this->addType("any", asmc::Hard, asmc::QWord, true);
+  this->addType("Self", asmc::Hard, asmc::QWord);
   // create a dummy type for let
   this->addType("let", asmc::Hard, asmc::QWord, true);
   // create a dummy type for typeOf
@@ -86,9 +87,57 @@ int getOpPriority(ast::Op op) {
 ast::Statement *parse::Parser::parseStmt(
     links::LinkedList<lex::Token *> &tokens, bool singleStmt = false) {
   ast::Statement *output = new ast::Statement;
+  std::vector<parse::Annotation> annotations;
+
   if (tokens.head == nullptr) {
     return output;
   };
+
+  // annotations
+  // @Ident(Argument, Argument)
+  auto atSym = dynamic_cast<lex::OpSym *>(tokens.peek());
+  while (atSym != nullptr && atSym->Sym == '@') {
+    tokens.pop();
+    auto annotation = parse::Annotation();
+    auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
+    if (ident == nullptr)
+      throw err::Exception("Expected identifier after @ on line " +
+                           std::to_string(atSym->lineCount));
+    annotation.name = ident->meta;
+    auto openParen = dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (!openParen || openParen->Sym != '(') {
+      atSym = openParen;
+      annotations.push_back(annotation);
+      continue;
+    }
+    tokens.pop();
+    auto arg = dynamic_cast<lex::LObj *>(tokens.peek());
+    while (arg != nullptr) {
+      annotation.args.push_back(arg->meta);
+      tokens.pop();
+      auto comma = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (comma && comma->Sym == ',') {
+        tokens.pop();
+        arg = dynamic_cast<lex::LObj *>(tokens.pop());
+      } else
+        break;
+    }
+    if (openParen) {
+      auto closeParen = dynamic_cast<lex::OpSym *>(tokens.pop());
+      if (!closeParen || closeParen->Sym != ')') {
+        if (closeParen) {
+          throw err::Exception("Expected ')' after annotation on line " +
+                               std::to_string(atSym->lineCount) + " got " +
+                               closeParen->Sym);
+        } else
+          throw err::Exception("Expected ')' after annotation on line " +
+                               std::to_string(atSym->lineCount));
+      }
+    }
+    annotations.push_back(annotation);
+    atSym = dynamic_cast<lex::OpSym *>(tokens.peek());
+  }
+
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto obj = *dynamic_cast<lex::LObj *>(tokens.peek());
     auto safeType = false;
@@ -454,7 +503,8 @@ ast::Statement *parse::Parser::parseStmt(
     } else if (obj.meta == "struct") {
       output = new ast::Struct(tokens, *this);
     } else if (obj.meta == "class") {
-      output = new ast::Class(tokens, *this, safeType, dynamicType, pedantic);
+      output = new ast::Class(tokens, *this, safeType, dynamicType, pedantic,
+                              annotations);
     } else if (obj.meta == "enum") {
       output = new ast::Enum(tokens, *this);
     } else if (obj.meta == "import") {

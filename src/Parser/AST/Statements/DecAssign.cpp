@@ -6,6 +6,11 @@
 #include "Parser/Parser.hpp"
 
 namespace ast {
+void DecAssign::debug() {
+  std::cout << "DecAssign: " << this->declare->ident << " " << this->mute << " "
+            << this->locked << std::endl;
+  std::cout << "Expr: " << this->expr->toString() << std::endl;
+}
 DecAssign::DecAssign(Declare *declare, const bool mute,
                      links::LinkedList<lex::Token *> &tokens,
                      parse::Parser &parser)

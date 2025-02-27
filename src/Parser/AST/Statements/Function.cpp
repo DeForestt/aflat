@@ -93,6 +93,7 @@ Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
       scopeName(scopeName),
       optional(optional) {
   this->ident.ident = ident;
+  this->useType = type;
   this->args = parser.parseArgs(tokens, ',', ')', this->argTypes, this->req,
                                 this->mutability, this->optConvertionIndices);
 
@@ -142,6 +143,7 @@ Function::Function(const ScopeMod &scope,
     this->type = *parser.typeList["void"];
     this->autoType = true;
   }
+  this->useType = this->type;
 
   auto optional = dynamic_cast<lex::Ref *>(tokens.peek());
   if (optional != nullptr) {
@@ -227,7 +229,30 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
 
     int AlignmentLoc = file.text.count;
     generator.intArgsCounter = 0;
-    generator.returnType = this->type;
+
+    this->useType = this->type;
+
+    if (generator.scope != nullptr && this->type.typeName == "Self") {
+      this->useType = Type(generator.scope->Ident, asmc::QWord);
+      // needs to change useType in the class nameTables
+      auto cl = generator.typeList[this->scopeName];
+      if (cl != nullptr) {
+        auto c = dynamic_cast<gen::Class *>(*cl);
+        if (c != nullptr) {
+          auto privateFunc = c->nameTable[this->ident.ident];
+          if (privateFunc != nullptr) {
+            privateFunc->useType = this->useType;
+          }
+          auto publicFunc = c->publicNameTable[this->ident.ident];
+          if (publicFunc != nullptr) {
+            publicFunc->useType = this->useType;
+          }
+        }
+      }
+    }
+
+    generator.returnType = this->useType;
+
     auto link = new asmc::LinkTask();
     link->logicalLine = this->logicalLine;
     link->command = "global";
@@ -322,7 +347,11 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
 
 gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
   gen::Expr output;
-  output.type = this->optional ? "Option" : this->type.typeName;
+  auto tn = useType.typeName != "" ? useType.typeName : type.typeName;
+  if (generator.scope != nullptr && tn == "Self") {
+    tn = generator.scope->Ident;
+  }
+  output.type = this->optional ? "Option" : tn;
   output.size = this->optional ? asmc::QWord : this->type.size;
   output.access = generator.registers["%rax"]->get(output.size);
   if (this->type.typeName == "float") {

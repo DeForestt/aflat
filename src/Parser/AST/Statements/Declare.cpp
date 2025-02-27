@@ -58,7 +58,6 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
     } else {
       // add the symbol to the class symbol table
       Table = &generator.scope->SymbolTable;
-
       if (Table->search<std::string>(gen::utils::searchSymbol, this->ident) !=
           nullptr)
         generator.alert("redefined variable: " + this->ident);

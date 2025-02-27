@@ -29,6 +29,16 @@ class Declare : public Arg, public Statement {
         type(type),
         requestType(requestType),
         modList(modList) {}
+  Declare(const Declare &other)
+      : ident(other.ident),
+        scope(other.scope),
+        TypeName(other.TypeName),
+        mut(other.mut),
+        type(other.type),
+        requestType(other.requestType),
+        modList(other.modList) {
+    this->logicalLine = other.logicalLine;
+  }
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 };  // namespace ast
