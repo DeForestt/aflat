@@ -33,14 +33,9 @@ class Content {
         return my;
     };
 
-    fn render() -> adr {
+    adr render() {
         my.content = my.cleanContent;
-        const let lines = my.content.split('\n');
-        string buffer = "";
-
-        foreach const string line : lines.scroll() {
-            str.print(line);
-        };
+        string buffer = my.content;
 
         for int i = 0; i < my.bindings.getCount(); i = i + 1 {
             const Bind binding = my.bindings.get(i).expect("Binding count corrupted");
@@ -48,8 +43,6 @@ class Content {
             const string val = binding.val;
             buffer = buffer.replace(key, val);
         };
-        
-        return my;
         return buffer.cstr();
     };
 };
