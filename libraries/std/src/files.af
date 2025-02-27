@@ -154,7 +154,6 @@ LinkedList toLinkedList@File(const char delim){
         adr ibuff = malloc(256);
         
         int eof = my.read(ibuff, delim);
-
         while (eof != 1){
                 l.append(ibuff);
                 ibuff = malloc(256);
