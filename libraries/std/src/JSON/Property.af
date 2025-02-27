@@ -16,7 +16,7 @@ safe class JSONProperty {
         my.context.properties.pushBack(my);
         const adr new_me = my.context.properties.back().orElse([] => panic("No properties found when adding int to JSONObject"));
         free(my);
-        my = new_me;
+        return new_me;
     };
 
     void _set(const any value) {
