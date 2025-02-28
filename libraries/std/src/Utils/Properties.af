@@ -1,6 +1,11 @@
 .needs <std>
 import Map from "Utils/Map";
 import Option from "Utils/Option";
+import List from "Collections";
+import Scroller from "Collections/Scroller";
+import Function from "Utils/Functions";
+import Observable from "Utils/Observable";
+
 import {print, printHex} from "io" under io;
 
 /*
@@ -24,13 +29,15 @@ safe dynamic class Computed {
 
 /*
  * Decorate a class method to be treated as a read-write calculated property.
+ * This property is observable.
  */
+ @Apply(Observable)
 safe dynamic class Property {
     private mutable any<any> getter;
     private mutable void<any, any> setter;
     private const any context = context;
 
-    Property init(const Map<> foo, const any context){
+    Property init(const Map<> foo, const any context) {
         const Map access = foo();
         my.getter = access.get("get").or(NULL);
         my.setter = access.get("set").or(NULL);
@@ -47,6 +54,7 @@ safe dynamic class Property {
         const let setter = my.setter;
         if (setter == NULL) panic("Attempt to write to a property without a setter.");
         setter(my.context, value);
+        my.notify(my);
     };
 
     adr ref() {

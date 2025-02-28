@@ -582,6 +582,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   linker.insert(linker.begin(), libPath + "Scroller.s");
   linker.insert(linker.begin(), libPath + "Utils_Defer.s");
   linker.insert(linker.begin(), libPath + "Memory.s");
+  linker.insert(linker.begin(), libPath + "Utils_Observable.s");
 
   // run gcc on the linkerList
   std::string linkerList = "";
@@ -598,7 +599,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   }
 
   system(gcc.c_str());
-  linker.erase(linker.begin(), linker.begin() + 37);
+  linker.erase(linker.begin(), linker.begin() + 38);
 
   if (!config.asm_) {
     for (auto &s : linker) {
