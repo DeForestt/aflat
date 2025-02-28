@@ -21,6 +21,8 @@ aflat ./libraries/std/src/Memory.af ./libraries/std/Memory.s
 mv ./libraries/std/Result.s ./libraries/std/Utils_Result.s
 aflat ./libraries/std/src/Utils/Functions.af ./libraries/std/Functions.s
 mv ./libraries/std/Functions.s ./libraries/std/Utils_Functions.s
+aflat ./libraries/std/src/Utils/Observable.af ./libraries/std/Observable.s
+mv ./libraries/std/Observable.s ./libraries/std/Utils_Observable.s
 aflat ./libraries/std/src/Utils/Map.af ./libraries/std/Map.s
 mv ./libraries/std/Map.s ./libraries/std/Utils_Map.s
 aflat ./libraries/std/src/Utils/Option.af ./libraries/std/Option.s

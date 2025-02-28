@@ -3,7 +3,6 @@
 import * from "io" under io;
 import string from "String";
 import Result from "Utils/Result";
-import Property from "Utils/Properties";
 import Iterator from "Collections/Iterator";
 import Scroller from "Collections/Scroller";
 import Option from "Utils/Option";
