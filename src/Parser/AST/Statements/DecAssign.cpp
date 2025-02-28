@@ -13,8 +13,9 @@ void DecAssign::debug() {
 }
 DecAssign::DecAssign(Declare *declare, const bool mute,
                      links::LinkedList<lex::Token *> &tokens,
-                     parse::Parser &parser)
-    : declare(declare), mute(mute) {
+                     parse::Parser &parser,
+                     const std::vector<parse::Annotation> &annotations)
+    : declare(declare), mute(mute), annotations(annotations) {
   this->expr = parser.parseExpr(tokens);
   this->logicalLine = this->expr->logicalLine;
 }
@@ -117,11 +118,28 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       file.text << mov;
       s->usable = true;
     } else {
-      // add the this to the class default list
-      generator.scope->defaultValues.push_back(*this);
-      // generate the declare
-      dec->mut = this->mute;
-      file << generator.GenSTMT(dec);
+      if (this->annotations.size() > 0) {
+        for (auto &annotation : this->annotations) {
+          if (generator.transforms.find(annotation.name) ==
+              generator.transforms.end()) {
+            generator.alert("Template " + annotation.name + " not found");
+          }
+          auto expr_str = this->expr->toString();
+          auto transform = generator.transforms[annotation.name];
+          auto result = transform.parse(declare->ident, declare->type.typeName,
+                                        expr_str, generator);
+          if (!result) {
+            generator.alert("Template " + annotation.name + " failed to parse");
+          }
+          file << result->generate(generator).file;
+        }
+      } else {
+        // add the this to the class default list
+        generator.scope->defaultValues.push_back(*this);
+        // generate the declare
+        dec->mut = this->mute;
+        file << generator.GenSTMT(dec);
+      };
     }
   } else {
     gen::Symbol Symbol;
@@ -156,7 +174,8 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
   };
 
   if (dec->type.fPointerArgs.isFPointer &&
-      generator.typeList[dec->TypeName] == nullptr) {
+      generator.typeList[dec->TypeName] == nullptr &&
+      this->annotations.size() == 0) {
     auto newType = new ast::Type();
     newType->typeName = dec->TypeName;
     newType->size = asmc::QWord;

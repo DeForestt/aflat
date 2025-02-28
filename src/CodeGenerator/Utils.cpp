@@ -76,6 +76,15 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
     if (enm->Ident == ident) {
       return stmt;
     }
+  } else if (dynamic_cast<ast::Transform *>(stmt)) {
+    ast::Transform *trans = dynamic_cast<ast::Transform *>(stmt);
+    ast::Transform *t = new ast::Transform();
+    t->ident = trans->ident;
+    t->_template = trans->_template;
+    t->locked = false;
+    if (t->ident == ident) {
+      return t;
+    }
   } else if (dynamic_cast<ast::Function *>(stmt)) {
     ast::Function *func = dynamic_cast<ast::Function *>(stmt);
     if (func->ident.ident == ident || ident == "*") {

@@ -47,17 +47,16 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
                          " Unopened UDeffType");
 
+  auto t = ast::Type();
+  t.size = asmc::QWord;
+  t.typeName = this->ident.ident;
+  // Check if the class is in the typeList
+  if (parser.typeList[this->ident.ident] != nullptr)
+    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+                         " Class " + this->ident.ident + " already exists");
+  parser.typeList << t;
   // check if there is a contract
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
-    auto t = ast::Type();
-    t.size = asmc::QWord;
-    t.typeName = this->ident.ident;
-    // Check if the class is in the typeList
-    if (parser.typeList[this->ident.ident] != nullptr)
-      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           " Class " + this->ident.ident + " already exists");
-    parser.typeList << t;
-
     auto contract = *dynamic_cast<lex::LObj *>(tokens.peek());
     if (contract.meta == "contract") {
       tokens.pop();

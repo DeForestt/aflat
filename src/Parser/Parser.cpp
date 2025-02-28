@@ -420,7 +420,7 @@ ast::Statement *parse::Parser::parseStmt(
             output = new ast::DecAssign(
                 new ast::Declare(ident.meta, scope, obj.meta, isMutable, type,
                                  requestType, modList),
-                isMutable, tokens, *this);
+                isMutable, tokens, *this, annotations);
           }
         } else {
           output = new ast::Declare(ident.meta, scope, obj.meta, isMutable,
@@ -509,6 +509,8 @@ ast::Statement *parse::Parser::parseStmt(
       output = new ast::Enum(tokens, *this);
     } else if (obj.meta == "import") {
       output = new ast::Import(tokens, *this);
+    } else if (obj.meta == "transform") {
+      output = new ast::Transform(tokens);
     } else if (obj.meta == "delete") {
       output = new ast::Delete(tokens, *this);
     } else if (obj.meta == "continue") {

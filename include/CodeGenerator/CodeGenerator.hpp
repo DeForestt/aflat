@@ -85,10 +85,9 @@ class Enum : public Type {
 };
 
 class CodeGenerator {
-  parse::Parser &parser;
-
  public:
 #pragma region State Variables
+  parse::Parser &parser;
   gen::Class *scope;
   ast::Type returnType;
   int scopePop = 0;

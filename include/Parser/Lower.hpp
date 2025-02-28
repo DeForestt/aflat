@@ -7,12 +7,14 @@ namespace parse {
 namespace lower {
 class Lowerer {
  public:
+  Lowerer(ast::Statement *root, bool snippet);
   Lowerer(ast::Statement *root);
 
  private:
   ast::Statement *root;
   ast::Statement *curr;
   bool inclass = false;
+  bool snippet = false;
   std::string className = "";
 
   ast::Statement *lower(ast::Statement *stmt);

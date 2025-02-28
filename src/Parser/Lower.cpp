@@ -30,6 +30,13 @@ Lower::Lowerer(ast::Statement *root) {
   this->root = this->lower(root);
 }
 
+Lower::Lowerer(ast::Statement *root, bool snippet) {
+  this->root = root;
+  this->curr = root;
+  this->snippet = snippet;
+  this->root = this->lower(root);
+}
+
 ast::Statement *Lower::lower(ast::Statement *stmt) {
   if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
     auto seq = dynamic_cast<ast::Sequence *>(stmt);
@@ -86,7 +93,7 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
       ast::Function *dec =
           this->findFunction(this->root, func->decorator, fromClass);
       if (dec == nullptr) {
-        if (!this->inclass)
+        if (!this->inclass && !this->snippet)
           throw err::Exception(
               "Can't use a class as a decorator outside a class");
 

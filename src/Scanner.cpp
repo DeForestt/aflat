@@ -153,6 +153,20 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
       }
       i++;
       tokens.push(stringObj);
+    } else if (input[i] == '~') {
+      auto *stringObj = new lex::StringObj();
+      stringObj->value = "";
+      i++;
+      while (input[i] != '~') {
+        // just copy the string exactly... no escaping
+        if (input[i] == '\n' || input[i] == '\r') {
+          lineCount++;
+        }
+        stringObj->value += input[i];
+        i++;
+      }
+      i++;
+      tokens.push(stringObj);
     } else if (input[i] == '\'') {
       auto charobj = new CharObj();
       i++;
