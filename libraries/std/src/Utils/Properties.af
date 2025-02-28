@@ -61,3 +61,31 @@ safe dynamic class Property {
         return my;
     };
 };
+
+transform observable 
+~
+mutable ${type} __${ident} = ${expr};
+fn ${ident}() -> Map : Property {{
+	"get": [const ${Self} this] => {
+		return this.__${ident};
+	},
+	"set": [const ${Self} this, const ${type} x] => {
+		this.__${ident} = x;
+		return;
+	}
+}};
+~;
+
+transform readonly
+~
+private mutable ${type} __${ident} = ${expr};
+fn ${ident}() -> Map : Property {{
+    "get": [const ${Self} this] => {
+        return this.__${ident};
+    },
+    "set": [] => {
+        panic("Cannot set readonly property");
+        return;
+    }
+}};
+~;
