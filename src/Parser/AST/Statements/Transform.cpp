@@ -6,6 +6,7 @@
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/Lower.hpp"
 #include "PreProcessor.hpp"
+#include "Utils.hpp"
 
 namespace ast {
 Transform::Transform(links::LinkedList<lex::Token *> &tokens) {
@@ -63,4 +64,9 @@ ast::Statement *Transform::parse(const std::string &ident, std::string &type,
 
   return statement;
 }
+std::string Compound::toString() {
+  return expr1->toString() + " " + utils::op_to_string(op) + " " +
+         expr2->toString();
+}
+
 };  // namespace ast

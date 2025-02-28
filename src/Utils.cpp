@@ -11,3 +11,45 @@ std::string utils::remove_char(std::string str, char ch) {
   str.erase(std::remove(str.begin(), str.end(), ch), str.end());
   return str;
 }
+
+std::string utils::op_to_string(ast::Op op) {
+  switch (op) {
+    case ast::Op::Plus:
+      return "+";
+    case ast::Op::Minus:
+      return "-";
+    case ast::Op::Carrot:
+      return "^";
+    case ast::Op::Mod:
+      return "%";
+    case ast::Op::Mul:
+      return "*";
+    case ast::Op::Div:
+      return "/";
+    case ast::Op::Equ:
+      return "==";
+    case ast::Op::NotEqu:
+      return "!=";
+    case ast::Op::Less:
+      return "<";
+    case ast::Op::Great:
+      return ">";
+    case ast::Op::AndBit:
+      return "&";
+    case ast::Op::AndBool:
+      return "&&";
+    case ast::Op::OrBit:
+      return "|";
+    case ast::Op::LessCmp:
+      return "<=";
+    case ast::Op::GreatCmp:
+      return ">=";
+    case ast::Op::CompEqu:
+      return "===";
+    case ast::Op::Leq:
+      return "<=";
+    case ast::Op::Geq:
+      return ">=";
+  }
+  return "";
+}
