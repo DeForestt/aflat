@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <tuple>
+#include <unordered_map>
 
 #include "ASM.hpp"
 #include "CodeGenerator/Expr.hpp"
@@ -84,6 +85,8 @@ class Enum : public Type {
 };
 
 class CodeGenerator {
+  parse::Parser &parser;
+
  public:
 #pragma region State Variables
   gen::Class *scope;
@@ -110,6 +113,7 @@ class CodeGenerator {
   links::LinkedList<Symbol> GlobalSymbolTable;
   links::SLinkedList<ast::Function, std::string> nameTable;
   links::SLinkedList<ast::Type, std::string> TypeList;
+  std::unordered_map<std::string, ast::Transform> transforms;
 #pragma endregion
 
   int getBytes(asmc::Size size);
@@ -151,7 +155,7 @@ class CodeGenerator {
       ast::Statement *STMT, links::LinkedList<gen::Symbol> &table);
   // a function for warnings or errors
   void alert(std::string message, bool error = true);
-  CodeGenerator(std::string moduleId);
+  CodeGenerator(std::string moduleId, parse::Parser &parser);
   asmc::File *deScope(gen::Symbol &sym);
 };
 }  // namespace gen

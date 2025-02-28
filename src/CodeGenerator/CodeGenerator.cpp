@@ -83,7 +83,8 @@ void gen::CodeGenerator::alert(std::string message, bool error = true) {
   }
 };
 
-gen::CodeGenerator::CodeGenerator(std::string moduleId) {
+gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser)
+    : parser(parser) {
   this->registers << asmc::Register("rax", "eax", "ax", "al");
   this->registers << asmc::Register("rcx", "ecx", "cx", "cl");
   this->registers << asmc::Register("rdx", "edx", "dx", "dl");

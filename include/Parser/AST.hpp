@@ -139,16 +139,19 @@ class Argument : public Arg, public Statement {
  public:
   std::string Ident;
   Type type;
+  std::string toString() override;
 };
 
 class ParenExpr : public Expr {
  public:
   Expr *expr;
+  std::string toString() override { return "(" + expr->toString() + ")"; }
 };
 
 class CharLiteral : public Expr {
  public:
   char value;
+  std::string toString() override { return std::string(1, value); }
 };
 
 class Iflush : public Statement {};
@@ -156,11 +159,13 @@ class Iflush : public Statement {};
 class CWrite : public Statement {
  public:
   Expr *expr;
+  std::string toString() override { return "cwrite(" + expr->toString() + ")"; }
 };
 
 class Push : public Statement {
  public:
   Expr *expr;
+  std::string toString() override { return "push(" + expr->toString() + ")"; }
 };
 
 class Pull : public Statement {
@@ -175,37 +180,53 @@ class Var : public Expr {
   links::LinkedList<std::string> modList;
   bool clean = false;
   bool internal = false;
+
+  std::string toString() override {
+    std::string result = Ident;
+    for (int i = 0; i < modList.count; i++) {
+      result += "." + modList.get(i);
+    }
+    return result;
+  }
 };
 
 class Buy : public Expr {
  public:
   Expr *expr;
+  std::string toString() override { return "$" + expr->toString(); }
 };
 
 class StringLiteral : public Expr {
  public:
   std::string val;
+
+  std::string toString() override { return "\"" + val + "\""; }
 };
 
 class FStringLiteral : public Expr {
  public:
   std::string val;
   std::vector<Expr *> args;
+
+  std::string toString() override { return "`" + val + "`"; }
 };
 
 class IntLiteral : public Expr {
  public:
   int val;
+  std::string toString() override { return std::to_string(val); }
 };
 
 class FloatLiteral : public Expr {
  public:
   std::string val;
+  std::string toString() override { return val; }
 };
 
 class LongLiteral : public Expr {
  public:
   int val;
+  std::string toString() override { return std::to_string(val); }
 };
 
 class Compound : public Expr {
@@ -213,6 +234,10 @@ class Compound : public Expr {
   Expr *expr1;
   Op op;
   Expr *expr2;
+  std::string toString() override {
+    return expr1->toString() + " " + std::to_string(op) + " " +
+           expr2->toString();
+  }
 };
 
 class Reference : public Expr {
@@ -220,6 +245,14 @@ class Reference : public Expr {
   std::string Ident;
   links::LinkedList<std::string> modList;
   bool internal = false;
+
+  std::string toString() override {
+    std::string result = "?" + Ident;
+    for (int i = 0; i < modList.count; i++) {
+      result += "." + modList.get(i);
+    }
+    return result;
+  }
 };
 
 class DeReference : public Expr {
@@ -227,16 +260,30 @@ class DeReference : public Expr {
   std::string Ident;
   links::LinkedList<std::string> modList;
   Type type;
+
+  std::string toString() override {
+    std::string result = Ident;
+    for (int i = 0; i < modList.count; i++) {
+      result += "." + modList.get(i);
+    }
+
+    result = result + "as" + type.typeName;
+    return result;
+  }
 };
 
 class CallExpr : public Expr {
  public:
   Call *call;
+
+  std::string toString() override;
 };
 
 class parenExpr : public Expr {
  public:
   Expr *expr;
+
+  std::string toString() override { return "(" + expr->toString() + ")"; }
 };
 
 class Lambda : public Expr {
@@ -248,6 +295,21 @@ class NewExpr : public Expr {
  public:
   Type type;
   links::LinkedList<Expr *> args;
+
+  std::string toString() override {
+    std::string result = "new " + type.typeName;
+    if (args.count > 0) {
+      result += "(";
+      for (int i = 0; i < args.count; i++) {
+        result += args.get(i)->toString();
+        if (i != args.count - 1) {
+          result += ", ";
+        }
+      }
+      result += ")";
+    }
+    return result;
+  }
 };
 
 class StructList : public Expr {
@@ -258,6 +320,7 @@ class StructList : public Expr {
 class Not : public Expr {
  public:
   Expr *expr;
+  std::string toString() override { return "!" + expr->toString(); }
 };
 
 class IfExpr : public Expr {
@@ -265,6 +328,10 @@ class IfExpr : public Expr {
   Expr *expr;
   Expr *trueExpr;
   Expr *falseExpr;
+  std::string toString() override {
+    return "if" + expr->toString() + "" + trueExpr->toString() + "else" +
+           falseExpr->toString();
+  }
 };
 
 }  // namespace ast

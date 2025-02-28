@@ -540,4 +540,24 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   generator.intArgsCounter = 0;
   return {file, std::optional<gen::Expr>(func->toExpr(generator))};
 }
+
+std::string Call::toString() {
+  std::string result = ident;
+  for (int i = 0; i < modList.count; i++) {
+    result += "." + modList.get(i);
+  }
+  result += "(";
+  for (int i = 0; i < Args.count; i++) {
+    result += Args.get(i)->toString();
+    if (i != Args.count - 1) {
+      result += ", ";
+    }
+  }
+  result += ")";
+
+  return result;
+}  // namespace ast
+
+std::string CallExpr::toString() { return call->toString(); }
+
 }  // namespace ast

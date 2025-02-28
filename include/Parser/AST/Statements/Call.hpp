@@ -17,6 +17,7 @@ class Call : public Statement {
   Call(const std::string &ident, const links::LinkedList<Expr *> &args,
        links::LinkedList<std::string> modList)
       : ident(ident), Args(args), modList(modList) {}
+  std::string toString() override;
 };
 
 }  // namespace ast

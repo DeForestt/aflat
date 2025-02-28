@@ -7,8 +7,8 @@ bool mockGen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   return gen::CodeGenerator::canAssign(type, typeName, fmt, strict);
 }
 
-CodeGenerator::CodeGenerator(std::string moduleId)
-    : gen::CodeGenerator(moduleId) {}
+CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser)
+    : gen::CodeGenerator(moduleId, parser), parser(parser) {}
 
 bool CodeGenerator::addType(gen::Type *type) {
   this->typeList.push(type);

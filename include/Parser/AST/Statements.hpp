@@ -27,4 +27,5 @@
 #include "Parser/AST/Statements/Return.hpp"
 #include "Parser/AST/Statements/Sequence.hpp"
 #include "Parser/AST/Statements/Struct.hpp"
+#include "Parser/AST/Statements/Transform.hpp"
 #include "Parser/AST/Statements/While.hpp"
