@@ -1,0 +1,23 @@
+.needs <std>
+import List from "Collections";
+import Scroller from "Collections/Scroller";
+import Function from "Utils/Functions";
+
+import {print, printHex} from "io" under io;
+
+class Observable {
+	List subscribers = new List(Function);
+
+	fn subscribe(const Function f) -> void {
+		my.subscribers.pushBack(f);
+		return;
+	};
+
+	private fn notify(const any event) -> void {
+		foreach const Function f : my.subscribers.scroll() {
+			f(event);
+		};
+		return;
+	};
+
+};
