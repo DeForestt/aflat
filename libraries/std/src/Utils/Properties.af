@@ -81,7 +81,7 @@ transform readonly
 private mutable ${type} __${ident} = ${expr};
 fn ${ident}() -> Map : Property {{
     "get": [const ${Self} this] => {
-        return this.__${ident};
+        return this.__${ident}; 
     },
     "set": [] => {
         panic("Cannot set readonly property");
