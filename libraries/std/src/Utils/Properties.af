@@ -76,7 +76,7 @@ fn ${ident}() -> Map : Property {{
 }};
 ~;
 
-transform readonly
+transform readonly 
 ~
 private mutable ${type} __${ident} = ${expr};
 fn ${ident}() -> Map : Property {{
@@ -85,6 +85,36 @@ fn ${ident}() -> Map : Property {{
     },
     "set": [] => {
         panic("Cannot set readonly property");
+        return;
+    }
+}};
+~;
+
+transform computed 
+~
+fn ${ident}() -> adr : Property {{
+    "get": [const ${Self} my] => {
+        return ${expr};
+    },
+    "set": [] => {
+        panic("Cannot set computed property");
+        return;
+    }
+}};
+~;
+
+transform lazy 
+~
+private mutable ${type} __${ident} = NULL;
+fn ${ident}() -> Map : Property {{
+    "get": [const ${Self} this] => {
+        if (this.__${ident} == NULL) {
+            this.__${ident} = ${expr};
+        }
+        return this.__${ident};
+    },
+    "set": [] => {
+        panic("Cannot set lazy property");
         return;
     }
 }};

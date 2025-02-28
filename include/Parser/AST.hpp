@@ -90,6 +90,10 @@ class ConditionalExpr {
   Expr *expr1;
   Op op;
   Expr *expr2;
+
+  std::string toString() {
+    return expr1->toString() + " " + " " + expr2->toString();
+  }
 };
 
 class Type {
@@ -234,10 +238,7 @@ class Compound : public Expr {
   Expr *expr1;
   Op op;
   Expr *expr2;
-  std::string toString() override {
-    return expr1->toString() + " " + std::to_string(op) + " " +
-           expr2->toString();
-  }
+  std::string toString() override;
 };
 
 class Reference : public Expr {
