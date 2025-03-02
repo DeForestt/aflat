@@ -119,3 +119,21 @@ fn ${ident}() -> Map : Property {{
     }
 }};
 ~;
+
+transform with 
+~
+mutable ${type} ${ident} = ${expr}; // default value
+fn with_${ident}(const ${type} x) -> ${Self} {
+    my.${ident} = x;
+    return my;
+};
+~;
+
+// just like with, but it takes ownership of the value
+transform with_owned ~
+mutable ${type} ${ident} = ${expr}; // default value
+fn with_${ident}(const &&${type} x) -> ${Self} {
+    my.${ident} = $x;
+    return my;
+};
+~;
