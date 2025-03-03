@@ -2,7 +2,7 @@
 .needs <server>
 import Endpoint, NotFoundImpl from "HTTP/Endpoint";
 import List from "Collections";
-import HTTPMessage, HTTPMethod, HTTPResponce, NotFoundError, ForbiddenError, BadRequestError, InternalServerError, OtherHTTPError, NotImplementedError from "HTTP";
+import HTTPMessage, HTTPMethod, HTTPResponse, NotFoundError, ForbiddenError, BadRequestError, InternalServerError, OtherHTTPError, NotImplementedError from "HTTP";
 import Result from "Utils/Result";
 import {methodToString} from "HTTP" under http;
 import string from "String";
@@ -40,7 +40,7 @@ class Server {
 
     void listen() {
         str.print(`listening on port: {my.port}\n`);
-        serve(my.port, [const adr msg, const Server self] => {
+        serve_sync(my.port, [const adr msg, const Server self] => {
             const HTTPMessage msg = new HTTPMessage(msg, true);
             const string method = http.methodToString(msg.method);
             const string endpoint = msg.endpoint;
@@ -75,15 +75,15 @@ class Server {
                         response = handler(self, data, path);
                     };
 
-                    HTTPResponce r = response.match({
-                        "ok": [const HTTPResponce res] => return res,
-                        "NotFoundError": [const NotFoundError err] => return new HTTPResponce(err.render().cstr(), "404", "Not Found"),
-                        "ForbiddenError": [const ForbiddenError err] => return new HTTPResponce(err.render().cstr(), "403", "Forbidden"),
-                        "BadRequestError": [const BadRequestError err] => return new HTTPResponce(err.render().cstr(), "400", "Bad Request"),
-                        "NotImplementedError": [const NotImplementedError err] => return new HTTPResponce(err.render().cstr(), "501", "Not Implemented"),
+                    HTTPResponse r = response.match({
+                        "ok": [const HTTPResponse res] => return res,
+                        "NotFoundError": [const NotFoundError err] => return new HTTPResponse(err.render().cstr(), "404", "Not Found"),
+                        "ForbiddenError": [const ForbiddenError err] => return new HTTPResponse(err.render().cstr(), "403", "Forbidden"),
+                        "BadRequestError": [const BadRequestError err] => return new HTTPResponse(err.render().cstr(), "400", "Bad Request"),
+                        "NotImplementedError": [const NotImplementedError err] => return new HTTPResponse(err.render().cstr(), "501", "Not Implemented"),
                         "_": [const Error err] => {
                             const let val = err.render();
-                            return new HTTPResponce(val.cstr(), "500", "Internal Server Error");
+                            return new HTTPResponse(val.cstr(), "500", "Internal Server Error");
                         }
                     });
 
@@ -101,11 +101,11 @@ class Server {
             if self.notFound != NULL {
                 const let notFound = self.notFound;
                 const let handler = notFound.imp;
-                const HTTPResponce r = handler(self, data);
+                const HTTPResponse r = handler(self, data);
                 return r.toString().cstr();
             };
 
-            const HTTPResponce r = new HTTPResponce(`Endpoint: [{method}] {endpoint} not implemented`.cstr(), "501", "Not Implemented");
+            const HTTPResponse r = new HTTPResponse(`Endpoint: [{method}] {endpoint} not implemented`.cstr(), "501", "Not Implemented");
             return r.toString().cstr();
         }, my);
     };

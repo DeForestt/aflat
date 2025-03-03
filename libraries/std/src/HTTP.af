@@ -308,18 +308,19 @@ class HTTPMessage {
                 return;
             };
 
-            string key = sections.get(0).expect("Invalid HTTP message");
+            const string key = sections.get(0).expect("Invalid HTTP message");
             string value = sections.get(1).expect("Invalid HTTP message");
 
             if sections.getCount() > 2 {
                 for int i = 2; i < sections.getCount(); i = i + 1 {
-                    value = value + ":";
+                    const string withColon = value + ":";
                     const string t = sections.get(i).expect("Invalid HTTP message");
-                    value = value + t;
+                    value = withColon + t;
                 };
             };
-            key = key.trim();
-            value = value.trim();
+            
+            const string key = key.trim();
+            const string value = value.trim();
             const HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
             this.headers.pushBack(n);
         }, my); 
@@ -429,13 +430,13 @@ class HTTPRequest {
     };
 };
 
-class HTTPResponce {
+class HTTPResponse {
     const private List headers = new List(HTTPHeader);
     const private adr statusMessage = statusMessage;
     const private adr statusCode = statusCode;
     private adr body = body;
     
-    HTTPResponce init(const adr body, const adr statusCode, const adr statusMessage) {
+    HTTPResponse init(const adr body, const adr statusCode, const adr statusMessage) {
         return my;
     };
 

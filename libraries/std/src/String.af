@@ -389,6 +389,7 @@ safe dynamic class string {
     private adr head;
     private int refcount = 1;
     private bool permanent = false;
+    public bool debug = false;
 
     string init(const adr head) {
         my.head = malloc(str.len(head) + 1);
@@ -401,7 +402,16 @@ safe dynamic class string {
         return my;
     };
 
-    int del(){
+    fn debugRefCount() {
+        if my.debug {
+            io.print(my.head);
+            io.print(" RefCount: ");
+            io.printInt(my.refcount);
+            io.print("\n");
+        };
+    };
+
+    int del() {
         if my.permanent return 0;
         free(my.head);
     };
@@ -523,6 +533,7 @@ safe dynamic class string {
         buff = buff + 1;
         buff =: '\0';
         const let s = new string(save);
+        s.seal();
         list.pushBack(s.get());
         free(save);
         return list;
@@ -772,8 +783,13 @@ safe dynamic class string {
 
     int endScope() {
         if my.permanent return 0;
+        if my.debug {
+            io.print(my.head);
+            io.print(": End scope called on string object\n");
+        };
         my.refcount = my.refcount - 1;
         if my.refcount == 0 {
+            if my.debug io.print(": Deleting string object\n");
             delete my;
         };
         return 0;
