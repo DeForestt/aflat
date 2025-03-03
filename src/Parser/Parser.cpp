@@ -1009,6 +1009,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     auto *fstringLiteral = new ast::FStringLiteral();
     fstringLiteral->logicalLine = fstringObj.lineCount;
     fstringLiteral->val = fstringObj.value;
+    fstringLiteral->original = fstringObj.value;
 
     // find each { and } and parse the expression in between
     while (true) {

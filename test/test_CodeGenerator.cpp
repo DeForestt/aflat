@@ -1,5 +1,10 @@
 #include "CodeGenerator/MockCodeGenerator.hpp"
+#include "Parser/AST.hpp"
 #include "catch.hpp"
+
+#define MOCKGEN                  \
+  auto parser = parse::Parser(); \
+  auto mockGen = test::mockGen::CodeGenerator("mod", parser);
 
 bool compareFunc(ast::Function F, std::string input) {
   if (input == F.ident.ident) {
@@ -11,7 +16,7 @@ bool compareFunc(ast::Function F, std::string input) {
 TEST_CASE("canAssign will not assign to types with different names",
           "[canAssign]") {
   auto testType = ast::Type();
-  auto mockGen = test::mockGen::CodeGenerator("mod");
+  MOCKGEN
 
   testType.typeName = "testType";
 
@@ -20,7 +25,7 @@ TEST_CASE("canAssign will not assign to types with different names",
 
 TEST_CASE("canAssign assigns types with the same name", "[canAssing]") {
   auto testType = ast::Type();
-  auto mockGen = test::mockGen::CodeGenerator("mod");
+  MOCKGEN
 
   testType.typeName = "testType";
 
@@ -33,7 +38,8 @@ TEST_CASE("cannAssign returns false if it can implicit cast", "[canAssign]") {
   auto constType = ast::Type();
   gen::Class *cl = new gen::Class();
   auto init = ast::Function();
-  auto mockGen = test::mockGen::CodeGenerator("mod");
+
+  MOCKGEN
 
   init.ident.ident = "init";
   constType.typeName = "takes";
