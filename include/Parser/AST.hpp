@@ -209,10 +209,11 @@ class StringLiteral : public Expr {
 
 class FStringLiteral : public Expr {
  public:
+  std::string original;
   std::string val;
   std::vector<Expr *> args;
 
-  std::string toString() override { return "`" + val + "`"; }
+  std::string toString() override { return "`" + original + "`"; }
 };
 
 class IntLiteral : public Expr {
