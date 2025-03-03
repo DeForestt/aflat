@@ -14,6 +14,7 @@ class Transform : public Statement {
   ~Transform() = default;
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   ast::Statement *parse(const std::string &ident, std::string &type,
-                        std::string &exp, gen::CodeGenerator &generator);
+                        std::string &exp, std::string &scope, std::string &mut,
+                        gen::CodeGenerator &generator);
 };
 };  // namespace ast

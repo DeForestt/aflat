@@ -298,12 +298,14 @@ class HTTPMessage {
                 return;
 
             if this.switch {
+                st.print("Switching.");
                 this.body = this.body + line + "\r\n";
+                st.print("Good switch.");
                 return;
             };
 
-            const let sections = line.split(':');
-            if sections.getCount() < 2{
+            const let sections = line.splitAtFirst(':');
+            if sections.getCount() != 2 {
                 io.fPrint("Invalid header: %s\n", {line});
                 return;
             };
@@ -313,9 +315,9 @@ class HTTPMessage {
 
             if sections.getCount() > 2 {
                 for int i = 2; i < sections.getCount(); i = i + 1 {
-                    const string withColon = value + ":";
+                    const string withColon = `{value}:`;
                     const string t = sections.get(i).expect("Invalid HTTP message");
-                    value = withColon + t;
+                    value = `{withColon}{t}`;
                 };
             };
             
@@ -332,20 +334,34 @@ class HTTPMessage {
 
     adr getHeader(const adr key) {
         const adr args = malloc(adr);
-        args =: key;
-        my.headers.forEach([const HTTPHeader header, const int __index, const adr arg] => {
-            const adr comp = arg as adr;
-            String a = new String(header.key);
+        
+        for int i = 0; i < my.headers.getCount(); i = i + 1 {
+            const HTTPHeader header = my.headers.get(i).expect("Get header failed");
+            const adr comp = header.key;
+            mutable string a = new string(header.key);
             a = a.trim('\n');
             a = a.trim('\r');
-            a = a.trim();
-            if a.equal(comp) {
-                arg =: header.value;
-                delete a;
-                return;
+            a = a.trim(' ');
+            if a == comp {
+                return header.value;
             };
             delete a;
-        }, args);
+        };
+        
+        args =: key;
+        // my.headers.forEach([const HTTPHeader header, const int __index, const adr arg] => {
+        //     const adr comp = arg as adr;
+        //     String a = new String(header.key);
+        //     a = a.trim('\n');
+        //     a = a.trim('\r');
+        //     a = a.trim(' ');
+        //     if a.equal(comp) {
+        //         arg =: header.value;
+        //         delete a;
+        //         return;
+        //     };
+        //     delete a;
+        // }, args);
         const adr ret = args as adr;
         return ret;
     };

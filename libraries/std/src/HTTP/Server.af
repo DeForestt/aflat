@@ -40,7 +40,7 @@ class Server {
 
     void listen() {
         str.print(`listening on port: {my.port}\n`);
-        serve_sync(my.port, [const adr msg, const Server self] => {
+        serve(my.port, [const adr msg, const Server self] => {
             const HTTPMessage msg = new HTTPMessage(msg, true);
             const string method = http.methodToString(msg.method);
             const string endpoint = msg.endpoint;
