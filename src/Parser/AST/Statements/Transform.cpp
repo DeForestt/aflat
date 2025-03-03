@@ -50,7 +50,6 @@ ast::Statement *Transform::parse(
 
   // replace all instances of ${arg} with the corresponding value
   for (auto &arg : args) {
-    std::cout << arg.first << " " << arg.second << std::endl;
     result = std::regex_replace(
         result, std::regex("\\$\\{" + arg.first + "\\}"), arg.second);
   }
@@ -66,7 +65,8 @@ ast::Statement *Transform::parse(
   // check for any remaining ${} and alert the name of the missing arg
   std::smatch match;
   if (std::regex_search(result, match, std::regex("\\$\\{[a-zA-Z0-9_]+\\}"))) {
-    generator.alert("Missing argument " + match.str());
+    generator.alert("Transform " + this->ident + " missing argument " +
+                    match.str());
   }
 
   lex::Lexer lexer = lex::Lexer();
