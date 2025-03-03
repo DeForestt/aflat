@@ -118,7 +118,7 @@ ast::Statement *parse::Parser::parseStmt(
       auto comma = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (comma && comma->Sym == ',') {
         tokens.pop();
-        arg = dynamic_cast<lex::LObj *>(tokens.pop());
+        arg = dynamic_cast<lex::LObj *>(tokens.peek());
       } else
         break;
     }

@@ -1,4 +1,6 @@
 #pragma once
+#include <unordered_map>
+
 #include "Parser/AST.hpp"
 
 namespace ast {
@@ -15,6 +17,7 @@ class Transform : public Statement {
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   ast::Statement *parse(const std::string &ident, std::string &type,
                         std::string &exp, std::string &scope, std::string &mut,
+                        std::unordered_map<std::string, std::string> &args,
                         gen::CodeGenerator &generator);
 };
 };  // namespace ast
