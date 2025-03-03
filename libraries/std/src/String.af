@@ -389,6 +389,7 @@ safe dynamic class string {
     private adr head;
     private int refcount = 1;
     private bool permanent = false;
+    public bool debug = false;
 
     string init(const adr head) {
         my.head = malloc(str.len(head) + 1);
@@ -401,7 +402,16 @@ safe dynamic class string {
         return my;
     };
 
-    int del(){
+    fn debugRefCount() {
+        if my.debug {
+            io.print(my.head);
+            io.print(" RefCount: ");
+            io.printInt(my.refcount);
+            io.print("\n");
+        };
+    };
+
+    int del() {
         if my.permanent return 0;
         free(my.head);
     };
@@ -421,12 +431,6 @@ safe dynamic class string {
         my.refcount = my.refcount - 1;
         my.head = malloc(str.len(other.head) + 1);
         memcpy(my.head, other.head, str.len(other.head) + 1);
-        if (other.refcount == 0) {
-            free(other.head);
-            free(other);
-        } else if (my.refcount == 0) {
-            delete my;
-        };
         return my;
     };
 
@@ -523,6 +527,44 @@ safe dynamic class string {
         buff = buff + 1;
         buff =: '\0';
         const let s = new string(save);
+        s.seal();
+        s.permanent = true;
+        list.pushBack(s.get());
+        free(save);
+        return list;
+    };
+
+    List splitAtFirst(const char delim) {
+        const List list = new List(string, 1, string.del);
+        const int myLen = str.len(my.head);
+        adr buff = malloc(1);
+        adr save = buff;
+        int buffSize = 1;
+
+        for int i = 0; i < myLen; i = i + 1 {
+            const adr curr = my.head + i;
+            const char c = curr as char;
+            if (c == delim) {
+                buff = buff + 1;
+                buff =: '\0';
+                const let s = new string(save);
+                list.pushBack(s);
+                //free(save);
+                buffSize = 1;
+                break;
+            } else {
+                buffSize = buffSize + 1;
+                save = realloc(save, buffSize);
+                buff = save;
+                buff = buff + buffSize - 2;
+                buff =: c;
+            };
+        };
+        buff = buff + 1;
+        buff =: '\0';
+        const let s = new string(save);
+        s.seal();
+        s.permanent = true;
         list.pushBack(s.get());
         free(save);
         return list;
@@ -772,8 +814,13 @@ safe dynamic class string {
 
     int endScope() {
         if my.permanent return 0;
+        // if my.debug {
+        //     io.print(my.head);
+        //     io.print(": End scope called on string object\n");
+        // };
         my.refcount = my.refcount - 1;
         if my.refcount == 0 {
+            // if my.debug io.print(": Deleting string object\n");
             delete my;
         };
         return 0;

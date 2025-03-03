@@ -298,28 +298,31 @@ class HTTPMessage {
                 return;
 
             if this.switch {
+                st.print("Switching.");
                 this.body = this.body + line + "\r\n";
+                st.print("Good switch.");
                 return;
             };
 
-            const let sections = line.split(':');
-            if sections.getCount() < 2{
+            const let sections = line.splitAtFirst(':');
+            if sections.getCount() != 2 {
                 io.fPrint("Invalid header: %s\n", {line});
                 return;
             };
 
-            string key = sections.get(0).expect("Invalid HTTP message");
+            const string key = sections.get(0).expect("Invalid HTTP message");
             string value = sections.get(1).expect("Invalid HTTP message");
 
             if sections.getCount() > 2 {
                 for int i = 2; i < sections.getCount(); i = i + 1 {
-                    value = value + ":";
+                    const string withColon = `{value}:`;
                     const string t = sections.get(i).expect("Invalid HTTP message");
-                    value = value + t;
+                    value = `{withColon}{t}`;
                 };
             };
-            key = key.trim();
-            value = value.trim();
+            
+            const string key = key.trim();
+            const string value = value.trim();
             const HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
             this.headers.pushBack(n);
         }, my); 
@@ -331,20 +334,34 @@ class HTTPMessage {
 
     adr getHeader(const adr key) {
         const adr args = malloc(adr);
-        args =: key;
-        my.headers.forEach([const HTTPHeader header, const int __index, const adr arg] => {
-            const adr comp = arg as adr;
-            String a = new String(header.key);
+        
+        for int i = 0; i < my.headers.getCount(); i = i + 1 {
+            const HTTPHeader header = my.headers.get(i).expect("Get header failed");
+            const adr comp = header.key;
+            mutable string a = new string(header.key);
             a = a.trim('\n');
             a = a.trim('\r');
-            a = a.trim();
-            if a.equal(comp) {
-                arg =: header.value;
-                delete a;
-                return;
+            a = a.trim(' ');
+            if a == comp {
+                return header.value;
             };
             delete a;
-        }, args);
+        };
+        
+        args =: key;
+        // my.headers.forEach([const HTTPHeader header, const int __index, const adr arg] => {
+        //     const adr comp = arg as adr;
+        //     String a = new String(header.key);
+        //     a = a.trim('\n');
+        //     a = a.trim('\r');
+        //     a = a.trim(' ');
+        //     if a.equal(comp) {
+        //         arg =: header.value;
+        //         delete a;
+        //         return;
+        //     };
+        //     delete a;
+        // }, args);
         const adr ret = args as adr;
         return ret;
     };
@@ -429,13 +446,13 @@ class HTTPRequest {
     };
 };
 
-class HTTPResponce {
+class HTTPResponse {
     const private List headers = new List(HTTPHeader);
     const private adr statusMessage = statusMessage;
     const private adr statusCode = statusCode;
     private adr body = body;
     
-    HTTPResponce init(const adr body, const adr statusCode, const adr statusMessage) {
+    HTTPResponse init(const adr body, const adr statusCode, const adr statusMessage) {
         return my;
     };
 

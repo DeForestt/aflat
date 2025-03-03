@@ -64,7 +64,7 @@ safe dynamic class Property {
 
 transform observable 
 ~
-mutable ${type} __${ident} = ${expr};
+${scope} ${mut} ${type} __${ident} = ${expr};
 fn ${ident}() -> Map : Property {{
 	"get": [const ${Self} this] => {
 		return this.__${ident};
@@ -122,7 +122,7 @@ fn ${ident}() -> Map : Property {{
 
 transform with 
 ~
-mutable ${type} ${ident} = ${expr}; // default value
+${scope} mutable ${type} ${ident} = ${expr}; // default value
 fn with_${ident}(const ${type} x) -> ${Self} {
     my.${ident} = x;
     return my;
@@ -131,7 +131,7 @@ fn with_${ident}(const ${type} x) -> ${Self} {
 
 // just like with, but it takes ownership of the value
 transform with_owned ~
-mutable ${type} ${ident} = ${expr}; // default value
+${scope} ${mut} ${type} ${ident} = ${expr}; // default value
 fn with_${ident}(const &&${type} x) -> ${Self} {
     my.${ident} = $x;
     return my;

@@ -126,8 +126,11 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
           }
           auto expr_str = this->expr->toString();
           auto transform = generator.transforms[annotation.name];
+          std::string mut = this->mute ? "mutable" : "const";
+          std::string scope =
+              this->declare->scope == ast::Public ? "public" : "private";
           auto result = transform.parse(declare->ident, declare->type.typeName,
-                                        expr_str, generator);
+                                        expr_str, scope, mut, generator);
           if (!result) {
             generator.alert("Template " + annotation.name + " failed to parse");
           }

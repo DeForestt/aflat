@@ -33,7 +33,8 @@ gen::GenerationResult const Transform::generate(gen::CodeGenerator &generator) {
 }
 
 ast::Statement *Transform::parse(const std::string &ident, std::string &type,
-                                 std::string &expr,
+                                 std::string &expr, std::string &scope,
+                                 std::string &mut,
                                  gen::CodeGenerator &generator) {
   std::string result = _template;
 
@@ -43,6 +44,8 @@ ast::Statement *Transform::parse(const std::string &ident, std::string &type,
   result = std::regex_replace(result, std::regex("\\$\\{ident\\}"), ident);
   result = std::regex_replace(result, std::regex("\\$\\{type\\}"), type);
   result = std::regex_replace(result, std::regex("\\$\\{expr\\}"), expr);
+  result = std::regex_replace(result, std::regex("\\$\\{scope\\}"), scope);
+  result = std::regex_replace(result, std::regex("\\$\\{mut\\}"), mut);
 
   // replace Self with scope
   if (generator.scope != nullptr)

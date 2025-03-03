@@ -2,7 +2,7 @@
 import Endpoint from "HTTP/Endpoint";
 import Server from "HTTP/Server";
 import string from "String";
-import HTTPMethod, HTTPResponce, HTTPMessage from "HTTP";
+import HTTPMethod, HTTPResponse, HTTPMessage from "HTTP";
 
 class GET signs Endpoint {
     GET init(const any<Server, HTTPMessage> imp, const Server context, const string path) {
@@ -10,7 +10,7 @@ class GET signs Endpoint {
         context.addEndpoint(my);
     };
 
-    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
@@ -22,7 +22,7 @@ class POST signs Endpoint {
         context.addEndpoint(my);
     };
 
-    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
@@ -34,7 +34,7 @@ class PUT signs Endpoint {
         context.addEndpoint(my);
     };
 
-    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
@@ -46,7 +46,7 @@ class DELETE signs Endpoint {
         context.addEndpoint(my);
     };
 
-    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
@@ -58,7 +58,7 @@ class PATCH signs Endpoint {
         context.addEndpoint(my);
     };
 
-    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
@@ -70,7 +70,7 @@ class OPTIONS signs Endpoint {
         context.addEndpoint(my);
     };
 
-    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
@@ -82,7 +82,7 @@ class HEAD signs Endpoint {
         context.addEndpoint(my);
     };
 
-    HTTPResponce _call(const Server context, * const HTTPMessage msg) {
+    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
