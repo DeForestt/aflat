@@ -1179,6 +1179,45 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         ifExpr->falseExpr = nullptr;
       }
       output = ifExpr;
+    } else if (obj.meta == "fn") {
+      auto lambda = new ast::Lambda();
+      lambda->logicalLine = obj.lineCount;
+      auto openParen = dynamic_cast<lex::OpSym *>(tokens.pop());
+      if (openParen == nullptr || openParen->Sym != '(')
+        throw err::Exception("Expected '(' after fn on line " +
+                             std::to_string(obj.lineCount));
+      lambda->function = new ast::Function();
+      lambda->function->req = 0;
+      lambda->function->args = this->parseArgs(
+          tokens, ',', ')', lambda->function->argTypes, lambda->function->req,
+          lambda->function->mutability, lambda->function->optConvertionIndices);
+      auto dash = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (dash != nullptr && dash->Sym == '-') {
+        tokens.pop();
+        auto greater = dynamic_cast<lex::Symbol *>(tokens.pop());
+        if (greater == nullptr || greater->meta != ">")
+          throw err::Exception("Expected '>' after '-' on line " +
+                               std::to_string(obj.lineCount));
+        auto typeName = dynamic_cast<lex::LObj *>(tokens.pop());
+        if (typeName == nullptr)
+          throw err::Exception("Expected type after -> on line " +
+                               std::to_string(obj.lineCount));
+        auto type = this->typeList[typeName->meta];
+        if (type == nullptr)
+          throw err::Exception("Unknown type " + typeName->meta);
+        lambda->function->type = *type;
+      } else {
+        lambda->function->type = *typeList["void"];
+        lambda->function->autoType = true;
+      }
+
+      auto openCurl = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (openCurl != nullptr && openCurl->Sym == '{') {
+        tokens.pop();
+        lambda->function->statement = this->parseStmt(tokens, false);
+      } else
+        lambda->function->statement = this->parseStmt(tokens, true);
+      output = lambda;
     } else if (tokens.count > 0 &&
                dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
       auto asObject = *dynamic_cast<lex::LObj *>(tokens.peek());
@@ -1333,6 +1372,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       Adr.opType = asmc::Hard;
       Adr.size = asmc::QWord;
       lambda->function->type = Adr;
+      lambda->function->autoType = true;
 
       output = lambda;
     } else if (eq.Sym == '(') {
