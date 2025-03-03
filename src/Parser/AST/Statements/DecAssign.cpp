@@ -129,8 +129,19 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
           std::string mut = this->mute ? "mutable" : "const";
           std::string scope =
               this->declare->scope == ast::Public ? "public" : "private";
+
+          std::unordered_map<std::string, std::string> args;
+          for (auto &arg : annotation.args) {
+            std::istringstream iss(arg);
+            std::string key;
+            std::string value;
+            std::getline(iss, key, '_');
+            std::getline(iss, value, '_');
+            args[key] = value;
+          }
+
           auto result = transform.parse(declare->ident, declare->type.typeName,
-                                        expr_str, scope, mut, generator);
+                                        expr_str, scope, mut, args, generator);
           if (!result) {
             generator.alert("Template " + annotation.name + " failed to parse");
           }

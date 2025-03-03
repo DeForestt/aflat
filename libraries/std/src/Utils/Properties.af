@@ -15,12 +15,12 @@ safe dynamic class Computed {
     private const any<any> foo = foo;
     private const any context = context;
 
-    Computed init(const any<any> foo, const any context){
+    fn init(const any<any> foo, const any context) -> Self {
         const int __i = 0;
         return my;
     };
 
-    any get() {
+    fn get() -> any {
         const let foo = my.foo;
         return foo(my.context);
     };
@@ -44,20 +44,20 @@ safe dynamic class Property {
         return my;
     };
 
-    any get() {
+    fn get() -> any {
         const let getter = my.getter;
         if (getter == NULL) panic("Attempt to read from a property without a getter.");
         return getter(my.context);
     };
 
-    void _set(const any value) {
+    fn _set(const any value) -> void {
         const let setter = my.setter;
         if (setter == NULL) panic("Attempt to write to a property without a setter.");
         setter(my.context, value);
         my.notify(my);
     };
 
-    adr ref() {
+    fn ref() -> Self {
         return my;
     };
 };
@@ -130,10 +130,31 @@ fn with_${ident}(const ${type} x) -> ${Self} {
 ~;
 
 // just like with, but it takes ownership of the value
-transform with_owned ~
+transform with_owned 
+~
 ${scope} ${mut} ${type} ${ident} = ${expr}; // default value
 fn with_${ident}(const &&${type} x) -> ${Self} {
     my.${ident} = $x;
     return my;
 };
+~;
+
+transform clamped 
+~
+${scope} ${mut} ${type} __${ident} = ${expr}; // default value
+fn ${ident}() -> Map : Property {{
+    "get": [const ${Self} this] => {
+        return this.__${ident};
+    },
+    "set": [const ${Self} this, const ${type} x] => {
+        if x < ${min} {
+            this.__${ident} = ${min};
+        } else if x > ${max} {
+            this.__${ident} = ${max};
+        } else {
+            this.__${ident} = x;
+        }
+        return;
+    }
+}};
 ~;

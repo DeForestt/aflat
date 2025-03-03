@@ -32,10 +32,11 @@ gen::GenerationResult const Transform::generate(gen::CodeGenerator &generator) {
   return gen::GenerationResult();
 }
 
-ast::Statement *Transform::parse(const std::string &ident, std::string &type,
-                                 std::string &expr, std::string &scope,
-                                 std::string &mut,
-                                 gen::CodeGenerator &generator) {
+ast::Statement *Transform::parse(
+    const std::string &ident, std::string &type, std::string &expr,
+    std::string &scope, std::string &mut,
+    std::unordered_map<std::string, std::string> &args,
+    gen::CodeGenerator &generator) {
   std::string result = _template;
 
   // replace all instances of ${ident} and ${type} and ${expr} with the
@@ -47,6 +48,13 @@ ast::Statement *Transform::parse(const std::string &ident, std::string &type,
   result = std::regex_replace(result, std::regex("\\$\\{scope\\}"), scope);
   result = std::regex_replace(result, std::regex("\\$\\{mut\\}"), mut);
 
+  // replace all instances of ${arg} with the corresponding value
+  for (auto &arg : args) {
+    std::cout << arg.first << " " << arg.second << std::endl;
+    result = std::regex_replace(
+        result, std::regex("\\$\\{" + arg.first + "\\}"), arg.second);
+  }
+
   // replace Self with scope
   if (generator.scope != nullptr)
     result = std::regex_replace(result, std::regex("\\$\\{Self\\}"),
@@ -54,6 +62,12 @@ ast::Statement *Transform::parse(const std::string &ident, std::string &type,
 
   // replace \" with "
   result = std::regex_replace(result, std::regex("\\\\\""), "\"");
+
+  // check for any remaining ${} and alert the name of the missing arg
+  std::smatch match;
+  if (std::regex_search(result, match, std::regex("\\$\\{[a-zA-Z0-9_]+\\}"))) {
+    generator.alert("Missing argument " + match.str());
+  }
 
   lex::Lexer lexer = lex::Lexer();
   lex::Lexer l = lex::Lexer();
