@@ -1551,19 +1551,20 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     if (OutputFile.lambdas == nullptr) OutputFile.lambdas = new asmc::File;
     OutputFile.hasLambda = true;
 
-    ast::Type Adr = ast::Type();
-    Adr.typeName = "adr";
-    Adr.opType = asmc::Hard;
-    Adr.size = asmc::QWord;
-
-    func->type = Adr;
-
     this->nameTable.push(*func);
     ast::Type saveRetType = this->returnType;
 
-    this->returnType.typeName = "--std--flex--function";
     auto saveLambdaReturns = this->lambdaReturns = "void";
     auto saveLambdaSize = this->lambdaSize = asmc::QWord;
+
+    if (func->autoType) {
+      ;
+      this->returnType.typeName = "--std--flex--function";
+    } else {
+      this->returnType = func->type;
+      this->lambdaReturns = func->type.typeName;
+      this->lambdaSize = func->type.size;
+    }
 
     gen::scope::ScopeManager::getInstance()->pushScope(true);
     OutputFile.lambdas->operator<<(this->GenSTMT(func));
