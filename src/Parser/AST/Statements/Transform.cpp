@@ -55,8 +55,6 @@ ast::Statement *Transform::parse(const std::string &ident, std::string &type,
   // replace \" with "
   result = std::regex_replace(result, std::regex("\\\\\""), "\"");
 
-  std::cout << "Transformed: " << result << std::endl;
-
   lex::Lexer lexer = lex::Lexer();
   lex::Lexer l = lex::Lexer();
   PreProcessor pp = PreProcessor();
