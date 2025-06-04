@@ -49,6 +49,28 @@ inline void report(const std::string &file, int line, const std::string &msg,
   }
 }
 
+inline void warn(const std::string &file, int line, const std::string &msg,
+                 const std::string &source = "") {
+  std::cout << "\033[1;33mwarning:\033[0m " << msg << "\n";
+  if (!file.empty()) {
+    if (line > 0)
+      std::cout << " --> " << file << ":" << line << "\n";
+    else
+      std::cout << " --> " << file << "\n";
+  }
+  if (line > 0 && !source.empty()) {
+    std::string prev = getLine(source, line - 1);
+    std::string codeLine = getLine(source, line);
+    std::string next = getLine(source, line + 1);
+    if (!prev.empty())
+      std::cout << std::setw(4) << line - 1 << " | " << prev << "\n";
+    std::cout << std::setw(4) << line << " | " << codeLine << "\n";
+    if (!next.empty())
+      std::cout << std::setw(4) << line + 1 << " | " << next << "\n";
+    std::cout << "\n";
+  }
+}
+
 }  // namespace error
 
 #endif  // ERROR_REPORTER_HPP

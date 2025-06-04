@@ -72,8 +72,11 @@ void gen::CodeGenerator::alert(std::string message, bool error) {
     error::report(this->moduleId, this->logicalLine, context + message, this->source);
     throw err::Exception(message);
   } else {
-    std::cout << "Warning: on line " << this->logicalLine << ": " << message
-              << std::endl;
+    std::string context;
+    if (this->scope != nullptr) context += "in class " + this->scope->Ident + ": ";
+    if (!this->globalScope && this->currentFunction != nullptr)
+      context += "in function " + this->currentFunction->ident.ident + ": ";
+    error::warn(this->moduleId, this->logicalLine, context + message, this->source);
   }
 };
 
