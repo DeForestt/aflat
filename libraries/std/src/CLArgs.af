@@ -6,96 +6,123 @@ import {fPrint} from "io" under io;
 import Error from "Utils/Error";
 import Render from "Utils/Error/Render";
 import Result from "Utils/Result";
+import Option from "Utils/Option";
+import { some, none } from "Utils/Option" under opt;
 import { accept, reject } from "Utils/Result" under pt;
 
-class ArgparseError signs Error {
+class ParseError signs Error {
     const string message = message.copy();
 
     string stdErrorMessage() : Render {
         return `{my._typeName}: {my.message}`;
     };
 
-    ArgparseError init(const string message) {
+    ParseError init(const string message) {
         return my;
     };
 };
 
-class Arg {
-    string name = "";
+class Spec {
+    string long = "";
+    string short = "";
+    bool needsValue = false;
+    string description = "";
+    string defaultVal = "";
+
+    Spec init(const string long, const string short, const bool needsValue, const string description, const string defaultVal) {
+        my.long = long;
+        my.short = short;
+        my.needsValue = needsValue;
+        my.description = description;
+        my.defaultVal = defaultVal;
+    };
+};
+
+class Parsed {
+    Spec spec = new Spec("", "", false, "", "");
     string value = "";
 
-    Arg init(const string name, const string value) {
-        my.name = name;
+    Parsed init(const Spec spec, const string value) {
+        my.spec = spec;
         my.value = value;
     };
 };
 
 class ArgsList {
-    List args = new List(Arg);
-    List tagLessArgs = new List(string);
+    List specs = new List(Spec);
+    List parsed = new List(Parsed);
+    List extras = new List(string);
     string progName = "";
 
-    ArgsList init(const int argc, const adr argv, const adr tagNames) {
+    ArgsList init(const int argc, const adr argv) {
         const adr[0] args = argv;
-        const adr[0] tagVals = tagNames;
-        const List tags = new List(string);
-
-        int j = 0;
-        adr tv = tagVals[j];
-        while (tv != NULL) {
-            const string v = tagVals[j];
-            tags.pushBack(v);
-            j++;
-            tv = tagVals[j];
-        };
-
         my.progName = args[0];
-
         for int i = 1; i < argc; i++ {
-            const string arg = args[i];
-            if (arg.at(0) == '-') {
-                const let subArg = arg.subString(1, arg.len());
-                if (tags.findFirst([const string s, const string y] => return s == y, subArg) != NULL) {
-
-                    if (i + 1 < argc) {
-                        const string val = args[i + 1];
-                        my.args.pushBack(Arg(subArg, val));
-                        i++;
+            const string cur = args[i];
+            if cur.at(0) == '-' {
+                bool longForm = cur.at(1) == '-';
+                const string name = if longForm cur.subString(2, cur.len()) else cur.subString(1, cur.len());
+                Option found = my.findSpec(name);
+                if found.isSome() {
+                    const Spec sp = found.or(new Spec("", "", false, "", ""));
+                    if sp.needsValue {
+                        if i + 1 < argc {
+                            const string val = args[i + 1];
+                            my.parsed.pushBack(Parsed(sp, val));
+                            i++;
+                        } else {
+                            io.fPrint("Missing value for %s\n", {cur});
+                            return NULL;
+                        };
                     } else {
-                        const let val = new string("");
-                        const let ag = Arg(subArg, val);
-                        my.args.pushBack(ag);
+                        my.parsed.pushBack(Parsed(sp, sp.defaultVal));
                     };
                 } else {
-                    io.fPrint("Error: Unknown tag: %s\n", {subArg});
+                    io.fPrint("Unknown option %s\n", {cur});
                     return NULL;
                 };
             } else {
-                my.tagLessArgs.pushBack(arg.copy());
+                my.extras.pushBack(cur.copy());
             };
         };
-
         return my;
     };
 
-    Result getArg(const string name) {
-        return my.args.findFirst([const Arg a, const string n] => return a.name == n, name).resolve(
-            [const Arg a] => return pt.accept(a),
-            [] => return pt.reject(new ArgparseError("Arg does not exist"))
+    void addOption(const string long, const string short, const bool needsValue, const string description, const string defaultVal) {
+        my.specs.pushBack(Spec(long, short, needsValue, description, defaultVal));
+    };
+
+    private Option findSpec(const string name) {
+        return my.specs.findFirst([const Spec s, const string n] => return s.long == n | s.short == n, name);
+    };
+
+    Result get(const string name) {
+        return my.parsed.findFirst([const Parsed p, const string n] => return p.spec.long == n | p.spec.short == n, name).resolve(
+            [const Parsed p] => return pt.accept(p),
+            [] => return pt.reject(new ParseError("Arg does not exist"))
         );
     };
 
     bool has(const string name) {
-        return my.getArg(name).match({
+        return my.get(name).match({
             "ok": [] => return true,
             "_": [] => return false
         });
     };
 
-    Result getTagLessArg(const int index) {
-        return my.tagLessArgs.get(index).resolve(
-            [const string a] => return pt.accept(a),
-            [const string e] => return pt.reject(new ArgparseError("Arg does not exist"))
-        );
+    string help() {
+        mutable string msg = new string("Usage: ");
+        msg = msg + my.progName + " [options]\n";
+        my.specs.forEach([const Spec s, const int i, const string m] => {
+            m = m + "  -" + s.short + ", --" + s.long;
+            if s.needsValue {
+                m = m + " <val>";
+            };
+            if s.description != "" {
+                m = m + ": " + s.description;
+            };
+            m = m + "\n";
+        }, msg);
+        return msg;
     };
 };
