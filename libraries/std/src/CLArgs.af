@@ -13,11 +13,11 @@ import { accept, reject } from "Utils/Result" under pt;
 class ParseError signs Error {
     const string message = message.copy();
 
-    string stdErrorMessage() : Render {
+    fn stdErrorMessage() -> Render {
         return `{my._typeName}: {my.message}`;
     };
 
-    ParseError init(const string message) {
+    fn init(const string message) -> Self {
         return my;
     };
 };
@@ -29,12 +29,13 @@ class Spec {
     string description = "";
     string defaultVal = "";
 
-    Spec init(const string long, const string short, const bool needsValue, const string description, const string defaultVal) {
+    fn init(const string long, const string short, const bool needsValue, const string description, const string defaultVal) -> Self {
         my.long = long;
         my.short = short;
         my.needsValue = needsValue;
         my.description = description;
         my.defaultVal = defaultVal;
+        return my;
     };
 };
 
@@ -42,9 +43,10 @@ class Parsed {
     Spec spec = new Spec("", "", false, "", "");
     string value = "";
 
-    Parsed init(const Spec spec, const string value) {
+    fn init(const Spec spec, const string value) -> Self {
         my.spec = spec;
         my.value = value;
+        return my;
     };
 };
 
@@ -54,7 +56,7 @@ class ArgsList {
     List extras = new List(string);
     string progName = "";
 
-    ArgsList init(const int argc, const adr argv) {
+    fn init(const int argc, const adr argv) -> Self {
         const adr[0] args = argv;
         my.progName = args[0];
         for int i = 1; i < argc; i++ {
@@ -88,29 +90,29 @@ class ArgsList {
         return my;
     };
 
-    void addOption(const string long, const string short, const bool needsValue, const string description, const string defaultVal) {
+    fn addOption(const string long, const string short, const bool needsValue, const string description, const string defaultVal) -> void {
         my.specs.pushBack(Spec(long, short, needsValue, description, defaultVal));
     };
 
-    private Option findSpec(const string name) {
+    private fn findSpec(const string name) -> Option {
         return my.specs.findFirst([const Spec s, const string n] => return s.long == n | s.short == n, name);
     };
 
-    Result get(const string name) {
+    fn get(const string name) -> Result {
         return my.parsed.findFirst([const Parsed p, const string n] => return p.spec.long == n | p.spec.short == n, name).resolve(
             [const Parsed p] => return pt.accept(p),
             [] => return pt.reject(new ParseError("Arg does not exist"))
         );
     };
 
-    bool has(const string name) {
+    fn has(const string name) -> bool {
         return my.get(name).match({
             "ok": [] => return true,
             "_": [] => return false
         });
     };
 
-    string help() {
+    fn help() -> string {
         mutable string msg = new string("Usage: ");
         msg = msg + my.progName + " [options]\n";
         my.specs.forEach([const Spec s, const int i, const string m] => {
