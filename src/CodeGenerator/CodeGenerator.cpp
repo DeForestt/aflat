@@ -70,7 +70,7 @@ void gen::CodeGenerator::alert(std::string message, bool error) {
     if (!this->globalScope && this->currentFunction != nullptr)
       context += "in function " + this->currentFunction->ident.ident + ": ";
     error::report(this->moduleId, this->logicalLine, context + message, this->source);
-    throw err::Exception(message);
+    throw err::Exception("Line: " + std::to_string(this->logicalLine) + " " + context + message);
   } else {
     std::string context;
     if (this->scope != nullptr) context += "in class " + this->scope->Ident + ": ";

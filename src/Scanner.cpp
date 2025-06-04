@@ -114,6 +114,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
         i++;
       }
       i++;
+      stringObj->lineCount = lineCount;
       tokens.push(stringObj);
     } else if (input[i] == '`') {
       auto *stringObj = new FStringObj();
@@ -152,6 +153,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
         i++;
       }
       i++;
+      stringObj->lineCount = lineCount;
       tokens.push(stringObj);
     } else if (input[i] == '~') {
       auto *stringObj = new lex::StringObj();
@@ -166,6 +168,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
         i++;
       }
       i++;
+      stringObj->lineCount = lineCount;
       tokens.push(stringObj);
     } else if (input[i] == '\'') {
       auto charobj = new CharObj();
@@ -196,6 +199,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
         charobj->value = input[i];
       i++;
       if (input[i] != '\'') throw err::Exception("Unterminated Char Value");
+      charobj->lineCount = lineCount;
       tokens << charobj;
       i++;
     } else if (input[i] == ';') {

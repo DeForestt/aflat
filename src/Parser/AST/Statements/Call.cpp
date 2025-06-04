@@ -369,6 +369,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     // check if the argument is a reference
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
+        generator.logicalLine = arg->logicalLine;
         generator.alert("Too many arguments for function: " + ident +
                         " expected: " +
                         std::to_string(func->argTypes.size()) + " got: " +
@@ -420,6 +421,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
                       " to a function");
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
+        generator.logicalLine = arg->logicalLine;
         generator.alert("Too many arguments for function: " + ident +
                         " expected: " + std::to_string(func->argTypes.size()) +
                         " got: " + std::to_string(i + 1));
