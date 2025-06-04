@@ -1,0 +1,8 @@
+.needs <std>
+
+import string from "String";
+import {print} from "String" under str;
+
+fn main() {
+    str.print("Aflat Bin\n");
+};
