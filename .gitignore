@@ -5,3 +5,6 @@
 /libraries/std/*.s
 !/libraries/std/asm.s
 /build/**
+# Coverage
+/coverage
+/coverage.info
