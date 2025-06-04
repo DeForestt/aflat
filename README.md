@@ -78,10 +78,19 @@ int main(){
         pointer =: i;                       // the =: operator is used to load a value to a pointer
     };
 
-    a.forEach([adr value]=> io.printInt(value as int)); // the as operator is used to assume the type of a pointer
-	io.printChar('\n');
+a.forEach([adr value]=> io.printInt(value as int)); // the as operator is used to assume the type of a pointer
+        io.printChar('\n');
     return 0;
 };
+```
+
+### LSP server
+The project ships with a lightweight language server that offers hover and
+completion support. Build and run it with:
+```bash
+cmake -S . -B build
+cmake --build build --target aflat-lsp
+./bin/aflat-lsp
 ```
 
 ## Have fun!
