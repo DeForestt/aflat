@@ -9,6 +9,7 @@ class LspServer {
 public:
     void run();
     nlohmann::json process(const nlohmann::json &request);
+    nlohmann::json validate(const std::string &text);
 private:
     std::map<std::string, std::string> documents;
 };

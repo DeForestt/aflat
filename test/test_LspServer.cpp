@@ -155,3 +155,16 @@ TEST_CASE("Rename across files", "[lsp]") {
     REQUIRE(bText.find("x") == std::string::npos);
 }
 
+TEST_CASE("Diagnostics for invalid code", "[lsp]") {
+    LspServer server;
+    json openReq = {
+        {"id", 1},
+        {"method", "textDocument/didOpen"},
+        {"params", {{"textDocument", {{"uri", "file:///bad.af"}, {"text", "int 123"}}}}}
+    };
+    json resp = server.process(openReq);
+    REQUIRE(resp.contains("diagnostics"));
+    REQUIRE(resp["diagnostics"].is_array());
+    REQUIRE(resp["diagnostics"].size() == 1);
+}
+

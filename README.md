@@ -86,8 +86,8 @@ a.forEach([adr value]=> io.printInt(value as int)); // the as operator is used t
 
 ### LSP server
 The project ships with a lightweight language server that offers hover,
-completion, go-to-definition and rename refactoring capabilities. Definitions and
-renames work across all open files. Build and run
+completion, go-to-definition, rename refactoring and on-the-fly error
+diagnostics. Definitions and renames work across all open files. Build and run
 it with:
 ```bash
 cmake -S . -B build

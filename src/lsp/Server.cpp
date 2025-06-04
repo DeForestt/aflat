@@ -2,6 +2,11 @@
 #include <iostream>
 #include <cctype>
 #include <unordered_set>
+#include <regex>
+
+#include "Scanner.hpp"
+#include "Parser/Parser.hpp"
+#include "Exceptions.hpp"
 
 using json = nlohmann::json;
 
@@ -81,11 +86,44 @@ int countLines(const std::string &text) {
 }
 }
 
+json LspServer::validate(const std::string &text) {
+    json diags = json::array();
+    try {
+        lex::Lexer lexer;
+        auto tokens = lexer.Scan(text);
+        tokens.invert();
+        parse::Parser parser;
+        parser.parseStmt(tokens);
+    } catch (const err::Exception &e) {
+        int line = 0;
+        std::regex r("[Ll]ine[: ]+([0-9]+)");
+        std::smatch m;
+        if (std::regex_search(e.errorMsg, m, r)) {
+            line = std::stoi(m[1]);
+        }
+        json d;
+        d["range"]["start"] = {{"line", line > 0 ? line - 1 : 0}, {"character", 0}};
+        d["range"]["end"] = {{"line", line > 0 ? line - 1 : 0}, {"character", 0}};
+        d["message"] = e.errorMsg;
+        d["severity"] = 1;
+        diags.push_back(d);
+    }
+    return diags;
+}
+
 void LspServer::run() {
     while (std::cin.good()) {
         auto request = readMessage();
         auto response = process(request);
         if (!response.is_null()) {
+            if (response.contains("diagnostics")) {
+                json diagMsg;
+                diagMsg["method"] = "textDocument/publishDiagnostics";
+                diagMsg["params"]["uri"] = request["params"]["textDocument"]["uri"];
+                diagMsg["params"]["diagnostics"] = response["diagnostics"];
+                sendMessage(diagMsg);
+                response.erase("diagnostics");
+            }
             response["id"] = request["id"];
             sendMessage(response);
         }
@@ -112,6 +150,7 @@ json LspServer::process(const json &request) {
         std::string text = params["textDocument"]["text"].get<std::string>();
         documents[uri] = text;
         result["result"] = nullptr;
+        result["diagnostics"] = validate(text);
     } else if (method == "textDocument/hover") {
         auto params = request["params"];
         std::string uri = params["textDocument"]["uri"].get<std::string>();
@@ -144,6 +183,7 @@ json LspServer::process(const json &request) {
         std::string text = params["contentChanges"][0]["text"].get<std::string>();
         documents[uri] = text;
         result["result"] = nullptr;
+        result["diagnostics"] = validate(text);
     } else if (method == "textDocument/definition") {
         auto params = request["params"];
         std::string uri = params["textDocument"]["uri"].get<std::string>();
