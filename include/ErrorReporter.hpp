@@ -29,12 +29,16 @@ inline std::string getLine(const std::string &source, int line) {
 
 inline void report(const std::string &file, int line, const std::string &msg,
                    const std::string &source = "") {
-  std::cout << "\033[1;31merror:\033[0m " << msg << "\n";
+  std::cout << "\033[1;31merror:\033[0m ";
   if (!file.empty()) {
-    if (line > 0)
-      std::cout << " --> " << file << ":" << line << "\n";
-    else
-      std::cout << " --> " << file << "\n";
+    std::cout << file;
+    if (line > 0) std::cout << ":" << line;
+    std::cout << ": ";
+  }
+  std::cout << msg << "\n";
+  if (!file.empty() && line > 0) {
+    std::cout << " --> " << file << ":" << line << "\n";
+    std::cout << "  |" << std::endl;
   }
   if (line > 0 && !source.empty()) {
     std::string prev = getLine(source, line - 1);
@@ -42,21 +46,25 @@ inline void report(const std::string &file, int line, const std::string &msg,
     std::string next = getLine(source, line + 1);
     if (!prev.empty())
       std::cout << std::setw(4) << line - 1 << " | " << prev << "\n";
-    std::cout << std::setw(4) << line << " | " << codeLine << "\n";
+    std::cout << ">" << std::setw(4) << line << " | " << codeLine << "\n";
     if (!next.empty())
       std::cout << std::setw(4) << line + 1 << " | " << next << "\n";
-    std::cout << "\n";
+    std::cout << "  |" << std::endl << std::endl;
   }
 }
 
 inline void warn(const std::string &file, int line, const std::string &msg,
                  const std::string &source = "") {
-  std::cout << "\033[1;33mwarning:\033[0m " << msg << "\n";
+  std::cout << "\033[1;33mwarning:\033[0m ";
   if (!file.empty()) {
-    if (line > 0)
-      std::cout << " --> " << file << ":" << line << "\n";
-    else
-      std::cout << " --> " << file << "\n";
+    std::cout << file;
+    if (line > 0) std::cout << ":" << line;
+    std::cout << ": ";
+  }
+  std::cout << msg << "\n";
+  if (!file.empty() && line > 0) {
+    std::cout << " --> " << file << ":" << line << "\n";
+    std::cout << "  |" << std::endl;
   }
   if (line > 0 && !source.empty()) {
     std::string prev = getLine(source, line - 1);
@@ -64,10 +72,10 @@ inline void warn(const std::string &file, int line, const std::string &msg,
     std::string next = getLine(source, line + 1);
     if (!prev.empty())
       std::cout << std::setw(4) << line - 1 << " | " << prev << "\n";
-    std::cout << std::setw(4) << line << " | " << codeLine << "\n";
+    std::cout << ">" << std::setw(4) << line << " | " << codeLine << "\n";
     if (!next.empty())
       std::cout << std::setw(4) << line + 1 << " | " << next << "\n";
-    std::cout << "\n";
+    std::cout << "  |" << std::endl << std::endl;
   }
 }
 
