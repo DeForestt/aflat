@@ -48,11 +48,9 @@ inline void report(const std::string &file, int line, const std::string &msg,
     auto printLine = [&](char mark, int ln, const std::string &txt) {
       std::cout << mark << std::setw(width) << ln << " | " << txt << "\n";
     };
-    if (!prev.empty())
-      printLine(' ', line - 1, prev);
+    if (!prev.empty()) printLine(' ', line - 1, prev);
     printLine('>', line, codeLine);
-    if (!next.empty())
-      printLine(' ', line + 1, next);
+    if (!next.empty()) printLine(' ', line + 1, next);
     std::cout << "  |" << std::endl << std::endl;
   }
 }
@@ -78,11 +76,9 @@ inline void warn(const std::string &file, int line, const std::string &msg,
     auto printLine = [&](char mark, int ln, const std::string &txt) {
       std::cout << mark << std::setw(width) << ln << " | " << txt << "\n";
     };
-    if (!prev.empty())
-      printLine(' ', line - 1, prev);
+    if (!prev.empty()) printLine(' ', line - 1, prev);
     printLine('>', line, codeLine);
-    if (!next.empty())
-      printLine(' ', line + 1, next);
+    if (!next.empty()) printLine(' ', line + 1, next);
     std::cout << "  |" << std::endl << std::endl;
   }
 }
