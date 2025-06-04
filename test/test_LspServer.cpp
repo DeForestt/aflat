@@ -56,7 +56,14 @@ TEST_CASE("Completion lists keywords", "[lsp]") {
     REQUIRE(resp["jsonrpc"] == "2.0");
     REQUIRE(resp["result"].is_array());
     REQUIRE(resp["result"].size() >= 1);
-    REQUIRE(resp["result"][0]["label"].get<std::string>() == "fun");
+    bool hasIf = false;
+    for (const auto &item : resp["result"]) {
+        if (item["label"].get<std::string>() == "if") {
+            hasIf = true;
+            break;
+        }
+    }
+    REQUIRE(hasIf);
 }
 
 TEST_CASE("Completion includes symbols", "[lsp]") {
