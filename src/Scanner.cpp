@@ -6,10 +6,10 @@
 
 #include "Exceptions.hpp"
 
-LinkedList<lex::Token *> lex::Lexer::Scan(string input) {
+LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
   LinkedList<lex::Token *> tokens = LinkedList<lex::Token *>();
   int i = 0;
-  int lineCount = 1;
+  int lineCount = startLine;
   while (i < input.length()) {
     if (input[i] == '\n') lineCount++;
     if (std::isalpha(input[i]) || input[i] == '_') {
