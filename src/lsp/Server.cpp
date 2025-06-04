@@ -1,6 +1,7 @@
 #include "lsp/Server.hpp"
 #include <iostream>
 #include <cctype>
+#include <unordered_set>
 
 using json = nlohmann::json;
 
@@ -48,6 +49,36 @@ std::string getWordAt(const std::string &text, int line, int character) {
     }
     return text.substr(start, end - start);
 }
+
+std::pair<int, int> indexToPos(const std::string &text, size_t idx) {
+    int line = 0;
+    int ch = 0;
+    for (size_t i = 0; i < idx && i < text.size(); ++i) {
+        if (text[i] == '\n') {
+            line++; ch = 0;
+        } else {
+            ch++;
+        }
+    }
+    return {line, ch};
+}
+
+std::pair<int, int> findWord(const std::string &text, const std::string &word) {
+    size_t pos = text.find(word);
+    while (pos != std::string::npos) {
+        bool left = pos == 0 || !(std::isalnum(text[pos-1]) || text[pos-1]=='_');
+        bool right = pos + word.size() >= text.size() || !(std::isalnum(text[pos+word.size()]) || text[pos+word.size()]=='_');
+        if (left && right) {
+            return indexToPos(text, pos);
+        }
+        pos = text.find(word, pos + word.size());
+    }
+    return {-1, -1};
+}
+
+int countLines(const std::string &text) {
+    return std::count(text.begin(), text.end(), '\n');
+}
 }
 
 void LspServer::run() {
@@ -71,7 +102,9 @@ json LspServer::process(const json &request) {
     if (method == "initialize") {
         result["result"]["capabilities"] = {
             {"hoverProvider", true},
-            {"completionProvider", json::object()}
+            {"completionProvider", json::object()},
+            {"definitionProvider", true},
+            {"renameProvider", true}
         };
     } else if (method == "textDocument/didOpen") {
         auto params = request["params"];
@@ -89,11 +122,75 @@ json LspServer::process(const json &request) {
         hover["contents"] = word.empty() ? "" : word;
         result["result"] = hover;
     } else if (method == "textDocument/completion") {
+        auto params = request["params"];
+        std::string uri = params.contains("textDocument") ? params["textDocument"]["uri"].get<std::string>() : "";
+        std::unordered_set<std::string> tokens;
+        if (!uri.empty() && documents.count(uri)) {
+            const std::string &txt = documents[uri];
+            std::string cur;
+            for (char c : txt) {
+                if (std::isalnum(c) || c == '_') cur += c; else { if (!cur.empty()) { tokens.insert(cur); cur.clear(); } }
+            }
+            if (!cur.empty()) tokens.insert(cur);
+        }
         json items = json::array();
+        for (const auto &tok : tokens) items.push_back({{"label", tok}});
         for (const auto &kw : {"fun", "let", "if", "else", "for"}) {
             items.push_back({{"label", kw}});
         }
         result["result"] = items;
+    } else if (method == "textDocument/didChange") {
+        auto params = request["params"];
+        std::string uri = params["textDocument"]["uri"].get<std::string>();
+        std::string text = params["contentChanges"][0]["text"].get<std::string>();
+        documents[uri] = text;
+        result["result"] = nullptr;
+    } else if (method == "textDocument/definition") {
+        auto params = request["params"];
+        std::string uri = params["textDocument"]["uri"].get<std::string>();
+        int line = params["position"]["line"].get<int>();
+        int character = params["position"]["character"].get<int>();
+        std::string word = getWordAt(documents[uri], line, character);
+        auto pos = findWord(documents[uri], word);
+        if (pos.first >= 0) {
+            json loc;
+            loc["uri"] = uri;
+            loc["range"]["start"] = {{"line", pos.first}, {"character", pos.second}};
+            loc["range"]["end"] = {{"line", pos.first}, {"character", pos.second + (int)word.size()}};
+            result["result"] = json::array({loc});
+        } else {
+            result["result"] = json::array();
+        }
+    } else if (method == "textDocument/rename") {
+        auto params = request["params"];
+        std::string uri = params["textDocument"]["uri"].get<std::string>();
+        int line = params["position"]["line"].get<int>();
+        int character = params["position"]["character"].get<int>();
+        std::string newName = params["newName"].get<std::string>();
+        std::string word = getWordAt(documents[uri], line, character);
+        if (!word.empty()) {
+            std::string &text = documents[uri];
+            size_t pos = 0;
+            while ((pos = text.find(word, pos)) != std::string::npos) {
+                bool left = pos == 0 || !(std::isalnum(text[pos-1]) || text[pos-1]=='_');
+                bool right = pos + word.size() >= text.size() || !(std::isalnum(text[pos+word.size()]) || text[pos+word.size()]=='_');
+                if (left && right) {
+                    text.replace(pos, word.size(), newName);
+                    pos += newName.size();
+                } else {
+                    pos += word.size();
+                }
+            }
+            json edit;
+            json change;
+            change["range"]["start"] = {{"line", 0}, {"character", 0}};
+            change["range"]["end"] = {{"line", countLines(text)}, {"character", 0}};
+            change["newText"] = text;
+            edit["changes"][uri] = json::array({change});
+            result["result"] = edit;
+        } else {
+            result["result"] = json();
+        }
     } else if (method == "shutdown") {
         result["result"] = nullptr;
     } else if (method == "exit") {

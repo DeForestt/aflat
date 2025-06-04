@@ -85,8 +85,9 @@ a.forEach([adr value]=> io.printInt(value as int)); // the as operator is used t
 ```
 
 ### LSP server
-The project ships with a lightweight language server that offers hover and
-completion support. Build and run it with:
+The project ships with a lightweight language server that offers hover,
+completion, go-to-definition and rename refactoring capabilities. Build and run
+it with:
 ```bash
 cmake -S . -B build
 cmake --build build --target aflat-lsp
