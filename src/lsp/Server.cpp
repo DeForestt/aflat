@@ -54,12 +54,14 @@ void LspServer::run() {
     while (std::cin.good()) {
         auto request = readMessage();
         auto response = process(request);
-        if (!response.is_null()) {
+
+        if (!response.is_null() && request.contains("id")) {
             response["id"] = request["id"];
             response["jsonrpc"] = "2.0";
             sendMessage(response);
         }
-        if (request["method"] == "shutdown") {
+
+        if (request.value("method", "") == "shutdown") {
             break;
         }
     }
