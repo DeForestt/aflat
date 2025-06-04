@@ -99,3 +99,59 @@ TEST_CASE("Rename replaces identifier", "[lsp]") {
     REQUIRE(newText.find("x") == std::string::npos);
 }
 
+TEST_CASE("Definition across files", "[lsp]") {
+    LspServer server;
+    json open1 = {
+        {"id", 1},
+        {"method", "textDocument/didOpen"},
+        {"params", {{"textDocument", {{"uri", "file:///a.af"}, {"text", "int x;"}}}}}
+    };
+    json open2 = {
+        {"id", 2},
+        {"method", "textDocument/didOpen"},
+        {"params", {{"textDocument", {{"uri", "file:///b.af"}, {"text", "x = 1;"}}}}}
+    };
+    server.process(open1);
+    server.process(open2);
+
+    json defReq = {
+        {"id", 3},
+        {"method", "textDocument/definition"},
+        {"params", {{"textDocument", {{"uri", "file:///b.af"}}}, {"position", {{"line", 0}, {"character", 0}}}}}
+    };
+    json resp = server.process(defReq);
+    REQUIRE(resp["result"].is_array());
+    REQUIRE(resp["result"][0]["uri"].get<std::string>() == "file:///a.af");
+}
+
+TEST_CASE("Rename across files", "[lsp]") {
+    LspServer server;
+    json open1 = {
+        {"id", 1},
+        {"method", "textDocument/didOpen"},
+        {"params", {{"textDocument", {{"uri", "file:///a.af"}, {"text", "int x;"}}}}}
+    };
+    json open2 = {
+        {"id", 2},
+        {"method", "textDocument/didOpen"},
+        {"params", {{"textDocument", {{"uri", "file:///b.af"}, {"text", "x = 1;"}}}}}
+    };
+    server.process(open1);
+    server.process(open2);
+
+    json renameReq = {
+        {"id", 3},
+        {"method", "textDocument/rename"},
+        {"params", {{"textDocument", {{"uri", "file:///b.af"}}}, {"position", {{"line", 0}, {"character", 0}}}, {"newName", "y"}}}
+    };
+    json resp = server.process(renameReq);
+    REQUIRE(resp["result"]["changes"].contains("file:///a.af"));
+    REQUIRE(resp["result"]["changes"].contains("file:///b.af"));
+    std::string aText = resp["result"]["changes"]["file:///a.af"][0]["newText"].get<std::string>();
+    std::string bText = resp["result"]["changes"]["file:///b.af"][0]["newText"].get<std::string>();
+    REQUIRE(aText.find("y") != std::string::npos);
+    REQUIRE(bText.find("y") != std::string::npos);
+    REQUIRE(aText.find("x") == std::string::npos);
+    REQUIRE(bText.find("x") == std::string::npos);
+}
+

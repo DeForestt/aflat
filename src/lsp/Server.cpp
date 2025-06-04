@@ -123,10 +123,9 @@ json LspServer::process(const json &request) {
         result["result"] = hover;
     } else if (method == "textDocument/completion") {
         auto params = request["params"];
-        std::string uri = params.contains("textDocument") ? params["textDocument"]["uri"].get<std::string>() : "";
         std::unordered_set<std::string> tokens;
-        if (!uri.empty() && documents.count(uri)) {
-            const std::string &txt = documents[uri];
+        for (const auto &entry : documents) {
+            const std::string &txt = entry.second;
             std::string cur;
             for (char c : txt) {
                 if (std::isalnum(c) || c == '_') cur += c; else { if (!cur.empty()) { tokens.insert(cur); cur.clear(); } }
@@ -151,10 +150,15 @@ json LspServer::process(const json &request) {
         int line = params["position"]["line"].get<int>();
         int character = params["position"]["character"].get<int>();
         std::string word = getWordAt(documents[uri], line, character);
-        auto pos = findWord(documents[uri], word);
+        std::string defUri;
+        std::pair<int,int> pos{-1,-1};
+        for (const auto &entry : documents) {
+            auto p = findWord(entry.second, word);
+            if (p.first >= 0) { pos = p; defUri = entry.first; break; }
+        }
         if (pos.first >= 0) {
             json loc;
-            loc["uri"] = uri;
+            loc["uri"] = defUri;
             loc["range"]["start"] = {{"line", pos.first}, {"character", pos.second}};
             loc["range"]["end"] = {{"line", pos.first}, {"character", pos.second + (int)word.size()}};
             result["result"] = json::array({loc});
@@ -169,24 +173,30 @@ json LspServer::process(const json &request) {
         std::string newName = params["newName"].get<std::string>();
         std::string word = getWordAt(documents[uri], line, character);
         if (!word.empty()) {
-            std::string &text = documents[uri];
-            size_t pos = 0;
-            while ((pos = text.find(word, pos)) != std::string::npos) {
-                bool left = pos == 0 || !(std::isalnum(text[pos-1]) || text[pos-1]=='_');
-                bool right = pos + word.size() >= text.size() || !(std::isalnum(text[pos+word.size()]) || text[pos+word.size()]=='_');
-                if (left && right) {
-                    text.replace(pos, word.size(), newName);
-                    pos += newName.size();
-                } else {
-                    pos += word.size();
+            json edit;
+            for (auto &entry : documents) {
+                std::string &text = entry.second;
+                size_t pos = 0;
+                bool changed = false;
+                while ((pos = text.find(word, pos)) != std::string::npos) {
+                    bool left = pos == 0 || !(std::isalnum(text[pos-1]) || text[pos-1]=='_');
+                    bool right = pos + word.size() >= text.size() || !(std::isalnum(text[pos+word.size()]) || text[pos+word.size()]=='_');
+                    if (left && right) {
+                        text.replace(pos, word.size(), newName);
+                        pos += newName.size();
+                        changed = true;
+                    } else {
+                        pos += word.size();
+                    }
+                }
+                if (changed) {
+                    json change;
+                    change["range"]["start"] = {{"line", 0}, {"character", 0}};
+                    change["range"]["end"] = {{"line", countLines(text)}, {"character", 0}};
+                    change["newText"] = text;
+                    edit["changes"][entry.first] = json::array({change});
                 }
             }
-            json edit;
-            json change;
-            change["range"]["start"] = {{"line", 0}, {"character", 0}};
-            change["range"]["end"] = {{"line", countLines(text)}, {"character", 0}};
-            change["newText"] = text;
-            edit["changes"][uri] = json::array({change});
             result["result"] = edit;
         } else {
             result["result"] = json();
