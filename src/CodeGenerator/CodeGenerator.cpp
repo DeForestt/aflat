@@ -920,6 +920,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     ast::StringLiteral str = *dynamic_cast<ast::StringLiteral *>(expr);
     asmc::StringLiteral *strLit = new asmc::StringLiteral();
     asmc::Label *label = new asmc::Label();
+    strLit->logicalLine = this->logicalLine;
+    label->logicalLine = this->logicalLine;
     if (this->scope == nullptr)
       label->label = ".str" + this->nameTable.head->data.ident.ident +
                      std::to_string(this->labelCount);
@@ -1016,6 +1018,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     ast::FloatLiteral *floatLit = dynamic_cast<ast::FloatLiteral *>(expr);
     asmc::FloatLiteral *fltLit = new asmc::FloatLiteral();
     asmc::Label *label = new asmc::Label();
+    fltLit->logicalLine = this->logicalLine;
+    label->logicalLine = this->logicalLine;
     if (this->scope == nullptr)
       label->label = ".float" + this->nameTable.head->data.ident.ident +
                      std::to_string(this->labelCount);
@@ -2064,7 +2068,11 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
   this->logicalLine = STMT->logicalLine;
 
   if (STMT->locked)
-    OutputFile.text.push(new asmc::nop());
+    {
+      auto *inst = new asmc::nop();
+      inst->logicalLine = this->logicalLine;
+      OutputFile.text.push(inst);
+    }
   else
     OutputFile << STMT->generate(*this).file;
 
@@ -2074,7 +2082,11 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
 asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
   asmc::File OutputFile = asmc::File();
   if (STMT->locked)
-    OutputFile.text.push(new asmc::nop());
+    {
+      auto *inst = new asmc::nop();
+      inst->logicalLine = STMT->logicalLine;
+      OutputFile.text.push(inst);
+    }
   else if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
     this->ImportsOnly(dynamic_cast<ast::Sequence *>(STMT)->Statement1);
     this->ImportsOnly(dynamic_cast<ast::Sequence *>(STMT)->Statement2);

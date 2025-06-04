@@ -584,15 +584,18 @@ ast::Statement *parse::Parser::parseStmt(
           // lets write everythig back to the tokens...
           auto s = new lex::OpSym();
           s->Sym = sym.Sym;
+          s->lineCount = sym.lineCount;
           tokens.push(s);
           for (int i = 0; i < modList.size(); i++) {
             auto s = new lex::LObj();
             s->meta = modList.pop();
+            s->lineCount = sym.lineCount;
             tokens.push(s);
           }
 
           auto name = new lex::LObj();
           name->meta = obj.meta;
+          name->lineCount = obj.lineCount;
           tokens.push(name);
 
           auto ret = new ast::Return();
@@ -621,6 +624,7 @@ ast::Statement *parse::Parser::parseStmt(
         if (!opSym || opSym->Sym != ';') {
           auto semicolon = new lex::OpSym();
           semicolon->Sym = ';';
+          semicolon->lineCount = tokens.peek()->lineCount;
           tokens.push(semicolon);
         }
       }
@@ -684,6 +688,7 @@ ast::Statement *parse::Parser::parseStmt(
           if (!els || els->meta != "else") {
             auto semicolon = new lex::OpSym();
             semicolon->Sym = ';';
+            semicolon->lineCount = tokens.peek()->lineCount;
             tokens.push(semicolon);
           }
         }
