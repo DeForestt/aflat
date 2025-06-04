@@ -16,6 +16,7 @@
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
+#include "ErrorReporter.hpp"
 
 std::string preProcess(std::string input);
 std::string getExePath();
@@ -256,7 +257,10 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
       PreProcessor pp;
       tokens = scanner.Scan(pp.PreProcess(content, libPath));
     } catch (int x) {
-      std::cout << " unparsable Char at index " + x;
+      int line = 1;
+      for (int i = 0; i < x && i < content.size(); ++i)
+        if (content[i] == '\n') line++;
+      error::report(path, line, "unparsable character", content);
       return false;
     }
     tokens.invert();
@@ -360,9 +364,8 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     ofs.close();
   } catch (err::Exception &e) {
     success = false;
-    std::cout << std::endl
-              << "Exception in " << path << ": " << e.errorMsg << std::endl
-              << std::endl;
+    int line = error::extractLine(e.errorMsg);
+    error::report(path, line, e.errorMsg, content);
     if (std::filesystem::exists(output)) std::filesystem::remove(output);
   }
   return success;

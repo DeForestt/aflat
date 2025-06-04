@@ -13,6 +13,7 @@
 #include "CodeGenerator/Utils.hpp"
 #include "Exceptions.hpp"
 #include "Scanner.hpp"
+#include "ErrorReporter.hpp"
 
 using namespace gen::utils;
 
@@ -61,27 +62,18 @@ std::string getUUID() {
   return uuid;
 };
 
-void gen::CodeGenerator::alert(std::string message, bool error = true) {
+void gen::CodeGenerator::alert(std::string message, bool error) {
   if (error) {
     this->errorFlag = true;
-    std::cout << "Error: on line " << this->logicalLine << ": ";
-    if (this->scope != nullptr) {
-      std::cout << "in class " << this->scope->Ident << ": ";
-    }
-    if (!this->globalScope && this->currentFunction != nullptr) {
-      std::cout << "in function " << this->currentFunction->ident.ident << ": ";
-    }
-    std::cout << message << std::endl;
+    std::string context;
+    if (this->scope != nullptr) context += "in class " + this->scope->Ident + ": ";
+    if (!this->globalScope && this->currentFunction != nullptr)
+      context += "in function " + this->currentFunction->ident.ident + ": ";
+    error::report(this->moduleId, this->logicalLine, context + message);
     throw err::Exception(message);
   } else {
-    std::cout << "Warning: on line " << this->logicalLine << ": ";
-    if (this->scope != nullptr) {
-      std::cout << "in class " << this->scope->Ident << ": ";
-    }
-    if (!this->globalScope && this->currentFunction != nullptr) {
-      std::cout << "in function " << this->currentFunction->ident.ident << ": ";
-    }
-    std::cout << message << std::endl;
+    std::cout << "Warning: on line " << this->logicalLine << ": " << message
+              << std::endl;
   }
 };
 
