@@ -37,8 +37,15 @@ inline void report(const std::string &file, int line, const std::string &msg,
       std::cout << " --> " << file << "\n";
   }
   if (line > 0 && !source.empty()) {
+    std::string prev = getLine(source, line - 1);
     std::string codeLine = getLine(source, line);
-    std::cout << std::setw(4) << line << " | " << codeLine << "\n\n";
+    std::string next = getLine(source, line + 1);
+    if (!prev.empty())
+      std::cout << std::setw(4) << line - 1 << " | " << prev << "\n";
+    std::cout << std::setw(4) << line << " | " << codeLine << "\n";
+    if (!next.empty())
+      std::cout << std::setw(4) << line + 1 << " | " << next << "\n";
+    std::cout << "\n";
   }
 }
 
