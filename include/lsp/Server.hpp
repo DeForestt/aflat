@@ -6,9 +6,13 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 
+#ifndef LSP_KEYWORDS_PATH
+#define LSP_KEYWORDS_PATH "lsp/keywords.json"
+#endif
+
 class LspServer {
 public:
-    explicit LspServer(const std::string &keywordsPath = "lsp/keywords.json");
+    explicit LspServer(const std::string &keywordsPath = LSP_KEYWORDS_PATH);
     void run();
     nlohmann::json process(const nlohmann::json &request);
 

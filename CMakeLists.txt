@@ -22,6 +22,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 add_definitions(${GCC_COMPILER_FLAGS})
 add_executable(aflat ${aflat_SRC})
 add_executable(aflat-lsp ${lsp_SRC})
+target_compile_definitions(aflat-lsp PRIVATE LSP_KEYWORDS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/lsp/keywords.json")
 
 target_include_directories(aflat PRIVATE include/)
 target_include_directories(aflat-lsp PRIVATE include/)
