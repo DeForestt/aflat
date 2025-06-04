@@ -1,8 +1,83 @@
 #include "lsp/Server.hpp"
 #include <iostream>
+#include <fstream>
+#include <regex>
 #include <cctype>
+#include <vector>
+#include <unordered_set>
+#include <sstream>
 
 using json = nlohmann::json;
+
+LspServer::LspServer(const std::string &keywordsPath) {
+    loadKeywords(keywordsPath);
+}
+
+void LspServer::loadKeywords(const std::string &path) {
+    std::ifstream in(path);
+    if (in.good()) {
+        json arr;
+        in >> arr;
+        if (arr.is_array()) {
+            keywords.clear();
+            for (const auto &item : arr) {
+                keywords.push_back(item.get<std::string>());
+            }
+        }
+    }
+    if (keywords.empty()) {
+        keywords = {"fun", "let", "if", "else", "for"};
+    }
+}
+
+static std::vector<std::string> extractSymbols(const std::string &text) {
+    std::vector<std::string> vars;
+    std::regex re(R"(\b([A-Za-z_][A-Za-z0-9_]*)\b\s*=)");
+    for (std::sregex_iterator it(text.begin(), text.end(), re), end; it != end; ++it) {
+        vars.push_back((*it)[1].str());
+    }
+    return vars;
+}
+
+static json makeSemanticTokens(const std::string &text,
+                               const std::vector<std::string> &keywords,
+                               const std::vector<std::string> &vars) {
+    json data = json::array();
+    std::unordered_set<std::string> varSet(vars.begin(), vars.end());
+    int prevLine = 0;
+    int prevChar = 0;
+    std::regex word(R"([A-Za-z_][A-Za-z0-9_]*)");
+    std::istringstream iss(text);
+    std::string line;
+    int lineNum = 0;
+    while (std::getline(iss, line)) {
+        auto begin = std::sregex_iterator(line.begin(), line.end(), word);
+        auto end = std::sregex_iterator();
+        for (auto it = begin; it != end; ++it) {
+            std::string w = (*it).str();
+            int col = (*it).position();
+            int type = -1;
+            if (std::find(keywords.begin(), keywords.end(), w) != keywords.end()) {
+                type = 0; // keyword
+            } else if (varSet.count(w)) {
+                type = 1; // variable
+            }
+            if (type >= 0) {
+                int deltaLine = lineNum - prevLine;
+                int deltaStart = (deltaLine == 0) ? col - prevChar : col;
+                data.push_back(deltaLine);
+                data.push_back(deltaStart);
+                data.push_back((*it).length());
+                data.push_back(type);
+                data.push_back(0);
+                prevLine = lineNum;
+                prevChar = col;
+            }
+        }
+        lineNum++;
+    }
+    return data;
+}
 
 namespace {
 json readMessage() {
@@ -76,7 +151,14 @@ json LspServer::process(const json &request) {
         result["result"] = {
             {"capabilities", {
                 {"hoverProvider", true},
-                {"completionProvider", json::object()}
+                {"completionProvider", json::object()},
+                {"semanticTokensProvider", {
+                    {"legend", {
+                        {"tokenTypes", {"keyword", "variable"}},
+                        {"tokenModifiers", json::array()}
+                    }},
+                    {"full", true}
+                }}
             }},
             {"serverInfo", {{"name", "aflat-lsp"}, {"version", "0.1"}}}
         };
@@ -87,6 +169,7 @@ json LspServer::process(const json &request) {
         std::string uri = params["textDocument"]["uri"].get<std::string>();
         std::string text = params["textDocument"]["text"].get<std::string>();
         documents[uri] = text;
+        symbols[uri] = extractSymbols(text);
         result["result"] = nullptr;
     } else if (method == "textDocument/didChange") {
         auto params = request["params"];
@@ -94,6 +177,7 @@ json LspServer::process(const json &request) {
         auto changes = params["contentChanges"];
         if (!changes.empty()) {
             documents[uri] = changes[0]["text"].get<std::string>();
+            symbols[uri] = extractSymbols(documents[uri]);
         }
         result["result"] = nullptr;
     } else if (method == "textDocument/hover") {
@@ -107,10 +191,23 @@ json LspServer::process(const json &request) {
         result["result"] = hover;
     } else if (method == "textDocument/completion") {
         json items = json::array();
-        for (const auto &kw : {"fun", "let", "if", "else", "for"}) {
+        for (const auto &kw : keywords) {
             items.push_back({{"label", kw}});
         }
+        auto params = request["params"];
+        if (params.contains("textDocument")) {
+            std::string uri = params["textDocument"]["uri"].get<std::string>();
+            for (const auto &sym : symbols[uri]) {
+                items.push_back({{"label", sym}});
+            }
+        }
         result["result"] = items;
+    } else if (method == "textDocument/semanticTokens/full") {
+        auto params = request["params"];
+        std::string uri = params["textDocument"]["uri"].get<std::string>();
+        json tokenResult;
+        tokenResult["data"] = makeSemanticTokens(documents[uri], keywords, symbols[uri]);
+        result["result"] = tokenResult;
     } else if (method == "shutdown") {
         result["result"] = nullptr;
     } else if (method == "exit") {
