@@ -206,7 +206,12 @@ json LspServer::process(const json &request) {
         auto params = request["params"];
         std::string uri = params["textDocument"]["uri"].get<std::string>();
         json tokenResult;
-        tokenResult["data"] = makeSemanticTokens(documents[uri], keywords, symbols[uri]);
+        if (documents.count(uri)) {
+            tokenResult["data"] = makeSemanticTokens(documents[uri], keywords,
+                                                     symbols[uri]);
+        } else {
+            tokenResult["data"] = json::array();
+        }
         result["result"] = tokenResult;
     } else if (method == "shutdown") {
         result["result"] = nullptr;

@@ -89,8 +89,9 @@ The project ships with a lightweight language server that offers hover,
 completion, and basic semantic token highlighting. Keyword suggestions are
 loaded from `lsp/keywords.json` (compiled into the server so it works regardless
 of the current working directory) and symbols defined in the current document
-are also suggested. It speaks standard JSON-RPC 2.0 so editors like Neovim can
-connect directly. Build and run it with:
+are also suggested. Semantic tokens are generated for files that have been
+opened with `textDocument/didOpen`. The server speaks standard JSON-RPC 2.0 so
+editors like Neovim can connect directly. Build and run it with:
 ```bash
 cmake -S . -B build
 cmake --build build --target aflat-lsp
