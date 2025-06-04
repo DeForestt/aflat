@@ -281,7 +281,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
       outputID = outputID.substr(outputID.find_last_of("/") + 1);
     }
 
-    gen::CodeGenerator genny(outputID, parser);
+    gen::CodeGenerator genny(outputID, parser, content);
     auto file = genny.GenSTMT(Prog);
     file.collect();
     if (genny.hasError()) {

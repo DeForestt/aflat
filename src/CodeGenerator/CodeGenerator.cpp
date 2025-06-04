@@ -69,7 +69,7 @@ void gen::CodeGenerator::alert(std::string message, bool error) {
     if (this->scope != nullptr) context += "in class " + this->scope->Ident + ": ";
     if (!this->globalScope && this->currentFunction != nullptr)
       context += "in function " + this->currentFunction->ident.ident + ": ";
-    error::report(this->moduleId, this->logicalLine, context + message);
+    error::report(this->moduleId, this->logicalLine, context + message, this->source);
     throw err::Exception(message);
   } else {
     std::cout << "Warning: on line " << this->logicalLine << ": " << message
@@ -77,8 +77,9 @@ void gen::CodeGenerator::alert(std::string message, bool error) {
   }
 };
 
-gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser)
-    : parser(parser) {
+gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser,
+                                 const std::string &source)
+    : parser(parser), source(source) {
   this->registers << asmc::Register("rax", "eax", "ax", "al");
   this->registers << asmc::Register("rcx", "ecx", "cx", "cl");
   this->registers << asmc::Register("rdx", "edx", "dx", "dl");
@@ -116,7 +117,7 @@ gen::CodeGenerator::resolveSymbol(std::string ident,
                                   links::LinkedList<std::string> modList,
                                   asmc::File &OutputFile,
                                   links::LinkedList<ast::Expr *> indicies,
-                                  bool internal = false) {
+                                  bool internal) {
   asmc::File pops;
   modList.invert();
   modList.reset();
@@ -397,7 +398,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
 
 gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound,
                                               asmc::File &OutputFile,
-                                              bool isDiv = false) {
+                                              bool isDiv) {
   asmc::Mov *mov1 = new asmc::Mov();
   asmc::Mov *mov2 = new asmc::Mov();
   std::string r1 = "%edx", r2 = "%rdi";
@@ -474,7 +475,7 @@ gen::Expr gen::CodeGenerator::genArithmetic(asmc::ArithInst *inst,
   return output;
 }
 gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
-                                      asmc::Size size = asmc::AUTO) {
+                                      asmc::Size size) {
   gen::Expr output;
   output.op = asmc::Hard;
   this->logicalLine = expr->logicalLine;

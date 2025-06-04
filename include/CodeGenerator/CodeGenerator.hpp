@@ -140,6 +140,7 @@ class CodeGenerator {
                  bool strict = false);
 
   std::string moduleId;
+  std::string source;
 
   links::LinkedList<std::string> breakContext;
   links::LinkedList<std::string> continueContext;
@@ -155,7 +156,8 @@ class CodeGenerator {
       ast::Statement *STMT, links::LinkedList<gen::Symbol> &table);
   // a function for warnings or errors
   void alert(std::string message, bool error = true);
-  CodeGenerator(std::string moduleId, parse::Parser &parser);
+  CodeGenerator(std::string moduleId, parse::Parser &parser,
+                const std::string &source = "");
   asmc::File *deScope(gen::Symbol &sym);
   bool hasError() const { return errorFlag; }
 };
