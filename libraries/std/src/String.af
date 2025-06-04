@@ -392,8 +392,13 @@ safe dynamic class string {
     public bool debug = false;
 
     string init(const adr head) {
+        if my.head != NULL {
+            free(my.head);
+        };
         my.head = malloc(str.len(head) + 1);
         memcpy(my.head, head, str.len(head) + 1);
+        my.refcount = 1;
+        my.permanent = false;
         return my;
     };
 
@@ -403,7 +408,10 @@ safe dynamic class string {
     };
 
     fn debugRefCount() {
-        if my.debug {
+        if my.debug & my.head != NULL {
+            if my.refcount < 0 {
+                my.refcount = 0;
+            };
             io.print(my.head);
             io.print(" RefCount: ");
             io.printInt(my.refcount);
@@ -413,7 +421,13 @@ safe dynamic class string {
 
     int del() {
         if my.permanent return 0;
-        free(my.head);
+        if my.head != NULL {
+            free(my.head);
+            my.head = NULL;
+        };
+        my.refcount = 0;
+        my.permanent = false;
+        return 0;
     };
 
     bool compare<<==>>(const string other) {
@@ -421,16 +435,24 @@ safe dynamic class string {
     };
 
     string get(){
-        my.refcount = my.refcount + 1;
+        if my.head != NULL {
+            if !my.permanent {
+                my.refcount = my.refcount + 1;
+            };
+            my.debugRefCount();
+        };
         return my;
     };
 
     string cpy<<=>>(const string other) {
-        free(my.head);
-        other.refcount = other.refcount - 1;
-        my.refcount = my.refcount - 1;
+        if other.head == my.head return my; // self assignment
+        if my.head != NULL {
+            free(my.head);
+        };
         my.head = malloc(str.len(other.head) + 1);
         memcpy(my.head, other.head, str.len(other.head) + 1);
+        my.refcount = 1;
+        my.permanent = false;
         return my;
     };
 
@@ -452,7 +474,9 @@ safe dynamic class string {
     };
 
     bool input(const adr prompt) {
-        free(my.head);
+        if my.head != NULL {
+            free(my.head);
+        };
         if prompt != NULL
             io.print(prompt);
         adr buff = malloc(1);
@@ -488,14 +512,6 @@ safe dynamic class string {
         memcpy(newHead + myLen, other.head, otherLen + 1);
         const string newString = new string(newHead);
         free(newHead);
-        other.refcount = other.refcount - 1;
-        my.refcount = my.refcount - 1;
-
-        if (other.refcount == 0) {
-            delete other;
-        } else if (my.refcount == 0) {
-            delete my;
-        };
         return newString;
     };
 
@@ -814,13 +830,12 @@ safe dynamic class string {
 
     int endScope() {
         if my.permanent return 0;
-        // if my.debug {
-        //     io.print(my.head);
-        //     io.print(": End scope called on string object\n");
-        // };
-        my.refcount = my.refcount - 1;
-        if my.refcount == 0 {
-            // if my.debug io.print(": Deleting string object\n");
+        if my.refcount > 0 {
+            my.refcount = my.refcount - 1;
+        };
+        my.debugRefCount();
+        if my.refcount <= 0 {
+            my.refcount = 0;
             delete my;
         };
         return 0;
@@ -952,8 +967,7 @@ export string fString(const string fmt, * adr args) {
 export int readInt(const string prompt, * int tries) {
 	if tries <= 0
 		tries = 3;
-	const string val = readString(prompt);
-    prompt.endScope(); 
+    const string val = readString(prompt);
     const Result res = val.toInt();
 	return res.resolve(
 		[const int x] => return x,
