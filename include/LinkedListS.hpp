@@ -126,7 +126,14 @@ T links::SLinkedList<T, Z>::peek() {
 
 template <typename T, typename Z>
 T links::SLinkedList<T, Z>::at(int i) {
-  return 0;
+  if (i < 0 || i >= this->count) {
+    throw err::Exception("Index Out of Range");
+  }
+  Node<T> *curr = this->head;
+  for (int idx = 0; idx < i; ++idx) {
+    curr = curr->next;
+  }
+  return curr->data;
 }
 
 template <typename T, typename Z>
