@@ -25,8 +25,8 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug);
 void ensureBinPath(const std::string &path, std::vector<std::string> &pathList);
 bool compileCFile(const std::string &path, bool debug);
-void runConfig(cfg::Config &config, const std::string &libPath, char pmode);
-void runConfig(cfg::Config &config, const std::string &libPath);
+bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
+bool runConfig(cfg::Config &config, const std::string &libPath);
 
 int main(int argc, char *argv[]) {
   // Usage error
@@ -117,12 +117,13 @@ int main(int argc, char *argv[]) {
       }
     };
     cfg::Config config = cfg::getConfig(content);
-    runConfig(config, libPathA, 'e');
-    auto of = config.outPutFile;
-    if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
-      of = "./" + config.outPutFile;
+    if (runConfig(config, libPathA, 'e')) {
+      auto of = config.outPutFile;
+      if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
+        of = "./" + config.outPutFile;
+      }
+      system(of.c_str());
     }
-    system(of.c_str());
     return 0;
   }
   if (value == "test") {
@@ -130,8 +131,9 @@ int main(int argc, char *argv[]) {
     std::string content((std::istreambuf_iterator<char>(ifs)),
                         (std::istreambuf_iterator<char>()));
     cfg::Config config = cfg::getConfig(content);
-    runConfig(config, libPathA, 't');
-    system("./bin/a.test");
+    if (runConfig(config, libPathA, 't')) {
+      system("./bin/a.test");
+    }
     return 0;
   }
   if (value == "add" || value == "module") {
@@ -511,11 +513,11 @@ bool compileCFile(const std::string &path, bool debug) {
   return system(cmd.c_str()) == 0;
 }
 
-void runConfig(cfg::Config &config, const std::string &libPath) {
-  runConfig(config, libPath, 'e');
+bool runConfig(cfg::Config &config, const std::string &libPath) {
+  return runConfig(config, libPath, 'e');
 }
 
-void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
+bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   std::vector<std::string> linker;
   std::vector<std::string> pathList;
   bool hasError = false;
@@ -568,7 +570,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
 
   if (hasError) {
     std::cout << "Errors detected. Skipping linking." << std::endl;
-    return;
+    return false;
   }
 
   // run gcc on the linkerList
@@ -598,4 +600,5 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       std::filesystem::remove_all("./bin/" + s);
     }
   }
+  return true;
 }
