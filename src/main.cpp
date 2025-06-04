@@ -10,6 +10,7 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Configs.hpp"
+#include "ErrorReporter.hpp"
 #include "Exceptions.hpp"
 #include "LinkedList.hpp"
 #include "Parser/Lower.hpp"
@@ -21,10 +22,12 @@ std::string preProcess(std::string input);
 std::string getExePath();
 void buildTemplate(std::string value);
 void libTemplate(std::string value);
-void build(std::string path, std::string output, cfg::Mutability mutability,
+bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug);
-void runConfig(cfg::Config &config, const std::string &libPath, char pmode);
-void runConfig(cfg::Config &config, const std::string &libPath);
+void ensureBinPath(const std::string &path, std::vector<std::string> &pathList);
+bool compileCFile(const std::string &path, bool debug);
+bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
+bool runConfig(cfg::Config &config, const std::string &libPath);
 
 int main(int argc, char *argv[]) {
   // Usage error
@@ -115,12 +118,13 @@ int main(int argc, char *argv[]) {
       }
     };
     cfg::Config config = cfg::getConfig(content);
-    runConfig(config, libPathA, 'e');
-    auto of = config.outPutFile;
-    if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
-      of = "./" + config.outPutFile;
+    if (runConfig(config, libPathA, 'e')) {
+      auto of = config.outPutFile;
+      if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
+        of = "./" + config.outPutFile;
+      }
+      system(of.c_str());
     }
-    system(of.c_str());
     return 0;
   }
   if (value == "test") {
@@ -128,8 +132,9 @@ int main(int argc, char *argv[]) {
     std::string content((std::istreambuf_iterator<char>(ifs)),
                         (std::istreambuf_iterator<char>()));
     cfg::Config config = cfg::getConfig(content);
-    runConfig(config, libPathA, 't');
-    system("./bin/a.test");
+    if (runConfig(config, libPathA, 't')) {
+      system("./bin/a.test");
+    }
     return 0;
   }
   if (value == "add" || value == "module") {
@@ -231,8 +236,9 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void build(std::string path, std::string output, cfg::Mutability mutability,
+bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug) {
+  bool success = true;
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;
 
@@ -251,8 +257,11 @@ void build(std::string path, std::string output, cfg::Mutability mutability,
       PreProcessor pp;
       tokens = scanner.Scan(pp.PreProcess(content, libPath));
     } catch (int x) {
-      std::cout << " unparsable Char at index " + x;
-      return;
+      int line = 1;
+      for (int i = 0; i < x && i < content.size(); ++i)
+        if (content[i] == '\n') line++;
+      error::report(path, line, "unparsable character", content);
+      return false;
     }
     tokens.invert();
     parse::Parser parser(mutability);
@@ -272,9 +281,14 @@ void build(std::string path, std::string output, cfg::Mutability mutability,
       outputID = outputID.substr(outputID.find_last_of("/") + 1);
     }
 
-    gen::CodeGenerator genny(outputID, parser);
+    gen::CodeGenerator genny(outputID, parser, content);
     auto file = genny.GenSTMT(Prog);
     file.collect();
+    if (genny.hasError()) {
+      success = false;
+      if (std::filesystem::exists(output)) std::filesystem::remove(output);
+      return success;
+    }
 
     file.text.invert();
     file.bss.invert();
@@ -349,11 +363,12 @@ void build(std::string path, std::string output, cfg::Mutability mutability,
     }
     ofs.close();
   } catch (err::Exception &e) {
-    std::cout << std::endl
-              << "Exception in " << path << ": " << e.errorMsg << std::endl
-              << std::endl;
+    success = false;
+    int line = error::extractLine(e.errorMsg);
+    error::report(path, line, e.errorMsg, content);
+    if (std::filesystem::exists(output)) std::filesystem::remove(output);
   }
-  return;
+  return success;
 };
 
 /*
@@ -474,13 +489,42 @@ void libTemplate(std::string value) {
   outfile.close();
 }
 
-void runConfig(cfg::Config &config, const std::string &libPath) {
-  runConfig(config, libPath, 'e');
+void ensureBinPath(const std::string &path,
+                   std::vector<std::string> &pathList) {
+  std::string addPath = "";
+  if (path.find("/") != std::string::npos) {
+    addPath = path.substr(0, path.find_last_of("/"));
+  }
+
+  const bool found = std::any_of(
+      pathList.begin(), pathList.end(),
+      [&](const std::string &searchPath) { return searchPath == addPath; });
+
+  if (!found && !addPath.empty()) {
+    std::filesystem::create_directories("./bin/" + addPath);
+    pathList.push_back(addPath);
+  }
 }
 
-void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
+bool compileCFile(const std::string &path, bool debug) {
+  std::string cmd;
+  if (debug)
+    cmd = "gcc -g -no-pie -z noexecstack -S -lefence ./src/" + path +
+          ".c -o ./bin/" + path + ".s";
+  else
+    cmd = "gcc -S -no-pie -z noexecstack ./src/" + path + ".c -o ./bin/" +
+          path + ".s";
+  return system(cmd.c_str()) == 0;
+}
+
+bool runConfig(cfg::Config &config, const std::string &libPath) {
+  return runConfig(config, libPath, 'e');
+}
+
+bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   std::vector<std::string> linker;
   std::vector<std::string> pathList;
+  bool hasError = false;
 
   std::string ofile = config.outPutFile;
 
@@ -492,97 +536,71 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   }
 
   for (auto mod : config.modules) {
-    std::string path = mod;
-    std::string addPath = "";
-
-    if (path.find("/") != std::string::npos) {
-      addPath = path.substr(0, path.find_last_of("/"));
+    ensureBinPath(mod, pathList);
+    if (build("./src/" + mod + ".af", "./bin/" + mod + ".s", config.mutability,
+              config.debug)) {
+      linker.push_back("./bin/" + mod + ".s");
+    } else {
+      hasError = true;
     }
-
-    const bool found = std::any_of(
-        pathList.begin(), pathList.end(),
-        [&](const std::string &searchPath) { return searchPath == addPath; });
-
-    if (!found && addPath != "") {
-      std::filesystem::create_directories("./bin/" + addPath);
-      pathList.push_back(addPath);
-    }
-
-    build("./src/" + path + ".af", "./bin/" + path + ".s", config.mutability,
-          config.debug);
-    linker.push_back("./bin/" + path + ".s");
   }
 
   for (auto file : config.cFiles) {
-    std::string path = file;
-    std::string addPath = "";
-
-    if (path.find("/") != std::string::npos) {
-      addPath = path.substr(0, path.find_last_of("/"));
+    ensureBinPath(file, pathList);
+    if (compileCFile(file, config.debug)) {
+      linker.push_back("./bin/" + file + ".s");
+    } else {
+      hasError = true;
     }
-
-    const bool found = std::any_of(
-        pathList.begin(), pathList.end(),
-        [&](const std::string &searchPath) { return searchPath == addPath; });
-
-    if (!found && addPath != "") {
-      std::filesystem::create_directories("./bin/" + addPath);
-      pathList.push_back(addPath);
-    }
-
-    if (config.debug)
-      system(("gcc -g -no-pie -z noexecstack -S -lefence ./src/" + path +
-              ".c -o ./bin/" + path + ".s")
-                 .c_str());
-    else
-      system(("gcc -S -no-pie -z noexecstack ./src/" + path + ".c -o ./bin/" +
-              path + ".s")
-                 .c_str());
-
-    linker.push_back("./bin/" + path + ".s");
   }
 
-  linker.insert(linker.begin(), libPath + "io.s");
-  linker.insert(linker.begin(), libPath + "Collections.s");
-  linker.insert(linker.begin(), libPath + "math.s");
-  linker.insert(linker.begin(), libPath + "strings.s");
-  if (config.compatibility)
-    linker.insert(linker.begin(), libPath + "std-cmp.s");
-  else
-    linker.insert(linker.begin(), libPath + "std.s");
-  linker.insert(linker.begin(), libPath + "concurrency.s");
-  linker.insert(linker.begin(), libPath + "files.s");
-  linker.insert(linker.begin(), libPath + "asm.s");
-  linker.insert(linker.begin(), libPath + "String.s");
-  linker.insert(linker.begin(), libPath + "DateTime.s");
-  linker.insert(linker.begin(), libPath + "HTTP.s");
-  linker.insert(linker.begin(), libPath + "request.s");
-  linker.insert(linker.begin(), libPath + "ATest.s");
-  linker.insert(linker.begin(), libPath + "CLArgs.s");
-  linker.insert(linker.begin(), libPath + "System.s");
-  linker.insert(linker.begin(), libPath + "Utils_Result.s");
-  linker.insert(linker.begin(), libPath + "Utils_Option.s");
-  linker.insert(linker.begin(), libPath + "Utils_Functions.s");
-  linker.insert(linker.begin(), libPath + "Utils_Map.s");
-  linker.insert(linker.begin(), libPath + "Utils_Properties.s");
-  linker.insert(linker.begin(), libPath + "Utils_Object.s");
-  linker.insert(linker.begin(), libPath + "Utils_Error.s");
-  linker.insert(linker.begin(), libPath + "Error_Render.s");
-  linker.insert(linker.begin(), libPath + "HTTP_Endpoint.s");
-  linker.insert(linker.begin(), libPath + "HTTP_Server.s");
-  linker.insert(linker.begin(), libPath + "HTTP_Endpoints.s");
-  linker.insert(linker.begin(), libPath + "HTTP_Middleware.s");
-  linker.insert(linker.begin(), libPath + "Web_Content.s");
-  linker.insert(linker.begin(), libPath + "Web_Content_Bind.s");
-  linker.insert(linker.begin(), libPath + "JSON.s");
-  linker.insert(linker.begin(), libPath + "JSON_Parse.s");
-  linker.insert(linker.begin(), libPath + "JSON_Property.s");
-  linker.insert(linker.begin(), libPath + "Iterator.s");
-  linker.insert(linker.begin(), libPath + "Enumerator.s");
-  linker.insert(linker.begin(), libPath + "Scroller.s");
-  linker.insert(linker.begin(), libPath + "Utils_Defer.s");
-  linker.insert(linker.begin(), libPath + "Memory.s");
-  linker.insert(linker.begin(), libPath + "Utils_Observable.s");
+  std::vector<std::string> libs = {"io.s",
+                                   "Collections.s",
+                                   "math.s",
+                                   "strings.s",
+                                   config.compatibility ? "std-cmp.s" : "std.s",
+                                   "concurrency.s",
+                                   "files.s",
+                                   "asm.s",
+                                   "String.s",
+                                   "DateTime.s",
+                                   "HTTP.s",
+                                   "request.s",
+                                   "ATest.s",
+                                   "CLArgs.s",
+                                   "System.s",
+                                   "Utils_Result.s",
+                                   "Utils_Option.s",
+                                   "Utils_Functions.s",
+                                   "Utils_Map.s",
+                                   "Utils_Properties.s",
+                                   "Utils_Object.s",
+                                   "Utils_Error.s",
+                                   "Error_Render.s",
+                                   "HTTP_Endpoint.s",
+                                   "HTTP_Server.s",
+                                   "HTTP_Endpoints.s",
+                                   "HTTP_Middleware.s",
+                                   "Web_Content.s",
+                                   "Web_Content_Bind.s",
+                                   "JSON.s",
+                                   "JSON_Parse.s",
+                                   "JSON_Property.s",
+                                   "Iterator.s",
+                                   "Enumerator.s",
+                                   "Scroller.s",
+                                   "Utils_Defer.s",
+                                   "Memory.s",
+                                   "Utils_Observable.s"};
+
+  for (const auto &lib : libs) {
+    linker.insert(linker.begin(), libPath + lib);
+  }
+
+  if (hasError) {
+    std::cout << "Errors detected. Skipping linking." << std::endl;
+    return false;
+  }
 
   // run gcc on the linkerList
   std::string linkerList = "";
@@ -599,7 +617,7 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   }
 
   system(gcc.c_str());
-  linker.erase(linker.begin(), linker.begin() + 38);
+  linker.erase(linker.begin(), linker.begin() + libs.size());
 
   if (!config.asm_) {
     for (auto &s : linker) {
@@ -611,4 +629,5 @@ void runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       std::filesystem::remove_all("./bin/" + s);
     }
   }
+  return true;
 }

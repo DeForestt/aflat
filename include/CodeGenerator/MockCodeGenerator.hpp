@@ -6,7 +6,8 @@ class CodeGenerator : public gen::CodeGenerator {
   parse::Parser &parser;
 
  public:
-  CodeGenerator(std::string moduleId, parse::Parser &parser);
+  CodeGenerator(std::string moduleId, parse::Parser &parser,
+                const std::string &source = "");
 
   bool canAssign(ast::Type type, std::string typeName, std::string fmt,
                  bool strict = false);

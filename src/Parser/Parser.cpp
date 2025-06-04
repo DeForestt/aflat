@@ -1,5 +1,6 @@
 #include "Parser/Parser.hpp"
 
+#include <algorithm>
 #include <iostream>
 
 #include "Exceptions.hpp"
@@ -9,7 +10,7 @@
 
 ast::Expr *prioritizeExpr(ast::Expr *expr);
 
-parse::Parser::Parser(int mutability = 0) {
+parse::Parser::Parser(int mutability) {
   this->typeList.foo = ast::Type::compare;
   this->mutability = mutability;
 
@@ -85,7 +86,7 @@ int getOpPriority(ast::Op op) {
  * parse return: AST::Statement - the parsed statement
  */
 ast::Statement *parse::Parser::parseStmt(
-    links::LinkedList<lex::Token *> &tokens, bool singleStmt = false) {
+    links::LinkedList<lex::Token *> &tokens, bool singleStmt) {
   ast::Statement *output = new ast::Statement;
   std::vector<parse::Annotation> annotations;
 
@@ -1016,6 +1017,9 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     fstringLiteral->val = fstringObj.value;
     fstringLiteral->original = fstringObj.value;
 
+    std::size_t offset = 0;
+    std::string original = fstringObj.value;
+
     // find each { and } and parse the expression in between
     while (true) {
       std::string::size_type pos = fstringObj.value.find('{', 0);
@@ -1032,10 +1036,15 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       // replace with %%% to avoid parsing errors
       fstringObj.value.replace(pos, pos2 - pos + 1, "%%%");
 
-      auto tokes = lexer.Scan(expr);
+      int startLine =
+          fstringObj.lineCount +
+          std::count(original.begin(), original.begin() + pos + offset, '\n');
+      auto tokes = lexer.Scan(expr, startLine);
       tokes.invert();
       auto exprAst = this->parseExpr(tokes);
       fstringLiteral->args.push_back(exprAst);
+
+      offset += (pos2 - pos + 1) - 3;
     }
 
     fstringLiteral->val = fstringObj.value;

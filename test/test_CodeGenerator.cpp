@@ -4,7 +4,7 @@
 
 #define MOCKGEN                  \
   auto parser = parse::Parser(); \
-  auto mockGen = test::mockGen::CodeGenerator("mod", parser);
+  auto mockGen = test::mockGen::CodeGenerator("mod", parser, "");
 
 bool compareFunc(ast::Function F, std::string input) {
   if (input == F.ident.ident) {

@@ -368,6 +368,12 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     ast::Expr *arg = this->Args.shift();
     // check if the argument is a reference
     if (checkArgs) {
+      if (i >= func->argTypes.size()) {
+        generator.logicalLine = arg->logicalLine;
+        generator.alert("Too many arguments for function: " + ident +
+                        " expected: " + std::to_string(func->argTypes.size()) +
+                        " got: " + std::to_string(i + 1));
+      }
       if (func->argTypes.at(i).isReference) {
         auto toReg = new ast::Reference();
         auto var = dynamic_cast<ast::Var *>(arg);
@@ -414,6 +420,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
                       " to a function");
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
+        generator.logicalLine = arg->logicalLine;
         generator.alert("Too many arguments for function: " + ident +
                         " expected: " + std::to_string(func->argTypes.size()) +
                         " got: " + std::to_string(i + 1));

@@ -67,7 +67,7 @@ class FloatLit : public Token {
 that the parser will be able to understand*/
 class Lexer {
  public:
-  LinkedList<Token *> Scan(string input);
+  LinkedList<Token *> Scan(string input, int startLine = 1);
 };
 
 };  // namespace lex
