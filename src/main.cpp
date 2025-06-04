@@ -10,13 +10,13 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Configs.hpp"
+#include "ErrorReporter.hpp"
 #include "Exceptions.hpp"
 #include "LinkedList.hpp"
 #include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
-#include "ErrorReporter.hpp"
 
 std::string preProcess(std::string input);
 std::string getExePath();
@@ -489,7 +489,8 @@ void libTemplate(std::string value) {
   outfile.close();
 }
 
-void ensureBinPath(const std::string &path, std::vector<std::string> &pathList) {
+void ensureBinPath(const std::string &path,
+                   std::vector<std::string> &pathList) {
   std::string addPath = "";
   if (path.find("/") != std::string::npos) {
     addPath = path.substr(0, path.find_last_of("/"));
@@ -511,8 +512,8 @@ bool compileCFile(const std::string &path, bool debug) {
     cmd = "gcc -g -no-pie -z noexecstack -S -lefence ./src/" + path +
           ".c -o ./bin/" + path + ".s";
   else
-    cmd = "gcc -S -no-pie -z noexecstack ./src/" + path +
-          ".c -o ./bin/" + path + ".s";
+    cmd = "gcc -S -no-pie -z noexecstack ./src/" + path + ".c -o ./bin/" +
+          path + ".s";
   return system(cmd.c_str()) == 0;
 }
 
@@ -536,8 +537,8 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
 
   for (auto mod : config.modules) {
     ensureBinPath(mod, pathList);
-    if (build("./src/" + mod + ".af", "./bin/" + mod + ".s",
-               config.mutability, config.debug)) {
+    if (build("./src/" + mod + ".af", "./bin/" + mod + ".s", config.mutability,
+              config.debug)) {
       linker.push_back("./bin/" + mod + ".s");
     } else {
       hasError = true;
@@ -553,19 +554,44 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     }
   }
 
-  std::vector<std::string> libs = {
-      "io.s",       "Collections.s", "math.s",           "strings.s",
-      config.compatibility ? "std-cmp.s" : "std.s",
-      "concurrency.s", "files.s",     "asm.s",            "String.s",
-      "DateTime.s",  "HTTP.s",       "request.s",        "ATest.s",
-      "CLArgs.s",    "System.s",     "Utils_Result.s",   "Utils_Option.s",
-      "Utils_Functions.s", "Utils_Map.s",       "Utils_Properties.s",
-      "Utils_Object.s",    "Utils_Error.s",    "Error_Render.s",
-      "HTTP_Endpoint.s",   "HTTP_Server.s",   "HTTP_Endpoints.s",
-      "HTTP_Middleware.s", "Web_Content.s",   "Web_Content_Bind.s",
-      "JSON.s",           "JSON_Parse.s",     "JSON_Property.s",
-      "Iterator.s",       "Enumerator.s",    "Scroller.s",
-      "Utils_Defer.s",     "Memory.s",        "Utils_Observable.s"};
+  std::vector<std::string> libs = {"io.s",
+                                   "Collections.s",
+                                   "math.s",
+                                   "strings.s",
+                                   config.compatibility ? "std-cmp.s" : "std.s",
+                                   "concurrency.s",
+                                   "files.s",
+                                   "asm.s",
+                                   "String.s",
+                                   "DateTime.s",
+                                   "HTTP.s",
+                                   "request.s",
+                                   "ATest.s",
+                                   "CLArgs.s",
+                                   "System.s",
+                                   "Utils_Result.s",
+                                   "Utils_Option.s",
+                                   "Utils_Functions.s",
+                                   "Utils_Map.s",
+                                   "Utils_Properties.s",
+                                   "Utils_Object.s",
+                                   "Utils_Error.s",
+                                   "Error_Render.s",
+                                   "HTTP_Endpoint.s",
+                                   "HTTP_Server.s",
+                                   "HTTP_Endpoints.s",
+                                   "HTTP_Middleware.s",
+                                   "Web_Content.s",
+                                   "Web_Content_Bind.s",
+                                   "JSON.s",
+                                   "JSON_Parse.s",
+                                   "JSON_Property.s",
+                                   "Iterator.s",
+                                   "Enumerator.s",
+                                   "Scroller.s",
+                                   "Utils_Defer.s",
+                                   "Memory.s",
+                                   "Utils_Observable.s"};
 
   for (const auto &lib : libs) {
     linker.insert(linker.begin(), libPath + lib);

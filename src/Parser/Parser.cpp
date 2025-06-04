@@ -1,7 +1,7 @@
 #include "Parser/Parser.hpp"
 
-#include <iostream>
 #include <algorithm>
+#include <iostream>
 
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
@@ -1036,9 +1036,9 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       // replace with %%% to avoid parsing errors
       fstringObj.value.replace(pos, pos2 - pos + 1, "%%%");
 
-      int startLine = fstringObj.lineCount +
-                      std::count(original.begin(),
-                                 original.begin() + pos + offset, '\n');
+      int startLine =
+          fstringObj.lineCount +
+          std::count(original.begin(), original.begin() + pos + offset, '\n');
       auto tokes = lexer.Scan(expr, startLine);
       tokes.invert();
       auto exprAst = this->parseExpr(tokes);

@@ -11,9 +11,9 @@
 #include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
+#include "ErrorReporter.hpp"
 #include "Exceptions.hpp"
 #include "Scanner.hpp"
-#include "ErrorReporter.hpp"
 
 using namespace gen::utils;
 
@@ -66,22 +66,27 @@ void gen::CodeGenerator::alert(std::string message, bool error) {
   if (error) {
     this->errorFlag = true;
     std::string context;
-    if (this->scope != nullptr) context += "in class " + this->scope->Ident + ": ";
+    if (this->scope != nullptr)
+      context += "in class " + this->scope->Ident + ": ";
     if (!this->globalScope && this->currentFunction != nullptr)
       context += "in function " + this->currentFunction->ident.ident + ": ";
-    error::report(this->moduleId, this->logicalLine, context + message, this->source);
-    throw err::Exception("Line: " + std::to_string(this->logicalLine) + " " + context + message);
+    error::report(this->moduleId, this->logicalLine, context + message,
+                  this->source);
+    throw err::Exception("Line: " + std::to_string(this->logicalLine) + " " +
+                         context + message);
   } else {
     std::string context;
-    if (this->scope != nullptr) context += "in class " + this->scope->Ident + ": ";
+    if (this->scope != nullptr)
+      context += "in class " + this->scope->Ident + ": ";
     if (!this->globalScope && this->currentFunction != nullptr)
       context += "in function " + this->currentFunction->ident.ident + ": ";
-    error::warn(this->moduleId, this->logicalLine, context + message, this->source);
+    error::warn(this->moduleId, this->logicalLine, context + message,
+                this->source);
   }
 };
 
 gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser,
-                                 const std::string &source)
+                                  const std::string &source)
     : parser(parser), source(source) {
   this->registers << asmc::Register("rax", "eax", "ax", "al");
   this->registers << asmc::Register("rcx", "ecx", "cx", "cl");

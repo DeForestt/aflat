@@ -371,9 +371,8 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
       if (i >= func->argTypes.size()) {
         generator.logicalLine = arg->logicalLine;
         generator.alert("Too many arguments for function: " + ident +
-                        " expected: " +
-                        std::to_string(func->argTypes.size()) + " got: " +
-                        std::to_string(i + 1));
+                        " expected: " + std::to_string(func->argTypes.size()) +
+                        " got: " + std::to_string(i + 1));
       }
       if (func->argTypes.at(i).isReference) {
         auto toReg = new ast::Reference();
