@@ -44,11 +44,15 @@ inline void report(const std::string &file, int line, const std::string &msg,
     std::string prev = getLine(source, line - 1);
     std::string codeLine = getLine(source, line);
     std::string next = getLine(source, line + 1);
+    constexpr int width = 4;  // digit width for line numbers
+    auto printLine = [&](char mark, int ln, const std::string &txt) {
+      std::cout << mark << std::setw(width) << ln << " | " << txt << "\n";
+    };
     if (!prev.empty())
-      std::cout << std::setw(4) << line - 1 << " | " << prev << "\n";
-    std::cout << ">" << std::setw(4) << line << " | " << codeLine << "\n";
+      printLine(' ', line - 1, prev);
+    printLine('>', line, codeLine);
     if (!next.empty())
-      std::cout << std::setw(4) << line + 1 << " | " << next << "\n";
+      printLine(' ', line + 1, next);
     std::cout << "  |" << std::endl << std::endl;
   }
 }
@@ -70,11 +74,15 @@ inline void warn(const std::string &file, int line, const std::string &msg,
     std::string prev = getLine(source, line - 1);
     std::string codeLine = getLine(source, line);
     std::string next = getLine(source, line + 1);
+    constexpr int width = 4;  // digit width for line numbers
+    auto printLine = [&](char mark, int ln, const std::string &txt) {
+      std::cout << mark << std::setw(width) << ln << " | " << txt << "\n";
+    };
     if (!prev.empty())
-      std::cout << std::setw(4) << line - 1 << " | " << prev << "\n";
-    std::cout << ">" << std::setw(4) << line << " | " << codeLine << "\n";
+      printLine(' ', line - 1, prev);
+    printLine('>', line, codeLine);
     if (!next.empty())
-      std::cout << std::setw(4) << line + 1 << " | " << next << "\n";
+      printLine(' ', line + 1, next);
     std::cout << "  |" << std::endl << std::endl;
   }
 }
