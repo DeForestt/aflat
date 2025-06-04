@@ -2,18 +2,19 @@
 
 import string from "String";
 import List from "Collections";
-import {fPrint} from "io" under io;
+import {print} from "String" under str;
 import Error from "Utils/Error";
 import Render from "Utils/Error/Render";
 import Result from "Utils/Result";
 import Option from "Utils/Option";
 import { some, none } from "Utils/Option" under opt;
 import { accept, reject } from "Utils/Result" under pt;
+import with from "Utils/Properties";
 
 class ParseError signs Error {
     const string message = message.copy();
 
-    fn stdErrorMessage() -> Render {
+    fn stdErrorMessage(): Render {
         return `{my._typeName}: {my.message}`;
     };
 
@@ -32,9 +33,12 @@ class Spec {
     fn init(const string long, const string short, const bool needsValue, const string description, const string defaultVal) -> Self {
         my.long = long;
         my.short = short;
+        my.long.seal();
+        my.short.seal();
         my.needsValue = needsValue;
         my.description = description;
-        my.defaultVal = defaultVal;
+        my.defaultVal = defaultVal.copy();
+        my.defaultVal.seal();
         return my;
     };
 };
@@ -55,32 +59,40 @@ class ArgsList {
     List parsed = new List(Parsed);
     List extras = new List(string);
     string progName = "";
+    
+    fn init() -> ArgsList {
+        return my;
+    };
 
-    fn init(const int argc, const adr argv) -> Self {
+    fn build(const int argc, const adr argv) -> ArgsList {
         const adr[0] args = argv;
-        my.progName = args[0];
+        my.progName = new string(args[0]);
         for int i = 1; i < argc; i++ {
-            const string cur = args[i];
+            const string cur = new string(args[i]);
+            cur.seal();
+            cur.get();
             if cur.at(0) == '-' {
                 bool longForm = cur.at(1) == '-';
                 const string name = if longForm cur.subString(2, cur.len()) else cur.subString(1, cur.len());
-                Option found = my.findSpec(name);
+                name.seal();
+                const Option found = my.findSpec(name);
                 if found.isSome() {
                     const Spec sp = found.or(new Spec("", "", false, "", ""));
                     if sp.needsValue {
                         if i + 1 < argc {
                             const string val = args[i + 1];
-                            my.parsed.pushBack(Parsed(sp, val));
+                            my.parsed.pushBack(new Parsed(sp, val));
                             i++;
                         } else {
-                            io.fPrint("Missing value for %s\n", {cur});
+                            str.print(`Missing value for {cur}\n`);
                             return NULL;
                         };
                     } else {
-                        my.parsed.pushBack(Parsed(sp, sp.defaultVal));
+                        string val = sp.defaultVal.copy();
+                        my.parsed.pushBack(new Parsed(sp, val));
                     };
                 } else {
-                    io.fPrint("Unknown option %s\n", {cur});
+                    str.print(`Unknown option: {cur}\n`);
                     return NULL;
                 };
             } else {
@@ -90,18 +102,26 @@ class ArgsList {
         return my;
     };
 
-    fn addOption(const string long, const string short, const bool needsValue, const string description, const string defaultVal) -> void {
+    fn withOption(const string long, const string short, const bool needsValue, const string description, const string defaultVal) -> ArgsList {
         my.specs.pushBack(Spec(long, short, needsValue, description, defaultVal));
+        return my;
     };
 
     private fn findSpec(const string name) -> Option {
-        return my.specs.findFirst([const Spec s, const string n] => return s.long == n | s.short == n, name);
+        name.seal();
+        return my.specs.findFirst(fn (const Spec s, const string n) {
+            n.seal();
+            if s.long == n return true;
+            if s.short == n return true;
+            return false;
+        },name);
     };
 
     fn get(const string name) -> Result {
         return my.parsed.findFirst([const Parsed p, const string n] => return p.spec.long == n | p.spec.short == n, name).resolve(
             [const Parsed p] => return pt.accept(p),
-            [] => return pt.reject(new ParseError("Arg does not exist"))
+            [] => return pt.reject(new ParseError("Arg does not exist")),
+            name
         );
     };
 
@@ -112,19 +132,25 @@ class ArgsList {
         });
     };
 
-    fn help() -> string {
-        mutable string msg = new string("Usage: ");
-        msg = msg + my.progName + " [options]\n";
-        my.specs.forEach([const Spec s, const int i, const string m] => {
-            m = m + "  -" + s.short + ", --" + s.long;
+    fn help() -> void {
+        str.print(`Usage: `);
+        str.print(my.progName);
+        str.print(" [options]\n");
+        my.specs.forEach([const Spec s, const int i,] => {
+            str.print("-");
+            str.print(s.short);
+            str.print(", --");
+            str.print(s.long);
             if s.needsValue {
-                m = m + " <val>";
+                str.print(" <value>");
             };
             if s.description != "" {
-                m = m + ": " + s.description;
+                str.print(": \t");
+                str.print(s.description);
+                str.print("\n");
+            } else {
+                str.print("\n");
             };
-            m = m + "\n";
-        }, msg);
-        return msg;
+        });
     };
 };

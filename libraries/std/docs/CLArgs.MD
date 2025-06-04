@@ -29,7 +29,7 @@ Main parser class.
 ## Example Usage
 ```js
 ArgsList args = new ArgsList();
-args.addOption("help", "h", false, "Show help", "");
+argsaddOption("help", "h", false, "Show help", "");
 args.addOption("output", "o", true, "Output file", "a.out");
 args.init(argc, argv);
 
