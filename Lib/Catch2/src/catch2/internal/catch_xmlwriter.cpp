@@ -12,6 +12,7 @@
 #include <catch2/internal/catch_xmlwriter.hpp>
 
 #include <iomanip>
+#include <cstdint>
 #include <type_traits>
 
 namespace Catch {
