@@ -1,6 +1,7 @@
 #include "Parser/Parser.hpp"
 
 #include <iostream>
+#include <algorithm>
 
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
@@ -9,7 +10,7 @@
 
 ast::Expr *prioritizeExpr(ast::Expr *expr);
 
-parse::Parser::Parser(int mutability = 0) {
+parse::Parser::Parser(int mutability) {
   this->typeList.foo = ast::Type::compare;
   this->mutability = mutability;
 
@@ -85,7 +86,7 @@ int getOpPriority(ast::Op op) {
  * parse return: AST::Statement - the parsed statement
  */
 ast::Statement *parse::Parser::parseStmt(
-    links::LinkedList<lex::Token *> &tokens, bool singleStmt = false) {
+    links::LinkedList<lex::Token *> &tokens, bool singleStmt) {
   ast::Statement *output = new ast::Statement;
   std::vector<parse::Annotation> annotations;
 
