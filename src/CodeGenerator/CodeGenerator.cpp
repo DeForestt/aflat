@@ -2067,13 +2067,11 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
   asmc::File OutputFile = asmc::File();
   this->logicalLine = STMT->logicalLine;
 
-  if (STMT->locked)
-    {
-      auto *inst = new asmc::nop();
-      inst->logicalLine = this->logicalLine;
-      OutputFile.text.push(inst);
-    }
-  else
+  if (STMT->locked) {
+    auto *inst = new asmc::nop();
+    inst->logicalLine = this->logicalLine;
+    OutputFile.text.push(inst);
+  } else
     OutputFile << STMT->generate(*this).file;
 
   return OutputFile;
@@ -2081,13 +2079,11 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
 
 asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
   asmc::File OutputFile = asmc::File();
-  if (STMT->locked)
-    {
-      auto *inst = new asmc::nop();
-      inst->logicalLine = STMT->logicalLine;
-      OutputFile.text.push(inst);
-    }
-  else if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
+  if (STMT->locked) {
+    auto *inst = new asmc::nop();
+    inst->logicalLine = STMT->logicalLine;
+    OutputFile.text.push(inst);
+  } else if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
     this->ImportsOnly(dynamic_cast<ast::Sequence *>(STMT)->Statement1);
     this->ImportsOnly(dynamic_cast<ast::Sequence *>(STMT)->Statement2);
   } else if (dynamic_cast<ast::Import *>(STMT) != nullptr) {
