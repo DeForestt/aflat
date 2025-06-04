@@ -11,6 +11,8 @@ file(GLOB_RECURSE all_SRC
 )
 file(GLOB_RECURSE lsp_SRC
     src/lsp/*.cpp
+    src/Scanner.cpp
+    src/Exceptions.cpp
 )
 list(REMOVE_ITEM all_SRC ${lsp_SRC})
 set(aflat_SRC ${all_SRC})

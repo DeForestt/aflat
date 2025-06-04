@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_set>
 #include <sstream>
+#include "Scanner.hpp"
 
 using json = nlohmann::json;
 
@@ -40,42 +41,45 @@ static std::vector<std::string> extractSymbols(const std::string &text) {
 }
 
 static json makeSemanticTokens(const std::string &text,
-                               const std::vector<std::string> &keywords,
-                               const std::vector<std::string> &vars) {
+                               const std::vector<std::string> &keywords) {
     json data = json::array();
-    std::unordered_set<std::string> varSet(vars.begin(), vars.end());
-    int prevLine = 0;
-    int prevChar = 0;
-    std::regex word(R"([A-Za-z_][A-Za-z0-9_]*)");
+    lex::Lexer lexer;
+    auto tokens = lexer.Scan(text);
+
+    std::vector<std::string> lines;
     std::istringstream iss(text);
     std::string line;
-    int lineNum = 0;
     while (std::getline(iss, line)) {
-        auto begin = std::sregex_iterator(line.begin(), line.end(), word);
-        auto end = std::sregex_iterator();
-        for (auto it = begin; it != end; ++it) {
-            std::string w = (*it).str();
-            int col = (*it).position();
-            int type = -1;
-            if (std::find(keywords.begin(), keywords.end(), w) != keywords.end()) {
-                type = 0; // keyword
-            } else if (varSet.count(w)) {
-                type = 1; // variable
-            }
-            if (type >= 0) {
-                int deltaLine = lineNum - prevLine;
-                int deltaStart = (deltaLine == 0) ? col - prevChar : col;
-                data.push_back(deltaLine);
-                data.push_back(deltaStart);
-                data.push_back((*it).length());
-                data.push_back(type);
-                data.push_back(0);
-                prevLine = lineNum;
-                prevChar = col;
-            }
-        }
-        lineNum++;
+        lines.push_back(line);
     }
+    std::vector<size_t> positions(lines.size(), 0);
+    int prevLine = 0;
+    int prevChar = 0;
+
+    for (int i = 0; i < tokens.size(); ++i) {
+        auto *tok = tokens.get(i);
+        auto *obj = dynamic_cast<lex::LObj *>(tok);
+        if (!obj)
+            continue;
+        int lineIdx = tok->lineCount - 1;
+        if (lineIdx < 0 || lineIdx >= static_cast<int>(lines.size()))
+            continue;
+        size_t pos = lines[lineIdx].find(obj->meta, positions[lineIdx]);
+        if (pos == std::string::npos)
+            continue;
+        positions[lineIdx] = pos + obj->meta.size();
+        int type = std::find(keywords.begin(), keywords.end(), obj->meta) != keywords.end() ? 0 : 1;
+        int deltaLine = lineIdx - prevLine;
+        int deltaStart = (deltaLine == 0) ? static_cast<int>(pos) - prevChar : static_cast<int>(pos);
+        data.push_back(deltaLine);
+        data.push_back(deltaStart);
+        data.push_back(obj->meta.size());
+        data.push_back(type);
+        data.push_back(0);
+        prevLine = lineIdx;
+        prevChar = pos;
+    }
+
     return data;
 }
 
@@ -207,8 +211,7 @@ json LspServer::process(const json &request) {
         std::string uri = params["textDocument"]["uri"].get<std::string>();
         json tokenResult;
         if (documents.count(uri)) {
-            tokenResult["data"] = makeSemanticTokens(documents[uri], keywords,
-                                                     symbols[uri]);
+            tokenResult["data"] = makeSemanticTokens(documents[uri], keywords);
         } else {
             tokenResult["data"] = json::array();
         }
