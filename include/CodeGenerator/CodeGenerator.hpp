@@ -74,7 +74,7 @@ class Enum : public Type {
     std::string name;
     int value;
     EnumValue() = default;
-    EnumValue(std::string name, int value) : name(name), value(value){};
+    EnumValue(std::string name, int value) : name(name), value(value) {};
   };
 
   Enum();
@@ -97,6 +97,7 @@ class CodeGenerator {
   bool globalScope = true;
   bool inFunction = false;
   bool returnFlag = false;
+  bool errorFlag = false;
   HashMap<ast::Statement *> includedMemo;
   HashMap<ast::Statement *> includedClasses;
   HashMap<std::string> nameSpaceTable;
@@ -156,6 +157,7 @@ class CodeGenerator {
   void alert(std::string message, bool error = true);
   CodeGenerator(std::string moduleId, parse::Parser &parser);
   asmc::File *deScope(gen::Symbol &sym);
+  bool hasError() const { return errorFlag; }
 };
 }  // namespace gen
 

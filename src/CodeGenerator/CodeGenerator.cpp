@@ -11,6 +11,7 @@
 #include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
+#include "Exceptions.hpp"
 #include "Scanner.hpp"
 
 using namespace gen::utils;
@@ -62,6 +63,7 @@ std::string getUUID() {
 
 void gen::CodeGenerator::alert(std::string message, bool error = true) {
   if (error) {
+    this->errorFlag = true;
     std::cout << "Error: on line " << this->logicalLine << ": ";
     if (this->scope != nullptr) {
       std::cout << "in class " << this->scope->Ident << ": ";
@@ -2072,7 +2074,11 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
     inst->logicalLine = this->logicalLine;
     OutputFile.text.push(inst);
   } else
-    OutputFile << STMT->generate(*this).file;
+    try {
+      OutputFile << STMT->generate(*this).file;
+    } catch (err::Exception &e) {
+      this->errorFlag = true;
+    }
 
   return OutputFile;
 }
