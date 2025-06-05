@@ -248,7 +248,7 @@ int sleep(const int seconds, *const int nanoseconds){
 /*
  * _FCstr utility function to format a c string
  */
-adr _fCstr(const adr fmt, * const adr args) {
+string _fCstr(const adr fmt, * const adr args) {
     const let s = new string(fmt);
     const let ret = st.fString(s, args);
     return ret;
