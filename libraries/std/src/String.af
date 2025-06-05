@@ -392,9 +392,6 @@ safe dynamic class string {
     public bool debug = false;
 
     string init(const adr head) {
-        if my.head != NULL {
-            free(my.head);
-        };
         my.head = malloc(str.len(head) + 1);
         memcpy(my.head, head, str.len(head) + 1);
         my.refcount = 1;

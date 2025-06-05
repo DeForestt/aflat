@@ -4,16 +4,16 @@
 import {print, printInt} from "io" under io;
 import LinkedList from "Collections";
 import string from "String";
-import {printString} from "String" under str;
+import {print} from "String" under str;
 
 mutable int _passes = 0;
 mutable int _failures = 0;
 
 class Expectation {
-    private generic value = value;
+    private any value = value;
     private bool negate = false;
 
-    Expectation init(const generic value) {
+    Expectation init(const any value) {
         return my;
     };
 
@@ -23,7 +23,7 @@ class Expectation {
         return e;
     };
 
-    bool toBe(const generic expected) {
+    bool toBe(const any expected) {
         bool result = my.value == expected;
         if my.negate {
             result = !result;
@@ -39,21 +39,21 @@ class Expectation {
     };
 };
 
-export Expectation expect(const generic value) {
+export Expectation expect(const any value) {
     return new Expectation(value);
 };
 
 class JestTest {
     private string name = new string(name);
-    private adr fn = fn;
+    private adr func = func;
 
-    JestTest init(const adr name, const adr fn) {
+    JestTest init(const adr name, const adr func) {
         return my;
     };
 
     bool run() {
         str.print(`Running {my.name}: `);
-        const let foo = my.fn;
+        const let foo = my.func;
         const bool res = foo();
         if res {
             io.print("OK\n", 'g');
@@ -67,7 +67,7 @@ class JestTest {
 };
 
 class Suite {
-    private string name = new string(name);
+    private adr name = name;
     private LinkedList tests = new LinkedList();
     private adr beforeAll = NULL;
     private adr afterAll = NULL;
@@ -78,20 +78,21 @@ class Suite {
         return my;
     };
 
-    void addTest(const adr name, const adr fn) {
-        my.tests.append(new JestTest(name, fn));
+    void addTest(const adr name, const adr func) {
+        my.tests.append(new JestTest(name, func));
     };
 
-    void setBeforeAll(const adr fn) { my.beforeAll = fn; };
-    void setAfterAll(const adr fn) { my.afterAll = fn; };
-    void setBeforeEach(const adr fn) { my.beforeEach = fn; };
-    void setAfterEach(const adr fn) { my.afterEach = fn; };
+    void setBeforeAll(const adr func) { my.beforeAll = func; };
+    void setAfterAll(const adr func) { my.afterAll = func; };
+    void setBeforeEach(const adr func) { my.beforeEach = func; };
+    void setAfterEach(const adr func) { my.afterEach = func; };
 
     int run() {
         if my.beforeAll != NULL {
             const let ba = my.beforeAll;
             ba();
         };
+        
         str.print(`\nSuite {my.name}\n`);
         for int i = 0; i < my.tests.size(); i++ {
             const JestTest t = my.tests.get(i);
@@ -117,8 +118,8 @@ export Suite describe(const adr name) {
     return new Suite(name);
 };
 
-export bool test(const adr name, const adr fn) {
-    const JestTest t = new JestTest(name, fn);
+export bool case(const adr name, const adr func) {
+    const JestTest t = new JestTest(name, func);
     return t.run();
 };
 
