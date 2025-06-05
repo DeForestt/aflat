@@ -251,8 +251,7 @@ int sleep(const int seconds, *const int nanoseconds){
 adr _fCstr(const adr fmt, * const adr args) {
     const let s = new string(fmt);
     const let ret = st.fString(s, args);
-    const let out = ret.copy();
-    return out.cstr();
+    return ret;
 };
 
 adr create(const int size, * const any value) {

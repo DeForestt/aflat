@@ -107,6 +107,5 @@ int sleep(const int seconds, * const int nanoseconds){
  */
 adr _fCstr(const adr fmt, * const adr args) {
     const let ret = st.fString(new string(fmt), args);
-    const let out = ret.copy();
-    return out.cstr();
+    return ret;
 };
