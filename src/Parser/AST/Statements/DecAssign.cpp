@@ -69,6 +69,10 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
         };
       };
 
+      if (dec->type.typeName == "string" && expr.type == "adr") {
+        expr = generator.GenExpr(generator.imply(this->expr, "string"), file);
+      }
+
       if (dec->type.typeName == "let") {
         if (expr.type == "generic" || expr.type == "any" ||
             expr.type == "let") {
