@@ -252,7 +252,7 @@ adr _fCstr(const adr fmt, * const adr args) {
     const let s = new string(fmt);
     const let ret = st.fString(s, args);
     const let out = ret.copy();
-    return out.get();
+    return out.cstr();
 };
 
 adr create(const int size, * const any value) {
