@@ -927,7 +927,7 @@ export string fString(const string fmt, * adr args) {
         if fmt.at(i) == '%' {
             i++;
             if fmt.at(i) == 'a' {
-                newString = newString + new String(args as adr);
+                newString = newString + new string(args as adr);
                 args = args + adr;
             } else if fmt.at(i) == 'c' {
                 newString = newString.push(args as char);
