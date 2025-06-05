@@ -291,6 +291,7 @@ class File {
   void operator<<(asmc::File file);
   void operator>>(asmc::File file);
   void cstitch(asmc::File file);
+  void optimize();
   void collect();
   File();
 };

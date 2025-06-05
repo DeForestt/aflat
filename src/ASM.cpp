@@ -404,6 +404,26 @@ void asmc::File::collect() {
     this->cstitch(*this->lambdas);
     delete this->lambdas;
   }
+  this->optimize();
+}
+
+void asmc::File::optimize() {
+  links::LinkedList<asmc::Instruction *> optimized;
+  while (this->text.head != nullptr) {
+    auto inst = this->text.pop();
+    bool skip = false;
+    if (dynamic_cast<asmc::nop *>(inst) != nullptr) {
+      skip = true;
+    } else if (auto mov = dynamic_cast<asmc::Mov *>(inst); mov != nullptr) {
+      if (mov->from == mov->to) skip = true;
+    }
+    if (skip) {
+      delete inst;
+    } else {
+      optimized.append(inst);
+    }
+  }
+  this->text = optimized;
 }
 
 asmc::File::File() {
