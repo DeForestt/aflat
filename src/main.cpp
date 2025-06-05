@@ -405,7 +405,8 @@ void buildTemplate(std::string value) {
 
   outfile = std::ofstream(value + "/src/test/test.af");
   outfile << ".needs <std>\n\n";
-  outfile << "import {test, report, expect, describe} from \"ATest.af\" under test;\n"
+  outfile << "import {test, report, expect, describe} from \"ATest.af\" under "
+             "test;\n"
              "import string from \"String\";\n\n"
              "bool simpleTest() : test.test(\"simpleTest\") {\n"
              "\ttest.expect(1).toBe(1);\n"
@@ -460,7 +461,8 @@ void libTemplate(std::string value) {
 
   outfile = std::ofstream(value + "/src/test/test.af");
   outfile << ".needs <std>\n\n";
-  outfile << "import {test, report, expect, describe} from \"ATest.af\" under test;\n"
+  outfile << "import {test, report, expect, describe} from \"ATest.af\" under "
+             "test;\n"
              "import string from \"String\";\n"
              "import {"
           << value << "} from \"src/mod\" under lib"
@@ -468,15 +470,17 @@ void libTemplate(std::string value) {
              "bool test_"
           << value << "() : test.test(\"test_" << value
           << "\") {\n"
-             "\ttest.expect(" << value << "(1, 2)).toBe(3);\n"
+             "\ttest.expect("
+          << value
+          << "(1, 2)).toBe(3);\n"
              "\treturn true;\n};\n\n"
              "int main() {\n"
              "\tSuite suite = test.describe(\""
           << value
           << " Test Suite\");\n"
              "\tsuite.addTest(\"test_"
-          << value
-          << "\", test_" << value << ");\n"
+          << value << "\", test_" << value
+          << ");\n"
              "\tsuite.run();\n"
              "\ttest.report();\n"
              "\treturn 0;\n"
