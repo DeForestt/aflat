@@ -405,21 +405,21 @@ void buildTemplate(std::string value) {
 
   outfile = std::ofstream(value + "/src/test/test.af");
   outfile << ".needs <std>\n\n";
-  outfile << "import {case, report, require} from \"ATest.af\" under test;\n"
-             "import string from \"String\";\n"
-             "import TestSuite from \"ATest.af\";\n\n"
-             "bool simpleTest() : test.case(\"simpleTest\") {\n"
-             "\ttest.require(3 != 3, \"3 is 3\");\n"
-             "\treturn 1 == 1;\n};\n\n";
+  outfile << "import {test, report, expect, describe} from \"ATest.af\" under test;\n"
+             "import string from \"String\";\n\n"
+             "bool simpleTest() : test.test(\"simpleTest\") {\n"
+             "\ttest.expect(1).toBe(1);\n"
+             "\treturn true;\n};\n\n";
 
-  outfile << "bool simpleFail() : test.case(\"simpleFail\") {\n"
-             "\treturn 1 == 2;\n"
+  outfile << "bool simpleFail() : test.test(\"simpleFail\") {\n"
+             "\ttest.expect(1).toBe(2);\n"
+             "\treturn false;\n"
              "};\n\n";
 
   outfile << "int main() {\n"
-             "\tTestSuite suite = new TestSuite(\"Simple Test Suite\");\n"
-             "\tsuite.addCase(simpleTest);\n"
-             "\tsuite.addCase(simpleFail);\n"
+             "\tSuite suite = test.describe(\"Simple Test Suite\");\n"
+             "\tsuite.addTest(\"simpleTest\", simpleTest);\n"
+             "\tsuite.addTest(\"simpleFail\", simpleFail);\n"
              "\tsuite.run();\n"
              "\ttest.report();\n"
              "\treturn 0;\n"
@@ -460,27 +460,23 @@ void libTemplate(std::string value) {
 
   outfile = std::ofstream(value + "/src/test/test.af");
   outfile << ".needs <std>\n\n";
-  outfile << "import {case, report, require} from \"ATest.af\" under test;\n"
+  outfile << "import {test, report, expect, describe} from \"ATest.af\" under test;\n"
              "import string from \"String\";\n"
-             "import TestSuite from \"ATest.af\";\n"
              "import {"
           << value << "} from \"src/mod\" under lib"
           << ";\n\n"
              "bool test_"
-          << value << "() : test.case(\"test_" << value
-          << "\") "
-             "{\n"
-             "\t return test.require("
-          << value
-          << "(1, 2) == 3, \"1 + 2 = 3\");"
-             "\n};\n\n"
+          << value << "() : test.test(\"test_" << value
+          << "\") {\n"
+             "\ttest.expect(" << value << "(1, 2)).toBe(3);\n"
+             "\treturn true;\n};\n\n"
              "int main() {\n"
-             "\tTestSuite suite = new TestSuite(\""
+             "\tSuite suite = test.describe(\""
           << value
           << " Test Suite\");\n"
-             "\tsuite.addCase(test_"
+             "\tsuite.addTest(\"test_"
           << value
-          << ");\n"
+          << "\", test_" << value << ");\n"
              "\tsuite.run();\n"
              "\ttest.report();\n"
              "\treturn 0;\n"
