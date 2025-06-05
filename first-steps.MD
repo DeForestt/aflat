@@ -24,7 +24,7 @@ Open up the `main.af` file in your favorite text editor.  The file will look som
 .needs <std>
 import * from "io" under io;
 
-int main() {
+fn main() -> int {
     io.print("Hello, world!\n");
     return 0;
 };
@@ -46,7 +46,7 @@ Now we will make a few edits to the project.  First, it would be nice for the wo
 .needs <std>
 import * from "io" under io;
 
-int main() {
+fn main() -> int {
     io.print("Hello, world!\n");
     io.print("From, The aflat Team\n");
     return 0;
@@ -61,7 +61,7 @@ When you show your program to your friends, it will be nice to have the program 
 import string from "String";
 import { readString, print } from "String" under st;
 
-int main(){
+fn main() -> int {
 	let name = st.readString("What is your name? ");
 	st.print(`Hello, {name}.\nFrom the AFlat Team.\n`);
 	return 0;
@@ -84,7 +84,7 @@ I take it back.  We don't want other people to see our program... in fact, we wa
 import string from "String";
 import { readString, print } from "String" under st;
 
-int main(){
+fn main() -> int {
 	let name = st.readString("What is your name? ");
 
 	if name == "Name" {
@@ -108,7 +108,7 @@ import string from "String";
 import { readString, print } from "String" under st;
 import Error from "Utils/Error"; // we need to import the Error type to use it in the match call for error handling
 
-int main(){
+fn main() -> int {
 		// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
 	int secret = 42; // one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
 	
@@ -140,7 +140,7 @@ import string from "String";
 import { readString, print } from "String" under st;
 import Error from "Utils/Error";
 
-int main(){
+fn main() -> int {
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
 	int secret = 42; // one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
 	
@@ -187,7 +187,7 @@ import { readString, print } from "String" under st;
 import Error from "Utils/Error";
 import Random from "math";
 
-int main(){
+fn main() -> int {
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
 	int secret = Random().nextInt(100); // generate a random number between 0 and 99
 	
@@ -250,7 +250,7 @@ class Student {
 	mutable int average;
 };
 
-int main() {
+fn main() -> int {
 	Student s = Student();
 	s.id = 1;
 	s.name = "John";
@@ -280,7 +280,7 @@ class Student {
 	mutable int average;
 };
 
-int main() {
+fn main() -> int {
 	Student s = {
 		1,
 		`John`,
@@ -307,7 +307,7 @@ class Student {
 	mutable string name = "";
 	mutable int average;
 
-	Student init(int id, string name, int average){
+	fn init(int id, string name, int average) -> Student {
 		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
@@ -315,7 +315,7 @@ class Student {
 	};
 };
 
-int main() {
+fn main() -> int {
 	Student s = Student(1, "John", 90);
 	str.print(`Student: {s.name} id: {s.id} average: {s.average}`);
 };
@@ -335,7 +335,7 @@ class Student {
 	mutable string name = "";
 	mutable int average;
 
-	Student init(int id, string name, int average){
+	fn init(int id, string name, int average) -> Student { 
 		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
@@ -343,7 +343,7 @@ class Student {
 	};
 };
 
-int main() {
+fn main() -> int {
 	Student JohnDoe = Student(1, "John Doe", 90);
 	Student JaneDoe = Student(2, "Jane Doe", 95);
 	str.print(`Student: {JohnDoe.name} id: {JohnDoe.id} average: {JohnDoe.average}\n`);
@@ -364,19 +364,19 @@ class Student {
 	mutable string name = "";
 	mutable int average;
 
-	Student init(int id, string name, int average){
+	fn init(int id, string name, int average) -> Student { 
 		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
 	};
 
-	void printInfo() {
+	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 };
 
-int main() {
+fn main() -> int {
 	Student JohnDoe = Student(1, "John Doe", 90);
 	Student JaneDoe = Student(2, "Jane Doe", 95);
 
@@ -402,19 +402,19 @@ class Student {
 	mutable string name = "";
 	mutable int average;
 
-	Student init(int id, string name, int average){
+	fn init(int id, string name, int average) -> Student { 
 		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
 	};
 
-	void printInfo() {
+	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 };
 
-int main() {
+fn main() -> int {
 	List roster = List(Student);
 	roster.pushBack(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
 	roster.pushBack(Student(2, "Jane Doe", 80));
@@ -447,7 +447,7 @@ class Student {
 	mutable string name = "";
 	mutable int average;
 
-	Student init(int id, string name, int average){
+	fn init(int id, string name, int average) -> Student { 
 		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
@@ -455,7 +455,7 @@ class Student {
 	};
 	
 
-	void printInfo() {
+	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 };
@@ -471,7 +471,7 @@ import List from "Collections";
 import Scroller from "Collections/Scroller"; // We need to import the Scroller class to iterate over the list
 import Student from "./src/Student"; // Then we import the Student class from the Student module. Note that for project level imports, we need to use the relative path to the project root
 
-int main() {
+fn main() -> int {
 	List roster = List(Student);
 	roster.pushBack(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
 	roster.pushBack(Student(2, "Jane Doe", 80));
@@ -507,7 +507,7 @@ class Student {
 	mutable int average;
 	List assignments = new List(Assignment);
 
-	Student init(int id, string name, int average){
+	fn init(int id, string name, int average) -> Student { 
 		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
@@ -515,7 +515,7 @@ class Student {
 	};
 	
 
-	void printInfo() {
+	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 };
@@ -536,7 +536,7 @@ class Student {
 	mutable int average;
 	List assignments = new List(Assignment);
 
-	Student init(int id, string name, int average){
+	fn init(int id, string name, int average) -> Student { 
 		str.print("The constructor has just been called!!!\n");
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
@@ -544,11 +544,11 @@ class Student {
 	};
 	
 
-	void printInfo() {
+	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 
-	void addAssignment(Assignment assignment){
+	fn addAssignment(Assignment assignment) -> void {
         my.assignments.pushBack(assignment);
     };
 };
@@ -563,7 +563,7 @@ mutable int totalPoints = 0; // add this code to the student class
 
 now we can calculate the average by dividing the total by the number of assignments.
 ```js
-    void addAssignment(Assignment assignment){
+    fn addAssignment(Assignment assignment) -> void {
         my.assignments.pushBack(assignment);
         my.totalPoints = my.totalPoints + assignment.grade;
 		int count = my.assignments.getCount();
@@ -582,7 +582,7 @@ import List from "Collections";
 import Student from "./src/Student";
 import Assignment from "./src/Assignment";
 
-int main(){
+fn main() -> int {
 	let s = new Student(1, "John Doe", 0);
 
 	s.addAssignment(Assignment("Math test", 100));
@@ -611,18 +611,18 @@ class Student {
 	private mutable int totalPoints = 0;
 	List assignments = new List(Assignment);
 
-	Student init(int id, string name, int average){
+	fn init(int id, string name, int average) -> Student { 
 		my.id = id; // 'my' is a way of accessing the fields of the class
 		my.name = name;
 		my.average = average;
 	};
 	
 
-	void printInfo() {
+	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 
-    void addAssignment(Assignment assignment){
+    fn addAssignment(Assignment assignment) -> void {
         my.assignments.pushBack(assignment);
         my.totalPoints = my.totalPoints + assignment.grade;
 		int count = my.assignments.getCount();
@@ -635,7 +635,7 @@ Now if you try to use the average field outside of the student class, you will g
 If you want to access the average field, you can create a getter method that returns the average.  The getter method should look like this:
 
 ```js
-int getAverage(){
+fn getAverage() -> int {
 	return my.average;
 };
 ```
@@ -660,7 +660,7 @@ Now we will make our main method and create the student roster list
 
 
 ```js
-int main(){
+fn main() -> int {
 	List roster = new List(Student);
 };
 ```
@@ -668,7 +668,7 @@ int main(){
 Now we should add an infinite loop to our main method.  This loop will keep running until the user chooses to quit.
 
 ```js
-int main(){
+fn main() -> int {
 	List roster = new List(Student);
 
 	while true { // things inside of this loop will run forever
@@ -680,7 +680,7 @@ int main(){
 Inside of the loop you can print out all of the student information.  You can use the printInfo method from the student class.
 
 ```js
-int main(){
+fn main() -> int {
 	List roster = new List(Student);
 
 	while true { // things inside of this loop will run forever
@@ -702,7 +702,7 @@ string getInfo() {
 now we will print out a menu to the user: 
 
 ```js
-int main(){
+fn main() -> int {
 	let roster = List(Student);
 
 	while true {
@@ -721,7 +721,7 @@ Now we need to create a function to add a student to the roster.  The function w
 
 ```js
 // This a function to add a student to the list.
-void addStudent(List roster) {
+fn addStudent(List roster) -> void {
 	let name = str.readString("Enter student name: ");
 	let id = roster.getCount() + 1;
 	roster.pushBack(Student(id, name, 0));
@@ -731,7 +731,7 @@ void addStudent(List roster) {
 Now we can call it from the main loop.
 
 ```js
-int main(){
+fn main() -> int {
 	let roster = List(Student);
 
 	while true {
@@ -753,7 +753,7 @@ Next we will add an addGrade function that will add an assignment to the student
 
 ```js
 // Add Grade
-bool addGrade(List roster) {
+fn addGrade(List roster) -> bool {
 	let id = str.readString("Enter student id or name: ");
 	
 	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => { return s.id == i.toInt().resolve([int value] => return value, NULL) }, id)
@@ -784,7 +784,7 @@ bool addGrade(List roster) {
 Now we can call it from the main function.  and we can call the addGrade function to the main function and add the exit option.
 
 ```js
-int main(){
+fn main() -> int {
 	let roster = List(Student);
 
 	while true {
@@ -825,7 +825,7 @@ import Assignment from "./src/Assignment";
 import Result from "Utils/Result";
 
 // Add Grade
-bool addGrade(List roster) {
+fn addGrade(List roster) -> bool {
 	let id = str.readString("Enter student id or name: ");
 	
 	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => { return s.id == i.toInt().resolve([int value] => return value, NULL) }, id)
@@ -852,13 +852,13 @@ bool addGrade(List roster) {
 };
 
 // This a function to add a student to the list.
-void addStudent(List roster) {
+fn addStudent(List roster) -> void {
 	let name = str.readString("Enter student name: ");
 	let id = roster.getCount() + 1;
 	roster.pushBack(Student(id, name, 0));
 };
 
-int main(){
+fn main() -> int {
 	let roster = List(Student);
 
 	while true {
@@ -898,7 +898,7 @@ To use products, you must import the product class from the `Utils/Results` modu
 example of a function that returns a product:
 
 ```js
-Result divide(int a, int b) {
+fn divide(int a, int b) -> Result {
 	if b == 0
 		return pr.reject("Cannot divide by zero");
 	return pr.accept(a / b);
@@ -910,7 +910,7 @@ When you call a function that returns a product, you call the `resolve()` method
 example of calling a function that returns a product:
 
 ```js
-int main() {
+fn main() -> int {
 	bool hasError = false;
 	// notice that the type must be specified explicitly because Results do not supply any type information.
 	int result = divide(10, 0).resolve([int value] => return value, [string error, adr err] => {
@@ -930,7 +930,7 @@ We will add error handling to the addGrade function.  We will also add a way to 
 Lets take a look at the updated addGrade function:
 ```js
 // Add Grade
-Result addGrade(List roster) {
+fn addGrade(List roster) -> Result {
 	let id = str.readString("Enter student id or name: ");
 	
 	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => { return s.id == i.toInt().resolve([int value] => return value, NULL) }, id)
@@ -962,7 +962,7 @@ Result addGrade(List roster) {
 Now we need to update the main function to handle the product.
 
 ```js
-	int main(){
+	fn main() -> int {
 	let roster = List(Student);
 
 	while true {
@@ -995,3 +995,38 @@ Now we need to update the main function to handle the product.
 ```
 ## Done So Soon?
 Don't worry, more tutorial to come...
+
+## Ownership, References, and Selling
+AFlat uses an explicit ownership model. Objects remain valid until they go out of scope or are deleted with `delete`. Class instances are passed by reference, so assigning them to another variable does not copy the object. You can take mutable or constant references using `mutable` or `const` in front of the reference type.
+
+Example:
+```aflat
+class Data {
+    mutable int value = 10;
+};
+
+fn modifyData(Data d) -> void {
+    d.value = 42;
+};
+
+fn main() -> int {
+    Data d = new Data();
+    modifyData(d); // d is passed by reference
+    str.print(`Updated value: {d.value}\n`);
+    return 0;
+};
+```
+
+The `$` operator transfers ownership, preventing reuse of the original variable.
+```aflat
+fn takeOwnership(mutable int &&a) -> void {
+    print(`Taking ownership of {a}`);
+};
+
+fn main() -> int {
+    int x = 10;
+    takeOwnership($x); // x is now invalid
+    return 0;
+};
+```
+
