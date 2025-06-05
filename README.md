@@ -78,10 +78,24 @@ int main(){
         pointer =: i;                       // the =: operator is used to load a value to a pointer
     };
 
-    a.forEach([adr value]=> io.printInt(value as int)); // the as operator is used to assume the type of a pointer
-	io.printChar('\n');
+a.forEach([adr value]=> io.printInt(value as int)); // the as operator is used to assume the type of a pointer
+        io.printChar('\n');
     return 0;
 };
+```
+
+### LSP server
+The project ships with a lightweight language server that offers hover,
+completion, and basic semantic token highlighting. Keyword suggestions are
+loaded from `lsp/keywords.json` (compiled into the server so it works regardless
+of the current working directory) and symbols defined in the current document
+are also suggested. Semantic tokens are generated for files that have been
+opened with `textDocument/didOpen`. The server speaks standard JSON-RPC 2.0 so
+editors like Neovim can connect directly. Build and run it with:
+```bash
+cmake -S . -B build
+cmake --build build --target aflat-lsp
+./bin/aflat-lsp
 ```
 
 ## Have fun!
