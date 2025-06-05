@@ -1,197 +1,135 @@
 .needs <std>
 .needs <asm>
-import {print, printInt, fPrint} from "io" under io;
+
+import {print, printInt} from "io" under io;
 import LinkedList from "Collections";
-import String, string from "String";
-import {printString, print} from "String" under str;
-import { mills } from "DateTime" under dt;
+import string from "String";
+import {print} from "String" under str;
 
-// keep track of passes and failures
-int passes = 0;
-int failures = 0;
+mutable int _passes = 0;
+mutable int _failures = 0;
 
-int requiresPass = 0;
-int requiresFail = 0;
+class Expectation {
+    private any value = value;
+    private bool negate = false;
 
-export bool case(const adr foo, const adr name, * const any _arg, * const adr _arg2, * const adr arg3, * const adr arg4) {
-    str.print(`\nRunning Test Case {name}: `);
-	const bool result = foo(_arg, _arg2, arg3, arg4);
-
-	if result {
-		io.print("OK\n", 'g');
-        passes = passes + 1;
-	} else {
-		io.print("FAIL\n", 'r');
-        failures = failures + 1;
-	};
-    
-    if requiresPass > 0
-        str.print(`{requiresPass} requires passed.\n`);
-
-    if requiresFail > 0
-        str.print(`{requiresFail} requires failed.\n`);
-        
-    for int i = 0; i < requiresFail; i++ {
-        io.print("-", 'r');
-    };
-    
-    for int i = 0; i < requiresPass; i++ {
-        io.print("+", 'g');
+    Expectation init(const any value) {
+        return my;
     };
 
-    io.print("\n----------------------------------------------------\n");
-    requiresPass = 0;
-    requiresFail = 0;
-    return result;
+    Expectation not() {
+        const Expectation e = new Expectation(my.value);
+        e.negate = !my.negate;
+        return e;
+    };
+
+    bool toBe(const any expected) {
+        bool result = my.value == expected;
+        if my.negate {
+            result = !result;
+        };
+        if result {
+            _passes = _passes + 1;
+            io.print("OK\n", 'g');
+        } else {
+            _failures = _failures + 1;
+            io.print("FAIL\n", 'r');
+        };
+        return result;
+    };
 };
 
-export bool require(const bool result, const string describe) {
-    if result {
-        requiresPass = requiresPass + 1;
-        return true;
-    } else {
-        io.fPrint("\n\tTest require: %s: ", {describe});
-        io.print("FAIL\n", 'r');
-        requiresFail = requiresFail + 1;
-        return false;
+export Expectation expect(const any value) {
+    return new Expectation(value);
+};
+
+class JestTest {
+    private string name = new string(name);
+    private adr func = func;
+
+    JestTest init(const adr name, const adr func) {
+        return my;
     };
+
+    bool run() {
+        str.print(`Running {my.name}: `);
+        const let foo = my.func;
+        const bool res = foo();
+        if res {
+            io.print("OK\n", 'g');
+            _passes = _passes + 1;
+        } else {
+            io.print("FAIL\n", 'r');
+            _failures = _failures + 1;
+        };
+        return res;
+    };
+};
+
+class Suite {
+    private adr name = name;
+    private LinkedList tests = new LinkedList();
+    private adr beforeAll = NULL;
+    private adr afterAll = NULL;
+    private adr beforeEach = NULL;
+    private adr afterEach = NULL;
+
+    Suite init(const adr name) {
+        return my;
+    };
+
+    void addTest(const adr name, const adr func) {
+        my.tests.append(new JestTest(name, func));
+    };
+
+    void setBeforeAll(const adr func) { my.beforeAll = func; };
+    void setAfterAll(const adr func) { my.afterAll = func; };
+    void setBeforeEach(const adr func) { my.beforeEach = func; };
+    void setAfterEach(const adr func) { my.afterEach = func; };
+
+    int run() {
+        if my.beforeAll != NULL {
+            const let ba = my.beforeAll;
+            ba();
+        };
+        
+        str.print(`\nSuite {my.name}\n`);
+        for int i = 0; i < my.tests.size(); i++ {
+            const JestTest t = my.tests.get(i);
+            if my.beforeEach != NULL {
+                const let be = my.beforeEach;
+                be();
+            };
+            t.run();
+            if my.afterEach != NULL {
+                const let ae = my.afterEach;
+                ae();
+            };
+        };
+        if my.afterAll != NULL {
+            const let aa = my.afterAll;
+            aa();
+        };
+        return 0;
+    };
+};
+
+export Suite describe(const adr name) {
+    return new Suite(name);
+};
+
+export bool case(const adr name, const adr func) {
+    const JestTest t = new JestTest(name, func);
+    return t.run();
 };
 
 export int report() {
-    io.print("Passed tests: "); io.printInt(passes); io.print("\n");
-    io.print("Failed tests: "); io.printInt(failures); io.print("\n");
-
-    for int i = 0; i < failures; i++ {
-        io.print("-", 'r');
-    };
-    
-    for int i = 0; i < passes; i++ {
-        io.print("+", 'g');
-    };
-    io.print("\n");
-    
-    if failures > 0 {
-        sys_write(2, " ", 1);
+    io.print("Passed tests: "); io.printInt(_passes); io.print("\n");
+    io.print("Failed tests: "); io.printInt(_failures); io.print("\n");
+    if _failures > 0 {
         return 1;
     } else {
         return 0;
     };
 };
 
-export any benchmarked(const adr foo, * mutable adr functionName, *const  any arg1, *const any arg2, *const any arg3, *const any arg4) {
-	if (functionName == NULL) {
-		functionName = "function";
-	};
-	const int start = dt.mills();
-	const any res = foo(arg1, arg2, arg3, arg4);
-	const int end = dt.mills();
-	str.print(`\n {functionName} runtime: {end - start}ms\n`);
-	return res;
-};
-
-class TestSuite {
-    private LinkedList cases = new LinkedList();
-    private LinkedList fixtures = new LinkedList();
-    private adr beforeAll = beforeAll;
-    private adr cleanup = cleanup;
-
-    string name = new string(name);
-
-    TestSuite init(const adr name, * const adr beforeAll, * const adr cleanup) {
-        return my;
-    };
-
-    void addFixture(const adr fixture) {
-        if my.fixtures.size() < 4 {
-            my.fixtures.append(fixture);
-        } else {
-            str.print(`Too many fixtures for testSuite {my.name} only 4 allowed\n`);
-            panic("Exceeded max fixtures exiting tests");
-        };
-    };
-
-    int addCase(const adr foo) {
-        my.cases.append(foo);
-        return 0;
-    };
-
-    int run() {
-        adr[4] fixtures = {NULL, NULL, NULL, NULL};
-        for int i = 0; i < my.fixtures.size(); i++ {
-            fixtures[i] = my.fixtures.get(i);
-        };
-        str.print(`\nRunning test suite: {my.name}\n\n`);
-        for int i = 0; i < my.cases.size(); i++ {
-            const adr foo = my.cases.get(i);
-            if my.beforeAll != NULL {
-                const let beforeAll = my.beforeAll;
-                beforeAll(fixtures[0], fixtures[1], fixtures[2], fixtures[3]);
-            };
-
-            foo(fixtures[0], fixtures[1], fixtures[2], fixtures[3]);
-        };
-        return 0;
-    };
-
-    void del() {
-        adr[4] fixtures = {NULL, NULL, NULL, NULL};
-        for int i = 0; i < my.fixtures.size(); i++ {
-            fixtures[i] = my.fixtures.get(i);
-        };
-        delete my.cases;
-        if my.cleanup != NULL {
-            const let cleanup = my.cleanup;
-            cleanup(fixtures[0], fixtures[1], fixtures[2], fixtures[3]);
-        };
-    };
-
-};
-
-class Mockable {
-	private adr foo = foo;
-	private adr mockImpl = NULL;
-	private bool mock = false;
-	private int callCount = 0;
-
-	Mockable init(const adr foo) {
-		return my;
-	};
-
-	void mock(const adr mockImpl) {
-		my.mockImpl = mockImpl;
-		my.mock = true;
-	};
-
-	void unMock() {
-		my.mock = false;
-		my.mockImpl = NULL;
-	};
-
-	any _call(const adr ref, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
-		my.callCount = my.callCount + 1;
-		const let mockImpl = my.mockImpl;
-		const let foo = my.foo;
-		if (my.mock) {
-			return mockImpl(ref, arg1, arg2, arg3, arg4);
-		} else {
-			return foo(ref, arg1, arg2, arg3, arg4);
-		};
-	};
-
-	bool wasCalled() {
-		return my.callCount > 0;
-	};
-
-	int getCallCount() {
-		return my.callCount;
-	};
-
-	void resetCallCount() {
-		my.callCount = 0;
-	};
-
-	void reset() {
-		my.resetCallCount();
-		my.unMock();
-	};
-};
