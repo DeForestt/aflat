@@ -1,197 +1,113 @@
 .needs <std>
 .needs <asm>
-import {print, printInt, fPrint} from "io" under io;
-import LinkedList from "Collections";
-import String, string from "String";
-import {printString, print} from "String" under str;
-import { mills } from "DateTime" under dt;
 
-// keep track of passes and failures
+import {print, printInt, fPrint} from "io" under io;
+import {print as strPrint} from "String" under str;
+
 int passes = 0;
 int failures = 0;
 
-int requiresPass = 0;
-int requiresFail = 0;
+adr _beforeAll = NULL;
+adr _afterAll = NULL;
+adr _beforeEach = NULL;
+adr _afterEach = NULL;
 
-export bool case(const adr foo, const adr name, * const any _arg, * const adr _arg2, * const adr arg3, * const adr arg4) {
-    str.print(`\nRunning Test Case {name}: `);
-	const bool result = foo(_arg, _arg2, arg3, arg4);
+class Expect {
+    private any value = value;
 
-	if result {
-		io.print("OK\n", 'g');
-        passes = passes + 1;
-	} else {
-		io.print("FAIL\n", 'r');
-        failures = failures + 1;
-	};
-    
-    if requiresPass > 0
-        str.print(`{requiresPass} requires passed.\n`);
-
-    if requiresFail > 0
-        str.print(`{requiresFail} requires failed.\n`);
-        
-    for int i = 0; i < requiresFail; i++ {
-        io.print("-", 'r');
-    };
-    
-    for int i = 0; i < requiresPass; i++ {
-        io.print("+", 'g');
-    };
-
-    io.print("\n----------------------------------------------------\n");
-    requiresPass = 0;
-    requiresFail = 0;
-    return result;
-};
-
-export bool require(const bool result, const string describe) {
-    if result {
-        requiresPass = requiresPass + 1;
-        return true;
-    } else {
-        io.fPrint("\n\tTest require: %s: ", {describe});
-        io.print("FAIL\n", 'r');
-        requiresFail = requiresFail + 1;
-        return false;
-    };
-};
-
-export int report() {
-    io.print("Passed tests: "); io.printInt(passes); io.print("\n");
-    io.print("Failed tests: "); io.printInt(failures); io.print("\n");
-
-    for int i = 0; i < failures; i++ {
-        io.print("-", 'r');
-    };
-    
-    for int i = 0; i < passes; i++ {
-        io.print("+", 'g');
-    };
-    io.print("\n");
-    
-    if failures > 0 {
-        sys_write(2, " ", 1);
-        return 1;
-    } else {
-        return 0;
-    };
-};
-
-export any benchmarked(const adr foo, * mutable adr functionName, *const  any arg1, *const any arg2, *const any arg3, *const any arg4) {
-	if (functionName == NULL) {
-		functionName = "function";
-	};
-	const int start = dt.mills();
-	const any res = foo(arg1, arg2, arg3, arg4);
-	const int end = dt.mills();
-	str.print(`\n {functionName} runtime: {end - start}ms\n`);
-	return res;
-};
-
-class TestSuite {
-    private LinkedList cases = new LinkedList();
-    private LinkedList fixtures = new LinkedList();
-    private adr beforeAll = beforeAll;
-    private adr cleanup = cleanup;
-
-    string name = new string(name);
-
-    TestSuite init(const adr name, * const adr beforeAll, * const adr cleanup) {
+    Expect init(const any value) {
         return my;
     };
 
-    void addFixture(const adr fixture) {
-        if my.fixtures.size() < 4 {
-            my.fixtures.append(fixture);
+    bool toBe(const any expected) {
+        if my.value == expected {
+            return true;
         } else {
-            str.print(`Too many fixtures for testSuite {my.name} only 4 allowed\n`);
-            panic("Exceeded max fixtures exiting tests");
+            return false;
         };
     };
 
-    int addCase(const adr foo) {
-        my.cases.append(foo);
-        return 0;
+    bool toEqual(const any expected) {
+        return my.toBe(expected);
     };
+};
 
-    int run() {
-        adr[4] fixtures = {NULL, NULL, NULL, NULL};
-        for int i = 0; i < my.fixtures.size(); i++ {
-            fixtures[i] = my.fixtures.get(i);
-        };
-        str.print(`\nRunning test suite: {my.name}\n\n`);
-        for int i = 0; i < my.cases.size(); i++ {
-            const adr foo = my.cases.get(i);
-            if my.beforeAll != NULL {
-                const let beforeAll = my.beforeAll;
-                beforeAll(fixtures[0], fixtures[1], fixtures[2], fixtures[3]);
-            };
+export Expect expect(const any value) {
+    return new Expect(value);
+};
 
-            foo(fixtures[0], fixtures[1], fixtures[2], fixtures[3]);
-        };
-        return 0;
+export void beforeAll(const adr fn) { _beforeAll = fn; };
+export void afterAll(const adr fn) { _afterAll = fn; };
+export void beforeEach(const adr fn) { _beforeEach = fn; };
+export void afterEach(const adr fn) { _afterEach = fn; };
+
+export void describe(const adr name, const adr fn) {
+    strPrint(`\n${name}\n`);
+    if _beforeAll != NULL { const let f = _beforeAll; f(NULL, NULL, NULL, NULL); };
+    fn(NULL, NULL, NULL, NULL);
+    if _afterAll != NULL { const let f = _afterAll; f(NULL, NULL, NULL, NULL); };
+};
+
+export void test(const adr name, const adr fn) {
+    if _beforeEach != NULL { const let f = _beforeEach; f(NULL, NULL, NULL, NULL); };
+    strPrint(`  ${name}: `);
+    const bool result = fn(NULL, NULL, NULL, NULL);
+    if result {
+        io.print("OK\n", 'g');
+        passes = passes + 1;
+    } else {
+        io.print("FAIL\n", 'r');
+        failures = failures + 1;
     };
+    if _afterEach != NULL { const let f = _afterEach; f(NULL, NULL, NULL, NULL); };
+};
 
-    void del() {
-        adr[4] fixtures = {NULL, NULL, NULL, NULL};
-        for int i = 0; i < my.fixtures.size(); i++ {
-            fixtures[i] = my.fixtures.get(i);
-        };
-        delete my.cases;
-        if my.cleanup != NULL {
-            const let cleanup = my.cleanup;
-            cleanup(fixtures[0], fixtures[1], fixtures[2], fixtures[3]);
-        };
-    };
-
+export int report() {
+    io.print("Passed: "); io.printInt(passes); io.print("\n");
+    io.print("Failed: "); io.printInt(failures); io.print("\n");
+    return failures;
 };
 
 class Mockable {
-	private adr foo = foo;
-	private adr mockImpl = NULL;
-	private bool mock = false;
-	private int callCount = 0;
+    private adr impl = impl;
+    private adr mockImpl = NULL;
+    private bool useMock = false;
+    private int callCount = 0;
 
-	Mockable init(const adr foo) {
-		return my;
-	};
+    Mockable init(const adr impl) {
+        return my;
+    };
 
-	void mock(const adr mockImpl) {
-		my.mockImpl = mockImpl;
-		my.mock = true;
-	};
+    void mock(const adr fn) {
+        my.mockImpl = fn;
+        my.useMock = true;
+    };
 
-	void unMock() {
-		my.mock = false;
-		my.mockImpl = NULL;
-	};
+    void unMock() {
+        my.useMock = false;
+        my.mockImpl = NULL;
+    };
 
-	any _call(const adr ref, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
-		my.callCount = my.callCount + 1;
-		const let mockImpl = my.mockImpl;
-		const let foo = my.foo;
-		if (my.mock) {
-			return mockImpl(ref, arg1, arg2, arg3, arg4);
-		} else {
-			return foo(ref, arg1, arg2, arg3, arg4);
-		};
-	};
+    any _call(const adr ref, *const any a, *const any b, *const any c, *const any d) {
+        my.callCount = my.callCount + 1;
+        const let f = if my.useMock my.mockImpl else my.impl;
+        return f(ref, a, b, c, d);
+    };
 
-	bool wasCalled() {
-		return my.callCount > 0;
-	};
+    bool wasCalled() {
+        return my.callCount > 0;
+    };
 
-	int getCallCount() {
-		return my.callCount;
-	};
+    int getCallCount() {
+        return my.callCount;
+    };
 
-	void resetCallCount() {
-		my.callCount = 0;
-	};
+    void resetCallCount() {
+        my.callCount = 0;
+    };
 
-	void reset() {
-		my.resetCallCount();
-		my.unMock();
-	};
+    void reset() {
+        my.resetCallCount();
+        my.unMock();
+    };
 };

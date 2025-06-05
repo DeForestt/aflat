@@ -1,7 +1,27 @@
 .needs <std>
-import string from "String";
-import {print} from "String" under str;
 
-fn main() {
-    str.print("Aflat Bin\n");
+import {describe, test, expect, report} from "ATest.af" under t;
+import {exp, abs} from "math" under math;
+import {len} from "strings" under strlib;
+import Option, {some} from "Utils/Option";
+
+int main() {
+    t.describe("math", [] {
+        t.test("exp 2^3", [] { return t.expect(math.exp(2,3)).toBe(8); });
+        t.test("abs -5", [] { return t.expect(math.abs(-5)).toBe(5); });
+    });
+
+    t.describe("strings", [] {
+        const adr s = "abc";
+        t.test("len", [] { return t.expect(strlib.len("abc")).toBe(3); });
+    });
+
+    t.describe("option", [] {
+        t.test("some isSome", [] {
+            const Option o = some(1);
+            return t.expect(o.isSome()).toBe(true);
+        });
+    });
+
+    return t.report();
 };
