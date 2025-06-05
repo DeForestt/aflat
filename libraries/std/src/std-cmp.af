@@ -106,5 +106,7 @@ int sleep(const int seconds, * const int nanoseconds){
  * _FCstr utility function to format a c string
  */
 adr _fCstr(const adr fmt, * const adr args) {
-    return st.fString(new string(fmt), args);
+    const let ret = st.fString(new string(fmt), args);
+    const let out = ret.copy();
+    return out.get();
 };
