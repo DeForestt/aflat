@@ -763,3 +763,30 @@ The package manager is used to create a module.  The syntax is:
 aflat module <module name>
 ```
 This will create a source file in the src directory.  It will also create and entry in the aflat.cfg file telling the compiler to compile the new source file.
+## Ownership, References, and Selling
+AFlat uses explicit ownership. Objects live until they go out of scope or are deleted. Class objects are passed by reference automatically.
+
+Example of references:
+```aflat
+class Data {
+    mutable int value = 10;
+};
+
+fn modify(Data d) -> void {
+    d.value = 5;
+};
+```
+
+Use `&` to take references and `$` to transfer ownership:
+```aflat
+fn take(mutable int &&x) -> void {
+    print(x);
+};
+
+fn main() -> int {
+    int a = 10;
+    take($a); // a is moved
+    return 0;
+};
+```
+
