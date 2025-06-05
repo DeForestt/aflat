@@ -24,3 +24,29 @@ TEST_CASE("Register get sizes", "[asm]") {
   REQUIRE(r.get(asmc::Word) == "%ax");
   REQUIRE(r.get(asmc::Byte) == "%al");
 }
+
+TEST_CASE("ASM File optimize removes redundant moves and nops", "[asm]") {
+  asmc::File f;
+  auto *movSame = new asmc::Mov();
+  movSame->from = "%rax";
+  movSame->to = "%rax";
+  movSame->size = asmc::QWord;
+  f.text.push(movSame);
+
+  auto *n = new asmc::nop();
+  f.text.push(n);
+
+  auto *mov = new asmc::Mov();
+  mov->from = "%rax";
+  mov->to = "%rbx";
+  mov->size = asmc::QWord;
+  f.text.push(mov);
+
+  f.optimize();
+
+  REQUIRE(f.text.size() == 1);
+  auto *inst = f.text.peek();
+  auto *m = dynamic_cast<asmc::Mov *>(inst);
+  REQUIRE(m != nullptr);
+  REQUIRE(m->to == "%rbx");
+}

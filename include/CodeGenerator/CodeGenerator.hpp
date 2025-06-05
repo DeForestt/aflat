@@ -74,7 +74,7 @@ class Enum : public Type {
     std::string name;
     int value;
     EnumValue() = default;
-    EnumValue(std::string name, int value) : name(name), value(value){};
+    EnumValue(std::string name, int value) : name(name), value(value) {};
   };
 
   Enum();

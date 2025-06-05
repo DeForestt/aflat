@@ -17,6 +17,7 @@
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
+#include "CompilerUtils.hpp"
 
 std::string preProcess(std::string input);
 std::string getExePath();
@@ -507,13 +508,9 @@ void ensureBinPath(const std::string &path,
 }
 
 bool compileCFile(const std::string &path, bool debug) {
-  std::string cmd;
-  if (debug)
-    cmd = "gcc -g -no-pie -z noexecstack -S -lefence ./src/" + path +
-          ".c -o ./bin/" + path + ".s";
-  else
-    cmd = "gcc -S -no-pie -z noexecstack ./src/" + path + ".c -o ./bin/" +
-          path + ".s";
+  std::string src = "./src/" + path + ".c";
+  std::string dst = "./bin/" + path + ".s";
+  std::string cmd = compilerutils::buildCompileCmd(src, dst, debug);
   return system(cmd.c_str()) == 0;
 }
 
@@ -611,11 +608,8 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     ofile = "./bin/a.test ";
   };
 
-  auto gcc = "gcc -no-pie -z noexecstack -o " + ofile + " " + linkerList;
-  if (config.debug) {
-    gcc = "gcc -O0 -g -no-pie -z noexecstack -o " + ofile + " " + linkerList;
-  }
-
+  std::string gcc =
+      compilerutils::buildLinkCmd(ofile, linkerList, config.debug);
   system(gcc.c_str());
   linker.erase(linker.begin(), linker.begin() + libs.size());
 
