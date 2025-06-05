@@ -41,7 +41,7 @@ int memcpy(adr dst,adr src, int size);
 int panic(adr msg);
 int assert(bool cond, * adr message);
 int sleep(int seconds, * int nanoseconds);
-string _fCstr(adr fmt, * adr args);
+adr _fCstr(adr fmt, * adr args);
 adr mmap(adr addr, int len, int prot, int flags, int fd, int offset);
 adr create(const int size, ? const any value);
 void _fEachOr(const adr iterator, const adr callback, *const any args);
