@@ -11,9 +11,11 @@ class Import : public Statement {
   std::vector<std::string> imports;
   std::string path;
   std::string nameSpace;
-  bool classes = false;
+  bool hasClasses = false;
+  bool hasFunctions = false;
   Import() = default;
   Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
   gen::GenerationResult const generate(gen::CodeGenerator &generator);
+  gen::GenerationResult const generateClasses(gen::CodeGenerator &generator);
 };
 };  // namespace ast

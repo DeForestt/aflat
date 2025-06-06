@@ -1,8 +1,8 @@
 .needs <std>
 
-import string from "String";
-import {print} from "String" under str;
+import string, {print} from "String" under str;
 
 fn main() {
+    string value = "Aflat Bin";
     str.print("Aflat Bin\n");
 };
