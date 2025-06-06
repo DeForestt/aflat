@@ -12,10 +12,10 @@
 namespace ast {
 Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->logicalLine = tokens.peek()->lineCount;
-  auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
-  if (sym != nullptr) {
-    this->classes = false;
-    if (sym->Sym == '{') {
+  while (true) {
+    auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (sym != nullptr && sym->Sym == '{') {
+      this->hasFunctions = true;
       do {
         tokens.pop();
         auto importObj = dynamic_cast<lex::LObj *>(tokens.pop());
@@ -36,23 +36,14 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
             "Line: " + std::to_string(tokens.peek()->lineCount) +
             " Expected }");
       }
-    } else if (sym->Sym == '*') {
+    } else if (sym != nullptr && sym->Sym == '*') {
+      this->hasFunctions = true;
       tokens.pop();
       this->imports.push_back("*");
-    } else
-      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           " Unexpected Token");
-  } else {
-    bool first = true;
-    this->classes = true;
-    do {
-      if (!first)
-        tokens.pop();
-      else
-        first = false;
-
+    } else {
       auto nt = dynamic_cast<lex::LObj *>(tokens.peek());
       if (nt != nullptr) {
+        this->hasClasses = true;
         this->imports.push_back(nt->meta);
         auto t = ast::Type();
         t.size = asmc::QWord;
@@ -61,12 +52,16 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
         parser.typeList << t;
         tokens.pop();
       } else {
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Expected Ident");
+        break;
       }
-    } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-             dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',');
+    }
+
+    if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+        dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',') {
+      tokens.pop();
+      continue;
+    }
+    break;
   }
 
   // check from from keyword
@@ -161,7 +156,8 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
       generator.alert("Identifier " + ident + " not found to import");
     OutputFile << generator.GenSTMT(statement);
   }
-  if (!this->classes) generator.nameSpaceTable.insert(this->nameSpace, id);
+  if (this->hasFunctions)
+    generator.nameSpaceTable.insert(this->nameSpace, id);
   return {OutputFile, std::nullopt};
 }
 }  // namespace ast
