@@ -244,9 +244,11 @@ Returns the address of the variable
 
 ### import
 ```bnf
-<import> ::= import {<function>, <function>} from "path" under <ident>
-            | import <Class>, <Class> from "path";
-            | import * from "path" under <ident>; // try to avoid this
+<import> ::= import <item>, <item> from "path" [under <ident>]
+
+<item>   ::= {<function>, <function>}
+           | <Class>
+           | *
 ```
 Import functions or classes from modules;
 ## Expressions
@@ -692,6 +694,13 @@ int game() {
 };
 ```
 note -- if a class signs a contract, the base class must be imported before the child.
+
+#### Importing classes and functions together
+AFlat now allows mixing both forms in a single statement.
+example:
+```js
+import Player, {spawn} from "./src/GameEngin" under game;
+```
 
 
 The list of standard modules is as follows:
