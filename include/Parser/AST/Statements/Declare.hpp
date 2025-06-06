@@ -38,6 +38,7 @@ class Declare : public Arg, public Statement {
         requestType(other.requestType),
         modList(other.modList) {
     this->logicalLine = other.logicalLine;
+    this->column = other.column;
   }
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };

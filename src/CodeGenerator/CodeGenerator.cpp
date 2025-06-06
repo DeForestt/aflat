@@ -70,17 +70,18 @@ void gen::CodeGenerator::alert(std::string message, bool error) {
       context += "in class " + this->scope->Ident + ": ";
     if (!this->globalScope && this->currentFunction != nullptr)
       context += "in function " + this->currentFunction->ident.ident + ": ";
-    error::report(this->moduleId, this->logicalLine, context + message,
-                  this->source);
-    throw err::Exception("Line: " + std::to_string(this->logicalLine) + " " +
-                         context + message);
+    error::report(this->moduleId, this->logicalLine, this->column,
+                  context + message, this->source);
+    throw err::Exception("Line: " + std::to_string(this->logicalLine) + ":" +
+                         std::to_string(this->column) + " " + context +
+                         message);
   } else {
     std::string context;
     if (this->scope != nullptr)
       context += "in class " + this->scope->Ident + ": ";
     if (!this->globalScope && this->currentFunction != nullptr)
       context += "in function " + this->currentFunction->ident.ident + ": ";
-    error::warn(this->moduleId, this->logicalLine, context + message,
+    error::warn(this->moduleId, this->logicalLine, this->column, context + message,
                 this->source);
   }
 };
@@ -487,6 +488,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   gen::Expr output;
   output.op = asmc::Hard;
   this->logicalLine = expr->logicalLine;
+  this->column = expr->column;
 
   if (dynamic_cast<ast::IntLiteral *>(expr) != nullptr) {
     ast::IntLiteral *intLit = dynamic_cast<ast::IntLiteral *>(expr);
@@ -2069,6 +2071,7 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
 asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
   asmc::File OutputFile = asmc::File();
   this->logicalLine = STMT->logicalLine;
+  this->column = STMT->column;
 
   if (STMT->locked) {
     auto *inst = new asmc::nop();

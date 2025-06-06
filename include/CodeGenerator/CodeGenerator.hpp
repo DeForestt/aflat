@@ -125,6 +125,7 @@ class CodeGenerator {
                                asmc::Register("r8", "r8d", "r8w", "r8b"),
                                asmc::Register("r9", "r9d", "r9w", "r9b")};
   int logicalLine = 0;
+  int column = 0;
   int tempCount = 0;
   asmc::File GenArgs(ast::Statement *STMT, asmc::File &OutputFile,
                      const ast::Function &func, int &index);

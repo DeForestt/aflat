@@ -8,6 +8,7 @@ namespace ast {
  */
 Break::Break(links::LinkedList<lex::Token *> &tokens) {
   this->logicalLine = tokens.peek()->lineCount;
+  this->column = tokens.peek()->column;
   if (dynamic_cast<lex::INT *>(tokens.peek()) != nullptr)
     this->level = std::stoi(dynamic_cast<lex::INT *>(tokens.pop())->value);
   else
@@ -15,6 +16,8 @@ Break::Break(links::LinkedList<lex::Token *> &tokens) {
 }
 
 gen::GenerationResult const Break::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File OutputFile;
   if (generator.breakContext.size() == 0)
     generator.alert("Attempted to break outside of a loop");

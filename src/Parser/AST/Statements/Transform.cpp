@@ -28,6 +28,8 @@ Transform::Transform(links::LinkedList<lex::Token *> &tokens) {
 }
 
 gen::GenerationResult const Transform::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   generator.transforms[ident] = *this;
   return gen::GenerationResult();
 }

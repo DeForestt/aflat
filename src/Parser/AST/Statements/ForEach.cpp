@@ -24,22 +24,28 @@ ForEach::ForEach(links::LinkedList<lex::Token *> &tokens,
   this->lambda->function->req++;
 
   this->lambda->function->args->logicalLine = tokens.peek()->lineCount;
+  this->lambda->function->args->column = tokens.peek()->column;
 
   this->iterator = parser.parseExpr(tokens);
   this->iterator->logicalLine = tokens.peek()->lineCount;
+  this->iterator->column = tokens.peek()->column;
 
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym && sym->Sym == '{') {
     tokens.pop();
     this->lambda->function->statement = parser.parseStmt(tokens);
     this->lambda->function->statement->logicalLine = tokens.peek()->lineCount;
+    this->lambda->function->statement->column = tokens.peek()->column;
   } else {
     this->lambda->function->statement = parser.parseStmt(tokens, true);
     this->lambda->function->statement->logicalLine = tokens.peek()->lineCount;
+    this->lambda->function->statement->column = tokens.peek()->column;
   }
 }
 
 gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   if (generator.nameTable["_fEachOr"] == nullptr)
     generator.alert(
         "Please include the standard library to use the forEach function\n\n"

@@ -10,6 +10,7 @@ Assign::Assign(const std::string &ident,
                links::LinkedList<std::string> modList,
                links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->logicalLine = tokens.peek()->lineCount;
+  this->column = tokens.peek()->column;
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
     auto s2 = dynamic_cast<lex::OpSym *>(tokens.peek());
     if (s2->Sym == ':') {
@@ -31,6 +32,8 @@ Assign::Assign(const std::string &ident,
 }
 
 gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File file;
   auto resolved =
       generator.resolveSymbol(this->Ident, this->modList, file, this->indices);

@@ -10,6 +10,8 @@
 
 namespace ast {
 gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File file;
   int offset = generator.getBytes(this->type.size);
   links::LinkedList<gen::Symbol> *Table;

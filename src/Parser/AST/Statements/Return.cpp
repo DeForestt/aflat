@@ -17,16 +17,20 @@ Return::Return(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
         dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ';')) {
     this->expr = parser.parseExpr(tokens);
     this->logicalLine = this->expr->logicalLine;
+    this->column = this->expr->column;
   } else {
     auto nu = new ast::Var();
     nu->Ident = "**void_type**";
     nu->logicalLine = tokens.peek()->lineCount;
+    nu->column = tokens.peek()->column;
     this->empty = true;
     this->expr = nu;
   };
 }
 
 gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File file;
   auto mov = new asmc::Mov();
   mov->logicalLine = this->logicalLine;

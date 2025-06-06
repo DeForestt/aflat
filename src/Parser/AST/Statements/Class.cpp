@@ -11,6 +11,7 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
              std::vector<parse::Annotation> &annotations) {
   this->annotations = annotations;
   this->logicalLine = tokens.peek()->lineCount;
+  this->column = tokens.peek()->column;
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
     this->ident.ident = ident.meta;
@@ -81,6 +82,8 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
 };
 
 gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   // check class Annotations for @Apply(Class) ... Composition
   std::vector<gen::Class *> applys;
 

@@ -6,6 +6,7 @@
 namespace ast {
 Struct::Struct(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->logicalLine = tokens.peek()->lineCount;
+  this->column = tokens.peek()->column;
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
     this->ident.ident = ident.meta;
@@ -25,6 +26,8 @@ Struct::Struct(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 }
 
 gen::GenerationResult const Struct::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   gen::Type *type = new gen::Type();
   bool saveScope = generator.globalScope;
   generator.globalScope = false;

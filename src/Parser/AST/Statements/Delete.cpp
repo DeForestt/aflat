@@ -8,6 +8,7 @@
 namespace ast {
 Delete::Delete(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->logicalLine = tokens.peek()->lineCount;
+  this->column = tokens.peek()->column;
   auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
   if (ident == nullptr)
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
@@ -35,6 +36,8 @@ Delete::Delete(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 }
 
 gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File OutputFile;
   auto resolved = generator.resolveSymbol(
       this->ident, this->modList, OutputFile, links::LinkedList<ast::Expr *>());

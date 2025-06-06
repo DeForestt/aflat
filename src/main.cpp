@@ -261,7 +261,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
       int line = 1;
       for (int i = 0; i < x && i < content.size(); ++i)
         if (content[i] == '\n') line++;
-      error::report(path, line, "unparsable character", content);
+      error::report(path, line, 0, "unparsable character", content);
       return false;
     }
     tokens.invert();
@@ -366,7 +366,8 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
   } catch (err::Exception &e) {
     success = false;
     int line = error::extractLine(e.errorMsg);
-    error::report(path, line, e.errorMsg, content);
+    int column = error::extractColumn(e.errorMsg);
+    error::report(path, line, column, e.errorMsg, content);
     if (std::filesystem::exists(output)) std::filesystem::remove(output);
   }
   return success;

@@ -6,6 +6,8 @@
 
 namespace ast {
 gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   auto flexFunction = ast::Function();
   auto callFunction = ast::Function();
   auto shiftedFunction = ast::Function();
@@ -370,6 +372,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
         generator.logicalLine = arg->logicalLine;
+        generator.column = arg->column;
         generator.alert("Too many arguments for function: " + ident +
                         " expected: " + std::to_string(func->argTypes.size()) +
                         " got: " + std::to_string(i + 1));
@@ -421,6 +424,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
         generator.logicalLine = arg->logicalLine;
+        generator.column = arg->column;
         generator.alert("Too many arguments for function: " + ident +
                         " expected: " + std::to_string(func->argTypes.size()) +
                         " got: " + std::to_string(i + 1));

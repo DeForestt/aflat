@@ -59,6 +59,7 @@ class Function : public Member, public Statement {
         optional(Other.optional),
         useType(Other.useType) {
     this->logicalLine = Other.logicalLine;
+    this->column = Other.column;
     this->locked = locked;
     this->hidden = this->hidden;
   }

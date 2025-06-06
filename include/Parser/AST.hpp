@@ -39,6 +39,7 @@ class Statement {
  public:
   bool locked = false;
   int logicalLine = 0;
+  int column = 0;
   virtual std::string toString() { return ""; };
   virtual gen::GenerationResult const generate(gen::CodeGenerator &generator) {
     asmc::File file;

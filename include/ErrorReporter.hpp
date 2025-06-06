@@ -18,6 +18,15 @@ inline int extractLine(const std::string &msg) {
   return -1;
 }
 
+inline int extractColumn(const std::string &msg) {
+  std::regex re("(?:[Ll]ine:?\\s*[0-9]+:)([0-9]+)");
+  std::smatch m;
+  if (std::regex_search(msg, m, re)) {
+    return std::stoi(m[1].str());
+  }
+  return -1;
+}
+
 inline std::string getLine(const std::string &source, int line) {
   if (line < 0) return "";
   std::istringstream iss(source);
@@ -27,17 +36,23 @@ inline std::string getLine(const std::string &source, int line) {
   return l;
 }
 
-inline void report(const std::string &file, int line, const std::string &msg,
+inline void report(const std::string &file, int line, int column,
+                   const std::string &msg,
                    const std::string &source = "") {
   std::cout << "\033[1;31merror:\033[0m ";
   if (!file.empty()) {
     std::cout << file;
-    if (line > 0) std::cout << ":" << line;
+    if (line > 0) {
+      std::cout << ":" << line;
+      if (column > 0) std::cout << ":" << column;
+    }
     std::cout << ": ";
   }
   std::cout << msg << "\n";
   if (!file.empty() && line > 0) {
-    std::cout << " --> " << file << ":" << line << "\n";
+    std::cout << " --> " << file << ":" << line;
+    if (column > 0) std::cout << ":" << column;
+    std::cout << "\n";
     std::cout << "  |" << std::endl;
   }
   if (line > 0 && !source.empty()) {
@@ -55,17 +70,23 @@ inline void report(const std::string &file, int line, const std::string &msg,
   }
 }
 
-inline void warn(const std::string &file, int line, const std::string &msg,
+inline void warn(const std::string &file, int line, int column,
+                 const std::string &msg,
                  const std::string &source = "") {
   std::cout << "\033[1;33mwarning:\033[0m ";
   if (!file.empty()) {
     std::cout << file;
-    if (line > 0) std::cout << ":" << line;
+    if (line > 0) {
+      std::cout << ":" << line;
+      if (column > 0) std::cout << ":" << column;
+    }
     std::cout << ": ";
   }
   std::cout << msg << "\n";
   if (!file.empty() && line > 0) {
-    std::cout << " --> " << file << ":" << line << "\n";
+    std::cout << " --> " << file << ":" << line;
+    if (column > 0) std::cout << ":" << column;
+    std::cout << "\n";
     std::cout << "  |" << std::endl;
   }
   if (line > 0 && !source.empty()) {

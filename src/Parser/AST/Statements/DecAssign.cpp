@@ -18,9 +18,12 @@ DecAssign::DecAssign(Declare *declare, const bool mute,
     : declare(declare), mute(mute), annotations(annotations) {
   this->expr = parser.parseExpr(tokens);
   this->logicalLine = this->expr->logicalLine;
+  this->column = this->expr->column;
 }
 
 gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File file;
   ast::Declare *dec = this->declare;
   bool allowAdr = false;
@@ -47,6 +50,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
           ref->Ident = var->Ident;
           ref->modList = var->modList;
           ref->logicalLine = var->logicalLine;
+          ref->column = var->column;
           this->expr = ref;
         } else {
           if (!var) allowAdr;

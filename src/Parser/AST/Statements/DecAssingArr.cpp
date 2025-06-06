@@ -6,6 +6,8 @@
 namespace ast {
 gen::GenerationResult const DecAssignArr::generate(
     gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File file;
   ast::DecArr *dec = this->declare;
   ast::Type adr;

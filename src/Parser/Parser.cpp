@@ -454,6 +454,7 @@ ast::Statement *parse::Parser::parseStmt(
           arr->mut = isMutable;
           arr->scope = scope;
           arr->logicalLine = obj.lineCount;
+          arr->column = obj.column;
           output = arr;
 
           // Check for equal sign
@@ -465,6 +466,7 @@ ast::Statement *parse::Parser::parseStmt(
             assign->expr = this->parseExpr(tokens);
             assign->mute = isMutable;
             assign->logicalLine = obj.lineCount;
+            assign->column = obj.column;
             output = assign;
           }
         } else if (sym->Sym == '{') {
@@ -486,11 +488,13 @@ ast::Statement *parse::Parser::parseStmt(
       auto push = new ast::Push;
       push->expr = this->parseExpr(tokens);
       push->logicalLine = obj.lineCount;
+      push->column = obj.column;
       output = push;
     } else if (obj.meta == "pull") {
       auto pull = new ast::Pull;
       pull->expr = this->parseExpr(tokens);
       pull->logicalLine = obj.lineCount;
+      pull->column = obj.column;
       output = pull;
       if (singleStmt) return output;
     } else if (obj.meta == "if") {
@@ -576,31 +580,25 @@ ast::Statement *parse::Parser::parseStmt(
         } else if (sym.Sym == '(') {
           output =
               new ast::Call(obj.meta, this->parseCallArgsList(tokens), modList);
-          output->logicalLine = obj.lineCount;
+            output->logicalLine = obj.lineCount;
+            output->column = obj.column;
         } else if (sym.Sym == '+') {
           output = new ast::Inc(obj.meta, tokens);
         } else if (sym.Sym == '-') {
           output = new ast::Dec(obj.meta, tokens);
         } else {
           // lets write everythig back to the tokens...
-          auto s = new lex::OpSym();
-          s->Sym = sym.Sym;
-          s->lineCount = sym.lineCount;
-          tokens.push(s);
+          tokens.push(new lex::OpSym(sym.Sym, sym.lineCount, sym.column));
           for (int i = 0; i < modList.size(); i++) {
-            auto s = new lex::LObj();
-            s->meta = modList.pop();
-            s->lineCount = sym.lineCount;
-            tokens.push(s);
+            tokens.push(
+                new lex::LObj(modList.pop(), sym.lineCount, sym.column));
           }
 
-          auto name = new lex::LObj();
-          name->meta = obj.meta;
-          name->lineCount = obj.lineCount;
-          tokens.push(name);
+          tokens.push(new lex::LObj(obj.meta, obj.lineCount, obj.column));
 
           auto ret = new ast::Return();
-          ret->logicalLine = obj.lineCount;
+            ret->logicalLine = obj.lineCount;
+            ret->column = obj.column;
           ret->expr = this->parseExpr(tokens);
           output = ret;
         }
@@ -608,9 +606,11 @@ ast::Statement *parse::Parser::parseStmt(
         // also an implicit return
         auto var = new ast::Var;
         var->Ident = obj.meta;
-        var->logicalLine = obj.lineCount;
+          var->logicalLine = obj.lineCount;
+          var->column = obj.column;
         auto ret = new ast::Return;
-        ret->logicalLine = obj.lineCount;
+          ret->logicalLine = obj.lineCount;
+          ret->column = obj.column;
         ret->expr = var;
         output = ret;
       }
@@ -623,10 +623,8 @@ ast::Statement *parse::Parser::parseStmt(
       if (tokens.peek()) {
         auto opSym = dynamic_cast<lex::OpSym *>(tokens.peek());
         if (!opSym || opSym->Sym != ';') {
-          auto semicolon = new lex::OpSym();
-          semicolon->Sym = ';';
-          semicolon->lineCount = tokens.peek()->lineCount;
-          tokens.push(semicolon);
+          tokens.push(
+              new lex::OpSym(';', tokens.peek()->lineCount, tokens.peek()->column));
         }
       }
     }
@@ -687,10 +685,8 @@ ast::Statement *parse::Parser::parseStmt(
           // check for else
           auto els = dynamic_cast<lex::LObj *>(tokens.peek());
           if (!els || els->meta != "else") {
-            auto semicolon = new lex::OpSym();
-            semicolon->Sym = ';';
-            semicolon->lineCount = tokens.peek()->lineCount;
-            tokens.push(semicolon);
+            tokens.push(new lex::OpSym(
+                ';', tokens.peek()->lineCount, tokens.peek()->column));
           }
         }
       }
@@ -1134,11 +1130,13 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     var->modList = modList;
     var->indices = indices;
     var->logicalLine = obj.lineCount;
+    var->column = obj.column;
     var->clean = clean;
     output = var;
     if (obj.meta == "new") {
       auto newExpr = new ast::NewExpr();
       newExpr->logicalLine = obj.lineCount;
+      newExpr->column = obj.column;
       auto typeName = dynamic_cast<lex::LObj *>(tokens.pop());
       if (typeName == nullptr)
         throw err::Exception(
@@ -1151,6 +1149,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
             typeName->meta + " is not a valid type.");
       newExpr->type = *nType;
       newExpr->logicalLine = obj.lineCount;
+      newExpr->column = obj.column;
       auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (sym != nullptr && sym->Sym == '(') {
         tokens.pop();
@@ -1182,6 +1181,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     } else if (obj.meta == "if") {
       auto ifExpr = new ast::IfExpr();
       ifExpr->logicalLine = obj.lineCount;
+      ifExpr->column = obj.column;
       ifExpr->expr = this->parseExpr(tokens);
       ifExpr->trueExpr = this->parseExpr(tokens);
       // check for else
@@ -1196,6 +1196,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     } else if (obj.meta == "fn") {
       auto lambda = new ast::Lambda();
       lambda->logicalLine = obj.lineCount;
+      lambda->column = obj.column;
       auto openParen = dynamic_cast<lex::OpSym *>(tokens.pop());
       if (openParen == nullptr || openParen->Sym != '(')
         throw err::Exception("Expected '(' after fn on line " +
@@ -1263,6 +1264,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         call->ident = obj.meta;
         call->modList = modList;
         call->logicalLine = obj.lineCount;
+        call->column = obj.column;
 
         auto testSym = dynamic_cast<lex::OpSym *>(tokens.peek());
         if (testSym != nullptr && testSym->Sym != '[' && testSym->Sym != '{') {
@@ -1290,6 +1292,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         ast::CallExpr *callExpr = new ast::CallExpr;
         callExpr->call = call;
         callExpr->logicalLine = obj.lineCount;
+        callExpr->column = obj.column;
 
         output = callExpr;
       } else {
@@ -1297,12 +1300,14 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         var->indices = indices;
         var->modList = modList;
         var->logicalLine = obj.lineCount;
+        var->column = obj.column;
         output = var;
       }
     } else {
       var->Ident = obj.meta;
       var->modList = modList;
       var->logicalLine = obj.lineCount;
+      var->column = obj.column;
       output = var;
     }
   } else if (dynamic_cast<lex::CharObj *>(tokens.peek()) != nullptr) {
@@ -1310,6 +1315,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     auto charLiteral = new ast::CharLiteral();
     charLiteral->value = obj.value;
     charLiteral->logicalLine = obj.lineCount;
+    charLiteral->column = obj.column;
     output = charLiteral;
   } else if (dynamic_cast<lex::Ref *>(tokens.peek()) != nullptr) {
     tokens.pop();

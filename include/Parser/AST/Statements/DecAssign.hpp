@@ -22,6 +22,7 @@ class DecAssign : public Statement {
   DecAssign(const DecAssign &other)
       : declare(other.declare), mute(other.mute), expr(other.expr) {
     this->logicalLine = other.logicalLine;
+    this->column = other.column;
   }
   void debug();
 };

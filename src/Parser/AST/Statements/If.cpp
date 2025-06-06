@@ -14,6 +14,7 @@ If::If(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->elseStatement = nullptr;
   this->expr = parser.parseExpr(tokens);
   this->logicalLine = this->expr->logicalLine;
+  this->column = this->expr->column;
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym != nullptr) {
     if (sym->Sym == '{') {
@@ -52,6 +53,8 @@ If::If(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 }
 
 gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File file;
   gen::scope::ScopeManager::getInstance()->pushScope(false);
 

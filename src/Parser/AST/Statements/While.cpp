@@ -13,6 +13,7 @@ namespace ast {
 While::While(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->expr = parser.parseExpr(tokens);
   this->logicalLine = this->expr->logicalLine;
+  this->column = this->expr->column;
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym != nullptr) {
     if (sym->Sym == '{') {
@@ -27,6 +28,8 @@ While::While(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 }
 
 gen::GenerationResult const While::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File file;
   gen::scope::ScopeManager::getInstance()->pushScope(true);
 
