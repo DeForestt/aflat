@@ -10,6 +10,8 @@ Assign::Assign(const std::string &ident,
                links::LinkedList<std::string> modList,
                links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->logicalLine = tokens.peek()->lineCount;
+  columnStart = tokens.peek()->columnStart;
+  columnEnd = tokens.peek()->columnEnd;
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
     auto s2 = dynamic_cast<lex::OpSym *>(tokens.peek());
     if (s2->Sym == ':') {

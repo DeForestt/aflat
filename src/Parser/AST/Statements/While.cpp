@@ -19,9 +19,9 @@ While::While(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
       tokens.pop();
       this->stmt = parser.parseStmt(tokens);
     } else
-      throw err::Exception("Line: " + std::to_string(sym->lineCount) +
-                           " un - opened while loop, expected '{' got " +
-                           sym->Sym + " instead");
+      throw err::Exception("un - opened while loop, expected '{' got " +
+                               std::string(1, sym->Sym),
+                           sym);
   } else
     this->stmt = parser.parseStmt(tokens, true);
 }

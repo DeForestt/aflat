@@ -15,13 +15,11 @@ Enum::Enum(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
     this->Ident = ident.meta;
   } else
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " enum needs Ident");
+    throw err::Exception("enum needs Ident", tokens.peek());
 
   lex::OpSym *op = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (!op || op->Sym != '{')
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Unopened Enum");
+    throw err::Exception("Unopened Enum", tokens.peek());
 
   tokens.pop();
 
@@ -34,8 +32,7 @@ Enum::Enum(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 
   op = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (!op || op->Sym != '}')
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Unclosed Enum");
+    throw err::Exception("Unclosed Enum", tokens.peek());
   tokens.pop();
   parser.typeList << ast::Type(this->Ident, asmc::DWord);
 }

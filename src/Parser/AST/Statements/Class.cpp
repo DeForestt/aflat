@@ -11,6 +11,8 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
              std::vector<parse::Annotation> &annotations) {
   this->annotations = annotations;
   this->logicalLine = tokens.peek()->lineCount;
+  columnStart = tokens.peek()->columnStart;
+  columnEnd = tokens.peek()->columnEnd;
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
     this->ident.ident = ident.meta;

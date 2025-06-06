@@ -22,9 +22,7 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
         if (importObj != nullptr) {
           this->imports.push_back(importObj->meta);
         } else {
-          throw err::Exception(
-              "Line: " + std::to_string(tokens.peek()->lineCount) +
-              " Expected Ident");
+          throw err::Exception("Expected Ident", tokens.peek());
         }
       } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
                dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',');
@@ -32,9 +30,7 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
           dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '}') {
         tokens.pop();
       } else {
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Expected }");
+        throw err::Exception("Expected }", tokens.peek());
       }
     } else if (sym != nullptr && sym->Sym == '*') {
       this->hasFunctions = true;
@@ -67,8 +63,7 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   // check from from keyword
   lex::LObj *from = dynamic_cast<lex::LObj *>(tokens.pop());
   if (from == nullptr || from->meta != "from") {
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Expected from");
+    throw err::Exception("Expected from", tokens.peek());
   };
 
   ast::StringLiteral *str =
@@ -76,8 +71,7 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   if (str != nullptr) {
     this->path = str->val;
   } else {
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Expected StringLiteral");
+    throw err::Exception("Expected StringLiteral", tokens.peek());
   }
 
   // check for under keyword
@@ -90,9 +84,7 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
         this->nameSpace = ident->meta;
         tokens.pop();
       } else {
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Expected Ident");
+        throw err::Exception("Expected Ident", tokens.peek());
       }
     }
   } else {
@@ -156,8 +148,7 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
       generator.alert("Identifier " + ident + " not found to import");
     OutputFile << generator.GenSTMT(statement);
   }
-  if (this->hasFunctions)
-    generator.nameSpaceTable.insert(this->nameSpace, id);
+  if (this->hasFunctions) generator.nameSpaceTable.insert(this->nameSpace, id);
   return {OutputFile, std::nullopt};
 }
 
@@ -180,8 +171,8 @@ gen::GenerationResult const Import::generateClasses(
   else {
     std::ifstream file(this->path);
     if (!file.is_open()) {
-      this->path = this->path.substr(0, this->path.find_last_of(".")) +
-                   "/mod.af";
+      this->path =
+          this->path.substr(0, this->path.find_last_of(".")) + "/mod.af";
       file.open(this->path);
       if (!file.is_open()) {
         generator.alert("File " + this->path + " not found");

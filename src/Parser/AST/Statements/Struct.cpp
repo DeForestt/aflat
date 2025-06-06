@@ -10,16 +10,13 @@ Struct::Struct(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
     this->ident.ident = ident.meta;
   } else
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " struct needs Ident");
+    throw err::Exception("struct needs Ident", tokens.peek());
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
     auto op = *dynamic_cast<lex::OpSym *>(tokens.pop());
     if (op.Sym != '{')
-      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           " Unopened UDeffType");
+      throw err::Exception("Unopened UDeffType", tokens.peek());
   } else
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Unopened UDeffType");
+    throw err::Exception("Unopened UDeffType", tokens.peek());
   this->statement = parser.parseStmt(tokens);
   parser.addType(this->ident.ident, asmc::Hard, asmc::QWord);
 }
