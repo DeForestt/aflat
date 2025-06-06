@@ -61,6 +61,8 @@ For::For(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 }
 
 gen::GenerationResult const For::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File OutputFile = asmc::File();
   gen::scope::ScopeManager::getInstance()->pushScope(true);
 

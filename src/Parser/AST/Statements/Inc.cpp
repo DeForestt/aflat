@@ -21,6 +21,8 @@ Inc::Inc(const std::string &ident, links::LinkedList<lex::Token *> &tokens)
 }
 
 gen::GenerationResult const Inc::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File OutputFile = asmc::File();
   gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(this->ident);
   if (sym == nullptr) generator.alert("Identifier not found to increment");

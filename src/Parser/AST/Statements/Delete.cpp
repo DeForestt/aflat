@@ -36,6 +36,8 @@ Delete::Delete(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 }
 
 gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File OutputFile;
   auto resolved = generator.resolveSymbol(
       this->ident, this->modList, OutputFile, links::LinkedList<ast::Expr *>());

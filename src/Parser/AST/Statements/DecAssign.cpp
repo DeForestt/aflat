@@ -22,6 +22,8 @@ DecAssign::DecAssign(Declare *declare, const bool mute,
 }
 
 gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File file;
   ast::Declare *dec = this->declare;
   bool allowAdr = false;

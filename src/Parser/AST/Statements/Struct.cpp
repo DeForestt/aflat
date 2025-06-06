@@ -26,6 +26,8 @@ Struct::Struct(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 }
 
 gen::GenerationResult const Struct::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   gen::Type *type = new gen::Type();
   bool saveScope = generator.globalScope;
   generator.globalScope = false;

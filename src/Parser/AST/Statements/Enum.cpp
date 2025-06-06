@@ -42,6 +42,8 @@ Enum::Enum(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 }
 
 gen::GenerationResult const Enum::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   gen::Enum *type = new gen::Enum();
   type->Ident = this->Ident;
   int i = 0;

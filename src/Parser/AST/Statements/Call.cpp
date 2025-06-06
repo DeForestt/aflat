@@ -6,6 +6,8 @@
 
 namespace ast {
 gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   auto flexFunction = ast::Function();
   auto callFunction = ast::Function();
   auto shiftedFunction = ast::Function();

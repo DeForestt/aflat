@@ -104,6 +104,8 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 }
 
 gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   auto OutputFile = asmc::File();
   if (this->path.find("./") == std::string::npos) {
     this->path = gen::utils::getLibPath("src") + this->path;
@@ -164,6 +166,8 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
 
 gen::GenerationResult const Import::generateClasses(
     gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   auto OutputFile = asmc::File();
   if (this->path.find("./") == std::string::npos) {
     this->path = gen::utils::getLibPath("src") + this->path;

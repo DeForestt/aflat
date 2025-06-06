@@ -6,6 +6,8 @@
 
 namespace ast {
 gen::GenerationResult const DecArr::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File file;
   int offset = generator.getBytes(this->type.size);
   int index = 1;

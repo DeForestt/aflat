@@ -32,6 +32,8 @@ Assign::Assign(const std::string &ident,
 }
 
 gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File file;
   auto resolved =
       generator.resolveSymbol(this->Ident, this->modList, file, this->indices);

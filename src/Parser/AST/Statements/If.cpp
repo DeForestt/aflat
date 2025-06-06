@@ -53,6 +53,8 @@ If::If(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 }
 
 gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File file;
   gen::scope::ScopeManager::getInstance()->pushScope(false);
 

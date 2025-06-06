@@ -82,6 +82,8 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
 };
 
 gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   // check class Annotations for @Apply(Class) ... Composition
   std::vector<gen::Class *> applys;
 

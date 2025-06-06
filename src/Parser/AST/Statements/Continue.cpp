@@ -16,6 +16,8 @@ Continue::Continue(links::LinkedList<lex::Token *> &tokens) {
 }
 
 gen::GenerationResult const Continue::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File OutputFile;
   if (generator.continueContext.size() == 0)
     generator.alert("Attempted to continue outside of a loop");

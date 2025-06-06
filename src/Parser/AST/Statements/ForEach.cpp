@@ -44,6 +44,8 @@ ForEach::ForEach(links::LinkedList<lex::Token *> &tokens,
 }
 
 gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   if (generator.nameTable["_fEachOr"] == nullptr)
     generator.alert(
         "Please include the standard library to use the forEach function\n\n"

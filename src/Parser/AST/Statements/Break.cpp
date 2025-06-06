@@ -16,6 +16,8 @@ Break::Break(links::LinkedList<lex::Token *> &tokens) {
 }
 
 gen::GenerationResult const Break::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File OutputFile;
   if (generator.breakContext.size() == 0)
     generator.alert("Attempted to break outside of a loop");

@@ -158,6 +158,8 @@ Function::Function(const ScopeMod &scope,
 }
 
 gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
+  generator.logicalLine = this->logicalLine;
+  generator.column = this->column;
   asmc::File file;
   ast::Function *saveFunc = generator.currentFunction;
   int saveIntArgs = generator.intArgsCounter;
