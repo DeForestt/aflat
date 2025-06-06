@@ -10,393 +10,296 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
   LinkedList<lex::Token *> tokens = LinkedList<lex::Token *>();
   int i = 0;
   int lineCount = startLine;
+  int lastBreak = 0;
   while (i < input.length()) {
-    if (input[i] == '\n') lineCount++;
+    if (input[i] == '\n') {
+      lineCount++;
+      lastBreak = ++i;
+      continue;
+    }
+    if (std::isspace(input[i])) {
+      i++;
+      continue;
+    }
+    int column = i - lastBreak + 1;
     if (std::isalpha(input[i]) || input[i] == '_') {
-      auto l_obj = new LObj();
-      l_obj->meta = "";
+      std::string meta;
       while (std::isalpha(input[i]) || std::isdigit(input[i]) ||
              input[i] == '_' || input[i] == '-') {
-        l_obj->meta += input[i];
+        meta += input[i];
         i++;
       }
-      l_obj->lineCount = lineCount;
-      tokens.push(l_obj);
+      tokens.push(new LObj(meta, lineCount, column));
     } else if (std::isdigit(input[i]) || input[i] == '-') {
       if (input[i] == '-' && !std::isdigit(input[i + 1])) {
-        auto sym = new lex::OpSym;
-        sym->Sym = '-';
+        tokens << new lex::OpSym('-', lineCount, column);
         i++;
-        sym->lineCount = lineCount;
-        tokens << sym;
       } else if (input[i] == '0' && input[i + 1] == 'x') {
         i += 2;
-        auto intLit = new lex::INT();
-        intLit->value = "0x";
+        std::string val = "0x";
         while (std::isxdigit(input[i])) {
-          intLit->value += input[i];
+          val += input[i];
           i++;
         }
-        intLit->lineCount = lineCount;
-        tokens << intLit;
+        tokens << new lex::INT(val, lineCount, column);
       } else {
-        auto IntLit = new lex::INT();
-        IntLit->value = input[i];
+        std::string val;
+        val += input[i];
         i++;
 
         while (std::isdigit(input[i]) || input[i] == '.') {
-          IntLit->value += input[i];
+          val += input[i];
           i++;
         }
-        IntLit->lineCount = lineCount;
 
-        // Check if IntLit->value contains '.'
-        if (IntLit->value.find('.') != string::npos) {
-          // Check if IntLit->value contains more than one '.'
-          if (IntLit->value.find('.') != IntLit->value.rfind('.')) {
-            throw err::Exception("Invalid token: " + IntLit->value +
+        if (val.find('.') != string::npos) {
+          if (val.find('.') != val.rfind('.')) {
+            throw err::Exception("Invalid token: " + val +
                                  " on line " + std::to_string(lineCount));
           }
 
-          auto FloatLit = new lex::FloatLit();
-          FloatLit->value = IntLit->value;
-          FloatLit->lineCount = lineCount;
-          tokens << FloatLit;
-        } else
-          tokens << IntLit;
+          tokens << new lex::FloatLit(val, lineCount, column);
+        } else {
+          tokens << new lex::INT(val, lineCount, column);
+        }
       }
     } else if (input[i] == '#') {
-      auto *IntLit = new lex::Long();
+      std::string val;
       i++;
 
       while (std::isdigit(input[i])) {
-        IntLit->value += input[i];
+        val += input[i];
         i++;
       }
-      IntLit->lineCount = lineCount;
-      tokens.push(IntLit);
-    } else if (std::isspace(input[i])) {
-      i++;
+      tokens.push(new lex::Long(val, lineCount, column));
     } else if (input[i] == '\"') {
-      auto *stringObj = new StringObj();
-      stringObj->value = "";
+      std::string value;
       i++;
       while (input[i] != '\"') {
         if (input[i] == '\n' || input[i] == '\t' || input[i] == '\r') {
           lineCount++;
-          i++;
+          lastBreak = ++i;
+          continue;
         }
         if (input[i] == '\\') {
           i++;
           if (input[i] == 'n') {
-            stringObj->value += "\\n";
+            value += "\\n";
           } else if (input[i] == 't') {
-            stringObj->value += '\t';
+            value += '\t';
           } else if (input[i] == '\\') {
-            stringObj->value += 0x5C;
+            value += 0x5C;
           } else if (input[i] == '\"') {
-            stringObj->value += "\\\"";
+            value += "\\\"";
           } else if (input[i] == '\'') {
-            stringObj->value += "\\'";
+            value += "\\'";
           } else if (input[i] == 'r') {
-            stringObj->value += '\r';
+            value += '\r';
           } else if (input[i] == '0') {
-            stringObj->value += '\0';
+            value += '\0';
           } else if (input[i] == 'e') {
-            stringObj->value += 0x1B;
+            value += 0x1B;
           } else {
-            throw err::Exception("Invalid token: " + stringObj->value +
+            throw err::Exception("Invalid token: " + value +
                                  " on line " + std::to_string(lineCount));
           }
         } else if (input[i] != '\n' && input[i] != '\t' && input[i] != '\r') {
-          stringObj->value += input[i];
+          value += input[i];
         }
         i++;
       }
       i++;
-      stringObj->lineCount = lineCount;
-      tokens.push(stringObj);
+      tokens.push(new StringObj(value, lineCount, column));
     } else if (input[i] == '`') {
-      auto *stringObj = new FStringObj();
-      stringObj->value = "";
+      std::string value;
       i++;
       while (input[i] != '`') {
         if (input[i] == '\n' || input[i] == '\t' || input[i] == '\r') {
           lineCount++;
-          i++;
+          lastBreak = ++i;
+          continue;
         }
         if (input[i] == '\\') {
           i++;
           if (input[i] == 'n') {
-            stringObj->value += "\\n";
+            value += "\\n";
           } else if (input[i] == 't') {
-            stringObj->value += '\t';
+            value += '\t';
           } else if (input[i] == '\\') {
-            stringObj->value += 0x5C;
+            value += 0x5C;
           } else if (input[i] == '`') {
-            stringObj->value += "`";
+            value += "`";
           } else if (input[i] == '\'') {
-            stringObj->value += "\\'";
+            value += "\\'";
           } else if (input[i] == 'r') {
-            stringObj->value += '\r';
+            value += '\r';
           } else if (input[i] == '0') {
-            stringObj->value += '\0';
+            value += '\0';
           } else if (input[i] == 'e') {
-            stringObj->value += 0x1B;
+            value += 0x1B;
           } else {
-            throw err::Exception("Invalid token: " + stringObj->value +
+            throw err::Exception("Invalid token: " + value +
                                  " on line " + std::to_string(lineCount));
           }
         } else if (input[i] != '\n' && input[i] != '\t' && input[i] != '\r') {
-          stringObj->value += input[i];
+          value += input[i];
         }
         i++;
       }
       i++;
-      stringObj->lineCount = lineCount;
-      tokens.push(stringObj);
+      tokens.push(new FStringObj(value, lineCount, column));
     } else if (input[i] == '~') {
-      auto *stringObj = new lex::StringObj();
-      stringObj->value = "";
+      std::string value;
       i++;
       while (input[i] != '~') {
         // just copy the string exactly... no escaping
         if (input[i] == '\n' || input[i] == '\r') {
           lineCount++;
         }
-        stringObj->value += input[i];
+        value += input[i];
         i++;
       }
       i++;
-      stringObj->lineCount = lineCount;
-      tokens.push(stringObj);
+      tokens.push(new lex::StringObj(value, lineCount, column));
     } else if (input[i] == '\'') {
-      auto charobj = new CharObj();
       i++;
+      char value;
       if (input[i] == '\\') {
         i++;
         if (input[i] == 'n') {
-          charobj->value = '\n';
+          value = '\n';
         } else if (input[i] == 't') {
-          charobj->value = '\t';
+          value = '\t';
         } else if (input[i] == '\\') {
-          charobj->value = '\\';
+          value = '\\';
         } else if (input[i] == '\"') {
-          charobj->value = '\"';
+          value = '\"';
         } else if (input[i] == '\'') {
-          charobj->value = '\'';
+          value = '\'';
         } else if (input[i] == 'r') {
-          charobj->value = '\r';
+          value = '\r';
         } else if (input[i] == '0') {
-          charobj->value = '\0';
+          value = '\0';
         } else if (input[i] == '\\') {
-          charobj->value = '\\';
+          value = '\\';
         } else {
           throw err::Exception("Invalid token: on line " +
                                std::to_string(lineCount));
         }
-      } else
-        charobj->value = input[i];
+      } else {
+        value = input[i];
+      }
       i++;
       if (input[i] != '\'') throw err::Exception("Unterminated Char Value");
-      charobj->lineCount = lineCount;
-      tokens << charobj;
+      tokens << new CharObj(value, lineCount, column);
       i++;
     } else if (input[i] == ';') {
-      auto semi = new OpSym;
-      semi->Sym = input[i];
-      semi->lineCount = lineCount;
-      tokens.push(semi);
+      tokens.push(new OpSym(';', lineCount, column));
       i++;
     } else if (input[i] == '?') {
-      auto Ref = new lex::Ref;
-      Ref->lineCount = lineCount;
-      tokens << Ref;
+      tokens << new lex::Ref(lineCount, column);
       i++;
     } else if (input[i] == '(') {
-      auto cPrenth = new OpSym;
-      cPrenth->Sym = input[i];
-      cPrenth->lineCount = lineCount;
-      tokens.push(cPrenth);
+      tokens.push(new OpSym('(', lineCount, column));
       i++;
     } else if (input[i] == ')') {
-      auto cPrenth = new OpSym;
-      cPrenth->Sym = input[i];
-      cPrenth->lineCount = lineCount;
-      tokens.push(cPrenth);
+      tokens.push(new OpSym(')', lineCount, column));
       i++;
     } else if (input[i] == '{') {
-      auto cPrenth = new OpSym;
-      cPrenth->Sym = input[i];
-      cPrenth->lineCount = lineCount;
-      tokens.push(cPrenth);
+      tokens.push(new OpSym('{', lineCount, column));
       i++;
     } else if (input[i] == '}') {
-      lex::OpSym *cPrenth = new OpSym;
-      cPrenth->Sym = input[i];
-      cPrenth->lineCount = lineCount;
-      tokens.push(cPrenth);
+      tokens.push(new OpSym('}', lineCount, column));
       i++;
     } else if (input[i] == '=') {
       if (input[i + 1] == '=') {
-        auto equ = new lex::Symbol;
-        equ->meta = "==";
+        tokens << new lex::Symbol("==", lineCount, column);
         i++;
-        equ->lineCount = lineCount;
-        tokens << equ;
       } else {
-        auto equ = new OpSym;
-        equ->Sym = input[i];
-        equ->lineCount = lineCount;
-        tokens << equ;
+        tokens << new OpSym('=', lineCount, column);
       }
       i++;
     } else if (input[i] == '<') {
-      auto sym = new lex::Symbol;
-      sym->meta = "<";
+      auto symCol = column;
+      std::string meta = "<";
       if (input[i + 1] == '<') {
-        auto opSym = new lex::OpSym;
-        opSym->Sym = '<';
-        opSym->lineCount = lineCount;
-        tokens << opSym;
-        free(sym);
+        tokens << new lex::OpSym('<', lineCount, column);
         i++;
       } else if (input[i + 1] == '=') {
-        sym->meta = "<=";
-        sym->lineCount = lineCount;
-        tokens << sym;
+        tokens << new lex::Symbol("<=", lineCount, column);
         i++;
       } else {
-        sym->lineCount = lineCount;
-        tokens << sym;
+        tokens << new lex::Symbol(meta, lineCount, symCol);
       }
       i++;
     } else if (input[i] == '>') {
-      auto *sym = new lex::Symbol;
-      sym->meta = ">";
+      auto symCol = column;
+      std::string meta = ">";
       if (input[i + 1] == '>') {
-        auto *opSym = new lex::OpSym;
-        opSym->Sym = '>';
-        opSym->lineCount = lineCount;
-        free(sym);
-        tokens << opSym;
+        tokens << new lex::OpSym('>', lineCount, column);
         i++;
       } else if (input[i + 1] == '=') {
-        sym->meta = ">=";
-        sym->lineCount = lineCount;
-        tokens << sym;
+        tokens << new lex::Symbol(">=", lineCount, column);
         i++;
       } else {
-        sym->lineCount = lineCount;
-        tokens << sym;
+        tokens << new lex::Symbol(meta, lineCount, symCol);
       }
       i++;
     } else if (input[i] == '|') {
-      auto *sym = new lex::OpSym;
-      sym->Sym = '|';
+      char op = '|';
       if (input[i + 1] == '|') {
-        auto opSym = new lex::Symbol;
-        opSym->meta = "||";
-        opSym->lineCount = lineCount;
-        free(sym);
-        tokens << opSym;
+        tokens << new lex::Symbol("||", lineCount, column);
         i++;
       } else {
-        sym->lineCount = lineCount;
-        tokens << sym;
+        tokens << new lex::OpSym(op, lineCount, column);
       }
       i++;
     } else if (input[i] == '!') {
       if (input[i + 1] == '=') {
-        auto equ = new lex::Symbol;
-        equ->meta = "!=";
+        tokens << new lex::Symbol("!=", lineCount, column);
         i++;
-        equ->lineCount = lineCount;
-        tokens << equ;
       } else {
-        auto equ = new OpSym;
-        equ->Sym = input[i];
-        equ->lineCount = lineCount;
-        tokens << equ;
+        tokens << new OpSym('!', lineCount, column);
       }
       i++;
     } else if (input[i] == ',') {
-      auto com = new OpSym;
-      com->Sym = input[i];
-      com->lineCount = lineCount;
-      tokens.push(com);
+      tokens.push(new OpSym(',', lineCount, column));
       i++;
     } else if (input[i] == '+') {
-      auto add = new OpSym;
-      add->Sym = input[i];
-      add->lineCount = lineCount;
-      tokens.push(add);
+      tokens.push(new OpSym('+', lineCount, column));
       i++;
     } else if (input[i] == '[') {
-      auto add = new OpSym;
-      add->Sym = input[i];
-      add->lineCount = lineCount;
-      tokens.push(add);
+      tokens.push(new OpSym('[', lineCount, column));
       i++;
     } else if (input[i] == ']') {
-      auto add = new OpSym;
-      add->Sym = input[i];
-      add->lineCount = lineCount;
-      tokens.push(add);
+      tokens.push(new OpSym(']', lineCount, column));
       i++;
     } else if (input[i] == '*') {
-      auto mul = new OpSym;
-      mul->Sym = input[i];
-      mul->lineCount = lineCount;
-      tokens << mul;
+      tokens << new OpSym('*', lineCount, column);
       i++;
     } else if (input[i] == '^') {
-      auto carrot = new OpSym;
-      carrot->Sym = input[i];
-      carrot->lineCount = lineCount;
-      tokens << carrot;
+      tokens << new OpSym('^', lineCount, column);
       i++;
     } else if (input[i] == '%') {
-      auto mul = new OpSym;
-      mul->Sym = input[i];
-      mul->lineCount = lineCount;
-      tokens << mul;
+      tokens << new OpSym('%', lineCount, column);
       i++;
     } else if (input[i] == ':') {
-      auto col = new OpSym;
-      col->Sym = input[i];
-      col->lineCount = lineCount;
-      tokens << col;
+      tokens << new OpSym(':', lineCount, column);
       i++;
     } else if (input[i] == '@') {
-      auto at = new OpSym;
-      at->Sym = input[i];
-      at->lineCount = lineCount;
-      tokens << at;
+      tokens << new OpSym('@', lineCount, column);
       i++;
     } else if (input[i] == '.') {
-      auto mul = new OpSym;
-      mul->Sym = input[i];
-      mul->lineCount = lineCount;
-      tokens << mul;
+      tokens << new OpSym('.', lineCount, column);
       i++;
     } else if (input[i] == '/') {
-      auto div = new OpSym;
-      div->Sym = input[i];
-      div->lineCount = lineCount;
-      tokens << div;
+      tokens << new OpSym('/', lineCount, column);
       i++;
     } else if (input[i] == '&') {
-      auto andBit = new OpSym;
-      andBit->Sym = input[i];
-      andBit->lineCount = lineCount;
-      tokens << andBit;
+      tokens << new OpSym('&', lineCount, column);
       i++;
     } else if (input[i] == '$') {
-      auto dollar = new OpSym;
-      dollar->Sym = input[i];
-      dollar->lineCount = lineCount;
-      tokens << dollar;
+      tokens << new OpSym('$', lineCount, column);
       i++;
     } else {
       /// Unknown token
@@ -404,9 +307,6 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
                            std::to_string(lineCount));
     }
   }
-  auto last_semi = new lex::OpSym;
-  last_semi->Sym = ';';
-  last_semi->lineCount = lineCount;
-  tokens.push(last_semi);
+  tokens.push(new lex::OpSym(';', lineCount, 1));
   return tokens;
 }

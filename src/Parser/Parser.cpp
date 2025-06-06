@@ -583,21 +583,13 @@ ast::Statement *parse::Parser::parseStmt(
           output = new ast::Dec(obj.meta, tokens);
         } else {
           // lets write everythig back to the tokens...
-          auto s = new lex::OpSym();
-          s->Sym = sym.Sym;
-          s->lineCount = sym.lineCount;
-          tokens.push(s);
+          tokens.push(new lex::OpSym(sym.Sym, sym.lineCount, sym.column));
           for (int i = 0; i < modList.size(); i++) {
-            auto s = new lex::LObj();
-            s->meta = modList.pop();
-            s->lineCount = sym.lineCount;
-            tokens.push(s);
+            tokens.push(
+                new lex::LObj(modList.pop(), sym.lineCount, sym.column));
           }
 
-          auto name = new lex::LObj();
-          name->meta = obj.meta;
-          name->lineCount = obj.lineCount;
-          tokens.push(name);
+          tokens.push(new lex::LObj(obj.meta, obj.lineCount, obj.column));
 
           auto ret = new ast::Return();
           ret->logicalLine = obj.lineCount;
@@ -623,10 +615,8 @@ ast::Statement *parse::Parser::parseStmt(
       if (tokens.peek()) {
         auto opSym = dynamic_cast<lex::OpSym *>(tokens.peek());
         if (!opSym || opSym->Sym != ';') {
-          auto semicolon = new lex::OpSym();
-          semicolon->Sym = ';';
-          semicolon->lineCount = tokens.peek()->lineCount;
-          tokens.push(semicolon);
+          tokens.push(
+              new lex::OpSym(';', tokens.peek()->lineCount, tokens.peek()->column));
         }
       }
     }
@@ -687,10 +677,8 @@ ast::Statement *parse::Parser::parseStmt(
           // check for else
           auto els = dynamic_cast<lex::LObj *>(tokens.peek());
           if (!els || els->meta != "else") {
-            auto semicolon = new lex::OpSym();
-            semicolon->Sym = ';';
-            semicolon->lineCount = tokens.peek()->lineCount;
-            tokens.push(semicolon);
+            tokens.push(new lex::OpSym(
+                ';', tokens.peek()->lineCount, tokens.peek()->column));
           }
         }
       }
