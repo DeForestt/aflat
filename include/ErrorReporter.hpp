@@ -18,6 +18,15 @@ inline int extractLine(const std::string &msg) {
   return -1;
 }
 
+inline int extractColumn(const std::string &msg) {
+  std::regex re("(?:[Ll]ine:?\\s*[0-9]+:)([0-9]+)");
+  std::smatch m;
+  if (std::regex_search(msg, m, re)) {
+    return std::stoi(m[1].str());
+  }
+  return -1;
+}
+
 inline std::string getLine(const std::string &source, int line) {
   if (line < 0) return "";
   std::istringstream iss(source);

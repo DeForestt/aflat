@@ -366,7 +366,8 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
   } catch (err::Exception &e) {
     success = false;
     int line = error::extractLine(e.errorMsg);
-    error::report(path, line, 0, e.errorMsg, content);
+    int column = error::extractColumn(e.errorMsg);
+    error::report(path, line, column, e.errorMsg, content);
     if (std::filesystem::exists(output)) std::filesystem::remove(output);
   }
   return success;
