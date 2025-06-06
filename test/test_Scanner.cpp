@@ -9,6 +9,10 @@ TEST_CASE("Lexer scans identifiers and ints", "[scanner]") {
   auto *second = dynamic_cast<lex::INT *>(tokens.get(1));
   REQUIRE(first != nullptr);
   REQUIRE(first->meta == "foo");
+  REQUIRE(first->columnStart == 0);
+  REQUIRE(first->columnEnd == 2);
   REQUIRE(second != nullptr);
   REQUIRE(second->value == "123");
+  REQUIRE(second->columnStart == 4);
+  REQUIRE(second->columnEnd == 6);
 }

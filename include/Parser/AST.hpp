@@ -39,6 +39,8 @@ class Statement {
  public:
   bool locked = false;
   int logicalLine = 0;
+  int columnStart = 0;
+  int columnEnd = 0;
   virtual std::string toString() { return ""; };
   virtual gen::GenerationResult const generate(gen::CodeGenerator &generator) {
     asmc::File file;
@@ -126,7 +128,7 @@ class Type {
 
   Type() = default;
   Type(const std::string &typeName, const asmc::Size &size)
-      : typeName(typeName), size(size){};
+      : typeName(typeName), size(size) {};
 };
 
 class Arg {
