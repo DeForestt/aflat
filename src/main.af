@@ -4,5 +4,5 @@ import string, {print} from "String" under str;
 
 fn main() {
     string value = "Aflat Bin";
-    str.print("Aflat Bin\n");
+    str.print(`The value is: {value}\n`);
 };
