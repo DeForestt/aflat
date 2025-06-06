@@ -370,6 +370,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
         generator.logicalLine = arg->logicalLine;
+        generator.column = arg->column;
         generator.alert("Too many arguments for function: " + ident +
                         " expected: " + std::to_string(func->argTypes.size()) +
                         " got: " + std::to_string(i + 1));
@@ -421,6 +422,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
         generator.logicalLine = arg->logicalLine;
+        generator.column = arg->column;
         generator.alert("Too many arguments for function: " + ident +
                         " expected: " + std::to_string(func->argTypes.size()) +
                         " got: " + std::to_string(i + 1));

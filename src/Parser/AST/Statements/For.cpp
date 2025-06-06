@@ -11,10 +11,14 @@ For::For(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
 
   if (sym == nullptr)
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+    throw err::Exception("Line: " +
+                         std::to_string(tokens.peek()->lineCount) + ":" +
+                         std::to_string(tokens.peek()->column) +
                          " Unterminated for loop initializer");
   if (sym->Sym != ';')
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+    throw err::Exception("Line: " +
+                         std::to_string(tokens.peek()->lineCount) + ":" +
+                         std::to_string(tokens.peek()->column) +
                          "unterminated for loop initializer");
 
   tokens.pop();
@@ -23,10 +27,14 @@ For::For(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 
   sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym == nullptr)
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+    throw err::Exception("Line: " +
+                         std::to_string(tokens.peek()->lineCount) + ":" +
+                         std::to_string(tokens.peek()->column) +
                          " Unterminated for loop condition");
   if (sym->Sym != ';')
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+    throw err::Exception("Line: " +
+                         std::to_string(tokens.peek()->lineCount) + ":" +
+                         std::to_string(tokens.peek()->column) +
                          "unterminated for loop condition");
   tokens.pop();
 
@@ -43,9 +51,10 @@ For::For(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
         tokens.pop();
         this->Run = parser.parseStmt(tokens);
       } else
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Unopened for loop body");
+        throw err::Exception("Line: " +
+                             std::to_string(tokens.peek()->lineCount) + ":" +
+                             std::to_string(tokens.peek()->column) +
+                             " Unopened for loop body");
     }
   } else
     this->Run = parser.parseStmt(tokens, true);
