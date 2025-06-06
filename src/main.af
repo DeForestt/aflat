@@ -1,8 +1,9 @@
 .needs <std>
 
-import string, {print} from "String" under str;
+import {print} from "String" under str;
 
 fn main() {
-    string value = "Aflat Bin";
-    str.print(`The value is: {value}\n`);
+    str.print(
+        "This is a the aflat test binary.\n"
+    );
 };
