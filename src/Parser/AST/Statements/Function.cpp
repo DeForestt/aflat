@@ -74,9 +74,11 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
       tokens.pop();
       this->statement = parser.parseStmt(tokens);
       this->logicalLine = tokens.peek()->lineCount;
+      this->column = tokens.peek()->column;
     } else {
       this->statement = nullptr;
       this->logicalLine = tokens.peek()->lineCount;
+      this->column = tokens.peek()->column;
     }
   } else
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
@@ -114,6 +116,7 @@ Function::Function(const ScopeMod &scope,
 
   this->ident.ident = ident->meta;
   this->logicalLine = tokens.peek()->lineCount;
+  this->column = tokens.peek()->column;
 
   auto openBracket = dynamic_cast<lex::OpSym *>(tokens.pop());
   if (openBracket == nullptr || openBracket->Sym != '(')

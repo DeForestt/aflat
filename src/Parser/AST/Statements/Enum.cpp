@@ -11,6 +11,7 @@ namespace ast {
  */
 Enum::Enum(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->logicalLine = tokens.peek()->lineCount;
+  this->column = tokens.peek()->column;
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
     this->Ident = ident.meta;

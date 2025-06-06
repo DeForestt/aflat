@@ -15,7 +15,9 @@ Dec::Dec(const std::string &ident, links::LinkedList<lex::Token *> &tokens)
         "Expected another '-' in the increment statment on line " +
         std::to_string(tokens.peek()->lineCount));
   }
-  this->logicalLine = tokens.pop()->lineCount;
+  auto tok = tokens.pop();
+  this->logicalLine = tok->lineCount;
+  this->column = tok->column;
 }
 
 gen::GenerationResult const Dec::generate(gen::CodeGenerator &generator) {

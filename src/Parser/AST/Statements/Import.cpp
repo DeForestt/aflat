@@ -12,6 +12,7 @@
 namespace ast {
 Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->logicalLine = tokens.peek()->lineCount;
+  this->column = tokens.peek()->column;
   while (true) {
     auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
     if (sym != nullptr && sym->Sym == '{') {

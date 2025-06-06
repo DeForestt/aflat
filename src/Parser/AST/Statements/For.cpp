@@ -7,6 +7,7 @@ namespace ast {
 For::For(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->declare = parser.parseStmt(tokens, true);
   this->logicalLine = this->declare->logicalLine;
+  this->column = this->declare->column;
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
 
   if (sym == nullptr)

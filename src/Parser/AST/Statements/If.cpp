@@ -14,6 +14,7 @@ If::If(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->elseStatement = nullptr;
   this->expr = parser.parseExpr(tokens);
   this->logicalLine = this->expr->logicalLine;
+  this->column = this->expr->column;
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym != nullptr) {
     if (sym->Sym == '{') {
