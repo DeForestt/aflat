@@ -25,14 +25,14 @@ int ScopeManager::assign(std::string symbol, ast::Type type, bool mask,
   using namespace gen::utils;
   auto sym = gen::Symbol();
 
-  for (int i = 0; i < this->stack.size(); i++) {
-    if (this->stack[i].symbol == symbol && symbol != "") {
+  for (auto &entry : this->stack) {
+    if (entry.symbol == symbol && symbol != "") {
       // // add an underscore to the front of the symbol
       // if (this->stack[i].type.typeName == type.typeName)
       //   throw err::Exception("Cannot shadow symbol \"" + symbol +
       //                        "\" with the same type");
-      this->stack[i].symbol = "~" + this->stack[i].symbol;
-      this->stack[i].underscores++;
+      entry.symbol = "~" + entry.symbol;
+      entry.underscores++;
     }
   }
 
@@ -77,7 +77,7 @@ void ScopeManager::popScope(CodeGenerator *callback, asmc::File &OutputFile,
                             bool fPop = false) {
   using namespace gen::utils;
   int size = this->scopeStack.back();
-  for (int i = 0; i < size; i++) {
+  while (size-- > 0) {
     if (!fPop) {
       this->SStackSize--;
       if (this->pleading.size() > 0 && this->pleading.back().pleading) {
@@ -113,12 +113,11 @@ void ScopeManager::popScope(CodeGenerator *callback, asmc::File &OutputFile,
         }
       }
       // find any symbols that have the same name and remove an underscore
-      for (int j = 0; j < this->stack.size(); j++) {
-        if (removeTildes(this->stack[j].symbol) == sym.symbol &&
-            sym.symbol != "") {
-          if (this->stack[j].underscores > 0) {
-            this->stack[j].symbol = this->stack[j].symbol.substr(1);
-            this->stack[j].underscores--;
+      for (auto &other : this->stack) {
+        if (removeTildes(other.symbol) == sym.symbol && sym.symbol != "") {
+          if (other.underscores > 0) {
+            other.symbol = other.symbol.substr(1);
+            other.underscores--;
           }
         }
       }
@@ -137,17 +136,15 @@ void ScopeManager::softPop(CodeGenerator *callback, asmc::File &OutputFile) {
   int size = (this->pleading.size() > 0 && this->pleading.back().pleading)
                  ? this->scopeStack.back()
                  : this->SStackSize;
-  int pos = this->stack.size() - 1;
 
-  for (int i = 0; i < size; i++) {
-    gen::Symbol sym = this->stack.at(pos);
+  for (auto it = this->stack.rbegin(); it != this->stack.rbegin() + size; ++it) {
+    gen::Symbol sym = *it;
     if (sym.symbol != "" && sym.symbol != "my") {
       auto desc = callback->deScope(sym);
       if (desc) {
         OutputFile << *desc;
       }
     }
-    pos--;
   }
 }
 
@@ -166,19 +163,20 @@ int ScopeManager::getStackAlignment() {
 };
 
 gen::Symbol *ScopeManager::get(std::string symbol) {
-  for (int i = this->stack.size() - 1; i >= 0; i--) {
-    if (this->stack[i].symbol == symbol) {
-      if (this->stack[i].usable) {
-        this->stack[i].refCount++;
-        return &this->stack[i];
+  for (auto it = this->stack.rbegin(); it != this->stack.rend(); ++it) {
+    if (it->symbol == symbol) {
+      if (it->usable) {
+        it->refCount++;
+        return &(*it);
       };
     }
   }
 
   // search global stack
-  for (int i = this->globalStack.size() - 1; i >= 0; i--) {
-    if (this->globalStack[i].symbol == symbol) {
-      return &this->globalStack[i];
+  for (auto it = this->globalStack.rbegin(); it != this->globalStack.rend();
+       ++it) {
+    if (it->symbol == symbol) {
+      return &(*it);
     }
   }
 
@@ -187,21 +185,21 @@ gen::Symbol *ScopeManager::get(std::string symbol) {
 
 std::vector<gen::Symbol> ScopeManager::getScope(const bool used) {
   std::vector<gen::Symbol> scope;
-  for (int i = this->stack.size() - 1; i >= 0; i--) {
-    if (this->stack[i].symbol != "") {
-      if (used) this->stack[i].refCount++;
-      scope.push_back(this->stack[i]);
+  for (auto it = this->stack.rbegin(); it != this->stack.rend(); ++it) {
+    if (it->symbol != "") {
+      if (used) it->refCount++;
+      scope.push_back(*it);
     }
   }
   return scope;
 };
 
 void ScopeManager::addAssign(std::string symbol, bool get = true) {
-  for (int i = this->stack.size() - 1; i >= 0; i--) {
-    if (this->stack[i].symbol == symbol) {
-      this->stack[i].assignCount++;
+  for (auto it = this->stack.rbegin(); it != this->stack.rend(); ++it) {
+    if (it->symbol == symbol) {
+      it->assignCount++;
       // cancel the ref that was added when getting the symbol
-      if (get) this->stack[i].refCount--;
+      if (get) it->refCount--;
     }
   }
 };
