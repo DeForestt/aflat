@@ -38,40 +38,31 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     if (func == nullptr) {
       auto f = generator.genericFunctions[ident];
       if (f != nullptr) {
-        std::cout << "Found generic function: " << ident << std::endl;
         auto junkFile = asmc::File();
-        func = dynamic_cast<ast::Function *>(deepCopy(f));
+        func = f;
         // get the argument types and create the map...
         std::unordered_map<std::string, std::string> genericMap;
         // loop through func.argTypes
         auto new_ident = func->ident.ident;
-        std::cout << "Going to check each of the " << func->argTypes.size()
-                  << " argument types for generics." << std::endl;
         for (int i = 0; i < func->argTypes.size(); i++) {
           auto type = func->argTypes[i];
-          std::cout << "Checking each of the " << func->genericTypes.size()
-                    << " generic types for a match." << std::endl;
           for (const auto &genericType : func->genericTypes) {
-            std::cout << "Checking type: " << type.typeName
-                      << " against generic type: " << genericType << std::endl;
             if (type.typeName == genericType) {
-              std::cout << "Found generic type: " << genericType
-                        << " in function: " << func->ident.ident << std::endl;
               auto exprType =
                   generator.GenExpr(this->Args.get(i), junkFile).type;
-              std::cout << "Type of argument " << i << " is: " << exprType
-                        << std::endl;
               genericMap[genericType] = exprType;
-              std::cout << "Added to generic map: " << genericType << " -> "
-                        << exprType << std::endl;
             }
           }
         }
         func->replaceTypes(genericMap);
         func->ident.ident = new_ident;
         func->genericTypes.clear();
+        if (file.lambdas == nullptr) {
+          file.lambdas = new asmc::File();
+          file.hasLambda = true;
+        }
         gen::scope::ScopeManager::getInstance()->pushScope(true);
-        file.lambdas->operator<<(func->generate(generator).file);
+        file.lambdas->operator<<(generator.GenSTMT(func));
         gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
         this->ident = func->ident.ident;
       }
@@ -455,6 +446,10 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
                           ") to an rvalue");
         }
       }
+    }
+    if (arg == nullptr) {
+      generator.alert("Argument " + std::to_string(i + 1) +
+                      " is null in function call: " + ident);
     }
     gen::Expr exp = generator.GenExpr(arg, file);
     if (!exp.passable)
