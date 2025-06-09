@@ -5,6 +5,7 @@
 #include "CodeGenerator/Utils.hpp"
 
 namespace ast {
+
 gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   auto flexFunction = ast::Function();
   auto callFunction = ast::Function();
@@ -34,6 +35,46 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   std::string allMods = "";
   if (this->modList.pos == nullptr) {
     func = generator.nameTable[ident];
+    if (func == nullptr) {
+      auto f = generator.genericFunctions[ident];
+      if (f != nullptr) {
+        auto junkFile = asmc::File();
+        func = dynamic_cast<ast::Function *>(deepCopy(f));
+        // get the argument types and create the map...
+        std::unordered_map<std::string, std::string> genericMap;
+        // loop through func.argTypes
+        auto new_ident = func->ident.ident;
+        for (int i = 0; i < func->argTypes.size(); i++) {
+          auto type = func->argTypes[i];
+
+          for (const auto &genericType : func->genericTypes) {
+            if (type.typeName == genericType) {
+              auto exprType =
+                  generator.GenExpr(this->Args.get(i), junkFile).type;
+              genericMap[genericType] = exprType;
+              new_ident += "." + exprType;
+            }
+          }
+        }
+        func->replaceTypes(genericMap);
+        func->ident.ident = new_ident;
+        func->genericTypes.clear();
+        func->scope = ast::ScopeMod::Private;
+        if (file.lambdas == nullptr) {
+          file.lambdas = new asmc::File();
+          file.hasLambda = true;
+        }
+        if (generator.generatedFunctionNames.find(new_ident) ==
+            generator.generatedFunctionNames.end()) {
+          gen::scope::ScopeManager::getInstance()->pushScope(true);
+          file.lambdas->operator<<(generator.GenSTMT(func));
+          gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+          generator.generatedFunctionNames.insert(new_ident);
+        }
+        this->ident = func->ident.ident;
+        ident = this->ident;
+      }
+    }
     if (func == nullptr) {
       gen::Symbol *smbl = gen::scope::ScopeManager::getInstance()->get(ident);
       if (smbl == nullptr)
@@ -413,6 +454,10 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
                           ") to an rvalue");
         }
       }
+    }
+    if (arg == nullptr) {
+      generator.alert("Argument " + std::to_string(i + 1) +
+                      " is null in function call: " + ident);
     }
     gen::Expr exp = generator.GenExpr(arg, file);
     if (!exp.passable)

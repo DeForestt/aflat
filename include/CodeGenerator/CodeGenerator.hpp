@@ -2,6 +2,7 @@
 #define GEN
 
 #include <optional>
+#include <set>
 #include <tuple>
 #include <unordered_map>
 
@@ -101,6 +102,8 @@ class CodeGenerator {
   HashMap<ast::Statement *> includedMemo;
   HashMap<ast::Statement *> includedClasses;
   HashMap<std::string> nameSpaceTable;
+  std::unordered_map<std::string, std::string> genericTypeConversions;
+  std::set<std::string> generatedFunctionNames;
   ast::Function *currentFunction = nullptr;
   std::string lambdaReturns = "";
   asmc::Size lambdaSize = asmc::AUTO;
@@ -108,10 +111,12 @@ class CodeGenerator {
 
 #pragma region Item Lists
   links::SLinkedList<gen::Type *, std::string> typeList;
+  links::SLinkedList<ast::Class *, std::string> genericTypes;
   links::SLinkedList<asmc::Register, std::string> registers;
   links::LinkedList<Symbol> SymbolTable;
   links::LinkedList<Symbol> GlobalSymbolTable;
   links::SLinkedList<ast::Function, std::string> nameTable;
+  links::SLinkedList<ast::Function, std::string> genericFunctions;
   links::SLinkedList<ast::Type, std::string> TypeList;
   std::unordered_map<std::string, ast::Transform> transforms;
 #pragma endregion

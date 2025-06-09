@@ -10,6 +10,7 @@ class Class : public Statement {
  public:
   Ident ident;
   std::string base;
+  std::vector<std::string> genericTypes;
   std::vector<parse::Annotation> annotations;
   Statement *contract;
   Statement *statement;
@@ -20,7 +21,8 @@ class Class : public Statement {
   Class() = default;
   Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
         bool safeType, bool dynamic, bool pedantic,
-        std::vector<parse::Annotation> &annotations);
+        std::vector<parse::Annotation> &annotations,
+        std::vector<std::string> &genericTypes);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 };  // namespace ast

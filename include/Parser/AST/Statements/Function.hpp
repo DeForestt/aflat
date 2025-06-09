@@ -24,6 +24,7 @@ class Function : public Member, public Statement {
   std::vector<int> optConvertionIndices;  // indices of optional arguments that
                                           // need to be converted
   std::vector<Type> argTypes;
+  std::vector<std::string> genericTypes;
   links::LinkedList<Expr *> decoratorArgs;
   std::vector<bool> mutability;
   bool isLambda = false;
@@ -39,7 +40,7 @@ class Function : public Member, public Statement {
            links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
            bool optional);
   Function(const ScopeMod &scope, links::LinkedList<lex::Token *> &tokens,
-           parse::Parser &parser);
+           std::vector<std::string> genericTypes, parse::Parser &parser);
   Function(const Function &Other, bool locked)
       : scope(Other.scope),
         type(Other.type),
@@ -57,7 +58,8 @@ class Function : public Member, public Statement {
         mask(Other.mask),
         has_return(Other.has_return),
         optional(Other.optional),
-        useType(Other.useType) {
+        useType(Other.useType),
+        genericTypes(Other.genericTypes) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;
     this->hidden = this->hidden;

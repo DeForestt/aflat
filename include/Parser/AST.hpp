@@ -2,6 +2,7 @@
 #define STRUCT
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "ASM.hpp"
@@ -40,6 +41,7 @@ class Statement {
   bool locked = false;
   int logicalLine = 0;
   virtual std::string toString() { return ""; };
+  virtual void replaceTypes(std::unordered_map<std::string, std::string> map);
   virtual gen::GenerationResult const generate(gen::CodeGenerator &generator) {
     asmc::File file;
     file.text << new asmc::nop();
@@ -126,7 +128,7 @@ class Type {
 
   Type() = default;
   Type(const std::string &typeName, const asmc::Size &size)
-      : typeName(typeName), size(size){};
+      : typeName(typeName), size(size) {};
 };
 
 class Arg {
@@ -335,6 +337,8 @@ class IfExpr : public Expr {
            falseExpr->toString();
   }
 };
+
+Statement *deepCopy(const Statement *stmt);
 
 }  // namespace ast
 

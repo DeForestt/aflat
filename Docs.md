@@ -719,19 +719,25 @@ The list of standard modules is as follows:
 - String
     - provides the Standard string object
 - ATest
-  - Provides the testing framework for Aflat
-
-
-
+  - Provides the testing framework for AFlat
 
 Example:
 ```js
 .needs <std>
+import {describe, it, assertEqual} from "ATest" under test;
+import Map from "Utils/Map";
 
-import {print} from "io" under io;
-
-int main(){
-    io.print("Hello World!\n");
+fn main() -> int {
+    test.describe("Test Suite 1", fn (Map __context) -> bool {
+        test.it("should pass the first test", fn (Map __context) {
+            test.assertEqual(1, 1);
+        });
+        test.it("should fail the second test", fn (Map __context) {
+            test.assertEqual(`value`, `other`);
+        });
+        return true;
+    });
+    return 0;
 };
 
 ```

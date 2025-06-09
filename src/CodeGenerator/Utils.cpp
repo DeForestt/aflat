@@ -89,7 +89,7 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
     ast::Function *func = dynamic_cast<ast::Function *>(stmt);
     if (func->ident.ident == ident || ident == "*") {
       func->ident.ident = id + '.' + func->ident.ident;
-      func->statement = nullptr;
+      if (func->genericTypes.size() == 0) func->statement = nullptr;
       if (func->scope != ast::Export) func->locked = true;
       return func;
     }

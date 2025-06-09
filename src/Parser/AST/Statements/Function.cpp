@@ -102,11 +102,10 @@ Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
 
 Function::Function(const ScopeMod &scope,
                    links::LinkedList<lex::Token *> &tokens,
-                   parse::Parser &parser)
-    : scope(scope) {
+                   std::vector<std::string> genericTypes, parse::Parser &parser)
+    : scope(scope), genericTypes(genericTypes) {
   // updated function syntax
   // func <ident>(<args>) -> <type> { <body> }
-
   const auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
   if (ident == nullptr)
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
@@ -155,6 +154,12 @@ Function::Function(const ScopeMod &scope,
 }
 
 gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
+  // if the function is generic, do not generate code for it. It will be
+  // generated when it is called with specific types.
+  if (this->genericTypes.size() > 0) {
+    generator.genericFunctions << *this;
+    return {asmc::File(), std::nullopt};
+  };
   asmc::File file;
   ast::Function *saveFunc = generator.currentFunction;
   int saveIntArgs = generator.intArgsCounter;

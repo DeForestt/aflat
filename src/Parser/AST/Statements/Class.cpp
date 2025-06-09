@@ -8,7 +8,9 @@
 namespace ast {
 Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
              bool safe, bool dynamic, bool pedantic,
-             std::vector<parse::Annotation> &annotations) {
+             std::vector<parse::Annotation> &annotations,
+             std::vector<std::string> &genericTypes) {
+  this->genericTypes = genericTypes;
   this->annotations = annotations;
   this->logicalLine = tokens.peek()->lineCount;
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
@@ -81,6 +83,13 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
 };
 
 gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
+  // if the class is generic, do not generate code for it. It will be
+  // generated when it is instantiated with specific types.
+  if (this->genericTypes.size() > 0) {
+    generator.genericTypes << this;
+    return {asmc::File(), std::nullopt};
+  }
+
   // check class Annotations for @Apply(Class) ... Composition
   std::vector<gen::Class *> applys;
 

@@ -109,6 +109,7 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser,
   this->registers << asmc::Register("xmm3", "xmm3", "xmm3", "xmm3");
   this->registers.foo = asmc::Register::compare;
   this->nameTable.foo = compareFunc;
+  this->genericFunctions.foo = compareFunc;
   this->includedMemo = HashMap<ast::Statement *>();
   this->nameSpaceTable = HashMap<std::string>();
   this->globalScope = true;
