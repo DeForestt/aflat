@@ -338,6 +338,8 @@ class IfExpr : public Expr {
   }
 };
 
+Statement *deepCopy(const Statement *stmt);
+
 }  // namespace ast
 
 #endif
