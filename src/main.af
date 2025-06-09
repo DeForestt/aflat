@@ -10,5 +10,4 @@ fn print(T value) {
 
 fn main() {
     print(17);
-    print("Hello, World!");
 };

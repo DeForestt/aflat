@@ -272,8 +272,16 @@ Statement *deepCopy(const Statement *stmt) {
   if (auto cont = dynamic_cast<const Continue *>(stmt)) {
     return new Continue(*cont);
   }
+  if (auto format = dynamic_cast<const FStringLiteral *>(stmt)) {
+    auto *copy = new FStringLiteral();
+    copy->original = format->original;
+    copy->val = format->val;
+    for (auto &arg : format->args) {
+      copy->args.push_back(static_cast<Expr *>(deepCopy(arg)));
+    }
+    return copy;
+  }
   return nullptr;
 }
 
 }  // namespace ast
-
