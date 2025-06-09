@@ -2,6 +2,7 @@
 #define GEN
 
 #include <optional>
+#include <set>
 #include <tuple>
 #include <unordered_map>
 
@@ -102,6 +103,7 @@ class CodeGenerator {
   HashMap<ast::Statement *> includedClasses;
   HashMap<std::string> nameSpaceTable;
   std::unordered_map<std::string, std::string> genericTypeConversions;
+  std::set<std::string> generatedFunctionNames;
   ast::Function *currentFunction = nullptr;
   std::string lambdaReturns = "";
   asmc::Size lambdaSize = asmc::AUTO;

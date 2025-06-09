@@ -64,10 +64,12 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           file.lambdas = new asmc::File();
           file.hasLambda = true;
         }
-        if (!generator.nameTable[new_ident]) {
+        if (generator.generatedFunctionNames.find(new_ident) ==
+            generator.generatedFunctionNames.end()) {
           gen::scope::ScopeManager::getInstance()->pushScope(true);
           file.lambdas->operator<<(generator.GenSTMT(func));
           gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+          generator.generatedFunctionNames.insert(new_ident);
         }
         this->ident = func->ident.ident;
         ident = this->ident;

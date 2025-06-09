@@ -1,135 +1,53 @@
 .needs <std>
-.needs <asm>
-
-import {print, printInt} from "io" under io;
-import LinkedList from "Collections";
-import string from "String";
 import {print} from "String" under str;
+import string from "String";
+import List from "Collections";
+import Map from "Utils/Map";
 
-mutable int _passes = 0;
-mutable int _failures = 0;
+mutable Map fixtures = NULL;
 
-class Expectation {
-    private any value = value;
-    private bool negate = false;
-
-    Expectation init(const any value) {
-        return my;
-    };
-
-    Expectation not() {
-        const Expectation e = new Expectation(my.value);
-        e.negate = !my.negate;
-        return e;
-    };
-
-    bool toBe(const any expected) {
-        bool result = my.value == expected;
-        if my.negate {
-            result = !result;
-        };
-        if result {
-            _passes = _passes + 1;
-            io.print("OK\n", 'g');
-        } else {
-            _failures = _failures + 1;
-            io.print("FAIL\n", 'r');
-        };
-        return result;
-    };
+export fn getFixtures() -> Map {
+	if fixtures == NULL {
+		fixtures = new Map();
+	};
+	return fixtures;
 };
 
-export Expectation expect(const any value) {
-    return new Expectation(value);
+class Description {
+	string text = text;
+	bool<?Map> implementation = implementation;
+	fn init(const string text, const bool<?Map> implementation) {
+		return my;
+	};
+
+	fn run() -> bool {
+		str.print(my.text + "\n");
+		const let foo = my.implementation;
+		const let fixtures = getFixtures();
+		foo(fixtures);
+		return true;
+	};
+}
+
+export fn describe(const string text, const bool<?Map> implementation) -> void {
+	const let desc = new Description(text, implementation);
+	desc.run();
 };
 
-class JestTest {
-    private string name = new string(name);
-    private adr func = func;
-
-    JestTest init(const adr name, const adr func) {
-        return my;
-    };
-
-    bool run() {
-        str.print(`Running {my.name}: `);
-        const let foo = my.func;
-        const bool res = foo();
-        if res {
-            io.print("OK\n", 'g');
-            _passes = _passes + 1;
-        } else {
-            io.print("FAIL\n", 'r');
-            _failures = _failures + 1;
-        };
-        return res;
-    };
+export fn fix(const adr name, const any value) -> void {
+	const let fixtures = getFixtures();
+	fixtures.set(name, value);
 };
 
-class Suite {
-    private adr name = name;
-    private LinkedList tests = new LinkedList();
-    private adr beforeAll = NULL;
-    private adr afterAll = NULL;
-    private adr beforeEach = NULL;
-    private adr afterEach = NULL;
-
-    Suite init(const adr name) {
-        return my;
-    };
-
-    void addTest(const adr name, const adr func) {
-        my.tests.append(new JestTest(name, func));
-    };
-
-    void setBeforeAll(const adr func) { my.beforeAll = func; };
-    void setAfterAll(const adr func) { my.afterAll = func; };
-    void setBeforeEach(const adr func) { my.beforeEach = func; };
-    void setAfterEach(const adr func) { my.afterEach = func; };
-
-    int run() {
-        if my.beforeAll != NULL {
-            const let ba = my.beforeAll;
-            ba();
-        };
-        
-        str.print(`\nSuite {my.name}\n`);
-        for int i = 0; i < my.tests.size(); i++ {
-            const JestTest t = my.tests.get(i);
-            if my.beforeEach != NULL {
-                const let be = my.beforeEach;
-                be();
-            };
-            t.run();
-            if my.afterEach != NULL {
-                const let ae = my.afterEach;
-                ae();
-            };
-        };
-        if my.afterAll != NULL {
-            const let aa = my.afterAll;
-            aa();
-        };
-        return 0;
-    };
+export fn it(const string text, const adr implementation) -> void {
+	str.print(`  it: {text}\n`);
+	const let fixtures = getFixtures();
+	implementation(fixtures);
 };
 
-export Suite describe(const adr name) {
-    return new Suite(name);
+types(T)
+export fn assertEqual(const T expected, const T actual) -> void {
+	if expected != actual {
+		str.print(`      Expected {expected} but got {actual}\n`);
+	};
 };
-
-export bool case(const adr name, const adr func) {
-    const JestTest t = new JestTest(name, func);
-    return t.run();
-};
-
-export int report() {
-    io.print("Passed tests: "); io.printInt(_passes); io.print("\n");
-    io.print("Failed tests: "); io.printInt(_failures); io.print("\n");
-    if _failures > 0 {
-        return 1;
-    } else {
-        return 0;
-    };
-};
-
