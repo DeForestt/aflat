@@ -8,5 +8,5 @@ fn print(T value) {
 };
 
 fn main() {
-    str.print("Aflat Bin\n");
+    print("Aflat Bin\n");
 };

@@ -8,7 +8,6 @@ static void applyType(Type &t,
                       const std::unordered_map<std::string, std::string> &map) {
   auto it = map.find(t.typeName);
   if (it != map.end()) t.typeName = it->second;
-  if (t.typeHint) applyType(*t.typeHint, map);
   if (t.fPointerArgs.returnType) applyType(*t.fPointerArgs.returnType, map);
   for (auto &a : t.fPointerArgs.argTypes) applyType(a, map);
 }

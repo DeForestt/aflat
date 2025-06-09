@@ -58,7 +58,8 @@ class Function : public Member, public Statement {
         mask(Other.mask),
         has_return(Other.has_return),
         optional(Other.optional),
-        useType(Other.useType) {
+        useType(Other.useType),
+        genericTypes(Other.genericTypes) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;
     this->hidden = this->hidden;

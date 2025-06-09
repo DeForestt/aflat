@@ -113,7 +113,9 @@ class CodeGenerator {
   links::LinkedList<Symbol> SymbolTable;
   links::LinkedList<Symbol> GlobalSymbolTable;
   links::SLinkedList<ast::Function, std::string> nameTable;
+  links::SLinkedList<ast::Function, std::string> genericFunctions;
   links::SLinkedList<ast::Type, std::string> TypeList;
+  links::SLinkedList<ast::Type, std::string> genericTypes;
   std::unordered_map<std::string, ast::Transform> transforms;
 #pragma endregion
 
