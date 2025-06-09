@@ -4,10 +4,12 @@ import string, {print} from "String" under str;
 
 types(T)
 fn print(T value) {
-    str.print(`Value: {value}\n`);
+    str.print(`{value}\n`);
     return;
 };
 
 fn main() {
     print(17);
+    print("Hello, World!");
+    print("Can we do it twice? Yes, we can!");
 };

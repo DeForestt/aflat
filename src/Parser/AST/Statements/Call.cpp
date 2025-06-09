@@ -39,32 +39,38 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
       auto f = generator.genericFunctions[ident];
       if (f != nullptr) {
         auto junkFile = asmc::File();
-        func = f;
+        func = dynamic_cast<ast::Function *>(deepCopy(f));
         // get the argument types and create the map...
         std::unordered_map<std::string, std::string> genericMap;
         // loop through func.argTypes
         auto new_ident = func->ident.ident;
         for (int i = 0; i < func->argTypes.size(); i++) {
           auto type = func->argTypes[i];
+
           for (const auto &genericType : func->genericTypes) {
             if (type.typeName == genericType) {
               auto exprType =
                   generator.GenExpr(this->Args.get(i), junkFile).type;
               genericMap[genericType] = exprType;
+              new_ident += "." + exprType;
             }
           }
         }
         func->replaceTypes(genericMap);
         func->ident.ident = new_ident;
         func->genericTypes.clear();
+        func->scope = ast::ScopeMod::Private;
         if (file.lambdas == nullptr) {
           file.lambdas = new asmc::File();
           file.hasLambda = true;
         }
-        gen::scope::ScopeManager::getInstance()->pushScope(true);
-        file.lambdas->operator<<(generator.GenSTMT(func));
-        gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+        if (!generator.nameTable[new_ident]) {
+          gen::scope::ScopeManager::getInstance()->pushScope(true);
+          file.lambdas->operator<<(generator.GenSTMT(func));
+          gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+        }
         this->ident = func->ident.ident;
+        ident = this->ident;
       }
     }
     if (func == nullptr) {
