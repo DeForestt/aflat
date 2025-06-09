@@ -101,6 +101,7 @@ class CodeGenerator {
   HashMap<ast::Statement *> includedMemo;
   HashMap<ast::Statement *> includedClasses;
   HashMap<std::string> nameSpaceTable;
+  std::unordered_map<std::string, std::string> genericTypeConversions;
   ast::Function *currentFunction = nullptr;
   std::string lambdaReturns = "";
   asmc::Size lambdaSize = asmc::AUTO;

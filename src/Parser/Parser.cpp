@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <unordered_set>
 
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
@@ -145,6 +146,7 @@ ast::Statement *parse::Parser::parseStmt(
     auto dynamicType = false;
     auto pedantic = false;
     auto scope = ast::Public;
+    std::vector<std::string> typeNames;
     tokens.pop();
 
     bool isMutable = true;
@@ -153,15 +155,48 @@ ast::Statement *parse::Parser::parseStmt(
     else
       isMutable = false;
 
-    if (obj.meta == "safe" || obj.meta == "dynamic" || obj.meta == "pedantic") {
-      while (obj.meta == "safe" || obj.meta == "dynamic" ||
-             obj.meta == "pedantic") {
+    // Use a set for efficient lookup instead of multiple 'or' checks
+    static const std::unordered_set<std::string> modifiers = {
+        "safe", "dynamic", "pedantic", "types"};
+
+    if (modifiers.count(obj.meta)) {
+      while (modifiers.count(obj.meta)) {
         if (obj.meta == "safe")
           safeType = true;
         else if (obj.meta == "dynamic")
           dynamicType = true;
         else if (obj.meta == "pedantic")
           pedantic = true;
+        else if (obj.meta == "types") {
+          // types(type1, type2, ...)
+          auto OpenParen = dynamic_cast<lex::OpSym *>(tokens.pop());
+          if (!OpenParen || OpenParen->Sym != '(') {
+            throw err::Exception("Expected '(' after types on line " +
+                                 std::to_string(obj.lineCount));
+          }
+          auto typeIdent = dynamic_cast<lex::LObj *>(tokens.pop());
+          if (!typeIdent)
+            throw err::Exception("Expected identifier after types on line " +
+                                 std::to_string(obj.lineCount));
+          typeNames.push_back(typeIdent->meta);
+          this->addType(typeIdent->meta, asmc::Hard, asmc::QWord, true);
+          auto comma = dynamic_cast<lex::OpSym *>(tokens.peek());
+          while (comma && comma->Sym == ',') {
+            tokens.pop();
+            typeIdent = dynamic_cast<lex::LObj *>(tokens.pop());
+            if (!typeIdent)
+              throw err::Exception("Expected identifier after types on line " +
+                                   std::to_string(obj.lineCount));
+            typeNames.push_back(typeIdent->meta);
+            comma = dynamic_cast<lex::OpSym *>(tokens.peek());
+          }
+          if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr ||
+              dynamic_cast<lex::OpSym *>(tokens.pop())->Sym != ')') {
+            throw err::Exception("Expected ')' after types on line " +
+                                 std::to_string(obj.lineCount));
+          }
+        }
+
         if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
           obj = *dynamic_cast<lex::LObj *>(tokens.peek());
           tokens.pop();
@@ -171,17 +206,18 @@ ast::Statement *parse::Parser::parseStmt(
         }
       }
 
-      if (obj.meta != "class") {
-        throw err::Exception("Can only specify a class as safe " +
-                             std::to_string(obj.lineCount));
+      if (obj.meta != "class" && (safeType, dynamicType, pedantic)) {
+        throw err::Exception(
+            "safe/dynamic/pedantic can only be used with classes on line " +
+            std::to_string(obj.lineCount) + " got " + obj.meta);
       };
     }
 
-    if (obj.meta == "const" || obj.meta == "mutable" || obj.meta == "public" ||
-        obj.meta == "private" || obj.meta == "static" || obj.meta == "export") {
-      while (obj.meta == "const" || obj.meta == "mutable" ||
-             obj.meta == "public" || obj.meta == "private" ||
-             obj.meta == "static" || obj.meta == "export") {
+    static const std::unordered_set<std::string> accessModifiers = {
+        "const", "mutable", "public", "private", "static", "export"};
+
+    if (accessModifiers.count(obj.meta)) {
+      while (accessModifiers.count(obj.meta)) {
         if (obj.meta == "const") {
           isMutable = false;
         } else if (obj.meta == "mutable") {
@@ -481,7 +517,7 @@ ast::Statement *parse::Parser::parseStmt(
     } else if (obj.meta == "return") {
       output = new ast::Return(tokens, *this);
     } else if (obj.meta == "fn") {
-      output = new ast::Function(scope, tokens, *this);
+      output = new ast::Function(scope, tokens, typeNames, *this);
     } else if (obj.meta == "push") {
       auto push = new ast::Push;
       push->expr = this->parseExpr(tokens);

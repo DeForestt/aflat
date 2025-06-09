@@ -2,7 +2,11 @@
 
 import string, {print} from "String" under str;
 
+types(T)
+fn print(T value) {
+    str.print(`{value}\n`);
+};
+
 fn main() {
-    string value = "Aflat Bin";
     str.print("Aflat Bin\n");
 };
