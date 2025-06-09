@@ -541,7 +541,7 @@ ast::Statement *parse::Parser::parseStmt(
       output = new ast::Struct(tokens, *this);
     } else if (obj.meta == "class") {
       output = new ast::Class(tokens, *this, safeType, dynamicType, pedantic,
-                              annotations);
+                              annotations, typeNames);
     } else if (obj.meta == "enum") {
       output = new ast::Enum(tokens, *this);
     } else if (obj.meta == "import") {
