@@ -406,26 +406,21 @@ void buildTemplate(std::string value) {
 
   outfile = std::ofstream(value + "/src/test/test.af");
   outfile << ".needs <std>\n\n";
-  outfile << "import {test, report, expect, describe} from \"ATest.af\" under "
-             "test;\n"
-             "import string from \"String\";\n\n"
-             "bool simpleTest() : test.test(\"simpleTest\") {\n"
-             "\ttest.expect(1).toBe(1);\n"
-             "\treturn true;\n};\n\n";
-
-  outfile << "bool simpleFail() : test.test(\"simpleFail\") {\n"
-             "\ttest.expect(1).toBe(2);\n"
-             "\treturn false;\n"
-             "};\n\n";
-
-  outfile << "int main() {\n"
-             "\tSuite suite = test.describe(\"Simple Test Suite\");\n"
-             "\tsuite.addTest(\"simpleTest\", simpleTest);\n"
-             "\tsuite.addTest(\"simpleFail\", simpleFail);\n"
-             "\tsuite.run();\n"
-             "\ttest.report();\n"
-             "\treturn 0;\n"
-             "};";
+  outfile <<
+      "import {describe, it, assertEqual} from \"ATest\" under test;\n"
+      "import Map from \"Utils/Map\";\n\n"
+      "fn main() -> int {\n"
+      "\ttest.describe(\"Test Suite 1\", fn (Map __context) -> bool {\n"
+      "\t\ttest.it(\"should pass the first test\", fn (Map __context) {\n"
+      "\t\t\ttest.assertEqual(1, 1);\n"
+      "\t\t});\n"
+      "\t\ttest.it(\"should fail the second test\", fn (Map __context) {\n"
+      "\t\t\ttest.assertEqual(`value`, `other`);\n"
+      "\t\t});\n"
+      "\t\treturn true;\n"
+      "\t});\n"
+      "\treturn 0;\n"
+      "};";
   outfile.close();
 
   outfile = std::ofstream(value + "/aflat.cfg");
@@ -462,28 +457,22 @@ void libTemplate(std::string value) {
 
   outfile = std::ofstream(value + "/src/test/test.af");
   outfile << ".needs <std>\n\n";
-  outfile << "import {test, report, expect, describe} from \"ATest.af\" under "
-             "test;\n"
-             "import string from \"String\";\n"
+  outfile << "import {describe, it, assertEqual} from \"ATest\" under test;\n"
+             "import Map from \"Utils/Map\";\n"
              "import {"
-          << value << "} from \"src/mod\" under lib"
-          << ";\n\n"
-             "bool test_"
-          << value << "() : test.test(\"test_" << value
-          << "\") {\n"
-             "\ttest.expect("
+          << value << "} from \"src/mod\";\n\n"
+             "fn main() -> int {\n"
+             "\ttest.describe(\""
           << value
-          << "(1, 2)).toBe(3);\n"
-             "\treturn true;\n};\n\n"
-             "int main() {\n"
-             "\tSuite suite = test.describe(\""
+          << " Test Suite\", fn (Map __context) -> bool {\n"
+             "\t\ttest.it(\"test_"
+          << value << "\", fn (Map __context) {\n"
+             "\t\t\ttest.assertEqual("
           << value
-          << " Test Suite\");\n"
-             "\tsuite.addTest(\"test_"
-          << value << "\", test_" << value
-          << ");\n"
-             "\tsuite.run();\n"
-             "\ttest.report();\n"
+          << "(1, 2), 3);\n"
+             "\t\t});\n"
+             "\t\treturn true;\n"
+             "\t});\n"
              "\treturn 0;\n"
              "};";
 
