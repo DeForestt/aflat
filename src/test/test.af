@@ -4,21 +4,93 @@ import string from "String";
 import List from "Collections";
 import Map from "Utils/Map";
 import {describe, it, assertEqual, assertTrue, fix} from "ATest" under test;
+import JSONObject, JSONValue, JSONType from "JSON";
 
 fn main() -> int{
 	test.describe("String", fn () -> bool {
-        test.it("should get the length of a string", fn () {
-            string s = "Hello, World!";
-            test.assertEqual(s.len(), 13);
+    test.it("should get the length of a string", fn () {
+        string s = "Hello, World!";
+        test.assertEqual(s.len(), 13);
+    });
+
+    test.it("should compare two strings", fn () {
+        string s1 = "Hello";
+        string s2 = "Hello";
+        test.assertTrue(s1 == s2);
+    });
+
+    test.it("should push a character", fn () {
+        string s = new string("abc");
+        const let r = s.push('d');
+        test.assertEqual(r.len(), 4);
+        test.assertTrue(r == "abcd");
+    });
+
+    test.it("should convert to upper and lower", fn () {
+        string s = "AfLaT";
+        test.assertTrue(s.toLower() == "aflat");
+        test.assertTrue(s.toUpper() == "AFLAT");
+    });
+
+    test.it("should parse numeric strings", fn () {
+        string s = new string("42");
+        test.assertTrue(s.isNumeric());
+        const let r = s.toInt();
+        test.assertEqual(42, r.expect("fail"));
+    });
+
+    test.it("should split strings", fn () {
+        string s = "a,b,c";
+        const List parts = s.split(',');
+        test.assertTrue(parts.get(0).expect("no") == "a");
+        test.assertTrue(parts.get(1).expect("no") == "b");
+        test.assertTrue(parts.get(2).expect("no") == "c");
+    });
+
+    test.it("should find substring index", fn () {
+        string s = "abcdef";
+        test.assertEqual(2, s.indexOf('c'));
+    });
+
+    test.it("should replace characters", fn () {
+        string s = "foo bar";
+        test.assertTrue(s.replaceChar(' ', '_') == "foo_bar");
+    });
+
+    test.it("should create substrings", fn () {
+        string s = "hello";
+        test.assertTrue(s.subString(1, 4) == "ell");
+    });
+
+        return true;
         });
 
-        test.it("should compare two strings", fn () {
-            string s1 = "Hello";
-            string s2 = "Hello";
-            test.assertTrue(s1 == s2);
+    test.describe("JSON", fn () -> bool {
+        test.it("should stringify simple objects", fn () {
+            JSONObject obj = new JSONObject();
+            obj.addString("name", "aflat");
+            obj.addInt("age", 2);
+            test.assertTrue(obj.toString() == "{\"name\": \"aflat\", \"age\": 2}");
+        });
+
+        test.it("should support nested objects", fn () {
+            JSONObject child = new JSONObject();
+            child.addBool("flag", true);
+            JSONObject parent = new JSONObject();
+            parent.addObject("child", child);
+            test.assertTrue(parent.toString() == "{\"child\": {\"flag\": true}}");
+        });
+
+        test.it("should stringify lists", fn () {
+            const List values = new List(JSONValue);
+            values.pushBack(new JSONValue("one", JSONType.String));
+            values.pushBack(new JSONValue(1, JSONType.Int));
+            JSONObject obj = new JSONObject();
+            obj.addList("vals", values);
+            test.assertTrue(obj.toString() == "{\"vals\": [\"one\", 1]}");
         });
 
         return true;
-	});
-	return 0;
-};
+        });
+        return 0;
+}; 
