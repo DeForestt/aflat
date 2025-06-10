@@ -122,6 +122,39 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser,
   this->scope = nullptr;
 }
 
+gen::Type **gen::CodeGenerator::instantiateGenericClass(
+    ast::Class *cls, const std::vector<std::string> &types,
+    std::string &newName, asmc::File &OutputFile) {
+  auto classStatement = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
+  std::unordered_map<std::string, std::string> genericMap;
+  newName = classStatement->ident.ident;
+  if (types.size() != classStatement->genericTypes.size())
+    alert("Generic class " + cls->ident.ident + " requires " +
+          std::to_string(classStatement->genericTypes.size()) +
+          " template types, but got " + std::to_string(types.size()));
+  for (size_t i = 0; i < types.size(); i++) {
+    newName += "." + types[i];
+    genericMap[classStatement->genericTypes[i]] = types[i];
+  }
+  classStatement->replaceTypes(genericMap);
+  classStatement->ident.ident = newName;
+  classStatement->genericTypes.clear();
+  gen::Type **result;
+  if (this->TypeList[newName] == nullptr) {
+    if (OutputFile.lambdas == nullptr) OutputFile.lambdas = new asmc::File;
+    OutputFile.hasLambda = true;
+    scope::ScopeManager::getInstance()->pushIsolated();
+    this->pushEnv();
+    OutputFile.lambdas->operator<<(this->GenSTMT(classStatement));
+    result = this->typeList[newName];
+    this->popEnv();
+    scope::ScopeManager::getInstance()->popIsolated();
+  } else {
+    result = this->typeList[newName];
+  }
+  return result;
+}
+
 std::tuple<std::string, gen::Symbol, bool, asmc::File, gen::Symbol *>
 gen::CodeGenerator::resolveSymbol(std::string ident,
                                   links::LinkedList<std::string> modList,
@@ -520,40 +553,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       auto cls = this->genericTypes[call->ident];
       if (cls != nullptr) {
         genericCall = true;
-        auto classStatement = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
-        auto genericMap = std::unordered_map<std::string, std::string>();
-        std::string new_class_name = classStatement->ident.ident;
-        if (exprCall->templateTypes.size() !=
-            classStatement->genericTypes.size()) {
-          alert("Generic class " + call->ident + " requires " +
-                std::to_string(classStatement->genericTypes.size()) +
-                " template types, but got " +
-                std::to_string(exprCall->templateTypes.size()));
-        }
-        for (int i = 0; i < exprCall->templateTypes.size(); i++) {
-          new_class_name += "." + exprCall->templateTypes[i];
-          genericMap[classStatement->genericTypes[i]] =
-              exprCall->templateTypes[i];
-        };
-        classStatement->replaceTypes(genericMap);
-        classStatement->genericTypes.clear();
-        classStatement->ident.ident = new_class_name;
+        std::string new_class_name;
+        t = this->instantiateGenericClass(cls, exprCall->templateTypes,
+                                          new_class_name, OutputFile);
         call->ident = new_class_name;
-
-        if (this->TypeList[new_class_name] == nullptr) {
-          if (OutputFile.lambdas == nullptr)
-            OutputFile.lambdas = new asmc::File;
-          OutputFile.hasLambda = true;
-
-          scope::ScopeManager::getInstance()->pushIsolated();
-          this->pushEnv();
-          OutputFile.lambdas->operator<<(this->GenSTMT(classStatement));
-          t = this->typeList[new_class_name];
-          this->popEnv();
-          scope::ScopeManager::getInstance()->popIsolated();
-        } else {
-          t = this->typeList[new_class_name];
-        }
         if (t == nullptr) {
           alert("Something went wrong with the generic class " + call->ident +
                 " in " + this->moduleId);
@@ -1672,45 +1675,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     if (type == nullptr) {
       auto cls = this->genericTypes[newExpr.type.typeName];
       if (cls != nullptr) {
-        auto classStatement = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
-
-        auto junkFile = asmc::File();
-        std::unordered_map<std::string, std::string> genericMap;
-        std::string new_class_name = classStatement->ident.ident;
-
-        if (newExpr.templateTypes.size() != classStatement->genericTypes.size())
-          alert("The class " + newExpr.type.typeName + " requires " +
-                std::to_string(classStatement->genericTypes.size()) +
-                " template types, but " +
-                std::to_string(newExpr.templateTypes.size()) +
-                " were provided");
-
-        for (size_t i = 0; i < classStatement->genericTypes.size(); i++) {
-          new_class_name += "." + newExpr.templateTypes[i];
-          auto genericType = classStatement->genericTypes[i];
-          auto typeSelected = newExpr.templateTypes[i];
-          genericMap[genericType] = typeSelected;
-        }
-
-        classStatement->replaceTypes(genericMap);
-        classStatement->ident.ident = new_class_name;
-        classStatement->genericTypes.clear();
+        std::string new_class_name;
+        type = this->instantiateGenericClass(cls, newExpr.templateTypes,
+                                             new_class_name, OutputFile);
         newExpr.type.typeName = new_class_name;
-
-        if (this->TypeList[new_class_name] == nullptr) {
-          if (OutputFile.lambdas == nullptr)
-            OutputFile.lambdas = new asmc::File;
-          OutputFile.hasLambda = true;
-
-          scope::ScopeManager::getInstance()->pushIsolated();
-          this->pushEnv();
-          OutputFile.lambdas->operator<<(this->GenSTMT(classStatement));
-          type = this->typeList[new_class_name];
-          this->popEnv();
-          scope::ScopeManager::getInstance()->popIsolated();
-        } else {
-          type = this->typeList[new_class_name];
-        }
       }
     }
     if (type == nullptr) alert("Type " + newExpr.type.typeName + " not found");

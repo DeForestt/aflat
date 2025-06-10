@@ -189,6 +189,10 @@ class CodeGenerator {
       ast::Statement *STMT, links::LinkedList<gen::Symbol> &table);
   // a function for warnings or errors
   void alert(std::string message, bool error = true);
+  gen::Type **instantiateGenericClass(ast::Class *cls,
+                                      const std::vector<std::string> &types,
+                                      std::string &newName,
+                                      asmc::File &OutputFile);
   CodeGenerator(std::string moduleId, parse::Parser &parser,
                 const std::string &source = "");
   asmc::File *deScope(gen::Symbol &sym);
