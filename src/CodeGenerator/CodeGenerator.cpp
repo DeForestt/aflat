@@ -566,8 +566,6 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     }
 
     if (t != nullptr) {
-      if (genericCall)
-        std::cout << "Generic class call: " << call->ident << std::endl;
       gen::Class *cl = dynamic_cast<gen::Class *>(*t);
       if (cl != nullptr) {
         if (cl->dynamic)
