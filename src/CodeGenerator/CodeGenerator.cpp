@@ -1638,9 +1638,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         }
 
         classStatement->replaceTypes(genericMap);
-        // classStatement->ident.ident = new_class_name;
+        classStatement->ident.ident = new_class_name;
         classStatement->genericTypes.clear();
-        // newExpr.type.typeName = new_class_name;
+        newExpr.type.typeName = new_class_name;
 
         if (this->TypeList[new_class_name] == nullptr) {
           scope::ScopeManager::getInstance()->pushIsolated();
