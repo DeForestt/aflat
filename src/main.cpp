@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
       if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
         of = "./" + config.outPutFile;
       }
-      system(of.c_str());
+      [[maybe_unused]] int rc = system(of.c_str());
     }
     return 0;
   }
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
                         (std::istreambuf_iterator<char>()));
     cfg::Config config = cfg::getConfig(content);
     if (runConfig(config, libPathA, 't')) {
-      system("./bin/a.test");
+      [[maybe_unused]] int rc = system("./bin/a.test");
     }
     return 0;
   }
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
         "curl -s "
         "https://raw.githubusercontent.com/DeForestt/aflat/refs/heads/main/"
         "install.sh | bash";
-    system(update_command.c_str());
+    [[maybe_unused]] int rc = system(update_command.c_str());
     return 0;
   }
   if (value == "clean") {
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
         "https://aflat-server.fly.dev/"
         "api/package/" +
         gitRepo + " | bash";
-    system(install_command.c_str());
+    [[maybe_unused]] int rc = system(install_command.c_str());
   }
   std::string outputFile;
   if (argc == 2)
@@ -599,7 +599,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
 
   std::string gcc =
       compilerutils::buildLinkCmd(ofile, linkerList, config.debug);
-  system(gcc.c_str());
+  [[maybe_unused]] int rc = system(gcc.c_str());
   linker.erase(linker.begin(), linker.begin() + libs.size());
 
   if (!config.asm_) {
