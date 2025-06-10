@@ -6,8 +6,8 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
-#include <utility>
 #include <iostream>
+#include <utility>
 
 #include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
@@ -1575,13 +1575,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       this->lambdaSize = func->type.size;
     }
 
-    gen::scope::ScopeManager::getInstance()->pushIsolated();
-    this->pushEnv();
     gen::scope::ScopeManager::getInstance()->pushScope(true);
     OutputFile.lambdas->operator<<(this->GenSTMT(func));
     gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
-    this->popEnv();
-    gen::scope::ScopeManager::getInstance()->popIsolated();
 
     this->returnType = saveRetType;
 
@@ -1643,17 +1639,15 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         }
 
         classStatement->replaceTypes(genericMap);
-          scope::ScopeManager::getInstance()->pushIsolated();
-          this->pushEnv();
-          this->popEnv();
-          scope::ScopeManager::getInstance()->popIsolated();
         classStatement->ident.ident = new_class_name;
         classStatement->genericTypes.clear();
         newExpr.type.typeName = new_class_name;
 
         if (this->TypeList[new_class_name] == nullptr) {
           scope::ScopeManager::getInstance()->pushIsolated();
+          this->pushEnv();
           classStatement->generate(*this);
+          this->popEnv();
           scope::ScopeManager::getInstance()->popIsolated();
         }
         type = this->typeList[new_class_name];
