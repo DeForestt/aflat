@@ -4,6 +4,7 @@ import string from "String";
 import List from "Collections";
 import Map from "Utils/Map";
 import {describe, it, assertEqual, assertTrue, fix} from "ATest" under test;
+import JSONObject, JSONValue, JSONType from "JSON";
 
 fn main() -> int{
 	test.describe("String", fn () -> bool {
@@ -18,7 +19,42 @@ fn main() -> int{
             test.assertTrue(s1 == s2);
         });
 
+        test.it("should push a character", fn () {
+            string s = new string("abc");
+            const let r = s.push('d');
+            test.assertEqual(r.len(), 4);
+            test.assertTrue(r == "abcd");
+        });
+
+        test.it("should convert to upper and lower", fn () {
+            string s = "AfLaT";
+            test.assertTrue(s.toLower() == "aflat");
+            test.assertTrue(s.toUpper() == "AFLAT");
+        });
+
+        test.it("should parse numeric strings", fn () {
+            string s = new string("42");
+            test.assertTrue(s.isNumeric());
+            const let r = s.toInt();
+            test.assertEqual(42, r.expect("fail"));
+        });
+
+        test.it("should find substring index", fn () {
+            string s = "abcdef";
+            test.assertEqual(2, s.indexOf('c'));
+        });
+
+        test.it("should replace characters", fn () {
+            string s = "foo bar";
+            test.assertTrue(s.replaceChar(' ', '_') == "foo_bar");
+        });
+
+        test.it("should create substrings", fn () {
+            string s = "hello";
+            test.assertTrue(s.subString(1, 4) == "ell");
+        });
+
         return true;
-	});
-	return 0;
-};
+    });
+        
+}; 
