@@ -8,51 +8,49 @@
 
 #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
 #include <catch2/catch_test_macros.hpp>
-
 #include <map>
 #include <set>
 
-TEST_CASE( "Character pretty printing" ){
-    SECTION("Specifically escaped"){
+TEST_CASE( "Character pretty printing" ) {
+    SECTION( "Specifically escaped" ) {
         char tab = '\t';
         char newline = '\n';
         char carr_return = '\r';
         char form_feed = '\f';
-        CHECK(tab == '\t');
-        CHECK(newline == '\n');
-        CHECK(carr_return == '\r');
-        CHECK(form_feed == '\f');
+        CHECK( tab == '\t' );
+        CHECK( newline == '\n' );
+        CHECK( carr_return == '\r' );
+        CHECK( form_feed == '\f' );
     }
-    SECTION("General chars"){
+    SECTION( "General chars" ) {
         char space = ' ';
-        CHECK(space == ' ');
-        char chars[] = {'a', 'z', 'A', 'Z'};
-        for (int i = 0; i < 4; ++i){
+        CHECK( space == ' ' );
+        char chars[] = { 'a', 'z', 'A', 'Z' };
+        for ( int i = 0; i < 4; ++i ) {
             char c = chars[i];
-            REQUIRE(c == chars[i]);
+            REQUIRE( c == chars[i] );
         }
     }
-    SECTION("Low ASCII"){
+    SECTION( "Low ASCII" ) {
         char null_terminator = '\0';
-        CHECK(null_terminator == '\0');
-        for (int i = 2; i < 6; ++i){
-            char c = static_cast<char>(i);
-            REQUIRE(c == i);
+        CHECK( null_terminator == '\0' );
+        for ( int i = 2; i < 6; ++i ) {
+            char c = static_cast<char>( i );
+            REQUIRE( c == i );
         }
     }
 }
 
-
 TEST_CASE( "Capture and info messages" ) {
-    SECTION("Capture should stringify like assertions") {
+    SECTION( "Capture should stringify like assertions" ) {
         int i = 2;
-        CAPTURE(i);
-        REQUIRE(true);
+        CAPTURE( i );
+        REQUIRE( true );
     }
-    SECTION("Info should NOT stringify the way assertions do") {
+    SECTION( "Info should NOT stringify the way assertions do" ) {
         int i = 3;
-        INFO(i);
-        REQUIRE(true);
+        INFO( i );
+        REQUIRE( true );
     }
 }
 
@@ -72,12 +70,10 @@ TEST_CASE( "std::map is convertible string", "[toString]" ) {
 
     SECTION( "several items" ) {
         std::map<std::string, int> map = {
-                { "abc", 1 },
-                { "def", 2 },
-                { "ghi", 3 }
-            };
+            { "abc", 1 }, { "def", 2 }, { "ghi", 3 } };
 
-        REQUIRE( Catch::Detail::stringify( map ) == "{ { \"abc\", 1 }, { \"def\", 2 }, { \"ghi\", 3 } }" );
+        REQUIRE( Catch::Detail::stringify( map ) ==
+                 "{ { \"abc\", 1 }, { \"def\", 2 }, { \"ghi\", 3 } }" );
     }
 }
 
@@ -98,66 +94,71 @@ TEST_CASE( "std::set is convertible string", "[toString]" ) {
     SECTION( "several items" ) {
         std::set<std::string> set = { "abc", "def", "ghi" };
 
-        REQUIRE( Catch::Detail::stringify( set ) == "{ \"abc\", \"def\", \"ghi\" }" );
+        REQUIRE( Catch::Detail::stringify( set ) ==
+                 "{ \"abc\", \"def\", \"ghi\" }" );
     }
 }
 
-TEST_CASE("Static arrays are convertible to string", "[toString]") {
-    SECTION("Single item") {
+TEST_CASE( "Static arrays are convertible to string", "[toString]" ) {
+    SECTION( "Single item" ) {
         int singular[1] = { 1 };
-        REQUIRE(Catch::Detail::stringify(singular) == "{ 1 }");
+        REQUIRE( Catch::Detail::stringify( singular ) == "{ 1 }" );
     }
-    SECTION("Multiple") {
+    SECTION( "Multiple" ) {
         int arr[3] = { 3, 2, 1 };
-        REQUIRE(Catch::Detail::stringify(arr) == "{ 3, 2, 1 }");
+        REQUIRE( Catch::Detail::stringify( arr ) == "{ 3, 2, 1 }" );
     }
-    SECTION("Non-trivial inner items") {
-        std::vector<std::string> arr[2] = { {"1:1", "1:2", "1:3"}, {"2:1", "2:2"} };
-        REQUIRE(Catch::Detail::stringify(arr) == R"({ { "1:1", "1:2", "1:3" }, { "2:1", "2:2" } })");
+    SECTION( "Non-trivial inner items" ) {
+        std::vector<std::string> arr[2] = { { "1:1", "1:2", "1:3" },
+                                            { "2:1", "2:2" } };
+        REQUIRE( Catch::Detail::stringify( arr ) ==
+                 R"({ { "1:1", "1:2", "1:3" }, { "2:1", "2:2" } })" );
     }
 }
 
 #ifdef CATCH_CONFIG_CPP17_STRING_VIEW
 
-TEST_CASE("String views are stringified like other strings", "[toString][approvals]") {
-    std::string_view view{"abc"};
-    CHECK(Catch::Detail::stringify(view) == R"("abc")");
+TEST_CASE( "String views are stringified like other strings",
+           "[toString][approvals]" ) {
+    std::string_view view{ "abc" };
+    CHECK( Catch::Detail::stringify( view ) == R"("abc")" );
 
-    std::string_view arr[] { view };
-    CHECK(Catch::Detail::stringify(arr) == R"({ "abc" })");
+    std::string_view arr[]{ view };
+    CHECK( Catch::Detail::stringify( arr ) == R"({ "abc" })" );
 }
 
 #endif
 
-TEST_CASE("Precision of floating point stringification can be set", "[toString][floatingPoint]") {
-    SECTION("Floats") {
+TEST_CASE( "Precision of floating point stringification can be set",
+           "[toString][floatingPoint]" ) {
+    SECTION( "Floats" ) {
         using sm = Catch::StringMaker<float>;
         const auto oldPrecision = sm::precision;
 
         const float testFloat = 1.12345678901234567899f;
-        auto str1 = sm::convert(testFloat);
+        auto str1 = sm::convert( testFloat );
         sm::precision = 5;
         // "1." prefix = 2 chars, f suffix is another char
-        CHECK(str1.size() == 3 + 5);
+        CHECK( str1.size() == 3 + 5 );
 
         sm::precision = 10;
-        auto str2 = sm::convert(testFloat);
-        REQUIRE(str2.size() == 3 + 10);
+        auto str2 = sm::convert( testFloat );
+        REQUIRE( str2.size() == 3 + 10 );
         sm::precision = oldPrecision;
     }
-    SECTION("Double") {
+    SECTION( "Double" ) {
         using sm = Catch::StringMaker<double>;
         const auto oldPrecision = sm::precision;
 
         const double testDouble = 1.123456789012345678901234567899;
         sm::precision = 5;
-        auto str1 = sm::convert(testDouble);
+        auto str1 = sm::convert( testDouble );
         // "1." prefix = 2 chars
-        CHECK(str1.size() == 2 + 5);
+        CHECK( str1.size() == 2 + 5 );
 
         sm::precision = 15;
-        auto str2 = sm::convert(testDouble);
-        REQUIRE(str2.size() == 2 + 15);
+        auto str2 = sm::convert( testDouble );
+        REQUIRE( str2.size() == 2 + 15 );
 
         sm::precision = oldPrecision;
     }
@@ -165,47 +166,48 @@ TEST_CASE("Precision of floating point stringification can be set", "[toString][
 
 namespace {
 
-struct WhatException : std::exception {
-    char const* what() const noexcept override {
-        return "This exception has overridden what() method";
+    struct WhatException : std::exception {
+        char const* what() const noexcept override {
+            return "This exception has overridden what() method";
+        }
+        ~WhatException() override;
+    };
+
+    struct OperatorException : std::exception {
+        ~OperatorException() override;
+    };
+
+    std::ostream& operator<<( std::ostream& out, OperatorException const& ) {
+        out << "OperatorException";
+        return out;
     }
-    ~WhatException() override;
-};
 
-struct OperatorException : std::exception {
-    ~OperatorException() override;
-};
-
-std::ostream& operator<<(std::ostream& out, OperatorException const&) {
-    out << "OperatorException";
-    return out;
-}
-
-struct StringMakerException : std::exception {
-    ~StringMakerException() override;
-};
+    struct StringMakerException : std::exception {
+        ~StringMakerException() override;
+    };
 
 } // end anonymous namespace
 
 namespace Catch {
-template <>
-struct StringMaker<StringMakerException> {
-    static std::string convert(StringMakerException const&) {
-        return "StringMakerException";
-    }
-};
-}
+    template <> struct StringMaker<StringMakerException> {
+        static std::string convert( StringMakerException const& ) {
+            return "StringMakerException";
+        }
+    };
+} // namespace Catch
 
 // Avoid -Wweak-tables
 WhatException::~WhatException() = default;
 OperatorException::~OperatorException() = default;
 StringMakerException::~StringMakerException() = default;
 
-
-
-
-TEST_CASE("Exception as a value (e.g. in REQUIRE_THROWS_MATCHES) can be stringified", "[toString][exception]") {
-    REQUIRE(::Catch::Detail::stringify(WhatException{}) == "This exception has overridden what() method");
-    REQUIRE(::Catch::Detail::stringify(OperatorException{}) == "OperatorException");
-    REQUIRE(::Catch::Detail::stringify(StringMakerException{}) == "StringMakerException");
+TEST_CASE(
+    "Exception as a value (e.g. in REQUIRE_THROWS_MATCHES) can be stringified",
+    "[toString][exception]" ) {
+    REQUIRE( ::Catch::Detail::stringify( WhatException{} ) ==
+             "This exception has overridden what() method" );
+    REQUIRE( ::Catch::Detail::stringify( OperatorException{} ) ==
+             "OperatorException" );
+    REQUIRE( ::Catch::Detail::stringify( StringMakerException{} ) ==
+             "StringMakerException" );
 }

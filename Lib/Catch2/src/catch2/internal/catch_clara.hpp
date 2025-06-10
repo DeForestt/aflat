@@ -29,11 +29,10 @@
 #    endif
 #endif
 
+#include <cassert>
 #include <catch2/internal/catch_move_and_forward.hpp>
 #include <catch2/internal/catch_noncopyable.hpp>
 #include <catch2/internal/catch_void_type.hpp>
-
-#include <cassert>
 #include <memory>
 #include <ostream>
 #include <sstream>
@@ -56,12 +55,11 @@ namespace Catch {
         };
 
         struct accept_many_t {};
-        constexpr accept_many_t accept_many {};
+        constexpr accept_many_t accept_many{};
 
         namespace Detail {
             struct fake_arg {
-                template <typename T>
-                operator T();
+                template <typename T> operator T();
             };
 
             template <typename F, typename = void>
@@ -70,10 +68,8 @@ namespace Catch {
             template <typename F>
             struct is_unary_function<
                 F,
-                Catch::Detail::void_t<decltype(
-                    std::declval<F>()( fake_arg() ) )
-                >
-            > : std::true_type {};
+                Catch::Detail::void_t<decltype( std::declval<F>()(
+                    fake_arg() ) )>> : std::true_type {};
 
             // Traits for extracting arg and return type of lambdas (for single
             // argument lambdas)
@@ -89,7 +85,8 @@ namespace Catch {
             template <typename ClassT, typename ReturnT, typename ArgT>
             struct UnaryLambdaTraits<ReturnT ( ClassT::* )( ArgT ) const> {
                 static const bool isValid = true;
-                using ArgType = std::remove_const_t<std::remove_reference_t<ArgT>>;
+                using ArgType =
+                    std::remove_const_t<std::remove_reference_t<ArgT>>;
                 using ReturnType = ReturnT;
             };
 
@@ -152,11 +149,10 @@ namespace Catch {
                 ResultBase( ResultType type ): m_type( type ) {}
                 virtual ~ResultBase(); // = default;
 
-
-                ResultBase(ResultBase const&) = default;
-                ResultBase& operator=(ResultBase const&) = default;
-                ResultBase(ResultBase&&) = default;
-                ResultBase& operator=(ResultBase&&) = default;
+                ResultBase( ResultBase const& ) = default;
+                ResultBase& operator=( ResultBase const& ) = default;
+                ResultBase( ResultBase&& ) = default;
+                ResultBase& operator=( ResultBase&& ) = default;
 
                 virtual void enforceOk() const = 0;
 
@@ -179,7 +175,8 @@ namespace Catch {
                         new ( &m_value ) T( other.m_value );
                 }
 
-                ResultValueBase( ResultType, T const& value ): ResultBase( ResultType::Ok ) {
+                ResultValueBase( ResultType, T const& value ):
+                    ResultBase( ResultType::Ok ) {
                     new ( &m_value ) T( value );
                 }
 
@@ -223,13 +220,12 @@ namespace Catch {
                     return { ResultType::Ok, value };
                 }
                 static auto ok() -> BasicResult { return { ResultType::Ok }; }
-                static auto logicError( std::string&& message )
-                    -> BasicResult {
-                    return { ResultType::LogicError, CATCH_MOVE(message) };
+                static auto logicError( std::string&& message ) -> BasicResult {
+                    return { ResultType::LogicError, CATCH_MOVE( message ) };
                 }
                 static auto runtimeError( std::string&& message )
                     -> BasicResult {
-                    return { ResultType::RuntimeError, CATCH_MOVE(message) };
+                    return { ResultType::RuntimeError, CATCH_MOVE( message ) };
                 }
 
                 explicit operator bool() const {
@@ -254,9 +250,9 @@ namespace Catch {
                 std::string
                     m_errorMessage; // Only populated if resultType is an error
 
-                BasicResult( ResultType type,
-                             std::string&& message ):
-                    ResultValueBase<T>( type ), m_errorMessage( CATCH_MOVE(message) ) {
+                BasicResult( ResultType type, std::string&& message ):
+                    ResultValueBase<T>( type ),
+                    m_errorMessage( CATCH_MOVE( message ) ) {
                     assert( m_type != ResultType::Ok );
                 }
 
@@ -414,7 +410,8 @@ namespace Catch {
             };
 
             template <typename L> struct BoundManyLambda : BoundLambda<L> {
-                explicit BoundManyLambda( L const& lambda ): BoundLambda<L>( lambda ) {}
+                explicit BoundManyLambda( L const& lambda ):
+                    BoundLambda<L>( lambda ) {}
                 bool isContainer() const override { return true; }
             };
 
@@ -522,18 +519,17 @@ namespace Catch {
                 std::string const& hint() const { return m_hint; }
             };
 
-        } // namespace detail
-
+        } // namespace Detail
 
         // A parser for arguments
         class Arg : public Detail::ParserRefImpl<Arg> {
         public:
-            using ParserRefImpl::ParserRefImpl;
             using ParserBase::parse;
+            using ParserRefImpl::ParserRefImpl;
 
             Detail::InternalParseResult
-                parse(std::string const&,
-                      Detail::TokenStream const& tokens) const override;
+            parse( std::string const&,
+                   Detail::TokenStream const& tokens ) const override;
         };
 
         // A parser for options
@@ -543,11 +539,12 @@ namespace Catch {
 
         public:
             template <typename LambdaT>
-            explicit Opt(LambdaT const& ref) :
+            explicit Opt( LambdaT const& ref ):
                 ParserRefImpl(
-                    std::make_shared<Detail::BoundFlagLambda<LambdaT>>(ref)) {}
+                    std::make_shared<Detail::BoundFlagLambda<LambdaT>>(
+                        ref ) ) {}
 
-            explicit Opt(bool& ref);
+            explicit Opt( bool& ref );
 
             template <typename LambdaT,
                       typename = typename std::enable_if_t<
@@ -565,20 +562,20 @@ namespace Catch {
             Opt( T& ref, std::string const& hint ):
                 ParserRefImpl( ref, hint ) {}
 
-            auto operator[](std::string const& optName) -> Opt& {
-                m_optNames.push_back(optName);
+            auto operator[]( std::string const& optName ) -> Opt& {
+                m_optNames.push_back( optName );
                 return *this;
             }
 
             std::vector<Detail::HelpColumns> getHelpColumns() const;
 
-            bool isMatch(std::string const& optToken) const;
+            bool isMatch( std::string const& optToken ) const;
 
             using ParserBase::parse;
 
             Detail::InternalParseResult
-                parse(std::string const&,
-                      Detail::TokenStream const& tokens) const override;
+            parse( std::string const&,
+                   Detail::TokenStream const& tokens ) const override;
 
             Detail::Result validate() const override;
         };
@@ -590,23 +587,23 @@ namespace Catch {
 
         public:
             ExeName();
-            explicit ExeName(std::string& ref);
+            explicit ExeName( std::string& ref );
 
             template <typename LambdaT>
-            explicit ExeName(LambdaT const& lambda) : ExeName() {
-                m_ref = std::make_shared<Detail::BoundLambda<LambdaT>>(lambda);
+            explicit ExeName( LambdaT const& lambda ): ExeName() {
+                m_ref =
+                    std::make_shared<Detail::BoundLambda<LambdaT>>( lambda );
             }
 
             // The exe name is not parsed out of the normal tokens, but is
             // handled specially
             Detail::InternalParseResult
-                parse(std::string const&,
-                      Detail::TokenStream const& tokens) const override;
+            parse( std::string const&,
+                   Detail::TokenStream const& tokens ) const override;
 
             std::string const& name() const { return *m_name; }
-            Detail::ParserResult set(std::string const& newName);
+            Detail::ParserResult set( std::string const& newName );
         };
-
 
         // A Combined parser
         class Parser : Detail::ParserBase {
@@ -615,36 +612,35 @@ namespace Catch {
             std::vector<Arg> m_args;
 
         public:
-
-            auto operator|=(ExeName const& exeName) -> Parser& {
+            auto operator|=( ExeName const& exeName ) -> Parser& {
                 m_exeName = exeName;
                 return *this;
             }
 
-            auto operator|=(Arg const& arg) -> Parser& {
-                m_args.push_back(arg);
+            auto operator|=( Arg const& arg ) -> Parser& {
+                m_args.push_back( arg );
                 return *this;
             }
 
-            auto operator|=(Opt const& opt) -> Parser& {
-                m_options.push_back(opt);
+            auto operator|=( Opt const& opt ) -> Parser& {
+                m_options.push_back( opt );
                 return *this;
             }
 
-            Parser& operator|=(Parser const& other);
+            Parser& operator|=( Parser const& other );
 
             template <typename T>
-            auto operator|(T const& other) const -> Parser {
-                return Parser(*this) |= other;
+            auto operator|( T const& other ) const -> Parser {
+                return Parser( *this ) |= other;
             }
 
             std::vector<Detail::HelpColumns> getHelpColumns() const;
 
-            void writeToStream(std::ostream& os) const;
+            void writeToStream( std::ostream& os ) const;
 
-            friend auto operator<<(std::ostream& os, Parser const& parser)
+            friend auto operator<<( std::ostream& os, Parser const& parser )
                 -> std::ostream& {
-                parser.writeToStream(os);
+                parser.writeToStream( os );
                 return os;
             }
 
@@ -652,8 +648,8 @@ namespace Catch {
 
             using ParserBase::parse;
             Detail::InternalParseResult
-                parse(std::string const& exeName,
-                      Detail::TokenStream const& tokens) const override;
+            parse( std::string const& exeName,
+                   Detail::TokenStream const& tokens ) const override;
         };
 
         // Transport for raw args (copied from main args, or supplied via
@@ -664,16 +660,15 @@ namespace Catch {
             std::vector<std::string> m_args;
 
         public:
-            Args(int argc, char const* const* argv);
-            Args(std::initializer_list<std::string> args);
+            Args( int argc, char const* const* argv );
+            Args( std::initializer_list<std::string> args );
 
             std::string const& exeName() const { return m_exeName; }
         };
 
-
         // Convenience wrapper for option parser that specifies the help option
         struct Help : Opt {
-            Help(bool& showHelpFlag);
+            Help( bool& showHelpFlag );
         };
 
         // Result type for parser operation
@@ -683,10 +678,10 @@ namespace Catch {
             template <typename DerivedT>
             template <typename T>
             Parser
-                ComposableParserImpl<DerivedT>::operator|(T const& other) const {
-                return Parser() | static_cast<DerivedT const&>(*this) | other;
+            ComposableParserImpl<DerivedT>::operator|( T const& other ) const {
+                return Parser() | static_cast<DerivedT const&>( *this ) | other;
             }
-        }
+        } // namespace Detail
 
     } // namespace Clara
 } // namespace Catch

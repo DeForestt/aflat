@@ -8,9 +8,8 @@
 #ifndef CATCH_TAG_ALIAS_REGISTRY_HPP_INCLUDED
 #define CATCH_TAG_ALIAS_REGISTRY_HPP_INCLUDED
 
-#include <catch2/interfaces/catch_interfaces_tag_alias_registry.hpp>
 #include <catch2/catch_tag_alias.hpp>
-
+#include <catch2/interfaces/catch_interfaces_tag_alias_registry.hpp>
 #include <map>
 #include <string>
 
@@ -21,8 +20,11 @@ namespace Catch {
     public:
         ~TagAliasRegistry() override;
         TagAlias const* find( std::string const& alias ) const override;
-        std::string expandAliases( std::string const& unexpandedTestSpec ) const override;
-        void add( std::string const& alias, std::string const& tag, SourceLineInfo const& lineInfo );
+        std::string
+        expandAliases( std::string const& unexpandedTestSpec ) const override;
+        void add( std::string const& alias,
+                  std::string const& tag,
+                  SourceLineInfo const& lineInfo );
 
     private:
         std::map<std::string, TagAlias> m_registry;

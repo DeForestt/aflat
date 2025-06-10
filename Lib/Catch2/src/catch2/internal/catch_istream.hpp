@@ -10,9 +10,8 @@
 
 #include <catch2/internal/catch_noncopyable.hpp>
 #include <catch2/internal/catch_unique_ptr.hpp>
-
-#include <iosfwd>
 #include <cstddef>
+#include <iosfwd>
 #include <ostream>
 #include <string>
 
@@ -23,7 +22,8 @@ namespace Catch {
         virtual ~IStream(); // = default
         virtual std::ostream& stream() = 0;
         /**
-         * Best guess on whether the instance is writing to a console (e.g. via stdout/stderr)
+         * Best guess on whether the instance is writing to a console (e.g. via
+         * stdout/stderr)
          *
          * This is useful for e.g. Win32 colour support, because the Win32
          * API manipulates console directly, unlike POSIX escape codes,
@@ -47,8 +47,9 @@ namespace Catch {
      *
      * \throws if passed an unrecognized %-prefixed stream
      */
-    auto makeStream( std::string const& filename ) -> Detail::unique_ptr<IStream>;
+    auto makeStream( std::string const& filename )
+        -> Detail::unique_ptr<IStream>;
 
-}
+} // namespace Catch
 
 #endif // CATCH_STREAM_HPP_INCLUDED

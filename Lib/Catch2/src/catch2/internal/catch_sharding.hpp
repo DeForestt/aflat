@@ -9,16 +9,17 @@
 #define CATCH_SHARDING_HPP_INCLUDED
 
 #include <catch2/catch_session.hpp>
-
 #include <cmath>
 
 namespace Catch {
 
-    template<typename Container>
-    Container createShard(Container const& container, std::size_t const shardCount, std::size_t const shardIndex) {
-        assert(shardCount > shardIndex);
+    template <typename Container>
+    Container createShard( Container const& container,
+                           std::size_t const shardCount,
+                           std::size_t const shardIndex ) {
+        assert( shardCount > shardIndex );
 
-        if (shardCount == 1) {
+        if ( shardCount == 1 ) {
             return container;
         }
 
@@ -27,15 +28,20 @@ namespace Catch {
         const std::size_t shardSize = totalTestCount / shardCount;
         const std::size_t leftoverTests = totalTestCount % shardCount;
 
-        const std::size_t startIndex = shardIndex * shardSize + (std::min)(shardIndex, leftoverTests);
-        const std::size_t endIndex = (shardIndex + 1) * shardSize + (std::min)(shardIndex + 1, leftoverTests);
+        const std::size_t startIndex =
+            shardIndex * shardSize + ( std::min )( shardIndex, leftoverTests );
+        const std::size_t endIndex =
+            ( shardIndex + 1 ) * shardSize +
+            ( std::min )( shardIndex + 1, leftoverTests );
 
-        auto startIterator = std::next(container.begin(), static_cast<std::ptrdiff_t>(startIndex));
-        auto endIterator = std::next(container.begin(), static_cast<std::ptrdiff_t>(endIndex));
+        auto startIterator = std::next(
+            container.begin(), static_cast<std::ptrdiff_t>( startIndex ) );
+        auto endIterator = std::next( container.begin(),
+                                      static_cast<std::ptrdiff_t>( endIndex ) );
 
-        return Container(startIterator, endIterator);
+        return Container( startIterator, endIterator );
     }
 
-}
+} // namespace Catch
 
 #endif // CATCH_SHARDING_HPP_INCLUDED

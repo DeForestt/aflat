@@ -9,7 +9,6 @@
 #define CATCH_REPORTER_COMMON_BASE_HPP_INCLUDED
 
 #include <catch2/interfaces/catch_interfaces_reporter.hpp>
-
 #include <map>
 #include <string>
 

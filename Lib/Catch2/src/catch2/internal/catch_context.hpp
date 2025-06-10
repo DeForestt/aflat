@@ -28,29 +28,25 @@ namespace Catch {
         virtual void setConfig( IConfig const* config ) = 0;
 
     private:
-        static IMutableContext *currentContext;
+        static IMutableContext* currentContext;
         friend IMutableContext& getCurrentMutableContext();
         friend void cleanUpContext();
         static void createContext();
     };
 
-    inline IMutableContext& getCurrentMutableContext()
-    {
-        if( !IMutableContext::currentContext )
+    inline IMutableContext& getCurrentMutableContext() {
+        if ( !IMutableContext::currentContext )
             IMutableContext::createContext();
         // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
         return *IMutableContext::currentContext;
     }
 
-    inline IContext& getCurrentContext()
-    {
-        return getCurrentMutableContext();
-    }
+    inline IContext& getCurrentContext() { return getCurrentMutableContext(); }
 
     void cleanUpContext();
 
     class SimplePcg32;
     SimplePcg32& sharedRng();
-}
+} // namespace Catch
 
 #endif // CATCH_CONTEXT_HPP_INCLUDED

@@ -18,10 +18,11 @@ namespace Catch {
 
         ErrnoGuard();
         ~ErrnoGuard();
+
     private:
         int m_oldErrno;
     };
 
-}
+} // namespace Catch
 
 #endif // CATCH_ERRNO_GUARD_HPP_INCLUDED

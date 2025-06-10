@@ -1,7 +1,7 @@
+#include "Parser/AST.hpp"
 #include "Parser/Parser.hpp"
 #include "Scanner.hpp"
 #include "catch.hpp"
-#include "Parser/AST.hpp"
 
 TEST_CASE("deepCopy clones statements", "[deepcopy]") {
   lex::Lexer l;

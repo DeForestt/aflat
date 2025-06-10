@@ -30,10 +30,12 @@ namespace Catch {
     void EventListenerBase::reportInvalidTestSpec( StringRef ) {}
     void EventListenerBase::testRunStarting( TestRunInfo const& ) {}
     void EventListenerBase::testCaseStarting( TestCaseInfo const& ) {}
-    void EventListenerBase::testCasePartialStarting(TestCaseInfo const&, uint64_t) {}
+    void EventListenerBase::testCasePartialStarting( TestCaseInfo const&,
+                                                     uint64_t ) {}
     void EventListenerBase::sectionStarting( SectionInfo const& ) {}
     void EventListenerBase::sectionEnded( SectionStats const& ) {}
-    void EventListenerBase::testCasePartialEnded(TestCaseStats const&, uint64_t) {}
+    void EventListenerBase::testCasePartialEnded( TestCaseStats const&,
+                                                  uint64_t ) {}
     void EventListenerBase::testCaseEnded( TestCaseStats const& ) {}
     void EventListenerBase::testRunEnded( TestRunStats const& ) {}
     void EventListenerBase::skipTest( TestCaseInfo const& ) {}

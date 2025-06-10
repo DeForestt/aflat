@@ -8,9 +8,8 @@
 #ifndef CATCH_TEST_CASE_REGISTRY_IMPL_HPP_INCLUDED
 #define CATCH_TEST_CASE_REGISTRY_IMPL_HPP_INCLUDED
 
-#include <catch2/internal/catch_test_registry.hpp>
 #include <catch2/interfaces/catch_interfaces_config.hpp>
-
+#include <catch2/internal/catch_test_registry.hpp>
 #include <vector>
 
 namespace Catch {
@@ -19,25 +18,36 @@ namespace Catch {
     class IConfig;
     class TestSpec;
 
-    std::vector<TestCaseHandle> sortTests( IConfig const& config, std::vector<TestCaseHandle> const& unsortedTestCases );
+    std::vector<TestCaseHandle>
+    sortTests( IConfig const& config,
+               std::vector<TestCaseHandle> const& unsortedTestCases );
 
     bool isThrowSafe( TestCaseHandle const& testCase, IConfig const& config );
-    bool matchTest( TestCaseHandle const& testCase, TestSpec const& testSpec, IConfig const& config );
+    bool matchTest( TestCaseHandle const& testCase,
+                    TestSpec const& testSpec,
+                    IConfig const& config );
 
-    void enforceNoDuplicateTestCases( std::vector<TestCaseHandle> const& functions );
+    void
+    enforceNoDuplicateTestCases( std::vector<TestCaseHandle> const& functions );
 
-    std::vector<TestCaseHandle> filterTests( std::vector<TestCaseHandle> const& testCases, TestSpec const& testSpec, IConfig const& config );
-    std::vector<TestCaseHandle> const& getAllTestCasesSorted( IConfig const& config );
+    std::vector<TestCaseHandle>
+    filterTests( std::vector<TestCaseHandle> const& testCases,
+                 TestSpec const& testSpec,
+                 IConfig const& config );
+    std::vector<TestCaseHandle> const&
+    getAllTestCasesSorted( IConfig const& config );
 
     class TestRegistry : public ITestCaseRegistry {
     public:
         ~TestRegistry() override = default;
 
-        void registerTest( Detail::unique_ptr<TestCaseInfo> testInfo, Detail::unique_ptr<ITestInvoker> testInvoker );
+        void registerTest( Detail::unique_ptr<TestCaseInfo> testInfo,
+                           Detail::unique_ptr<ITestInvoker> testInvoker );
 
         std::vector<TestCaseInfo*> const& getAllInfos() const override;
         std::vector<TestCaseHandle> const& getAllTests() const override;
-        std::vector<TestCaseHandle> const& getAllTestsSorted( IConfig const& config ) const override;
+        std::vector<TestCaseHandle> const&
+        getAllTestsSorted( IConfig const& config ) const override;
 
     private:
         std::vector<Detail::unique_ptr<TestCaseInfo>> m_owned_test_infos;
@@ -54,19 +64,18 @@ namespace Catch {
     ///////////////////////////////////////////////////////////////////////////
 
     class TestInvokerAsFunction final : public ITestInvoker {
-        using TestType = void(*)();
+        using TestType = void ( * )();
         TestType m_testAsFunction;
+
     public:
-        TestInvokerAsFunction(TestType testAsFunction) noexcept:
-            m_testAsFunction(testAsFunction) {}
+        TestInvokerAsFunction( TestType testAsFunction ) noexcept:
+            m_testAsFunction( testAsFunction ) {}
 
         void invoke() const override;
     };
 
     ///////////////////////////////////////////////////////////////////////////
 
-
 } // end namespace Catch
-
 
 #endif // CATCH_TEST_CASE_REGISTRY_IMPL_HPP_INCLUDED

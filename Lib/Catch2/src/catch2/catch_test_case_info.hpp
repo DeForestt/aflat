@@ -8,20 +8,18 @@
 #ifndef CATCH_TEST_CASE_INFO_HPP_INCLUDED
 #define CATCH_TEST_CASE_INFO_HPP_INCLUDED
 
-#include <catch2/internal/catch_source_line_info.hpp>
 #include <catch2/internal/catch_noncopyable.hpp>
+#include <catch2/internal/catch_source_line_info.hpp>
 #include <catch2/internal/catch_stringref.hpp>
 #include <catch2/internal/catch_test_registry.hpp>
 #include <catch2/internal/catch_unique_ptr.hpp>
-
-
+#include <cstdint>
 #include <string>
 #include <vector>
-#include <cstdint>
 
 #ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wpadded"
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wpadded"
 #endif
 
 namespace Catch {
@@ -34,12 +32,10 @@ namespace Catch {
      * as "cool-tag" internally.
      */
     struct Tag {
-        constexpr Tag(StringRef original_):
-            original(original_)
-        {}
+        constexpr Tag( StringRef original_ ): original( original_ ) {}
         StringRef original;
 
-        friend bool operator< ( Tag const& lhs, Tag const& rhs );
+        friend bool operator<( Tag const& lhs, Tag const& rhs );
         friend bool operator==( Tag const& lhs, Tag const& rhs );
     };
 
@@ -66,9 +62,9 @@ namespace Catch {
      */
     struct TestCaseInfo : Detail::NonCopyable {
 
-        TestCaseInfo(StringRef _className,
-                     NameAndTags const& _tags,
-                     SourceLineInfo const& _lineInfo);
+        TestCaseInfo( StringRef _className,
+                      NameAndTags const& _tags,
+                      SourceLineInfo const& _lineInfo );
 
         bool isHidden() const;
         bool throws() const;
@@ -82,16 +78,17 @@ namespace Catch {
         friend bool operator<( TestCaseInfo const& lhs,
                                TestCaseInfo const& rhs );
 
-
         std::string tagsAsString() const;
 
         std::string name;
         StringRef className;
+
     private:
         std::string backingTags;
         // Internally we copy tags to the backing storage and then add
         // refs to this storage to the tags vector.
-        void internalAppendTag(StringRef tagString);
+        void internalAppendTag( StringRef tagString );
+
     public:
         std::vector<Tag> tags;
         SourceLineInfo lineInfo;
@@ -107,13 +104,12 @@ namespace Catch {
     class TestCaseHandle {
         TestCaseInfo* m_info;
         ITestInvoker* m_invoker;
-    public:
-        TestCaseHandle(TestCaseInfo* info, ITestInvoker* invoker) :
-            m_info(info), m_invoker(invoker) {}
 
-        void invoke() const {
-            m_invoker->invoke();
-        }
+    public:
+        TestCaseHandle( TestCaseInfo* info, ITestInvoker* invoker ):
+            m_info( info ), m_invoker( invoker ) {}
+
+        void invoke() const { m_invoker->invoke(); }
 
         TestCaseInfo const& getTestCaseInfo() const;
     };
@@ -122,10 +118,10 @@ namespace Catch {
     makeTestCaseInfo( StringRef className,
                       NameAndTags const& nameAndTags,
                       SourceLineInfo const& lineInfo );
-}
+} // namespace Catch
 
 #ifdef __clang__
-#pragma clang diagnostic pop
+#    pragma clang diagnostic pop
 #endif
 
 #endif // CATCH_TEST_CASE_INFO_HPP_INCLUDED

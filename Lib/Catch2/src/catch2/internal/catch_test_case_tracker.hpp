@@ -9,188 +9,181 @@
 #define CATCH_TEST_CASE_TRACKER_HPP_INCLUDED
 
 #include <catch2/internal/catch_source_line_info.hpp>
-#include <catch2/internal/catch_unique_ptr.hpp>
 #include <catch2/internal/catch_stringref.hpp>
-
+#include <catch2/internal/catch_unique_ptr.hpp>
 #include <string>
 #include <vector>
 
 namespace Catch {
-namespace TestCaseTracking {
+    namespace TestCaseTracking {
 
-    struct NameAndLocation {
-        std::string name;
-        SourceLineInfo location;
+        struct NameAndLocation {
+            std::string name;
+            SourceLineInfo location;
 
-        NameAndLocation( std::string const& _name, SourceLineInfo const& _location );
-        friend bool operator==(NameAndLocation const& lhs, NameAndLocation const& rhs) {
-            return lhs.name == rhs.name
-                && lhs.location == rhs.location;
-        }
-    };
-
-    class ITracker;
-
-    using ITrackerPtr = Catch::Detail::unique_ptr<ITracker>;
-
-    class ITracker {
-        NameAndLocation m_nameAndLocation;
-
-        using Children = std::vector<ITrackerPtr>;
-
-    protected:
-        enum CycleState {
-            NotStarted,
-            Executing,
-            ExecutingChildren,
-            NeedsAnotherRun,
-            CompletedSuccessfully,
-            Failed
+            NameAndLocation( std::string const& _name,
+                             SourceLineInfo const& _location );
+            friend bool operator==( NameAndLocation const& lhs,
+                                    NameAndLocation const& rhs ) {
+                return lhs.name == rhs.name && lhs.location == rhs.location;
+            }
         };
 
-        ITracker* m_parent = nullptr;
-        Children m_children;
-        CycleState m_runState = NotStarted;
+        class ITracker;
 
-    public:
-        ITracker( NameAndLocation const& nameAndLoc, ITracker* parent ):
-            m_nameAndLocation( nameAndLoc ),
-            m_parent( parent )
-        {}
+        using ITrackerPtr = Catch::Detail::unique_ptr<ITracker>;
 
+        class ITracker {
+            NameAndLocation m_nameAndLocation;
 
-        // static queries
-        NameAndLocation const& nameAndLocation() const {
-            return m_nameAndLocation;
-        }
-        ITracker* parent() const {
-            return m_parent;
-        }
+            using Children = std::vector<ITrackerPtr>;
 
-        virtual ~ITracker(); // = default
+        protected:
+            enum CycleState {
+                NotStarted,
+                Executing,
+                ExecutingChildren,
+                NeedsAnotherRun,
+                CompletedSuccessfully,
+                Failed
+            };
 
+            ITracker* m_parent = nullptr;
+            Children m_children;
+            CycleState m_runState = NotStarted;
 
-        // dynamic queries
+        public:
+            ITracker( NameAndLocation const& nameAndLoc, ITracker* parent ):
+                m_nameAndLocation( nameAndLoc ), m_parent( parent ) {}
 
-        //! Returns true if tracker run to completion (successfully or not)
-        virtual bool isComplete() const = 0;
-        //! Returns true if tracker run to completion succesfully
-        bool isSuccessfullyCompleted() const;
-        //! Returns true if tracker has started but hasn't been completed
-        bool isOpen() const;
-        //! Returns true iff tracker has started
-        bool hasStarted() const;
+            // static queries
+            NameAndLocation const& nameAndLocation() const {
+                return m_nameAndLocation;
+            }
+            ITracker* parent() const { return m_parent; }
 
-        // actions
-        virtual void close() = 0; // Successfully complete
-        virtual void fail() = 0;
-        void markAsNeedingAnotherRun();
+            virtual ~ITracker(); // = default
 
-        //! Register a nested ITracker
-        void addChild( ITrackerPtr&& child );
-        /**
-         * Returns ptr to specific child if register with this tracker.
-         *
-         * Returns nullptr if not found.
-         */
-        ITracker* findChild( NameAndLocation const& nameAndLocation );
-        //! Have any children been added?
-        bool hasChildren() const {
-            return !m_children.empty();
-        }
+            // dynamic queries
 
+            //! Returns true if tracker run to completion (successfully or not)
+            virtual bool isComplete() const = 0;
+            //! Returns true if tracker run to completion succesfully
+            bool isSuccessfullyCompleted() const;
+            //! Returns true if tracker has started but hasn't been completed
+            bool isOpen() const;
+            //! Returns true iff tracker has started
+            bool hasStarted() const;
 
-        //! Marks tracker as executing a child, doing se recursively up the tree
-        void openChild();
+            // actions
+            virtual void close() = 0; // Successfully complete
+            virtual void fail() = 0;
+            void markAsNeedingAnotherRun();
 
-        /**
-         * Returns true if the instance is a section tracker
-         *
-         * Subclasses should override to true if they are, replaces RTTI
-         * for internal debug checks.
-         */
-        virtual bool isSectionTracker() const;
-        /**
-         * Returns true if the instance is a generator tracker
-         *
-         * Subclasses should override to true if they are, replaces RTTI
-         * for internal debug checks.
-         */
-        virtual bool isGeneratorTracker() const;
-    };
+            //! Register a nested ITracker
+            void addChild( ITrackerPtr&& child );
+            /**
+             * Returns ptr to specific child if register with this tracker.
+             *
+             * Returns nullptr if not found.
+             */
+            ITracker* findChild( NameAndLocation const& nameAndLocation );
+            //! Have any children been added?
+            bool hasChildren() const { return !m_children.empty(); }
 
-    class TrackerContext {
+            //! Marks tracker as executing a child, doing se recursively up the
+            //! tree
+            void openChild();
 
-        enum RunState {
-            NotStarted,
-            Executing,
-            CompletedCycle
+            /**
+             * Returns true if the instance is a section tracker
+             *
+             * Subclasses should override to true if they are, replaces RTTI
+             * for internal debug checks.
+             */
+            virtual bool isSectionTracker() const;
+            /**
+             * Returns true if the instance is a generator tracker
+             *
+             * Subclasses should override to true if they are, replaces RTTI
+             * for internal debug checks.
+             */
+            virtual bool isGeneratorTracker() const;
         };
 
-        ITrackerPtr m_rootTracker;
-        ITracker* m_currentTracker = nullptr;
-        RunState m_runState = NotStarted;
+        class TrackerContext {
 
-    public:
+            enum RunState { NotStarted, Executing, CompletedCycle };
 
-        ITracker& startRun();
-        void endRun();
+            ITrackerPtr m_rootTracker;
+            ITracker* m_currentTracker = nullptr;
+            RunState m_runState = NotStarted;
 
-        void startCycle();
-        void completeCycle();
+        public:
+            ITracker& startRun();
+            void endRun();
 
-        bool completedCycle() const;
-        ITracker& currentTracker();
-        void setCurrentTracker( ITracker* tracker );
-    };
+            void startCycle();
+            void completeCycle();
 
-    class TrackerBase : public ITracker {
-    protected:
+            bool completedCycle() const;
+            ITracker& currentTracker();
+            void setCurrentTracker( ITracker* tracker );
+        };
 
-        TrackerContext& m_ctx;
+        class TrackerBase : public ITracker {
+        protected:
+            TrackerContext& m_ctx;
 
-    public:
-        TrackerBase( NameAndLocation const& nameAndLocation, TrackerContext& ctx, ITracker* parent );
+        public:
+            TrackerBase( NameAndLocation const& nameAndLocation,
+                         TrackerContext& ctx,
+                         ITracker* parent );
 
-        bool isComplete() const override;
+            bool isComplete() const override;
 
-        void open();
+            void open();
 
-        void close() override;
-        void fail() override;
+            void close() override;
+            void fail() override;
 
-    private:
-        void moveToParent();
-        void moveToThis();
-    };
+        private:
+            void moveToParent();
+            void moveToThis();
+        };
 
-    class SectionTracker : public TrackerBase {
-        std::vector<StringRef> m_filters;
-        std::string m_trimmed_name;
-    public:
-        SectionTracker( NameAndLocation const& nameAndLocation, TrackerContext& ctx, ITracker* parent );
+        class SectionTracker : public TrackerBase {
+            std::vector<StringRef> m_filters;
+            std::string m_trimmed_name;
 
-        bool isSectionTracker() const override;
+        public:
+            SectionTracker( NameAndLocation const& nameAndLocation,
+                            TrackerContext& ctx,
+                            ITracker* parent );
 
-        bool isComplete() const override;
+            bool isSectionTracker() const override;
 
-        static SectionTracker& acquire( TrackerContext& ctx, NameAndLocation const& nameAndLocation );
+            bool isComplete() const override;
 
-        void tryOpen();
+            static SectionTracker&
+            acquire( TrackerContext& ctx,
+                     NameAndLocation const& nameAndLocation );
 
-        void addInitialFilters( std::vector<std::string> const& filters );
-        void addNextFilters( std::vector<StringRef> const& filters );
-        //! Returns filters active in this tracker
-        std::vector<StringRef> const& getFilters() const;
-        //! Returns whitespace-trimmed name of the tracked section
-        StringRef trimmedName() const;
-    };
+            void tryOpen();
 
-} // namespace TestCaseTracking
+            void addInitialFilters( std::vector<std::string> const& filters );
+            void addNextFilters( std::vector<StringRef> const& filters );
+            //! Returns filters active in this tracker
+            std::vector<StringRef> const& getFilters() const;
+            //! Returns whitespace-trimmed name of the tracked section
+            StringRef trimmedName() const;
+        };
 
-using TestCaseTracking::ITracker;
-using TestCaseTracking::TrackerContext;
-using TestCaseTracking::SectionTracker;
+    } // namespace TestCaseTracking
+
+    using TestCaseTracking::ITracker;
+    using TestCaseTracking::SectionTracker;
+    using TestCaseTracking::TrackerContext;
 
 } // namespace Catch
 

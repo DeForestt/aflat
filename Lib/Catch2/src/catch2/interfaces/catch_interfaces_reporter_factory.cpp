@@ -11,4 +11,4 @@
 namespace Catch {
     IReporterFactory::~IReporterFactory() = default;
     EventListenerFactory::~EventListenerFactory() = default;
-}
+} // namespace Catch

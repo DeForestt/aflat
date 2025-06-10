@@ -6,40 +6,38 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
-#include <catch2/internal/catch_debug_console.hpp>
-
-#include <catch2/internal/catch_config_android_logwrite.hpp>
-#include <catch2/internal/catch_platform.hpp>
-#include <catch2/internal/catch_windows_h_proxy.hpp>
 #include <catch2/catch_user_config.hpp>
+#include <catch2/internal/catch_config_android_logwrite.hpp>
+#include <catch2/internal/catch_debug_console.hpp>
+#include <catch2/internal/catch_platform.hpp>
 #include <catch2/internal/catch_stdstreams.hpp>
-
+#include <catch2/internal/catch_windows_h_proxy.hpp>
 #include <ostream>
 
-#if defined(CATCH_CONFIG_ANDROID_LOGWRITE)
-#include <android/log.h>
+#if defined( CATCH_CONFIG_ANDROID_LOGWRITE )
+#    include <android/log.h>
 
-    namespace Catch {
-        void writeToDebugConsole( std::string const& text ) {
-            __android_log_write( ANDROID_LOG_DEBUG, "Catch", text.c_str() );
-        }
+namespace Catch {
+    void writeToDebugConsole( std::string const& text ) {
+        __android_log_write( ANDROID_LOG_DEBUG, "Catch", text.c_str() );
     }
+} // namespace Catch
 
-#elif defined(CATCH_PLATFORM_WINDOWS)
+#elif defined( CATCH_PLATFORM_WINDOWS )
 
-    namespace Catch {
-        void writeToDebugConsole( std::string const& text ) {
-            ::OutputDebugStringA( text.c_str() );
-        }
+namespace Catch {
+    void writeToDebugConsole( std::string const& text ) {
+        ::OutputDebugStringA( text.c_str() );
     }
+} // namespace Catch
 
 #else
 
-    namespace Catch {
-        void writeToDebugConsole( std::string const& text ) {
-            // !TBD: Need a version for Mac/ XCode and other IDEs
-            Catch::cout() << text;
-        }
+namespace Catch {
+    void writeToDebugConsole( std::string const& text ) {
+        // !TBD: Need a version for Mac/ XCode and other IDEs
+        Catch::cout() << text;
     }
+} // namespace Catch
 
 #endif // Platform

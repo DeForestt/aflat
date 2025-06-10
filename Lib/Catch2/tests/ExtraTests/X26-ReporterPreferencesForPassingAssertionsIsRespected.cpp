@@ -12,39 +12,37 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/reporters/catch_reporter_streaming_base.hpp>
 #include <catch2/reporters/catch_reporter_registrars.hpp>
-
+#include <catch2/reporters/catch_reporter_streaming_base.hpp>
 #include <iostream>
 #include <utility>
 
 namespace {
 
-  class TestReporter : public Catch::StreamingReporterBase {
-  public:
-      TestReporter(Catch::ReporterConfig&& _config):
-          StreamingReporterBase(std::move(_config)) {
-          m_preferences.shouldReportAllAssertions = false;
-          std::cout << "X26 - TestReporter constructed\n";
-      }
+    class TestReporter : public Catch::StreamingReporterBase {
+    public:
+        TestReporter( Catch::ReporterConfig&& _config ):
+            StreamingReporterBase( std::move( _config ) ) {
+            m_preferences.shouldReportAllAssertions = false;
+            std::cout << "X26 - TestReporter constructed\n";
+        }
 
-      static std::string getDescription() {
-          return "X26 - test reporter that opts out of passing assertions";
-      }
+        static std::string getDescription() {
+            return "X26 - test reporter that opts out of passing assertions";
+        }
 
-      void
-      assertionEnded( Catch::AssertionStats const& ) override {
-          std::cerr << "X26 - assertionEnded\n";
-      }
+        void assertionEnded( Catch::AssertionStats const& ) override {
+            std::cerr << "X26 - assertionEnded\n";
+        }
 
-      ~TestReporter() override;
-  };
+        ~TestReporter() override;
+    };
 
-  TestReporter::~TestReporter() = default;
+    TestReporter::~TestReporter() = default;
 
-}
+} // namespace
 
-CATCH_REGISTER_REPORTER("test-reporter", TestReporter)
+CATCH_REGISTER_REPORTER( "test-reporter", TestReporter )
 
 TEST_CASE( "Test with only passing assertions" ) {
     REQUIRE( 1 == 1 );

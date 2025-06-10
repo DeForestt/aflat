@@ -5,28 +5,26 @@
 //        https://www.boost.org/LICENSE_1_0.txt)
 
 // SPDX-License-Identifier: BSL-1.0
-#include <catch2/internal/catch_stringref.hpp>
-
 #include <algorithm>
-#include <ostream>
-#include <cstring>
+#include <catch2/internal/catch_stringref.hpp>
 #include <cstdint>
+#include <cstring>
+#include <ostream>
 
 namespace Catch {
-    StringRef::StringRef( char const* rawChars ) noexcept
-    : StringRef( rawChars, std::strlen(rawChars) )
-    {}
+    StringRef::StringRef( char const* rawChars ) noexcept:
+        StringRef( rawChars, std::strlen( rawChars ) ) {}
 
-    auto StringRef::operator == ( StringRef other ) const noexcept -> bool {
-        return m_size == other.m_size
-            && (std::memcmp( m_start, other.m_start, m_size ) == 0);
+    auto StringRef::operator==( StringRef other ) const noexcept -> bool {
+        return m_size == other.m_size &&
+               ( std::memcmp( m_start, other.m_start, m_size ) == 0 );
     }
 
-    bool StringRef::operator<(StringRef rhs) const noexcept {
-        if (m_size < rhs.m_size) {
-            return strncmp(m_start, rhs.m_start, m_size) <= 0;
+    bool StringRef::operator<( StringRef rhs ) const noexcept {
+        if ( m_size < rhs.m_size ) {
+            return strncmp( m_start, rhs.m_start, m_size ) <= 0;
         }
-        return strncmp(m_start, rhs.m_start, rhs.m_size) < 0;
+        return strncmp( m_start, rhs.m_start, rhs.m_size ) < 0;
     }
 
     int StringRef::compare( StringRef rhs ) const {
@@ -50,20 +48,21 @@ namespace Catch {
         }
     }
 
-    auto operator << ( std::ostream& os, StringRef str ) -> std::ostream& {
-        return os.write(str.data(), static_cast<std::streamsize>(str.size()));
+    auto operator<<( std::ostream& os, StringRef str ) -> std::ostream& {
+        return os.write( str.data(),
+                         static_cast<std::streamsize>( str.size() ) );
     }
 
-    std::string operator+(StringRef lhs, StringRef rhs) {
+    std::string operator+( StringRef lhs, StringRef rhs ) {
         std::string ret;
-        ret.reserve(lhs.size() + rhs.size());
+        ret.reserve( lhs.size() + rhs.size() );
         ret += lhs;
         ret += rhs;
         return ret;
     }
 
     auto operator+=( std::string& lhs, StringRef rhs ) -> std::string& {
-        lhs.append(rhs.data(), rhs.size());
+        lhs.append( rhs.data(), rhs.size() );
         return lhs;
     }
 

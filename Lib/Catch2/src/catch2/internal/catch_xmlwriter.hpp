@@ -10,7 +10,6 @@
 
 #include <catch2/internal/catch_reusable_string_stream.hpp>
 #include <catch2/internal/catch_stringref.hpp>
-
 #include <iosfwd>
 #include <vector>
 
@@ -21,8 +20,8 @@ namespace Catch {
         Newline = 0x02,
     };
 
-    XmlFormatting operator | (XmlFormatting lhs, XmlFormatting rhs);
-    XmlFormatting operator & (XmlFormatting lhs, XmlFormatting rhs);
+    XmlFormatting operator|( XmlFormatting lhs, XmlFormatting rhs );
+    XmlFormatting operator&( XmlFormatting lhs, XmlFormatting rhs );
 
     /**
      * Helper for XML-encoding text (escaping angle brackets, quotes, etc)
@@ -38,7 +37,8 @@ namespace Catch {
 
         void encodeTo( std::ostream& os ) const;
 
-        friend std::ostream& operator << ( std::ostream& os, XmlEncode const& xmlEncode );
+        friend std::ostream& operator<<( std::ostream& os,
+                                         XmlEncode const& xmlEncode );
 
     private:
         StringRef m_str;
@@ -47,7 +47,6 @@ namespace Catch {
 
     class XmlWriter {
     public:
-
         class ScopedElement {
         public:
             ScopedElement( XmlWriter* writer, XmlFormatting fmt );
@@ -88,11 +87,17 @@ namespace Catch {
         XmlWriter( XmlWriter const& ) = delete;
         XmlWriter& operator=( XmlWriter const& ) = delete;
 
-        XmlWriter& startElement( std::string const& name, XmlFormatting fmt = XmlFormatting::Newline | XmlFormatting::Indent);
+        XmlWriter& startElement( std::string const& name,
+                                 XmlFormatting fmt = XmlFormatting::Newline |
+                                                     XmlFormatting::Indent );
 
-        ScopedElement scopedElement( std::string const& name, XmlFormatting fmt = XmlFormatting::Newline | XmlFormatting::Indent);
+        ScopedElement
+        scopedElement( std::string const& name,
+                       XmlFormatting fmt = XmlFormatting::Newline |
+                                           XmlFormatting::Indent );
 
-        XmlWriter& endElement(XmlFormatting fmt = XmlFormatting::Newline | XmlFormatting::Indent);
+        XmlWriter& endElement( XmlFormatting fmt = XmlFormatting::Newline |
+                                                   XmlFormatting::Indent );
 
         //! The attribute content is XML-encoded
         XmlWriter& writeAttribute( StringRef name, StringRef attribute );
@@ -133,8 +138,7 @@ namespace Catch {
         void ensureTagClosed();
 
     private:
-
-        void applyFormatting(XmlFormatting fmt);
+        void applyFormatting( XmlFormatting fmt );
 
         void writeDeclaration();
 
@@ -147,6 +151,6 @@ namespace Catch {
         std::ostream& m_os;
     };
 
-}
+} // namespace Catch
 
 #endif // CATCH_XMLWRITER_HPP_INCLUDED

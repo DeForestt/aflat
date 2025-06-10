@@ -30,7 +30,8 @@ namespace Catch {
             std::string m_string;
             // Width of the column for linebreaking
             size_t m_width = CATCH_CONFIG_CONSOLE_WIDTH - 1;
-            // Indentation of other lines (including first if initial indent is unset)
+            // Indentation of other lines (including first if initial indent is
+            // unset)
             size_t m_indent = 0;
             // Indentation of the first line
             size_t m_initialIndent = std::string::npos;
@@ -54,7 +55,8 @@ namespace Catch {
                 bool m_addHyphen = false;
 
                 const_iterator( Column const& column, EndTag ):
-                    m_column( column ), m_lineStart( m_column.m_string.size() ) {}
+                    m_column( column ),
+                    m_lineStart( m_column.m_string.size() ) {}
 
                 // Calculates the length of the current line
                 void calcLength();
@@ -82,7 +84,8 @@ namespace Catch {
                 const_iterator operator++( int );
 
                 bool operator==( const_iterator const& other ) const {
-                    return m_lineStart == other.m_lineStart && &m_column == &other.m_column;
+                    return m_lineStart == other.m_lineStart &&
+                           &m_column == &other.m_column;
                 }
                 bool operator!=( const_iterator const& other ) const {
                     return !operator==( other );
@@ -108,7 +111,9 @@ namespace Catch {
 
             size_t width() const { return m_width; }
             const_iterator begin() const { return const_iterator( *this ); }
-            const_iterator end() const { return { *this, const_iterator::EndTag{} }; }
+            const_iterator end() const {
+                return { *this, const_iterator::EndTag{} };
+            }
 
             friend std::ostream& operator<<( std::ostream& os,
                                              Column const& col );
