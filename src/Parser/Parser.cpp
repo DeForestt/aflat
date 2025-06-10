@@ -1172,6 +1172,36 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     var->logicalLine = obj.lineCount;
     var->clean = clean;
     output = var;
+    auto genericTypeList = std::vector<std::string>();
+
+    auto templateSym = dynamic_cast<lex::Symbol *>(tokens.peek());
+    if (templateSym != nullptr && templateSym->meta == "::") {
+      tokens.pop();
+      if (dynamic_cast<lex::Symbol *>(tokens.peek()) == nullptr ||
+          dynamic_cast<lex::Symbol *>(tokens.peek())->meta != "<") {
+        throw err::Exception("Expected < after :: on line " +
+                             std::to_string(obj.lineCount));
+      }
+      tokens.pop();
+      while (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+        auto typeName = *dynamic_cast<lex::LObj *>(tokens.pop());
+        if (this->typeList[typeName.meta] == nullptr)
+          throw err::Exception("Unknown type " + typeName.meta);
+        genericTypeList.push_back(typeName.meta);
+        if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+            dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',') {
+          tokens.pop();
+        } else if (dynamic_cast<lex::Symbol *>(tokens.peek()) != nullptr &&
+                   dynamic_cast<lex::Symbol *>(tokens.peek())->meta == ">") {
+          tokens.pop();
+          break;
+        } else {
+          throw err::Exception("Expected , or > after new on line " +
+                               std::to_string(obj.lineCount));
+        }
+      }
+    }
+
     if (obj.meta == "new") {
       auto newExpr = new ast::NewExpr();
       newExpr->logicalLine = obj.lineCount;
@@ -1188,8 +1218,15 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       newExpr->type = *nType;
       newExpr->logicalLine = obj.lineCount;
       auto symbol = dynamic_cast<lex::Symbol *>(tokens.peek());
-      if (symbol != nullptr && symbol->meta == "<") {
+      if (symbol != nullptr && symbol->meta == "::") {
         tokens.pop();
+        symbol = dynamic_cast<lex::Symbol *>(tokens.peek());
+        if (symbol == nullptr || symbol->meta != "<") {
+          throw err::Exception("Expected < after :: on line " +
+                               std::to_string(obj.lineCount));
+        }
+        tokens.pop();
+        // parse the template types
         while (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
           auto typeName = *dynamic_cast<lex::LObj *>(tokens.pop());
           if (this->typeList[typeName.meta] == nullptr)
@@ -1345,6 +1382,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         }
 
         ast::CallExpr *callExpr = new ast::CallExpr;
+        callExpr->templateTypes = std::move(genericTypeList);
         callExpr->call = call;
         callExpr->logicalLine = obj.lineCount;
 

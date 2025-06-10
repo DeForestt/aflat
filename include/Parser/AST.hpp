@@ -280,6 +280,7 @@ class CallExpr : public Expr {
  public:
   Call *call;
 
+  std::vector<std::string> templateTypes;
   std::string toString() override;
 };
 

@@ -514,7 +514,60 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     // check if the call ident is a class name
     Type **t = this->typeList[call->ident];
+    bool genericCall = false;
+
+    if (t == nullptr) {
+      auto cls = this->genericTypes[call->ident];
+      if (cls != nullptr) {
+        genericCall = true;
+        auto classStatement = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
+        auto genericMap = std::unordered_map<std::string, std::string>();
+        std::string new_class_name = classStatement->ident.ident;
+        if (exprCall->templateTypes.size() !=
+            classStatement->genericTypes.size()) {
+          alert("Generic class " + call->ident + " requires " +
+                std::to_string(classStatement->genericTypes.size()) +
+                " template types, but got " +
+                std::to_string(exprCall->templateTypes.size()));
+        }
+        for (int i = 0; i < exprCall->templateTypes.size(); i++) {
+          new_class_name += "." + exprCall->templateTypes[i];
+          genericMap[classStatement->genericTypes[i]] =
+              exprCall->templateTypes[i];
+        };
+        classStatement->replaceTypes(genericMap);
+        classStatement->genericTypes.clear();
+        classStatement->ident.ident = new_class_name;
+        call->ident = new_class_name;
+
+        if (this->TypeList[new_class_name] == nullptr) {
+          if (OutputFile.lambdas == nullptr)
+            OutputFile.lambdas = new asmc::File;
+          OutputFile.hasLambda = true;
+
+          scope::ScopeManager::getInstance()->pushIsolated();
+          this->pushEnv();
+          OutputFile.lambdas->operator<<(this->GenSTMT(classStatement));
+          t = this->typeList[new_class_name];
+          this->popEnv();
+          scope::ScopeManager::getInstance()->popIsolated();
+        } else {
+          t = this->typeList[new_class_name];
+        }
+        if (t == nullptr) {
+          alert("Something went wrong with the generic class " + call->ident +
+                " in " + this->moduleId);
+        }
+      }
+    }
+
+    if (!genericCall && exprCall->templateTypes.size() != 0) {
+      alert("Template types cannot be used with non-generic classes");
+    }
+
     if (t != nullptr) {
+      if (genericCall)
+        std::cout << "Generic class call: " << call->ident << std::endl;
       gen::Class *cl = dynamic_cast<gen::Class *>(*t);
       if (cl != nullptr) {
         if (cl->dynamic)

@@ -22,8 +22,8 @@ fn print(T value) {
 };
 
 fn main() {
-    let test = new TestClass<int>(12);
-    let test2 = new TestClass<string>("Hello");
+    let test = TestClass::<int>(12);
+    let test2 = new TestClass::<string>("Hello");
     let v = test.returnValue();
     print(v);
     print(test2.returnValue());
