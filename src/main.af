@@ -2,6 +2,19 @@
 
 import string, {print} from "String" under str;
 
+types(A)
+class TestClass {
+    private A value = value;
+
+    fn init(A value) -> Self {
+        return my;
+    };
+
+    fn returnValue() -> A {
+        return my.value;
+    };
+};
+
 types(T)
 fn print(T value) {
     str.print(`{value}\n`);
@@ -9,7 +22,10 @@ fn print(T value) {
 };
 
 fn main() {
-    print(17);
-    print("Hello, World!");
+    let test = TestClass::<int>(12);
+    let test2 = new TestClass::<string>("Hello");
+    let v = test.returnValue();
+    print(v);
+    print(test2.returnValue());
     print("Can we do it twice? Yes, we can!");
 };

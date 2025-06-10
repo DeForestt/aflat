@@ -24,17 +24,16 @@
  * below will need to be updated taking these assumptions into account.
  */
 
-#include <catch2/internal/catch_fatal_condition_handler.hpp>
-
+#include <algorithm>
+#include <catch2/interfaces/catch_interfaces_capture.hpp>
 #include <catch2/internal/catch_context.hpp>
 #include <catch2/internal/catch_enforce.hpp>
-#include <catch2/interfaces/catch_interfaces_capture.hpp>
-#include <catch2/internal/catch_windows_h_proxy.hpp>
+#include <catch2/internal/catch_fatal_condition_handler.hpp>
 #include <catch2/internal/catch_stdstreams.hpp>
+#include <catch2/internal/catch_windows_h_proxy.hpp>
 
-#include <algorithm>
-
-#if !defined( CATCH_CONFIG_WINDOWS_SEH ) && !defined( CATCH_CONFIG_POSIX_SIGNALS )
+#if !defined( CATCH_CONFIG_WINDOWS_SEH ) && \
+    !defined( CATCH_CONFIG_POSIX_SIGNALS )
 
 namespace Catch {
 
@@ -50,15 +49,18 @@ namespace Catch {
 #endif // !CATCH_CONFIG_WINDOWS_SEH && !CATCH_CONFIG_POSIX_SIGNALS
 
 #if defined( CATCH_CONFIG_WINDOWS_SEH ) && defined( CATCH_CONFIG_POSIX_SIGNALS )
-#error "Inconsistent configuration: Windows' SEH handling and POSIX signals cannot be enabled at the same time"
+#    error \
+        "Inconsistent configuration: Windows' SEH handling and POSIX signals cannot be enabled at the same time"
 #endif // CATCH_CONFIG_WINDOWS_SEH && CATCH_CONFIG_POSIX_SIGNALS
 
 #if defined( CATCH_CONFIG_WINDOWS_SEH ) || defined( CATCH_CONFIG_POSIX_SIGNALS )
 
 namespace {
     //! Signals fatal error message to the run context
-    void reportFatal( char const * const message ) {
-        Catch::getCurrentContext().getResultCapture()->handleFatalErrorCondition( message );
+    void reportFatal( char const* const message ) {
+        Catch::getCurrentContext()
+            .getResultCapture()
+            ->handleFatalErrorCondition( message );
     }
 
     //! Minimal size Catch2 needs for its own fatal error handling.
@@ -73,22 +75,28 @@ namespace {
 
 namespace Catch {
 
-    struct SignalDefs { DWORD id; const char* name; };
+    struct SignalDefs {
+        DWORD id;
+        const char* name;
+    };
 
     // There is no 1-1 mapping between signals and windows exceptions.
     // Windows can easily distinguish between SO and SigSegV,
     // but SigInt, SigTerm, etc are handled differently.
     static SignalDefs signalDefs[] = {
-        { EXCEPTION_ILLEGAL_INSTRUCTION,  "SIGILL - Illegal instruction signal" },
+        { EXCEPTION_ILLEGAL_INSTRUCTION,
+          "SIGILL - Illegal instruction signal" },
         { EXCEPTION_STACK_OVERFLOW, "SIGSEGV - Stack overflow" },
-        { EXCEPTION_ACCESS_VIOLATION, "SIGSEGV - Segmentation violation signal" },
+        { EXCEPTION_ACCESS_VIOLATION,
+          "SIGSEGV - Segmentation violation signal" },
         { EXCEPTION_INT_DIVIDE_BY_ZERO, "Divide by zero error" },
     };
 
-    static LONG CALLBACK topLevelExceptionFilter(PEXCEPTION_POINTERS ExceptionInfo) {
-        for (auto const& def : signalDefs) {
-            if (ExceptionInfo->ExceptionRecord->ExceptionCode == def.id) {
-                reportFatal(def.name);
+    static LONG CALLBACK
+    topLevelExceptionFilter( PEXCEPTION_POINTERS ExceptionInfo ) {
+        for ( auto const& def : signalDefs ) {
+            if ( ExceptionInfo->ExceptionRecord->ExceptionCode == def.id ) {
+                reportFatal( def.name );
             }
         }
         // If its not an exception we care about, pass it along.
@@ -99,14 +107,14 @@ namespace Catch {
     // Since we do not support multiple instantiations, we put these
     // into global variables and rely on cleaning them up in outlined
     // constructors/destructors
-    static LPTOP_LEVEL_EXCEPTION_FILTER previousTopLevelExceptionFilter = nullptr;
-
+    static LPTOP_LEVEL_EXCEPTION_FILTER previousTopLevelExceptionFilter =
+        nullptr;
 
     // For MSVC, we reserve part of the stack memory for handling
     // memory overflow structured exception.
     FatalConditionHandler::FatalConditionHandler() {
-        ULONG guaranteeSize = static_cast<ULONG>(minStackSizeForErrors);
-        if (!SetThreadStackGuarantee(&guaranteeSize)) {
+        ULONG guaranteeSize = static_cast<ULONG>( minStackSizeForErrors );
+        if ( !SetThreadStackGuarantee( &guaranteeSize ) ) {
             // We do not want to fully error out, because needing
             // the stack reserve should be rare enough anyway.
             Catch::cerr()
@@ -119,17 +127,19 @@ namespace Catch {
     // Windows does not support lowering the stack size guarantee.
     FatalConditionHandler::~FatalConditionHandler() = default;
 
-
     void FatalConditionHandler::engage_platform() {
         // Register as a the top level exception filter.
-        previousTopLevelExceptionFilter = SetUnhandledExceptionFilter(topLevelExceptionFilter);
+        previousTopLevelExceptionFilter =
+            SetUnhandledExceptionFilter( topLevelExceptionFilter );
     }
 
     void FatalConditionHandler::disengage_platform() noexcept {
-        if (SetUnhandledExceptionFilter(previousTopLevelExceptionFilter) != topLevelExceptionFilter) {
+        if ( SetUnhandledExceptionFilter( previousTopLevelExceptionFilter ) !=
+             topLevelExceptionFilter ) {
             Catch::cerr()
                 << "Unexpected SEH unhandled exception filter on disengage."
-                << " The filter was restored, but might be rolled back unexpectedly.";
+                << " The filter was restored, but might be rolled back "
+                   "unexpectedly.";
         }
         previousTopLevelExceptionFilter = nullptr;
     }
@@ -140,7 +150,7 @@ namespace Catch {
 
 #if defined( CATCH_CONFIG_POSIX_SIGNALS )
 
-#include <signal.h>
+#    include <signal.h>
 
 namespace Catch {
 
@@ -150,43 +160,45 @@ namespace Catch {
     };
 
     static SignalDefs signalDefs[] = {
-        { SIGINT,  "SIGINT - Terminal interrupt signal" },
-        { SIGILL,  "SIGILL - Illegal instruction signal" },
-        { SIGFPE,  "SIGFPE - Floating point error signal" },
+        { SIGINT, "SIGINT - Terminal interrupt signal" },
+        { SIGILL, "SIGILL - Illegal instruction signal" },
+        { SIGFPE, "SIGFPE - Floating point error signal" },
         { SIGSEGV, "SIGSEGV - Segmentation violation signal" },
         { SIGTERM, "SIGTERM - Termination request signal" },
-        { SIGABRT, "SIGABRT - Abort (abnormal termination) signal" }
-    };
+        { SIGABRT, "SIGABRT - Abort (abnormal termination) signal" } };
 
 // Older GCCs trigger -Wmissing-field-initializers for T foo = {}
 // which is zero initialization, but not explicit. We want to avoid
 // that.
-#if defined(__GNUC__)
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-#endif
+#    if defined( __GNUC__ )
+#        pragma GCC diagnostic push
+#        pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#    endif
 
     static char* altStackMem = nullptr;
     static std::size_t altStackSize = 0;
     static stack_t oldSigStack{};
-    static struct sigaction oldSigActions[sizeof(signalDefs) / sizeof(SignalDefs)]{};
+    static struct sigaction
+        oldSigActions[sizeof( signalDefs ) / sizeof( SignalDefs )]{};
 
     static void restorePreviousSignalHandlers() noexcept {
         // We set signal handlers back to the previous ones. Hopefully
         // nobody overwrote them in the meantime, and doesn't expect
         // their signal handlers to live past ours given that they
         // installed them after ours..
-        for (std::size_t i = 0; i < sizeof(signalDefs) / sizeof(SignalDefs); ++i) {
-            sigaction(signalDefs[i].id, &oldSigActions[i], nullptr);
+        for ( std::size_t i = 0;
+              i < sizeof( signalDefs ) / sizeof( SignalDefs );
+              ++i ) {
+            sigaction( signalDefs[i].id, &oldSigActions[i], nullptr );
         }
         // Return the old stack
-        sigaltstack(&oldSigStack, nullptr);
+        sigaltstack( &oldSigStack, nullptr );
     }
 
     static void handleSignal( int sig ) {
-        char const * name = "<unknown signal>";
-        for (auto const& def : signalDefs) {
-            if (sig == def.id) {
+        char const* name = "<unknown signal>";
+        for ( auto const& def : signalDefs ) {
+            if ( sig == def.id ) {
                 name = def.name;
                 break;
             }
@@ -200,9 +212,12 @@ namespace Catch {
     }
 
     FatalConditionHandler::FatalConditionHandler() {
-        assert(!altStackMem && "Cannot initialize POSIX signal handler when one already exists");
-        if (altStackSize == 0) {
-            altStackSize = std::max(static_cast<size_t>(SIGSTKSZ), minStackSizeForErrors);
+        assert(
+            !altStackMem &&
+            "Cannot initialize POSIX signal handler when one already exists" );
+        if ( altStackSize == 0 ) {
+            altStackSize = std::max( static_cast<size_t>( SIGSTKSZ ),
+                                     minStackSizeForErrors );
         }
         altStackMem = new char[altStackSize]();
     }
@@ -219,20 +234,21 @@ namespace Catch {
         sigStack.ss_sp = altStackMem;
         sigStack.ss_size = altStackSize;
         sigStack.ss_flags = 0;
-        sigaltstack(&sigStack, &oldSigStack);
-        struct sigaction sa = { };
+        sigaltstack( &sigStack, &oldSigStack );
+        struct sigaction sa = {};
 
         sa.sa_handler = handleSignal;
         sa.sa_flags = SA_ONSTACK;
-        for (std::size_t i = 0; i < sizeof(signalDefs)/sizeof(SignalDefs); ++i) {
-            sigaction(signalDefs[i].id, &sa, &oldSigActions[i]);
+        for ( std::size_t i = 0;
+              i < sizeof( signalDefs ) / sizeof( SignalDefs );
+              ++i ) {
+            sigaction( signalDefs[i].id, &sa, &oldSigActions[i] );
         }
     }
 
-#if defined(__GNUC__)
-#    pragma GCC diagnostic pop
-#endif
-
+#    if defined( __GNUC__ )
+#        pragma GCC diagnostic pop
+#    endif
 
     void FatalConditionHandler::disengage_platform() noexcept {
         restorePreviousSignalHandlers();

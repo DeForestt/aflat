@@ -8,11 +8,10 @@
 #ifndef CATCH_INTERFACES_CAPTURE_HPP_INCLUDED
 #define CATCH_INTERFACES_CAPTURE_HPP_INCLUDED
 
-#include <string>
-#include <chrono>
-
-#include <catch2/internal/catch_stringref.hpp>
 #include <catch2/internal/catch_result_type.hpp>
+#include <catch2/internal/catch_stringref.hpp>
+#include <chrono>
+#include <string>
 
 namespace Catch {
 
@@ -37,12 +36,14 @@ namespace Catch {
     public:
         virtual ~IResultCapture();
 
-        virtual bool sectionStarted(    SectionInfo const& sectionInfo,
-                                        Counts& assertions ) = 0;
+        virtual bool sectionStarted( SectionInfo const& sectionInfo,
+                                     Counts& assertions ) = 0;
         virtual void sectionEnded( SectionEndInfo const& endInfo ) = 0;
         virtual void sectionEndedEarly( SectionEndInfo const& endInfo ) = 0;
 
-        virtual auto acquireGeneratorTracker( StringRef generatorName, SourceLineInfo const& lineInfo ) -> IGeneratorTracker& = 0;
+        virtual auto acquireGeneratorTracker( StringRef generatorName,
+                                              SourceLineInfo const& lineInfo )
+            -> IGeneratorTracker& = 0;
 
         virtual void benchmarkPreparing( StringRef name ) = 0;
         virtual void benchmarkStarting( BenchmarkInfo const& info ) = 0;
@@ -52,34 +53,29 @@ namespace Catch {
         virtual void pushScopedMessage( MessageInfo const& message ) = 0;
         virtual void popScopedMessage( MessageInfo const& message ) = 0;
 
-        virtual void emplaceUnscopedMessage( MessageBuilder const& builder ) = 0;
+        virtual void
+        emplaceUnscopedMessage( MessageBuilder const& builder ) = 0;
 
         virtual void handleFatalErrorCondition( StringRef message ) = 0;
 
-        virtual void handleExpr
-                (   AssertionInfo const& info,
-                    ITransientExpression const& expr,
-                    AssertionReaction& reaction ) = 0;
-        virtual void handleMessage
-                (   AssertionInfo const& info,
-                    ResultWas::OfType resultType,
-                    StringRef message,
-                    AssertionReaction& reaction ) = 0;
-        virtual void handleUnexpectedExceptionNotThrown
-                (   AssertionInfo const& info,
-                    AssertionReaction& reaction ) = 0;
-        virtual void handleUnexpectedInflightException
-                (   AssertionInfo const& info,
-                    std::string const& message,
-                    AssertionReaction& reaction ) = 0;
-        virtual void handleIncomplete
-                (   AssertionInfo const& info ) = 0;
-        virtual void handleNonExpr
-                (   AssertionInfo const &info,
-                    ResultWas::OfType resultType,
-                    AssertionReaction &reaction ) = 0;
-
-
+        virtual void handleExpr( AssertionInfo const& info,
+                                 ITransientExpression const& expr,
+                                 AssertionReaction& reaction ) = 0;
+        virtual void handleMessage( AssertionInfo const& info,
+                                    ResultWas::OfType resultType,
+                                    StringRef message,
+                                    AssertionReaction& reaction ) = 0;
+        virtual void
+        handleUnexpectedExceptionNotThrown( AssertionInfo const& info,
+                                            AssertionReaction& reaction ) = 0;
+        virtual void
+        handleUnexpectedInflightException( AssertionInfo const& info,
+                                           std::string const& message,
+                                           AssertionReaction& reaction ) = 0;
+        virtual void handleIncomplete( AssertionInfo const& info ) = 0;
+        virtual void handleNonExpr( AssertionInfo const& info,
+                                    ResultWas::OfType resultType,
+                                    AssertionReaction& reaction ) = 0;
 
         virtual bool lastAssertionPassed() = 0;
         virtual void assertionPassed() = 0;
@@ -91,6 +87,6 @@ namespace Catch {
     };
 
     IResultCapture& getResultCapture();
-}
+} // namespace Catch
 
 #endif // CATCH_INTERFACES_CAPTURE_HPP_INCLUDED

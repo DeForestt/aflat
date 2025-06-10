@@ -13,9 +13,9 @@
  * As an FYI, if you do that, you are wrong.
  */
 
-#include <windows.h>
 #include <catch2/catch_test_macros.hpp>
+#include <windows.h>
 
-TEST_CASE("Catch2 did survive compilation with windows.h", "[compile-test]") {
+TEST_CASE( "Catch2 did survive compilation with windows.h", "[compile-test]" ) {
     SUCCEED();
 }

@@ -5,6 +5,7 @@
 #include <set>
 #include <tuple>
 #include <unordered_map>
+#include <vector>
 
 #include "ASM.hpp"
 #include "CodeGenerator/Expr.hpp"
@@ -111,7 +112,7 @@ class CodeGenerator {
 
 #pragma region Item Lists
   links::SLinkedList<gen::Type *, std::string> typeList;
-  links::SLinkedList<ast::Class *, std::string> genericTypes;
+  std::unordered_map<std::string, ast::Class *> genericTypes;
   links::SLinkedList<asmc::Register, std::string> registers;
   links::LinkedList<Symbol> SymbolTable;
   links::LinkedList<Symbol> GlobalSymbolTable;
@@ -120,6 +121,30 @@ class CodeGenerator {
   links::SLinkedList<ast::Type, std::string> TypeList;
   std::unordered_map<std::string, ast::Transform> transforms;
 #pragma endregion
+
+  struct EnvState {
+    links::LinkedList<Symbol> SymbolTable;
+    links::LinkedList<Symbol> GlobalSymbolTable;
+    links::SLinkedList<ast::Function, std::string> nameTable;
+    links::SLinkedList<ast::Function, std::string> genericFunctions;
+    std::unordered_map<std::string, ast::Class *> genericTypes;
+    HashMap<ast::Statement *> includedMemo;
+    HashMap<ast::Statement *> includedClasses;
+    HashMap<std::string> nameSpaceTable;
+    std::unordered_map<std::string, std::string> genericTypeConversions;
+    std::set<std::string> generatedFunctionNames;
+    links::SLinkedList<gen::Type *, std::string> typeList;
+    links::SLinkedList<ast::Type, std::string> TypeList;
+    std::unordered_map<std::string, ast::Transform> transforms;
+    bool inFunction;
+    bool globalScope;
+    std::string lambdaReturns;
+    asmc::Size lambdaSize;
+    int tempCount;
+    ast::Function *currentFunction;
+  };
+
+  std::vector<EnvState> envStack;
 
   int getBytes(asmc::Size size);
 
@@ -150,6 +175,9 @@ class CodeGenerator {
   links::LinkedList<std::string> breakContext;
   links::LinkedList<std::string> continueContext;
 
+  void pushEnv();
+  void popEnv();
+
   std::tuple<std::string, gen::Symbol, bool, asmc::File, gen::Symbol *>
   resolveSymbol(std::string ident, links::LinkedList<std::string> modList,
                 asmc::File &OutputFile, links::LinkedList<ast::Expr *> indicies,
@@ -161,6 +189,10 @@ class CodeGenerator {
       ast::Statement *STMT, links::LinkedList<gen::Symbol> &table);
   // a function for warnings or errors
   void alert(std::string message, bool error = true);
+  gen::Type **instantiateGenericClass(ast::Class *cls,
+                                      const std::vector<std::string> &types,
+                                      std::string &newName,
+                                      asmc::File &OutputFile);
   CodeGenerator(std::string moduleId, parse::Parser &parser,
                 const std::string &source = "");
   asmc::File *deScope(gen::Symbol &sym);

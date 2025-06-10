@@ -13,5 +13,5 @@ namespace Catch {
         namespace Detail {
             BenchmarkFunction::callable::~callable() = default;
         } // namespace Detail
-    } // namespace Benchmark
+    }     // namespace Benchmark
 } // namespace Catch

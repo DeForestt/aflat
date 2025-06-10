@@ -283,7 +283,8 @@ namespace {
            << info.reconstructExpression() << "'\n"
            << ws( level + 1 ) << "- message: '" << info.message << "'\n"
            << ws( level + 1 ) << "- lazyExpression: '"
-           << "(info.lazyExpression)" << "'\n"
+           << "(info.lazyExpression)"
+           << "'\n"
            << ws( level + 1 ) << "- resultType: '" << info.resultType << "'\n";
     }
 

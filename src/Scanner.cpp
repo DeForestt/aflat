@@ -366,8 +366,16 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
       auto col = new OpSym;
       col->Sym = input[i];
       col->lineCount = lineCount;
-      tokens << col;
       i++;
+      if (input[i] == ':') {
+        auto sym = new lex::Symbol;
+        sym->meta = "::";
+        sym->lineCount = lineCount;
+        tokens << sym;
+        i++;
+      } else {
+        tokens << col;
+      }
     } else if (input[i] == '@') {
       auto at = new OpSym;
       at->Sym = input[i];

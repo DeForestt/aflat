@@ -128,7 +128,7 @@ class Type {
 
   Type() = default;
   Type(const std::string &typeName, const asmc::Size &size)
-      : typeName(typeName), size(size) {};
+      : typeName(typeName), size(size){};
 };
 
 class Arg {
@@ -280,6 +280,7 @@ class CallExpr : public Expr {
  public:
   Call *call;
 
+  std::vector<std::string> templateTypes;
   std::string toString() override;
 };
 
@@ -299,6 +300,7 @@ class NewExpr : public Expr {
  public:
   Type type;
   links::LinkedList<Expr *> args;
+  std::vector<std::string> templateTypes;
 
   std::string toString() override {
     std::string result = "new " + type.typeName;

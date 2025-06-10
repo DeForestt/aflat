@@ -1,10 +1,11 @@
+#include <cstdio>
+#include <fstream>
+
+#include "CodeGenerator/MockCodeGenerator.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
 #include "catch.hpp"
-#include "CodeGenerator/MockCodeGenerator.hpp"
-#include <fstream>
-#include <cstdio>
 
 TEST_CASE("Parser handles mixed import of classes and functions", "[parser]") {
   lex::Lexer l;

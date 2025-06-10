@@ -9,9 +9,8 @@
 #define CATCH_REPORTER_STREAMING_BASE_HPP_INCLUDED
 
 #include <catch2/interfaces/catch_interfaces_reporter.hpp>
-#include <catch2/reporters/catch_reporter_common_base.hpp>
 #include <catch2/internal/catch_move_and_forward.hpp>
-
+#include <catch2/reporters/catch_reporter_common_base.hpp>
 #include <vector>
 
 namespace Catch {
@@ -20,9 +19,8 @@ namespace Catch {
     public:
         // GCC5 compat: we cannot use inherited constructor, because it
         //              doesn't implement backport of P0136
-        StreamingReporterBase(ReporterConfig&& _config):
-            ReporterBase(CATCH_MOVE(_config))
-        {}
+        StreamingReporterBase( ReporterConfig&& _config ):
+            ReporterBase( CATCH_MOVE( _config ) ) {}
         ~StreamingReporterBase() override;
 
         void benchmarkPreparing( StringRef ) override {}
@@ -36,27 +34,29 @@ namespace Catch {
 
         void testRunStarting( TestRunInfo const& _testRunInfo ) override;
 
-        void testCaseStarting(TestCaseInfo const& _testInfo) override  {
+        void testCaseStarting( TestCaseInfo const& _testInfo ) override {
             currentTestCaseInfo = &_testInfo;
         }
-        void testCasePartialStarting( TestCaseInfo const&, uint64_t ) override {}
-        void sectionStarting(SectionInfo const& _sectionInfo) override {
-            m_sectionStack.push_back(_sectionInfo);
+        void testCasePartialStarting( TestCaseInfo const&, uint64_t ) override {
+        }
+        void sectionStarting( SectionInfo const& _sectionInfo ) override {
+            m_sectionStack.push_back( _sectionInfo );
         }
 
         void assertionStarting( AssertionInfo const& ) override {}
         void assertionEnded( AssertionStats const& ) override {}
 
-        void sectionEnded(SectionStats const& /* _sectionStats */) override {
+        void sectionEnded( SectionStats const& /* _sectionStats */ ) override {
             m_sectionStack.pop_back();
         }
         void testCasePartialEnded( TestCaseStats const&, uint64_t ) override {}
-        void testCaseEnded(TestCaseStats const& /* _testCaseStats */) override {
+        void
+        testCaseEnded( TestCaseStats const& /* _testCaseStats */ ) override {
             currentTestCaseInfo = nullptr;
         }
         void testRunEnded( TestRunStats const& /* _testRunStats */ ) override;
 
-        void skipTest(TestCaseInfo const&) override {
+        void skipTest( TestCaseInfo const& ) override {
             // Don't do anything with this by default.
             // It can optionally be overridden in the derived class.
         }

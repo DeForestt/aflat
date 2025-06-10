@@ -10,21 +10,23 @@
 
 #include <catch2/interfaces/catch_interfaces_reporter.hpp>
 #include <catch2/interfaces/catch_interfaces_reporter_registry.hpp>
-
 #include <map>
 
 namespace Catch {
 
     class ReporterRegistry : public IReporterRegistry {
     public:
-
         ReporterRegistry();
-        ~ReporterRegistry() override; // = default, out of line to allow fwd decl
+        ~ReporterRegistry()
+            override; // = default, out of line to allow fwd decl
 
-        IEventListenerPtr create( std::string const& name, ReporterConfig&& config ) const override;
+        IEventListenerPtr create( std::string const& name,
+                                  ReporterConfig&& config ) const override;
 
-        void registerReporter( std::string const& name, IReporterFactoryPtr factory );
-        void registerListener( Detail::unique_ptr<EventListenerFactory> factory );
+        void registerReporter( std::string const& name,
+                               IReporterFactoryPtr factory );
+        void
+        registerListener( Detail::unique_ptr<EventListenerFactory> factory );
 
         FactoryMap const& getFactories() const override;
         Listeners const& getListeners() const override;
@@ -33,6 +35,6 @@ namespace Catch {
         FactoryMap m_factories;
         Listeners m_listeners;
     };
-}
+} // namespace Catch
 
 #endif // CATCH_REPORTER_REGISTRY_HPP_INCLUDED

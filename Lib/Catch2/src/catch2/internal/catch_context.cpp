@@ -14,13 +14,9 @@ namespace Catch {
     class Context : public IMutableContext, private Detail::NonCopyable {
 
     public: // IContext
-        IResultCapture* getResultCapture() override {
-            return m_resultCapture;
-        }
+        IResultCapture* getResultCapture() override { return m_resultCapture; }
 
-        IConfig const* getConfig() const override {
-            return m_config;
-        }
+        IConfig const* getConfig() const override { return m_config; }
 
         ~Context() override;
 
@@ -28,9 +24,7 @@ namespace Catch {
         void setResultCapture( IResultCapture* resultCapture ) override {
             m_resultCapture = resultCapture;
         }
-        void setConfig( IConfig const* config ) override {
-            m_config = config;
-        }
+        void setConfig( IConfig const* config ) override { m_config = config; }
 
         friend IMutableContext& getCurrentMutableContext();
 
@@ -39,12 +33,9 @@ namespace Catch {
         IResultCapture* m_resultCapture = nullptr;
     };
 
-    IMutableContext *IMutableContext::currentContext = nullptr;
+    IMutableContext* IMutableContext::currentContext = nullptr;
 
-    void IMutableContext::createContext()
-    {
-        currentContext = new Context();
-    }
+    void IMutableContext::createContext() { currentContext = new Context(); }
 
     void cleanUpContext() {
         delete IMutableContext::currentContext;
@@ -54,10 +45,9 @@ namespace Catch {
     IMutableContext::~IMutableContext() = default;
     Context::~Context() = default;
 
-
     SimplePcg32& sharedRng() {
         static SimplePcg32 s_rng;
         return s_rng;
     }
 
-}
+} // namespace Catch

@@ -156,8 +156,7 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
       generator.alert("Identifier " + ident + " not found to import");
     OutputFile << generator.GenSTMT(statement);
   }
-  if (this->hasFunctions)
-    generator.nameSpaceTable.insert(this->nameSpace, id);
+  if (this->hasFunctions) generator.nameSpaceTable.insert(this->nameSpace, id);
   return {OutputFile, std::nullopt};
 }
 
@@ -180,8 +179,8 @@ gen::GenerationResult const Import::generateClasses(
   else {
     std::ifstream file(this->path);
     if (!file.is_open()) {
-      this->path = this->path.substr(0, this->path.find_last_of(".")) +
-                   "/mod.af";
+      this->path =
+          this->path.substr(0, this->path.find_last_of(".")) + "/mod.af";
       file.open(this->path);
       if (!file.is_open()) {
         generator.alert("File " + this->path + " not found");

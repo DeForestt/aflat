@@ -23,5 +23,9 @@ public:
     int m_a;
 };
 
-TEST_CASE_METHOD(TestCaseFixture1, "A test case with duplicated name and tags", "[tag1]") {}
-TEST_CASE_METHOD(TestCaseFixture2, "A test case with duplicated name and tags", "[tag1]") {}
+TEST_CASE_METHOD( TestCaseFixture1,
+                  "A test case with duplicated name and tags",
+                  "[tag1]" ) {}
+TEST_CASE_METHOD( TestCaseFixture2,
+                  "A test case with duplicated name and tags",
+                  "[tag1]" ) {}

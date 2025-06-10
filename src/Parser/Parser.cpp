@@ -988,6 +988,39 @@ ast::Type parse::Parser::parseFPointerType(
   return type;
 }
 
+std::vector<std::string> parse::Parser::parseTemplateTypeList(
+    links::LinkedList<lex::Token *> &tokens, int lineCount) {
+  std::vector<std::string> list;
+  auto templateSym = dynamic_cast<lex::Symbol *>(tokens.peek());
+  if (templateSym != nullptr && templateSym->meta == "::") {
+    tokens.pop();
+    if (dynamic_cast<lex::Symbol *>(tokens.peek()) == nullptr ||
+        dynamic_cast<lex::Symbol *>(tokens.peek())->meta != "<") {
+      throw err::Exception("Expected < after :: on line " +
+                           std::to_string(lineCount));
+    }
+    tokens.pop();
+    while (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+      auto typeName = *dynamic_cast<lex::LObj *>(tokens.pop());
+      if (this->typeList[typeName.meta] == nullptr)
+        throw err::Exception("Unknown type " + typeName.meta);
+      list.push_back(typeName.meta);
+      if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+          dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',') {
+        tokens.pop();
+      } else if (dynamic_cast<lex::Symbol *>(tokens.peek()) != nullptr &&
+                 dynamic_cast<lex::Symbol *>(tokens.peek())->meta == ">") {
+        tokens.pop();
+        break;
+      } else {
+        throw err::Exception("Expected , or > after template list on line " +
+                             std::to_string(lineCount));
+      }
+    }
+  }
+  return list;
+}
+
 ast::ConditionalExpr *parse::Parser::parseCondition(
     links::LinkedList<lex::Token *> &tokens) {
   auto output = new ast::ConditionalExpr();
@@ -1172,6 +1205,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     var->logicalLine = obj.lineCount;
     var->clean = clean;
     output = var;
+    auto genericTypeList = this->parseTemplateTypeList(tokens, obj.lineCount);
+
     if (obj.meta == "new") {
       auto newExpr = new ast::NewExpr();
       newExpr->logicalLine = obj.lineCount;
@@ -1187,6 +1222,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
             typeName->meta + " is not a valid type.");
       newExpr->type = *nType;
       newExpr->logicalLine = obj.lineCount;
+      auto types = this->parseTemplateTypeList(tokens, obj.lineCount);
+      newExpr->templateTypes = std::move(types);
       auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (sym != nullptr && sym->Sym == '(') {
         tokens.pop();
@@ -1324,6 +1361,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         }
 
         ast::CallExpr *callExpr = new ast::CallExpr;
+        callExpr->templateTypes = std::move(genericTypeList);
         callExpr->call = call;
         callExpr->logicalLine = obj.lineCount;
 

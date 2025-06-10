@@ -11,7 +11,7 @@
 namespace Catch {
 
     //! Used to signal that an assertion macro failed
-    struct TestFailureException{};
+    struct TestFailureException {};
 
 } // namespace Catch
 

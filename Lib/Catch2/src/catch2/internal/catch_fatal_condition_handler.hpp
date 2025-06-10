@@ -8,10 +8,9 @@
 #ifndef CATCH_FATAL_CONDITION_HANDLER_HPP_INCLUDED
 #define CATCH_FATAL_CONDITION_HANDLER_HPP_INCLUDED
 
-#include <catch2/internal/catch_platform.hpp>
-#include <catch2/internal/catch_compiler_capabilities.hpp>
-
 #include <cassert>
+#include <catch2/internal/catch_compiler_capabilities.hpp>
+#include <catch2/internal/catch_platform.hpp>
 
 namespace Catch {
 
@@ -33,19 +32,22 @@ namespace Catch {
         // engage-disengage 1:1 pairing.
         void engage_platform();
         void disengage_platform() noexcept;
+
     public:
         // Should also have platform-specific implementations as needed
         FatalConditionHandler();
         ~FatalConditionHandler();
 
         void engage() {
-            assert(!m_started && "Handler cannot be installed twice.");
+            assert( !m_started && "Handler cannot be installed twice." );
             m_started = true;
             engage_platform();
         }
 
         void disengage() noexcept {
-            assert(m_started && "Handler cannot be uninstalled without being installed first");
+            assert(
+                m_started &&
+                "Handler cannot be uninstalled without being installed first" );
             m_started = false;
             disengage_platform();
         }
@@ -54,14 +56,13 @@ namespace Catch {
     //! Simple RAII guard for (dis)engaging the FatalConditionHandler
     class FatalConditionHandlerGuard {
         FatalConditionHandler* m_handler;
+
     public:
-        FatalConditionHandlerGuard(FatalConditionHandler* handler):
-            m_handler(handler) {
+        FatalConditionHandlerGuard( FatalConditionHandler* handler ):
+            m_handler( handler ) {
             m_handler->engage();
         }
-        ~FatalConditionHandlerGuard() {
-            m_handler->disengage();
-        }
+        ~FatalConditionHandlerGuard() { m_handler->disengage(); }
     };
 
 } // end namespace Catch

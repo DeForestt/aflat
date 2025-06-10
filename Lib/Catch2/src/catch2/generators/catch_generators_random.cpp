@@ -7,7 +7,6 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #include <catch2/generators/catch_generators_random.hpp>
-
 #include <catch2/internal/catch_context.hpp>
 
 std::uint32_t Catch::Generators::Detail::getSeed() { return sharedRng()(); }

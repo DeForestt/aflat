@@ -6,20 +6,19 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
-
 #include <catch2/matchers/catch_matchers.hpp>
 
 namespace Catch {
-namespace Matchers {
+    namespace Matchers {
 
-    std::string MatcherUntypedBase::toString() const {
-        if (m_cachedToString.empty()) {
-            m_cachedToString = describe();
+        std::string MatcherUntypedBase::toString() const {
+            if ( m_cachedToString.empty() ) {
+                m_cachedToString = describe();
+            }
+            return m_cachedToString;
         }
-        return m_cachedToString;
-    }
 
-    MatcherUntypedBase::~MatcherUntypedBase() = default;
+        MatcherUntypedBase::~MatcherUntypedBase() = default;
 
-} // namespace Matchers
+    } // namespace Matchers
 } // namespace Catch

@@ -7,20 +7,19 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #include <catch2/catch_tag_alias_autoregistrar.hpp>
-#include <catch2/reporters/catch_reporter_event_listener.hpp>
-#include <catch2/internal/catch_enforce.hpp>
 #include <catch2/catch_test_case_info.hpp>
+#include <catch2/internal/catch_enforce.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
 #include <catch2/reporters/catch_reporter_registrars.hpp>
 
-
 // Some example tag aliases
-CATCH_REGISTER_TAG_ALIAS("[@nhf]", "[failing]~[.]")
-CATCH_REGISTER_TAG_ALIAS("[@tricky]", "[tricky]~[.]")
+CATCH_REGISTER_TAG_ALIAS( "[@nhf]", "[failing]~[.]" )
+CATCH_REGISTER_TAG_ALIAS( "[@tricky]", "[tricky]~[.]" )
 
 #ifdef __clang__
-#   pragma clang diagnostic ignored "-Wpadded"
-#   pragma clang diagnostic ignored "-Wweak-vtables"
-#   pragma clang diagnostic ignored "-Wc++98-compat"
+#    pragma clang diagnostic ignored "-Wpadded"
+#    pragma clang diagnostic ignored "-Wweak-vtables"
+#    pragma clang diagnostic ignored "-Wc++98-compat"
 #endif
 
 /**
@@ -36,15 +35,9 @@ class ValidatingTestListener : public Catch::EventListenerBase {
         int starting = 0;
         int ended = 0;
 
-        bool hasActiveEvent() const {
-            return starting > ended;
-        }
-        bool hasSingleActiveEvent() const {
-            return starting - 1 == ended;
-        }
-        bool allEventsEnded() const {
-            return starting == ended;
-        }
+        bool hasActiveEvent() const { return starting > ended; }
+        bool hasSingleActiveEvent() const { return starting - 1 == ended; }
+        bool allEventsEnded() const { return starting == ended; }
     };
 
 public:
@@ -52,8 +45,8 @@ public:
         return "Validates ordering of Catch2's listener events";
     }
 
-    ValidatingTestListener(Catch::IConfig const* config) :
-        EventListenerBase(config) {
+    ValidatingTestListener( Catch::IConfig const* config ):
+        EventListenerBase( config ) {
         m_preferences.shouldReportAllAssertions = true;
     }
 
@@ -62,22 +55,24 @@ public:
                        "Test run can only start once" );
         ++m_testRunCounter.starting;
     }
-    void testCaseStarting(Catch::TestCaseInfo const&) override {
+    void testCaseStarting( Catch::TestCaseInfo const& ) override {
         CATCH_ENFORCE( m_testRunCounter.hasActiveEvent(),
-                       "Test case can only be started if the test run has already started" );
+                       "Test case can only be started if the test run has "
+                       "already started" );
         CATCH_ENFORCE( m_testCaseCounter.allEventsEnded(),
                        "Test case cannot start if there is an unfinished one" );
 
         ++m_testCaseCounter.starting;
 
         // Reset the part tracking for partial test case events
-        m_lastSeenPartNumber = uint64_t(-1);
+        m_lastSeenPartNumber = uint64_t( -1 );
     }
 
-    void testCasePartialStarting(Catch::TestCaseInfo const&,
-                                 uint64_t partNumber) override {
+    void testCasePartialStarting( Catch::TestCaseInfo const&,
+                                  uint64_t partNumber ) override {
         CATCH_ENFORCE( m_testCaseCounter.hasSingleActiveEvent(),
-                       "Test case can only be partially started if the test case has fully started already" );
+                       "Test case can only be partially started if the test "
+                       "case has fully started already" );
         CATCH_ENFORCE( m_lastSeenPartNumber + 1 == partNumber,
                        "Partial test case started out of order" );
 
@@ -85,7 +80,7 @@ public:
         m_lastSeenPartNumber = partNumber;
     }
 
-    void sectionStarting(Catch::SectionInfo const&) override {
+    void sectionStarting( Catch::SectionInfo const& ) override {
         CATCH_ENFORCE( m_testCaseCounter.hasSingleActiveEvent(),
                        "Section can only start in a test case" );
         CATCH_ENFORCE( m_testCasePartialCounter.hasSingleActiveEvent(),
@@ -94,20 +89,20 @@ public:
         ++m_sectionCounter.starting;
     }
 
-    void assertionStarting(Catch::AssertionInfo const&) override {
+    void assertionStarting( Catch::AssertionInfo const& ) override {
         CATCH_ENFORCE( m_testCaseCounter.hasSingleActiveEvent(),
                        "Assertion can only start if test case is started" );
 
         ++m_assertionCounter.starting;
     }
-    void assertionEnded(Catch::AssertionStats const&) override {
+    void assertionEnded( Catch::AssertionStats const& ) override {
         // todo:
         //  * Check that assertions are balanced
         //  * Check that assertions has started
         ++m_assertionCounter.ended;
     }
 
-    void sectionEnded(Catch::SectionStats const&) override {
+    void sectionEnded( Catch::SectionStats const& ) override {
         CATCH_ENFORCE( m_sectionCounter.hasActiveEvent(),
                        "Section ended without corresponding start" );
         // TODO: Check that all assertions ended
@@ -115,9 +110,8 @@ public:
         ++m_sectionCounter.ended;
     }
 
-
-    void testCasePartialEnded(Catch::TestCaseStats const&,
-                              uint64_t partNumber) override {
+    void testCasePartialEnded( Catch::TestCaseStats const&,
+                               uint64_t partNumber ) override {
         CATCH_ENFORCE( m_lastSeenPartNumber == partNumber,
                        "Partial test case ended out of order" );
         CATCH_ENFORCE( m_testCasePartialCounter.hasSingleActiveEvent(),
@@ -129,8 +123,7 @@ public:
         ++m_testCasePartialCounter.ended;
     }
 
-
-    void testCaseEnded(Catch::TestCaseStats const&) override {
+    void testCaseEnded( Catch::TestCaseStats const& ) override {
         CATCH_ENFORCE( m_testCaseCounter.hasSingleActiveEvent(),
                        "Test case end is not matched with test case start" );
         CATCH_ENFORCE( m_testCasePartialCounter.allEventsEnded(),
@@ -161,7 +154,6 @@ private:
     EventCounter m_sectionCounter;
     EventCounter m_assertionCounter;
 };
-
 
 ValidatingTestListener::~ValidatingTestListener() {
     // Throwing from noexcept destructor terminates, but we don't mind

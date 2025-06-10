@@ -9,15 +9,21 @@
 
 namespace Catch {
     namespace Matchers {
-        std::string AllTrueMatcher::describe() const { return "contains only true"; }
+        std::string AllTrueMatcher::describe() const {
+            return "contains only true";
+        }
 
         AllTrueMatcher AllTrue() { return AllTrueMatcher{}; }
 
-        std::string NoneTrueMatcher::describe() const { return "contains no true"; }
+        std::string NoneTrueMatcher::describe() const {
+            return "contains no true";
+        }
 
         NoneTrueMatcher NoneTrue() { return NoneTrueMatcher{}; }
 
-        std::string AnyTrueMatcher::describe() const { return "contains at least one true"; }
+        std::string AnyTrueMatcher::describe() const {
+            return "contains at least one true";
+        }
 
         AnyTrueMatcher AnyTrue() { return AnyTrueMatcher{}; }
     } // namespace Matchers

@@ -10,14 +10,13 @@
 
 namespace Catch {
 
-    MessageInfo::MessageInfo(   StringRef _macroName,
-                                SourceLineInfo const& _lineInfo,
-                                ResultWas::OfType _type )
-    :   macroName( _macroName ),
+    MessageInfo::MessageInfo( StringRef _macroName,
+                              SourceLineInfo const& _lineInfo,
+                              ResultWas::OfType _type ):
+        macroName( _macroName ),
         lineInfo( _lineInfo ),
         type( _type ),
-        sequence( ++globalCount )
-    {}
+        sequence( ++globalCount ) {}
 
     // This may need protecting if threading support is added
     unsigned int MessageInfo::globalCount = 0;

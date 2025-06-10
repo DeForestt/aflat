@@ -13,8 +13,8 @@
 namespace Catch {
 
     struct Counts {
-        Counts operator - ( Counts const& other ) const;
-        Counts& operator += ( Counts const& other );
+        Counts operator-( Counts const& other ) const;
+        Counts& operator+=( Counts const& other );
 
         std::uint64_t total() const;
         bool allPassed() const;
@@ -27,14 +27,14 @@ namespace Catch {
 
     struct Totals {
 
-        Totals operator - ( Totals const& other ) const;
-        Totals& operator += ( Totals const& other );
+        Totals operator-( Totals const& other ) const;
+        Totals& operator+=( Totals const& other );
 
         Totals delta( Totals const& prevTotals ) const;
 
         Counts assertions;
         Counts testCases;
     };
-}
+} // namespace Catch
 
 #endif // CATCH_TOTALS_HPP_INCLUDED

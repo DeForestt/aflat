@@ -7,6 +7,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
 #include <iostream>
+#include <utility>
 
 #include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
@@ -119,6 +120,39 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser,
   this->TypeList.push(*nullType);
   this->moduleId = moduleId;
   this->scope = nullptr;
+}
+
+gen::Type **gen::CodeGenerator::instantiateGenericClass(
+    ast::Class *cls, const std::vector<std::string> &types,
+    std::string &newName, asmc::File &OutputFile) {
+  auto classStatement = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
+  std::unordered_map<std::string, std::string> genericMap;
+  newName = classStatement->ident.ident;
+  if (types.size() != classStatement->genericTypes.size())
+    alert("Generic class " + cls->ident.ident + " requires " +
+          std::to_string(classStatement->genericTypes.size()) +
+          " template types, but got " + std::to_string(types.size()));
+  for (size_t i = 0; i < types.size(); i++) {
+    newName += "." + types[i];
+    genericMap[classStatement->genericTypes[i]] = types[i];
+  }
+  classStatement->replaceTypes(genericMap);
+  classStatement->ident.ident = newName;
+  classStatement->genericTypes.clear();
+  gen::Type **result;
+  if (this->TypeList[newName] == nullptr) {
+    if (OutputFile.lambdas == nullptr) OutputFile.lambdas = new asmc::File;
+    OutputFile.hasLambda = true;
+    scope::ScopeManager::getInstance()->pushIsolated();
+    this->pushEnv();
+    OutputFile.lambdas->operator<<(this->GenSTMT(classStatement));
+    result = this->typeList[newName];
+    this->popEnv();
+    scope::ScopeManager::getInstance()->popIsolated();
+  } else {
+    result = this->typeList[newName];
+  }
+  return result;
 }
 
 std::tuple<std::string, gen::Symbol, bool, asmc::File, gen::Symbol *>
@@ -513,6 +547,27 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     // check if the call ident is a class name
     Type **t = this->typeList[call->ident];
+    bool genericCall = false;
+
+    if (t == nullptr) {
+      auto cls = this->genericTypes[call->ident];
+      if (cls != nullptr) {
+        genericCall = true;
+        std::string new_class_name;
+        t = this->instantiateGenericClass(cls, exprCall->templateTypes,
+                                          new_class_name, OutputFile);
+        call->ident = new_class_name;
+        if (t == nullptr) {
+          alert("Something went wrong with the generic class " + call->ident +
+                " in " + this->moduleId);
+        }
+      }
+    }
+
+    if (!genericCall && exprCall->templateTypes.size() != 0) {
+      alert("Template types cannot be used with non-generic classes");
+    }
+
     if (t != nullptr) {
       gen::Class *cl = dynamic_cast<gen::Class *>(*t);
       if (cl != nullptr) {
@@ -1609,14 +1664,24 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   } else if (dynamic_cast<ast::NewExpr *>(expr) != nullptr) {
     ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);
     ast::Function *malloc = this->nameTable["malloc"];
+
     if (malloc == nullptr)
       alert(
           "Please import std library in order to use new operator.\n\n -> "
           ".needs <std> \n\n");
     gen::Type **type = this->typeList[newExpr.type.typeName];
-    if (type == nullptr) alert("Type" + newExpr.type.typeName + " not found");
+    if (type == nullptr) {
+      auto cls = this->genericTypes[newExpr.type.typeName];
+      if (cls != nullptr) {
+        std::string new_class_name;
+        type = this->instantiateGenericClass(cls, newExpr.templateTypes,
+                                             new_class_name, OutputFile);
+        newExpr.type.typeName = new_class_name;
+      }
+    }
+    if (type == nullptr) alert("Type " + newExpr.type.typeName + " not found");
     // check if the function is a class
-    gen::Class *cl = dynamic_cast<gen::Class *>(*type);
+    auto cl = dynamic_cast<gen::Class *>(*type);
     if (cl == nullptr)
       alert("The new operator can only be used with classes. Type " +
             newExpr.type.typeName + " is not a class");
@@ -2141,4 +2206,67 @@ asmc::File *gen::CodeGenerator::deScope(gen::Symbol &sym) {
   file->text << pop;
 
   return file;
+}
+
+void gen::CodeGenerator::pushEnv() {
+  EnvState state;
+  state.SymbolTable = std::move(this->SymbolTable);
+  state.GlobalSymbolTable = std::move(this->GlobalSymbolTable);
+  state.nameTable = std::move(this->nameTable);
+  state.genericFunctions = std::move(this->genericFunctions);
+  state.genericTypes = std::move(this->genericTypes);
+  state.includedMemo = std::move(this->includedMemo);
+  state.includedClasses = std::move(this->includedClasses);
+  state.nameSpaceTable = std::move(this->nameSpaceTable);
+  state.genericTypeConversions = std::move(this->genericTypeConversions);
+  state.generatedFunctionNames = std::move(this->generatedFunctionNames);
+  state.transforms = std::move(this->transforms);
+  state.inFunction = this->inFunction;
+  state.globalScope = this->globalScope;
+  state.lambdaReturns = this->lambdaReturns;
+  state.lambdaSize = this->lambdaSize;
+  state.tempCount = this->tempCount;
+  state.currentFunction = this->currentFunction;
+  this->envStack.push_back(std::move(state));
+
+  this->SymbolTable = links::LinkedList<Symbol>();
+  this->GlobalSymbolTable = links::LinkedList<Symbol>();
+  this->nameTable = links::SLinkedList<ast::Function, std::string>();
+  this->genericFunctions = links::SLinkedList<ast::Function, std::string>();
+  this->genericTypes.clear();
+  this->includedMemo = HashMap<ast::Statement *>();
+  this->includedClasses = HashMap<ast::Statement *>();
+  this->nameSpaceTable = HashMap<std::string>();
+  this->genericTypeConversions.clear();
+  this->generatedFunctionNames.clear();
+  this->transforms.clear();
+  this->currentFunction = nullptr;
+  this->inFunction = false;
+  this->globalScope = false;
+  this->lambdaReturns = "";
+}
+
+void gen::CodeGenerator::popEnv() {
+  if (this->envStack.empty()) return;
+  EnvState state = std::move(this->envStack.back());
+  this->envStack.pop_back();
+
+  this->SymbolTable = std::move(state.SymbolTable);
+  this->GlobalSymbolTable = std::move(state.GlobalSymbolTable);
+  this->nameTable = std::move(state.nameTable);
+  this->genericFunctions = std::move(state.genericFunctions);
+  this->genericTypes = std::move(state.genericTypes);
+  this->includedMemo = std::move(state.includedMemo);
+  this->includedClasses = std::move(state.includedClasses);
+  this->nameSpaceTable = std::move(state.nameSpaceTable);
+  this->genericTypeConversions = std::move(state.genericTypeConversions);
+  this->generatedFunctionNames = std::move(state.generatedFunctionNames);
+  this->transforms = std::move(state.transforms);
+  this->inFunction = state.inFunction;
+  this->globalScope = state.globalScope;
+  this->lambdaReturns = state.lambdaReturns;
+  this->lambdaSize = state.lambdaSize;
+  this->tempCount = state.tempCount;
+  this->currentFunction = state.currentFunction;
+  // restore the current function
 }

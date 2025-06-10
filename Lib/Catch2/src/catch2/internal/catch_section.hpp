@@ -8,11 +8,11 @@
 #ifndef CATCH_SECTION_HPP_INCLUDED
 #define CATCH_SECTION_HPP_INCLUDED
 
-#include <catch2/internal/catch_compiler_capabilities.hpp>
-#include <catch2/internal/catch_noncopyable.hpp>
 #include <catch2/catch_section_info.hpp>
 #include <catch2/catch_timer.hpp>
 #include <catch2/catch_totals.hpp>
+#include <catch2/internal/catch_compiler_capabilities.hpp>
+#include <catch2/internal/catch_noncopyable.hpp>
 #include <catch2/internal/catch_unique_name.hpp>
 
 namespace Catch {
@@ -35,16 +35,22 @@ namespace Catch {
 
 } // end namespace Catch
 
-#define INTERNAL_CATCH_SECTION( ... ) \
-    CATCH_INTERNAL_START_WARNINGS_SUPPRESSION \
-    CATCH_INTERNAL_SUPPRESS_UNUSED_VARIABLE_WARNINGS \
-    if( Catch::Section const& INTERNAL_CATCH_UNIQUE_NAME( catch_internal_Section ) = Catch::SectionInfo( CATCH_INTERNAL_LINEINFO, __VA_ARGS__ ) ) \
+#define INTERNAL_CATCH_SECTION( ... )                                     \
+    CATCH_INTERNAL_START_WARNINGS_SUPPRESSION                             \
+    CATCH_INTERNAL_SUPPRESS_UNUSED_VARIABLE_WARNINGS                      \
+    if ( Catch::Section const& INTERNAL_CATCH_UNIQUE_NAME(                \
+             catch_internal_Section ) =                                   \
+             Catch::SectionInfo( CATCH_INTERNAL_LINEINFO, __VA_ARGS__ ) ) \
     CATCH_INTERNAL_STOP_WARNINGS_SUPPRESSION
 
-#define INTERNAL_CATCH_DYNAMIC_SECTION( ... ) \
-    CATCH_INTERNAL_START_WARNINGS_SUPPRESSION \
-    CATCH_INTERNAL_SUPPRESS_UNUSED_VARIABLE_WARNINGS \
-    if( Catch::Section const& INTERNAL_CATCH_UNIQUE_NAME( catch_internal_Section ) = Catch::SectionInfo( CATCH_INTERNAL_LINEINFO, (Catch::ReusableStringStream() << __VA_ARGS__).str() ) ) \
+#define INTERNAL_CATCH_DYNAMIC_SECTION( ... )                               \
+    CATCH_INTERNAL_START_WARNINGS_SUPPRESSION                               \
+    CATCH_INTERNAL_SUPPRESS_UNUSED_VARIABLE_WARNINGS                        \
+    if ( Catch::Section const& INTERNAL_CATCH_UNIQUE_NAME(                  \
+             catch_internal_Section ) =                                     \
+             Catch::SectionInfo(                                            \
+                 CATCH_INTERNAL_LINEINFO,                                   \
+                 ( Catch::ReusableStringStream() << __VA_ARGS__ ).str() ) ) \
     CATCH_INTERNAL_STOP_WARNINGS_SUPPRESSION
 
 #endif // CATCH_SECTION_HPP_INCLUDED

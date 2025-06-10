@@ -3,8 +3,7 @@
 namespace compilerutils {
 
 std::string buildCompileCmd(const std::string &srcPath,
-                            const std::string &destPath,
-                            bool debug) {
+                            const std::string &destPath, bool debug) {
   std::string flags;
   if (debug)
     flags = "-g -no-pie -z noexecstack -S -lefence ";
@@ -14,8 +13,7 @@ std::string buildCompileCmd(const std::string &srcPath,
 }
 
 std::string buildLinkCmd(const std::string &output,
-                         const std::string &linkerList,
-                         bool debug) {
+                         const std::string &linkerList, bool debug) {
   std::string flags;
   if (debug)
     flags = "-O0 -g -no-pie -z noexecstack -o ";

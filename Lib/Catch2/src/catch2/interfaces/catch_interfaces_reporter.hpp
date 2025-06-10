@@ -8,21 +8,19 @@
 #ifndef CATCH_INTERFACES_REPORTER_HPP_INCLUDED
 #define CATCH_INTERFACES_REPORTER_HPP_INCLUDED
 
-#include <catch2/catch_section_info.hpp>
-#include <catch2/catch_totals.hpp>
-#include <catch2/catch_assertion_result.hpp>
-#include <catch2/internal/catch_message_info.hpp>
-#include <catch2/internal/catch_stringref.hpp>
-#include <catch2/internal/catch_unique_ptr.hpp>
-#include <catch2/internal/catch_move_and_forward.hpp>
 #include <catch2/benchmark/catch_estimate.hpp>
 #include <catch2/benchmark/catch_outlier_classification.hpp>
-
-
+#include <catch2/catch_assertion_result.hpp>
+#include <catch2/catch_section_info.hpp>
+#include <catch2/catch_totals.hpp>
+#include <catch2/internal/catch_message_info.hpp>
+#include <catch2/internal/catch_move_and_forward.hpp>
+#include <catch2/internal/catch_stringref.hpp>
+#include <catch2/internal/catch_unique_ptr.hpp>
+#include <iosfwd>
 #include <map>
 #include <string>
 #include <vector>
-#include <iosfwd>
 
 namespace Catch {
 
@@ -58,7 +56,7 @@ namespace Catch {
     };
 
     struct TestRunInfo {
-        constexpr TestRunInfo(StringRef _name) : name(_name) {}
+        constexpr TestRunInfo( StringRef _name ): name( _name ) {}
         StringRef name;
     };
 
@@ -67,10 +65,10 @@ namespace Catch {
                         std::vector<MessageInfo> const& _infoMessages,
                         Totals const& _totals );
 
-        AssertionStats( AssertionStats const& )              = default;
-        AssertionStats( AssertionStats && )                  = default;
-        AssertionStats& operator = ( AssertionStats const& ) = delete;
-        AssertionStats& operator = ( AssertionStats && )     = delete;
+        AssertionStats( AssertionStats const& ) = default;
+        AssertionStats( AssertionStats&& ) = default;
+        AssertionStats& operator=( AssertionStats const& ) = delete;
+        AssertionStats& operator=( AssertionStats&& ) = delete;
 
         AssertionResult assertionResult;
         std::vector<MessageInfo> infoMessages;
@@ -78,10 +76,10 @@ namespace Catch {
     };
 
     struct SectionStats {
-        SectionStats(   SectionInfo const& _sectionInfo,
-                        Counts const& _assertions,
-                        double _durationInSeconds,
-                        bool _missingAssertions );
+        SectionStats( SectionInfo const& _sectionInfo,
+                      Counts const& _assertions,
+                      double _durationInSeconds,
+                      bool _missingAssertions );
 
         SectionInfo sectionInfo;
         Counts assertions;
@@ -90,13 +88,13 @@ namespace Catch {
     };
 
     struct TestCaseStats {
-        TestCaseStats(  TestCaseInfo const& _testInfo,
-                        Totals const& _totals,
-                        std::string const& _stdOut,
-                        std::string const& _stdErr,
-                        bool _aborting );
+        TestCaseStats( TestCaseInfo const& _testInfo,
+                       Totals const& _totals,
+                       std::string const& _stdOut,
+                       std::string const& _stdErr,
+                       bool _aborting );
 
-        TestCaseInfo const * testInfo;
+        TestCaseInfo const* testInfo;
         Totals totals;
         std::string stdOut;
         std::string stdErr;
@@ -104,15 +102,14 @@ namespace Catch {
     };
 
     struct TestRunStats {
-        TestRunStats(   TestRunInfo const& _runInfo,
-                        Totals const& _totals,
-                        bool _aborting );
+        TestRunStats( TestRunInfo const& _runInfo,
+                      Totals const& _totals,
+                      bool _aborting );
 
         TestRunInfo runInfo;
         Totals totals;
         bool aborting;
     };
-
 
     struct BenchmarkInfo {
         std::string name;
@@ -124,8 +121,7 @@ namespace Catch {
         double clockCost;
     };
 
-    template <class Duration>
-    struct BenchmarkStats {
+    template <class Duration> struct BenchmarkStats {
         BenchmarkInfo info;
 
         std::vector<Duration> samples;
@@ -137,13 +133,13 @@ namespace Catch {
         template <typename Duration2>
         operator BenchmarkStats<Duration2>() const {
             std::vector<Duration2> samples2;
-            samples2.reserve(samples.size());
-            for (auto const& sample : samples) {
-                samples2.push_back(Duration2(sample));
+            samples2.reserve( samples.size() );
+            for ( auto const& sample : samples ) {
+                samples2.push_back( Duration2( sample ) );
             }
             return {
                 info,
-                CATCH_MOVE(samples2),
+                CATCH_MOVE( samples2 ),
                 mean,
                 standardDeviation,
                 outliers,
@@ -207,33 +203,44 @@ namespace Catch {
          */
         virtual void testRunStarting( TestRunInfo const& testRunInfo ) = 0;
 
-        //! Called _once_ for each TEST_CASE, no matter how many times it is entered
+        //! Called _once_ for each TEST_CASE, no matter how many times it is
+        //! entered
         virtual void testCaseStarting( TestCaseInfo const& testInfo ) = 0;
-        //! Called _every time_ a TEST_CASE is entered, including repeats (due to sections)
-        virtual void testCasePartialStarting( TestCaseInfo const& testInfo, uint64_t partNumber ) = 0;
-        //! Called when a `SECTION` is being entered. Not called for skipped sections
+        //! Called _every time_ a TEST_CASE is entered, including repeats (due
+        //! to sections)
+        virtual void testCasePartialStarting( TestCaseInfo const& testInfo,
+                                              uint64_t partNumber ) = 0;
+        //! Called when a `SECTION` is being entered. Not called for skipped
+        //! sections
         virtual void sectionStarting( SectionInfo const& sectionInfo ) = 0;
 
-        //! Called when user-code is being probed before the actual benchmark runs
+        //! Called when user-code is being probed before the actual benchmark
+        //! runs
         virtual void benchmarkPreparing( StringRef benchmarkName ) = 0;
         //! Called after probe but before the user-code is being benchmarked
-        virtual void benchmarkStarting( BenchmarkInfo const& benchmarkInfo ) = 0;
+        virtual void
+        benchmarkStarting( BenchmarkInfo const& benchmarkInfo ) = 0;
         //! Called with the benchmark results if benchmark successfully finishes
-        virtual void benchmarkEnded( BenchmarkStats<> const& benchmarkStats ) = 0;
+        virtual void
+        benchmarkEnded( BenchmarkStats<> const& benchmarkStats ) = 0;
         //! Called if running the benchmarks fails for any reason
         virtual void benchmarkFailed( StringRef benchmarkName ) = 0;
 
         //! Called before assertion success/failure is evaluated
-        virtual void assertionStarting( AssertionInfo const& assertionInfo ) = 0;
+        virtual void
+        assertionStarting( AssertionInfo const& assertionInfo ) = 0;
 
         //! Called after assertion was fully evaluated
         virtual void assertionEnded( AssertionStats const& assertionStats ) = 0;
 
         //! Called after a `SECTION` has finished running
         virtual void sectionEnded( SectionStats const& sectionStats ) = 0;
-        //! Called _every time_ a TEST_CASE is entered, including repeats (due to sections)
-        virtual void testCasePartialEnded(TestCaseStats const& testCaseStats, uint64_t partNumber ) = 0;
-        //! Called _once_ for each TEST_CASE, no matter how many times it is entered
+        //! Called _every time_ a TEST_CASE is entered, including repeats (due
+        //! to sections)
+        virtual void testCasePartialEnded( TestCaseStats const& testCaseStats,
+                                           uint64_t partNumber ) = 0;
+        //! Called _once_ for each TEST_CASE, no matter how many times it is
+        //! entered
         virtual void testCaseEnded( TestCaseStats const& testCaseStats ) = 0;
         /**
          * Called once after all tests in a testing run are finished
@@ -248,14 +255,20 @@ namespace Catch {
         //! Called if a fatal error (signal/structured exception) occured
         virtual void fatalErrorEncountered( StringRef error ) = 0;
 
-        //! Writes out information about provided reporters using reporter-specific format
-        virtual void listReporters(std::vector<ReporterDescription> const& descriptions) = 0;
-        //! Writes out the provided listeners descriptions using reporter-specific format
-        virtual void listListeners(std::vector<ListenerDescription> const& descriptions) = 0;
-        //! Writes out information about provided tests using reporter-specific format
-        virtual void listTests(std::vector<TestCaseHandle> const& tests) = 0;
-        //! Writes out information about the provided tags using reporter-specific format
-        virtual void listTags(std::vector<TagInfo> const& tags) = 0;
+        //! Writes out information about provided reporters using
+        //! reporter-specific format
+        virtual void listReporters(
+            std::vector<ReporterDescription> const& descriptions ) = 0;
+        //! Writes out the provided listeners descriptions using
+        //! reporter-specific format
+        virtual void listListeners(
+            std::vector<ListenerDescription> const& descriptions ) = 0;
+        //! Writes out information about provided tests using reporter-specific
+        //! format
+        virtual void listTests( std::vector<TestCaseHandle> const& tests ) = 0;
+        //! Writes out information about the provided tags using
+        //! reporter-specific format
+        virtual void listTags( std::vector<TagInfo> const& tags ) = 0;
     };
     using IEventListenerPtr = Detail::unique_ptr<IEventListener>;
 

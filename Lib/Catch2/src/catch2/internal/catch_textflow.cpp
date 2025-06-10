@@ -5,9 +5,8 @@
 //        https://www.boost.org/LICENSE_1_0.txt)
 
 // SPDX-License-Identifier: BSL-1.0
-#include <catch2/internal/catch_textflow.hpp>
-
 #include <algorithm>
+#include <catch2/internal/catch_textflow.hpp>
 #include <cstring>
 #include <ostream>
 
@@ -51,7 +50,8 @@ namespace Catch {
             }
 
             const auto maxLineLength = m_column.m_width - indentSize();
-            const auto maxParseTo = std::min(current_line.size(), m_lineStart + maxLineLength);
+            const auto maxParseTo =
+                std::min( current_line.size(), m_lineStart + maxLineLength );
             while ( m_parsedTo < maxParseTo &&
                     current_line[m_parsedTo] != '\n' ) {
                 ++m_parsedTo;
@@ -67,11 +67,14 @@ namespace Catch {
                 // (We look from the end, so that the first found boundary is
                 // the right one)
                 size_t newLineLength = maxLineLength;
-                while ( newLineLength > 0 && !isBoundary( current_line, m_lineStart + newLineLength ) ) {
+                while (
+                    newLineLength > 0 &&
+                    !isBoundary( current_line, m_lineStart + newLineLength ) ) {
                     --newLineLength;
                 }
                 while ( newLineLength > 0 &&
-                        isWhitespace( current_line[m_lineStart + newLineLength - 1] ) ) {
+                        isWhitespace(
+                            current_line[m_lineStart + newLineLength - 1] ) ) {
                     --newLineLength;
                 }
 
@@ -94,7 +97,7 @@ namespace Catch {
 
         std::string
         Column::const_iterator::addIndentAndSuffix( size_t position,
-                                              size_t length ) const {
+                                                    size_t length ) const {
             std::string ret;
             const auto desired_indent = indentSize();
             ret.reserve( desired_indent + length + m_addHyphen );
@@ -107,7 +110,8 @@ namespace Catch {
             return ret;
         }
 
-        Column::const_iterator::const_iterator( Column const& column ): m_column( column ) {
+        Column::const_iterator::const_iterator( Column const& column ):
+            m_column( column ) {
             assert( m_column.m_width > m_column.m_indent );
             assert( m_column.m_initialIndent == std::string::npos ||
                     m_column.m_width > m_column.m_initialIndent );
@@ -125,7 +129,8 @@ namespace Catch {
         Column::const_iterator& Column::const_iterator::operator++() {
             m_lineStart += m_lineLength;
             std::string const& current_line = m_column.m_string;
-            if ( m_lineStart < current_line.size() && current_line[m_lineStart] == '\n' ) {
+            if ( m_lineStart < current_line.size() &&
+                 current_line[m_lineStart] == '\n' ) {
                 m_lineStart += 1;
             } else {
                 while ( m_lineStart < current_line.size() &&

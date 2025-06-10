@@ -724,14 +724,15 @@ class StringRef {
 auto operator+=(std::string& lhs, StringRef const& sr) -> std::string&;
 auto operator<<(std::ostream& os, StringRef const& sr) -> std::ostream&;
 
-constexpr auto operator"" _sr(char const* rawChars,
-                              std::size_t size) noexcept -> StringRef {
+constexpr auto operator"" _sr(char const* rawChars, std::size_t size) noexcept
+    -> StringRef {
   return StringRef(rawChars, size);
 }
 }  // namespace Catch
 
-constexpr auto operator"" _catch_sr(
-    char const* rawChars, std::size_t size) noexcept -> Catch::StringRef {
+constexpr auto operator"" _catch_sr(char const* rawChars,
+                                    std::size_t size) noexcept
+    -> Catch::StringRef {
   return Catch::StringRef(rawChars, size);
 }
 
@@ -2114,9 +2115,9 @@ std::string rawMemoryToString(const T& object) {
 template <typename T>
 class IsStreamInsertable {
   template <typename Stream, typename U>
-  static auto test(int) -> decltype(std::declval<Stream&>()
-                                        << std::declval<U>(),
-                                    std::true_type());
+  static auto test(int)
+      -> decltype(std::declval<Stream&>() << std::declval<U>(),
+                  std::true_type());
 
   template <typename, typename>
   static auto test(...) -> std::false_type;
@@ -3106,8 +3107,8 @@ class LazyExpression {
 
   explicit operator bool() const;
 
-  friend auto operator<<(std::ostream& os,
-                         LazyExpression const& lazyExpr) -> std::ostream&;
+  friend auto operator<<(std::ostream& os, LazyExpression const& lazyExpr)
+      -> std::ostream&;
 };
 
 struct AssertionReaction {
@@ -4704,8 +4705,8 @@ template <typename T>
 struct as {};
 
 template <typename T, typename... Gs>
-auto makeGenerators(GeneratorWrapper<T>&& generator,
-                    Gs&&... moreGenerators) -> Generators<T> {
+auto makeGenerators(GeneratorWrapper<T>&& generator, Gs&&... moreGenerators)
+    -> Generators<T> {
   return Generators<T>(std::move(generator),
                        std::forward<Gs>(moreGenerators)...);
 }
@@ -4844,7 +4845,8 @@ class FilterGenerator : public IGenerator<T> {
       return false;
     }
     while (!m_predicate(m_generator.get()) &&
-           (success = m_generator.next()) == true);
+           (success = m_generator.next()) == true)
+      ;
     return success;
   }
 };
@@ -8837,8 +8839,8 @@ unsigned int rngSeed();
 namespace Catch {
 
 namespace {
-auto operator<<(std::ostream& os,
-                ITransientExpression const& expr) -> std::ostream& {
+auto operator<<(std::ostream& os, ITransientExpression const& expr)
+    -> std::ostream& {
   expr.streamReconstructedExpression(os);
   return os;
 }
@@ -8853,8 +8855,8 @@ LazyExpression::operator bool() const {
   return m_transientExpression != nullptr;
 }
 
-auto operator<<(std::ostream& os,
-                LazyExpression const& lazyExpr) -> std::ostream& {
+auto operator<<(std::ostream& os, LazyExpression const& lazyExpr)
+    -> std::ostream& {
   if (lazyExpr.m_isNegated) os << "!";
 
   if (lazyExpr) {
@@ -9712,13 +9714,13 @@ inline auto convertInto(std::string const& source, T& target) -> ParserResult {
   else
     return ParserResult::ok(ParseResultType::Matched);
 }
-inline auto convertInto(std::string const& source,
-                        std::string& target) -> ParserResult {
+inline auto convertInto(std::string const& source, std::string& target)
+    -> ParserResult {
   target = source;
   return ParserResult::ok(ParseResultType::Matched);
 }
-inline auto convertInto(std::string const& source,
-                        bool& target) -> ParserResult {
+inline auto convertInto(std::string const& source, bool& target)
+    -> ParserResult {
   std::string srcLC = source;
   std::transform(
       srcLC.begin(), srcLC.end(), srcLC.begin(),
@@ -9825,8 +9827,8 @@ struct LambdaInvoker<void> {
 };
 
 template <typename ArgType, typename L>
-inline auto invokeLambda(L const& lambda,
-                         std::string const& arg) -> ParserResult {
+inline auto invokeLambda(L const& lambda, std::string const& arg)
+    -> ParserResult {
   ArgType temp{};
   auto result = convertInto(arg, temp);
   return !result
@@ -9874,8 +9876,9 @@ class ParserBase {
  public:
   virtual ~ParserBase() = default;
   virtual auto validate() const -> Result { return Result::ok(); }
-  virtual auto parse(std::string const& exeName, TokenStream const& tokens)
-      const -> InternalParseResult = 0;
+  virtual auto parse(std::string const& exeName,
+                     TokenStream const& tokens) const
+      -> InternalParseResult = 0;
   virtual auto cardinality() const -> size_t { return 1; }
 
   auto parse(Args const& args) const -> InternalParseResult {
@@ -9966,8 +9969,8 @@ class ExeName : public ComposableParserImpl<ExeName> {
 
   // The exe name is not parsed out of the normal tokens, but is handled
   // specially
-  auto parse(std::string const&,
-             TokenStream const& tokens) const -> InternalParseResult override {
+  auto parse(std::string const&, TokenStream const& tokens) const
+      -> InternalParseResult override {
     return InternalParseResult::ok(
         ParseState(ParseResultType::NoMatch, tokens));
   }
@@ -9991,8 +9994,8 @@ class Arg : public ParserRefImpl<Arg> {
  public:
   using ParserRefImpl::ParserRefImpl;
 
-  auto parse(std::string const&,
-             TokenStream const& tokens) const -> InternalParseResult override {
+  auto parse(std::string const&, TokenStream const& tokens) const
+      -> InternalParseResult override {
     auto validationResult = validate();
     if (!validationResult) return InternalParseResult(validationResult);
 
@@ -10070,8 +10073,8 @@ class Opt : public ParserRefImpl<Opt> {
 
   using ParserBase::parse;
 
-  auto parse(std::string const&,
-             TokenStream const& tokens) const -> InternalParseResult override {
+  auto parse(std::string const&, TokenStream const& tokens) const
+      -> InternalParseResult override {
     auto validationResult = validate();
     if (!validationResult) return InternalParseResult(validationResult);
 
@@ -10229,8 +10232,8 @@ struct Parser : ParserBase {
     }
   }
 
-  friend auto operator<<(std::ostream& os,
-                         Parser const& parser) -> std::ostream& {
+  friend auto operator<<(std::ostream& os, Parser const& parser)
+      -> std::ostream& {
     parser.writeToStream(os);
     return os;
   }
@@ -10249,8 +10252,8 @@ struct Parser : ParserBase {
 
   using ParserBase::parse;
 
-  auto parse(std::string const& exeName,
-             TokenStream const& tokens) const -> InternalParseResult override {
+  auto parse(std::string const& exeName, TokenStream const& tokens) const
+      -> InternalParseResult override {
     struct ParserInfo {
       ParserBase const* parser = nullptr;
       size_t count = 0;
@@ -14129,11 +14132,12 @@ void Session::showHelp() const {
                 << std::endl;
 }
 void Session::libIdentify() {
-  Catch::cout() << std::left << std::setw(16)
-                << "description: " << "A Catch2 test executable\n"
-                << std::left << std::setw(16)
-                << "category: " << "testframework\n"
-                << std::left << std::setw(16) << "framework: " << "Catch Test\n"
+  Catch::cout() << std::left << std::setw(16) << "description: "
+                << "A Catch2 test executable\n"
+                << std::left << std::setw(16) << "category: "
+                << "testframework\n"
+                << std::left << std::setw(16) << "framework: "
+                << "Catch Test\n"
                 << std::left << std::setw(16) << "version: " << libraryVersion()
                 << std::endl;
 }
@@ -14593,8 +14597,8 @@ auto StringRef::c_str() const -> char const* {
 }
 auto StringRef::data() const noexcept -> char const* { return m_start; }
 
-auto StringRef::substr(size_type start,
-                       size_type size) const noexcept -> StringRef {
+auto StringRef::substr(size_type start, size_type size) const noexcept
+    -> StringRef {
   if (start < m_size) {
     return StringRef(m_start + start, (std::min)(m_size - start, size));
   } else {
@@ -16985,8 +16989,8 @@ class Duration {
         return "** internal error **";
     }
   }
-  friend auto operator<<(std::ostream& os,
-                         Duration const& duration) -> std::ostream& {
+  friend auto operator<<(std::ostream& os, Duration const& duration)
+      -> std::ostream& {
     return os << duration.value() << ' ' << duration.unitsAsString();
   }
 };
@@ -17677,7 +17681,8 @@ void JunitReporter::writeAssertion(AssertionStats const& stats) {
 
     ReusableStringStream rss;
     if (stats.totals.assertions.total() > 0) {
-      rss << "FAILED" << ":\n";
+      rss << "FAILED"
+          << ":\n";
       if (result.hasExpression()) {
         rss << "  ";
         rss << result.getExpressionInMacro();

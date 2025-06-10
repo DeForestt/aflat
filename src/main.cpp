@@ -9,6 +9,7 @@
 #include "ASM.hpp"
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "CompilerUtils.hpp"
 #include "Configs.hpp"
 #include "ErrorReporter.hpp"
 #include "Exceptions.hpp"
@@ -17,7 +18,6 @@
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
-#include "CompilerUtils.hpp"
 
 std::string preProcess(std::string input);
 std::string getExePath();
@@ -406,21 +406,21 @@ void buildTemplate(std::string value) {
 
   outfile = std::ofstream(value + "/src/test/test.af");
   outfile << ".needs <std>\n\n";
-  outfile <<
-      "import {describe, it, assertEqual} from \"ATest\" under test;\n"
-      "import Map from \"Utils/Map\";\n\n"
-      "fn main() -> int {\n"
-      "\ttest.describe(\"Test Suite 1\", fn (Map __context) -> bool {\n"
-      "\t\ttest.it(\"should pass the first test\", fn (Map __context) {\n"
-      "\t\t\ttest.assertEqual(1, 1);\n"
-      "\t\t});\n"
-      "\t\ttest.it(\"should fail the second test\", fn (Map __context) {\n"
-      "\t\t\ttest.assertEqual(`value`, `other`);\n"
-      "\t\t});\n"
-      "\t\treturn true;\n"
-      "\t});\n"
-      "\treturn 0;\n"
-      "};";
+  outfile
+      << "import {describe, it, assertEqual} from \"ATest\" under test;\n"
+         "import Map from \"Utils/Map\";\n\n"
+         "fn main() -> int {\n"
+         "\ttest.describe(\"Test Suite 1\", fn (Map __context) -> bool {\n"
+         "\t\ttest.it(\"should pass the first test\", fn (Map __context) {\n"
+         "\t\t\ttest.assertEqual(1, 1);\n"
+         "\t\t});\n"
+         "\t\ttest.it(\"should fail the second test\", fn (Map __context) {\n"
+         "\t\t\ttest.assertEqual(`value`, `other`);\n"
+         "\t\t});\n"
+         "\t\treturn true;\n"
+         "\t});\n"
+         "\treturn 0;\n"
+         "};";
   outfile.close();
 
   outfile = std::ofstream(value + "/aflat.cfg");
@@ -460,13 +460,15 @@ void libTemplate(std::string value) {
   outfile << "import {describe, it, assertEqual} from \"ATest\" under test;\n"
              "import Map from \"Utils/Map\";\n"
              "import {"
-          << value << "} from \"src/mod\";\n\n"
+          << value
+          << "} from \"src/mod\";\n\n"
              "fn main() -> int {\n"
              "\ttest.describe(\""
           << value
           << " Test Suite\", fn (Map __context) -> bool {\n"
              "\t\ttest.it(\"test_"
-          << value << "\", fn (Map __context) {\n"
+          << value
+          << "\", fn (Map __context) {\n"
              "\t\t\ttest.assertEqual("
           << value
           << "(1, 2), 3);\n"

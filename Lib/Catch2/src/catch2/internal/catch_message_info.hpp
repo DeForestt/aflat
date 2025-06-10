@@ -8,18 +8,17 @@
 #ifndef CATCH_MESSAGE_INFO_HPP_INCLUDED
 #define CATCH_MESSAGE_INFO_HPP_INCLUDED
 
+#include <catch2/interfaces/catch_interfaces_capture.hpp>
 #include <catch2/internal/catch_result_type.hpp>
 #include <catch2/internal/catch_source_line_info.hpp>
-#include <catch2/interfaces/catch_interfaces_capture.hpp>
-
 #include <string>
 
 namespace Catch {
 
     struct MessageInfo {
-        MessageInfo(    StringRef _macroName,
-                        SourceLineInfo const& _lineInfo,
-                        ResultWas::OfType _type );
+        MessageInfo( StringRef _macroName,
+                     SourceLineInfo const& _lineInfo,
+                     ResultWas::OfType _type );
 
         StringRef macroName;
         std::string message;
@@ -27,12 +26,13 @@ namespace Catch {
         ResultWas::OfType type;
         unsigned int sequence;
 
-        bool operator == (MessageInfo const& other) const {
+        bool operator==( MessageInfo const& other ) const {
             return sequence == other.sequence;
         }
-        bool operator < (MessageInfo const& other) const {
+        bool operator<( MessageInfo const& other ) const {
             return sequence < other.sequence;
         }
+
     private:
         static unsigned int globalCount;
     };

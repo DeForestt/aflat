@@ -20,13 +20,12 @@
 // We assume that WCHAR should be enabled by default, and only disabled
 // for a shortlist (so far only DJGPP) of compilers.
 
-#if defined(__DJGPP__)
-#  define CATCH_INTERNAL_CONFIG_NO_WCHAR
+#if defined( __DJGPP__ )
+#    define CATCH_INTERNAL_CONFIG_NO_WCHAR
 #endif // __DJGPP__
 
 #if !defined( CATCH_INTERNAL_CONFIG_NO_WCHAR ) && \
-    !defined( CATCH_CONFIG_NO_WCHAR ) && \
-    !defined( CATCH_CONFIG_WCHAR )
+    !defined( CATCH_CONFIG_NO_WCHAR ) && !defined( CATCH_CONFIG_WCHAR )
 #    define CATCH_CONFIG_WCHAR
 #endif
 
