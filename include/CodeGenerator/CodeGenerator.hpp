@@ -111,7 +111,7 @@ class CodeGenerator {
 
 #pragma region Item Lists
   links::SLinkedList<gen::Type *, std::string> typeList;
-  links::SLinkedList<ast::Class *, std::string> genericTypes;
+  std::unordered_map<std::string, ast::Class *> genericTypes;
   links::SLinkedList<asmc::Register, std::string> registers;
   links::LinkedList<Symbol> SymbolTable;
   links::LinkedList<Symbol> GlobalSymbolTable;

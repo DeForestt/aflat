@@ -1187,6 +1187,27 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
             typeName->meta + " is not a valid type.");
       newExpr->type = *nType;
       newExpr->logicalLine = obj.lineCount;
+      auto symbol = dynamic_cast<lex::Symbol *>(tokens.peek());
+      if (symbol != nullptr && symbol->meta == "<") {
+        tokens.pop();
+        while (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+          auto typeName = *dynamic_cast<lex::LObj *>(tokens.pop());
+          if (this->typeList[typeName.meta] == nullptr)
+            throw err::Exception("Unknown type " + typeName.meta);
+          newExpr->templateTypes.push_back(typeName.meta);
+          if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+              dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',') {
+            tokens.pop();
+          } else if (dynamic_cast<lex::Symbol *>(tokens.peek()) != nullptr &&
+                     dynamic_cast<lex::Symbol *>(tokens.peek())->meta == ">") {
+            tokens.pop();
+            break;
+          } else {
+            throw err::Exception("Expected , or > after new on line " +
+                                 std::to_string(obj.lineCount));
+          }
+        }
+      }
       auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (sym != nullptr && sym->Sym == '(') {
         tokens.pop();

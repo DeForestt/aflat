@@ -1609,14 +1609,50 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   } else if (dynamic_cast<ast::NewExpr *>(expr) != nullptr) {
     ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);
     ast::Function *malloc = this->nameTable["malloc"];
+
     if (malloc == nullptr)
       alert(
           "Please import std library in order to use new operator.\n\n -> "
           ".needs <std> \n\n");
     gen::Type **type = this->typeList[newExpr.type.typeName];
-    if (type == nullptr) alert("Type" + newExpr.type.typeName + " not found");
+    if (type == nullptr) {
+      auto cls = this->genericTypes[newExpr.type.typeName];
+      if (cls != nullptr) {
+        auto classStatement = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
+
+        auto junkFile = asmc::File();
+        std::unordered_map<std::string, std::string> genericMap;
+        std::string new_class_name = classStatement->ident.ident;
+
+        if (newExpr.templateTypes.size() != classStatement->genericTypes.size())
+          alert("The class " + newExpr.type.typeName + " requires " +
+                std::to_string(classStatement->genericTypes.size()) +
+                " template types, but " +
+                std::to_string(newExpr.templateTypes.size()) +
+                " were provided");
+
+        for (size_t i = 0; i < classStatement->genericTypes.size(); i++) {
+          auto genericType = classStatement->genericTypes[i];
+          auto typeSelected = newExpr.templateTypes[i];
+          genericMap[genericType] = typeSelected;
+        }
+
+        classStatement->replaceTypes(genericMap);
+        // classStatement->ident.ident = new_class_name;
+        classStatement->genericTypes.clear();
+        // newExpr.type.typeName = new_class_name;
+
+        if (this->TypeList[new_class_name] == nullptr) {
+          scope::ScopeManager::getInstance()->pushScope(true);
+          classStatement->generate(*this);
+          scope::ScopeManager::getInstance()->popScope(this, junkFile);
+        }
+        type = this->typeList[new_class_name];
+      }
+    }
+    if (type == nullptr) alert("Type " + newExpr.type.typeName + " not found");
     // check if the function is a class
-    gen::Class *cl = dynamic_cast<gen::Class *>(*type);
+    auto cl = dynamic_cast<gen::Class *>(*type);
     if (cl == nullptr)
       alert("The new operator can only be used with classes. Type " +
             newExpr.type.typeName + " is not a class");
