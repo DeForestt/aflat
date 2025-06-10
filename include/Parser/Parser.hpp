@@ -44,6 +44,8 @@ class Parser {
   ast::Type parseFPointerType(links::LinkedList<lex::Token *> &tokens,
                               const std::string typeName);
   ast::ConditionalExpr *parseCondition(links::LinkedList<lex::Token *> &tokens);
+  std::vector<std::string> parseTemplateTypeList(
+      links::LinkedList<lex::Token *> &tokens, int lineCount);
   links::LinkedList<ast::Expr *> parseCallArgsList(
       links::LinkedList<lex::Token *> &tokens);
 };
