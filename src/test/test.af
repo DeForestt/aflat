@@ -1,7 +1,17 @@
 .needs <std>
-import string from "String";
 import {print} from "String" under str;
+import string from "String";
+import List from "Collections";
+import Map from "Utils/Map";
+import {describe, it, assertEqual, fix} from "ATest" under test;
 
-fn main() {
-    str.print("Aflat Bin\n");
+fn main() -> int{
+	test.describe("String", fn () -> bool {
+        test.it("should get the length of a string", fn () {
+            string s = "Hello, World!";
+            test.assertEqual(s.len(), 13);
+        });
+        return true;
+	});
+	return 0;
 };
