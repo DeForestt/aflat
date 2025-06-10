@@ -1643,9 +1643,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         // newExpr.type.typeName = new_class_name;
 
         if (this->TypeList[new_class_name] == nullptr) {
-          scope::ScopeManager::getInstance()->pushScope(true);
+          scope::ScopeManager::getInstance()->pushIsolated();
           classStatement->generate(*this);
-          scope::ScopeManager::getInstance()->popScope(this, junkFile);
+          scope::ScopeManager::getInstance()->popIsolated();
         }
         type = this->typeList[new_class_name];
       }
