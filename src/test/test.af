@@ -3,7 +3,7 @@ import {print} from "String" under str;
 import string from "String";
 import List from "Collections";
 import Map from "Utils/Map";
-import {describe, it, assertEqual, fix} from "ATest" under test;
+import {describe, it, assertEqual, assertTrue, fix} from "ATest" under test;
 
 fn main() -> int{
 	test.describe("String", fn () -> bool {
@@ -11,6 +11,13 @@ fn main() -> int{
             string s = "Hello, World!";
             test.assertEqual(s.len(), 13);
         });
+
+        test.it("should compare two strings", fn () {
+            string s1 = "Hello";
+            string s2 = "Hello";
+            test.assertTrue(s1 == s2);
+        });
+
         return true;
 	});
 	return 0;

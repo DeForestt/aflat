@@ -71,12 +71,14 @@ export fn assertFalse(const bool condition) -> void {
 	};
 };
 
-export fn assertNull(const any value) -> void {
+types(T)
+export fn assertNull(const T value) -> void {
 	if value != NULL {
 		str.print(`      Expected null but got {value}\n`);
 	};
 };
 
+types(any)
 export fn assertNotNull(const any value) -> void {
 	if value == NULL {
 		str.print(`      Expected not null but got null\n`);
