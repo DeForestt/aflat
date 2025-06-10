@@ -1,4 +1,4 @@
-#ifndef GENgit
+#ifndef GEN
 #define GEN
 
 #include <optional>
