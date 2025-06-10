@@ -16,6 +16,15 @@ class ScopeManager {
     int SScopeSize;
     bool pleading;
   };
+  struct isoState {
+    std::vector<gen::Symbol> stack;
+    std::vector<gen::Symbol> globalStack;
+    std::vector<plead> pleading;
+    int stackPos;
+    int maxStackPos;
+    std::vector<int> scopeStack;
+    int SStackSize;
+  };
   ScopeManager();
   ~ScopeManager() = default;
   static ScopeManager *instance;
@@ -36,6 +45,8 @@ class ScopeManager {
   // scopeStack holds the number of symbols in the current scope
   std::vector<int> scopeStack;
   int SStackSize = 0;
+
+  std::vector<isoState> isolated;
 
   // int scopeStackPos;
 
@@ -70,6 +81,9 @@ class ScopeManager {
   // pop a scope
   void popScope(gen::CodeGenerator *callback, asmc::File &OutputFile,
                 bool fPop = false);
+
+  void pushIsolated();
+  void popIsolated();
 
   void softPop(gen::CodeGenerator *callback, asmc::File &OutputFile);
 

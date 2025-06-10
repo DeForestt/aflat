@@ -7,6 +7,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
 #include <iostream>
+#include <utility>
 
 #include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
@@ -1632,22 +1633,31 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                 " were provided");
 
         for (size_t i = 0; i < classStatement->genericTypes.size(); i++) {
+          new_class_name += "." + newExpr.templateTypes[i];
           auto genericType = classStatement->genericTypes[i];
           auto typeSelected = newExpr.templateTypes[i];
           genericMap[genericType] = typeSelected;
         }
 
         classStatement->replaceTypes(genericMap);
-        // classStatement->ident.ident = new_class_name;
+        classStatement->ident.ident = new_class_name;
         classStatement->genericTypes.clear();
-        // newExpr.type.typeName = new_class_name;
+        newExpr.type.typeName = new_class_name;
 
         if (this->TypeList[new_class_name] == nullptr) {
-          scope::ScopeManager::getInstance()->pushScope(true);
-          classStatement->generate(*this);
-          scope::ScopeManager::getInstance()->popScope(this, junkFile);
+          if (OutputFile.lambdas == nullptr)
+            OutputFile.lambdas = new asmc::File;
+          OutputFile.hasLambda = true;
+
+          scope::ScopeManager::getInstance()->pushIsolated();
+          this->pushEnv();
+          OutputFile.lambdas->operator<<(this->GenSTMT(classStatement));
+          type = this->typeList[new_class_name];
+          this->popEnv();
+          scope::ScopeManager::getInstance()->popIsolated();
+        } else {
+          type = this->typeList[new_class_name];
         }
-        type = this->typeList[new_class_name];
       }
     }
     if (type == nullptr) alert("Type " + newExpr.type.typeName + " not found");
@@ -2177,4 +2187,67 @@ asmc::File *gen::CodeGenerator::deScope(gen::Symbol &sym) {
   file->text << pop;
 
   return file;
+}
+
+void gen::CodeGenerator::pushEnv() {
+  EnvState state;
+  state.SymbolTable = std::move(this->SymbolTable);
+  state.GlobalSymbolTable = std::move(this->GlobalSymbolTable);
+  state.nameTable = std::move(this->nameTable);
+  state.genericFunctions = std::move(this->genericFunctions);
+  state.genericTypes = std::move(this->genericTypes);
+  state.includedMemo = std::move(this->includedMemo);
+  state.includedClasses = std::move(this->includedClasses);
+  state.nameSpaceTable = std::move(this->nameSpaceTable);
+  state.genericTypeConversions = std::move(this->genericTypeConversions);
+  state.generatedFunctionNames = std::move(this->generatedFunctionNames);
+  state.transforms = std::move(this->transforms);
+  state.inFunction = this->inFunction;
+  state.globalScope = this->globalScope;
+  state.lambdaReturns = this->lambdaReturns;
+  state.lambdaSize = this->lambdaSize;
+  state.tempCount = this->tempCount;
+  state.currentFunction = this->currentFunction;
+  this->envStack.push_back(std::move(state));
+
+  this->SymbolTable = links::LinkedList<Symbol>();
+  this->GlobalSymbolTable = links::LinkedList<Symbol>();
+  this->nameTable = links::SLinkedList<ast::Function, std::string>();
+  this->genericFunctions = links::SLinkedList<ast::Function, std::string>();
+  this->genericTypes.clear();
+  this->includedMemo = HashMap<ast::Statement *>();
+  this->includedClasses = HashMap<ast::Statement *>();
+  this->nameSpaceTable = HashMap<std::string>();
+  this->genericTypeConversions.clear();
+  this->generatedFunctionNames.clear();
+  this->transforms.clear();
+  this->currentFunction = nullptr;
+  this->inFunction = false;
+  this->globalScope = false;
+  this->lambdaReturns = "";
+}
+
+void gen::CodeGenerator::popEnv() {
+  if (this->envStack.empty()) return;
+  EnvState state = std::move(this->envStack.back());
+  this->envStack.pop_back();
+
+  this->SymbolTable = std::move(state.SymbolTable);
+  this->GlobalSymbolTable = std::move(state.GlobalSymbolTable);
+  this->nameTable = std::move(state.nameTable);
+  this->genericFunctions = std::move(state.genericFunctions);
+  this->genericTypes = std::move(state.genericTypes);
+  this->includedMemo = std::move(state.includedMemo);
+  this->includedClasses = std::move(state.includedClasses);
+  this->nameSpaceTable = std::move(state.nameSpaceTable);
+  this->genericTypeConversions = std::move(state.genericTypeConversions);
+  this->generatedFunctionNames = std::move(state.generatedFunctionNames);
+  this->transforms = std::move(state.transforms);
+  this->inFunction = state.inFunction;
+  this->globalScope = state.globalScope;
+  this->lambdaReturns = state.lambdaReturns;
+  this->lambdaSize = state.lambdaSize;
+  this->tempCount = state.tempCount;
+  this->currentFunction = state.currentFunction;
+  // restore the current function
 }

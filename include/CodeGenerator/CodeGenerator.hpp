@@ -5,6 +5,7 @@
 #include <set>
 #include <tuple>
 #include <unordered_map>
+#include <vector>
 
 #include "ASM.hpp"
 #include "CodeGenerator/Expr.hpp"
@@ -121,6 +122,30 @@ class CodeGenerator {
   std::unordered_map<std::string, ast::Transform> transforms;
 #pragma endregion
 
+  struct EnvState {
+    links::LinkedList<Symbol> SymbolTable;
+    links::LinkedList<Symbol> GlobalSymbolTable;
+    links::SLinkedList<ast::Function, std::string> nameTable;
+    links::SLinkedList<ast::Function, std::string> genericFunctions;
+    std::unordered_map<std::string, ast::Class *> genericTypes;
+    HashMap<ast::Statement *> includedMemo;
+    HashMap<ast::Statement *> includedClasses;
+    HashMap<std::string> nameSpaceTable;
+    std::unordered_map<std::string, std::string> genericTypeConversions;
+    std::set<std::string> generatedFunctionNames;
+    links::SLinkedList<gen::Type *, std::string> typeList;
+    links::SLinkedList<ast::Type, std::string> TypeList;
+    std::unordered_map<std::string, ast::Transform> transforms;
+    bool inFunction;
+    bool globalScope;
+    std::string lambdaReturns;
+    asmc::Size lambdaSize;
+    int tempCount;
+    ast::Function *currentFunction;
+  };
+
+  std::vector<EnvState> envStack;
+
   int getBytes(asmc::Size size);
 
   asmc::Register intArgs[6] = {asmc::Register("rdi", "edi", "di", "dil"),
@@ -149,6 +174,9 @@ class CodeGenerator {
 
   links::LinkedList<std::string> breakContext;
   links::LinkedList<std::string> continueContext;
+
+  void pushEnv();
+  void popEnv();
 
   std::tuple<std::string, gen::Symbol, bool, asmc::File, gen::Symbol *>
   resolveSymbol(std::string ident, links::LinkedList<std::string> modList,
