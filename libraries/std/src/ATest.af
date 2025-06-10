@@ -51,3 +51,36 @@ export fn assertEqual(const T expected, const T actual) -> void {
 		str.print(`      Expected {expected} but got {actual}\n`);
 	};
 };
+
+types(T)
+export fn assertNotEqual(const T expected, const T actual) -> void {
+	if expected == actual {
+		str.print(`      Expected not {expected} but got {actual}\n`);
+	};
+};
+
+export fn assertTrue(const bool condition) -> void {
+	if !condition {
+		str.print(`      Expected true but got false\n`);
+	};
+};
+
+export fn assertFalse(const bool condition) -> void {
+	if condition {
+		str.print(`      Expected false but got true\n`);
+	};
+};
+
+types(T)
+export fn assertNull(const T value) -> void {
+	if value != NULL {
+		str.print(`      Expected null but got {value}\n`);
+	};
+};
+
+types(any)
+export fn assertNotNull(const any value) -> void {
+	if value == NULL {
+		str.print(`      Expected not null but got null\n`);
+	};
+};
