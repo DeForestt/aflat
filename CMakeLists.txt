@@ -30,7 +30,7 @@ file(GLOB_RECURSE testing_Modules
 list(REMOVE_ITEM testing_Modules ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
 message (STATUS ${testing_Modules})
-add_executable(test ${testing_Modules})
-target_include_directories(test PRIVATE include/)
-target_link_libraries(test PRIVATE Catch2::Catch2WithMain)
+add_executable(a.test ${testing_Modules})
+target_include_directories(a.test PRIVATE include/)
+target_link_libraries(a.test PRIVATE Catch2::Catch2WithMain)
 # target_link_options(test PRIVATE -flto)
