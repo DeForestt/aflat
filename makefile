@@ -1,5 +1,5 @@
 CXX       := g++
-CXX_FLAGS := -std=c++17 -O3 -march=native -fpermissive
+CXX_FLAGS := -std=c++17 -O3 -march=native -fpermissive -g
 
 BIN     := bin
 SRC     := src

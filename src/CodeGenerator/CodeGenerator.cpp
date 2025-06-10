@@ -1633,6 +1633,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                 " were provided");
 
         for (size_t i = 0; i < classStatement->genericTypes.size(); i++) {
+          new_class_name += "." + newExpr.templateTypes[i];
           auto genericType = classStatement->genericTypes[i];
           auto typeSelected = newExpr.templateTypes[i];
           genericMap[genericType] = typeSelected;
@@ -1644,13 +1645,19 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         newExpr.type.typeName = new_class_name;
 
         if (this->TypeList[new_class_name] == nullptr) {
+          if (OutputFile.lambdas == nullptr)
+            OutputFile.lambdas = new asmc::File;
+          OutputFile.hasLambda = true;
+
           scope::ScopeManager::getInstance()->pushIsolated();
           this->pushEnv();
-          classStatement->generate(*this);
+          OutputFile.lambdas->operator<<(this->GenSTMT(classStatement));
+          type = this->typeList[new_class_name];
           this->popEnv();
           scope::ScopeManager::getInstance()->popIsolated();
+        } else {
+          type = this->typeList[new_class_name];
         }
-        type = this->typeList[new_class_name];
       }
     }
     if (type == nullptr) alert("Type " + newExpr.type.typeName + " not found");
@@ -2194,9 +2201,13 @@ void gen::CodeGenerator::pushEnv() {
   state.nameSpaceTable = std::move(this->nameSpaceTable);
   state.genericTypeConversions = std::move(this->genericTypeConversions);
   state.generatedFunctionNames = std::move(this->generatedFunctionNames);
-  state.typeList = this->typeList;
-  state.TypeList = this->TypeList;
   state.transforms = std::move(this->transforms);
+  state.inFunction = this->inFunction;
+  state.globalScope = this->globalScope;
+  state.lambdaReturns = this->lambdaReturns;
+  state.lambdaSize = this->lambdaSize;
+  state.tempCount = this->tempCount;
+  state.currentFunction = this->currentFunction;
   this->envStack.push_back(std::move(state));
 
   this->SymbolTable = links::LinkedList<Symbol>();
@@ -2210,6 +2221,10 @@ void gen::CodeGenerator::pushEnv() {
   this->genericTypeConversions.clear();
   this->generatedFunctionNames.clear();
   this->transforms.clear();
+  this->currentFunction = nullptr;
+  this->inFunction = false;
+  this->globalScope = false;
+  this->lambdaReturns = "";
 }
 
 void gen::CodeGenerator::popEnv() {
@@ -2227,7 +2242,12 @@ void gen::CodeGenerator::popEnv() {
   this->nameSpaceTable = std::move(state.nameSpaceTable);
   this->genericTypeConversions = std::move(state.genericTypeConversions);
   this->generatedFunctionNames = std::move(state.generatedFunctionNames);
-  this->typeList = state.typeList;
-  this->TypeList = state.TypeList;
   this->transforms = std::move(state.transforms);
+  this->inFunction = state.inFunction;
+  this->globalScope = state.globalScope;
+  this->lambdaReturns = state.lambdaReturns;
+  this->lambdaSize = state.lambdaSize;
+  this->tempCount = state.tempCount;
+  this->currentFunction = state.currentFunction;
+  // restore the current function
 }
