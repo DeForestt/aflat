@@ -205,3 +205,36 @@ void ScopeManager::addAssign(std::string symbol, bool get) {
     }
   }
 };
+
+void ScopeManager::pushIsolated() {
+  isoState state;
+  state.stack = this->stack;
+  state.globalStack = this->globalStack;
+  state.pleading = this->pleading;
+  state.stackPos = this->stackPos;
+  state.maxStackPos = this->maxStackPos;
+  state.scopeStack = this->scopeStack;
+  state.SStackSize = this->SStackSize;
+  this->isolated.push_back(state);
+
+  this->stack.clear();
+  this->stackPos = 0;
+  this->maxStackPos = 0;
+  this->scopeStack.clear();
+  this->scopeStack.push_back(0);
+  this->SStackSize = 0;
+  this->pleading.clear();
+};
+
+void ScopeManager::popIsolated() {
+  if (this->isolated.empty()) return;
+  isoState state = this->isolated.back();
+  this->isolated.pop_back();
+  this->stack = state.stack;
+  this->globalStack = state.globalStack;
+  this->pleading = state.pleading;
+  this->stackPos = state.stackPos;
+  this->maxStackPos = state.maxStackPos;
+  this->scopeStack = state.scopeStack;
+  this->SStackSize = state.SStackSize;
+};
