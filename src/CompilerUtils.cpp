@@ -1,27 +1,26 @@
 #include "CompilerUtils.hpp"
+#include <string_view>
 
 namespace compilerutils {
 
-std::string buildCompileCmd(const std::string &srcPath,
-                            const std::string &destPath,
+std::string buildCompileCmd(std::string_view srcPath,
+                            std::string_view destPath,
                             bool debug) {
-  std::string flags;
-  if (debug)
-    flags = "-g -no-pie -z noexecstack -S -lefence ";
-  else
-    flags = "-O3 -march=native -S -no-pie -z noexecstack ";
-  return "gcc " + flags + srcPath + " -o " + destPath;
+  const std::string flags =
+      debug ? "-g -no-pie -z noexecstack -S -lefence "
+            : "-O3 -march=native -S -no-pie -z noexecstack ";
+  return std::string{"gcc "} + flags + std::string{srcPath} + " -o " +
+         std::string{destPath};
 }
 
-std::string buildLinkCmd(const std::string &output,
-                         const std::string &linkerList,
+std::string buildLinkCmd(std::string_view output,
+                         std::string_view linkerList,
                          bool debug) {
-  std::string flags;
-  if (debug)
-    flags = "-O0 -g -no-pie -z noexecstack -o ";
-  else
-    flags = "-O3 -march=native -no-pie -z noexecstack -o ";
-  return "gcc " + flags + output + " " + linkerList;
+  const std::string flags =
+      debug ? "-O0 -g -no-pie -z noexecstack -o "
+            : "-O3 -march=native -no-pie -z noexecstack -o ";
+  return std::string{"gcc "} + flags + std::string{output} + " " +
+         std::string{linkerList};
 }
 
 }  // namespace compilerutils
