@@ -21,7 +21,7 @@ void ScopeManager::reset() {
 }
 
 int ScopeManager::assign(std::string symbol, ast::Type type, bool mask,
-                         bool mut = true) {
+                         bool mut) {
   using namespace gen::utils;
   auto sym = gen::Symbol();
 
@@ -74,7 +74,7 @@ std::string removeTildes(const std::string &input) {
 }
 
 void ScopeManager::popScope(CodeGenerator *callback, asmc::File &OutputFile,
-                            bool fPop = false) {
+                            bool fPop) {
   using namespace gen::utils;
   int size = this->scopeStack.back();
   for (int i = 0; i < size; i++) {
@@ -196,7 +196,7 @@ std::vector<gen::Symbol> ScopeManager::getScope(const bool used) {
   return scope;
 };
 
-void ScopeManager::addAssign(std::string symbol, bool get = true) {
+void ScopeManager::addAssign(std::string symbol, bool get) {
   for (int i = this->stack.size() - 1; i >= 0; i--) {
     if (this->stack[i].symbol == symbol) {
       this->stack[i].assignCount++;
