@@ -4,6 +4,7 @@ import string from "String";
 import List from "Collections";
 import Map from "Utils/Map";
 import Result from "Utils/Result";
+import Error from "Utils/Error";
 
 mutable Map fixtures = NULL;
 
@@ -87,13 +88,13 @@ export fn assertNotNull(const any value) -> void {
 };
 
 export fn assertError(const Result result) -> void {
-	if result.hasError() {
+	if !result.hasError() {
 		str.print(`      Expected error but got success\n`);
 	};
 };
 
 export fn assertSuccess(const Result result) -> void {
-	if !result.hasError() {
-		str.print(`      Expected success but got error\n`);
+	if result.hasError() {
+		str.print(`      Expected success but got error {result.getError()}\n`);
 	};
 };
