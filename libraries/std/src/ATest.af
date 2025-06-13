@@ -3,6 +3,7 @@ import {print} from "String" under str;
 import string from "String";
 import List from "Collections";
 import Map from "Utils/Map";
+import Result from "Utils/Result";
 
 mutable Map fixtures = NULL;
 
@@ -82,5 +83,17 @@ types(any)
 export fn assertNotNull(const any value) -> void {
 	if value == NULL {
 		str.print(`      Expected not null but got null\n`);
+	};
+};
+
+export fn assertError(const Result result) -> void {
+	if result.hasError() {
+		str.print(`      Expected error but got success\n`);
+	};
+};
+
+export fn assertSuccess(const Result result) -> void {
+	if !result.hasError() {
+		str.print(`      Expected success but got error\n`);
 	};
 };
