@@ -2212,12 +2212,12 @@ void gen::CodeGenerator::pushEnv() {
   EnvState state;
   state.SymbolTable = std::move(this->SymbolTable);
   state.GlobalSymbolTable = std::move(this->GlobalSymbolTable);
-  state.nameTable = std::move(this->nameTable);
+  // state.nameTable = std::move(this->nameTable);
   state.genericFunctions = std::move(this->genericFunctions);
   state.genericTypes = std::move(this->genericTypes);
   state.includedMemo = std::move(this->includedMemo);
   state.includedClasses = std::move(this->includedClasses);
-  state.nameSpaceTable = std::move(this->nameSpaceTable);
+  // state.nameSpaceTable = std::move(this->nameSpaceTable);
   state.genericTypeConversions = std::move(this->genericTypeConversions);
   state.generatedFunctionNames = std::move(this->generatedFunctionNames);
   state.transforms = std::move(this->transforms);
@@ -2231,12 +2231,12 @@ void gen::CodeGenerator::pushEnv() {
 
   this->SymbolTable = links::LinkedList<Symbol>();
   this->GlobalSymbolTable = links::LinkedList<Symbol>();
-  this->nameTable = links::SLinkedList<ast::Function, std::string>();
+  // this->nameTable = links::SLinkedList<ast::Function, std::string>();
   this->genericFunctions = links::SLinkedList<ast::Function, std::string>();
   this->genericTypes.clear();
   this->includedMemo = HashMap<ast::Statement *>();
   this->includedClasses = HashMap<ast::Statement *>();
-  this->nameSpaceTable = HashMap<std::string>();
+  // this->nameSpaceTable = HashMap<std::string>();
   this->genericTypeConversions.clear();
   this->generatedFunctionNames.clear();
   this->transforms.clear();
@@ -2253,12 +2253,12 @@ void gen::CodeGenerator::popEnv() {
 
   this->SymbolTable = std::move(state.SymbolTable);
   this->GlobalSymbolTable = std::move(state.GlobalSymbolTable);
-  this->nameTable = std::move(state.nameTable);
+  // this->nameTable = std::move(state.nameTable);
   this->genericFunctions = std::move(state.genericFunctions);
   this->genericTypes = std::move(state.genericTypes);
   this->includedMemo = std::move(state.includedMemo);
   this->includedClasses = std::move(state.includedClasses);
-  this->nameSpaceTable = std::move(state.nameSpaceTable);
+  // this->nameSpaceTable = std::move(state.nameSpaceTable);
   this->genericTypeConversions = std::move(state.genericTypeConversions);
   this->generatedFunctionNames = std::move(state.generatedFunctionNames);
   this->transforms = std::move(state.transforms);

@@ -60,6 +60,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         func->ident.ident = new_ident;
         func->genericTypes.clear();
         func->scope = ast::ScopeMod::Private;
+
         if (file.lambdas == nullptr) {
           file.lambdas = new asmc::File();
           file.hasLambda = true;
@@ -72,6 +73,14 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           generator.generatedFunctionNames.insert(new_ident);
         }
         this->ident = func->ident.ident;
+        // get func from the name table so that it can be used with generated
+        // return type
+        func = generator.nameTable[func->ident.ident];
+        if (func == nullptr)
+          generator.alert(
+              "cannot find function after generic generation (this is a bug "
+              "please report it): " +
+              this->ident);
         ident = this->ident;
       }
     }

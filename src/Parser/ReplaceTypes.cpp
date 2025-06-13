@@ -89,6 +89,12 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
   if (auto newExpr = dynamic_cast<NewExpr *>(this)) {
     applyType(newExpr->type, map);
     applyList(newExpr->args, map);
+
+    for (auto &t : newExpr->templateTypes) {
+      auto it = map.find(t);
+      if (it != map.end()) t = it->second;
+    }
+
     return;
   }
   if (auto callExpr = dynamic_cast<CallExpr *>(this)) {
