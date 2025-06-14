@@ -565,7 +565,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     }
 
     if (!genericCall && exprCall->templateTypes.size() != 0) {
-      alert("Template types cannot be used with non-generic classes");
+      call->genericTypes = exprCall->templateTypes;
     }
 
     if (t != nullptr) {

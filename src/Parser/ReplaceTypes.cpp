@@ -23,6 +23,15 @@ static void applyList(links::LinkedList<T *> &list,
   list.reset();
 }
 
+static void applyTemplateTypes(
+    std::vector<std::string> &templateTypes,
+    const std::unordered_map<std::string, std::string> &map) {
+  for (auto &t : templateTypes) {
+    auto it = map.find(t);
+    if (it != map.end()) t = it->second;
+  }
+}
+
 void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
   if (auto expr = dynamic_cast<Expr *>(this)) {
     if (expr->extention) expr->extention->replaceTypes(map);
@@ -89,19 +98,15 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
   if (auto newExpr = dynamic_cast<NewExpr *>(this)) {
     applyType(newExpr->type, map);
     applyList(newExpr->args, map);
-
-    for (auto &t : newExpr->templateTypes) {
-      auto it = map.find(t);
-      if (it != map.end()) t = it->second;
-    }
+    applyTemplateTypes(newExpr->templateTypes, map);
 
     return;
   }
   if (auto callExpr = dynamic_cast<CallExpr *>(this)) {
     if (callExpr->call) callExpr->call->replaceTypes(map);
+    applyTemplateTypes(callExpr->templateTypes, map);
     return;
   }
-
   if (auto assign = dynamic_cast<Assign *>(this)) {
     if (assign->expr) assign->expr->replaceTypes(map);
     applyList(assign->indices, map);
@@ -134,6 +139,7 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
   }
   if (auto call = dynamic_cast<Call *>(this)) {
     applyList(call->Args, map);
+    applyTemplateTypes(call->genericTypes, map);
     return;
   }
   if (auto destruct = dynamic_cast<Destructure *>(this)) {

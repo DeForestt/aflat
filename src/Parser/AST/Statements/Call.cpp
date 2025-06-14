@@ -44,11 +44,18 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         std::unordered_map<std::string, std::string> genericMap;
         // loop through func.argTypes
         auto new_ident = func->ident.ident;
+
+        for (int i = 0; i < this->genericTypes.size(); i++) {
+          genericMap[func->genericTypes[i]] = this->genericTypes[i];
+          new_ident += "." + this->genericTypes[i];
+        }
+
         for (int i = 0; i < func->argTypes.size(); i++) {
           auto type = func->argTypes[i];
 
           for (const auto &genericType : func->genericTypes) {
-            if (type.typeName == genericType) {
+            if (type.typeName == genericType &&
+                genericMap.find(genericType) == genericMap.end()) {
               auto exprType =
                   generator.GenExpr(this->Args.get(i), junkFile).type;
               genericMap[genericType] = exprType;
