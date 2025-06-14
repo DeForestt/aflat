@@ -19,6 +19,8 @@ aflat ./libraries/std/src/Utils/Result.af ./libraries/std/Result.s
 aflat ./libraries/std/src/Memory.af ./libraries/std/Memory.s
 # rename Result.s to Utils_Result.s
 mv ./libraries/std/Result.s ./libraries/std/Utils_Result.s
+aflat ./libraries/std/src/Utils/result.af ./libraries/std/result.s
+mv ./libraries/std/result.s ./libraries/std/Utils_result.s
 aflat ./libraries/std/src/Utils/Functions.af ./libraries/std/Functions.s
 mv ./libraries/std/Functions.s ./libraries/std/Utils_Functions.s
 aflat ./libraries/std/src/Utils/Observable.af ./libraries/std/Observable.s

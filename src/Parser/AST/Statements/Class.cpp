@@ -186,7 +186,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
     OutputFile << generator.GenSTMT(hoist);
   }
 
-  if (this->includer) {
+  if (this->includer && this->genericTypes.size() == 0) {
     gen::utils::shellStatement(this->statement);
   }
 

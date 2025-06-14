@@ -558,6 +558,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
                                    "CLArgs.s",
                                    "System.s",
                                    "Utils_Result.s",
+                                   "Utils_result.s",
                                    "Utils_Option.s",
                                    "Utils_Functions.s",
                                    "Utils_Map.s",
