@@ -889,38 +889,54 @@ Play around with the program and see how it works.
 
 As a side project, see if you can add a way to view all of the assignments in a students assignment list.
 
+## Templates
+Templates let you write classes and functions that operate on any number of
+types. Add a `types(T)` line before the definition—replace `T` with as many type
+names as you need (for example `types(Key, Value)`). Template functions can
+usually infer the type arguments from their parameters, but class templates
+cannot. Always instantiate a templated class with `::<Type>` to specify the
+desired type.
+
 ## Error Handling in AFlat
-The aflat standard library offers a way to handle errors using `Results`.  Results are good to use because they force you to handle errors.  The downside of using products is that you lose type safety.  Because AFlat does not support generics, the resolve() method simply trust that the user knows the correct type.  Be careful when using products because you can easily get the wrong type and aflat will still compile.
+The aflat standard library offers a way to handle errors using `Result`. Results
+force you to handle possible failures. With the template system introduced by
+the `types` keyword, a `Result` can retain the type of the value it wraps.
+Instantiate templated classes or functions with `::<type>` when the type cannot
+be inferred.
 
 ### Importing and Using Results
-To use products, you must import the product class from the `Utils/Results` module.  Then you can create a product by calling the Result constructor.  The Result constructor takes two arguments, the first is the value and the second is the error.  If there is no error, the second argument can be omitted or set to NULL. You should also import the `accept()` and `reject()` methods from the `Utils/Results` module.  These methods are used to create products.
+Import the helpers from `Utils/result` under a namespace of your choice. Use
+`accept` to wrap a success value and `reject` for an error. Functions that may
+fail should return `result::<T>`.
 
-example of a function that returns a product:
+Example of a function that returns a result:
 
 ```js
-fn divide(int a, int b) -> Result {
-	if b == 0
-		return pr.reject("Cannot divide by zero");
-	return pr.accept(a / b);
+import {accept, reject} from "Utils/result" under pr;
+
+fn divide(int a, int b) -> result::<int> {
+        if b == 0
+                return pr.reject(Error("Cannot divide by zero"));
+        return pr.accept(a / b);
 };
 ```
 
-When you call a function that returns a product, you call the `resolve()` method on the product.  The resolve method takes two arguments, the first is a function that is called if the product is accepted and the second is a function that is called if the product is rejected.  The first argument is called with the value of the product and the second argument is called with the error of the product. A second arbitrary argument can be passed to the resolve method.  This argument is passed to the function that is called as the second argument.
+You can handle the result with the `match` method, providing handlers for the
+`ok` and `err` cases.
 
-example of calling a function that returns a product:
+Example of calling a function that returns a result:
 
 ```js
 fn main() -> int {
-	bool hasError = false;
-	// notice that the type must be specified explicitly because Results do not supply any type information.
-	int result = divide(10, 0).resolve([int value] => return value, [string error, adr err] => {
-		str.print(`{error}\n`);
-		err =: true; // We store the error state in the pointer passed to the function.
-		return 0;
-	}, ?hasError); // ? is used to pass a pointer to a variable. This passes the address of the hasError variable to the function.
-	if !hasError
-		str.print(`Result: {result}\n`);
-	return 0;
+        divide(10, 0).match({
+                ok: fn (int value) {
+                        str.print(`Value: {value}\n`);
+                },
+                err: fn (Error e) {
+                        str.print(`Error: {e}\n`);
+                }
+        });
+        return 0;
 };
 ```
 
@@ -930,7 +946,7 @@ We will add error handling to the addGrade function.  We will also add a way to 
 Lets take a look at the updated addGrade function:
 ```js
 // Add Grade
-fn addGrade(List roster) -> Result {
+fn addGrade(List roster) -> result::<void> {
 	let id = str.readString("Enter student id or name: ");
 	
 	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => { return s.id == i.toInt().resolve([int value] => return value, NULL) }, id)
@@ -938,24 +954,23 @@ fn addGrade(List roster) -> Result {
 
 	// above we use the ternary operator to check if the id is numeric.  If it is, we search for the student by id.  If it is not, we search for the student by name.
 
-	if student == NULL {
-		return pr.reject("Student not found."); // We return a Result with an error message.
-	};
+        if student == NULL {
+                return pr.reject(Error("Student not found."));
+        };
 
 	let assignment = str.readString("Enter assignment name: ");
 	let grade = str.readString( `Enter {student.name}'s grade:`);
 	string errorMsg = "";
-	int grade = grade.toInt().resolve([int value] => return value, [string error, mutable string msg] => { // We shadow the grade variable with an int since we wont need the product anymore.
-		msg = error;
-		return 0;
-	}, errorMsg);
-	if errorMsg != "" {
-		return pr.reject(errorMsg); // We return a Result with an error message.
-	};
+        int grade = grade.toInt().resolve([int value] => return value, [string error, mutable string msg] => {
+                msg = error;
+                return 0;
+        }, errorMsg);
+        if errorMsg != "" {
+                return pr.reject(Error(errorMsg));
+        };
 
-	student.addAssignment(Assignment(assignment, grade)); // We use the resolve() method to get the value of the Result.
-	// We will talk more about products later.
-	return pr.accept(NULL); // We return a Result with a value of NULL.
+        student.addAssignment(Assignment(assignment, grade));
+        return pr.accept(NULL);
 };
 ```
 
@@ -977,13 +992,17 @@ Now we need to update the main function to handle the product.
 
 		if input == "1"
 			addStudent(roster)
-		else if input == "2"
-			adr __junk = addGrade(roster).
-				resolve([] => return NULL, [string error] => { // We use the resolve() method to handle the Result.
-					str.print(`Error: {error}\n`);
-					let __junk = str.readString("Press enter to continue...");
-					return NULL;
-				})
+                else if input == "2"
+                        addGrade(roster).match({
+                                ok: fn (void _) {
+                                        return NULL;
+                                },
+                                err: fn (Error error) {
+                                        str.print(`Error: {error}\n`);
+                                        let __junk = str.readString("Press enter to continue...");
+                                        return NULL;
+                                }
+                        })
 		else if input == "quit"
 			return 0
 		else {
