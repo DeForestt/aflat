@@ -612,6 +612,70 @@ When an object is deleted, the following steps are taken:
 1. The destructor function is called if present.
 2. The memory for the function is freed.
 
+## Templates
+Templates allow classes and functions to operate on any number of types.
+Declare template parameters using the `types` keyword. List as many type names
+as you need inside the parentheses separated by commas. When the argument
+types fully determine the template parameters, you may omit `::<...>` and let
+the compiler infer them. If the compiler cannot infer the types, specify them
+explicitly with `::<Type>`.
+
+Example:
+```aflat
+types(T)
+fn echo(T value) {
+    str.print(`{value}\n`);
+};
+
+fn main() {
+    echo(5);        // T inferred as int
+    echo("hi");     // T inferred as string
+    echo::<bool>(true); // explicit when needed
+};
+```
+
+You may list multiple template types:
+
+```aflat
+types(Key, Value)
+class Pair {
+    Key key = key;
+    Value value = value;
+};
+
+fn main() {
+    let p = Pair::<int, string>(1, "one");
+};
+```
+
+### Template Classes
+A class can also be templated. Provide the `types` line before the class and
+specify the concrete type when constructing. Unlike template functions, class
+templates do **not** support type inference, so you must always supply the
+concrete type using `::<Type>` when creating an instance.
+
+```aflat
+types(A)
+class Box {
+    mutable A value = value;
+
+    fn init(A value) -> Self {
+        return my;
+    };
+
+    fn get() -> A {
+        return my.value;
+    };
+};
+
+fn main() {
+    let b = Box::<int>(5);
+    let s = Box::<string>("hi");
+    str.print(`{b.get()} {s.get()}\n`);
+};
+```
+
+
 
 ## Working with header files
 Much like in c or c++, aflat supports a header and source file interface; The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
@@ -720,6 +784,8 @@ The list of standard modules is as follows:
     - provides the Standard string object
 - ATest
   - Provides the testing framework for AFlat
+- Utils/result
+  - A templated result type used for error handling
 
 Example:
 ```js
@@ -741,6 +807,12 @@ fn main() -> int {
 };
 
 ```
+
+### Utils/result.af
+The `result` module defines a templated `result` class used for error handling. Use
+`accept` to create a success and `reject` for an error. Call `match` on the result
+to access the value or handle the error.
+
 ## Package Manager
 The Aflat package manager is built into the compiler.
 
