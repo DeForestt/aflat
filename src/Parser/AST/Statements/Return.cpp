@@ -73,8 +73,11 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     generator.currentFunction->type = ast::Type(from.type, from.size);
 
     // need to find it in the nameTable or the scope nameTable
-    if (generator.scope == nullptr) {
+    if (generator.scope == nullptr ||
+        generator.currentFunction->genericTypes.size() > 0) {
       generator.nameTable[generator.currentFunction->ident.ident]->type =
+          ast::Type(from.type, from.size);
+      generator.nameTable[generator.currentFunction->ident.ident]->useType =
           ast::Type(from.type, from.size);
     } else {
       generator.scope->nameTable[generator.currentFunction->ident.ident]->type =

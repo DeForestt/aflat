@@ -1,0 +1,72 @@
+.needs <std>
+
+import string from "String";
+import Error from "Utils/Error";
+import Map from "Utils/Map";
+import Option from "Utils/Option";
+
+types(A)
+safe dynamic class result {
+    private A value = value;
+    private mutable bool success = error == NULL;
+    private mutable Error error = error;
+    private mutable int refcount = 1;
+
+    fn get() -> Self {
+		my.refcount = my.refcount + 1;
+		return my;
+	};
+
+    fn endScope() {
+        my.refcount = my.refcount - 1;
+        if my.refcount == 0 {
+            delete my;
+        };
+        return;
+    };
+
+    fn init(const A value, *const Error error) -> Self {
+        return my;
+    };
+
+    fn expect() -> A {
+        if (!my.success)
+            panic(`Error: {my.error}`.cstr());
+        return my.value;
+    };
+
+    fn getError() -> Error {
+		return my.error;
+	};
+
+	fn hasError() -> bool {
+		return my.success != true;
+	};
+
+    fn match(const Map cases, *const any arg1, *const any arg2, *const any arg3, *const any arg4) -> A {
+		if my.success {
+			if cases.has("ok") {
+				const Option foo = cases.get("ok");
+                const adr foo = foo.orElse(
+                    [] => panic("No case for ok")
+                );
+				return foo(my.value, arg1, arg2, arg3, arg4);
+			} else {
+				panic("No case for ok");
+			};
+		};
+
+		return my.error.match(cases, arg1, arg2, arg3, arg4);
+	};
+
+};
+
+types(T)
+export fn accept(const T value) {
+    return new result::<T>(value);
+};
+
+types(J)
+export fn reject(const Error error) {
+    return new result::<J>(NULL, error);
+};

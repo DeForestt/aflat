@@ -44,11 +44,18 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         std::unordered_map<std::string, std::string> genericMap;
         // loop through func.argTypes
         auto new_ident = func->ident.ident;
+
+        for (int i = 0; i < this->genericTypes.size(); i++) {
+          genericMap[func->genericTypes[i]] = this->genericTypes[i];
+          new_ident += "." + this->genericTypes[i];
+        }
+
         for (int i = 0; i < func->argTypes.size(); i++) {
           auto type = func->argTypes[i];
 
           for (const auto &genericType : func->genericTypes) {
-            if (type.typeName == genericType) {
+            if (type.typeName == genericType &&
+                genericMap.find(genericType) == genericMap.end()) {
               auto exprType =
                   generator.GenExpr(this->Args.get(i), junkFile).type;
               genericMap[genericType] = exprType;
@@ -60,6 +67,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         func->ident.ident = new_ident;
         func->genericTypes.clear();
         func->scope = ast::ScopeMod::Private;
+
         if (file.lambdas == nullptr) {
           file.lambdas = new asmc::File();
           file.hasLambda = true;
@@ -72,6 +80,14 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           generator.generatedFunctionNames.insert(new_ident);
         }
         this->ident = func->ident.ident;
+        // get func from the name table so that it can be used with generated
+        // return type
+        func = generator.nameTable[func->ident.ident];
+        if (func == nullptr)
+          generator.alert(
+              "cannot find function after generic generation (this is a bug "
+              "please report it): " +
+              this->ident);
         ident = this->ident;
       }
     }

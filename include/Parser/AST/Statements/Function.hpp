@@ -59,7 +59,8 @@ class Function : public Member, public Statement {
         has_return(Other.has_return),
         optional(Other.optional),
         useType(Other.useType),
-        genericTypes(Other.genericTypes) {
+        genericTypes(Other.genericTypes),
+        autoType(Other.autoType) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;
     this->hidden = this->hidden;

@@ -559,6 +559,8 @@ ast::Statement *parse::Parser::parseStmt(
           "Line: " + std::to_string(tokens.peek()->lineCount) +
           " floating else, may have an extra semicolon before the else");
     } else {
+      auto genericTypes = this->parseTemplateTypeList(tokens, obj.lineCount);
+
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
         auto sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
         links::LinkedList<std::string> modList;
@@ -610,8 +612,8 @@ ast::Statement *parse::Parser::parseStmt(
         if (sym.Sym == '=') {
           output = new ast::Assign(obj.meta, indices, modList, tokens, *this);
         } else if (sym.Sym == '(') {
-          output =
-              new ast::Call(obj.meta, this->parseCallArgsList(tokens), modList);
+          output = new ast::Call(obj.meta, this->parseCallArgsList(tokens),
+                                 modList, genericTypes);
           output->logicalLine = obj.lineCount;
         } else if (sym.Sym == '+') {
           output = new ast::Inc(obj.meta, tokens);
