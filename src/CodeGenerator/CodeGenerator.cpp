@@ -155,6 +155,30 @@ gen::Type **gen::CodeGenerator::instantiateGenericClass(
   return result;
 }
 
+void gen::CodeGenerator::ensureTemplateType(const std::string &typeName,
+                                            asmc::File &OutputFile) {
+  if (this->typeList[typeName] != nullptr) return;
+
+  auto dot = typeName.find('.');
+  if (dot == std::string::npos) return;
+
+  std::string base = typeName.substr(0, dot);
+  auto cls = this->genericTypes[base];
+  if (cls == nullptr) return;
+
+  std::vector<std::string> types;
+  size_t start = dot + 1;
+  while (true) {
+    auto next = typeName.find('.', start);
+    types.push_back(typeName.substr(start, next - start));
+    if (next == std::string::npos) break;
+    start = next + 1;
+  }
+
+  std::string newName;
+  this->instantiateGenericClass(cls, types, newName, OutputFile);
+}
+
 std::tuple<std::string, gen::Symbol, bool, asmc::File, gen::Symbol *>
 gen::CodeGenerator::resolveSymbol(std::string ident,
                                   links::LinkedList<std::string> modList,
@@ -325,6 +349,7 @@ gen::CodeGenerator::resolveSymbol(std::string ident,
     access = '(' + this->registers["%r12"]->get(asmc::QWord) + ')';
     retSym.type = *retSym.type.typeHint;
   };
+  this->ensureTemplateType(retSym.type.typeName, OutputFile);
   return std::make_tuple(access, retSym, true, pops, modSym);
 };
 
@@ -628,6 +653,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       auto callGen = call->generate(*this);
       OutputFile << callGen.file;
       output = callGen.expr.value();
+      this->ensureTemplateType(output.type, OutputFile);
       if (size != asmc::AUTO &&
           (output.type == "any" || output.type == "--std--flex--function"))
         output.size = size;

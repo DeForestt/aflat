@@ -193,6 +193,8 @@ class CodeGenerator {
                                       const std::vector<std::string> &types,
                                       std::string &newName,
                                       asmc::File &OutputFile);
+  void ensureTemplateType(const std::string &typeName,
+                          asmc::File &OutputFile);
   CodeGenerator(std::string moduleId, parse::Parser &parser,
                 const std::string &source = "");
   asmc::File *deScope(gen::Symbol &sym);
