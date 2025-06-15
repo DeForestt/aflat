@@ -18,51 +18,6 @@
 
 using namespace gen::utils;
 
-#pragma region helper functions
-
-typedef gen::Enum Enum;
-
-bool Enum::compareEnum(Enum::EnumValue e, std::string ident) {
-  return e.name == ident;
-}
-
-Enum::Enum() { this->values.foo = Enum::compareEnum; }
-
-bool gen::Type::compare(gen::Type *t, std::string ident) {
-  if (ident == t->Ident) return true;
-  return false;
-}
-
-#pragma endregion
-
-int gen::CodeGenerator::getBytes(asmc::Size size) {
-  switch (size) {
-    case asmc::QWord:
-      return 8;
-      break;
-    case asmc::Word:
-      return 2;
-      break;
-    case asmc::Byte:
-      return 1;
-      break;
-    case asmc::DWord:
-      return 4;
-      break;
-    default:
-      alert("Unknown Size");
-  }
-  return 0;
-}
-
-std::string getUUID() {
-  std::string uuid = "";
-  for (int i = 0; i < 16; i++) {
-    uuid += std::to_string(rand() % 10);
-  }
-  return uuid;
-};
-
 void gen::CodeGenerator::alert(std::string message, bool error) {
   if (error) {
     this->errorFlag = true;
@@ -122,211 +77,6 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser,
   this->scope = nullptr;
 }
 
-gen::Type **gen::CodeGenerator::instantiateGenericClass(
-    ast::Class *cls, const std::vector<std::string> &types,
-    std::string &newName, asmc::File &OutputFile) {
-  auto classStatement = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
-  std::unordered_map<std::string, std::string> genericMap;
-  newName = classStatement->ident.ident;
-  if (types.size() != classStatement->genericTypes.size())
-    alert("Generic class " + cls->ident.ident + " requires " +
-          std::to_string(classStatement->genericTypes.size()) +
-          " template types, but got " + std::to_string(types.size()));
-  for (size_t i = 0; i < types.size(); i++) {
-    newName += "." + types[i];
-    genericMap[classStatement->genericTypes[i]] = types[i];
-  }
-  classStatement->replaceTypes(genericMap);
-  classStatement->ident.ident = newName;
-  classStatement->genericTypes.clear();
-  gen::Type **result;
-  if (this->TypeList[newName] == nullptr) {
-    if (OutputFile.lambdas == nullptr) OutputFile.lambdas = new asmc::File;
-    OutputFile.hasLambda = true;
-    scope::ScopeManager::getInstance()->pushIsolated();
-    this->pushEnv();
-    OutputFile.lambdas->operator<<(this->GenSTMT(classStatement));
-    result = this->typeList[newName];
-    this->popEnv();
-    scope::ScopeManager::getInstance()->popIsolated();
-  } else {
-    result = this->typeList[newName];
-  }
-  return result;
-}
-
-std::tuple<std::string, gen::Symbol, bool, asmc::File, gen::Symbol *>
-gen::CodeGenerator::resolveSymbol(std::string ident,
-                                  links::LinkedList<std::string> modList,
-                                  asmc::File &OutputFile,
-                                  links::LinkedList<ast::Expr *> indicies,
-                                  bool internal) {
-  asmc::File pops;
-  modList.invert();
-  modList.reset();
-
-  std::string nsp;
-  if (this->nameSpaceTable.contains(ident)) {
-    nsp = this->nameSpaceTable.get(ident) + ".";
-    if (modList.count == 0)
-      alert("NameSpace " + ident + " cannot be used as a variable");
-    ident = nsp + modList.shift();
-  };
-
-  bool global = false;
-  gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(ident);
-
-  if (sym == nullptr) {
-    sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, ident);
-    global = true;
-  }
-  if (sym == nullptr)
-    return std::make_tuple("", gen::Symbol(), false, pops, nullptr);
-
-  std::string access = "";
-  if (global)
-    access = sym->symbol;
-  else
-    access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
-  ast::Type last = sym->type;
-  gen::Symbol *modSym = sym;
-  const int checkTo = (internal) ? 1 : 0;
-  if (modList.trail() > checkTo) {
-    // push r14
-    asmc::Push *push = new asmc::Push;
-    push->logicalLine = this->logicalLine;
-    push->op = this->registers["%r14"]->get(asmc::QWord);
-    OutputFile.text << push;
-    while (modList.trail() > checkTo) {
-      if (this->typeList[last.typeName] == nullptr)
-        alert("type not found to resolve " + last.typeName);
-      gen::Type type = **this->typeList[last.typeName];
-      std::string sto = modList.touch();
-      if (this->scope == *this->typeList[last.typeName]) {
-        // if we are scoped to the type search the symbol in the type
-        // symbol table
-        modSym =
-            type.SymbolTable.search<std::string>(searchSymbol, modList.shift());
-      } else {
-        // if we are not scoped to the type search the symbol in the
-        // public symbol table
-        modSym = type.publicSymbols.search<std::string>(searchSymbol,
-                                                        modList.shift());
-      };
-      if (modSym == nullptr)
-        alert("variable not found " + last.typeName + "." + sto);
-      last = modSym->type;
-      int tbyte = modSym->byteMod;
-      asmc::Mov *mov = new asmc::Mov();
-      mov->size = asmc::QWord;
-      mov->to = this->registers["%r14"]->get(asmc::QWord);
-      mov->from = access;
-      mov->logicalLine = this->logicalLine;
-      OutputFile.text << mov;
-      access =
-          std::to_string(tbyte - (this->getBytes(last.size) * last.arraySize)) +
-          '(' + mov->to + ')';
-    }
-
-    // pop r14
-    asmc::Pop *pop = new asmc::Pop;
-    pop->op = this->registers["%r14"]->get(asmc::QWord);
-    pop->logicalLine = this->logicalLine;
-    pops.text << pop;
-  };
-
-  modList.invert();
-  modList.reset();
-
-  indicies.reset();
-  modSym->type.indices.reset();
-  gen::Symbol retSym = *modSym;
-
-  if (indicies.trail() != 0) {
-    this->canAssign(modSym->type, "adr",
-                    "the given type {} is not subscriptable");
-
-    if (modSym->type.indices.trail() != indicies.trail())
-      alert("invalid index count");
-
-    int multiplier = getBytes(modSym->type.typeHint->size);
-
-    int count = 1;
-
-    asmc::Mov *zero = new asmc::Mov();
-    zero->from = "$0";
-    zero->to = this->registers["%r12"]->get(asmc::QWord);
-    zero->logicalLine = this->logicalLine;
-    zero->size = asmc::QWord;
-
-    OutputFile.text << zero;
-
-    while (indicies.trail() > 0) {
-      // generate the expression
-      ast::Expr *index = indicies.shift();
-      gen::Expr expr = this->GenExpr(index, OutputFile);
-      // clear r13
-      asmc::Xor *xr = new asmc::Xor();
-      xr->op1 = this->registers["%r13"]->get(asmc::QWord);
-      xr->op2 = this->registers["%r13"]->get(asmc::QWord);
-      xr->logicalLine = this->logicalLine;
-      OutputFile.text << xr;
-
-      // move expression access to r13
-      asmc::Mov *mov = new asmc::Mov();
-      mov->size = asmc::DWord;
-      mov->to = this->registers["%r13"]->get(asmc::DWord);
-      mov->from = expr.access;
-      mov->logicalLine = this->logicalLine;
-      OutputFile.text << mov;
-
-      // multiply r13 by count
-      asmc::Mul *mul = new asmc::Mul();
-      mul->op2 = this->registers["%r13"]->get(asmc::QWord);
-      mul->op1 = '$' + std::to_string(count);
-      mul->logicalLine = this->logicalLine;
-      OutputFile.text << mul;
-
-      // add r13 to r12
-      asmc::Add *add = new asmc::Add();
-      add->op1 = this->registers["%r13"]->get(asmc::QWord);
-      add->op2 = this->registers["%r12"]->get(asmc::QWord);
-      add->size = asmc::QWord;
-      add->logicalLine = this->logicalLine;
-
-      OutputFile.text << add;
-      count = modSym->type.indices.shift();
-    };
-    // multiply r13 by the size of the type
-    asmc::Mul *mul = new asmc::Mul();
-    mul->op2 = this->registers["%r12"]->get(asmc::QWord);
-    mul->op1 = '$' + std::to_string(multiplier);
-    mul->size = asmc::QWord;
-    mul->logicalLine = this->logicalLine;
-
-    OutputFile.text << mul;
-    // load the address of the acces to rdx
-    asmc::Mov *mov = new asmc::Mov();
-    mov->size = asmc::QWord;
-    mov->to = this->registers["%rdx"]->get(asmc::QWord);
-    mov->from = access;
-    mov->logicalLine = this->logicalLine;
-    OutputFile.text << mov;
-
-    // add rdx to r13
-    asmc::Add *add = new asmc::Add();
-    add->op1 = this->registers["%rdx"]->get(asmc::QWord);
-    add->op2 = this->registers["%r12"]->get(asmc::QWord);
-    add->size = asmc::QWord;
-    add->logicalLine = this->logicalLine;
-
-    OutputFile.text << add;
-
-    access = '(' + this->registers["%r12"]->get(asmc::QWord) + ')';
-    retSym.type = *retSym.type.typeHint;
-  };
-  return std::make_tuple(access, retSym, true, pops, modSym);
-};
 
 bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
                                    std::string fmt, bool strict) {
@@ -747,7 +497,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           if (sym->mutable_) {
             gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
           }
-          byteMod += this->getBytes(sym->type.size);
+          byteMod += gen::utils::sizeToInt(sym->type.size);
           newSym.byteMod = byteMod;
           cl->SymbolTable.push(newSym);
           cl->publicSymbols.push(newSym);
@@ -1769,7 +1519,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     while (structList.args.trail() > 0) {
       asmc::File tempFile;
       gen::Expr expr = this->GenExpr(structList.args.shift(), tempFile);
-      size += this->getBytes(expr.size);
+      size += gen::utils::sizeToInt(expr.size);
     };
     structList.args.reset();
 
@@ -1777,7 +1527,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                      std::chrono::system_clock::now().time_since_epoch())
                      .count();
     std::string uniqueIdent = std::to_string(mills);
-    uniqueIdent = uniqueIdent + getUUID();
+    uniqueIdent = uniqueIdent + gen::utils::generateUUID();
 
     ast::Type structType = ast::Type();
     structType.size = asmc::Byte;
@@ -1805,7 +1555,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       mov2->to = "-" + std::to_string(bMod - offset) + "(%rbp)";
       mov2->size = genExpr.size;
       OutputFile.text << mov2;
-      offset += this->getBytes(genExpr.size);
+      offset += gen::utils::sizeToInt(genExpr.size);
     };
 
     // create a pointer to the struct
@@ -1987,7 +1737,7 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(
     ast::Declare *arg = dynamic_cast<ast::Declare *>(STMT);
     gen::Symbol symbol;
 
-    int offset = this->getBytes(arg->type.size);
+    int offset = gen::utils::sizeToInt(arg->type.size);
 
     if (table.search<std::string>(searchSymbol, arg->ident) != nullptr)
       alert("redefined variable:" + arg->ident);
@@ -2007,7 +1757,7 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(
    */
     ast::DecArr *dec = dynamic_cast<ast::DecArr *>(STMT);
     int offset = 0;
-    offset = this->getBytes(dec->type.size);
+    offset = gen::utils::sizeToInt(dec->type.size);
 
     offset = offset * dec->count;
 
@@ -2070,7 +1820,7 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
           for (auto sym = inScope.rbegin(); sym != inScope.rend(); sym++) {
             auto newSym = *sym;
 
-            byteMod += this->getBytes(sym->type.size);
+            byteMod += gen::utils::sizeToInt(sym->type.size);
             newSym.byteMod = byteMod;
             cl->SymbolTable.push(newSym);
             cl->publicSymbols.push(newSym);
@@ -2171,102 +1921,3 @@ asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
   return OutputFile;
 }
 
-asmc::File *gen::CodeGenerator::deScope(gen::Symbol &sym) {
-  if (sym.sold != -1) return nullptr;
-  asmc::File *file = new asmc::File();
-  gen::Type **type = this->typeList[sym.type.typeName];
-  if (type == nullptr) return nullptr;
-
-  gen::Class *classType = dynamic_cast<gen::Class *>(*type);
-  if (classType == nullptr) return nullptr;
-
-  // check if the class has a destructor
-  ast::Function *endScope = classType->nameTable["endScope"];
-  if (endScope == nullptr) return nullptr;
-
-  // push rax to preserve return value
-  asmc::Push *push = new asmc::Push();
-  push->logicalLine = this->logicalLine;
-  push->op = this->registers["%rax"]->get(asmc::QWord);
-  file->text << push;
-
-  // call the destructor
-  ast::Call *callDel = new ast::Call();
-  callDel->logicalLine = this->logicalLine;
-  callDel->ident = sym.symbol;
-  callDel->Args = LinkedList<ast::Expr *>();
-  callDel->modList = links::LinkedList<std::string>();
-  callDel->modList.push("endScope");
-  file->operator<<(this->GenSTMT(callDel));
-
-  // pop rax
-  asmc::Pop *pop = new asmc::Pop();
-  pop->logicalLine = this->logicalLine;
-  pop->op = this->registers["%rax"]->get(asmc::QWord);
-  file->text << pop;
-
-  return file;
-}
-
-void gen::CodeGenerator::pushEnv() {
-  EnvState state;
-  state.SymbolTable = std::move(this->SymbolTable);
-  state.GlobalSymbolTable = std::move(this->GlobalSymbolTable);
-  // state.nameTable = std::move(this->nameTable);
-  state.genericFunctions = std::move(this->genericFunctions);
-  state.genericTypes = std::move(this->genericTypes);
-  state.includedMemo = std::move(this->includedMemo);
-  state.includedClasses = std::move(this->includedClasses);
-  // state.nameSpaceTable = std::move(this->nameSpaceTable);
-  state.genericTypeConversions = std::move(this->genericTypeConversions);
-  state.generatedFunctionNames = std::move(this->generatedFunctionNames);
-  state.transforms = std::move(this->transforms);
-  state.inFunction = this->inFunction;
-  state.globalScope = this->globalScope;
-  state.lambdaReturns = this->lambdaReturns;
-  state.lambdaSize = this->lambdaSize;
-  state.tempCount = this->tempCount;
-  state.currentFunction = this->currentFunction;
-  this->envStack.push_back(std::move(state));
-
-  this->SymbolTable = links::LinkedList<Symbol>();
-  this->GlobalSymbolTable = links::LinkedList<Symbol>();
-  // this->nameTable = links::SLinkedList<ast::Function, std::string>();
-  this->genericFunctions = links::SLinkedList<ast::Function, std::string>();
-  this->genericTypes.clear();
-  this->includedMemo = HashMap<ast::Statement *>();
-  this->includedClasses = HashMap<ast::Statement *>();
-  // this->nameSpaceTable = HashMap<std::string>();
-  this->genericTypeConversions.clear();
-  this->generatedFunctionNames.clear();
-  this->transforms.clear();
-  this->currentFunction = nullptr;
-  this->inFunction = false;
-  this->globalScope = false;
-  this->lambdaReturns = "";
-}
-
-void gen::CodeGenerator::popEnv() {
-  if (this->envStack.empty()) return;
-  EnvState state = std::move(this->envStack.back());
-  this->envStack.pop_back();
-
-  this->SymbolTable = std::move(state.SymbolTable);
-  this->GlobalSymbolTable = std::move(state.GlobalSymbolTable);
-  // this->nameTable = std::move(state.nameTable);
-  this->genericFunctions = std::move(state.genericFunctions);
-  this->genericTypes = std::move(state.genericTypes);
-  this->includedMemo = std::move(state.includedMemo);
-  this->includedClasses = std::move(state.includedClasses);
-  // this->nameSpaceTable = std::move(state.nameSpaceTable);
-  this->genericTypeConversions = std::move(state.genericTypeConversions);
-  this->generatedFunctionNames = std::move(state.generatedFunctionNames);
-  this->transforms = std::move(state.transforms);
-  this->inFunction = state.inFunction;
-  this->globalScope = state.globalScope;
-  this->lambdaReturns = state.lambdaReturns;
-  this->lambdaSize = state.lambdaSize;
-  this->tempCount = state.tempCount;
-  this->currentFunction = state.currentFunction;
-  // restore the current function
-}
