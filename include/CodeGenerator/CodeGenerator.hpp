@@ -14,77 +14,8 @@
 #include "LinkedListS.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/Parser.hpp"
+#include "CodeGenerator/Types.hpp"
 namespace gen {
-
-class Symbol {
- public:
-  std::string symbol;
-  ast::Type type;
-  bool mutable_ = true;
-  bool readOnly = false;
-  bool mask = false;
-  int byteMod;
-  bool usable = true;
-  int sold = -1;
-  int underscores = 0;
-  int refCount = 0;
-  int assignCount = 0;
-};
-
-class Type {
- public:
-  std::string Ident;
-
-  // The public Symbol table will hold all public symbols
-  // This is to be used externally
-  links::LinkedList<Symbol> publicSymbols;
-
-  // The private Symbol table will hold all public and private symbols
-  // This is used internally
-  links::LinkedList<Symbol> SymbolTable;
-  static bool compare(Type *t, std::string ident);
-  virtual int poly() { return 0; };
-  int size;
-};
-
-class Class : public Type {
- public:
-  bool dynamic = false;
-  bool safeType =
-      false;  // if true, this class cannot be passed as an argument.
-  bool pedantic = false;  // if true, this class cannot be assigned to a void
-                          // pointer (`adr`)
-  // The public Name table will hold all public functions
-  // This is to be used externally
-  links::SLinkedList<ast::Function, std::string> publicNameTable;
-  // overload table
-  links::SLinkedList<ast::Function, ast::Op> overloadTable;
-  // The private Name table will hold all public and private functions
-  // This is used internally
-  links::SLinkedList<ast::Function, std::string> nameTable;
-  ast::Statement *contract;
-  ast::Statement *body;
-  std::vector<ast::DecAssign> defaultValues;
-  static bool compare(Type *t, std::string ident);
-  gen::Class *parent = nullptr;
-};
-
-class Enum : public Type {
- public:
-  struct EnumValue {
-   public:
-    std::string name;
-    int value;
-    EnumValue() = default;
-    EnumValue(std::string name, int value) : name(name), value(value){};
-  };
-
-  Enum();
-
-  links::SLinkedList<EnumValue, std::string> values;
-  static bool compare(Type *t, std::string ident);
-  static bool compareEnum(EnumValue e, std::string ident);
-};
 
 class CodeGenerator {
  public:
@@ -145,8 +76,6 @@ class CodeGenerator {
   };
 
   std::vector<EnvState> envStack;
-
-  int getBytes(asmc::Size size);
 
   asmc::Register intArgs[6] = {asmc::Register("rdi", "edi", "di", "dil"),
                                asmc::Register("rsi", "esi", "si", "sil"),

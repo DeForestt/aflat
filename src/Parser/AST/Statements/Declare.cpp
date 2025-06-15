@@ -11,7 +11,7 @@
 namespace ast {
 gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
   asmc::File file;
-  int offset = generator.getBytes(this->type.size);
+  int offset = gen::utils::sizeToInt(this->type.size);
   links::LinkedList<gen::Symbol> *Table;
 
   if (this->requestType != "") {
@@ -28,7 +28,7 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
       int byteMod = 0;
       for (auto sym : inScope) {
         auto newSym = sym;
-        byteMod += generator.getBytes(sym.type.size);
+        byteMod += gen::utils::sizeToInt(sym.type.size);
         newSym.byteMod = byteMod;
         cl->SymbolTable.push(newSym);
         cl->publicSymbols.push(newSym);

@@ -26,11 +26,9 @@ TEST_CASE("getLibPath forms correct suffix", "[cgutils]") {
           std::string::npos);
 }
 
-TEST_CASE("getBytes returns expected values", "[codegen]") {
-  auto parser = parse::Parser();
-  gen::CodeGenerator gen("mod", parser);
-  REQUIRE(gen.getBytes(asmc::QWord) == 8);
-  REQUIRE(gen.getBytes(asmc::Word) == 2);
-  REQUIRE(gen.getBytes(asmc::Byte) == 1);
-  REQUIRE(gen.getBytes(asmc::DWord) == 4);
+TEST_CASE("sizeToInt returns expected values", "[codegen]") {
+  REQUIRE(gen::utils::sizeToInt(asmc::QWord) == 8);
+  REQUIRE(gen::utils::sizeToInt(asmc::Word) == 2);
+  REQUIRE(gen::utils::sizeToInt(asmc::Byte) == 1);
+  REQUIRE(gen::utils::sizeToInt(asmc::DWord) == 4);
 }

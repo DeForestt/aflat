@@ -6,7 +6,7 @@
 #include <string>
 
 #include "ASM.hpp"
-#include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/Types.hpp"
 
 namespace gen::utils {
 bool searchSymbol(gen::Symbol sym, std::string str);
@@ -21,6 +21,7 @@ ast::Sequence *extractAllDeclarations(ast::Statement *stmt);
 ast::Sequence *copyAllFunctionShells(ast::Statement *stmt);
 void shellStatement(ast::Statement *stmt);
 std::string getLibPath(std::string lib);
+std::string generateUUID();
 
 template <typename T>
 std::string toString(const T &value) {

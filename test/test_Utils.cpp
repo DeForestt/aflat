@@ -2,6 +2,7 @@
 #include "Parser/AST.hpp"
 #include "Utils.hpp"
 #include "catch.hpp"
+#include <cctype>
 
 TEST_CASE("remove_char removes specific character", "[utils]") {
   REQUIRE(utils::remove_char("hello", 'l') == "heo");
@@ -42,4 +43,12 @@ TEST_CASE("compareFunc matches function identifier", "[cgutils]") {
 TEST_CASE("format utility replaces braces", "[cgutils]") {
   REQUIRE(gen::utils::format("{} {}", "hello", "world") == "hello world");
   REQUIRE(gen::utils::format("{}+{}={}", 1, 2, 3) == "1+2=3");
+}
+
+TEST_CASE("generateUUID returns 16 digits", "[cgutils]") {
+  auto id = gen::utils::generateUUID();
+  REQUIRE(id.size() == 16);
+  for (char c : id) {
+    REQUIRE(std::isdigit(c));
+  }
 }

@@ -203,3 +203,11 @@ std::string gen::utils::getLibPath(std::string lib) {
                         "/libraries/std/" + lib + "/";
   return libPath;
 }
+
+std::string gen::utils::generateUUID() {
+  std::string uuid;
+  for (int i = 0; i < 16; i++) {
+    uuid += std::to_string(rand() % 10);
+  }
+  return uuid;
+}

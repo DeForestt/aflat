@@ -7,7 +7,7 @@
 namespace ast {
 gen::GenerationResult const DecArr::generate(gen::CodeGenerator &generator) {
   asmc::File file;
-  int offset = generator.getBytes(this->type.size);
+  int offset = gen::utils::sizeToInt(this->type.size);
   int index = 1;
   this->indices.reset();
   links::LinkedList<int> typeHolder;
