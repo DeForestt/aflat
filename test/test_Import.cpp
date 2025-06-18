@@ -1,14 +1,14 @@
 #include <cstdio>
 #include <fstream>
+#include <functional>
+#include <unordered_map>
 
 #include "CodeGenerator/MockCodeGenerator.hpp"
+#include "CodeGenerator/Utils.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
 #include "catch.hpp"
-#include "CodeGenerator/Utils.hpp"
-#include <functional>
-#include <unordered_map>
 
 TEST_CASE("Parser handles mixed import of classes and functions", "[parser]") {
   lex::Lexer l;
@@ -94,7 +94,8 @@ TEST_CASE("Import applies nested namespaces", "[namespaces]") {
   ast::Statement *root = p2.parseStmt(t2);
   std::unordered_map<std::string, std::string> map;
   ast::collectImportNamespaces(root, map);
-  std::function<ast::Statement *(ast::Statement *)> findCall = [&](ast::Statement *s) -> ast::Statement * {
+  std::function<ast::Statement *(ast::Statement *)> findCall =
+      [&](ast::Statement *s) -> ast::Statement * {
     if (!s) return nullptr;
     if (auto f = dynamic_cast<ast::Function *>(s)) {
       if (f->ident.ident == "call") return s;
@@ -111,7 +112,8 @@ TEST_CASE("Import applies nested namespaces", "[namespaces]") {
 
   auto *func = dynamic_cast<ast::Function *>(funcStmt);
   REQUIRE(func != nullptr);
-  std::function<ast::Call *(ast::Statement *)> findCallNode = [&](ast::Statement *s) -> ast::Call * {
+  std::function<ast::Call *(ast::Statement *)> findCallNode =
+      [&](ast::Statement *s) -> ast::Call * {
     if (!s) return nullptr;
     if (auto cexpr = dynamic_cast<ast::CallExpr *>(s)) return cexpr->call;
     if (auto call = dynamic_cast<ast::Call *>(s)) return call;
@@ -119,8 +121,10 @@ TEST_CASE("Import applies nested namespaces", "[namespaces]") {
       if (auto r = findCallNode(seqn->Statement1)) return r;
       return findCallNode(seqn->Statement2);
     }
-    if (auto ret = dynamic_cast<ast::Return *>(s)) return findCallNode(ret->expr);
-    if (auto expr = dynamic_cast<ast::Expr *>(s)) return findCallNode(expr->extention);
+    if (auto ret = dynamic_cast<ast::Return *>(s))
+      return findCallNode(ret->expr);
+    if (auto expr = dynamic_cast<ast::Expr *>(s))
+      return findCallNode(expr->extention);
     return nullptr;
   };
   auto *call = findCallNode(func->statement);

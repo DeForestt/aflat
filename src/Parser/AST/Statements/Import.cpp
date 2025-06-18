@@ -13,8 +13,7 @@
 namespace ast {
 
 static void collectImportNamespacesImpl(
-    ast::Statement *stmt,
-    std::unordered_map<std::string, std::string> &map) {
+    ast::Statement *stmt, std::unordered_map<std::string, std::string> &map) {
   if (!stmt) return;
   if (auto seq = dynamic_cast<ast::Sequence *>(stmt)) {
     collectImportNamespacesImpl(seq->Statement1, map);
@@ -30,8 +29,7 @@ static void collectImportNamespacesImpl(
 }
 
 void collectImportNamespaces(
-    ast::Statement *stmt,
-    std::unordered_map<std::string, std::string> &map) {
+    ast::Statement *stmt, std::unordered_map<std::string, std::string> &map) {
   collectImportNamespacesImpl(stmt, map);
 }
 Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {

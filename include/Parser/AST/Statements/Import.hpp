@@ -1,6 +1,7 @@
 #pragma once
-#include "Parser/AST.hpp"
 #include <unordered_map>
+
+#include "Parser/AST.hpp"
 
 namespace ast {
 /*
@@ -19,7 +20,6 @@ class Import : public Statement {
   gen::GenerationResult const generate(gen::CodeGenerator &generator);
   gen::GenerationResult const generateClasses(gen::CodeGenerator &generator);
 };
-void collectImportNamespaces(
-    ast::Statement *stmt,
-    std::unordered_map<std::string, std::string> &map);
+void collectImportNamespaces(ast::Statement *stmt,
+                             std::unordered_map<std::string, std::string> &map);
 };  // namespace ast
