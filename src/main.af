@@ -37,5 +37,5 @@ fn main() {
     let numbers = new vector::<int>();
     numbers.pushBack(1);
     numbers.pushBack(2);
-    print(numbers.get(0).or(0));
+    print(numbers.get(0).or(0));:w
 };
