@@ -42,6 +42,7 @@ class Statement {
   int logicalLine = 0;
   virtual std::string toString() { return ""; };
   virtual void replaceTypes(std::unordered_map<std::string, std::string> map);
+  virtual void namespaceSwap(std::unordered_map<std::string, std::string> map);
   virtual gen::GenerationResult const generate(gen::CodeGenerator &generator) {
     asmc::File file;
     file.text << new asmc::nop();
