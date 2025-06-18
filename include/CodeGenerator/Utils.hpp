@@ -1,6 +1,5 @@
 #pragma once
 #include <array>
-#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -13,8 +12,9 @@ bool searchSymbol(gen::Symbol sym, std::string str);
 int sizeToInt(asmc::Size size);
 
 bool compareFunc(ast::Function F, std::string input);
-ast::Statement *extract(std::string ident, ast::Statement *stmt,
-                        std::string id);
+ast::Statement *extract(
+    std::string ident, ast::Statement *stmt, std::string id,
+    std::unordered_map<std::string, std::string> &namespaceReplacemen);
 ast::Statement *extract(std::string ident, ast::Statement *stmt);
 ast::Sequence *extractAllFunctions(ast::Statement *stmt);
 ast::Sequence *extractAllDeclarations(ast::Statement *stmt);

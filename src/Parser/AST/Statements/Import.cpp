@@ -151,7 +151,9 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   for (std::string ident : this->imports) {
     if (generator.includedClasses.contains(id + "::" + ident)) continue;
     generator.includedClasses.insert(id + "::" + ident, nullptr);
-    ast::Statement *statement = gen::utils::extract(ident, added, id);
+    std::unordered_map<std::string, std::string> namespaceReplaclacement;
+    ast::Statement *statement =
+        gen::utils::extract(ident, added, id, namespaceReplaclacement);
     if (statement == nullptr)
       generator.alert("Identifier " + ident + " not found to import");
     OutputFile << generator.GenSTMT(statement);
@@ -204,7 +206,9 @@ gen::GenerationResult const Import::generateClasses(
   }
 
   for (std::string ident : this->imports) {
-    ast::Statement *statement = gen::utils::extract(ident, added, id);
+    std::unordered_map<std::string, std::string> namespaceReplaclacement;
+    ast::Statement *statement =
+        gen::utils::extract(ident, added, id, namespaceReplaclacement);
     if (statement == nullptr) continue;
     if (dynamic_cast<ast::Class *>(statement) == nullptr &&
         dynamic_cast<ast::Enum *>(statement) == nullptr &&

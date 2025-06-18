@@ -2,6 +2,10 @@
 
 #include <unistd.h>
 
+#include <unordered_map>
+
+#include "Parser/AST/Statements/Import.hpp"
+
 using namespace gen::utils;
 
 void gen::utils::shellStatement(ast::Statement *stmt) {
@@ -47,22 +51,25 @@ bool gen::utils::compareFunc(ast::Function F, std::string input) {
 }
 
 ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt) {
-  return extract(ident, stmt, "");
+  auto namespaceReplaclacement = std::unordered_map<std::string, std::string>();
+  return extract(ident, stmt, "", namespaceReplaclacement);
 }
 
-ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
-                                    std::string id) {
-  // traverse the statement tree and return the statement with the ident
+ast::Statement *gen::utils::extract(
+    std::string ident, ast::Statement *stmt, std::string id,
+    std::unordered_map<std::string, std::string> &namespaceReplaclacement) {
+  // traverse the statement tree and return the statement with the identstring
   if (stmt == nullptr) return nullptr;
   if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
     ast::Sequence *seq = dynamic_cast<ast::Sequence *>(stmt);
-    ast::Statement *temp = extract(ident, seq->Statement1, id);
+    ast::Statement *temp =
+        extract(ident, seq->Statement1, id, namespaceReplaclacement);
     if (ident != "*" && temp != nullptr) {
       return temp;
     } else if (ident != "*") {
-      return extract(ident, seq->Statement2, id);
+      return extract(ident, seq->Statement2, id, namespaceReplaclacement);
     } else {
-      extract(ident, seq->Statement2, id);
+      extract(ident, seq->Statement2, id, namespaceReplaclacement);
     }
   } else if (dynamic_cast<ast::Class *>(stmt)) {
     ast::Class *cls = dynamic_cast<ast::Class *>(stmt);
@@ -94,6 +101,11 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
       if (func->genericTypes.size() == 0) func->statement = nullptr;
       if (func->scope != ast::Export) func->locked = true;
       return func;
+    }
+  } else if (auto imp = dynamic_cast<ast::Import *>(stmt)) {
+    if (imp->nameSpace != "") {
+      std::string id = imp->path.substr(imp->path.find_last_of("/") + 1);
+      namespaceReplaclacement[imp->nameSpace] = id;
     }
   } else
     stmt->locked = true;
