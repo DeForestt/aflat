@@ -156,6 +156,7 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
         gen::utils::extract(ident, added, id, namespaceReplaclacement);
     if (statement == nullptr)
       generator.alert("Identifier " + ident + " not found to import");
+    statement->namespaceSwap(namespaceReplaclacement);
     OutputFile << generator.GenSTMT(statement);
   }
   if (this->hasFunctions) generator.nameSpaceTable.insert(this->nameSpace, id);
@@ -216,6 +217,7 @@ gen::GenerationResult const Import::generateClasses(
       continue;
     if (generator.includedClasses.contains(id + "::" + ident)) continue;
     generator.includedClasses.insert(id + "::" + ident, nullptr);
+    statement->namespaceSwap(namespaceReplaclacement);
     OutputFile << generator.GenSTMT(statement);
   }
 
