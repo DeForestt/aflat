@@ -29,6 +29,8 @@ aflat ./libraries/std/src/Utils/Map.af ./libraries/std/Map.s
 mv ./libraries/std/Map.s ./libraries/std/Utils_Map.s
 aflat ./libraries/std/src/Utils/Option.af ./libraries/std/Option.s
 mv ./libraries/std/Option.s ./libraries/std/Utils_Option.s
+aflat ./libraries/std/src/Utils/option.af ./libraries/std/option.s
+mv ./libraries/std/option.s ./libraries/std/Utils_option.s
 aflat ./libraries/std/src/Utils/Properties.af ./libraries/std/Properties.s
 mv ./libraries/std/Properties.s ./libraries/std/Utils_Properties.s
 aflat ./libraries/std/src/Utils/Object.af ./libraries/std/Object.s
