@@ -53,4 +53,6 @@ aflat ./libraries/std/src/JSON/Property.af ./libraries/std/JSON_Property.s
 aflat ./libraries/std/src/Collections/Iterator.af ./libraries/std/Iterator.s
 aflat ./libraries/std/src/Collections/Scroller.af ./libraries/std/Scroller.s
 aflat ./libraries/std/src/Collections/Enumerator.af ./libraries/std/Enumerator.s
+aflat ./libraries/std/src/Collections/vector.af ./libraries/std/vector.s
+mv ./libraries/std/vector.s ./libraries/std/Collections_vector.s
 gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c
