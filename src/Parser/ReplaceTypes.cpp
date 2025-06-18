@@ -62,6 +62,7 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
     return;
   }
   if (auto var = dynamic_cast<Var *>(this)) {
+    if (map.find(var->Ident) != map.end()) var->Ident = map[var->Ident];
     applyList(var->indices, map);
     return;
   }
