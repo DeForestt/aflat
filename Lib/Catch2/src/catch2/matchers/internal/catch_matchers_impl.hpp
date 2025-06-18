@@ -75,7 +75,6 @@ namespace Catch {
     } while ( false )
 
 ///////////////////////////////////////////////////////////////////////////////
-
 #define INTERNAL_CATCH_THROWS_MATCHES(                                          \
     macroName, exceptionType, resultDisposition, matcher, ... )                 \
     do {                                                                        \
