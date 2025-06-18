@@ -2,7 +2,6 @@
 
 import string, {print} from "String" under str;
 import option, { some, none } from "Utils/option" under opt;
-import vector from "Collections/vector";
 
 types(A)
 class TestClass {
@@ -33,9 +32,4 @@ fn main() {
 
     let someVal = opt.some::<int>(99);
     print(someVal.or(0));
-
-    let numbers = new vector::<int>();
-    numbers.pushBack(1);
-    numbers.pushBack(2);
-    print(numbers.get(0).or(0));:w
 };
