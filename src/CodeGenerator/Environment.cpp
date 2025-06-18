@@ -95,5 +95,4 @@ void CodeGenerator::popEnv() {
   this->currentFunction = state.currentFunction;
 }
 
-} // namespace gen
-
+}  // namespace gen

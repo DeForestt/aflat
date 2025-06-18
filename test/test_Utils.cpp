@@ -1,8 +1,9 @@
+#include <cctype>
+
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/AST.hpp"
 #include "Utils.hpp"
 #include "catch.hpp"
-#include <cctype>
 
 TEST_CASE("remove_char removes specific character", "[utils]") {
   REQUIRE(utils::remove_char("hello", 'l') == "heo");
