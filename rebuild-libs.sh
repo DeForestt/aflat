@@ -29,6 +29,8 @@ aflat ./libraries/std/src/Utils/Map.af ./libraries/std/Map.s
 mv ./libraries/std/Map.s ./libraries/std/Utils_Map.s
 aflat ./libraries/std/src/Utils/Option.af ./libraries/std/Option.s
 mv ./libraries/std/Option.s ./libraries/std/Utils_Option.s
+aflat ./libraries/std/src/Utils/option.af ./libraries/std/option.s
+mv ./libraries/std/option.s ./libraries/std/Utils_option.s
 aflat ./libraries/std/src/Utils/Properties.af ./libraries/std/Properties.s
 mv ./libraries/std/Properties.s ./libraries/std/Utils_Properties.s
 aflat ./libraries/std/src/Utils/Object.af ./libraries/std/Object.s
@@ -51,4 +53,6 @@ aflat ./libraries/std/src/JSON/Property.af ./libraries/std/JSON_Property.s
 aflat ./libraries/std/src/Collections/Iterator.af ./libraries/std/Iterator.s
 aflat ./libraries/std/src/Collections/Scroller.af ./libraries/std/Scroller.s
 aflat ./libraries/std/src/Collections/Enumerator.af ./libraries/std/Enumerator.s
+aflat ./libraries/std/src/Collections/vector.af ./libraries/std/vector.s
+mv ./libraries/std/vector.s ./libraries/std/Collections_vector.s
 gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c
