@@ -7,13 +7,16 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
 #include <iostream>
+#include <sstream>
 #include <utility>
 
 #include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Types.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "ErrorReporter.hpp"
 #include "Exceptions.hpp"
+#include "Parser/AST.hpp"
 #include "Scanner.hpp"
 
 using namespace gen::utils;
@@ -76,7 +79,6 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser,
   this->moduleId = moduleId;
   this->scope = nullptr;
 }
-
 
 bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
                                    std::string fmt, bool strict) {
@@ -187,4 +189,55 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   alert(format("Type mismatch on line {}: " + fmt, this->logicalLine,
                type.typeName, typeName));
   return false;
+}
+
+std::vector<std::string> splitTypeName(const std::string &typeName) {
+  std::vector<std::string> parts;
+  std::stringstream ss(typeName);
+  std::string part;
+
+  while (std::getline(ss, part, '.')) {
+    if (!part.empty()) {
+      parts.push_back(part);
+    }
+  }
+
+  return parts;
+}
+
+gen::Type **gen::CodeGenerator::getType(std::string typeName,
+                                        asmc::File &OutputFile) {
+  gen::Type **type = this->typeList[typeName];
+  if (type == nullptr) {
+    // find . in the type name
+    if (typeName.find('.') == std::string::npos)
+      this->alert("Type " + typeName +
+                  " not found in type list, did you forget to "
+                  "include the file that defines it?");
+
+    auto typeNameParts = splitTypeName(typeName);
+    auto typeNamePart = typeNameParts.front();
+
+    // find the class of this type...
+    auto cl = this->genericTypes[typeNamePart];
+
+    if (cl == nullptr) {
+      this->alert("Type " + typeName +
+                  " not found in type list, did you forget to "
+                  "include the file that defines it?");
+    }
+
+    if (cl->genericTypes.size() != typeNameParts.size() - 1) {
+      this->alert("Type " + typeName +
+                  " not found in type list, did you forget to "
+                  "include the file that defines it?");
+    }
+    // typeNameParts without the first parts
+    auto typeNameWithoutFirstPart = typeNameParts;
+    typeNameWithoutFirstPart.erase(typeNameWithoutFirstPart.begin());
+
+    return this->instantiateGenericClass(cl, typeNameWithoutFirstPart, typeName,
+                                         OutputFile);
+  }
+  return type;
 }

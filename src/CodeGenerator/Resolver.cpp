@@ -6,10 +6,9 @@ using namespace gen::utils;
 
 namespace gen {
 
-Type **CodeGenerator::instantiateGenericClass(ast::Class *cls,
-                                            const std::vector<std::string> &types,
-                                            std::string &newName,
-                                            asmc::File &OutputFile) {
+Type **CodeGenerator::instantiateGenericClass(
+    ast::Class *cls, const std::vector<std::string> &types,
+    std::string &newName, asmc::File &OutputFile) {
   auto classStatement = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
   std::unordered_map<std::string, std::string> genericMap;
   newName = classStatement->ident.ident;
@@ -24,6 +23,8 @@ Type **CodeGenerator::instantiateGenericClass(ast::Class *cls,
   classStatement->replaceTypes(genericMap);
   classStatement->ident.ident = newName;
   classStatement->genericTypes.clear();
+  classStatement->hidden =
+      true;  // we hid the class so all of its functions are private
   Type **result;
   if (this->TypeList[newName] == nullptr) {
     if (OutputFile.lambdas == nullptr) OutputFile.lambdas = new asmc::File;
@@ -82,9 +83,7 @@ CodeGenerator::resolveSymbol(std::string ident,
     push->op = this->registers["%r14"]->get(asmc::QWord);
     OutputFile.text << push;
     while (modList.trail() > checkTo) {
-      if (this->typeList[last.typeName] == nullptr)
-        alert("type not found to resolve " + last.typeName);
-      Type type = **this->typeList[last.typeName];
+      Type type = **this->getType(last.typeName, OutputFile);
       std::string sto = modList.touch();
       if (this->scope == *this->typeList[last.typeName]) {
         modSym =
@@ -103,9 +102,8 @@ CodeGenerator::resolveSymbol(std::string ident,
       mov->from = access;
       mov->logicalLine = this->logicalLine;
       OutputFile.text << mov;
-      access =
-          std::to_string(tbyte - (sizeToInt(last.size) * last.arraySize)) +
-          '(' + mov->to + ')';
+      access = std::to_string(tbyte - (sizeToInt(last.size) * last.arraySize)) +
+               '(' + mov->to + ')';
     }
 
     asmc::Pop *pop = new asmc::Pop;
@@ -199,5 +197,4 @@ CodeGenerator::resolveSymbol(std::string ident,
   return std::make_tuple(access, retSym, true, pops, modSym);
 }
 
-} // namespace gen
-
+}  // namespace gen

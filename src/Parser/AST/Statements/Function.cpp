@@ -2,6 +2,7 @@
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "Parser/AST.hpp"
 #include "Scanner.hpp"
 
 namespace ast {
@@ -137,6 +138,13 @@ Function::Function(const ScopeMod &scope,
     if (type == nullptr)
       throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
                            "Type not found");
+
+    auto templateTypeList =
+        parser.parseTemplateTypeList(tokens, tokens.peek()->lineCount);
+    for (auto &genericType : templateTypeList) {
+      type->typeName = type->typeName + "." + genericType;
+    }
+
     this->type = *type;
   } else {
     this->type = *parser.typeList["void"];
@@ -160,6 +168,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     generator.genericFunctions << *this;
     return {asmc::File(), std::nullopt};
   };
+  bool hidden = false;
   asmc::File file;
   ast::Function *saveFunc = generator.currentFunction;
   int saveIntArgs = generator.intArgsCounter;
@@ -199,6 +208,9 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       if (dynamic_cast<gen::Class *>(tScope) == nullptr)
         generator.alert("Can only scope to  a class");
       generator.scope = dynamic_cast<gen::Class *>(tScope);
+      if (generator.scope->hidden) {
+        hidden = true;
+      }
     }
 
     asmc::Push *push = new asmc::Push();
@@ -283,7 +295,8 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     };
     int counter = 0;
     auto argmute = generator.GenArgs(this->args, file, *this, counter);
-    if (!isLambda && this->scope == ast::Public) file.linker.push(link);
+    if (!isLambda && this->scope == ast::Public && !hidden)
+      file.linker.push(link);
 
     file << argmute;
 

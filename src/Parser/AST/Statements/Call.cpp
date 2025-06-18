@@ -79,6 +79,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
           generator.generatedFunctionNames.insert(new_ident);
         }
+
         this->ident = func->ident.ident;
         // get func from the name table so that it can be used with generated
         // return type
@@ -133,9 +134,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           func->useType = func->type;
         } else {
           // find the type of the object
-          auto type = *generator.typeList[smbl->type.typeName];
-          if (type == nullptr)
-            generator.alert("type not found " + smbl->type.typeName);
+          auto type = *generator.getType(smbl->type.typeName, file);
           auto cl = dynamic_cast<gen::Class *>(type);
           if (cl == nullptr)
             generator.alert("type is not a class " + smbl->type.typeName);
@@ -194,9 +193,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
 
     int modCount = 0;
     while (this->modList.pos != nullptr) {
-      if (generator.typeList[last.typeName] == nullptr)
-        generator.alert("type not found " + last.typeName);
-      auto type = *generator.typeList[last.typeName];
+      auto type = *generator.getType(last.typeName, file);
       gen::Class *cl = dynamic_cast<gen::Class *>(type);
       if (cl != nullptr) {
         bool addPub = true;
@@ -259,9 +256,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
             generator.alert("cannot find function " + this->modList.touch());
           } else if (this->modList.pos->next == nullptr) {
             // find the type of the object
-            auto objectType = *generator.typeList[sym->type.typeName];
-            if (objectType == nullptr)
-              generator.alert("type not found " + sym->type.typeName);
+            auto objectType = *generator.getType(sym->type.typeName, file);
             auto objectClass = dynamic_cast<gen::Class *>(objectType);
             if (objectClass == nullptr)
               generator.alert("type is not a class " + sym->type.typeName);
@@ -369,8 +364,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
       argsCounter++;
       stack.push("%rdi");
       // find the class
-      gen::Type *type = *generator.typeList[this->publify];
-      if (type == nullptr) generator.alert("type not found " + this->publify);
+      gen::Type *type = *generator.getType(this->publify, file);
       gen::Class *cl = dynamic_cast<gen::Class *>(type);
       if (cl == nullptr) generator.alert("not a class: " + this->publify);
       ast::Function *f = cl->nameTable[ident];
