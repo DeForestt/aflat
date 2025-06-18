@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "LinkedList.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/AST/Statements.hpp"
@@ -15,7 +17,8 @@ static void applyList(links::LinkedList<T *> &list,
   list.reset();
 }
 
-void Statement::namespaceSwap(std::unordered_map<std::string, std::string> map) {
+void Statement::namespaceSwap(
+    std::unordered_map<std::string, std::string> map) {
   if (auto expr = dynamic_cast<Expr *>(this)) {
     if (expr->extention) expr->extention->namespaceSwap(map);
   }
@@ -111,7 +114,7 @@ void Statement::namespaceSwap(std::unordered_map<std::string, std::string> map) 
   }
   if (auto call = dynamic_cast<Call *>(this)) {
     auto it = map.find(call->ident);
-    if (it != map.end()) call->ident = it->second;
+    if (it != map.end()) call->imbeddedNamespace = it->second;
     applyList(call->Args, map);
     return;
   }
@@ -127,8 +130,12 @@ void Statement::namespaceSwap(std::unordered_map<std::string, std::string> map) 
     return;
   }
   if (auto foreach = dynamic_cast<ForEach *>(this)) {
-    if (foreach->lambda) foreach->lambda->namespaceSwap(map);
-    if (foreach->iterator) foreach->iterator->namespaceSwap(map);
+    if (foreach->lambda)
+      foreach
+        ->lambda->namespaceSwap(map);
+    if (foreach->iterator)
+      foreach
+        ->iterator->namespaceSwap(map);
     return;
   }
   if (auto func = dynamic_cast<Function *>(this)) {

@@ -8,7 +8,7 @@ TEST_CASE("namespaceSwap replaces call identifiers", "[namespaceswap]") {
   std::unordered_map<std::string, std::string> map;
   map["foo"] = "bar";
   call.namespaceSwap(map);
-  REQUIRE(call.ident == "bar");
+  REQUIRE(call.imbeddedNamespace == "bar");
 }
 
 TEST_CASE("namespaceSwap recurses into sequences", "[namespaceswap]") {
@@ -20,6 +20,6 @@ TEST_CASE("namespaceSwap recurses into sequences", "[namespaceswap]") {
   std::unordered_map<std::string, std::string> map;
   map["foo"] = "bar";
   seq->namespaceSwap(map);
-  REQUIRE(call->ident == "bar");
+  REQUIRE(call->imbeddedNamespace == "bar");
   delete seq;
 }
