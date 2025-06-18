@@ -86,6 +86,8 @@ Mirrors src/ — each subsystem (e.g., Parser, PreProcessor, CodeGenerator) has 
 
 Standard Library: libraries/std/
 .af source files and .gs headers for built-in modules.
+remember that when adding a new Standard Library module, you must also update the standard library build script. (rebuild-libs.sh)
+as well as add it to the vector in src/main.cpp.
 
 Rebuild using:
 
