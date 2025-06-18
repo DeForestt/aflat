@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+
 #include "LinkedList.hpp"
 #include "LinkedListS.hpp"
 #include "Parser/AST.hpp"
@@ -28,6 +29,7 @@ class Symbol {
 class Type {
  public:
   std::string Ident;
+  bool hidden = false;
   links::LinkedList<Symbol> publicSymbols;
   links::LinkedList<Symbol> SymbolTable;
   static bool compare(Type* t, std::string ident);

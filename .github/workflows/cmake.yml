@@ -25,7 +25,7 @@ jobs:
         run: cmake --build build && bash ./rebuild-libs.sh && ./bin/aflat build
       - name: Test
         working-directory: ${{github.workspace}}/bin
-        run: ./test 
+        run: ./a.test 
 
   check-format:
     runs-on: ubuntu-latest

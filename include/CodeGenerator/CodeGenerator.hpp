@@ -1,7 +1,6 @@
 #ifndef GEN
 #define GEN
 
-#include <optional>
 #include <set>
 #include <tuple>
 #include <unordered_map>
@@ -9,16 +8,17 @@
 
 #include "ASM.hpp"
 #include "CodeGenerator/Expr.hpp"
+#include "CodeGenerator/Types.hpp"
 #include "HashMap.hpp"
 #include "LinkedList.hpp"
 #include "LinkedListS.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/Parser.hpp"
-#include "CodeGenerator/Types.hpp"
 namespace gen {
 
 class CodeGenerator {
  public:
+  Type **getType(std::string ident, asmc::File &OutputFile);
 #pragma region State Variables
   parse::Parser &parser;
   gen::Class *scope;

@@ -110,6 +110,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
 
   asmc::File OutputFile;
   gen::Class *type = new gen::Class();
+  type->hidden = this->hidden;
   type->body = this->statement;  // save the body in case of composition
   bool saveScope = generator.globalScope;
   generator.globalScope = false;

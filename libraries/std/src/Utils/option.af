@@ -1,0 +1,79 @@
+.needs <std>
+
+import Function from "Utils/Functions";
+import Map from "Utils/Map";
+import Option from "Utils/Option";
+import string from "String";
+
+types(A)
+safe dynamic class option {
+    private A value = value;
+    private mutable bool hasValue = hasValue;
+    private mutable int refcount = 1;
+
+    fn get() -> Self {
+        my.refcount = my.refcount + 1;
+        return my;
+    };
+
+    fn endScope() {
+        my.refcount = my.refcount - 1;
+        if my.refcount == 0 {
+            delete my;
+        };
+        return;
+    };
+
+    fn init(const bool hasValue, *const A value) -> Self {
+        return my;
+    };
+
+    fn resolve(const Function acc, const Function rej, *const any arg, *const any arg2) {
+        if my.hasValue
+            return acc(my.value, arg, arg2)
+        else
+            return rej(NULL, arg, arg2);
+    };
+
+    fn orElse(const Function onNone, *const any arg) -> A {
+        if my.hasValue
+            return my.value
+        else
+            return onNone(NULL, arg);
+    };
+
+    fn match(const Map cases, *const any arg, *const any arg2) {
+        const let some_none = if my.hasValue "some" else "none";
+        const Option foo = cases.get(some_none);
+        const adr foo = foo.orElse([] => panic("un-handled option case"));
+        return if my.hasValue foo(my.value, arg, arg2) else foo(arg, arg2);
+    };
+
+    fn or(const A defaultValue) -> A {
+        if my.hasValue
+            return my.value
+        else
+            return defaultValue;
+    };
+
+    fn isSome() -> bool {
+        return my.hasValue;
+    };
+
+    fn toString() -> string {
+        if my.hasValue
+            return "Option: Some"
+        else
+            return "Option: None";
+    };
+};
+
+types(T)
+export fn some(const T value) {
+    return new option::<T>(true, value);
+};
+
+types(J)
+export fn none() {
+    return new option::<J>(false, NULL);
+};

@@ -1,11 +1,12 @@
-#include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
-#include "CodeGenerator/Utils.hpp"
-#include "CodeGenerator/GenerationResult.hpp"
-#include "Exceptions.hpp"
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
+
+#include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/GenerationResult.hpp"
+#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Utils.hpp"
+#include "Exceptions.hpp"
 
 using namespace gen::utils;
 
@@ -209,4 +210,4 @@ asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
   }
   return OutputFile;
 }
-} // namespace gen
+}  // namespace gen

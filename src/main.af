@@ -1,6 +1,7 @@
 .needs <std>
 
 import string, {print} from "String" under str;
+import option, { some, none } from "Utils/option" under opt;
 
 types(A)
 class TestClass {
@@ -28,4 +29,7 @@ fn main() {
     print(v);
     print(test2.returnValue());
     print("Can we do it twice? Yes, we can!");
+
+    let someVal = opt.some::<int>(99);
+    print(someVal.or(0));
 };

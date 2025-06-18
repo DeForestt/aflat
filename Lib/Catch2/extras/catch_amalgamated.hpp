@@ -5433,10 +5433,11 @@ namespace Catch {
                                 disable : 4312 ) // Converting int to T* using
                                                  // reinterpret_cast (issue on
                                                  // x64 platform)
-#                            pragma warning( disable : 4180 ) // qualifier
-                                                              // applied to
-                                                              // function type
-                                                              // has no meaning
+#                            pragma warning( \
+                                disable : 4180 ) // qualifier
+                                                 // applied to
+                                                 // function type
+                                                 // has no meaning
 #                            pragma warning( \
                                 disable : 4800 ) // Forcing result to true or
                                                  // false
@@ -5968,31 +5969,32 @@ namespace Catch {
 
 ///////////////////////////////////////////////////////////////////////////////
 // Although this is matcher-based, it can be used with just a string
-#                    define INTERNAL_CATCH_THROWS_STR_MATCHES(                             \
-                        macroName, resultDisposition, matcher, ... )                       \
-                        do {                                                               \
-                            Catch::AssertionHandler catchAssertionHandler(                 \
-                                macroName##_catch_sr,                                      \
-                                CATCH_INTERNAL_LINEINFO,                                   \
-                                CATCH_INTERNAL_STRINGIFY(                                  \
-                                    __VA_ARGS__ ) ","                                      \
-                                                  " " CATCH_INTERNAL_STRINGIFY( matcher ), \
-                                resultDisposition );                                       \
-                            if ( catchAssertionHandler.allowThrows() )                     \
-                                try {                                                      \
-                                    static_cast<void>( __VA_ARGS__ );                      \
-                                    catchAssertionHandler                                  \
-                                        .handleUnexpectedExceptionNotThrown();             \
-                                } catch ( ... ) {                                          \
-                                    Catch::handleExceptionMatchExpr(                       \
-                                        catchAssertionHandler,                             \
-                                        matcher,                                           \
-                                        #matcher##_catch_sr );                             \
-                                }                                                          \
-                            else                                                           \
-                                catchAssertionHandler                                      \
-                                    .handleThrowingCallSkipped();                          \
-                            INTERNAL_CATCH_REACT( catchAssertionHandler )                  \
+#                    define INTERNAL_CATCH_THROWS_STR_MATCHES(                  \
+                        macroName, resultDisposition, matcher, ... )            \
+                        do {                                                    \
+                            Catch::AssertionHandler catchAssertionHandler(      \
+                                macroName##_catch_sr,                           \
+                                CATCH_INTERNAL_LINEINFO,                        \
+                                CATCH_INTERNAL_STRINGIFY(                       \
+                                    __VA_ARGS__ ) ","                           \
+                                                  " " CATCH_INTERNAL_STRINGIFY( \
+                                                      matcher ),                \
+                                resultDisposition );                            \
+                            if ( catchAssertionHandler.allowThrows() )          \
+                                try {                                           \
+                                    static_cast<void>( __VA_ARGS__ );           \
+                                    catchAssertionHandler                       \
+                                        .handleUnexpectedExceptionNotThrown();  \
+                                } catch ( ... ) {                               \
+                                    Catch::handleExceptionMatchExpr(            \
+                                        catchAssertionHandler,                  \
+                                        matcher,                                \
+                                        #matcher##_catch_sr );                  \
+                                }                                               \
+                            else                                                \
+                                catchAssertionHandler                           \
+                                    .handleThrowingCallSkipped();               \
+                            INTERNAL_CATCH_REACT( catchAssertionHandler )       \
                         } while ( false )
 
 #                endif // CATCH_CONFIG_DISABLE
@@ -11543,7 +11545,8 @@ namespace Catch {
                                     CATCH_INTERNAL_LINEINFO,                                               \
                                     CATCH_INTERNAL_STRINGIFY( __VA_ARGS__ ) ", " CATCH_INTERNAL_STRINGIFY( \
                                         exceptionType ) ","                                                \
-                                                        " " CATCH_INTERNAL_STRINGIFY( matcher ),           \
+                                                        " " CATCH_INTERNAL_STRINGIFY(                      \
+                                                            matcher ),                                     \
                                     resultDisposition );                                                   \
                         if ( catchAssertionHandler.allowThrows() )                                         \
                             try {                                                                          \
