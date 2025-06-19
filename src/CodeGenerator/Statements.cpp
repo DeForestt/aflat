@@ -30,7 +30,7 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(
     int offset = gen::utils::sizeToInt(arg->type.size);
 
     if (table.search<std::string>(searchSymbol, arg->ident) != nullptr)
-      alert("redefined variable:" + arg->ident);
+      alert("redefined variable:" + arg->ident, true, __FILE__, __LINE__);
 
     symbol.symbol = arg->ident;
     if (table.head == nullptr) {
@@ -53,7 +53,7 @@ links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(
 
     if (this->SymbolTable.search<std::string>(searchSymbol, dec->ident) !=
         nullptr)
-      alert("redefined variable" + dec->ident);
+      alert("redefined variable" + dec->ident, true, __FILE__, __LINE__);
 
     gen::Symbol Symbol;
     if (this->SymbolTable.head == nullptr) {
@@ -86,7 +86,8 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
     if (intArgsCounter > 6) {
       alert(
           "AFlat compiler cannot handle more than 6 int / pointer "
-          "arguments.");
+          "arguments.",
+          true, __FILE__, __LINE__);
     } else {
       asmc::Size size;
       gen::Symbol symbol;
@@ -119,9 +120,11 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
           this->typeList.push(cl);
           arg->type = ast::Type(cl->Ident, asmc::QWord);
         } else {
-          alert("The symbol " + arg->requestType +
-                " is not defined in the current scope so its type cannot be "
-                "resolved");
+          alert(
+              "The symbol " + arg->requestType +
+                  " is not defined in the current scope so its type cannot be "
+                  "resolved",
+              true, __FILE__, __LINE__);
         }
       }
 
