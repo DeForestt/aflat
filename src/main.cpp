@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "ASM.hpp"
+#include "CLI.hpp"
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CompilerUtils.hpp"
@@ -29,11 +30,11 @@ void ensureBinPath(const std::string &path, std::vector<std::string> &pathList);
 bool compileCFile(const std::string &path, bool debug);
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 bool runConfig(cfg::Config &config, const std::string &libPath);
+cfg::Config loadConfig(const std::string &cfgFile);
 
 int main(int argc, char *argv[]) {
-  // Usage error
-  if (argc < 2) {
-    std::cout << "Usage: aflat <file> <output>\n";
+  CommandLineOptions cli;
+  if (!parseCommandLine(argc, argv, cli)) {
     return 1;
   }
 
@@ -42,83 +43,33 @@ int main(int argc, char *argv[]) {
   std::string libPathA =
       exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/";
 
-  std::string value = argv[1];
+  std::string value = cli.command;
 
   if (value == "make") {
-    if (argc < 3 || argc > 4) {
-      std::cout << "Usage: aflat <make> <project name>\n";
+    if (cli.args.empty() || cli.args.size() > 2) {
+      printUsage(argv[0]);
       return 1;
     }
-    if (argc == 3) {
-      std::cout << "creating " << argv[2] << '\n';
-      std::string pName = argv[2];
+    std::string pName = cli.args[0];
+    std::cout << "creating " << pName << '\n';
+    if (cli.args.size() == 2 && cli.args[1] == "lib") {
+      libTemplate(pName);
+    } else {
       buildTemplate(pName);
-      return 0;
-    }
-
-    if (argc == 4) {
-      if (std::string(argv[3]) == "lib") {
-        std::cout << "creating " << argv[2] << '\n';
-        std::string pName = argv[2];
-        libTemplate(pName);
-        return 0;
-      }
     }
     return 0;
   }
   if (value == "build") {
-    std::ifstream ifs("aflat.cfg");
-    std::string content((std::istreambuf_iterator<char>(ifs)),
-                        (std::istreambuf_iterator<char>()));
-    // Find any file that fits *.aflat.cfg
-    std::vector<std::string> files;
-    for (const auto &entry : std::filesystem::directory_iterator(".")) {
-      if (entry.path().string().find(".aflat.cfg") != std::string::npos) {
-        files.push_back(entry.path().string());
-      }
-    }
-    // add each line that starts with 'm' to the modules list
-    for (auto file : files) {
-      std::string id = file.substr(0, file.find(".aflat.cfg"));
-      std::ifstream ifs(file);
-      while (ifs) {
-        std::string line;
-        std::getline(ifs, line);
-        if (line[0] == 'm') {
-          // append after the 'm '
-          content += "m " + id + "/" + line.substr(2) + "\n";
-        }
-      }
-    };
-    cfg::Config config = cfg::getConfig(content);
+    cfg::Config config = loadConfig(cli.configFile);
+    config.debug = cli.debug;
+    config.outPutFile = cli.outputFile;
     runConfig(config, libPathA, 'e');
     return 0;
   }
   if (value == "run") {
-    std::ifstream ifs("aflat.cfg");
-    std::string content((std::istreambuf_iterator<char>(ifs)),
-                        (std::istreambuf_iterator<char>()));
-
-    std::vector<std::string> files;
-    for (const auto &entry : std::filesystem::directory_iterator(".")) {
-      if (entry.path().string().find(".aflat.cfg") != std::string::npos) {
-        files.push_back(entry.path().string());
-      }
-    }
-    // add each line that starts with 'm' to the modules list
-    for (auto file : files) {
-      std::string id = file.substr(0, file.find(".aflat.cfg"));
-      std::ifstream ifs(file);
-      while (ifs) {
-        std::string line;
-        std::getline(ifs, line);
-        if (line[0] == 'm') {
-          // append after the 'm '
-          content += "m " + id + "/" + line.substr(2) + "\n";
-        }
-      }
-    };
-    cfg::Config config = cfg::getConfig(content);
+    cfg::Config config = loadConfig(cli.configFile);
+    config.debug = cli.debug;
+    config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 'e')) {
       auto of = config.outPutFile;
       if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
@@ -129,21 +80,20 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   if (value == "test") {
-    std::ifstream ifs("aflat.cfg");
-    std::string content((std::istreambuf_iterator<char>(ifs)),
-                        (std::istreambuf_iterator<char>()));
-    cfg::Config config = cfg::getConfig(content);
+    cfg::Config config = loadConfig(cli.configFile);
+    config.debug = cli.debug;
+    config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 't')) {
       [[maybe_unused]] int rc = system("./bin/a.test");
     }
     return 0;
   }
   if (value == "add" || value == "module") {
-    if (argc < 3) {
-      std::cout << "Usage: aflat add <modual name>\n";
+    if (cli.args.empty()) {
+      printUsage(argv[0]);
       return 1;
     }
-    std::string modualName = argv[2];
+    std::string modualName = cli.args[0];
     std::string srcName = "./src/" + modualName + ".af";
     std::string headerName = "./head/" + modualName + ".gs";
 
@@ -176,14 +126,14 @@ int main(int argc, char *argv[]) {
     srcFile.close();
 
     // Read the last line of the config file
-    std::fstream cFile("./aflat.cfg", std::fstream::in | std::fstream::out);
+    std::fstream cFile(cli.configFile, std::fstream::in | std::fstream::out);
     cFile.seekg(-1, cFile.end);  // move the the end
     char c;
     cFile.get(c);
     cFile.close();
 
     // add the modual to the config file
-    std::fstream configFile("./aflat.cfg", std::ios::app | std::ios::in);
+    std::fstream configFile(cli.configFile, std::ios::app | std::ios::in);
     // if the last line is not a newline add a newline
     if (c != '\n') {
       configFile << '\n';
@@ -205,12 +155,11 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   if (value == "install") {
-    // install a package from a git repository
-    if (argc < 3) {
-      std::cout << "Usage: aflat install <git repository>\n";
+    if (cli.args.empty()) {
+      printUsage(argv[0]);
       return 1;
     }
-    std::string gitRepo = argv[2];
+    std::string gitRepo = cli.args[0];
     // if repo starts with 'https://' remove it
     if (gitRepo.find("https://") != std::string::npos) {
       gitRepo = gitRepo.substr(8);
@@ -223,13 +172,9 @@ int main(int argc, char *argv[]) {
         gitRepo + " | bash";
     [[maybe_unused]] int rc = system(install_command.c_str());
   }
-  std::string outputFile;
-  if (argc == 2)
-    outputFile = "out.s";
-  else
-    outputFile = argv[2];
+  std::string outputFile = cli.outputFile;
   if (std::filesystem::exists(value)) {
-    build(value, outputFile, cfg::Mutability::Promiscuous, true);
+    build(value, outputFile, cfg::Mutability::Promiscuous, cli.debug);
   } else {
     std::cout << "File " << value << " does not exist\n";
     return 1;
@@ -503,6 +448,33 @@ bool compileCFile(const std::string &path, bool debug) {
   std::string dst = "./bin/" + path + ".s";
   std::string cmd = compilerutils::buildCompileCmd(src, dst, debug);
   return system(cmd.c_str()) == 0;
+}
+
+cfg::Config loadConfig(const std::string &cfgFile) {
+  std::ifstream ifs(cfgFile);
+  std::string content((std::istreambuf_iterator<char>(ifs)),
+                      (std::istreambuf_iterator<char>()));
+
+  std::vector<std::string> files;
+  for (const auto &entry : std::filesystem::directory_iterator(".")) {
+    if (entry.path().string().find(".aflat.cfg") != std::string::npos) {
+      files.push_back(entry.path().string());
+    }
+  }
+
+  for (auto file : files) {
+    std::string id = file.substr(0, file.find(".aflat.cfg"));
+    std::ifstream mifs(file);
+    while (mifs) {
+      std::string line;
+      std::getline(mifs, line);
+      if (line.rfind("m ", 0) == 0) {
+        content += "m " + id + "/" + line.substr(2) + "\n";
+      }
+    }
+  }
+
+  return cfg::getConfig(content);
 }
 
 bool runConfig(cfg::Config &config, const std::string &libPath) {
