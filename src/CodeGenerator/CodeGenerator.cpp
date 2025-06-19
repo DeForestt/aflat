@@ -1,7 +1,6 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 
 #include <execinfo.h>
-
 #include <unistd.h>
 
 #include <boost/uuid/random_generator.hpp>
@@ -203,7 +202,8 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   };
 
   alert(format("Type mismatch on line {}: " + fmt, this->logicalLine,
-               type.typeName, typeName), true, __FILE__, __LINE__);
+               type.typeName, typeName),
+        true, __FILE__, __LINE__);
   return false;
 }
 
@@ -228,9 +228,9 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
     // find . in the type name
     if (typeName.find('.') == std::string::npos)
       this->alert("Type " + typeName +
-                  " not found in type list, did you forget to "
-                  "include the file that defines it?", true, __FILE__,
-                  __LINE__);
+                      " not found in type list, did you forget to "
+                      "include the file that defines it?",
+                  true, __FILE__, __LINE__);
 
     auto typeNameParts = splitTypeName(typeName);
     auto typeNamePart = typeNameParts.front();
@@ -240,16 +240,16 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
 
     if (cl == nullptr) {
       this->alert("Type " + typeName +
-                  " not found in type list, did you forget to "
-                  "include the file that defines it?", true, __FILE__,
-                  __LINE__);
+                      " not found in type list, did you forget to "
+                      "include the file that defines it?",
+                  true, __FILE__, __LINE__);
     }
 
     if (cl->genericTypes.size() != typeNameParts.size() - 1) {
       this->alert("Type " + typeName +
-                  " not found in type list, did you forget to "
-                  "include the file that defines it?", true, __FILE__,
-                  __LINE__);
+                      " not found in type list, did you forget to "
+                      "include the file that defines it?",
+                  true, __FILE__, __LINE__);
     }
     // typeNameParts without the first parts
     auto typeNameWithoutFirstPart = typeNameParts;

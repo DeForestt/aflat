@@ -117,8 +117,8 @@ class CodeGenerator {
   links::LinkedList<gen::Symbol> GenTable(
       ast::Statement *STMT, links::LinkedList<gen::Symbol> &table);
   // a function for warnings or errors
-  void alert(std::string message, bool error = true,
-             const char *file = nullptr, int line = 0);
+  void alert(std::string message, bool error = true, const char *file = nullptr,
+             int line = 0);
   static void enableAlertTrace(bool enable);
   gen::Type **instantiateGenericClass(ast::Class *cls,
                                       const std::vector<std::string> &types,

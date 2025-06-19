@@ -54,7 +54,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         call->ident = new_class_name;
         if (t == nullptr) {
           alert("Something went wrong with the generic class " + call->ident +
-                " in " + this->moduleId, true, __FILE__, __LINE__);
+                    " in " + this->moduleId,
+                true, __FILE__, __LINE__);
         }
       }
     }
@@ -138,7 +139,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.type != "generic")
         this->alert(
             "Can only explicitly cast to a type from any, adr, "
-            "or generic", true, __FILE__, __LINE__);
+            "or generic",
+            true, __FILE__, __LINE__);
       output.type = exprCall->typeCast;
     }
   } else if (dynamic_cast<ast::Var *>(expr) != nullptr) {
@@ -334,8 +336,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       gen::Symbol sym = std::get<1>(resolved);
       if (sym.sold != -1) {
         alert("variable " + var.Ident + " was sold on line " +
-              std::to_string(sym.sold) + " and cannot be used", true,
-              __FILE__, __LINE__);
+                  std::to_string(sym.sold) + " and cannot be used",
+              true, __FILE__, __LINE__);
       }
 
       if (sym.type.isReference && !var.clean) {
@@ -401,7 +403,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.type != "generic")
         this->alert(
             "Can only explicitly cast to a type from any, adr, "
-            "or generic", true, __FILE__, __LINE__);
+            "or generic",
+            true, __FILE__, __LINE__);
       output.type = var.typeCast;
     }
   } else if (dynamic_cast<ast::Buy *>(expr) != nullptr) {
@@ -521,7 +524,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       pos = strLit->val.find("%%%", 0);
       if (pos == std::string::npos)
         this->alert("too many arguments for format string", true, __FILE__,
-                     __LINE__);
+                    __LINE__);
 
       asmc::File file;
 
@@ -535,15 +538,15 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
             if (cl->parent != nullptr) {
               if (cl->parent->nameTable["toString"] == nullptr) {
                 this->alert("class " + cl->Ident +
-                            " does not contain a toString method", true,
-                            __FILE__, __LINE__);
+                                " does not contain a toString method",
+                            true, __FILE__, __LINE__);
               } else {
                 cl = cl->parent;
               }
             } else {
-              this->alert("class " + cl->Ident +
-                          " does not contain a toString method", true,
-                          __FILE__, __LINE__);
+              this->alert(
+                  "class " + cl->Ident + " does not contain a toString method",
+                  true, __FILE__, __LINE__);
             }
           }
 
@@ -571,7 +574,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         strLit->val.replace(pos, 3, "%c");
       else {
         this->alert("unable to format type of " + exp.type, true, __FILE__,
-                     __LINE__);
+                    __LINE__);
       }
 
       list->args << expr;
@@ -1100,7 +1103,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.type != "generic")
         this->alert(
             "Can only explicitly cast to a type from any, adr, "
-            "or generic", true, __FILE__, __LINE__);
+            "or generic",
+            true, __FILE__, __LINE__);
       output.type = comp.typeCast;
     }
   } else if (dynamic_cast<ast::Lambda *>(expr) != nullptr) {
@@ -1176,7 +1180,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     if (malloc == nullptr)
       alert(
           "Please import std library in order to use new operator.\n\n -> "
-          ".needs <std> \n\n", true, __FILE__, __LINE__);
+          ".needs <std> \n\n",
+          true, __FILE__, __LINE__);
     gen::Type **type = this->typeList[newExpr.type.typeName];
     if (type == nullptr) {
       auto cls = this->genericTypes[newExpr.type.typeName];
@@ -1194,8 +1199,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     auto cl = dynamic_cast<gen::Class *>(*type);
     if (cl == nullptr)
       alert("The new operator can only be used with classes. Type " +
-            newExpr.type.typeName + " is not a class", true, __FILE__,
-            __LINE__);
+                newExpr.type.typeName + " is not a class",
+            true, __FILE__, __LINE__);
     // check if the class has a constructor
     ast::Function *init = cl->nameTable["init"];
 

@@ -14,9 +14,9 @@ Type **CodeGenerator::instantiateGenericClass(
   newName = classStatement->ident.ident;
   if (types.size() != classStatement->genericTypes.size())
     alert("Generic class " + cls->ident.ident + " requires " +
-          std::to_string(classStatement->genericTypes.size()) +
-          " template types, but got " + std::to_string(types.size()), true,
-          __FILE__, __LINE__);
+              std::to_string(classStatement->genericTypes.size()) +
+              " template types, but got " + std::to_string(types.size()),
+          true, __FILE__, __LINE__);
   for (size_t i = 0; i < types.size(); i++) {
     newName += "." + types[i];
     genericMap[classStatement->genericTypes[i]] = types[i];

@@ -86,7 +86,8 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
     if (intArgsCounter > 6) {
       alert(
           "AFlat compiler cannot handle more than 6 int / pointer "
-          "arguments.", true, __FILE__, __LINE__);
+          "arguments.",
+          true, __FILE__, __LINE__);
     } else {
       asmc::Size size;
       gen::Symbol symbol;
@@ -119,9 +120,11 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
           this->typeList.push(cl);
           arg->type = ast::Type(cl->Ident, asmc::QWord);
         } else {
-          alert("The symbol " + arg->requestType +
-                " is not defined in the current scope so its type cannot be "
-                "resolved", true, __FILE__, __LINE__);
+          alert(
+              "The symbol " + arg->requestType +
+                  " is not defined in the current scope so its type cannot be "
+                  "resolved",
+              true, __FILE__, __LINE__);
         }
       }
 
