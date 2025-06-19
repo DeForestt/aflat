@@ -577,6 +577,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
                                    "JSON_Property.s",
                                    "Iterator.s",
                                    "Enumerator.s",
+                                   "vector.s",
                                    "Scroller.s",
                                    "Utils_Defer.s",
                                    "Memory.s",

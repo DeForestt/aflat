@@ -1,0 +1,49 @@
+.needs <std>
+
+import List from "Collections";
+import Option from "Utils/Option";
+import Result from "Utils/Result";
+import option, { some, none } from "Utils/option" under opt;
+
+// Simple templated vector backed by List
+
+types(T)
+safe dynamic class vector {
+    private List inner = new List(T);
+
+    fn init() -> Self {
+        return my;
+    };
+
+    fn pushBack(const T value) -> int {
+        inner.pushValue(value);
+        return inner.getCount();
+    };
+
+    fn popBack() -> option::<T> {
+        const Option val = inner.popBack();
+        return val.match({
+            "some": [adr ptr] => return opt.some(*ptr),
+            "none": [] => return opt.none::<T>()
+        });
+    };
+
+    fn back() -> option::<T> {
+        const Option val = inner.back();
+        return val.match({
+            "some": [adr ptr] => return opt.some(*ptr),
+            "none": [] => return opt.none::<T>()
+        });
+    };
+
+    fn get(const int index) -> option::<T> {
+        const Result res = inner.get(index);
+        return res.match({
+            "ok": [adr ptr] => return opt.some(*ptr),
+            "error": [adr err] => return opt.none::<T>()
+        });
+    };
+
+    fn getCount() -> int { return inner.getCount(); };
+};
+
