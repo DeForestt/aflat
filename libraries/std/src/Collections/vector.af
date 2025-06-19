@@ -9,38 +9,22 @@ import option, { some, none } from "Utils/option" under opt;
 
 types(T)
 safe dynamic class vector {
-    private List inner = new List(T);
+    private List inner = new List(size);
 
-    fn init() -> Self {
+    fn init(const int size) -> Self {
         return my;
     };
 
     fn pushBack(const T value) -> int {
-        inner.pushValue(value);
-        return inner.getCount();
-    };
-
-    fn popBack() -> option::<T> {
-        const Option val = inner.popBack();
-        return val.match({
-            "some": [adr ptr] => return opt.some(*ptr),
-            "none": [] => return opt.none::<T>()
-        });
-    };
-
-    fn back() -> option::<T> {
-        const Option val = inner.back();
-        return val.match({
-            "some": [adr ptr] => return opt.some(*ptr),
-            "none": [] => return opt.none::<T>()
-        });
+        my.inner.pushValue(value);
+        return my.inner.getCount();
     };
 
     fn get(const int index) -> option::<T> {
-        const Result res = inner.get(index);
+        const Result res = my.inner.get(index);
         return res.match({
-            "ok": [adr ptr] => return opt.some(*ptr),
-            "error": [adr err] => return opt.none::<T>()
+            "ok": fn(T ptr) return opt.some::<T>(ptr),
+            "error": fn(adr err) return opt.none::<T>()
         });
     };
 

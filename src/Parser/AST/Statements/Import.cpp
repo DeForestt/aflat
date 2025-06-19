@@ -4,7 +4,6 @@
 #include <unordered_map>
 
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"

@@ -22,10 +22,8 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
 
   if (this->imbeddedNamespace.has_value()) {
     ident = this->imbeddedNamespace.value() + "." + this->modList.shift();
-  }
-
-  std::string nsp;
-  if (generator.nameSpaceTable.contains(ident)) {
+  } else if (generator.nameSpaceTable.contains(ident)) {
+    std::string nsp;
     nsp = generator.nameSpaceTable.get(ident) + ".";
     ident = nsp + this->modList.shift();
   };

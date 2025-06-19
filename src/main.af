@@ -32,10 +32,10 @@ fn main() {
     print("Can we do it twice? Yes, we can!");
 
     let someVal = opt.some::<int>(99);
-    print(someVal.or(0));
+    print(`option value {someVal.or(0)}`);
 
-    let numbers = new vector::<int>();
-    numbers.pushBack(1);
-    numbers.pushBack(2);
-    print(numbers.get(0).or(0));
+    let numbers = new vector::<adr>(adr);
+    // numbers.pushBack("Hello");
+    // numbers.pushBack("World");
+    // print(numbers.get(0).or("Nothing"));
 };
