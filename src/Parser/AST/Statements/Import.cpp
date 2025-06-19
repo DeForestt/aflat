@@ -182,7 +182,8 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
       OutputFile << generator.GenSTMT(statement);
     }
   }
-  if (this->hasFunctions) generator.nameSpaceTable.insert(this->nameSpace, id);
+  if (this->hasFunctions && this->nameSpace != "")
+    generator.nameSpaceTable.insert(this->nameSpace, id);
   return {OutputFile, std::nullopt};
 }
 

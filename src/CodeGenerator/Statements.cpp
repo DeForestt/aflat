@@ -201,12 +201,9 @@ asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
     this->ImportsOnly(dynamic_cast<ast::Sequence *>(STMT)->Statement2);
   } else if (dynamic_cast<ast::Import *>(STMT) != nullptr) {
     auto imp = dynamic_cast<ast::Import *>(STMT);
-    if (imp->hasClasses) {
-      if (imp->hasFunctions)
-        imp->generateClasses(*this);
-      else
-        imp->generate(*this);
-    }
+    imp = dynamic_cast<ast::Import *>(deepCopy(imp));
+    imp->nameSpace = "";
+    imp->generate(*this);
   }
   return OutputFile;
 }
