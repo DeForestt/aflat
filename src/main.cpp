@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
   if (!parseCommandLine(argc, argv, cli)) {
     return 1;
   }
+  gen::CodeGenerator::enableAlertTrace(cli.traceAlerts);
 
   std::string filename = getExePath();
   std::string exepath = filename.substr(0, filename.find_last_of("/"));

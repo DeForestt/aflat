@@ -8,11 +8,12 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
   static option longOptions[] = {{"help", no_argument, nullptr, 'h'},
                                  {"output", required_argument, nullptr, 'o'},
                                  {"debug", no_argument, nullptr, 'd'},
+                                 {"trace-alerts", no_argument, nullptr, 't'},
                                  {"config", required_argument, nullptr, 'c'},
                                  {nullptr, 0, nullptr, 0}};
 
   int opt;
-  while ((opt = getopt_long(argc, argv, "hdo:c:", longOptions, nullptr)) !=
+  while ((opt = getopt_long(argc, argv, "hdo:tc:", longOptions, nullptr)) !=
          -1) {
     switch (opt) {
       case 'o':
@@ -20,6 +21,9 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
         break;
       case 'd':
         opts.debug = true;
+        break;
+      case 't':
+        opts.traceAlerts = true;
         break;
       case 'c':
         opts.configFile = optarg;
@@ -61,5 +65,6 @@ void printUsage(const char *prog) {
       << "  -o, --output <file> Output file when compiling a single file\n"
       << "  -c, --config <file> Use alternative config file\n"
       << "  -d, --debug         Enable debug information\n"
+      << "  -t, --trace-alerts  Trace CodeGenerator alerts\n"
       << "  -h, --help          Display this help message\n";
 }

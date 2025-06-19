@@ -1,5 +1,6 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 
+#include <execinfo.h>
 #include <unistd.h>
 
 #include <boost/uuid/random_generator.hpp>
@@ -21,7 +22,20 @@
 
 using namespace gen::utils;
 
-void gen::CodeGenerator::alert(std::string message, bool error) {
+bool gen::CodeGenerator::traceAlert = false;
+
+void gen::CodeGenerator::enableAlertTrace(bool enable) { traceAlert = enable; }
+
+void gen::CodeGenerator::alert(std::string message, bool error,
+                               const char *file, int line) {
+  if (traceAlert && file) {
+    std::cerr << "[CG alert] " << file << ":" << line << std::endl;
+    void *array[10];
+    int size = backtrace(array, 10);
+    char **symbols = backtrace_symbols(array, size);
+    for (int i = 0; i < size; ++i) std::cerr << symbols[i] << std::endl;
+    free(symbols);
+  }
   if (error) {
     this->errorFlag = true;
     std::string context;
@@ -90,7 +104,8 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   if (typeName == "NULLTYPE" && type.typeName == "void") return true;
   if (typeName == "generic" && type.typeName == "NULLTYPE") return true;
   if (typeName == "NULLTYPE" && type.typeName == "generic") return true;
-  if (typeName == "void") this->alert("cannot use void function as value");
+  if (typeName == "void")
+    this->alert("cannot use void function as value", true, __FILE__, __LINE__);
   if (typeName == "--std--flex--function" || typeName == "any" ||
       type.typeName == "any")
     return true;
@@ -187,7 +202,8 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   };
 
   alert(format("Type mismatch on line {}: " + fmt, this->logicalLine,
-               type.typeName, typeName));
+               type.typeName, typeName),
+        true, __FILE__, __LINE__);
   return false;
 }
 
@@ -212,8 +228,9 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
     // find . in the type name
     if (typeName.find('.') == std::string::npos)
       this->alert("Type " + typeName +
-                  " not found in type list, did you forget to "
-                  "include the file that defines it?");
+                      " not found in type list, did you forget to "
+                      "include the file that defines it?",
+                  true, __FILE__, __LINE__);
 
     auto typeNameParts = splitTypeName(typeName);
     auto typeNamePart = typeNameParts.front();
@@ -223,14 +240,16 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
 
     if (cl == nullptr) {
       this->alert("Type " + typeName +
-                  " not found in type list, did you forget to "
-                  "include the file that defines it?");
+                      " not found in type list, did you forget to "
+                      "include the file that defines it?",
+                  true, __FILE__, __LINE__);
     }
 
     if (cl->genericTypes.size() != typeNameParts.size() - 1) {
       this->alert("Type " + typeName +
-                  " not found in type list, did you forget to "
-                  "include the file that defines it?");
+                      " not found in type list, did you forget to "
+                      "include the file that defines it?",
+                  true, __FILE__, __LINE__);
     }
     // typeNameParts without the first parts
     auto typeNameWithoutFirstPart = typeNameParts;

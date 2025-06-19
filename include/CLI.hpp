@@ -5,6 +5,7 @@
 
 struct CommandLineOptions {
   bool debug = false;
+  bool traceAlerts = false;
   std::string outputFile = "out.s";
   std::string configFile = "aflat.cfg";
   std::string command;
