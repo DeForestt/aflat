@@ -40,8 +40,9 @@ ast::Expr *gen::CodeGenerator::imply(ast::Expr *expr, std::string typeName) {
     }
   }
   this->alert("Cannot imply type " + typeName +
-              " from expression of type at line " +
-              std::to_string(expr->logicalLine));
+                  " from expression of type at line " +
+                  std::to_string(expr->logicalLine),
+              true, __FILE__, __LINE__);
   return nullptr;
 }
 }  // namespace gen

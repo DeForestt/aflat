@@ -54,7 +54,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         call->ident = new_class_name;
         if (t == nullptr) {
           alert("Something went wrong with the generic class " + call->ident +
-                " in " + this->moduleId);
+                    " in " + this->moduleId,
+                true, __FILE__, __LINE__);
         }
       }
     }
@@ -67,7 +68,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       gen::Class *cl = dynamic_cast<gen::Class *>(*t);
       if (cl != nullptr) {
         if (cl->dynamic)
-          alert("Dynamic class '" + cl->Ident + "' must be called with new");
+          alert("Dynamic class '" + cl->Ident + "' must be called with new",
+                true, __FILE__, __LINE__);
         // allocate space for the object
         ast::Type type = ast::Type();
         type.typeName = cl->Ident;
@@ -117,7 +119,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.type = cl->Ident;
         }
       } else {
-        alert("Class " + call->ident + " not found");
+        alert("Class " + call->ident + " not found", true, __FILE__, __LINE__);
       }
     } else {
       auto callGen = call->generate(*this);
@@ -137,7 +139,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.type != "generic")
         this->alert(
             "Can only explicitly cast to a type from any, adr, "
-            "or generic");
+            "or generic",
+            true, __FILE__, __LINE__);
       output.type = exprCall->typeCast;
     }
   } else if (dynamic_cast<ast::Var *>(expr) != nullptr) {
@@ -156,7 +159,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       if (this->nameSpaceTable.contains(var.Ident)) {
         nsp = this->nameSpaceTable.get(ident) + ".";
         if (var.modList.trail() == 0)
-          alert("NameSpace " + ident + " cannot be used as a variable");
+          alert("NameSpace " + ident + " cannot be used as a variable", true,
+                __FILE__, __LINE__);
         ident = nsp + var.modList.shift();
       };
 
@@ -167,12 +171,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         Enum *en = dynamic_cast<Enum *>(type);
         if (en) {
           if (var.modList.trail() == 0) {
-            alert("Enum " + ident + " cannot be used as a variable");
+            alert("Enum " + ident + " cannot be used as a variable", true,
+                  __FILE__, __LINE__);
           }
           std::string enumIdent = var.modList.shift();
           Enum::EnumValue *item = en->values[enumIdent];
           if (!item) {
-            alert("Enum " + ident + " does not contain " + enumIdent);
+            alert("Enum " + ident + " does not contain " + enumIdent, true,
+                  __FILE__, __LINE__);
           }
           output.access = '$' + std::to_string(item->value);
           output.type = en->Ident;
@@ -187,7 +193,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
               output.type = "adr";
               output.size = asmc::QWord;
             } else {
-              alert("Class " + ident + " does not contain " + functionName);
+              alert("Class " + ident + " does not contain " + functionName,
+                    true, __FILE__, __LINE__);
             }
           } else {
             output.access =
@@ -321,7 +328,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         strLit->logicalLine = this->logicalLine;
         output = this->GenExpr(strLit, OutputFile);
       } else {
-        alert("variable not found " + ident);
+        alert("variable not found " + ident, true, __FILE__, __LINE__);
       }
       var.modList.invert();
       var.modList.reset();
@@ -329,7 +336,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       gen::Symbol sym = std::get<1>(resolved);
       if (sym.sold != -1) {
         alert("variable " + var.Ident + " was sold on line " +
-              std::to_string(sym.sold) + " and cannot be used");
+                  std::to_string(sym.sold) + " and cannot be used",
+              true, __FILE__, __LINE__);
       }
 
       if (sym.type.isReference && !var.clean) {
@@ -395,7 +403,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.type != "generic")
         this->alert(
             "Can only explicitly cast to a type from any, adr, "
-            "or generic");
+            "or generic",
+            true, __FILE__, __LINE__);
       output.type = var.typeCast;
     }
   } else if (dynamic_cast<ast::Buy *>(expr) != nullptr) {
@@ -403,7 +412,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     // for now, we will onlt support buying of a variable (lvalue)
     auto var = dynamic_cast<ast::Var *>(buy->expr);
     if (var == nullptr) {
-      this->alert("buying of non-variable not supported");
+      this->alert("buying of non-variable not supported", true, __FILE__,
+                  __LINE__);
     }
 
     auto resolved =
@@ -411,7 +421,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                             links::LinkedList<ast::Expr *>(), false);
 
     if (std::get<2>(resolved) == false) {
-      this->alert("attemptted to buy an undeclared variable: " + var->Ident);
+      this->alert("attemptted to buy an undeclared variable: " + var->Ident,
+                  true, __FILE__, __LINE__);
     }
 
     gen::Symbol *sym = &std::get<1>(resolved);
@@ -460,7 +471,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     if (std::get<2>(resolved)) {
       lea->from = std::get<0>(resolved);
     } else
-      alert("variable not found " + ref.Ident);
+      alert("variable not found " + ref.Ident, true, __FILE__, __LINE__);
     lea->to = this->registers["%rax"]->get(asmc::QWord);
 
     output.access = registers["%rax"]->get(asmc::QWord);
@@ -512,7 +523,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     for (auto expr : str.args) {
       pos = strLit->val.find("%%%", 0);
       if (pos == std::string::npos)
-        this->alert("too many arguments for format string");
+        this->alert("too many arguments for format string", true, __FILE__,
+                    __LINE__);
 
       asmc::File file;
 
@@ -526,13 +538,15 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
             if (cl->parent != nullptr) {
               if (cl->parent->nameTable["toString"] == nullptr) {
                 this->alert("class " + cl->Ident +
-                            " does not contain a toString method");
+                                " does not contain a toString method",
+                            true, __FILE__, __LINE__);
               } else {
                 cl = cl->parent;
               }
             } else {
-              this->alert("class " + cl->Ident +
-                          " does not contain a toString method");
+              this->alert(
+                  "class " + cl->Ident + " does not contain a toString method",
+                  true, __FILE__, __LINE__);
             }
           }
 
@@ -559,7 +573,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       else if (exp.type == "char")
         strLit->val.replace(pos, 3, "%c");
       else {
-        this->alert("unable to format type of " + exp.type);
+        this->alert("unable to format type of " + exp.type, true, __FILE__,
+                    __LINE__);
       }
 
       list->args << expr;
@@ -608,7 +623,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                             links::LinkedList<ast::Expr *>(), false);
 
     if (!std::get<2>(resolved)) {
-      alert("variable not found to deRef" + deRef.Ident);
+      alert("variable not found to deRef" + deRef.Ident, true, __FILE__,
+            __LINE__);
     }
 
     gen::Symbol *sym = &std::get<1>(resolved);
@@ -1067,7 +1083,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           break;
         }
         default: {
-          alert("Unhandled operator in comparison");
+          alert("Unhandled operator in comparison", true, __FILE__, __LINE__);
           break;
         }
       }
@@ -1087,7 +1103,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.type != "generic")
         this->alert(
             "Can only explicitly cast to a type from any, adr, "
-            "or generic");
+            "or generic",
+            true, __FILE__, __LINE__);
       output.type = comp.typeCast;
     }
   } else if (dynamic_cast<ast::Lambda *>(expr) != nullptr) {
@@ -1163,7 +1180,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     if (malloc == nullptr)
       alert(
           "Please import std library in order to use new operator.\n\n -> "
-          ".needs <std> \n\n");
+          ".needs <std> \n\n",
+          true, __FILE__, __LINE__);
     gen::Type **type = this->typeList[newExpr.type.typeName];
     if (type == nullptr) {
       auto cls = this->genericTypes[newExpr.type.typeName];
@@ -1174,12 +1192,15 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         newExpr.type.typeName = new_class_name;
       }
     }
-    if (type == nullptr) alert("Type " + newExpr.type.typeName + " not found");
+    if (type == nullptr)
+      alert("Type " + newExpr.type.typeName + " not found", true, __FILE__,
+            __LINE__);
     // check if the function is a class
     auto cl = dynamic_cast<gen::Class *>(*type);
     if (cl == nullptr)
       alert("The new operator can only be used with classes. Type " +
-            newExpr.type.typeName + " is not a class");
+                newExpr.type.typeName + " is not a class",
+            true, __FILE__, __LINE__);
     // check if the class has a constructor
     ast::Function *init = cl->nameTable["init"];
 
@@ -1370,7 +1391,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     OutputFile.text << label1;
     if (!ifExpr->falseExpr)
-      this->alert("if expression must have a false branch");
+      this->alert("if expression must have a false branch", true, __FILE__,
+                  __LINE__);
     gen::Expr falseExpr = this->GenExpr(ifExpr->falseExpr, OutputFile);
     asmc::Mov *mov3 = new asmc::Mov();
     mov3->logicalLine = this->logicalLine;
@@ -1391,7 +1413,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.size = trueExpr.size;
     output.type = trueExpr.type;
   } else {
-    this->alert("Unhandled expression");
+    this->alert("Unhandled expression", true, __FILE__, __LINE__);
   }
 
   if (expr->extention != nullptr) {
@@ -1425,7 +1447,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       var->modList.invert();
       var->Ident = tempName;
     } else {
-      this->alert("Cannot extend an expression of this type");
+      this->alert("Cannot extend an expression of this type", true, __FILE__,
+                  __LINE__);
     }
 
     output = this->GenExpr(expr->extention, OutputFile, size);
