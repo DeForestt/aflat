@@ -97,13 +97,13 @@ void ScopeManager::popScope(CodeGenerator *callback, asmc::File &OutputFile,
                               "\" is assigned but never "
                               "used please consider removing it. If this is a "
                               "placeholder var prefix with `__`",
-                          false);
+                          false, __FILE__, __LINE__);
         };
         if (sym.assignCount < 1 && sym.mutable_) {
           callback->alert("Symbol \"" + sym.symbol +
                               "\" is mutable but never "
                               "assigned please consider making it immutable.",
-                          false);
+                          false, __FILE__, __LINE__);
         };
       }
       if (!fPop) {

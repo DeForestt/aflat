@@ -15,7 +15,8 @@ Type **CodeGenerator::instantiateGenericClass(
   if (types.size() != classStatement->genericTypes.size())
     alert("Generic class " + cls->ident.ident + " requires " +
           std::to_string(classStatement->genericTypes.size()) +
-          " template types, but got " + std::to_string(types.size()));
+          " template types, but got " + std::to_string(types.size()), true,
+          __FILE__, __LINE__);
   for (size_t i = 0; i < types.size(); i++) {
     newName += "." + types[i];
     genericMap[classStatement->genericTypes[i]] = types[i];
@@ -55,7 +56,8 @@ CodeGenerator::resolveSymbol(std::string ident,
   if (this->nameSpaceTable.contains(ident)) {
     nsp = this->nameSpaceTable.get(ident) + ".";
     if (modList.count == 0)
-      alert("NameSpace " + ident + " cannot be used as a variable");
+      alert("NameSpace " + ident + " cannot be used as a variable", true,
+            __FILE__, __LINE__);
     ident = nsp + modList.shift();
   };
 
@@ -93,7 +95,8 @@ CodeGenerator::resolveSymbol(std::string ident,
                                                         modList.shift());
       };
       if (modSym == nullptr)
-        alert("variable not found " + last.typeName + "." + sto);
+        alert("variable not found " + last.typeName + "." + sto, true, __FILE__,
+              __LINE__);
       last = modSym->type;
       int tbyte = modSym->byteMod;
       asmc::Mov *mov = new asmc::Mov();
@@ -124,7 +127,7 @@ CodeGenerator::resolveSymbol(std::string ident,
                     "the given type {} is not subscriptable");
 
     if (modSym->type.indices.trail() != indicies.trail())
-      alert("invalid index count");
+      alert("invalid index count", true, __FILE__, __LINE__);
 
     int multiplier = sizeToInt(modSym->type.typeHint->size);
 
