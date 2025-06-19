@@ -13,4 +13,3 @@ struct CommandLineOptions {
 
 bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts);
 void printUsage(const char *prog);
-

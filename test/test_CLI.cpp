@@ -9,4 +9,3 @@ TEST_CASE("CLI parses flags", "[cli]") {
   REQUIRE(opts.outputFile == "foo.s");
   REQUIRE(opts.command == "build");
 }
-
