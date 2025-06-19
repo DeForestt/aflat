@@ -1,4 +1,7 @@
 #pragma once
+#include <optional>
+#include <string>
+
 #include "Parser/AST.hpp"
 
 namespace ast {
@@ -9,6 +12,7 @@ namespace ast {
 class Call : public Statement {
  public:
   std::string ident;
+  std::optional<std::string> imbeddedNamespace = std::nullopt;
   links::LinkedList<Expr *> Args;
   links::LinkedList<std::string> modList;
   std::vector<std::string> genericTypes;

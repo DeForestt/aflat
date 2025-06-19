@@ -1,6 +1,7 @@
 #include "Parser/AST/Statements/Import.hpp"
 
 #include <fstream>
+#include <unordered_map>
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
@@ -10,6 +11,27 @@
 #include "PreProcessor.hpp"
 
 namespace ast {
+
+static void collectImportNamespacesImpl(
+    ast::Statement *stmt, std::unordered_map<std::string, std::string> &map) {
+  if (!stmt) return;
+  if (auto seq = dynamic_cast<ast::Sequence *>(stmt)) {
+    collectImportNamespacesImpl(seq->Statement1, map);
+    collectImportNamespacesImpl(seq->Statement2, map);
+  } else if (auto imp = dynamic_cast<ast::Import *>(stmt)) {
+    std::string id = imp->path;
+    if (id.find_last_of('/') != std::string::npos)
+      id = id.substr(id.find_last_of('/') + 1);
+    if (id.find_last_of('.') != std::string::npos)
+      id = id.substr(0, id.find_last_of('.'));
+    map[imp->nameSpace] = id;
+  }
+}
+
+void collectImportNamespaces(
+    ast::Statement *stmt, std::unordered_map<std::string, std::string> &map) {
+  collectImportNamespacesImpl(stmt, map);
+}
 Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->logicalLine = tokens.peek()->lineCount;
   while (true) {
@@ -148,13 +170,18 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     generator.includedMemo.insert(this->path, added);
     generator.ImportsOnly(added);
   }
+  std::unordered_map<std::string, std::string> nsMap;
+  collectImportNamespaces(added, nsMap);
   for (std::string ident : this->imports) {
     if (generator.includedClasses.contains(id + "::" + ident)) continue;
     generator.includedClasses.insert(id + "::" + ident, nullptr);
     ast::Statement *statement = gen::utils::extract(ident, added, id);
-    if (statement == nullptr)
+    if (statement == nullptr) {
       generator.alert("Identifier " + ident + " not found to import");
-    OutputFile << generator.GenSTMT(statement);
+    } else {
+      statement->namespaceSwap(nsMap);
+      OutputFile << generator.GenSTMT(statement);
+    }
   }
   if (this->hasFunctions) generator.nameSpaceTable.insert(this->nameSpace, id);
   return {OutputFile, std::nullopt};
@@ -203,6 +230,9 @@ gen::GenerationResult const Import::generateClasses(
     generator.ImportsOnly(added);
   }
 
+  std::unordered_map<std::string, std::string> nsMap;
+  collectImportNamespaces(added, nsMap);
+
   for (std::string ident : this->imports) {
     ast::Statement *statement = gen::utils::extract(ident, added, id);
     if (statement == nullptr) continue;
@@ -212,6 +242,7 @@ gen::GenerationResult const Import::generateClasses(
       continue;
     if (generator.includedClasses.contains(id + "::" + ident)) continue;
     generator.includedClasses.insert(id + "::" + ident, nullptr);
+    statement->namespaceSwap(nsMap);
     OutputFile << generator.GenSTMT(statement);
   }
 
