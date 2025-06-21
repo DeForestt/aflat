@@ -133,19 +133,25 @@ Function::Function(const ScopeMod &scope,
     auto typeName = dynamic_cast<lex::LObj *>(tokens.pop());
     if (typeName == nullptr)
       throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           "Expected Identifier");
+                           " Expected Identifier");
     auto type = parser.typeList[typeName->meta];
     if (type == nullptr)
       throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           "Type not found");
+                           " Type " + typeName->meta + "not found");
 
     auto templateTypeList =
         parser.parseTemplateTypeList(tokens, tokens.peek()->lineCount);
+    auto typenameStr = type->typeName;
     for (auto &genericType : templateTypeList) {
-      type->typeName = type->typeName + "." + genericType;
+      typenameStr = typenameStr + "." + genericType;
     }
 
-    this->type = *type;
+    this->type = Type(typenameStr, type->size);
+    this->type.opType = type->opType;
+    this->type.isGeneric = type->isGeneric;
+    this->type.safeType = type->safeType;
+    this->type.pedantic = type->pedantic;
+    this->type.typeHint = type->typeHint;
   } else {
     this->type = *parser.typeList["void"];
     this->autoType = true;
@@ -168,13 +174,14 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     generator.genericFunctions << *this;
     return {asmc::File(), std::nullopt};
   };
+
   bool hidden = false;
   asmc::File file;
   ast::Function *saveFunc = generator.currentFunction;
   int saveIntArgs = generator.intArgsCounter;
   bool isLambda = this->isLambda;
 
-  if (generator.scope == nullptr) {
+  if (generator.scope == nullptr || this->globalLocked) {
     if (!this->isLambda) generator.nameTable << *this;
   } else {
     if (!this->isLambda) this->scopeName = generator.scope->Ident;
@@ -197,7 +204,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
 
     auto label = new asmc::Label;
     label->logicalLine = this->logicalLine;
-    if (generator.scope == nullptr || this->isLambda)
+    if (generator.scope == nullptr || this->isLambda || this->globalLocked)
       label->label = this->ident.ident;
     else
       label->label = "pub_" + generator.scope->Ident + "_" + this->ident.ident;
@@ -275,7 +282,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     link->command = "global";
     link->operand = label->label;
 
-    if (generator.scope != nullptr && !this->isLambda) {
+    if (generator.scope != nullptr && !this->isLambda && !this->globalLocked) {
       // add the opo to the arguments of the function
       auto movy = new asmc::Mov();
       movy->logicalLine = this->logicalLine;
@@ -301,7 +308,8 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     file << argmute;
 
     // if the function is 'init' and scope is a class, add the default value
-    if (this->ident.ident == "init" && generator.scope != nullptr) {
+    if (this->ident.ident == "init" && generator.scope != nullptr &&
+        !globalLocked) {
       // add all of the default values from the scopes list
       for (ast::DecAssign it : generator.scope->defaultValues) {
         ast::Assign assign = ast::Assign();

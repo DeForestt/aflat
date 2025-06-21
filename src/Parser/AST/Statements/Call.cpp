@@ -71,6 +71,9 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         func->ident.ident = new_ident;
         func->genericTypes.clear();
         func->scope = ast::ScopeMod::Private;
+        func->globalLocked = true;
+
+        bool generated = false;
 
         if (file.lambdas == nullptr) {
           file.lambdas = new asmc::File();
@@ -82,17 +85,26 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           file.lambdas->operator<<(generator.GenSTMT(func));
           gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
           generator.generatedFunctionNames.insert(new_ident);
+          generated = true;
+        } else {
+          gen::scope::ScopeManager::getInstance()->pushScope(true);
+          generator.GenSTMT(func);
+          gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+          generator.generatedFunctionNames.insert(new_ident);
+          generated = true;
         }
 
         this->ident = func->ident.ident;
         // get func from the name table so that it can be used with generated
         // return type
         func = generator.nameTable[func->ident.ident];
-        if (func == nullptr)
+        if (func == nullptr) {
           generator.alert(
               "cannot find function after generic generation (this is a bug "
-              "please report it): " +
-              this->ident);
+              "please report it): `" +
+                  this->ident + "`" + (generated ? " (generated)" : ""),
+              true, __FILE__, __LINE__);
+        }
         ident = this->ident;
       }
     }
@@ -257,7 +269,8 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
 
             addPub = false;
           } else if (sym == nullptr) {
-            generator.alert("cannot find function " + this->modList.touch());
+            generator.alert("cannot find function " + this->modList.touch(),
+                            true, __FILE__, __LINE__);
           } else if (this->modList.pos->next == nullptr) {
             // find the type of the object
             auto objectType = *generator.getType(sym->type.typeName, file);
@@ -386,8 +399,10 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   file.text << push;
   stack << push->op;
 
-  if (func == nullptr)
-    generator.alert("Cannot Find Function: " + ident + allMods);
+  if (func == nullptr) {
+    generator.alert("Cannot Find Function: " + ident + allMods, true, __FILE__,
+                    __LINE__);
+  }
 
   if (func->scope == ast::Private && func->scopeName != "global") {
     if (generator.scope == nullptr)

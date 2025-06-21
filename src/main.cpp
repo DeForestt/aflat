@@ -241,6 +241,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     }
 
     gen::CodeGenerator genny(outputID, parser, content);
+    genny.mutability = mutability;
     auto file = genny.GenSTMT(Prog);
     file.collect();
     if (genny.hasError()) {
@@ -538,6 +539,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
                                    "Iterator.s",
                                    "Enumerator.s",
                                    "Scroller.s",
+                                   "vector.s",
                                    "Utils_Defer.s",
                                    "Memory.s",
                                    "Utils_Observable.s"};

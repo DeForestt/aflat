@@ -11,3 +11,4 @@ format ./include/*
 format ./src/*
 format ./src/Parser/*
 format ./src/CodeGenerator/*
+format ./tests/*

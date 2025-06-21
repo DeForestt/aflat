@@ -24,6 +24,7 @@ class CodeGenerator {
   gen::Class *scope;
   ast::Type returnType;
   int scopePop = 0;
+  int mutability = 0;
   int labelCount = 0;
   int intArgsCounter;
   int selectReg = 0;
@@ -36,6 +37,7 @@ class CodeGenerator {
   HashMap<std::string> nameSpaceTable;
   std::unordered_map<std::string, std::string> genericTypeConversions;
   std::set<std::string> generatedFunctionNames;
+  std::set<std::string> generatedClassNames;
   ast::Function *currentFunction = nullptr;
   std::string lambdaReturns = "";
   asmc::Size lambdaSize = asmc::AUTO;
@@ -67,6 +69,8 @@ class CodeGenerator {
     links::SLinkedList<gen::Type *, std::string> typeList;
     links::SLinkedList<ast::Type, std::string> TypeList;
     std::unordered_map<std::string, ast::Transform> transforms;
+    gen::Class *scope;
+    ast::Type returnType;
     bool inFunction;
     bool globalScope;
     std::string lambdaReturns;
