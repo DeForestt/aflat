@@ -10,7 +10,7 @@ class Class : public Statement {
  public:
   Ident ident;
   std::string base;
-  std::vector<std::string> genericTypes;
+  std::vector<std::string> genericTypes = std::vector<std::string>();
   std::vector<parse::Annotation> annotations;
   Statement *contract;
   Statement *statement;

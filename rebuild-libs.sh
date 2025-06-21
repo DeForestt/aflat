@@ -67,5 +67,7 @@ aflat ./libraries/std/src/Collections/Iterator.af -o ./libraries/std/Iterator.s
 aflat ./libraries/std/src/Collections/Scroller.af -o ./libraries/std/Scroller.s
 aflat ./libraries/std/src/Collections/Enumerator.af -o ./libraries/std/Enumerator.s
 
+aflat ./libraries/std/src/Collections/Vector.af -o ./libraries/std/vector.s
+
 gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c
 

@@ -1,3 +1,6 @@
+#include <iostream>
+#include <sstream>
+
 #include "LinkedList.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/AST/Statements.hpp"
@@ -32,6 +35,34 @@ static void applyTemplateTypes(
   }
 }
 
+static std::string replaceAllParts(
+    const std::string &input,
+    const std::unordered_map<std::string, std::string> &typeMap) {
+  std::stringstream ss(input);
+  std::string segment;
+  std::vector<std::string> parts;
+
+  // Split the string on '.'
+  while (std::getline(ss, segment, '.')) {
+    // Replace if mapping exists
+    auto it = typeMap.find(segment);
+    if (it != typeMap.end()) {
+      parts.push_back(it->second);
+    } else {
+      parts.push_back(segment);
+    }
+  }
+
+  // Join back together
+  std::string result;
+  for (size_t i = 0; i < parts.size(); ++i) {
+    if (i > 0) result += ".";
+    result += parts[i];
+  }
+
+  return result;
+}
+
 void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
   if (auto expr = dynamic_cast<Expr *>(this)) {
     if (expr->extention) expr->extention->replaceTypes(map);
@@ -62,6 +93,7 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
     return;
   }
   if (auto var = dynamic_cast<Var *>(this)) {
+    if (map.find(var->Ident) != map.end()) var->Ident = map[var->Ident];
     applyList(var->indices, map);
     return;
   }
@@ -163,8 +195,18 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
     return;
   }
   if (auto func = dynamic_cast<Function *>(this)) {
-    applyType(func->type, map);
-    applyType(func->useType, map);
+    if (func->type.typeName.find('.') != std::string::npos) {
+      func->type.typeName = replaceAllParts(func->type.typeName, map);
+    } else {
+      applyType(func->type, map);
+    }
+
+    if (func->useType.typeName.find('.') != std::string::npos) {
+      func->useType.typeName = replaceAllParts(func->useType.typeName, map);
+    } else {
+      applyType(func->useType, map);
+    }
+
     for (auto &t : func->argTypes) applyType(t, map);
     if (func->args) func->args->replaceTypes(map);
     if (func->statement) func->statement->replaceTypes(map);

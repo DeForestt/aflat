@@ -33,6 +33,7 @@ class Function : public Member, public Statement {
   bool has_return = false;
   bool optional = false;
   bool autoType = false;
+  bool globalLocked = false;  // if the function is locked to the global scope
 
   Function() = default;
   Function(const string &ident, const ScopeMod &scope, const Type &type,
@@ -60,7 +61,8 @@ class Function : public Member, public Statement {
         optional(Other.optional),
         useType(Other.useType),
         genericTypes(Other.genericTypes),
-        autoType(Other.autoType) {
+        autoType(Other.autoType),
+        globalLocked(Other.globalLocked) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;
     this->hidden = this->hidden;

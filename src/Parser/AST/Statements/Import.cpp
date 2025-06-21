@@ -223,6 +223,8 @@ gen::GenerationResult const Import::generateClasses(
     auto tokens = l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head")));
     tokens.invert();
     parse::Parser p = parse::Parser();
+    if (this->path.find("./") != std::string::npos)
+      p.mutability = generator.mutability;
     ast::Statement *statement = p.parseStmt(tokens);
     auto Lowerer = parse::lower::Lowerer(statement);
     added = statement;

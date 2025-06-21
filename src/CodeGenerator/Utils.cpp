@@ -70,8 +70,9 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
       if (cls->genericTypes.size() == 0) {
         shellStatement(cls->statement);
         cls->includer = true;
+        return cls;
       }
-      return stmt;
+      return ast::deepCopy(cls);
     }
   } else if (dynamic_cast<ast::Enum *>(stmt)) {
     ast::Enum *enm = dynamic_cast<ast::Enum *>(stmt);

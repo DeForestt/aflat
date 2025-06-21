@@ -41,9 +41,19 @@ class SLinkedList {
 
   T *operator[](Z input);
 
-  T at(int i);
+  T *at(int i);
 };
 }  // namespace links
+
+template <typename T, typename Z>
+T *links::SLinkedList<T, Z>::at(int i) {
+  if (i < 0 || i >= this->count) return nullptr;
+  links::Node<T> *pointer = this->head;
+  for (int j = 0; j < i; j++) {
+    pointer = pointer->next;
+  }
+  return &pointer->data;
+}
 
 template <typename T, typename Z>
 T *links::SLinkedList<T, Z>::operator[](Z input) {
@@ -122,11 +132,6 @@ T links::SLinkedList<T, Z>::pop() {
 template <typename T, typename Z>
 T links::SLinkedList<T, Z>::peek() {
   return this->head->data;
-}
-
-template <typename T, typename Z>
-T links::SLinkedList<T, Z>::at(int i) {
-  return 0;
 }
 
 template <typename T, typename Z>

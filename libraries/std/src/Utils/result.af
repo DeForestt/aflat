@@ -6,7 +6,7 @@ import Map from "Utils/Map";
 import Option from "Utils/Option";
 
 types(A)
-safe dynamic class result {
+safe dynamic pedantic class result {
     private A value = value;
     private mutable bool success = error == NULL;
     private mutable Error error = error;
@@ -43,7 +43,15 @@ safe dynamic class result {
 		return my.success != true;
 	};
 
-    fn match(const Map cases, *const any arg1, *const any arg2, *const any arg3, *const any arg4) -> A {
+    fn toString() -> string {
+        if my.success {
+            return `Ok: {my.value}`;
+        } else {
+            return `Error: {my.error}`;
+        };
+    };
+
+    fn match(const Map cases, *const any arg1, *const any arg2, *const any arg3, *const any arg4) -> any {
 		if my.success {
 			if cases.has("ok") {
 				const Option foo = cases.get("ok");
