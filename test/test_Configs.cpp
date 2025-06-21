@@ -61,3 +61,25 @@ TEST_CASE("Config TestFile", "[Configs]") {
   REQUIRE(config.cFiles.size() == 0);
   REQUIRE(config.testFile == "test");
 };
+
+TEST_CASE("Ini Build", "[Configs]") {
+  std::string content =
+      "[build]\n"
+      "output = ./bin/main\n"
+      "debug = true\n"
+      "main = src/main\n"
+      "test = src/test\n";
+  cfg::Config config = cfg::getConfig(content);
+  REQUIRE(config.outPutFile == "./bin/main");
+  REQUIRE(config.debug == true);
+  REQUIRE(config.entryPoint == "src/main");
+  REQUIRE(config.testFile == "src/test");
+};
+
+TEST_CASE("Ini Dependencies", "[Configs]") {
+  std::string content =
+      "[build]\nmain = main\n\n[dependencies]\ncollections = \"./src/answer.af\"\n";
+  cfg::Config config = cfg::getConfig(content);
+  REQUIRE(config.modules.size() == 1);
+  REQUIRE(config.modules[0] == "answer");
+};
