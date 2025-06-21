@@ -168,13 +168,14 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     generator.genericFunctions << *this;
     return {asmc::File(), std::nullopt};
   };
+
   bool hidden = false;
   asmc::File file;
   ast::Function *saveFunc = generator.currentFunction;
   int saveIntArgs = generator.intArgsCounter;
   bool isLambda = this->isLambda;
 
-  if (generator.scope == nullptr) {
+  if (generator.scope == nullptr || this->globalLocked) {
     if (!this->isLambda) generator.nameTable << *this;
   } else {
     if (!this->isLambda) this->scopeName = generator.scope->Ident;

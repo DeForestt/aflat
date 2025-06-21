@@ -24,6 +24,7 @@ class CodeGenerator {
   gen::Class *scope;
   ast::Type returnType;
   int scopePop = 0;
+  int mutability = 0;
   int labelCount = 0;
   int intArgsCounter;
   int selectReg = 0;

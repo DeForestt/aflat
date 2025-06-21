@@ -229,6 +229,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     }
 
     gen::CodeGenerator genny(outputID, parser, content);
+    genny.mutability = mutability;
     auto file = genny.GenSTMT(Prog);
     file.collect();
     if (genny.hasError()) {
