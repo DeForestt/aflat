@@ -552,6 +552,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
                                    "Iterator.s",
                                    "Enumerator.s",
                                    "Scroller.s",
+                                   "vector.s",
                                    "Utils_Defer.s",
                                    "Memory.s",
                                    "Utils_Observable.s"};
