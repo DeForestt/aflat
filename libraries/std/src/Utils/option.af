@@ -6,7 +6,7 @@ import Option from "Utils/Option";
 import string from "String";
 
 types(A)
-safe dynamic class option {
+safe dynamic pedantic class option {
     private A value = value;
     private mutable bool hasValue = hasValue;
     private mutable int refcount = 1;
@@ -62,9 +62,9 @@ safe dynamic class option {
 
     fn toString() -> string {
         if my.hasValue
-            return "Option: Some"
+            return `Option: Some({my.value})`
         else
-            return "Option: None";
+            return `Option: None`;
     };
 };
 

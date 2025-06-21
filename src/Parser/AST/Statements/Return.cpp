@@ -72,9 +72,9 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     generator.currentFunction->autoType = false;
     generator.currentFunction->type = ast::Type(from.type, from.size);
 
-    // need to find it in the nameTable or the scope nameTable
     if (generator.scope == nullptr ||
-        generator.currentFunction->genericTypes.size() > 0) {
+        generator.currentFunction->genericTypes.size() > 0 ||
+        generator.currentFunction->globalLocked) {
       if (generator.nameTable[generator.currentFunction->ident.ident] !=
           nullptr) {
         generator.nameTable[generator.currentFunction->ident.ident]->type =
@@ -83,6 +83,16 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
             ast::Type(from.type, from.size);
       }
     } else {
+      if (generator.scope->nameTable[generator.currentFunction->ident.ident] ==
+          nullptr) {
+        generator.alert("the function " +
+                            generator.currentFunction->ident.ident +
+                            " is not defined in the current scope `" +
+                            generator.scope->Ident +
+                            "` , but it is being returned "
+                            "from",
+                        true, __FILE__, __LINE__);
+      }
       generator.scope->nameTable[generator.currentFunction->ident.ident]->type =
           ast::Type(from.type, from.size);
       const auto pub =

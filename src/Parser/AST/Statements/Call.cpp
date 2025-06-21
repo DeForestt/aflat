@@ -73,6 +73,8 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         func->scope = ast::ScopeMod::Private;
         func->globalLocked = true;
 
+        bool generated = false;
+
         if (file.lambdas == nullptr) {
           file.lambdas = new asmc::File();
           file.hasLambda = true;
@@ -83,6 +85,13 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           file.lambdas->operator<<(generator.GenSTMT(func));
           gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
           generator.generatedFunctionNames.insert(new_ident);
+          generated = true;
+        } else {
+          gen::scope::ScopeManager::getInstance()->pushScope(true);
+          generator.GenSTMT(func);
+          gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+          generator.generatedFunctionNames.insert(new_ident);
+          generated = true;
         }
 
         this->ident = func->ident.ident;
@@ -93,7 +102,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           generator.alert(
               "cannot find function after generic generation (this is a bug "
               "please report it): `" +
-                  this->ident + "`",
+                  this->ident + "`" + (generated ? " (generated)" : ""),
               true, __FILE__, __LINE__);
         }
         ident = this->ident;
