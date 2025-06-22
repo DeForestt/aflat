@@ -12,10 +12,12 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
                                  {"quiet", no_argument, nullptr, 'q'},
                                  {"trace-alerts", no_argument, nullptr, 't'},
                                  {"config", required_argument, nullptr, 'c'},
+                                 {"update-deps", no_argument, nullptr, 'U'},
+                                 {"clean-deps", no_argument, nullptr, 'K'},
                                  {nullptr, 0, nullptr, 0}};
 
   int opt;
-  while ((opt = getopt_long(argc, argv, "hdo:tc:q", longOptions, nullptr)) !=
+  while ((opt = getopt_long(argc, argv, "hdo:tc:qUK", longOptions, nullptr)) !=
          -1) {
     switch (opt) {
       case 'o':
@@ -32,6 +34,12 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
         break;
       case 'c':
         opts.configFile = optarg;
+        break;
+      case 'U':
+        opts.updateDeps = true;
+        break;
+      case 'K':
+        opts.cleanDeps = true;
         break;
       case 'h':
       case '?':
@@ -73,5 +81,7 @@ void printUsage(const char *prog) {
       << "  -d, --debug         Enable debug information\n"
       << "  -q, --quiet         Suppress build progress output\n"
       << "  -t, --trace-alerts  Trace CodeGenerator alerts\n"
+      << "  -U, --update-deps   Refresh git dependencies\n"
+      << "  -K, --clean-deps    Remove all git dependencies\n"
       << "  -h, --help          Display this help message\n";
 }

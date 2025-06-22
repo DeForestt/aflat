@@ -66,14 +66,16 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   if (value == "build") {
-    cfg::Config config = cfg::loadConfig(cli.configFile);
+    cfg::Config config =
+        cfg::loadConfig(cli.configFile, cli.updateDeps, cli.cleanDeps);
     config.debug = cli.debug;
     if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
     runConfig(config, libPathA, 'e');
     return 0;
   }
   if (value == "run") {
-    cfg::Config config = cfg::loadConfig(cli.configFile);
+    cfg::Config config =
+        cfg::loadConfig(cli.configFile, cli.updateDeps, cli.cleanDeps);
     config.debug = cli.debug;
     if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 'e')) {
@@ -86,7 +88,8 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   if (value == "test") {
-    cfg::Config config = cfg::loadConfig(cli.configFile);
+    cfg::Config config =
+        cfg::loadConfig(cli.configFile, cli.updateDeps, cli.cleanDeps);
     config.debug = cli.debug;
     if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 't')) {

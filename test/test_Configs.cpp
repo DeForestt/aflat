@@ -89,6 +89,15 @@ TEST_CASE("Ini Dependencies", "[Configs]") {
   REQUIRE(config.modules[0] == "answer");
 };
 
+TEST_CASE("Git dependencies stored separately", "[Configs]") {
+  std::string content =
+      "[build]\nmain = main\n\n[dependencies]\nlogger = "
+      "\"https://example.com/repo.git\"\n";
+  cfg::Config config = cfg::getConfig(content);
+  REQUIRE(config.modules.empty());
+  REQUIRE(config.dependencies.at("logger") == "https://example.com/repo.git");
+};
+
 TEST_CASE("Subconfig modules", "[Configs]") {
   std::ofstream sub("lib.aflat.cfg");
   sub << "[dependencies]\nfoo = \"./src/foo.af\"\n";

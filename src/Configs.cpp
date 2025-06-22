@@ -71,12 +71,15 @@ cfg::Config cfg::getConfig(std::string content) {
         }
       } else if (section == "dependencies") {
         if (!value.empty()) {
-          std::string mod = value;
-          if (mod.rfind("./", 0) == 0) mod = mod.substr(2);
-          if (mod.rfind("src/", 0) == 0) mod = mod.substr(4);
-          if (mod.size() > 3 && mod.substr(mod.size() - 3) == ".af")
-            mod = mod.substr(0, mod.size() - 3);
-          config.modules.push_back(mod);
+          config.dependencies[key] = value;
+          if (value.size() < 4 || value.substr(value.size() - 4) != ".git") {
+            std::string mod = value;
+            if (mod.rfind("./", 0) == 0) mod = mod.substr(2);
+            if (mod.rfind("src/", 0) == 0) mod = mod.substr(4);
+            if (mod.size() > 3 && mod.substr(mod.size() - 3) == ".af")
+              mod = mod.substr(0, mod.size() - 3);
+            config.modules.push_back(mod);
+          }
         }
       }
     }

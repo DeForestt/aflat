@@ -19,3 +19,12 @@ TEST_CASE("CLI default output empty without flag", "[cli]") {
   REQUIRE(opts.outputFile.empty());
   REQUIRE(opts.command == "build");
 }
+
+TEST_CASE("CLI dependency flags", "[cli]") {
+  const char *argv[] = {"aflat", "--update-deps", "--clean-deps", "build"};
+  CommandLineOptions opts;
+  REQUIRE(parseCommandLine(4, (char **)argv, opts));
+  REQUIRE(opts.updateDeps == true);
+  REQUIRE(opts.cleanDeps == true);
+  REQUIRE(opts.command == "build");
+}
