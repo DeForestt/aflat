@@ -18,6 +18,7 @@
 #include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
+#include "Progress.hpp"
 #include "Scanner.hpp"
 
 std::string preProcess(std::string input);
@@ -32,11 +33,16 @@ bool compileCFile(const std::string &path, bool debug);
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 bool runConfig(cfg::Config &config, const std::string &libPath);
 
+static CompileProgress *gProgress = nullptr;
+static bool gQuiet = false;
+
+#ifndef AFLAT_TEST
 int main(int argc, char *argv[]) {
   CommandLineOptions cli;
   if (!parseCommandLine(argc, argv, cli)) {
     return 1;
   }
+  gQuiet = cli.quiet;
   gen::CodeGenerator::enableAlertTrace(cli.traceAlerts);
 
   std::string filename = getExePath();
@@ -52,7 +58,6 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     std::string pName = cli.args[0];
-    std::cout << "creating " << pName << '\n';
     if (cli.args.size() == 2 && cli.args[1] == "lib") {
       libTemplate(pName);
     } else {
@@ -63,14 +68,14 @@ int main(int argc, char *argv[]) {
   if (value == "build") {
     cfg::Config config = cfg::loadConfig(cli.configFile);
     config.debug = cli.debug;
-    config.outPutFile = cli.outputFile;
+    if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
     runConfig(config, libPathA, 'e');
     return 0;
   }
   if (value == "run") {
     cfg::Config config = cfg::loadConfig(cli.configFile);
     config.debug = cli.debug;
-    config.outPutFile = cli.outputFile;
+    if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 'e')) {
       auto of = config.outPutFile;
       if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
@@ -83,7 +88,7 @@ int main(int argc, char *argv[]) {
   if (value == "test") {
     cfg::Config config = cfg::loadConfig(cli.configFile);
     config.debug = cli.debug;
-    config.outPutFile = cli.outputFile;
+    if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 't')) {
       [[maybe_unused]] int rc = system("./bin/a.test");
     }
@@ -184,6 +189,10 @@ int main(int argc, char *argv[]) {
     [[maybe_unused]] int rc = system(install_command.c_str());
   }
   std::string outputFile = cli.outputFile;
+  if (outputFile.empty() && !cli.args.empty()) {
+    outputFile = cli.args[0];
+  }
+  if (outputFile.empty()) outputFile = "out.s";
   if (std::filesystem::exists(value)) {
     build(value, outputFile, cfg::Mutability::Promiscuous, cli.debug);
   } else {
@@ -192,12 +201,20 @@ int main(int argc, char *argv[]) {
   }
   return 0;
 }
+#endif
 
 bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug) {
   bool success = true;
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;
+  std::string origPath = path;
+  if (!gQuiet) {
+    if (gProgress)
+      gProgress->update(origPath, "parsing");
+    else
+      std::cout << "[parsing] " << origPath << std::endl;
+  }
 
   auto filename = getExePath();
   auto wd = std::filesystem::current_path();
@@ -241,6 +258,12 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     gen::CodeGenerator genny(outputID, parser, content);
     genny.mutability = mutability;
     auto file = genny.GenSTMT(Prog);
+    if (!gQuiet) {
+      if (gProgress)
+        gProgress->update(origPath, "generating");
+      else
+        std::cout << "[generating] " << origPath << std::endl;
+    }
     file.collect();
     if (genny.hasError()) {
       success = false;
@@ -320,11 +343,18 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
       ofs << file.bss.pop()->toString();
     }
     ofs.close();
+    if (!gQuiet) {
+      if (gProgress)
+        gProgress->update(origPath, "done");
+      else
+        std::cout << "[done] " << origPath << std::endl;
+    }
   } catch (err::Exception &e) {
     success = false;
     int line = error::extractLine(e.errorMsg);
     error::report(path, line, e.errorMsg, content);
     if (std::filesystem::exists(output)) std::filesystem::remove(output);
+    if (!gQuiet && gProgress) gProgress->update(origPath, "done");
   }
   return success;
 };
@@ -460,8 +490,27 @@ void ensureBinPath(const std::string &path,
 bool compileCFile(const std::string &path, bool debug) {
   std::string src = "./src/" + path + ".c";
   std::string dst = "./bin/" + path + ".s";
+  if (!gQuiet) {
+    if (gProgress)
+      gProgress->update(src, "parsing");
+    else
+      std::cout << "[parsing] " << src << std::endl;
+  }
   std::string cmd = compilerutils::buildCompileCmd(src, dst, debug);
-  return system(cmd.c_str()) == 0;
+  if (!gQuiet) {
+    if (gProgress)
+      gProgress->update(src, "generating");
+    else
+      std::cout << "[generating] " << src << std::endl;
+  }
+  bool result = system(cmd.c_str()) == 0;
+  if (!gQuiet) {
+    if (gProgress)
+      gProgress->update(src, "done");
+    else if (result)
+      std::cout << "[done] " << src << std::endl;
+  }
+  return result;
 }
 
 bool runConfig(cfg::Config &config, const std::string &libPath) {
@@ -481,6 +530,15 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   } else if (pmode == 't') {
     config.modules.push_back(config.testFile);
   }
+
+  std::vector<std::string> sources;
+  for (const auto &mod : config.modules)
+    sources.push_back("./src/" + mod + ".af");
+  for (const auto &file : config.cFiles)
+    sources.push_back("./src/" + file + ".c");
+
+  CompileProgress progress(sources, gQuiet);
+  if (!gQuiet) gProgress = &progress;
 
   for (auto mod : config.modules) {
     ensureBinPath(mod, pathList);
@@ -548,6 +606,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
 
   if (hasError) {
     std::cout << "Errors detected. Skipping linking." << std::endl;
+    gProgress = nullptr;
     return false;
   }
 
@@ -575,5 +634,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       std::filesystem::remove_all("./bin/" + s);
     }
   }
+  gProgress = nullptr;
+  std::cout << std::endl;
   return true;
 }

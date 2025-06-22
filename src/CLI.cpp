@@ -5,15 +5,17 @@
 #include <iostream>
 
 bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
+  optind = 1;  // reset getopt state for repeated calls
   static option longOptions[] = {{"help", no_argument, nullptr, 'h'},
                                  {"output", required_argument, nullptr, 'o'},
                                  {"debug", no_argument, nullptr, 'd'},
+                                 {"quiet", no_argument, nullptr, 'q'},
                                  {"trace-alerts", no_argument, nullptr, 't'},
                                  {"config", required_argument, nullptr, 'c'},
                                  {nullptr, 0, nullptr, 0}};
 
   int opt;
-  while ((opt = getopt_long(argc, argv, "hdo:tc:", longOptions, nullptr)) !=
+  while ((opt = getopt_long(argc, argv, "hdo:tc:q", longOptions, nullptr)) !=
          -1) {
     switch (opt) {
       case 'o':
@@ -21,6 +23,9 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
         break;
       case 'd':
         opts.debug = true;
+        break;
+      case 'q':
+        opts.quiet = true;
         break;
       case 't':
         opts.traceAlerts = true;
@@ -66,6 +71,7 @@ void printUsage(const char *prog) {
       << "  -o, --output <file> Output file when compiling a single file\n"
       << "  -c, --config <file> Use alternative config file\n"
       << "  -d, --debug         Enable debug information\n"
+      << "  -q, --quiet         Suppress build progress output\n"
       << "  -t, --trace-alerts  Trace CodeGenerator alerts\n"
       << "  -h, --help          Display this help message\n";
 }

@@ -6,7 +6,8 @@
 struct CommandLineOptions {
   bool debug = false;
   bool traceAlerts = false;
-  std::string outputFile = "out.s";
+  bool quiet = false;
+  std::string outputFile;  // set via -o when compiling single files
   std::string configFile = "aflat.cfg";
   std::string command;
   std::vector<std::string> args;

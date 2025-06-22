@@ -27,10 +27,12 @@ file(GLOB_RECURSE testing_Modules
     src/*.cpp
 )
 
-list(REMOVE_ITEM testing_Modules ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
+# Do not remove main.cpp when building tests so helper functions are available
+# The main function is excluded via the AFLAT_TEST define.
 
 message (STATUS ${testing_Modules})
 add_executable(a.test ${testing_Modules})
 target_include_directories(a.test PRIVATE include/)
 target_link_libraries(a.test PRIVATE Catch2::Catch2WithMain)
+target_compile_definitions(a.test PRIVATE AFLAT_TEST)
 # target_link_options(test PRIVATE -flto)

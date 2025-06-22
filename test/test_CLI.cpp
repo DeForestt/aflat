@@ -2,11 +2,20 @@
 #include "catch.hpp"
 
 TEST_CASE("CLI parses flags", "[cli]") {
-  const char *argv[] = {"aflat", "-d", "-t", "-o", "foo.s", "build"};
+  const char *argv[] = {"aflat", "-d", "-t", "-q", "-o", "foo.s", "build"};
   CommandLineOptions opts;
-  REQUIRE(parseCommandLine(6, (char **)argv, opts));
+  REQUIRE(parseCommandLine(7, (char **)argv, opts));
   REQUIRE(opts.debug == true);
   REQUIRE(opts.traceAlerts == true);
+  REQUIRE(opts.quiet == true);
   REQUIRE(opts.outputFile == "foo.s");
+  REQUIRE(opts.command == "build");
+}
+
+TEST_CASE("CLI default output empty without flag", "[cli]") {
+  const char *argv[] = {"aflat", "build"};
+  CommandLineOptions opts;
+  REQUIRE(parseCommandLine(2, (char **)argv, opts));
+  REQUIRE(opts.outputFile.empty());
   REQUIRE(opts.command == "build");
 }
