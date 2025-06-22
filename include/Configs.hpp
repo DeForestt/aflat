@@ -20,5 +20,6 @@ struct Config {
 };
 
 Config getConfig(std::string content);
+Config loadConfig(const std::string &cfgFile);
 
 }  // namespace cfg
