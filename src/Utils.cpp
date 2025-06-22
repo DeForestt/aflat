@@ -12,6 +12,13 @@ std::string utils::remove_char(std::string str, char ch) {
   return str;
 }
 
+std::string utils::trim(const std::string &str) {
+  const auto begin = str.find_first_not_of(" \t\n\r");
+  if (begin == std::string::npos) return "";
+  const auto end = str.find_last_not_of(" \t\n\r");
+  return str.substr(begin, end - begin + 1);
+}
+
 std::string utils::op_to_string(ast::Op op) {
   switch (op) {
     case ast::Op::Plus:

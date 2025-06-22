@@ -1,3 +1,7 @@
+#include <filesystem>
+#include <fstream>
+#include <string>
+
 #include "Configs.hpp"
 #include "catch.hpp"
 
@@ -60,4 +64,45 @@ TEST_CASE("Config TestFile", "[Configs]") {
   REQUIRE(config.modules.size() == 0);
   REQUIRE(config.cFiles.size() == 0);
   REQUIRE(config.testFile == "test");
+};
+
+TEST_CASE("Ini Build", "[Configs]") {
+  std::string content =
+      "[build]\n"
+      "output = ./bin/main\n"
+      "debug = true\n"
+      "main = src/main\n"
+      "test = src/test\n";
+  cfg::Config config = cfg::getConfig(content);
+  REQUIRE(config.outPutFile == "./bin/main");
+  REQUIRE(config.debug == true);
+  REQUIRE(config.entryPoint == "src/main");
+  REQUIRE(config.testFile == "src/test");
+};
+
+TEST_CASE("Ini Dependencies", "[Configs]") {
+  std::string content =
+      "[build]\nmain = main\n\n[dependencies]\ncollections = "
+      "\"./src/answer.af\"\n";
+  cfg::Config config = cfg::getConfig(content);
+  REQUIRE(config.modules.size() == 1);
+  REQUIRE(config.modules[0] == "answer");
+};
+
+TEST_CASE("Subconfig modules", "[Configs]") {
+  std::ofstream sub("lib.aflat.cfg");
+  sub << "[dependencies]\nfoo = \"./src/foo.af\"\n";
+  sub.close();
+
+  std::ofstream mainCfg("temp.cfg");
+  mainCfg << "[build]\nmain = main\n";
+  mainCfg.close();
+
+  cfg::Config config = cfg::loadConfig("temp.cfg");
+
+  std::filesystem::remove("temp.cfg");
+  std::filesystem::remove("lib.aflat.cfg");
+
+  REQUIRE(config.modules.size() == 1);
+  REQUIRE(config.modules[0] == "lib/foo");
 };

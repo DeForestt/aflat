@@ -821,7 +821,7 @@ The package manager is used to create a project.  The syntax is:
 ```bash
 aflat make <project name>
 ```
-The project name is will be the name of the directory that will be created. It will create a head, src, and bin directory.  The head directory will contain the header files for the project.  The src directory will contain the source files for the project.  The bin directory will contain the compiled object files for the project.  It will also create an aflat.cfg file which will contain settings for the compiler.
+The project name is will be the name of the directory that will be created. It will create a head, src, and bin directory.  The head directory will contain the header files for the project.  The src directory will contain the source files for the project.  The bin directory will contain the compiled object files for the project.  It will also create an `aflat.cfg` file using an INI format for build settings and dependencies.
 
 ## Building a Project
 The project can be built with the following syntax:
@@ -842,14 +842,17 @@ The package manager is used to create a src/header pair.  The syntax is:
 ```bash
 aflat add <src/header name>
 ```
-This will create a header and source file in their respective directories.  It will also create and entry in the aflat.cfg file telling the compiler to compile the new source file.
+This will create a header and source file in their respective directories.  It will also create an entry in the `[dependencies]` section of `aflat.cfg` so the new source file is built.
 
 ## Bootstrapping a module
 The package manager is used to create a module.  The syntax is:
 ```bash
 aflat module <module name>
 ```
-This will create a source file in the src directory.  It will also create and entry in the aflat.cfg file telling the compiler to compile the new source file.
+This creates a directory under `src/` matching the module name and places
+`mod.af` inside. An entry is added under `[dependencies]` in `aflat.cfg` so the
+new module is compiled. For a single `.af` file without a folder, use
+`aflat file <name>` instead.
 ## Ownership, References, and Selling
 AFlat uses explicit ownership. Objects live until they go out of scope or are deleted. Class objects are passed by reference automatically.
 

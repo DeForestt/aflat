@@ -27,10 +27,10 @@ void libTemplate(std::string value);
 bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug);
 void ensureBinPath(const std::string &path, std::vector<std::string> &pathList);
+
 bool compileCFile(const std::string &path, bool debug);
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 bool runConfig(cfg::Config &config, const std::string &libPath);
-cfg::Config loadConfig(const std::string &cfgFile);
 
 int main(int argc, char *argv[]) {
   CommandLineOptions cli;
@@ -61,14 +61,14 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   if (value == "build") {
-    cfg::Config config = loadConfig(cli.configFile);
+    cfg::Config config = cfg::loadConfig(cli.configFile);
     config.debug = cli.debug;
     config.outPutFile = cli.outputFile;
     runConfig(config, libPathA, 'e');
     return 0;
   }
   if (value == "run") {
-    cfg::Config config = loadConfig(cli.configFile);
+    cfg::Config config = cfg::loadConfig(cli.configFile);
     config.debug = cli.debug;
     config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 'e')) {
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   if (value == "test") {
-    cfg::Config config = loadConfig(cli.configFile);
+    cfg::Config config = cfg::loadConfig(cli.configFile);
     config.debug = cli.debug;
     config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 't')) {
@@ -89,29 +89,32 @@ int main(int argc, char *argv[]) {
     }
     return 0;
   }
-  if (value == "add" || value == "module") {
+  if (value == "add" || value == "module" || value == "file") {
     if (cli.args.empty()) {
       printUsage(argv[0]);
       return 1;
     }
     std::string modualName = cli.args[0];
-    std::string srcName = "./src/" + modualName + ".af";
+    std::string srcName = value == "module" ? "./src/" + modualName + "/mod.af"
+                                            : "./src/" + modualName + ".af";
     std::string headerName = "./head/" + modualName + ".gs";
 
-    std::string path = "";
+    if (value == "module") {
+      std::filesystem::create_directories("./src/" + modualName);
+    } else {
+      std::string path = "";
 
-    // Check if the modual name has a path
-    if (modualName.find("/") != std::string::npos) {
-      path = modualName.substr(0, modualName.find_last_of("/"));
-    }
+      if (modualName.find("/") != std::string::npos) {
+        path = modualName.substr(0, modualName.find_last_of("/"));
+      }
 
-    // Check if the modual path exists
-    if (path != "") {
-      if (!std::filesystem::exists(path)) {
-        // Create the paths
+      if (!path.empty() && !std::filesystem::exists("./src/" + path)) {
         std::filesystem::create_directories("./src/" + path);
-        if (value == "add")
-          std::filesystem::create_directories("./head/" + path);
+      }
+
+      if (value == "add" && !path.empty() &&
+          !std::filesystem::exists("./head/" + path)) {
+        std::filesystem::create_directories("./head/" + path);
       }
     }
 
@@ -126,21 +129,28 @@ int main(int argc, char *argv[]) {
     }
     srcFile.close();
 
-    // Read the last line of the config file
-    std::fstream cFile(cli.configFile, std::fstream::in | std::fstream::out);
-    cFile.seekg(-1, cFile.end);  // move the the end
-    char c;
-    cFile.get(c);
-    cFile.close();
+    std::ifstream cfgIn(cli.configFile);
+    std::string cfgContent((std::istreambuf_iterator<char>(cfgIn)),
+                           std::istreambuf_iterator<char>());
+    cfgIn.close();
 
-    // add the modual to the config file
-    std::fstream configFile(cli.configFile, std::ios::app | std::ios::in);
-    // if the last line is not a newline add a newline
-    if (c != '\n') {
-      configFile << '\n';
+    const std::string depHeader = "[dependencies]";
+    const std::string entry =
+        modualName + (value == "module"
+                          ? " = \"./src/" + modualName + "/mod.af\"\n"
+                          : " = \"./src/" + modualName + ".af\"\n");
+
+    if (cfgContent.find(depHeader) == std::string::npos) {
+      if (!cfgContent.empty() && cfgContent.back() != '\n') cfgContent += '\n';
+      cfgContent += depHeader + "\n" + entry;
+    } else {
+      if (!cfgContent.empty() && cfgContent.back() != '\n') cfgContent += '\n';
+      cfgContent += entry;
     }
 
-    configFile << "m " << modualName << "\n";
+    std::ofstream cfgOut(cli.configFile, std::ios::trunc);
+    cfgOut << cfgContent;
+    cfgOut.close();
     return 0;
   }
   if (value == "update") {
@@ -372,10 +382,10 @@ void buildTemplate(std::string value) {
 
   outfile = std::ofstream(value + "/aflat.cfg");
 
-  // Write the standard Config file
-  outfile << "; Aflat Config File\n";
-  outfile << "e main\n";
-  outfile << "t test/test\n";
+  // Write the standard Config file in INI format
+  outfile << "[build]\n";
+  outfile << "main = main\n";
+  outfile << "test = test/test\n";
   outfile.close();
 }
 
@@ -397,9 +407,11 @@ void libTemplate(std::string value) {
   outfile.close();
 
   outfile = std::ofstream(value + "/aflat.cfg");
-  outfile << "; Aflat Config File\n";
-  outfile << "m mod\n";
-  outfile << "t test/test\n";
+  outfile << "[build]\n";
+  outfile << "main = mod\n";
+  outfile << "test = test/test\n";
+  outfile << "\n[dependencies]\n";
+  outfile << "mod = \"./src/mod.af\"\n";
   outfile.close();
 
   outfile = std::ofstream(value + "/src/test/test.af");
@@ -450,33 +462,6 @@ bool compileCFile(const std::string &path, bool debug) {
   std::string dst = "./bin/" + path + ".s";
   std::string cmd = compilerutils::buildCompileCmd(src, dst, debug);
   return system(cmd.c_str()) == 0;
-}
-
-cfg::Config loadConfig(const std::string &cfgFile) {
-  std::ifstream ifs(cfgFile);
-  std::string content((std::istreambuf_iterator<char>(ifs)),
-                      (std::istreambuf_iterator<char>()));
-
-  std::vector<std::string> files;
-  for (const auto &entry : std::filesystem::directory_iterator(".")) {
-    if (entry.path().string().find(".aflat.cfg") != std::string::npos) {
-      files.push_back(entry.path().string());
-    }
-  }
-
-  for (auto file : files) {
-    std::string id = file.substr(0, file.find(".aflat.cfg"));
-    std::ifstream mifs(file);
-    while (mifs) {
-      std::string line;
-      std::getline(mifs, line);
-      if (line.rfind("m ", 0) == 0) {
-        content += "m " + id + "/" + line.substr(2) + "\n";
-      }
-    }
-  }
-
-  return cfg::getConfig(content);
 }
 
 bool runConfig(cfg::Config &config, const std::string &libPath) {
