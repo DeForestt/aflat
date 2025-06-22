@@ -5,6 +5,7 @@
 #include <iostream>
 
 bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
+  optind = 1;  // reset getopt state for repeated calls
   static option longOptions[] = {{"help", no_argument, nullptr, 'h'},
                                  {"output", required_argument, nullptr, 'o'},
                                  {"debug", no_argument, nullptr, 'd'},

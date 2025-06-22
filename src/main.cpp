@@ -69,14 +69,14 @@ int main(int argc, char *argv[]) {
   if (value == "build") {
     cfg::Config config = cfg::loadConfig(cli.configFile);
     config.debug = cli.debug;
-    config.outPutFile = cli.outputFile;
+    if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
     runConfig(config, libPathA, 'e');
     return 0;
   }
   if (value == "run") {
     cfg::Config config = cfg::loadConfig(cli.configFile);
     config.debug = cli.debug;
-    config.outPutFile = cli.outputFile;
+    if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 'e')) {
       auto of = config.outPutFile;
       if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
   if (value == "test") {
     cfg::Config config = cfg::loadConfig(cli.configFile);
     config.debug = cli.debug;
-    config.outPutFile = cli.outputFile;
+    if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 't')) {
       [[maybe_unused]] int rc = system("./bin/a.test");
     }
@@ -190,6 +190,10 @@ int main(int argc, char *argv[]) {
     [[maybe_unused]] int rc = system(install_command.c_str());
   }
   std::string outputFile = cli.outputFile;
+  if (outputFile.empty() && !cli.args.empty()) {
+    outputFile = cli.args[0];
+  }
+  if (outputFile.empty()) outputFile = "out.s";
   if (std::filesystem::exists(value)) {
     build(value, outputFile, cfg::Mutability::Promiscuous, cli.debug);
   } else {

@@ -11,3 +11,11 @@ TEST_CASE("CLI parses flags", "[cli]") {
   REQUIRE(opts.outputFile == "foo.s");
   REQUIRE(opts.command == "build");
 }
+
+TEST_CASE("CLI default output empty without flag", "[cli]") {
+  const char *argv[] = {"aflat", "build"};
+  CommandLineOptions opts;
+  REQUIRE(parseCommandLine(2, (char **)argv, opts));
+  REQUIRE(opts.outputFile.empty());
+  REQUIRE(opts.command == "build");
+}
