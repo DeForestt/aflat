@@ -77,7 +77,6 @@ int main(int argc, char *argv[]) {
     config.debug = cli.debug;
     if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 'e')) {
-      std::cout << "running " << config.outPutFile << '\n';
       auto of = config.outPutFile;
       if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
         of = "./" + config.outPutFile;
