@@ -34,6 +34,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 bool runConfig(cfg::Config &config, const std::string &libPath);
 
 static CompileProgress *gProgress = nullptr;
+static bool gQuiet = false;
 
 #ifndef AFLAT_TEST
 int main(int argc, char *argv[]) {
@@ -41,6 +42,7 @@ int main(int argc, char *argv[]) {
   if (!parseCommandLine(argc, argv, cli)) {
     return 1;
   }
+  gQuiet = cli.quiet;
   gen::CodeGenerator::enableAlertTrace(cli.traceAlerts);
 
   std::string filename = getExePath();
@@ -204,10 +206,12 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;
   std::string origPath = path;
-  if (gProgress)
-    gProgress->update(origPath, "parsing");
-  else
-    std::cout << "[parsing] " << origPath << std::endl;
+  if (!gQuiet) {
+    if (gProgress)
+      gProgress->update(origPath, "parsing");
+    else
+      std::cout << "[parsing] " << origPath << std::endl;
+  }
 
   auto filename = getExePath();
   auto wd = std::filesystem::current_path();
@@ -251,10 +255,12 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     gen::CodeGenerator genny(outputID, parser, content);
     genny.mutability = mutability;
     auto file = genny.GenSTMT(Prog);
-    if (gProgress)
-      gProgress->update(origPath, "generating");
-    else
-      std::cout << "[generating] " << origPath << std::endl;
+    if (!gQuiet) {
+      if (gProgress)
+        gProgress->update(origPath, "generating");
+      else
+        std::cout << "[generating] " << origPath << std::endl;
+    }
     file.collect();
     if (genny.hasError()) {
       success = false;
@@ -334,16 +340,18 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
       ofs << file.bss.pop()->toString();
     }
     ofs.close();
-    if (gProgress)
-      gProgress->update(origPath, "done");
-    else
-      std::cout << "[done] " << origPath << std::endl;
+    if (!gQuiet) {
+      if (gProgress)
+        gProgress->update(origPath, "done");
+      else
+        std::cout << "[done] " << origPath << std::endl;
+    }
   } catch (err::Exception &e) {
     success = false;
     int line = error::extractLine(e.errorMsg);
     error::report(path, line, e.errorMsg, content);
     if (std::filesystem::exists(output)) std::filesystem::remove(output);
-    if (gProgress) gProgress->update(origPath, "done");
+    if (!gQuiet && gProgress) gProgress->update(origPath, "done");
   }
   return success;
 };
@@ -479,20 +487,26 @@ void ensureBinPath(const std::string &path,
 bool compileCFile(const std::string &path, bool debug) {
   std::string src = "./src/" + path + ".c";
   std::string dst = "./bin/" + path + ".s";
-  if (gProgress)
-    gProgress->update(src, "parsing");
-  else
-    std::cout << "[parsing] " << src << std::endl;
+  if (!gQuiet) {
+    if (gProgress)
+      gProgress->update(src, "parsing");
+    else
+      std::cout << "[parsing] " << src << std::endl;
+  }
   std::string cmd = compilerutils::buildCompileCmd(src, dst, debug);
-  if (gProgress)
-    gProgress->update(src, "generating");
-  else
-    std::cout << "[generating] " << src << std::endl;
+  if (!gQuiet) {
+    if (gProgress)
+      gProgress->update(src, "generating");
+    else
+      std::cout << "[generating] " << src << std::endl;
+  }
   bool result = system(cmd.c_str()) == 0;
-  if (gProgress)
-    gProgress->update(src, "done");
-  else if (result)
-    std::cout << "[done] " << src << std::endl;
+  if (!gQuiet) {
+    if (gProgress)
+      gProgress->update(src, "done");
+    else if (result)
+      std::cout << "[done] " << src << std::endl;
+  }
   return result;
 }
 
@@ -518,8 +532,8 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   for (const auto &mod : config.modules) sources.push_back("./src/" + mod + ".af");
   for (const auto &file : config.cFiles) sources.push_back("./src/" + file + ".c");
 
-  CompileProgress progress(sources);
-  gProgress = &progress;
+  CompileProgress progress(sources, gQuiet);
+  if (!gQuiet) gProgress = &progress;
 
   for (auto mod : config.modules) {
     ensureBinPath(mod, pathList);
