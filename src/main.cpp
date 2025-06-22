@@ -126,21 +126,25 @@ int main(int argc, char *argv[]) {
     }
     srcFile.close();
 
-    // Read the last line of the config file
-    std::fstream cFile(cli.configFile, std::fstream::in | std::fstream::out);
-    cFile.seekg(-1, cFile.end);  // move the the end
-    char c;
-    cFile.get(c);
-    cFile.close();
+    std::ifstream cfgIn(cli.configFile);
+    std::string cfgContent((std::istreambuf_iterator<char>(cfgIn)),
+                          std::istreambuf_iterator<char>());
+    cfgIn.close();
 
-    // add the modual to the config file
-    std::fstream configFile(cli.configFile, std::ios::app | std::ios::in);
-    // if the last line is not a newline add a newline
-    if (c != '\n') {
-      configFile << '\n';
+    const std::string depHeader = "[dependencies]";
+    const std::string entry = modualName + " = \"./src/" + modualName + ".af\"\n";
+
+    if (cfgContent.find(depHeader) == std::string::npos) {
+      if (!cfgContent.empty() && cfgContent.back() != '\n') cfgContent += '\n';
+      cfgContent += depHeader + "\n" + entry;
+    } else {
+      if (!cfgContent.empty() && cfgContent.back() != '\n') cfgContent += '\n';
+      cfgContent += entry;
     }
 
-    configFile << "m " << modualName << "\n";
+    std::ofstream cfgOut(cli.configFile, std::ios::trunc);
+    cfgOut << cfgContent;
+    cfgOut.close();
     return 0;
   }
   if (value == "update") {
@@ -371,10 +375,10 @@ void buildTemplate(std::string value) {
 
   outfile = std::ofstream(value + "/aflat.cfg");
 
-  // Write the standard Config file
-  outfile << "; Aflat Config File\n";
-  outfile << "e main\n";
-  outfile << "t test/test\n";
+  // Write the standard Config file in INI format
+  outfile << "[build]\n";
+  outfile << "main = main\n";
+  outfile << "test = test/test\n";
   outfile.close();
 }
 
@@ -396,9 +400,11 @@ void libTemplate(std::string value) {
   outfile.close();
 
   outfile = std::ofstream(value + "/aflat.cfg");
-  outfile << "; Aflat Config File\n";
-  outfile << "m mod\n";
-  outfile << "t test/test\n";
+  outfile << "[build]\n";
+  outfile << "main = mod\n";
+  outfile << "test = test/test\n";
+  outfile << "\n[dependencies]\n";
+  outfile << "mod = \"./src/mod.af\"\n";
   outfile.close();
 
   outfile = std::ofstream(value + "/src/test/test.af");
