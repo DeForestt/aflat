@@ -23,9 +23,9 @@ void CompileProgress::update(const std::string& src, const std::string& state) {
   if (it == index_.end()) return;
   size_t line = it->second;
   size_t linesUp = sources_.size() - line;
-  std::cout << "\033[" << linesUp << "A";     // move up
-  std::cout << "\r\033[K";                     // clear line
-  std::cout << "[" << state << "] " << src;    // print new state
-  std::cout << "\033[" << linesUp << "B";     // move back down
+  std::cout << "\033[" << linesUp << "A";    // move up
+  std::cout << "\r\033[K";                   // clear line
+  std::cout << "[" << state << "] " << src;  // print new state
+  std::cout << "\033[" << linesUp << "B";    // move back down
   std::cout.flush();
 }

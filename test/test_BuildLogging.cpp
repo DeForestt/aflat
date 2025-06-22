@@ -1,7 +1,7 @@
 #include <filesystem>
 #include <fstream>
-#include <sstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "Configs.hpp"
@@ -20,8 +20,8 @@ TEST_CASE("build logs compile states", "[build]") {
   std::stringstream buffer;
   auto *oldBuf = std::cout.rdbuf(buffer.rdbuf());
 
-  bool result = build("tmp/simple.af", "tmp/simple.s", cfg::Mutability::Strict,
-                       false);
+  bool result =
+      build("tmp/simple.af", "tmp/simple.s", cfg::Mutability::Strict, false);
   std::cout.flush();
   std::cout.rdbuf(oldBuf);
 

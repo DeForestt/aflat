@@ -18,4 +18,4 @@ class CompileProgress {
   bool quiet_ = false;
 };
 
-#endif // AFLAT_PROGRESS_HPP
+#endif  // AFLAT_PROGRESS_HPP
