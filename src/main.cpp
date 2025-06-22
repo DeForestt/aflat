@@ -18,8 +18,8 @@
 #include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
-#include "Scanner.hpp"
 #include "Progress.hpp"
+#include "Scanner.hpp"
 
 std::string preProcess(std::string input);
 std::string getExePath();
@@ -58,7 +58,6 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     std::string pName = cli.args[0];
-    std::cout << "creating " << pName << '\n';
     if (cli.args.size() == 2 && cli.args[1] == "lib") {
       libTemplate(pName);
     } else {
@@ -78,6 +77,7 @@ int main(int argc, char *argv[]) {
     config.debug = cli.debug;
     if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 'e')) {
+      std::cout << "running " << config.outPutFile << '\n';
       auto of = config.outPutFile;
       if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
         of = "./" + config.outPutFile;
@@ -533,8 +533,10 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   }
 
   std::vector<std::string> sources;
-  for (const auto &mod : config.modules) sources.push_back("./src/" + mod + ".af");
-  for (const auto &file : config.cFiles) sources.push_back("./src/" + file + ".c");
+  for (const auto &mod : config.modules)
+    sources.push_back("./src/" + mod + ".af");
+  for (const auto &file : config.cFiles)
+    sources.push_back("./src/" + file + ".c");
 
   CompileProgress progress(sources, gQuiet);
   if (!gQuiet) gProgress = &progress;
@@ -634,5 +636,6 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     }
   }
   gProgress = nullptr;
+  std::cout << std::endl;
   return true;
 }
