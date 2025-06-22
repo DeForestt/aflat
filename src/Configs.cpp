@@ -27,7 +27,8 @@ cfg::Config cfg::getConfig(std::string content) {
       if (line.empty() || line[0] == ';') continue;
       if (line.front() == '[' && line.back() == ']') {
         section = line.substr(1, line.size() - 2);
-        std::transform(section.begin(), section.end(), section.begin(), ::tolower);
+        std::transform(section.begin(), section.end(), section.begin(),
+                       ::tolower);
         continue;
       }
       auto eq = line.find('=');
@@ -40,7 +41,8 @@ cfg::Config cfg::getConfig(std::string content) {
         value = value.substr(1, value.size() - 2);
       }
       std::string lowerKey = key;
-      std::transform(lowerKey.begin(), lowerKey.end(), lowerKey.begin(), ::tolower);
+      std::transform(lowerKey.begin(), lowerKey.end(), lowerKey.begin(),
+                     ::tolower);
 
       if (section == "build") {
         if (lowerKey == "output") {

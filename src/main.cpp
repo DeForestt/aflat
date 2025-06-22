@@ -95,9 +95,8 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     std::string modualName = cli.args[0];
-    std::string srcName = value == "module"
-                            ? "./src/" + modualName + "/mod.af"
-                            : "./src/" + modualName + ".af";
+    std::string srcName = value == "module" ? "./src/" + modualName + "/mod.af"
+                                            : "./src/" + modualName + ".af";
     std::string headerName = "./head/" + modualName + ".gs";
 
     if (value == "module") {
@@ -132,15 +131,14 @@ int main(int argc, char *argv[]) {
 
     std::ifstream cfgIn(cli.configFile);
     std::string cfgContent((std::istreambuf_iterator<char>(cfgIn)),
-                          std::istreambuf_iterator<char>());
+                           std::istreambuf_iterator<char>());
     cfgIn.close();
 
     const std::string depHeader = "[dependencies]";
     const std::string entry =
-        modualName +
-        (value == "module"
-             ? " = \"./src/" + modualName + "/mod.af\"\n"
-             : " = \"./src/" + modualName + ".af\"\n");
+        modualName + (value == "module"
+                          ? " = \"./src/" + modualName + "/mod.af\"\n"
+                          : " = \"./src/" + modualName + ".af\"\n");
 
     if (cfgContent.find(depHeader) == std::string::npos) {
       if (!cfgContent.empty() && cfgContent.back() != '\n') cfgContent += '\n';
