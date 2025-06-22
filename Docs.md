@@ -849,7 +849,10 @@ The package manager is used to create a module.  The syntax is:
 ```bash
 aflat module <module name>
 ```
-This will create a source file in the src directory.  It will also add an entry under `[dependencies]` in `aflat.cfg` so the new module is compiled.
+This creates a directory under `src/` matching the module name and places
+`mod.af` inside. An entry is added under `[dependencies]` in `aflat.cfg` so the
+new module is compiled. For a single `.af` file without a folder, use
+`aflat file <name>` instead.
 ## Ownership, References, and Selling
 AFlat uses explicit ownership. Objects live until they go out of scope or are deleted. Class objects are passed by reference automatically.
 

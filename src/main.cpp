@@ -89,29 +89,33 @@ int main(int argc, char *argv[]) {
     }
     return 0;
   }
-  if (value == "add" || value == "module") {
+  if (value == "add" || value == "module" || value == "file") {
     if (cli.args.empty()) {
       printUsage(argv[0]);
       return 1;
     }
     std::string modualName = cli.args[0];
-    std::string srcName = "./src/" + modualName + ".af";
+    std::string srcName = value == "module"
+                            ? "./src/" + modualName + "/mod.af"
+                            : "./src/" + modualName + ".af";
     std::string headerName = "./head/" + modualName + ".gs";
 
-    std::string path = "";
+    if (value == "module") {
+      std::filesystem::create_directories("./src/" + modualName);
+    } else {
+      std::string path = "";
 
-    // Check if the modual name has a path
-    if (modualName.find("/") != std::string::npos) {
-      path = modualName.substr(0, modualName.find_last_of("/"));
-    }
+      if (modualName.find("/") != std::string::npos) {
+        path = modualName.substr(0, modualName.find_last_of("/"));
+      }
 
-    // Check if the modual path exists
-    if (path != "") {
-      if (!std::filesystem::exists(path)) {
-        // Create the paths
+      if (!path.empty() && !std::filesystem::exists("./src/" + path)) {
         std::filesystem::create_directories("./src/" + path);
-        if (value == "add")
-          std::filesystem::create_directories("./head/" + path);
+      }
+
+      if (value == "add" && !path.empty() &&
+          !std::filesystem::exists("./head/" + path)) {
+        std::filesystem::create_directories("./head/" + path);
       }
     }
 
@@ -132,7 +136,11 @@ int main(int argc, char *argv[]) {
     cfgIn.close();
 
     const std::string depHeader = "[dependencies]";
-    const std::string entry = modualName + " = \"./src/" + modualName + ".af\"\n";
+    const std::string entry =
+        modualName +
+        (value == "module"
+             ? " = \"./src/" + modualName + "/mod.af\"\n"
+             : " = \"./src/" + modualName + ".af\"\n");
 
     if (cfgContent.find(depHeader) == std::string::npos) {
       if (!cfgContent.empty() && cfgContent.back() != '\n') cfgContent += '\n';
