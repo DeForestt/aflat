@@ -32,6 +32,7 @@ bool compileCFile(const std::string &path, bool debug);
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 bool runConfig(cfg::Config &config, const std::string &libPath);
 
+#ifndef AFLAT_TEST
 int main(int argc, char *argv[]) {
   CommandLineOptions cli;
   if (!parseCommandLine(argc, argv, cli)) {
@@ -192,12 +193,15 @@ int main(int argc, char *argv[]) {
   }
   return 0;
 }
+#endif
 
 bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug) {
   bool success = true;
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;
+  std::string origPath = path;
+  std::cout << "[parsing] " << origPath << std::endl;
 
   auto filename = getExePath();
   auto wd = std::filesystem::current_path();
@@ -241,6 +245,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     gen::CodeGenerator genny(outputID, parser, content);
     genny.mutability = mutability;
     auto file = genny.GenSTMT(Prog);
+    std::cout << "[generating] " << origPath << std::endl;
     file.collect();
     if (genny.hasError()) {
       success = false;
@@ -320,6 +325,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
       ofs << file.bss.pop()->toString();
     }
     ofs.close();
+    std::cout << "[done] " << origPath << std::endl;
   } catch (err::Exception &e) {
     success = false;
     int line = error::extractLine(e.errorMsg);
@@ -460,8 +466,12 @@ void ensureBinPath(const std::string &path,
 bool compileCFile(const std::string &path, bool debug) {
   std::string src = "./src/" + path + ".c";
   std::string dst = "./bin/" + path + ".s";
+  std::cout << "[parsing] " << src << std::endl;
   std::string cmd = compilerutils::buildCompileCmd(src, dst, debug);
-  return system(cmd.c_str()) == 0;
+  std::cout << "[generating] " << src << std::endl;
+  bool result = system(cmd.c_str()) == 0;
+  if (result) std::cout << "[done] " << src << std::endl;
+  return result;
 }
 
 bool runConfig(cfg::Config &config, const std::string &libPath) {
@@ -480,6 +490,14 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     config.modules.push_back(entryPoint);
   } else if (pmode == 't') {
     config.modules.push_back(config.testFile);
+  }
+
+  std::vector<std::string> sources;
+  for (const auto &mod : config.modules) sources.push_back("./src/" + mod + ".af");
+  for (const auto &file : config.cFiles) sources.push_back("./src/" + file + ".c");
+
+  for (const auto &src : sources) {
+    std::cout << "[waiting] " << src << std::endl;
   }
 
   for (auto mod : config.modules) {
