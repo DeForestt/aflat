@@ -7,6 +7,9 @@ struct CommandLineOptions {
   bool debug = false;
   bool traceAlerts = false;
   bool quiet = false;
+  bool updateDeps = false;
+  bool cleanDeps = false;
+  std::string installName;
   std::string outputFile;  // set via -o when compiling single files
   std::string configFile = "aflat.cfg";
   std::string command;

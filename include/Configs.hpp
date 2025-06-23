@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace cfg {
@@ -10,6 +11,7 @@ struct Config {
   std::string aflatVersion;
   std::vector<std::string> modules;
   std::vector<std::string> cFiles;
+  std::unordered_map<std::string, std::string> dependencies;
   std::string testFile;
   std::string entryPoint;
   std::string outPutFile = "./bin/a.out";
@@ -20,6 +22,7 @@ struct Config {
 };
 
 Config getConfig(std::string content);
-Config loadConfig(const std::string &cfgFile);
+Config loadConfig(const std::string &cfgFile, bool updateDeps = false,
+                  bool cleanDeps = false);
 
 }  // namespace cfg
