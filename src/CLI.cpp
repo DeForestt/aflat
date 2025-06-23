@@ -18,8 +18,8 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
                                  {nullptr, 0, nullptr, 0}};
 
   int opt;
-  while ((opt = getopt_long(argc, argv, "hdo:tc:qUKn:", longOptions, nullptr)) !=
-         -1) {
+  while ((opt = getopt_long(argc, argv, "hdo:tc:qUKn:", longOptions,
+                            nullptr)) != -1) {
     switch (opt) {
       case 'o':
         opts.outputFile = optarg;

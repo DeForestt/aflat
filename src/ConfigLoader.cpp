@@ -1,8 +1,8 @@
+#include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <iterator>
 #include <iostream>
-#include <ctime>
+#include <iterator>
 
 #include "Configs.hpp"
 
@@ -36,7 +36,8 @@ Config loadConfig(const std::string &cfgFile, bool updateDeps, bool cleanDeps) {
 
         auto baseTmp = std::filesystem::path(".aflat/tmp/git");
         std::filesystem::create_directories(baseTmp);
-        auto tmpDir = baseTmp / (name + "-" + std::to_string(std::time(nullptr)));
+        auto tmpDir =
+            baseTmp / (name + "-" + std::to_string(std::time(nullptr)));
 
         std::string cmd = "git clone --depth 1 " + url + " " + tmpDir.string();
         if (system(cmd.c_str()) != 0) {
@@ -47,23 +48,26 @@ Config loadConfig(const std::string &cfgFile, bool updateDeps, bool cleanDeps) {
 
         auto srcDir = tmpDir / "src";
         if (!std::filesystem::exists(srcDir)) {
-          std::cerr << "Dependency " << name
-                    << " missing src/ directory" << std::endl;
+          std::cerr << "Dependency " << name << " missing src/ directory"
+                    << std::endl;
           std::filesystem::remove_all(tmpDir);
           continue;
         }
 
         std::filesystem::create_directories(srcPath);
-        std::filesystem::copy(srcDir, srcPath,
-                              std::filesystem::copy_options::recursive |
-                                  std::filesystem::copy_options::overwrite_existing);
+        std::filesystem::copy(
+            srcDir, srcPath,
+            std::filesystem::copy_options::recursive |
+                std::filesystem::copy_options::overwrite_existing);
 
         auto repoCfg = tmpDir / "aflat.cfg";
         if (std::filesystem::exists(repoCfg)) {
-          std::filesystem::copy_file(repoCfg, cfgPath,
-                                    std::filesystem::copy_options::overwrite_existing);
+          std::filesystem::copy_file(
+              repoCfg, cfgPath,
+              std::filesystem::copy_options::overwrite_existing);
         } else {
-          std::cerr << "Warning: aflat.cfg missing in repo " << url << std::endl;
+          std::cerr << "Warning: aflat.cfg missing in repo " << url
+                    << std::endl;
         }
 
         std::filesystem::remove_all(tmpDir);
