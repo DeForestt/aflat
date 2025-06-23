@@ -73,7 +73,8 @@ ast::Statement *Transform::parse(
   lex::Lexer l = lex::Lexer();
   PreProcessor pp = PreProcessor();
 
-  auto tokens = l.Scan(pp.PreProcess(result, gen::utils::getLibPath("head")));
+  auto tokens =
+      l.Scan(pp.PreProcess(result, gen::utils::getLibPath("head")));
   tokens.invert();
   // parse the file
   ast::Statement *statement = generator.parser.parseStmt(tokens);

@@ -44,8 +44,11 @@ PreProcessor::~PreProcessor() {
   // dtor
 }
 
-std::string PreProcessor::PreProcess(std::string code, std::string libPath) {
+std::string PreProcessor::PreProcess(std::string code, std::string libPath,
+                                     const std::string &currDir) {
   std::string output;
+  std::string prevRoot = this->root;
+  if (!currDir.empty()) this->root = currDir;
 
   // loop through each line of code
   std::stringstream input_stringstream(code);
@@ -92,6 +95,7 @@ std::string PreProcessor::PreProcess(std::string code, std::string libPath) {
     outfile << output;
     outfile.close();
   }
+  if (!currDir.empty()) this->root = prevRoot;
   return output;
 }
 
@@ -135,15 +139,19 @@ std::string PreProcessor::Include(std::string line, std::string libPath) {
     if (std::find(this->includes.begin(), this->includes.end(), path) ==
         this->includes.end()) {
       this->includes.push_back(path);
-      if (this->debug) return this->PreProcess(output, libPath);
-      output = this->PreProcess(output, libPath);
+      if (this->debug)
+        return this->PreProcess(output, libPath,
+                                 std::filesystem::path(path).parent_path().string());
+      output = this->PreProcess(output, libPath,
+                                std::filesystem::path(path).parent_path().string());
       output.reserve(output.size());
       cleanPut = std::accumulate(output.begin(), output.end(), std::string(),
                                  [](std::string &a, char b) {
                                    if (b != '\n') a += b;
                                    return a;
                                  });
-      return this->PreProcess(cleanPut, libPath);
+      return this->PreProcess(cleanPut, libPath,
+                              std::filesystem::path(path).parent_path().string());
     }
     return "";
   } else {

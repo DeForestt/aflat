@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <unordered_map>
+#include <filesystem>
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
@@ -160,7 +161,9 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     lex::Lexer l = lex::Lexer();
     PreProcessor pp = PreProcessor();
 
-    auto tokens = l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head")));
+    auto tokens = l.Scan(pp.PreProcess(
+        text, gen::utils::getLibPath("head"),
+        std::filesystem::path(this->path).parent_path().string()));
     tokens.invert();
     // parse the file
     parse::Parser p = parse::Parser();
@@ -220,7 +223,9 @@ gen::GenerationResult const Import::generateClasses(
     lex::Lexer l = lex::Lexer();
     PreProcessor pp = PreProcessor();
 
-    auto tokens = l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head")));
+    auto tokens = l.Scan(pp.PreProcess(
+        text, gen::utils::getLibPath("head"),
+        std::filesystem::path(this->path).parent_path().string()));
     tokens.invert();
     parse::Parser p = parse::Parser();
     if (this->path.find("./") != std::string::npos)

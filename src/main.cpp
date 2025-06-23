@@ -249,7 +249,8 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
   try {
     try {
       PreProcessor pp;
-      tokens = scanner.Scan(pp.PreProcess(content, libPath));
+      tokens = scanner.Scan(pp.PreProcess(
+          content, libPath, std::filesystem::path(path).parent_path().string()));
     } catch (int x) {
       int line = 1;
       for (int i = 0; i < x && i < content.size(); ++i)

@@ -13,7 +13,7 @@
 TEST_CASE("Parser handles mixed import of classes and functions", "[parser]") {
   lex::Lexer l;
   PreProcessor pp;
-  auto code = pp.PreProcess("import Foo, {bar} from \"Mod\" under m;", "");
+  auto code = pp.PreProcess("import Foo, {bar} from \"Mod\" under m;", "", "");
   auto tokens = l.Scan(code);
   tokens.invert();
   parse::Parser p;
@@ -37,7 +37,7 @@ TEST_CASE("ImportsOnly ignores functions in mixed import", "[codegen]") {
 
   lex::Lexer l;
   PreProcessor pp;
-  auto code = pp.PreProcess("import Foo, {bar} from \"./Temp\" under m;", "");
+  auto code = pp.PreProcess("import Foo, {bar} from \"./Temp\" under m;", "", "");
   auto tokens = l.Scan(code);
   tokens.invert();
   parse::Parser p;
@@ -69,7 +69,7 @@ TEST_CASE("Import applies nested namespaces", "[namespaces]") {
 
   lex::Lexer l;
   PreProcessor pp;
-  auto code = pp.PreProcess("import {call} from \"./Outer\";", "");
+  auto code = pp.PreProcess("import {call} from \"./Outer\";", "", "");
   auto tokens = l.Scan(code);
   tokens.invert();
   parse::Parser p;
@@ -88,7 +88,7 @@ TEST_CASE("Import applies nested namespaces", "[namespaces]") {
   outerFile.close();
   lex::Lexer l2;
   PreProcessor pp2;
-  auto t2 = l2.Scan(pp2.PreProcess(outerCode, ""));
+  auto t2 = l2.Scan(pp2.PreProcess(outerCode, "", ""));
   t2.invert();
   parse::Parser p2;
   ast::Statement *root = p2.parseStmt(t2);
