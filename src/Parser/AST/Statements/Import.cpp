@@ -127,13 +127,17 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 
 gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   auto OutputFile = asmc::File();
-  if (this->path.find("./") == std::string::npos) {
-    this->path = gen::utils::getLibPath("src") + this->path;
-  };
-
-  if (this->path.substr(this->path.length() - 3, 3) != ".af") {
-    this->path = this->path + ".af";
-  };
+  std::filesystem::path importPath = this->path;
+  if (importPath.is_relative()) {
+    if (this->path.find("./") == std::string::npos)
+      importPath = gen::utils::getLibPath("src") / importPath;
+    else
+      importPath = generator.cwd / importPath;
+  }
+  if (importPath.extension() != ".af") importPath += ".af";
+  this->path = importPath.string();
+  auto prevCwd = generator.cwd;
+  generator.cwd = importPath.parent_path();
 
   std::string id = this->path.substr(this->path.find_last_of("/") + 1);
   // remove the .af extension
@@ -161,9 +165,9 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     lex::Lexer l = lex::Lexer();
     PreProcessor pp = PreProcessor();
 
-    auto tokens = l.Scan(pp.PreProcess(
-        text, gen::utils::getLibPath("head"),
-        std::filesystem::path(this->path).parent_path().string()));
+    auto tokens =
+        l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head"),
+                             generator.cwd.string()));
     tokens.invert();
     // parse the file
     parse::Parser p = parse::Parser();
@@ -187,19 +191,24 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     }
   }
   if (this->hasFunctions) generator.nameSpaceTable.insert(this->nameSpace, id);
+  generator.cwd = prevCwd;
   return {OutputFile, std::nullopt};
 }
 
 gen::GenerationResult const Import::generateClasses(
     gen::CodeGenerator &generator) {
   auto OutputFile = asmc::File();
-  if (this->path.find("./") == std::string::npos) {
-    this->path = gen::utils::getLibPath("src") + this->path;
-  };
-
-  if (this->path.substr(this->path.length() - 3, 3) != ".af") {
-    this->path = this->path + ".af";
-  };
+  std::filesystem::path importPath = this->path;
+  if (importPath.is_relative()) {
+    if (this->path.find("./") == std::string::npos)
+      importPath = gen::utils::getLibPath("src") / importPath;
+    else
+      importPath = generator.cwd / importPath;
+  }
+  if (importPath.extension() != ".af") importPath += ".af";
+  this->path = importPath.string();
+  auto prevCwd = generator.cwd;
+  generator.cwd = importPath.parent_path();
 
   std::string id = this->path.substr(this->path.find_last_of("/") + 1);
   id = id.substr(0, id.find_last_of("."));
@@ -223,9 +232,9 @@ gen::GenerationResult const Import::generateClasses(
     lex::Lexer l = lex::Lexer();
     PreProcessor pp = PreProcessor();
 
-    auto tokens = l.Scan(pp.PreProcess(
-        text, gen::utils::getLibPath("head"),
-        std::filesystem::path(this->path).parent_path().string()));
+    auto tokens =
+        l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head"),
+                             generator.cwd.string()));
     tokens.invert();
     parse::Parser p = parse::Parser();
     if (this->path.find("./") != std::string::npos)
@@ -253,6 +262,7 @@ gen::GenerationResult const Import::generateClasses(
     OutputFile << generator.GenSTMT(statement);
   }
 
+  generator.cwd = prevCwd;
   return {OutputFile, std::nullopt};
 }
 }  // namespace ast

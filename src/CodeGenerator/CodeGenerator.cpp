@@ -2,6 +2,7 @@
 
 #include <execinfo.h>
 #include <unistd.h>
+#include <filesystem>
 
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -59,8 +60,9 @@ void gen::CodeGenerator::alert(std::string message, bool error,
 };
 
 gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser,
-                                  const std::string &source)
-    : parser(parser), source(source) {
+                                  const std::string &source,
+                                  const std::string &cwd)
+    : parser(parser), source(source), cwd(cwd.empty() ? std::filesystem::current_path() : std::filesystem::path(cwd)) {
   this->registers << asmc::Register("rax", "eax", "ax", "al");
   this->registers << asmc::Register("rcx", "ecx", "cx", "cl");
   this->registers << asmc::Register("rdx", "edx", "dx", "dl");

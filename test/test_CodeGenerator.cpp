@@ -1,10 +1,12 @@
 #include "CodeGenerator/MockCodeGenerator.hpp"
+#include <filesystem>
 #include "Parser/AST.hpp"
 #include "catch.hpp"
 
-#define MOCKGEN                  \
-  auto parser = parse::Parser(); \
-  auto mockGen = test::mockGen::CodeGenerator("mod", parser, "");
+#define MOCKGEN                                   \
+  auto parser = parse::Parser();                  \
+  auto mockGen = test::mockGen::CodeGenerator(    \
+      "mod", parser, "", std::filesystem::current_path().string());
 
 bool compareFunc(ast::Function F, std::string input) {
   if (input == F.ident.ident) {

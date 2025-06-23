@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include "CodeGenerator/MockCodeGenerator.hpp"
+#include <filesystem>
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
@@ -47,7 +48,8 @@ TEST_CASE("ImportsOnly ignores functions in mixed import", "[codegen]") {
   auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
   REQUIRE(imp != nullptr);
 
-  test::mockGen::CodeGenerator gen("mod", p, "");
+  test::mockGen::CodeGenerator gen(
+      "mod", p, "", std::filesystem::current_path().string());
   gen.ImportsOnly(imp);
 
   REQUIRE(gen.includedClasses.contains("Temp::Foo"));
@@ -79,7 +81,8 @@ TEST_CASE("Import applies nested namespaces", "[namespaces]") {
   auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
   REQUIRE(imp != nullptr);
 
-  test::mockGen::CodeGenerator gen("mod", p, "");
+  test::mockGen::CodeGenerator gen(
+      "mod", p, "", std::filesystem::current_path().string());
   imp->generate(gen);
 
   std::ifstream outerFile("Outer.af");
