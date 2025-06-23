@@ -178,18 +178,35 @@ int main(int argc, char *argv[]) {
       printUsage(argv[0]);
       return 1;
     }
-    std::string gitRepo = cli.args[0];
-    // if repo starts with 'https://' remove it
-    if (gitRepo.find("https://") != std::string::npos) {
-      gitRepo = gitRepo.substr(8);
+    std::string repoUrl = cli.args[0];
+    std::string name = cli.installName;
+    if (name.empty()) {
+      size_t slash = repoUrl.find_last_of('/');
+      name = slash == std::string::npos ? repoUrl : repoUrl.substr(slash + 1);
+      if (name.size() > 4 && name.substr(name.size() - 4) == ".git")
+        name = name.substr(0, name.size() - 4);
     }
 
-    std::string install_command =
-        "curl -s "
-        "https://aflat-server.fly.dev/"
-        "api/package/" +
-        gitRepo + " | bash";
-    [[maybe_unused]] int rc = system(install_command.c_str());
+    std::ifstream cfgIn(cli.configFile);
+    std::string cfgContent((std::istreambuf_iterator<char>(cfgIn)),
+                           std::istreambuf_iterator<char>());
+    cfgIn.close();
+
+    const std::string depHeader = "[dependencies]";
+    const std::string entry = name + " = \"" + repoUrl + "\"\n";
+
+    if (cfgContent.find(depHeader) == std::string::npos) {
+      if (!cfgContent.empty() && cfgContent.back() != '\n') cfgContent += '\n';
+      cfgContent += depHeader + "\n" + entry;
+    } else {
+      if (!cfgContent.empty() && cfgContent.back() != '\n') cfgContent += '\n';
+      cfgContent += entry;
+    }
+
+    std::ofstream cfgOut(cli.configFile, std::ios::trunc);
+    cfgOut << cfgContent;
+    cfgOut.close();
+    return 0;
   }
   std::string outputFile = cli.outputFile;
   if (outputFile.empty() && !cli.args.empty()) {

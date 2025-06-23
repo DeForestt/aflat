@@ -12,12 +12,13 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
                                  {"quiet", no_argument, nullptr, 'q'},
                                  {"trace-alerts", no_argument, nullptr, 't'},
                                  {"config", required_argument, nullptr, 'c'},
+                                 {"name", required_argument, nullptr, 'n'},
                                  {"update-deps", no_argument, nullptr, 'U'},
                                  {"clean-deps", no_argument, nullptr, 'K'},
                                  {nullptr, 0, nullptr, 0}};
 
   int opt;
-  while ((opt = getopt_long(argc, argv, "hdo:tc:qUK", longOptions, nullptr)) !=
+  while ((opt = getopt_long(argc, argv, "hdo:tc:qUKn:", longOptions, nullptr)) !=
          -1) {
     switch (opt) {
       case 'o':
@@ -34,6 +35,9 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
         break;
       case 'c':
         opts.configFile = optarg;
+        break;
+      case 'n':
+        opts.installName = optarg;
         break;
       case 'U':
         opts.updateDeps = true;
@@ -71,13 +75,14 @@ void printUsage(const char *prog) {
       << "  add <module>        Add a header/src pair\n"
       << "  file <name>         Add a single source file\n"
       << "  module <name>       Add a folder-based module (mod.af)\n"
-      << "  install <repo>      Install a package\n"
+      << "  install <repo>      Add git dependency (use --name to set module)\n"
       << "  update              Update AFlat\n"
       << "  clean               Remove ./bin directory\n"
       << "  <file> [out.s]      Compile single file\n\n"
       << "Options:\n"
       << "  -o, --output <file> Output file when compiling a single file\n"
       << "  -c, --config <file> Use alternative config file\n"
+      << "  -n, --name <name>   Module name when installing\n"
       << "  -d, --debug         Enable debug information\n"
       << "  -q, --quiet         Suppress build progress output\n"
       << "  -t, --trace-alerts  Trace CodeGenerator alerts\n"
