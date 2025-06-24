@@ -839,6 +839,12 @@ ast::Statement *parse::Parser::parseArgs(
         dec->type = *typeList[obj.meta];
       }
 
+      auto templateTypes =
+          this->parseTemplateTypeList(tokens, obj.lineCount);
+      if (!templateTypes.empty()) {
+        for (auto &tName : templateTypes) dec->type.typeName += "." + tName;
+      }
+
       std::string requestType = "";
       links::LinkedList<std::string> modList;
       // Handle typeOf
