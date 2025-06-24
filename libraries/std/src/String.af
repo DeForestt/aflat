@@ -404,7 +404,7 @@ safe dynamic class string {
         return my;
     };
 
-    safe fn debugRefCount() {
+    fn debugRefCount() {
         if my.debug & my.head != NULL {
             if my.refcount < 0 {
                 my.refcount = 0;
