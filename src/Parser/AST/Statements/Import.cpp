@@ -1,8 +1,8 @@
 #include "Parser/AST/Statements/Import.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <unordered_map>
-#include <filesystem>
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
@@ -156,6 +156,7 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
       file.open(this->path);
       if (!file.is_open()) {
         generator.alert("File " + this->path + " not found");
+        generator.cwd = prevCwd;
         return {OutputFile, std::nullopt};
       }
     }
@@ -165,9 +166,8 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     lex::Lexer l = lex::Lexer();
     PreProcessor pp = PreProcessor();
 
-    auto tokens =
-        l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head"),
-                             generator.cwd.string()));
+    auto tokens = l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head"),
+                                       generator.cwd.string()));
     tokens.invert();
     // parse the file
     parse::Parser p = parse::Parser();
@@ -223,6 +223,7 @@ gen::GenerationResult const Import::generateClasses(
       file.open(this->path);
       if (!file.is_open()) {
         generator.alert("File " + this->path + " not found");
+        generator.cwd = prevCwd;
         return {OutputFile, std::nullopt};
       }
     }
@@ -232,9 +233,8 @@ gen::GenerationResult const Import::generateClasses(
     lex::Lexer l = lex::Lexer();
     PreProcessor pp = PreProcessor();
 
-    auto tokens =
-        l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head"),
-                             generator.cwd.string()));
+    auto tokens = l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head"),
+                                       generator.cwd.string()));
     tokens.invert();
     parse::Parser p = parse::Parser();
     if (this->path.find("./") != std::string::npos)
