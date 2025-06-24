@@ -427,6 +427,31 @@ class <class name>{
 ```
 - A class function automaticly creates a pointer to the object that called it.  It is stored in the my variable.  This is useful for functions that need to access the class variables.
 
+### Safe methods
+Use the `safe` keyword on a class method when it does not modify `my`. Only
+`safe` methods may be invoked on an `immutable` instance. Attempting to call a
+non-safe method on an immutable object is a compile-time error.
+
+```aflat
+class Counter {
+    mutable int value = 0;
+
+    safe fn get() -> int {
+        return my.value;
+    };
+
+    fn inc() -> void {
+        my.value = my.value + 1;
+    };
+};
+
+fn main() -> int {
+    immutable Counter c = new Counter();
+    c.inc();      // error: cannot call non-safe method on immutable object
+    return c.get(); // ok
+};
+```
+
 ### Constructor
 the constructor is a special function that is called when an object is created. The constructor must have the name `init`.  The syntax is:
 ```js
@@ -876,6 +901,28 @@ fn take(mutable int &&x) -> void {
 fn main() -> int {
     int a = 10;
     take($a); // a is moved
+    return 0;
+};
+```
+
+### Immutable variables
+
+`immutable` enforces *deep* immutability. A variable declared with this modifier
+cannot be reassigned and every value reachable through it becomes read only.
+This differs from `const`, which only stops the variable itself from being
+rebound.
+
+```aflat
+class Box {
+    mutable int value = 0;
+};
+
+fn main() -> int {
+    const Box c1 = new Box();
+    c1.value = 5; // allowed - fields can change
+
+    immutable Box c2 = new Box();
+    c2.value = 5; // error: cannot modify field of immutable variable
     return 0;
 };
 ```
