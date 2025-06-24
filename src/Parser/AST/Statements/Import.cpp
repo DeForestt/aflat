@@ -129,9 +129,10 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   auto OutputFile = asmc::File();
   std::filesystem::path importPath = this->path;
   if (importPath.is_relative()) {
-    if (!this->path.empty() && this->path[0] == '.')
-    else
+    if (!this->path.empty() && this->path[0] == '.') {
+    } else {
       importPath = gen::utils::getLibPath("src") / importPath;
+    }
       this->path = this->path.substr(2);
       importPath = generator.cwd / this->path;
     }
@@ -175,9 +176,10 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     parse::Parser p = parse::Parser();
     ast::Statement *statement = p.parseStmt(tokens);
     auto Lowerer = parse::lower::Lowerer(statement);
-    if (!this->path.empty() && this->path[0] == '.')
-    else
+    if (!this->path.empty() && this->path[0] == '.') {
+    } else {
       importPath = gen::utils::getLibPath("src") / importPath;
+    }
   }
   std::unordered_map<std::string, std::string> nsMap;
   collectImportNamespaces(added, nsMap);
