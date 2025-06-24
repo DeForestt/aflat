@@ -150,6 +150,7 @@ ast::Statement *parse::Parser::parseStmt(
     tokens.pop();
 
     bool isMutable = true;
+    bool isImmutable = false;
     if (this->mutability == 0)
       isMutable = true;
     else
@@ -214,7 +215,7 @@ ast::Statement *parse::Parser::parseStmt(
     }
 
     static const std::unordered_set<std::string> accessModifiers = {
-        "const", "mutable", "public", "private", "static", "export"};
+        "const", "mutable", "immutable", "public", "private", "static", "export"};
 
     if (accessModifiers.count(obj.meta)) {
       while (accessModifiers.count(obj.meta)) {
@@ -222,6 +223,9 @@ ast::Statement *parse::Parser::parseStmt(
           isMutable = false;
         } else if (obj.meta == "mutable") {
           isMutable = true;
+        } else if (obj.meta == "immutable") {
+          isMutable = false;
+          isImmutable = true;
         } else if (obj.meta == "public") {
           scope = ast::Public;
         } else if (obj.meta == "private") {
@@ -243,6 +247,14 @@ ast::Statement *parse::Parser::parseStmt(
 
     if (obj.meta == "const") {
       isMutable = false;
+      if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
+        throw err::Exception("Expected statement after public on line " +
+                             std::to_string(obj.lineCount));
+      obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+      tokens.pop();
+    } else if (obj.meta == "immutable") {
+      isMutable = false;
+      isImmutable = true;
       if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
         throw err::Exception("Expected statement after public on line " +
                              std::to_string(obj.lineCount));
@@ -454,14 +466,17 @@ ast::Statement *parse::Parser::parseStmt(
                                        scopeName, tokens, *this, optional);
           } else if (sym.Sym == '=') {
             tokens.pop();
-            output = new ast::DecAssign(
-                new ast::Declare(ident.meta, scope, obj.meta, isMutable, type,
-                                 requestType, modList),
-                isMutable, tokens, *this, annotations);
+            auto decl = new ast::Declare(ident.meta, scope, obj.meta, isMutable,
+                                       type, requestType, modList);
+            decl->readOnly = isImmutable;
+            output = new ast::DecAssign(decl, isMutable, tokens, *this,
+                                       annotations);
           }
         } else {
-          output = new ast::Declare(ident.meta, scope, obj.meta, isMutable,
-                                    type, requestType, modList);
+          auto decl = new ast::Declare(ident.meta, scope, obj.meta, isMutable,
+                                       type, requestType, modList);
+          decl->readOnly = isImmutable;
+          output = decl;
         }
       } else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
         auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -804,6 +819,7 @@ ast::Statement *parse::Parser::parseArgs(
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto obj = *dynamic_cast<lex::LObj *>(tokens.peek());
     bool isMutable;
+    bool isImmutable = false;
     if (this->mutability == 0)
       isMutable = true;
     else
@@ -811,6 +827,14 @@ ast::Statement *parse::Parser::parseArgs(
     tokens.pop();
     if (obj.meta == "const") {
       isMutable = false;
+      if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
+        throw err::Exception("Expected statement after public on line " +
+                             std::to_string(obj.lineCount));
+      obj = *dynamic_cast<lex::LObj *>(tokens.peek());
+      tokens.pop();
+    } else if (obj.meta == "immutable") {
+      isMutable = false;
+      isImmutable = true;
       if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
         throw err::Exception("Expected statement after public on line " +
                              std::to_string(obj.lineCount));
@@ -894,6 +918,7 @@ ast::Statement *parse::Parser::parseArgs(
         tokens.pop();
         dec->ident = ident.meta;
         dec->mut = isMutable;
+        dec->readOnly = isImmutable;
         dec->requestType = requestType;
         dec->modList = modList;
         output = dec;
