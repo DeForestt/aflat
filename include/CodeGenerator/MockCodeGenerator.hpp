@@ -7,7 +7,7 @@ class CodeGenerator : public gen::CodeGenerator {
 
  public:
   CodeGenerator(std::string moduleId, parse::Parser &parser,
-                const std::string &source = "");
+                const std::string &source = "", const std::string &cwd = "");
 
   bool canAssign(ast::Type type, std::string typeName, std::string fmt,
                  bool strict = false);

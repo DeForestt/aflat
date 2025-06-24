@@ -28,6 +28,10 @@ cd aflat
 mkdir bin
 make
 ```
+Once the compiler is built, generate the standard library objects:
+```bash
+./rebuild-libs.sh
+```
 I suggest creating an alias for main in your bashrc file.
 ```bash
 alias aflat="<aflat bin dir>/main"

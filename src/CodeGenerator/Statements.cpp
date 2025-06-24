@@ -205,10 +205,13 @@ asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
   } else if (dynamic_cast<ast::Import *>(STMT) != nullptr) {
     auto imp = dynamic_cast<ast::Import *>(STMT);
     if (imp->hasClasses) {
+      auto prev = this->cwd;
+      if (!imp->cwd.empty()) this->cwd = imp->cwd;
       if (imp->hasFunctions)
         imp->generateClasses(*this);
       else
         imp->generate(*this);
+      this->cwd = prev;
     }
   }
   return OutputFile;
