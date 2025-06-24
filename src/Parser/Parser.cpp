@@ -316,6 +316,11 @@ ast::Statement *parse::Parser::parseStmt(
                       ? this->parseFPointerType(tokens, obj.meta)
                       : *this->typeList[obj.meta];
 
+      auto templateTypes = this->parseTemplateTypeList(tokens, obj.lineCount);
+      if (!templateTypes.empty()) {
+        for (auto &tName : templateTypes) type.typeName += "." + tName;
+      }
+
       const auto ref = dynamic_cast<lex::Ref *>(tokens.peek());
       bool optional = false;
       if (ref) {
@@ -861,6 +866,11 @@ ast::Statement *parse::Parser::parseArgs(
         dec->type = this->parseFPointerType(tokens, obj.meta);
       } else {
         dec->type = *typeList[obj.meta];
+      }
+
+      auto templateTypes = this->parseTemplateTypeList(tokens, obj.lineCount);
+      if (!templateTypes.empty()) {
+        for (auto &tName : templateTypes) dec->type.typeName += "." + tName;
       }
 
       std::string requestType = "";

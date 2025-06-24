@@ -32,4 +32,9 @@ fn main() {
 
     let someVal = opt.some::<int>(99);
     print(someVal.or(0));
+
+    mutable option::<string> maybeString;
+    maybeString = opt.some(`Hello, World!`);
+    print(maybeString.or("Default String"));
 };
+
