@@ -171,3 +171,47 @@ TEST_CASE("Imports handle parent directory paths", "[imports]") {
   std::filesystem::remove_all("sub");
   std::filesystem::remove("Inner.af");
 }
+
+TEST_CASE("ImportsOnly uses import working directory", "[imports]") {
+  std::filesystem::create_directories("FlatLog/Logger");
+  std::ofstream logger("FlatLog/Logger/mod.af");
+  logger << "export class Logger {}\n";
+  logger.close();
+
+  std::ofstream mod("FlatLog/mod.af");
+  mod << "import Logger from \"./Logger\";\n";
+  mod << "export int info() { return 0; };\n";
+  mod.close();
+
+  std::ofstream main("main.af");
+  main << "import {info} from \"./FlatLog\" under log;\n";
+  main.close();
+
+  lex::Lexer l;
+  PreProcessor pp;
+  auto code =
+      pp.PreProcess("import {info} from \"./FlatLog\" under log;", "", "");
+  auto tokens = l.Scan(code);
+  tokens.invert();
+  parse::Parser p;
+  ast::Statement *stmt = p.parseStmt(tokens);
+  auto *seq = dynamic_cast<ast::Sequence *>(stmt);
+  REQUIRE(seq != nullptr);
+  auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
+  REQUIRE(imp != nullptr);
+
+  test::mockGen::CodeGenerator gen("mod", p, "",
+                                   std::filesystem::current_path().string());
+  imp->generate(gen);
+
+  auto path =
+      std::filesystem::absolute("FlatLog/mod.af").lexically_normal().string();
+  auto *added = gen.includedMemo.get(path);
+  REQUIRE(added != nullptr);
+
+  gen.cwd = std::filesystem::current_path();
+  REQUIRE_NOTHROW(gen.ImportsOnly(added));
+
+  std::filesystem::remove_all("FlatLog");
+  std::filesystem::remove("main.af");
+}

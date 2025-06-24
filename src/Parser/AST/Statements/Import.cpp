@@ -145,6 +145,8 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   std::string id = this->path.substr(this->path.find_last_of("/") + 1);
   // remove the .af extension
   id = id.substr(0, id.find_last_of("."));
+      this->cwd = std::filesystem::path(this->path).parent_path().string();
+      generator.cwd = std::filesystem::path(this->path).parent_path();
   ast::Statement *added = nullptr;
   if (generator.includedMemo.contains(this->path))
     added = generator.includedMemo.get(this->path);
@@ -232,6 +234,8 @@ gen::GenerationResult const Import::generateClasses(
         generator.cwd = prevCwd;
         return {OutputFile, std::nullopt};
       }
+      this->cwd = std::filesystem::path(this->path).parent_path().string();
+      generator.cwd = std::filesystem::path(this->path).parent_path();
     }
 
     std::string text = std::string((std::istreambuf_iterator<char>(file)),
