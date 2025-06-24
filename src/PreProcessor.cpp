@@ -116,7 +116,9 @@ std::string PreProcessor::Include(std::string line, std::string libPath) {
     if (relpath.find(".gs") == std::string::npos) {
       relpath += ".gs";
     }
-    path = (std::filesystem::path(this->root) / relpath).lexically_normal().string();
+    path = (std::filesystem::path(this->root) / relpath)
+               .lexically_normal()
+               .string();
   } else if (line.find("<") != std::string::npos) {
     // get the file name
     auto startPos = line.find_first_of('<') + 1;
@@ -126,7 +128,8 @@ std::string PreProcessor::Include(std::string line, std::string libPath) {
     if (relpath.find(".gs") == std::string::npos) {
       relpath += ".gs";
     }
-    path = (std::filesystem::path(libPath) / relpath).lexically_normal().string();
+    path =
+        (std::filesystem::path(libPath) / relpath).lexically_normal().string();
   }
   // check if the file exists
   if (std::filesystem::exists(path)) {
