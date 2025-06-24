@@ -48,7 +48,7 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
     // scope
     if (generator.scope == nullptr || generator.inFunction) {
       auto mod = gen::scope::ScopeManager::getInstance()->assign(
-          this->ident, this->type, false, this->mut);
+          this->ident, this->type, false, this->mut, this->readOnly);
       auto def = new asmc::Define();
       def->logicalLine = this->logicalLine;
       def->name = this->ident;
@@ -70,6 +70,7 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
       Symbol.type = this->type;
       Symbol.symbol = this->ident;
       Symbol.mutable_ = this->mut;
+      Symbol.readOnly = this->readOnly;
       Table->push(Symbol);
       // if the symbol is public add it to the public symbol table
       if (this->scope == ast::Public && generator.scope != nullptr)
@@ -92,6 +93,7 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
     Symbol.type = this->type;
     Symbol.symbol = this->ident;
     Symbol.mutable_ = this->mut;
+    Symbol.readOnly = this->readOnly;
     file.bss << label;
     file.bss << var;
     Table->push(Symbol);

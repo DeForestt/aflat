@@ -95,7 +95,8 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       }
 
       int byteMod = gen::scope::ScopeManager::getInstance()->assign(
-          dec->ident, dec->type, this->declare->mask, this->mute);
+          dec->ident, dec->type, this->declare->mask, this->mute,
+          this->declare->readOnly);
       auto s = gen::scope::ScopeManager::getInstance()->get(dec->ident);
       s->usable = false;
       s->refCount--;
@@ -165,6 +166,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
     Symbol.type = dec->type;
     Symbol.symbol = dec->ident;
     Symbol.mutable_ = this->mute;
+    Symbol.readOnly = this->declare->readOnly;
     auto Table = &generator.GlobalSymbolTable;
 
     auto var = new asmc::LinkTask();

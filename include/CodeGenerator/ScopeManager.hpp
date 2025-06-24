@@ -64,7 +64,8 @@ class ScopeManager {
   void operator=(ScopeManager const &) = delete;
 
   // Assign a new symbol and return the byteMod
-  int assign(std::string symbol, ast::Type type, bool mask, bool mut = true);
+  int assign(std::string symbol, ast::Type type, bool mask, bool mut = true,
+             bool readOnly = false);
 
   // Add to a symbols assign count
   void addAssign(std::string symbol, const bool get = true);
