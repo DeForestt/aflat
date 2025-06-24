@@ -131,8 +131,10 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   if (importPath.is_relative()) {
     if (this->path.find("./") == std::string::npos)
       importPath = gen::utils::getLibPath("src") / importPath;
-    else
-      importPath = generator.cwd / importPath;
+    else {
+      this->path = this->path.substr(2);
+      importPath = generator.cwd / this->path;
+    }
   }
   if (importPath.extension() != ".af") importPath += ".af";
   this->path = importPath.string();
