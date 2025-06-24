@@ -207,7 +207,7 @@ ast::Statement *parse::Parser::parseStmt(
         }
       }
 
-      // check if object.meta is calss or function
+      // check if object.meta is class or function
       static const std::unordered_set<std::string> classFunction = {"class",
                                                                     "fn"};
 
