@@ -304,6 +304,12 @@ ast::Statement *parse::Parser::parseStmt(
                       ? this->parseFPointerType(tokens, obj.meta)
                       : *this->typeList[obj.meta];
 
+      auto templateTypes =
+          this->parseTemplateTypeList(tokens, obj.lineCount);
+      if (!templateTypes.empty()) {
+        for (auto &tName : templateTypes) type.typeName += "." + tName;
+      }
+
       const auto ref = dynamic_cast<lex::Ref *>(tokens.peek());
       bool optional = false;
       if (ref) {
