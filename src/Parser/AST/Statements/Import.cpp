@@ -144,7 +144,7 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   std::string id = this->path.substr(this->path.find_last_of("/") + 1);
   // remove the .af extension
   id = id.substr(0, id.find_last_of("."));
-  ast::Statement *added;
+  ast::Statement *added = nullptr;
   if (generator.includedMemo.contains(this->path))
     added = generator.includedMemo.get(this->path);
   else {
