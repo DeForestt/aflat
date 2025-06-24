@@ -207,7 +207,12 @@ ast::Statement *parse::Parser::parseStmt(
         }
       }
 
-      if (obj.meta != "class" && (dynamicType || pedantic || safeType)) {
+      // check if object.meta is calss or function
+      static const std::unordered_set<std::string> classFunction = {"class",
+                                                                    "fn"};
+
+      if (classFunction.count(obj.meta) == 0 &&
+          (dynamicType || pedantic || safeType)) {
         throw err::Exception(
             "safe/dynamic/pedantic can only be used with classes or functions "
             "on line " +

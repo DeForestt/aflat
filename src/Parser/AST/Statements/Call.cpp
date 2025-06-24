@@ -11,6 +11,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   auto callFunction = ast::Function();
   auto shiftedFunction = ast::Function();
   auto publifyedFunction = ast::Function();
+  bool immutableSymbol = false;
 
   auto file = asmc::File();
   std::string mod = "";
@@ -201,6 +202,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     std::string pubname;
     gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(ident);
     if (sym == nullptr) generator.alert("cannot find object: " + ident);
+    immutableSymbol = immutableSymbol || sym->readOnly;
     allMods += sym->symbol + ".";
 
     ast::Type last = sym->type;
@@ -290,6 +292,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
             func->req = f->req;
             func->argTypes = f->argTypes;
             func->optConvertionIndices = f->optConvertionIndices;
+            func->safe = f->safe;
             pubname = sym->type.typeName;
             shift = false;
           }
@@ -305,6 +308,13 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           if (shift) ref->internal = true;
           mod = "pub_" + pubname + "_";
           if (!addPub) mod = "";
+
+          if (immutableSymbol && !func->safe) {
+            generator.alert("Immutable objects can only call safe functions: " +
+                                allMods + mod + func->ident.ident,
+                            true, __FILE__, __LINE__);
+          }
+
           gen::Expr exp;
           exp = generator.GenExpr(ref, file);
           asmc::Mov *mov = new asmc::Mov();
@@ -346,6 +356,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         }
       }
       mods.push(this->modList.shift());
+      immutableSymbol = immutableSymbol || sym->readOnly;
       last = sym->type;
       allMods += sym->symbol + ".";
       modCount++;
@@ -376,6 +387,11 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         t.size = asmc::QWord;
         func->argTypes = f->argTypes;
         func->argTypes.push_back(t);
+        if (immutableSymbol && !f->safe) {
+          generator.alert("Immutable objects can only call safe functions: " +
+                              func->ident.ident,
+                          true, __FILE__, __LINE__);
+        }
       };
     } else {
       argsCounter++;
@@ -389,6 +405,11 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         generator.alert("cannot find function: " + ident + " in " + cl->Ident);
       func->argTypes = f->argTypes;
       func->req = f->req;
+      if (immutableSymbol && !f->safe) {
+        generator.alert("Immutable objects can only call safe functions: " +
+                            func->ident.ident,
+                        true, __FILE__, __LINE__);
+      }
     }
     mod = "";
   }
