@@ -304,8 +304,7 @@ ast::Statement *parse::Parser::parseStmt(
                       ? this->parseFPointerType(tokens, obj.meta)
                       : *this->typeList[obj.meta];
 
-      auto templateTypes =
-          this->parseTemplateTypeList(tokens, obj.lineCount);
+      auto templateTypes = this->parseTemplateTypeList(tokens, obj.lineCount);
       if (!templateTypes.empty()) {
         for (auto &tName : templateTypes) type.typeName += "." + tName;
       }
@@ -845,8 +844,7 @@ ast::Statement *parse::Parser::parseArgs(
         dec->type = *typeList[obj.meta];
       }
 
-      auto templateTypes =
-          this->parseTemplateTypeList(tokens, obj.lineCount);
+      auto templateTypes = this->parseTemplateTypeList(tokens, obj.lineCount);
       if (!templateTypes.empty()) {
         for (auto &tName : templateTypes) dec->type.typeName += "." + tName;
       }

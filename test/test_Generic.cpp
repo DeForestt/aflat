@@ -23,8 +23,8 @@ TEST_CASE("generic type variable declaration", "[generics]") {
   ofs << "};\n";
   ofs.close();
 
-  bool result = build("tmp/generic.af", "tmp/generic.s", cfg::Mutability::Strict,
-                      false);
+  bool result =
+      build("tmp/generic.af", "tmp/generic.s", cfg::Mutability::Strict, false);
   if (fs::exists("tmp/generic.af")) fs::remove("tmp/generic.af");
   if (fs::exists("tmp/generic.s")) fs::remove("tmp/generic.s");
   fs::remove("tmp");
