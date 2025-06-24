@@ -404,7 +404,7 @@ safe dynamic class string {
         return my;
     };
 
-    fn debugRefCount() {
+    safe fn debugRefCount() {
         if my.debug & my.head != NULL {
             if my.refcount < 0 {
                 my.refcount = 0;
@@ -458,14 +458,14 @@ safe dynamic class string {
         return str.str_at(my.head, index);
     };
 
-    fn cstr() -> adr {
+    safe fn cstr() -> adr {
         return my.head;
     };
 
     /*
      * copy the string into a buffer
      */
-    int copyTo(const adr buff) {
+    safe fn copyTo(const adr buff) -> int {
         memcpy(buff, my.head, str.len(my.head) + 1);
         return 0;
     };
@@ -497,7 +497,7 @@ safe dynamic class string {
         return true;
     };
 
-    int getRefcount() {
+    safe fn getRefcount() -> int {
         return my.refcount;
     };
     
