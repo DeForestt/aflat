@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
@@ -175,10 +176,9 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     parse::Parser p = parse::Parser();
     ast::Statement *statement = p.parseStmt(tokens);
     auto Lowerer = parse::lower::Lowerer(statement);
-    if (!this->path.empty() && this->path[0] == '.') {
-    } else {
-      importPath = gen::utils::getLibPath("src") / importPath;
-    }
+    added = statement;
+    generator.includedMemo.insert(this->path, statement);
+    generator.ImportsOnly(added);
   }
   std::unordered_map<std::string, std::string> nsMap;
   collectImportNamespaces(added, nsMap);
