@@ -129,13 +129,13 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   std::filesystem::path importPath = this->path;
   if (importPath.is_relative()) {
     if (!this->path.empty() && this->path[0] == '.') {
+      importPath = generator.cwd / importPath;
     } else {
       importPath = gen::utils::getLibPath("src") / importPath;
     }
   }
-  importPath = std::filesystem::absolute(importPath).lexically_normal();
-
   if (importPath.extension() != ".af") importPath += ".af";
+  importPath = std::filesystem::absolute(importPath).lexically_normal();
   this->path = importPath.string();
   auto prevCwd = generator.cwd;
   generator.cwd = importPath.parent_path();
@@ -202,13 +202,14 @@ gen::GenerationResult const Import::generateClasses(
   auto OutputFile = asmc::File();
   std::filesystem::path importPath = this->path;
   if (importPath.is_relative()) {
-  importPath = std::filesystem::absolute(importPath).lexically_normal();
-    if (this->path.find("./") == std::string::npos)
-      importPath = gen::utils::getLibPath("src") / importPath;
-    else
+    if (!this->path.empty() && this->path[0] == '.') {
       importPath = generator.cwd / importPath;
+    } else {
+      importPath = gen::utils::getLibPath("src") / importPath;
+    }
   }
   if (importPath.extension() != ".af") importPath += ".af";
+  importPath = std::filesystem::absolute(importPath).lexically_normal();
   this->path = importPath.string();
   auto prevCwd = generator.cwd;
   generator.cwd = importPath.parent_path();
