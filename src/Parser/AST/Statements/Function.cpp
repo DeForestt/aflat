@@ -295,7 +295,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       ty.size = asmc::QWord;
 
       int byteMod = gen::scope::ScopeManager::getInstance()->assign(
-          "my", ty, false, false);
+          "my", ty, false, false, this->safe);
 
       movy->size = asmc::QWord;
       movy->to = "-" + std::to_string(byteMod) + +"(%rbp)";
