@@ -1,11 +1,11 @@
 #ifndef GEN
 #define GEN
 
+#include <filesystem>
 #include <set>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
-#include <filesystem>
 
 #include "ASM.hpp"
 #include "CodeGenerator/Expr.hpp"
@@ -131,8 +131,7 @@ class CodeGenerator {
                                       std::string &newName,
                                       asmc::File &OutputFile);
   CodeGenerator(std::string moduleId, parse::Parser &parser,
-                const std::string &source = "",
-                const std::string &cwd = "");
+                const std::string &source = "", const std::string &cwd = "");
   asmc::File *deScope(gen::Symbol &sym);
   bool hasError() const { return errorFlag; }
 

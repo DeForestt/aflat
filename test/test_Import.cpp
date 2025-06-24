@@ -1,10 +1,10 @@
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <unordered_map>
 
 #include "CodeGenerator/MockCodeGenerator.hpp"
-#include <filesystem>
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
@@ -38,7 +38,8 @@ TEST_CASE("ImportsOnly ignores functions in mixed import", "[codegen]") {
 
   lex::Lexer l;
   PreProcessor pp;
-  auto code = pp.PreProcess("import Foo, {bar} from \"./Temp\" under m;", "", "");
+  auto code =
+      pp.PreProcess("import Foo, {bar} from \"./Temp\" under m;", "", "");
   auto tokens = l.Scan(code);
   tokens.invert();
   parse::Parser p;
@@ -48,8 +49,8 @@ TEST_CASE("ImportsOnly ignores functions in mixed import", "[codegen]") {
   auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
   REQUIRE(imp != nullptr);
 
-  test::mockGen::CodeGenerator gen(
-      "mod", p, "", std::filesystem::current_path().string());
+  test::mockGen::CodeGenerator gen("mod", p, "",
+                                   std::filesystem::current_path().string());
   gen.ImportsOnly(imp);
 
   REQUIRE(gen.includedClasses.contains("Temp::Foo"));
@@ -81,8 +82,8 @@ TEST_CASE("Import applies nested namespaces", "[namespaces]") {
   auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
   REQUIRE(imp != nullptr);
 
-  test::mockGen::CodeGenerator gen(
-      "mod", p, "", std::filesystem::current_path().string());
+  test::mockGen::CodeGenerator gen("mod", p, "",
+                                   std::filesystem::current_path().string());
   imp->generate(gen);
 
   std::ifstream outerFile("Outer.af");
@@ -162,8 +163,8 @@ TEST_CASE("Imports handle parent directory paths", "[imports]") {
   auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
   REQUIRE(imp != nullptr);
 
-  test::mockGen::CodeGenerator gen(
-      "mod", p, "", std::filesystem::current_path().string());
+  test::mockGen::CodeGenerator gen("mod", p, "",
+                                   std::filesystem::current_path().string());
   imp->generate(gen);
   REQUIRE_FALSE(gen.hasError());
 

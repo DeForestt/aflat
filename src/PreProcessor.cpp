@@ -140,18 +140,20 @@ std::string PreProcessor::Include(std::string line, std::string libPath) {
         this->includes.end()) {
       this->includes.push_back(path);
       if (this->debug)
-        return this->PreProcess(output, libPath,
-                                 std::filesystem::path(path).parent_path().string());
-      output = this->PreProcess(output, libPath,
-                                std::filesystem::path(path).parent_path().string());
+        return this->PreProcess(
+            output, libPath,
+            std::filesystem::path(path).parent_path().string());
+      output = this->PreProcess(
+          output, libPath, std::filesystem::path(path).parent_path().string());
       output.reserve(output.size());
       cleanPut = std::accumulate(output.begin(), output.end(), std::string(),
                                  [](std::string &a, char b) {
                                    if (b != '\n') a += b;
                                    return a;
                                  });
-      return this->PreProcess(cleanPut, libPath,
-                              std::filesystem::path(path).parent_path().string());
+      return this->PreProcess(
+          cleanPut, libPath,
+          std::filesystem::path(path).parent_path().string());
     }
     return "";
   } else {
