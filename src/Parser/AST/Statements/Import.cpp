@@ -133,6 +133,7 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
       importPath = gen::utils::getLibPath("src") / importPath;
     }
   }
+  importPath = std::filesystem::absolute(importPath).lexically_normal();
 
   if (importPath.extension() != ".af") importPath += ".af";
   this->path = importPath.string();
@@ -201,6 +202,7 @@ gen::GenerationResult const Import::generateClasses(
   auto OutputFile = asmc::File();
   std::filesystem::path importPath = this->path;
   if (importPath.is_relative()) {
+  importPath = std::filesystem::absolute(importPath).lexically_normal();
     if (this->path.find("./") == std::string::npos)
       importPath = gen::utils::getLibPath("src") / importPath;
     else
