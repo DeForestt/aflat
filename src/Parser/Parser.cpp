@@ -215,7 +215,8 @@ ast::Statement *parse::Parser::parseStmt(
     }
 
     static const std::unordered_set<std::string> accessModifiers = {
-        "const", "mutable", "immutable", "public", "private", "static", "export"};
+        "const",   "mutable", "immutable", "public",
+        "private", "static",  "export"};
 
     if (accessModifiers.count(obj.meta)) {
       while (accessModifiers.count(obj.meta)) {
@@ -472,10 +473,10 @@ ast::Statement *parse::Parser::parseStmt(
           } else if (sym.Sym == '=') {
             tokens.pop();
             auto decl = new ast::Declare(ident.meta, scope, obj.meta, isMutable,
-                                       type, requestType, modList);
+                                         type, requestType, modList);
             decl->readOnly = isImmutable;
-            output = new ast::DecAssign(decl, isMutable, tokens, *this,
-                                       annotations);
+            output =
+                new ast::DecAssign(decl, isMutable, tokens, *this, annotations);
           }
         } else {
           auto decl = new ast::Declare(ident.meta, scope, obj.meta, isMutable,

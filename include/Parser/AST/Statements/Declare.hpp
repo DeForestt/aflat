@@ -22,8 +22,7 @@ class Declare : public Arg, public Statement {
   Declare(const std::string &ident, const ScopeMod &scope,
           const std::string &TypeName, const bool mut, const Type &type,
           const std::string &requestType,
-          links::LinkedList<std::string> modList,
-          bool readOnly = false)
+          links::LinkedList<std::string> modList, bool readOnly = false)
       : ident(ident),
         scope(scope),
         TypeName(TypeName),
