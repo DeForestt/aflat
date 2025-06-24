@@ -1,6 +1,7 @@
 #ifndef GEN
 #define GEN
 
+#include <filesystem>
 #include <set>
 #include <tuple>
 #include <unordered_map>
@@ -104,6 +105,7 @@ class CodeGenerator {
 
   std::string moduleId;
   std::string source;
+  std::filesystem::path cwd;
 
   links::LinkedList<std::string> breakContext;
   links::LinkedList<std::string> continueContext;
@@ -129,7 +131,7 @@ class CodeGenerator {
                                       std::string &newName,
                                       asmc::File &OutputFile);
   CodeGenerator(std::string moduleId, parse::Parser &parser,
-                const std::string &source = "");
+                const std::string &source = "", const std::string &cwd = "");
   asmc::File *deScope(gen::Symbol &sym);
   bool hasError() const { return errorFlag; }
 

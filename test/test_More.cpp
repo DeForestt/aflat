@@ -14,7 +14,7 @@ TEST_CASE("Definition compares name", "[preprocessor]") {
 
 TEST_CASE("PreProcessor replaces defined values", "[preprocessor]") {
   PreProcessor pp;
-  std::string output = pp.PreProcess(".def X = Y\nX\n", "");
+  std::string output = pp.PreProcess(".def X = Y\nX\n", "", "");
   REQUIRE(output == "Y\n");
 }
 
