@@ -138,3 +138,35 @@ TEST_CASE("Import applies nested namespaces", "[namespaces]") {
   std::remove("Inner.af");
   std::remove("Outer.af");
 }
+
+TEST_CASE("Imports handle parent directory paths", "[imports]") {
+  std::filesystem::create_directory("sub");
+  std::ofstream inner("Inner.af");
+  inner << "export int bar() { return 0; };\n";
+  inner.close();
+
+  std::ofstream outer("sub/Outer.af");
+  outer << "import {bar} from \"../Inner\" under i;\n";
+  outer << "export int call() { return i.bar(); };\n";
+  outer.close();
+
+  lex::Lexer l;
+  PreProcessor pp;
+  auto code = pp.PreProcess("import {call} from \"./sub/Outer\";", "", "");
+  auto tokens = l.Scan(code);
+  tokens.invert();
+  parse::Parser p;
+  ast::Statement *stmt = p.parseStmt(tokens);
+  auto *seq = dynamic_cast<ast::Sequence *>(stmt);
+  REQUIRE(seq != nullptr);
+  auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
+  REQUIRE(imp != nullptr);
+
+  test::mockGen::CodeGenerator gen(
+      "mod", p, "", std::filesystem::current_path().string());
+  imp->generate(gen);
+  REQUIRE_FALSE(gen.hasError());
+
+  std::filesystem::remove_all("sub");
+  std::filesystem::remove("Inner.af");
+}
