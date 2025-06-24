@@ -5,7 +5,6 @@
 #include <unordered_map>
 
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
@@ -133,10 +132,8 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     } else {
       importPath = gen::utils::getLibPath("src") / importPath;
     }
-      this->path = this->path.substr(2);
-      importPath = generator.cwd / this->path;
-    }
   }
+
   if (importPath.extension() != ".af") importPath += ".af";
   this->path = importPath.string();
   auto prevCwd = generator.cwd;
