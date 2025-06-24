@@ -21,7 +21,7 @@ void ScopeManager::reset() {
 }
 
 int ScopeManager::assign(std::string symbol, ast::Type type, bool mask,
-                         bool mut) {
+                         bool mut, bool readOnly) {
   using namespace gen::utils;
   auto sym = gen::Symbol();
 
@@ -45,6 +45,7 @@ int ScopeManager::assign(std::string symbol, ast::Type type, bool mask,
   sym.type = type;
   sym.byteMod = this->stackPos;
   sym.mutable_ = mut;
+  sym.readOnly = readOnly;
   sym.refCount = 0;
   this->stack.push_back(sym);
   this->SStackSize++;

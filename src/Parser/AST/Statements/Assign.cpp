@@ -172,9 +172,9 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
     mov->to = output;
   };
 
-  if (!fin->mutable_ && !this->override &&
+  if ((!fin->mutable_ || fin->readOnly) && !this->override &&
       !(this->reference && !fin->type.isReference)) {
-    generator.alert("cannot assign to const " + fin->symbol);
+    generator.alert("cannot assign to immutable " + fin->symbol);
   }
 
   mov2->logicalLine = this->logicalLine;

@@ -3,40 +3,34 @@ Welcome to the AFlat codebase. This document outlines the essential practices fo
 
 🚧 Expectations
 Format all C++ code using:
-
-bash
-Copy
-Edit
-find . -path ./Lib -prune -o -path ./test/catch.hpp -prune -o -regex '.*\.\(cpp\|hpp\)' -exec clang-format -style=file -i {} \+ -exec git add {} \+
+```
+find . \( -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) -exec clang-format -i {} +
+```
 Build with CMake. It's the supported and canonical way to configure the C++ build.
 
 Test everything you change:
 
 For AFlat code: edit src/main.af and run:
 
-bash
-Copy
-Edit
+```
+bash rebuild-libs.sh
 ./bin/aflat run
+```
+
 For C++ code: changes must include unit tests. Use the Catch2 framework located in test/.
 
 Quick rebuilds:
 
 Use make to rebuild the C++ binary and regenerate standard libraries:
+`make`
 
-bash
-Copy
-Edit
-make
 Standard library updates:
 
 After editing anything in libraries/std/src, run:
 
-bash
-Copy
-Edit
-./rebuild-libs.sh
-No output means success.
+`./rebuild-libs.sh`
+
+You will see the build output in the terminal.
 
 🗂️ Repo Structure
 Root
@@ -90,11 +84,10 @@ remember that when adding a new Standard Library module, you must also update th
 as well as add it to the vector in src/main.cpp.
 
 Rebuild using:
-
-bash
-Copy
-Edit
+```bash
 ./rebuild-libs.sh
+```
+
 Tests: test/
 Contains Catch2-based unit tests.
 

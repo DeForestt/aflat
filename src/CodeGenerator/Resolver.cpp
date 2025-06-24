@@ -64,6 +64,7 @@ CodeGenerator::resolveSymbol(std::string ident,
 
   bool global = false;
   Symbol *sym = scope::ScopeManager::getInstance()->get(ident);
+  bool readOnly = sym ? sym->readOnly : false;
 
   if (sym == nullptr) {
     sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, ident);
@@ -99,6 +100,7 @@ CodeGenerator::resolveSymbol(std::string ident,
         alert("variable not found " + last.typeName + "." + sto, true, __FILE__,
               __LINE__);
       last = modSym->type;
+      readOnly = readOnly || modSym->readOnly;
       int tbyte = modSym->byteMod;
       asmc::Mov *mov = new asmc::Mov();
       mov->size = asmc::QWord;
@@ -122,6 +124,8 @@ CodeGenerator::resolveSymbol(std::string ident,
   indicies.reset();
   modSym->type.indices.reset();
   Symbol retSym = *modSym;
+  if (readOnly) retSym.mutable_ = false;
+  retSym.readOnly = readOnly || modSym->readOnly;
 
   if (indicies.trail() != 0) {
     this->canAssign(modSym->type, "adr",
