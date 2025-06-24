@@ -137,6 +137,7 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   if (importPath.extension() != ".af") importPath += ".af";
   importPath = std::filesystem::absolute(importPath).lexically_normal();
   this->path = importPath.string();
+  this->cwd = importPath.parent_path().string();
   auto prevCwd = generator.cwd;
   generator.cwd = importPath.parent_path();
 
@@ -211,6 +212,7 @@ gen::GenerationResult const Import::generateClasses(
   if (importPath.extension() != ".af") importPath += ".af";
   importPath = std::filesystem::absolute(importPath).lexically_normal();
   this->path = importPath.string();
+  this->cwd = importPath.parent_path().string();
   auto prevCwd = generator.cwd;
   generator.cwd = importPath.parent_path();
 
