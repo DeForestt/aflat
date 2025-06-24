@@ -22,7 +22,8 @@ class PreProcessor {
  public:
   PreProcessor();
   ~PreProcessor();
-  std::string PreProcess(std::string code, std::string exePath);
+  std::string PreProcess(std::string code, std::string exePath,
+                         const std::string &currDir = "");
   bool debug = false;
 
  private:
