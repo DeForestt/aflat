@@ -207,9 +207,15 @@ ast::Statement *parse::Parser::parseStmt(
         }
       }
 
-      if (obj.meta != "class" && (safeType, dynamicType, pedantic)) {
+      // check if object.meta is class or function
+      static const std::unordered_set<std::string> classFunction = {"class",
+                                                                    "fn"};
+
+      if (classFunction.count(obj.meta) == 0 &&
+          (dynamicType || pedantic || safeType)) {
         throw err::Exception(
-            "safe/dynamic/pedantic can only be used with classes on line " +
+            "safe/dynamic/pedantic can only be used with classes or functions "
+            "on line " +
             std::to_string(obj.lineCount) + " got " + obj.meta);
       };
     }
@@ -468,8 +474,9 @@ ast::Statement *parse::Parser::parseStmt(
           // Checking for Parenthesis to see if it is a function
           if (sym.Sym == '(') {
             tokens.pop();
-            output = new ast::Function(ident.meta, scope, type, overload,
-                                       scopeName, tokens, *this, optional);
+            output =
+                new ast::Function(ident.meta, scope, type, overload, scopeName,
+                                  tokens, *this, optional, safeType);
           } else if (sym.Sym == '=') {
             tokens.pop();
             auto decl = new ast::Declare(ident.meta, scope, obj.meta, isMutable,
@@ -538,7 +545,7 @@ ast::Statement *parse::Parser::parseStmt(
     } else if (obj.meta == "return") {
       output = new ast::Return(tokens, *this);
     } else if (obj.meta == "fn") {
-      output = new ast::Function(scope, tokens, typeNames, *this);
+      output = new ast::Function(scope, tokens, typeNames, *this, safeType);
     } else if (obj.meta == "push") {
       auto push = new ast::Push;
       push->expr = this->parseExpr(tokens);

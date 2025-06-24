@@ -458,7 +458,7 @@ safe dynamic class string {
         return str.str_at(my.head, index);
     };
 
-    adr cstr() {
+    fn cstr() -> adr {
         return my.head;
     };
 

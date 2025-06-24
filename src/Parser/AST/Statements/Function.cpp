@@ -87,12 +87,13 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
 Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
                    const Op op, const std::string &scopeName,
                    links::LinkedList<lex::Token *> &tokens,
-                   parse::Parser &parser, bool optional)
+                   parse::Parser &parser, bool optional, bool safe)
     : scope(scope),
       type(type),
       op(op),
       scopeName(scopeName),
-      optional(optional) {
+      optional(optional),
+      safe(safe) {
   this->ident.ident = ident;
   this->useType = type;
   this->args = parser.parseArgs(tokens, ',', ')', this->argTypes, this->req,
@@ -103,8 +104,9 @@ Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
 
 Function::Function(const ScopeMod &scope,
                    links::LinkedList<lex::Token *> &tokens,
-                   std::vector<std::string> genericTypes, parse::Parser &parser)
-    : scope(scope), genericTypes(genericTypes) {
+                   std::vector<std::string> genericTypes, parse::Parser &parser,
+                   bool safe)
+    : scope(scope), genericTypes(genericTypes), safe(safe) {
   // updated function syntax
   // func <ident>(<args>) -> <type> { <body> }
   const auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
@@ -293,7 +295,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       ty.size = asmc::QWord;
 
       int byteMod = gen::scope::ScopeManager::getInstance()->assign(
-          "my", ty, false, false);
+          "my", ty, false, false, this->safe);
 
       movy->size = asmc::QWord;
       movy->to = "-" + std::to_string(byteMod) + +"(%rbp)";

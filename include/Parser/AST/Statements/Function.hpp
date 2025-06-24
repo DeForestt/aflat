@@ -10,6 +10,8 @@ namespace ast {
 class Function : public Member, public Statement {
  public:
   ScopeMod scope;
+  bool safe = false;  // is this a class method that does not mutate
+                      // the class instance?
   Type type;
   Type useType = Type("", asmc::QWord);
   std::string scopeName = "global";
@@ -39,9 +41,10 @@ class Function : public Member, public Statement {
   Function(const string &ident, const ScopeMod &scope, const Type &type,
            const Op op, const std::string &scopeName,
            links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
-           bool optional);
+           bool optional, bool safe = false);
   Function(const ScopeMod &scope, links::LinkedList<lex::Token *> &tokens,
-           std::vector<std::string> genericTypes, parse::Parser &parser);
+           std::vector<std::string> genericTypes, parse::Parser &parser,
+           bool safe = false);
   Function(const Function &Other, bool locked)
       : scope(Other.scope),
         type(Other.type),
@@ -62,10 +65,11 @@ class Function : public Member, public Statement {
         useType(Other.useType),
         genericTypes(Other.genericTypes),
         autoType(Other.autoType),
-        globalLocked(Other.globalLocked) {
+        globalLocked(Other.globalLocked),
+        safe(Other.safe) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;
-    this->hidden = this->hidden;
+    this->hidden = Other.hidden;
   }
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   gen::Expr toExpr(gen::CodeGenerator &generator);
