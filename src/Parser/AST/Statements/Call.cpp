@@ -201,9 +201,12 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   } else {
     std::string pubname;
     gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(ident);
-    if (sym == nullptr) generator.alert("cannot find object: " + ident);
-    immutableSymbol = immutableSymbol || sym->readOnly;
-    allMods += sym->symbol + ".";
+    if (sym == nullptr) {
+        generator.alert("cannot find object: " + ident);
+    } else {
+        immutableSymbol = immutableSymbol || sym->readOnly;
+        allMods += sym->symbol + ".";
+    }
 
     ast::Type last = sym->type;
     std::string my = sym->symbol;
