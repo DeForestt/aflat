@@ -1,0 +1,42 @@
+.needs <std>
+
+import { str_at, str_comp } from "strings" under strings;
+import Map from "Utils/Map"; 
+import Option from "Utils/Option";
+import option from "Utils/option";
+import { some, none } from "Utils/option" under opt;
+import List from "Collections";	
+
+types(T)
+class unordered_map {
+	private mutable Map inner = new Map();
+	
+	fn init() -> Self {
+		return my;
+	};
+
+	fn set(const adr key, const T data) -> void {
+		my.inner.set(key, data);
+	};
+
+	fn get(const adr key) -> option::<T> {
+		let val = my.inner.get(key);
+		
+		return val.match({
+			"some": fn (T data) return opt.some(data),
+			"none": fn () return opt.none::<T>()
+		});
+	};
+
+	fn _call(const adr key) -> option::<T> {
+  		return my.get(key);
+ 	};
+
+	fn keys() -> List {
+  		return my.inner.keys();
+ 	};
+
+	fn has(const adr key) -> bool {
+		return my.inner.has(key);
+  	};
+};

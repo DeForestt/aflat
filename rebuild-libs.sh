@@ -52,6 +52,8 @@ mv ./libraries/std/Error.s ./libraries/std/Utils_Error.s
 aflat ./libraries/std/src/Utils/Defer.af -o ./libraries/std/Defer.s
 mv ./libraries/std/Defer.s ./libraries/std/Utils_Defer.s
 
+aflat ./libraries/std/src/Collections/unordered_map.af -o ./libraries/std/unordered_map.s
+
 aflat ./libraries/std/src/Utils/Error/Render.af -o ./libraries/std/Error_Render.s
 aflat ./libraries/std/src/HTTP/Endpoint.af -o ./libraries/std/HTTP_Endpoint.s
 aflat ./libraries/std/src/HTTP/Middleware.af -o ./libraries/std/HTTP_Middleware.s
