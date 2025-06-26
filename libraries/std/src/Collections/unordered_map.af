@@ -21,10 +21,10 @@ class unordered_map {
 	};
 
 	fn get(const adr key) -> option::<T> {
-		let val = my.inner.get(key);
+		const let val = my.inner.get(key);
 		
 		return val.match({
-			"some": fn (T data) return opt.some(data),
+			"some": fn (const T data) return opt.some(data),
 			"none": fn () return opt.none::<T>()
 		});
 	};
