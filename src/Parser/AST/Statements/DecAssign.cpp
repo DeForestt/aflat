@@ -55,7 +55,8 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
 
       auto mov = new asmc::Mov();
       mov->logicalLine = this->logicalLine;
-      gen::Expr expr = generator.GenExpr(this->expr, file, dec->type.size);
+      gen::Expr expr = generator.GenExpr(this->expr, file, dec->type.size,
+                                         dec->type.typeName);
 
       const auto testType =
           allowAdr ? ast::Type("adr", asmc::QWord) : dec->type;
@@ -64,8 +65,9 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
                 !generator.canAssign(testType, expr.type,
                                      "type {} cannot be assigned to type {}"),
             dec->trust) {
-          expr = generator.GenExpr(
-              generator.imply(this->expr, testType.typeName), file);
+          expr =
+              generator.GenExpr(generator.imply(this->expr, testType.typeName),
+                                file, testType.size, testType.typeName);
         };
       };
 

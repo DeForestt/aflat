@@ -11,9 +11,13 @@
 
 using namespace gen::utils;
 
+bool startsWith(const std::string &s, const std::string &prefix) {
+  return s.size() >= prefix.size() && s.compare(0, prefix.size(), prefix) == 0;
+}
+
 namespace gen {
 gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
-                                      asmc::Size size) {
+                                      asmc::Size size, std::string typeHint) {
   gen::Expr output;
   output.op = asmc::Hard;
   this->logicalLine = expr->logicalLine;
@@ -1176,6 +1180,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   } else if (dynamic_cast<ast::NewExpr *>(expr) != nullptr) {
     ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);
     ast::Function *malloc = this->nameTable["malloc"];
+
+    if (newExpr.type.typeName == "Map" &&
+        typeHint.rfind("unordered_map", 0) == 0) {
+      std::istringstream iss(typeHint);
+      std::string typeName;
+      std::getline(iss, typeName, '.');
+      newExpr.type.typeName = typeName;
+
+      while (std::getline(iss, typeName, '.')) {
+        newExpr.templateTypes.push_back(typeName);
+      }
+    }
 
     if (malloc == nullptr)
       alert(

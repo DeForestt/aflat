@@ -118,7 +118,8 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   mov->logicalLine = this->logicalLine;
   asmc::Mov *mov2 = new asmc::Mov();
   mov2->logicalLine = this->logicalLine;
-  gen::Expr expr = generator.GenExpr(this->expr, file, symbol->type.size);
+  gen::Expr expr = generator.GenExpr(this->expr, file, symbol->type.size,
+                                     symbol->type.typeName);
 
   if (!this->reference || symbol->type.isReference) {
     if (!generator.canAssign(
