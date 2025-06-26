@@ -461,6 +461,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     ast::Expr *rem = this->Args.touch();
     ast::Expr *arg = this->Args.shift();
     // check if the argument is a reference
+    std::string typeHint = "";
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
         generator.logicalLine = arg->logicalLine;
@@ -507,12 +508,13 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
                           ") to an rvalue");
         }
       }
+      typeHint = func->argTypes.at(i).typeName;
     }
     if (arg == nullptr) {
       generator.alert("Argument " + std::to_string(i + 1) +
                       " is null in function call: " + ident);
     }
-    gen::Expr exp = generator.GenExpr(arg, file);
+    gen::Expr exp = generator.GenExpr(arg, file, asmc::AUTO, typeHint);
     if (!exp.passable)
       generator.alert("Cannot pass an lvalue of safe type " + exp.type +
                       " to a function");

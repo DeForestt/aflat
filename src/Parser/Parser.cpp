@@ -1537,6 +1537,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         auto newExpr = new ast::NewExpr();
         newExpr->logicalLine = eq.lineCount;
         newExpr->type.typeName = "Map";
+        newExpr->castableMap = true;
         output = newExpr;
       } else {
         auto first_arg = this->parseExpr(tokens);

@@ -302,6 +302,7 @@ class NewExpr : public Expr {
   Type type;
   links::LinkedList<Expr *> args;
   std::vector<std::string> templateTypes;
+  bool castableMap = false;
 
   std::string toString() override {
     std::string result = "new " + type.typeName;

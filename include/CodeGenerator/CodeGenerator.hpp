@@ -94,7 +94,7 @@ class CodeGenerator {
                      const ast::Function &func, int &index);
   ast::Function GenCall(ast::Call *call, asmc::File &OutputFile);
   Expr GenExpr(ast::Expr *expr, asmc::File &OutputFile,
-               asmc::Size size = asmc::AUTO);
+               asmc::Size size = asmc::AUTO, std::string typeHint = "");
   gen::Expr prepareCompound(ast::Compound compound, asmc::File &OutputFile,
                             bool isDiv = false);
   gen::Expr genArithmetic(asmc::ArithInst *, ast::Compound compound,
