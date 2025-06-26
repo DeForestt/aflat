@@ -15,8 +15,9 @@ class unordered_map {
 		return my;
 	};
 
-	fn set(const adr key, const T data) -> void {
+	fn set(const adr key, const T data) -> Self {
 		my.inner.set(key, data);
+		return my;
 	};
 
 	fn get(const adr key) -> option::<T> {
