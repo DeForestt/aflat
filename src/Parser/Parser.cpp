@@ -806,15 +806,16 @@ links::LinkedList<ast::Expr *> parse::Parser::parseCallArgsList(
 ast::Statement *parse::Parser::parseArgs(
     links::LinkedList<lex::Token *> &tokens, char deliminator, char close,
     std::vector<ast::Type> &types, int &required, std::vector<bool> &mutability,
-    std::vector<int> &optConvertionIndices) {
+    std::vector<bool> &readOnly, std::vector<int> &optConvertionIndices) {
   return this->parseArgs(tokens, deliminator, close, types, required,
-                         mutability, optConvertionIndices, false);
+                         mutability, readOnly, optConvertionIndices, false);
 }
 
 ast::Statement *parse::Parser::parseArgs(
     links::LinkedList<lex::Token *> &tokens, char deliminator, char close,
     std::vector<ast::Type> &types, int &required, std::vector<bool> &mutability,
-    std::vector<int> &optConvertionIndices, bool foreach) {
+    std::vector<bool> &readOnly, std::vector<int> &optConvertionIndices,
+    bool foreach) {
   auto output = new ast::Statement();
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym == nullptr) {
@@ -942,6 +943,7 @@ ast::Statement *parse::Parser::parseArgs(
         output = dec;
         types.push_back(dec->type);
         mutability.push_back(isMutable);
+        readOnly.push_back(isImmutable);
       }
     } else
       throw err::Exception("Line: " + std::to_string(obj.lineCount) +
@@ -966,7 +968,7 @@ ast::Statement *parse::Parser::parseArgs(
       s->Statement1 = output;
       s->Statement2 =
           this->parseArgs(tokens, deliminator, close, types, required,
-                          mutability, optConvertionIndices);
+                          mutability, readOnly, optConvertionIndices);
       return s;
     } else if (obj && obj->Sym == close) {
       return output;
@@ -1322,7 +1324,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       lambda->function->req = 0;
       lambda->function->args = this->parseArgs(
           tokens, ',', ')', lambda->function->argTypes, lambda->function->req,
-          lambda->function->mutability, lambda->function->optConvertionIndices);
+          lambda->function->mutability, lambda->function->readOnly,
+          lambda->function->optConvertionIndices);
       auto dash = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (dash != nullptr && dash->Sym == '-') {
         tokens.pop();
@@ -1471,7 +1474,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       lambda->function->req = 0;
       lambda->function->args = this->parseArgs(
           tokens, ',', ']', lambda->function->argTypes, lambda->function->req,
-          lambda->function->mutability, lambda->function->optConvertionIndices);
+          lambda->function->mutability, lambda->function->readOnly,
+          lambda->function->optConvertionIndices);
 
       lambda->logicalLine = eq.lineCount;
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)
