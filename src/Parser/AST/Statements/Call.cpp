@@ -469,52 +469,54 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
                         " expected: " + std::to_string(func->argTypes.size()) +
                         " got: " + std::to_string(i + 1));
       }
-      if (func->argTypes.at(i).isReference) {
-        auto toReg = new ast::Reference();
-        auto var = dynamic_cast<ast::Var *>(arg);
-        if (var == nullptr) {
-          generator.alert("Attempted to pass an rvalue to a reference");
-        }
-        auto sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
+      auto var = dynamic_cast<ast::Var *>(arg);
+      gen::Symbol *sym = nullptr;
+      if (var) {
+        sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
         if (!sym) {
           sym = generator.GlobalSymbolTable.search<std::string>(
               gen::utils::searchSymbol, var->Ident);
         }
-
         if (!sym) {
           generator.alert("cannot find symbol: " + var->Ident);
         }
-        if (func->readOnly.size() > i && func->readOnly[i]) {
-          // immutable parameter accepts anything
-        } else if (func->mutability[i]) {
-          if (sym->readOnly) {
+
+        bool paramRO = func->readOnly.size() > i && func->readOnly[i];
+        if (sym->readOnly && !paramRO) {
+          generator.alert(
+              "cannot pass an immutable value to a " +
+              std::string(func->mutability[i] ? "mutable" : "const") +
+              " argument: " + var->Ident);
+        }
+      }
+
+      if (func->argTypes.at(i).isReference) {
+        auto toReg = new ast::Reference();
+        if (var == nullptr) {
+          generator.alert("Attempted to pass an rvalue to a reference");
+        }
+        if (sym) {
+          if (!sym->mutable_ && func->mutability[i]) {
             generator.alert(
-                "cannot pass an immutable reference to a mutable "
-                "argument: " +
+                "cannot pass a const reference to a mutable argument: " +
                 var->Ident);
-          } else {
+          } else if (func->mutability[i]) {
             gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
-          }
-        } else {
-          if (sym->readOnly) {
-            generator.alert(
-                "cannot pass an immutable reference to a const argument: " +
-                var->Ident);
           }
         }
         if (!var) {
           generator.alert("A reference can only point to an lvalue");
         }
-        toReg->Ident = var->Ident;
-        toReg->modList = var->modList;
-        toReg->logicalLine = var->logicalLine;
+        toReg->Ident = var ? var->Ident : "";
+        if (var) toReg->modList = var->modList;
+        if (var) toReg->logicalLine = var->logicalLine;
         arg = toReg;
       }
       if (func->argTypes.at(i).isRvalue) {
         // make sure that its not a var
-        auto var = dynamic_cast<ast::Var *>(arg);
-        if (var != nullptr) {
-          generator.alert("Attempted to pass an lvalue (" + var->Ident +
+        auto rValVar = dynamic_cast<ast::Var *>(arg);
+        if (rValVar != nullptr) {
+          generator.alert("Attempted to pass an lvalue (" + rValVar->Ident +
                           ") to an rvalue");
         }
       }
