@@ -29,6 +29,7 @@ class Function : public Member, public Statement {
   std::vector<std::string> genericTypes;
   links::LinkedList<Expr *> decoratorArgs;
   std::vector<bool> mutability;
+  std::vector<bool> readOnly;
   bool isLambda = false;
   bool flex = false;
   bool mask;
@@ -58,6 +59,7 @@ class Function : public Member, public Statement {
         argTypes(Other.argTypes),
         optConvertionIndices(Other.optConvertionIndices),
         mutability(Other.mutability),
+        readOnly(Other.readOnly),
         isLambda(Other.isLambda),
         mask(Other.mask),
         has_return(Other.has_return),

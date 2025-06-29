@@ -28,6 +28,7 @@ class Parser {
                             char delimn, char close,
                             std::vector<ast::Type> &types, int &requiered,
                             std::vector<bool> &mutability,
+                            std::vector<bool> &readOnly,
                             std::vector<int> &optConvertionIndices,
                             bool forEach);
 
@@ -35,6 +36,7 @@ class Parser {
                             char delimn, char close,
                             std::vector<ast::Type> &types, int &requiered,
                             std::vector<bool> &mutability,
+                            std::vector<bool> &readOnly,
                             std::vector<int> &optConvertionIndices);
   void addType(std::string name, asmc::OpType opType, asmc::Size size);
   void addType(std::string name, asmc::OpType opType, asmc::Size size,

@@ -484,13 +484,23 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         if (!sym) {
           generator.alert("cannot find symbol: " + var->Ident);
         }
-        if (sym->mutable_ == false && func->mutability[i]) {
-          generator.alert(
-              "cannot pass a const reference to a mutable "
-              "argument: " +
-              var->Ident);
+        if (func->readOnly.size() > i && func->readOnly[i]) {
+          // immutable parameter accepts anything
         } else if (func->mutability[i]) {
-          gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
+          if (sym->readOnly) {
+            generator.alert(
+                "cannot pass an immutable reference to a mutable "
+                "argument: " +
+                var->Ident);
+          } else {
+            gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
+          }
+        } else {
+          if (sym->readOnly) {
+            generator.alert(
+                "cannot pass an immutable reference to a const argument: " +
+                var->Ident);
+          }
         }
         if (!var) {
           generator.alert("A reference can only point to an lvalue");

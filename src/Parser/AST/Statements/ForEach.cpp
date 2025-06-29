@@ -11,6 +11,7 @@ ForEach::ForEach(links::LinkedList<lex::Token *> &tokens,
   this->lambda->function->args = parser.parseArgs(
       tokens, ',', ':', this->lambda->function->argTypes,
       this->lambda->function->req, this->lambda->function->mutability,
+      this->lambda->function->readOnly,
       this->lambda->function->optConvertionIndices, true);
 
   auto decscope = new Declare("*scope", ast::Public, "typeOf", false,
