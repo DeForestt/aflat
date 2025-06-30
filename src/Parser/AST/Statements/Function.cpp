@@ -97,7 +97,8 @@ Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
   this->ident.ident = ident;
   this->useType = type;
   this->args = parser.parseArgs(tokens, ',', ')', this->argTypes, this->req,
-                                this->mutability, this->optConvertionIndices);
+                                this->mutability, this->optConvertionIndices,
+                                this->readOnly);
 
   parseFunctionBody(tokens, parser);
 }
@@ -122,7 +123,8 @@ Function::Function(const ScopeMod &scope,
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
                          "Expected '('");
   this->args = parser.parseArgs(tokens, ',', ')', this->argTypes, this->req,
-                                this->mutability, this->optConvertionIndices);
+                                this->mutability, this->optConvertionIndices,
+                                this->readOnly);
 
   auto dash = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (dash && dash->Sym == '-') {

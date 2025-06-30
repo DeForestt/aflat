@@ -29,13 +29,14 @@ class Parser {
                             std::vector<ast::Type> &types, int &requiered,
                             std::vector<bool> &mutability,
                             std::vector<int> &optConvertionIndices,
-                            bool forEach);
+                            std::vector<bool> &readOnly, bool forEach);
 
   ast::Statement *parseArgs(links::LinkedList<lex::Token *> &tokens,
                             char delimn, char close,
                             std::vector<ast::Type> &types, int &requiered,
                             std::vector<bool> &mutability,
-                            std::vector<int> &optConvertionIndices);
+                            std::vector<int> &optConvertionIndices,
+                            std::vector<bool> &readOnly);
   void addType(std::string name, asmc::OpType opType, asmc::Size size);
   void addType(std::string name, asmc::OpType opType, asmc::Size size,
                bool isGeneric);
