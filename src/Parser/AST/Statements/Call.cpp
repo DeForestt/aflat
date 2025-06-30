@@ -463,6 +463,21 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     // check if the argument is a reference
     std::string typeHint = "";
     if (checkArgs) {
+      auto var = dynamic_cast<ast::Var *>(arg);
+      if (var != nullptr) {
+        auto sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
+        if (!sym) {
+          sym = generator.GlobalSymbolTable.search<std::string>(
+              gen::utils::searchSymbol, var->Ident);
+        }
+        if (sym && func) {
+          if (sym->readOnly && !func->readOnly[i]) {
+            generator.alert(
+                "Cannot pass immutable variable `" + var->Ident +
+                "` to mutable function argument: " + func->ident.ident);
+          }
+        }
+      }
       if (i >= func->argTypes.size()) {
         generator.logicalLine = arg->logicalLine;
         generator.alert("Too many arguments for function: " + ident +

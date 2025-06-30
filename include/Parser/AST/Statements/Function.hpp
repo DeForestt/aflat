@@ -29,6 +29,7 @@ class Function : public Member, public Statement {
   std::vector<std::string> genericTypes;
   links::LinkedList<Expr *> decoratorArgs;
   std::vector<bool> mutability;
+  std::vector<bool> readOnly;  // if the argument is read only
   bool isLambda = false;
   bool flex = false;
   bool mask;
@@ -66,7 +67,8 @@ class Function : public Member, public Statement {
         genericTypes(Other.genericTypes),
         autoType(Other.autoType),
         globalLocked(Other.globalLocked),
-        safe(Other.safe) {
+        safe(Other.safe),
+        readOnly(Other.readOnly) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;
     this->hidden = Other.hidden;
