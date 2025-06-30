@@ -465,7 +465,7 @@ safe dynamic class string {
     /*
      * copy the string into a buffer
      */
-    safe fn copyTo(const adr buff) -> int {
+    fn copyTo(const adr buff) -> int {
         memcpy(buff, my.head, str.len(my.head) + 1);
         return 0;
     };
