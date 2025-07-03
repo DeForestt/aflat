@@ -4,12 +4,15 @@
 
 import List from "Collections";
 import Map from "Utils/Map";
+import unordered_map from "Collections/unordered_map";
+import vector from "Collections/Vector";
 import String, string from "String";
 import Error from "Utils/Error";
 import {len, int_toString} from "strings" under str;
 import {print, printInt, fPrint, printHex} from "io" under io;
 import {worker} from "concurrency" under async;
 import {printString, fString, print} from "String" under st;
+import option, {some, none} from "Utils/option" under opt;
 
 class NotFoundError signs Error {
     // 404 Not Found
@@ -157,10 +160,14 @@ class HTTPHeader {
     HTTPHeader init(const adr key, const adr value) {
         return my;
     };
+
+    fn toString() -> string {
+        return `{my.key}: {my.value}`;
+    };
 };
 
 class HTTPMessage {
-    const private List headers = new List(HTTPHeader);
+    const private vector::<HTTPHeader> headers = new vector::<HTTPHeader>;
     private bool switch = false;
     const public Map query = new Map();
     string origin = new string("");
@@ -225,7 +232,7 @@ class HTTPMessage {
             key = key.trim();
             value = value.trim();
             const HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
-            this.headers.pushBack(n);
+            this.headers.push_back(n);
         }, my);
         return 0;
     };
@@ -324,7 +331,7 @@ class HTTPMessage {
             const string key = key.trim();
             const string value = value.trim();
             const HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
-            this.headers.pushBack(n);
+            this.headers.push_back(n);
         }, my); 
     };
 
@@ -335,8 +342,10 @@ class HTTPMessage {
     adr getHeader(const adr key) {
         const adr args = malloc(adr);
         
-        for int i = 0; i < my.headers.getCount(); i = i + 1 {
-            const HTTPHeader header = my.headers.get(i).expect("Get header failed");
+        for int i = 0; i < my.headers.count(); i = i + 1 {
+            const HTTPHeader header = my.headers.get(i).orElse(
+                fn () panic("Failed To Get Header")
+            );
             const adr comp = header.key;
             mutable string a = new string(header.key);
             a = a.trim('\n');
@@ -349,19 +358,6 @@ class HTTPMessage {
         };
         
         args =: key;
-        // my.headers.forEach([const HTTPHeader header, const int __index, const adr arg] => {
-        //     const adr comp = arg as adr;
-        //     String a = new String(header.key);
-        //     a = a.trim('\n');
-        //     a = a.trim('\r');
-        //     a = a.trim(' ');
-        //     if a.equal(comp) {
-        //         arg =: header.value;
-        //         delete a;
-        //         return;
-        //     };
-        //     delete a;
-        // }, args);
         const adr ret = args as adr;
         return ret;
     };
@@ -447,7 +443,7 @@ class HTTPRequest {
 };
 
 class HTTPResponse {
-    const private List headers = new List(HTTPHeader);
+    const private vector::<HTTPHeader> headers = new vector::<HTTPHeader>;
     const private adr statusMessage = statusMessage;
     const private adr statusCode = statusCode;
     private adr body = body;
@@ -458,7 +454,7 @@ class HTTPResponse {
 
     void addHeader(const adr key, const adr value) {
         const HTTPHeader header = new HTTPHeader(key, value);
-        my.headers.pushBack(header);
+        my.headers.push_back(header);
         return;
     };
 
