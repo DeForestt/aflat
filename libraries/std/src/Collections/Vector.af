@@ -76,4 +76,13 @@ class vector {
         return my.inner.scroll();
     };
 
+    fn forEach(const any<T, *int, *any> func, *const any args) -> void {
+        for int i = 0; i < my.count(); i = i + 1 {
+            const let value = my.get(i);
+            func(value.orElse(
+                fn () panic("Failed to get value at index {i}")
+            ), i, args);
+        };
+    };
+
 };
