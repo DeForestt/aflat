@@ -367,7 +367,7 @@ class HTTPRequest {
     private HTTPMethod method = method;
     private adr host;
     private adr endpoint;
-    const private List headers = new List(HTTPHeader);
+    const private vector::<HTTPHeader> headers = new vector::<HTTPHeader>;
     private adr body = "\r\n";
 
     HTTPRequest init(const HTTPMethod method) {
@@ -392,7 +392,7 @@ class HTTPRequest {
 
     int addHeader(const adr key, const adr value) {
         const HTTPHeader header = new HTTPHeader(key, value);
-        my.headers.pushBack(header);
+        my.headers.push_back(header);
     };
 
     void setBody(const adr body) {
@@ -405,7 +405,7 @@ class HTTPRequest {
 
     public string getHeaders() {
         const string res = new string("");
-        my.headers.forEach([const HTTPHeader header, const int __i, string buffer] => {
+        my.headers.forEach(fn (const HTTPHeader header, const int __i, string buffer) {
             buffer = buffer + header.key;
             buffer = buffer + ": ";
             buffer = buffer + header.value;
