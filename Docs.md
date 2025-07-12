@@ -864,6 +864,7 @@ The package manager is used to create a project.  The syntax is:
 ```bash
 aflat make <project name>
 ```
+Add `--lib` before `make` to generate a library template without a `main` file.
 The project name is will be the name of the directory that will be created. It will create a head, src, and bin directory.  The head directory will contain the header files for the project.  The src directory will contain the source files for the project.  The bin directory will contain the compiled object files for the project.  It will also create an `aflat.cfg` file using an INI format for build settings and dependencies.
 
 ## Building a Project
