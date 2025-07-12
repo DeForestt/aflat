@@ -37,14 +37,24 @@ export fn describe(const string text, const bool<?Map> implementation) -> void {
 };
 
 export fn fix(const adr name, const any value) -> void {
-	const let fixtures = getFixtures();
-	fixtures.set(name, value);
+        const let fixtures = getFixtures();
+        fixtures.set(name, value);
+};
+
+mutable any<?Map> beforeEachFn = NULL;
+
+export fn beforEach(const any<?Map> implementation) -> void {
+        beforeEachFn = implementation;
 };
 
 export fn it(const string text, const adr implementation) -> void {
-	str.print(`  it: {text}\n`);
-	const let fixtures = getFixtures();
-	implementation(fixtures);
+        str.print(`  it: {text}\n`);
+        const let fixtures = getFixtures();
+        if beforeEachFn != NULL {
+                const let cb = beforeEachFn;
+                cb(fixtures);
+        };
+        implementation(fixtures);
 };
 
 types(T)
