@@ -3,58 +3,70 @@ import {print} from "String" under str;
 import string from "String";
 import List from "Collections";
 import Map from "Utils/Map";
+import unordered_map from "Collections/unordered_map";
 import Result from "Utils/Result";
 import Error from "Utils/Error";
+import option from "Utils/option";
+import {some, none} from "Utils/option";
 
-mutable Map fixtures = NULL;
+mutable unordered_map::<adr> fixtures = NULL;
 
-export fn getFixtures() -> Map {
+export fn getFixtures() -> unordered_map::<adr> {
 	if fixtures == NULL {
-		fixtures = new Map();
+		fixtures = new unordered_map::<adr>();
 	};
 	return fixtures;
 };
 
 class Description {
 	string text = text;
-	bool<?Map> implementation = implementation;
-	fn init(const string text, const bool<?Map> implementation) {
+	any<> implementation = implementation;
+	fn init(const string text, const any<> implementation) {
 		return my;
 	};
 
 	fn run() -> bool {
 		str.print(my.text + "\n");
 		const let foo = my.implementation;
-		const let fixtures = getFixtures();
-		foo(fixtures);
+		foo();
 		return true;
 	};
-}
+};
 
-export fn describe(const string text, const bool<?Map> implementation) -> void {
+export fn describe(const string text, const any<> implementation) -> void {
 	const let desc = new Description(text, implementation);
 	desc.run();
 };
 
-export fn fix(const adr name, const any value) -> void {
-        const let fixtures = getFixtures();
-        fixtures.set(name, value);
+export fn fix(const adr name, const any<> setUp) -> void {
+	const let fixtures = getFixtures();
+	fixtures.set(name, setUp);
 };
 
-mutable any<?Map> beforeEachFn = NULL;
+export fn getFixture(const string name) -> any {
+	const let name = name.cstr();
+	const let fixtures = getFixtures();
+	if !fixtures.has(name) {
+		str.print(`  Warning: Fixture {name} does not exist.\n`);
+		return NULL;
+	};
+	const let fixture = fixtures.get(name).orElse(fn () panic("Fixture not found"));
+	return fixture();
+};
 
-export fn beforEach(const any<?Map> implementation) -> void {
+mutable any<> beforeEachFn = NULL;
+
+export fn beforeEach(const any<> implementation) -> void {
         beforeEachFn = implementation;
 };
 
-export fn it(const string text, const adr implementation) -> void {
+export fn it(const string text, const any<> implementation) -> void {
         str.print(`  it: {text}\n`);
-        const let fixtures = getFixtures();
         if beforeEachFn != NULL {
                 const let cb = beforeEachFn;
-                cb(fixtures);
+                cb();
         };
-        implementation(fixtures);
+        implementation();
 };
 
 types(T)
