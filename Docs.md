@@ -809,23 +809,40 @@ The list of standard modules is as follows:
     - provides the Standard string object
 - ATest
   - Provides the testing framework for AFlat
-  - `beforEach` registers a callback to run before each `it` block
+  - `beforeEach` registers a callback to run before each `it` block
+  - Use `describe` to group tests and `it` for individual cases
+  - Fixtures can be defined with `fix` and accessed via `getFixture`
+  - `getFixture` returns an untyped `any` and its result must be stored in a
+    variable with an explicit type
+  - Fixtures are torn down at the end of every `it` block so teardown functions
+    can manage resources
+  - Assertion helpers include `assertEqual`, `assertNotEqual`, `assertTrue`,
+    `assertFalse`, `assertNull`, `assertNotNull`, `assertError`, and
+    `assertSuccess`
 - Utils/result
   - A templated result type used for error handling
 
 Example:
 ```js
 .needs <std>
-import {describe, it, beforEach, assertEqual} from "ATest" under test;
-import Map from "Utils/Map";
+import {describe, it, beforeEach, fix, getFixture,
+        assertEqual, assertTrue, assertNotNull} from "ATest" under test;
 
 fn main() -> int {
-    test.describe("Test Suite 1", fn (Map __context) -> bool {
-        test.it("should pass the first test", fn (Map __context) {
-            test.assertEqual(1, 1);
+    test.fix("counter", fn () -> int { return 5; }, fn (int v) {
+        print(`clean {v}`);
+    });
+
+    test.beforeEach(fn () { print("setup"); });
+
+    test.describe("Numbers", fn () -> bool {
+        test.it("fixture works", fn () {
+            const int c = test.getFixture("counter");
+            test.assertNotNull(c);
+            test.assertEqual(c, 5);
         });
-        test.it("should fail the second test", fn (Map __context) {
-            test.assertEqual(`value`, `other`);
+        test.it("math works", fn () {
+            test.assertTrue(1 + 1 == 2);
         });
         return true;
     });
