@@ -7,15 +7,75 @@ import unordered_map from "Collections/unordered_map";
 import Result from "Utils/Result";
 import Error from "Utils/Error";
 import option from "Utils/option";
-import {some, none} from "Utils/option";
+import {some, none} from "Utils/option" under opt;
 
-mutable unordered_map::<adr> fixtures = NULL;
+class FixtureStruct {
+	any<> setUp = setUp;
+	any<any> tearDown = tearDown;
+	fn init(const any<> setUp, const any<any> tearDown) -> Self {
+		return my;
+	};
 
-export fn getFixtures() -> unordered_map::<adr> {
+	fn setUp() -> any {
+		if my.setUp != NULL {
+			const let foo = my.setUp;
+			return foo();
+		} else {
+			return NULL;
+		};
+	};
+
+	fn tearDown(const any value) -> void {
+		if my.tearDown != NULL {
+			const let foo = my.tearDown;
+			foo(value);
+		};
+		return;
+	};
+
+	fn _call() -> any {
+		return my.setUp();
+	};
+
+	fn toString() -> string {
+		return `FixtureStruct(setUp: {my.setUp != NULL}, tearDown: {my.tearDown != NULL})`;
+	};
+};
+
+mutable unordered_map::<FixtureStruct> fixtures = NULL;
+mutable Map fixtureData = NULL;
+
+export fn getFixtures() -> unordered_map::<FixtureStruct> {
 	if fixtures == NULL {
-		fixtures = new unordered_map::<adr>();
+		fixtures = new unordered_map::<FixtureStruct>();
 	};
 	return fixtures;
+};
+
+export fn getFixtureData() -> Map {
+	if fixtureData == NULL {
+		fixtureData = new Map();
+	};
+	return fixtureData;
+};
+
+fn builtList() -> List {
+	return getFixtureData().keys();
+};
+
+export fn tearDownFixtures() -> void {
+	const let built = getFixtureData();
+	const let fixtures = getFixtures();
+	const let keys = fixtures.keys();
+	for int i = 0; i < keys.getCount(); i++ {
+		const string key = keys.get(i).expect("Key not found");
+		if built.has(key.cstr()) {
+			const any data = built.get(key.cstr()).orElse(fn () panic("Fixture data not found"));
+			const let fixture = fixtures.get(key.cstr()).orElse(fn () panic("Fixture not found"));
+			fixture.tearDown(data);
+		};
+	};
+	built.clear();
 };
 
 class Description {
@@ -38,20 +98,32 @@ export fn describe(const string text, const any<> implementation) -> void {
 	desc.run();
 };
 
-export fn fix(const adr name, const any<> setUp) -> void {
+export fn fix(const adr name, const any<> setUp, * const any<any> tearDown) -> void {
 	const let fixtures = getFixtures();
-	fixtures.set(name, setUp);
+	if fixtures.has(name) {
+		const let fixtureData = getFixtureData();
+		const let fixture = fixtures.get(name).orElse(fn () panic("Fixture already exists"));
+		if fixtureData.has(name) {
+			const any data = fixtureData.get(name).orElse(fn () panic("Fixture data not found"));
+			fixture.tearDown(data);
+		};
+	};
+	const let fixture = new FixtureStruct(setUp, tearDown);
+	fixtures.set(name, fixture);
 };
 
 export fn getFixture(const string name) -> any {
+	const let fd = getFixtureData();
+	if fd.has(name) {
+		const any data = fd.get(name).orElse(fn () panic("Fixture data not found"));
+		return data;
+	};
 	const let name = name.cstr();
 	const let fixtures = getFixtures();
-	if !fixtures.has(name) {
-		str.print(`  Warning: Fixture {name} does not exist.\n`);
-		return NULL;
-	};
 	const let fixture = fixtures.get(name).orElse(fn () panic("Fixture not found"));
-	return fixture();
+	const any data = fixture.setUp();
+	fd.set(name, data);
+	return data;
 };
 
 mutable any<> beforeEachFn = NULL;
@@ -67,6 +139,7 @@ export fn it(const string text, const any<> implementation) -> void {
                 cb();
         };
         implementation();
+		tearDownFixtures();
 };
 
 types(T)

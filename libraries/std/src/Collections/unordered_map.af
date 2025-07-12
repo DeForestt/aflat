@@ -40,4 +40,9 @@ class unordered_map {
 	fn has(const adr key) -> bool {
 		return my.inner.has(key);
   	};
+
+	fn clear() -> void {
+		my.inner.clear();
+		return;
+	};
 };
