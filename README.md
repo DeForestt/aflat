@@ -41,9 +41,13 @@ Or adding the aflat bin to your path.
 This readme assumes that the aflat bin directory is in your path or an alias is set.
 
 ### Creating a new project
-Creating a new aflat progect is as simple as running the binary with the command 'make'
+Creating a new aflat project is as simple as running the binary with the command `make`
 ```bash
 aflat make <project_name>
+```
+To create a library project omit the hello world `main` by using `--lib`:
+```bash
+aflat --lib make <project_name>
 ```
 
 ### Hello World

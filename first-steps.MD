@@ -16,6 +16,7 @@ To create the tutorial project, run the following command in your project direct
 ```bash
 aflat make tutorial
 ```
+Use `--lib` before `make` if you want a library project instead of an executable.
 
 The tutorial project will have been created in the `tutorial` directory.  The tutorial project will have a `aflat.cfg` file that will tell the aflat build system what to build and link.  The tutorial project will have a `src/main.af` file that will be the entry point for the project. It will also have a `src/test/test.af` file that is will be used to test the project with the `aflat test` command.
 

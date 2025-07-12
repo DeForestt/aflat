@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     std::string pName = cli.args[0];
-    if (cli.args.size() == 2 && cli.args[1] == "lib") {
+    if (cli.library || (cli.args.size() == 2 && cli.args[1] == "lib")) {
       libTemplate(pName);
     } else {
       buildTemplate(pName);

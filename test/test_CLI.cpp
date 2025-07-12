@@ -36,3 +36,13 @@ TEST_CASE("CLI name flag", "[cli]") {
   REQUIRE(opts.installName == "foo");
   REQUIRE(opts.command == "install");
 }
+
+TEST_CASE("CLI library flag", "[cli]") {
+  const char *argv[] = {"aflat", "--lib", "make", "proj"};
+  CommandLineOptions opts;
+  REQUIRE(parseCommandLine(4, (char **)argv, opts));
+  REQUIRE(opts.library == true);
+  REQUIRE(opts.command == "make");
+  REQUIRE(opts.args.size() == 1);
+  REQUIRE(opts.args[0] == std::string("proj"));
+}
