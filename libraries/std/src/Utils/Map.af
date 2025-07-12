@@ -116,8 +116,8 @@ class MapNode {
     };
 
     public List keys() {
-        const List keys = new List(adr);
-        keys.pushBack(my.key);
+        const List keys = new List(string);
+        keys.pushBack(new string(my.key));
         if my.left != NULL {
             keys.stitch(my.left.keys());
         };
@@ -184,7 +184,7 @@ class Map {
 
     List keys() {
         if my.root == NULL {
-            return new List(adr);
+            return new List(string);
         } else {
             return my.root.keys();
         };
@@ -192,5 +192,15 @@ class Map {
 
     bool has(const adr key) {
         return my.get(key).isSome();
+    };
+
+    void normalize() {
+        if my.root != NULL {
+            my.root.normalize();
+        };
+    };
+
+    void clear() {
+        my.root = NULL;
     };
 };
