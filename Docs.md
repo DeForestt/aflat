@@ -809,13 +809,14 @@ The list of standard modules is as follows:
     - provides the Standard string object
 - ATest
   - Provides the testing framework for AFlat
+  - `beforEach` registers a callback to run before each `it` block
 - Utils/result
   - A templated result type used for error handling
 
 Example:
 ```js
 .needs <std>
-import {describe, it, assertEqual} from "ATest" under test;
+import {describe, it, beforEach, assertEqual} from "ATest" under test;
 import Map from "Utils/Map";
 
 fn main() -> int {
