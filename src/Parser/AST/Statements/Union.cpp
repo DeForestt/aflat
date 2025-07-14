@@ -245,8 +245,9 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   // now we need a symbol for the type (just the index of the alias)
   gen::Symbol typeSymbol;
   typeSymbol.type = ast::Type("int", asmc::DWord);
-  typeSymbol.symbol = "type";        // This is the type of the union
-  typeSymbol.byteMod = asmc::DWord;  // This is the size of the type
+  typeSymbol.symbol = "type";  // This is the type of the union
+  typeSymbol.byteMod =
+      maxSize + 4;  // This is the size of the union + 4 bytes for the type
   type->SymbolTable.push(typeSymbol);
 
   if (this->statement != nullptr) {

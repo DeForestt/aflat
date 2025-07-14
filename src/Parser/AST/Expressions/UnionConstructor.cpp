@@ -64,7 +64,6 @@ gen::GenerationResult const UnionConstructor::generateExpression(
     std::cout << "Moving primitive type: " << fromExpr.type
               << " to union variant: " << variantName << std::endl;
     file << generator.setOffset(mov->to, 0, fromExpr.access, fromExpr.size);
-    return {file, std::nullopt};
   } else {
     std::cout << "Moving from expression of type: " << fromExpr.type
               << " to union variant: " << variantName << std::endl;
@@ -88,9 +87,9 @@ gen::GenerationResult const UnionConstructor::generateExpression(
 
   // set the variant index in the union
   file << generator.setOffset(mov->to, unionGen->largestSize,
-                              "$" + std::to_string(variantIndex), asmc::DWord)
+                              "$" + std::to_string(variantIndex), asmc::DWord);
 
-              auto out = gen::Expr();
+  auto out = gen::Expr();
   out.access = mov->to;
   out.size = asmc::QWord;
   out.type = unionType.typeName;
