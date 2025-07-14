@@ -86,6 +86,9 @@ class Expr : public Statement {
   Expr *extention = nullptr;
   bool selling = false;
   std::string typeCast = "";
+  virtual gen::GenerationResult const generateExpression(
+      gen::CodeGenerator &generator, asmc::Size size,
+      std::string typeHint = "");
 };
 
 class ConditionalExpr {
@@ -351,8 +354,8 @@ class UnionConstructor : public Expr {
   bool dynamic;
   std::vector<std::string> templateTypes;
   std::string toString() override {
-    return "union " + unionType.typeName + "." + variantName + "(" +
-           expr->toString() + ")";
+    return unionType.typeName + "->" + variantName + "(" + expr->toString() +
+           ")";
   }
   UnionConstructor(Type unionType, std::string variantName, Expr *expr,
                    bool dynamic, std::vector<std::string> templateTypes)
@@ -361,6 +364,14 @@ class UnionConstructor : public Expr {
         expr(expr),
         dynamic(dynamic),
         templateTypes(std::move(templateTypes)) {}
+
+  gen::GenerationResult const generateExpression(
+      gen::CodeGenerator &generator, asmc::Size size,
+      std::string typeHint = "") override;
+
+  gen::GenerationResult const getStaticExpr(gen::CodeGenerator &generator,
+                                            asmc::Size size,
+                                            std::string typeHint = "");
 };
 
 Statement *deepCopy(const Statement *stmt);

@@ -63,6 +63,7 @@ class Union : public Class {
         : name(std::move(name)), value(std::move(value)), byteSize(byteSize) {}
   };
 
+  int largestSize = 0;
   std::vector<Alias> aliases;
 };
 

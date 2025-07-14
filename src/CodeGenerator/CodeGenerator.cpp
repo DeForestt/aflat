@@ -315,7 +315,7 @@ asmc::File gen::CodeGenerator::memMove(std::string from, std::string to,
   movCount->logicalLine = this->logicalLine;
   file.text << movCount;
 
-  std::string loopLabelStr = gen::utils::generateUUID();
+  std::string loopLabelStr = "L_" + gen::utils::generateUUID();
   asmc::Label *loopLabel = new asmc::Label();
   loopLabel->label = loopLabelStr;
   loopLabel->logicalLine = this->logicalLine;

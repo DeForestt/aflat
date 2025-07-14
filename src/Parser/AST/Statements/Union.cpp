@@ -172,13 +172,10 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
     } else if (alias.isType()) {
       auto typePtr = alias.getType();
 
-      static std::unordered_map<std::string, int> primitiveSizes = {
-          {"int", 4},  {"short", 2}, {"char", 1}, {"long", 8},   {"adr", 8},
-          {"byte", 1}, {"float", 4}, {"bool", 1}, {"generic", 8}};
-
-      if (primitiveSizes.find(typePtr->typeName) != primitiveSizes.end()) {
+      if (parse::PRIMITIVE_TYPES.find(typePtr->typeName) !=
+          parse::PRIMITIVE_TYPES.end()) {
         type->aliases.emplace_back(alias.name, typePtr,
-                                   primitiveSizes[typePtr->typeName]);
+                                   parse::PRIMITIVE_TYPES[typePtr->typeName]);
       } else {
         // For other types, we can use the size from the typeList
         auto t = generator.typeList[typePtr->typeName];
@@ -235,6 +232,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
                              })
                 ->byteSize;
 
+  type->largestSize = maxSize;
   // now, before anything else, we need to add a symbol for the union portion...
   // all this does is alocate the memory in the object
 
