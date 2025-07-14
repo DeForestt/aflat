@@ -58,3 +58,50 @@ TEST_CASE("cannAssign returns false if it can implicit cast", "[canAssign]") {
 
   CHECK_THROWS(!mockGen.canAssign(testType, "takes", "ERROR"));
 }
+
+TEST_CASE("memMove generates copy loop", "[memmove]") {
+  auto parser = parse::Parser();
+  gen::CodeGenerator gen("mod", parser, "",
+                         std::filesystem::current_path().string());
+
+  auto file = gen.memMove("%rax", "%rbx", 1);
+  REQUIRE(file.text.size() >= 3);
+  bool foundSrc = false;
+  bool foundDst = false;
+  bool pushSrc = false;
+  bool pushDst = false;
+  bool pushCnt = false;
+  bool pushA = false;
+  bool popSrc = false;
+  bool popDst = false;
+  bool popCnt = false;
+  bool popA = false;
+  for (int i = 0; i < file.text.size(); ++i) {
+    if (auto *m = dynamic_cast<asmc::Mov *>(file.text.get(i))) {
+      if (m->from == "%rax" && m->to == "%rsi") foundSrc = true;
+      if (m->from == "%rbx" && m->to == "%rdi") foundDst = true;
+    }
+    if (auto *p = dynamic_cast<asmc::Push *>(file.text.get(i))) {
+      if (p->op == "%rsi") pushSrc = true;
+      if (p->op == "%rdi") pushDst = true;
+      if (p->op == "%rcx") pushCnt = true;
+      if (p->op == "%rax") pushA = true;
+    }
+    if (auto *p2 = dynamic_cast<asmc::Pop *>(file.text.get(i))) {
+      if (p2->op == "%rsi") popSrc = true;
+      if (p2->op == "%rdi") popDst = true;
+      if (p2->op == "%rcx") popCnt = true;
+      if (p2->op == "%rax") popA = true;
+    }
+  }
+  REQUIRE(foundSrc);
+  REQUIRE(foundDst);
+  REQUIRE(pushSrc);
+  REQUIRE(pushDst);
+  REQUIRE(pushCnt);
+  REQUIRE(pushA);
+  REQUIRE(popSrc);
+  REQUIRE(popDst);
+  REQUIRE(popCnt);
+  REQUIRE(popA);
+}

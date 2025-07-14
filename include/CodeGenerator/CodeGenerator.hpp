@@ -99,6 +99,7 @@ class CodeGenerator {
                             bool isDiv = false);
   gen::Expr genArithmetic(asmc::ArithInst *, ast::Compound compound,
                           asmc::File &OutputFile);
+  asmc::File memMove(std::string from, std::string to, int bytes);
   ast::Expr *imply(ast::Expr *expr, std::string typeName);
   bool canAssign(ast::Type type, std::string typeName, std::string fmt,
                  bool strict = false);
