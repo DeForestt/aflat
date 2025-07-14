@@ -394,3 +394,64 @@ asmc::File gen::CodeGenerator::memMove(std::string from, std::string to,
 
   return file;
 }
+
+asmc::File gen::CodeGenerator::setOffset(std::string to, int offset,
+                                         std::string from, asmc::Size size) {
+  asmc::File file;
+
+  asmc::Push *pushRdi = new asmc::Push();
+  pushRdi->op = this->registers["%rdi"]->get(asmc::QWord);
+  pushRdi->size = asmc::QWord;
+  pushRdi->logicalLine = this->logicalLine;
+  file.text << pushRdi;
+
+  asmc::Push *pushRax = new asmc::Push();
+  pushRax->op = this->registers["%rax"]->get(asmc::QWord);
+  pushRax->size = asmc::QWord;
+  pushRax->logicalLine = this->logicalLine;
+  file.text << pushRax;
+
+  asmc::Mov *movPtr = new asmc::Mov();
+  movPtr->from = to;
+  movPtr->to = this->registers["%rdi"]->get(asmc::QWord);
+  movPtr->size = asmc::QWord;
+  movPtr->logicalLine = this->logicalLine;
+  file.text << movPtr;
+
+  if (offset != 0) {
+    asmc::Add *addOffset = new asmc::Add();
+    addOffset->op1 = "$" + std::to_string(offset);
+    addOffset->op2 = this->registers["%rdi"]->get(asmc::QWord);
+    addOffset->size = asmc::QWord;
+    addOffset->logicalLine = this->logicalLine;
+    file.text << addOffset;
+  }
+
+  asmc::Mov *movVal = new asmc::Mov();
+  movVal->from = from;
+  movVal->to = this->registers["%rax"]->get(size);
+  movVal->size = size;
+  movVal->logicalLine = this->logicalLine;
+  file.text << movVal;
+
+  asmc::Mov *store = new asmc::Mov();
+  store->from = this->registers["%rax"]->get(size);
+  store->to = '(' + this->registers["%rdi"]->get(asmc::QWord) + ')';
+  store->size = size;
+  store->logicalLine = this->logicalLine;
+  file.text << store;
+
+  asmc::Pop *popRax = new asmc::Pop();
+  popRax->op = this->registers["%rax"]->get(asmc::QWord);
+  popRax->size = asmc::QWord;
+  popRax->logicalLine = this->logicalLine;
+  file.text << popRax;
+
+  asmc::Pop *popRdi = new asmc::Pop();
+  popRdi->op = this->registers["%rdi"]->get(asmc::QWord);
+  popRdi->size = asmc::QWord;
+  popRdi->logicalLine = this->logicalLine;
+  file.text << popRdi;
+
+  return file;
+}
