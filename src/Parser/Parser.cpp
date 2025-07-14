@@ -1286,9 +1286,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       auto dynamic = false;
       output = new ast::UnionConstructor(*unionType, variantName->meta, expr,
                                          dynamic, genericTypeList);
-    };
-
-    if (obj.meta == "new") {
+    } else if (obj.meta == "new") {
       auto newExpr = new ast::NewExpr();
       newExpr->logicalLine = obj.lineCount;
       auto typeName = dynamic_cast<lex::LObj *>(tokens.pop());
