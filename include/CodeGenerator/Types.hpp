@@ -52,6 +52,20 @@ class Class : public Type {
   gen::Class* parent = nullptr;
 };
 
+class Union : public Class {
+ public:
+  struct Alias {
+    int byteSize;
+    std::string name;
+    std::variant<ast::Type*, ast::Expr*> value;
+    Alias(std::string name, std::variant<ast::Type*, ast::Expr*> value,
+          int byteSize)
+        : name(std::move(name)), value(std::move(value)), byteSize(byteSize) {}
+  };
+
+  std::vector<Alias> aliases;
+};
+
 class Enum : public Type {
  public:
   struct EnumValue {

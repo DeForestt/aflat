@@ -343,6 +343,26 @@ class IfExpr : public Expr {
   }
 };
 
+class UnionConstructor : public Expr {
+ public:
+  ast::Type unionType;
+  std::string variantName;
+  Expr *expr;
+  bool dynamic;
+  std::vector<std::string> templateTypes;
+  std::string toString() override {
+    return "union " + unionType.typeName + "." + variantName + "(" +
+           expr->toString() + ")";
+  }
+  UnionConstructor(Type unionType, std::string variantName, Expr *expr,
+                   bool dynamic, std::vector<std::string> templateTypes)
+      : unionType(unionType),
+        variantName(variantName),
+        expr(expr),
+        dynamic(dynamic),
+        templateTypes(std::move(templateTypes)) {}
+};
+
 Statement *deepCopy(const Statement *stmt);
 
 }  // namespace ast

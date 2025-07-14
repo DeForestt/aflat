@@ -48,6 +48,11 @@ ast::Statement *Lower::lower(ast::Statement *stmt) {
     stmt = this->lowerFunction(func);
   } else if (dynamic_cast<ast::Class *>(stmt) != nullptr) {
     auto cl = dynamic_cast<ast::Class *>(stmt);
+    if (dynamic_cast<ast::Union *>(cl) != nullptr) {
+      // Unions should not be lowered
+      //
+      return cl;
+    }
     this->inclass = true;
     this->className = cl->ident.ident;
     cl->statement = this->lower(cl->statement);

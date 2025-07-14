@@ -126,13 +126,8 @@ Function::Function(const ScopeMod &scope,
                                 this->mutability, this->optConvertionIndices,
                                 this->readOnly);
 
-  auto dash = dynamic_cast<lex::OpSym *>(tokens.peek());
-  if (dash && dash->Sym == '-') {
-    tokens.pop();
-    auto arrow = dynamic_cast<lex::Symbol *>(tokens.peek());
-    if (arrow == nullptr || arrow->meta != ">")
-      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           "Expected '->'");
+  auto arrow = dynamic_cast<lex::Symbol *>(tokens.peek());
+  if (arrow && arrow->meta == "->") {
     tokens.pop();
     auto typeName = dynamic_cast<lex::LObj *>(tokens.pop());
     if (typeName == nullptr)

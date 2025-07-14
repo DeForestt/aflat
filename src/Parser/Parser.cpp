@@ -570,6 +570,8 @@ ast::Statement *parse::Parser::parseStmt(
     } else if (obj.meta == "class") {
       output = new ast::Class(tokens, *this, safeType, dynamicType, pedantic,
                               annotations, typeNames);
+    } else if (obj.meta == "union") {
+      output = new ast::Union(tokens, *this, typeNames);
     } else if (obj.meta == "enum") {
       output = new ast::Enum(tokens, *this);
     } else if (obj.meta == "import") {
@@ -1254,6 +1256,38 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     output = var;
     auto genericTypeList = this->parseTemplateTypeList(tokens, obj.lineCount);
 
+    // check for the `->` operator if it is there that means that we are
+    // constructing a union
+    auto arrow = dynamic_cast<lex::Symbol *>(tokens.peek());
+    if (arrow != nullptr && arrow->meta == "->") {
+      tokens.pop();
+      auto unionType = this->typeList[obj.meta];
+      if (unionType == nullptr)
+        throw err::Exception("Line: " + std::to_string(obj.lineCount) +
+                             " Unknown type " + obj.meta);
+      auto variantName = dynamic_cast<lex::LObj *>(tokens.pop());
+      if (variantName == nullptr)
+        throw err::Exception("Line: " + std::to_string(obj.lineCount) +
+                             " Expected, Ident after ->");
+      auto openParen = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (!openParen || openParen->Sym != '(') {
+        throw err::Exception("Line: " + std::to_string(obj.lineCount) +
+                             " Expected, ( after ->");
+      }
+      tokens.pop();
+      auto expr = this->parseExpr(tokens);
+      if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+          dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ')') {
+        tokens.pop();
+      } else {
+        throw err::Exception("Line: " + std::to_string(obj.lineCount) +
+                             " Expected, ) after union variant");
+      }
+      auto dynamic = false;
+      output = new ast::UnionConstructor(*unionType, variantName->meta, expr,
+                                         dynamic, genericTypeList);
+    };
+
     if (obj.meta == "new") {
       auto newExpr = new ast::NewExpr();
       newExpr->logicalLine = obj.lineCount;
@@ -1279,8 +1313,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         if (testSym != nullptr && testSym->Sym != '[') {
           auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
           if (symp->Sym != ')')
-            throw err::Exception("Expected closed parenthesis got " +
-                                 symp->Sym);
+            throw err::Exception(
+                &"Expected closed parenthesis got "[symp->Sym]);
         } else {
           bool pop = false;
           do {
@@ -1293,8 +1327,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
           if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
             auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
             if (symp->Sym != ')')
-              throw err::Exception("Expected closed parenthesis got " +
-                                   symp->Sym);
+              throw err::Exception(
+                  &"Expected closed parenthesis got "[symp->Sym]);
           }
         }
       }
@@ -1389,8 +1423,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         if (testSym != nullptr && testSym->Sym != '[' && testSym->Sym != '{') {
           auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
           if (symp->Sym != ')')
-            throw err::Exception("Expected closed parenthesis got " +
-                                 symp->Sym);
+            throw err::Exception(
+                &"Expected closed parenthesis got "[symp->Sym]);
         } else {
           bool pop = false;
           do {
@@ -1403,8 +1437,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
           if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
             auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
             if (symp->Sym != ')')
-              throw err::Exception("Expected closed parenthesis got " +
-                                   symp->Sym);
+              throw err::Exception(
+                  &"Expected closed parenthesis got "[symp->Sym]);
           }
         }
 
