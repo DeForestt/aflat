@@ -136,13 +136,15 @@ class CodeGenerator {
   asmc::File *deScope(gen::Symbol &sym);
   bool hasError() const { return errorFlag; }
 
- private:
-  // Helper containing the original large implementation of GenExpr.
-  Expr GenExprRest(ast::Expr *expr, asmc::File &OutputFile,
-                   asmc::Size size = asmc::AUTO, std::string typeHint = "");
+  // Exposed helpers for generating specific expression types
   Expr genCallExpr(ast::CallExpr *exprCall, asmc::File &OutputFile,
                    asmc::Size size);
   Expr genVarExpr(ast::Var var, asmc::File &OutputFile, asmc::Size size);
+  // Helper containing the original large implementation of GenExpr.
+  Expr GenExprRest(ast::Expr *expr, asmc::File &OutputFile,
+                   asmc::Size size = asmc::AUTO, std::string typeHint = "");
+
+ private:
   static bool traceAlert;
 };
 }  // namespace gen

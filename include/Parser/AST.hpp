@@ -86,6 +86,9 @@ class Expr : public Statement {
   Expr *extention = nullptr;
   bool selling = false;
   std::string typeCast = "";
+  virtual gen::GenerationResult const generateExpr(
+      gen::CodeGenerator &generator, asmc::Size size = asmc::AUTO,
+      std::string typeHint = "");
 };
 
 class ConditionalExpr {
@@ -130,7 +133,7 @@ class Type {
 
   Type() = default;
   Type(const std::string &typeName, const asmc::Size &size)
-      : typeName(typeName), size(size){};
+      : typeName(typeName), size(size) {};
 };
 
 class Arg {
@@ -196,6 +199,9 @@ class Var : public Expr {
     }
     return result;
   }
+  gen::GenerationResult const generateExpr(gen::CodeGenerator &generator,
+                                           asmc::Size size = asmc::AUTO,
+                                           std::string typeHint = "") override;
 };
 
 class Buy : public Expr {
@@ -284,6 +290,9 @@ class CallExpr : public Expr {
 
   std::vector<std::string> templateTypes;
   std::string toString() override;
+  gen::GenerationResult const generateExpr(gen::CodeGenerator &generator,
+                                           asmc::Size size = asmc::AUTO,
+                                           std::string typeHint = "") override;
 };
 
 class parenExpr : public Expr {

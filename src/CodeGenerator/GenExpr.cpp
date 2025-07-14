@@ -19,7 +19,9 @@ namespace gen {
 
 Expr CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                             asmc::Size size, std::string typeHint) {
-  return GenExprRest(expr, OutputFile, size, std::move(typeHint));
+  auto result = expr->generateExpr(*this, size, std::move(typeHint));
+  OutputFile << result.file;
+  return result.expr.value();
 }
 
 }  // namespace gen
