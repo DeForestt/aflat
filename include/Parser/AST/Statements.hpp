@@ -24,6 +24,7 @@
 #include "Parser/AST/Statements/If.hpp"
 #include "Parser/AST/Statements/Import.hpp"
 #include "Parser/AST/Statements/Inc.hpp"
+#include "Parser/AST/Statements/Match.hpp"
 #include "Parser/AST/Statements/Return.hpp"
 #include "Parser/AST/Statements/Sequence.hpp"
 #include "Parser/AST/Statements/Struct.hpp"

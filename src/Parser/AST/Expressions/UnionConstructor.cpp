@@ -40,6 +40,21 @@ gen::GenerationResult const UnionConstructor::generateExpression(
     return {file, std::nullopt};
   }
 
+  auto it = std::find_if(unionGen->aliases.begin(), unionGen->aliases.end(),
+                         [&](const gen::Union::Alias &alias) {
+                           return alias.name == variantName;
+                         });
+
+  if (it == unionGen->aliases.end()) {
+    generator.alert(
+        "Variant " + variantName + " not found in union " + unionType.typeName,
+        true, __FILE__, __LINE__);
+    return {file, std::nullopt};
+  }
+
+  int variantIndex = std::distance(unionGen->aliases.begin(), it);
+  auto alias = *it;
+
   auto internalAccess = getStaticExpr(generator, size, typeHint);
   file << internalAccess.file;
   // create a temporary variable to hold the union
@@ -55,35 +70,28 @@ gen::GenerationResult const UnionConstructor::generateExpression(
 
   file.text << mov;
 
-  auto fromExpr = generator.GenExpr(expr, file, asmc::QWord);
+  auto fromExpr = std::holds_alternative<ast::Type *>(alias.value)
+                      ? generator.GenExpr(expr, file, asmc::QWord)
+                      : generator.GenExpr(std::get<ast::Expr *>(alias.value),
+                                          file, asmc::QWord);
+
+  if (std::holds_alternative<ast::Type *>(alias.value)) {
+    if (!generator.canAssign(*std::get<ast::Type *>(alias.value), fromExpr.type,
+                             "Cannot assign type {} to union variant {}")) {
+      fromExpr = generator.GenExpr(
+          generator.imply(expr, std::get<ast::Type *>(alias.value)->typeName),
+          file);
+    }
+  }
 
   // check if the expression is a primitive type
 
   if (parse::PRIMITIVE_TYPES.find(fromExpr.type) !=
       parse::PRIMITIVE_TYPES.end()) {
-    std::cout << "Moving primitive type: " << fromExpr.type
-              << " to union variant: " << variantName << std::endl;
     file << generator.setOffset(mov->to, 0, fromExpr.access, fromExpr.size);
   } else {
-    std::cout << "Moving from expression of type: " << fromExpr.type
-              << " to union variant: " << variantName << std::endl;
     file << generator.memMove(fromExpr.access, mov->to, unionGen->largestSize);
   };
-
-  auto it = std::find_if(unionGen->aliases.begin(), unionGen->aliases.end(),
-                         [&](const gen::Union::Alias &alias) {
-                           return alias.name == variantName;
-                         });
-
-  if (it == unionGen->aliases.end()) {
-    generator.alert(
-        "Variant " + variantName + " not found in union " + unionType.typeName,
-        true, __FILE__, __LINE__);
-    return {file, std::nullopt};
-  }
-
-  int variantIndex = std::distance(unionGen->aliases.begin(), it);
-  auto alias = *it;
 
   // set the variant index in the union
   file << generator.setOffset(mov->to, unionGen->largestSize,
