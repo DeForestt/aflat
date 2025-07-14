@@ -61,8 +61,9 @@ gen::GenerationResult const UnionConstructor::generateExpression(
 
   if (parse::PRIMITIVE_TYPES.find(fromExpr.type) !=
       parse::PRIMITIVE_TYPES.end()) {
-    generator.alert("Cannot assign primitive type to union variant", true,
-                    __FILE__, __LINE__);
+    std::cout << "Moving primitive type: " << fromExpr.type
+              << " to union variant: " << variantName << std::endl;
+    file << generator.setOffset(mov->to, 0, fromExpr.access, fromExpr.size);
     return {file, std::nullopt};
   } else {
     std::cout << "Moving from expression of type: " << fromExpr.type
@@ -85,7 +86,11 @@ gen::GenerationResult const UnionConstructor::generateExpression(
   int variantIndex = std::distance(unionGen->aliases.begin(), it);
   auto alias = *it;
 
-  auto out = gen::Expr();
+  // set the variant index in the union
+  file << generator.setOffset(mov->to, unionGen->largestSize,
+                              "$" + std::to_string(variantIndex), asmc::DWord)
+
+              auto out = gen::Expr();
   out.access = mov->to;
   out.size = asmc::QWord;
   out.type = unionType.typeName;
