@@ -1,0 +1,96 @@
+#include <algorithm>
+
+#include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/ScopeManager.hpp"
+#include "Parser/AST.hpp"
+
+namespace ast {
+
+gen::GenerationResult const UnionConstructor::getStaticExpr(
+    gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
+  asmc::File file;
+
+  auto callExpr = new ast::CallExpr();
+  callExpr->call = new ast::Call();
+  callExpr->templateTypes = templateTypes;
+  callExpr->call->ident = unionType.typeName;
+  callExpr->call->logicalLine = logicalLine;
+
+  auto resolvedCall = generator.GenExpr(callExpr, file, size, typeHint);
+  return {file, resolvedCall};
+}
+
+gen::GenerationResult const UnionConstructor::generateExpression(
+    gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
+  asmc::File file;
+
+  auto type = generator.getType(unionType.typeName, file);
+  if (type == nullptr) {
+    generator.alert("Type " + unionType.typeName + " not found", true, __FILE__,
+                    __LINE__);
+    return {file, std::nullopt};
+  }
+
+  auto t = *type;
+  auto unionGen = dynamic_cast<gen::Union *>(t);
+  if (unionGen == nullptr) {
+    generator.alert("Type " + unionType.typeName +
+                        " is not a union type, cannot construct it as such",
+                    true, __FILE__, __LINE__);
+    return {file, std::nullopt};
+  }
+
+  auto internalAccess = getStaticExpr(generator, size, typeHint);
+  file << internalAccess.file;
+  // create a temporary variable to hold the union
+  auto tempName = "$" + std::to_string(generator.tempCount++) + "_temp";
+  auto mod = gen::scope::ScopeManager::getInstance()->assign(tempName,
+                                                             unionType, false);
+
+  auto mov = new asmc::Mov();
+  mov->logicalLine = logicalLine;
+  mov->from = internalAccess.expr->access;
+  mov->to = "-" + std::to_string(mod) + "(%rbp)";
+  mov->size = asmc::QWord;
+
+  file.text << mov;
+
+  auto fromExpr = generator.GenExpr(expr, file, asmc::QWord);
+
+  // check if the expression is a primitive type
+
+  if (parse::PRIMITIVE_TYPES.find(fromExpr.type) !=
+      parse::PRIMITIVE_TYPES.end()) {
+    generator.alert("Cannot assign primitive type to union variant", true,
+                    __FILE__, __LINE__);
+    return {file, std::nullopt};
+  } else {
+    std::cout << "Moving from expression of type: " << fromExpr.type
+              << " to union variant: " << variantName << std::endl;
+    file << generator.memMove(fromExpr.access, mov->to, unionGen->largestSize);
+  };
+
+  auto it = std::find_if(unionGen->aliases.begin(), unionGen->aliases.end(),
+                         [&](const gen::Union::Alias &alias) {
+                           return alias.name == variantName;
+                         });
+
+  if (it == unionGen->aliases.end()) {
+    generator.alert(
+        "Variant " + variantName + " not found in union " + unionType.typeName,
+        true, __FILE__, __LINE__);
+    return {file, std::nullopt};
+  }
+
+  int variantIndex = std::distance(unionGen->aliases.begin(), it);
+  auto alias = *it;
+
+  auto out = gen::Expr();
+  out.access = mov->to;
+  out.size = asmc::QWord;
+  out.type = unionType.typeName;
+  out.op = asmc::Hard;
+
+  return {file, out};
+}
+};  // namespace ast
