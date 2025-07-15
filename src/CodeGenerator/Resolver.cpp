@@ -87,14 +87,14 @@ CodeGenerator::resolveSymbol(std::string ident,
     push->op = this->registers["%r14"]->get(asmc::QWord);
     OutputFile.text << push;
     while (modList.trail() > checkTo) {
-      Type type = **this->getType(last.typeName, OutputFile);
+      Type *type = *this->getType(last.typeName, OutputFile);
       std::string sto = modList.touch();
       if (this->scope == *this->typeList[last.typeName]) {
-        modSym =
-            type.SymbolTable.search<std::string>(searchSymbol, modList.shift());
+        modSym = type->SymbolTable.search<std::string>(searchSymbol,
+                                                       modList.shift());
       } else {
-        modSym = type.publicSymbols.search<std::string>(searchSymbol,
-                                                        modList.shift());
+        modSym = type->publicSymbols.search<std::string>(searchSymbol,
+                                                         modList.shift());
       };
       if (modSym == nullptr)
         alert("variable not found " + last.typeName + "." + sto, true, __FILE__,
