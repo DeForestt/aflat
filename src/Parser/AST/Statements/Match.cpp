@@ -1,7 +1,9 @@
 #include "Parser/AST/Statements/Match.hpp"
 
-#include <iostream>
+#include <optional>
 #include <vector>
+
+#include "CodeGenerator/CodeGenerator.hpp"
 
 namespace ast {
 
@@ -90,6 +92,19 @@ Match::Match(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   if (closeBrace == nullptr || closeBrace->Sym != '}') {
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
                          " Match statement must end with a closing brace.");
+  }
+}
+
+gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
+  asmc::File file;
+
+  auto exprResult = generator.GenExpr(expr, file);
+  auto t = generator.getType(exprResult.type, file);
+
+  if (!t) {
+    generator.alert("Match expression type not found: " + exprResult.type, true,
+                    __FILE__, __LINE__);
+    return {.file = file, .expr = std::nullopt};
   }
 }
 

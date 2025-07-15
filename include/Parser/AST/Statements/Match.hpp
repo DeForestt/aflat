@@ -34,8 +34,8 @@ class Match : public Expr {
   ast::Expr *expr = nullptr;  // The expression to match against
   std::vector<Case> cases;
 
-  // gen::GenerationResult const generate(gen::CodeGenerator &generator)
-  // override; gen::GenerationResult const generateExpression(
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
+  // gen::GenerationResult const generateExpression(
   //     gen::CodeGenerator &generator, asmc::Size size, std::string typeHint =
   //     "") override;
   std::vector<Case> const parseCases(links::LinkedList<lex::Token *> &tokens,
