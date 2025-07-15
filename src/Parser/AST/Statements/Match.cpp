@@ -13,6 +13,7 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Types.hpp"
+#include "Parser/Parser.hpp"
 
 namespace ast {
 
@@ -190,15 +191,36 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
       if (std::holds_alternative<ast::Type *>(alias.value)) {
         // if the alias value is a type, we need to declare a variable of that
         // type
+
         auto &type = std::get<ast::Type *>(alias.value);
         auto byteMod = gen::scope::ScopeManager::getInstance()->assign(
             *_case.pattern.veriableName, *type, false, false);
-        auto mov = new asmc::Mov();
-        mov->logicalLine = expr->logicalLine;
-        mov->size = type->size;
-        mov->from = generator.registers["%rdx"]->get(type->size);
-        mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
-        file.text << mov;
+
+        if (parse::PRIMITIVE_TYPES.find(type->typeName) !=
+            parse::PRIMITIVE_TYPES.end()) {
+          // primitives will need to be dereferenced
+          auto mov = new asmc::Mov();
+          mov->logicalLine = expr->logicalLine;
+          mov->size = type->size;
+          mov->from = "(" + generator.registers["%rdx"]->get(asmc::QWord) + ")";
+          mov->to = generator.registers["%eax"]->get(type->size);
+          file.text << mov;
+
+          auto mov2 = new asmc::Mov();
+          mov2->logicalLine = expr->logicalLine;
+          mov2->size = type->size;
+          mov2->from = generator.registers["%eax"]->get(type->size);
+          mov2->to = "-" + std::to_string(byteMod) + "(%rbp)";
+          file.text << mov2;
+
+        } else {
+          auto mov = new asmc::Mov();
+          mov->logicalLine = expr->logicalLine;
+          mov->size = type->size;
+          mov->from = generator.registers["%rdx"]->get(type->size);
+          mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
+          file.text << mov;
+        };
 
       } else if (std::holds_alternative<ast::Expr *>(alias.value)) {
         auto &expr = std::get<ast::Expr *>(alias.value);
