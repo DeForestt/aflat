@@ -7,6 +7,7 @@
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/AST/Statements.hpp"
+#include "Parser/AST/Statements/Match.hpp"
 #include "Scanner.hpp"
 
 ast::Expr *prioritizeExpr(ast::Expr *expr);
@@ -546,6 +547,8 @@ ast::Statement *parse::Parser::parseStmt(
       output = new ast::Return(tokens, *this);
     } else if (obj.meta == "fn") {
       output = new ast::Function(scope, tokens, typeNames, *this, safeType);
+    } else if (obj.meta == "match") {
+      output = new ast::Match(tokens, *this);
     } else if (obj.meta == "push") {
       auto push = new ast::Push;
       push->expr = this->parseExpr(tokens);
@@ -799,7 +802,7 @@ links::LinkedList<ast::Expr *> parse::Parser::parseCallArgsList(
     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
       auto sym = dynamic_cast<lex::OpSym *>(tokens.pop());
       if (sym->Sym != ')')
-        throw err::Exception("Expected closed parenthesis got " + sym->Sym);
+        throw err::Exception(&"Expected closed parenthesis got "[sym->Sym]);
     }
   }
   return args;
