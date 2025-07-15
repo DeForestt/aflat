@@ -26,6 +26,7 @@ gen::GenerationResult const UnionConstructor::getDynamicExpr(
   auto newExpr = new ast::NewExpr();
   newExpr->type = unionType;
   newExpr->logicalLine = logicalLine;
+  newExpr->templateTypes = templateTypes;
 
   auto resolvedExpr = generator.GenExpr(newExpr, file, size, typeHint);
   return {file, resolvedExpr};

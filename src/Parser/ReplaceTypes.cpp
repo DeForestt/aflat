@@ -233,6 +233,17 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
     if (strct->statement) strct->statement->replaceTypes(map);
     return;
   }
+  if (auto un = dynamic_cast<Union *>(this)) {
+    for (auto &alias : un->aliases) {
+      if (alias.isType()) {
+        applyType(*alias.getType(), map);
+      } else if (alias.isConstExpr()) {
+        alias.getConstExpr()->replaceTypes(map);
+      }
+    }
+    if (un->statement) un->statement->replaceTypes(map);
+    return;
+  }
   if (auto whileSt = dynamic_cast<While *>(this)) {
     if (whileSt->expr) whileSt->expr->replaceTypes(map);
     if (whileSt->stmt) whileSt->stmt->replaceTypes(map);
