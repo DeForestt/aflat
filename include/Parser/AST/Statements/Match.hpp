@@ -15,7 +15,7 @@ class Match : public Expr {
   struct Pattern {
     std::string aliasName;
     std::optional<std::string> veriableName;
-    Pattern(links::LinkedList<lex::Token *> tokens);
+    Pattern(links::LinkedList<lex::Token *> &tokens);
     Pattern() = default;
     Pattern(std::string aliasName, std::optional<std::string> veriableName)
         : aliasName(std::move(aliasName)),

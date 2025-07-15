@@ -5,7 +5,7 @@
 
 namespace ast {
 
-Match::Pattern::Pattern(links::LinkedList<lex::Token *> tokens) {
+Match::Pattern::Pattern(links::LinkedList<lex::Token *> &tokens) {
   auto name = dynamic_cast<lex::LObj *>(tokens.pop());
   if (name == nullptr) {
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
