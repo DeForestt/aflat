@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/Types.hpp"
 
 namespace ast {
 
@@ -106,6 +107,16 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
                     __FILE__, __LINE__);
     return {.file = file, .expr = std::nullopt};
   }
+
+  auto type = *t;
+  auto unionType = dynamic_cast<gen::Union *>(type);
+  if (!unionType) {
+    generator.alert("Match expression type is not a union: " + exprResult.type,
+                    true, __FILE__, __LINE__);
+    return {.file = file, .expr = std::nullopt};
+  }
+
+  auto offset = unionType->largestSize;
 }
 
 }  // namespace ast
