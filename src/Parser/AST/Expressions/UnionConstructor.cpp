@@ -20,6 +20,17 @@ gen::GenerationResult const UnionConstructor::getStaticExpr(
   return {file, resolvedCall};
 }
 
+gen::GenerationResult const UnionConstructor::getDynamicExpr(
+    gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
+  asmc::File file;
+  auto newExpr = new ast::NewExpr();
+  newExpr->type = unionType;
+  newExpr->logicalLine = logicalLine;
+
+  auto resolvedExpr = generator.GenExpr(newExpr, file, size, typeHint);
+  return {file, resolvedExpr};
+}
+
 gen::GenerationResult const UnionConstructor::generateExpression(
     gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
   asmc::File file;
@@ -55,7 +66,8 @@ gen::GenerationResult const UnionConstructor::generateExpression(
   int variantIndex = std::distance(unionGen->aliases.begin(), it);
   auto alias = *it;
 
-  auto internalAccess = getStaticExpr(generator, size, typeHint);
+  auto internalAccess = dynamic ? getDynamicExpr(generator, size, typeHint)
+                                : getStaticExpr(generator, size, typeHint);
   file << internalAccess.file;
   // create a temporary variable to hold the union
   auto tempName = "$" + std::to_string(generator.tempCount++) + "_temp";

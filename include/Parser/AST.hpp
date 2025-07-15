@@ -372,6 +372,10 @@ class UnionConstructor : public Expr {
   gen::GenerationResult const getStaticExpr(gen::CodeGenerator &generator,
                                             asmc::Size size,
                                             std::string typeHint = "");
+
+  gen::GenerationResult const getDynamicExpr(gen::CodeGenerator &generator,
+                                             asmc::Size size,
+                                             std::string typeHint = "");
 };
 
 Statement *deepCopy(const Statement *stmt);
