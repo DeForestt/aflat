@@ -27,7 +27,6 @@ void buildTemplate(std::string value);
 void libTemplate(std::string value);
 bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug);
-void ensureBinPath(const std::string &path, std::vector<std::string> &pathList);
 
 bool compileCFile(const std::string &path, bool debug);
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
@@ -35,6 +34,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath);
 
 static CompileProgress *gProgress = nullptr;
 static bool gQuiet = false;
+static bool gUseCache = true;
 
 #ifndef AFLAT_TEST
 int main(int argc, char *argv[]) {
@@ -43,6 +43,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   gQuiet = cli.quiet;
+  gUseCache = !cli.noCache;
+  if (cli.cleanCache) std::filesystem::remove_all(".cache");
   gen::CodeGenerator::enableAlertTrace(cli.traceAlerts);
 
   std::string filename = getExePath();
@@ -494,33 +496,37 @@ void libTemplate(std::string value) {
   outfile.close();
 }
 
-void ensureBinPath(const std::string &path,
-                   std::vector<std::string> &pathList) {
-  std::string addPath = "";
-  if (path.find("/") != std::string::npos) {
-    addPath = path.substr(0, path.find_last_of("/"));
-  }
-
-  const bool found = std::any_of(
-      pathList.begin(), pathList.end(),
-      [&](const std::string &searchPath) { return searchPath == addPath; });
-
-  if (!found && !addPath.empty()) {
-    std::filesystem::create_directories("./bin/" + addPath);
-    pathList.push_back(addPath);
-  }
-}
-
 bool compileCFile(const std::string &path, bool debug) {
+  namespace fs = std::filesystem;
   std::string src = "./src/" + path + ".c";
-  std::string dst = "./bin/" + path + ".s";
+  std::string obj = "./.cache/" + path + ".o";
+
+  if (gUseCache && fs::exists(obj) &&
+      fs::last_write_time(obj) >= fs::last_write_time(src)) {
+    if (!gQuiet) {
+      if (gProgress)
+        gProgress->update(src, "cached");
+      else
+        std::cout << "[cached] " << src << std::endl;
+    }
+    return true;
+  }
+
   if (!gQuiet) {
     if (gProgress)
       gProgress->update(src, "parsing");
     else
       std::cout << "[parsing] " << src << std::endl;
   }
-  std::string cmd = compilerutils::buildCompileCmd(src, dst, debug);
+
+  fs::create_directories(fs::path(obj).parent_path());
+  std::string flags;
+  if (debug)
+    flags = "-g -c -no-pie -z noexecstack ";
+  else
+    flags = "-O3 -march=native -c -no-pie -z noexecstack ";
+  std::string cmd = "gcc " + flags + src + " -o " + obj;
+
   if (!gQuiet) {
     if (gProgress)
       gProgress->update(src, "generating");
@@ -542,8 +548,8 @@ bool runConfig(cfg::Config &config, const std::string &libPath) {
 }
 
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
+  namespace fs = std::filesystem;
   std::vector<std::string> linker;
-  std::vector<std::string> pathList;
   bool hasError = false;
 
   std::string ofile = config.outPutFile;
@@ -565,19 +571,42 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   if (!gQuiet) gProgress = &progress;
 
   for (auto mod : config.modules) {
-    ensureBinPath(mod, pathList);
-    if (build("./src/" + mod + ".af", "./bin/" + mod + ".s", config.mutability,
-              config.debug)) {
-      linker.push_back("./bin/" + mod + ".s");
-    } else {
-      hasError = true;
+    std::string src = "./src/" + mod + ".af";
+    std::string asmPath = "./.cache/" + mod + ".s";
+    std::string objPath = "./.cache/" + mod + ".o";
+
+    bool useCached = false;
+    if (gUseCache && fs::exists(objPath) &&
+        fs::last_write_time(objPath) >= fs::last_write_time(src)) {
+      useCached = true;
+      if (!gQuiet) {
+        if (gProgress)
+          gProgress->update(src, "cached");
+        else
+          std::cout << "[cached] " << src << std::endl;
+      }
     }
+
+    if (!useCached) {
+      fs::create_directories(fs::path(asmPath).parent_path());
+      if (build(src, asmPath, config.mutability, config.debug)) {
+        std::string cmd = "gcc -c " + asmPath + " -o " + objPath;
+        if (system(cmd.c_str()) != 0) {
+          hasError = true;
+          continue;
+        }
+        fs::remove(asmPath);
+      } else {
+        hasError = true;
+        continue;
+      }
+    }
+    linker.push_back(objPath);
   }
 
   for (auto file : config.cFiles) {
-    ensureBinPath(file, pathList);
     if (compileCFile(file, config.debug)) {
-      linker.push_back("./bin/" + file + ".s");
+      linker.push_back("./.cache/" + file + ".o");
     } else {
       hasError = true;
     }
@@ -653,12 +682,8 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
 
   if (!config.asm_) {
     for (auto &s : linker) {
+      if (gUseCache && s.rfind("./.cache/", 0) == 0) continue;
       std::filesystem::remove(s);
-    }
-
-    // remove the paths from the pathList
-    for (auto &s : pathList) {
-      std::filesystem::remove_all("./bin/" + s);
     }
   }
   gProgress = nullptr;

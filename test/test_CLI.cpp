@@ -46,3 +46,12 @@ TEST_CASE("CLI library flag", "[cli]") {
   REQUIRE(opts.args.size() == 1);
   REQUIRE(opts.args[0] == std::string("proj"));
 }
+
+TEST_CASE("CLI cache flags", "[cli]") {
+  const char *argv[] = {"aflat", "--no-cache", "--clean-cache", "build"};
+  CommandLineOptions opts;
+  REQUIRE(parseCommandLine(4, (char **)argv, opts));
+  REQUIRE(opts.noCache == true);
+  REQUIRE(opts.cleanCache == true);
+  REQUIRE(opts.command == "build");
+}
