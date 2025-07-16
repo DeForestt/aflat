@@ -1,8 +1,12 @@
-function build_af {
-    local src=$1
-    local out=$2
+#!/usr/bin/env bash
+set -euo pipefail
 
-    if [ ! -f "$out" ] || [ "$src" -nt "$out" ]; then
+function build_af {
+    local src="$1"
+    local out="$2"
+
+    # Rebuild if the source was modified more recently than the output
+    if [[ ! -f "$out" ]] || [[ "$src" -nt "$out" ]]; then
         echo "[build] $src -> $out"
         ./bin/aflat "$src" -o "$out"
     else
@@ -11,10 +15,10 @@ function build_af {
 }
 
 function build_c {
-    local src=$1
-    local out=$2
+    local src="$1"
+    local out="$2"
 
-    if [ ! -f "$out" ] || [ "$src" -nt "$out" ]; then
+    if [[ ! -f "$out" ]] || [[ "$src" -nt "$out" ]]; then
         echo "[build] $src -> $out"
         gcc -g -no-pie -S -o "$out" "$src"
     else
