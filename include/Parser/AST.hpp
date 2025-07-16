@@ -364,7 +364,6 @@ class UnionConstructor : public Expr {
         expr(expr),
         dynamic(dynamic),
         templateTypes(std::move(templateTypes)) {}
-<<<<<<< Updated upstream
   UnionConstructor() = default;
 
   gen::GenerationResult const generateExpression(
@@ -378,10 +377,6 @@ class UnionConstructor : public Expr {
   gen::GenerationResult const getDynamicExpr(gen::CodeGenerator &generator,
                                              asmc::Size size,
                                              std::string typeHint = "");
-=======
-
-  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
->>>>>>> Stashed changes
 };
 
 Statement *deepCopy(const Statement *stmt);
