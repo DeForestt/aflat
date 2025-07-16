@@ -574,7 +574,7 @@ class List {
         return 0;
     };
 
-    Option findFirst(const bool<any, *any> func, * const adr args) {
+    Option findFirst(const adr func, * const adr args) {
         for int i = 0; i < my.count; i = i + 1 {
             const any val = my.unwrapGet(i);
             const bool brk = func(val, args);

@@ -126,6 +126,9 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
     return {.file = file, .expr = std::nullopt};
   }
 
+  auto saveMatchScope = generator.matchScope;
+  generator.matchScope = this;
+
   auto matchID = boost::uuids::to_string(boost::uuids::random_generator()());
   matchID.erase(std::remove(matchID.begin(), matchID.end(), '-'),
                 matchID.end());
@@ -266,13 +269,13 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
   file.text << popRdx;
 
   gen::Expr result = {
-      .access = generator.registers["%rax"]->get(asmc::QWord),
+      .access = generator.registers["%rax"]->get(returns.size),
       .type = returns.typeName,
       .size = returns.size,
       .passable = true,
   };
-
-  return {file, std::nullopt};
+  generator.matchScope = saveMatchScope;
+  return {file, result};
 }
 
 }  // namespace ast

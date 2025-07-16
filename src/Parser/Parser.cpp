@@ -1369,6 +1369,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         }
         output = newExpr;
       }
+    } else if (obj.meta == "match") {
+      output = new ast::Match(tokens, *this);
     } else if (obj.meta == "if") {
       auto ifExpr = new ast::IfExpr();
       ifExpr->logicalLine = obj.lineCount;

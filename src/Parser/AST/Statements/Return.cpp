@@ -49,6 +49,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
         size = gen::utils::toSize(it->second);
       }
       generator.matchScope->returns.typeName = from.type;
+      generator.matchScope->returns.size = size;
     } else if (!generator.canAssign(
                    generator.matchScope->returns, from.type,
                    "the return type of the match statement is {} but "

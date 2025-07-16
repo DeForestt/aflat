@@ -35,9 +35,11 @@ class Match : public Expr {
   std::vector<Case> cases;
 
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
-  // gen::GenerationResult const generateExpression(
-  //     gen::CodeGenerator &generator, asmc::Size size, std::string typeHint =
-  //     "") override;
+  gen::GenerationResult const generateExpression(
+      gen::CodeGenerator &generator, asmc::Size size,
+      std::string typeHint = "") override {
+    return generate(generator);
+  }
   std::vector<Case> const parseCases(links::LinkedList<lex::Token *> &tokens,
                                      parse::Parser &parser);
 
