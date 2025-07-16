@@ -946,3 +946,73 @@ fn main() -> int {
 };
 ```
 
+## Unions and Pattern Matching
+Unions let a single value hold one of several different types. Each union stores
+space for the largest variant and a 32‑bit tag indicating which variant is
+active. When you construct a union using `new <Union>-><Variant>(value)`, the
+expression's value is **copied** into the union's memory. References are not
+stored automatically; every variant holds its own copy so the union remains
+self‑contained.
+
+### Example: Optional Type
+```aflat
+.types(T)
+union optional {
+  Some(T),
+  None
+};
+
+.types(T)
+fn Some(T val) -> optional::<T> {
+  return new optional::<T>->Some(val);
+};
+
+.types(T)
+fn None() -> optional::<T> {
+  return new optional::<T>->None();
+};
+```
+Here `optional` can store either a value `Some(T)` or the unit variant `None`.
+The constructors allocate an instance and copy their argument into the union.
+
+### Pattern Matching
+The `match` statement inspects the tag stored in a union and branches to the
+appropriate case. At run time the tag is loaded, compared against each variant
+index, and execution jumps to the matching case. If a pattern binds a variable,
+that variable receives a copy of the union's data for the active variant.
+
+```aflat
+fn main() -> int {
+  let a = Some(42);
+  let b = match a {
+    Some(value) => value,
+    None() => return 0
+  };
+  str.print(`B is now {b}\n`);
+  return 0;
+};
+```
+In memory `a` contains the copied integer `42` followed by a type tag marking it
+as `Some`. During `match` the tag is read and compared; when it equals the index
+of `Some`, `value` is copied out for use inside that case.
+
+### Type Safety
+Because unions keep their own copy of the contained data, lifetime issues are
+avoided—there are no implicit references to external variables. The compiler
+checks that assignments into a union are type compatible and enforces that the
+result of a `match` expression matches the declared return type of each case.
+
+### Memory Layout and Control Flow
+Internally a union reserves enough bytes for its largest variant plus four bytes
+for a 32‑bit type tag. An `optional::<int>` therefore occupies eight bytes: four
+for the integer and four for the tag.
+
+Union constructors copy values into this space. They allocate a temporary stack
+slot, move the argument into the union buffer, and write the tag value right
+after the data. No references are stored—every assignment performs a copy when
+dealing with non‑primitive types.
+
+When executing a `match`, the tag is loaded at run time and compared against the
+variant index for each case. If a pattern binds a variable, the value is copied
+out of the union into that variable. Once a case finishes executing, a common
+epilogue restores registers and returns the matched result.
