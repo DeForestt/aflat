@@ -251,9 +251,11 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
     }
 
     if (cl->genericTypes.size() != typeNameParts.size() - 1) {
-      this->alert("Type " + typeName +
-                      " not found in type list, did you forget to "
-                      "include the file that defines it?",
+      this->alert("Type " + typeName + " has " +
+                      std::to_string(cl->genericTypes.size()) +
+                      " generic types, but " +
+                      std::to_string(typeNameParts.size() - 1) +
+                      " were provided. Please check the type definition.",
                   true, __FILE__, __LINE__);
     }
     // typeNameParts without the first parts

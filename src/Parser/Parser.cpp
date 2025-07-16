@@ -1304,6 +1304,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
             typeName->meta + " is not a valid type.");
       newExpr->type = *nType;
       newExpr->logicalLine = obj.lineCount;
+
+      auto types = this->parseTemplateTypeList(tokens, obj.lineCount);
       // check for an arrow operator
       auto arrow = dynamic_cast<lex::Symbol *>(tokens.peek());
       if (arrow != nullptr && arrow->meta == "->") {
@@ -1328,10 +1330,9 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         }
         auto dynamic = true;
         output = new ast::UnionConstructor(*nType, variantName->meta, expr,
-                                           dynamic, genericTypeList);
+                                           dynamic, types);
         delete newExpr;
       } else {
-        auto types = this->parseTemplateTypeList(tokens, obj.lineCount);
         newExpr->templateTypes = std::move(types);
         auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
         if (sym != nullptr && sym->Sym == '(') {

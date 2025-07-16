@@ -107,8 +107,6 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
   auto type = ast::Type(this->ident.ident, asmc::QWord);
 
   parser.typeList << type;  // add the type to the typeList
-
-  std::cout << std::endl;
 };
 
 gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {

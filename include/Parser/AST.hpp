@@ -364,6 +364,7 @@ class UnionConstructor : public Expr {
         expr(expr),
         dynamic(dynamic),
         templateTypes(std::move(templateTypes)) {}
+  UnionConstructor() = default;
 
   gen::GenerationResult const generateExpression(
       gen::CodeGenerator &generator, asmc::Size size,
