@@ -169,6 +169,27 @@ void Statement::namespaceSwap(
     if (whileSt->stmt) whileSt->stmt->namespaceSwap(map);
     return;
   }
+  if (auto uni = dynamic_cast<Union *>(this)) {
+    if (uni->statement) uni->statement->namespaceSwap(map);
+    for (auto &alias : uni->aliases) {
+      if (alias.value && std::holds_alternative<ast::Expr *>(*alias.value)) {
+        auto expr = std::get<ast::Expr *>(*alias.value);
+        if (expr) expr->namespaceSwap(map);
+      }
+    }
+    return;
+  }
+  if (auto match = dynamic_cast<Match *>(this)) {
+    if (match->expr) match->expr->namespaceSwap(map);
+    for (auto &caseExpr : match->cases) {
+      if (caseExpr.statement) caseExpr.statement->namespaceSwap(map);
+    }
+    return;
+  }
+  if (auto unionConstructor = dynamic_cast<UnionConstructor *>(this)) {
+    if (unionConstructor->expr) unionConstructor->expr->namespaceSwap(map);
+    return;
+  }
   if (auto cls = dynamic_cast<Class *>(this)) {
     if (cls->contract) cls->contract->namespaceSwap(map);
     if (cls->statement) cls->statement->namespaceSwap(map);
