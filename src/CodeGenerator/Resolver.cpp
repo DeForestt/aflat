@@ -29,6 +29,11 @@ Type **CodeGenerator::instantiateGenericClass(
       true;  // we hid the class so all of its functions are private
   Type **result;
   if (this->typeList[newName] == nullptr) {
+    // create a placeholder so recursive instantiation doesn't re-enter
+    gen::Class *placeholder = new gen::Class();
+    placeholder->Ident = newName;
+    this->typeList.push(placeholder);
+
     if (OutputFile.lambdas == nullptr) OutputFile.lambdas = new asmc::File;
     OutputFile.hasLambda = true;
     scope::ScopeManager::getInstance()->pushIsolated();
