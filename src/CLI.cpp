@@ -15,11 +15,13 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
                                  {"name", required_argument, nullptr, 'n'},
                                  {"update-deps", no_argument, nullptr, 'U'},
                                  {"clean-deps", no_argument, nullptr, 'K'},
+                                 {"clean-cache", no_argument, nullptr, 'C'},
+                                 {"no-cache", no_argument, nullptr, 'N'},
                                  {"lib", no_argument, nullptr, 'L'},
                                  {nullptr, 0, nullptr, 0}};
 
   int opt;
-  while ((opt = getopt_long(argc, argv, "hdo:tc:qUKn:L", longOptions,
+  while ((opt = getopt_long(argc, argv, "hdo:tc:qUKn:LNC", longOptions,
                             nullptr)) != -1) {
     switch (opt) {
       case 'o':
@@ -48,6 +50,12 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
         break;
       case 'L':
         opts.library = true;
+        break;
+      case 'C':
+        opts.cleanCache = true;
+        break;
+      case 'N':
+        opts.noCache = true;
         break;
       case 'h':
       case '?':
@@ -92,6 +100,8 @@ void printUsage(const char *prog) {
       << "  -t, --trace-alerts  Trace CodeGenerator alerts\n"
       << "  -U, --update-deps   Refresh git dependencies\n"
       << "  -K, --clean-deps    Remove all git dependencies\n"
+      << "  -C, --clean-cache   Remove build cache\n"
+      << "  -N, --no-cache      Disable cache for this run\n"
       << "  -L, --lib           Create a library project with make\n"
       << "  -h, --help          Display this help message\n";
 }

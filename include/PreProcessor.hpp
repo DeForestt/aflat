@@ -26,6 +26,8 @@ class PreProcessor {
                          const std::string &currDir = "");
   bool debug = false;
 
+  const std::vector<std::string> &getIncludes() const;
+
  private:
   std::string root;
   links::SLinkedList<Definition, std::string> definitions;

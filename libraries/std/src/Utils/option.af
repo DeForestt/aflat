@@ -42,7 +42,7 @@ union option {
 
   safe fn toString() -> string {
     match my {
-        Some(value) => return `Some({value.toString()})`,
+        Some(value) => return `Some({value})`,
         None() => return `None`
     };
   };

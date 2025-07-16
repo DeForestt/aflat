@@ -1,7 +1,7 @@
 .needs <std>
 
 import string, {print} from "String" under str;
-import option, { some, none } from "Utils/option" under opt;
+import option, { Some, None } from "Utils/option" under opt;
 
 types(A)
 class TestClass {
@@ -30,11 +30,11 @@ fn main() {
     print(test2.returnValue());
     print("Can we do it twice? Yes, we can!");
 
-    let someVal = opt.some::<int>(99);
+    let someVal = opt.Some(99);
     print(someVal.or(0));
 
     mutable option::<string> maybeString;
-    maybeString = opt.some(`Hello, World!`);
+    maybeString = opt.Some(`Hello, World!`);
     print(maybeString.or("Default String"));
 };
 
