@@ -31,7 +31,10 @@ fi
 
 # Check for ~/.aflat directory
 if [ -d ~/.aflat ]; then
-  (cd ~/.aflat/aflat && git pull && make && bash rebuild-libs.sh && aflat build > aflatBuildLog.log)
+  (cd ~/.aflat/aflat && git pull)
+  (cd ~/.aflat/aflat && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release)
+  (cd ~/.aflat/aflat && cmake --build build --target aflat)
+  (cd ~/.aflat/aflat && bash rebuild-libs.sh)
   echo 'aflat updated'
   exit
 fi
