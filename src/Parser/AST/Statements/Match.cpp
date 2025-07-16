@@ -29,12 +29,11 @@ Match::Pattern::Pattern(links::LinkedList<lex::Token *> &tokens) {
   if (auto openParen = dynamic_cast<lex::OpSym *>(tokens.peek());
       openParen != nullptr && openParen->Sym == '(') {
     tokens.pop();
-    auto veriableToken = dynamic_cast<lex::LObj *>(tokens.pop());
-    if (veriableToken == nullptr) {
-      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           " Match pattern must have a variable name.");
+    auto veriableToken = dynamic_cast<lex::LObj *>(tokens.peek());
+    if (veriableToken) {
+      tokens.pop();
+      veriableName = veriableToken->meta;
     }
-    veriableName = veriableToken->meta;
     auto closeParen = dynamic_cast<lex::OpSym *>(tokens.pop());
     if (closeParen == nullptr || closeParen->Sym != ')') {
       throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
