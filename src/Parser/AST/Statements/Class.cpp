@@ -86,8 +86,9 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   // if the class is generic, do not generate code for it. It will be
   // generated when it is instantiated with specific types.
   if (this->genericTypes.size() > 0) {
+    auto *copy = dynamic_cast<ast::Class *>(ast::deepCopy(this));
     generator.genericTypes.insert(
-        {this->ident.ident, this});  // add the class to the generic types
+        {this->ident.ident, copy});  // add the class to the generic types
     return {asmc::File(), std::nullopt};
   }
 
