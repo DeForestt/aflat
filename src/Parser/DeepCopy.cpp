@@ -1,3 +1,6 @@
+#include <iostream>
+#include <string>
+
 #include "Parser/AST.hpp"
 #include "Parser/AST/Statements.hpp"
 
@@ -111,6 +114,20 @@ Statement *deepCopy(const Statement *stmt) {
   if (auto decarr = dynamic_cast<const DecArr *>(stmt)) {
     auto *copy = new DecArr(*decarr);
     copy->indices = copyExprList(decarr->indices);
+    return copy;
+  }
+  if (auto un = dynamic_cast<const Union *>(stmt)) {
+    auto *copy = new Union(*un);
+    copy->statement = deepCopy(un->statement);
+    copy->genericTypes = std::vector<std::string>(un->genericTypes);
+    for (auto &alias : copy->aliases) {
+      if (alias.isType()) {
+        alias.value =
+            new Type(alias.getType()->typeName, alias.getType()->size);
+      } else if (alias.isConstExpr()) {
+        alias.value = static_cast<Expr *>(deepCopy(alias.getConstExpr()));
+      }
+    }
     return copy;
   }
   if (auto cls = dynamic_cast<const Class *>(stmt)) {
@@ -279,6 +296,15 @@ Statement *deepCopy(const Statement *stmt) {
     for (auto &arg : format->args) {
       copy->args.push_back(static_cast<Expr *>(deepCopy(arg)));
     }
+    return copy;
+  }
+  if (auto unionConstructor = dynamic_cast<const UnionConstructor *>(stmt)) {
+    auto *copy = new UnionConstructor();
+    copy->unionType = unionConstructor->unionType;
+    copy->variantName = unionConstructor->variantName;
+    copy->expr = static_cast<Expr *>(deepCopy(unionConstructor->expr));
+    copy->dynamic = unionConstructor->dynamic;
+    copy->templateTypes = unionConstructor->templateTypes;
     return copy;
   }
   return nullptr;

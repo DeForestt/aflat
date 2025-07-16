@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <iostream>
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
@@ -35,6 +36,11 @@ gen::GenerationResult const UnionConstructor::getDynamicExpr(
 gen::GenerationResult const UnionConstructor::generateExpression(
     gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
   asmc::File file;
+  if (templateTypes.size() > 0) {
+    for (const auto &type : templateTypes) {
+      unionType.typeName += "." + type;
+    }
+  }
 
   auto type = generator.getType(unionType.typeName, file);
   if (type == nullptr) {
@@ -70,6 +76,7 @@ gen::GenerationResult const UnionConstructor::generateExpression(
   auto internalAccess = dynamic ? getDynamicExpr(generator, size, typeHint)
                                 : getStaticExpr(generator, size, typeHint);
   file << internalAccess.file;
+
   // create a temporary variable to hold the union
   auto tempName = "$" + std::to_string(generator.tempCount++) + "_temp";
   auto mod = gen::scope::ScopeManager::getInstance()->assign(tempName,

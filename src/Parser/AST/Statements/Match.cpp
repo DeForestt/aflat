@@ -4,6 +4,7 @@
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <iostream>
 #include <optional>
 #include <string>
 #include <variant>
@@ -193,26 +194,28 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
         // type
 
         auto &type = std::get<ast::Type *>(alias.value);
+
         auto byteMod = gen::scope::ScopeManager::getInstance()->assign(
             *_case.pattern.veriableName, *type, false, false);
 
         if (parse::PRIMITIVE_TYPES.find(type->typeName) !=
             parse::PRIMITIVE_TYPES.end()) {
+          auto s = parse::PRIMITIVE_TYPES[type->typeName];
           // primitives will need to be dereferenced
           auto mov = new asmc::Mov();
           mov->logicalLine = expr->logicalLine;
-          mov->size = type->size;
+          mov->size = asmc::QWord;
+          ;
           mov->from = "(" + generator.registers["%rdx"]->get(asmc::QWord) + ")";
-          mov->to = generator.registers["%eax"]->get(type->size);
+          mov->to = generator.registers["%rax"]->get(asmc::QWord);
           file.text << mov;
 
           auto mov2 = new asmc::Mov();
           mov2->logicalLine = expr->logicalLine;
           mov2->size = type->size;
-          mov2->from = generator.registers["%eax"]->get(type->size);
+          mov2->from = generator.registers["%rax"]->get(type->size);
           mov2->to = "-" + std::to_string(byteMod) + "(%rbp)";
           file.text << mov2;
-
         } else {
           auto mov = new asmc::Mov();
           mov->logicalLine = expr->logicalLine;
@@ -220,8 +223,7 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
           mov->from = generator.registers["%rdx"]->get(type->size);
           mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
           file.text << mov;
-        };
-
+        }
       } else if (std::holds_alternative<ast::Expr *>(alias.value)) {
         auto &expr = std::get<ast::Expr *>(alias.value);
         // if the alias value is an expression, we need to declare a variable of
@@ -232,11 +234,11 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
         decAssign->declare->type = ast::Type("let", asmc::AUTO);
         decAssign->declare->ident = _case.pattern.veriableName.value();
         decAssign->declare->mut = false;
+        decAssign->mute = false;
         decAssign->expr = expr;
         file << decAssign->generate(generator).file;
       }
-    } else
-      std::cout << "Alias has no variable name." << std::endl;
+    }
     file << _case.statement->generate(generator).file;
     auto jmp = new asmc::Jmp();
     jmp->logicalLine = expr->logicalLine;

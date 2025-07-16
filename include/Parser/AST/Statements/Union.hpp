@@ -55,22 +55,17 @@ class Union : public Class {
   // unions.
   Statement *statement = nullptr;
 
-  Ident ident;
-  std::vector<std::string> genericTypes = std::vector<std::string>();
+  // std::vector<std::string> genericTypes = std::vector<std::string>();
   std::vector<Alias> aliases;
 
   Union() = default;
   Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
         std::vector<std::string> &genericTypes);
 
-  Union(Union &&other) noexcept
-      : Class(std::move(other)),
-        ident(std::move(other.ident)),
-        genericTypes(std::move(other.genericTypes)),
-        aliases(std::move(other.aliases)),
-        statement(std::exchange(other.statement, nullptr)) {}
-
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
+  std::vector<std::string> getGenericTypes() const override {
+    return genericTypes;
+  }
 
   std::string toString() const {
     std::string result = "union " + ident.ident + " {\n";

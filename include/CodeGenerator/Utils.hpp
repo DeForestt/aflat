@@ -1,6 +1,5 @@
 #pragma once
 #include <array>
-#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -11,6 +10,7 @@
 namespace gen::utils {
 bool searchSymbol(gen::Symbol sym, std::string str);
 int sizeToInt(asmc::Size size);
+asmc::Size toSize(size_t size);
 
 bool compareFunc(ast::Function F, std::string input);
 ast::Statement *extract(std::string ident, ast::Statement *stmt,
