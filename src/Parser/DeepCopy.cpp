@@ -124,11 +124,12 @@ Statement *deepCopy(const Statement *stmt) {
     for (const auto &alias : un->aliases) {
       if (alias.value) {
         if (std::holds_alternative<ast::Type *>(*alias.value)) {
-          copy->aliases.emplace_back(alias.name,
-                                     std::get<ast::Type *>(*alias.value));
+          auto *t = std::get<ast::Type *>(*alias.value);
+          copy->aliases.emplace_back(alias.name, new ast::Type(*t));
         } else if (std::holds_alternative<ast::Expr *>(*alias.value)) {
+          auto *e = std::get<ast::Expr *>(*alias.value);
           copy->aliases.emplace_back(alias.name,
-                                     std::get<ast::Expr *>(*alias.value));
+                                     static_cast<ast::Expr *>(deepCopy(e)));
         } else {
           copy->aliases.emplace_back(alias.name);
         }

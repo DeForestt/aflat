@@ -22,13 +22,22 @@ Type **CodeGenerator::instantiateGenericClass(
     genericMap[classStatement->genericTypes[i]] = types[i];
   }
 
+  bool newlyInserted = false;
+  if (this->typeList[newName] == nullptr) {
+    // insert a placeholder before modifying the AST to stop recursive entry
+    gen::Class *placeholder = new gen::Class();
+    placeholder->Ident = newName;
+    this->typeList.push(placeholder);
+    newlyInserted = true;
+  }
+
   classStatement->replaceTypes(genericMap);
   classStatement->ident.ident = newName;
   classStatement->genericTypes.clear();
   classStatement->hidden =
       true;  // we hid the class so all of its functions are private
   Type **result;
-  if (this->typeList[newName] == nullptr) {
+  if (newlyInserted) {
     if (OutputFile.lambdas == nullptr) OutputFile.lambdas = new asmc::File;
     OutputFile.hasLambda = true;
     scope::ScopeManager::getInstance()->pushIsolated();
