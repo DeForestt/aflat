@@ -106,7 +106,10 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
   } else if (dynamic_cast<ast::Function *>(stmt)) {
     ast::Function *func = dynamic_cast<ast::Function *>(stmt);
     if (func->ident.ident == ident || ident == "*") {
-      func->ident.ident = id + '.' + func->ident.ident;
+      std::string prefix = id + '.';
+      if (!prefix.empty() && func->ident.ident.rfind(prefix, 0) != 0) {
+        func->ident.ident = prefix + func->ident.ident;
+      }
       if (func->genericTypes.size() == 0) func->statement = nullptr;
       if (func->scope != ast::Export) func->locked = true;
       return func;
