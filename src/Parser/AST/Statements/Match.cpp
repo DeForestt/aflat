@@ -61,6 +61,7 @@ Match::Case::Case(links::LinkedList<lex::Token *> &tokens,
 
   auto openBrace = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (openBrace && openBrace->Sym == '{') {
+    tokens.pop();
     statement = parser.parseStmt(tokens);
   } else {
     statement = parser.parseStmt(tokens, true);
