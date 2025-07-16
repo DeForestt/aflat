@@ -25,7 +25,7 @@ class Match : public Expr {
   struct Case {
     Pattern pattern;
     Statement *statement;
-    Case() = delete;
+    Case() = default;
     Case(Pattern pattern, Statement *statement)
         : pattern(std::move(pattern)), statement(statement) {}
     Case(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
@@ -46,7 +46,7 @@ class Match : public Expr {
   ast::Type returns =
       ast::Type("void", asmc::QWord);  // The return type of the match statement
   // Constructors
-  Match() = delete;
+  Match() = default;
   Match(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
 };
 };  // namespace ast

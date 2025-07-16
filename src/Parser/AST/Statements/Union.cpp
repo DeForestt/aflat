@@ -98,7 +98,7 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
 
   auto closeBrace = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (closeBrace == nullptr || closeBrace->Sym != '}') {
-    this->statement = parser.parseStmt(tokens, true);
+    this->statement = parser.parseStmt(tokens);
   } else {
     this->statement = nullptr;
     tokens.pop();  // pop the closing brace

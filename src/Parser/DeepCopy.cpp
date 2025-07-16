@@ -307,6 +307,19 @@ Statement *deepCopy(const Statement *stmt) {
     copy->templateTypes = unionConstructor->templateTypes;
     return copy;
   }
+  if (auto match = dynamic_cast<const Match *>(stmt)) {
+    auto *copy = new Match();
+    copy->expr = static_cast<Expr *>(deepCopy(match->expr));
+    copy->cases = std::vector<Match::Case>();
+    copy->returns = match->returns;
+    for (const auto &caseItem : match->cases) {
+      auto *caseCopy = new Match::Case();
+      caseCopy->pattern = Match::Pattern(caseItem.pattern);
+      caseCopy->statement = deepCopy(caseItem.statement);
+      copy->cases.push_back(*caseCopy);
+    }
+    return copy;
+  }
   return nullptr;
 }
 
