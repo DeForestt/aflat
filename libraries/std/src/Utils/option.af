@@ -58,3 +58,18 @@ types(T)
 export fn None() -> option::<T> {
   return new option::<T>->None();
 };
+
+// !UNSAFE! This function is not typesafe
+// Alert: This function practicas type erasure
+private bool nullIsh(immutable any value) {
+  return value == NULL;
+};
+
+types(T)
+export fn toOption(immutable T value) -> option::<T> {
+    if nullIsh(value) {
+        return option::<T>->None();
+    } else {
+        return option::<T>->Some(value);
+    };
+};

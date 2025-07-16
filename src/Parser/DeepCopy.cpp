@@ -120,12 +120,20 @@ Statement *deepCopy(const Statement *stmt) {
     auto *copy = new Union(*un);
     copy->statement = deepCopy(un->statement);
     copy->genericTypes = std::vector<std::string>(un->genericTypes);
-    for (auto &alias : copy->aliases) {
-      if (alias.isType()) {
-        alias.value =
-            new Type(alias.getType()->typeName, alias.getType()->size);
-      } else if (alias.isConstExpr()) {
-        alias.value = static_cast<Expr *>(deepCopy(alias.getConstExpr()));
+    copy->aliases = std::vector<Union::Alias>();
+    for (const auto &alias : un->aliases) {
+      if (alias.value) {
+        if (std::holds_alternative<ast::Type *>(*alias.value)) {
+          copy->aliases.emplace_back(alias.name,
+                                     std::get<ast::Type *>(*alias.value));
+        } else if (std::holds_alternative<ast::Expr *>(*alias.value)) {
+          copy->aliases.emplace_back(alias.name,
+                                     std::get<ast::Expr *>(*alias.value));
+        } else {
+          copy->aliases.emplace_back(alias.name);
+        }
+      } else {
+        copy->aliases.emplace_back(alias.name);
       }
     }
     return copy;
