@@ -675,6 +675,7 @@ ast::Statement *parse::Parser::parseStmt(
           tokens.push(name);
 
           auto ret = new ast::Return();
+          ret->implicit = true;
           ret->logicalLine = obj.lineCount;
           ret->expr = this->parseExpr(tokens);
           output = ret;
