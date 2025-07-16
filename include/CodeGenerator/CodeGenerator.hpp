@@ -14,6 +14,7 @@
 #include "LinkedList.hpp"
 #include "LinkedListS.hpp"
 #include "Parser/AST.hpp"
+#include "Parser/AST/Statements/Match.hpp"
 #include "Parser/Parser.hpp"
 namespace gen {
 
@@ -23,6 +24,7 @@ class CodeGenerator {
 #pragma region State Variables
   parse::Parser &parser;
   gen::Class *scope;
+  ast::Match *matchScope = nullptr;
   ast::Type returnType;
   int scopePop = 0;
   int mutability = 0;
@@ -78,6 +80,7 @@ class CodeGenerator {
     asmc::Size lambdaSize;
     int tempCount;
     ast::Function *currentFunction;
+    ast::Match *matchScope;
   };
 
   std::vector<EnvState> envStack;

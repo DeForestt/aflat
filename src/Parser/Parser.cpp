@@ -545,6 +545,10 @@ ast::Statement *parse::Parser::parseStmt(
       }
     } else if (obj.meta == "return") {
       output = new ast::Return(tokens, *this);
+    } else if (obj.meta == "resolve") {
+      auto ret = new ast::Return(tokens, *this);
+      ret->resolver = true;
+      output = ret;
     } else if (obj.meta == "fn") {
       output = new ast::Function(scope, tokens, typeNames, *this, safeType);
     } else if (obj.meta == "match") {
@@ -689,7 +693,9 @@ ast::Statement *parse::Parser::parseStmt(
   } else if (tokens.peek() && tokens.count > 0) {
     auto close_curl = dynamic_cast<lex::OpSym *>(tokens.peek());
     if (!close_curl || (close_curl->Sym != '}' && close_curl->Sym != ';')) {
-      output = new ast::Return(tokens, *this);
+      auto ret = new ast::Return(tokens, *this);
+      ret->implicit = true;
+      output = ret;
       // if the next token is not a semicolon, add one
       if (tokens.peek()) {
         auto opSym = dynamic_cast<lex::OpSym *>(tokens.peek());

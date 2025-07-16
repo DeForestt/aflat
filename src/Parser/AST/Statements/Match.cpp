@@ -265,6 +265,13 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
   popRdx->op = generator.registers["%rdx"]->get(asmc::QWord);
   file.text << popRdx;
 
+  gen::Expr result = {
+      .access = generator.registers["%rax"]->get(asmc::QWord),
+      .type = returns.typeName,
+      .size = returns.size,
+      .passable = true,
+  };
+
   return {file, std::nullopt};
 }
 

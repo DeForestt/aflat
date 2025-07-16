@@ -41,6 +41,8 @@ class Match : public Expr {
   std::vector<Case> const parseCases(links::LinkedList<lex::Token *> &tokens,
                                      parse::Parser &parser);
 
+  ast::Type returns =
+      ast::Type("void", asmc::QWord);  // The return type of the match statement
   // Constructors
   Match() = delete;
   Match(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);

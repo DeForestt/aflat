@@ -1,7 +1,9 @@
 #include "Parser/AST/Statements/Return.hpp"
 
+#include "ASM.hpp"
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Utils.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/AST/Statements/Call.hpp"
 #include "Parser/Parser.hpp"
@@ -28,6 +30,54 @@ Return::Return(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 
 gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   asmc::File file;
+
+  if (implicit && generator.matchScope) {
+    resolver = true;  // if this is an implicit return, and
+  }
+
+  if (resolver) {
+    auto from = generator.GenExpr(this->expr, file);
+    if (generator.matchScope == nullptr) {
+      generator.alert(
+          "cannot use a resolver return outside of a match statement", true,
+          __FILE__, __LINE__);
+    }
+    if (generator.matchScope->returns.typeName == "void") {
+      auto it = parse::PRIMITIVE_TYPES.find(from.type);
+      auto size = asmc::QWord;
+      if (it != parse::PRIMITIVE_TYPES.end()) {
+        size = gen::utils::toSize(it->second);
+      }
+      generator.matchScope->returns.typeName = from.type;
+    } else if (!generator.canAssign(
+                   generator.matchScope->returns, from.type,
+                   "the return type of the match statement is {} but "
+                   "the resolver returns {}")) {
+      auto imo =
+          generator.imply(this->expr, generator.matchScope->returns.typeName);
+      from = generator.GenExpr(imo, file);
+    }
+    // if this is a resolver, we just need to put the expression into %rax
+    if (from.op != asmc::Float) {
+      auto mov = new asmc::Mov();
+      mov->logicalLine = this->logicalLine;
+      mov->from = from.access;
+      mov->to = generator.registers["%rax"]->get(from.size);
+      mov->size = from.size;
+      mov->op = from.op;
+      file.text << mov;
+    } else {
+      auto mov = new asmc::Mov();
+      mov->logicalLine = this->logicalLine;
+      mov->from = from.access;
+      mov->to = generator.registers["%xmm0"]->get(from.size);
+      mov->size = from.size;
+      mov->op = from.op;
+      file.text << mov;
+    }
+    return {file, std::nullopt};
+  }
+
   auto mov = new asmc::Mov();
   mov->logicalLine = this->logicalLine;
 

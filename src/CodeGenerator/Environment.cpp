@@ -55,6 +55,7 @@ void CodeGenerator::pushEnv() {
   state.currentFunction = this->currentFunction;
   state.scope = this->scope;
   state.returnType = this->returnType;
+  state.matchScope = this->matchScope;
   this->envStack.push_back(std::move(state));
 
   this->SymbolTable = links::LinkedList<Symbol>();
@@ -69,6 +70,7 @@ void CodeGenerator::pushEnv() {
   this->scope = nullptr;
   this->returnType = ast::Type();
   this->lambdaReturns = "";
+  this->matchScope = nullptr;
 }
 
 void CodeGenerator::popEnv() {
@@ -90,6 +92,7 @@ void CodeGenerator::popEnv() {
   this->currentFunction = state.currentFunction;
   this->scope = state.scope;
   this->returnType = state.returnType;
+  this->matchScope = state.matchScope;
 }
 
 }  // namespace gen

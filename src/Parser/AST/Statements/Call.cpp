@@ -80,6 +80,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           file.lambdas = new asmc::File();
           file.hasLambda = true;
         }
+        auto saveReturnType = generator.returnType;
         if (generator.generatedFunctionNames.find(new_ident) ==
             generator.generatedFunctionNames.end()) {
           gen::scope::ScopeManager::getInstance()->pushScope(true);
@@ -94,6 +95,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           generator.generatedFunctionNames.insert(new_ident);
           generated = true;
         }
+        generator.returnType = saveReturnType;
 
         this->ident = func->ident.ident;
         // get func from the name table so that it can be used with generated
