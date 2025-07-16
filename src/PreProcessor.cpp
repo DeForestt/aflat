@@ -44,6 +44,10 @@ PreProcessor::~PreProcessor() {
   // dtor
 }
 
+const std::vector<std::string> &PreProcessor::getIncludes() const {
+  return includes;
+}
+
 std::string PreProcessor::PreProcess(std::string code, std::string libPath,
                                      const std::string &currDir) {
   std::string output;

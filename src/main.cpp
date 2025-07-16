@@ -29,6 +29,8 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug);
 
 bool compileCFile(const std::string &path, bool debug);
+bool objectUpToDate(const std::string &src, const std::string &obj,
+                    const std::string &libPath);
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 bool runConfig(cfg::Config &config, const std::string &libPath);
 
@@ -496,6 +498,23 @@ void libTemplate(std::string value) {
   outfile.close();
 }
 
+bool objectUpToDate(const std::string &src, const std::string &obj,
+                    const std::string &libPath) {
+  namespace fs = std::filesystem;
+  if (!fs::exists(obj)) return false;
+  auto objTime = fs::last_write_time(obj);
+  if (objTime < fs::last_write_time(src)) return false;
+  std::ifstream ifs(src);
+  std::string content((std::istreambuf_iterator<char>(ifs)),
+                      std::istreambuf_iterator<char>());
+  PreProcessor pp;
+  pp.PreProcess(content, libPath, fs::path(src).parent_path().string());
+  for (const auto &inc : pp.getIncludes()) {
+    if (fs::exists(inc) && objTime < fs::last_write_time(inc)) return false;
+  }
+  return true;
+}
+
 bool compileCFile(const std::string &path, bool debug) {
   namespace fs = std::filesystem;
   std::string src = "./src/" + path + ".c";
@@ -575,16 +594,23 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     std::string asmPath = "./.cache/" + mod + ".s";
     std::string objPath = "./.cache/" + mod + ".o";
 
-    bool useCached = false;
-    if (gUseCache && fs::exists(objPath) &&
-        fs::last_write_time(objPath) >= fs::last_write_time(src)) {
-      useCached = true;
-      if (!gQuiet) {
-        if (gProgress)
-          gProgress->update(src, "cached");
-        else
-          std::cout << "[cached] " << src << std::endl;
-      }
+    bool useCached =
+        gUseCache && objectUpToDate(src, objPath, libPath + "head/");
+    auto objTime = std::filesystem::exists(objPath)
+                       ? std::filesystem::last_write_time(objPath)
+                       : std::filesystem::file_time_type::min();
+    for (const auto &dep : config.modules) {
+      if (dep == mod) continue;
+      std::string depSrc = "./src/" + dep + ".af";
+      if (std::filesystem::exists(depSrc) &&
+          std::filesystem::last_write_time(depSrc) > objTime)
+        useCached = false;
+    }
+    if (useCached && !gQuiet) {
+      if (gProgress)
+        gProgress->update(src, "cached");
+      else
+        std::cout << "[cached] " << src << std::endl;
     }
 
     if (!useCached) {
