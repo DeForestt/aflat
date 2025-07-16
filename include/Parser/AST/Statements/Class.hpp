@@ -25,5 +25,8 @@ class Class : public Statement {
         std::vector<parse::Annotation> &annotations,
         std::vector<std::string> &genericTypes);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
+  virtual std::vector<std::string> getGenericTypes() const {
+    return this->genericTypes;
+  }
 };
 };  // namespace ast

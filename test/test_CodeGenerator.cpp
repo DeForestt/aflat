@@ -58,3 +58,94 @@ TEST_CASE("cannAssign returns false if it can implicit cast", "[canAssign]") {
 
   CHECK_THROWS(!mockGen.canAssign(testType, "takes", "ERROR"));
 }
+
+TEST_CASE("memMove generates copy loop", "[memmove]") {
+  auto parser = parse::Parser();
+  gen::CodeGenerator gen("mod", parser, "",
+                         std::filesystem::current_path().string());
+
+  auto file = gen.memMove("%rax", "%rbx", 1);
+  REQUIRE(file.text.size() >= 3);
+  bool foundSrc = false;
+  bool foundDst = false;
+  bool pushSrc = false;
+  bool pushDst = false;
+  bool pushCnt = false;
+  bool pushA = false;
+  bool popSrc = false;
+  bool popDst = false;
+  bool popCnt = false;
+  bool popA = false;
+  for (int i = 0; i < file.text.size(); ++i) {
+    if (auto *m = dynamic_cast<asmc::Mov *>(file.text.get(i))) {
+      if (m->from == "%rax" && m->to == "%rsi") foundSrc = true;
+      if (m->from == "%rbx" && m->to == "%rdi") foundDst = true;
+    }
+    if (auto *p = dynamic_cast<asmc::Push *>(file.text.get(i))) {
+      if (p->op == "%rsi") pushSrc = true;
+      if (p->op == "%rdi") pushDst = true;
+      if (p->op == "%rcx") pushCnt = true;
+      if (p->op == "%rax") pushA = true;
+    }
+    if (auto *p2 = dynamic_cast<asmc::Pop *>(file.text.get(i))) {
+      if (p2->op == "%rsi") popSrc = true;
+      if (p2->op == "%rdi") popDst = true;
+      if (p2->op == "%rcx") popCnt = true;
+      if (p2->op == "%rax") popA = true;
+    }
+  }
+  REQUIRE(foundSrc);
+  REQUIRE(foundDst);
+  REQUIRE(pushSrc);
+  REQUIRE(pushDst);
+  REQUIRE(pushCnt);
+  REQUIRE(pushA);
+  REQUIRE(popSrc);
+  REQUIRE(popDst);
+  REQUIRE(popCnt);
+  REQUIRE(popA);
+}
+
+TEST_CASE("setOffset stores value at pointer offset", "[setOffset]") {
+  auto parser = parse::Parser();
+  gen::CodeGenerator gen("mod", parser, "",
+                         std::filesystem::current_path().string());
+
+  auto file = gen.setOffset("%rbx", 4, "$0xff", asmc::Byte);
+  bool movePtr = false;
+  bool addOff = false;
+  bool moveVal = false;
+  bool storeVal = false;
+  bool pushRdi = false;
+  bool pushRax = false;
+  bool popRdi = false;
+  bool popRax = false;
+
+  for (int i = 0; i < file.text.size(); ++i) {
+    if (auto *m = dynamic_cast<asmc::Mov *>(file.text.get(i))) {
+      if (m->from == "%rbx" && m->to == "%rdi") movePtr = true;
+      if (m->from == "$0xff" && m->to == "%al") moveVal = true;
+      if (m->from == "%al" && m->to == "(%rdi)") storeVal = true;
+    }
+    if (auto *a = dynamic_cast<asmc::Add *>(file.text.get(i))) {
+      if (a->op1 == "$4" && a->op2 == "%rdi") addOff = true;
+    }
+    if (auto *p = dynamic_cast<asmc::Push *>(file.text.get(i))) {
+      if (p->op == "%rdi") pushRdi = true;
+      if (p->op == "%rax") pushRax = true;
+    }
+    if (auto *po = dynamic_cast<asmc::Pop *>(file.text.get(i))) {
+      if (po->op == "%rdi") popRdi = true;
+      if (po->op == "%rax") popRax = true;
+    }
+  }
+
+  REQUIRE(movePtr);
+  REQUIRE(addOff);
+  REQUIRE(moveVal);
+  REQUIRE(storeVal);
+  REQUIRE(pushRdi);
+  REQUIRE(pushRax);
+  REQUIRE(popRdi);
+  REQUIRE(popRax);
+}

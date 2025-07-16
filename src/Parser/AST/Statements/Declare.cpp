@@ -85,7 +85,7 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
       generator.alert("redefined global variable: " + this->ident);
 
     label->label = this->ident;
-    if (this->type.size = asmc::QWord) {
+    if (this->type.size == asmc::QWord) {
       var->command = "quad";
     };
     gen::Symbol Symbol;

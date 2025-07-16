@@ -12,6 +12,78 @@ class SLinkedList {
 
   Node<T> *head;
   SLinkedList();
+  ~SLinkedList();
+  SLinkedList(const SLinkedList &other);
+  SLinkedList &operator=(const SLinkedList &other);
+  SLinkedList(SLinkedList &&other) noexcept;
+  SLinkedList &operator=(SLinkedList &&other) noexcept;
+
+  class iterator {
+   public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = T;
+    using pointer = T *;
+    using reference = T &;
+
+    iterator(Node<T> *n) : node(n) {}
+    reference operator*() const { return node->data; }
+    pointer operator->() const { return &node->data; }
+    iterator &operator++() {
+      node = node ? node->next : nullptr;
+      return *this;
+    }
+    iterator operator++(int) {
+      iterator tmp(*this);
+      ++(*this);
+      return tmp;
+    }
+    friend bool operator==(const iterator &a, const iterator &b) {
+      return a.node == b.node;
+    }
+    friend bool operator!=(const iterator &a, const iterator &b) {
+      return a.node != b.node;
+    }
+
+   private:
+    Node<T> *node;
+  };
+
+  class const_iterator {
+   public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = T;
+    using pointer = const T *;
+    using reference = const T &;
+
+    const_iterator(const Node<T> *n) : node(n) {}
+    reference operator*() const { return node->data; }
+    pointer operator->() const { return &node->data; }
+    const_iterator &operator++() {
+      node = node ? node->next : nullptr;
+      return *this;
+    }
+    const_iterator operator++(int) {
+      const_iterator tmp(*this);
+      ++(*this);
+      return tmp;
+    }
+    friend bool operator==(const const_iterator &a, const const_iterator &b) {
+      return a.node == b.node;
+    }
+    friend bool operator!=(const const_iterator &a, const const_iterator &b) {
+      return a.node != b.node;
+    }
+
+   private:
+    const Node<T> *node;
+  };
+
+  iterator begin() { return iterator(head); }
+  iterator end() { return iterator(nullptr); }
+  const_iterator begin() const { return const_iterator(head); }
+  const_iterator end() const { return const_iterator(nullptr); }
 
   /*Push a new value to the top of the list*/
   void push(T value);
@@ -77,6 +149,52 @@ links::SLinkedList<T, Z>::SLinkedList() {
 }
 
 template <typename T, typename Z>
+links::SLinkedList<T, Z>::~SLinkedList() {
+  clear();
+}
+
+template <typename T, typename Z>
+links::SLinkedList<T, Z>::SLinkedList(const SLinkedList &other)
+    : SLinkedList() {
+  for (const auto &v : other) push(v);
+}
+
+template <typename T, typename Z>
+links::SLinkedList<T, Z> &links::SLinkedList<T, Z>::operator=(
+    const SLinkedList &other) {
+  if (this != &other) {
+    clear();
+    for (const auto &v : other) push(v);
+  }
+  return *this;
+}
+
+template <typename T, typename Z>
+links::SLinkedList<T, Z>::SLinkedList(SLinkedList &&other) noexcept {
+  foo = other.foo;
+  count = other.count;
+  head = other.head;
+  other.head = nullptr;
+  other.count = 0;
+  other.foo = nullptr;
+}
+
+template <typename T, typename Z>
+links::SLinkedList<T, Z> &links::SLinkedList<T, Z>::operator=(
+    SLinkedList &&other) noexcept {
+  if (this != &other) {
+    clear();
+    foo = other.foo;
+    count = other.count;
+    head = other.head;
+    other.head = nullptr;
+    other.count = 0;
+    other.foo = nullptr;
+  }
+  return *this;
+}
+
+template <typename T, typename Z>
 void links::SLinkedList<T, Z>::clear() {
   if (this->count > 0) {
     // this->head = nullptr;
@@ -84,23 +202,23 @@ void links::SLinkedList<T, Z>::clear() {
       this->pop();
     }
   }
+  this->head = nullptr;
+  this->count = 0;
 }
 
 template <typename T, typename Z>
 void links::SLinkedList<T, Z>::push(T value) {
   this->count += 1;
-  Node<T> *push = new Node<T>();
+  Node<T> *push = new Node<T>(std::move(value));
   push->next = this->head;
-  push->data = value;
   this->head = push;
 }
 
 template <typename T, typename Z>
 void links::SLinkedList<T, Z>::operator<<(T value) {
   this->count += 1;
-  Node<T> *push = new Node<T>();
+  Node<T> *push = new Node<T>(std::move(value));
   push->next = this->head;
-  push->data = value;
   this->head = push;
 }
 
@@ -126,6 +244,7 @@ T links::SLinkedList<T, Z>::pop() {
   Node<T> *popper = this->head;
   this->head = this->head->next;
   delete popper;
+  if (this->count == 0) head = nullptr;
   return data;
 }
 
@@ -146,6 +265,8 @@ void links::SLinkedList<T, Z>::stitch(SLinkedList<T, Z> l) {
     }
     pointer->next = l.head;
   }
+  l.head = nullptr;
+  l.count = 0;
 }
 
 template <typename T, typename Z>
@@ -161,6 +282,8 @@ void links::SLinkedList<T, Z>::istitch(SLinkedList<T, Z> l) {
     pointer->next = head;
     this->head = l.head;
   }
+  l.head = nullptr;
+  l.count = 0;
 }
 
 #endif

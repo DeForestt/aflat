@@ -16,7 +16,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
       auto l_obj = new LObj();
       l_obj->meta = "";
       while (std::isalpha(input[i]) || std::isdigit(input[i]) ||
-             input[i] == '_' || input[i] == '-') {
+             input[i] == '_') {
         l_obj->meta += input[i];
         i++;
       }
@@ -24,11 +24,19 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
       tokens.push(l_obj);
     } else if (std::isdigit(input[i]) || input[i] == '-') {
       if (input[i] == '-' && !std::isdigit(input[i + 1])) {
-        auto sym = new lex::OpSym;
-        sym->Sym = '-';
-        i++;
-        sym->lineCount = lineCount;
-        tokens << sym;
+        if (input[i + 1] == '>') {
+          auto sym = new lex::Symbol;
+          sym->meta = "->";
+          i += 2;
+          sym->lineCount = lineCount;
+          tokens << sym;
+        } else {
+          auto sym = new lex::OpSym;
+          sym->Sym = '-';
+          i++;
+          sym->lineCount = lineCount;
+          tokens << sym;
+        }
       } else if (input[i] == '0' && input[i + 1] == 'x') {
         i += 2;
         auto intLit = new lex::INT();

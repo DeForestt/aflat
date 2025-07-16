@@ -251,9 +251,11 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
     }
 
     if (cl->genericTypes.size() != typeNameParts.size() - 1) {
-      this->alert("Type " + typeName +
-                      " not found in type list, did you forget to "
-                      "include the file that defines it?",
+      this->alert("Type " + typeName + " has " +
+                      std::to_string(cl->genericTypes.size()) +
+                      " generic types, but " +
+                      std::to_string(typeNameParts.size() - 1) +
+                      " were provided. Please check the type definition.",
                   true, __FILE__, __LINE__);
     }
     // typeNameParts without the first parts
@@ -264,4 +266,194 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
                                          OutputFile);
   }
   return type;
+}
+
+asmc::File gen::CodeGenerator::memMove(std::string from, std::string to,
+                                       int bytes) {
+  asmc::File file;
+
+  asmc::Push *pushRsi = new asmc::Push();
+  pushRsi->op = this->registers["%rsi"]->get(asmc::QWord);
+  pushRsi->size = asmc::QWord;
+  pushRsi->logicalLine = this->logicalLine;
+  file.text << pushRsi;
+
+  asmc::Push *pushRdi = new asmc::Push();
+  pushRdi->op = this->registers["%rdi"]->get(asmc::QWord);
+  pushRdi->size = asmc::QWord;
+  pushRdi->logicalLine = this->logicalLine;
+  file.text << pushRdi;
+
+  asmc::Push *pushRcx = new asmc::Push();
+  pushRcx->op = this->registers["%rcx"]->get(asmc::QWord);
+  pushRcx->size = asmc::QWord;
+  pushRcx->logicalLine = this->logicalLine;
+  file.text << pushRcx;
+
+  asmc::Push *pushRax = new asmc::Push();
+  pushRax->op = this->registers["%rax"]->get(asmc::QWord);
+  pushRax->size = asmc::QWord;
+  pushRax->logicalLine = this->logicalLine;
+  file.text << pushRax;
+
+  asmc::Mov *movFrom = new asmc::Mov();
+  movFrom->from = from;
+  movFrom->to = this->registers["%rsi"]->get(asmc::QWord);
+  movFrom->size = asmc::QWord;
+  movFrom->logicalLine = this->logicalLine;
+  file.text << movFrom;
+
+  asmc::Mov *movTo = new asmc::Mov();
+  movTo->from = to;
+  movTo->to = this->registers["%rdi"]->get(asmc::QWord);
+  movTo->size = asmc::QWord;
+  movTo->logicalLine = this->logicalLine;
+  file.text << movTo;
+
+  asmc::Mov *movCount = new asmc::Mov();
+  movCount->from = "$" + std::to_string(bytes);
+  movCount->to = this->registers["%rcx"]->get(asmc::QWord);
+  movCount->size = asmc::QWord;
+  movCount->logicalLine = this->logicalLine;
+  file.text << movCount;
+
+  std::string loopLabelStr = "L_" + gen::utils::generateUUID();
+  asmc::Label *loopLabel = new asmc::Label();
+  loopLabel->label = loopLabelStr;
+  loopLabel->logicalLine = this->logicalLine;
+  file.text << loopLabel;
+
+  asmc::Mov *load = new asmc::Mov();
+  load->from = '(' + this->registers["%rsi"]->get(asmc::QWord) + ')';
+  load->to = this->registers["%al"]->get(asmc::Byte);
+  load->size = asmc::Byte;
+  load->logicalLine = this->logicalLine;
+  file.text << load;
+
+  asmc::Mov *store = new asmc::Mov();
+  store->from = this->registers["%al"]->get(asmc::Byte);
+  store->to = '(' + this->registers["%rdi"]->get(asmc::QWord) + ')';
+  store->size = asmc::Byte;
+  store->logicalLine = this->logicalLine;
+  file.text << store;
+
+  asmc::Add *incSrc = new asmc::Add();
+  incSrc->op1 = "$1";
+  incSrc->op2 = this->registers["%rsi"]->get(asmc::QWord);
+  incSrc->size = asmc::QWord;
+  incSrc->logicalLine = this->logicalLine;
+  file.text << incSrc;
+
+  asmc::Add *incDst = new asmc::Add();
+  incDst->op1 = "$1";
+  incDst->op2 = this->registers["%rdi"]->get(asmc::QWord);
+  incDst->size = asmc::QWord;
+  incDst->logicalLine = this->logicalLine;
+  file.text << incDst;
+
+  asmc::Sub *dec = new asmc::Sub();
+  dec->op1 = "$1";
+  dec->op2 = this->registers["%rcx"]->get(asmc::QWord);
+  dec->size = asmc::QWord;
+  dec->logicalLine = this->logicalLine;
+  file.text << dec;
+
+  asmc::Cmp *cmp = new asmc::Cmp();
+  cmp->from = "$0";
+  cmp->to = this->registers["%rcx"]->get(asmc::QWord);
+  cmp->size = asmc::QWord;
+  cmp->logicalLine = this->logicalLine;
+  file.text << cmp;
+
+  asmc::Jne *jne = new asmc::Jne();
+  jne->to = loopLabelStr;
+  jne->logicalLine = this->logicalLine;
+  file.text << jne;
+
+  asmc::Pop *popRax = new asmc::Pop();
+  popRax->op = this->registers["%rax"]->get(asmc::QWord);
+  popRax->size = asmc::QWord;
+  popRax->logicalLine = this->logicalLine;
+  file.text << popRax;
+
+  asmc::Pop *popRcx = new asmc::Pop();
+  popRcx->op = this->registers["%rcx"]->get(asmc::QWord);
+  popRcx->size = asmc::QWord;
+  popRcx->logicalLine = this->logicalLine;
+  file.text << popRcx;
+
+  asmc::Pop *popRdi = new asmc::Pop();
+  popRdi->op = this->registers["%rdi"]->get(asmc::QWord);
+  popRdi->size = asmc::QWord;
+  popRdi->logicalLine = this->logicalLine;
+  file.text << popRdi;
+
+  asmc::Pop *popRsi = new asmc::Pop();
+  popRsi->op = this->registers["%rsi"]->get(asmc::QWord);
+  popRsi->size = asmc::QWord;
+  popRsi->logicalLine = this->logicalLine;
+  file.text << popRsi;
+
+  return file;
+}
+
+asmc::File gen::CodeGenerator::setOffset(std::string to, int offset,
+                                         std::string from, asmc::Size size) {
+  asmc::File file;
+
+  asmc::Push *pushRdi = new asmc::Push();
+  pushRdi->op = this->registers["%rdi"]->get(asmc::QWord);
+  pushRdi->size = asmc::QWord;
+  pushRdi->logicalLine = this->logicalLine;
+  file.text << pushRdi;
+
+  asmc::Push *pushRax = new asmc::Push();
+  pushRax->op = this->registers["%rax"]->get(asmc::QWord);
+  pushRax->size = asmc::QWord;
+  pushRax->logicalLine = this->logicalLine;
+  file.text << pushRax;
+
+  asmc::Mov *movPtr = new asmc::Mov();
+  movPtr->from = to;
+  movPtr->to = this->registers["%rdi"]->get(asmc::QWord);
+  movPtr->size = asmc::QWord;
+  movPtr->logicalLine = this->logicalLine;
+  file.text << movPtr;
+
+  if (offset != 0) {
+    asmc::Add *addOffset = new asmc::Add();
+    addOffset->op1 = "$" + std::to_string(offset);
+    addOffset->op2 = this->registers["%rdi"]->get(asmc::QWord);
+    addOffset->size = asmc::QWord;
+    addOffset->logicalLine = this->logicalLine;
+    file.text << addOffset;
+  }
+
+  asmc::Mov *movVal = new asmc::Mov();
+  movVal->from = from;
+  movVal->to = this->registers["%rax"]->get(size);
+  movVal->size = size;
+  movVal->logicalLine = this->logicalLine;
+  file.text << movVal;
+
+  asmc::Mov *store = new asmc::Mov();
+  store->from = this->registers["%rax"]->get(size);
+  store->to = '(' + this->registers["%rdi"]->get(asmc::QWord) + ')';
+  store->size = size;
+  store->logicalLine = this->logicalLine;
+  file.text << store;
+
+  asmc::Pop *popRax = new asmc::Pop();
+  popRax->op = this->registers["%rax"]->get(asmc::QWord);
+  popRax->size = asmc::QWord;
+  popRax->logicalLine = this->logicalLine;
+  file.text << popRax;
+
+  asmc::Pop *popRdi = new asmc::Pop();
+  popRdi->op = this->registers["%rdi"]->get(asmc::QWord);
+  popRdi->size = asmc::QWord;
+  popRdi->logicalLine = this->logicalLine;
+  file.text << popRdi;
+
+  return file;
 }

@@ -14,6 +14,7 @@
 #include "LinkedList.hpp"
 #include "LinkedListS.hpp"
 #include "Parser/AST.hpp"
+#include "Parser/AST/Statements/Match.hpp"
 #include "Parser/Parser.hpp"
 namespace gen {
 
@@ -23,6 +24,7 @@ class CodeGenerator {
 #pragma region State Variables
   parse::Parser &parser;
   gen::Class *scope;
+  ast::Match *matchScope = nullptr;
   ast::Type returnType;
   int scopePop = 0;
   int mutability = 0;
@@ -78,6 +80,7 @@ class CodeGenerator {
     asmc::Size lambdaSize;
     int tempCount;
     ast::Function *currentFunction;
+    ast::Match *matchScope;
   };
 
   std::vector<EnvState> envStack;
@@ -99,6 +102,9 @@ class CodeGenerator {
                             bool isDiv = false);
   gen::Expr genArithmetic(asmc::ArithInst *, ast::Compound compound,
                           asmc::File &OutputFile);
+  asmc::File memMove(std::string from, std::string to, int bytes);
+  asmc::File setOffset(std::string to, int offset, std::string from,
+                       asmc::Size size);
   ast::Expr *imply(ast::Expr *expr, std::string typeName);
   bool canAssign(ast::Type type, std::string typeName, std::string fmt,
                  bool strict = false);

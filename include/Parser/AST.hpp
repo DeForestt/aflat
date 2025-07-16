@@ -86,6 +86,9 @@ class Expr : public Statement {
   Expr *extention = nullptr;
   bool selling = false;
   std::string typeCast = "";
+  virtual gen::GenerationResult const generateExpression(
+      gen::CodeGenerator &generator, asmc::Size size,
+      std::string typeHint = "");
 };
 
 class ConditionalExpr {
@@ -341,6 +344,39 @@ class IfExpr : public Expr {
     return "if" + expr->toString() + "" + trueExpr->toString() + "else" +
            falseExpr->toString();
   }
+};
+
+class UnionConstructor : public Expr {
+ public:
+  ast::Type unionType;
+  std::string variantName;
+  Expr *expr;
+  bool dynamic;
+  std::vector<std::string> templateTypes;
+  std::string toString() override {
+    return unionType.typeName + "->" + variantName + "(" + expr->toString() +
+           ")";
+  }
+  UnionConstructor(Type unionType, std::string variantName, Expr *expr,
+                   bool dynamic, std::vector<std::string> templateTypes)
+      : unionType(unionType),
+        variantName(variantName),
+        expr(expr),
+        dynamic(dynamic),
+        templateTypes(std::move(templateTypes)) {}
+  UnionConstructor() = default;
+
+  gen::GenerationResult const generateExpression(
+      gen::CodeGenerator &generator, asmc::Size size,
+      std::string typeHint = "") override;
+
+  gen::GenerationResult const getStaticExpr(gen::CodeGenerator &generator,
+                                            asmc::Size size,
+                                            std::string typeHint = "");
+
+  gen::GenerationResult const getDynamicExpr(gen::CodeGenerator &generator,
+                                             asmc::Size size,
+                                             std::string typeHint = "");
 };
 
 Statement *deepCopy(const Statement *stmt);

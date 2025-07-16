@@ -2,6 +2,7 @@
 #define PARSE
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "LinkedList.hpp"
@@ -11,6 +12,11 @@
 #include "Scanner.hpp"
 
 namespace parse {
+
+static std::unordered_map<std::string, int> PRIMITIVE_TYPES = {
+    {"int", 4},  {"short", 2}, {"char", 1}, {"long", 8},    {"adr", 8},
+    {"byte", 1}, {"float", 4}, {"bool", 1}, {"generic", 8}, {"number", 8}};
+
 struct Annotation {
   std::string name;
   std::vector<std::string> args;

@@ -86,10 +86,7 @@ class ArgsList {
     };
 
     bool has(const string name) {
-        return my.getArg(name).match({
-            "ok": [] => return true,
-            "_": [] => return false
-        });
+        return my.getArg(name).value([] => return false);
     };
 
     Result getTagLessArg(const int index) {

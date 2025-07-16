@@ -32,6 +32,21 @@ int gen::utils::sizeToInt(asmc::Size size) {
   }
 }
 
+asmc::Size gen::utils::toSize(size_t size) {
+  switch (size) {
+    case 1:
+      return asmc::Size::Byte;
+    case 2:
+      return asmc::Size::Word;
+    case 4:
+      return asmc::Size::DWord;
+    case 8:
+      return asmc::Size::QWord;
+    default:
+      return asmc::Size::AUTO;
+  }
+}
+
 bool gen::utils::searchSymbol(gen::Symbol sym, std::string str) {
   if (sym.symbol == str)
     return true;

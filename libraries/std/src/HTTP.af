@@ -192,41 +192,43 @@ class HTTPMessage {
         };
 
         my.switch = false;
-
-        lines.forEach([const string line, const int index, const HTTPMessage this] => {
+        
+        for int i = 0; i < lines.getCount(); i = i + 1 {
+            const string line = lines.get(i).expect("Invalid HTTP message");
             if line == "\n" {
-                this.switch = true;
-                return;
+                my.switch = true;
+                continue;
             };
             
-            if index == 0
-                return;
+            if i == 0
+                continue;
 
-            if this.switch {
-                this.body = this.body + line + "\r\n";
-                return;
+            if my.switch {
+                my.body = my.body + line + "\r\n";
+                continue;
             };
 
             const let sections = line.split(':');
-            if sections.getCount() < 2{
-                return;
+            if sections.getCount() < 2 {
+                continue;
             };
 
             string key = sections.get(0).expect("Invalid HTTP message");
             string value = sections.get(1).expect("Invalid HTTP message");
 
             if sections.getCount() > 2 {
-                for int i = 2; i < sections.getCount(); i = i + 1 {
+                for int j = 2; j < sections.getCount(); j = j + 1 {
                     value = value + ":";
-                    const string t = sections.get(i).expect("Invalid HTTP message");
+                    const string t = sections.get(j).expect("Invalid HTTP message");
                     value = value + t;
                 };
             };
             key = key.trim();
             value = value.trim();
             const HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
-            this.headers.pushBack(n);
-        }, my);
+            my.headers.pushBack(n);
+        };
+
         return 0;
     };
 
@@ -288,44 +290,42 @@ class HTTPMessage {
 
         my.switch = false;
 
-        lines.forEach([const string line, const int index, const HTTPMessage this] => {
+        for int i = 0; i < lines.getCount(); i = i + 1 {
+            const string line = lines.get(i).expect("Invalid HTTP message");
             if line == "\n" {
-                this.switch = true;
-                return;
+                my.switch = true;
+                continue;
             };
             
-            if index == 0
-                return;
+            if i == 0
+                continue;
 
-            if this.switch {
-                st.print("Switching.");
-                this.body = this.body + line + "\r\n";
-                st.print("Good switch.");
-                return;
+            if my.switch {
+                my.body = my.body + line + "\r\n";
+                continue;
             };
 
-            const let sections = line.splitAtFirst(':');
-            if sections.getCount() != 2 {
-                io.fPrint("Invalid header: %s\n", {line});
-                return;
+            const let sections = line.split(':');
+            if sections.getCount() < 2 {
+                continue;
             };
 
-            const string key = sections.get(0).expect("Invalid HTTP message");
+            string key = sections.get(0).expect("Invalid HTTP message");
             string value = sections.get(1).expect("Invalid HTTP message");
 
             if sections.getCount() > 2 {
-                for int i = 2; i < sections.getCount(); i = i + 1 {
-                    const string withColon = `{value}:`;
-                    const string t = sections.get(i).expect("Invalid HTTP message");
-                    value = `{withColon}{t}`;
+                for int j = 2; j < sections.getCount(); j = j + 1 {
+                    value = value + ":";
+                    const string t = sections.get(j).expect("Invalid HTTP message");
+                    value = value + t;
                 };
             };
-            
-            const string key = key.trim();
-            const string value = value.trim();
+            key = key.trim();
+            value = value.trim();
             const HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
-            this.headers.pushBack(n);
-        }, my); 
+            my.headers.pushBack(n);
+        };
+
     };
 
     HTTPMessage init(const adr rsp, * const bool isReq) {
@@ -349,19 +349,6 @@ class HTTPMessage {
         };
         
         args =: key;
-        // my.headers.forEach([const HTTPHeader header, const int __index, const adr arg] => {
-        //     const adr comp = arg as adr;
-        //     String a = new String(header.key);
-        //     a = a.trim('\n');
-        //     a = a.trim('\r');
-        //     a = a.trim(' ');
-        //     if a.equal(comp) {
-        //         arg =: header.value;
-        //         delete a;
-        //         return;
-        //     };
-        //     delete a;
-        // }, args);
         const adr ret = args as adr;
         return ret;
     };
@@ -408,15 +395,14 @@ class HTTPRequest {
     };
 
     public string getHeaders() {
-        const string res = new string("");
-        my.headers.forEach([const HTTPHeader header, const int __i, string buffer] => {
-            buffer = buffer + header.key;
-            buffer = buffer + ": ";
-            buffer = buffer + header.value;
-            buffer = buffer + "\r\n";
-            buffer.get();
-            return;
-        }, res);
+        string res = new string("");
+        for int i = 0; i < my.headers.getCount(); i = i + 1 {
+            const HTTPHeader header = my.headers.get(i).expect("Get header failed");
+            res = res + header.key;
+            res = res + ": ";
+            res = res + header.value;
+            res = res + "\r\n";
+        };
         return res;
     };
 
@@ -467,15 +453,14 @@ class HTTPResponse {
     };
 
     string getHeaders() {
-        const string res = new string("");
-        my.headers.forEach([const HTTPHeader header, const int __i, string buffer] => {
-            buffer = buffer + header.key;
-            buffer = buffer + ": ";
-            buffer = buffer + header.value;
-            buffer = buffer + "\r\n";
-            buffer.get();
-            return;
-        }, res);
+        string res = new string("");
+        for int i = 0; i < my.headers.getCount(); i = i + 1 {
+            const HTTPHeader header = my.headers.get(i).expect("Get header failed");
+            res = res + header.key;
+            res = res + ": ";
+            res = res + header.value;
+            res = res + "\r\n";
+        };
         return res;
     };
 

@@ -1,9 +1,12 @@
 #include <iostream>
 #include <sstream>
 
+#include "ASM.hpp"
+#include "CodeGenerator/Utils.hpp"
 #include "LinkedList.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/AST/Statements.hpp"
+#include "Parser/Parser.hpp"
 
 namespace ast {
 
@@ -231,6 +234,36 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
   }
   if (auto strct = dynamic_cast<Struct *>(this)) {
     if (strct->statement) strct->statement->replaceTypes(map);
+    return;
+  }
+  if (auto un = dynamic_cast<Union *>(this)) {
+    for (auto &alias : un->aliases) {
+      if (alias.isType()) {
+        auto it = map.find(alias.getType()->typeName);
+        if (it != map.end()) {
+          auto &typeName = it->second;
+          auto it = parse::PRIMITIVE_TYPES.find(typeName);
+          if (it != parse::PRIMITIVE_TYPES.end()) {
+            alias.value = new Type(typeName, gen::utils::toSize(it->second));
+          } else {
+            alias.value =
+                new Type(typeName, asmc::QWord);  // if it is a complex type, it
+                                                  // passes as a pointer.
+          }
+        }
+      } else if (alias.isConstExpr()) {
+        alias.getConstExpr()->replaceTypes(map);
+      }
+    }
+    if (un->statement) un->statement->replaceTypes(map);
+    return;
+  }
+  if (auto unionConstructor = dynamic_cast<UnionConstructor *>(this)) {
+    applyType(unionConstructor->unionType, map);
+    if (unionConstructor->expr) {
+      unionConstructor->expr->replaceTypes(map);
+    }
+    applyTemplateTypes(unionConstructor->templateTypes, map);
     return;
   }
   if (auto whileSt = dynamic_cast<While *>(this)) {

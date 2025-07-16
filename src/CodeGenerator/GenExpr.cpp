@@ -1429,7 +1429,13 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.size = trueExpr.size;
     output.type = trueExpr.type;
   } else {
-    this->alert("Unhandled expression", true, __FILE__, __LINE__);
+    auto res = expr->generateExpression(*this, size, typeHint);
+    OutputFile << res.file;
+    if (res.expr.has_value()) {
+      output = *res.expr;
+    } else {
+      this->alert("Unhandled expression", true, __FILE__, __LINE__);
+    }
   }
 
   if (expr->extention != nullptr) {

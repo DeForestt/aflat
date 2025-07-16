@@ -327,7 +327,7 @@ private char upper(char c){
     return c;
 };
 
-private bool match(const char c, const char p) {
+private bool reg(const char c, const char p) {
     if p == '.' return true;
     if p == '*' return true;
     if p == 'd' return
@@ -341,14 +341,14 @@ private bool match(const char c, const char p) {
             c <= 'Z')
         | (c == '_');
     if p == 'W' return
-        !match(c, 'w');
+        !reg(c, 'w');
     if p == 's' return 
         c == ' ' | 
         c == '\t' |
         c == '\n' |
         c == '\r';
     if p == 'S' return
-        !match(c, 's');
+        !reg(c, 's');
     if p == c return true;
     return false;
 };
@@ -364,7 +364,7 @@ export bool matches(const String input, const adr pattern){
     while i < input.len() & j < pString.len() {
         const char pChar = pString.at(j);
         const char iChar = input.at(i);
-        if !match(iChar, pChar) return false;
+        if !reg(iChar, pChar) return false;
         i++;
         j++;
     };
