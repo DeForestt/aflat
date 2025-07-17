@@ -5,7 +5,6 @@
 #include "CodeGenerator/Utils.hpp"
 #include "LinkedList.hpp"
 #include "Parser/AST.hpp"
-#include "Parser/AST/Statements.hpp"
 #include "Parser/Parser.hpp"
 
 namespace ast {
@@ -138,8 +137,8 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
     return;
   }
   if (auto callExpr = dynamic_cast<CallExpr *>(this)) {
-    if (callExpr->call) callExpr->call->replaceTypes(map);
     applyTemplateTypes(callExpr->templateTypes, map);
+    if (callExpr->call) callExpr->call->replaceTypes(map);
     return;
   }
   if (auto assign = dynamic_cast<Assign *>(this)) {

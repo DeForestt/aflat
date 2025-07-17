@@ -6,7 +6,6 @@
 
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
-#include "Parser/AST/Statements.hpp"
 #include "Parser/AST/Statements/Match.hpp"
 #include "Scanner.hpp"
 
@@ -1482,7 +1481,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         }
 
         ast::CallExpr *callExpr = new ast::CallExpr;
-        callExpr->templateTypes = std::move(genericTypeList);
+        callExpr->templateTypes = genericTypeList;
         callExpr->call = call;
         callExpr->logicalLine = obj.lineCount;
 

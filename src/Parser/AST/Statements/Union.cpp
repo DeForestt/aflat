@@ -176,7 +176,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
                                    parse::PRIMITIVE_TYPES[typePtr->typeName]);
       } else {
         // For other types, we can use the size from the typeList
-        auto t = generator.typeList[typePtr->typeName];
+        auto t = generator.getType(typePtr->typeName, OutputFile);
         if (!t) {
           generator.alert("Type not found: " + typePtr->typeName, true,
                           __FILE__, __LINE__);
