@@ -8,7 +8,7 @@ import result from "Utils/result";
 import Iterator from "Collections/Iterator";
 import Scroller from "Collections/Scroller";
 import {accept, reject} from "Utils/result" under res;
-import {Some, None} from "Utils/option" under opt;
+import {some, none} from "Utils/option" under opt;
 
 types(T)
 class vector {
@@ -31,10 +31,10 @@ class vector {
         const let ret = my.inner.popBack();
         return ret.match({
             "some": fn (const T value) {
-                return opt.Some::<T>(value);
+                return opt.some::<T>(value);
             },
             "none": fn () {
-                return opt.None::<T>();
+                return opt.none::<T>();
             }
         });
     };
@@ -43,10 +43,10 @@ class vector {
         const let ret = my.inner.get(index);
         return ret.match({
             "ok": fn (const T value) {
-                return opt.Some::<T>(value);
+                return opt.some::<T>(value);
             },
             "_": fn () {
-                return opt.None::<T>();
+                return opt.none::<T>();
             }
         });
     };
@@ -64,10 +64,10 @@ class vector {
         const let ret = my.inner.findFirst(predicate, args);
         return ret.match({
             "some": fn (const T value) {
-                return opt.Some::<T>(value);
+                return opt.some::<T>(value);
             },
             "none": fn () {
-                return opt.None::<T>();
+                return opt.none::<T>();
             }
         });
     };

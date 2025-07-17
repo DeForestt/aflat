@@ -7,7 +7,7 @@ import unordered_map from "Collections/unordered_map";
 import Result from "Utils/Result";
 import Error from "Utils/Error";
 import option from "Utils/option";
-import {Some, None} from "Utils/option" under opt;
+import {some, none} from "Utils/option" under opt;
 
 class FixtureStruct {
 	any<> setUp = setUp;
@@ -71,7 +71,7 @@ export fn tearDownFixtures() -> void {
 		const string key = keys.get(i).expect("Key not found");
 		if built.has(key.cstr()) {
 			const any data = built.get(key.cstr()).orElse(fn () panic("Fixture data not found"));
-			const let fixture = fixtures.get(key.cstr()).expect("Fixture not found");
+			const let fixture = fixtures.get(key.cstr()).orElse(fn () panic("Fixture not found"));
 			fixture.tearDown(data);
 		};
 	};
@@ -102,7 +102,7 @@ export fn fix(const adr name, const any<> setUp, * const any<any> tearDown) -> v
 	const let fixtures = getFixtures();
 	if fixtures.has(name) {
 		const let fixtureData = getFixtureData();
-		const let fixture = fixtures.get(name).expect("Fixture not found");
+		const let fixture = fixtures.get(name).orElse(fn () panic("Fixture already exists"));
 		if fixtureData.has(name) {
 			const any data = fixtureData.get(name).orElse(fn () panic("Fixture data not found"));
 			fixture.tearDown(data);
@@ -120,7 +120,7 @@ export fn getFixture(const string name) -> any {
 	};
 	const let name = name.cstr();
 	const let fixtures = getFixtures();
-	const let fixture = fixtures.get(name).expect("Fixture not found");
+	const let fixture = fixtures.get(name).orElse(fn () panic("Fixture not found"));
 	const any data = fixture.setUp();
 	fd.set(name, data);
 	return data;

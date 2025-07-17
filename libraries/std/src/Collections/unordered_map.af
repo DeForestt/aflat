@@ -4,7 +4,7 @@ import { str_at, str_comp } from "strings" under strings;
 import Map from "Utils/Map"; 
 import Option from "Utils/Option";
 import option from "Utils/option";
-import { Some, None } from "Utils/option" under opt;
+import { some, none } from "Utils/option" under opt;
 import List from "Collections";	
 
 types(T)
@@ -24,8 +24,8 @@ class unordered_map {
 		const let val = my.inner.get(key);
 		
 		return val.match({
-			"some": fn (const T data) return opt.Some(data),
-			"none": fn () return opt.None::<T>()
+			"some": fn (const T data) return opt.some(data),
+			"none": fn () return opt.none::<T>()
 		});
 	};
 
