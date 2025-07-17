@@ -92,4 +92,10 @@ int main(){
 };
 ```
 
+### Debugging
+
+When running AFlat, pass `-t` or `--trace-alerts` to print a stack trace whenever
+the compiler reports an alert. Building via CMake now includes debug symbols and
+linker options so the trace will display function names and line numbers.
+
 ## Have fun!

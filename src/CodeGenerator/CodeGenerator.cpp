@@ -7,6 +7,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
+#include <cstdio>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -23,6 +24,23 @@
 
 using namespace gen::utils;
 
+static void printStacktrace() {
+  void *array[50];
+  int size = backtrace(array, 50);
+  char exe[1024];
+  ssize_t len = readlink("/proc/self/exe", exe, sizeof(exe) - 1);
+  if (len != -1) exe[len] = '\0';
+  for (int i = 0; i < size; ++i) {
+    std::stringstream cmd;
+    cmd << "addr2line -f -C -e " << exe << " " << array[i];
+    FILE *fp = popen(cmd.str().c_str(), "r");
+    if (!fp) continue;
+    char line[256];
+    while (fgets(line, sizeof(line), fp)) std::cerr << line;
+    pclose(fp);
+  }
+}
+
 bool gen::CodeGenerator::traceAlert = false;
 
 void gen::CodeGenerator::enableAlertTrace(bool enable) { traceAlert = enable; }
@@ -31,11 +49,7 @@ void gen::CodeGenerator::alert(std::string message, bool error,
                                const char *file, int line) {
   if (traceAlert && file) {
     std::cerr << "[CG alert] " << file << ":" << line << std::endl;
-    void *array[10];
-    int size = backtrace(array, 10);
-    char **symbols = backtrace_symbols(array, size);
-    for (int i = 0; i < size; ++i) std::cerr << symbols[i] << std::endl;
-    free(symbols);
+    printStacktrace();
   }
   if (error) {
     this->errorFlag = true;
