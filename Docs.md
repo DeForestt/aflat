@@ -72,8 +72,12 @@ fn <function name>(<arguments>) -> <return type>? {
 
 - The `fn` keyword is now used to define functions.
 - Return types are optional; if omitted, they are inferred where possible.
-- If a function has an optional return type (denoted with `?`), it is automatically wrapped in `Option`.
-- If a function does not return a value with the `return` keyword, a return statement with no value is implied. In the case of `Option`, `return;` will return `none`.
+- If a function has an optional return type (denoted with `?`), it is sugar for
+  returning `option<T>`.
+- Prefixing an argument with `?` likewise treats it as `option<T>` and allows the
+  caller to omit the argument entirely, in which case `None()` is passed.
+- The returned `option` is created automatically: returning a value yields `Some(value)` while `return;` (or falling off the end) yields `None()`.
+- If a function does not return a value with the `return` keyword, a return statement with no value is implied. In the case of `option`, `return;` will return `None()`.
 - Functions are still limited to six arguments due to register-based argument passing.
 - **The old syntax is still supported for backwards compatibility.**
 
@@ -86,7 +90,9 @@ fn add(int a, int b) -> int {
 
 #### Optional Arguments
 - **`*` (Nullable Argument):** An argument prefixed with `*` is considered nullable and defaults to `NULL` or a type-specific default.
-- **`?` (Optional Argument):** An argument prefixed with `?` is considered optional and is automatically wrapped in `Option`.
+ - **`?` (Optional Argument):** An argument prefixed with `?` is considered optional and is automatically wrapped in `option`.
+ -   When calling such a function you may omit the argument to pass `None()`. Inside
+    the function the parameter type is `option<T>`.
 
 Example:
 ```js
@@ -95,10 +101,10 @@ fn add(int a, *int b) -> int {
 };
 
 fn maybeDivide(int a, ?int b) -> int? {
-    b.map({
-        "some": [int x] => return a / x,
-        "none": [] => return NULL
-    })
+    match b {
+        Some(x) => return a / x,
+        None() => return;
+    };
 };
 ```
 
@@ -398,6 +404,26 @@ int main(){
     return 0;
 };
 ```
+
+### Match Statements
+`match` inspects a union and executes one arm based on the active alias. Each
+arm specifies an alias and may bind the alias payload to a variable. The result
+of the chosen arm becomes the value of the entire statement.
+
+```c
+match <union expr> {
+    Alias1(x) => {
+        // use x
+    },
+    Alias2 => {
+        // handle Alias2 which has no payload
+    }
+};
+```
+
+All aliases of the union must be accounted for or a compile-time error is
+emitted. Because `match` is an expression, it can be directly returned or stored
+in a variable.
 
 ## Classes
 Classes in aflat are effectively structs that can implement functions and support encapsulation and rudimentary inheritance.  The syntax is:
@@ -699,9 +725,51 @@ fn main() {
     str.print(`{b.get()} {s.get()}\n`);
 };
 ```
+## Unions
+Unions define a single type that can represent several *aliases*. An alias may
+wrap a value, represent a constant, or carry no data at all. They are useful when
+a variable must hold values of different shapes but only one at a time.
 
+```c
+union Value {
+    Int(int),         // alias carrying an int
+    Float(float),     // alias carrying a float
+    Text(string),     // another typed alias
+    None,             // empty alias with no payload
+    ErrorCode = 404   // alias bound to a constant expression
+};
+```
 
+The compiler allocates enough space for the largest alias plus a four byte tag
+indicating which alias is active. After the alias list you may define methods
+just like a class body.
 
+### Constructing a Union
+Create a value with `new <Union>-><Alias>(args)` or by calling helper functions
+if the module provides them.
+
+```c
+Value v1 = new Value->Int(42);
+Value v2 = new Value->Text("hi");
+Value none = new Value->None();
+```
+
+### Matching on a Union
+Use `match` to perform different logic based on the active alias. The payload of
+an alias can be bound to a variable inside the case.
+
+```c
+match v1 {
+    Int(i) => printInt(i),
+    Float(f) => printFloat(f),
+    Text(t) => str.print(t),
+    None() => {},
+    ErrorCode => print("error")
+};
+```
+
+The expression evaluates to whatever the executed case returns, allowing it to
+be embedded in other expressions.
 ## Working with header files
 Much like in c or c++, aflat supports a header and source file interface; The header file contains the function and class definitions.  The source file contains the implementation of the functions and classes.  Header files should have the extension '.gs' and source files should have the extension '.af'.
 
@@ -856,8 +924,47 @@ The `result` module defines a templated `result` class used for error handling. 
 `accept` to create a success and `reject` for an error. Call `match` on the result
 to access the value or handle the error.
 
+### Utils/option.af
+The `option` union is the standard way to express an optional value. It has two
+aliases: `Some(T)` containing a value and `None` for the empty state. Helper
+functions `Some(value)` and `None()` construct the respective aliases.
+
+```c
+types(T)
+union option {
+    Some(T),
+    None
+};
+```
+
+Common methods are:
+
+- `isSome()` / `isNone()` – query the state
+- `expect(msg)` – return the contained value or abort with a message
+- `or(default)` – return the value or a default
+- `toString()` – for debugging
+
+Example usage:
+
+```c
+fn index(int[] arr, int idx) -> int? {
+    if (idx >= arr.length) {
+        return;       // yields None()
+    }
+    return arr[idx]; // yields Some(value)
+};
+
+let res = index(nums, 2);
+match res {
+    Some(v) => printInt(v),
+    None() => print("out of range")
+};
+```
+
+Pattern matching with `match` is the most convenient way to operate on an
+`option` value.
+
 ## Package Manager
-The Aflat package manager is built into the compiler.
 
 ### Bootstrapping a Project
 The package manager is used to create a project.  The syntax is:
