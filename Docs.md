@@ -3,6 +3,12 @@
 AFlat aims to trust that developers know what they are doing.  It allows and encourages things that many other modern languages do not, such as pointer asthmatic, memory management, and so on. While aflat does allow some developers to do some dangerous things, it also provides optional safety features that can be used to prevent some of the more dangerous things.  AFlat is not a language for everyone, but it is a language for careful developers who want to have more control over their code and their programs.
 <br>
 
+### Development Best Practices
+* Build the compiler with CMake (`mkdir build && cd build && cmake .. && make`).
+* Rebuild the standard library with `./rebuild-libs.sh` after editing `libraries/std/src`.
+* Format C++ code using clang-format.
+* Run `./bin/aflat run` to execute tests whenever you change the source.
+
 ## Types
 ### int
 A 4 byte signed int

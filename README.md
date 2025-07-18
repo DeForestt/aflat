@@ -21,22 +21,23 @@ git clone https://github.com/DeForestt/aflat
 ```
 
 ### Building the project
-All that is required to build the project is to create the bin directory and run the `make` command.
-please make sure that you have the `make` command installed. `sudo apt install make`
+The compiler uses **CMake** as its primary build system. Create a build directory and compile with CMake:
 ```bash
 cd aflat
-mkdir bin
+mkdir build && cd build
+cmake ..
 make
 ```
-Once the compiler is built, generate the standard library objects:
+For quick rebuilds you can simply run `make` again from the build directory.
+After building, generate the standard library objects:
 ```bash
-./rebuild-libs.sh
+../rebuild-libs.sh
 ```
-I suggest creating an alias for main in your bashrc file.
+Create an alias to the compiled binary so `aflat` is easy to run:
 ```bash
-alias aflat="<aflat bin dir>/main"
+alias aflat="<path to build>/bin/aflat"
 ```
-Or adding the aflat bin to your path.
+Alternatively add the `bin` directory to your `PATH`.
 
 This readme assumes that the aflat bin directory is in your path or an alias is set.
 
@@ -71,6 +72,13 @@ aflat build
 
 ### Running the project
 Build and run the project with the `aflat run` command.
+
+### Best Practices
+* Format C++ code with clang-format using
+  `find . \( -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) -exec clang-format -i {} +`.
+* Use CMake for the compiler build and `make` for quick rebuilds.
+* After editing files in `libraries/std/src`, run `./rebuild-libs.sh`.
+* Run `./bin/aflat run` to execute tests and ensure changes work as expected.
 
 ### Array Loop Example
 ```js
