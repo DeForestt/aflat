@@ -3,7 +3,6 @@
 import string from "String";
 import Error from "Utils/Error";
 
-
 types(T)
 union result {
     Ok(T),

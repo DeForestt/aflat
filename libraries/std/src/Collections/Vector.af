@@ -4,10 +4,8 @@ import Result from "Utils/Result";
 import Error from "Utils/Error";
 import option from "Utils/option";
 import Map from "Utils/Map";
-import result from "Utils/result";
 import Iterator from "Collections/Iterator";
 import Scroller from "Collections/Scroller";
-import {accept, reject} from "Utils/result" under res;
 import {Some, None} from "Utils/option" under opt;
 
 types(T)
