@@ -11,6 +11,15 @@ aflat update
 ```
 You should see a bunch of output
 
+### Development Best Practices
+When building the compiler from source use CMake:
+```bash
+mkdir build && cd build
+cmake .. && make
+```
+Format any C++ changes with clang-format and run `./rebuild-libs.sh` after editing `libraries/std/src`.
+Run `./bin/aflat run` to verify everything still works.
+
 ## First Project
 To create the tutorial project, run the following command in your project directory.
 ```bash

@@ -1,5 +1,5 @@
-# ICollection -- Depricated
-The ICollection interface that was meant to provide a common interface for all collections.  It is now only used in the case of the Array class.  It is not recommended to use this interface.
+# ICollection -- Deprecated
+The `ICollection` interface was originally meant to provide a common API for all collections.  It is now only used by the `Array` class and is generally discouraged. Prefer `List` or other container types instead.
 
 ## Fields
 The ICollection interface mandates no fields.
