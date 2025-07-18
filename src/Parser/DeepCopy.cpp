@@ -3,6 +3,7 @@
 
 #include "Parser/AST.hpp"
 #include "Parser/AST/Statements.hpp"
+#include "Parser/AST/Statements/Union.hpp"
 
 namespace ast {
 
@@ -40,6 +41,7 @@ Statement *deepCopy(const Statement *stmt) {
   }
   if (auto func = dynamic_cast<const Function *>(stmt)) {
     auto *copy = new Function(*func, func->locked);
+    copy->argTypes = func->argTypes;
     copy->args = deepCopy(func->args);
     copy->statement = deepCopy(func->statement);
     copy->decoratorArgs = copyExprList(func->decoratorArgs);
@@ -117,15 +119,21 @@ Statement *deepCopy(const Statement *stmt) {
     return copy;
   }
   if (auto un = dynamic_cast<const Union *>(stmt)) {
-    auto *copy = new Union(*un);
+    auto *copy = new Union();
+    copy->ident = un->ident;
     copy->statement = deepCopy(un->statement);
     copy->genericTypes = std::vector<std::string>(un->genericTypes);
-    for (auto &alias : copy->aliases) {
-      if (alias.isType()) {
-        alias.value =
-            new Type(alias.getType()->typeName, alias.getType()->size);
-      } else if (alias.isConstExpr()) {
-        alias.value = static_cast<Expr *>(deepCopy(alias.getConstExpr()));
+    for (auto alias : un->aliases) {
+      if (alias->isType()) {
+        // log type info
+        copy->aliases.push_back(new Union::Alias(
+            alias->name,
+            Type(alias->getType().typeName, alias->getType().size)));
+      } else if (alias->isConstExpr()) {
+        copy->aliases.push_back(new Union::Alias(
+            alias->name, static_cast<Expr *>(deepCopy(alias->getConstExpr()))));
+      } else {
+        copy->aliases.push_back(new Union::Alias(alias->name, std::nullopt));
       }
     }
     return copy;
@@ -221,6 +229,7 @@ Statement *deepCopy(const Statement *stmt) {
   }
   if (auto callExpr = dynamic_cast<const CallExpr *>(stmt)) {
     auto *copy = new CallExpr();
+    copy->templateTypes = std::vector<std::string>(callExpr->templateTypes);
     copy->call = static_cast<Call *>(deepCopy(callExpr->call));
     return copy;
   }
@@ -281,6 +290,10 @@ Statement *deepCopy(const Statement *stmt) {
   if (auto cw = dynamic_cast<const CWrite *>(stmt)) {
     auto *copy = new CWrite();
     copy->expr = static_cast<Expr *>(deepCopy(cw->expr));
+    return copy;
+  }
+  if (auto note = dynamic_cast<const Note *>(stmt)) {
+    auto *copy = new Note(note->message);
     return copy;
   }
   if (auto brk = dynamic_cast<const Break *>(stmt)) {

@@ -244,7 +244,7 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
     auto cl = this->genericTypes[typeNamePart];
 
     if (cl == nullptr) {
-      this->alert("Type " + typeName +
+      this->alert("Type " + typeNamePart +
                       " not found in type list, did you forget to "
                       "include the file that defines it?",
                   true, __FILE__, __LINE__);

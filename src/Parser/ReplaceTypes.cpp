@@ -90,6 +90,9 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
     if (pull->expr) pull->expr->replaceTypes(map);
     return;
   }
+  if (auto note = dynamic_cast<Note *>(this)) {
+    return;
+  }
   if (auto buy = dynamic_cast<Buy *>(this)) {
     if (buy->expr) buy->expr->replaceTypes(map);
     return;
@@ -237,21 +240,21 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
   }
   if (auto un = dynamic_cast<Union *>(this)) {
     for (auto &alias : un->aliases) {
-      if (alias.isType()) {
-        auto it = map.find(alias.getType()->typeName);
+      if (alias->isType()) {
+        auto it = map.find(alias->getType().typeName);
         if (it != map.end()) {
           auto &typeName = it->second;
           auto it = parse::PRIMITIVE_TYPES.find(typeName);
           if (it != parse::PRIMITIVE_TYPES.end()) {
-            alias.value = new Type(typeName, gen::utils::toSize(it->second));
+            alias->value = Type(typeName, gen::utils::toSize(it->second));
           } else {
-            alias.value =
-                new Type(typeName, asmc::QWord);  // if it is a complex type, it
-                                                  // passes as a pointer.
+            alias->value =
+                Type(typeName, asmc::QWord);  // if it is a complex type, it
+                                              // passes as a pointer.
           }
         }
-      } else if (alias.isConstExpr()) {
-        alias.getConstExpr()->replaceTypes(map);
+      } else if (alias->isConstExpr()) {
+        alias->getConstExpr()->replaceTypes(map);
       }
     }
     if (un->statement) un->statement->replaceTypes(map);
