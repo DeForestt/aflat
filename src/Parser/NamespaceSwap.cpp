@@ -45,6 +45,9 @@ void Statement::namespaceSwap(
     if (pull->expr) pull->expr->namespaceSwap(map);
     return;
   }
+  if (auto note = dynamic_cast<Note *>(this)) {
+    return;
+  }
   if (auto buy = dynamic_cast<Buy *>(this)) {
     if (buy->expr) buy->expr->namespaceSwap(map);
     return;
@@ -171,9 +174,9 @@ void Statement::namespaceSwap(
   }
   if (auto uni = dynamic_cast<Union *>(this)) {
     if (uni->statement) uni->statement->namespaceSwap(map);
-    for (auto &alias : uni->aliases) {
-      if (alias.value && std::holds_alternative<ast::Expr *>(*alias.value)) {
-        auto expr = std::get<ast::Expr *>(*alias.value);
+    for (auto alias : uni->aliases) {
+      if (alias->value && std::holds_alternative<ast::Expr *>(*alias->value)) {
+        auto expr = std::get<ast::Expr *>(*alias->value);
         if (expr) expr->namespaceSwap(map);
       }
     }

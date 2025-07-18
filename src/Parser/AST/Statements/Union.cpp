@@ -8,13 +8,14 @@
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/Utils.hpp"
+#include "Parser/AST.hpp"
 #include "Parser/Parser.hpp"
 
 namespace ast {
 
-std::vector<ast::Union::Alias> parseAliases(
+std::vector<ast::Union::Alias *> parseAliases(
     links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
-  std::vector<ast::Union::Alias> aliases;
+  std::vector<ast::Union::Alias *> aliases;
   lex::OpSym *comma = nullptr;
   bool first = true;
   do {
@@ -33,12 +34,12 @@ std::vector<ast::Union::Alias> parseAliases(
 
     std::string name = aliasIdent->meta;
 
-    std::optional<std::variant<ast::Type *, ast::Expr *>> value = std::nullopt;
+    std::optional<std::variant<ast::Type, ast::Expr *>> value = std::nullopt;
 
     comma = dynamic_cast<lex::OpSym *>(tokens.peek());
     if (comma == nullptr || comma->Sym != '(') {
       // If there is no Open Peren, it means this alias is a unit type
-      aliases.emplace_back(name);
+      aliases.push_back(new Union::Alias(name));
       continue;
     }
 
@@ -49,7 +50,8 @@ std::vector<ast::Union::Alias> parseAliases(
           maybeTypeName ? parser.typeList[maybeTypeName->meta] : nullptr;
       if (type) {
         tokens.pop();
-        std::variant<ast::Type *, ast::Expr *> typeOrExpr = type;
+        std::variant<ast::Type, ast::Expr *> typeOrExpr =
+            ast::Type(type->typeName, type->size);
         value = typeOrExpr;
       } else {
         auto expr = parser.parseExpr(tokens);
@@ -68,7 +70,7 @@ std::vector<ast::Union::Alias> parseAliases(
       }
       comma = dynamic_cast<lex::OpSym *>(tokens.peek());
     }
-    aliases.emplace_back(name, value);
+    aliases.push_back(new Union::Alias(name, value));
 
   } while (comma != nullptr && comma->Sym == ',');
 
@@ -114,7 +116,8 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   // generated when it is instantiated with specific types.
   if (this->genericTypes.size() > 0) {
     generator.genericTypes.insert(
-        {this->ident.ident, this});  // add the union to the generic types
+        {this->ident.ident, dynamic_cast<ast::Union *>(ast::deepCopy(
+                                this))});  // add the union to the generic types
     return {asmc::File(), std::nullopt};
   }
 
@@ -157,7 +160,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
 
   for (const auto &alias : this->aliases) {
     gen::Expr expr;
-    if (alias.isUnit()) {
+    if (alias->isUnit()) {
       // need to create an int expr with a unique value...
       // It needs to be resonabley different from other aliases so some high
       // number just in case
@@ -166,17 +169,18 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
       intLit->val = generator.tempCount++ +
                     1000000;  // Start from a high number to avoid conflicts
 
-      type->aliases.emplace_back(alias.name, intLit, 4);
-    } else if (alias.isType()) {
-      auto typePtr = alias.getType();
+      type->aliases.emplace_back(alias->name, intLit, 4);
+    } else if (alias->isType()) {
+      auto typePtr =
+          new ast::Type(alias->getType().typeName, alias->getType().size);
 
       if (parse::PRIMITIVE_TYPES.find(typePtr->typeName) !=
           parse::PRIMITIVE_TYPES.end()) {
-        type->aliases.emplace_back(alias.name, typePtr,
+        type->aliases.emplace_back(alias->name, typePtr,
                                    parse::PRIMITIVE_TYPES[typePtr->typeName]);
       } else {
         // For other types, we can use the size from the typeList
-        auto t = generator.typeList[typePtr->typeName];
+        auto t = generator.getType(typePtr->typeName, OutputFile);
         if (!t) {
           generator.alert("Type not found: " + typePtr->typeName, true,
                           __FILE__, __LINE__);
@@ -184,36 +188,36 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
           auto typ = *t;
           if (dynamic_cast<gen::Enum *>(typ)) {
             // always use 4 bytes for enums
-            type->aliases.emplace_back(alias.name, typePtr, 4);
+            type->aliases.emplace_back(alias->name, typePtr, 4);
           } else {
             auto size = typ->SymbolTable.head->data.byteMod;
             if (size <= 0) {
               generator.alert("Type " + typePtr->typeName + " has invalid size",
                               true, __FILE__, __LINE__);
             } else {
-              type->aliases.emplace_back(alias.name, typePtr, size);
+              type->aliases.emplace_back(alias->name, typePtr, size);
             }
           }
         }
       }
-    } else if (alias.isConstExpr()) {
+    } else if (alias->isConstExpr()) {
       // We need to evaluate the expression and determine its type
-      auto exprPtr = alias.getConstExpr();
+      auto exprPtr = alias->getConstExpr();
       if (exprPtr == nullptr) {
-        generator.alert("Constant expression is null for alias: " + alias.name,
+        generator.alert("Constant expression is null for alias: " + alias->name,
                         true, __FILE__, __LINE__);
       } else {
         expr = generator.GenExpr(exprPtr, junkFile);
         if (expr.size == asmc::AUTO) {
           generator.alert(
               "Could not determine size of constant expression for alias: " +
-                  alias.name,
+                  alias->name,
               true, __FILE__, __LINE__);
         }
-        type->aliases.emplace_back(alias.name, exprPtr, expr.size);
+        type->aliases.emplace_back(alias->name, exprPtr, expr.size);
       }
     } else {
-      generator.alert("Unknown alias type for: " + alias.name, true, __FILE__,
+      generator.alert("Unknown alias type for: " + alias->name, true, __FILE__,
                       __LINE__);
     }
   }

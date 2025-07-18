@@ -1,9 +1,6 @@
 .needs <std>
-
-import Function from "Utils/Functions";
-import Map from "Utils/Map";
-import Option from "Utils/Option";
-import string from "String";
+import {print} from "String" under str;
+import string from "String" under str;
 
 types(T)
 union option {
@@ -42,11 +39,10 @@ union option {
 
   safe fn toString() -> string {
     match my {
-        Some(value) => return `Some({value})`,
-        None() => return `None`
-    };
-  };
-
+      Some(value) => return `Some({value})`,
+      None() => return "None"
+    }
+  }
 };
 
 types(T)
@@ -57,4 +53,16 @@ export fn Some(const T val) -> option::<T> {
 types(T)
 export fn None() -> option::<T> {
   return new option::<T>->None();
+};
+
+types(T)
+export fn optionWrapper(immutable T value) -> option::<T> {
+  const any checker = value; // Note: This is a workaround for the type system to allow checking for NULL even if T is not an 8-byte type.
+  // 0, false, and \0 are not considered NULL in this context.
+  // If T is a reference type, this will check if the reference is NULL.
+  if (checker == NULL) {
+    return new option::<T>->None();
+  } else {
+    return new option::<T>->Some(value);
+  }
 };
