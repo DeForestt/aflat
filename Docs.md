@@ -59,6 +59,94 @@ Type a = b;
 ```
 
 You will see more about this in the class section.
+
+## Union Types
+A union stores one of several possible variants. Each variant is called an
+**alias** and may contain a value of a specific type, a constant expression or be
+unit-like (holding no data). Unions behave much like classes: they support
+generics and can define methods inside the union block.
+
+### Defining a Union
+```aflat
+types(A, B)
+union Example {
+    First(A),
+    Second(B),
+    Empty
+
+    fn isFirst() -> bool {
+        match my {
+            First() => return true,
+            _ => return false
+        };
+    };
+};
+```
+
+Aliases are created using `new <UnionName>->Alias(values)` or helper functions.
+Unit aliases are parameterless. The union itself can contain methods which use
+`my` to refer to the stored value.
+
+### Option Example
+An `optional` union is commonly used to express the presence or absence of a
+value. Below is a full implementation making use of generics and pattern
+matching:
+
+```aflat
+.needs <std>
+import {print} from "String" under str;
+import string from "String" under str;
+
+types(T)
+union optional {
+  Some(T),
+  None
+
+  safe fn isSome() -> bool {
+    match my {
+      Some() => return true,
+      None() => return false
+    };
+  };
+
+  safe fn isNone() -> bool {
+    match my {
+      Some() => return false,
+      None() => return true
+    };
+  };
+
+  safe fn expect(string msg) -> T {
+    match my {
+      Some(value) => return value,
+      None() => panic(msg.cstr())
+    };
+  };
+};
+
+types(T)
+fn Some(T val) -> optional::<T> {
+  return new optional::<T>->Some(val);
+};
+
+types(T)
+fn None() -> optional::<T> {
+  return new optional::<T>->None();
+};
+
+fn main() -> int {
+  let a = None::<int>();
+  str.print(`isSome looks like {a.isSome()}\n`);
+
+  let b = match a {
+    Some(value) => value,
+    None() => return 0
+  };
+
+  str.print(`B is now {b}\n`);
+  return 0;
+};
+```
 ## Functions
 
 ### Syntax
@@ -398,6 +486,21 @@ int main(){
     return 0;
 };
 ```
+
+### Match Statements
+Pattern matching selects code paths based on the alias held by a union. The
+syntax is:
+
+```aflat
+match <expression> {
+    Alias(value) => <statement>,
+    Other() => <statement>
+};
+```
+
+`match` is an expression; the selected arm determines the result. Using `return`
+inside an arm exits the enclosing function. Identifiers inside an alias pattern
+bind the contained value to a new variable.
 
 ## Classes
 Classes in aflat are effectively structs that can implement functions and support encapsulation and rudimentary inheritance.  The syntax is:
