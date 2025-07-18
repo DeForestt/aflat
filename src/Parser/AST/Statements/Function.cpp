@@ -376,7 +376,7 @@ gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
   if (generator.scope != nullptr && tn == "Self") {
     tn = generator.scope->Ident;
   }
-  output.type = this->optional ? "Option" : tn;
+  output.type = this->optional ? "option." + tn : tn;
   output.size = this->optional ? asmc::QWord : this->type.size;
   output.access = generator.registers["%rax"]->get(output.size);
   if (this->type.typeName == "float") {

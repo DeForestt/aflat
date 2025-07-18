@@ -87,7 +87,9 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   gen::Expr from = generator.GenExpr(this->expr, file);
 
   if (generator.currentFunction->optional) {
-    if (from.type != "Option") {
+    // if fromtype is not option.typeName, we need to convert it to
+    // option.typeName
+    if (from.type != "option." + generator.returnType.typeName) {
       if (!this->empty &&
           !generator.canAssign(generator.returnType, from.type,
                                "the return type of this function is {} but the "
@@ -102,7 +104,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
         this->expr = nu;
       }
       auto optionConvertion = new ast::Call();
-      optionConvertion->ident = "_toOption";
+      optionConvertion->ident = "option.optionWrapper";
       optionConvertion->Args.push(this->expr);
       auto call = new ast::CallExpr();
       call->call = optionConvertion;
