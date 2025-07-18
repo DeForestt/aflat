@@ -3,6 +3,7 @@
 
 #include "Parser/AST.hpp"
 #include "Parser/AST/Statements.hpp"
+#include "Parser/AST/Statements/Union.hpp"
 
 namespace ast {
 
@@ -117,15 +118,21 @@ Statement *deepCopy(const Statement *stmt) {
     return copy;
   }
   if (auto un = dynamic_cast<const Union *>(stmt)) {
-    auto *copy = new Union(*un);
+    auto *copy = new Union();
+    copy->ident = un->ident;
     copy->statement = deepCopy(un->statement);
     copy->genericTypes = std::vector<std::string>(un->genericTypes);
-    for (auto &alias : copy->aliases) {
-      if (alias.isType()) {
-        alias.value =
-            new Type(alias.getType()->typeName, alias.getType()->size);
-      } else if (alias.isConstExpr()) {
-        alias.value = static_cast<Expr *>(deepCopy(alias.getConstExpr()));
+    for (auto alias : un->aliases) {
+      if (alias->isType()) {
+        // log type info
+        copy->aliases.push_back(new Union::Alias(
+            alias->name,
+            Type(alias->getType().typeName, alias->getType().size)));
+      } else if (alias->isConstExpr()) {
+        copy->aliases.push_back(new Union::Alias(
+            alias->name, static_cast<Expr *>(deepCopy(alias->getConstExpr()))));
+      } else {
+        copy->aliases.push_back(new Union::Alias(alias->name, std::nullopt));
       }
     }
     return copy;

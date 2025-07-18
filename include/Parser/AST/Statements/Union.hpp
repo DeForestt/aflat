@@ -24,28 +24,29 @@ class Union : public Class {
  public:
   struct Alias {
     std::string name;
-    std::optional<std::variant<ast::Type *, ast::Expr *>> value;
+    std::optional<std::variant<ast::Type, ast::Expr *>> value;
     Alias(std::string name,
-          std::optional<std::variant<ast::Type *, ast::Expr *>> value =
+          std::optional<std::variant<ast::Type, ast::Expr *>> value =
               std::nullopt)
         : name(std::move(name)), value(std::move(value)) {}
 
     bool isUnit() const { return !value.has_value(); }
     bool isType() const {
-      return value && std::holds_alternative<ast::Type *>(*value);
+      return value && std::holds_alternative<ast::Type>(*value);
     }
     bool isConstExpr() const {
       return value && std::holds_alternative<ast::Expr *>(*value);
     }
-    ast::Type *getType() const noexcept {
-      return isType() ? std::get<ast::Type *>(*value) : nullptr;
+    ast::Type getType() const noexcept {
+      return isType() ? std::get<ast::Type>(*value)
+                      : ast::Type("Invalid", asmc::QWord);
     }
     ast::Expr *getConstExpr() const noexcept {
       return isConstExpr() ? std::get<ast::Expr *>(*value) : nullptr;
     }
     std::string toString() const {
       if (isUnit()) return name;
-      if (isType()) return name + "(" + getType()->typeName + ")";
+      if (isType()) return name + "(" + getType().typeName + ")";
       if (isConstExpr()) return name + "(" + getConstExpr()->toString() + ")";
       return name;  // Fallback, should not happen
     }
@@ -56,7 +57,7 @@ class Union : public Class {
   Statement *statement = nullptr;
 
   // std::vector<std::string> genericTypes = std::vector<std::string>();
-  std::vector<Alias> aliases;
+  std::vector<Alias *> aliases;
 
   Union() = default;
   Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
@@ -70,7 +71,7 @@ class Union : public Class {
   std::string toString() const {
     std::string result = "union " + ident.ident + " {\n";
     for (const auto &alias : aliases) {
-      result += "  " + alias.toString() + ",\n";
+      result += "  " + alias->toString() + ",\n";
     }
     if (statement) {
       result += "  ... " + statement->toString() + "\n";
