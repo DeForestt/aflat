@@ -221,6 +221,7 @@ Statement *deepCopy(const Statement *stmt) {
   }
   if (auto callExpr = dynamic_cast<const CallExpr *>(stmt)) {
     auto *copy = new CallExpr();
+    copy->templateTypes = std::vector<std::string>(callExpr->templateTypes);
     copy->call = static_cast<Call *>(deepCopy(callExpr->call));
     return copy;
   }

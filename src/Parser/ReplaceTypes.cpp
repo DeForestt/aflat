@@ -141,6 +141,7 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
   }
   if (auto callExpr = dynamic_cast<CallExpr *>(this)) {
     applyTemplateTypes(callExpr->templateTypes, map);
+    std::cout << std::endl;
     if (callExpr->call) callExpr->call->replaceTypes(map);
     return;
   }
