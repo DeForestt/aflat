@@ -41,6 +41,7 @@ Statement *deepCopy(const Statement *stmt) {
   }
   if (auto func = dynamic_cast<const Function *>(stmt)) {
     auto *copy = new Function(*func, func->locked);
+    copy->argTypes = func->argTypes;
     copy->args = deepCopy(func->args);
     copy->statement = deepCopy(func->statement);
     copy->decoratorArgs = copyExprList(func->decoratorArgs);
