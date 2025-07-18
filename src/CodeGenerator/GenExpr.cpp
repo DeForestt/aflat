@@ -564,9 +564,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           expr = call;
         }
         exp = this->GenExpr(expr, file);
-      }
-
-      if (exp.type == "adr")
+      } else if (exp.type == "adr")
         strLit->val.replace(pos, 3, "%a");
       else if (exp.type == "int" || exp.type == "number")
         strLit->val.replace(pos, 3, "%d");
@@ -577,8 +575,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       else if (exp.type == "char")
         strLit->val.replace(pos, 3, "%c");
       else {
-        this->alert("unable to format type of " + exp.type, true, __FILE__,
-                    __LINE__);
+        strLit->val.replace(pos, 3, exp.type);
       }
 
       list->args << expr;
