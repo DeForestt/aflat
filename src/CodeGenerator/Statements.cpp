@@ -152,7 +152,7 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
         call->logicalLine = arg->logicalLine;
         call->call = new ast::Call();
         call->call->logicalLine = arg->logicalLine;
-        call->call->ident = "_toOption";
+        call->call->ident = "option.optionWrapper";
         call->call->Args.push(var);
 
         auto decAssign = new ast::DecAssign();
@@ -160,8 +160,9 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
         decAssign->expr = call;
         decAssign->declare = new ast::Declare();
         decAssign->declare->ident = arg->ident;
-        decAssign->declare->type = ast::Type("Option", asmc::QWord);
-        decAssign->declare->TypeName = "Option";
+        decAssign->declare->type =
+            ast::Type("option." + arg->type.typeName, asmc::QWord);
+        decAssign->declare->TypeName = "option." + arg->type.typeName;
         decAssign->declare->mut = arg->mut;
         decAssign->mute = arg->mut;
         decAssign->expr = call;
