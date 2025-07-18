@@ -7,7 +7,7 @@ import {describe, it, assertEqual, assertTrue, fix} from "ATest" under test;
 import JSONObject, JSONValue, JSONType from "JSON";
 
 fn main() -> int{
-	test.describe("String", fn () -> bool {
+	test.describe("String", fn () {
         test.it("should get the length of a string", fn () {
             string s = "Hello, World!";
             test.assertEqual(s.len(), 13);
