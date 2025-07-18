@@ -2,79 +2,48 @@
 
 import string from "String";
 import Error from "Utils/Error";
-import Map from "Utils/Map";
-import Option from "Utils/Option";
 
-types(A)
-safe dynamic pedantic class result {
-    private A value = value;
-    private mutable bool success = error == NULL;
-    private mutable Error error = error;
-    private mutable int refcount = 1;
 
-    fn get() -> Self {
-		my.refcount = my.refcount + 1;
-		return my;
-	};
+types(T)
+union result {
+    Ok(T),
+    Error(Error)
 
-    fn endScope() {
-        my.refcount = my.refcount - 1;
-        if my.refcount == 0 {
-            delete my;
+    fn expect() -> T {
+        match {
+            Ok(value) => return value,
+            Error(err) => panic(`Unhandled error: {err}`.cstr())
         };
-        return;
-    };
-
-    fn init(const A value, *const Error error) -> Self {
-        return my;
-    };
-
-    fn expect() -> A {
-        if (!my.success)
-            panic(`Error: {my.error}`.cstr());
-        return my.value;
     };
 
     fn getError() -> Error {
-		return my.error;
-	};
-
-	fn hasError() -> bool {
-		return my.success != true;
-	};
-
-    fn toString() -> string {
-        if my.success {
-            return `Ok: {my.value}`;
-        } else {
-            return `Error: {my.error}`;
+        match {
+            Ok() => return Error("No error".cstr()),
+            Error(err) => return err
         };
     };
 
-    fn match(const Map cases, *const any arg1, *const any arg2, *const any arg3, *const any arg4) -> any {
-		if my.success {
-			if cases.has("ok") {
-				const Option foo = cases.get("ok");
-                const adr foo = foo.orElse(
-                    [] => panic("No case for ok")
-                );
-				return foo(my.value, arg1, arg2, arg3, arg4);
-			} else {
-				panic("No case for ok");
-			};
-		};
+    fn hasError() -> bool {
+        match {
+            Ok() => return false,
+            Error() => return true
+        };
+    };
 
-		return my.error.match(cases, arg1, arg2, arg3, arg4);
-	};
-
+    fn toString() -> string {
+        match {
+            Ok(value) => return `Ok({value})`,
+            Error(err) => return `Error({err})`
+        };
+    };
 };
 
 types(T)
 export fn accept(const T value) {
-    return new result::<T>(value);
+    return new result->Ok(value);
 };
 
-types(J)
-export fn reject(const Error error) {
-    return new result::<J>(NULL, error);
+types(T)
+export fn reject(const Error err) {
+    return new result::<T>->Error(err);
 };
