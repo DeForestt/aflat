@@ -45,6 +45,9 @@ void Statement::namespaceSwap(
     if (pull->expr) pull->expr->namespaceSwap(map);
     return;
   }
+  if (auto note = dynamic_cast<Note *>(this)) {
+    return;
+  }
   if (auto buy = dynamic_cast<Buy *>(this)) {
     if (buy->expr) buy->expr->namespaceSwap(map);
     return;

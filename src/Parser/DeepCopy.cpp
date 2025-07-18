@@ -283,6 +283,10 @@ Statement *deepCopy(const Statement *stmt) {
     copy->expr = static_cast<Expr *>(deepCopy(cw->expr));
     return copy;
   }
+  if (auto note = dynamic_cast<const Note *>(stmt)) {
+    auto *copy = new Note(note->message);
+    return copy;
+  }
   if (auto brk = dynamic_cast<const Break *>(stmt)) {
     return new Break(*brk);
   }

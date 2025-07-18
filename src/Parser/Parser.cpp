@@ -563,6 +563,16 @@ ast::Statement *parse::Parser::parseStmt(
       pull->logicalLine = obj.lineCount;
       output = pull;
       if (singleStmt) return output;
+    } else if (obj.meta == "note") {
+      auto expr = this->parseExpr(tokens);
+      auto str = dynamic_cast<ast::StringLiteral *>(expr);
+      if (!str)
+        throw err::Exception("Expected string after note on line " +
+                             std::to_string(obj.lineCount));
+      std::cout << "Parsing: " << str->val << std::endl;
+      auto note = new ast::Note(str->val);
+      note->logicalLine = obj.lineCount;
+      output = note;
     } else if (obj.meta == "if") {
       output = new ast::If(tokens, *this);
     } else if (obj.meta == "while") {

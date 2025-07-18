@@ -90,6 +90,9 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
     if (pull->expr) pull->expr->replaceTypes(map);
     return;
   }
+  if (auto note = dynamic_cast<Note *>(this)) {
+    return;
+  }
   if (auto buy = dynamic_cast<Buy *>(this)) {
     if (buy->expr) buy->expr->replaceTypes(map);
     return;
