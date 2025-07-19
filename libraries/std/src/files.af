@@ -159,7 +159,7 @@ class File{
 export fn createFile(const adr fileName) -> File! {
         const File file = malloc(File);
         const long flag = #2 | #512 | #64; // O_RDWR | O_CREAT | O_TRUNC
-        file.file = sys_open(fileName, flag, #511);
+        file.file = sys_open(fileName, flag, 0o0777);
         const int test = file.file;
         if(test < 1) {
                 free(file);
@@ -172,7 +172,7 @@ export fn createFile(const adr fileName) -> File! {
 export fn openFile(const adr fileName) -> File! {
         const File file = malloc(File);
         const long flag = #2;
-        file.file = sys_open(fileName, flag, #511);
+        file.file = sys_open(fileName, flag, 0o0777);
         const int test = file.file;
         if(test < 0){
                 free(file);
