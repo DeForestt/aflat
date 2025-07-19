@@ -6,6 +6,7 @@ import List from "Collections";
 import Map from "Utils/Map";
 import string from "String";
 import Error from "Utils/Error";
+import Result from "Utils/Result";
 import {len, int_toString} from "strings" under str;
 import {print, printInt, fPrint, printHex} from "io" under io;
 import {worker} from "concurrency" under async;
