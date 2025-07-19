@@ -956,9 +956,54 @@ fn main() -> int {
 ```
 
 ### Utils/result.af
-The `result` module defines a templated `result` class used for error handling. Use
-`accept` to create a success and `reject` for an error. Call `match` on the result
-to access the value or handle the error.
+The `result` module defines a templated `result` union used for error handling.
+Use `accept` to create a success and `reject` for an error. Call `match` on the
+result to access the value or handle the error.
+
+`result` supersedes the older `Result` class. `Result` stored its payload as
+`any` and relied on reference counting, which introduced extra allocations and
+loss of type information. The new union keeps the success value typed via
+`Ok(T)` and errors via `Err(Error)`. This allows compile‑time checks and avoids
+the overhead of dynamic dispatch. The trade‑off is that you must pattern match
+on the value and manage ownership yourself rather than relying on the class to
+clean up automatically.
+
+#### `!` return shorthand
+
+Functions that return a `result` can use `T!` as a shorthand for
+`result::<T>`. Returning a bare value implicitly wraps it in `accept`, while
+errors are returned with `reject`.
+
+Example:
+
+```js
+.needs <std>
+import {print} from "String" under str;
+import string from "String";
+import Error from "Utils/Error";
+import {Some, None} from "Utils/option";
+import result from "Utils/result";
+import {accept, reject} from "Utils/result" under res;
+
+fn divide(int a, ?int b) -> int! {
+    match b {
+        Some(val) => return a / val,
+        None() => return res.reject::<int>(new Error("Divide by 0"))
+    };
+};
+
+fn main() -> int {
+    let d = divide(10);
+    match d {
+        Ok(v) => str.print(`Returned value: {v}\n`),
+        Err(e) => str.print(`Error got an error: {e}\n`)
+    };
+    return 0;
+};
+```
+
+This style lets errors bubble up without breaking control flow—similar to an
+exception system but without unwinding the stack.
 
 ### Utils/option.af
 The `option` union is the standard way to express an optional value. It has two
