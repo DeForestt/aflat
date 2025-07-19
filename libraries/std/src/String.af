@@ -3,8 +3,10 @@
 
 import ICollection from "Collections";
 import LinkedList, List from "Collections";
-import Result from "Utils/Result";
-import {accept, reject} from "Utils/Result" under prod;
+import result from "Utils/result";
+import {accept, reject, resultWrapper} from "Utils/result" under prod;
+import option from "Utils/option";
+import {optionWrapper} from "Utils/option" under opt;
 import { exp } from "math" under math;
 import Error from "Utils/Error";
 
@@ -170,6 +172,21 @@ safe dynamic class string {
     safe fn getRefcount() -> int {
         return my.refcount;
     };
+
+    bool isNumeric() {
+        const int myLen = str.len(my.head);
+        for int i = 0; i < myLen; i = i + 1 {
+            const adr curr = my.head + i;
+            const char c = curr as char;
+            if (c < '0' | c > '9') return false;
+        };
+        return true;
+    };
+
+    fn toInt() -> int! {
+        if !my.isNumeric() return prod.reject::<int>(new Error("String is not numeric"));
+        return str.str_toInt(my.head);
+    };
     
     string concat<<+>>(const string other) {
         const int myLen = str.len(my.head);
@@ -270,21 +287,6 @@ safe dynamic class string {
 
     string copy() {
         return new string(my.head);
-    };
-
-    bool isNumeric() {
-        const int myLen = str.len(my.head);
-        for int i = 0; i < myLen; i = i + 1 {
-            const adr curr = my.head + i;
-            const char c = curr as char;
-            if (c < '0' | c > '9') return false;
-        };
-        return true;
-    };
-
-    Result toInt() {
-        if !my.isNumeric() return prod.reject(new Error("Attempt to convert non-numeric string to int"));
-        return prod.accept(str.str_toInt(my.head));
     };
 
     string toUpper() {
@@ -514,13 +516,6 @@ export int print(const string obj) {
     return 0;
 };
 
-types(T)
-export fn put(const T obj) {
-    let obj = `{obj}`;
-    io.print(obj.cstr());
-    return 0;
-}
-
 export string readString(*const string prompt) {
     if prompt != NULL print(prompt);
     adr buff = malloc(1);
@@ -634,20 +629,24 @@ export string fString(const string fmt, * adr args) {
     return newString.copy();
 };
 
-export int readInt(const string prompt, * int tries) {
-	if tries <= 0
-		tries = 3;
+export int readInt(const string prompt,  ?const int tries) {
+    int count = 0;
+	match tries {
+        Some(t) => count = t,
+        None => count = 3
+    };
+
     const string val = readString(prompt);
-    const Result res = val.toInt();
-	return res.resolve(
-		[const int x] => return x,
-		[const string err, int t] => {
-			t = t - 1;
-			if t == 0 panic("Failed to enter an integer");
-			return readInt(`{err} please try again ({t} tries left): `, t);
-		},
-		tries
-	);
+    const let res = val.toInt();
+
+    match res {
+        Ok(x) => return x,
+        Err(err) => {
+            count = count - 1;
+            if count <= 0 panic(`Failed to enter an integer: {err}`);
+            return readInt(`{err} please try again ({count} tries left): `, count);
+        }
+    };
 };
 
 export string itos(const int i) {

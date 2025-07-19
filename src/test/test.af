@@ -3,6 +3,7 @@ import {print} from "String" under str;
 import string from "String";
 import List from "Collections";
 import Map from "Utils/Map";
+import result from "Utils/result";
 import {describe, it, assertEqual, assertTrue, fix} from "ATest" under test;
 import JSONObject, JSONValue, JSONType from "JSON";
 
@@ -36,8 +37,10 @@ fn main() -> int{
             string s = new string("42");
             test.assertTrue(s.isNumeric());
             const let r = s.toInt();
-            int fail = r.expect("-1");
-            test.assertEqual(42, fail);
+            match r {
+                Ok(val) => test.assertEqual(val, 42),
+                Err() => test.assertTrue(false)
+            };
         });
         
         test.it("should replace characters", fn () {
