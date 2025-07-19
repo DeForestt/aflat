@@ -1,17 +1,17 @@
 .needs <std>
 import string from "String";
-import {print} from "String" under str;
+import Error from "Utils/Error";
 
 types(T)
 union result {
     Ok(T),
-    Err(adr)
+    Err(Error)
 
     safe fn expect(const string msg) -> T {
         match my {
             Ok(value) => return value,
             Err(err) => {
-                panic(`Error: {err}. {msg}`);
+                panic(`Error: {err}. {msg}`.cstr());
             }
         };
     };
@@ -44,7 +44,7 @@ export fn accept(const T value) -> result::<T> {
 };
 
 types(T)
-export fn reject(const adr err) -> result::<T> {
+export fn reject(const Error err) -> result::<T> {
     return new result::<T>->Err(err);
 };
 
