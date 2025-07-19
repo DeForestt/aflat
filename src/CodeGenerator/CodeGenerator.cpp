@@ -100,7 +100,7 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser,
 }
 
 bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
-                                   std::string fmt, bool strict) {
+                                   std::string fmt, bool strict, bool panic) {
   if (type.typeName == typeName) return true;
   if (type.fPointerArgs.returnType != nullptr && typeName == "adr") return true;
   if (type.typeName == "adr" && typeName.find("~") != std::string::npos)
@@ -206,9 +206,11 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     return true;
   };
 
-  alert(format("Type mismatch on line {}: " + fmt, this->logicalLine,
-               type.typeName, typeName),
-        true, __FILE__, __LINE__);
+  if (panic) {
+    alert(format("Type mismatch on line {}: " + fmt, this->logicalLine,
+                 type.typeName, typeName),
+          true, __FILE__, __LINE__);
+  }
   return false;
 }
 

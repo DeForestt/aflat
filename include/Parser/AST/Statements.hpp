@@ -5,6 +5,7 @@
  */
 
 #pragma once
+#include "Parser/AST/Expressions/Bubble.hpp"
 #include "Parser/AST/Statements/Assign.hpp"
 #include "Parser/AST/Statements/Break.hpp"
 #include "Parser/AST/Statements/Call.hpp"
