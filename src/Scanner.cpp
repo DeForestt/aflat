@@ -47,6 +47,16 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
         }
         intLit->lineCount = lineCount;
         tokens << intLit;
+      } else if (input[i] == '0' && input[i + 1] == 'o') {
+        i += 2;
+        auto intLit = new lex::INT();
+        intLit->value = "0o";
+        while (input[i] >= '0' && input[i] <= '7') {
+          intLit->value += input[i];
+          i++;
+        }
+        intLit->lineCount = lineCount;
+        tokens << intLit;
       } else {
         auto IntLit = new lex::INT();
         IntLit->value = input[i];
