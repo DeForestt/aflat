@@ -3,311 +3,15 @@
 
 import ICollection from "Collections";
 import LinkedList, List from "Collections";
-import Result from "Utils/Result";
-import {accept, reject} from "Utils/Result" under prod;
+import result from "Utils/result";
+import {accept, reject, resultWrapper} from "Utils/result" under prod;
+import option from "Utils/option";
+import {optionWrapper} from "Utils/option" under opt;
 import { exp } from "math" under math;
 import Error from "Utils/Error";
 
 import * from "strings" under str;
 import {print, printInt, printHex} from "io" under io;
-
-private char lower(char c);
-private char upper(char c);
-
-class String{
-    private adr head;
-
-    String init(adr value);
-    String concat<<&>>(String s);
-    String stitch<<+>>(adr s);
-    String copy<<=>>(String s);
-    String replace(char o, char n);
-    LinkedList split(* char c);
-    String toLower();
-    String toUpper();
-    String trim(* char ch);
-    char at(int i);
-    adr getPrimitive();
-
-    String subString(int start, int end);
-    int loop(adr foo, * adr args);
-
-    // compare is for compairing to another string object
-    bool compare(String s);
-    // equal is for compairing to a string literal or a char array
-    bool equal<<==>>(adr s);
-
-    bool isNumeric();
-
-    int indexOf(char c);
-    int toInt();
-    int len();
-
-    int del();
-};
-
-
-bool isNumeric@String(){
-    if my.len() == 0
-        return false;
-    for int i = 0; i < my.len(); i++ {
-        if (my.at(i) < '0') | (my.at(i) > '9')
-            return false;
-    };
-    return true;
-};
-
-String init@String(const adr value){
-    int length = str.len(value);
-    length = length + 1;
-    my.head = malloc(length);
-    const adr head = my.head;
-    memcpy(head, value, length);
-};
-
-String concat@String(const String s){
-    const int mylen = str.len(my.head);
-    int slen = str.len(s.head);
-    slen = slen + 1;
-    const int length = mylen + slen;
-    adr newhead = malloc(length);
-    const adr ret = newhead;
-    memcpy(newhead, my.head, mylen);
-    newhead = newhead + mylen;
-    memcpy(newhead, s.head, slen);
-    const String newString = new String(ret);
-    free(ret);
-    return newString;
-};
-
-String stitch@String(const adr value){
-    const int mylen = str.len(my.head);
-    int slen = str.len(value);
-    slen = slen + 1;
-    const int length = mylen + slen;
-    adr newhead = malloc(length);
-    const adr ret = newhead;
-    memcpy(newhead, my.head, mylen);
-    newhead = newhead + mylen;
-    memcpy(newhead, value, slen);
-    const String newString = new String(ret);
-    free(ret);
-    return newString;
-};
-
-String subString@String(const int start, const int end){
-    adr head = my.head;
-    int length = end - start;
-    length = length;
-    adr newhead = malloc(length + 1);
-    const adr ret = newhead;
-    head = head + start;
-    memcpy(newhead, head, length);
-    newhead = newhead + length;
-    newhead =: '\0';
-    const String newString = new String(ret);
-    free(ret);
-    return newString;
-};
-
-bool compare@String(const String s){
-    const adr strin = s.head;
-    const adr mystring = my.head;
-    const int comp = str.str_comp(strin, mystring);
-    return comp == 1;
-};
-
-bool equal@String(const adr s){
-    const int comp = str.str_comp(my.head, s);
-    return comp == 1;
-};
-
-adr getPrimitive@String(){
-    return my.head;
-};
-
-char at@String(const int index){
-    const char ch = str.str_at(my.head, index);
-    return ch;
-};
-
-int indexOf@String(const char ch){
-    const int index = str.str_find(my.head, ch);
-    return index;
-};
-
-int del@String(){
-    const adr head = my.head;
-    free(head);
-};
-
-int loop@String(const adr foo, * const adr args){
-    const adr head = my.head;
-    const adr bar = foo;
-    const int length = str.len(head);
-    int i = 0;
-    while(i < length){
-        const char ch = str.str_at(head, i);
-        const int brk = bar(ch, i, args);
-        i = i + 1;
-        if(brk == 1){
-            return 0;
-        };
-    };
-    return 0;
-};
-
-export String printString(const String s){
-    const adr head = s.getPrimitive();
-    io.print(head);
-    return s;
-};
-
-export String getString(){
-    adr buff = malloc(1);
-    adr save = buff;
-    int buffSize = 1;
-    const char input = ' ';
-    const char nl = '\n';
-    const char null = '\0';
-    int i = 0;
-    while(input != nl){
-        sys_read(0, ?input, 1);
-        buff = buff + i;
-        buff =: input;
-        if(input == nl){buff =: null};
-        buffSize = buffSize + 1;
-        save = realloc(save, buffSize);
-        buff = save;
-        i = i + 1;
-    };
-    const String s = new String(save);
-    free(save);
-    return s;
-};
-
-String copy@String(const String s){
-    delete my;
-    return s;
-};
-
-String trim@String( * char ch){
-    if ch == '\0'
-        ch = ' ';
-    const int length = my.len();
-    int i = 0;
-    char test = my.at(i);
-    while(test == ch){
-        i = i + 1;
-        test = my.at(i);
-    };
-
-    int j = length - 1;
-    test = my.at(j);
-
-    while(test == ch){
-        j = j - 1;
-        test = my.at(j);
-    };
-    j = j + 1;
-    
-    const String newString = my.subString(i, j);
-
-    return newString;
-};
-
-String replace@String(const char o, const char n){
-    adr newhead = malloc(my.len());
-    const adr save = newhead;
-    int length = my.len();
-    length = length + 1;
-    const adr head = my.head;
-    memcpy(newhead, head, length);
-    int i = 0;
-    while(i < length){
-        if(my.at(i) == o){
-            newhead = newhead + i;
-            newhead =: n;
-        };
-        i = i + 1;
-    };
-    const String newString = new String(save);
-    free(save);
-    return newString;
-};
-
-String toLower@String(){
-    adr newhead = malloc(my.len());
-    const adr save = newhead;
-    int length = my.len();
-    length = length + 1;
-    int i = 0;
-    while(i < length){
-        char c = my.at(i);
-        c = lower(c);
-        newhead =: c;
-        newhead = newhead + 1;
-        i = i + 1;
-    };
-    const String newString = new String(save);
-    free(save);
-    return newString;
-};
-
-String toUpper@String(){
-    adr newhead = malloc(my.len());
-    const adr save = newhead;
-    int length = my.len();
-    length = length + 1;
-    int i = 0;
-    while(i < length){
-        char c = my.at(i);
-        c = upper(c);
-        newhead =: c;
-        newhead = newhead + 1;
-        i = i + 1;
-    };
-    const String newString = new String(save);
-    free(save);
-    return newString;
-};
-
-LinkedList split@String(* char c){
-    const LinkedList list = new LinkedList(String.del, true);
-    if c == '\0'
-        c = ' ';
-    const int length = my.len();
-    int newStringStart = 0;
-    for int i = 0; i < length; i++ {
-        const char ch = my.at(i);
-        if ch == c {
-            const int newStringEnd = i;
-            const String newString = my.subString(newStringStart, newStringEnd);
-            list.append(newString);
-            newStringStart = newStringEnd + 1;
-        };
-    };
-    const String newString = my.subString(newStringStart, length);
-    list.append(newString);
-    return list;
-};
-
-int toInt@String(){
-    if !my.isNumeric()
-        panic("Attempt to convert non-numeric string to int");
-    return str.str_toInt(my.head);
-};
-
-int len@String(){
-    // loop through the head and count the number of characters
-    int length = 0;
-    adr head = my.head;
-    while(head as char != '\0'){
-        head = head + 1;
-        length = length + 1;
-    };
-    return length;
-};
 
 private char lower(char c){
     if (c > '@'){
@@ -351,38 +55,6 @@ private bool reg(const char c, const char p) {
         !reg(c, 's');
     if p == c return true;
     return false;
-};
-
-export bool matches(const String input, const adr pattern){
-    const String pString = new String(pattern);
-
-    int i = 0;
-    int j = 0;
-
-    if pString.len() != input.len() return false;
-    
-    while i < input.len() & j < pString.len() {
-        const char pChar = pString.at(j);
-        const char iChar = input.at(i);
-        if !reg(iChar, pChar) return false;
-        i++;
-        j++;
-    };
-
-    return true;
-};
-
-export String consume(const adr pattern, * const adr message){
-    const String input = getString();
-    if matches(input, pattern)
-        return input;
-
-    if message != NULL {
-        io.print(message); 
-        io.print(" ");
-    };
-    
-    return consume(pattern, message);
 };
 
 safe dynamic class string {
@@ -500,6 +172,21 @@ safe dynamic class string {
     safe fn getRefcount() -> int {
         return my.refcount;
     };
+
+    bool isNumeric() {
+        const int myLen = str.len(my.head);
+        for int i = 0; i < myLen; i = i + 1 {
+            const adr curr = my.head + i;
+            const char c = curr as char;
+            if (c < '0' | c > '9') return false;
+        };
+        return true;
+    };
+
+    fn toInt() -> int! {
+        if !my.isNumeric() return prod.reject::<int>(new Error("String is not numeric"));
+        return str.str_toInt(my.head);
+    };
     
     string concat<<+>>(const string other) {
         const int myLen = str.len(my.head);
@@ -600,21 +287,6 @@ safe dynamic class string {
 
     string copy() {
         return new string(my.head);
-    };
-
-    bool isNumeric() {
-        const int myLen = str.len(my.head);
-        for int i = 0; i < myLen; i = i + 1 {
-            const adr curr = my.head + i;
-            const char c = curr as char;
-            if (c < '0' | c > '9') return false;
-        };
-        return true;
-    };
-
-    Result toInt() {
-        if !my.isNumeric() return prod.reject(new Error("Attempt to convert non-numeric string to int"));
-        return prod.accept(str.str_toInt(my.head));
     };
 
     string toUpper() {
@@ -837,11 +509,7 @@ safe dynamic class string {
         };
         return 0;
     };
-};
-
-export string create_string(const adr head) {
-    return new string(head);
-};
+}; 
 
 export int print(const string obj) {
     io.print(obj.cstr());
@@ -961,20 +629,24 @@ export string fString(const string fmt, * adr args) {
     return newString.copy();
 };
 
-export int readInt(const string prompt, * int tries) {
-	if tries <= 0
-		tries = 3;
+export int readInt(const string prompt,  ?const int tries) {
+    int count = 0;
+	match tries {
+        Some(t) => count = t,
+        None => count = 3
+    };
+
     const string val = readString(prompt);
-    const Result res = val.toInt();
-	return res.resolve(
-		[const int x] => return x,
-		[const string err, int t] => {
-			t = t - 1;
-			if t == 0 panic("Failed to enter an integer");
-			return readInt(`{err} please try again ({t} tries left): `, t);
-		},
-		tries
-	);
+    const let res = val.toInt();
+
+    match res {
+        Ok(x) => return x,
+        Err(err) => {
+            count = count - 1;
+            if count <= 0 panic(`Failed to enter an integer: {err}`);
+            return readInt(`{err} please try again ({count} tries left): `, count);
+        }
+    };
 };
 
 export string itos(const int i) {

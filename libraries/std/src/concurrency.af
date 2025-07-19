@@ -2,7 +2,6 @@
 .needs <std>
 
 import {len, int_toStringL0, str_toInt} from "strings" under str;
-import String from "String.af";
 import Function from "Utils/Functions";
 import * from "io" under io;
 

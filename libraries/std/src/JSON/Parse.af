@@ -3,7 +3,7 @@ import string from "String";
 import { fString, print } from "String" under st;
 import { fPrint } from "io" under io;
 import List from "Collections";
-import Result from "Utils/Result";
+import result from "Utils/result";
 
 /*
  * Take in a string and a json string and return a string
@@ -30,7 +30,11 @@ export int getInt(const string key, const string json) {
     };
     mutable let value = json.subString(start, end);
     value = value.trim(' ');
-    return value.toInt().resolve([const int val] => return val, [] => return -1);
+
+    match value.toInt() {
+        Ok(val) => return val,
+        Err() => return -1
+    };
 };
 
 /*
