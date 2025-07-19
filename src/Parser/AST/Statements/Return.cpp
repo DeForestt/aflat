@@ -115,26 +115,58 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     // if fromtype is not result.typeName, we need to convert it to
     // result.typeName
     if (from.type != "result." + generator.returnType.typeName) {
-      if (!this->empty &&
-          !generator.canAssign(generator.returnType, from.type,
-                               "the return type of this function is {} but the "
-                               "expression returns {}")) {
-        auto imp = generator.imply(this->expr, generator.returnType.typeName);
-        this->expr = imp;
+      bool isError = false;
+      if (parse::PRIMITIVE_TYPES.find(from.type) ==
+          parse::PRIMITIVE_TYPES.end()) {
+        if (auto t = generator.getType(from.type, file)) {
+          auto type = *t;
+          if (type->Ident == "Error") {
+            isError = true;
+          } else {
+            if (auto classType = dynamic_cast<ast::Class *>(type)) {
+              if (classType->ident.ident == "Error") {
+                isError = true;
+              } else if (classType->base == "Error") {
+                isError = true;
+              }
+            }
+          }
+        }
       }
-      if (this->empty) {
-        auto nu = new ast::Var();
-        nu->Ident = "NULL";
-        nu->logicalLine = this->logicalLine;
-        this->expr = nu;
+
+      if (isError) {
+        auto reject = new ast::Call();
+        reject->ident = "result.reject";
+        reject->Args.push(this->expr);
+        reject->genericTypes.push_back(generator.returnType.typeName);
+        auto call = new ast::CallExpr();
+        call->call = reject;
+        call->logicalLine = this->logicalLine;
+        call->templateTypes = generator.currentFunction->genericTypes;
+        from = generator.GenExpr(call, file);
+      } else {
+        if (!this->empty &&
+            !generator.canAssign(
+                generator.returnType, from.type,
+                "the return type of this function is {} but the "
+                "expression returns {}")) {
+          auto imp = generator.imply(this->expr, generator.returnType.typeName);
+          this->expr = imp;
+        }
+        if (this->empty) {
+          auto nu = new ast::Var();
+          nu->Ident = "NULL";
+          nu->logicalLine = this->logicalLine;
+          this->expr = nu;
+        }
+        auto resultConvertion = new ast::Call();
+        resultConvertion->ident = "result.resultWrapper";
+        resultConvertion->Args.push(this->expr);
+        auto call = new ast::CallExpr();
+        call->call = resultConvertion;
+        call->logicalLine = this->logicalLine;
+        from = generator.GenExpr(call, file);
       }
-      auto resultConvertion = new ast::Call();
-      resultConvertion->ident = "result.resultWrapper";
-      resultConvertion->Args.push(this->expr);
-      auto call = new ast::CallExpr();
-      call->call = resultConvertion;
-      call->logicalLine = this->logicalLine;
-      from = generator.GenExpr(call, file);
     }
   }
 

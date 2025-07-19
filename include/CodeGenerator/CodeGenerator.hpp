@@ -107,7 +107,7 @@ class CodeGenerator {
                        asmc::Size size);
   ast::Expr *imply(ast::Expr *expr, std::string typeName);
   bool canAssign(ast::Type type, std::string typeName, std::string fmt,
-                 bool strict = false);
+                 bool strict = false, bool panic = true);
 
   std::string moduleId;
   std::string source;

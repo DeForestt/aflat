@@ -6,6 +6,7 @@
 
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
+#include "Parser/AST/Expressions/Bubble.hpp"
 #include "Parser/AST/Statements/Match.hpp"
 #include "Scanner.hpp"
 
@@ -1835,6 +1836,17 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         return prioritizeExpr(compound);
       }
     }
+
+  if (tokens.count > 0 &&
+      dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
+    auto sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (sym.Sym == '!') {
+      tokens.pop();
+      auto bubble = new ast::Bubble(output);
+      bubble->logicalLine = sym.lineCount;
+      output = bubble;
+    }
+  }
 
   if (tokens.count > 0)
     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
