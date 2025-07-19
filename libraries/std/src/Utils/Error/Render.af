@@ -5,7 +5,7 @@ import Error from "Utils/Error";
 safe dynamic class Render {
     int i = 0;
     
-    Render init(const string<> render, const Error context) {
+    Render init(const adr render, const Error context) {
         context.setRender(render);
         return my;
     };

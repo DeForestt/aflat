@@ -111,6 +111,31 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       call->logicalLine = this->logicalLine;
       from = generator.GenExpr(call, file);
     }
+  } else if (generator.currentFunction->error) {
+    // if fromtype is not result.typeName, we need to convert it to
+    // result.typeName
+    if (from.type != "result." + generator.returnType.typeName) {
+      if (!this->empty &&
+          !generator.canAssign(generator.returnType, from.type,
+                               "the return type of this function is {} but the "
+                               "expression returns {}")) {
+        auto imp = generator.imply(this->expr, generator.returnType.typeName);
+        this->expr = imp;
+      }
+      if (this->empty) {
+        auto nu = new ast::Var();
+        nu->Ident = "NULL";
+        nu->logicalLine = this->logicalLine;
+        this->expr = nu;
+      }
+      auto resultConvertion = new ast::Call();
+      resultConvertion->ident = "result.resultWrapper";
+      resultConvertion->Args.push(this->expr);
+      auto call = new ast::CallExpr();
+      call->call = resultConvertion;
+      call->logicalLine = this->logicalLine;
+      from = generator.GenExpr(call, file);
+    }
   }
 
   if (generator.currentFunction->isLambda &&
@@ -180,6 +205,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   };
 
   if (!generator.currentFunction->optional &&
+      !generator.currentFunction->error &&
       !generator.canAssign(generator.returnType, from.type,
                            "the return type of this function is {} but the "
                            "expression returns {}")) {

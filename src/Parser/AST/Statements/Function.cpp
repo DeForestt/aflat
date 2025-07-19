@@ -161,6 +161,11 @@ Function::Function(const ScopeMod &scope,
   if (optional != nullptr) {
     this->optional = true;
     tokens.pop();
+  } else if (auto opSym = dynamic_cast<lex::OpSym *>(tokens.peek())) {
+    if (opSym->Sym == '!') {
+      this->error = true;
+      tokens.pop();
+    }
   }
 
   parseFunctionBody(tokens, parser);
@@ -376,8 +381,10 @@ gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
   if (generator.scope != nullptr && tn == "Self") {
     tn = generator.scope->Ident;
   }
-  output.type = this->optional ? "option." + tn : tn;
-  output.size = this->optional ? asmc::QWord : this->type.size;
+  output.type = this->optional ? "option." + tn
+                : this->error  ? "result." + tn
+                               : tn;
+  output.size = this->optional || this->error ? asmc::QWord : this->type.size;
   output.access = generator.registers["%rax"]->get(output.size);
   if (this->type.typeName == "float") {
     output.access = generator.registers["%xmm0"]->get(output.size);

@@ -12,7 +12,7 @@ import {Some, None} from "Utils/option" under opt;
 class FixtureStruct {
 	any<> setUp = setUp;
 	any<any> tearDown = tearDown;
-	fn init(const any<> setUp, const any<any> tearDown) -> Self {
+	fn init(const adr setUp, const adr tearDown) -> Self {
 		return my;
 	};
 
@@ -93,12 +93,12 @@ class Description {
 	};
 };
 
-export fn describe(const string text, const any<> implementation) -> void {
+export fn describe(const string text, const adr implementation) -> void {
 	const let desc = new Description(text, implementation);
 	desc.run();
 };
 
-export fn fix(const adr name, const any<> setUp, * const any<any> tearDown) -> void {
+export fn fix(const adr name, const adr setUp, * const adr tearDown) -> void {
 	const let fixtures = getFixtures();
 	if fixtures.has(name) {
 		const let fixtureData = getFixtureData();
@@ -128,11 +128,11 @@ export fn getFixture(const string name) -> any {
 
 mutable any<> beforeEachFn = NULL;
 
-export fn beforeEach(const any<> implementation) -> void {
+export fn beforeEach(const adr implementation) -> void {
         beforeEachFn = implementation;
 };
 
-export fn it(const string text, const any<> implementation) -> void {
+export fn it(const adr text, const adr implementation) -> void {
         str.print(`  it: {text}\n`);
         if beforeEachFn != NULL {
                 const let cb = beforeEachFn;
