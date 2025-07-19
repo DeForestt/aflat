@@ -784,8 +784,8 @@ fn addGrade(List roster) -> bool {
 		let junk = str.readString("Press enter to continue...");
 		return false;
 	};
-	student.addAssignment(Assignment(assignment, grade.toInt().resolve([int value] => return value, NULL))); // We use the resolve() method to get the value of the Result.
-	// We will talk more about products later.
+        student.addAssignment(Assignment(assignment, grade.toInt().resolve([int value] => return value, NULL))); // We use the resolve() method to get the value of the Result.
+        // We will talk more about results later.
 	return true;
 };
 
@@ -856,8 +856,8 @@ fn addGrade(List roster) -> bool {
 		let junk = str.readString("Press enter to continue...");
 		return false;
 	};
-	student.addAssignment(Assignment(assignment, grade.toInt().resolve([int value] => return value, NULL))); // We use the resolve() method to get the value of the Result.
-	// We will talk more about products later.
+        student.addAssignment(Assignment(assignment, grade.toInt().resolve([int value] => return value, NULL))); // We use the resolve() method to get the value of the Result.
+        // We will talk more about results later.
 	return true;
 };
 
@@ -908,26 +908,27 @@ cannot. Always instantiate a templated class with `::<Type>` to specify the
 desired type.
 
 ## Error Handling in AFlat
-The aflat standard library offers a way to handle errors using `Result`. Results
-force you to handle possible failures. With the template system introduced by
-the `types` keyword, a `Result` can retain the type of the value it wraps.
-Instantiate templated classes or functions with `::<type>` when the type cannot
-be inferred.
+The aflat standard library offers a way to handle errors using the `result`
+union. It replaces the older `Result` class. `Result` stored values as `any` and
+used reference counting, which meant extra casts and allocations. The new
+`result` keeps the payload typed so the compiler can check uses at compile time.
+You still instantiate templated results with `::<type>` when the type cannot be
+inferred.
 
 ### Importing and Using Results
 Import the helpers from `Utils/result` under a namespace of your choice. Use
 `accept` to wrap a success value and `reject` for an error. Functions that may
-fail should return `result::<T>`.
+fail should return `result::<T>` or use the shorthand `T!` for the return type.
 
 Example of a function that returns a result:
 
 ```js
 import {accept, reject} from "Utils/result" under pr;
 
-fn divide(int a, int b) -> result::<int> {
+fn divide(int a, int b) -> int! {
         if b == 0
-                return pr.reject(Error("Cannot divide by zero"));
-        return pr.accept(a / b);
+                return pr.reject::<int>(Error("Cannot divide by zero"));
+        return a / b; // automatically wrapped in Ok
 };
 ```
 
@@ -950,8 +951,15 @@ fn main() -> int {
 };
 ```
 
+The `divide` function illustrates the `int!` shorthand. Returning a bare value
+automatically wraps it with `accept`, while an error uses `reject`. This lets
+errors propagate much like exceptions without additional boilerplate.
+
 ### Adding Error Handling to the Student Roster
-We will add error handling to the addGrade function.  We will also add a way to remove a student from the roster. Instead of returning a boolean, we will return a product.  We can then resolve or reject the product based on the result of the function.
+We will add error handling to the addGrade function.  We will also add a way to
+remove a student from the roster. Instead of returning a boolean, we will return
+a result. We can then resolve or reject that result based on the outcome of the
+function.
 
 Lets take a look at the updated addGrade function:
 ```js
@@ -984,7 +992,7 @@ fn addGrade(List roster) -> result::<void> {
 };
 ```
 
-Now we need to update the main function to handle the product.
+Now we need to update the main function to handle the result.
 
 ```js
 	fn main() -> int {
