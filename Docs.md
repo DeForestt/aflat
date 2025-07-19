@@ -1005,6 +1005,43 @@ fn main() -> int {
 This style lets errors bubble up without breaking control flow—similar to an
 exception system but without unwinding the stack.
 
+#### Bubble operator `!`
+
+When working with functions that return a `result`, the `!` bubble operator can
+be appended to an expression to automatically propagate any error. It expands to
+matching on the `result` and returning an error early if one is encountered.
+
+Example:
+
+```js
+fn divideString(string a, string b) -> int! {
+    let aInt = a.toInt()!; // bubble an error if parsing fails
+    let bInt = b.toInt()!;
+    return divide(aInt, bInt);
+};
+```
+
+This is equivalent to:
+
+```js
+fn divideString(string a, string b) -> int! {
+    let aIntRes = a.toInt();
+    match aIntRes {
+        Ok(val) => aIntRes = val,
+        Err(e) => return e,
+    };
+    let bIntRes = b.toInt();
+    match bIntRes {
+        Ok(val) => bIntRes = val,
+        Err(e) => return e,
+    };
+    return divide(aIntRes, bIntRes);
+};
+```
+
+Using `!` keeps code concise and clearly signals that any encountered error will
+immediately return from the surrounding function.
+
 ### Utils/option.af
 The `option` union is the standard way to express an optional value. It has two
 aliases: `Some(T)` containing a value and `None` for the empty state. Helper
