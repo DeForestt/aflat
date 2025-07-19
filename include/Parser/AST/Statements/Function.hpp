@@ -35,6 +35,7 @@ class Function : public Member, public Statement {
   bool mask;
   bool has_return = false;
   bool optional = false;
+  bool error = false;  // if the function can return an error
   bool autoType = false;
   bool globalLocked = false;  // if the function is locked to the global scope
 

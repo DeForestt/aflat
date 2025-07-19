@@ -1,48 +1,54 @@
 .needs <std>
-
 import string from "String";
-import Error from "Utils/Error";
+import {print} from "String" under str;
 
 types(T)
 union result {
     Ok(T),
-    Error(Error)
+    Err(adr)
 
-    fn expect() -> T {
-        match {
+    safe fn expect(const string msg) -> T {
+        match my {
             Ok(value) => return value,
-            Error(err) => panic(`Unhandled error: {err}`.cstr())
+            Err(err) => {
+                panic(`Error: {err}. {msg}`);
+            }
         };
     };
 
-    fn getError() -> Error {
-        match {
-            Ok() => return Error("No error".cstr()),
-            Error(err) => return err
+    safe fn isOk() -> bool {
+        match my {
+            Ok() => return true,
+            Err() => return false
         };
     };
 
-    fn hasError() -> bool {
-        match {
+    safe fn isErr() -> bool {
+        match my {
             Ok() => return false,
-            Error() => return true
+            Err() => return true
         };
     };
 
-    fn toString() -> string {
-        match {
+    safe fn toString() -> string {
+        match my {
             Ok(value) => return `Ok({value})`,
-            Error(err) => return `Error({err})`
-        };
+            Err(err) => return `Err({err})`
+        }
     };
 };
 
 types(T)
-export fn accept(const T value) {
-    return new result->Ok(value);
+export fn accept(const T value) -> result::<T> {
+    return new result::<T>->Ok(value);
 };
 
 types(T)
-export fn reject(const Error err) {
-    return new result::<T>->Error(err);
+export fn reject(const adr err) -> result::<T> {
+    return new result::<T>->Err(err);
+};
+
+types(T)
+export fn resultWrapper(const T value) -> result::<T> {
+    return new result::<T>->Ok(value);
 };

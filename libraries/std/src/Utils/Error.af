@@ -7,14 +7,14 @@ import Map from "Utils/Map";
 
 pedantic class Error {
 	contract {
-		private const string _typeName = __typeName__;
-		private mutable string<> _render = NULL;
+		private const string _typeName = new string(__typeName__);
+		private mutable adr _render = NULL;
         const adr data = NULL;
 	};
 
-    private const string message = message.copy();
+    private const string message = new string(message.cstr());
 
-    public void setRender(const string<> render) {
+    public void setRender(const adr render) {
         if my._render != NULL
             panic("Render already set.");
 
@@ -22,7 +22,7 @@ pedantic class Error {
     };
 
     private string stdErrorMessage() : Render {
-        return `{my._typeName}: {my.message}`;   
+        return `{my._typeName}: {my.message}`;
     };
 
     Error init(const string message) {
