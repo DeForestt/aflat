@@ -1190,9 +1190,11 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     auto intObj = *dynamic_cast<lex::INT *>(tokens.pop());
     auto intLiteral = new ast::IntLiteral();
     intLiteral->logicalLine = intObj.lineCount;
-    // check if the int is a hex
-    if (intObj.value[0] == '0' && intObj.value[1] == 'x') {
+    // check if the int is a hex or octal
+    if (intObj.value.rfind("0x", 0) == 0) {
       intLiteral->val = std::stoi(intObj.value, nullptr, 16);
+    } else if (intObj.value.rfind("0o", 0) == 0) {
+      intLiteral->val = std::stoi(intObj.value.substr(2), nullptr, 8);
     } else {
       intLiteral->val = std::stoi(intObj.value);
     }

@@ -1,18 +1,49 @@
 .needs <std.gs>
 .needs <asm.gs>
 
-
-import ICollection from "Collections";
-import Array from "Collections";
-import LinkedList, List from "Collections";
+import List from "Collections";
 import {len} from "strings" under str;
 import string from "String";
 import {print} from "String" under st;
-import {printLong, printHex, printInt} from "io" under io;
-import Result from "Utils/Result";
+import {printLong, printHex, printInt, print} from "io" under io;
+import result from "Utils/result";
 import Error from "Utils/Error";
 import Render from "Utils/Error/Render";
-import { accept, reject } from "Utils/Result" under res;
+import { accept, reject, resultWrapper } from "Utils/result" under res;
+import option from "Utils/option";
+import {Some, None} from "Utils/option" under opt;
+import vector from "Collections/Vector";
+
+
+fn strerror(int code) -> adr;
+
+class FileError signs Error {
+        int code = code * -1;
+
+        private string renderMessage() : Render {
+                const adr myStr = strerror(my.code);
+                return `Failed To Open File Error Code ({my.code}): {myStr}`;
+        };
+
+        fn init(const int code) -> FileError {
+                return my;
+        };
+};
+
+class ReadError signs Error {
+        private int code = code * -1;
+        private string renderMessage() : Render {
+                if(my.code == -1) {
+                        return `End of File Reached`;
+                };
+                const adr myStr = strerror(my.code);
+                return `Failed To Read File Error Code ({my.code}): {myStr}`;
+        };
+
+        fn init(const int code) -> ReadError {
+                return my;
+        };
+};
 
 class fstat{
     long st_dev;
@@ -31,68 +62,36 @@ class fstat{
     Times st_ctime;
 };
 
+private fn newFstat(const int file) -> fstat {
+  const let stat = new fstat();
+  sys_fstat(file, stat);
+  return stat;
+};
+
+private int clearChar(adr pointer, const int size){
+        int i = 0;
+        while(i < size){
+                pointer =: '\0';
+                pointer = pointer + 1;
+                i = i + 1;
+        };
+};
+
 class File{
     adr fileName;
     int file;
 
-    int write(adr text);
-    void writeBytes(const adr pointer, const int size) {
-        sys_write(my.file, pointer, size);
-    };
-    int read(adr pointer, char delim);
-    Array toArray(char delim);
-    LinkedList toLinkedList(char delim);
-    List toList(char delim);
-    string readToEnd();
-    int close();
-};
-
-class FileError signs Error {
-        private string renderMessage() : Render {
-                return `File Error`;
-        };
-
-        FileError init() {
-                return my;
-        };
-};
-
-export Result createFile(const adr fileName){
-        const File file = malloc(File);
-        file.file = sys_create(fileName, #511);
-        const int test = file.file;
-        if(test < 1) {
-                free(file);
-                return res.reject(new FileError());
-        };
-
-        return res.accept(file);
-};
-
-export Result openFile(const adr fileName) {
-        const File file = malloc(File);
-        const long flag = #2;
-        file.file = sys_open(fileName, flag, #777);
-        const int test = file.file;
-        if(test < 0){
-                free(file);
-                return res.reject(new FileError());
-        };
-        file.fileName = fileName;
-        return res.accept(file);
-};
-
-int close@File(){
-        return sys_close(my.file);
-};
-
-int write@File(const adr text){
+    fn write(const adr text) -> int {
         const int length = str.len(text);
         const int ret = sys_write(my.file, text, length);
         return ret;
-};
+    };
 
-int read@File(adr pointer, const char delim){
+    fn writeBytes(const adr pointer, const int size) -> void {
+        sys_write(my.file, pointer, size);
+    };
+
+    fn read(adr pointer, const char delim) -> int {
         const char input = '\0';
         const char null = '\0';
         while(input != delim){
@@ -106,100 +105,97 @@ int read@File(adr pointer, const char delim){
         };
         pointer =: null;
         return  0;
-};
+    };
 
-fstat newFstat(const int file) {
-  const let stat = new fstat();
-  sys_fstat(file, stat);
-  return stat;
-};
-
-string readToEnd@File(){
-        const int file = my.file;
-        const fstat stat = newFstat(file);
-        const adr buffer = malloc(1 + stat.st_size);
-        sys_read(file, buffer, 0 + stat.st_size);
-        const adr pointer = buffer + (0 + stat.st_size);
-        pointer =: '\0';
-        const string text = new string(buffer);
-        return text;
-};
-
-Array toArray@File(const char delim){
-	const Array a = new Array(adr, 0);
-	adr ibuff = malloc(256);
-	
-	int eof = my.read(ibuff, delim);
-        int size = 0;
-        while (eof != 1){
-                size = a.size;
-		a.extend(1);
-		const adr pointer = a.at(size);
-                pointer =: ibuff;
-                ibuff = malloc(256);
-		eof = my.read(ibuff, delim);
-	};
-
-        size = a.size;
-        a.extend(1);
-        const adr pointer = a.at(size);
-        pointer =: ibuff;
-        ibuff = malloc(256);
-
-        return a;
-};
-
-LinkedList toLinkedList@File(const char delim){
-        const LinkedList l = new LinkedList;
-        adr ibuff = malloc(256);
-        
-        int eof = my.read(ibuff, delim);
-
-        while (eof != 1){
-                l.append(ibuff);
-                ibuff = malloc(256);
-                eof = my.read(ibuff, delim);
-        };
-
-        l.append(ibuff);
-        return l;
-};
-
-private int clearChar(adr pointer, const int size){
-        int i = 0;
-        while(i < size){
-                pointer =: '\0';
-                pointer = pointer + 1;
-                i = i + 1;
-        };
-};
-
-List toList@File(const char delim){
-        const List l = new List(256, 1);
+    fn toVector(const char delim) -> vector::<string> {
+        const let l = new vector::<string>();
         const char[256] ibuff;
         
         int eof = my.read(ibuff, delim);
 
         while (eof != 1){
-                l.pushBack(ibuff);
+                l.push_back(new string(ibuff));
                 clearChar(ibuff, 256);
                 eof = my.read(ibuff, delim);
         };
 
-        l.pushBack(ibuff);
+        l.push_back(new string(ibuff));
         return l;
+    };
+
+    fn readToEnd() -> string! {
+        const int file = my.file;
+        const fstat stat = newFstat(file);
+        const int size = 0 + stat.st_size;
+        const adr buffer = malloc(1 + size);
+        const int err = sys_read(file, buffer, size);
+        if err < -1 {
+            free(buffer);
+            return res.reject::<string>(new ReadError(err));
+        } else if err == 0 {
+            free(buffer);
+            return res.reject::<string>(new ReadError(1));
+        };
+        const adr pointer = buffer + stat.st_size;
+        pointer =: '\0';
+        const string text = new string(buffer);
+        free(buffer);
+        return text;
+    };
+
+    fn close() -> int {
+        return sys_close(my.file);
+    };
+
+    fn rewind() -> void {
+        sys_seek(my.file, 0, 0); // SEEK_SET
+    };
+
+    fn toString() -> string {
+        return `[File]`;
+    };
+};
+
+export fn createFile(const adr fileName) -> File! {
+        const File file = malloc(File);
+        const long flag = #2 | #512 | #64; // O_RDWR | O_CREAT | O_TRUNC
+        file.file = sys_open(fileName, flag, 0o0777);
+        const int test = file.file;
+        if(test < 1) {
+                free(file);
+                return res.reject::<File>(new FileError(test));
+        };
+
+        return file;
+};
+
+export fn openFile(const adr fileName) -> File! {
+        const File file = malloc(File);
+        const long flag = #2;
+        file.file = sys_open(fileName, flag, 0o0777);
+        const int test = file.file;
+        if(test < 0){
+                free(file);
+                return res.reject::<File>(new FileError(test));
+        };
+        file.fileName = fileName;
+        return file;
 };
 
 
 safe dynamic pedantic class FileManager {
   private mutable int refcount = 1;
   private mutable bool usable = true;
-  private mutable File f = createFile(filename).value([const FileManager this] => {
-        this.usable = false;
-        return NULL;
-  });
+
+  private mutable File f = NULL;
 
   FileManager init(const adr filename) {
+    my.f = match createFile(filename) {
+        Ok(file) => file,
+        Err() => {
+            my.usable = false;
+        }
+    };
     return my;
   };
   
@@ -210,7 +206,6 @@ safe dynamic pedantic class FileManager {
         };
         return 0;
   };
-
   
   File _call() {
     if !my.usable {

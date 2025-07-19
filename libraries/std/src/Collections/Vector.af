@@ -58,7 +58,7 @@ class vector {
         return my;
     };
 
-    fn findFirst(const bool<any, *any> predicate, * const adr args) -> option::<T> {
+    fn findFirst(const adr predicate, * const adr args) -> option::<T> {
         const let ret = my.inner.findFirst(predicate, args);
         return ret.match({
             "some": fn (const T value) {
@@ -73,5 +73,4 @@ class vector {
     fn scroll() -> Scroller {
         return my.inner.scroll();
     };
-
 };
