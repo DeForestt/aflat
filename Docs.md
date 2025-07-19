@@ -731,6 +731,36 @@ fn main() {
     str.print(`{b.get()} {s.get()}\n`);
 };
 ```
+
+## Transforms
+`transform` provides a macro-like facility to generate code at compile time. A
+transform is declared using `transform <name>` followed by a template between
+`~` delimiters:
+
+```aflat
+transform observable
+~
+${scope} ${mut} ${type} __${ident} = ${expr};
+fn ${ident}() -> Map : Property {
+    "get": [const ${Self} this] => {
+        return this.__${ident};
+    },
+    "set": [const ${Self} this, const ${type} x] => {
+        this.__${ident} = x;
+        return;
+    }
+};
+~;
+```
+
+Placeholders like `${ident}`, `${type}`, and `${expr}` are substituted when the
+transform is applied. Annotate a declaration with `@Name` to expand the template
+using that declaration's identifier, type and expression. Any arguments supplied
+to the annotation can be referenced as `${arg}` within the template.
+
+Transforms are parsed into normal AFlat code before compilation, allowing users
+to build reusable patterns such as property helpers.
+
 ## Unions
 Unions define a single type that can represent several *aliases*. An alias may
 wrap a value, represent a constant, or carry no data at all. They are useful when
