@@ -1040,7 +1040,10 @@ fn divideString(string a, string b) -> int! {
 ```
 
 Using `!` keeps code concise and clearly signals that any encountered error will
-immediately return from the surrounding function.
+immediately return from the surrounding function. However, it should not be
+overused. Reserve the operator for helper functions or short routines where
+propagating errors is expected. In other situations prefer explicit error
+handling so callers can see when failures might occur.
 
 ### Utils/option.af
 The `option` union is the standard way to express an optional value. It has two
