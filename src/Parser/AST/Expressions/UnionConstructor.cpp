@@ -104,10 +104,13 @@ gen::GenerationResult const UnionConstructor::generateExpression(
     }
   }
 
-  // check if the expression is a primitive type
-
-  if (parse::PRIMITIVE_TYPES.find(fromExpr.type) !=
-      parse::PRIMITIVE_TYPES.end()) {
+  // check if the expression is a primitive type or reference
+  if (std::holds_alternative<ast::Type *>(alias.value) &&
+      (std::get<ast::Type *>(alias.value)->isReference ||
+       std::get<ast::Type *>(alias.value)->isRvalue)) {
+    file << generator.setOffset(mov->to, 0, fromExpr.access, asmc::QWord);
+  } else if (parse::PRIMITIVE_TYPES.find(fromExpr.type) !=
+             parse::PRIMITIVE_TYPES.end()) {
     file << generator.setOffset(mov->to, 0, fromExpr.access, fromExpr.size);
   } else {
     file << generator.memMove(fromExpr.access, mov->to, unionGen->largestSize);

@@ -46,7 +46,15 @@ class Union : public Class {
     }
     std::string toString() const {
       if (isUnit()) return name;
-      if (isType()) return name + "(" + getType().typeName + ")";
+      if (isType()) {
+        auto t = getType();
+        std::string typeStr = t.typeName;
+        if (t.isRvalue)
+          typeStr = "&&" + typeStr;
+        else if (t.isReference)
+          typeStr = "&" + typeStr;
+        return name + "(" + typeStr + ")";
+      }
       if (isConstExpr()) return name + "(" + getConstExpr()->toString() + ")";
       return name;  // Fallback, should not happen
     }

@@ -1069,11 +1069,35 @@ std::vector<std::string> parse::Parser::parseTemplateTypeList(
                            std::to_string(lineCount));
     }
     tokens.pop();
-    while (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
-      auto typeName = *dynamic_cast<lex::LObj *>(tokens.pop());
+    while (true) {
+      bool ref = false;
+      bool rval = false;
+      auto amp = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (amp && amp->Sym == '&') {
+        tokens.pop();
+        if (auto amp2 = dynamic_cast<lex::OpSym *>(tokens.peek());
+            amp2 && amp2->Sym == '&') {
+          tokens.pop();
+          rval = true;
+        } else {
+          ref = true;
+        }
+      }
+      auto typeTok = dynamic_cast<lex::LObj *>(tokens.peek());
+      if (!typeTok)
+        throw err::Exception("Expected type name in template list on line " +
+                             std::to_string(lineCount));
+      auto typeName = *typeTok;
+      tokens.pop();
       if (this->typeList[typeName.meta] == nullptr)
         throw err::Exception("Unknown type " + typeName.meta);
-      list.push_back(typeName.meta);
+      std::string outName = typeName.meta;
+      if (rval)
+        outName = "&&" + outName;
+      else if (ref)
+        outName = "&" + outName;
+      list.push_back(outName);
+
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
           dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',') {
         tokens.pop();
