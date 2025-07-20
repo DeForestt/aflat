@@ -117,24 +117,26 @@ Now we will make a simple guessing game.  The program will ask the user to guess
 import string from "String";
 import { readString, print } from "String" under str;
 import Error from "Utils/Error"; // we need to import the Error type to use it in the match call for error handling
+import result from "Utils/result"; // we need to import the Result type to use it in the match call for error handling
+import { accept, reject } from "Utils/result"; // result expects these two functions to be imported
 
 fn main() -> int {
 		// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
 	int secret = 42; // one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
 
 	let guess = str.readString("Enter your guess: "); // get the string that the user entered
-	int guessInt = guess.toInt().match({
-		"ok": [int i] => return i,
-		"_": [Error w] => panic(`Error converting string to int: {w}`.cstr())
-	}); // convert the string to an int.  If the conversion fails, panic with an error message.
+	let guessInt = match guess.toInt() {
+		Ok(i) => i, // if the conversion is successful, return the int value
+		Err(err) => panic(`Error converting string to int: {err}`.cstr()) // if the conversion fails, panic with an error message.
+	};
 
 	if guessInt == secret // now that we have the same type we can compare them with the '==' operator
-		st.print("You guessed it!\n")
+		str.print("You guessed it!\n")
 	else if guessInt < secret // we can check if the guess is too low with the '<' operator
-		st.print("Too low!\n")
+		str.print("Too low!\n")
 	else
-		st.print("Too high!\n");
-	
+		str.print("Too high!\n");
+
 	// notice that the curly braces are not needed in the if statement.  The curly braces are only needed when there is a block of code to be executed.
 
 	return 0;
@@ -147,30 +149,31 @@ This game is a bit too hard.  We cannot expect to guess the number in just one t
 ```js
 .needs <std>
 import string from "String";
-import { readString, print } from "String" under st;
+import { readString, print } from "String" under str;
 import Error from "Utils/Error";
+import result from "Utils/result";
+import { accept, reject } from "Utils/result";
 
 fn main() -> int {
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
 	int secret = 42; // one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
 	
 	for mutable int i = 0; i < 10; i = i + 1 {
-		let guess = st.readString("Enter your guess: "); // get the string that the user entered
-		int guessInt = guess.toInt().match({
-			"ok": [int i] => return i,
-			"_": [Error w] => panic(`Error converting string to int: {w}`.cstr())
-		}); // convert the string to an int.  If the conversion fails, panic with an error message.
-		// this is the main error handling mechanism in aflat. Note that the match method name is a convention and not a keyword.
-		// it may be added to the language in the future.
+		let guess = str.readString("Enter your guess: "); // get the string that the user entered
+		let guessInt = match guess.toInt() {
+			Ok(i) => i, // if the conversion is successful, return the int value
+			Err(err) => panic(`Error converting string to int: {err}`.cstr()) // if the conversion fails, panic with an error message.
+		}; // convert the string to an int.  If the conversion fails, panic with an error message.
 
-		if guessInt == secret // now that we have the same type we can compare them with the '==' operator
-			st.print("You guessed it!\n")
-		else if guessInt < secret // we can check if the guess is too low with the '<' operator
-			st.print("Too low!\n")
+		if guessInt == secret { // now that we have the same type we can compare them with the '==' operator
+			str.print("You guessed it!\n");
+			break; // exit the loop if the guess is correct
+		} else if guessInt < secret // we can check if the guess is too low with the '<' operator
+			str.print("Too low!\n")
 		else
-			st.print("Too high!\n");
+			str.print("Too high!\n");
 	};
-	st.print(`The secret number was {secret}\n`); // we can use the backtick to create a string that can contain variables.  The variables are surrounded by {} and the variable name is inside the braces.  The variable name is evaluated and the result is inserted into the string.  The string is then converted to a string and printed.
+	str.print(`The secret number was {secret}\n`); // we can use the backtick to create a string that can contain variables.  The variables are surrounded by {} and the variable name is inside the braces.  The variable name is evaluated and the result is inserted into the string.  The string is then converted to a string and printed.
 	// notice that the curly braces are not needed in the if statement.  The curly braces are only needed when there is a block of code to be executed.
 
 	return 0;
@@ -261,7 +264,7 @@ class Student {
 };
 
 fn main() -> int {
-	Student s = Student();
+	let s = Student();
 	s.id = 1;
 	s.name = "John";
 	s.average = 90;
@@ -297,11 +300,12 @@ fn main() -> int {
 		90
 	}; // This is a struct literal.  It is a way of statically creating an object.  The values are separated by commas and enclosed in curly braces.
 	str.print(`Student: {s.name} id: {s.id} average: {s.average}\n`);
+	return 0;
 };
 ```
 
 **Note:** Keep in mind that using Struct Literals in this way is inherently unsafe. If the order of the fields in the struct changes, the code will break. It is recommended to use the constructor method to create objects.
-**Just Don't Do This!**
+**Just Don't Do This Unless You Are Trying To Do Something Clever.**
 
 ## Class constructors
 A class constructor is a function that is called when an object is created from the class.  The constructor is used to initialize the object.  The constructor is the first function that is called when an object is created from the class.  The name of a constructor function must be 'init'.
@@ -326,11 +330,11 @@ class Student {
 };
 
 fn main() -> int {
-	Student s = Student(1, "John", 90);
-	str.print(`Student: {s.name} id: {s.id} average: {s.average}`);
+	let s = Student(1, "John", 90);
+	str.print(`Student: {s.name} id: {s.id} average: {s.average}\n`);
+	return 0;
 };
 ```
-
 Take a look at our program now, it gives the same output as before but it is much simpler.
 lets add another student.
 
@@ -354,10 +358,11 @@ class Student {
 };
 
 fn main() -> int {
-	Student JohnDoe = Student(1, "John Doe", 90);
-	Student JaneDoe = Student(2, "Jane Doe", 95);
+	let JohnDoe = Student(1, "John Doe", 90);
+	let JaneDoe = Student(2, "Jane Doe", 95);
 	str.print(`Student: {JohnDoe.name} id: {JohnDoe.id} average: {JohnDoe.average}\n`);
 	str.print(`Student: {JaneDoe.name} id: {JaneDoe.id} average: {JaneDoe.average}\n`);
+	return 0;
 };
 ```
 
@@ -387,8 +392,8 @@ class Student {
 };
 
 fn main() -> int {
-	Student JohnDoe = Student(1, "John Doe", 90);
-	Student JaneDoe = Student(2, "Jane Doe", 95);
+	let JohnDoe = Student(1, "John Doe", 90);
+	let JaneDoe = Student(2, "Jane Doe", 95);
 
 	JohnDoe.printInfo();
 	JaneDoe.printInfo();
@@ -396,15 +401,17 @@ fn main() -> int {
 ```
 As you can see, the code is much cleaner.  We can now call the method to print out the student information. in stead of repeating the same code over and over again.
 
-## Lists
-The code that we have here is great, but we can see how it can become very long if the number of students goes up. The aflat standard library provides a List class.  The List class is meant to be used as a list of objects.  In stead of using 's1' 's2' and so on, lets use a  List to hold our students.
+## Vectors
+The code that we have here is great, but we can see how it can become very long if the number of students goes up. The aflat standard library provides a `vector` class.  The `vector` class is meant to be used as a list of objects.  In stead of using 's1' 's2' and so on, lets use a  vector to hold our students.
 
 ```js
 .needs <std>
 
 import string from "String";
 import { print } from "String" under str;
-import List from "Collections";
+import vector from "Collections/Vector"; // We need to import the Vector class to create a list of students
+import option from "Utils/option"; // vector expects the option module to be imported
+import {Some, None} from "Utils/option"; // vector expects the Some and None classes to be imported
 import Scroller from "Collections/Scroller"; // We need to import the Scroller class to iterate over the list
 
 class Student {
@@ -422,12 +429,16 @@ class Student {
 	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
+
+	fn toString() -> string { // vector expects any class that uses it to implement the toString method
+		return `Student: {my.name} id: {my.id} average: {my.average}`;
+	};
 };
 
 fn main() -> int {
-	List roster = List(Student);
-	roster.pushBack(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
-	roster.pushBack(Student(2, "Jane Doe", 80));
+	let roster = vector::<Student>(); // We create a new list of students using the Vector class
+	roster.push_back(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
+	roster.push_back(Student(2, "Jane Doe", 80));
 
 	// this is a foreach loop that iterates over an iterable object
 	foreach Student student : roster.scroll() { // A List is not an iterable object, calling the `scroll` method makes it iterable and allows us to use the foreach loop
