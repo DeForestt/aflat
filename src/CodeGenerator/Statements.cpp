@@ -128,6 +128,13 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
         }
       }
 
+      if (parse::PRIMITIVE_TYPES.find(arg->type.typeName) ==
+              parse::PRIMITIVE_TYPES.end() &&
+          arg->ident != "my" && arg->type.typeName != "any" &&
+          arg->type.typeName.find("~") == std::string::npos) {
+        this->getType(arg->type.typeName, OutputFile);
+      }
+
       size = arg->type.size;
       arg->type.arraySize = 1;
       mov->from = this->intArgs[intArgsCounter].get(arg->type.size);
