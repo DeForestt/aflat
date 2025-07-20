@@ -579,7 +579,7 @@ class List {
             const any val = my.unwrapGet(i);
             const bool brk = func(val, args);
             if brk == true {
-                return val;
+                return opt.some(val);
             };
         };
         return opt.none();

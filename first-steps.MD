@@ -762,11 +762,11 @@ fn main() -> int {
 Now we need to create a function to add a student to the roster.  The function will take in a LinkedList of students and add a new student to the list.  This function should go under the imports and over the main function.
 
 ```js
-// This a function to add a student to the list.
-fn addStudent(List roster) -> void {
+// This is a function to add a student to the list.
+fn addStudent(vector::<Student> roster) -> void {
 	let name = str.readString("Enter student name: ");
-	let id = roster.getCount() + 1;
-	roster.pushBack(Student(id, name, 0));
+	let id = roster.count() + 1;
+	roster.push_back(Student(id, name, 0));
 };
 ```
 
@@ -774,13 +774,13 @@ Now we can call it from the main loop.
 
 ```js
 fn main() -> int {
-	let roster = List(Student);
+	let roster = new vector::<Student>();
 
 	while true {
 		str.print("\n--Student Roster--\n");
-		roster.forEach([Student s]=>{
-			str.print(`{s.getInfo()}\n`); // We use the getInfo() method to print the student's information.
-		});
+		foreach Student s : roster.scroll() {
+			s.printInfo();
+		};
 		str.print("--------------------\n");
 		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
 		let input = str.readString("Enter a command: "); // We read the user's input.
@@ -788,6 +788,8 @@ fn main() -> int {
 		if input == "1"
 			addStudent(roster);
 	};
+
+	return 0;
 };
 ```
 
