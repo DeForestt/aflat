@@ -520,31 +520,36 @@ Now that we know how to make modules and classes, see if you can create an Assig
 The constructor should take in the name and the grade and set the fields.
 
 ## Adding to the student class
-Now that we have the Assignment class, add a list of assignments as a field in our student class.  The list should be a List.  Our new student module should look like this:
+Now that we have the Assignment class, add a list of assignments as a field in our student class.  The list should be a vector.  Our new student module should look like this:
 
 ```js
 .needs <std>
 import string from "String";
-import List from "Collections";
-import Assignment from "./src/Assignment";
 import { print } from "String" under str;
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import {Some, None} from "Utils/option";
+import Assignment from "../Assignment";
 
 class Student {
 	mutable int id;
 	mutable string name = "";
 	mutable int average;
-	List assignments = new List(Assignment);
+    vector::<Assignment> assignments = new vector::<Assignment>(); // We create a new list of assignments using the Vector class
 
-	fn init(int id, string name, int average) -> Student { 
+	fn init(int id, string name, int average) -> Student {
 		str.print("The constructor has just been called!!!\n");
-		my.id = id; // 'my' is a way of accessing the fields of the class
+		my.id = id;
 		my.name = name;
 		my.average = average;
 	};
-	
 
 	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
+	};
+
+	fn toString() -> string {
+		return `Student: {my.name} id: {my.id} average: {my.average}`;
 	};
 };
 ```
@@ -554,30 +559,35 @@ Now we should create a method to add an assignment to the student's list of assi
 ```js
 .needs <std>
 import string from "String";
-import List from "Collections";
-import Assignment from "./src/Assignment";
 import { print } from "String" under str;
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import {Some, None} from "Utils/option";
+import Assignment from "../Assignment";
 
 class Student {
 	mutable int id;
 	mutable string name = "";
 	mutable int average;
-	List assignments = new List(Assignment);
+    vector::<Assignment> assignments = new vector::<Assignment>(); // We create a new list of assignments using the Vector class
 
-	fn init(int id, string name, int average) -> Student { 
+	fn init(int id, string name, int average) -> Student {
 		str.print("The constructor has just been called!!!\n");
-		my.id = id; // 'my' is a way of accessing the fields of the class
+		my.id = id;
 		my.name = name;
 		my.average = average;
 	};
-	
 
 	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 
-	fn addAssignment(Assignment assignment) -> void {
-        my.assignments.pushBack(assignment);
+	fn toString() -> string {
+		return `Student: {my.name} id: {my.id} average: {my.average}`;
+	};
+
+    fn addAssignment(Assignment assignment) -> void {
+        my.assignments.push_back(assignment);
     };
 };
 ```
@@ -592,7 +602,7 @@ mutable int totalPoints = 0; // add this code to the student class
 now we can calculate the average by dividing the total by the number of assignments.
 ```js
     fn addAssignment(Assignment assignment) -> void {
-        my.assignments.pushBack(assignment);
+        my.assignments.push_back(assignment);
         my.totalPoints = my.totalPoints + assignment.grade;
 		int count = my.assignments.getCount();
         my.average = my.totalPoints / count;
@@ -606,15 +616,17 @@ Now lets rewrite our main program to use our new student module.
 
 import string from "String";
 import { print } from "String" under str;
-import List from "Collections";
-import Student from "./src/Student";
-import Assignment from "./src/Assignment";
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import {Some, None} from "Utils/option";
+import Scroller from "Collections/Scroller";
+import Student from "./Student";
+import Assignment from "./Assignment";
 
 fn main() -> int {
 	let s = new Student(1, "John Doe", 0);
-
-	s.addAssignment(Assignment("Math test", 100));
-	s.addAssignment(Assignment("English test", 90));
+	s.addAssignment(Assignment("Math Homework", 95));
+	s.addAssignment(Assignment("Science Project", 88));
 	s.printInfo();
 	return 0;
 };
@@ -628,32 +640,37 @@ You may have noticed that there is no reason for anything outside of the student
 ```js
 .needs <std>
 import string from "String";
-import List from "Collections";
-import Assignment from "./src/Assignment";
 import { print } from "String" under str;
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import {Some, None} from "Utils/option";
+import Assignment from "../Assignment";
 
 class Student {
 	mutable int id;
 	mutable string name = "";
 	private mutable int average;
-	private mutable int totalPoints = 0;
-	List assignments = new List(Assignment);
+    private mutable int totalPoints = 0;
+    vector::<Assignment> assignments = new vector::<Assignment>(); // We create a new list of assignments using the Vector class
 
-	fn init(int id, string name, int average) -> Student { 
-		my.id = id; // 'my' is a way of accessing the fields of the class
+	fn init(int id, string name, int average) -> Student {
+		my.id = id;
 		my.name = name;
 		my.average = average;
 	};
-	
 
 	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 
+	fn toString() -> string {
+		return `Student: {my.name} id: {my.id} average: {my.average}`;
+	};
+
     fn addAssignment(Assignment assignment) -> void {
-        my.assignments.pushBack(assignment);
-        my.totalPoints = my.totalPoints + assignment.grade;
-		int count = my.assignments.getCount();
+        my.assignments.push_back(assignment);
+                my.totalPoints = my.totalPoints + assignment.grade;
+		int count = my.assignments.count();
         my.average = my.totalPoints / count;
     };
 };
@@ -677,10 +694,13 @@ Now lets build out a student roster system. Delete everything in the main module
 .needs <std>
 
 import string from "String";
-import { print } from "String" under str;
-import List from "Collections";
-import Student from "./src/Student";
-import Assignment from "./src/Assignment";
+import { print, readString } from "String" under str;
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import {Some, None} from "Utils/option";
+import Scroller from "Collections/Scroller";
+import Student from "./Student";
+import Assignment from "./Assignment";
 
 ```
 
@@ -709,21 +729,15 @@ Inside of the loop you can print out all of the student information.  You can us
 
 ```js
 fn main() -> int {
-	List roster = new List(Student);
+	let roster = new vector::<Student>();
 
-	while true { // things inside of this loop will run forever
-		
-		// print all students in the list
-		roster.forEach([Student s] => {
+	while true {
+		foreach Student s : roster.scroll() {
 			s.printInfo();
-		});
+		};
 	};
-};
-```
-We will add a new getInfo method to the student class.  This method will return a string with all of the student information.
-```js
-string getInfo() {
-	return `Student: {my.name} id: {my.id} average: {my.average}\n`;
+
+	return 0;
 };
 ```
 
