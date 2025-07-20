@@ -117,24 +117,26 @@ Now we will make a simple guessing game.  The program will ask the user to guess
 import string from "String";
 import { readString, print } from "String" under str;
 import Error from "Utils/Error"; // we need to import the Error type to use it in the match call for error handling
+import result from "Utils/result"; // we need to import the Result type to use it in the match call for error handling
+import { accept, reject } from "Utils/result"; // result expects these two functions to be imported
 
 fn main() -> int {
 		// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
 	int secret = 42; // one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
 
 	let guess = str.readString("Enter your guess: "); // get the string that the user entered
-	int guessInt = guess.toInt().match({
-		"ok": [int i] => return i,
-		"_": [Error w] => panic(`Error converting string to int: {w}`.cstr())
-	}); // convert the string to an int.  If the conversion fails, panic with an error message.
+	let guessInt = match guess.toInt() {
+		Ok(i) => i, // if the conversion is successful, return the int value
+		Err(err) => panic(`Error converting string to int: {err}`.cstr()) // if the conversion fails, panic with an error message.
+	};
 
 	if guessInt == secret // now that we have the same type we can compare them with the '==' operator
-		st.print("You guessed it!\n")
+		str.print("You guessed it!\n")
 	else if guessInt < secret // we can check if the guess is too low with the '<' operator
-		st.print("Too low!\n")
+		str.print("Too low!\n")
 	else
-		st.print("Too high!\n");
-	
+		str.print("Too high!\n");
+
 	// notice that the curly braces are not needed in the if statement.  The curly braces are only needed when there is a block of code to be executed.
 
 	return 0;
@@ -147,30 +149,31 @@ This game is a bit too hard.  We cannot expect to guess the number in just one t
 ```js
 .needs <std>
 import string from "String";
-import { readString, print } from "String" under st;
+import { readString, print } from "String" under str;
 import Error from "Utils/Error";
+import result from "Utils/result";
+import { accept, reject } from "Utils/result";
 
 fn main() -> int {
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
 	int secret = 42; // one of the most common types of variables in aflat is an int.  This stores an integer. 42 as the answer.
 	
 	for mutable int i = 0; i < 10; i = i + 1 {
-		let guess = st.readString("Enter your guess: "); // get the string that the user entered
-		int guessInt = guess.toInt().match({
-			"ok": [int i] => return i,
-			"_": [Error w] => panic(`Error converting string to int: {w}`.cstr())
-		}); // convert the string to an int.  If the conversion fails, panic with an error message.
-		// this is the main error handling mechanism in aflat. Note that the match method name is a convention and not a keyword.
-		// it may be added to the language in the future.
+		let guess = str.readString("Enter your guess: "); // get the string that the user entered
+		let guessInt = match guess.toInt() {
+			Ok(i) => i, // if the conversion is successful, return the int value
+			Err(err) => panic(`Error converting string to int: {err}`.cstr()) // if the conversion fails, panic with an error message.
+		}; // convert the string to an int.  If the conversion fails, panic with an error message.
 
-		if guessInt == secret // now that we have the same type we can compare them with the '==' operator
-			st.print("You guessed it!\n")
-		else if guessInt < secret // we can check if the guess is too low with the '<' operator
-			st.print("Too low!\n")
+		if guessInt == secret { // now that we have the same type we can compare them with the '==' operator
+			str.print("You guessed it!\n");
+			break; // exit the loop if the guess is correct
+		} else if guessInt < secret // we can check if the guess is too low with the '<' operator
+			str.print("Too low!\n")
 		else
-			st.print("Too high!\n");
+			str.print("Too high!\n");
 	};
-	st.print(`The secret number was {secret}\n`); // we can use the backtick to create a string that can contain variables.  The variables are surrounded by {} and the variable name is inside the braces.  The variable name is evaluated and the result is inserted into the string.  The string is then converted to a string and printed.
+	str.print(`The secret number was {secret}\n`); // we can use the backtick to create a string that can contain variables.  The variables are surrounded by {} and the variable name is inside the braces.  The variable name is evaluated and the result is inserted into the string.  The string is then converted to a string and printed.
 	// notice that the curly braces are not needed in the if statement.  The curly braces are only needed when there is a block of code to be executed.
 
 	return 0;
@@ -261,7 +264,7 @@ class Student {
 };
 
 fn main() -> int {
-	Student s = Student();
+	let s = Student();
 	s.id = 1;
 	s.name = "John";
 	s.average = 90;
@@ -297,11 +300,12 @@ fn main() -> int {
 		90
 	}; // This is a struct literal.  It is a way of statically creating an object.  The values are separated by commas and enclosed in curly braces.
 	str.print(`Student: {s.name} id: {s.id} average: {s.average}\n`);
+	return 0;
 };
 ```
 
 **Note:** Keep in mind that using Struct Literals in this way is inherently unsafe. If the order of the fields in the struct changes, the code will break. It is recommended to use the constructor method to create objects.
-**Just Don't Do This!**
+**Just Don't Do This Unless You Are Trying To Do Something Clever.**
 
 ## Class constructors
 A class constructor is a function that is called when an object is created from the class.  The constructor is used to initialize the object.  The constructor is the first function that is called when an object is created from the class.  The name of a constructor function must be 'init'.
@@ -326,11 +330,11 @@ class Student {
 };
 
 fn main() -> int {
-	Student s = Student(1, "John", 90);
-	str.print(`Student: {s.name} id: {s.id} average: {s.average}`);
+	let s = Student(1, "John", 90);
+	str.print(`Student: {s.name} id: {s.id} average: {s.average}\n`);
+	return 0;
 };
 ```
-
 Take a look at our program now, it gives the same output as before but it is much simpler.
 lets add another student.
 
@@ -354,10 +358,11 @@ class Student {
 };
 
 fn main() -> int {
-	Student JohnDoe = Student(1, "John Doe", 90);
-	Student JaneDoe = Student(2, "Jane Doe", 95);
+	let JohnDoe = Student(1, "John Doe", 90);
+	let JaneDoe = Student(2, "Jane Doe", 95);
 	str.print(`Student: {JohnDoe.name} id: {JohnDoe.id} average: {JohnDoe.average}\n`);
 	str.print(`Student: {JaneDoe.name} id: {JaneDoe.id} average: {JaneDoe.average}\n`);
+	return 0;
 };
 ```
 
@@ -387,8 +392,8 @@ class Student {
 };
 
 fn main() -> int {
-	Student JohnDoe = Student(1, "John Doe", 90);
-	Student JaneDoe = Student(2, "Jane Doe", 95);
+	let JohnDoe = Student(1, "John Doe", 90);
+	let JaneDoe = Student(2, "Jane Doe", 95);
 
 	JohnDoe.printInfo();
 	JaneDoe.printInfo();
@@ -396,15 +401,17 @@ fn main() -> int {
 ```
 As you can see, the code is much cleaner.  We can now call the method to print out the student information. in stead of repeating the same code over and over again.
 
-## Lists
-The code that we have here is great, but we can see how it can become very long if the number of students goes up. The aflat standard library provides a List class.  The List class is meant to be used as a list of objects.  In stead of using 's1' 's2' and so on, lets use a  List to hold our students.
+## Vectors
+The code that we have here is great, but we can see how it can become very long if the number of students goes up. The aflat standard library provides a `vector` class.  The `vector` class is meant to be used as a list of objects.  In stead of using 's1' 's2' and so on, lets use a  vector to hold our students.
 
 ```js
 .needs <std>
 
 import string from "String";
 import { print } from "String" under str;
-import List from "Collections";
+import vector from "Collections/Vector"; // We need to import the Vector class to create a list of students
+import option from "Utils/option"; // vector expects the option module to be imported
+import {Some, None} from "Utils/option"; // vector expects the Some and None classes to be imported
 import Scroller from "Collections/Scroller"; // We need to import the Scroller class to iterate over the list
 
 class Student {
@@ -422,12 +429,16 @@ class Student {
 	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
+
+	fn toString() -> string { // vector expects any class that uses it to implement the toString method
+		return `Student: {my.name} id: {my.id} average: {my.average}`;
+	};
 };
 
 fn main() -> int {
-	List roster = List(Student);
-	roster.pushBack(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
-	roster.pushBack(Student(2, "Jane Doe", 80));
+	let roster = vector::<Student>(); // We create a new list of students using the Vector class
+	roster.push_back(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
+	roster.push_back(Student(2, "Jane Doe", 80));
 
 	// this is a foreach loop that iterates over an iterable object
 	foreach Student student : roster.scroll() { // A List is not an iterable object, calling the `scroll` method makes it iterable and allows us to use the foreach loop
@@ -445,7 +456,7 @@ It is helpful to hide our classes in another file, It helps to give us less to l
 aflat module Student
 ```
 
-This will create a new file called 'Student.af' in the src folder. Copy the Student class from the previous section and paste it into the new file. 
+This will create a new file called 'Student/mod.af' in the src folder. Copy the Student class from the previous section and paste it into the new file. 
 
 ```js
 .needs <std>
@@ -463,10 +474,13 @@ class Student {
 		my.name = name;
 		my.average = average;
 	};
-	
 
 	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
+	};
+
+	fn toString() -> string { // vector expects any class that uses it to implement the toString method
+		return `Student: {my.name} id: {my.id} average: {my.average}`;
 	};
 };
 ```
@@ -475,16 +489,20 @@ Now it can bee imported into our main program the same way we would import any c
 
 ```js
 .needs <std>
+
 import string from "String";
 import { print } from "String" under str;
-import List from "Collections";
+import vector from "Collections/Vector"; // We need to import the Vector class to create a list of students
+import option from "Utils/option"; // vector expects the option module to be imported
+import {Some, None} from "Utils/option"; // vector expects the Some and None classes to be imported
 import Scroller from "Collections/Scroller"; // We need to import the Scroller class to iterate over the list
-import Student from "./src/Student"; // Then we import the Student class from the Student module. Note that for project level imports, we need to use the relative path to the project root
+import Student from "./Student"; // Now we can import the Student module.  Note that If `Student.af` does not exist, it will look for `Student/mod.af`
+
 
 fn main() -> int {
-	List roster = List(Student);
-	roster.pushBack(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
-	roster.pushBack(Student(2, "Jane Doe", 80));
+	let roster = vector::<Student>(); // We create a new list of students using the Vector class
+	roster.push_back(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
+	roster.push_back(Student(2, "Jane Doe", 80));
 
 	// this is a foreach loop that iterates over an iterable object
 	foreach Student student : roster.scroll() { // A List is not an iterable object, calling the `scroll` method makes it iterable and allows us to use the foreach loop
@@ -502,31 +520,36 @@ Now that we know how to make modules and classes, see if you can create an Assig
 The constructor should take in the name and the grade and set the fields.
 
 ## Adding to the student class
-Now that we have the Assignment class, add a list of assignments as a field in our student class.  The list should be a List.  Our new student module should look like this:
+Now that we have the Assignment class, add a list of assignments as a field in our student class.  The list should be a vector.  Our new student module should look like this:
 
 ```js
 .needs <std>
 import string from "String";
-import List from "Collections";
-import Assignment from "./src/Assignment";
 import { print } from "String" under str;
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import {Some, None} from "Utils/option";
+import Assignment from "../Assignment";
 
 class Student {
 	mutable int id;
 	mutable string name = "";
 	mutable int average;
-	List assignments = new List(Assignment);
+    vector::<Assignment> assignments = new vector::<Assignment>(); // We create a new list of assignments using the Vector class
 
-	fn init(int id, string name, int average) -> Student { 
+	fn init(int id, string name, int average) -> Student {
 		str.print("The constructor has just been called!!!\n");
-		my.id = id; // 'my' is a way of accessing the fields of the class
+		my.id = id;
 		my.name = name;
 		my.average = average;
 	};
-	
 
 	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
+	};
+
+	fn toString() -> string {
+		return `Student: {my.name} id: {my.id} average: {my.average}`;
 	};
 };
 ```
@@ -536,30 +559,35 @@ Now we should create a method to add an assignment to the student's list of assi
 ```js
 .needs <std>
 import string from "String";
-import List from "Collections";
-import Assignment from "./src/Assignment";
 import { print } from "String" under str;
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import {Some, None} from "Utils/option";
+import Assignment from "../Assignment";
 
 class Student {
 	mutable int id;
 	mutable string name = "";
 	mutable int average;
-	List assignments = new List(Assignment);
+    vector::<Assignment> assignments = new vector::<Assignment>(); // We create a new list of assignments using the Vector class
 
-	fn init(int id, string name, int average) -> Student { 
+	fn init(int id, string name, int average) -> Student {
 		str.print("The constructor has just been called!!!\n");
-		my.id = id; // 'my' is a way of accessing the fields of the class
+		my.id = id;
 		my.name = name;
 		my.average = average;
 	};
-	
 
 	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 
-	fn addAssignment(Assignment assignment) -> void {
-        my.assignments.pushBack(assignment);
+	fn toString() -> string {
+		return `Student: {my.name} id: {my.id} average: {my.average}`;
+	};
+
+    fn addAssignment(Assignment assignment) -> void {
+        my.assignments.push_back(assignment);
     };
 };
 ```
@@ -574,7 +602,7 @@ mutable int totalPoints = 0; // add this code to the student class
 now we can calculate the average by dividing the total by the number of assignments.
 ```js
     fn addAssignment(Assignment assignment) -> void {
-        my.assignments.pushBack(assignment);
+        my.assignments.push_back(assignment);
         my.totalPoints = my.totalPoints + assignment.grade;
 		int count = my.assignments.getCount();
         my.average = my.totalPoints / count;
@@ -588,15 +616,17 @@ Now lets rewrite our main program to use our new student module.
 
 import string from "String";
 import { print } from "String" under str;
-import List from "Collections";
-import Student from "./src/Student";
-import Assignment from "./src/Assignment";
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import {Some, None} from "Utils/option";
+import Scroller from "Collections/Scroller";
+import Student from "./Student";
+import Assignment from "./Assignment";
 
 fn main() -> int {
 	let s = new Student(1, "John Doe", 0);
-
-	s.addAssignment(Assignment("Math test", 100));
-	s.addAssignment(Assignment("English test", 90));
+	s.addAssignment(Assignment("Math Homework", 95));
+	s.addAssignment(Assignment("Science Project", 88));
 	s.printInfo();
 	return 0;
 };
@@ -610,32 +640,37 @@ You may have noticed that there is no reason for anything outside of the student
 ```js
 .needs <std>
 import string from "String";
-import List from "Collections";
-import Assignment from "./src/Assignment";
 import { print } from "String" under str;
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import {Some, None} from "Utils/option";
+import Assignment from "../Assignment";
 
 class Student {
 	mutable int id;
 	mutable string name = "";
 	private mutable int average;
-	private mutable int totalPoints = 0;
-	List assignments = new List(Assignment);
+    private mutable int totalPoints = 0;
+    vector::<Assignment> assignments = new vector::<Assignment>(); // We create a new list of assignments using the Vector class
 
-	fn init(int id, string name, int average) -> Student { 
-		my.id = id; // 'my' is a way of accessing the fields of the class
+	fn init(int id, string name, int average) -> Student {
+		my.id = id;
 		my.name = name;
 		my.average = average;
 	};
-	
 
 	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
 	};
 
+	fn toString() -> string {
+		return `Student: {my.name} id: {my.id} average: {my.average}`;
+	};
+
     fn addAssignment(Assignment assignment) -> void {
-        my.assignments.pushBack(assignment);
-        my.totalPoints = my.totalPoints + assignment.grade;
-		int count = my.assignments.getCount();
+        my.assignments.push_back(assignment);
+                my.totalPoints = my.totalPoints + assignment.grade;
+		int count = my.assignments.count();
         my.average = my.totalPoints / count;
     };
 };
@@ -659,10 +694,13 @@ Now lets build out a student roster system. Delete everything in the main module
 .needs <std>
 
 import string from "String";
-import { print } from "String" under str;
-import List from "Collections";
-import Student from "./src/Student";
-import Assignment from "./src/Assignment";
+import { print, readString } from "String" under str;
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import {Some, None} from "Utils/option";
+import Scroller from "Collections/Scroller";
+import Student from "./Student";
+import Assignment from "./Assignment";
 
 ```
 
@@ -691,21 +729,15 @@ Inside of the loop you can print out all of the student information.  You can us
 
 ```js
 fn main() -> int {
-	List roster = new List(Student);
+	let roster = new vector::<Student>();
 
-	while true { // things inside of this loop will run forever
-		
-		// print all students in the list
-		roster.forEach([Student s] => {
+	while true {
+		foreach Student s : roster.scroll() {
 			s.printInfo();
-		});
+		};
 	};
-};
-```
-We will add a new getInfo method to the student class.  This method will return a string with all of the student information.
-```js
-string getInfo() {
-	return `Student: {my.name} id: {my.id} average: {my.average}\n`;
+
+	return 0;
 };
 ```
 
@@ -730,11 +762,11 @@ fn main() -> int {
 Now we need to create a function to add a student to the roster.  The function will take in a LinkedList of students and add a new student to the list.  This function should go under the imports and over the main function.
 
 ```js
-// This a function to add a student to the list.
-fn addStudent(List roster) -> void {
+// This is a function to add a student to the list.
+fn addStudent(vector::<Student> roster) -> void {
 	let name = str.readString("Enter student name: ");
-	let id = roster.getCount() + 1;
-	roster.pushBack(Student(id, name, 0));
+	let id = roster.count() + 1;
+	roster.push_back(Student(id, name, 0));
 };
 ```
 
@@ -742,13 +774,13 @@ Now we can call it from the main loop.
 
 ```js
 fn main() -> int {
-	let roster = List(Student);
+	let roster = new vector::<Student>();
 
 	while true {
 		str.print("\n--Student Roster--\n");
-		roster.forEach([Student s]=>{
-			str.print(`{s.getInfo()}\n`); // We use the getInfo() method to print the student's information.
-		});
+		foreach Student s : roster.scroll() {
+			s.printInfo();
+		};
 		str.print("--------------------\n");
 		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
 		let input = str.readString("Enter a command: "); // We read the user's input.
@@ -756,6 +788,8 @@ fn main() -> int {
 		if input == "1"
 			addStudent(roster);
 	};
+
+	return 0;
 };
 ```
 
@@ -763,30 +797,42 @@ Next we will add an addGrade function that will add an assignment to the student
 
 ```js
 // Add Grade
-fn addGrade(List roster) -> bool {
-	let id = str.readString("Enter student id or name: ");
-	
-	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => { return s.id == i.toInt().resolve([int value] => return value, NULL) }, id)
-		else roster.findFirst([Student s, string i] => return s.name == i, id);
-
-	// above we use the ternary operator to check if the id is numeric.  If it is, we search for the student by id.  If it is not, we search for the student by name.
-
-	if student == NULL {
-		str.print("Student not found.\n");
-		let junk = str.readString("Press enter to continue...");
-		return false;
+fn addGrade(vector::<Student> roster) -> bool {
+	let id = str.readString("Enter student id: ");
+	let id = match id.toInt() {
+		Ok(i) => i,
+		Err => {
+			str.print("Invalid ID. Please enter a valid integer.\n");
+			return false;
+		}
+	};
+	/*
+	 * below the findFirst function takes a function as an argument.
+	 * This function checks if the student id matches the input id.
+	 * We pass the id as a reference because there is no really good way to
+	 * pass a value into the anonymous function.
+	 */
+	let student = match roster.findFirst( fn (Student s, int& i) return s.id == i, ?id) {
+		Some(s) => s,
+		None => {
+			str.print("Student not found.\n");
+			return false;
+		}
 	};
 
-	let assignment = str.readString("Enter assignment name: ");
-	let grade = str.readString( `Enter {student.name}'s grade:`);
-	if !grade.isNumeric() {
-		str.print("Grade must be a number.\n");
-		let junk = str.readString("Press enter to continue...");
-		return false;
+	let assignmentName = str.readString("Enter assignment name: ");
+	let grade = str.readString("Enter assignment grade: ");
+	match grade.toInt() {
+		Ok(g) => {
+			let assignment = new Assignment(assignmentName, g);
+			student.addAssignment(assignment);
+			return true;
+		},
+		Err => {
+			str.print("Invalid grade. Please enter a valid integer.\n");
+			return false;
+		}
 	};
-        student.addAssignment(Assignment(assignment, grade.toInt().resolve([int value] => return value, NULL))); // We use the resolve() method to get the value of the Result.
-        // We will talk more about results later.
-	return true;
 };
 
 ```
@@ -795,29 +841,32 @@ Now we can call it from the main function.  and we can call the addGrade functio
 
 ```js
 fn main() -> int {
-	let roster = List(Student);
+	let roster = new vector::<Student>();
 
 	while true {
-		io.clear(); // We clear the screen.
 		str.print("\n--Student Roster--\n");
-		roster.forEach([Student s]=>{
-			str.print(`{s.getInfo()}\n`); // We use the getInfo() method to print the student's information.
-		});
+		foreach Student s : roster.scroll() {
+			s.printInfo();
+		};
 		str.print("--------------------\n");
 		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
 		let input = str.readString("Enter a command: "); // We read the user's input.
 
-		if input == "1"
-			addStudent(roster)
-		else if input == "2"
-			addGrade(roster)
-		else if input == "quit"
-			return 0
-		else {
-			str.print("Invalid command\n");
-			let junk = str.readString("Press enter to continue...");
+		if input == "1" {
+			addStudent(roster);
+		} else if input == "2" {
+			if !addGrade(roster) {
+				str.print("Failed to add grade.\n");
+			};
+		} else if input == "quit" | input == "exit" {
+			str.print("Exiting program.\n");
+			break;
+		} else {
+			str.print("Invalid command. Please try again.\n");
 		};
 	};
+
+	return 0;
 };
 ```
 
@@ -826,72 +875,87 @@ All together, the main module should look like this:
 ```js
 .needs <std>
 
-import { clear } from "io" under io;
 import string from "String";
 import { print, readString } from "String" under str;
-import List from "Collections";
-import Student from "./src/Student";
-import Assignment from "./src/Assignment";
-import Result from "Utils/Result";
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import result from "Utils/result";
+import {Some, None} from "Utils/option";
+import Scroller from "Collections/Scroller";
+import Student from "./Student";
+import Assignment from "./Assignment";
 
-// Add Grade
-fn addGrade(List roster) -> bool {
-	let id = str.readString("Enter student id or name: ");
-	
-	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => { return s.id == i.toInt().resolve([int value] => return value, NULL) }, id)
-		else roster.findFirst([Student s, string i] => return s.name == i, id);
-
-	// above we use the ternary operator to check if the id is numeric.  If it is, we search for the student by id.  If it is not, we search for the student by name.
-
-	if student == NULL {
-		str.print("Student not found.\n");
-		let junk = str.readString("Press enter to continue...");
-		return false;
-	};
-
-	let assignment = str.readString("Enter assignment name: ");
-	let grade = str.readString( `Enter {student.name}'s grade:`);
-	if !grade.isNumeric() {
-		str.print("Grade must be a number.\n");
-		let junk = str.readString("Press enter to continue...");
-		return false;
-	};
-        student.addAssignment(Assignment(assignment, grade.toInt().resolve([int value] => return value, NULL))); // We use the resolve() method to get the value of the Result.
-        // We will talk more about results later.
-	return true;
+fn addStudent(vector::<Student> roster) -> void {
+	let name = str.readString("Enter student name: ");
+	let id = roster.count() + 1;
+	roster.push_back(Student(id, name, 0));
 };
 
-// This a function to add a student to the list.
-fn addStudent(List roster) -> void {
-	let name = str.readString("Enter student name: ");
-	let id = roster.getCount() + 1;
-	roster.pushBack(Student(id, name, 0));
+fn addGrade(vector::<Student> roster) -> bool {
+	let id = str.readString("Enter student id: ");
+	let id = match id.toInt() {
+		Ok(i) => i,
+		Err => {
+			str.print("Invalid ID. Please enter a valid integer.\n");
+			return false;
+		}
+	};
+	/*
+	 * below the findFirst function takes a function as an argument.
+	 * This function checks if the student id matches the input id.
+	 * We pass the id as a reference because there is no really good way to
+	 * pass a value into the anonymous function.
+	 */
+	let student = match roster.findFirst( fn (Student s, int& i) return s.id == i, ?id) {
+		Some(s) => s,
+		None => {
+			str.print("Student not found.\n");
+			return false;
+		}
+	};
+
+	let assignmentName = str.readString("Enter assignment name: ");
+	let grade = str.readString("Enter assignment grade: ");
+	match grade.toInt() {
+		Ok(g) => {
+			let assignment = new Assignment(assignmentName, g);
+			student.addAssignment(assignment);
+			return true;
+		},
+		Err => {
+			str.print("Invalid grade. Please enter a valid integer.\n");
+			return false;
+		}
+	};
 };
 
 fn main() -> int {
-	let roster = List(Student);
+	let roster = new vector::<Student>();
 
 	while true {
-		io.clear(); // We clear the screen.
 		str.print("\n--Student Roster--\n");
-		roster.forEach([Student s]=>{
-			str.print(`{s.getInfo()}\n`); // We use the getInfo() method to print the student's information.
-		});
+		foreach Student s : roster.scroll() {
+			s.printInfo();
+		};
 		str.print("--------------------\n");
 		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
 		let input = str.readString("Enter a command: "); // We read the user's input.
 
-		if input == "1"
-			addStudent(roster)
-		else if input == "2"
-			addGrade(roster)
-		else if input == "quit"
-			return 0
-		else {
-			str.print("Invalid command\n");
-			let junk = str.readString("Press enter to continue...");
+		if input == "1" {
+			addStudent(roster);
+		} else if input == "2" {
+			if !addGrade(roster) {
+				str.print("Failed to add grade.\n");
+			};
+		} else if input == "quit" | input == "exit" {
+			str.print("Exiting program.\n");
+			break;
+		} else {
+			str.print("Invalid command. Please try again.\n");
 		};
 	};
+
+	return 0;
 };
 ```
 
@@ -963,81 +1027,73 @@ function.
 
 Lets take a look at the updated addGrade function:
 ```js
-// Add Grade
-fn addGrade(List roster) -> result::<void> {
-	let id = str.readString("Enter student id or name: ");
-	
-	Student student = if id.isNumeric() roster.findFirst([Student s, string i] => { return s.id == i.toInt().resolve([int value] => return value, NULL) }, id)
-		else roster.findFirst([Student s, string i] => return s.name == i, id);
+fn addGrade(vector::<Student> roster) -> bool! {
+	let id = str.readString("Enter student id: ");
+	let id = id.toInt()!; // We can now use the bubble operator (!) to unwrap the result of toInt. 
+	// If the conversion fails, the error will be returned to the caller (not stack unwinding just returning).
 
-	// above we use the ternary operator to check if the id is numeric.  If it is, we search for the student by id.  If it is not, we search for the student by name.
+	/*
+	 * below the findFirst function takes a function as an argument.
+	 * This function checks if the student id matches the input id.
+	 * We pass the id as a reference because there is no really good way to
+	 * pass a value into the anonymous function.
+	 */
+	let student = match roster.findFirst( fn (Student s, int& i) return s.id == i, ?id) {
+		Some(s) => s,
+		None => return res.reject::<bool>(new Error(`Student with id {id} not found.`)) // for reject, we have to tell it what it could have been
+	};
 
-        if student == NULL {
-                return pr.reject(Error("Student not found."));
-        };
-
-	let assignment = str.readString("Enter assignment name: ");
-	let grade = str.readString( `Enter {student.name}'s grade:`);
-	string errorMsg = "";
-        int grade = grade.toInt().resolve([int value] => return value, [string error, mutable string msg] => {
-                msg = error;
-                return 0;
-        }, errorMsg);
-        if errorMsg != "" {
-                return pr.reject(Error(errorMsg));
-        };
-
-        student.addAssignment(Assignment(assignment, grade));
-        return pr.accept(NULL);
+	let assignmentName = str.readString("Enter assignment name: ");
+	let grade = str.readString("Enter assignment grade: ");
+	let assignment = new Assignment(assignmentName, grade.toInt()!);
+	student.addAssignment(assignment);
+	return true;
 };
 ```
 
 Now we need to update the main function to handle the result.
 
 ```js
-	fn main() -> int {
-	let roster = List(Student);
+fn main() -> int {
+	let roster = new vector::<Student>();
 
 	while true {
-		io.clear(); // We clear the screen.
 		str.print("\n--Student Roster--\n");
-		roster.forEach([Student s]=>{
-			str.print(`{s.getInfo()}\n`); // We use the getInfo() method to print the student's information.
-		});
+		foreach Student s : roster.scroll() {
+			s.printInfo();
+		};
 		str.print("--------------------\n");
 		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
 		let input = str.readString("Enter a command: "); // We read the user's input.
 
-		if input == "1"
-			addStudent(roster)
-                else if input == "2"
-                        addGrade(roster).match({
-                                ok: fn (void _) {
-                                        return NULL;
-                                },
-                                err: fn (Error error) {
-                                        str.print(`Error: {error}\n`);
-                                        let __junk = str.readString("Press enter to continue...");
-                                        return NULL;
-                                }
-                        })
-		else if input == "quit"
-			return 0
-		else {
-			str.print("Invalid command\n");
-			let __junk = str.readString("Press enter to continue...");
+		if input == "1" {
+			addStudent(roster);
+		} else if input == "2" {
+			match addGrade(roster) {
+				Ok => {
+					str.print("Grade added successfully.\n");
+				},
+				Err(e) => {
+					str.print(`Error: {e}\n`);
+				},
+			};
+		} else if input == "quit" | input == "exit" {
+			str.print("Exiting program.\n");
+			break;
+		} else {
+			str.print("Invalid command. Please try again.\n");
 		};
 	};
+
+	return 0;
 };
 ```
-## Done So Soon?
-Don't worry, more tutorial to come...
 
 ## Ownership, References, and Selling
 AFlat uses an explicit ownership model. Objects remain valid until they go out of scope or are deleted with `delete`. Class instances are passed by reference, so assigning them to another variable does not copy the object. You can take mutable or constant references using `mutable` or `const` in front of the reference type.
 
 Example:
-```aflat
+```js
 class Data {
     mutable int value = 10;
 };
@@ -1055,7 +1111,7 @@ fn main() -> int {
 ```
 
 The `$` operator transfers ownership, preventing reuse of the original variable.
-```aflat
+```js
 fn takeOwnership(mutable int &&a) -> void {
     print(`Taking ownership of {a}`);
 };
@@ -1067,3 +1123,5 @@ fn main() -> int {
 };
 ```
 
+## Done so soon?
+Don't worry, more tutorial to come...
