@@ -1003,14 +1003,14 @@ Example of calling a function that returns a result:
 
 ```js
 fn main() -> int {
-        divide(10, 0).match({
-                ok: fn (int value) {
-                        str.print(`Value: {value}\n`);
+        match divide(10, 0) {
+                Ok(value) => {
+                    str.print(`Value: {value}\n`);
                 },
-                err: fn (Error e) {
-                        str.print(`Error: {e}\n`);
+                Err(e) => {
+                    str.print(`Error: {e}\n`);
                 }
-        });
+        };
         return 0;
 };
 ```
