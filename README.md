@@ -14,6 +14,7 @@ Install with one command:
 ```
 curl -s https://raw.githubusercontent.com/DeForestt/aflat/main/install.sh | bash
 ```
+This will automatically add `aflat` to your `PATH` and enable bash/zsh tab completion.
 
 ### Cloning the repository
 ```bash
