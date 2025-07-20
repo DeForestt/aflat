@@ -456,7 +456,7 @@ It is helpful to hide our classes in another file, It helps to give us less to l
 aflat module Student
 ```
 
-This will create a new file called 'Student.af' in the src folder. Copy the Student class from the previous section and paste it into the new file. 
+This will create a new file called 'Student/mod.af' in the src folder. Copy the Student class from the previous section and paste it into the new file. 
 
 ```js
 .needs <std>
@@ -474,10 +474,13 @@ class Student {
 		my.name = name;
 		my.average = average;
 	};
-	
 
 	fn printInfo() -> void {
 		str.print(`Student: {my.name} id: {my.id} average: {my.average}\n`);
+	};
+
+	fn toString() -> string { // vector expects any class that uses it to implement the toString method
+		return `Student: {my.name} id: {my.id} average: {my.average}`;
 	};
 };
 ```
@@ -486,16 +489,20 @@ Now it can bee imported into our main program the same way we would import any c
 
 ```js
 .needs <std>
+
 import string from "String";
 import { print } from "String" under str;
-import List from "Collections";
+import vector from "Collections/Vector"; // We need to import the Vector class to create a list of students
+import option from "Utils/option"; // vector expects the option module to be imported
+import {Some, None} from "Utils/option"; // vector expects the Some and None classes to be imported
 import Scroller from "Collections/Scroller"; // We need to import the Scroller class to iterate over the list
-import Student from "./src/Student"; // Then we import the Student class from the Student module. Note that for project level imports, we need to use the relative path to the project root
+import Student from "./Student"; // Now we can import the Student module.  Note that If `Student.af` does not exist, it will look for `Student/mod.af`
+
 
 fn main() -> int {
-	List roster = List(Student);
-	roster.pushBack(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
-	roster.pushBack(Student(2, "Jane Doe", 80));
+	let roster = vector::<Student>(); // We create a new list of students using the Vector class
+	roster.push_back(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
+	roster.push_back(Student(2, "Jane Doe", 80));
 
 	// this is a foreach loop that iterates over an iterable object
 	foreach Student student : roster.scroll() { // A List is not an iterable object, calling the `scroll` method makes it iterable and allows us to use the foreach loop
