@@ -47,8 +47,39 @@ static void applyTemplateTypes(
     std::vector<std::string> &templateTypes,
     const std::unordered_map<std::string, std::string> &map) {
   for (auto &t : templateTypes) {
-    auto it = map.find(t);
-    if (it != map.end()) t = it->second;
+    bool ref = false;
+    bool rval = false;
+    std::string base = t;
+    if (base.rfind("&&", 0) == 0) {
+      rval = true;
+      base = base.substr(2);
+    } else if (base.rfind('&', 0) == 0) {
+      ref = true;
+      base = base.substr(1);
+    }
+
+    auto it = map.find(base);
+    if (it != map.end()) {
+      std::string newName = it->second;
+      bool nref = false;
+      bool nrval = false;
+      if (newName.rfind("&&", 0) == 0) {
+        nrval = true;
+        newName = newName.substr(2);
+      } else if (newName.rfind('&', 0) == 0) {
+        nref = true;
+        newName = newName.substr(1);
+      }
+
+      if (nref || nrval) {
+        ref = nref;
+        rval = nrval;
+      }
+
+      t = (rval ? std::string("&&")
+                : (ref ? std::string("&") : std::string(""))) +
+          newName;
+    }
   }
 }
 
@@ -256,33 +287,43 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
   if (auto un = dynamic_cast<Union *>(this)) {
     for (auto &alias : un->aliases) {
       if (alias->isType()) {
-        auto it = map.find(alias->getType().typeName);
+        auto aliasType = alias->getType();
+        bool ref = aliasType.isReference;
+        bool rval = aliasType.isRvalue;
+        std::string typeName = aliasType.typeName;
+
+        auto it = map.find(aliasType.typeName);
         if (it != map.end()) {
-          std::string typeName = it->second;
-          bool ref = false;
-          bool rval = false;
+          typeName = it->second;
+          bool mapRef = false;
+          bool mapRval = false;
           if (typeName.rfind("&&", 0) == 0) {
-            rval = true;
+            mapRval = true;
             typeName = typeName.substr(2);
           } else if (typeName.rfind('&', 0) == 0) {
-            ref = true;
+            mapRef = true;
             typeName = typeName.substr(1);
           }
-          auto primIt = parse::PRIMITIVE_TYPES.find(typeName);
-          asmc::Size sz = primIt != parse::PRIMITIVE_TYPES.end()
-                              ? gen::utils::toSize(primIt->second)
-                              : asmc::QWord;
-          ast::Type newT(typeName, sz);
-          if (ref || rval) {
-            newT.refSize = sz;
-            newT.size = asmc::QWord;
-            if (rval)
-              newT.isRvalue = true;
-            else
-              newT.isReference = true;
+          if (mapRef || mapRval) {
+            ref = mapRef;
+            rval = mapRval;
           }
-          alias->value = newT;
         }
+
+        auto primIt = parse::PRIMITIVE_TYPES.find(typeName);
+        asmc::Size sz = primIt != parse::PRIMITIVE_TYPES.end()
+                            ? gen::utils::toSize(primIt->second)
+                            : asmc::QWord;
+        ast::Type newT(typeName, sz);
+        if (ref || rval) {
+          newT.refSize = sz;
+          newT.size = asmc::QWord;
+          if (rval)
+            newT.isRvalue = true;
+          else
+            newT.isReference = true;
+        }
+        alias->value = newT;
       } else if (alias->isConstExpr()) {
         alias->getConstExpr()->replaceTypes(map);
       }
