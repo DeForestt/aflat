@@ -7,6 +7,8 @@ import Map from "Utils/Map";
 import Iterator from "Collections/Iterator";
 import Scroller from "Collections/Scroller";
 import {Some, None} from "Utils/option" under opt;
+import result from "Utils/result";
+import {accept, reject, resultWrapper} from "Utils/result" under res;
 
 types(T)
 class vector {
@@ -70,6 +72,13 @@ class vector {
         });
     };
 
+    fn set(const int index, const T value) -> result::<bool> {
+        if index >= my.inner.getCount() {
+            return res.reject::<bool>(new Error("Index out of bounds"));
+        }
+        my.inner.set(index, value);
+        return res.accept(true);
+    };
     fn scroll() -> Scroller {
         return my.inner.scroll();
     };
