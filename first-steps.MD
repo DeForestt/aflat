@@ -195,32 +195,32 @@ This game gets boring quickly.  We need to make sure that the program doesn't al
 
 ```js
 .needs <std>
+.needs <std>
 import string from "String";
-import { readString, print } from "String" under st;
+import { readString, print } from "String" under str;
 import Error from "Utils/Error";
-import Random from "math";
+import result from "Utils/result";
+import { accept, reject } from "Utils/result";
 
 fn main() -> int {
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
 	int secret = Random().nextInt(100); // generate a random number between 0 and 99
 	
 	for mutable int i = 0; i < 10; i = i + 1 {
-		let guess = st.readString("Enter your guess: "); // get the string that the user entered
-		int guessInt = guess.toInt().match({
-			"ok": [int i] => return i,
-			"_": [Error w] => panic(`Error converting string to int: {w}`.cstr())
-		}); // convert the string to an int.  If the conversion fails, panic with an error message.
-		// this is the main error handling mechanism in aflat. Note that the match method name is a convention and not a keyword.
-		// it may be added to the language in the future.
+		let guess = str.readString("Enter your guess: "); // get the string that the user entered
+		let guessInt = match guess.toInt() {
+			Ok(i) => i, // if the conversion is successful, return the int value
+			Err(err) => panic(`Error converting string to int: {err}`.cstr()) // if the conversion fails, panic with an error message.
+		}; // convert the string to an int.  If the conversion fails, panic with an error message.
 
 		if guessInt == secret // now that we have the same type we can compare them with the '==' operator
-			st.print("You guessed it!\n")
+			str.print("You guessed it!\n")
 		else if guessInt < secret // we can check if the guess is too low with the '<' operator
-			st.print("Too low!\n")
+			str.print("Too low!\n")
 		else
-			st.print("Too high!\n");
+			str.print("Too high!\n");
 	};
-	st.print(`The secret number was {secret}\n`); // we can use the backtick to create a string that can contain variables.  The variables are surrounded by {} and the variable name is inside the braces.  The variable name is evaluated and the result is inserted into the string.  The string is then converted to a string and printed.
+	str.print(`The secret number was {secret}\n`); // we can use the backtick to create a string that can contain variables.  The variables are surrounded by {} and the variable name is inside the braces.  The variable name is evaluated and the result is inserted into the string.  The string is then converted to a string and printed.
 	// notice that the curly braces are not needed in the if statement.  The curly braces are only needed when there is a block of code to be executed.
 
 	return 0;
@@ -826,6 +826,7 @@ fn addGrade(vector::<Student> roster) -> bool {
 		Ok(g) => {
 			let assignment = new Assignment(assignmentName, g);
 			student.addAssignment(assignment);
+			roster.set(roster.set(student.id - 1, student)); // Update the student in the roster
 			return true;
 		},
 		Err => {
@@ -1047,6 +1048,7 @@ fn addGrade(vector::<Student> roster) -> bool! {
 	let grade = str.readString("Enter assignment grade: ");
 	let assignment = new Assignment(assignmentName, grade.toInt()!);
 	student.addAssignment(assignment);
+	roster.set(roster.set(student.id - 1, student));
 	return true;
 };
 ```
