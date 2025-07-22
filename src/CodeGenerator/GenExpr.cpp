@@ -478,8 +478,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.size = asmc::QWord;
     output.type = sym->type.typeName;
 
-    // mark the original symbol as sold
-    std::get<4>(resolved)->sold = this->logicalLine;
+    // mark the original symbol as sold; re-fetch in case assign() reallocated
+    auto *soldSym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
+    if (soldSym) soldSym->sold = this->logicalLine;
   } else if (dynamic_cast<ast::Reference *>(expr) != nullptr) {
     ast::Reference ref = *dynamic_cast<ast::Reference *>(expr);
 
