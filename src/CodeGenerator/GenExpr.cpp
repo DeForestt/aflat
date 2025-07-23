@@ -129,6 +129,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       auto callGen = call->generate(*this);
       OutputFile << callGen.file;
       output = callGen.expr.value();
+      output.owned = true;
       if (size != asmc::AUTO &&
           (output.type == "any" || output.type == "--std--flex--function"))
         output.size = size;
@@ -357,6 +358,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.size = sym.type.size;
         output.op = sym.type.opType;
         output.type = sym.type.typeName;
+        output.owned = sym.owned;
 
         // check if the symbol type is a class
         auto cont = true;
@@ -1262,6 +1264,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       output.size = asmc::QWord;
       output.type = newExpr.type.typeName;
     };
+    output.owned = true;
   } else if (dynamic_cast<ast::ParenExpr *>(expr) != nullptr) {
     ast::ParenExpr parenExpr = *dynamic_cast<ast::ParenExpr *>(expr);
     output = this->GenExpr(parenExpr.expr, OutputFile);

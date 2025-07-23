@@ -123,6 +123,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
 
       file.text << mov2;
       file.text << mov;
+      s->owned = expr.owned;
       s->usable = true;
     } else {
       if (this->annotations.size() > 0) {
@@ -187,6 +188,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
     };
     var->operand = exp.access.erase(0, 1);
     Symbol.type.opType = exp.op;
+    Symbol.owned = exp.owned;
     file.data << label;
     file.data << var;
     if (Table->search<std::string>(gen::utils::searchSymbol, dec->ident) !=

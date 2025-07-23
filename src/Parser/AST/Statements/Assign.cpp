@@ -192,6 +192,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   if (this->modList.count == 0 && this->reference) {
     gen::scope::ScopeManager::getInstance()->get(fin->symbol);
   }
+  fin->owned = expr.owned;
 
   if (generator.TypeList[fin->type.typeName] == nullptr) {
     auto t = new ast::Type();
