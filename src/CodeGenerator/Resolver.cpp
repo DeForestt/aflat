@@ -70,6 +70,7 @@ CodeGenerator::resolveSymbol(std::string ident,
   if (sym == nullptr) {
     sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, ident);
     global = true;
+    owned = true;  // global symbols are corporatly owned
   }
   if (sym == nullptr)
     return std::make_tuple("", Symbol(), false, pops, nullptr);

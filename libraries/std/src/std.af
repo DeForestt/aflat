@@ -144,7 +144,8 @@ adr malloc(const int size){
         block = requestSpace(NULL, size);
         head = block;
         block = block + #16;
-        return block;
+        const adr ret = block;
+        return ret;
     };
     Block last;
     last = head;
@@ -162,7 +163,8 @@ adr malloc(const int size){
     block.free = 0;
     splitBlock(block, size);
     block = block + Block;
-    return block;
+    const adr ret = block;
+    return ret; // doing this cheats past the ownership system
 };
 
 adr realloc(const adr ptr, const int size){
