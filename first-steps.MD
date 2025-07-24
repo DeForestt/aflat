@@ -604,7 +604,7 @@ now we can calculate the average by dividing the total by the number of assignme
     fn addAssignment(Assignment &&assignment) -> void {
         my.assignments.push_back($assignment);
         my.totalPoints = my.totalPoints + assignment.grade;
-		int count = my.assignments.getCount();
+                int count = my.assignments.count();
         my.average = my.totalPoints / count;
     };
 ```
