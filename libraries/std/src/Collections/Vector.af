@@ -28,31 +28,31 @@ class vector {
         return my.inner.getCount();
     };
 
-    fn pop_back() -> option::<T> {
+    fn pop_back() -> option::<&T> {
         const let ret = my.inner.popBack();
         return ret.match({
             "some": fn (const T value) {
-                return opt.Some::<T>(value);
+                return opt.Some::<&T>(value);
             },
             "none": fn () {
-                return opt.None::<T>();
+                return opt.None::<&T>();
             }
         });
     };
 
-    fn get(const int index) -> option::<T> {
+    fn get(const int index) -> option::<&T> {
         const let ret = my.inner.get(index);
         return ret.match({
             "ok": fn (const T value) {
-                return opt.Some::<T>(value);
+                return opt.Some::<&T>(value);
             },
             "_": fn () {
-                return opt.None::<T>();
+                return opt.None::<&T>();
             }
         });
     };
 
-    fn _call(const int index) -> option::<T> {
+    fn _call(const int index) -> option::<&T> {
         return my.get(index);
     };
 
@@ -61,14 +61,14 @@ class vector {
         return my;
     };
 
-    fn findFirst(const adr predicate, * const adr args) -> option::<T> {
+    fn findFirst(const adr predicate, * const adr args) -> option::<&T> {
         const let ret = my.inner.findFirst(predicate, args);
         return ret.match({
             "some": fn (const T value) {
-                return opt.Some::<T>(value);
+                return opt.Some::<&T>(value);
             },
             "none": fn () {
-                return opt.None::<T>();
+                return opt.None::<&T>();
             }
         });
     };

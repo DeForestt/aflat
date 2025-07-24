@@ -227,3 +227,9 @@ std::string gen::utils::generateUUID() {
   }
   return uuid;
 }
+
+std::string gen::utils::sanitizeTypeName(const std::string &name) {
+  if (name.rfind("&&", 0) == 0) return "rref_" + name.substr(2);
+  if (!name.empty() && name[0] == '&') return "ref_" + name.substr(1);
+  return name;
+}

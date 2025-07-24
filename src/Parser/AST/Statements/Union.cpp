@@ -45,13 +45,34 @@ std::vector<ast::Union::Alias *> parseAliases(
 
     if (comma->Sym == '(') {
       tokens.pop();
+      bool ref = false;
+      bool rval = false;
+      auto amp = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (amp && amp->Sym == '&') {
+        tokens.pop();
+        if (auto amp2 = dynamic_cast<lex::OpSym *>(tokens.peek());
+            amp2 && amp2->Sym == '&') {
+          tokens.pop();
+          rval = true;
+        } else {
+          ref = true;
+        }
+      }
       auto maybeTypeName = dynamic_cast<lex::LObj *>(tokens.peek());
       auto type =
           maybeTypeName ? parser.typeList[maybeTypeName->meta] : nullptr;
       if (type) {
         tokens.pop();
-        std::variant<ast::Type, ast::Expr *> typeOrExpr =
-            ast::Type(type->typeName, type->size);
+        ast::Type t(type->typeName, type->size);
+        if (ref || rval) {
+          t.refSize = t.size;
+          t.size = asmc::QWord;
+          if (rval)
+            t.isRvalue = true;
+          else
+            t.isReference = true;
+        }
+        std::variant<ast::Type, ast::Expr *> typeOrExpr = t;
         value = typeOrExpr;
       } else {
         auto expr = parser.parseExpr(tokens);
@@ -173,9 +194,14 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
     } else if (alias->isType()) {
       auto typePtr =
           new ast::Type(alias->getType().typeName, alias->getType().size);
+      typePtr->isReference = alias->getType().isReference;
+      typePtr->isRvalue = alias->getType().isRvalue;
+      typePtr->refSize = alias->getType().refSize;
 
-      if (parse::PRIMITIVE_TYPES.find(typePtr->typeName) !=
-          parse::PRIMITIVE_TYPES.end()) {
+      if (typePtr->isReference || typePtr->isRvalue) {
+        type->aliases.emplace_back(alias->name, typePtr, 8);
+      } else if (parse::PRIMITIVE_TYPES.find(typePtr->typeName) !=
+                 parse::PRIMITIVE_TYPES.end()) {
         type->aliases.emplace_back(alias->name, typePtr,
                                    parse::PRIMITIVE_TYPES[typePtr->typeName]);
       } else {

@@ -22,6 +22,7 @@ ast::Sequence *copyAllFunctionShells(ast::Statement *stmt);
 void shellStatement(ast::Statement *stmt);
 std::string getLibPath(std::string lib);
 std::string generateUUID();
+std::string sanitizeTypeName(const std::string &name);
 
 template <typename T>
 std::string toString(const T &value) {

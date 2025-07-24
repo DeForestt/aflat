@@ -125,10 +125,12 @@ Statement *deepCopy(const Statement *stmt) {
     copy->genericTypes = std::vector<std::string>(un->genericTypes);
     for (auto alias : un->aliases) {
       if (alias->isType()) {
-        // log type info
-        copy->aliases.push_back(new Union::Alias(
-            alias->name,
-            Type(alias->getType().typeName, alias->getType().size)));
+        auto t = alias->getType();
+        Type newT(t.typeName, t.size);
+        newT.isReference = t.isReference;
+        newT.isRvalue = t.isRvalue;
+        newT.refSize = t.refSize;
+        copy->aliases.push_back(new Union::Alias(alias->name, newT));
       } else if (alias->isConstExpr()) {
         copy->aliases.push_back(new Union::Alias(
             alias->name, static_cast<Expr *>(deepCopy(alias->getConstExpr()))));
