@@ -18,8 +18,9 @@ class vector {
         return my;
     };
 
-    fn push_back(const T value) -> Self {
+    fn push_back(const T &&value) -> Self {
         my.inner.pushBack(value);
+        delete value;
         return my;
     };
 
@@ -72,11 +73,12 @@ class vector {
         });
     };
 
-    fn set(const int index, const T value) -> result::<bool> {
+    fn set(const int index, const T &&value) -> result::<bool> {
         if index >= my.inner.getCount() {
             return res.reject::<bool>(new Error("Index out of bounds"));
         }
         my.inner.set(index, value);
+        delete value;
         return res.accept(true);
     };
     fn scroll() -> Scroller {
