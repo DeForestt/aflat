@@ -81,6 +81,7 @@ class vector {
         delete value;
         return res.accept(true);
     };
+    
     fn scroll() -> Scroller {
         return my.inner.scroll();
     };
