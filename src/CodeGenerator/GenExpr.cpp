@@ -701,6 +701,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       push2->op = this->registers["%rdx"]->get(asmc::QWord);
       OutputFile.text << push2;
       output.op = asmc::Hard;
+      output.owned = true;
       output.type = "--std--flex--function";
       switch (comp.op) {
         case ast::Plus: {
@@ -1182,6 +1183,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.access = "$" + id;
     output.size = asmc::QWord;
     output.type = typeName;
+    output.owned = true;
   } else if (dynamic_cast<ast::NewExpr *>(expr) != nullptr) {
     ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);
     ast::Function *malloc = this->nameTable["malloc"];
