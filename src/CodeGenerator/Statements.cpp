@@ -142,6 +142,11 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
       int mod = gen::scope::ScopeManager::getInstance()->assign(
           arg->ident, arg->type, false, arg->mut);
 
+      auto sym = gen::scope::ScopeManager::getInstance()->get(arg->ident);
+      if (func.argTypes[index].isRvalue) {
+        sym->owned = true;
+      }
+
       mov->size = size;
       mov->to = "-" + std::to_string(mod) + +"(%rbp)";
       OutputFile.text << mov;

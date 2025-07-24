@@ -245,6 +245,14 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     from = generator.GenExpr(imp, file);
   };
 
+  if (parse::PRIMITIVE_TYPES.find(from.type) == parse::PRIMITIVE_TYPES.end()) {
+    if (!from.owned) {
+      generator.alert(
+          "cannot return a non-owned reference to a type " + from.type, true,
+          __FILE__, __LINE__);
+    }
+  }
+
   if (from.op != asmc::Float) {
     auto pop = new asmc::Pop();
     pop->logicalLine = this->logicalLine;

@@ -2,7 +2,6 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
-#include <iostream>
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/GenerationResult.hpp"
@@ -121,6 +120,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.access = afterInit.access;
           output.size = asmc::QWord;
           output.type = cl->Ident;
+          output.owned = false;
         }
       } else {
         alert("Class " + call->ident + " not found", true, __FILE__, __LINE__);
