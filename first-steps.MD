@@ -437,8 +437,8 @@ class Student {
 
 fn main() -> int {
 	let roster = vector::<Student>(); // We create a new list of students using the Vector class
-	roster.push_back(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
-	roster.push_back(Student(2, "Jane Doe", 80));
+        roster.push_back(new Student(1, "John Doe", 90)); // The push_back method now requires ownership
+        roster.push_back(new Student(2, "Jane Doe", 80));
 
 	// this is a foreach loop that iterates over an iterable object
 	foreach Student student : roster.scroll() { // A List is not an iterable object, calling the `scroll` method makes it iterable and allows us to use the foreach loop
@@ -501,8 +501,8 @@ import Student from "./Student"; // Now we can import the Student module.  Note 
 
 fn main() -> int {
 	let roster = vector::<Student>(); // We create a new list of students using the Vector class
-	roster.push_back(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
-	roster.push_back(Student(2, "Jane Doe", 80));
+        roster.push_back(new Student(1, "John Doe", 90)); // push_back takes ownership of the object
+        roster.push_back(new Student(2, "Jane Doe", 80));
 
 	// this is a foreach loop that iterates over an iterable object
 	foreach Student student : roster.scroll() { // A List is not an iterable object, calling the `scroll` method makes it iterable and allows us to use the foreach loop
@@ -586,8 +586,8 @@ class Student {
 		return `Student: {my.name} id: {my.id} average: {my.average}`;
 	};
 
-    fn addAssignment(Assignment assignment) -> void {
-        my.assignments.push_back(assignment);
+    fn addAssignment(Assignment &&assignment) -> void {
+        my.assignments.push_back($assignment);
     };
 };
 ```
@@ -601,8 +601,8 @@ mutable int totalPoints = 0; // add this code to the student class
 
 now we can calculate the average by dividing the total by the number of assignments.
 ```js
-    fn addAssignment(Assignment assignment) -> void {
-        my.assignments.push_back(assignment);
+    fn addAssignment(Assignment &&assignment) -> void {
+        my.assignments.push_back($assignment);
         my.totalPoints = my.totalPoints + assignment.grade;
 		int count = my.assignments.getCount();
         my.average = my.totalPoints / count;
@@ -667,9 +667,9 @@ class Student {
 		return `Student: {my.name} id: {my.id} average: {my.average}`;
 	};
 
-    fn addAssignment(Assignment assignment) -> void {
-        my.assignments.push_back(assignment);
-                my.totalPoints = my.totalPoints + assignment.grade;
+    fn addAssignment(Assignment &&assignment) -> void {
+        my.assignments.push_back($assignment);
+        my.totalPoints = my.totalPoints + assignment.grade;
 		int count = my.assignments.count();
         my.average = my.totalPoints / count;
     };
@@ -766,7 +766,7 @@ Now we need to create a function to add a student to the roster.  The function w
 fn addStudent(vector::<Student> roster) -> void {
 	let name = str.readString("Enter student name: ");
 	let id = roster.count() + 1;
-	roster.push_back(Student(id, name, 0));
+        roster.push_back(new Student(id, name, 0));
 };
 ```
 
@@ -822,13 +822,13 @@ fn addGrade(vector::<Student> roster) -> bool {
 
 	let assignmentName = str.readString("Enter assignment name: ");
 	let grade = str.readString("Enter assignment grade: ");
-	match grade.toInt() {
-		Ok(g) => {
-			let assignment = new Assignment(assignmentName, g);
-			student.addAssignment(assignment);
-			roster.set(roster.set(student.id - 1, student)); // Update the student in the roster
-			return true;
-		},
+        match grade.toInt() {
+                Ok(g) => {
+                        let assignment = new Assignment(assignmentName, g);
+                        student.addAssignment($assignment);
+                        roster.set(student.id - 1, $student); // Update the student in the roster
+                return true;
+                },
 		Err => {
 			str.print("Invalid grade. Please enter a valid integer.\n");
 			return false;
@@ -887,9 +887,9 @@ import Student from "./Student";
 import Assignment from "./Assignment";
 
 fn addStudent(vector::<Student> roster) -> void {
-	let name = str.readString("Enter student name: ");
-	let id = roster.count() + 1;
-	roster.push_back(Student(id, name, 0));
+        let name = str.readString("Enter student name: ");
+        let id = roster.count() + 1;
+        roster.push_back(new Student(id, name, 0));
 };
 
 fn addGrade(vector::<Student> roster) -> bool {
@@ -917,12 +917,12 @@ fn addGrade(vector::<Student> roster) -> bool {
 
 	let assignmentName = str.readString("Enter assignment name: ");
 	let grade = str.readString("Enter assignment grade: ");
-	match grade.toInt() {
-		Ok(g) => {
-			let assignment = new Assignment(assignmentName, g);
-			student.addAssignment(assignment);
-			return true;
-		},
+        match grade.toInt() {
+                Ok(g) => {
+                        let assignment = new Assignment(assignmentName, g);
+                        student.addAssignment($assignment);
+                        return true;
+                },
 		Err => {
 			str.print("Invalid grade. Please enter a valid integer.\n");
 			return false;
@@ -1046,10 +1046,10 @@ fn addGrade(vector::<Student> roster) -> bool! {
 
 	let assignmentName = str.readString("Enter assignment name: ");
 	let grade = str.readString("Enter assignment grade: ");
-	let assignment = new Assignment(assignmentName, grade.toInt()!);
-	student.addAssignment(assignment);
-	roster.set(roster.set(student.id - 1, student));
-	return true;
+        let assignment = new Assignment(assignmentName, grade.toInt()!);
+        student.addAssignment($assignment);
+        roster.set(student.id - 1, $student);
+        return true;
 };
 ```
 
