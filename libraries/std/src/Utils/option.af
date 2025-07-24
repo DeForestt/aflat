@@ -30,7 +30,7 @@ union option {
     };
   };
 
-  safe fn or(const T defaultValue) -> T {
+  safe fn or(const T &&defaultValue) -> T {
     match my {
       Some(value) => return value,
       None() => return defaultValue
