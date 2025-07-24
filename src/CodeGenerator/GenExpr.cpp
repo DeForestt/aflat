@@ -188,6 +188,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.access = '$' + std::to_string(item->value);
           output.type = en->Ident;
           output.size = asmc::DWord;
+          output.owned = true;
         } else {
           auto cl = dynamic_cast<gen::Class *>(type);
           if (var.modList.trail() == 1 && cl) {
