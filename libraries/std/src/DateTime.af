@@ -3,7 +3,6 @@
 
 import string from "String";
 import {print} from "String" under str;
-import ICollection from "Collections";
 import List from "Collections";
 import result from "Utils/result";
 import Function from "Utils/Functions";
