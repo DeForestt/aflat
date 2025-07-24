@@ -1125,52 +1125,121 @@ This creates a directory under `src/` matching the module name and places
 `mod.af` inside. An entry is added under `[dependencies]` in `aflat.cfg` so the
 new module is compiled. For a single `.af` file without a folder, use
 `aflat file <name>` instead.
-## Ownership, References, and Selling
-AFlat uses explicit ownership. Objects live until they go out of scope or are deleted. Class objects are passed by reference automatically.
 
-Example of references:
-```aflat
-class Data {
-    mutable int value = 10;
-};
+# \ud83d\udcd8 AFlat Ownership Model
 
-fn modify(Data d) -> void {
-    d.value = 5;
-};
-```
+AFlat uses an explicit ownership model for managing memory and ensuring correctness in dynamic allocations. It is designed to strike a balance between **performance**, **safety**, and **control**, while still adhering to AFlat\u2019s philosophy of trusting the programmer.
 
-Use `&` to take references and `$` to transfer ownership:
-```aflat
-fn take(mutable int &&x) -> void {
-    print(x);
-};
+This model **only applies to non-value types** \u2014 i.e., user-defined classes and heap-allocated objects. Value types like `int`, `float`, etc., are always passed and copied by value and are excluded from ownership checks.
 
-fn main() -> int {
-    int a = 10;
-    take($a); // a is moved
-    return 0;
-};
-```
+---
 
-### Immutable variables
+## \ud83d\udd11 Core Principles
 
-`immutable` enforces *deep* immutability. A variable declared with this modifier
-cannot be reassigned and every value reachable through it becomes read only.
-This differs from `const`, which only stops the variable itself from being
-rebound.
+1. **Ownership implies responsibility**
+   If you own a value, you are responsible for its lifetime (e.g., freeing it or transferring it).
 
-```aflat
-class Box {
-    mutable int value = 0;
-};
+2. **You cannot move or return what you don\u2019t own**
+   The compiler enforces that only owned values may be moved (sold) or returned.
 
-fn main() -> int {
-    const Box c1 = new Box();
-    c1.value = 5; // allowed - fields can change
+3. **Ownership only applies to heap-allocated memory**
+   Stack variables, literals, and internal references cannot be owned.
 
-    immutable Box c2 = new Box();
-    c2.value = 5; // error: cannot modify field of immutable variable
-    return 0;
-};
-```
+---
 
+## \ud83d\udcdc Ownership Rules
+
+### 1. You can only sell things you own
+
+* The `$` operator transfers ownership.
+* Attempting to `$` a non-owned variable is a compile-time error.
+
+### 2. You can only own heap-allocated values
+
+* Only objects allocated with `new`, returned from functions that yield ownership, or passed via `&&` are considered "owned."
+* Stack values and function-local variables are not ownable.
+
+### 3. You can only return things you own
+
+* Returning a non-owned reference violates ownership.
+* Functions must return owned values or wrap borrows in safe containers (e.g., `option`, `result`, etc.).
+
+### 4. The return value of a `CallExpr` is owned
+
+* When calling a function that returns an owned object, the return value is treated as a fresh owned value (e.g., `fn makeFoo() -> Foo!`).
+
+### 5. Anything created with `new` is owned
+
+* `new` always produces a heap-allocated, owned object.
+* You do **not** need to use `$` when passing `new Foo()` to a `&&` parameter, since it is an rvalue.
+
+### 6. Arguments marked with `&&` take ownership
+
+* Functions expecting a `&&` parameter require the caller to transfer ownership.
+* Example:
+
+  ```aflat
+  fn takeIt(Foo &&f) { ... }
+
+  let f = new Foo();
+  takeIt($f); // legal
+  ```
+
+### 7. Anything else is not owned
+
+* Regular variables, references, and function parameters passed by value are non-owning by default.
+* You cannot `$` or return these without wrapping them or copying explicitly.
+
+### 8. Accessing a field of an owned object yields ownership of that field
+
+* If you own an object, you can legally move out of its fields.
+* This allows:
+
+  ```aflat
+  let obj = new Container();
+  let inner = $obj.field; // legal: obj is owned
+  ```
+
+> \u26a0\ufe0f This creates *double ownership* (parent and field both considered owners), and the compiler does **not** track invalidation. It's the programmer\u2019s responsibility to avoid use-after-move bugs.
+
+---
+
+## \ud83e\uddea Special Cases and Clarifications
+
+* **Selling (`$`) is only required on variables**, not rvalues:
+
+  ```aflat
+  takeIt(new Foo());   // OK \u2014 rvalue is owned
+  takeIt($myFoo);      // OK \u2014 transfer ownership
+  takeIt(myFoo);       // \u274c Error \u2014 ownership not transferred
+  ```
+
+* **Returning fields directly from a method** is currently treated as an ownership transfer.
+  Future plans include treating such field returns as **borrows** unless explicitly marked otherwise.
+
+---
+
+## \u2705 Ownership Summary Table
+
+| Expression                   | Owned? | Requires `$`? | Notes                                  |
+| ---------------------------- | ------ | ------------- | -------------------------------------- |
+| `new Foo()`                  | \u2705 Yes  | \u274c No          | Owned rvalue                           |
+| `let f = new Foo();`         | \u2705 Yes  | \u2705 Yes         | Named variable \u2014 must `$f` to move     |
+| `someFunc()` returning `T!`  | \u2705 Yes  | \u274c No          | Functions can transfer ownership       |
+| `field` from owned object    | \u2705 Yes  | \u2705 Yes         | You can move fields if parent is owned |
+| `field` from borrowed object | \u274c No   | \u274c Error       | Cannot move out                        |
+| Stack or literal value       | \u274c No   | \u274c N/A         | Not tracked by ownership model         |
+| Function param (by value)    | \u274c No   | \u274c Error       | Must use `&&` to pass ownership        |
+| Function param (with `&&`)   | \u2705 Yes  | \u2705 Yes or \u274c No | `$var` or `new Foo()` is valid         |
+| Return `t` (not owned)       | \u274c No   | \u274c Error       | Must return only owned values          |
+
+---
+
+## \ud83e\udd14 Design Benefits
+
+* \u2705 **Clear semantics**: Ownership rules are easy to reason about.
+* \u2705 **No runtime overhead**: All checks are compile-time.
+* \u2705 **Opt-in safety**: Works well with AFlat's philosophy of \u201ctrust the programmer.\u201d
+* \u2705 **Extendable**: Lays groundwork for future borrow tracking and lifetimes.
+
+---
