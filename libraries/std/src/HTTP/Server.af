@@ -76,7 +76,7 @@ class Server {
                     };
 
                     HTTPResponse r = response.match({
-                        "ok": [const HTTPResponse res] => return res,
+                        "ok": [const HTTPResponse &&res] => return res,
                         "NotFoundError": [const NotFoundError err] => return new HTTPResponse(err.render().cstr(), "404", "Not Found"),
                         "ForbiddenError": [const ForbiddenError err] => return new HTTPResponse(err.render().cstr(), "403", "Forbidden"),
                         "BadRequestError": [const BadRequestError err] => return new HTTPResponse(err.render().cstr(), "400", "Bad Request"),

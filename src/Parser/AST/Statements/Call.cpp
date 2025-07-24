@@ -523,7 +523,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         rValue = true;
         // make sure that its not a var
         auto var = dynamic_cast<ast::Var *>(arg);
-        if (var != nullptr) {
+        if (var != nullptr && var->Ident != "NULL") {
           generator.alert("Attempted to pass an lvalue (" + var->Ident +
                           ") to an rvalue");
         }
