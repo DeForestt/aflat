@@ -437,8 +437,8 @@ class Student {
 
 fn main() -> int {
 	let roster = vector::<Student>(); // We create a new list of students using the Vector class
-	roster.push_back(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
-	roster.push_back(Student(2, "Jane Doe", 80));
+        roster.push_back(new Student(1, "John Doe", 90)); // The push_back method now requires ownership
+        roster.push_back(new Student(2, "Jane Doe", 80)); // roster owns this Student too
 
 	// this is a foreach loop that iterates over an iterable object
 	foreach Student student : roster.scroll() { // A List is not an iterable object, calling the `scroll` method makes it iterable and allows us to use the foreach loop
@@ -501,8 +501,8 @@ import Student from "./Student"; // Now we can import the Student module.  Note 
 
 fn main() -> int {
 	let roster = vector::<Student>(); // We create a new list of students using the Vector class
-	roster.push_back(Student(1, "John Doe", 90)); // The pushBack method is a way of adding elements to the list
-	roster.push_back(Student(2, "Jane Doe", 80));
+        roster.push_back(new Student(1, "John Doe", 90)); // push_back takes ownership of the object
+        roster.push_back(new Student(2, "Jane Doe", 80)); // ownership also transferred here
 
 	// this is a foreach loop that iterates over an iterable object
 	foreach Student student : roster.scroll() { // A List is not an iterable object, calling the `scroll` method makes it iterable and allows us to use the foreach loop
@@ -586,8 +586,8 @@ class Student {
 		return `Student: {my.name} id: {my.id} average: {my.average}`;
 	};
 
-    fn addAssignment(Assignment assignment) -> void {
-        my.assignments.push_back(assignment);
+    fn addAssignment(Assignment &&assignment) -> void {
+        my.assignments.push_back($assignment); // push_back takes ownership of the assignment
     };
 };
 ```
@@ -601,10 +601,10 @@ mutable int totalPoints = 0; // add this code to the student class
 
 now we can calculate the average by dividing the total by the number of assignments.
 ```js
-    fn addAssignment(Assignment assignment) -> void {
-        my.assignments.push_back(assignment);
+    fn addAssignment(Assignment &&assignment) -> void {
+        my.assignments.push_back($assignment); // transfer ownership of assignment
         my.totalPoints = my.totalPoints + assignment.grade;
-		int count = my.assignments.getCount();
+                int count = my.assignments.count();
         my.average = my.totalPoints / count;
     };
 ```
@@ -624,11 +624,11 @@ import Student from "./Student";
 import Assignment from "./Assignment";
 
 fn main() -> int {
-	let s = new Student(1, "John Doe", 0);
-	s.addAssignment(Assignment("Math Homework", 95));
-	s.addAssignment(Assignment("Science Project", 88));
-	s.printInfo();
-	return 0;
+        let s = new Student(1, "John Doe", 0);
+        s.addAssignment(Assignment("Math Homework", 95)); // Assignment(...) returns an owned value
+        s.addAssignment(Assignment("Science Project", 88)); // ownership moves into addAssignment
+        s.printInfo();
+        return 0;
 };
 ```
 
@@ -667,10 +667,10 @@ class Student {
 		return `Student: {my.name} id: {my.id} average: {my.average}`;
 	};
 
-    fn addAssignment(Assignment assignment) -> void {
-        my.assignments.push_back(assignment);
-                my.totalPoints = my.totalPoints + assignment.grade;
-		int count = my.assignments.count();
+    fn addAssignment(Assignment &&assignment) -> void {
+        my.assignments.push_back($assignment); // move assignment into vector
+        my.totalPoints = my.totalPoints + assignment.grade;
+                int count = my.assignments.count();
         my.average = my.totalPoints / count;
     };
 };
@@ -764,9 +764,9 @@ Now we need to create a function to add a student to the roster.  The function w
 ```js
 // This is a function to add a student to the list.
 fn addStudent(vector::<Student> roster) -> void {
-	let name = str.readString("Enter student name: ");
-	let id = roster.count() + 1;
-	roster.push_back(Student(id, name, 0));
+        let name = str.readString("Enter student name: ");
+        let id = roster.count() + 1;
+        roster.push_back(new Student(id, name, 0)); // roster now owns the new student
 };
 ```
 
@@ -822,13 +822,13 @@ fn addGrade(vector::<Student> roster) -> bool {
 
 	let assignmentName = str.readString("Enter assignment name: ");
 	let grade = str.readString("Enter assignment grade: ");
-	match grade.toInt() {
-		Ok(g) => {
-			let assignment = new Assignment(assignmentName, g);
-			student.addAssignment(assignment);
-			roster.set(roster.set(student.id - 1, student)); // Update the student in the roster
-			return true;
-		},
+        match grade.toInt() {
+                Ok(g) => {
+                        let assignment = new Assignment(assignmentName, g); // 'new' returns an owned assignment
+                        student.addAssignment($assignment); // transfer ownership to the student's vector
+                        roster.set(student.id - 1, $student); // set takes ownership of the updated student
+                return true;
+                },
 		Err => {
 			str.print("Invalid grade. Please enter a valid integer.\n");
 			return false;
@@ -887,9 +887,9 @@ import Student from "./Student";
 import Assignment from "./Assignment";
 
 fn addStudent(vector::<Student> roster) -> void {
-	let name = str.readString("Enter student name: ");
-	let id = roster.count() + 1;
-	roster.push_back(Student(id, name, 0));
+        let name = str.readString("Enter student name: ");
+        let id = roster.count() + 1;
+        roster.push_back(new Student(id, name, 0)); // push_back takes ownership of the new student
 };
 
 fn addGrade(vector::<Student> roster) -> bool {
@@ -917,12 +917,12 @@ fn addGrade(vector::<Student> roster) -> bool {
 
 	let assignmentName = str.readString("Enter assignment name: ");
 	let grade = str.readString("Enter assignment grade: ");
-	match grade.toInt() {
-		Ok(g) => {
-			let assignment = new Assignment(assignmentName, g);
-			student.addAssignment(assignment);
-			return true;
-		},
+        match grade.toInt() {
+                Ok(g) => {
+                        let assignment = new Assignment(assignmentName, g); // owned assignment
+                        student.addAssignment($assignment); // ownership is moved to the student
+                        return true;
+                },
 		Err => {
 			str.print("Invalid grade. Please enter a valid integer.\n");
 			return false;
@@ -1044,12 +1044,12 @@ fn addGrade(vector::<Student> roster) -> bool! {
 		None => return res.reject::<bool>(new Error(`Student with id {id} not found.`)) // for reject, we have to tell it what it could have been
 	};
 
-	let assignmentName = str.readString("Enter assignment name: ");
-	let grade = str.readString("Enter assignment grade: ");
-	let assignment = new Assignment(assignmentName, grade.toInt()!);
-	student.addAssignment(assignment);
-	roster.set(roster.set(student.id - 1, student));
-	return true;
+        let assignmentName = str.readString("Enter assignment name: ");
+        let grade = str.readString("Enter assignment grade: ");
+       let assignment = new Assignment(assignmentName, grade.toInt()!); // owned assignment object
+       student.addAssignment($assignment); // move assignment into the student
+       roster.set(student.id - 1, $student); // transfer ownership to the roster
+       return true;
 };
 ```
 
