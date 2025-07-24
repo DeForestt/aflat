@@ -104,7 +104,7 @@ class JSONObject {
 
     JSONObject addObject(const string key, const JSONObject value) {
         const let __prop = new JSONProperty(
-            [const JSONObject __context, const JSONObject val] => {
+            [const JSONObject __context, const JSONObject &&val] => {
                 return val;
             },
             my,
@@ -118,7 +118,7 @@ class JSONObject {
 
     JSONObject addList(const string key, const List value) {
         const let __prop = new JSONProperty(
-            [const JSONObject __context, const List val] => {
+            [const JSONObject __context, const List &&val] => {
                 return val;
             },
             my,

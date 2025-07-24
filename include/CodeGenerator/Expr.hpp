@@ -11,6 +11,7 @@ class Expr {
   std::string type = "";
   asmc::Size size;
   bool passable = true;
+  bool owned = false;
   Expr() = default;
 };
 }  // namespace gen

@@ -3,6 +3,7 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
+#include "Parser/Parser.hpp"
 
 namespace ast {
 
@@ -464,6 +465,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     ast::Expr *arg = this->Args.shift();
     // check if the argument is a reference
     std::string typeHint = "";
+    bool rValue = false;
     if (checkArgs) {
       auto var = dynamic_cast<ast::Var *>(arg);
       if (var != nullptr) {
@@ -518,9 +520,10 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         arg = toReg;
       }
       if (func->argTypes.at(i).isRvalue) {
+        rValue = true;
         // make sure that its not a var
         auto var = dynamic_cast<ast::Var *>(arg);
-        if (var != nullptr) {
+        if (var != nullptr && var->Ident != "NULL") {
           generator.alert("Attempted to pass an lvalue (" + var->Ident +
                           ") to an rvalue");
         }
@@ -535,6 +538,19 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     if (!exp.passable)
       generator.alert("Cannot pass an lvalue of safe type " + exp.type +
                       " to a function");
+    if (!exp.owned && rValue) {
+      if (parse::PRIMITIVE_TYPES.find(exp.type) ==
+          parse::PRIMITIVE_TYPES.end()) {
+        generator.alert("Attempted to pass an unowned rvalue of type `" +
+                        exp.type +
+                        "` to a function argument that expects to take "
+                        "ownership.  Consider using the sell operator `$`" +
+                        " or ensure that the value is dynamically allocated "
+                        "(statically allocated references ar considered to be "
+                        "borrowed from the stack)");
+      }
+    }
+
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
         generator.logicalLine = arg->logicalLine;

@@ -2,7 +2,6 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
-#include <iostream>
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/GenerationResult.hpp"
@@ -121,6 +120,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.access = afterInit.access;
           output.size = asmc::QWord;
           output.type = cl->Ident;
+          output.owned = false;
         }
       } else {
         alert("Class " + call->ident + " not found", true, __FILE__, __LINE__);
@@ -129,6 +129,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       auto callGen = call->generate(*this);
       OutputFile << callGen.file;
       output = callGen.expr.value();
+      output.owned = true;
       if (size != asmc::AUTO &&
           (output.type == "any" || output.type == "--std--flex--function"))
         output.size = size;
@@ -187,6 +188,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.access = '$' + std::to_string(item->value);
           output.type = en->Ident;
           output.size = asmc::DWord;
+          output.owned = true;
         } else {
           auto cl = dynamic_cast<gen::Class *>(type);
           if (var.modList.trail() == 1 && cl) {
@@ -230,6 +232,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       } else if (var.Ident == "NULL") {
         output.size = asmc::QWord;
         output.access = "$0";
+        output.owned = true;
         output.type = "generic";
       } else if (var.Ident == "**void_type**") {
         output.size = asmc::QWord;
@@ -357,6 +360,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.size = sym.type.size;
         output.op = sym.type.opType;
         output.type = sym.type.typeName;
+        output.owned = sym.owned;
 
         // check if the symbol type is a class
         auto cont = true;
@@ -698,6 +702,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       push2->op = this->registers["%rdx"]->get(asmc::QWord);
       OutputFile.text << push2;
       output.op = asmc::Hard;
+      output.owned = true;
       output.type = "--std--flex--function";
       switch (comp.op) {
         case ast::Plus: {
@@ -1179,6 +1184,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.access = "$" + id;
     output.size = asmc::QWord;
     output.type = typeName;
+    output.owned = true;
   } else if (dynamic_cast<ast::NewExpr *>(expr) != nullptr) {
     ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);
     ast::Function *malloc = this->nameTable["malloc"];
@@ -1262,6 +1268,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       output.size = asmc::QWord;
       output.type = newExpr.type.typeName;
     };
+    output.owned = true;
   } else if (dynamic_cast<ast::ParenExpr *>(expr) != nullptr) {
     ast::ParenExpr parenExpr = *dynamic_cast<ast::ParenExpr *>(expr);
     output = this->GenExpr(parenExpr.expr, OutputFile);

@@ -24,6 +24,7 @@ class Symbol {
   int underscores = 0;
   int refCount = 0;
   int assignCount = 0;
+  bool owned = false;
 };
 
 class Type {

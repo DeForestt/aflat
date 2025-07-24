@@ -122,6 +122,7 @@ gen::GenerationResult const UnionConstructor::generateExpression(
   out.size = asmc::QWord;
   out.type = unionType.typeName;
   out.op = asmc::Hard;
+  out.owned = internalAccess.expr->owned;
 
   return {file, out};
 }

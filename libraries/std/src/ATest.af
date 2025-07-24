@@ -30,7 +30,6 @@ class FixtureStruct {
 			const let foo = my.tearDown;
 			foo(value);
 		};
-		return;
 	};
 
 	fn _call() -> any {

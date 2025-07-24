@@ -197,7 +197,7 @@ export Message readPipe(const Pipe pipe){
     const adr mbody = malloc(mlen);
 
     pipe.read(mbody, mlen);
-    const Message m = Message(mbody);
+    const Message m = new Message(mbody);
     return m;
 };
 

@@ -44,7 +44,7 @@ dynamic safe pedantic class Option {
     };
 
     // returns a value if it exists, otherwise returns a default value
-    public any or(const any defaultValue) {
+    public any or(const any &&defaultValue) {
         if my.hasValue
             return my.value
         else

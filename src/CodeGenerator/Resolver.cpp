@@ -63,16 +63,21 @@ CodeGenerator::resolveSymbol(std::string ident,
   };
 
   bool global = false;
+  bool owned = false;
   Symbol *sym = scope::ScopeManager::getInstance()->get(ident);
   bool readOnly = sym ? sym->readOnly : false;
 
   if (sym == nullptr) {
     sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, ident);
     global = true;
+    owned = true;  // global symbols are corporatly owned
   }
   if (sym == nullptr)
     return std::make_tuple("", Symbol(), false, pops, nullptr);
 
+  if (sym->owned) {
+    owned = true;
+  }
   std::string access = "";
   if (global)
     access = sym->symbol;
@@ -202,6 +207,7 @@ CodeGenerator::resolveSymbol(std::string ident,
     access = '(' + this->registers["%r12"]->get(asmc::QWord) + ')';
     retSym.type = *retSym.type.typeHint;
   };
+  retSym.owned = owned;
   return std::make_tuple(access, retSym, true, pops, modSym);
 }
 

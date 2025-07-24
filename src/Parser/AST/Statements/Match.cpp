@@ -200,6 +200,9 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
 
         auto byteMod = gen::scope::ScopeManager::getInstance()->assign(
             *_case.pattern.veriableName, *type, false, false);
+        auto sym = gen::scope::ScopeManager::getInstance()->get(
+            *_case.pattern.veriableName);
+        sym->owned = exprResult.owned;
 
         if (parse::PRIMITIVE_TYPES.find(type->typeName) !=
             parse::PRIMITIVE_TYPES.end()) {
@@ -273,6 +276,7 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
       .type = returns.typeName,
       .size = returns.size,
       .passable = true,
+      .owned = exprResult.owned,
   };
   generator.matchScope = saveMatchScope;
   return {file, result};

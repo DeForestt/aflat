@@ -1,8 +1,7 @@
 .needs <std>
 .needs <asm>
 
-import ICollection from "Collections";
-import LinkedList, List from "Collections";
+import List from "Collections";
 import result from "Utils/result";
 import {accept, reject, resultWrapper} from "Utils/result" under prod;
 import option from "Utils/option";
