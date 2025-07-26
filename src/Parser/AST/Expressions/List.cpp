@@ -27,6 +27,16 @@ gen::GenerationResult const List::generateExpression(
   asmc::File file;
 
   // get the type of the first item This will be the type of the list
+  if (!typeHint.empty() && typeHint != "let") {
+    // if typeHint is provided, we will use it as the type of the List
+    // The typehint will be vector.typeName we just want the typeName part
+    //
+    if (typeHint.find('.') == std::string::npos) {
+      generator.alert("Vector type hint given: `" + typeHint +
+                      "` is unintelligible for a vector type.");
+    }
+    typeHint = typeHint.substr(typeHint.find('.') + 1);
+  }
   std::string type = typeHint;
 
   if (typeHint.empty() || typeHint == "let") {
