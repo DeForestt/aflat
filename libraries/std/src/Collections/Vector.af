@@ -6,64 +6,72 @@ import option from "Utils/option";
 import Map from "Utils/Map";
 import Iterator from "Collections/Iterator";
 import Scroller from "Collections/Scroller";
-import {Some, None} from "Utils/option" under opt;
+import {Some, None, optionWrapper} from "Utils/option" under opt;
 import result from "Utils/result";
 import {accept, reject, resultWrapper} from "Utils/result" under res;
 
 types(T)
 class vector {
-    private List inner = new List(T, size);
+    private mutable adr head = NULL;
+    private int size = 0;
+    private int count = 0;
     int iteratorIndex = 0;
 
     fn init(*const int size) -> Self {
+        if size == 0 {
+            my.size = 1;
+            my.head = malloc(T * size);
+        };
         return my;
     };
 
     fn push_back(const T &&value) -> Self {
-        my.inner.pushBack(value);
+        if my.count == my.size {
+            my.size = my.size * 2;
+            my.head = realloc(my.head, T * my.size);
+        };
+
+        memcpy(my.head + (my.count * T), value, T);
+        my.count = my.count + 1;
         return my;
     };
 
     fn count() -> int {
-        return my.inner.getCount();
+        return my.count;
     };
 
     fn front() -> option::<T> {
-        if my.inner.getCount() == 0 {
+        if my.count == 0 {
             return opt.None::<T>();
-        }
+        };
+        
         return my.get(0);
     };
 
     fn back() -> option::<T> {
-        if my.inner.getCount() == 0 {
+        if my.count == 0 {
             return opt.None::<T>();
-        }
-        return my.get(my.inner.getCount() - 1);
+        };
+
+        return my.get(my.count - 1);
     };
 
     fn pop_back() -> option::<T> {
-        const let ret = my.inner.popBack();
-        return ret.match({
-            "some": fn (const T value) {
-                return opt.Some::<T>(value);
-            },
-            "none": fn () {
-                return opt.None::<T>();
-            }
-        });
+        if my.count == 0 {
+            return opt.None::<T>();
+        };
+
+        my.count = my.count - 1;
+        const T val = my.head + (my.count * T);
+        return opt.Some::<T>(val);
     };
 
     fn get(const int index) -> option::<T> {
-        const let ret = my.inner.get(index);
-        return ret.match({
-            "ok": fn (const T value) {
-                return opt.Some::<T>(value);
-            },
-            "_": fn () {
-                return opt.None::<T>();
-            }
-        });
+        if index >= my.count | index < 0 {
+            return opt.None::<T>();
+        };
+        const T val = my.head + (index * T);
+        return opt.Some::<T>(val);
     };
 
     fn _call(const int index) -> option::<T> {
@@ -71,40 +79,38 @@ class vector {
     };
 
     fn push_value(const T value) -> Self {
-        my.inner.pushValue(value);
+        if (T > 8) {
+            panic("Cannot push a reference by value");
+        };
+        my.push_back(?value);
         return my;
     };
 
     fn findFirst(const adr predicate, * const adr args) -> option::<T> {
-        const let ret = my.inner.findFirst(predicate, args);
-        return ret.match({
-            "some": fn (const T value) {
-                return opt.Some::<T>(value);
-            },
-            "none": fn () {
-                return opt.None::<T>();
-            }
-        });
+        for int i = 0; i < my.count; i = i + 1 {
+            const any val = my.get(i).expect(`Failed to get value at index {i} from vector`);
+            const bool brk = predicate(val, args);
+            if brk == true {
+                return opt.Some::<T>(val);
+            };
+            return opt.None::<T>();
+        };
     };
 
     fn set(const int index, const T &&value) -> result::<bool> {
-        if index >= my.inner.getCount() {
+        if index >= my.count {
             return res.reject::<bool>(new Error("Index out of bounds"));
-        }
-        my.inner.set(index, value);
+        };
+        memcpy(my.head + (index * T), value, T);
         return res.accept(true);
-    };
-    
-    fn scroll() -> Scroller {
-        return my.inner.scroll();
     };
 
     fn next() -> option::<T> {
         const let val = my.get(my.iteratorIndex);
         my.iteratorIndex = my.iteratorIndex + 1;
-        if my.iteratorIndex > my.inner.getCount() {
+        if my.iteratorIndex > my.count {
             my.iteratorIndex = 0; // Reset iterator index if it exceeds the count
-        }
+        };
         return val;
     };
 
