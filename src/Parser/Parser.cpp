@@ -160,7 +160,7 @@ ast::Statement *parse::Parser::parseStmt(
 
     // Use a set for efficient lookup instead of multiple 'or' checks
     static const std::unordered_set<std::string> modifiers = {
-        "safe", "dynamic", "pedantic", "types"};
+        "safe", "dynamic", "pedantic", "types", "when"};
 
     if (modifiers.count(obj.meta)) {
       while (modifiers.count(obj.meta)) {
@@ -198,8 +198,13 @@ ast::Statement *parse::Parser::parseStmt(
             throw err::Exception("Expected ')' after types on line " +
                                  std::to_string(obj.lineCount));
           }
+        } else if (obj.meta == "when") {
+          auto openParen = dynamic_cast<lex::OpSym *>(tokens.pop());
+          if (!openParen || openParen->Sym != '(') {
+            throw err::Exception("Expected '(' after when on line " +
+                                 std::to_string(obj.lineCount));
+          }
         }
-
         if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
           obj = *dynamic_cast<lex::LObj *>(tokens.peek());
           tokens.pop();
