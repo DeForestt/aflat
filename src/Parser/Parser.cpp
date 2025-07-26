@@ -7,6 +7,7 @@
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/AST/Expressions/Bubble.hpp"
+#include "Parser/AST/Expressions/List.hpp"
 #include "Parser/AST/Statements/Match.hpp"
 #include "Scanner.hpp"
 
@@ -1553,50 +1554,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
   } else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
     auto eq = *dynamic_cast<lex::OpSym *>(tokens.peek());
     if (eq.Sym == '[') {
-      tokens.pop();
-      ast::Lambda *lambda = new ast::Lambda();
-      lambda->function = new ast::Function();
-      lambda->function->req = 0;
-      lambda->function->args = this->parseArgs(
-          tokens, ',', ']', lambda->function->argTypes, lambda->function->req,
-          lambda->function->mutability, lambda->function->optConvertionIndices,
-          lambda->function->readOnly);
-
-      lambda->logicalLine = eq.lineCount;
-      if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Need an => to start lambda not a symbol");
-      if ((dynamic_cast<lex::OpSym *>(tokens.pop())->Sym != '='))
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Need an => to start lambda");
-
-      if (dynamic_cast<lex::Symbol *>(tokens.peek()) == nullptr)
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Need an => to start lambda not a symbol");
-      if ((dynamic_cast<lex::Symbol *>(tokens.pop())->meta != ">"))
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " GOT: " + dynamic_cast<lex::OpSym *>(tokens.pop())->Sym +
-            " Need an => to start lambda");
-
-      if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-          dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '{') {
-        tokens.pop();
-        lambda->function->statement = this->parseStmt(tokens);
-      } else
-        lambda->function->statement = this->parseStmt(tokens, true);
-
-      ast::Type Adr = ast::Type();
-      Adr.typeName = "any";
-      Adr.opType = asmc::Hard;
-      Adr.size = asmc::QWord;
-      lambda->function->type = Adr;
-      lambda->function->autoType = true;
-
-      output = lambda;
+      output = new ast::List(tokens, *this);
     } else if (eq.Sym == '(') {
       tokens.pop();
       auto paren = new ast::ParenExpr();
