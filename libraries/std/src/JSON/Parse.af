@@ -80,7 +80,7 @@ export List getList(const string key, const string json) {
     mutable string listBuffer = new string("");
     const List ret = new List(string);
     
-    const let flush = [mutable string s] => {
+    const let flush = fn (mutable string s) {
         if s.len() > 0
             s = "";
     };
