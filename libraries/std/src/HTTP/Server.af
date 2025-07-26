@@ -40,7 +40,7 @@ class Server {
 
     void listen() {
         str.print(`listening on port: {my.port}\n`);
-        serve(my.port, [const adr msg, const Server self] => {
+        serve(my.port, fn (const adr msg, const Server self) {
             const HTTPMessage msg = new HTTPMessage(msg, true);
             const string method = http.methodToString(msg.method);
             const string endpoint = msg.endpoint;
@@ -76,12 +76,12 @@ class Server {
                     };
 
                     HTTPResponse r = response.match({
-                        "ok": [const HTTPResponse &&res] => return res,
-                        "NotFoundError": [const NotFoundError err] => return new HTTPResponse(err.render().cstr(), "404", "Not Found"),
-                        "ForbiddenError": [const ForbiddenError err] => return new HTTPResponse(err.render().cstr(), "403", "Forbidden"),
-                        "BadRequestError": [const BadRequestError err] => return new HTTPResponse(err.render().cstr(), "400", "Bad Request"),
-                        "NotImplementedError": [const NotImplementedError err] => return new HTTPResponse(err.render().cstr(), "501", "Not Implemented"),
-                        "_": [const Error err] => {
+                        "ok": fn (const HTTPResponse &&res) return res,
+                        "NotFoundError": fn (const NotFoundError err) return new HTTPResponse(err.render().cstr(), "404", "Not Found"),
+                        "ForbiddenError": fn (const ForbiddenError err) return new HTTPResponse(err.render().cstr(), "403", "Forbidden"),
+                        "BadRequestError": fn (const BadRequestError err) return new HTTPResponse(err.render().cstr(), "400", "Bad Request"),
+                        "NotImplementedError": fn (const NotImplementedError err) return new HTTPResponse(err.render().cstr(), "501", "Not Implemented"),
+                        "_": fn (const Error err) {
                             const let val = err.render();
                             return new HTTPResponse(val.cstr(), "500", "Internal Server Error");
                         }

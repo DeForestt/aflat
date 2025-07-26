@@ -67,10 +67,10 @@ transform observable
 ~
 ${scope} ${mut} ${type} __${ident} = ${expr};
 fn ${ident}() -> Map : Property {{
-	"get": [const ${Self} this] => {
+	"get": fn (const ${Self} this) {
 		return this.__${ident};
 	},
-	"set": [const ${Self} this, const ${type} x] => {
+	"set": fn (const ${Self} this, const ${type} x) {
 		this.__${ident} = x;
 		return;
 	}
@@ -81,10 +81,10 @@ transform readonly
 ~
 private mutable ${type} __${ident} = ${expr};
 fn ${ident}() -> Map : Property {{
-    "get": [const ${Self} this] => {
+    "get": fn (const ${Self} this) {
         return this.__${ident};
     },
-    "set": [] => {
+    "set": fn () {
         panic("Cannot set readonly property");
         return;
     }
@@ -94,10 +94,10 @@ fn ${ident}() -> Map : Property {{
 transform computed 
 ~
 fn ${ident}() -> adr : Property {{
-    "get": [const ${Self} my] => {
+    "get": fn (const ${Self} my) {
         return ${expr};
     },
-    "set": [] => {
+    "set": fn () {
         panic("Cannot set computed property");
         return;
     }
@@ -108,13 +108,13 @@ transform lazy
 ~
 private mutable ${type} __${ident} = NULL;
 fn ${ident}() -> Map : Property {{
-    "get": [const ${Self} this] => {
+    "get": fn (const ${Self} this) {
         if (this.__${ident} == NULL) {
             this.__${ident} = ${expr};
         }
         return this.__${ident};
     },
-    "set": [] => {
+    "set": fn () {
         panic("Cannot set lazy property");
         return;
     }
@@ -144,10 +144,10 @@ transform clamped
 ~
 ${scope} ${mut} ${type} __${ident} = ${expr}; // default value
 fn ${ident}() -> Map : Property {{
-    "get": [const ${Self} this] => {
+    "get": fn (const ${Self} this) {
         return this.__${ident};
     },
-    "set": [const ${Self} this, const ${type} x] => {
+    "set": fn (const ${Self} this, const ${type} x) {
         if x < ${min} {
             this.__${ident} = ${min};
         } else if x > ${max} {

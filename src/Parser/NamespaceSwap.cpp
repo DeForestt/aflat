@@ -1,5 +1,3 @@
-#include <optional>
-
 #include "LinkedList.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/AST/Statements.hpp"
@@ -133,9 +131,9 @@ void Statement::namespaceSwap(
     return;
   }
   if (auto foreach = dynamic_cast<ForEach *>(this)) {
-    if (foreach->lambda)
+    if (foreach->implementation)
       foreach
-        ->lambda->namespaceSwap(map);
+        ->implementation->namespaceSwap(map);
     if (foreach->iterator)
       foreach
         ->iterator->namespaceSwap(map);

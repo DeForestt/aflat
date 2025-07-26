@@ -28,7 +28,7 @@ class Enumerator signs Iterator {
         my.index = my.index + 1;
         const let val = my.iterator.next();
         if val.hasError() return val;
-        const any val = val.value([] => panic("Iterator returned empty value"));
+        const any val = val.value(fn () panic("Iterator returned empty value"));
         const let map = {
             "value": val,
             "index": i

@@ -74,28 +74,28 @@ class JSONObject {
     
     JSONObject addInt(const string key, const int value) {
         const let __prop = new JSONProperty(
-            [const JSONObject __context, const int val] => {
+            fn (const JSONObject __context, const int val) {
                 return val;
             },
             my,
             key,
             JSONType.Int
         );
-        const JSONProperty prop = my.properties.back().orElse([] => panic("No properties found when adding int to JSONObject"));
+        const JSONProperty prop = my.properties.back().orElse(fn () panic("No properties found when adding int to JSONObject"));
         const prop = value;
         return my;
     };
 
     JSONObject addString(const string key, const string value) {
         const let __prop = new JSONProperty(
-            [const JSONObject __context, const adr val] => {
+            fn (const JSONObject __context, const adr val) {
                 return val;
             },
             my,
             key,
             JSONType.String
         );
-        const JSONProperty prop = my.properties.back().orElse([] => panic("No properties found when adding string to JSONObject"));
+        const JSONProperty prop = my.properties.back().orElse(fn () panic("No properties found when adding string to JSONObject"));
         const let pointer = malloc(value.len() + 1);
         value.copyTo(pointer);
         prop = value.copy();
@@ -104,41 +104,41 @@ class JSONObject {
 
     JSONObject addObject(const string key, const JSONObject value) {
         const let __prop = new JSONProperty(
-            [const JSONObject __context, const JSONObject &&val] => {
+            fn (const JSONObject __context, const JSONObject &&val) {
                 return val;
             },
             my,
             key,
             JSONType.Object
         );
-        const JSONProperty prop = my.properties.back().orElse([] => panic("No properties found when adding object to JSONObject"));
+        const JSONProperty prop = my.properties.back().orElse(fn () panic("No properties found when adding object to JSONObject"));
         prop = value;
         return my;
     };
 
     JSONObject addList(const string key, const List value) {
         const let __prop = new JSONProperty(
-            [const JSONObject __context, const List &&val] => {
+            fn (const JSONObject __context, const List &&val) {
                 return val;
             },
             my,
             key,
             JSONType.List
         );
-        const JSONProperty prop = my.properties.back().orElse([] => panic("No properties found when adding list to JSONObject"));
+        const JSONProperty prop = my.properties.back().orElse(fn () panic("No properties found when adding list to JSONObject"));
         prop = value;
     };
 
     JSONObject addBool(const string key, const bool val) {
         const let __prop = new JSONProperty(
-            [const JSONObject __context, const bool arg] => {
+            fn (const JSONObject __context, const bool arg) {
                 return arg;
             },
             my,
             key,
             JSONType.Boolean
         );
-        const JSONProperty prop = my.properties.back().orElse([] => panic("No properties found when adding bool to JSONObject"));
+        const JSONProperty prop = my.properties.back().orElse(fn () panic("No properties found when adding bool to JSONObject"));
         const prop = val;
     };
 

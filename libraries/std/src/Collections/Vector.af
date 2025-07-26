@@ -13,6 +13,7 @@ import {accept, reject, resultWrapper} from "Utils/result" under res;
 types(T)
 class vector {
     private List inner = new List(T, size);
+    int iteratorIndex = 0;
 
     fn init(*const int size) -> Self {
         return my;
@@ -20,7 +21,6 @@ class vector {
 
     fn push_back(const T &&value) -> Self {
         my.inner.pushBack(value);
-        delete value;
         return my;
     };
 
@@ -78,11 +78,21 @@ class vector {
             return res.reject::<bool>(new Error("Index out of bounds"));
         }
         my.inner.set(index, value);
-        delete value;
         return res.accept(true);
     };
     
     fn scroll() -> Scroller {
         return my.inner.scroll();
+    };
+
+    fn next() -> option::<T> {
+        const let val = my.get(my.iteratorIndex);
+        my.iteratorIndex = my.iteratorIndex + 1;
+        return val;
+    };
+
+    fn reset() -> Self {
+        my.iteratorIndex = 0;
+        return my;
     };
 };

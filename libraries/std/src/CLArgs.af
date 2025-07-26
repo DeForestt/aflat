@@ -55,7 +55,7 @@ class ArgsList {
             const string arg = args[i];
             if (arg.at(0) == '-') {
                 const let subArg = arg.subString(1, arg.len());
-                if (tags.findFirst([const string s, const string y] => return s == y, subArg) != NULL) {
+                if (tags.findFirst(fn (const string s, const string y) return s == y, subArg) != NULL) {
 
                     if (i + 1 < argc) {
                         const string val = args[i + 1];
@@ -79,20 +79,20 @@ class ArgsList {
     };
 
     Result getArg(const string name) {
-        return my.args.findFirst([const Arg a, const string n] => return a.name == n, name).resolve(
-            [const Arg a] => return pt.accept(a),
-            [] => return pt.reject(new ArgparseError("Arg does not exist"))
+        return my.args.findFirst(fn (const Arg a, const string n) return a.name == n, name).resolve(
+            fn (const Arg a) return pt.accept(a),
+            fn() return pt.reject(new ArgparseError("Arg does not exist"))
         );
     };
 
     bool has(const string name) {
-        return my.getArg(name).value([] => return false);
+        return my.getArg(name).value(fn () return false);
     };
 
     Result getTagLessArg(const int index) {
         return my.tagLessArgs.get(index).resolve(
-            [const string a] => return pt.accept(a),
-            [const string e] => return pt.reject(new ArgparseError("Arg does not exist"))
+            fn (const string a) return pt.accept(a),
+            fn (const string e) return pt.reject(new ArgparseError("Arg does not exist"))
         );
     };
 };

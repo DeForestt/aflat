@@ -38,8 +38,8 @@ dynamic safe pedantic class Option {
     // match function is the new canonical way to work with an Option it will use a named match rather than 2 anonymous functions
     public any match(const Map cases, *const any arg, *const any arg2) {
         const let some_none = if my.hasValue "some" else "none";
-        const adr foo = cases(some_none).orElse([] => panic("un-handled option case"));
-        return if my.hasValue foo(my.value, arg, arg2) else  
+        const adr foo = cases(some_none).orElse(fn () panic("un-handled option case"));
+        return if my.hasValue foo(my.value, arg, arg2) else
         foo(arg, arg2);
     };
 

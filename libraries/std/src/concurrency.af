@@ -103,7 +103,7 @@ safe dynamic pedantic class AsyncResult{
     public int timeout(const int time, *const int nano) {
         // create a new process that waits for time and then kills the process
 
-        const Process timeout = Process([const adr args]=>{
+        const Process timeout = Process(fn (const adr args) {
             const int[3] arg = args;
             sleep(arg[0], arg[1]);        
             if sys_kill(arg[2], 2) == 0 {
@@ -253,7 +253,7 @@ export int wait(const Thread p){
 
 // Start a function as a concurrent process
 export AsyncResult worker(const adr foo, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
-    const MProcess p = new MProcess([const WorkArgs args, const Pipe __inbox, const Pipe outbox] => {
+    const MProcess p = new MProcess(fn (const WorkArgs args, const Pipe __inbox, const Pipe outbox) {
         const adr res = args.run();
         const Message msg = new Message(res);
         msg.writePipe(outbox);
@@ -265,7 +265,7 @@ export AsyncResult worker(const adr foo, *const any arg1, *const any arg2, *cons
 };
 
 export AsyncResult do(const Function foo) {
-    const MProcess p = new MProcess([const Function func, const Pipe __inbox, const Pipe outbox] => {
+    const MProcess p = new MProcess(fn (const Function func, const Pipe __inbox, const Pipe outbox) {
         const adr res = func();
         const Message msg = new Message(res);
         msg.writePipe(outbox);

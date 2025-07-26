@@ -67,7 +67,7 @@ dynamic safe pedantic class Result {
 		if my.success {
 			if cases.has("ok") {
 				const adr foo = cases.get("ok").orElse(
-					[] => panic("No case for ok")
+					fn () panic("No case for ok")
 				);
 				return foo(my.value, arg1, arg2, arg3, arg4);
 			} else {
