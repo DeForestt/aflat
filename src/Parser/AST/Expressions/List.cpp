@@ -1,7 +1,5 @@
 #include "Parser/AST/Expressions/List.hpp"
 
-#include <iostream>
-
 #include "ASM.hpp"
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "Parser/AST.hpp"
@@ -28,12 +26,20 @@ gen::GenerationResult const List::generateExpression(
     gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
   asmc::File file;
 
-  auto firstItem = this->items.front();
   // get the type of the first item This will be the type of the list
-  asmc::File junckFile;
-  auto typeCheck = generator.GenExpr(firstItem, junckFile, size, typeHint);
+  std::string type = typeHint;
 
-  auto type = typeCheck.type;
+  if (typeHint.empty() || typeHint == "let") {
+    if (this->items.empty()) {
+      generator.alert(
+          "List is empty, cannot determine the type of an empty list, please "
+          "provide an explicit type.");
+    }
+    auto firstItem = this->items.front();
+    asmc::File junckFile;
+    auto typeCheck = generator.GenExpr(firstItem, junckFile, size, typeHint);
+    type = typeCheck.type;
+  };
 
   auto newExpr = new ast::NewExpr();
   newExpr->type.typeName = "vector";
