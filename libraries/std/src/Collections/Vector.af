@@ -28,6 +28,20 @@ class vector {
         return my.inner.getCount();
     };
 
+    fn front() -> option::<T> {
+        if my.inner.getCount() == 0 {
+            return opt.None::<T>();
+        }
+        return my.get(0);
+    };
+
+    fn back() -> option::<T> {
+        if my.inner.getCount() == 0 {
+            return opt.None::<T>();
+        }
+        return my.get(my.inner.getCount() - 1);
+    };
+
     fn pop_back() -> option::<T> {
         const let ret = my.inner.popBack();
         return ret.match({
@@ -88,6 +102,9 @@ class vector {
     fn next() -> option::<T> {
         const let val = my.get(my.iteratorIndex);
         my.iteratorIndex = my.iteratorIndex + 1;
+        if my.iteratorIndex > my.inner.getCount() {
+            my.iteratorIndex = 0; // Reset iterator index if it exceeds the count
+        }
         return val;
     };
 
