@@ -78,7 +78,6 @@ class vector {
             return res.reject::<bool>(new Error("Index out of bounds"));
         }
         my.inner.set(index, value);
-        delete value;
         return res.accept(true);
     };
     
