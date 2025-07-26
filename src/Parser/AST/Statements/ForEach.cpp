@@ -1,91 +1,105 @@
 #include "Parser/AST/Statements/ForEach.hpp"
 
+#include <unistd.h>
+
+#include <optional>
+#include <string>
+
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "Exceptions.hpp"
+#include "Parser/AST.hpp"
+#include "Parser/AST/Statements/DecAssign.hpp"
+#include "Scanner.hpp"
 
 namespace ast {
 ForEach::ForEach(links::LinkedList<lex::Token *> &tokens,
                  parse::Parser &parser) {
-  this->lambda = new Lambda();
-  this->lambda->function = new Function();
-  this->lambda->function->args = parser.parseArgs(
-      tokens, ',', ':', this->lambda->function->argTypes,
-      this->lambda->function->req, this->lambda->function->mutability,
-      this->lambda->function->optConvertionIndices, lambda->function->readOnly,
-      true);
+  auto identifier = dynamic_cast<lex::LObj *>(tokens.pop());
+  if (identifier == nullptr) {
+    throw err::Exception("Expected an identifier for the forEach loop");
+  }
 
-  auto decscope = new Declare("*scope", ast::Public, "typeOf", false,
-                              *parser.typeList["typeOf"], "state",
-                              links::LinkedList<std::string>());
-  auto sequence2 = new Sequence();
-  sequence2->Statement1 = this->lambda->function->args;
-  sequence2->Statement2 = decscope;
-  this->lambda->function->args = sequence2;
-  this->lambda->function->argTypes.push_back(decscope->type);
-  this->lambda->function->req++;
+  this->binding_identifier = identifier->meta;
 
-  this->lambda->function->args->logicalLine = tokens.peek()->lineCount;
-
+  auto in = dynamic_cast<lex::LObj *>(tokens.pop());
+  if (in == nullptr || in->meta != "in") {
+    throw err::Exception("Expected 'in' keyword in forEach loop");
+  }
   this->iterator = parser.parseExpr(tokens);
-  this->iterator->logicalLine = tokens.peek()->lineCount;
+  if (this->iterator == nullptr) {
+    throw err::Exception("Expected an expression for the iterator in forEach");
+  }
 
-  auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
-  if (sym && sym->Sym == '{') {
-    tokens.pop();
-    this->lambda->function->statement = parser.parseStmt(tokens);
-    this->lambda->function->statement->logicalLine = tokens.peek()->lineCount;
+  auto openCurly = dynamic_cast<lex::OpSym *>(tokens.peek());
+  if (openCurly && openCurly->Sym == '{') {
+    tokens.pop();  // Remove the '{'
+    this->implementation = parser.parseStmt(tokens);
   } else {
-    this->lambda->function->statement = parser.parseStmt(tokens, true);
-    this->lambda->function->statement->logicalLine = tokens.peek()->lineCount;
+    this->implementation = parser.parseStmt(tokens, true);
   }
 }
 
 gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
-  if (generator.nameTable["_fEachOr"] == nullptr)
-    generator.alert(
-        "Please include the standard library to use the forEach function\n\n"
-        ".needs <std> \n\n");
+  asmc::File file;
+  gen::scope::ScopeManager::getInstance()->pushScope(true);
+  generator.logicalLine = this->logicalLine;
 
-  auto dumbyGen = asmc::File();
-  auto expr = generator.GenExpr(this->iterator, dumbyGen);
-  ast::Type iteratorType = ast::Type("Iterator", asmc::QWord);
-  generator.canAssign(iteratorType, expr.type,
-                      "Can only iterate over {}, {} not allowed");
-  auto call = new Call();
-  // the __fEachOr should be defined in the standard library this is the
-  // obviscated name for the forEach function
-  auto type = ast::Type("typeOf", asmc::QWord);
-  type.isGeneric = true;
-  type.opType = asmc::Hard;
+  auto decl = new ast::DecAssign();
+  decl->logicalLine = this->logicalLine;
+  decl->declare = new ast::Declare();
+  decl->declare->logicalLine = this->logicalLine;
+  decl->declare->ident = "_foreach_" + std::to_string(generator.tempCount++);
+  decl->declare->type.typeName = "let";
+  decl->mute = false;
+  decl->declare->mut = false;
+  decl->expr = this->iterator;
 
-  auto state = new ast::Var();
-  auto decAssign = new DecAssign();
-  decAssign->declare = new Declare();
-  state->Ident = "state";
-  call->ident = "_fEachOr";
-  call->Args.push(this->iterator);
-  call->Args.push(this->lambda);
-  call->Args.push(state);
+  file << decl->generate(generator).file;
 
-  auto deconstruct = new Destructure();
-  deconstruct->mute = true;
-  deconstruct->logicalLine = this->logicalLine;
-  auto var = new Var();
-  var->Ident = "*scope";
-  deconstruct->expr = var;
-  auto inScope = gen::scope::ScopeManager::getInstance()->getScope(true);
+  // create the while loop
 
-  for (auto sym : inScope) {
-    if (sym.underscores == 0) {
-      deconstruct->identifiers.push_back(sym.symbol);
-    }
-  }
+  auto whileLoop = new ast::While();
+  whileLoop->logicalLine = this->logicalLine;
+  auto trueVar = new ast::Var();
+  trueVar->logicalLine = this->logicalLine;
+  trueVar->Ident = "true";
+  whileLoop->expr = trueVar;
 
-  auto sequence = new Sequence();
-  sequence->Statement1 = deconstruct;
-  sequence->Statement2 = this->lambda->function->statement;
-  this->lambda->function->statement = sequence;
+  // We need a match statement to make up the body of the while loop
 
-  return call->generate(generator);
+  // Create the call for the nextDecl
+  auto nextCall = new ast::Call();
+  nextCall->logicalLine = this->logicalLine;
+  nextCall->ident = decl->declare->ident;
+  nextCall->modList << "next";
+
+  auto nextCallExpr = new ast::CallExpr();
+  nextCallExpr->logicalLine = this->logicalLine;
+  nextCallExpr->call = nextCall;
+
+  // Create the match Statement
+  auto match = new ast::Match();
+  match->logicalLine = this->logicalLine;
+  match->expr = nextCallExpr;
+
+  auto somePattern = ast::Match::Pattern("Some", this->binding_identifier);
+  auto someCase = ast::Match::Case(somePattern, this->implementation);
+
+  match->cases.push_back(someCase);
+  auto nonePattern = ast::Match::Pattern("None", std::nullopt);
+  auto noneCase = ast::Match::Case(nonePattern, new ast::Break());
+  match->cases.push_back(noneCase);
+
+  whileLoop->stmt = match;
+  file << whileLoop->generate(generator).file;
+
+  gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+
+  return {
+      .file = file,
+      .expr = std::nullopt,
+  };
 }
+
 }  // namespace ast

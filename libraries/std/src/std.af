@@ -266,16 +266,6 @@ adr create(const int size, * const any value) {
     return ptr;
 };
 
-void _fEachOr(const Iterator iterator, const void<any, *any> callback, *const any args) {
-    while true {
-        const Result result = iterator.next();
-        if result.hasError()
-            break;
-
-        callback(result.value([] => panic("Failed to resolve")), args);
-    };
-};
-
 /*
  * _toOption utility function to convert a value to an Option
  */

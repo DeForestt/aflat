@@ -191,9 +191,9 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
     return;
   }
   if (auto foreach = dynamic_cast<ForEach *>(this)) {
-    if (foreach->lambda)
+    if (foreach->implementation)
       foreach
-        ->lambda->replaceTypes(map);
+        ->implementation->replaceTypes(map);
     if (foreach->iterator)
       foreach
         ->iterator->replaceTypes(map);

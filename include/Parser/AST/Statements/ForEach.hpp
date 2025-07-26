@@ -10,7 +10,8 @@ namespace ast {
  */
 class ForEach : public Statement {
  public:
-  Lambda *lambda;
+  Statement *implementation = nullptr;
+  std::string binding_identifier;
   Expr *iterator;
   ForEach() = default;
   ForEach(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);

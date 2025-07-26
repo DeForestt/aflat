@@ -14,9 +14,10 @@ class Observable {
 	};
 
 	private fn notify(const any event) -> void {
-		foreach const Function f : my.subscribers.scroll() {
+		for int i = 0; i < my.subscribers.getCount(); i++ {
+			const Function f = my.subscribers.get(i).expect("Expected Function in Observable subscribers list");
 			f(event);
-		};
+		}
 		return;
 	};
 
