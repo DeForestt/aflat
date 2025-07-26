@@ -21,7 +21,6 @@ class vector {
 
     fn push_back(const T &&value) -> Self {
         my.inner.pushBack(value);
-        delete value;
         return my;
     };
 
