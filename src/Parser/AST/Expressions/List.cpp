@@ -27,8 +27,6 @@ List::List(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 gen::GenerationResult const List::generateExpression(
     gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
   asmc::File file;
-  std::cout << "Generating List Expression with " << this->items.size()
-            << " items" << std::endl;
 
   auto firstItem = this->items.front();
   // get the type of the first item This will be the type of the list
