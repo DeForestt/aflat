@@ -486,6 +486,8 @@ ast::Statement *parse::Parser::parseStmt(
             output =
                 new ast::Function(ident.meta, scope, type, overload, scopeName,
                                   tokens, *this, optional, safeType);
+            output->logicalLine = obj.lineCount;
+            output->when = whenClause;
           } else if (sym.Sym == '=') {
             tokens.pop();
             auto decl = new ast::Declare(ident.meta, scope, obj.meta, isMutable,
@@ -559,6 +561,7 @@ ast::Statement *parse::Parser::parseStmt(
       output = ret;
     } else if (obj.meta == "fn") {
       output = new ast::Function(scope, tokens, typeNames, *this, safeType);
+      output->when = whenClause;
     } else if (obj.meta == "match") {
       output = new ast::Match(tokens, *this);
     } else if (obj.meta == "push") {
@@ -616,6 +619,8 @@ ast::Statement *parse::Parser::parseStmt(
           " floating else, may have an extra semicolon before the else");
     } else {
       auto genericTypes = this->parseTemplateTypeList(tokens, obj.lineCount);
+
+      output->when = whenClause;
 
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
         auto sym = *dynamic_cast<lex::OpSym *>(tokens.pop());
