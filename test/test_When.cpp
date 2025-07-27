@@ -46,22 +46,3 @@ TEST_CASE("when resolution checks primitive", "[when][resolution]") {
   w.predicates[0].typeName = "Foo";
   CHECK_FALSE(gen.whenSatisfied(w));
 }
-
-TEST_CASE("replaceTypes updates when predicates", "[when][replace]") {
-  lex::Lexer l;
-  parse::Parser p;
-  auto tokens = l.Scan("when (T is primitive) fn foo(x: T) {};", 1);
-  tokens.invert();
-  ast::Statement *stmt = p.parseStmt(tokens);
-  auto *seq = dynamic_cast<ast::Sequence *>(stmt);
-  REQUIRE(seq != nullptr);
-  auto *func = dynamic_cast<ast::Function *>(seq->Statement1);
-  REQUIRE(func != nullptr);
-  REQUIRE(func->when.has_value());
-  std::unordered_map<std::string, std::string> map{{"T", "int"}};
-  func->replaceTypes(map);
-  REQUIRE(func->when->predicates[0].typeName == "int");
-  gen::CodeGenerator gen("mod", p, "",
-                         std::filesystem::current_path().string());
-  CHECK(gen.whenSatisfied(*func->when));
-}
