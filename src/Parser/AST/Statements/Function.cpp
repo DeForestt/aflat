@@ -177,7 +177,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
   if (this->genericTypes.size() > 0) {
     generator.genericFunctions << *this;
     return {asmc::File(), std::nullopt};
-  };
+  }
 
   bool hidden = false;
   asmc::File file;

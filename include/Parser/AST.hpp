@@ -51,6 +51,7 @@ class WhenPredicat {
 };
 
 class When {
+ public:
   std::vector<WhenPredicat> predicates;
 };
 
@@ -152,7 +153,7 @@ class Type {
 
   Type() = default;
   Type(const std::string &typeName, const asmc::Size &size)
-      : typeName(typeName), size(size){};
+      : typeName(typeName), size(size) {};
 };
 
 class Arg {

@@ -73,6 +73,7 @@ class Function : public Member, public Statement {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;
     this->hidden = Other.hidden;
+    this->when = Other.when;
   }
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   gen::Expr toExpr(gen::CodeGenerator &generator);

@@ -459,3 +459,31 @@ asmc::File gen::CodeGenerator::setOffset(std::string to, int offset,
 
   return file;
 }
+
+bool gen::CodeGenerator::whenSatisfied(const ast::When &when) {
+  for (const auto &pred : when.predicates) {
+    if (pred.op == ast::WhenOperator::IS && pred.ident == "primitive") {
+      bool isPrim = parse::PRIMITIVE_TYPES.find(pred.typeName) !=
+                    parse::PRIMITIVE_TYPES.end();
+      if (!pred.negated && !isPrim) return false;
+      if (pred.negated && isPrim) return false;
+    } else if (pred.op == ast::WhenOperator::IS) {
+      auto equal = pred.typeName == pred.ident;
+      if (!pred.negated && !equal) return false;
+      if (pred.negated && equal) return false;
+    } else if (pred.op == ast::WhenOperator::HAS) {
+      // Check if the type has the identifier
+      gen::Type **type = this->typeList[pred.typeName];
+      auto has = false;
+      if (type != nullptr) {
+        gen::Class *cl = dynamic_cast<gen::Class *>(*type);
+        if (cl != nullptr) {
+          bool has = cl->publicNameTable[pred.ident] != nullptr;
+        }
+      }
+      if (!pred.negated && !has) return false;
+      if (pred.negated && has) return false;
+    }
+  }
+  return true;
+}
