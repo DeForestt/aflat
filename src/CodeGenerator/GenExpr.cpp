@@ -213,6 +213,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.size = asmc::DWord;
         output.access = "$4";
         output.type = "int";
+      } else if (ident == "number") {
+        output.size = asmc::DWord;
+        output.access = "$8";
+        output.type = "int";
       } else if (ident == "char" || ident == "bool" || ident == "byte") {
         output.size = asmc::DWord;
         output.access = "$1";
