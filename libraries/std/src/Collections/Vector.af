@@ -37,19 +37,7 @@ class vector {
         return my;
     };
 
-    when (T is not primitive)
-    fn push_back(const T &&value) -> Self {
-        if my.count == my.size {
-            my.size = my.size * 2;
-            my.head = realloc(my.head, T * my.size);
-        };
-
-        memcpy(my.head + (my.count * T), value, T);
-        my.count = my.count + 1;
-        return my;
-    };
-
-    when (T is adr)
+    when (T is not primitive or T is adr)
     fn push_back(const T &&value) -> Self {
         if my.count == my.size {
             my.size = my.size * 2;
@@ -100,16 +88,7 @@ class vector {
         return opt.Some(val as T);
     };
 
-    when (T is adr)
-    fn get(const int index) -> option::<T> {
-        if index >= my.count | index < 0 {
-            return opt.None::<T>();
-        };
-        const T val = my.head + (index * T);
-        return opt.Some(val);
-    };
-
-    when (T is not primitive)
+    when (T is adr or T is not primitive)
     fn get(const int index) -> option::<T> {
         if index >= my.count | index < 0 {
             return opt.None::<T>();
@@ -134,7 +113,7 @@ class vector {
         };
     };
 
-    when (T is not primitive)
+    when (T is not primitive or T is adr)
     fn set(const int index, const T &&value) -> result::<bool> {
         if index >= my.count {
             return res.reject::<bool>(new Error("Index out of bounds"));
@@ -151,15 +130,6 @@ class vector {
         memcpy(my.head + (index * T), ?value, T);
         return res.accept(true);
     };
-
-    when (T is adr)
-    fn set(const int index, const T &&value) -> result::<bool> {
-        if index >= my.count {
-            return res.reject::<bool>(new Error("Index out of bounds"));
-        };
-        memcpy(my.head + (index * T), value, T);
-        return res.accept(true);
-    };  
 
     fn next() -> option::<T> {
         const let val = my.get(my.iteratorIndex);
