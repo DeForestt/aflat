@@ -66,6 +66,12 @@ static std::string replaceAllParts(
 }
 
 void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
+  if (this->when.has_value()) {
+    for (auto &pred : this->when->predicates) {
+      auto it = map.find(pred.typeName);
+      if (it != map.end()) pred.typeName = it->second;
+    }
+  }
   if (auto expr = dynamic_cast<Expr *>(this)) {
     if (expr->extention) expr->extention->replaceTypes(map);
   }

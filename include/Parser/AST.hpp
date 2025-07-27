@@ -1,6 +1,7 @@
 #ifndef STRUCT
 #define STRUCT
 
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -36,8 +37,27 @@ class Ident {
   std::string ident;
 };
 
+enum class WhenOperator {
+  IS,
+  HAS,
+};
+
+class WhenPredicat {
+ public:
+  bool negated = false;
+  WhenOperator op;
+  std::string typeName;
+  std::string ident;
+};
+
+class When {
+ public:
+  std::vector<WhenPredicat> predicates;
+};
+
 class Statement {
  public:
+  std::optional<When> when;  // When clause for templates
   bool locked = false;
   int logicalLine = 0;
   virtual std::string toString() { return ""; };

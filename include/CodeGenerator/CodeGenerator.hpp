@@ -128,6 +128,7 @@ class CodeGenerator {
   asmc::File ImportsOnly(ast::Statement *stmt);
   links::LinkedList<gen::Symbol> GenTable(
       ast::Statement *STMT, links::LinkedList<gen::Symbol> &table);
+  bool whenSatisfied(const ast::When &when);
   // a function for warnings or errors
   void alert(std::string message, bool error = true, const char *file = nullptr,
              int line = 0);
