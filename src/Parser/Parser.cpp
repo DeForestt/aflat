@@ -717,6 +717,7 @@ ast::Statement *parse::Parser::parseStmt(
       auto ret = new ast::Return(tokens, *this);
       ret->implicit = true;
       output = ret;
+      if (whenClause) output->when = whenClause;
       // if the next token is not a semicolon, add one
       if (tokens.peek()) {
         auto opSym = dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -734,7 +735,10 @@ ast::Statement *parse::Parser::parseStmt(
     if (whenClause) output->when = whenClause;
     auto call = dynamic_cast<ast::Call *>(output);
 
-    if (!call) return output;
+    if (!call) {
+      if (whenClause) output->when = whenClause;
+      return output;
+    }
 
     if (tokens.peek()) {
       // implicit return exceptions
@@ -743,19 +747,27 @@ ast::Statement *parse::Parser::parseStmt(
       // 2. if the next token is an else, it is internal and should not be an
       // implicit return
       auto OpSym = dynamic_cast<lex::OpSym *>(tokens.peek());
-      if (OpSym && OpSym->Sym == ';') return output;
+      if (OpSym && OpSym->Sym == ';') {
+        if (whenClause) output->when = whenClause;
+        return output;
+      }
       auto els = dynamic_cast<lex::LObj *>(tokens.peek());
-      if (els && els->meta == "else") return output;
+      if (els && els->meta == "else") {
+        if (whenClause) output->when = whenClause;
+        return output;
+      }
     }
     auto ret = new ast::Return;
     auto callExpr = new ast::CallExpr;
     callExpr->call = call;
     ret->expr = callExpr;
+    if (whenClause) ret->when = whenClause;
     this->Output = *ret;
     return ret;
   }
   if (tokens.head == nullptr) {
     this->Output = *output;
+    if (whenClause) output->when = whenClause;
     return output;
   } else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
              tokens.head->next != nullptr) {
@@ -766,6 +778,7 @@ ast::Statement *parse::Parser::parseStmt(
       s->Statement1 = output;
       s->Statement2 = this->parseStmt(tokens, false);
       this->Output = *s;
+      if (whenClause) s->when = whenClause;
       return s;
     } else if (obj.Sym == '}') {
       this->Output = *output;
@@ -776,6 +789,7 @@ ast::Statement *parse::Parser::parseStmt(
         auto callExpr = new ast::CallExpr;
         callExpr->call = dynamic_cast<ast::Call *>(output);
         ret->expr = callExpr;
+        if (whenClause) ret->when = whenClause;
         return ret;
       }
       // check if the next token is a semicolon if not, treat it like a swquence
@@ -793,9 +807,11 @@ ast::Statement *parse::Parser::parseStmt(
           }
         }
       }
+      if (whenClause) output->when = whenClause;
       return output;
     } else if (obj.Sym == '!') {
       this->Output = *output;
+      if (whenClause) output->when = whenClause;
       return output;
     }
   } else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
@@ -807,9 +823,11 @@ ast::Statement *parse::Parser::parseStmt(
       return nullptr;
     } else if (obj.Sym == ';') {
       this->Output = *output;
+      if (whenClause) output->when = whenClause;
       return output;
     }
   }
+  if (whenClause) output->when = whenClause;
   return output;
 }
 
