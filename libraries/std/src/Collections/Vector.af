@@ -20,7 +20,7 @@ class vector {
     fn init(*const int size) -> Self {
         if size == 0 {
             my.size = 1;
-            my.head = malloc(T * size);
+            my.head = malloc(T * my.size);
         };
         return my;
     };
@@ -106,7 +106,7 @@ class vector {
             return opt.None::<T>();
         };
         const T val = my.head + (index * T);
-        return opt.Some::<T>(val);
+        return opt.Some(val);
     };
 
     when (T is not primitive)
@@ -114,8 +114,8 @@ class vector {
         if index >= my.count | index < 0 {
             return opt.None::<T>();
         };
-        const adr val = my.head + (index * T);
-        return opt.Some(val as T);
+        const T val = my.head + (index * T);
+        return opt.Some(val);
     };
 
 
