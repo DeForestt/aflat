@@ -411,6 +411,26 @@ int main(){
 };
 ```
 
+### Foreach Loops
+`foreach` iterates over any object that implements a `next()` method returning
+`option`. The loop binds each yielded value to an identifier and executes the
+body until `None` is returned. The syntax is:
+
+```c
+foreach <ident> in <iterator> {
+    <body>
+};
+```
+
+Example:
+
+```c
+let nums = [1, 2, 3];
+foreach n in nums {
+    printInt(n);
+};
+```
+
 ### Match Statements
 `match` inspects a union and executes one arm based on the active alias. Each
 arm specifies an alias and may bind the alias payload to a variable. The result
@@ -430,6 +450,25 @@ match <union expr> {
 All aliases of the union must be accounted for or a compile-time error is
 emitted. Because `match` is an expression, it can be directly returned or stored
 in a variable.
+
+### List Literals
+AFlat provides bracket syntax to construct a `vector` from values. The type of
+the resulting list is inferred from the first element or from the assignment
+target.
+
+```c
+let names = ["Tom", "Sue", "Bob"];
+vector::<int> numbers = [1, 2, 3];
+```
+
+Empty lists require an explicit target type:
+
+```c
+vector::<string> words = [];
+```
+
+The literal expands to creating a `vector` instance and pushing each element in
+order.
 
 ## Classes
 Classes in aflat are effectively structs that can implement functions and support encapsulation and rudimentary inheritance.  The syntax is:
@@ -729,6 +768,28 @@ fn main() {
     let b = Box::<int>(5);
     let s = Box::<string>("hi");
     str.print(`{b.get()} {s.get()}\n`);
+};
+```
+
+### When Clauses
+Use a `when` clause to conditionally compile a function or method based on
+template parameters. A clause consists of predicates combined with `and` inside
+parentheses. Supported predicates are:
+
+- `T is <trait>` / `T is not <trait>`
+- `T has <method>` / `T missing <method>`
+
+The item is generated only if all predicates are satisfied.
+
+Example:
+
+```c
+types(T)
+when (T is dynamic and T has toString)
+fn printAll(vector::<T> vals) {
+    foreach v in vals {
+        str.print(v.toString());
+    };
 };
 ```
 
