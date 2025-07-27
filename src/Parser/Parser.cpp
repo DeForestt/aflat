@@ -1176,21 +1176,23 @@ ast::When parse::Parser::parseWhenClause(
                            std::to_string(lineCount));
     }
 
-    when.predicates.push_back(pred);
-
     auto close = dynamic_cast<lex::OpSym *>(tokens.peek());
     if (close && close->Sym == ')') {
       tokens.pop();
+      when.predicates.push_back(pred);
       break;
     }
 
-    auto andTok = dynamic_cast<lex::LObj *>(tokens.peek());
-    if (andTok && andTok->meta == "and") {
+    auto joinTok = dynamic_cast<lex::LObj *>(tokens.peek());
+    if (joinTok && (joinTok->meta == "and" || joinTok->meta == "or")) {
       tokens.pop();
+      pred.join =
+          (joinTok->meta == "and") ? ast::WhenJoiner::AND : ast::WhenJoiner::OR;
+      when.predicates.push_back(pred);
       continue;
     }
 
-    throw err::Exception("Expected 'and' or ')' in when clause on line " +
+    throw err::Exception("Expected 'and', 'or' or ')' in when clause on line " +
                          std::to_string(lineCount));
   }
 

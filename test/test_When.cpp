@@ -23,10 +23,27 @@ TEST_CASE("Parser parses when clauses", "[parser][when]") {
   CHECK(func->when->predicates[0].op == ast::WhenOperator::IS);
   CHECK(func->when->predicates[0].ident == "dynamic");
   CHECK(func->when->predicates[0].negated == false);
+  CHECK(func->when->predicates[0].join == ast::WhenJoiner::AND);
   CHECK(func->when->predicates[1].typeName == "T");
   CHECK(func->when->predicates[1].op == ast::WhenOperator::HAS);
   CHECK(func->when->predicates[1].ident == "toString");
   CHECK(func->when->predicates[1].negated == false);
+}
+
+TEST_CASE("Parser parses when clauses with or", "[parser][when]") {
+  lex::Lexer l;
+  auto tokens =
+      l.Scan("when (T is dynamic or T has toString) fn foo() -> int {};", 1);
+  tokens.invert();
+  parse::Parser p;
+  ast::Statement *stmt = p.parseStmt(tokens);
+  auto *seq = dynamic_cast<ast::Sequence *>(stmt);
+  REQUIRE(seq != nullptr);
+  auto *func = dynamic_cast<ast::Function *>(seq->Statement1);
+  REQUIRE(func != nullptr);
+  REQUIRE(func->when.has_value());
+  REQUIRE(func->when->predicates.size() == 2);
+  CHECK(func->when->predicates[0].join == ast::WhenJoiner::OR);
 }
 
 TEST_CASE("when resolution checks primitive", "[when][resolution]") {
@@ -45,4 +62,13 @@ TEST_CASE("when resolution checks primitive", "[when][resolution]") {
 
   w.predicates[0].typeName = "Foo";
   CHECK_FALSE(gen.whenSatisfied(w));
+
+  ast::WhenPredicat pred2;
+  pred2.op = ast::WhenOperator::IS;
+  pred2.typeName = "int";
+  pred2.ident = "primitive";
+  pred2.negated = false;
+  w.predicates[0].join = ast::WhenJoiner::OR;
+  w.predicates.push_back(pred2);
+  CHECK(gen.whenSatisfied(w));
 }

@@ -461,29 +461,43 @@ asmc::File gen::CodeGenerator::setOffset(std::string to, int offset,
 }
 
 bool gen::CodeGenerator::whenSatisfied(const ast::When &when) {
-  for (const auto &pred : when.predicates) {
+  auto evalPred = [this](const ast::WhenPredicat &pred) -> bool {
     if (pred.op == ast::WhenOperator::IS && pred.ident == "primitive") {
       bool isPrim = parse::PRIMITIVE_TYPES.find(pred.typeName) !=
                     parse::PRIMITIVE_TYPES.end();
       if (!pred.negated && !isPrim) return false;
       if (pred.negated && isPrim) return false;
+      return true;
     } else if (pred.op == ast::WhenOperator::IS) {
       auto equal = pred.typeName == pred.ident;
       if (!pred.negated && !equal) return false;
       if (pred.negated && equal) return false;
+      return true;
     } else if (pred.op == ast::WhenOperator::HAS) {
-      // Check if the type has the identifier
       gen::Type **type = this->typeList[pred.typeName];
       auto has = false;
       if (type != nullptr) {
         gen::Class *cl = dynamic_cast<gen::Class *>(*type);
         if (cl != nullptr) {
-          bool has = cl->publicNameTable[pred.ident] != nullptr;
+          has = cl->publicNameTable[pred.ident] != nullptr;
         }
       }
       if (!pred.negated && !has) return false;
       if (pred.negated && has) return false;
+      return true;
     }
+    return false;
+  };
+
+  if (when.predicates.empty()) return true;
+  bool result = evalPred(when.predicates[0]);
+  for (size_t i = 1; i < when.predicates.size(); ++i) {
+    bool cur = evalPred(when.predicates[i]);
+    auto join = when.predicates[i - 1].join;
+    if (join == ast::WhenJoiner::AND)
+      result = result && cur;
+    else
+      result = result || cur;
   }
-  return true;
+  return result;
 }

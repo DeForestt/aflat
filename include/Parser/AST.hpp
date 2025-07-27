@@ -42,12 +42,18 @@ enum class WhenOperator {
   HAS,
 };
 
+enum class WhenJoiner {
+  AND,
+  OR,
+};
+
 class WhenPredicat {
  public:
   bool negated = false;
   WhenOperator op;
   std::string typeName;
   std::string ident;
+  WhenJoiner join = WhenJoiner::AND;  // relation to next predicate
 };
 
 class When {
@@ -153,7 +159,7 @@ class Type {
 
   Type() = default;
   Type(const std::string &typeName, const asmc::Size &size)
-      : typeName(typeName), size(size){};
+      : typeName(typeName), size(size) {};
 };
 
 class Arg {
