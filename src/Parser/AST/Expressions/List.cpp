@@ -45,7 +45,7 @@ gen::GenerationResult const List::generateExpression(
           "List is empty, cannot determine the type of an empty list, please "
           "provide an explicit type.");
     }
-    auto firstItem = this->items.front();
+    auto firstItem = dynamic_cast<ast::Expr *>(ast::deepCopy(this->items[0]));
     asmc::File junckFile;
     auto typeCheck = generator.GenExpr(firstItem, junckFile, size, typeHint);
     type = typeCheck.type;
