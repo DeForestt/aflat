@@ -69,6 +69,7 @@ class vector {
         return my.get(my.count - 1);
     };
 
+    when (T is primitive and T is not adr)
     fn pop_back() -> option::<T> {
         if my.count == 0 {
             return opt.None::<T>();
@@ -76,7 +77,17 @@ class vector {
 
         my.count = my.count - 1;
         const T val = my.head + (my.count * T);
-        return opt.Some::<T>(val);
+        return opt.Some::<T>(val as T);
+    };
+
+    when (T is not primitive or T is adr)
+    fn pop_back() -> option::<T> {
+        if my.count == 0 {
+            return opt.None::<T>();
+        };
+        my.count = my.count - 1;
+        const T val = my.head + (my.count * T);
+        return opt.Some(val);
     };
 
     when (T is primitive and T is not adr)
