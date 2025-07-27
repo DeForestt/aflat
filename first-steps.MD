@@ -412,7 +412,7 @@ import { print } from "String" under str;
 import vector from "Collections/Vector"; // We need to import the Vector class to create a list of students
 import option from "Utils/option"; // vector expects the option module to be imported
 import {Some, None} from "Utils/option"; // vector expects the Some and None classes to be imported
-import Scroller from "Collections/Scroller"; // We need to import the Scroller class to iterate over the list
+// Vectors can be iterated over directly; Scroller is optional for manual control
 
 class Student {
 	mutable int id;
@@ -436,14 +436,14 @@ class Student {
 };
 
 fn main() -> int {
-	let roster = vector::<Student>(); // We create a new list of students using the Vector class
-        roster.push_back(new Student(1, "John Doe", 90)); // The push_back method now requires ownership
-        roster.push_back(new Student(2, "Jane Doe", 80)); // roster owns this Student too
+        let roster = [
+                new Student(1, "John Doe", 90),
+                new Student(2, "Jane Doe", 80)
+        ];
 
-	// this is a foreach loop that iterates over an iterable object
-	foreach Student student : roster.scroll() { // A List is not an iterable object, calling the `scroll` method makes it iterable and allows us to use the foreach loop
-		student.printInfo(); 
-	};
+        foreach student in roster {
+                student.printInfo();
+        };
 };
 ```
 
@@ -495,19 +495,19 @@ import { print } from "String" under str;
 import vector from "Collections/Vector"; // We need to import the Vector class to create a list of students
 import option from "Utils/option"; // vector expects the option module to be imported
 import {Some, None} from "Utils/option"; // vector expects the Some and None classes to be imported
-import Scroller from "Collections/Scroller"; // We need to import the Scroller class to iterate over the list
+
 import Student from "./Student"; // Now we can import the Student module.  Note that If `Student.af` does not exist, it will look for `Student/mod.af`
 
 
 fn main() -> int {
-	let roster = vector::<Student>(); // We create a new list of students using the Vector class
-        roster.push_back(new Student(1, "John Doe", 90)); // push_back takes ownership of the object
-        roster.push_back(new Student(2, "Jane Doe", 80)); // ownership also transferred here
+        let roster = [
+                new Student(1, "John Doe", 90),
+                new Student(2, "Jane Doe", 80)
+        ];
 
-	// this is a foreach loop that iterates over an iterable object
-	foreach Student student : roster.scroll() { // A List is not an iterable object, calling the `scroll` method makes it iterable and allows us to use the foreach loop
-		student.printInfo(); 
-	};
+        foreach student in roster {
+                student.printInfo();
+        };
 };
 ```
 
@@ -619,7 +619,6 @@ import { print } from "String" under str;
 import vector from "Collections/Vector";
 import option from "Utils/option";
 import {Some, None} from "Utils/option";
-import Scroller from "Collections/Scroller";
 import Student from "./Student";
 import Assignment from "./Assignment";
 
@@ -698,7 +697,6 @@ import { print, readString } from "String" under str;
 import vector from "Collections/Vector";
 import option from "Utils/option";
 import {Some, None} from "Utils/option";
-import Scroller from "Collections/Scroller";
 import Student from "./Student";
 import Assignment from "./Assignment";
 
@@ -729,13 +727,13 @@ Inside of the loop you can print out all of the student information.  You can us
 
 ```js
 fn main() -> int {
-	let roster = new vector::<Student>();
+        let roster = new vector::<Student>();
 
-	while true {
-		foreach Student s : roster.scroll() {
-			s.printInfo();
-		};
-	};
+        while true {
+                foreach s in roster {
+                        s.printInfo();
+                };
+        };
 
 	return 0;
 };
@@ -774,14 +772,14 @@ Now we can call it from the main loop.
 
 ```js
 fn main() -> int {
-	let roster = new vector::<Student>();
+        let roster = new vector::<Student>();
 
-	while true {
-		str.print("\n--Student Roster--\n");
-		foreach Student s : roster.scroll() {
-			s.printInfo();
-		};
-		str.print("--------------------\n");
+        while true {
+                str.print("\n--Student Roster--\n");
+                foreach s in roster {
+                        s.printInfo();
+                };
+                str.print("--------------------\n");
 		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
 		let input = str.readString("Enter a command: "); // We read the user's input.
 
@@ -844,12 +842,12 @@ Now we can call it from the main function.  and we can call the addGrade functio
 fn main() -> int {
 	let roster = new vector::<Student>();
 
-	while true {
-		str.print("\n--Student Roster--\n");
-		foreach Student s : roster.scroll() {
-			s.printInfo();
-		};
-		str.print("--------------------\n");
+        while true {
+                str.print("\n--Student Roster--\n");
+                foreach s in roster {
+                        s.printInfo();
+                };
+                str.print("--------------------\n");
 		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
 		let input = str.readString("Enter a command: "); // We read the user's input.
 
@@ -882,7 +880,6 @@ import vector from "Collections/Vector";
 import option from "Utils/option";
 import result from "Utils/result";
 import {Some, None} from "Utils/option";
-import Scroller from "Collections/Scroller";
 import Student from "./Student";
 import Assignment from "./Assignment";
 
@@ -933,12 +930,12 @@ fn addGrade(vector::<Student> roster) -> bool {
 fn main() -> int {
 	let roster = new vector::<Student>();
 
-	while true {
-		str.print("\n--Student Roster--\n");
-		foreach Student s : roster.scroll() {
-			s.printInfo();
-		};
-		str.print("--------------------\n");
+        while true {
+                str.print("\n--Student Roster--\n");
+                foreach s in roster {
+                        s.printInfo();
+                };
+                str.print("--------------------\n");
 		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
 		let input = str.readString("Enter a command: "); // We read the user's input.
 
@@ -1057,14 +1054,14 @@ Now we need to update the main function to handle the result.
 
 ```js
 fn main() -> int {
-	let roster = new vector::<Student>();
+        let roster = new vector::<Student>();
 
-	while true {
-		str.print("\n--Student Roster--\n");
-		foreach Student s : roster.scroll() {
-			s.printInfo();
-		};
-		str.print("--------------------\n");
+        while true {
+                str.print("\n--Student Roster--\n");
+                foreach s in roster {
+                        s.printInfo();
+                };
+                str.print("--------------------\n");
 		str.print("Menu : 1. Add a student | 2. Add Grade | quit\n> "); // We print the menu.
 		let input = str.readString("Enter a command: "); // We read the user's input.
 
