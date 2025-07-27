@@ -115,7 +115,7 @@ class vector {
             return opt.None::<T>();
         };
         const adr val = my.head + (index * T);
-        return val as T;
+        return opt.Some(val as T);
     };
 
 
