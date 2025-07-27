@@ -53,6 +53,8 @@ class Parser {
   ast::ConditionalExpr *parseCondition(links::LinkedList<lex::Token *> &tokens);
   std::vector<std::string> parseTemplateTypeList(
       links::LinkedList<lex::Token *> &tokens, int lineCount);
+  ast::When parseWhenClause(links::LinkedList<lex::Token *> &tokens,
+                            int lineCount);
   links::LinkedList<ast::Expr *> parseCallArgsList(
       links::LinkedList<lex::Token *> &tokens);
 };

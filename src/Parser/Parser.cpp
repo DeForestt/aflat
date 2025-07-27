@@ -92,6 +92,7 @@ ast::Statement *parse::Parser::parseStmt(
     links::LinkedList<lex::Token *> &tokens, bool singleStmt) {
   ast::Statement *output = new ast::Statement;
   std::vector<parse::Annotation> annotations;
+  std::optional<ast::When> whenClause;
 
   if (tokens.head == nullptr) {
     return output;
@@ -204,6 +205,7 @@ ast::Statement *parse::Parser::parseStmt(
             throw err::Exception("Expected '(' after when on line " +
                                  std::to_string(obj.lineCount));
           }
+          whenClause = this->parseWhenClause(tokens, obj.lineCount);
         }
         if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
           obj = *dynamic_cast<lex::LObj *>(tokens.peek());
@@ -569,6 +571,7 @@ ast::Statement *parse::Parser::parseStmt(
       pull->expr = this->parseExpr(tokens);
       pull->logicalLine = obj.lineCount;
       output = pull;
+      if (whenClause) output->when = whenClause;
       if (singleStmt) return output;
     } else if (obj.meta == "note") {
       auto expr = this->parseExpr(tokens);
@@ -707,6 +710,7 @@ ast::Statement *parse::Parser::parseStmt(
         output = ret;
       }
     }
+    if (whenClause) output->when = whenClause;
   } else if (tokens.peek() && tokens.count > 0) {
     auto close_curl = dynamic_cast<lex::OpSym *>(tokens.peek());
     if (!close_curl || (close_curl->Sym != '}' && close_curl->Sym != ';')) {
@@ -727,6 +731,7 @@ ast::Statement *parse::Parser::parseStmt(
   }
 
   if (singleStmt) {
+    if (whenClause) output->when = whenClause;
     auto call = dynamic_cast<ast::Call *>(output);
 
     if (!call) return output;
@@ -1094,6 +1099,79 @@ std::vector<std::string> parse::Parser::parseTemplateTypeList(
     }
   }
   return list;
+}
+
+ast::When parse::Parser::parseWhenClause(
+    links::LinkedList<lex::Token *> &tokens, int lineCount) {
+  ast::When when;
+  while (true) {
+    auto typeTok = dynamic_cast<lex::LObj *>(tokens.pop());
+    if (!typeTok)
+      throw err::Exception("Expected type in when clause on line " +
+                           std::to_string(lineCount));
+
+    auto opTok = dynamic_cast<lex::LObj *>(tokens.pop());
+    if (!opTok)
+      throw err::Exception("Expected operator in when clause on line " +
+                           std::to_string(lineCount));
+
+    ast::WhenPredicat pred;
+    pred.typeName = typeTok->meta;
+    if (opTok->meta == "is") {
+      pred.op = ast::WhenOperator::IS;
+      auto identTok = dynamic_cast<lex::LObj *>(tokens.pop());
+      if (!identTok)
+        throw err::Exception("Expected identifier after 'is' on line " +
+                             std::to_string(lineCount));
+      if (identTok->meta == "not") {
+        pred.negated = true;
+        identTok = dynamic_cast<lex::LObj *>(tokens.pop());
+        if (!identTok)
+          throw err::Exception(
+              "Expected identifier after 'not' in when clause on line " +
+              std::to_string(lineCount));
+      }
+      pred.ident = identTok->meta;
+    } else if (opTok->meta == "has") {
+      pred.op = ast::WhenOperator::HAS;
+      auto identTok = dynamic_cast<lex::LObj *>(tokens.pop());
+      if (!identTok)
+        throw err::Exception("Expected identifier after 'has' on line " +
+                             std::to_string(lineCount));
+      pred.ident = identTok->meta;
+    } else if (opTok->meta == "missing") {
+      pred.op = ast::WhenOperator::HAS;
+      pred.negated = true;
+      auto identTok = dynamic_cast<lex::LObj *>(tokens.pop());
+      if (!identTok)
+        throw err::Exception("Expected identifier after 'missing' on line " +
+                             std::to_string(lineCount));
+      pred.ident = identTok->meta;
+    } else {
+      throw err::Exception("Unexpected operator '" + opTok->meta +
+                           "' in when clause on line " +
+                           std::to_string(lineCount));
+    }
+
+    when.predicates.push_back(pred);
+
+    auto close = dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (close && close->Sym == ')') {
+      tokens.pop();
+      break;
+    }
+
+    auto andTok = dynamic_cast<lex::LObj *>(tokens.peek());
+    if (andTok && andTok->meta == "and") {
+      tokens.pop();
+      continue;
+    }
+
+    throw err::Exception("Expected 'and' or ')' in when clause on line " +
+                         std::to_string(lineCount));
+  }
+
+  return when;
 }
 
 ast::ConditionalExpr *parse::Parser::parseCondition(
