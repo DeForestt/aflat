@@ -192,6 +192,10 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
   asmc::File OutputFile = asmc::File();
   this->logicalLine = STMT->logicalLine;
 
+  if (STMT->when && !this->whenSatisfied(*STMT->when)) {
+    return OutputFile;
+  }
+
   if (STMT->locked) {
     auto *inst = new asmc::nop();
     inst->logicalLine = this->logicalLine;
