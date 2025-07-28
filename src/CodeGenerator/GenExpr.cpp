@@ -10,6 +10,8 @@
 
 using namespace gen::utils;
 
+std::vector<std::string> splitTypeName(const std::string &typeName);
+
 bool startsWith(const std::string &s, const std::string &prefix) {
   return s.size() >= prefix.size() && s.compare(0, prefix.size(), prefix) == 0;
 }
@@ -1195,13 +1197,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     if (newExpr.type.typeName == "Map" &&
         typeHint.rfind("unordered_map", 0) == 0) {
-      std::istringstream iss(typeHint);
-      std::string typeName;
-      std::getline(iss, typeName, '.');
-      newExpr.type.typeName = typeName;
-
-      while (std::getline(iss, typeName, '.')) {
-        newExpr.templateTypes.push_back(typeName);
+      auto parts = splitTypeName(typeHint);
+      if (!parts.empty()) {
+        newExpr.type.typeName = parts.front();
+        for (size_t i = 1; i < parts.size(); ++i) {
+          newExpr.templateTypes.push_back(parts[i]);
+        }
       }
     }
 

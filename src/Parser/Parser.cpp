@@ -1115,7 +1115,14 @@ std::string parse::Parser::parseTypeName(
     throw err::Exception("Unknown type " + typeTok->meta);
   std::string name = typeTok->meta;
   auto nested = this->parseTemplateTypeList(tokens, lineCount);
-  for (auto &n : nested) name += "." + n;
+  if (!nested.empty()) {
+    name += "<";
+    for (size_t i = 0; i < nested.size(); ++i) {
+      if (i) name += ",";
+      name += nested[i];
+    }
+    name += ">";
+  }
   return name;
 }
 
