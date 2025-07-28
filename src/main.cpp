@@ -621,7 +621,8 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
           hasError = true;
           continue;
         }
-        fs::remove(asmPath);
+
+        if (!config.asm_) fs::remove(asmPath);
       } else {
         hasError = true;
         continue;
