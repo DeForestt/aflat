@@ -15,7 +15,10 @@ find_package(Boost 1.71.0 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_compile_options(${GCC_COMPILER_FLAGS})
+# threading
+find_package(Threads REQUIRED)
 add_executable(aflat ${aflat_SRC})
+target_link_libraries(aflat PRIVATE Threads::Threads)
 # target_link_options(aflat PRIVATE -flto)
 
 target_include_directories(aflat PRIVATE include/) 
@@ -33,6 +36,6 @@ file(GLOB_RECURSE testing_Modules
 message (STATUS ${testing_Modules})
 add_executable(a.test ${testing_Modules})
 target_include_directories(a.test PRIVATE include/)
-target_link_libraries(a.test PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(a.test PRIVATE Catch2::Catch2WithMain Threads::Threads)
 target_compile_definitions(a.test PRIVATE AFLAT_TEST)
 # target_link_options(test PRIVATE -flto)

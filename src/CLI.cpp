@@ -10,6 +10,7 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
                                  {"output", required_argument, nullptr, 'o'},
                                  {"debug", no_argument, nullptr, 'd'},
                                  {"quiet", no_argument, nullptr, 'q'},
+                                 {"jobs", no_argument, nullptr, 'j'},
                                  {"trace-alerts", no_argument, nullptr, 't'},
                                  {"config", required_argument, nullptr, 'c'},
                                  {"name", required_argument, nullptr, 'n'},
@@ -21,7 +22,7 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
                                  {nullptr, 0, nullptr, 0}};
 
   int opt;
-  while ((opt = getopt_long(argc, argv, "hdo:tc:qUKn:LNC", longOptions,
+  while ((opt = getopt_long(argc, argv, "hdo:tc:qjUKn:LNC", longOptions,
                             nullptr)) != -1) {
     switch (opt) {
       case 'o':
@@ -32,6 +33,9 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
         break;
       case 'q':
         opts.quiet = true;
+        break;
+      case 'j':
+        opts.concurrent = true;
         break;
       case 't':
         opts.traceAlerts = true;
@@ -102,6 +106,7 @@ void printUsage(const char *prog) {
       << "  -K, --clean-deps    Remove all git dependencies\n"
       << "  -C, --clean-cache   Remove build cache\n"
       << "  -N, --no-cache      Disable cache for this run\n"
+      << "  -j, --jobs         Enable concurrent module builds\n"
       << "  -L, --lib           Create a library project with make\n"
       << "  -h, --help          Display this help message\n";
 }

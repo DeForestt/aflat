@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <future>
 #include <iostream>
 #include <vector>
 
@@ -31,12 +32,20 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
 bool compileCFile(const std::string &path, bool debug);
 bool objectUpToDate(const std::string &src, const std::string &obj,
                     const std::string &libPath);
+struct ModuleResult {
+  std::string objPath;
+  bool success;
+};
+
+ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
+                           const std::string &libPath);
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 bool runConfig(cfg::Config &config, const std::string &libPath);
 
 static CompileProgress *gProgress = nullptr;
 static bool gQuiet = false;
 static bool gUseCache = true;
+static bool gConcurrentBuild = false;
 
 #ifndef AFLAT_TEST
 int main(int argc, char *argv[]) {
@@ -46,6 +55,7 @@ int main(int argc, char *argv[]) {
   }
   gQuiet = cli.quiet;
   gUseCache = !cli.noCache;
+  gConcurrentBuild = cli.concurrent;
   if (cli.cleanCache) std::filesystem::remove_all(".cache");
   gen::CodeGenerator::enableAlertTrace(cli.traceAlerts);
 
@@ -562,6 +572,44 @@ bool compileCFile(const std::string &path, bool debug) {
   return result;
 }
 
+ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
+                           const std::string &libPath) {
+  namespace fs = std::filesystem;
+  std::string src = "./src/" + mod + ".af";
+  std::string asmPath = "./.cache/" + mod + ".s";
+  std::string objPath = "./.cache/" + mod + ".o";
+
+  bool useCached = gUseCache && objectUpToDate(src, objPath, libPath + "head/");
+  auto objTime = fs::exists(objPath) ? fs::last_write_time(objPath)
+                                     : fs::file_time_type::min();
+  for (const auto &dep : config.modules) {
+    if (dep == mod) continue;
+    std::string depSrc = "./src/" + dep + ".af";
+    if (fs::exists(depSrc) && fs::last_write_time(depSrc) > objTime)
+      useCached = false;
+  }
+  if (useCached && !gQuiet) {
+    if (gProgress)
+      gProgress->update(src, "cached");
+    else
+      std::cout << "[cached] " << src << std::endl;
+  }
+
+  if (!useCached) {
+    fs::create_directories(fs::path(asmPath).parent_path());
+    if (build(src, asmPath, config.mutability, config.debug)) {
+      std::string cmd = "gcc -c " + asmPath + " -o " + objPath;
+      if (system(cmd.c_str()) != 0) {
+        return {objPath, false};
+      }
+      fs::remove(asmPath);
+    } else {
+      return {objPath, false};
+    }
+  }
+  return {objPath, true};
+}
+
 bool runConfig(cfg::Config &config, const std::string &libPath) {
   return runConfig(config, libPath, 'e');
 }
@@ -589,45 +637,26 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   CompileProgress progress(sources, gQuiet);
   if (!gQuiet) gProgress = &progress;
 
-  for (auto mod : config.modules) {
-    std::string src = "./src/" + mod + ".af";
-    std::string asmPath = "./.cache/" + mod + ".s";
-    std::string objPath = "./.cache/" + mod + ".o";
-
-    bool useCached =
-        gUseCache && objectUpToDate(src, objPath, libPath + "head/");
-    auto objTime = std::filesystem::exists(objPath)
-                       ? std::filesystem::last_write_time(objPath)
-                       : std::filesystem::file_time_type::min();
-    for (const auto &dep : config.modules) {
-      if (dep == mod) continue;
-      std::string depSrc = "./src/" + dep + ".af";
-      if (std::filesystem::exists(depSrc) &&
-          std::filesystem::last_write_time(depSrc) > objTime)
-        useCached = false;
+  if (gConcurrentBuild) {
+    std::vector<std::future<ModuleResult>> futures;
+    for (const auto &mod : config.modules) {
+      futures.emplace_back(std::async(std::launch::async, compileModule, mod,
+                                      std::cref(config), libPath));
     }
-    if (useCached && !gQuiet) {
-      if (gProgress)
-        gProgress->update(src, "cached");
-      else
-        std::cout << "[cached] " << src << std::endl;
+    for (auto &f : futures) {
+      ModuleResult r = f.get();
+      if (!r.success) hasError = true;
+      linker.push_back(r.objPath);
     }
-
-    if (!useCached) {
-      fs::create_directories(fs::path(asmPath).parent_path());
-      if (build(src, asmPath, config.mutability, config.debug)) {
-        std::string cmd = "gcc -c " + asmPath + " -o " + objPath;
-        if (system(cmd.c_str()) != 0) {
-          hasError = true;
-          continue;
-        }
-        fs::remove(asmPath);
-      } else {
+  } else {
+    for (const auto &mod : config.modules) {
+      ModuleResult r = compileModule(mod, config, libPath);
+      if (!r.success) {
         hasError = true;
         continue;
       }
+      linker.push_back(r.objPath);
     }
-    linker.push_back(objPath);
   }
 
   for (auto file : config.cFiles) {
