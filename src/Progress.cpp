@@ -1,10 +1,15 @@
 #include "Progress.hpp"
 
+#include <mutex>
+
+std::mutex progressMutex;
+
 CompileProgress::CompileProgress(const std::vector<std::string>& sources,
                                  bool quiet) {
   sources_ = sources;
   quiet_ = quiet;
   if (!quiet_) {
+    std::lock_guard<std::mutex> lock(progressMutex);
     for (size_t i = 0; i < sources.size(); ++i) {
       index_[sources[i]] = i;
       std::cout << "[waiting] " << sources[i] << std::endl;
@@ -23,6 +28,7 @@ void CompileProgress::update(const std::string& src, const std::string& state) {
   if (it == index_.end()) return;
   size_t line = it->second;
   size_t linesUp = sources_.size() - line;
+  std::lock_guard<std::mutex> lock(progressMutex);
   std::cout << "\033[" << linesUp << "A";    // move up
   std::cout << "\r\033[K";                   // clear line
   std::cout << "[" << state << "] " << src;  // print new state

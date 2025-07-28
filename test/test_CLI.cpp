@@ -55,3 +55,11 @@ TEST_CASE("CLI cache flags", "[cli]") {
   REQUIRE(opts.cleanCache == true);
   REQUIRE(opts.command == "build");
 }
+
+TEST_CASE("CLI concurrent build flag", "[cli]") {
+  const char *argv[] = {"aflat", "-j", "build"};
+  CommandLineOptions opts;
+  REQUIRE(parseCommandLine(3, (char **)argv, opts));
+  REQUIRE(opts.concurrent == true);
+  REQUIRE(opts.command == "build");
+}

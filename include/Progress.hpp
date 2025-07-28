@@ -2,6 +2,7 @@
 #define AFLAT_PROGRESS_HPP
 
 #include <iostream>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -17,5 +18,7 @@ class CompileProgress {
   std::unordered_map<std::string, size_t> index_;
   bool quiet_ = false;
 };
+
+extern std::mutex progressMutex;
 
 #endif  // AFLAT_PROGRESS_HPP
