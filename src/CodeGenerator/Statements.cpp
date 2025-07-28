@@ -223,7 +223,18 @@ asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
     auto imp = dynamic_cast<ast::Import *>(STMT);
     auto prev = this->cwd;
     if (!imp->cwd.empty()) this->cwd = imp->cwd;
-    imp->generate(*this);
+    imp->generateClasses(*this);
+    if (imp->hasFunctions) {
+      auto added = this->includedMemo.get(imp->path);
+      if (added != nullptr) {
+        auto shells = gen::utils::copyAllFunctionShells(added);
+        if (shells) this->GenSTMT(shells);
+      }
+      std::string id = std::filesystem::path(imp->path).filename().string();
+      if (id.find_last_of('.') != std::string::npos)
+        id = id.substr(0, id.find_last_of('.'));
+      this->nameSpaceTable.insert(imp->nameSpace, id);
+    }
     this->cwd = prev;
   }
   return OutputFile;
