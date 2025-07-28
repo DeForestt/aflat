@@ -113,7 +113,7 @@ class CommandLineArgs {
 							my.values.set(argument.longName.cstr(), new CLAValue->String(args[i]));
 						};
 					} else {
-						my.values.set(argument.longName.cstr(), new CLAValue->None());
+						my.values.set(argument.longName.cstr(), new CLAValue->Boolean(true));
 					};
 				};
 			};
