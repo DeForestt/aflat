@@ -512,7 +512,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     strLit->value = str.val;
     OutputFile.data << label;
     OutputFile.data << strLit;
-    output.access = "$" + label->label;
+    auto sanitized = label->label;
+    for (char &c : sanitized)
+      if (c == '<' || c == '>' || c == ',') c = '_';
+    if (!sanitized.empty() && sanitized[0] == '.')
+      sanitized = "L" + sanitized.substr(1);
+    output.access = "$" + sanitized;
     output.size = asmc::QWord;
     output.type = "adr";
   } else if (dynamic_cast<ast::FStringLiteral *>(expr) != nullptr) {
@@ -621,6 +626,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     mov->op = asmc::Float;
     mov->to = this->registers["%xmm0"]->get(asmc::DWord);
     mov->from = label->label;
+    for (char &c : mov->from)
+      if (c == '<' || c == '>' || c == ',') c = '_';
+    if (!mov->from.empty() && mov->from[0] == '.')
+      mov->from = "L" + mov->from.substr(1);
 
     output.op = asmc::Float;
     mov->logicalLine = this->logicalLine;

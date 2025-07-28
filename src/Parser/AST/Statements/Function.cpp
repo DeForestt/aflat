@@ -141,8 +141,13 @@ Function::Function(const ScopeMod &scope,
     auto templateTypeList =
         parser.parseTemplateTypeList(tokens, tokens.peek()->lineCount);
     auto typenameStr = type->typeName;
-    for (auto &genericType : templateTypeList) {
-      typenameStr = typenameStr + "." + genericType;
+    if (!templateTypeList.empty()) {
+      typenameStr += "<";
+      for (size_t i = 0; i < templateTypeList.size(); ++i) {
+        if (i) typenameStr += ",";
+        typenameStr += templateTypeList[i];
+      }
+      typenameStr += ">";
     }
 
     this->type = Type(typenameStr, type->size);

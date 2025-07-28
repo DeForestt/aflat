@@ -29,13 +29,14 @@ gen::GenerationResult const List::generateExpression(
   // get the type of the first item This will be the type of the list
   if (!typeHint.empty() && typeHint != "let") {
     // if typeHint is provided, we will use it as the type of the List
-    // The typehint will be vector.typeName we just want the typeName part
-    //
-    if (typeHint.find('.') == std::string::npos) {
+    if (typeHint.rfind("vector<", 0) == 0 && typeHint.back() == '>') {
+      typeHint = typeHint.substr(7, typeHint.size() - 8);
+    } else if (typeHint.rfind("vector.", 0) == 0) {
+      typeHint = typeHint.substr(7);
+    } else {
       generator.alert("Vector type hint given: `" + typeHint +
                       "` is unintelligible for a vector type.");
     }
-    typeHint = typeHint.substr(typeHint.find('.') + 1);
   }
   std::string type = typeHint;
 
