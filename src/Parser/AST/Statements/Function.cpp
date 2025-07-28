@@ -1,5 +1,6 @@
 #include "Parser/AST/Statements/Function.hpp"
 
+#include "ASM.hpp"
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Parser/AST.hpp"
@@ -213,12 +214,13 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
 
     auto label = new asmc::Label;
     label->logicalLine = this->logicalLine;
+    std::string lName;
     if (generator.scope == nullptr || this->isLambda || this->globalLocked)
-      label->label = this->ident.ident;
+      lName = this->ident.ident;
     else
-      label->label = "pub_" + generator.scope->Ident + "_" + this->ident.ident;
+      lName = "pub_" + generator.scope->Ident + "_" + this->ident.ident;
     if (this->scopeName != "global") {
-      label->label = "pub_" + this->scopeName + "_" + this->ident.ident;
+      lName = "pub_" + this->scopeName + "_" + this->ident.ident;
       gen::Type *tScope = *generator.typeList[this->scopeName];
       if (tScope == nullptr) generator.alert("Failed to locate function Scope");
       if (dynamic_cast<gen::Class *>(tScope) == nullptr)
@@ -228,6 +230,8 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
         hidden = true;
       }
     }
+
+    label->label = asmc::sanitize(lName);
 
     asmc::Push *push = new asmc::Push();
     push->logicalLine = this->logicalLine;
