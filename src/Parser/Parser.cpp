@@ -143,6 +143,21 @@ ast::Statement *parse::Parser::parseStmt(
     atSym = dynamic_cast<lex::OpSym *>(tokens.peek());
   }
 
+  // ellipsis statement ...
+  auto dot = dynamic_cast<lex::OpSym *>(tokens.peek());
+  if (dot && dot->Sym == '.' && tokens.size() >= 3) {
+    auto dot2 = dynamic_cast<lex::OpSym *>(tokens.get(1));
+    auto dot3 = dynamic_cast<lex::OpSym *>(tokens.get(2));
+    if (dot2 && dot2->Sym == '.' && dot3 && dot3->Sym == '.') {
+      tokens.pop();
+      tokens.pop();
+      tokens.pop();
+      auto ellipsis = new ast::Ellipsis();
+      ellipsis->logicalLine = dot->lineCount;
+      output = ellipsis;
+    }
+  }
+
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto obj = *dynamic_cast<lex::LObj *>(tokens.peek());
     auto safeType = false;

@@ -18,6 +18,7 @@
 #include "Parser/AST/Statements/Declare.hpp"
 #include "Parser/AST/Statements/Delete.hpp"
 #include "Parser/AST/Statements/Destructure.hpp"
+#include "Parser/AST/Statements/Ellipsis.hpp"
 #include "Parser/AST/Statements/Enum.hpp"
 #include "Parser/AST/Statements/For.hpp"
 #include "Parser/AST/Statements/ForEach.hpp"
