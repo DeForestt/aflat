@@ -27,7 +27,12 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   }
 
   std::string nsp;
-  if (generator.nameSpaceTable.contains(ident)) {
+  if (this->modList.pos != nullptr &&
+      generator.nameSpaceTable.contains(this->modList.touch())) {
+    nsp = generator.nameSpaceTable.get(this->modList.touch()) + ".";
+    this->modList.shift();
+    ident = nsp + ident;
+  } else if (generator.nameSpaceTable.contains(ident)) {
     nsp = generator.nameSpaceTable.get(ident) + ".";
     ident = nsp + this->modList.shift();
   };
