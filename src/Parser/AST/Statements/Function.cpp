@@ -383,9 +383,12 @@ gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
   if (generator.scope != nullptr && tn == "Self") {
     tn = generator.scope->Ident;
   }
-  output.type = this->optional ? "option." + tn
-                : this->error  ? "result." + tn
-                               : tn;
+  if (this->optional)
+    output.type = "option<" + tn + ">";
+  else if (this->error)
+    output.type = "result<" + tn + ">";
+  else
+    output.type = tn;
   output.size = this->optional || this->error ? asmc::QWord : this->type.size;
   output.access = generator.registers["%rax"]->get(output.size);
   if (this->type.typeName == "float") {

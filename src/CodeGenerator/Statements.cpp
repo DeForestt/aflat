@@ -173,8 +173,8 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
         decAssign->declare = new ast::Declare();
         decAssign->declare->ident = arg->ident;
         decAssign->declare->type =
-            ast::Type("option." + arg->type.typeName, asmc::QWord);
-        decAssign->declare->TypeName = "option." + arg->type.typeName;
+            ast::Type("option<" + arg->type.typeName + ">", asmc::QWord);
+        decAssign->declare->TypeName = "option<" + arg->type.typeName + ">";
         decAssign->declare->mut = arg->mut;
         decAssign->mute = arg->mut;
         decAssign->expr = call;

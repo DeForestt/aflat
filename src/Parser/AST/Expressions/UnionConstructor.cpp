@@ -36,10 +36,13 @@ gen::GenerationResult const UnionConstructor::getDynamicExpr(
 gen::GenerationResult const UnionConstructor::generateExpression(
     gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
   asmc::File file;
-  if (templateTypes.size() > 0) {
-    for (const auto &type : templateTypes) {
-      unionType.typeName += "." + type;
+  if (!templateTypes.empty()) {
+    unionType.typeName += "<";
+    for (size_t i = 0; i < templateTypes.size(); ++i) {
+      if (i) unionType.typeName += ",";
+      unionType.typeName += templateTypes[i];
     }
+    unionType.typeName += ">";
   }
 
   auto type = generator.getType(unionType.typeName, file);

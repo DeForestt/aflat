@@ -9,10 +9,75 @@
 
 namespace ast {
 
+static std::vector<std::string> splitTypeParts(const std::string &typeName) {
+  std::vector<std::string> parts;
+  std::string base;
+  std::string current;
+  int depth = 0;
+  for (char c : typeName) {
+    if (c == '<') {
+      if (depth == 0) {
+        base = current;
+        current.clear();
+      } else {
+        current += c;
+      }
+      depth++;
+    } else if (c == '>') {
+      depth--;
+      if (depth == 0) {
+        parts.push_back(current);
+        current.clear();
+      } else {
+        current += c;
+      }
+    } else if (c == ',' && depth == 1) {
+      parts.push_back(current);
+      current.clear();
+    } else {
+      current += c;
+    }
+  }
+  if (!current.empty()) {
+    if (base.empty())
+      parts.push_back(current);
+    else
+      parts.push_back(current);
+  }
+  if (!base.empty()) parts.insert(parts.begin(), base);
+  return parts;
+}
+
+static std::string replaceGenericType(
+    const std::string &name,
+    const std::unordered_map<std::string, std::string> &map) {
+  auto parts = splitTypeParts(name);
+  for (auto &p : parts) {
+    auto it = map.find(p);
+    if (it != map.end()) {
+      p = it->second;
+    } else if (p.find('<') != std::string::npos) {
+      p = replaceGenericType(p, map);
+    }
+  }
+  if (parts.empty()) return name;
+  if (parts.size() == 1) return parts[0];
+  std::string out = parts[0] + "<";
+  for (size_t i = 1; i < parts.size(); ++i) {
+    if (i > 1) out += ",";
+    out += parts[i];
+  }
+  out += ">";
+  return out;
+}
+
 static void applyType(Type &t,
                       const std::unordered_map<std::string, std::string> &map) {
   auto it = map.find(t.typeName);
-  if (it != map.end()) t.typeName = it->second;
+  if (it != map.end())
+    t.typeName = it->second;
+  else if (t.typeName.find('<') != std::string::npos)
+    t.typeName = replaceGenericType(t.typeName, map);
   if (t.fPointerArgs.returnType) applyType(*t.fPointerArgs.returnType, map);
   for (auto &a : t.fPointerArgs.argTypes) applyType(a, map);
 }
@@ -50,6 +115,8 @@ static std::string replaceAllParts(
     auto it = typeMap.find(segment);
     if (it != typeMap.end()) {
       parts.push_back(it->second);
+    } else if (segment.find('<') != std::string::npos) {
+      parts.push_back(replaceGenericType(segment, typeMap));
     } else {
       parts.push_back(segment);
     }

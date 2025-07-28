@@ -89,7 +89,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   if (generator.currentFunction->optional) {
     // if fromtype is not option.typeName, we need to convert it to
     // option.typeName
-    if (from.type != "option." + generator.returnType.typeName) {
+    if (from.type != "option<" + generator.returnType.typeName + ">") {
       if (!this->empty &&
           !generator.canAssign(generator.returnType, from.type,
                                "the return type of this function is {} but the "
@@ -114,7 +114,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   } else if (generator.currentFunction->error) {
     // if fromtype is not result.typeName, we need to convert it to
     // result.typeName
-    if (from.type != "result." + generator.returnType.typeName) {
+    if (from.type != "result<" + generator.returnType.typeName + ">") {
       bool isError = false;
       if (parse::PRIMITIVE_TYPES.find(from.type) ==
           parse::PRIMITIVE_TYPES.end()) {
