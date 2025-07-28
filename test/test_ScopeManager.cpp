@@ -1,3 +1,5 @@
+#include <thread>
+
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Parser/AST.hpp"
 #include "catch.hpp"
@@ -30,4 +32,13 @@ TEST_CASE("ScopeManager isolated scope", "[scopemanager]") {
   sm->popIsolated();
   REQUIRE(sm->get("b") == nullptr);
   REQUIRE(sm->get("a") != nullptr);
+}
+
+TEST_CASE("ScopeManager instance is thread-local", "[scopemanager]") {
+  auto *mainSM = gen::scope::ScopeManager::getInstance();
+  std::thread t([&]() {
+    auto *threadSM = gen::scope::ScopeManager::getInstance();
+    REQUIRE(threadSM != mainSM);
+  });
+  t.join();
 }

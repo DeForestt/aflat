@@ -27,7 +27,7 @@ class ScopeManager {
   };
   ScopeManager();
   ~ScopeManager() = default;
-  static ScopeManager *instance;
+  static thread_local ScopeManager *instance;
 
   // Stack
   std::vector<gen::Symbol> stack;

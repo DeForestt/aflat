@@ -5,7 +5,7 @@
 
 typedef gen::scope::ScopeManager ScopeManager;
 
-ScopeManager *ScopeManager::instance = nullptr;
+thread_local ScopeManager *ScopeManager::instance = nullptr;
 
 ScopeManager::ScopeManager() {
   this->stackPos = 0;
