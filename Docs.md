@@ -986,6 +986,8 @@ The list of standard modules is as follows:
     `assertSuccess`
 - Utils/result
   - A templated result type used for error handling
+- CLArgs
+  - Parser for command line options and flags
 
 Example:
 ```js
