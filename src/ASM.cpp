@@ -398,7 +398,7 @@ std::string asmc::Define::toString() {
 
 void asmc::File::operator<<(asmc::File file) {
   this->linker.stitch(file.linker);
-  this->text.istitch(file.text);
+  this->text.stitch(file.text);
   this->bss.stitch(file.bss);
   this->data.stitch(file.data);
   if (!this->hasLambda && file.hasLambda) {
@@ -413,7 +413,7 @@ void asmc::File::operator<<(asmc::File file) {
 
 void asmc::File::cstitch(asmc::File file) {
   this->linker.stitch(file.linker);
-  this->text.istitch(file.text);
+  this->text.stitch(file.text);
   this->bss.stitch(file.bss);
   this->data.stitch(file.data);
 }
