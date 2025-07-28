@@ -1,98 +1,152 @@
 .needs <std>
-
 import string from "String";
-import List from "Collections";
-import {fPrint} from "io" under io;
+import {str_at} from "strings" under st;
+import { print } from "String" under str;
+import unordered_map from "Collections/unordered_map";
 import Error from "Utils/Error";
-import Render from "Utils/Error/Render";
-import Result from "Utils/Result";
-import { accept, reject } from "Utils/Result" under pt;
+import Option from "Utils/Option";
+import option from "Utils/option";
+import Scroller from "Collections/Scroller";
+import vector from "Collections/Vector";
+import List from "Collections";
+import {Some, None, optionWrapper} from "Utils/option" under opt;
+import result from "Utils/result";
+import {accept, reject, resultWrapper} from "Utils/result" under res;
 
-class ArgparseError signs Error {
-    const string message = message.copy();
+union CLAValue {
+	String(string),
+	Number(int),
+	Boolean(bool),
+	None
 
-    string stdErrorMessage() : Render {
-        return `{my._typeName}: {my.message}`;
-    };
+	fn getString() -> string! {
+		match my {
+			String(s) => return s,
+			Number(n) => return res.reject::<string>(new Error("Expected String, got Number")),
+			Boolean(b) => return res.reject::<string>(new Error("Expected String, got Boolean")),
+			None => return res.reject::<string>(new Error("No value present"))
+		}
+	};
 
-    ArgparseError init(const string message) {
-        return my;
-    };
+	fn toString() -> string {
+		match my {
+			String(s) => return `{s}`,
+			Number(n) => return `{n}`,
+			Boolean(b) => return `{b}`,
+			None => return "None"
+		}
+	}
 };
 
-class Arg {
-    string name = "";
-    string value = "";
+class Argument {
+	const string longName = longName;
+	const string shortName = shortName;
+	const string description = description;
+	const string defaultValue = defaultValue.or("false");
 
-    Arg init(const string name, const string value) {
-        my.name = name;
-        my.value = value;
-    };
+	fn init(adr longName, adr shortName, adr description, ?adr defaultValue) -> Self {
+		return my;
+	};
+
+	fn toString() -> string {
+		return `--{my.longName}, -{my.shortName}: {my.description} (default: {my.defaultValue})`;
+	};
 };
 
-class ArgsList {
-    List args = new List(Arg);
-    List tagLessArgs = new List(string);
-    string progName = "";
+class CLAInternalArgs {
+	unordered_map::<Argument> arguments;
+	string tag;
+};
 
-    ArgsList init(const int argc, const adr argv, const adr tagNames) {
-        const adr[0] args = argv;
-        const adr[0] tagVals = tagNames;
-        const List tags = new List(string);
+class CommandLineArgs {
+	const int argc = argc;
+	const adr argv = argv;
+	mutable string programName = "";
 
-        int j = 0;
-        adr tv = tagVals[j];
-        while (tv != NULL) {
-            const string v = tagVals[j];
-            tags.pushBack(v);
-            j++;
-            tv = tagVals[j];
-        };
+	mutable vector::<Argument> arguments = NULL;
+	mutable vector::<CLAValue> untagedValues = [];
+	const unordered_map::<CLAValue> values = {};
+	
+	mutable bool built = false;
 
-        my.progName = args[0];
+	fn with_arguments(vector::<Argument> &&args) -> Self {
+		if my.built {
+			panic("CommandLineArgs has already been built. Cannot add more arguments.");
+		};
+		my.arguments = args;
+		return my;
+	};
 
-        for int i = 1; i < argc; i++ {
-            const string arg = args[i];
-            if (arg.at(0) == '-') {
-                const let subArg = arg.subString(1, arg.len());
-                if (tags.findFirst(fn (const string s, const string y) return s == y, subArg) != NULL) {
+	fn init(int argc, adr argv) -> Self {
+		return my;
+	};
 
-                    if (i + 1 < argc) {
-                        const string val = args[i + 1];
-                        my.args.pushBack(Arg(subArg, val));
-                        i++;
-                    } else {
-                        const let val = new string("");
-                        const let ag = Arg(subArg, val);
-                        my.args.pushBack(ag);
-                    };
-                } else {
-                    io.fPrint("Error: Unknown tag: %s\n", {subArg});
-                    return NULL;
-                };
-            } else {
-                my.tagLessArgs.pushBack(arg.copy());
-            };
-        };
+	fn parse() -> bool! {
+		adr[0] args = my.argv;
+		my.programName = args[0];
+		mutable int i = 1;
+		while i < my.argc {
+			mutable let found = false;
+			const string arg = new string(args[i]);
+			foreach argument in my.arguments {
+				if `--{argument.longName}` == arg {
+					found = true;
+					if i + 1 < my.argc {
+						i = i + 1;
+						if st.str_at(args[i], 0) == '-' {
+							my.values.set(argument.longName.cstr(), new CLAValue->Boolean(true));
+							i = i - 1; // Adjust index since we consumed an argument
+						} else {
+							my.values.set(argument.longName.cstr(), new CLAValue->String(args[i]));
+						};
+					} else {
+						my.values.set(argument.longName.cstr(), new CLAValue->Boolean(true));
+					};
+				} else if `-{argument.shortName}` == arg {
+					found = true;
+					if i + 1 < my.argc {
+						i = i + 1;
+						if st.str_at(args[i], 0) == '-' {
+							my.values.set(argument.longName.cstr(), new CLAValue->Boolean(true));
+							i = i - 1; // Adjust index since we consumed an argument
+						} else {
+							my.values.set(argument.longName.cstr(), new CLAValue->String(args[i]));
+						};
+					} else {
+						my.values.set(argument.longName.cstr(), new CLAValue->None());
+					};
+				};
+			};
+			
+			if !found {
+				if st.str_at(args[i], 0) == '-' {
+					return res.reject::<bool>(new Error(`Unknown Command Line Tag {args[i]}`))
+				} else {
+					my.untagedValues.push_back(new CLAValue->String(args[i]));
+				};
+			};
 
-        return my;
-    };
+			i = i + 1;
+		};
+		return true;
+	};
 
-    Result getArg(const string name) {
-        return my.args.findFirst(fn (const Arg a, const string n) return a.name == n, name).resolve(
-            fn (const Arg a) return pt.accept(a),
-            fn() return pt.reject(new ArgparseError("Arg does not exist"))
-        );
-    };
+	fn printHelp() -> void {
+		str.print(`Usage: {my.programName} [options]\n`);
+		foreach arg in my.arguments {
+			str.print(`\t{arg}\n`);
+		};
+	};
 
-    bool has(const string name) {
-        return my.getArg(name).value(fn () return false);
-    };
+	fn popCommand() -> CLAValue? {
+		return my.untagedValues.pop_back();
+	};
 
-    Result getTagLessArg(const int index) {
-        return my.tagLessArgs.get(index).resolve(
-            fn (const string a) return pt.accept(a),
-            fn (const string e) return pt.reject(new ArgparseError("Arg does not exist"))
-        );
-    };
+	fn hasTag(string tag) -> bool {
+		return my.values.has(tag.cstr());
+	};
+
+	fn getTag(string tag) -> CLAValue? {
+		my.values.get(tag.cstr());
+	};
 };
