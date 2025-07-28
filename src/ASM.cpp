@@ -1,11 +1,15 @@
 #include "ASM.hpp"
 
-static std::string sanitize(const std::string &name) {
+std::string asmc::sanitize(const std::string &name) {
   std::string out;
   for (char c : name) {
     switch (c) {
       case '<':
+        out += "gen__sym__open";
+        break;
       case '>':
+        out += "gen__sym__close";
+        break;
       case ',':
         out += '_';
         break;

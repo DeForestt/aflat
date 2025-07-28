@@ -3,6 +3,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
 
+#include "ASM.hpp"
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
@@ -512,12 +513,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     strLit->value = str.val;
     OutputFile.data << label;
     OutputFile.data << strLit;
-    auto sanitized = label->label;
-    for (char &c : sanitized)
-      if (c == '<' || c == '>' || c == ',') c = '_';
-    if (!sanitized.empty() && sanitized[0] == '.')
-      sanitized = "L" + sanitized.substr(1);
-    output.access = "$" + sanitized;
+    output.access = "$" + asmc::sanitize(label->label);
     output.size = asmc::QWord;
     output.type = "adr";
   } else if (dynamic_cast<ast::FStringLiteral *>(expr) != nullptr) {
@@ -625,11 +621,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     mov->size = asmc::DWord;
     mov->op = asmc::Float;
     mov->to = this->registers["%xmm0"]->get(asmc::DWord);
-    mov->from = label->label;
-    for (char &c : mov->from)
-      if (c == '<' || c == '>' || c == ',') c = '_';
-    if (!mov->from.empty() && mov->from[0] == '.')
-      mov->from = "L" + mov->from.substr(1);
+    mov->from = asmc::sanitize(label->label);
 
     output.op = asmc::Float;
     mov->logicalLine = this->logicalLine;
