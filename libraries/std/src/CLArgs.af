@@ -44,7 +44,7 @@ class Argument {
 	const string description = description;
 	const string defaultValue = defaultValue.or("false");
 
-	fn init(const adr longName, const adr shortName, const adr description, const ?adr defaultValue) -> Self {
+	fn init(const adr longName, const adr shortName, const adr description, ?const adr defaultValue) -> Self {
 		return my;
 	};
 
@@ -82,7 +82,7 @@ class CommandLineArgs {
 	};
 
 	fn parse() -> bool! {
-		adr[0] args = my.argv;
+		const adr[0] args = my.argv;
 		my.programName = args[0];
 		mutable int i = 1;
 		while i < my.argc {
@@ -142,11 +142,11 @@ class CommandLineArgs {
 		return my.untagedValues.pop_back();
 	};
 
-	fn hasTag(string tag) -> bool {
+	fn hasTag(const string tag) -> bool {
 		return my.values.has(tag.cstr());
 	};
 
-	fn getTag(string tag) -> CLAValue? {
-		my.values.get(tag.cstr());
+	fn getTag(const string tag) -> CLAValue? {
+		return my.values.get(tag.cstr());
 	};
 };
