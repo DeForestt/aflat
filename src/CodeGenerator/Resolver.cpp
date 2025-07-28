@@ -17,9 +17,14 @@ Type **CodeGenerator::instantiateGenericClass(
               std::to_string(classStatement->genericTypes.size()) +
               " template types, but got " + std::to_string(types.size()),
           true, __FILE__, __LINE__);
-  for (size_t i = 0; i < types.size(); i++) {
-    newName += "." + types[i];
-    genericMap[classStatement->genericTypes[i]] = types[i];
+  if (!types.empty()) {
+    newName += "<";
+    for (size_t i = 0; i < types.size(); i++) {
+      if (i) newName += ",";
+      newName += types[i];
+      genericMap[classStatement->genericTypes[i]] = types[i];
+    }
+    newName += ">";
   }
 
   classStatement->replaceTypes(genericMap);

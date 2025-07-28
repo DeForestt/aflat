@@ -7,6 +7,8 @@
 
 namespace asmc {
 
+std::string sanitize(const std::string &name);
+
 enum OpType {
   Float,
   Hard,

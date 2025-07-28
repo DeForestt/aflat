@@ -1,5 +1,6 @@
 #include "Parser/AST/Statements/Function.hpp"
 
+#include "ASM.hpp"
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Parser/AST.hpp"
@@ -141,8 +142,13 @@ Function::Function(const ScopeMod &scope,
     auto templateTypeList =
         parser.parseTemplateTypeList(tokens, tokens.peek()->lineCount);
     auto typenameStr = type->typeName;
-    for (auto &genericType : templateTypeList) {
-      typenameStr = typenameStr + "." + genericType;
+    if (!templateTypeList.empty()) {
+      typenameStr += "<";
+      for (size_t i = 0; i < templateTypeList.size(); ++i) {
+        if (i) typenameStr += ",";
+        typenameStr += templateTypeList[i];
+      }
+      typenameStr += ">";
     }
 
     this->type = Type(typenameStr, type->size);
@@ -208,12 +214,13 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
 
     auto label = new asmc::Label;
     label->logicalLine = this->logicalLine;
+    std::string lName;
     if (generator.scope == nullptr || this->isLambda || this->globalLocked)
-      label->label = this->ident.ident;
+      lName = this->ident.ident;
     else
-      label->label = "pub_" + generator.scope->Ident + "_" + this->ident.ident;
+      lName = "pub_" + generator.scope->Ident + "_" + this->ident.ident;
     if (this->scopeName != "global") {
-      label->label = "pub_" + this->scopeName + "_" + this->ident.ident;
+      lName = "pub_" + this->scopeName + "_" + this->ident.ident;
       gen::Type *tScope = *generator.typeList[this->scopeName];
       if (tScope == nullptr) generator.alert("Failed to locate function Scope");
       if (dynamic_cast<gen::Class *>(tScope) == nullptr)
@@ -223,6 +230,8 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
         hidden = true;
       }
     }
+
+    label->label = asmc::sanitize(lName);
 
     asmc::Push *push = new asmc::Push();
     push->logicalLine = this->logicalLine;
@@ -383,9 +392,12 @@ gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
   if (generator.scope != nullptr && tn == "Self") {
     tn = generator.scope->Ident;
   }
-  output.type = this->optional ? "option." + tn
-                : this->error  ? "result." + tn
-                               : tn;
+  if (this->optional)
+    output.type = "option<" + tn + ">";
+  else if (this->error)
+    output.type = "result<" + tn + ">";
+  else
+    output.type = tn;
   output.size = this->optional || this->error ? asmc::QWord : this->type.size;
   output.access = generator.registers["%rax"]->get(output.size);
   if (this->type.typeName == "float") {

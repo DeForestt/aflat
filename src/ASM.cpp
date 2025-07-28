@@ -1,10 +1,31 @@
 #include "ASM.hpp"
 
+std::string asmc::sanitize(const std::string &name) {
+  std::string out;
+  for (char c : name) {
+    switch (c) {
+      case '<':
+        out += "gen__sym__open";
+        break;
+      case '>':
+        out += "gen__sym__close";
+        break;
+      case ',':
+        out += '_';
+        break;
+      default:
+        out += c;
+    }
+  }
+  if (!out.empty() && out[0] == '.') out = "L" + out.substr(1);
+  return out;
+}
+
 std::string asmc::Instruction::toString() { return (""); }
 
 std::string asmc::SysCall::toString() { return "\tsyscall\t\n"; }
 
-std::string asmc::Label::toString() { return this->label + ":\n"; }
+std::string asmc::Label::toString() { return sanitize(this->label) + ":\n"; }
 
 std::string asmc::Sete::toString() { return "\tsete\t" + this->op + "\n"; }
 
@@ -19,11 +40,11 @@ std::string asmc::Setl::toString() { return "\tsetl\t" + this->op + "\n"; }
 std::string asmc::Setle::toString() { return "\tsetle\t" + this->op + "\n"; }
 
 std::string asmc::LinkTask::toString() {
-  return "." + this->command + "\t" + this->operand + "\n";
+  return "." + this->command + "\t" + sanitize(this->operand) + "\n";
 }
 
 std::string asmc::Call::toString() {
-  return "\tcall\t" + this->function + "\n";
+  return "\tcall\t" + sanitize(this->function) + "\n";
 }
 
 std::string asmc::Mov::toString() {
@@ -106,19 +127,33 @@ std::string asmc::Movdqu::toString() {
   return "\tmovdqu\t" + this->from + ", " + this->to + "\n";
 }
 
-std::string asmc::Jmp::toString() { return "\tjmp\t" + this->to + "\n"; }
+std::string asmc::Jmp::toString() {
+  return "\tjmp\t" + sanitize(this->to) + "\n";
+}
 
-std::string asmc::Jne::toString() { return "\tjne\t" + this->to + "\n"; }
+std::string asmc::Jne::toString() {
+  return "\tjne\t" + sanitize(this->to) + "\n";
+}
 
-std::string asmc::Je::toString() { return "\tje\t" + this->to + "\n"; }
+std::string asmc::Je::toString() {
+  return "\tje\t" + sanitize(this->to) + "\n";
+}
 
-std::string asmc::Jl::toString() { return "\tjl\t" + this->to + "\n"; }
+std::string asmc::Jl::toString() {
+  return "\tjl\t" + sanitize(this->to) + "\n";
+}
 
-std::string asmc::Jle::toString() { return "\tjle\t" + this->to + "\n"; }
+std::string asmc::Jle::toString() {
+  return "\tjle\t" + sanitize(this->to) + "\n";
+}
 
-std::string asmc::Jg::toString() { return "\tjg\t" + this->to + "\n"; }
+std::string asmc::Jg::toString() {
+  return "\tjg\t" + sanitize(this->to) + "\n";
+}
 
-std::string asmc::Jge::toString() { return "\tjge\t" + this->to + "\n"; }
+std::string asmc::Jge::toString() {
+  return "\tjge\t" + sanitize(this->to) + "\n";
+}
 
 std::string asmc::Movl::toString() {
   return "\tmovl\t" + this->from + ", " + this->to + "\n";
@@ -363,7 +398,7 @@ std::string asmc::Define::toString() {
 
 void asmc::File::operator<<(asmc::File file) {
   this->linker.stitch(file.linker);
-  this->text.istitch(file.text);
+  this->text.stitch(file.text);
   this->bss.stitch(file.bss);
   this->data.stitch(file.data);
   if (!this->hasLambda && file.hasLambda) {
@@ -378,7 +413,7 @@ void asmc::File::operator<<(asmc::File file) {
 
 void asmc::File::cstitch(asmc::File file) {
   this->linker.stitch(file.linker);
-  this->text.istitch(file.text);
+  this->text.stitch(file.text);
   this->bss.stitch(file.bss);
   this->data.stitch(file.data);
 }

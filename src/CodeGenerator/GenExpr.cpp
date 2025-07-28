@@ -3,12 +3,15 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
 
+#include "ASM.hpp"
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 
 using namespace gen::utils;
+
+std::vector<std::string> splitTypeName(const std::string &typeName);
 
 bool startsWith(const std::string &s, const std::string &prefix) {
   return s.size() >= prefix.size() && s.compare(0, prefix.size(), prefix) == 0;
@@ -510,7 +513,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     strLit->value = str.val;
     OutputFile.data << label;
     OutputFile.data << strLit;
-    output.access = "$" + label->label;
+    output.access = "$" + asmc::sanitize(label->label);
     output.size = asmc::QWord;
     output.type = "adr";
   } else if (dynamic_cast<ast::FStringLiteral *>(expr) != nullptr) {
@@ -618,7 +621,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     mov->size = asmc::DWord;
     mov->op = asmc::Float;
     mov->to = this->registers["%xmm0"]->get(asmc::DWord);
-    mov->from = label->label;
+    mov->from = asmc::sanitize(label->label);
 
     output.op = asmc::Float;
     mov->logicalLine = this->logicalLine;
@@ -1195,13 +1198,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     if (newExpr.type.typeName == "Map" &&
         typeHint.rfind("unordered_map", 0) == 0) {
-      std::istringstream iss(typeHint);
-      std::string typeName;
-      std::getline(iss, typeName, '.');
-      newExpr.type.typeName = typeName;
-
-      while (std::getline(iss, typeName, '.')) {
-        newExpr.templateTypes.push_back(typeName);
+      auto parts = splitTypeName(typeHint);
+      if (!parts.empty()) {
+        newExpr.type.typeName = parts.front();
+        for (size_t i = 1; i < parts.size(); ++i) {
+          newExpr.templateTypes.push_back(parts[i]);
+        }
       }
     }
 

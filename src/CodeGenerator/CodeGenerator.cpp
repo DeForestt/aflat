@@ -216,14 +216,42 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
 
 std::vector<std::string> splitTypeName(const std::string &typeName) {
   std::vector<std::string> parts;
-  std::stringstream ss(typeName);
-  std::string part;
+  std::string base;
+  std::string current;
+  int depth = 0;
 
-  while (std::getline(ss, part, '.')) {
-    if (!part.empty()) {
-      parts.push_back(part);
+  for (char c : typeName) {
+    if (c == '<') {
+      if (depth == 0) {
+        base = current;
+        current.clear();
+      } else {
+        current += c;
+      }
+      depth++;
+    } else if (c == '>') {
+      depth--;
+      if (depth == 0) {
+        parts.push_back(current);
+        current.clear();
+      } else {
+        current += c;
+      }
+    } else if (c == ',' && depth == 1) {
+      parts.push_back(current);
+      current.clear();
+    } else {
+      current += c;
     }
   }
+
+  if (!current.empty()) {
+    if (base.empty())
+      parts.push_back(current);
+    else
+      parts.push_back(current);
+  }
+  if (!base.empty()) parts.insert(parts.begin(), base);
 
   return parts;
 }
@@ -232,8 +260,8 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
                                         asmc::File &OutputFile) {
   gen::Type **type = this->typeList[typeName];
   if (type == nullptr) {
-    // find . in the type name
-    if (typeName.find('.') == std::string::npos)
+    // find < in the type name
+    if (typeName.find('<') == std::string::npos)
       this->alert("Type " + typeName +
                       " not found in type list, did you forget to "
                       "include the file that defines it?",
