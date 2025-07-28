@@ -216,20 +216,26 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
 
 std::vector<std::string> splitTypeName(const std::string &typeName) {
   std::vector<std::string> parts;
+  std::string base;
   std::string current;
   int depth = 0;
 
   for (char c : typeName) {
     if (c == '<') {
+      if (depth == 0) {
+        base = current;
+        current.clear();
+      } else {
+        current += c;
+      }
       depth++;
-      current += c;
     } else if (c == '>') {
       depth--;
-      current += c;
-    } else if (c == '.' && depth == 0) {
-      if (!current.empty()) {
+      if (depth == 0) {
         parts.push_back(current);
         current.clear();
+      } else {
+        current += c;
       }
     } else if (c == ',' && depth == 1) {
       parts.push_back(current);
@@ -238,7 +244,15 @@ std::vector<std::string> splitTypeName(const std::string &typeName) {
       current += c;
     }
   }
-  if (!current.empty()) parts.push_back(current);
+
+  if (!current.empty()) {
+    if (base.empty())
+      parts.push_back(current);
+    else
+      parts.push_back(current);
+  }
+  if (!base.empty()) parts.insert(parts.begin(), base);
+
   return parts;
 }
 
