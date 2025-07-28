@@ -176,4 +176,3 @@ gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c &
 wait
 
 echo "All libraries compiled successfully!"
-
