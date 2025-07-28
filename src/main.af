@@ -1,40 +1,34 @@
 .needs <std>
+import string from "String";
+import { print } from "String" under str;
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import { Some, None } from "Utils/option" under opt;
+import result from "Utils/result";
+import { accept, reject } from "Utils/result" under res;
 
-import string, {print} from "String" under str;
-import option, { Some, None } from "Utils/option" under opt;
-
-types(A)
-class TestClass {
-    private A value = value;
-
-    fn init(A value) -> Self {
+types(T)
+class Boxed {
+    T value = value;
+    fn init(T value) -> Self {
         return my;
     };
 
-    fn returnValue() -> A {
-        return my.value;
+    fn toString() -> string {
+        return `Boxed({my.value})`;
     };
 };
 
-types(T)
-fn print(immutable T value) {
-    str.print(`{value}\n`);
-    return;
+
+fn main() -> int {
+    let v = [
+        new Boxed::<string>("Hello"),
+        new Boxed::<string>("World"),
+    ];
+
+    foreach i in v {
+        str.print(`Processing item: {i}\n`);
+    };
+    
+    return 0;
 };
-
-fn main() {
-    let test = TestClass::<int>(12);
-    let test2 = new TestClass::<string>("Hello");
-    immutable let v = test.returnValue();
-    print(v);
-    print(test2.returnValue());
-    print("Can we do it twice? Yes, we can!");
-
-    let someVal = opt.Some(99);
-    print(someVal.or(0));
-
-    mutable option::<string> maybeString;
-    maybeString = opt.Some(`Hello, World!`);
-    print(maybeString.or("Default String"));
-};
-

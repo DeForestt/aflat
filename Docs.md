@@ -744,6 +744,20 @@ fn main() {
 };
 ```
 
+Nested template arguments are supported:
+
+```aflat
+types(A)
+class Box {
+    A value = value;
+    fn init(A value) -> Self { return my; };
+};
+
+fn main() {
+    Box::<Box::<int>> b = Box::<Box::<int>>(Box::<int>(5));
+};
+```
+
 ### Template Classes
 A class can also be templated. Provide the `types` line before the class and
 specify the concrete type when constructing. Unlike template functions, class

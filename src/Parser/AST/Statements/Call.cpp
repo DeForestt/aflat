@@ -50,10 +50,10 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         std::unordered_map<std::string, std::string> genericMap;
         // loop through func.argTypes
         auto new_ident = func->ident.ident;
-
+        std::vector<std::string> allGenerics;
         for (int i = 0; i < this->genericTypes.size(); i++) {
           genericMap[func->genericTypes[i]] = this->genericTypes[i];
-          new_ident += "." + this->genericTypes[i];
+          allGenerics.push_back(this->genericTypes[i]);
         }
 
         for (int i = 0; i < func->argTypes.size(); i++) {
@@ -65,9 +65,17 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
               auto exprType =
                   generator.GenExpr(this->Args.get(i), junkFile).type;
               genericMap[genericType] = exprType;
-              new_ident += "." + exprType;
+              allGenerics.push_back(exprType);
             }
           }
+        }
+        if (!allGenerics.empty()) {
+          new_ident += "<";
+          for (size_t gi = 0; gi < allGenerics.size(); ++gi) {
+            if (gi) new_ident += ",";
+            new_ident += allGenerics[gi];
+          }
+          new_ident += ">";
         }
         func->replaceTypes(genericMap);
         func->ident.ident = new_ident;
