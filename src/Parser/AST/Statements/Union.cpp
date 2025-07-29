@@ -46,12 +46,22 @@ std::vector<ast::Union::Alias *> parseAliases(
     if (comma->Sym == '(') {
       tokens.pop();
       auto maybeTypeName = dynamic_cast<lex::LObj *>(tokens.peek());
-      auto type =
-          maybeTypeName ? parser.typeList[maybeTypeName->meta] : nullptr;
+      auto type = maybeTypeName ? parser.typeList[maybeTypeName->meta] : nullptr;
       if (type) {
         tokens.pop();
-        std::variant<ast::Type, ast::Expr *> typeOrExpr =
-            ast::Type(type->typeName, type->size);
+        ast::Type aliasType(type->typeName, type->size);
+
+        const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
+        if (sym && sym->meta == "<")
+          aliasType = parser.parseFPointerType(tokens, aliasType.typeName);
+
+        auto templateTypes =
+            parser.parseTemplateTypeList(tokens, maybeTypeName->lineCount);
+        if (!templateTypes.empty()) {
+          for (auto &tName : templateTypes) aliasType.typeName += "." + tName;
+        }
+
+        std::variant<ast::Type, ast::Expr *> typeOrExpr = aliasType;
         value = typeOrExpr;
       } else {
         auto expr = parser.parseExpr(tokens);
