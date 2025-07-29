@@ -25,3 +25,21 @@ class RefCounted {
 		my.locked = false;
 	};
 };
+
+types(T)
+safe pedantic class Box {
+	private mutable T value = value;
+
+	fn init(const T &&value) -> Self {
+		return my;
+	};
+
+	fn get() -> T {
+		return my.value;
+	};
+
+	fn _set(const T &&value) -> Self {
+		my.value = value;
+		return my;
+	};
+};
