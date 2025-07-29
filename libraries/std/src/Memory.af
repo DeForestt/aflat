@@ -27,10 +27,10 @@ class RefCounted {
 };
 
 types(T)
-safe pedantic class Box {
+safe class Box {
 	private mutable T value = value;
 
-	fn init(const T &&value) -> Self {
+	fn init(const T value) -> Self {
 		return my;
 	};
 
@@ -42,4 +42,9 @@ safe pedantic class Box {
 		my.value = value;
 		return my;
 	};
+};
+
+types(T)
+export fn wrap(const T &&value) -> Box::<T> {
+	return new Box::<T>(value);
 };
