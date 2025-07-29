@@ -1156,7 +1156,37 @@ The package manager is used to create a project.  The syntax is:
 aflat make <project name>
 ```
 Add `--lib` before `make` to generate a library template without a `main` file.
-The project name is will be the name of the directory that will be created. It will create a head, src, and bin directory.  The head directory will contain the header files for the project.  The src directory will contain the source files for the project.  The bin directory will contain the compiled object files for the project.  It will also create an `aflat.cfg` file using an INI format for build settings and dependencies.
+The project name will be the name of the directory that is created. It will
+include `head`, `src`, and `bin` folders for headers, source files, and build
+artifacts. It also creates an `aflat.cfg` file using an INI format for build
+settings and dependencies.
+
+### The `aflat.cfg` file
+`aflat.cfg` contains a `[build]` section describing how the project is compiled
+and an optional `[dependencies]` section for additional modules. A typical
+configuration looks like:
+
+```ini
+[build]
+main = main         ; entry source relative to src/
+test = test/test    ; path to test file
+output = ./bin/app  ; output binary path
+debug = true        ; enable debug symbols
+asm = true          ; emit assembly
+```
+
+Entries under `[dependencies]` can point to local modules or git repositories.
+For example:
+
+```ini
+[dependencies]
+collections = "./src/collections.af"     ; local file
+logger = "https://github.com/example/logger.git" ; git repo
+```
+
+Use `aflat install <repo>` to add a git dependency and update `aflat.cfg`
+automatically. Run `aflat -U` to refresh all dependencies or `aflat -K` to
+remove them.
 
 ## Building a Project
 The project can be built with the following syntax:

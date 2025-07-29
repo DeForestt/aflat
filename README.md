@@ -66,9 +66,23 @@ int main(){
 ```
 
 ### Building a project
-The aflat `make` command will have generated an `aflat.cfg` configuration file that tells the built in pacage manager what to build and link the file.
+The `aflat make` command generates an `aflat.cfg` file that describes how the
+package manager should build your project. The configuration uses an INI style
+format with a `[build]` section for settings like the entry point and output
+binary as well as an optional `[dependencies]` section for additional modules.
 ```bash
 aflat build
+```
+
+### Including dependencies
+Add modules under `[dependencies]` in `aflat.cfg`. Each entry can be a relative
+path to a `.af` file or a Git repository URL. Use `aflat install <repo>` to clone
+a Git dependency and automatically update the configuration. Example:
+
+```ini
+[dependencies]
+collections = "./src/collections.af"
+logger = "https://github.com/example/logger.git"
 ```
 
 ### Running the project
