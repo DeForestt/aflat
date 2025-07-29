@@ -84,6 +84,8 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
 
   if (auto ident = dynamic_cast<lex::LObj *>(tokens.pop())) {
     this->ident.ident = ident->meta;
+    auto type = ast::Type(this->ident.ident, asmc::QWord);
+    parser.typeList << type;  // add the type to the typeList
   } else {
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
                          " union needs Ident");
@@ -105,10 +107,6 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
     this->statement = nullptr;
     tokens.pop();  // pop the closing brace
   }
-
-  auto type = ast::Type(this->ident.ident, asmc::QWord);
-
-  parser.typeList << type;  // add the type to the typeList
 };
 
 gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
