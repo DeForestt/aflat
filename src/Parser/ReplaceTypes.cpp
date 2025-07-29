@@ -9,10 +9,18 @@
 
 namespace ast {
 
+static std::string replaceAllParts(
+    const std::string &input,
+    const std::unordered_map<std::string, std::string> &typeMap);
+
 static void applyType(Type &t,
                       const std::unordered_map<std::string, std::string> &map) {
-  auto it = map.find(t.typeName);
-  if (it != map.end()) t.typeName = it->second;
+  if (t.typeName.find('.') != std::string::npos) {
+    t.typeName = replaceAllParts(t.typeName, map);
+  } else {
+    auto it = map.find(t.typeName);
+    if (it != map.end()) t.typeName = it->second;
+  }
   if (t.fPointerArgs.returnType) applyType(*t.fPointerArgs.returnType, map);
   for (auto &a : t.fPointerArgs.argTypes) applyType(a, map);
 }
@@ -247,17 +255,19 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
   if (auto un = dynamic_cast<Union *>(this)) {
     for (auto &alias : un->aliases) {
       if (alias->isType()) {
-        auto it = map.find(alias->getType().typeName);
-        if (it != map.end()) {
-          auto &typeName = it->second;
-          auto it = parse::PRIMITIVE_TYPES.find(typeName);
-          if (it != parse::PRIMITIVE_TYPES.end()) {
-            alias->value = Type(typeName, gen::utils::toSize(it->second));
-          } else {
-            alias->value =
-                Type(typeName, asmc::QWord);  // if it is a complex type, it
-                                              // passes as a pointer.
-          }
+        auto typeName = alias->getType().typeName;
+        if (typeName.find('.') != std::string::npos) {
+          typeName = replaceAllParts(typeName, map);
+        } else {
+          auto it = map.find(typeName);
+          if (it != map.end()) typeName = it->second;
+        }
+
+        auto primIt = parse::PRIMITIVE_TYPES.find(typeName);
+        if (primIt != parse::PRIMITIVE_TYPES.end()) {
+          alias->value = Type(typeName, gen::utils::toSize(primIt->second));
+        } else {
+          alias->value = Type(typeName, asmc::QWord);
         }
       } else if (alias->isConstExpr()) {
         alias->getConstExpr()->replaceTypes(map);
