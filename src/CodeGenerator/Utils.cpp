@@ -2,6 +2,8 @@
 
 #include <unistd.h>
 
+#include "CodeGenerator/CodeGenerator.hpp"
+
 using namespace gen::utils;
 
 void gen::utils::shellStatement(ast::Statement *stmt) {
@@ -226,4 +228,98 @@ std::string gen::utils::generateUUID() {
     uuid += std::to_string(rand() % 10);
   }
   return uuid;
+}
+
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <vector>
+
+std::tuple<std::string, std::unordered_map<std::string, std::string>>
+gen::utils::parseGenericName(const std::string &name,
+                             const std::vector<std::string> &templateTypeNames,
+                             CodeGenerator &generator) {
+  std::string base;
+  std::unordered_map<std::string, std::string> mapping;
+
+  auto lt_pos = name.find('<');
+  if (lt_pos == std::string::npos) {
+    // No generics — check mismatch with templateTypeNames
+    if (!templateTypeNames.empty()) {
+      generator.alert(
+          "Generic type parameters expected but not provided in " + name, true,
+          __FILE__, __LINE__);
+    }
+    return {name, mapping};
+  }
+
+  base = name.substr(0, lt_pos);
+
+  auto gt_pos = name.rfind('>');
+  if (gt_pos == std::string::npos || gt_pos <= lt_pos) {
+    generator.alert("Invalid generic type syntax in " + name, true, __FILE__,
+                    __LINE__);
+    return {base, mapping};
+  }
+
+  // Extract substring between < and >
+  std::string inner = name.substr(lt_pos + 1, gt_pos - lt_pos - 1);
+
+  // Parse inner parameters respecting nesting
+  int depth = 0;
+  std::string current;
+  std::vector<std::string> actualTypes;
+
+  for (char c : inner) {
+    if (c == '<') {
+      depth++;
+      current += c;
+    } else if (c == '>') {
+      if (depth == 0) {
+        generator.alert("Mismatched '>' in " + name, true, __FILE__, __LINE__);
+        return {base, mapping};
+      }
+      depth--;
+      current += c;
+    } else if (c == ',' && depth == 0) {
+      // Split at top-level commas
+      size_t start = current.find_first_not_of(" \t");
+      size_t end = current.find_last_not_of(" \t");
+      if (start != std::string::npos) {
+        actualTypes.push_back(current.substr(start, end - start + 1));
+      }
+      current.clear();
+    } else {
+      current += c;
+    }
+  }
+
+  // Add last type
+  size_t start = current.find_first_not_of(" \t");
+  size_t end = current.find_last_not_of(" \t");
+  if (start != std::string::npos) {
+    actualTypes.push_back(current.substr(start, end - start + 1));
+  }
+
+  if (depth != 0) {
+    generator.alert("Unbalanced '<' and '>' in " + name, true, __FILE__,
+                    __LINE__);
+    return {base, mapping};
+  }
+
+  // Map template names to actual types
+  if (actualTypes.size() != templateTypeNames.size()) {
+    generator.alert("Generic parameter count mismatch in " + name +
+                        " (expected " +
+                        std::to_string(templateTypeNames.size()) + ", got " +
+                        std::to_string(actualTypes.size()) + ")",
+                    true, __FILE__, __LINE__);
+  }
+
+  size_t count = std::min(actualTypes.size(), templateTypeNames.size());
+  for (size_t i = 0; i < count; ++i) {
+    mapping[templateTypeNames[i]] = actualTypes[i];
+  }
+
+  return {base, mapping};
 }
