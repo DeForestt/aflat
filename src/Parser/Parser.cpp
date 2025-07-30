@@ -1106,6 +1106,26 @@ ast::Type parse::Parser::parseFPointerType(
   return type;
 }
 
+std::string parse::Parser::parseTypeName(
+    links::LinkedList<lex::Token *> &tokens, int lineCount) {
+  auto typeTok = dynamic_cast<lex::LObj *>(tokens.pop());
+  if (!typeTok)
+    throw err::Exception("Type expected on line " + std::to_string(lineCount));
+  if (this->typeList[typeTok->meta] == nullptr)
+    throw err::Exception("Unknown type " + typeTok->meta);
+  std::string name = typeTok->meta;
+  auto nested = this->parseTemplateTypeList(tokens, lineCount);
+  if (!nested.empty()) {
+    name += "<";
+    for (size_t i = 0; i < nested.size(); ++i) {
+      if (i) name += ",";
+      name += nested[i];
+    }
+    name += ">";
+  }
+  return name;
+}
+
 std::vector<std::string> parse::Parser::parseTemplateTypeList(
     links::LinkedList<lex::Token *> &tokens, int lineCount) {
   std::vector<std::string> list;
@@ -1118,11 +1138,8 @@ std::vector<std::string> parse::Parser::parseTemplateTypeList(
                            std::to_string(lineCount));
     }
     tokens.pop();
-    while (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
-      auto typeName = *dynamic_cast<lex::LObj *>(tokens.pop());
-      if (this->typeList[typeName.meta] == nullptr)
-        throw err::Exception("Unknown type " + typeName.meta);
-      list.push_back(typeName.meta);
+    while (true) {
+      list.push_back(this->parseTypeName(tokens, lineCount));
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
           dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',') {
         tokens.pop();
