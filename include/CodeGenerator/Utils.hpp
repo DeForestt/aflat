@@ -25,13 +25,10 @@ void shellStatement(ast::Statement *stmt);
 std::string getLibPath(std::string lib);
 std::string generateUUID();
 
-using GenericNameConstruct =
-    std::tuple<std::string, std::unordered_map<std::string, std::string>>;
+using GenericNameConstruct = std::tuple<std::string, std::vector<std::string>>;
 
-std::tuple<std::string, std::unordered_map<std::string, std::string>>
-parseGenericName(const std::string &name,
-                 const std::vector<std::string> &templateTypeNames,
-                 CodeGenerator &generator);
+std::tuple<std::string, std::vector<std::string>> parseGenericName(
+    const std::string &name, CodeGenerator &generator);
 
 template <typename T>
 std::string toString(const T &value) {

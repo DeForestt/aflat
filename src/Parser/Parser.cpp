@@ -349,7 +349,11 @@ ast::Statement *parse::Parser::parseStmt(
 
       auto templateTypes = this->parseTemplateTypeList(tokens, obj.lineCount);
       if (!templateTypes.empty()) {
-        for (auto &tName : templateTypes) type.typeName += "." + tName;
+        type.typeName += "<" + templateTypes[0];
+        for (size_t i = 1; i < templateTypes.size(); ++i) {
+          type.typeName += ", " + templateTypes[i];
+        }
+        type.typeName += ">";
       }
 
       const auto ref = dynamic_cast<lex::Ref *>(tokens.peek());
@@ -950,7 +954,11 @@ ast::Statement *parse::Parser::parseArgs(
 
       auto templateTypes = this->parseTemplateTypeList(tokens, obj.lineCount);
       if (!templateTypes.empty()) {
-        for (auto &tName : templateTypes) dec->type.typeName += "." + tName;
+        dec->type.typeName += "<" + templateTypes[0];
+        for (size_t i = 1; i < templateTypes.size(); ++i) {
+          dec->type.typeName += ", " + templateTypes[i];
+        }
+        dec->type.typeName += ">";
       }
 
       std::string requestType = "";
@@ -1477,6 +1485,15 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         delete newExpr;
       } else {
         newExpr->templateTypes = std::move(types);
+
+        if (!newExpr->templateTypes.empty()) {
+          newExpr->type.typeName += "<" + newExpr->templateTypes[0];
+          for (size_t i = 1; i < newExpr->templateTypes.size(); ++i) {
+            newExpr->type.typeName += ", " + newExpr->templateTypes[i];
+          }
+          newExpr->type.typeName += ">";
+        }
+
         auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
         if (sym != nullptr && sym->Sym == '(') {
           tokens.pop();

@@ -31,11 +31,15 @@ gen::GenerationResult const List::generateExpression(
     // if typeHint is provided, we will use it as the type of the List
     // The typehint will be vector.typeName we just want the typeName part
     //
-    if (typeHint.find('.') == std::string::npos) {
+    // typehint is between the first '<' and the last '>'
+    auto start = typeHint.find('<') + 1;
+    auto end = typeHint.rfind('>');
+    if (start == std::string::npos || end == std::string::npos ||
+        start >= end) {
       generator.alert("Vector type hint given: `" + typeHint +
                       "` is unintelligible for a vector type.");
     }
-    typeHint = typeHint.substr(typeHint.find('.') + 1);
+    typeHint = typeHint.substr(start, end - start);
   }
   std::string type = typeHint;
 
@@ -52,7 +56,7 @@ gen::GenerationResult const List::generateExpression(
   };
 
   auto newExpr = new ast::NewExpr();
-  newExpr->type.typeName = "vector";
+  newExpr->type.typeName = "vector<" + type + ">";
   newExpr->type.size = asmc::QWord;
   newExpr->templateTypes.push_back(type);
 

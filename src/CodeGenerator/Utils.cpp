@@ -230,27 +230,15 @@ std::string gen::utils::generateUUID() {
   return uuid;
 }
 
-#include <string>
-#include <tuple>
-#include <unordered_map>
-#include <vector>
-
-std::tuple<std::string, std::unordered_map<std::string, std::string>>
-gen::utils::parseGenericName(const std::string &name,
-                             const std::vector<std::string> &templateTypeNames,
-                             CodeGenerator &generator) {
+std::tuple<std::string, std::vector<std::string>> gen::utils::parseGenericName(
+    const std::string &name, CodeGenerator &generator) {
   std::string base;
-  std::unordered_map<std::string, std::string> mapping;
+  std::vector<std::string> actualTypes;
 
   auto lt_pos = name.find('<');
   if (lt_pos == std::string::npos) {
-    // No generics — check mismatch with templateTypeNames
-    if (!templateTypeNames.empty()) {
-      generator.alert(
-          "Generic type parameters expected but not provided in " + name, true,
-          __FILE__, __LINE__);
-    }
-    return {name, mapping};
+    // No generics
+    return {name, actualTypes};
   }
 
   base = name.substr(0, lt_pos);
@@ -259,7 +247,7 @@ gen::utils::parseGenericName(const std::string &name,
   if (gt_pos == std::string::npos || gt_pos <= lt_pos) {
     generator.alert("Invalid generic type syntax in " + name, true, __FILE__,
                     __LINE__);
-    return {base, mapping};
+    return {base, actualTypes};
   }
 
   // Extract substring between < and >
@@ -268,7 +256,6 @@ gen::utils::parseGenericName(const std::string &name,
   // Parse inner parameters respecting nesting
   int depth = 0;
   std::string current;
-  std::vector<std::string> actualTypes;
 
   for (char c : inner) {
     if (c == '<') {
@@ -277,7 +264,7 @@ gen::utils::parseGenericName(const std::string &name,
     } else if (c == '>') {
       if (depth == 0) {
         generator.alert("Mismatched '>' in " + name, true, __FILE__, __LINE__);
-        return {base, mapping};
+        return {base, actualTypes};
       }
       depth--;
       current += c;
@@ -304,22 +291,8 @@ gen::utils::parseGenericName(const std::string &name,
   if (depth != 0) {
     generator.alert("Unbalanced '<' and '>' in " + name, true, __FILE__,
                     __LINE__);
-    return {base, mapping};
+    return {base, actualTypes};
   }
 
-  // Map template names to actual types
-  if (actualTypes.size() != templateTypeNames.size()) {
-    generator.alert("Generic parameter count mismatch in " + name +
-                        " (expected " +
-                        std::to_string(templateTypeNames.size()) + ", got " +
-                        std::to_string(actualTypes.size()) + ")",
-                    true, __FILE__, __LINE__);
-  }
-
-  size_t count = std::min(actualTypes.size(), templateTypeNames.size());
-  for (size_t i = 0; i < count; ++i) {
-    mapping[templateTypeNames[i]] = actualTypes[i];
-  }
-
-  return {base, mapping};
+  return {base, actualTypes};
 }

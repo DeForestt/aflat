@@ -37,9 +37,14 @@ gen::GenerationResult const UnionConstructor::generateExpression(
     gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
   asmc::File file;
   if (templateTypes.size() > 0) {
-    for (const auto &type : templateTypes) {
-      unionType.typeName += "." + type;
+    unionType.typeName += "<";
+    for (size_t i = 0; i < templateTypes.size(); ++i) {
+      unionType.typeName += templateTypes[i];
+      if (i < templateTypes.size() - 1) {
+        unionType.typeName += ", ";
+      }
     }
+    unionType.typeName += ">";
   }
 
   auto type = generator.getType(unionType.typeName, file);

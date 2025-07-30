@@ -237,6 +237,41 @@ int main(int argc, char *argv[]) {
 }
 #endif
 
+static std::string sanitizeGenerics(const std::string &input) {
+  std::string result;
+  bool inSingleQuote = false;
+  bool inDoubleQuote = false;
+
+  for (size_t i = 0; i < input.size(); ++i) {
+    char c = input[i];
+
+    // Handle quote toggling (ignoring escaped quotes)
+    if (c == '"' && !inSingleQuote) {
+      bool escaped = (i > 0 && input[i - 1] == '\\');
+      if (!escaped) inDoubleQuote = !inDoubleQuote;
+      result += c;
+    } else if (c == '\'' && !inDoubleQuote) {
+      bool escaped = (i > 0 && input[i - 1] == '\\');
+      if (!escaped) inSingleQuote = !inSingleQuote;
+      result += c;
+    } else if (!inSingleQuote && !inDoubleQuote) {
+      // Outside of quotes → replace < and >
+      if (c == '<') {
+        result += "__std__generic__start__";
+      } else if (c == '>') {
+        result += "__std__generic__end__";
+      } else {
+        result += c;
+      }
+    } else {
+      // Inside quotes → just append
+      result += c;
+    }
+  }
+
+  return result;
+}
+
 bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug) {
   bool success = true;
@@ -332,7 +367,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
 
     // output linker commands
     while (file.linker.head != nullptr) {
-      ofs << file.linker.pop()->toString();
+      ofs << sanitizeGenerics(file.linker.pop()->toString());
     }
     // text section output
     ofs << "\n\n.text\n\n";
@@ -356,7 +391,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
         else if (logicalLine > 0 &&
                  dynamic_cast<asmc::Define *>(inst) != nullptr)
           ofs << ".line " << logicalLine - 1 << "\n";
-      auto str = inst->toString();
+      auto str = sanitizeGenerics(inst->toString());
       // replace '\n' with "\n .line " + line number
       // while(str.find('\n') != std::string::npos){
       //   auto index = str.find('\n');
@@ -372,13 +407,13 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     // data section output
     ofs << "\n\n.data\n\n";
     while (file.data.head != nullptr) {
-      ofs << file.data.pop()->toString();
+      ofs << sanitizeGenerics(file.data.pop()->toString());
     }
 
     // bss section output
     ofs << "\n\n.bss\n\n";
     while (file.bss.head != nullptr) {
-      ofs << file.bss.pop()->toString();
+      ofs << sanitizeGenerics(file.bss.pop()->toString());
     }
     ofs.close();
     if (!gQuiet) {

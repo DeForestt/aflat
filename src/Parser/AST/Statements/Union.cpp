@@ -46,7 +46,8 @@ std::vector<ast::Union::Alias *> parseAliases(
     if (comma->Sym == '(') {
       tokens.pop();
       auto maybeTypeName = dynamic_cast<lex::LObj *>(tokens.peek());
-      auto type = maybeTypeName ? parser.typeList[maybeTypeName->meta] : nullptr;
+      auto type =
+          maybeTypeName ? parser.typeList[maybeTypeName->meta] : nullptr;
       if (type) {
         tokens.pop();
         ast::Type aliasType(type->typeName, type->size);
@@ -99,6 +100,9 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
                          " union needs Ident");
   }
 
+  auto type = ast::Type(this->ident.ident, asmc::QWord);
+
+  parser.typeList << type;  // add the type to the typeList
   auto op = dynamic_cast<lex::OpSym *>(tokens.pop());
 
   if (op == nullptr || op->Sym != '{') {
@@ -115,10 +119,6 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
     this->statement = nullptr;
     tokens.pop();  // pop the closing brace
   }
-
-  auto type = ast::Type(this->ident.ident, asmc::QWord);
-
-  parser.typeList << type;  // add the type to the typeList
 };
 
 gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {

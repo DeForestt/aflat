@@ -233,15 +233,16 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
   gen::Type **type = this->typeList[typeName];
   if (type == nullptr) {
     // find . in the type name
-    if (typeName.find('.') == std::string::npos)
+    if (typeName.find('<') == std::string::npos)
       this->alert("Type " + typeName +
                       " not found in type list, did you forget to "
                       "include the file that defines it?",
                   true, __FILE__, __LINE__);
 
-    auto typeNameParts = splitTypeName(typeName);
-    auto typeNamePart = typeNameParts.front();
+    auto parsedTemplate = gen::utils::parseGenericName(typeName, *this);
 
+    auto typeNamePart = std::get<0>(parsedTemplate);
+    auto templates = std::get<1>(parsedTemplate);
     // find the class of this type...
     auto cl = this->genericTypes[typeNamePart];
 
@@ -252,20 +253,16 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
                   true, __FILE__, __LINE__);
     }
 
-    if (cl->genericTypes.size() != typeNameParts.size() - 1) {
+    if (cl->genericTypes.size() != templates.size()) {
       this->alert("Type " + typeName + " has " +
                       std::to_string(cl->genericTypes.size()) +
                       " generic types, but " +
-                      std::to_string(typeNameParts.size() - 1) +
+                      std::to_string(templates.size()) +
                       " were provided. Please check the type definition.",
                   true, __FILE__, __LINE__);
     }
-    // typeNameParts without the first parts
-    auto typeNameWithoutFirstPart = typeNameParts;
-    typeNameWithoutFirstPart.erase(typeNameWithoutFirstPart.begin());
 
-    return this->instantiateGenericClass(cl, typeNameWithoutFirstPart, typeName,
-                                         OutputFile);
+    return this->instantiateGenericClass(cl, templates, typeName, OutputFile);
   }
   return type;
 }

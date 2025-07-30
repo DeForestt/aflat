@@ -140,10 +140,18 @@ Function::Function(const ScopeMod &scope,
 
     auto templateTypeList =
         parser.parseTemplateTypeList(tokens, tokens.peek()->lineCount);
+
     auto typenameStr = type->typeName;
-    for (auto &genericType : templateTypeList) {
-      typenameStr = typenameStr + "." + genericType;
-    }
+    if (!templateTypeList.empty()) {
+      typenameStr += "<";
+      for (size_t i = 0; i < templateTypeList.size(); ++i) {
+        typenameStr += templateTypeList[i];
+        if (i != templateTypeList.size() - 1) {
+          typenameStr += ", ";
+        }
+      }
+      typenameStr += ">";
+    };
 
     this->type = Type(typenameStr, type->size);
     this->type.opType = type->opType;
@@ -383,8 +391,8 @@ gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
   if (generator.scope != nullptr && tn == "Self") {
     tn = generator.scope->Ident;
   }
-  output.type = this->optional ? "option." + tn
-                : this->error  ? "result." + tn
+  output.type = this->optional ? "option<" + tn + ">"
+                : this->error  ? "result<" + tn + ">"
                                : tn;
   output.size = this->optional || this->error ? asmc::QWord : this->type.size;
   output.access = generator.registers["%rax"]->get(output.size);
