@@ -262,6 +262,15 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
                   true, __FILE__, __LINE__);
     }
 
+    for (auto &templateType : templates) {
+      if (parse::PRIMITIVE_TYPES.find(templateType) ==
+          parse::PRIMITIVE_TYPES.end()) {
+        getType(templateType, OutputFile);  // This ensures that the types are
+                                            // valid and registered in the type
+                                            // list if they are also generic
+      }
+    }
+
     return this->instantiateGenericClass(cl, templates, typeName, OutputFile);
   }
   return type;
