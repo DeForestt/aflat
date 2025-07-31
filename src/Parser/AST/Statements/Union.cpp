@@ -49,7 +49,18 @@ std::vector<ast::Union::Alias *> parseAliases(
       auto type =
           maybeTypeName ? parser.typeList[maybeTypeName->meta] : nullptr;
       if (type) {
-        tokens.pop();
+        tokens.pop();  // pop the type name
+        auto templateArgs =
+            parser.parseTemplateTypeList(tokens, maybeTypeName->lineCount);
+
+        if (!templateArgs.empty()) {
+          type->typeName += "<" + templateArgs[0];
+          for (size_t i = 1; i < templateArgs.size(); ++i) {
+            type->typeName += ", " + templateArgs[i];
+          }
+          type->typeName += ">";
+        }
+        // std::cout << "Parsed type: " << type->typeName << std::endl;
         ast::Type aliasType(type->typeName, type->size);
 
         const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());

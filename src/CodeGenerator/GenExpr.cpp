@@ -170,6 +170,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       };
 
       Type **t = this->typeList[ident];
+      if (ident.find("<") != std::string::npos) {
+        t = this->getType(ident, OutputFile);
+      }
       if (t != nullptr) {
         Type *type = *t;
         // check if t is an enum
@@ -203,8 +206,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                     true, __FILE__, __LINE__);
             }
           } else {
+            if (!type->SymbolTable.head) {
+              alert("Type " + type->Ident +
+                        " is incomplete Please consider boxing using "
+                        "Memory::Box to fix this issue",
+                    true, __FILE__, __LINE__);
+            }
             output.access =
-                '$' + std::to_string(type->SymbolTable.head->data.byteMod);
+                "$" + std::to_string(type->SymbolTable.head->data.byteMod);
             output.type = "int";
             output.size = asmc::DWord;
           }

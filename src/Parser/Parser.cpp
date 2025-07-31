@@ -943,90 +943,87 @@ ast::Statement *parse::Parser::parseArgs(
       tokens.pop();
     };
 
-    if (typeList[obj.meta] != nullptr) {
-      auto dec = new ast::Declare();
-      const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
-      if (sym != nullptr && sym->meta == "<") {
-        dec->type = this->parseFPointerType(tokens, obj.meta);
-      } else {
-        dec->type = *typeList[obj.meta];
-      }
+    auto dec = new ast::Declare();
+    const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
+    if (sym != nullptr && sym->meta == "<") {
+      dec->type = this->parseFPointerType(tokens, obj.meta);
+    } else {
+      dec->type = typeList[obj.meta] ? *typeList[obj.meta]
+                                     : ast::Type(obj.meta, asmc::QWord);
+    }
 
-      auto templateTypes = this->parseTemplateTypeList(tokens, obj.lineCount);
-      if (!templateTypes.empty()) {
-        dec->type.typeName += "<" + templateTypes[0];
-        for (size_t i = 1; i < templateTypes.size(); ++i) {
-          dec->type.typeName += ", " + templateTypes[i];
-        }
-        dec->type.typeName += ">";
+    auto templateTypes = this->parseTemplateTypeList(tokens, obj.lineCount);
+    if (!templateTypes.empty()) {
+      dec->type.typeName += "<" + templateTypes[0];
+      for (size_t i = 1; i < templateTypes.size(); ++i) {
+        dec->type.typeName += ", " + templateTypes[i];
       }
+      dec->type.typeName += ">";
+    }
 
-      std::string requestType = "";
-      links::LinkedList<std::string> modList;
-      // Handle typeOf
-      if (obj.meta == "typeOf") {
-        auto OpenParen = dynamic_cast<lex::OpSym *>(tokens.pop());
-        if (!OpenParen || OpenParen->Sym != '(') {
-          throw err::Exception("Expected '(' after typeOf on line " +
-                               std::to_string(obj.lineCount));
-        }
-        auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
-        if (!ident)
+    std::string requestType = "";
+    links::LinkedList<std::string> modList;
+    // Handle typeOf
+    if (obj.meta == "typeOf") {
+      auto OpenParen = dynamic_cast<lex::OpSym *>(tokens.pop());
+      if (!OpenParen || OpenParen->Sym != '(') {
+        throw err::Exception("Expected '(' after typeOf on line " +
+                             std::to_string(obj.lineCount));
+      }
+      auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
+      if (!ident)
+        throw err::Exception("Expected identifier after typeOf on line " +
+                             std::to_string(obj.lineCount));
+      requestType = ident->meta;
+
+      auto dot = dynamic_cast<lex::OpSym *>(tokens.peek());
+      while (dot && dot->Sym == '.') {
+        tokens.pop();
+        auto mod = dynamic_cast<lex::LObj *>(tokens.pop());
+        if (!mod)
           throw err::Exception("Expected identifier after typeOf on line " +
                                std::to_string(obj.lineCount));
-        requestType = ident->meta;
-
-        auto dot = dynamic_cast<lex::OpSym *>(tokens.peek());
-        while (dot && dot->Sym == '.') {
-          tokens.pop();
-          auto mod = dynamic_cast<lex::LObj *>(tokens.pop());
-          if (!mod)
-            throw err::Exception("Expected identifier after typeOf on line " +
-                                 std::to_string(obj.lineCount));
-          modList << mod->meta;
-          dot = dynamic_cast<lex::OpSym *>(tokens.peek());
-        }
-
-        auto CloseParen = dynamic_cast<lex::OpSym *>(tokens.pop());
-        if (!CloseParen || CloseParen->Sym != ')') {
-          throw err::Exception("Expected ')' after typeOf on line " +
-                               std::to_string(obj.lineCount));
-        }
+        modList << mod->meta;
+        dot = dynamic_cast<lex::OpSym *>(tokens.peek());
       }
 
-      // check if the type is a reference
-      const auto refSym = dynamic_cast<lex::OpSym *>(tokens.peek());
-      if (refSym && refSym->Sym == '&') {
-        // check if the type is an rval reference
+      auto CloseParen = dynamic_cast<lex::OpSym *>(tokens.pop());
+      if (!CloseParen || CloseParen->Sym != ')') {
+        throw err::Exception("Expected ')' after typeOf on line " +
+                             std::to_string(obj.lineCount));
+      }
+    }
+
+    // check if the type is a reference
+    const auto refSym = dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (refSym && refSym->Sym == '&') {
+      // check if the type is an rval reference
+      tokens.pop();
+      if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
+          dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '&') {
         tokens.pop();
-        if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-            dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == '&') {
-          tokens.pop();
-          dec->type.isRvalue = true;
-        } else {
-          dec->type.isReference = true;
-          dec->type.refSize = dec->type.size;
-          dec->type.size = asmc::QWord;
-        }
+        dec->type.isRvalue = true;
+      } else {
+        dec->type.isReference = true;
+        dec->type.refSize = dec->type.size;
+        dec->type.size = asmc::QWord;
       }
+    }
 
-      // ensures the the current token is an Ident
-      if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
-        auto ident = *dynamic_cast<lex::LObj *>(tokens.peek());
-        tokens.pop();
-        dec->ident = ident.meta;
-        dec->mut = isMutable;
-        dec->readOnly = isImmutable;
-        dec->requestType = requestType;
-        dec->modList = modList;
-        output = dec;
-        types.push_back(dec->type);
-        mutability.push_back(isMutable);
-        readOnly.push_back(isImmutable);
-      }
-    } else
-      throw err::Exception("Line: " + std::to_string(obj.lineCount) +
-                           " expected type got " + obj.meta);
+    // ensures the the current token is an Ident
+    if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+      auto ident = *dynamic_cast<lex::LObj *>(tokens.peek());
+      tokens.pop();
+      dec->ident = ident.meta;
+      dec->mut = isMutable;
+      dec->readOnly = isImmutable;
+      dec->requestType = requestType;
+      dec->modList = modList;
+      output = dec;
+      types.push_back(dec->type);
+      mutability.push_back(isMutable);
+      readOnly.push_back(isImmutable);
+    }
   }
 
   if (tokens.head == nullptr) {
@@ -1130,17 +1127,36 @@ std::vector<std::string> parse::Parser::parseTemplateTypeList(
       auto typeName = *dynamic_cast<lex::LObj *>(tokens.pop());
       if (this->typeList[typeName.meta] == nullptr)
         throw err::Exception("Unknown type " + typeName.meta);
-      list.push_back(typeName.meta);
-      if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
-          dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',') {
+      auto tname = typeName.meta;
+      // recursing into nested template types
+      auto l = this->parseTemplateTypeList(tokens, lineCount);
+      if (!l.empty()) {
+        tname += "<" + l[0];
+        for (size_t i = 1; i < l.size(); ++i) {
+          tname += ", " + l[i];
+        }
+        tname += ">";
+      }
+      list.push_back(tname);
+      auto k = tokens.peek();
+      if (dynamic_cast<lex::OpSym *>(k) != nullptr &&
+          dynamic_cast<lex::OpSym *>(k)->Sym == ',') {
         tokens.pop();
-      } else if (dynamic_cast<lex::Symbol *>(tokens.peek()) != nullptr &&
-                 dynamic_cast<lex::Symbol *>(tokens.peek())->meta == ">") {
+      } else if (dynamic_cast<lex::Symbol *>(k) != nullptr &&
+                 dynamic_cast<lex::Symbol *>(k)->meta == ">") {
         tokens.pop();
+        break;
+      } else if (dynamic_cast<lex::OpSym *>(k) != nullptr &&
+                 dynamic_cast<lex::OpSym *>(k)->Sym == '>') {
+        tokens.pop();
+        auto newSym = new lex::Symbol();
+        newSym->meta = ">";
+        tokens << newSym;
         break;
       } else {
         throw err::Exception("Expected , or > after template list on line " +
-                             std::to_string(lineCount));
+                             std::to_string(lineCount) + " near " + tname +
+                             " but got " + tokens.peek()->toString());
       }
     }
   }
@@ -1449,10 +1465,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
             "Line: " + std::to_string(tokens.peek()->lineCount) +
             " Expected, Ident after new.");
       auto nType = this->typeList[typeName->meta];
-      if (nType == nullptr)
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) + ": " +
-            typeName->meta + " is not a valid type.");
+      if (nType == nullptr) nType = new ast::Type(typeName->meta, asmc::QWord);
       newExpr->type = *nType;
       newExpr->logicalLine = obj.lineCount;
 
