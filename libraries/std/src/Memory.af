@@ -1,4 +1,5 @@
 .needs <std> 
+import string from "String";
 
 class RefCounted {
 	private mutable int refCount = 0;
@@ -27,7 +28,7 @@ class RefCounted {
 };
 
 types(T)
-safe class Box {
+class Box {
 	private mutable T value = value;
 
 	fn init(const T value) -> Self {
@@ -42,6 +43,17 @@ safe class Box {
 		my.value = value;
 		return my;
 	};
+
+	when(T has toString)
+	fn toString() -> string {
+		return `Box: {my.value}`;
+	};
+
+	when(T missing toString)
+	fn toString() -> string {
+		return `Box: {__typeName__}`; // just use the typeName for toString
+	};
+
 };
 
 types(T)
