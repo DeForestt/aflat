@@ -30,6 +30,7 @@ union result {
         };
     };
 
+    when (T has toString or T is primitive)
     safe fn toString() -> string {
         match my {
             Ok(value) => return `Ok({value})`,

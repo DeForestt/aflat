@@ -5,9 +5,10 @@ import result from "Utils/result";
 import option from "Utils/option";
 import vector from "Collections/Vector";
 import unordered_map from "Collections/unordered_map";
-import {Some, None} from "Utils/option" under opt;
-import {accept, reject} from "Utils/result" under res;
+import {Some, None, optionWrapper} from "Utils/option" under opt;
+import {accept, reject, resultWrapper} from "Utils/result" under res;
 import Box from "Memory";
+import Error from "Utils/Error";
 
 
 union JSON {
@@ -15,21 +16,61 @@ union JSON {
     Number(int),
     Boolean(bool),
     List(vector::<Box::<JSON>>),
-    Object(unordered_map::<Box::<JSON>>)
+    Object(unordered_map::<Box::<JSON>>),
+    Null
+
+    fn get(const string key) -> JSON? {
+        match my {
+            Object(map) => {
+                match map.get(key) {
+                    Some(value) => return value.get(), // unwrap the Box
+                    None => return NULL // null will become None
+                }
+            },
+            String() => return NULL,
+            Number() => return NULL,
+            Boolean() => return NULL,
+            List() => return NULL,
+            Null() => return NULL
+        }
+    }
+
+    fn asString() -> string! {
+        match my {
+            String(s) => return s,
+            Number() => return new Error("Requested JSON value is a Number, not a String"),
+            Boolean() => return new Error("Requested JSON value is a Boolean, not a String"),
+            List() => return new Error("Requested JSON value is a List, not a String"),
+            Object() => return new Error("Requested JSON value is an Object, not a String"),
+            Null() => return new Error("Requested JSON value is NULL, not a String")
+        }
+    };
+
+    fn toString() -> string {
+        return `JSON`;
+    }
 };
 
-fn Object(const unordered_map::<Box::<JSON>> map) -> JSON {
+export fn Object(const unordered_map::<Box::<JSON>> map) -> JSON {
     return new JSON->Object(map);
 };
 
-fn String(const string s) -> JSON {
+export fn String(const string s) -> JSON {
     return new JSON->String(s);
 };
 
-fn Number(const int n) -> JSON {
+export fn Number(const int n) -> JSON {
     return new JSON->Number(n);
 };
 
-fn Boolean(const bool b) -> JSON {
+export fn Boolean(const bool b) -> JSON {
     return new JSON->Boolean(b);
+};
+
+export fn List(const vector::<Box::<JSON>> list) -> JSON {
+    return new JSON->List(list);
+};
+
+export fn Null() -> JSON {
+    return new JSON->Null();
 };
