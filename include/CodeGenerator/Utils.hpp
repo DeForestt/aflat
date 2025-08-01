@@ -3,6 +3,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <tuple>
+#include <vector>
 
 #include "ASM.hpp"
 #include "CodeGenerator/Types.hpp"
@@ -22,6 +24,11 @@ ast::Sequence *copyAllFunctionShells(ast::Statement *stmt);
 void shellStatement(ast::Statement *stmt);
 std::string getLibPath(std::string lib);
 std::string generateUUID();
+
+using GenericNameConstruct = std::tuple<std::string, std::vector<std::string>>;
+
+std::tuple<std::string, std::vector<std::string>> parseGenericName(
+    const std::string &name, CodeGenerator &generator);
 
 template <typename T>
 std::string toString(const T &value) {

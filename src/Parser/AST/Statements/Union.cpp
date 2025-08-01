@@ -46,9 +46,21 @@ std::vector<ast::Union::Alias *> parseAliases(
     if (comma->Sym == '(') {
       tokens.pop();
       auto maybeTypeName = dynamic_cast<lex::LObj *>(tokens.peek());
-      auto type = maybeTypeName ? parser.typeList[maybeTypeName->meta] : nullptr;
+      auto type =
+          maybeTypeName ? parser.typeList[maybeTypeName->meta] : nullptr;
       if (type) {
-        tokens.pop();
+        tokens.pop();  // pop the type name
+        auto templateArgs =
+            parser.parseTemplateTypeList(tokens, maybeTypeName->lineCount);
+
+        if (!templateArgs.empty()) {
+          type->typeName += "<" + templateArgs[0];
+          for (size_t i = 1; i < templateArgs.size(); ++i) {
+            type->typeName += ", " + templateArgs[i];
+          }
+          type->typeName += ">";
+        }
+        // std::cout << "Parsed type: " << type->typeName << std::endl;
         ast::Type aliasType(type->typeName, type->size);
 
         const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
@@ -99,6 +111,9 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
                          " union needs Ident");
   }
 
+  auto type = ast::Type(this->ident.ident, asmc::QWord);
+
+  parser.typeList << type;  // add the type to the typeList
   auto op = dynamic_cast<lex::OpSym *>(tokens.pop());
 
   if (op == nullptr || op->Sym != '{') {
@@ -115,10 +130,6 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
     this->statement = nullptr;
     tokens.pop();  // pop the closing brace
   }
-
-  auto type = ast::Type(this->ident.ident, asmc::QWord);
-
-  parser.typeList << type;  // add the type to the typeList
 };
 
 gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {

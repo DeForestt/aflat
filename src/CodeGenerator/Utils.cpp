@@ -2,6 +2,8 @@
 
 #include <unistd.h>
 
+#include "CodeGenerator/CodeGenerator.hpp"
+
 using namespace gen::utils;
 
 void gen::utils::shellStatement(ast::Statement *stmt) {
@@ -226,4 +228,71 @@ std::string gen::utils::generateUUID() {
     uuid += std::to_string(rand() % 10);
   }
   return uuid;
+}
+
+std::tuple<std::string, std::vector<std::string>> gen::utils::parseGenericName(
+    const std::string &name, CodeGenerator &generator) {
+  std::string base;
+  std::vector<std::string> actualTypes;
+
+  auto lt_pos = name.find('<');
+  if (lt_pos == std::string::npos) {
+    // No generics
+    return {name, actualTypes};
+  }
+
+  base = name.substr(0, lt_pos);
+
+  auto gt_pos = name.rfind('>');
+  if (gt_pos == std::string::npos || gt_pos <= lt_pos) {
+    generator.alert("Invalid generic type syntax in " + name, true, __FILE__,
+                    __LINE__);
+    return {base, actualTypes};
+  }
+
+  // Extract substring between < and >
+  std::string inner = name.substr(lt_pos + 1, gt_pos - lt_pos - 1);
+
+  // Parse inner parameters respecting nesting
+  int depth = 0;
+  std::string current;
+
+  for (char c : inner) {
+    if (c == '<') {
+      depth++;
+      current += c;
+    } else if (c == '>') {
+      if (depth == 0) {
+        generator.alert("Mismatched '>' in " + name, true, __FILE__, __LINE__);
+        return {base, actualTypes};
+      }
+      depth--;
+      current += c;
+    } else if (c == ',' && depth == 0) {
+      // Split at top-level commas
+      size_t start = current.find_first_not_of(" \t");
+      size_t end = current.find_last_not_of(" \t");
+      if (start != std::string::npos) {
+        actualTypes.push_back(current.substr(start, end - start + 1));
+      }
+      current.clear();
+    } else {
+      current += c;
+    }
+  }
+
+  // Add last type
+  size_t start = current.find_first_not_of(" \t");
+  size_t end = current.find_last_not_of(" \t");
+  if (start != std::string::npos) {
+    actualTypes.push_back(current.substr(start, end - start + 1));
+  }
+
+  if (depth != 0) {
+    generator.alert("Unbalanced '<' and '>' in " + name, true, __FILE__,
+                    __LINE__);
+    return {base, actualTypes};
+  }
+
+  return {base, actualTypes};
 }

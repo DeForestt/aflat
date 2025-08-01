@@ -11,16 +11,18 @@ Type **CodeGenerator::instantiateGenericClass(
     std::string &newName, asmc::File &OutputFile) {
   auto classStatement = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
   std::unordered_map<std::string, std::string> genericMap;
-  newName = classStatement->ident.ident;
+  newName = classStatement->ident.ident + "<";
   if (types.size() != classStatement->genericTypes.size())
     alert("Generic class " + cls->ident.ident + " requires " +
               std::to_string(classStatement->genericTypes.size()) +
               " template types, but got " + std::to_string(types.size()),
           true, __FILE__, __LINE__);
   for (size_t i = 0; i < types.size(); i++) {
-    newName += "." + types[i];
+    newName += types[i];
+    if (i < types.size() - 1) newName += ",";
     genericMap[classStatement->genericTypes[i]] = types[i];
   }
+  newName += ">";
 
   classStatement->replaceTypes(genericMap);
   classStatement->ident.ident = newName;

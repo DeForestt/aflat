@@ -1,4 +1,5 @@
 .needs <std> 
+import string from "String";
 
 class RefCounted {
 	private mutable int refCount = 0;
@@ -27,7 +28,7 @@ class RefCounted {
 };
 
 types(T)
-safe class Box {
+class Box {
 	private mutable T value = value;
 
 	fn init(const T value) -> Self {

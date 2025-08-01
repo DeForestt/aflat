@@ -15,7 +15,7 @@ static std::string replaceAllParts(
 
 static void applyType(Type &t,
                       const std::unordered_map<std::string, std::string> &map) {
-  if (t.typeName.find('.') != std::string::npos) {
+  if (t.typeName.find('<') != std::string::npos) {
     t.typeName = replaceAllParts(t.typeName, map);
   } else {
     auto it = map.find(t.typeName);
@@ -35,39 +35,85 @@ static void applyList(links::LinkedList<T *> &list,
   }
   list.reset();
 }
+static std::string replaceTypeString(
+    const std::string &input,
+    const std::unordered_map<std::string, std::string> &map) {
+  std::string result;
+  std::string currentIdent;
+
+  for (char c : input) {
+    if (std::isalnum(static_cast<unsigned char>(c)) || c == '_') {
+      currentIdent += c;
+    } else {
+      if (!currentIdent.empty()) {
+        auto it = map.find(currentIdent);
+        if (it != map.end()) {
+          result += it->second;
+        } else {
+          result += currentIdent;
+        }
+        currentIdent.clear();
+      }
+      result += c;
+    }
+  }
+
+  if (!currentIdent.empty()) {
+    auto it = map.find(currentIdent);
+    if (it != map.end()) {
+      result += it->second;
+    } else {
+      result += currentIdent;
+    }
+  }
+
+  return result;
+}
 
 static void applyTemplateTypes(
     std::vector<std::string> &templateTypes,
     const std::unordered_map<std::string, std::string> &map) {
   for (auto &t : templateTypes) {
-    auto it = map.find(t);
-    if (it != map.end()) t = it->second;
+    t = replaceTypeString(t, map);
   }
 }
 
 static std::string replaceAllParts(
     const std::string &input,
     const std::unordered_map<std::string, std::string> &typeMap) {
-  std::stringstream ss(input);
-  std::string segment;
-  std::vector<std::string> parts;
+  std::string result;
+  std::string currentIdent;
 
-  // Split the string on '.'
-  while (std::getline(ss, segment, '.')) {
-    // Replace if mapping exists
-    auto it = typeMap.find(segment);
-    if (it != typeMap.end()) {
-      parts.push_back(it->second);
+  for (size_t i = 0; i < input.size(); ++i) {
+    char c = input[i];
+
+    if (std::isalnum(static_cast<unsigned char>(c)) || c == '_') {
+      // Build up identifier
+      currentIdent += c;
     } else {
-      parts.push_back(segment);
+      // If we were building an identifier, replace if needed
+      if (!currentIdent.empty()) {
+        auto it = typeMap.find(currentIdent);
+        if (it != typeMap.end()) {
+          result += it->second;
+        } else {
+          result += currentIdent;
+        }
+        currentIdent.clear();
+      }
+      // Copy punctuation / symbols directly
+      result += c;
     }
   }
 
-  // Join back together
-  std::string result;
-  for (size_t i = 0; i < parts.size(); ++i) {
-    if (i > 0) result += ".";
-    result += parts[i];
+  // Handle last identifier at end of string
+  if (!currentIdent.empty()) {
+    auto it = typeMap.find(currentIdent);
+    if (it != typeMap.end()) {
+      result += it->second;
+    } else {
+      result += currentIdent;
+    }
   }
 
   return result;
