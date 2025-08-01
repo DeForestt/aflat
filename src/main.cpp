@@ -637,7 +637,7 @@ ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
       if (system(cmd.c_str()) != 0) {
         return {objPath, false};
       }
-      fs::remove(asmPath);
+      if (!config.asm_) fs::remove(asmPath);
     } else {
       return {objPath, false};
     }
