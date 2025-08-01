@@ -164,8 +164,31 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
                       generator.registers["%rdx"]->get(asmc::QWord) + ")";
   file.text << moveTypeTag;
 
+  // make sure that each case name is an actual alias of the union type
+  for (const auto &c : cases) {
+    if (std::find_if(unionType->aliases.begin(), unionType->aliases.end(),
+                     [&](const auto &alias) {
+                       return alias.name == c.pattern.aliasName;
+                     }) == unionType->aliases.end() &&
+        c.pattern.aliasName != "_") {
+      generator.alert("Match case alias name '" + c.pattern.aliasName +
+                          "' is not an alias of the union type '" +
+                          unionType->Ident + "'.",
+                      true, __FILE__, __LINE__);
+      return {.file = file, .expr = std::nullopt};
+    }
+  }
+
   for (auto i = 0; i < jmpLabels.size(); i++) {
     auto &alias = unionType->aliases[i];
+    // find the case
+    auto caseIt =
+        std::find_if(cases.begin(), cases.end(), [&](const Match::Case &c) {
+          return c.pattern.aliasName == alias.name;
+        });
+    if (caseIt == cases.end()) {
+      continue;
+    }
     auto cmp = new asmc::Cmp();
     cmp->logicalLine = expr->logicalLine;
     cmp->to = generator.registers["%rax"]->get(asmc::DWord);
@@ -176,17 +199,6 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
     jne->to = jmpLabels[i];
     jne->logicalLine = expr->logicalLine;
     file.text << jne;
-
-    // find the case for this alias type
-    auto caseIt =
-        std::find_if(cases.begin(), cases.end(), [&](const Match::Case &c) {
-          return c.pattern.aliasName == alias.name;
-        });
-    if (caseIt == cases.end()) {
-      generator.alert("Match case not found for alias: " + alias.name, true,
-                      __FILE__, __LINE__);
-      continue;
-    }
 
     // push the scope for the case
     gen::scope::ScopeManager::getInstance()->pushScope(true);
@@ -256,6 +268,40 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
     lable->logicalLine = expr->logicalLine;
     lable->label = jmpLabels[i];
     file.text << lable;
+  }
+
+  // check for a default cases
+  auto defaultCaseIt = std::find_if(
+      cases.begin(), cases.end(),
+      [&](const Match::Case &c) { return c.pattern.aliasName == "_"; });
+  if (defaultCaseIt != cases.end()) {
+    // push the scope for the default case
+    gen::scope::ScopeManager::getInstance()->pushScope(true);
+    auto &_case = *defaultCaseIt;
+
+    if (_case.pattern.veriableName.has_value()) {
+      generator.alert("Match default case cannot have a bind variable name: " +
+                          _case.pattern.veriableName.value(),
+                      true, __FILE__, __LINE__);
+    }
+    file << _case.statement->generate(generator).file;
+    auto jmp = new asmc::Jmp();
+    jmp->logicalLine = expr->logicalLine;
+    jmp->to = matchEndLabel;
+    file.text << jmp;
+    // pop the scope for the default cases
+    gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+    auto lable = new asmc::Label();
+    lable->logicalLine = expr->logicalLine;
+    lable->label = ".match_arm_" + matchID + "_default";
+    file.text << lable;
+  } else {
+    if (this->cases.size() != unionType->aliases.size()) {
+      generator.alert(
+          "Match statement does not have a default case, but not all cases "
+          "are covered.",
+          true, __FILE__, __LINE__);
+    }
   }
 
   // add the end Label
