@@ -289,7 +289,7 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
     jmp->logicalLine = expr->logicalLine;
     jmp->to = matchEndLabel;
     file.text << jmp;
-    // pop the scope for the default cases
+    // pop the scope for the default case
     gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
     auto lable = new asmc::Label();
     lable->logicalLine = expr->logicalLine;
