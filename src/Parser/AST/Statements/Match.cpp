@@ -279,9 +279,9 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
     gen::scope::ScopeManager::getInstance()->pushScope(true);
     auto &_case = *defaultCaseIt;
 
-    if (_case.pattern.veriableName.has_value()) {
+    if (_case.pattern.variableName.has_value()) {
       generator.alert("Match default case cannot have a bind variable name: " +
-                          _case.pattern.veriableName.value(),
+                          _case.pattern.variableName.value(),
                       true, __FILE__, __LINE__);
     }
     file << _case.statement->generate(generator).file;
