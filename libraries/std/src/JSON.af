@@ -12,7 +12,7 @@ import Error from "Utils/Error";
 
 
 union JSON {
-    String(string),
+    String(adr),
     Number(int),
     Boolean(bool),
     List(vector::<Box::<JSON>>),
@@ -27,22 +27,35 @@ union JSON {
                     None => return NULL // null will become None
                 }
             },
-            String() => return NULL,
-            Number() => return NULL,
-            Boolean() => return NULL,
-            List() => return NULL,
-            Null() => return NULL
-        }
+            _ => return NULL,
+        };
     }
 
-    fn asString() -> string! {
+    fn asString() -> adr! {
         match my {
             String(s) => return s,
-            Number() => return new Error("Requested JSON value is a Number, not a String"),
-            Boolean() => return new Error("Requested JSON value is a Boolean, not a String"),
-            List() => return new Error("Requested JSON value is a List, not a String"),
-            Object() => return new Error("Requested JSON value is an Object, not a String"),
-            Null() => return new Error("Requested JSON value is NULL, not a String")
+            _ => return new Error("JSON is not a String")           
+        }
+    };
+
+    fn asNumber() -> int! {
+        match my {
+            Number(n) => return n,
+            _ => return new Error("JSON is not a Number")
+        }
+    };
+
+    fn asBoolean() -> bool! {
+        match my {
+            Boolean(b) => return b,
+            _ => return new Error("JSON is not a Boolean")
+        }
+    };
+
+    fn isNull() -> bool {
+        match my {
+            Null => return true,
+            _ => return false
         }
     };
 
@@ -55,7 +68,7 @@ export fn Object(const unordered_map::<Box::<JSON>> map) -> JSON {
     return new JSON->Object(map);
 };
 
-export fn String(const string s) -> JSON {
+export fn String(const adr s) -> JSON {
     return new JSON->String(s);
 };
 
