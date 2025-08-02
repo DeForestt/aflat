@@ -43,6 +43,10 @@ class Box {
 		my.value = value;
 		return my;
 	};
+
+	fn toString() -> string {
+		return `Box({my.value})`;
+	};
 };
 
 types(T)
