@@ -1,48 +1,83 @@
 .needs <std>
 
 import { str_at, str_comp } from "strings" under strings;
-import Map from "Utils/Map"; 
-import Option from "Utils/Option";
+import string from "String";
+import MapNode from "Utils/Map";
 import option from "Utils/option";
 import { Some, None } from "Utils/option" under opt;
-import List from "Collections";	
+import { accept, reject } from "Utils/result" under res;
+import result from "Utils/result";
+import vector from "Collections/Vector";
 
 types(T)
 class unordered_map {
-	private mutable Map inner = new Map();
-	
+	private mutable MapNode root = NULL;
+
 	fn init() -> Self {
 		return my;
 	};
 
-	fn set(const adr key, const T data) -> Self {
-		my.inner.set(key, data);
-		return my;
+	// Since the map can outlive the caller of `set`, we will be taking ownership of the data.
+	fn set(const adr key, const T &&data) -> Self {
+		if my.root == NULL {
+			my.root = new MapNode(key, data); // Selling here would be valid, but the ownership mapper doesn't handle branches well so we wont sell.
+			return my;
+		} else {
+			my.root.input(key, data); // Same deal with the selling here.
+			return my;
+		};
 	};
 
 	fn get(const adr key) -> option::<T> {
-		const let val = my.inner.get(key);
-		
-		return val.match({
-			"some": fn (const T data) return opt.Some(data),
-			"none": fn () return opt.None::<T>()
-		});
+		if my.root == NULL {
+			return opt.None::<T>();
+		} else {
+			const any node = my.root.get(key);
+			if node == NULL {
+				return opt.None::<T>();
+			} else {
+				return opt.Some::<T>(node);
+			};
+		};
+	};
+
+	fn keys() -> vector::<string> {
+		if my.root == NULL {
+			return new vector::<string>();
+		} else {
+			return my.root.typeSafeKeys();
+		};
+	};
+
+	fn values() -> vector::<T> {
+		const let values = new vector::<T>();
+		foreach key in my.keys() {
+			const let value = my.get(key);
+			if value.isSome() {
+				values.push_back(value.expect("Value should be present"));
+			};
+		};
+		return values;
 	};
 
 	fn _call(const adr key) -> option::<T> {
   		return my.get(key);
  	};
 
-	fn keys() -> List {
-  		return my.inner.keys();
- 	};
-
 	fn has(const adr key) -> bool {
-		return my.inner.has(key);
+		const let v = my.get(key);
+		return v.isSome();
   	};
 
-	fn clear() -> void {
-		my.inner.clear();
+	fn normalize() -> void {
+		if my.root != NULL {
+			my.root.normalize();
+		};
 		return;
+	};
+
+	fn clear() -> Self {
+		my.root = NULL;
+		return my;
 	};
 };

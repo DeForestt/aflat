@@ -2,8 +2,12 @@
 import List from "Collections";
 import string from "String";
 import Option from "Utils/Option";
-import {none, some} from "Utils/Option" under opt;
+import {none, some} from "Utils/Option" under may;
 import {str_at, len, str_comp} from "strings" under st;
+import option from "Utils/option";
+import {Some, None} from "Utils/option" under opt;
+import vector from "Collections/Vector";
+import {accept, reject} from "Utils/result" under res;
 
 class MapNode {
     mutable private MapNode left = NULL;
@@ -127,6 +131,18 @@ class MapNode {
         keys.stringFunc = fn (const adr val) return new string(val);
         return keys;
     };
+
+    fn typeSafeKeys() -> vector::<string> {
+        const let keys = new vector::<string>();
+        keys.push_back(new string(my.key));
+        if my.left != NULL {
+            keys.stitch(my.left.typeSafeKeys());
+        }
+        if my.right != NULL {
+            keys.stitch(my.right.typeSafeKeys());
+        }
+        return keys;
+    };
 };
 
 class Map {
@@ -167,13 +183,13 @@ class Map {
 
     Option get(const adr key) {
         if my.root == NULL {
-            return opt.none();
+            return may.none();
         } else {
             const any val = my.root.get(key);
             if val == NULL {
-                return opt.none();
+                return may.none();
             } else {
-                return opt.some(val);
+                return may.some(val);
             };
         };
     };

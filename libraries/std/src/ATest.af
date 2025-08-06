@@ -7,6 +7,8 @@ import unordered_map from "Collections/unordered_map";
 import Result from "Utils/Result";
 import Error from "Utils/Error";
 import option from "Utils/option";
+import result from "Utils/result";
+import {accept, reject} from "Utils/result" under res;
 import {Some, None} from "Utils/option" under opt;
 
 class FixtureStruct {
@@ -66,8 +68,8 @@ export fn tearDownFixtures() -> void {
 	const let built = getFixtureData();
 	const let fixtures = getFixtures();
 	const let keys = fixtures.keys();
-	for int i = 0; i < keys.getCount(); i++ {
-		const string key = keys.get(i).expect("Key not found");
+
+	foreach key in keys {
 		if built.has(key.cstr()) {
 			const any data = built.get(key.cstr()).orElse(fn () panic("Fixture data not found"));
 			const let fixture = fixtures.get(key.cstr()).expect("Fixture not found");
@@ -107,8 +109,8 @@ export fn fix(const adr name, const adr setUp, * const adr tearDown) -> void {
 			fixture.tearDown(data);
 		};
 	};
-	const let fixture = new FixtureStruct(setUp, tearDown);
-	fixtures.set(name, fixture);
+
+	fixtures.set(name, new FixtureStruct(setUp, tearDown));
 };
 
 export fn getFixture(const string name) -> any {
@@ -178,17 +180,5 @@ types(any)
 export fn assertNotNull(const any value) -> void {
 	if value == NULL {
 		str.print(`      Expected not null but got null\n`);
-	};
-};
-
-export fn assertError(const Result result) -> void {
-	if !result.hasError() {
-		str.print(`      Expected error but got success\n`);
-	};
-};
-
-export fn assertSuccess(const Result result) -> void {
-	if result.hasError() {
-		str.print(`      Expected success but got error {result.getError()}\n`);
 	};
 };
