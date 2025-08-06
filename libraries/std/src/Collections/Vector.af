@@ -19,7 +19,7 @@ class vector {
 
     fn init(*const int size) -> Self {
         if size == 0 {
-            my.size = 1;
+            my.size = 1; 
             my.head = malloc(T * my.size);
         };
         return my;
@@ -49,7 +49,7 @@ class vector {
         return my;
     };
 
-    fn count() -> int {
+    safe fn count() -> int {
         return my.count;
     };
 
@@ -149,6 +149,18 @@ class vector {
             my.iteratorIndex = 0; // Reset iterator index if it exceeds the count
         };
         return val;
+    };
+
+    fn stitch(immutable vector::<T> other) -> Self {
+        const let totalCount = my.count() + other.count();
+        const let totalSize = totalCount * T;
+        if totalSize > my.size {
+            my.size = totalSize;
+            my.head = realloc(my.head, T * my.size);
+        };
+        memcpy(my.head + (my.count * T), other.head, other.count() * T);
+        my.count = totalCount;
+        return my;
     };
 
     fn reset() -> Self {

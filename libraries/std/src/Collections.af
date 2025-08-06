@@ -41,6 +41,10 @@ class List {
         return my;
     };
 
+    fn toArray() -> adr {
+        return my.head;
+    };
+
     int pushBack(const adr value) {
         if my.count == my.size {
             my.size = my.size * 2;
