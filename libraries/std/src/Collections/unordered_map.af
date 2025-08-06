@@ -76,8 +76,8 @@ class unordered_map {
 		return;
 	};
 
-	fn clear() -> Self {
+	fn clear() -> void {
 		my.root = NULL;
-		return my;
+		return;
 	};
 };
