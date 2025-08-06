@@ -22,7 +22,7 @@ union JSON {
     fn get(const string key) -> JSON? {
         match my {
             Object(map) => {
-                match map.get(key) {
+                match map.get(key.cstr()) {
                     Some(value) => return value.get(), // unwrap the Box
                     None => return NULL // null will become None
                 }
