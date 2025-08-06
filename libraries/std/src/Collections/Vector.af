@@ -158,7 +158,7 @@ class vector {
             my.size = totalSize;
             my.head = realloc(my.head, T * my.size);
         };
-        memcpy(my.head + (my.count * T), other.head, totalSize);
+        memcpy(my.head + (my.count * T), other.head, other.count() * T);
         my.count = totalCount;
         return my;
     };
