@@ -60,7 +60,14 @@ union JSON {
     };
 
     fn toString() -> string {
-        return `JSON`;
+        match my {
+            String(s) => return `String({s})`,
+            Number(n) => return `Number({n})`,
+            Boolean(b) => return `Boolean({b})`,
+            List(list) => return `List({list})`,
+            Object(map) => return `Object({map})`,
+            Null => return "Null"
+        };
     }
 };
 

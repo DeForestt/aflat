@@ -80,4 +80,8 @@ class unordered_map {
 		my.root = NULL;
 		return;
 	};
+
+	fn toString() -> string {
+		return `unordered_map(keys={my.keys()})`;
+	};
 };
