@@ -1,6 +1,7 @@
 .needs <std>
 import List from "Collections";
 import Result from "Utils/Result";
+import string from "String";
 import Error from "Utils/Error";
 import option from "Utils/option";
 import Map from "Utils/Map";
@@ -166,5 +167,9 @@ class vector {
     fn reset() -> Self {
         my.iteratorIndex = 0;
         return my;
+    };
+
+    fn toString() -> string {
+        return `vector(size={my.size}, count={my.count})`;
     };
 };

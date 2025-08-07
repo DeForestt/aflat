@@ -7,9 +7,9 @@ import vector from "Collections/Vector";
 import unordered_map from "Collections/unordered_map";
 import {Some, None, optionWrapper} from "Utils/option" under opt;
 import {accept, reject, resultWrapper} from "Utils/result" under res;
+import {print} from "String" under str;
 import Box from "Memory";
 import Error from "Utils/Error";
-
 
 union JSON {
     String(adr),
@@ -60,8 +60,60 @@ union JSON {
     };
 
     fn toString() -> string {
-        return `JSON`;
-    }
+        match my {
+            String(s) => return `String({s})`,
+            Number(n) => return `Number({n})`,
+            Boolean(b) => return `Boolean({b})`,
+            List(list) => return `List({list})`,
+            Object(map) => return `Object({map})`,
+            Null => return "Null"
+        };
+    };
+
+    private fn wrap(const string s, const char c1, const char c2) -> string {
+        return `{c1}{s}{c2}`;
+    };
+
+    fn stringify() -> string {
+        match my {
+            String(s) => return my.wrap(s, '"', '"'),
+            Number(n) => return `{n}`,
+            Boolean(b) => return `{b}`,
+            List(list) => {
+                const let v = match list.next() {
+                    Some(value) => resolve value.get(), // unwrap the Box
+                    None => return "[]"
+                };
+                mutable let builder = `[{v.stringify()}`;
+                foreach item in list {
+                    const let item = item.get(); // unwrap the Box
+                    builder =  `{builder}, {item.stringify()}`;
+                };
+                return `{builder}]`;
+            },
+            Object(map) => {
+                mutable string builder = "";
+                let first = true;
+                
+                const let keys = map.keys();
+                foreach key in keys {
+                    const let value = map.get(key).expect(`Value {key} should be present`);
+                    // value is a Box, so we need to unwrap it
+                    const let value = value.get();
+                    const let wrapKey = my.wrap(key, '"', '"');
+                    if first {
+                        first = false;
+                    } else {
+                        builder = builder + ", ";
+                    };
+                    builder = `{builder}{wrapKey}: `;
+                    builder = builder + value.stringify();
+                };
+                return my.wrap(builder, '{', '}');
+            },
+            Null => return `null`
+        }
+    };
 };
 
 export fn Object(const unordered_map::<Box::<JSON>> map) -> JSON {
