@@ -41,9 +41,9 @@ class unordered_map {
 		};
 	};
 
-	fn keys() -> vector::<string> {
+	fn keys() -> vector::<adr> {
 		if my.root == NULL {
-			return new vector::<string>();
+			return new vector::<adr>();
 		} else {
 			return my.root.typeSafeKeys();
 		};

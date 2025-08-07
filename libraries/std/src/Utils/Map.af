@@ -1,6 +1,7 @@
 .needs <std>
 import List from "Collections";
 import string from "String";
+import {print} from "String" under str;
 import Option from "Utils/Option";
 import {none, some} from "Utils/Option" under may;
 import {str_at, len, str_comp} from "strings" under st;
@@ -132,15 +133,16 @@ class MapNode {
         return keys;
     };
 
-    fn typeSafeKeys() -> vector::<string> {
-        const let keys = new vector::<string>();
-        keys.push_back(new string(my.key));
+    fn typeSafeKeys() -> vector::<adr> {
+        const let keys = new vector::<adr>();
+        const let key = my.key;
+        keys.push_back($key);
         if my.left != NULL {
             keys.stitch(my.left.typeSafeKeys());
-        }
+        };
         if my.right != NULL {
             keys.stitch(my.right.typeSafeKeys());
-        }
+        };
         return keys;
     };
 };
