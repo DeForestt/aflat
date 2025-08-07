@@ -4,6 +4,7 @@ import string from "String";
 import List from "Collections";
 import Map from "Utils/Map";
 import unordered_map from "Collections/unordered_map";
+import vector from "Collections/Vector";
 import Result from "Utils/Result";
 import Error from "Utils/Error";
 import option from "Utils/option";
@@ -70,9 +71,9 @@ export fn tearDownFixtures() -> void {
 	const let keys = fixtures.keys();
 
 	foreach key in keys {
-		if built.has(key.cstr()) {
-			const any data = built.get(key.cstr()).orElse(fn () panic("Fixture data not found"));
-			const let fixture = fixtures.get(key.cstr()).expect("Fixture not found");
+		if built.has(key) {
+			const any data = built.get(key).orElse(fn () panic("Fixture data not found"));
+			const let fixture = fixtures.get(key).expect("Fixture not found");
 			fixture.tearDown(data);
 		};
 	};
