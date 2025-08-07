@@ -80,7 +80,11 @@ union JSON {
             Number(n) => return `{n}`,
             Boolean(b) => return `{b}`,
             List(list) => {
-                mutable let builder = `[{list.next()}`;
+                const let v = match list.next() {
+                    Some(value) => resolve value.get(), // unwrap the Box
+                    None => return "[]"
+                };
+                mutable let builder = `[{v.stringify()}`;
                 foreach item in list {
                     const let item = item.get(); // unwrap the Box
                     builder =  `{builder}, {item.stringify()}`;
@@ -97,13 +101,13 @@ union JSON {
                     // value is a Box, so we need to unwrap it
                     const let value = value.get();
                     const let wrapKey = my.wrap(key, '"', '"');
-                    builder = `{builder}{wrapKey}: `;
-                    builder = builder + value.stringify();
                     if first {
                         first = false;
                     } else {
                         builder = builder + ", ";
                     };
+                    builder = `{builder}{wrapKey}: `;
+                    builder = builder + value.stringify();
                 };
                 return my.wrap(builder, '{', '}');
             },
