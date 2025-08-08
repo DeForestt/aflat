@@ -30,7 +30,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   if (generator.nameSpaceTable.contains(ident)) {
     nsp = generator.nameSpaceTable.get(ident) + ".";
     ident = nsp + this->modList.shift();
-  };
+  }
 
   links::LinkedList<std::string> mods = links::LinkedList<std::string>();
   // first push rdx
