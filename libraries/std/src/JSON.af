@@ -31,6 +31,16 @@ union JSON {
         };
     }
 
+    fn set(const string key, const JSON value) -> JSON! {
+        match my {
+            Object(map) => {
+                map.set(key.cstr(), new Box::<JSON>(value));
+                return my;
+            },
+            _ => return new Error("JSON is not an Object")
+        }
+    };
+
     fn asString() -> adr! {
         match my {
             String(s) => return s,

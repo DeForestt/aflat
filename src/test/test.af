@@ -89,6 +89,21 @@ fn main() -> int{
                 None => test.assertEqual("String", "None")
             }
         });
+
+        test.it("should input a field to a JSON object", fn () {
+            JSON obj = test.getFixture("object");
+            match obj.set("city", json.String("New York")) {
+                Ok(o) => {},
+                Err(e) => test.assertEqual(`Object`, `Error: {e}`)
+            };
+
+            match obj.get("city") {
+                Some(value) => match value.asString() {
+                    Ok(s) => test.assertTrue(`New York` == s),
+                    Err(e) => test.assertEqual(`String`, `Error: {e}`)
+                },
+                None => test.assertEqual("String", "None")
+            };
+        });
     });
-        
-}; 
+};
