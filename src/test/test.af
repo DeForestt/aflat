@@ -2,10 +2,18 @@
 import {print} from "String" under str;
 import string from "String";
 import List from "Collections";
+import unordered_map from "Collections/unordered_map";
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import {Some, None, optionWrapper} from "Utils/option" under opt;
+import {accept, reject, resultWrapper} from "Utils/result" under res;
 import Map from "Utils/Map";
 import result from "Utils/result";
-import {describe, it, assertEqual, assertTrue, fix} from "ATest" under test;
-import JSONObject, JSONValue, JSONType from "JSON";
+import {describe, it, assertEqual, assertTrue, fix, getFixture} from "ATest" under test;
+import JSON from "JSON";
+import {String, Number, Boolean, Object, Null} from "JSON" under json;
+import Box from "Memory";
+import {wrap} from "Memory" under box;
 
 fn main() -> int{
 	test.describe("String", fn () {
@@ -54,6 +62,33 @@ fn main() -> int{
         });
 
         return true;
+    });
+
+    test.describe("JSON", fn ( ) {
+        test.fix("object", fn () {
+            let obj = json.Object({
+                "name": box.wrap(json.String("John")),
+                "age": box.wrap(json.Number(30)),
+            });
+            return obj;
+        });
+
+        test.it("should stringify a JSON object", fn () {
+            const JSON obj = test.getFixture("object");
+            const let jsonString = obj.stringify();
+            test.assertTrue(new string("{ \"name\":   \"John\", \"age\":   30 }") == jsonString);
+        });
+
+        test.it("should get a field from a JSON object", fn () {
+            const JSON obj = test.getFixture("object");
+            match obj.get("name") {
+                Some(value) => match value.asString() {
+                    Ok(s) => test.assertTrue(`John` == s),
+                    Err(e) => test.assertEqual(`String`, `Error: {e}`)
+                },
+                None => test.assertEqual("String", "None")
+            }
+        });
     });
         
 }; 
