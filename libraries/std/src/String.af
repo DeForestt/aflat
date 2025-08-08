@@ -140,6 +140,14 @@ safe dynamic class string {
         return opt.Some(c);
     };
 
+    fn peek() -> option::<char> {
+        if my.itter >= my.len() {
+            return opt.None::<char>();
+        };
+        const char c = my.at(my.itter);
+        return opt.Some(c);
+    };
+
     safe fn cstr() -> adr {
         return my.head;
     };
