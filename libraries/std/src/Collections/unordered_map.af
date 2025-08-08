@@ -8,6 +8,7 @@ import { Some, None } from "Utils/option" under opt;
 import { accept, reject } from "Utils/result" under res;
 import result from "Utils/result";
 import vector from "Collections/Vector";
+import { print } from "String" under str;
 
 types(T)
 class unordered_map {
@@ -28,11 +29,11 @@ class unordered_map {
 		};
 	};
 
-	fn get(const adr key) -> option::<T> {
+	fn get(const string key) -> option::<T> {
 		if my.root == NULL {
 			return opt.None::<T>();
 		} else {
-			const any node = my.root.get(key);
+			const any node = my.root.get(key.cstr());
 			if node == NULL {
 				return opt.None::<T>();
 			} else {

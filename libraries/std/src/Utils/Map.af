@@ -15,20 +15,25 @@ class MapNode {
     mutable private MapNode right = NULL;
     mutable private any data = data;
     
-    const private adr key = key;
+    const private adr key = malloc(st.len(key) + 1);
     const int hashVal = my.hash(key);
 
     public int hash(const adr key) {
-        // string hash algorithm
+        
+        const int prime = 31;          // small prime base
         int hash = 0;
         for int i = 0; i < st.len(key); i++ {
-            hash = (hash * 31) + st.str_at(key, i);
+            const int z = 0;
+            const adr zadr = ?z;
+            zadr =: st.str_at(key, i);
+            hash = (hash * prime + z) % 2147483647; // large prime modulus to avoid overflow
         };
         return hash;
     };
 
 
     public MapNode init(const adr key, const any data) {
+        memcpy(my.key, key, st.len(key) + 1);
         return my;
     };
 
@@ -107,7 +112,9 @@ class MapNode {
             return my.data;
         };
 
-        if my.hash(my.key) < my.hash(key) {
+        const int keyHash = my.hash(key);
+
+        if my.hashVal < keyHash {
             if my.right != NULL {
                 return my.right.get(key);
             };
@@ -135,7 +142,8 @@ class MapNode {
 
     fn typeSafeKeys() -> vector::<adr> {
         const let keys = new vector::<adr>();
-        const let key = my.key;
+        const let key = malloc(st.len(my.key) + 1);
+        memcpy(key, my.key, st.len(my.key) + 1);
         keys.push_back($key);
         if my.left != NULL {
             keys.stitch(my.left.typeSafeKeys());

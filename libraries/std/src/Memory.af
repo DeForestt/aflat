@@ -50,6 +50,6 @@ class Box {
 };
 
 types(T)
-export fn wrap(const T &&value) -> Box::<T> {
+export fn wrap(const T value) -> Box::<T> {
 	return new Box::<T>(value);
 };
