@@ -26,7 +26,7 @@ class MapNode {
             const int z = 0;
             const adr zadr = ?z;
             zadr =: st.str_at(key, i);
-            hash = (hash * prime + z);
+            hash = (hash * prime + z) % 2147483647; // large prime modulus to avoid overflow
         };
         return hash;
     };
