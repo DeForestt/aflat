@@ -148,6 +148,16 @@ safe dynamic class string {
         return opt.Some(c);
     };
 
+    fn consume(const string s) -> bool {
+        const int slen = s.len();
+        if my.itter + slen > my.len() return false;
+        for int i = 0; i < slen; i = i + 1 {
+            if my.at(my.itter + i) != s.at(i) return false;
+        };
+        my.itter = my.itter + slen;
+        return true;
+    };
+
     safe fn cstr() -> adr {
         return my.head;
     };
