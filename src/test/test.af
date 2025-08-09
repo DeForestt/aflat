@@ -179,7 +179,7 @@ fn main() -> int{
                         match value.asList() {
                             Ok(list) => {
                                 test.assertEqual(list.count(), 3);
-                                test.assertTrue(value.stringify() == "[  \"a\" ,   \"b\",   \"c\" ]")
+                                test.assertTrue(value.stringify() == "[   \"a\",   \"b\",   \"c\" ]");
                             },
                             Err(e) => test.assertEqual(`List`, `Error: {e}`)
                         };
