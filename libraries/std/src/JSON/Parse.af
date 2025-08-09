@@ -52,9 +52,9 @@ private fn parseArray(const string value) -> JSON! {
         const let element = box.wrap(element);
         elements.push_back($element);
         v = value.peek();
-        if v.or('v') == ',' {
+        if `{v.or('v')}` == "," {
             value.next(); // consume the ','
-        } else if v.or('v') == ']' {
+        } else if `{v.or('v')}` == "]" {
             break;
         };
     };
@@ -119,7 +119,7 @@ export fn parse(const string json_) -> JSON! {
         if c == '[' return parseArray(json_);
         if c == '{' return parseObject(json_);
 
-        return new Error(`Unsupported JSON value: {json_}`);
+        return new Error(`Unsupported JSON value: {json_} : {c}`);
     };
-    return new Error(`Unsupported JSON value: {json_}`);
+    return new Error(`JSON is empty or is not valid: {json_}`);
 };
