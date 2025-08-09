@@ -9,7 +9,7 @@ import {Some, None, optionWrapper} from "Utils/option" under opt;
 import {accept, reject, resultWrapper} from "Utils/result" under res;
 import Map from "Utils/Map";
 import result from "Utils/result";
-import {describe, it, assertEqual, assertTrue, fix, getFixture} from "ATest" under test;
+import {describe, it, assertEqual, assertTrue, fix, getFixture, assertFalse} from "ATest" under test;
 import JSON from "JSON";
 import {String, Number, Boolean, Object, Null} from "JSON" under json;
 import { parse } from "JSON/Parse" under parser;
@@ -133,6 +133,32 @@ fn main() -> int{
                         };
                     },
                     Err(e) => test.assertEqual(`Number`, `Error: {e}`)
+                };
+            });
+
+            test.it("should parse a JSON boolean true", fn () {
+                const let jsonString = "true";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        match value.asBoolean() {
+                            Ok(b) => test.assertTrue(b),
+                            Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
+                        };
+                    },
+                    Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
+                };
+            });
+
+            test.it("should parse a JSON boolean false", fn () {
+                const let jsonString = "false";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        match value.asBoolean() {
+                            Ok(b) => test.assertFalse(b),
+                            Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
+                        };
+                    },
+                    Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
                 };
             });
         });

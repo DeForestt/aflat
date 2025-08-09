@@ -24,23 +24,33 @@ private fn parseString(const string value) -> JSON! {
     return new Error("Unterminated string in JSON");
 };
 
+private fn parseBoolean(const string value) -> JSON! {
+    if value.consume("rue") {
+        return json.Boolean(true);
+    } else if value.consume("alse") {
+        return json.Boolean(false);
+    };
+    return new Error(`Invalid boolean in JSON: {value}`);
+}
+
 export fn parse(const string json_) -> JSON! {
     const let value = json_.trim();
     foreach c in value {
         if c == '\"' return parseString(value);
         if st.char_isDigit(c) {
-          string numStr = `{c}`;
-          while st.char_isDigit(value.peek().or('v')) {
-            match value.next() {
-              Some(nc) => numStr = `{numStr}{nc}`,
-              None => break
+            string numStr = `{c}`;
+            while st.char_isDigit(value.peek().or('v')) {
+                match value.next() {
+                    Some(nc) => numStr = `{numStr}{nc}`,
+                    None => break
+                };
             };
-          };
             match numStr.toInt() {
                 Ok(num) => return json.Number(num),
                 Err(e) => return new Error(`Invalid number in JSON: {numStr} - {e}`)
             };
         };
+        if c == 't' | c == 'f' return parseBoolean(value);
     };
     return new Error(`Unsupported JSON value: {value}`);
 };
