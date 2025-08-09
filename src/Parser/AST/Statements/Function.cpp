@@ -134,10 +134,7 @@ Function::Function(const ScopeMod &scope,
       throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
                            " Expected Identifier");
     auto type = parser.typeList[typeName->meta];
-    if (type == nullptr)
-      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           " Type " + typeName->meta + "not found");
-
+    if (type == nullptr) type = new Type(typeName->meta, asmc::QWord);
     auto templateTypeList =
         parser.parseTemplateTypeList(tokens, tokens.peek()->lineCount);
 
