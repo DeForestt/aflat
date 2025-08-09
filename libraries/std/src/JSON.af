@@ -118,7 +118,7 @@ union JSON {
                     Some(value) => resolve value.get(), // unwrap the Box
                     None => return "[]"
                 };
-                mutable let builder = `[{v.stringify(indent + 1)}{nl}{indentStr}`;
+                mutable let builder = `[{nl}{indentStr}{v.stringify(indent + 1)}`;
                 foreach item in list {
                     const let item = item.get(); // unwrap the Box
 
