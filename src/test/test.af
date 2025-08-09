@@ -77,7 +77,7 @@ fn main() -> int{
         test.it("should stringify a JSON object", fn () {
             const JSON obj = test.getFixture("object");
             const let jsonString = obj.stringify();
-            test.assertTrue(new string("{ \"name\":   \"John\", \"age\":   30 }") == jsonString);
+            test.assertTrue(new string("{\"name\":\"John\",\"age\":30}") == jsonString);
         });
 
         test.it("should get a field from a JSON object", fn () {
@@ -179,7 +179,7 @@ fn main() -> int{
                         match value.asList() {
                             Ok(list) => {
                                 test.assertEqual(list.count(), 3);
-                                test.assertTrue(value.stringify() == "[  \"a\" ,   \"b\",   \"c\" ]")
+                                test.assertTrue(value.stringify() == "[\"a\",\"b\",\"c\"]");
                             },
                             Err(e) => test.assertEqual(`List`, `Error: {e}`)
                         };

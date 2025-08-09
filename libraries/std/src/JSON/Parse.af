@@ -79,7 +79,6 @@ private fn parseObject(const string value) -> JSON! {
         if !(`{val}` == ":") {
             return new Error(`Expected ':' after key in JSON object: {value} but found '{val}'`);
         };
-        value.next(); // consume the ':'
         const let val = parse(value)!;
         map.set(key, box.wrap(val));
         while st.char_isWhiteSpace(value.peek().or('n')) v = value.next();
