@@ -161,6 +161,60 @@ fn main() -> int{
                     Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
                 };
             });
+
+            test.it("should parse a JSON null", fn () {
+                const let jsonString = "null";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        test.assertTrue(value.isNull());
+                    },
+                    Err(e) => test.assertEqual(`Null`, `Error: {e}`)
+                };
+            });
+
+            test.it("should parse a list", fn () {
+                const let jsonString = "[\"a\", \"b\", \"c\"]";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        match value.asList() {
+                            Ok(list) => {
+                                test.assertEqual(list.count(), 3);
+                                test.assertTrue(value.stringify() == "[  \"a\" ,   \"b\",   \"c\" ]")
+                            },
+                            Err(e) => test.assertEqual(`List`, `Error: {e}`)
+                        };
+                    },
+                    Err(e) => test.assertEqual(`List`, `Error: {e}`)
+                };
+            });
+
+            test.it("should parse an object", fn () {
+                const let jsonString = "{ \"key\": \"value\", \"num\": 10 }";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        match value.asObject() {
+                            Ok(map) => {
+                                match map.get("key") {
+                                    Some(v) => match v.get().asString() {
+                                        Ok(s) => test.assertTrue(`{s}` == "value"),
+                                        Err(e) => test.assertEqual(`String`, `Error: {e}`)
+                                    },
+                                    None => test.assertTrue(false)
+                                };
+                                match map.get("num") {
+                                    Some(v) => match v.get().asNumber() {
+                                        Ok(n) => test.assertEqual(n, 10),
+                                        Err(e) => test.assertEqual(`Number`, `Error: {e}`)
+                                    },
+                                    None => test.assertTrue(false)
+                                };
+                            },
+                            Err(e) => test.assertEqual(`Object`, `Error: {e}`)
+                        };
+                    },
+                    Err(e) => test.assertEqual(`Object`, `Error: {e}`)
+                };
+            });
         });
     });
 };

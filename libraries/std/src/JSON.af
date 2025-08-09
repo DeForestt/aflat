@@ -29,7 +29,7 @@ union JSON {
             },
             _ => return NULL,
         };
-    }
+    };
 
     fn set(const string key, const JSON value) -> JSON! {
         match my {
@@ -59,6 +59,20 @@ union JSON {
         match my {
             Boolean(b) => return b,
             _ => return new Error("JSON is not a Boolean")
+        }
+    };
+
+    fn asList() -> vector::<Box::<JSON>>! {
+        match my {
+            List(list) => return list,
+            _ => return new Error("JSON is not a List"),
+        }
+    }; 
+
+    fn asObject() -> unordered_map::<Box::<JSON>>! {
+        match my {
+            Object(map) => return map,
+            _ => return new Error("JSON is not an Object")
         }
     };
 

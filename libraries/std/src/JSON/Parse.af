@@ -1,7 +1,7 @@
 .needs <std>
 import string from "String";
 import {print} from "String" under str;
-import {char_isDigit} from "strings" under st;
+import {char_isDigit, char_isWhiteSpace} from "strings" under st;
 import List from "Collections";
 import result from "Utils/result";
 import option from "Utils/option";
@@ -10,8 +10,12 @@ import {accept, reject, resultWrapper} from "Utils/result" under res;
 import vector from "Collections/Vector";
 import unordered_map from "Collections/unordered_map";
 import JSON from "JSON";
-import {String, Number, Boolean, Object, Null} from "JSON" under json;
+import {String, Number, Boolean, Object, Null, List} from "JSON" under json;
 import Error from "Utils/Error";
+import Box from "Memory";
+import {wrap} from "Memory" under box;
+
+export fn parse(const string json_) -> JSON!;
 
 private fn parseString(const string value) -> JSON! {
     string builder = "";
@@ -22,7 +26,7 @@ private fn parseString(const string value) -> JSON! {
         builder = `{builder}{c}`;
     };
     return new Error("Unterminated string in JSON");
-};
+}
 
 private fn parseBoolean(const string value) -> JSON! {
     if value.consume("rue") {
@@ -33,14 +37,74 @@ private fn parseBoolean(const string value) -> JSON! {
     return new Error(`Invalid boolean in JSON: {value}`);
 }
 
+private fn parseNull(const string value) -> JSON! {
+    if value.consume("ull") {
+        return json.Null();
+    };
+    return new Error(`Invalid null in JSON: {value}`);
+}
+
+private fn parseArray(const string value) -> JSON! {
+    const let elements = new vector::<Box::<JSON>>();
+    let v = value.peek();
+    while true {
+        const let element = parse(value)!;
+        const let element = box.wrap(element);
+        elements.push_back($element);
+        v = value.peek();
+        if v.or('v') == ',' {
+            value.next(); // consume the ','
+        } else if v.or('v') == ']' {
+            break;
+        };
+    };
+    value.next(); // consume the ']'
+    return json.List(elements);
+};
+
+private fn parseObject(const string value) -> JSON! {
+    const let map = new unordered_map::<Box::<JSON>>();
+    let v = value.peek();
+    while true {
+        if v.or('v') == '}' {
+            value.next(); // consume the '}'
+            return json.Object(map);
+        };
+
+        const let key = match parse(value)!.asString() {
+            Ok(s) => s,
+            Err(e) => return new Error(`Expected string key in JSON object: {e}`)
+        };
+        const let val = value.next().or('n');
+        if !(`{val}` == ":") {
+            return new Error(`Expected ':' after key in JSON object: {value} but found '{val}'`);
+        };
+        value.next(); // consume the ':'
+        const let val = parse(value)!;
+        map.set(key, box.wrap(val));
+        while st.char_isWhiteSpace(value.peek().or('n')) v = value.next();
+        v = value.peek();
+        if `{v.or('v')}` == "," {
+            value.next(); // consume the ','
+            while st.char_isWhiteSpace(value.peek().or('n')) v = value.next();
+            v = value.peek();
+        } else if `{v.or('v')}` == "}" {
+            value.next(); // consume the '}'
+            return json.Object(map);
+        } else {
+            return new Error(`Expected ',' or '}' in JSON object: {value}`);
+        };
+    };
+};
+
 export fn parse(const string json_) -> JSON! {
-    const let value = json_.trim();
-    foreach c in value {
-        if c == '\"' return parseString(value);
+    foreach c in json_ {
+        if st.char_isWhiteSpace(c) continue;
+        if c == '\"' return parseString(json_);
         if st.char_isDigit(c) {
             string numStr = `{c}`;
-            while st.char_isDigit(value.peek().or('v')) {
-                match value.next() {
+            while st.char_isDigit(json_.peek().or('v')) {
+                match json_.next() {
                     Some(nc) => numStr = `{numStr}{nc}`,
                     None => break
                 };
@@ -50,7 +114,12 @@ export fn parse(const string json_) -> JSON! {
                 Err(e) => return new Error(`Invalid number in JSON: {numStr} - {e}`)
             };
         };
-        if c == 't' | c == 'f' return parseBoolean(value);
+        if c == 't' | c == 'f' return parseBoolean(json_);
+        if c == 'n' return parseNull(json_);
+        if c == '[' return parseArray(json_);
+        if c == '{' return parseObject(json_);
+
+        return new Error(`Unsupported JSON value: {json_}`);
     };
-    return new Error(`Unsupported JSON value: {value}`);
+    return new Error(`Unsupported JSON value: {json_}`);
 };

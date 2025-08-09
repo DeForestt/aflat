@@ -480,6 +480,10 @@ export bool char_isDigit(const char c) {
   return c >= '0' & c <= '9';
 };
 
+export bool char_isWhiteSpace(const char c) {
+  return (c == ' ') | (c == '\n') | (c == '\t') | (c == '\r');
+};
+
 export int hex_toInt(adr hex){
 	int result = 0;
 	int i = 0;
