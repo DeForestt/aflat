@@ -12,6 +12,7 @@ import result from "Utils/result";
 import {describe, it, assertEqual, assertTrue, fix, getFixture} from "ATest" under test;
 import JSON from "JSON";
 import {String, Number, Boolean, Object, Null} from "JSON" under json;
+import { parse } from "JSON/Parse" under parser;
 import Box from "Memory";
 import {wrap} from "Memory" under box;
 
@@ -105,5 +106,36 @@ fn main() -> int{
                 None => test.assertEqual("String", "None")
             };
         });
+
+        test.describe("json parse", fn () {
+            test.it("should parse a JSON string", fn () {
+                const let jsonString = "\"test\"";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        match value.asString() {
+                            Ok(s) => {
+                                test.assertTrue(`{s}` == "test");
+                            },
+                            Err(e) => test.assertEqual(`String`, `Error: {e}`)
+                        };
+                    },
+                    Err(e) => test.assertEqual(`String`, `Error: {e}`)
+                };
+            });
+
+            test.it("should parse a JSON number", fn () {
+                const let jsonString = "42";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        match value.asNumber() {
+                            Ok(n) => test.assertEqual(n, 42),
+                            Err(e) => test.assertEqual(`Number`, `Error: {e}`)
+                        };
+                    },
+                    Err(e) => test.assertEqual(`Number`, `Error: {e}`)
+                };
+            });
+        });
     });
 };
+

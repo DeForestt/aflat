@@ -1,7 +1,46 @@
 .needs <std>
 import string from "String";
-import { fString, print } from "String" under st;
-import { fPrint } from "io" under io;
+import {print} from "String" under str;
+import {char_isDigit} from "strings" under st;
 import List from "Collections";
 import result from "Utils/result";
+import option from "Utils/option";
+import {Some, None, optionWrapper} from "Utils/option" under opt;
+import {accept, reject, resultWrapper} from "Utils/result" under res;
+import vector from "Collections/Vector";
+import unordered_map from "Collections/unordered_map";
+import JSON from "JSON";
+import {String, Number, Boolean, Object, Null} from "JSON" under json;
+import Error from "Utils/Error";
 
+private fn parseString(const string value) -> JSON! {
+    string builder = "";
+    foreach c in value {
+        if c == '\"' {
+            return json.String(builder.cstr());
+        };
+        builder = `{builder}{c}`;
+    };
+    return new Error("Unterminated string in JSON");
+};
+
+export fn parse(const string json_) -> JSON! {
+    const let value = json_.trim();
+    foreach c in value {
+        if c == '\"' return parseString(value);
+        if st.char_isDigit(c) {
+          string numStr = `{c}`;
+          while st.char_isDigit(value.peek().or('v')) {
+            match value.next() {
+              Some(nc) => numStr = `{numStr}{nc}`,
+              None => break
+            };
+          };
+            match numStr.toInt() {
+                Ok(num) => return json.Number(num),
+                Err(e) => return new Error(`Invalid number in JSON: {numStr} - {e}`)
+            };
+        };
+    };
+    return new Error(`Unsupported JSON value: {value}`);
+};
