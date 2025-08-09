@@ -2,10 +2,19 @@
 import {print} from "String" under str;
 import string from "String";
 import List from "Collections";
+import unordered_map from "Collections/unordered_map";
+import vector from "Collections/Vector";
+import option from "Utils/option";
+import {Some, None, optionWrapper} from "Utils/option" under opt;
+import {accept, reject, resultWrapper} from "Utils/result" under res;
 import Map from "Utils/Map";
 import result from "Utils/result";
-import {describe, it, assertEqual, assertTrue, fix} from "ATest" under test;
-import JSONObject, JSONValue, JSONType from "JSON";
+import {describe, it, assertEqual, assertTrue, fix, getFixture, assertFalse} from "ATest" under test;
+import JSON from "JSON";
+import {String, Number, Boolean, Object, Null} from "JSON" under json;
+import { parse } from "JSON/Parse" under parser;
+import Box from "Memory";
+import {wrap} from "Memory" under box;
 
 fn main() -> int{
 	test.describe("String", fn () {
@@ -55,5 +64,158 @@ fn main() -> int{
 
         return true;
     });
-        
-}; 
+
+    test.describe("JSON", fn ( ) {
+        test.fix("object", fn () {
+            let obj = json.Object({
+                "name": box.wrap(json.String("John")),
+                "age": box.wrap(json.Number(30)),
+            });
+            return obj;
+        });
+
+        test.it("should stringify a JSON object", fn () {
+            const JSON obj = test.getFixture("object");
+            const let jsonString = obj.stringify();
+            test.assertTrue(new string("{ \"name\":   \"John\", \"age\":   30 }") == jsonString);
+        });
+
+        test.it("should get a field from a JSON object", fn () {
+            const JSON obj = test.getFixture("object");
+            match obj.get("name") {
+                Some(value) => match value.asString() {
+                    Ok(s) => test.assertTrue(`John` == s),
+                    Err(e) => test.assertEqual(`String`, `Error: {e}`)
+                },
+                None => test.assertEqual("String", "None")
+            }
+        });
+
+        test.it("should input a field to a JSON object", fn () {
+            JSON obj = test.getFixture("object");
+            match obj.set("city", json.String("New York")) {
+                Ok(o) => {},
+                Err(e) => test.assertEqual(`Object`, `Error: {e}`)
+            };
+
+            match obj.get("city") {
+                Some(value) => match value.asString() {
+                    Ok(s) => test.assertTrue(`New York` == s),
+                    Err(e) => test.assertEqual(`String`, `Error: {e}`)
+                },
+                None => test.assertEqual("String", "None")
+            };
+        });
+
+        test.describe("json parse", fn () {
+            test.it("should parse a JSON string", fn () {
+                const let jsonString = "\"test\"";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        match value.asString() {
+                            Ok(s) => {
+                                test.assertTrue(`{s}` == "test");
+                            },
+                            Err(e) => test.assertEqual(`String`, `Error: {e}`)
+                        };
+                    },
+                    Err(e) => test.assertEqual(`String`, `Error: {e}`)
+                };
+            });
+
+            test.it("should parse a JSON number", fn () {
+                const let jsonString = "42";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        match value.asNumber() {
+                            Ok(n) => test.assertEqual(n, 42),
+                            Err(e) => test.assertEqual(`Number`, `Error: {e}`)
+                        };
+                    },
+                    Err(e) => test.assertEqual(`Number`, `Error: {e}`)
+                };
+            });
+
+            test.it("should parse a JSON boolean true", fn () {
+                const let jsonString = "true";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        match value.asBoolean() {
+                            Ok(b) => test.assertTrue(b),
+                            Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
+                        };
+                    },
+                    Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
+                };
+            });
+
+            test.it("should parse a JSON boolean false", fn () {
+                const let jsonString = "false";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        match value.asBoolean() {
+                            Ok(b) => test.assertFalse(b),
+                            Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
+                        };
+                    },
+                    Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
+                };
+            });
+
+            test.it("should parse a JSON null", fn () {
+                const let jsonString = "null";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        test.assertTrue(value.isNull());
+                    },
+                    Err(e) => test.assertEqual(`Null`, `Error: {e}`)
+                };
+            });
+
+            test.it("should parse a list", fn () {
+                const let jsonString = "[\"a\", \"b\", \"c\"]";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        match value.asList() {
+                            Ok(list) => {
+                                test.assertEqual(list.count(), 3);
+                                test.assertTrue(value.stringify() == "[  \"a\" ,   \"b\",   \"c\" ]")
+                            },
+                            Err(e) => test.assertEqual(`List`, `Error: {e}`)
+                        };
+                    },
+                    Err(e) => test.assertEqual(`List`, `Error: {e}`)
+                };
+            });
+
+            test.it("should parse an object", fn () {
+                const let jsonString = "{ \"key\": \"value\", \"num\": 10 }";
+                match parser.parse(jsonString) {
+                    Ok(value) => {
+                        match value.asObject() {
+                            Ok(map) => {
+                                match map.get("key") {
+                                    Some(v) => match v.get().asString() {
+                                        Ok(s) => test.assertTrue(`{s}` == "value"),
+                                        Err(e) => test.assertEqual(`String`, `Error: {e}`)
+                                    },
+                                    None => test.assertTrue(false)
+                                };
+                                match map.get("num") {
+                                    Some(v) => match v.get().asNumber() {
+                                        Ok(n) => test.assertEqual(n, 10),
+                                        Err(e) => test.assertEqual(`Number`, `Error: {e}`)
+                                    },
+                                    None => test.assertTrue(false)
+                                };
+                            },
+                            Err(e) => test.assertEqual(`Object`, `Error: {e}`)
+                        };
+                    },
+                    Err(e) => test.assertEqual(`Object`, `Error: {e}`)
+                };
+            });
+        });
+    });
+};
+

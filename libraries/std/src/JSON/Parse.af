@@ -1,132 +1,125 @@
 .needs <std>
 import string from "String";
-import { fString, print } from "String" under st;
-import { fPrint } from "io" under io;
+import {print} from "String" under str;
+import {char_isDigit, char_isWhiteSpace} from "strings" under st;
 import List from "Collections";
 import result from "Utils/result";
+import option from "Utils/option";
+import {Some, None, optionWrapper} from "Utils/option" under opt;
+import {accept, reject, resultWrapper} from "Utils/result" under res;
+import vector from "Collections/Vector";
+import unordered_map from "Collections/unordered_map";
+import JSON from "JSON";
+import {String, Number, Boolean, Object, Null, List} from "JSON" under json;
+import Error from "Utils/Error";
+import Box from "Memory";
+import {wrap} from "Memory" under box;
 
-/*
- * Take in a string and a json string and return a string
- * value.
- */
-export string getString(const string key, const string json) {
-    const let start = json.find(key, 0) + key.len() + 2;
-    const let newString = json.subString(start, json.len());
-    const let newStart = newString.find("\"", 0);
-    const let newEnd = newString.find("\"", newStart + 1);
-    const let value = newString.subString(newStart + 1, newEnd);
-    return value;
+export fn parse(const string json_) -> JSON!;
+
+private fn parseString(const string value) -> JSON! {
+    string builder = "";
+    foreach c in value {
+        if c == '\"' {
+            return json.String(builder.cstr());
+        };
+        builder = `{builder}{c}`;
+    };
+    return new Error("Unterminated string in JSON");
+}
+
+private fn parseBoolean(const string value) -> JSON! {
+    if value.consume("rue") {
+        return json.Boolean(true);
+    } else if value.consume("alse") {
+        return json.Boolean(false);
+    };
+    return new Error(`Invalid boolean in JSON: {value}`);
+}
+
+private fn parseNull(const string value) -> JSON! {
+    if value.consume("ull") {
+        return json.Null();
+    };
+    return new Error(`Invalid null in JSON: {value}`);
+}
+
+private fn parseArray(const string value) -> JSON! {
+    const let elements = new vector::<Box::<JSON>>();
+    let v = value.peek();
+    while true {
+        const let element = parse(value)!;
+        const let element = box.wrap(element);
+        elements.push_back($element);
+        v = value.peek();
+        if v.or('v') == ',' {
+            value.next(); // consume the ','
+        } else if v.or('v') == ']' {
+            break;
+        };
+    };
+    value.next(); // consume the ']'
+    return json.List(elements);
 };
 
-/*
- * Take in a string and a json string and return a int
- * value.
- */
-export int getInt(const string key, const string json) {
-    const let start = json.find(key, 0) + key.len() + 2;
-    mutable let end = json.find(",", start);
-    if end == -1 {
-        end = json.find("}", start);
-    };
-    mutable let value = json.subString(start, end);
-    value = value.trim(' ');
-
-    match value.toInt() {
-        Ok(val) => return val,
-        Err() => return -1
-    };
-};
-
-/*
- * Take in a string and a json string and return a json string
- * value.  ***NOTE:*** This function is not complete.  It will
- * not work for nested json objects.
- */
-export string getJson(const string key, const string json) {
-    const let start = json.find(key, 0) + key.len() + 2;
-    const let newString = json.subString(start, json.len());
-    const let newStart = newString.find("{", 0);
-    const let afterOpen = newString.subString(newStart + 1, newString.len());
-    int openCount = 1;
-    int closeCount = 0;
-
-    for int i = 0; i < afterOpen.len(); i = i + 1 {
-        const char c = afterOpen.at(i);
-        if c == '{' {
-            openCount = openCount + 1;
-        } else if c == '}' {
-            closeCount = closeCount + 1;
-        };
-        if openCount == closeCount {
-            const let value = afterOpen.subString(0, i);
-            return st.fString("{%s}", {value});
-        };
-    };
-    return new string("undefined");
-};
-
-/*
- * Consume a key and a json string and return a list of
- * strings.
- */
-export List getList(const string key, const string json) {
-    const let start = json.find(key, 0) + key.len() + 2;
-    const let newString = json.subString(start, json.len());
-    const let newStart = newString.find("[", 0);
-    const let afterOpen = newString.subString(newStart + 1, newString.len());
-    int openCount = 1;
-    int closeCount = 0;
-
-    mutable string listBuffer = new string("");
-    const List ret = new List(string);
-    
-    const let flush = fn (mutable string s) {
-        if s.len() > 0
-            s = "";
-    };
-
-    mutable let inQuote = false;
-    mutable let inObject = false;
-    
-
-    for int i = 0; i < afterOpen.len(); i = i + 1 {
-        const char c = afterOpen.at(i);
-        if c == '[' {
-            openCount = openCount + 1;
-        } else if c == ']' {
-            closeCount = closeCount + 1;
+private fn parseObject(const string value) -> JSON! {
+    const let map = new unordered_map::<Box::<JSON>>();
+    let v = value.peek();
+    while true {
+        if v.or('v') == '}' {
+            value.next(); // consume the '}'
+            return json.Object(map);
         };
 
-        if (c == '"') & (openCount - closeCount == 1) & (!inObject) {
-            inQuote = !inQuote;
+        const let key = match parse(value)!.asString() {
+            Ok(s) => s,
+            Err(e) => return new Error(`Expected string key in JSON object: {e}`)
         };
-
-        if (c == '{') & (openCount - closeCount == 1) {
-            inObject = true;
+        const let val = value.next().or('n');
+        if !(`{val}` == ":") {
+            return new Error(`Expected ':' after key in JSON object: {value} but found '{val}'`);
         };
-
-        if (c == '}') & (openCount - closeCount == 1) {
-            inObject = false;
-        };
-
-
-        if (openCount - closeCount == 1) & (!inQuote) & (!inObject) {
-            if c == ',' {
-                ret.pushBack(listBuffer.trim(' '));
-                flush(listBuffer);
-            } else {
-                listBuffer = listBuffer.push(c);
-            };
+        value.next(); // consume the ':'
+        const let val = parse(value)!;
+        map.set(key, box.wrap(val));
+        while st.char_isWhiteSpace(value.peek().or('n')) v = value.next();
+        v = value.peek();
+        if `{v.or('v')}` == "," {
+            value.next(); // consume the ','
+            while st.char_isWhiteSpace(value.peek().or('n')) v = value.next();
+            v = value.peek();
+        } else if `{v.or('v')}` == "}" {
+            value.next(); // consume the '}'
+            return json.Object(map);
         } else {
-            listBuffer = listBuffer.push(c);
-        };
-
-        if openCount == closeCount {
-            if listBuffer.at(listBuffer.len() - 1) == ']'
-                listBuffer = listBuffer.subString(0, listBuffer.len() - 1);
-            ret.pushBack(listBuffer.trim(' '));
-            return ret;
+            return new Error(`Expected ',' or '}' in JSON object: {value}`);
         };
     };
-    return ret;
+};
+
+export fn parse(const string json_) -> JSON! {
+    foreach c in json_ {
+        if st.char_isWhiteSpace(c) continue;
+        if c == '\"' return parseString(json_);
+        if st.char_isDigit(c) {
+            string numStr = `{c}`;
+            while st.char_isDigit(json_.peek().or('v')) {
+                match json_.next() {
+                    Some(nc) => numStr = `{numStr}{nc}`,
+                    None => break
+                };
+            };
+            match numStr.toInt() {
+                Ok(num) => return json.Number(num),
+                Err(e) => return new Error(`Invalid number in JSON: {numStr} - {e}`)
+            };
+        };
+        if c == 't' | c == 'f' return parseBoolean(json_);
+        if c == 'n' return parseNull(json_);
+        if c == '[' return parseArray(json_);
+        if c == '{' return parseObject(json_);
+
+        return new Error(`Unsupported JSON value: {json_}`);
+    };
+    return new Error(`Unsupported JSON value: {json_}`);
 };
