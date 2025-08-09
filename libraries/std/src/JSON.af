@@ -100,7 +100,8 @@ union JSON {
 
     fn stringify(?const int indent_) -> string {
         const let indent = 1 * indent_.or(0); // If 0, there will never be any indentation
-        const let nl = if indent > 0 "\n" else " ";
+        const let nextIndent = if indent > 0 indent + 1 else 0;
+        const let nl = if indent > 0 "\n" else "";
         mutable string indentStr = "";
         for int i = 0; i < indent; i++ {
             indentStr = `{indentStr}  `;
@@ -118,11 +119,11 @@ union JSON {
                     Some(value) => resolve value.get(), // unwrap the Box
                     None => return "[]"
                 };
-                mutable let builder = `[{nl}{indentStr}{v.stringify(indent + 1)}`;
+                mutable let builder = `[{nl}{indentStr}{v.stringify(nextIndent)}`;
                 foreach item in list {
                     const let item = item.get(); // unwrap the Box
 
-                    builder =  `{builder},{nl}{indentStr}{item.stringify(indent + 1)}`;
+                    builder =  `{builder},{nl}{indentStr}{item.stringify(nextIndent)}`;
                 };
                 return `{builder}{nl}{indentStr}]`;
             },
@@ -141,8 +142,8 @@ union JSON {
                     } else {
                         builder = `{builder},{nl}{indentStr}`;
                     };
-                    builder = `{builder}{wrapKey}: `;
-                    builder = builder + value.stringify(indent + 1  );
+                    builder = `{builder}{wrapKey}:`;
+                    builder = builder + value.stringify(nextIndent);
                 };
                 mutable string sub1Indent = "";
                 for int i = 0; i < indent - 1; i++ {
