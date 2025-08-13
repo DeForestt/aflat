@@ -7,7 +7,7 @@
 #include "Parser/AST.hpp"
 #include "catch.hpp"
 
-TEST_CASE("unused non-primitive return value warns", "[leak-warning]") {
+TEST_CASE("unused non-primitive return value is cleaned", "[leak-warning]") {
   auto parser = parse::Parser();
   test::mockGen::CodeGenerator gen("mod", parser, "",
                                    std::filesystem::current_path().string());
@@ -26,7 +26,7 @@ TEST_CASE("unused non-primitive return value warns", "[leak-warning]") {
   gen.GenSTMT(&call);
   std::cout.rdbuf(old);
 
-  REQUIRE(buffer.str().find("warning") != std::string::npos);
+  REQUIRE(buffer.str().find("warning") == std::string::npos);
 }
 
 TEST_CASE("returning non-primitive value does not warn", "[leak-warning]") {
