@@ -21,6 +21,7 @@ class Symbol {
   int byteMod;
   bool usable = true;
   int sold = -1;
+  bool returned = false;
   int underscores = 0;
   int refCount = 0;
   int assignCount = 0;
@@ -36,6 +37,7 @@ class Type {
   static bool compare(Type* t, std::string ident);
   virtual int poly() { return 0; }
   int size;
+  bool uniqueType = false;
 };
 
 class Class : public Type {

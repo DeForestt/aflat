@@ -100,7 +100,7 @@ std::vector<ast::Union::Alias *> parseAliases(
 }
 
 Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
-             std::vector<std::string> &genericTypes) {
+             bool uniqueType, std::vector<std::string> &genericTypes) {
   this->genericTypes = genericTypes;
   this->logicalLine = tokens.peek()->lineCount;
 
@@ -112,8 +112,9 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
   }
 
   auto type = ast::Type(this->ident.ident, asmc::QWord);
-
+  type.uniqueType = uniqueType;
   parser.typeList << type;  // add the type to the typeList
+  this->uniqueType = uniqueType;
   auto op = dynamic_cast<lex::OpSym *>(tokens.pop());
 
   if (op == nullptr || op->Sym != '{') {
@@ -156,6 +157,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   type->safeType = this->safeType;
   type->dynamic = this->dynamic;
   type->pedantic = this->pedantic;
+  type->uniqueType = this->uniqueType;
   generator.scope = type;
 
   type->overloadTable.foo = [](ast::Function func, ast::Op op) {

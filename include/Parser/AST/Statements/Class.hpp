@@ -17,11 +17,12 @@ class Class : public Statement {
   bool safeType = false;
   bool dynamic = false;
   bool pedantic = false;
+  bool uniqueType = false;
   bool includer = false;
   bool hidden = false;
   Class() = default;
   Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
-        bool safeType, bool dynamic, bool pedantic,
+        bool safeType, bool dynamic, bool pedantic, bool uniqueType,
         std::vector<parse::Annotation> &annotations,
         std::vector<std::string> &genericTypes);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;

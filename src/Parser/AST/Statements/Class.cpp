@@ -7,7 +7,7 @@
 
 namespace ast {
 Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
-             bool safe, bool dynamic, bool pedantic,
+             bool safe, bool dynamic, bool pedantic, bool unique,
              std::vector<parse::Annotation> &annotations,
              std::vector<std::string> &genericTypes) {
   this->genericTypes = genericTypes;
@@ -56,6 +56,7 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
   if (parser.typeList[this->ident.ident] != nullptr)
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
                          " Class " + this->ident.ident + " already exists");
+  t.uniqueType = unique;
   parser.typeList << t;
   // check if there is a contract
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
@@ -79,6 +80,7 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
   this->safeType = safe;
   this->dynamic = dynamic;
   this->pedantic = pedantic;
+  this->uniqueType = unique;
   this->statement = parser.parseStmt(tokens);
 };
 
@@ -120,6 +122,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   type->safeType = this->safeType;
   type->dynamic = this->dynamic;
   type->pedantic = this->pedantic;
+  type->uniqueType = this->uniqueType;
   generator.scope = type;
   type->overloadTable.foo = [](ast::Function func, ast::Op op) {
     if (func.op == op) {

@@ -86,6 +86,14 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
 
   gen::Expr from = generator.GenExpr(this->expr, file);
 
+  gen::Symbol *retSym = nullptr;
+  if (auto var = dynamic_cast<ast::Var *>(this->expr)) {
+    if (var->modList.count == 0 && var->Ident != "my") {
+      retSym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
+      if (retSym) retSym->returned = true;
+    }
+  }
+
   if (generator.currentFunction->optional) {
     // if fromtype is not option.typeName, we need to convert it to
     // option.typeName
@@ -272,6 +280,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   file.text << mov;
 
   gen::scope::ScopeManager::getInstance()->softPop(&generator, file);
+  if (retSym) retSym->returned = false;
 
   auto re = new asmc::Return();
   re->logicalLine = this->logicalLine;

@@ -123,6 +123,10 @@ Statement *deepCopy(const Statement *stmt) {
     copy->ident = un->ident;
     copy->statement = deepCopy(un->statement);
     copy->genericTypes = std::vector<std::string>(un->genericTypes);
+    copy->safeType = un->safeType;
+    copy->dynamic = un->dynamic;
+    copy->pedantic = un->pedantic;
+    copy->uniqueType = un->uniqueType;
     for (auto alias : un->aliases) {
       if (alias->isType()) {
         // log type info

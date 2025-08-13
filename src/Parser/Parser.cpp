@@ -25,31 +25,33 @@ parse::Parser::Parser(int mutability) {
   this->addType("byte", asmc::Hard, asmc::Byte);
   this->addType("float", asmc::Float, asmc::DWord);
   this->addType("bool", asmc::Hard, asmc::Byte);
-  this->addType("generic", asmc::Hard, asmc::QWord, true);
+  this->addType("generic", asmc::Hard, asmc::QWord, true, false);
   this->addType("void", asmc::Hard, asmc::QWord);
-  this->addType("any", asmc::Hard, asmc::QWord, true);
+  this->addType("any", asmc::Hard, asmc::QWord, true, false);
   this->addType("Self", asmc::Hard, asmc::QWord);
   // create a dummy type for let
-  this->addType("let", asmc::Hard, asmc::QWord, true);
+  this->addType("let", asmc::Hard, asmc::QWord, true, false);
   // create a dummy type for typeOf
-  this->addType("typeOf", asmc::Hard, asmc::QWord, true);
+  this->addType("typeOf", asmc::Hard, asmc::QWord, true, false);
 }
 
 void parse::Parser::addType(std::string name, asmc::OpType opType,
-                            asmc::Size size) {
+                            asmc::Size size, bool unique) {
   ast::Type type;
   type.typeName = name;
   type.opType = opType;
   type.size = size;
+  type.uniqueType = unique;
 
   this->typeList << type;
 }
 
 void parse::Parser::addType(std::string name, asmc::OpType opType,
-                            asmc::Size size, bool isGeneric) {
+                            asmc::Size size, bool isGeneric, bool unique) {
   ast::Type type = ast::Type(name, size);
   type.opType = opType;
   type.isGeneric = isGeneric;
+  type.uniqueType = unique;
 
   this->typeList << type;
 }
@@ -163,6 +165,7 @@ ast::Statement *parse::Parser::parseStmt(
     auto safeType = false;
     auto dynamicType = false;
     auto pedantic = false;
+    auto uniqueType = false;
     auto scope = ast::Public;
     std::vector<std::string> typeNames;
     tokens.pop();
@@ -176,7 +179,7 @@ ast::Statement *parse::Parser::parseStmt(
 
     // Use a set for efficient lookup instead of multiple 'or' checks
     static const std::unordered_set<std::string> modifiers = {
-        "safe", "dynamic", "pedantic", "types", "when"};
+        "safe", "dynamic", "pedantic", "types", "when", "unique"};
 
     if (modifiers.count(obj.meta)) {
       while (modifiers.count(obj.meta)) {
@@ -186,6 +189,8 @@ ast::Statement *parse::Parser::parseStmt(
           dynamicType = true;
         else if (obj.meta == "pedantic")
           pedantic = true;
+        else if (obj.meta == "unique")
+          uniqueType = true;
         else if (obj.meta == "types") {
           // types(type1, type2, ...)
           auto OpenParen = dynamic_cast<lex::OpSym *>(tokens.pop());
@@ -198,7 +203,7 @@ ast::Statement *parse::Parser::parseStmt(
             throw err::Exception("Expected identifier after types on line " +
                                  std::to_string(obj.lineCount));
           typeNames.push_back(typeIdent->meta);
-          this->addType(typeIdent->meta, asmc::Hard, asmc::QWord, true);
+          this->addType(typeIdent->meta, asmc::Hard, asmc::QWord, true, false);
           auto comma = dynamic_cast<lex::OpSym *>(tokens.peek());
           while (comma && comma->Sym == ',') {
             tokens.pop();
@@ -226,7 +231,7 @@ ast::Statement *parse::Parser::parseStmt(
           obj = *dynamic_cast<lex::LObj *>(tokens.peek());
           tokens.pop();
         } else {
-          throw err::Exception("Expected type after safe/dynamic on line " +
+          throw err::Exception("Expected type after modifier on line " +
                                std::to_string(obj.lineCount));
         }
       }
@@ -234,7 +239,6 @@ ast::Statement *parse::Parser::parseStmt(
       // check if object.meta is class or function
       static const std::unordered_set<std::string> classFunction = {"class",
                                                                     "fn"};
-
       if (classFunction.count(obj.meta) == 0 &&
           (dynamicType || pedantic || safeType)) {
         throw err::Exception(
@@ -242,6 +246,18 @@ ast::Statement *parse::Parser::parseStmt(
             "on line " +
             std::to_string(obj.lineCount) + " got " + obj.meta);
       };
+      static const std::unordered_set<std::string> uniqueTargets = {
+          "class", "union", "struct"};
+      if (uniqueType && uniqueTargets.count(obj.meta) == 0) {
+        throw err::Exception(
+            "unique can only be used with classes, unions or "
+            "structs on line " +
+            std::to_string(obj.lineCount));
+      }
+      if (safeType && uniqueType) {
+        throw err::Exception("safe and unique cannot be combined on line " +
+                             std::to_string(obj.lineCount));
+      }
     }
 
     static const std::unordered_set<std::string> accessModifiers = {
@@ -614,12 +630,12 @@ ast::Statement *parse::Parser::parseStmt(
     } else if (obj.meta == "foreach") {
       output = new ast::ForEach(tokens, *this);
     } else if (obj.meta == "struct") {
-      output = new ast::Struct(tokens, *this);
+      output = new ast::Struct(tokens, *this, uniqueType);
     } else if (obj.meta == "class") {
       output = new ast::Class(tokens, *this, safeType, dynamicType, pedantic,
-                              annotations, typeNames);
+                              uniqueType, annotations, typeNames);
     } else if (obj.meta == "union") {
-      output = new ast::Union(tokens, *this, typeNames);
+      output = new ast::Union(tokens, *this, uniqueType, typeNames);
     } else if (obj.meta == "enum") {
       output = new ast::Enum(tokens, *this);
     } else if (obj.meta == "import") {

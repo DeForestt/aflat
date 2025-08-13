@@ -43,9 +43,10 @@ class Parser {
                             std::vector<bool> &mutability,
                             std::vector<int> &optConvertionIndices,
                             std::vector<bool> &readOnly);
-  void addType(std::string name, asmc::OpType opType, asmc::Size size);
   void addType(std::string name, asmc::OpType opType, asmc::Size size,
-               bool isGeneric);
+               bool unique = false);
+  void addType(std::string name, asmc::OpType opType, asmc::Size size,
+               bool isGeneric, bool unique = false);
   int mutability;
   links::SLinkedList<ast::Type, std::string> typeList;
   ast::Type parseFPointerType(links::LinkedList<lex::Token *> &tokens,
