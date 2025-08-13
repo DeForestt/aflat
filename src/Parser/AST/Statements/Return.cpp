@@ -86,6 +86,13 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
 
   gen::Expr from = generator.GenExpr(this->expr, file);
 
+  if (auto var = dynamic_cast<ast::Var *>(this->expr)) {
+    if (var->modList.count == 0 && var->Ident != "my") {
+      if (auto sym = gen::scope::ScopeManager::getInstance()->get(var->Ident))
+        sym->sold = this->logicalLine;
+    }
+  }
+
   if (generator.currentFunction->optional) {
     // if fromtype is not option.typeName, we need to convert it to
     // option.typeName
