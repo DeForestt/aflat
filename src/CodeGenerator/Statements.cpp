@@ -213,6 +213,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
                                          parse::PRIMITIVE_TYPES.end()) {
             auto t = this->typeList[expr.type];
             if (t && (*t)->uniqueType) {
+              this->alert("Discarding non-primitive return value of type `" +
+                              expr.type + "` may leak",
+                          false);
               scope::ScopeManager::getInstance()->pushScope(false);
               const auto tempName =
                   "$" + std::to_string(this->tempCount++) + "_unused";
