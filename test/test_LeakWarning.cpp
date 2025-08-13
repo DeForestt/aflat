@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "CodeGenerator/MockCodeGenerator.hpp"
+#include "CodeGenerator/ScopeManager.hpp"
 #include "Parser/AST.hpp"
 #include "catch.hpp"
 
@@ -26,6 +27,42 @@ TEST_CASE("unused non-primitive return value warns", "[leak-warning]") {
   std::cout.rdbuf(old);
 
   REQUIRE(buffer.str().find("warning") != std::string::npos);
+}
+
+TEST_CASE("returning non-primitive value does not warn", "[leak-warning]") {
+  auto parser = parse::Parser();
+  test::mockGen::CodeGenerator gen("mod", parser, "",
+                                   std::filesystem::current_path().string());
+
+  ast::Function make;
+  make.ident.ident = "make";
+  make.type = ast::Type("Foo", asmc::QWord);
+  gen.nameTable.push(make);
+
+  ast::Function func;
+  func.ident.ident = "func";
+  func.type = ast::Type("Foo", asmc::QWord);
+  gen.currentFunction = &func;
+  gen.inFunction = true;
+  gen.returnType = func.type;
+
+  gen::scope::ScopeManager::getInstance()->reset();
+  gen::scope::ScopeManager::getInstance()->pushScope(true);
+
+  auto call = new ast::CallExpr();
+  call->call = new ast::Call();
+  call->call->ident = "make";
+  call->call->Args = links::LinkedList<ast::Expr *>();
+
+  ast::Return ret;
+  ret.expr = call;
+
+  std::ostringstream buffer;
+  auto *old = std::cout.rdbuf(buffer.rdbuf());
+  gen.GenSTMT(&ret);
+  std::cout.rdbuf(old);
+
+  REQUIRE(buffer.str().find("warning") == std::string::npos);
 }
 
 TEST_CASE("passing temporary to non-owned parameter warns", "[leak-warning]") {
