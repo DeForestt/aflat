@@ -5,7 +5,7 @@
 #include "Parser/AST.hpp"
 #include "catch.hpp"
 
-TEST_CASE("returning variable marks it sold", "[return]") {
+TEST_CASE("returning variable doesn't mark it sold", "[return]") {
   auto parser = parse::Parser();
   test::mockGen::CodeGenerator gen("mod", parser, "",
                                    std::filesystem::current_path().string());
@@ -40,6 +40,8 @@ TEST_CASE("returning variable marks it sold", "[return]") {
 
   ret.generate(gen);
   int soldLine = sym->sold;
+  bool returned = sym->returned;
   scope->reset();
-  REQUIRE(soldLine != -1);
+  REQUIRE(soldLine == -1);
+  REQUIRE_FALSE(returned);
 }

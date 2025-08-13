@@ -28,7 +28,7 @@ TEST_CASE("deScope cleans owned non-primitives", "[deScope]") {
   REQUIRE(file != nullptr);
 }
 
-TEST_CASE("deScope skips primitives and sold symbols", "[deScope]") {
+TEST_CASE("deScope skips primitives, sold, and returned symbols", "[deScope]") {
   auto parser = parse::Parser();
   test::mockGen::CodeGenerator gen("mod", parser, "",
                                    std::filesystem::current_path().string());
@@ -55,4 +55,11 @@ TEST_CASE("deScope skips primitives and sold symbols", "[deScope]") {
   sold.owned = true;
   sold.sold = 1;
   REQUIRE(gen.deScope(sold) == nullptr);
+
+  gen::Symbol returned;
+  returned.symbol = "z";
+  returned.type = ast::Type("Foo", asmc::QWord);
+  returned.owned = true;
+  returned.returned = true;
+  REQUIRE(gen.deScope(returned) == nullptr);
 }

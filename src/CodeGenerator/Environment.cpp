@@ -7,8 +7,8 @@ using namespace gen::utils;
 namespace gen {
 
 asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
-  // if the symbol has been sold (moved/returned) do not clean it up
-  if (sym.sold != -1) return nullptr;
+  // if the symbol has been sold (moved) or is being returned do not clean it up
+  if (sym.sold != -1 || sym.returned) return nullptr;
 
   // only owned symbols require clean up
   if (!sym.owned) return nullptr;
