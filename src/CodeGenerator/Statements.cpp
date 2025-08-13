@@ -7,6 +7,8 @@
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Exceptions.hpp"
+#include "Parser/AST/Statements/Call.hpp"
+#include "Parser/Parser.hpp"
 
 using namespace gen::utils;
 
@@ -202,7 +204,18 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
     OutputFile.text.push(inst);
   } else
     try {
-      OutputFile << STMT->generate(*this).file;
+      auto result = STMT->generate(*this);
+      OutputFile << result.file;
+      if (dynamic_cast<ast::Call *>(STMT) != nullptr &&
+          result.expr.has_value()) {
+        const auto &expr = result.expr.value();
+        if (expr.type != "void" && parse::PRIMITIVE_TYPES.find(expr.type) ==
+                                       parse::PRIMITIVE_TYPES.end()) {
+          this->alert("Discarding non-primitive return value of type `" +
+                          expr.type + "` may leak memory",
+                      false);
+        }
+      }
     } catch (err::Exception &e) {
       this->errorFlag = true;
     }
