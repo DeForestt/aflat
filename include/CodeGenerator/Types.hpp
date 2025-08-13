@@ -36,6 +36,7 @@ class Type {
   static bool compare(Type* t, std::string ident);
   virtual int poly() { return 0; }
   int size;
+  bool uniqueType = false;
 };
 
 class Class : public Type {

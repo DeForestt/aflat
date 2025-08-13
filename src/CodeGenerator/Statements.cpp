@@ -211,24 +211,28 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
           const auto &expr = result.expr.value();
           if (expr.type != "void" && parse::PRIMITIVE_TYPES.find(expr.type) ==
                                          parse::PRIMITIVE_TYPES.end()) {
-            scope::ScopeManager::getInstance()->pushScope(false);
-            const auto tempName =
-                "$" + std::to_string(this->tempCount++) + "_unused";
-            ast::Type tmpType(expr.type, expr.size);
-            tmpType.opType = expr.op;
-            auto mod = scope::ScopeManager::getInstance()->assign(
-                tempName, tmpType, false, false);
-            if (auto *sym = scope::ScopeManager::getInstance()->get(tempName)) {
-              sym->owned = expr.owned;
+            auto t = this->typeList[expr.type];
+            if (t && (*t)->uniqueType) {
+              scope::ScopeManager::getInstance()->pushScope(false);
+              const auto tempName =
+                  "$" + std::to_string(this->tempCount++) + "_unused";
+              ast::Type tmpType(expr.type, expr.size);
+              tmpType.opType = expr.op;
+              auto mod = scope::ScopeManager::getInstance()->assign(
+                  tempName, tmpType, false, false);
+              if (auto *sym =
+                      scope::ScopeManager::getInstance()->get(tempName)) {
+                sym->owned = expr.owned;
+              }
+              auto *mov = new asmc::Mov();
+              mov->logicalLine = this->logicalLine;
+              mov->size = expr.size;
+              mov->op = expr.op;
+              mov->from = expr.access;
+              mov->to = "-" + std::to_string(mod) + "(%rbp)";
+              OutputFile.text << mov;
+              scope::ScopeManager::getInstance()->popScope(this, OutputFile);
             }
-            auto *mov = new asmc::Mov();
-            mov->logicalLine = this->logicalLine;
-            mov->size = expr.size;
-            mov->op = expr.op;
-            mov->from = expr.access;
-            mov->to = "-" + std::to_string(mod) + "(%rbp)";
-            OutputFile.text << mov;
-            scope::ScopeManager::getInstance()->popScope(this, OutputFile);
           }
         }
       } else {

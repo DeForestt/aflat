@@ -139,6 +139,7 @@ class Type {
   bool isGeneric = false;
   bool safeType = false;
   bool pedantic = false;
+  bool uniqueType = false;
   Type *typeHint;
   bool isReference = false;
   bool isRvalue = false;
@@ -159,7 +160,7 @@ class Type {
 
   Type() = default;
   Type(const std::string &typeName, const asmc::Size &size)
-      : typeName(typeName), size(size){};
+      : typeName(typeName), size(size) {};
 };
 
 class Arg {

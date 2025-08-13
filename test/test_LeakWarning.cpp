@@ -12,6 +12,12 @@ TEST_CASE("unused non-primitive return value is cleaned", "[leak-warning]") {
   test::mockGen::CodeGenerator gen("mod", parser, "",
                                    std::filesystem::current_path().string());
 
+  parser.addType("Foo", asmc::Hard, asmc::QWord, false, true);
+  auto foo = new gen::Class();
+  foo->Ident = "Foo";
+  foo->uniqueType = true;
+  gen.addType(foo);
+
   ast::Function make;
   make.ident.ident = "make";
   make.type = ast::Type("Foo", asmc::QWord);
@@ -33,6 +39,12 @@ TEST_CASE("returning non-primitive value does not warn", "[leak-warning]") {
   auto parser = parse::Parser();
   test::mockGen::CodeGenerator gen("mod", parser, "",
                                    std::filesystem::current_path().string());
+
+  parser.addType("Foo", asmc::Hard, asmc::QWord, false, true);
+  auto foo = new gen::Class();
+  foo->Ident = "Foo";
+  foo->uniqueType = true;
+  gen.addType(foo);
 
   ast::Function make;
   make.ident.ident = "make";
@@ -70,6 +82,12 @@ TEST_CASE("passing temporary to non-owned parameter warns", "[leak-warning]") {
   test::mockGen::CodeGenerator gen("mod", parser, "",
                                    std::filesystem::current_path().string());
 
+  parser.addType("Foo", asmc::Hard, asmc::QWord, false, true);
+  auto foo = new gen::Class();
+  foo->Ident = "Foo";
+  foo->uniqueType = true;
+  gen.addType(foo);
+
   ast::Function produce;
   produce.ident.ident = "produce";
   produce.type = ast::Type("Foo", asmc::QWord);
@@ -106,6 +124,12 @@ TEST_CASE("passing temporary to owned parameter does not warn",
   auto parser = parse::Parser();
   test::mockGen::CodeGenerator gen("mod", parser, "",
                                    std::filesystem::current_path().string());
+
+  parser.addType("Foo", asmc::Hard, asmc::QWord, false, true);
+  auto foo = new gen::Class();
+  foo->Ident = "Foo";
+  foo->uniqueType = true;
+  gen.addType(foo);
 
   ast::Function produce;
   produce.ident.ident = "produce";

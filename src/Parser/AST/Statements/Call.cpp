@@ -541,11 +541,14 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     if (dynamic_cast<ast::CallExpr *>(arg) != nullptr &&
         !func->argTypes.at(i).isRvalue && exp.type != "void" &&
         parse::PRIMITIVE_TYPES.find(exp.type) == parse::PRIMITIVE_TYPES.end()) {
-      generator.alert("Discarding non-primitive return value of type `" +
-                          exp.type + "` that is passed to argument " +
-                          std::to_string(i + 1) + " of function `" + ident +
-                          "` without transferring ownership may leak",
-                      false);
+      auto t = generator.typeList[exp.type];
+      if (t && (*t)->uniqueType) {
+        generator.alert("Discarding non-primitive return value of type `" +
+                            exp.type + "` that is passed to argument " +
+                            std::to_string(i + 1) + " of function `" + ident +
+                            "` without transferring ownership may leak",
+                        false);
+      }
     }
     if (!exp.owned && rValue) {
       if (parse::PRIMITIVE_TYPES.find(exp.type) ==

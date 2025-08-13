@@ -18,24 +18,50 @@ asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
       parse::PRIMITIVE_TYPES.end())
     return nullptr;
 
+  auto type = this->typeList[sym.type.typeName];
+  if (type == nullptr) return nullptr;
+
+  if (!(*type)->uniqueType) {
+    auto classType = dynamic_cast<Class *>(*type);
+    if (classType == nullptr) return nullptr;
+    auto endScope = classType->nameTable["endScope"];
+    if (endScope == nullptr) return nullptr;
+
+    auto file = new asmc::File();
+    auto push = new asmc::Push();
+    push->logicalLine = this->logicalLine;
+    push->op = this->registers["%rax"]->get(asmc::QWord);
+    file->text << push;
+
+    auto callDel = new ast::Call();
+    callDel->logicalLine = this->logicalLine;
+    callDel->ident = sym.symbol;
+    callDel->Args = LinkedList<ast::Expr *>();
+    callDel->modList = links::LinkedList<std::string>();
+    callDel->modList.push("endScope");
+    *file << this->GenSTMT(callDel);
+
+    auto pop = new asmc::Pop();
+    pop->logicalLine = this->logicalLine;
+    pop->op = this->registers["%rax"]->get(asmc::QWord);
+    file->text << pop;
+    return file;
+  }
+
   auto file = new asmc::File();
 
-  // call the `del` method if it exists
-  if (auto type = this->typeList[sym.type.typeName]) {
-    if (auto classType = dynamic_cast<Class *>(*type)) {
-      if (auto destructor = classType->nameTable["del"]) {
-        auto callDel = new ast::Call();
-        callDel->logicalLine = this->logicalLine;
-        callDel->ident = sym.symbol;
-        callDel->Args = LinkedList<ast::Expr *>();
-        callDel->modList = links::LinkedList<std::string>();
-        callDel->modList.push("del");
-        *file << this->GenSTMT(callDel);
-      }
+  if (auto classType = dynamic_cast<Class *>(*type)) {
+    if (auto destructor = classType->nameTable["del"]) {
+      auto callDel = new ast::Call();
+      callDel->logicalLine = this->logicalLine;
+      callDel->ident = sym.symbol;
+      callDel->Args = LinkedList<ast::Expr *>();
+      callDel->modList = links::LinkedList<std::string>();
+      callDel->modList.push("del");
+      *file << this->GenSTMT(callDel);
     }
   }
 
-  // call free on the symbol if available
   if (this->nameTable["free"] != nullptr) {
     auto var = new ast::Var();
     var->logicalLine = this->logicalLine;

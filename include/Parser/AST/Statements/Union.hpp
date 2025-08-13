@@ -61,7 +61,7 @@ class Union : public Class {
 
   Union() = default;
   Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
-        std::vector<std::string> &genericTypes);
+        bool uniqueType, std::vector<std::string> &genericTypes);
 
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   std::vector<std::string> getGenericTypes() const override {

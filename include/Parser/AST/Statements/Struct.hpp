@@ -10,8 +10,10 @@ class Struct : public Member, public Statement {
  public:
   Ident ident;
   Statement *statement;
+  bool uniqueType = false;
   Struct() = default;
-  Struct(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
+  Struct(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
+         bool uniqueType);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 }  // namespace ast

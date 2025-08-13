@@ -9,6 +9,12 @@ TEST_CASE("deScope cleans owned non-primitives", "[deScope]") {
   test::mockGen::CodeGenerator gen("mod", parser, "",
                                    std::filesystem::current_path().string());
 
+  parser.addType("Foo", asmc::Hard, asmc::QWord, false, true);
+  auto foo = new gen::Class();
+  foo->Ident = "Foo";
+  foo->uniqueType = true;
+  gen.addType(foo);
+
   ast::Function freeFunc;
   freeFunc.ident.ident = "free";
   gen.nameTable.push(freeFunc);
@@ -26,6 +32,12 @@ TEST_CASE("deScope skips primitives and sold symbols", "[deScope]") {
   auto parser = parse::Parser();
   test::mockGen::CodeGenerator gen("mod", parser, "",
                                    std::filesystem::current_path().string());
+
+  parser.addType("Foo", asmc::Hard, asmc::QWord, false, true);
+  auto foo = new gen::Class();
+  foo->Ident = "Foo";
+  foo->uniqueType = true;
+  gen.addType(foo);
 
   ast::Function freeFunc;
   freeFunc.ident.ident = "free";
