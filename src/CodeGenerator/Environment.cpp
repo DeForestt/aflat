@@ -7,34 +7,50 @@ using namespace gen::utils;
 namespace gen {
 
 asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
+  // if the symbol has been sold (moved/returned) do not clean it up
   if (sym.sold != -1) return nullptr;
-  asmc::File *file = new asmc::File();
-  Type **type = this->typeList[sym.type.typeName];
-  if (type == nullptr) return nullptr;
 
-  Class *classType = dynamic_cast<Class *>(*type);
-  if (classType == nullptr) return nullptr;
+  // only owned symbols require clean up
+  if (!sym.owned) return nullptr;
 
-  ast::Function *endScope = classType->nameTable["endScope"];
-  if (endScope == nullptr) return nullptr;
+  // primitives do not need to be cleaned up
+  if (parse::PRIMITIVE_TYPES.find(sym.type.typeName) !=
+      parse::PRIMITIVE_TYPES.end())
+    return nullptr;
 
-  asmc::Push *push = new asmc::Push();
-  push->logicalLine = this->logicalLine;
-  push->op = this->registers["%rax"]->get(asmc::QWord);
-  file->text << push;
+  auto file = new asmc::File();
 
-  ast::Call *callDel = new ast::Call();
-  callDel->logicalLine = this->logicalLine;
-  callDel->ident = sym.symbol;
-  callDel->Args = LinkedList<ast::Expr *>();
-  callDel->modList = links::LinkedList<std::string>();
-  callDel->modList.push("endScope");
-  file->operator<<(this->GenSTMT(callDel));
+  // call the `del` method if it exists
+  if (auto type = this->typeList[sym.type.typeName]) {
+    if (auto classType = dynamic_cast<Class *>(*type)) {
+      if (auto destructor = classType->nameTable["del"]) {
+        auto callDel = new ast::Call();
+        callDel->logicalLine = this->logicalLine;
+        callDel->ident = sym.symbol;
+        callDel->Args = LinkedList<ast::Expr *>();
+        callDel->modList = links::LinkedList<std::string>();
+        callDel->modList.push("del");
+        *file << this->GenSTMT(callDel);
+      }
+    }
+  }
 
-  asmc::Pop *pop = new asmc::Pop();
-  pop->logicalLine = this->logicalLine;
-  pop->op = this->registers["%rax"]->get(asmc::QWord);
-  file->text << pop;
+  // call free on the symbol if available
+  if (this->nameTable["free"] != nullptr) {
+    auto var = new ast::Var();
+    var->logicalLine = this->logicalLine;
+    var->Ident = sym.symbol;
+    var->modList = LinkedList<std::string>();
+
+    auto freeCall = new ast::Call();
+    freeCall->logicalLine = this->logicalLine;
+    freeCall->ident = "free";
+    freeCall->Args = LinkedList<ast::Expr *>();
+    freeCall->Args.push(var);
+    freeCall->modList = LinkedList<std::string>();
+
+    *file << this->GenSTMT(freeCall);
+  }
 
   return file;
 }
