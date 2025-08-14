@@ -538,7 +538,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     if (!exp.passable)
       generator.alert("Cannot pass an lvalue of safe type " + exp.type +
                       " to a function");
-    if (dynamic_cast<ast::CallExpr *>(arg) != nullptr &&
+    if (checkArgs && dynamic_cast<ast::CallExpr *>(arg) != nullptr &&
         !func->argTypes.at(i).isRvalue && exp.type != "void" &&
         parse::PRIMITIVE_TYPES.find(exp.type) == parse::PRIMITIVE_TYPES.end()) {
       auto t = generator.typeList[exp.type];
