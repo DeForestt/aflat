@@ -1,7 +1,6 @@
 .needs <std.gs>
 .needs <asm.gs>
 
-import List from "Collections";
 import {len} from "strings" under str;
 import string from "String";
 import {print} from "String" under st;

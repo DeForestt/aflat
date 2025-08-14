@@ -8,7 +8,6 @@ import Option from "Utils/Option";
 import option from "Utils/option";
 import Scroller from "Collections/Scroller";
 import vector from "Collections/Vector";
-import List from "Collections";
 import {Some, None, optionWrapper} from "Utils/option" under opt;
 import result from "Utils/result";
 import {accept, reject, resultWrapper} from "Utils/result" under res;

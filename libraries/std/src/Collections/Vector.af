@@ -1,5 +1,4 @@
 .needs <std>
-import List from "Collections";
 import Result from "Utils/Result";
 import string from "String";
 import Error from "Utils/Error";
