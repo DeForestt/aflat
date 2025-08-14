@@ -122,7 +122,7 @@ class File{
         return l;
     };
 
-    fn readToEnd() -> string! {
+    fn readToEnd() -> result::<string> {
         const int file = my.file;
         const fstat stat = newFstat(file);
         const int size = 0 + stat.st_size;
@@ -139,7 +139,7 @@ class File{
         pointer =: '\0';
         const string text = new string(buffer);
         free(buffer);
-        return text;
+        return res.accept(text);
     };
 
     fn close() -> int {
