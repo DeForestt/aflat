@@ -1641,7 +1641,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         call->logicalLine = obj.lineCount;
 
         auto testSym = dynamic_cast<lex::OpSym *>(tokens.peek());
-        if (testSym != nullptr && testSym->Sym != '[' && testSym->Sym != '{') {
+        if (testSym != nullptr && testSym->Sym != '[' && testSym->Sym != '{' &&
+            testSym->Sym != '$') {
           auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
           if (symp->Sym != ')')
             throw err::Exception(
