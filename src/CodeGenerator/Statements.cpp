@@ -260,15 +260,21 @@ asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
     this->ImportsOnly(dynamic_cast<ast::Sequence *>(STMT)->Statement2);
   } else if (dynamic_cast<ast::Import *>(STMT) != nullptr) {
     auto imp = dynamic_cast<ast::Import *>(STMT);
-    if (imp->hasClasses) {
-      auto prev = this->cwd;
-      if (!imp->cwd.empty()) this->cwd = imp->cwd;
-      if (imp->hasFunctions)
-        imp->generateClasses(*this);
-      else
-        imp->generate(*this);
-      this->cwd = prev;
+    auto prev = this->cwd;
+    if (!imp->cwd.empty()) this->cwd = imp->cwd;
+    imp->generateClasses(*this);
+    if (imp->hasFunctions) {
+      auto added = this->includedMemo.get(imp->path);
+      if (added != nullptr) {
+        auto shells = gen::utils::copyAllFunctionShells(added);
+        if (shells) this->GenSTMT(shells);
+      }
+      std::string id = std::filesystem::path(imp->path).filename().string();
+      if (id.find_last_of('.') != std::string::npos)
+        id = id.substr(0, id.find_last_of('.'));
+      this->nameSpaceTable.insert(imp->nameSpace, id);
     }
+    this->cwd = prev;
   }
   return OutputFile;
 }

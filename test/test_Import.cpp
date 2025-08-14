@@ -30,7 +30,7 @@ TEST_CASE("Parser handles mixed import of classes and functions", "[parser]") {
   REQUIRE(imp->imports[1] == "bar");
 }
 
-TEST_CASE("ImportsOnly ignores functions in mixed import", "[codegen]") {
+TEST_CASE("ImportsOnly includes functions in mixed import", "[codegen]") {
   std::ofstream mod("Temp.af");
   mod << "class Foo {}\n";
   mod << "export int bar() { return 0; };\n";
@@ -54,8 +54,7 @@ TEST_CASE("ImportsOnly ignores functions in mixed import", "[codegen]") {
   gen.ImportsOnly(imp);
 
   REQUIRE(gen.includedClasses.contains("Temp::Foo"));
-  REQUIRE_FALSE(gen.includedClasses.contains("Temp::bar"));
-  REQUIRE_FALSE(gen.nameSpaceTable.contains("m"));
+  REQUIRE(gen.nameSpaceTable.contains("m"));
 
   std::remove("Temp.af");
 }
