@@ -1,0 +1,38 @@
+.needs <std>
+import string from "String";
+
+types(T, U)
+unique class tuple {
+    private const T first = first;
+    private const U second = second;
+
+    fn init(const T &&first, const U &&second) -> Self {
+        return my;
+    };
+
+    fn getFirst() -> T {
+        return my.first;
+    };
+
+    fn getSecond() -> U {
+        return my.second;
+    };
+
+    fn del() {
+        when(T is not primitive)
+        delete my.first;
+
+        when(U is not primitive)
+        delete my.second;
+        return;
+    };
+
+    fn toString() -> string {
+        return `({my.first}, {my.second})`;
+    };
+};
+
+types(T, U)
+fn make_tuple(const T &&first, const U &&second) -> tuple::<T, U> {
+    return new tuple::<T, U>(first, second);
+};
