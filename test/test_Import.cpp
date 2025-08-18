@@ -100,12 +100,15 @@ TEST_CASE("Import applies nested namespaces", "[namespaces]") {
   ast::collectImportNamespaces(root, map);
   std::function<ast::Statement *(ast::Statement *)> findCall =
       [&](ast::Statement *s) -> ast::Statement * {
-    if (!s) return nullptr;
+    if (!s)
+      return nullptr;
     if (auto f = dynamic_cast<ast::Function *>(s)) {
-      if (f->ident.ident == "call") return s;
+      if (f->ident.ident == "call")
+        return s;
     }
     if (auto seq2 = dynamic_cast<ast::Sequence *>(s)) {
-      if (auto r = findCall(seq2->Statement1)) return r;
+      if (auto r = findCall(seq2->Statement1))
+        return r;
       return findCall(seq2->Statement2);
     }
     return nullptr;
@@ -118,11 +121,15 @@ TEST_CASE("Import applies nested namespaces", "[namespaces]") {
   REQUIRE(func != nullptr);
   std::function<ast::Call *(ast::Statement *)> findCallNode =
       [&](ast::Statement *s) -> ast::Call * {
-    if (!s) return nullptr;
-    if (auto cexpr = dynamic_cast<ast::CallExpr *>(s)) return cexpr->call;
-    if (auto call = dynamic_cast<ast::Call *>(s)) return call;
+    if (!s)
+      return nullptr;
+    if (auto cexpr = dynamic_cast<ast::CallExpr *>(s))
+      return cexpr->call;
+    if (auto call = dynamic_cast<ast::Call *>(s))
+      return call;
     if (auto seqn = dynamic_cast<ast::Sequence *>(s)) {
-      if (auto r = findCallNode(seqn->Statement1)) return r;
+      if (auto r = findCallNode(seqn->Statement1))
+        return r;
       return findCallNode(seqn->Statement2);
     }
     if (auto ret = dynamic_cast<ast::Return *>(s))

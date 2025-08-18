@@ -51,7 +51,8 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
         } else {
           bool pop = false;
           do {
-            if (pop) tokens.pop();
+            if (pop)
+              tokens.pop();
             this->decoratorArgs.push(parser.parseExpr(tokens));
             pop = true;
           } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
@@ -88,12 +89,8 @@ Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
                    const Op op, const std::string &scopeName,
                    links::LinkedList<lex::Token *> &tokens,
                    parse::Parser &parser, bool optional, bool safe)
-    : scope(scope),
-      type(type),
-      op(op),
-      scopeName(scopeName),
-      optional(optional),
-      safe(safe) {
+    : scope(scope), type(type), op(op), scopeName(scopeName),
+      optional(optional), safe(safe) {
   this->ident.ident = ident;
   this->useType = type;
   this->args = parser.parseArgs(tokens, ',', ')', this->argTypes, this->req,
@@ -134,7 +131,8 @@ Function::Function(const ScopeMod &scope,
       throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
                            " Expected Identifier");
     auto type = parser.typeList[typeName->meta];
-    if (type == nullptr) type = new Type(typeName->meta, asmc::QWord);
+    if (type == nullptr)
+      type = new Type(typeName->meta, asmc::QWord);
     auto templateTypeList =
         parser.parseTemplateTypeList(tokens, tokens.peek()->lineCount);
 
@@ -191,15 +189,19 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
   bool isLambda = this->isLambda;
 
   if (generator.scope == nullptr || this->globalLocked) {
-    if (!this->isLambda) generator.nameTable << *this;
+    if (!this->isLambda)
+      generator.nameTable << *this;
   } else {
-    if (!this->isLambda) this->scopeName = generator.scope->Ident;
+    if (!this->isLambda)
+      this->scopeName = generator.scope->Ident;
     generator.scope->nameTable << *this;
     if (this->op != ast::None)
-      if (!this->isLambda) this->scopeName = generator.scope->Ident;
+      if (!this->isLambda)
+        this->scopeName = generator.scope->Ident;
     generator.scope->overloadTable << *this;
     if (this->scope == ast::Public)
-      if (!this->isLambda) generator.scope->publicNameTable << *this;
+      if (!this->isLambda)
+        generator.scope->publicNameTable << *this;
   }
 
   if (this->statement != nullptr && !this->hidden) {
@@ -220,7 +222,8 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     if (this->scopeName != "global") {
       label->label = "pub_" + this->scopeName + "_" + this->ident.ident;
       gen::Type *tScope = *generator.typeList[this->scopeName];
-      if (tScope == nullptr) generator.alert("Failed to locate function Scope");
+      if (tScope == nullptr)
+        generator.alert("Failed to locate function Scope");
       if (dynamic_cast<gen::Class *>(tScope) == nullptr)
         generator.alert("Can only scope to  a class");
       generator.scope = dynamic_cast<gen::Class *>(tScope);
@@ -399,4 +402,4 @@ gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
   }
   return output;
 };
-}  // namespace ast
+} // namespace ast

@@ -15,5 +15,5 @@ bool CodeGenerator::addType(gen::Type *type) {
   this->typeList.push(type);
   return true;
 }
-}  // namespace mockGen
-}  // namespace test
+} // namespace mockGen
+} // namespace test

@@ -4,9 +4,8 @@
 #include "LinkedList.hpp"
 
 namespace links {
-template <typename T, typename Z>
-class SLinkedList {
- public:
+template <typename T, typename Z> class SLinkedList {
+public:
   bool (*foo)(T, Z);
   int count;
 
@@ -19,7 +18,7 @@ class SLinkedList {
   SLinkedList &operator=(SLinkedList &&other) noexcept;
 
   class iterator {
-   public:
+  public:
     using iterator_category = std::forward_iterator_tag;
     using difference_type = std::ptrdiff_t;
     using value_type = T;
@@ -45,12 +44,12 @@ class SLinkedList {
       return a.node != b.node;
     }
 
-   private:
+  private:
     Node<T> *node;
   };
 
   class const_iterator {
-   public:
+  public:
     using iterator_category = std::forward_iterator_tag;
     using difference_type = std::ptrdiff_t;
     using value_type = T;
@@ -76,7 +75,7 @@ class SLinkedList {
       return a.node != b.node;
     }
 
-   private:
+  private:
     const Node<T> *node;
   };
 
@@ -115,11 +114,11 @@ class SLinkedList {
 
   T *at(int i);
 };
-}  // namespace links
+} // namespace links
 
-template <typename T, typename Z>
-T *links::SLinkedList<T, Z>::at(int i) {
-  if (i < 0 || i >= this->count) return nullptr;
+template <typename T, typename Z> T *links::SLinkedList<T, Z>::at(int i) {
+  if (i < 0 || i >= this->count)
+    return nullptr;
   links::Node<T> *pointer = this->head;
   for (int j = 0; j < i; j++) {
     pointer = pointer->next;
@@ -130,8 +129,10 @@ T *links::SLinkedList<T, Z>::at(int i) {
 template <typename T, typename Z>
 T *links::SLinkedList<T, Z>::operator[](Z input) {
   links::Node<T> *pointer = this->head;
-  if (this->head == nullptr) return nullptr;
-  if ((*foo)(this->head->data, input)) return &this->head->data;
+  if (this->head == nullptr)
+    return nullptr;
+  if ((*foo)(this->head->data, input))
+    return &this->head->data;
   while (pointer->next != nullptr) {
     pointer = pointer->next;
     if (foo(pointer->data, input)) {
@@ -141,30 +142,30 @@ T *links::SLinkedList<T, Z>::operator[](Z input) {
   return nullptr;
 }
 
-template <typename T, typename Z>
-links::SLinkedList<T, Z>::SLinkedList() {
+template <typename T, typename Z> links::SLinkedList<T, Z>::SLinkedList() {
   this->count = 0;
   this->foo = nullptr;
   head = nullptr;
 }
 
-template <typename T, typename Z>
-links::SLinkedList<T, Z>::~SLinkedList() {
+template <typename T, typename Z> links::SLinkedList<T, Z>::~SLinkedList() {
   clear();
 }
 
 template <typename T, typename Z>
 links::SLinkedList<T, Z>::SLinkedList(const SLinkedList &other)
     : SLinkedList() {
-  for (const auto &v : other) push(v);
+  for (const auto &v : other)
+    push(v);
 }
 
 template <typename T, typename Z>
-links::SLinkedList<T, Z> &links::SLinkedList<T, Z>::operator=(
-    const SLinkedList &other) {
+links::SLinkedList<T, Z> &
+links::SLinkedList<T, Z>::operator=(const SLinkedList &other) {
   if (this != &other) {
     clear();
-    for (const auto &v : other) push(v);
+    for (const auto &v : other)
+      push(v);
   }
   return *this;
 }
@@ -180,8 +181,8 @@ links::SLinkedList<T, Z>::SLinkedList(SLinkedList &&other) noexcept {
 }
 
 template <typename T, typename Z>
-links::SLinkedList<T, Z> &links::SLinkedList<T, Z>::operator=(
-    SLinkedList &&other) noexcept {
+links::SLinkedList<T, Z> &
+links::SLinkedList<T, Z>::operator=(SLinkedList &&other) noexcept {
   if (this != &other) {
     clear();
     foo = other.foo;
@@ -194,8 +195,7 @@ links::SLinkedList<T, Z> &links::SLinkedList<T, Z>::operator=(
   return *this;
 }
 
-template <typename T, typename Z>
-void links::SLinkedList<T, Z>::clear() {
+template <typename T, typename Z> void links::SLinkedList<T, Z>::clear() {
   if (this->count > 0) {
     // this->head = nullptr;
     while (this->count > 0) {
@@ -206,8 +206,7 @@ void links::SLinkedList<T, Z>::clear() {
   this->count = 0;
 }
 
-template <typename T, typename Z>
-void links::SLinkedList<T, Z>::push(T value) {
+template <typename T, typename Z> void links::SLinkedList<T, Z>::push(T value) {
   this->count += 1;
   Node<T> *push = new Node<T>(std::move(value));
   push->next = this->head;
@@ -222,8 +221,7 @@ void links::SLinkedList<T, Z>::operator<<(T value) {
   this->head = push;
 }
 
-template <typename T, typename Z>
-void links::SLinkedList<T, Z>::invert() {
+template <typename T, typename Z> void links::SLinkedList<T, Z>::invert() {
   Node<T> *prev = nullptr;
   Node<T> *curr = this->head;
   Node<T> *next = nullptr;
@@ -237,19 +235,18 @@ void links::SLinkedList<T, Z>::invert() {
   this->head = prev;
 }
 
-template <typename T, typename Z>
-T links::SLinkedList<T, Z>::pop() {
+template <typename T, typename Z> T links::SLinkedList<T, Z>::pop() {
   this->count -= 1;
   T data = this->head->data;
   Node<T> *popper = this->head;
   this->head = this->head->next;
   delete popper;
-  if (this->count == 0) head = nullptr;
+  if (this->count == 0)
+    head = nullptr;
   return data;
 }
 
-template <typename T, typename Z>
-T links::SLinkedList<T, Z>::peek() {
+template <typename T, typename Z> T links::SLinkedList<T, Z>::peek() {
   return this->head->data;
 }
 

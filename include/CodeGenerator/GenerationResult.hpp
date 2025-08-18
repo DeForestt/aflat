@@ -8,4 +8,4 @@ struct GenerationResult {
   asmc::File file;
   std::optional<gen::Expr> expr;
 };
-}  // namespace gen
+} // namespace gen

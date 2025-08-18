@@ -15,8 +15,9 @@ namespace ast {
  * }
  */
 
-gen::GenerationResult const Bubble::generateExpression(
-    gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
+gen::GenerationResult const
+Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
+                           std::string typeHint) {
   asmc::File file;
   auto matchExpr = new ast::Match();
   matchExpr->expr = expr;
@@ -47,4 +48,4 @@ gen::GenerationResult const Bubble::generateExpression(
   return matchExpr->generateExpression(generator, size, typeHint);
 }
 
-}  // namespace ast
+} // namespace ast

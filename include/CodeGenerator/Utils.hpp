@@ -27,18 +27,16 @@ std::string generateUUID();
 
 using GenericNameConstruct = std::tuple<std::string, std::vector<std::string>>;
 
-std::tuple<std::string, std::vector<std::string>> parseGenericName(
-    const std::string &name, CodeGenerator &generator);
+std::tuple<std::string, std::vector<std::string>>
+parseGenericName(const std::string &name, CodeGenerator &generator);
 
-template <typename T>
-std::string toString(const T &value) {
+template <typename T> std::string toString(const T &value) {
   std::stringstream ss;
   ss << value;
   return ss.str();
 }
 
-template <typename... Args>
-std::string format(std::string fmt, Args... args) {
+template <typename... Args> std::string format(std::string fmt, Args... args) {
   std::array<std::string, sizeof...(Args)> argStrings = {toString(args)...};
   std::stringstream result;
   std::size_t argIndex = 0;
@@ -50,7 +48,7 @@ std::string format(std::string fmt, Args... args) {
             "Not enough arguments provided to format string");
       }
       result << argStrings[argIndex++];
-      i++;  // Skip the '}' character
+      i++; // Skip the '}' character
     } else {
       result << fmt[i];
     }
@@ -62,4 +60,4 @@ std::string format(std::string fmt, Args... args) {
 
   return result.str();
 }
-};  // namespace gen::utils
+}; // namespace gen::utils

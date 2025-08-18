@@ -5,6 +5,7 @@ function aflat {
 # Function to compile a specific library
 function compile_single {
     case "$1" in
+        "Tuple") aflat ./libraries/std/src/Collections/Tuple.af -o ./libraries/std/Tuple.s ;;
         "Collections") aflat ./libraries/std/src/Collections.af -o ./libraries/std/Collections.s ;;
         "concurrency") aflat ./libraries/std/src/concurrency.af -o ./libraries/std/concurrency.s ;;
         "DateTime") aflat ./libraries/std/src/DateTime.af -o ./libraries/std/DateTime.s ;;
@@ -80,7 +81,7 @@ function compile_single {
             echo "  Properties, Object, Error, Defer, unordered_map, Error_Render"
             echo "  HTTP_Endpoint, HTTP_Middleware, HTTP_Server, HTTP_Endpoints"
             echo "  Web_Content, Web_Content_Bind, JSON, JSON_Parse, JSON_Property"
-            echo "  Iterator, Scroller, Enumerator, Vector, request"
+            echo "  Iterator, Scroller, Enumerator, Vector, request, Tuple"
             exit 1 ;;
     esac
     echo "Successfully compiled $1"
@@ -164,6 +165,7 @@ aflat ./libraries/std/src/Collections/Iterator.af -o ./libraries/std/Iterator.s 
 aflat ./libraries/std/src/Collections/Scroller.af -o ./libraries/std/Scroller.s &
 aflat ./libraries/std/src/Collections/Enumerator.af -o ./libraries/std/Enumerator.s &
 aflat ./libraries/std/src/Collections/Vector.af -o ./libraries/std/vector.s &
+aflat ./libraries/std/src/Collections/Tuple.af -o ./libraries/std/Tuple.s &
 
 # Handle JSON/Parse separately since it needs renaming
 aflat ./libraries/std/src/JSON/Parse.af -o ./libraries/std/Parse.s

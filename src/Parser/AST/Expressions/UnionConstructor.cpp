@@ -7,8 +7,9 @@
 
 namespace ast {
 
-gen::GenerationResult const UnionConstructor::getStaticExpr(
-    gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
+gen::GenerationResult const
+UnionConstructor::getStaticExpr(gen::CodeGenerator &generator, asmc::Size size,
+                                std::string typeHint) {
   asmc::File file;
 
   auto callExpr = new ast::CallExpr();
@@ -21,8 +22,9 @@ gen::GenerationResult const UnionConstructor::getStaticExpr(
   return {file, resolvedCall};
 }
 
-gen::GenerationResult const UnionConstructor::getDynamicExpr(
-    gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
+gen::GenerationResult const
+UnionConstructor::getDynamicExpr(gen::CodeGenerator &generator, asmc::Size size,
+                                 std::string typeHint) {
   asmc::File file;
   auto newExpr = new ast::NewExpr();
   newExpr->type = unionType;
@@ -33,8 +35,9 @@ gen::GenerationResult const UnionConstructor::getDynamicExpr(
   return {file, resolvedExpr};
 }
 
-gen::GenerationResult const UnionConstructor::generateExpression(
-    gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
+gen::GenerationResult const
+UnionConstructor::generateExpression(gen::CodeGenerator &generator,
+                                     asmc::Size size, std::string typeHint) {
   asmc::File file;
   if (templateTypes.size() > 0) {
     unionType.typeName += "<";
@@ -69,9 +72,9 @@ gen::GenerationResult const UnionConstructor::generateExpression(
                          });
 
   if (it == unionGen->aliases.end()) {
-    generator.alert(
-        "Variant " + variantName + " not found in union " + unionType.typeName,
-        true, __FILE__, __LINE__);
+    generator.alert("Variant " + variantName + " not found in union " +
+                        unionType.typeName,
+                    true, __FILE__, __LINE__);
     return {file, std::nullopt};
   }
 
@@ -131,4 +134,4 @@ gen::GenerationResult const UnionConstructor::generateExpression(
 
   return {file, out};
 }
-};  // namespace ast
+}; // namespace ast

@@ -9,4 +9,4 @@ std::string buildCompileCmd(const std::string &srcPath,
 std::string buildLinkCmd(const std::string &output,
                          const std::string &linkerList, bool debug);
 
-}  // namespace compilerutils
+} // namespace compilerutils

@@ -14,8 +14,10 @@ cfg::Config cfg::getConfig(std::string content) {
   bool ini = false;
   while (std::getline(detect, line)) {
     line = trim(line);
-    if (line.empty() || line[0] == ';') continue;
-    if (!line.empty() && line[0] == '[') ini = true;
+    if (line.empty() || line[0] == ';')
+      continue;
+    if (!line.empty() && line[0] == '[')
+      ini = true;
     break;
   }
 
@@ -24,7 +26,8 @@ cfg::Config cfg::getConfig(std::string content) {
   if (ini) {
     while (std::getline(ss, line)) {
       line = trim(line);
-      if (line.empty() || line[0] == ';') continue;
+      if (line.empty() || line[0] == ';')
+        continue;
       if (line.front() == '[' && line.back() == ']') {
         section = line.substr(1, line.size() - 2);
         std::transform(section.begin(), section.end(), section.begin(),
@@ -32,7 +35,8 @@ cfg::Config cfg::getConfig(std::string content) {
         continue;
       }
       auto eq = line.find('=');
-      if (eq == std::string::npos) continue;
+      if (eq == std::string::npos)
+        continue;
       auto key = trim(line.substr(0, eq));
       auto value = trim(line.substr(eq + 1));
       if (value.size() > 1 &&
@@ -74,8 +78,10 @@ cfg::Config cfg::getConfig(std::string content) {
           config.dependencies[key] = value;
           if (value.size() < 4 || value.substr(value.size() - 4) != ".git") {
             std::string mod = value;
-            if (mod.rfind("./", 0) == 0) mod = mod.substr(2);
-            if (mod.rfind("src/", 0) == 0) mod = mod.substr(4);
+            if (mod.rfind("./", 0) == 0)
+              mod = mod.substr(2);
+            if (mod.rfind("src/", 0) == 0)
+              mod = mod.substr(4);
             if (mod.size() > 3 && mod.substr(mod.size() - 3) == ".af")
               mod = mod.substr(0, mod.size() - 3);
             config.modules.push_back(mod);
@@ -94,8 +100,10 @@ cfg::Config cfg::getConfig(std::string content) {
       std::transform(lowerCaseCopy.begin(), lowerCaseCopy.end(),
                      lowerCaseCopy.begin(), ::tolower);
 
-      if (line.empty()) continue;
-      if (line[0] == ';') continue;
+      if (line.empty())
+        continue;
+      if (line[0] == ';')
+        continue;
 
       if (line[0] == 'm') {
         std::string module = copy;

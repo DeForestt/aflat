@@ -55,7 +55,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
       ref->modList = var->modList;
       ref->logicalLine = var->logicalLine;
       this->expr = ref;
-      this->override = true;  // we can set a reference even if it is const
+      this->override = true; // we can set a reference even if it is const
       auto resolve =
           generator.resolveSymbol(var->Ident, var->modList, file, var->indices);
       if (!std::get<2>(resolve)) {
@@ -204,4 +204,4 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
 
   return {file, std::nullopt};
 }
-}  // namespace ast
+} // namespace ast

@@ -17,7 +17,7 @@ TEST_CASE("CallExpr ownership", "[owned]") {
   auto call = new ast::CallExpr();
   call->call = new ast::Call();
   call->call->ident = "foo";
-  call->call->Args = links::LinkedList<ast::Expr*>();
+  call->call->Args = links::LinkedList<ast::Expr *>();
 
   asmc::File file;
   auto expr = gen.GenExpr(call, file);

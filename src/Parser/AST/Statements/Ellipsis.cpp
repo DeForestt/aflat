@@ -10,4 +10,4 @@ gen::GenerationResult const Ellipsis::generate(gen::CodeGenerator &generator) {
   return {file, std::nullopt};
 }
 
-}  // namespace ast
+} // namespace ast

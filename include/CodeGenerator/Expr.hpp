@@ -5,7 +5,7 @@
 
 namespace gen {
 class Expr {
- public:
+public:
   asmc::OpType op = asmc::Hard;
   std::string access;
   std::string type = "";
@@ -14,4 +14,4 @@ class Expr {
   bool owned = false;
   Expr() = default;
 };
-}  // namespace gen
+} // namespace gen

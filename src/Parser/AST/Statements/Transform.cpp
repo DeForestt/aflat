@@ -32,11 +32,11 @@ gen::GenerationResult const Transform::generate(gen::CodeGenerator &generator) {
   return gen::GenerationResult();
 }
 
-ast::Statement *Transform::parse(
-    const std::string &ident, std::string &type, std::string &expr,
-    std::string &scope, std::string &mut,
-    std::unordered_map<std::string, std::string> &args,
-    gen::CodeGenerator &generator) {
+ast::Statement *
+Transform::parse(const std::string &ident, std::string &type, std::string &expr,
+                 std::string &scope, std::string &mut,
+                 std::unordered_map<std::string, std::string> &args,
+                 gen::CodeGenerator &generator) {
   std::string result = _template;
 
   // replace all instances of ${ident} and ${type} and ${expr} with the
@@ -86,4 +86,4 @@ std::string Compound::toString() {
          expr2->toString();
 }
 
-};  // namespace ast
+}; // namespace ast

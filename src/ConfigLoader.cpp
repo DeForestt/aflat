@@ -84,7 +84,8 @@ Config loadConfig(const std::string &cfgFile, bool updateDeps, bool cleanDeps) {
 
   for (const auto &file : files) {
     std::string id = file.substr(0, file.find(".aflat.cfg"));
-    if (id.rfind("./", 0) == 0) id = id.substr(2);
+    if (id.rfind("./", 0) == 0)
+      id = id.substr(2);
     std::ifstream mifs(file);
     std::string subContent((std::istreambuf_iterator<char>(mifs)),
                            (std::istreambuf_iterator<char>()));
@@ -97,4 +98,4 @@ Config loadConfig(const std::string &cfgFile, bool updateDeps, bool cleanDeps) {
   return config;
 }
 
-}  // namespace cfg
+} // namespace cfg

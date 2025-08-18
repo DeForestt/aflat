@@ -11,7 +11,7 @@ namespace ast {
  * @brief This class will be used to represent a match statement
  */
 class Match : public Expr {
- public:
+public:
   struct Pattern {
     std::string aliasName;
     std::optional<std::string> veriableName;
@@ -31,22 +31,22 @@ class Match : public Expr {
     Case(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
   };
 
-  ast::Expr *expr = nullptr;  // The expression to match against
+  ast::Expr *expr = nullptr; // The expression to match against
   std::vector<Case> cases;
 
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
-  gen::GenerationResult const generateExpression(
-      gen::CodeGenerator &generator, asmc::Size size,
-      std::string typeHint = "") override {
+  gen::GenerationResult const
+  generateExpression(gen::CodeGenerator &generator, asmc::Size size,
+                     std::string typeHint = "") override {
     return generate(generator);
   }
   std::vector<Case> const parseCases(links::LinkedList<lex::Token *> &tokens,
                                      parse::Parser &parser);
 
   ast::Type returns =
-      ast::Type("void", asmc::QWord);  // The return type of the match statement
+      ast::Type("void", asmc::QWord); // The return type of the match statement
   // Constructors
   Match() = default;
   Match(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
 };
-};  // namespace ast
+}; // namespace ast

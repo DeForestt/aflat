@@ -13,9 +13,11 @@
 
 namespace ast {
 
-static void collectImportNamespacesImpl(
-    ast::Statement *stmt, std::unordered_map<std::string, std::string> &map) {
-  if (!stmt) return;
+static void
+collectImportNamespacesImpl(ast::Statement *stmt,
+                            std::unordered_map<std::string, std::string> &map) {
+  if (!stmt)
+    return;
   if (auto seq = dynamic_cast<ast::Sequence *>(stmt)) {
     collectImportNamespacesImpl(seq->Statement1, map);
     collectImportNamespacesImpl(seq->Statement2, map);
@@ -135,7 +137,8 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
       importPath = gen::utils::getLibPath("src") / importPath;
     }
   }
-  if (importPath.extension() != ".af") importPath += ".af";
+  if (importPath.extension() != ".af")
+    importPath += ".af";
   importPath = std::filesystem::absolute(importPath).lexically_normal();
   this->path = importPath.string();
   this->cwd = importPath.parent_path().string();
@@ -185,7 +188,8 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   std::unordered_map<std::string, std::string> nsMap;
   collectImportNamespaces(added, nsMap);
   for (std::string ident : this->imports) {
-    if (generator.includedClasses.contains(id + "::" + ident)) continue;
+    if (generator.includedClasses.contains(id + "::" + ident))
+      continue;
     generator.includedClasses.insert(id + "::" + ident, nullptr);
     ast::Statement *statement = gen::utils::extract(ident, added, id);
     if (statement == nullptr) {
@@ -195,13 +199,14 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
       OutputFile << generator.GenSTMT(statement);
     }
   }
-  if (this->hasFunctions) generator.nameSpaceTable.insert(this->nameSpace, id);
+  if (this->hasFunctions)
+    generator.nameSpaceTable.insert(this->nameSpace, id);
   generator.cwd = prevCwd;
   return {OutputFile, std::nullopt};
 }
 
-gen::GenerationResult const Import::generateClasses(
-    gen::CodeGenerator &generator) {
+gen::GenerationResult const
+Import::generateClasses(gen::CodeGenerator &generator) {
   auto OutputFile = asmc::File();
   std::filesystem::path importPath = this->path;
   if (importPath.is_relative()) {
@@ -211,7 +216,8 @@ gen::GenerationResult const Import::generateClasses(
       importPath = gen::utils::getLibPath("src") / importPath;
     }
   }
-  if (importPath.extension() != ".af") importPath += ".af";
+  if (importPath.extension() != ".af")
+    importPath += ".af";
   importPath = std::filesystem::absolute(importPath).lexically_normal();
   this->path = importPath.string();
   this->cwd = importPath.parent_path().string();
@@ -261,12 +267,14 @@ gen::GenerationResult const Import::generateClasses(
 
   for (std::string ident : this->imports) {
     ast::Statement *statement = gen::utils::extract(ident, added, id);
-    if (statement == nullptr) continue;
+    if (statement == nullptr)
+      continue;
     if (dynamic_cast<ast::Class *>(statement) == nullptr &&
         dynamic_cast<ast::Enum *>(statement) == nullptr &&
         dynamic_cast<ast::Transform *>(statement) == nullptr)
       continue;
-    if (generator.includedClasses.contains(id + "::" + ident)) continue;
+    if (generator.includedClasses.contains(id + "::" + ident))
+      continue;
     generator.includedClasses.insert(id + "::" + ident, nullptr);
     statement->namespaceSwap(nsMap);
     OutputFile << generator.GenSTMT(statement);
@@ -275,4 +283,4 @@ gen::GenerationResult const Import::generateClasses(
   generator.cwd = prevCwd;
   return {OutputFile, std::nullopt};
 }
-}  // namespace ast
+} // namespace ast

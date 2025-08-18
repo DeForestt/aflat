@@ -8,10 +8,12 @@ namespace gen {
 
 asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
   // if the symbol has been sold (moved) or is being returned do not clean it up
-  if (sym.sold != -1 || sym.returned) return nullptr;
+  if (sym.sold != -1 || sym.returned)
+    return nullptr;
 
   // only owned symbols require clean up
-  if (!sym.owned) return nullptr;
+  if (!sym.owned)
+    return nullptr;
 
   // primitives do not need to be cleaned up
   if (parse::PRIMITIVE_TYPES.find(sym.type.typeName) !=
@@ -19,13 +21,16 @@ asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
     return nullptr;
 
   auto type = this->typeList[sym.type.typeName];
-  if (type == nullptr) return nullptr;
+  if (type == nullptr)
+    return nullptr;
 
   if (!(*type)->uniqueType) {
     auto classType = dynamic_cast<Class *>(*type);
-    if (classType == nullptr) return nullptr;
+    if (classType == nullptr)
+      return nullptr;
     auto endScope = classType->nameTable["endScope"];
-    if (endScope == nullptr) return nullptr;
+    if (endScope == nullptr)
+      return nullptr;
 
     auto file = new asmc::File();
     auto push = new asmc::Push();
@@ -116,7 +121,8 @@ void CodeGenerator::pushEnv() {
 }
 
 void CodeGenerator::popEnv() {
-  if (this->envStack.empty()) return;
+  if (this->envStack.empty())
+    return;
   EnvState state = std::move(this->envStack.back());
   this->envStack.pop_back();
 
@@ -137,4 +143,4 @@ void CodeGenerator::popEnv() {
   this->matchScope = state.matchScope;
 }
 
-}  // namespace gen
+} // namespace gen

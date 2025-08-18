@@ -19,7 +19,7 @@
 namespace gen {
 
 class CodeGenerator {
- public:
+public:
   Type **getType(std::string ident, asmc::File &OutputFile);
 #pragma region State Variables
   parse::Parser &parser;
@@ -126,8 +126,8 @@ class CodeGenerator {
 
   asmc::File GenSTMT(ast::Statement *stmt);
   asmc::File ImportsOnly(ast::Statement *stmt);
-  links::LinkedList<gen::Symbol> GenTable(
-      ast::Statement *STMT, links::LinkedList<gen::Symbol> &table);
+  links::LinkedList<gen::Symbol>
+  GenTable(ast::Statement *STMT, links::LinkedList<gen::Symbol> &table);
   bool whenSatisfied(const ast::When &when);
   // a function for warnings or errors
   void alert(std::string message, bool error = true, const char *file = nullptr,
@@ -142,9 +142,9 @@ class CodeGenerator {
   asmc::File *deScope(gen::Symbol &sym);
   bool hasError() const { return errorFlag; }
 
- private:
+private:
   static bool traceAlert;
 };
-}  // namespace gen
+} // namespace gen
 
 #endif

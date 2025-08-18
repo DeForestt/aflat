@@ -33,7 +33,8 @@ gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound,
   mov1->from = expr2.access;
   mov1->size = expr2.size;
   mov1->logicalLine = this->logicalLine;
-  if (!isDiv) OutputFile.text << mov1;
+  if (!isDiv)
+    OutputFile.text << mov1;
 
   gen::Expr expr1 = this->GenExpr(compound.expr1, OutputFile);
   mov2->op = expr1.op;
@@ -91,4 +92,4 @@ gen::Expr gen::CodeGenerator::genArithmetic(asmc::ArithInst *inst,
   output.type = expr.type;
   return output;
 }
-}  // namespace gen
+} // namespace gen

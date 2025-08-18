@@ -9,7 +9,7 @@ namespace ast {
  * @brief this class will represent a for each loop
  */
 class ForEach : public Statement {
- public:
+public:
   Statement *implementation = nullptr;
   std::string binding_identifier;
   Expr *iterator;
@@ -17,4 +17,4 @@ class ForEach : public Statement {
   ForEach(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
-}  // namespace ast
+} // namespace ast

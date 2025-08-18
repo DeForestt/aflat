@@ -7,7 +7,7 @@ namespace ast {
  * @brief This class is used to represent an assignment statement
  */
 class Assign : public Statement {
- public:
+public:
   std::string Ident;
   bool reference = false;
   bool override = false;
@@ -21,4 +21,4 @@ class Assign : public Statement {
          links::LinkedList<std::string> modList,
          links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
 };
-}  // namespace ast
+} // namespace ast

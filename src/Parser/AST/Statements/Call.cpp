@@ -226,7 +226,8 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         gen::Class *parent = cl->parent;
         if (func == nullptr && parent) {
           func = parent->nameTable[this->modList.touch()];
-          if (func != nullptr) pubname = parent->Ident;
+          if (func != nullptr)
+            pubname = parent->Ident;
         }
         bool shift = true;
         if (func == nullptr) {
@@ -311,9 +312,11 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           ref->logicalLine = this->logicalLine;
           ref->Ident = my;
           ref->modList = this->modList;
-          if (shift) ref->internal = true;
+          if (shift)
+            ref->internal = true;
           mod = "pub_" + pubname + "_";
-          if (!addPub) mod = "";
+          if (!addPub)
+            mod = "";
 
           if (immutableSymbol && !func->safe) {
             generator.alert("Immutable objects can only call safe functions: " +
@@ -405,7 +408,8 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
       // find the class
       gen::Type *type = *generator.getType(this->publify, file);
       gen::Class *cl = dynamic_cast<gen::Class *>(type);
-      if (cl == nullptr) generator.alert("not a class: " + this->publify);
+      if (cl == nullptr)
+        generator.alert("not a class: " + this->publify);
       ast::Function *f = cl->nameTable[ident];
       if (f == nullptr)
         generator.alert("cannot find function: " + ident + " in " + cl->Ident);
@@ -504,10 +508,9 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           generator.alert("cannot find symbol: " + var->Ident);
         }
         if (sym->mutable_ == false && func->mutability[i]) {
-          generator.alert(
-              "cannot pass a const reference to a mutable "
-              "argument: " +
-              var->Ident);
+          generator.alert("cannot pass a const reference to a mutable "
+                          "argument: " +
+                          var->Ident);
         } else if (func->mutability[i]) {
           gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
         }
@@ -656,7 +659,8 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   };
 
   int argsUsed = argsCounter;
-  if (this->publify != "") argsUsed--;
+  if (this->publify != "")
+    argsUsed--;
 
   while (argsUsed < func->argTypes.size()) {
     // if the argument is a float, we need to push a float
@@ -708,8 +712,8 @@ std::string Call::toString() {
   result += ")";
 
   return result;
-}  // namespace ast
+} // namespace ast
 
 std::string CallExpr::toString() { return call->toString(); }
 
-}  // namespace ast
+} // namespace ast

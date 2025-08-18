@@ -19,7 +19,8 @@ inline int extractLine(const std::string &msg) {
 }
 
 inline std::string getLine(const std::string &source, int line) {
-  if (line < 0) return "";
+  if (line < 0)
+    return "";
   std::istringstream iss(source);
   std::string l;
   for (int i = 1; i <= line && std::getline(iss, l); ++i) {
@@ -32,7 +33,8 @@ inline void report(const std::string &file, int line, const std::string &msg,
   std::cout << "\033[1;31merror:\033[0m ";
   if (!file.empty()) {
     std::cout << file;
-    if (line > 0) std::cout << ":" << line;
+    if (line > 0)
+      std::cout << ":" << line;
     std::cout << ": ";
   }
   std::cout << msg << "\n";
@@ -44,13 +46,15 @@ inline void report(const std::string &file, int line, const std::string &msg,
     std::string prev = getLine(source, line - 1);
     std::string codeLine = getLine(source, line);
     std::string next = getLine(source, line + 1);
-    constexpr int width = 4;  // digit width for line numbers
+    constexpr int width = 4; // digit width for line numbers
     auto printLine = [&](char mark, int ln, const std::string &txt) {
       std::cout << mark << std::setw(width) << ln << " | " << txt << "\n";
     };
-    if (!prev.empty()) printLine(' ', line - 1, prev);
+    if (!prev.empty())
+      printLine(' ', line - 1, prev);
     printLine('>', line, codeLine);
-    if (!next.empty()) printLine(' ', line + 1, next);
+    if (!next.empty())
+      printLine(' ', line + 1, next);
     std::cout << "  |" << std::endl << std::endl;
   }
 }
@@ -60,7 +64,8 @@ inline void warn(const std::string &file, int line, const std::string &msg,
   std::cout << "\033[1;33mwarning:\033[0m ";
   if (!file.empty()) {
     std::cout << file;
-    if (line > 0) std::cout << ":" << line;
+    if (line > 0)
+      std::cout << ":" << line;
     std::cout << ": ";
   }
   std::cout << msg << "\n";
@@ -72,17 +77,19 @@ inline void warn(const std::string &file, int line, const std::string &msg,
     std::string prev = getLine(source, line - 1);
     std::string codeLine = getLine(source, line);
     std::string next = getLine(source, line + 1);
-    constexpr int width = 4;  // digit width for line numbers
+    constexpr int width = 4; // digit width for line numbers
     auto printLine = [&](char mark, int ln, const std::string &txt) {
       std::cout << mark << std::setw(width) << ln << " | " << txt << "\n";
     };
-    if (!prev.empty()) printLine(' ', line - 1, prev);
+    if (!prev.empty())
+      printLine(' ', line - 1, prev);
     printLine('>', line, codeLine);
-    if (!next.empty()) printLine(' ', line + 1, next);
+    if (!next.empty())
+      printLine(' ', line + 1, next);
     std::cout << "  |" << std::endl << std::endl;
   }
 }
 
-}  // namespace error
+} // namespace error
 
-#endif  // ERROR_REPORTER_HPP
+#endif // ERROR_REPORTER_HPP

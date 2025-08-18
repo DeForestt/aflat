@@ -21,31 +21,31 @@ void gen::utils::shellStatement(ast::Statement *stmt) {
 
 int gen::utils::sizeToInt(asmc::Size size) {
   switch (size) {
-    case asmc::Size::Byte:
-      return 1;
-    case asmc::Size::Word:
-      return 2;
-    case asmc::Size::DWord:
-      return 4;
-    case asmc::Size::QWord:
-      return 8;
-    default:
-      return 0;
+  case asmc::Size::Byte:
+    return 1;
+  case asmc::Size::Word:
+    return 2;
+  case asmc::Size::DWord:
+    return 4;
+  case asmc::Size::QWord:
+    return 8;
+  default:
+    return 0;
   }
 }
 
 asmc::Size gen::utils::toSize(size_t size) {
   switch (size) {
-    case 1:
-      return asmc::Size::Byte;
-    case 2:
-      return asmc::Size::Word;
-    case 4:
-      return asmc::Size::DWord;
-    case 8:
-      return asmc::Size::QWord;
-    default:
-      return asmc::Size::AUTO;
+  case 1:
+    return asmc::Size::Byte;
+  case 2:
+    return asmc::Size::Word;
+  case 4:
+    return asmc::Size::DWord;
+  case 8:
+    return asmc::Size::QWord;
+  default:
+    return asmc::Size::AUTO;
   }
 }
 
@@ -70,7 +70,8 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt) {
 ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
                                     std::string id) {
   // traverse the statement tree and return the statement with the ident
-  if (stmt == nullptr) return nullptr;
+  if (stmt == nullptr)
+    return nullptr;
   if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
     ast::Sequence *seq = dynamic_cast<ast::Sequence *>(stmt);
     ast::Statement *temp = extract(ident, seq->Statement1, id);
@@ -109,8 +110,10 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
     ast::Function *func = dynamic_cast<ast::Function *>(stmt);
     if (func->ident.ident == ident || ident == "*") {
       func->ident.ident = id + '.' + func->ident.ident;
-      if (func->genericTypes.size() == 0) func->statement = nullptr;
-      if (func->scope != ast::Export) func->locked = true;
+      if (func->genericTypes.size() == 0)
+        func->statement = nullptr;
+      if (func->scope != ast::Export)
+        func->locked = true;
       return func;
     }
   } else
@@ -124,7 +127,8 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
 ast::Sequence *gen::utils::extractAllFunctions(ast::Statement *stmt) {
   // recursively traverse the statement tree and return a new tree with all the
   // functions
-  if (stmt == nullptr) return nullptr;
+  if (stmt == nullptr)
+    return nullptr;
   if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
     ast::Sequence *seq = dynamic_cast<ast::Sequence *>(stmt);
     ast::Statement *temp = extractAllFunctions(seq->Statement1);
@@ -151,7 +155,8 @@ ast::Sequence *gen::utils::extractAllFunctions(ast::Statement *stmt) {
 }
 
 ast::Sequence *gen::utils::copyAllFunctionShells(ast::Statement *stmt) {
-  if (stmt == nullptr) return nullptr;
+  if (stmt == nullptr)
+    return nullptr;
   if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
     ast::Sequence *seq = dynamic_cast<ast::Sequence *>(stmt);
     ast::Statement *temp = copyAllFunctionShells(seq->Statement1);
@@ -180,7 +185,8 @@ ast::Sequence *gen::utils::copyAllFunctionShells(ast::Statement *stmt) {
 ast::Sequence *gen::utils::extractAllDeclarations(ast::Statement *stmt) {
   // recursively traverse the statement tree and return a new tree with all the
   // declarations
-  if (stmt == nullptr) return nullptr;
+  if (stmt == nullptr)
+    return nullptr;
   if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
     ast::Sequence *seq = dynamic_cast<ast::Sequence *>(stmt);
     ast::Statement *temp = extractAllDeclarations(seq->Statement1);
@@ -230,8 +236,9 @@ std::string gen::utils::generateUUID() {
   return uuid;
 }
 
-std::tuple<std::string, std::vector<std::string>> gen::utils::parseGenericName(
-    const std::string &name, CodeGenerator &generator) {
+std::tuple<std::string, std::vector<std::string>>
+gen::utils::parseGenericName(const std::string &name,
+                             CodeGenerator &generator) {
   std::string base;
   std::vector<std::string> actualTypes;
 

@@ -5,7 +5,7 @@ namespace mockGen {
 class CodeGenerator : public gen::CodeGenerator {
   parse::Parser &parser;
 
- public:
+public:
   CodeGenerator(std::string moduleId, parse::Parser &parser,
                 const std::string &source = "", const std::string &cwd = "");
 
@@ -13,5 +13,5 @@ class CodeGenerator : public gen::CodeGenerator {
                  bool strict = false);
   bool addType(gen::Type *type);
 };
-}  // namespace mockGen
-}  // namespace test
+} // namespace mockGen
+} // namespace test

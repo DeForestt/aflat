@@ -9,6 +9,9 @@ import Scroller from "Collections/Scroller";
 import {Some, None, optionWrapper} from "Utils/option" under opt;
 import result from "Utils/result";
 import {accept, reject, resultWrapper} from "Utils/result" under res;
+import tuple from "Collections/Tuple";
+import {make_tuple} from "Collections/Tuple";
+import Enumerator from "Collections/Enumerator";
 
 types(T)
 class vector {
@@ -171,4 +174,5 @@ class vector {
     fn toString() -> string {
         return `vector(size={my.size}, count={my.count})`;
     };
+
 };

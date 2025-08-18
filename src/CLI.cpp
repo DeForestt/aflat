@@ -5,7 +5,7 @@
 #include <iostream>
 
 bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
-  optind = 1;  // reset getopt state for repeated calls
+  optind = 1; // reset getopt state for repeated calls
   static option longOptions[] = {{"help", no_argument, nullptr, 'h'},
                                  {"output", required_argument, nullptr, 'o'},
                                  {"debug", no_argument, nullptr, 'd'},
@@ -25,46 +25,46 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
   while ((opt = getopt_long(argc, argv, "hdo:tc:qjUKn:LNC", longOptions,
                             nullptr)) != -1) {
     switch (opt) {
-      case 'o':
-        opts.outputFile = optarg;
-        break;
-      case 'd':
-        opts.debug = true;
-        break;
-      case 'q':
-        opts.quiet = true;
-        break;
-      case 'j':
-        opts.concurrent = true;
-        break;
-      case 't':
-        opts.traceAlerts = true;
-        break;
-      case 'c':
-        opts.configFile = optarg;
-        break;
-      case 'n':
-        opts.installName = optarg;
-        break;
-      case 'U':
-        opts.updateDeps = true;
-        break;
-      case 'K':
-        opts.cleanDeps = true;
-        break;
-      case 'L':
-        opts.library = true;
-        break;
-      case 'C':
-        opts.cleanCache = true;
-        break;
-      case 'N':
-        opts.noCache = true;
-        break;
-      case 'h':
-      case '?':
-        printUsage(argv[0]);
-        return false;
+    case 'o':
+      opts.outputFile = optarg;
+      break;
+    case 'd':
+      opts.debug = true;
+      break;
+    case 'q':
+      opts.quiet = true;
+      break;
+    case 'j':
+      opts.concurrent = true;
+      break;
+    case 't':
+      opts.traceAlerts = true;
+      break;
+    case 'c':
+      opts.configFile = optarg;
+      break;
+    case 'n':
+      opts.installName = optarg;
+      break;
+    case 'U':
+      opts.updateDeps = true;
+      break;
+    case 'K':
+      opts.cleanDeps = true;
+      break;
+    case 'L':
+      opts.library = true;
+      break;
+    case 'C':
+      opts.cleanCache = true;
+      break;
+    case 'N':
+      opts.noCache = true;
+      break;
+    case 'h':
+    case '?':
+      printUsage(argv[0]);
+      return false;
     }
   }
 

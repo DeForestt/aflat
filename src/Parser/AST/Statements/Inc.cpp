@@ -21,7 +21,8 @@ Inc::Inc(const std::string &ident, links::LinkedList<lex::Token *> &tokens)
 gen::GenerationResult const Inc::generate(gen::CodeGenerator &generator) {
   asmc::File OutputFile = asmc::File();
   gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(this->ident);
-  if (sym == nullptr) generator.alert("Identifier not found to increment");
+  if (sym == nullptr)
+    generator.alert("Identifier not found to increment");
   generator.canAssign(
       sym->type, "int",
       "type {} does not support incrementing please us int instead");
@@ -35,4 +36,4 @@ gen::GenerationResult const Inc::generate(gen::CodeGenerator &generator) {
   return {OutputFile, std::nullopt};
 }
 
-}  // namespace ast
+} // namespace ast

@@ -7,7 +7,7 @@ namespace ast {
  * @brief Represents a declaration and assignment statement.
  */
 class DecAssign : public Statement {
- public:
+public:
   std::vector<parse::Annotation> annotations;
 
   Declare *declare;
@@ -25,4 +25,4 @@ class DecAssign : public Statement {
   }
   void debug();
 };
-}  // namespace ast
+} // namespace ast

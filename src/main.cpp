@@ -56,7 +56,8 @@ int main(int argc, char *argv[]) {
   gQuiet = cli.quiet;
   gUseCache = !cli.noCache;
   gConcurrentBuild = cli.concurrent;
-  if (cli.cleanCache) std::filesystem::remove_all(".cache");
+  if (cli.cleanCache)
+    std::filesystem::remove_all(".cache");
   gen::CodeGenerator::enableAlertTrace(cli.traceAlerts);
 
   std::string filename = getExePath();
@@ -83,7 +84,8 @@ int main(int argc, char *argv[]) {
     cfg::Config config =
         cfg::loadConfig(cli.configFile, cli.updateDeps, cli.cleanDeps);
     config.debug = cli.debug;
-    if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
+    if (!cli.outputFile.empty())
+      config.outPutFile = cli.outputFile;
     runConfig(config, libPathA, 'e');
     return 0;
   }
@@ -91,7 +93,8 @@ int main(int argc, char *argv[]) {
     cfg::Config config =
         cfg::loadConfig(cli.configFile, cli.updateDeps, cli.cleanDeps);
     config.debug = cli.debug;
-    if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
+    if (!cli.outputFile.empty())
+      config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 'e')) {
       auto of = config.outPutFile;
       if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
@@ -105,7 +108,8 @@ int main(int argc, char *argv[]) {
     cfg::Config config =
         cfg::loadConfig(cli.configFile, cli.updateDeps, cli.cleanDeps);
     config.debug = cli.debug;
-    if (!cli.outputFile.empty()) config.outPutFile = cli.outputFile;
+    if (!cli.outputFile.empty())
+      config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 't')) {
       [[maybe_unused]] int rc = system("./bin/a.test");
     }
@@ -163,10 +167,12 @@ int main(int argc, char *argv[]) {
                           : " = \"./src/" + modualName + ".af\"\n");
 
     if (cfgContent.find(depHeader) == std::string::npos) {
-      if (!cfgContent.empty() && cfgContent.back() != '\n') cfgContent += '\n';
+      if (!cfgContent.empty() && cfgContent.back() != '\n')
+        cfgContent += '\n';
       cfgContent += depHeader + "\n" + entry;
     } else {
-      if (!cfgContent.empty() && cfgContent.back() != '\n') cfgContent += '\n';
+      if (!cfgContent.empty() && cfgContent.back() != '\n')
+        cfgContent += '\n';
       cfgContent += entry;
     }
 
@@ -210,10 +216,12 @@ int main(int argc, char *argv[]) {
     const std::string entry = name + " = \"" + repoUrl + "\"\n";
 
     if (cfgContent.find(depHeader) == std::string::npos) {
-      if (!cfgContent.empty() && cfgContent.back() != '\n') cfgContent += '\n';
+      if (!cfgContent.empty() && cfgContent.back() != '\n')
+        cfgContent += '\n';
       cfgContent += depHeader + "\n" + entry;
     } else {
-      if (!cfgContent.empty() && cfgContent.back() != '\n') cfgContent += '\n';
+      if (!cfgContent.empty() && cfgContent.back() != '\n')
+        cfgContent += '\n';
       cfgContent += entry;
     }
 
@@ -226,7 +234,8 @@ int main(int argc, char *argv[]) {
   if (outputFile.empty() && !cli.args.empty()) {
     outputFile = cli.args[0];
   }
-  if (outputFile.empty()) outputFile = "out.s";
+  if (outputFile.empty())
+    outputFile = "out.s";
   if (std::filesystem::exists(value)) {
     build(value, outputFile, cfg::Mutability::Promiscuous, cli.debug);
   } else {
@@ -241,6 +250,7 @@ static std::string sanitizeGenerics(const std::string &input) {
   std::string result;
   bool inSingleQuote = false;
   bool inDoubleQuote = false;
+  int genericDepth = 0;
 
   for (size_t i = 0; i < input.size(); ++i) {
     char c = input[i];
@@ -248,18 +258,24 @@ static std::string sanitizeGenerics(const std::string &input) {
     // Handle quote toggling (ignoring escaped quotes)
     if (c == '"' && !inSingleQuote) {
       bool escaped = (i > 0 && input[i - 1] == '\\');
-      if (!escaped) inDoubleQuote = !inDoubleQuote;
+      if (!escaped)
+        inDoubleQuote = !inDoubleQuote;
       result += c;
     } else if (c == '\'' && !inDoubleQuote) {
       bool escaped = (i > 0 && input[i - 1] == '\\');
-      if (!escaped) inSingleQuote = !inSingleQuote;
+      if (!escaped)
+        inSingleQuote = !inSingleQuote;
       result += c;
     } else if (!inSingleQuote && !inDoubleQuote) {
       // Outside of quotes → replace < and >
       if (c == '<') {
         result += "__std__generic__start__";
+        genericDepth++;
       } else if (c == '>') {
         result += "__std__generic__end__";
+        genericDepth--;
+      } else if (c == ',' && genericDepth > 0) {
+        result += "__std__generic__separator__";
       } else {
         result += c;
       }
@@ -304,7 +320,8 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     } catch (int x) {
       int line = 1;
       for (int i = 0; i < x && i < content.size(); ++i)
-        if (content[i] == '\n') line++;
+        if (content[i] == '\n')
+          line++;
       error::report(path, line, "unparsable character", content);
       return false;
     }
@@ -340,7 +357,8 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     file.collect();
     if (genny.hasError()) {
       success = false;
-      if (std::filesystem::exists(output)) std::filesystem::remove(output);
+      if (std::filesystem::exists(output))
+        std::filesystem::remove(output);
       return success;
     }
 
@@ -399,7 +417,8 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
       //   std::to_string(inst->logicalLine) + "\n" + str.substr(index +
       //   1);
       // }
-      if (dynamic_cast<asmc::Define *>(inst) == nullptr) ofs << str;
+      if (dynamic_cast<asmc::Define *>(inst) == nullptr)
+        ofs << str;
       // if (debug && dynamic_cast<asmc::Define *>(inst) != nullptr) ofs <<
       // inst->toString();
     }
@@ -426,8 +445,10 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     success = false;
     int line = error::extractLine(e.errorMsg);
     error::report(path, line, e.errorMsg, content);
-    if (std::filesystem::exists(output)) std::filesystem::remove(output);
-    if (!gQuiet && gProgress) gProgress->update(origPath, "done");
+    if (std::filesystem::exists(output))
+      std::filesystem::remove(output);
+    if (!gQuiet && gProgress)
+      gProgress->update(origPath, "done");
   }
   return success;
 };
@@ -546,16 +567,19 @@ void libTemplate(std::string value) {
 bool objectUpToDate(const std::string &src, const std::string &obj,
                     const std::string &libPath) {
   namespace fs = std::filesystem;
-  if (!fs::exists(obj)) return false;
+  if (!fs::exists(obj))
+    return false;
   auto objTime = fs::last_write_time(obj);
-  if (objTime < fs::last_write_time(src)) return false;
+  if (objTime < fs::last_write_time(src))
+    return false;
   std::ifstream ifs(src);
   std::string content((std::istreambuf_iterator<char>(ifs)),
                       std::istreambuf_iterator<char>());
   PreProcessor pp;
   pp.PreProcess(content, libPath, fs::path(src).parent_path().string());
   for (const auto &inc : pp.getIncludes()) {
-    if (fs::exists(inc) && objTime < fs::last_write_time(inc)) return false;
+    if (fs::exists(inc) && objTime < fs::last_write_time(inc))
+      return false;
   }
   return true;
 }
@@ -618,7 +642,8 @@ ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
   auto objTime = fs::exists(objPath) ? fs::last_write_time(objPath)
                                      : fs::file_time_type::min();
   for (const auto &dep : config.modules) {
-    if (dep == mod) continue;
+    if (dep == mod)
+      continue;
     std::string depSrc = "./src/" + dep + ".af";
     if (fs::exists(depSrc) && fs::last_write_time(depSrc) > objTime)
       useCached = false;
@@ -637,7 +662,8 @@ ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
       if (system(cmd.c_str()) != 0) {
         return {objPath, false};
       }
-      if (!config.asm_) fs::remove(asmPath);
+      if (!config.asm_)
+        fs::remove(asmPath);
     } else {
       return {objPath, false};
     }
@@ -670,7 +696,8 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     sources.push_back("./src/" + file + ".c");
 
   CompileProgress progress(sources, gQuiet);
-  if (!gQuiet) gProgress = &progress;
+  if (!gQuiet)
+    gProgress = &progress;
 
   if (gConcurrentBuild) {
     std::vector<std::future<ModuleResult>> futures;
@@ -680,7 +707,8 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     }
     for (auto &f : futures) {
       ModuleResult r = f.get();
-      if (!r.success) hasError = true;
+      if (!r.success)
+        hasError = true;
       linker.push_back(r.objPath);
     }
   } else {
@@ -744,6 +772,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       "Memory.s",
       "Utils_Observable.s",
       "unordered_map.s",
+      "Tuple.s",
   };
 
   for (const auto &lib : libs) {
@@ -759,7 +788,8 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   // run gcc on the linkerList
   std::string linkerList = "";
 
-  for (auto &s : linker) linkerList += s + " ";
+  for (auto &s : linker)
+    linkerList += s + " ";
 
   if (pmode == 't') {
     ofile = "./bin/a.test ";
@@ -772,7 +802,8 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
 
   if (!config.asm_) {
     for (auto &s : linker) {
-      if (gUseCache && s.rfind("./.cache/", 0) == 0) continue;
+      if (gUseCache && s.rfind("./.cache/", 0) == 0)
+        continue;
       std::filesystem::remove(s);
     }
   }

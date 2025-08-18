@@ -38,10 +38,9 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
           }
 
           if (dec->mut && !std::get<1>(resolved).mutable_) {
-            generator.alert(
-                "Cannot create a mutable reference to a immutable "
-                "variable " +
-                var->Ident);
+            generator.alert("Cannot create a mutable reference to a immutable "
+                            "variable " +
+                            var->Ident);
           }
 
           ref->Ident = var->Ident;
@@ -49,7 +48,8 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
           ref->logicalLine = var->logicalLine;
           this->expr = ref;
         } else {
-          if (!var) allowAdr;
+          if (!var)
+            allowAdr;
         }
       }
 
@@ -78,10 +78,9 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       if (dec->type.typeName == "let") {
         if (expr.type == "generic" || expr.type == "any" ||
             expr.type == "let") {
-          generator.alert(
-              "Cannot infer type of variable because the "
-              "expression is of type " +
-              expr.type);
+          generator.alert("Cannot infer type of variable because the "
+                          "expression is of type " +
+                          expr.type);
         }
         dec->type.typeName = expr.type;
         dec->type.size = expr.size;
@@ -209,4 +208,4 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
   return {file, std::nullopt};
 }
 
-}  // namespace ast
+} // namespace ast

@@ -7,7 +7,7 @@ namespace ast {
  * @brief This class is used to represent a continue statement
  */
 class Break : public Statement {
- public:
+public:
   int level = 1;
   Break() = default;
   explicit Break(int level) : level(level){};
@@ -16,4 +16,4 @@ class Break : public Statement {
   Break(links::LinkedList<lex::Token *> &tokens);
   gen::GenerationResult const generate(gen::CodeGenerator &generator);
 };
-}  // namespace ast
+} // namespace ast

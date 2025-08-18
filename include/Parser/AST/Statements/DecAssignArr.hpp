@@ -7,10 +7,10 @@ namespace ast {
  * @brief Represents a declaration and assignment statement.
  */
 class DecAssignArr : public Statement {
- public:
+public:
   DecArr *declare;
   bool mute = true;
   Expr *expr;
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
-}  // namespace ast
+} // namespace ast

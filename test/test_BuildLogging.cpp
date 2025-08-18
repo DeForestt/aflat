@@ -26,7 +26,8 @@ TEST_CASE("build logs compile states", "[build]") {
   std::cout.rdbuf(oldBuf);
 
   fs::remove("tmp/simple.af");
-  if (fs::exists("tmp/simple.s")) fs::remove("tmp/simple.s");
+  if (fs::exists("tmp/simple.s"))
+    fs::remove("tmp/simple.s");
   fs::remove("tmp");
 
   REQUIRE(result);

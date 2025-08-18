@@ -14,7 +14,8 @@ gen::GenerationResult const DecArr::generate(gen::CodeGenerator &generator) {
   while (this->indices.pos != nullptr) {
     ast::IntLiteral *lit =
         dynamic_cast<ast::IntLiteral *>(this->indices.shift());
-    if (lit == nullptr) generator.alert("array index must be an integer");
+    if (lit == nullptr)
+      generator.alert("array index must be an integer");
     index *= lit->val;
     typeHolder.push(lit->val);
   }
@@ -92,4 +93,4 @@ gen::GenerationResult const DecArr::generate(gen::CodeGenerator &generator) {
   }
   return {file, std::nullopt};
 }
-};  // namespace ast
+}; // namespace ast

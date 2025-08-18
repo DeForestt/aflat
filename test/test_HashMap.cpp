@@ -2,7 +2,7 @@
 #include "catch.hpp"
 
 TEST_CASE("HashMap insert and retrieve", "[hashmap]") {
-  HashMap<int*> map;
+  HashMap<int *> map;
   int a = 5;
   map.insert("a", &a);
   REQUIRE(map.size() == 1);

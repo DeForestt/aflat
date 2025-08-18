@@ -45,4 +45,4 @@ ast::Expr *gen::CodeGenerator::imply(ast::Expr *expr, std::string typeName) {
               true, __FILE__, __LINE__);
   return nullptr;
 }
-}  // namespace gen
+} // namespace gen

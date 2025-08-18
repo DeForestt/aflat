@@ -10,7 +10,7 @@
 
 /* A class to store a Definition */
 class Definition {
- public:
+public:
   std::string name;
   std::string value;
 
@@ -19,7 +19,7 @@ class Definition {
 };
 
 class PreProcessor {
- public:
+public:
   PreProcessor();
   ~PreProcessor();
   std::string PreProcess(std::string code, std::string exePath,
@@ -28,7 +28,7 @@ class PreProcessor {
 
   const std::vector<std::string> &getIncludes() const;
 
- private:
+private:
   std::string root;
   links::SLinkedList<Definition, std::string> definitions;
   std::vector<std::string> includes;

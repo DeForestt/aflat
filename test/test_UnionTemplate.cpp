@@ -24,8 +24,10 @@ TEST_CASE("generic union construction", "[union][generics]") {
 
   bool result =
       build("tmp/union.af", "tmp/union.s", cfg::Mutability::Strict, false);
-  if (fs::exists("tmp/union.af")) fs::remove("tmp/union.af");
-  if (fs::exists("tmp/union.s")) fs::remove("tmp/union.s");
+  if (fs::exists("tmp/union.af"))
+    fs::remove("tmp/union.af");
+  if (fs::exists("tmp/union.s"))
+    fs::remove("tmp/union.s");
   fs::remove("tmp");
 
   REQUIRE(result);

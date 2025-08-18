@@ -11,7 +11,7 @@ namespace gen {
 namespace scope {
 
 class ScopeManager {
- private:
+private:
   struct plead {
     int SScopeSize;
     bool pleading;
@@ -50,10 +50,11 @@ class ScopeManager {
 
   // int scopeStackPos;
 
- public:
+public:
   // Singleton Access
   static ScopeManager *getInstance() {
-    if (!ScopeManager::instance) ScopeManager::instance = new ScopeManager;
+    if (!ScopeManager::instance)
+      ScopeManager::instance = new ScopeManager;
     return ScopeManager::instance;
   };
 
@@ -95,7 +96,7 @@ class ScopeManager {
   void reset();
 };
 
-}  // namespace scope
+} // namespace scope
 
-}  // namespace gen
+} // namespace gen
 #endif
