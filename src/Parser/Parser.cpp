@@ -58,29 +58,29 @@ void parse::Parser::addType(std::string name, asmc::OpType opType,
 
 int getOpPriority(ast::Op op) {
   switch (op) {
-    case ast::AndBit:
-    case ast::OrBit:
-    case ast::Great:
-    case ast::Less:
-      return 1;
-    case ast::CompEqu:
-    case ast::NotEqu:
-    case ast::LessCmp:
-    case ast::GreatCmp:
-    case ast::Leq:
-    case ast::Geq:
-      return 2;
-    case ast::Plus:
-    case ast::Minus:
-      return 3;
-    case ast::Mul:
-    case ast::Div:
-      return 4;
-    case ast::Mod:
-    case ast::Carrot:
-      return 5;
-    default:
-      throw err::Exception("Unknown operator");
+  case ast::AndBit:
+  case ast::OrBit:
+  case ast::Great:
+  case ast::Less:
+    return 1;
+  case ast::CompEqu:
+  case ast::NotEqu:
+  case ast::LessCmp:
+  case ast::GreatCmp:
+  case ast::Leq:
+  case ast::Geq:
+    return 2;
+  case ast::Plus:
+  case ast::Minus:
+    return 3;
+  case ast::Mul:
+  case ast::Div:
+    return 4;
+  case ast::Mod:
+  case ast::Carrot:
+    return 5;
+  default:
+    throw err::Exception("Unknown operator");
   }
 };
 
@@ -90,8 +90,9 @@ int getOpPriority(ast::Op op) {
  * as a Statement parameters: LinkedList<Token> &tokens - the list of tokens to
  * parse return: AST::Statement - the parsed statement
  */
-ast::Statement *parse::Parser::parseStmt(
-    links::LinkedList<lex::Token *> &tokens, bool singleStmt) {
+ast::Statement *
+parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
+                         bool singleStmt) {
   ast::Statement *output = new ast::Statement;
   std::vector<parse::Annotation> annotations;
   std::optional<ast::When> whenClause;
@@ -208,6 +209,8 @@ ast::Statement *parse::Parser::parseStmt(
           while (comma && comma->Sym == ',') {
             tokens.pop();
             typeIdent = dynamic_cast<lex::LObj *>(tokens.pop());
+            this->addType(typeIdent->meta, asmc::Hard, asmc::QWord, true,
+                          false);
             if (!typeIdent)
               throw err::Exception("Expected identifier after types on line " +
                                    std::to_string(obj.lineCount));
@@ -249,10 +252,9 @@ ast::Statement *parse::Parser::parseStmt(
       static const std::unordered_set<std::string> uniqueTargets = {
           "class", "union", "struct"};
       if (uniqueType && uniqueTargets.count(obj.meta) == 0) {
-        throw err::Exception(
-            "unique can only be used with classes, unions or "
-            "structs on line " +
-            std::to_string(obj.lineCount));
+        throw err::Exception("unique can only be used with classes, unions or "
+                             "structs on line " +
+                             std::to_string(obj.lineCount));
       }
       if (safeType && uniqueType) {
         throw err::Exception("safe and unique cannot be combined on line " +
@@ -309,10 +311,9 @@ ast::Statement *parse::Parser::parseStmt(
       tokens.pop();
     } else if (obj.meta == "mutable") {
       if (mutability == 2)
-        throw err::Exception(
-            "Cannot use a mutable variable in safe "
-            "mode, please set config "
-            "mutability to promiscuous or strict");
+        throw err::Exception("Cannot use a mutable variable in safe "
+                             "mode, please set config "
+                             "mutability to promiscuous or strict");
       isMutable = true;
       if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
         throw err::Exception("Expected statement after public on line " +
@@ -609,8 +610,10 @@ ast::Statement *parse::Parser::parseStmt(
       pull->expr = this->parseExpr(tokens);
       pull->logicalLine = obj.lineCount;
       output = pull;
-      if (whenClause) output->when = whenClause;
-      if (singleStmt) return output;
+      if (whenClause)
+        output->when = whenClause;
+      if (singleStmt)
+        return output;
     } else if (obj.meta == "note") {
       auto expr = this->parseExpr(tokens);
       auto str = dynamic_cast<ast::StringLiteral *>(expr);
@@ -750,14 +753,16 @@ ast::Statement *parse::Parser::parseStmt(
         output = ret;
       }
     }
-    if (whenClause) output->when = whenClause;
+    if (whenClause)
+      output->when = whenClause;
   } else if (tokens.peek() && tokens.count > 0) {
     auto close_curl = dynamic_cast<lex::OpSym *>(tokens.peek());
     if (!close_curl || (close_curl->Sym != '}' && close_curl->Sym != ';')) {
       auto ret = new ast::Return(tokens, *this);
       ret->implicit = true;
       output = ret;
-      if (whenClause) output->when = whenClause;
+      if (whenClause)
+        output->when = whenClause;
       // if the next token is not a semicolon, add one
       if (tokens.peek()) {
         auto opSym = dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -772,11 +777,13 @@ ast::Statement *parse::Parser::parseStmt(
   }
 
   if (singleStmt) {
-    if (whenClause) output->when = whenClause;
+    if (whenClause)
+      output->when = whenClause;
     auto call = dynamic_cast<ast::Call *>(output);
 
     if (!call) {
-      if (whenClause) output->when = whenClause;
+      if (whenClause)
+        output->when = whenClause;
       return output;
     }
 
@@ -788,12 +795,14 @@ ast::Statement *parse::Parser::parseStmt(
       // implicit return
       auto OpSym = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (OpSym && OpSym->Sym == ';') {
-        if (whenClause) output->when = whenClause;
+        if (whenClause)
+          output->when = whenClause;
         return output;
       }
       auto els = dynamic_cast<lex::LObj *>(tokens.peek());
       if (els && els->meta == "else") {
-        if (whenClause) output->when = whenClause;
+        if (whenClause)
+          output->when = whenClause;
         return output;
       }
     }
@@ -801,13 +810,15 @@ ast::Statement *parse::Parser::parseStmt(
     auto callExpr = new ast::CallExpr;
     callExpr->call = call;
     ret->expr = callExpr;
-    if (whenClause) ret->when = whenClause;
+    if (whenClause)
+      ret->when = whenClause;
     this->Output = *ret;
     return ret;
   }
   if (tokens.head == nullptr) {
     this->Output = *output;
-    if (whenClause) output->when = whenClause;
+    if (whenClause)
+      output->when = whenClause;
     return output;
   } else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
              tokens.head->next != nullptr) {
@@ -818,7 +829,8 @@ ast::Statement *parse::Parser::parseStmt(
       s->Statement1 = output;
       s->Statement2 = this->parseStmt(tokens, false);
       this->Output = *s;
-      if (whenClause) s->when = whenClause;
+      if (whenClause)
+        s->when = whenClause;
       return s;
     } else if (obj.Sym == '}') {
       this->Output = *output;
@@ -829,7 +841,8 @@ ast::Statement *parse::Parser::parseStmt(
         auto callExpr = new ast::CallExpr;
         callExpr->call = dynamic_cast<ast::Call *>(output);
         ret->expr = callExpr;
-        if (whenClause) ret->when = whenClause;
+        if (whenClause)
+          ret->when = whenClause;
         return ret;
       }
       // check if the next token is a semicolon if not, treat it like a swquence
@@ -847,11 +860,13 @@ ast::Statement *parse::Parser::parseStmt(
           }
         }
       }
-      if (whenClause) output->when = whenClause;
+      if (whenClause)
+        output->when = whenClause;
       return output;
     } else if (obj.Sym == '!') {
       this->Output = *output;
-      if (whenClause) output->when = whenClause;
+      if (whenClause)
+        output->when = whenClause;
       return output;
     }
   } else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
@@ -863,16 +878,18 @@ ast::Statement *parse::Parser::parseStmt(
       return nullptr;
     } else if (obj.Sym == ';') {
       this->Output = *output;
-      if (whenClause) output->when = whenClause;
+      if (whenClause)
+        output->when = whenClause;
       return output;
     }
   }
-  if (whenClause) output->when = whenClause;
+  if (whenClause)
+    output->when = whenClause;
   return output;
 }
 
-links::LinkedList<ast::Expr *> parse::Parser::parseCallArgsList(
-    links::LinkedList<lex::Token *> &tokens) {
+links::LinkedList<ast::Expr *>
+parse::Parser::parseCallArgsList(links::LinkedList<lex::Token *> &tokens) {
   links::LinkedList<ast::Expr *> args;
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
       dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ')') {
@@ -880,7 +897,8 @@ links::LinkedList<ast::Expr *> parse::Parser::parseCallArgsList(
   } else {
     bool pop = false;
     do {
-      if (pop) tokens.pop();
+      if (pop)
+        tokens.pop();
       args.push(this->parseExpr(tokens));
       pop = true;
     } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
@@ -947,10 +965,9 @@ ast::Statement *parse::Parser::parseArgs(
       tokens.pop();
     } else if (obj.meta == "mutable") {
       if (this->mutability == 2)
-        throw err::Exception(
-            "Cannot use a mutable variable in safe "
-            "mode, please set config "
-            "mutability to promiscuous or strict");
+        throw err::Exception("Cannot use a mutable variable in safe "
+                             "mode, please set config "
+                             "mutability to promiscuous or strict");
       isMutable = true;
       if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
         throw err::Exception("Expected statement after public on line " +
@@ -1073,8 +1090,9 @@ ast::Statement *parse::Parser::parseArgs(
   return output;
 }
 
-ast::Type parse::Parser::parseFPointerType(
-    links::LinkedList<lex::Token *> &tokens, const std::string typeName) {
+ast::Type
+parse::Parser::parseFPointerType(links::LinkedList<lex::Token *> &tokens,
+                                 const std::string typeName) {
   tokens.pop();
   auto callTypeList = std::vector<ast::Type>();
   std::string newTypeName = typeName + "~";
@@ -1127,8 +1145,9 @@ ast::Type parse::Parser::parseFPointerType(
   return type;
 }
 
-std::vector<std::string> parse::Parser::parseTemplateTypeList(
-    links::LinkedList<lex::Token *> &tokens, int lineCount) {
+std::vector<std::string>
+parse::Parser::parseTemplateTypeList(links::LinkedList<lex::Token *> &tokens,
+                                     int lineCount) {
   std::vector<std::string> list;
   auto templateSym = dynamic_cast<lex::Symbol *>(tokens.peek());
   if (templateSym != nullptr && templateSym->meta == "::") {
@@ -1179,8 +1198,9 @@ std::vector<std::string> parse::Parser::parseTemplateTypeList(
   return list;
 }
 
-ast::When parse::Parser::parseWhenClause(
-    links::LinkedList<lex::Token *> &tokens, int lineCount) {
+ast::When
+parse::Parser::parseWhenClause(links::LinkedList<lex::Token *> &tokens,
+                               int lineCount) {
   ast::When when;
   while (true) {
     auto typeTok = dynamic_cast<lex::LObj *>(tokens.pop());
@@ -1254,8 +1274,8 @@ ast::When parse::Parser::parseWhenClause(
   return when;
 }
 
-ast::ConditionalExpr *parse::Parser::parseCondition(
-    links::LinkedList<lex::Token *> &tokens) {
+ast::ConditionalExpr *
+parse::Parser::parseCondition(links::LinkedList<lex::Token *> &tokens) {
   auto output = new ast::ConditionalExpr();
 
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
@@ -1481,7 +1501,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
             "Line: " + std::to_string(tokens.peek()->lineCount) +
             " Expected, Ident after new.");
       auto nType = this->typeList[typeName->meta];
-      if (nType == nullptr) nType = new ast::Type(typeName->meta, asmc::QWord);
+      if (nType == nullptr)
+        nType = new ast::Type(typeName->meta, asmc::QWord);
       newExpr->type = *nType;
       newExpr->logicalLine = obj.lineCount;
 
@@ -1536,7 +1557,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
           } else {
             bool pop = false;
             do {
-              if (pop) tokens.pop();
+              if (pop)
+                tokens.pop();
               newExpr->args.push(this->parseExpr(tokens));
               pop = true;
             } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
@@ -1650,7 +1672,8 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         } else {
           bool pop = false;
           do {
-            if (pop) tokens.pop();
+            if (pop)
+              tokens.pop();
             call->Args.push(this->parseExpr(tokens));
             pop = true;
           } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
@@ -2014,7 +2037,8 @@ ast::Expr *prioritizeExpr(ast::Expr *expr) {
       if (getOpPriority(compound->op) >= getOpPriority(right->op)) {
         compound->expr2 = right->expr1;
         right->expr1 = compound;
-        if (i == 0) root = right;
+        if (i == 0)
+          root = right;
         compound = right;
         right = dynamic_cast<ast::Compound *>(compound->expr2);
       } else

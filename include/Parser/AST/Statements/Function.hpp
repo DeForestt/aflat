@@ -8,10 +8,10 @@ namespace ast {
  * @brief Represents a function declaration.
  */
 class Function : public Member, public Statement {
- public:
+public:
   ScopeMod scope;
-  bool safe = false;  // is this a class method that does not mutate
-                      // the class instance?
+  bool safe = false; // is this a class method that does not mutate
+                     // the class instance?
   Type type;
   Type useType = Type("", asmc::QWord);
   std::string scopeName = "global";
@@ -23,21 +23,21 @@ class Function : public Member, public Statement {
   Statement *statement;
   Op op;
   int req = 0;
-  std::vector<int> optConvertionIndices;  // indices of optional arguments that
-                                          // need to be converted
+  std::vector<int> optConvertionIndices; // indices of optional arguments that
+                                         // need to be converted
   std::vector<Type> argTypes;
   std::vector<std::string> genericTypes;
   links::LinkedList<Expr *> decoratorArgs;
   std::vector<bool> mutability;
-  std::vector<bool> readOnly;  // if the argument is read only
+  std::vector<bool> readOnly; // if the argument is read only
   bool isLambda = false;
   bool flex = false;
   bool mask;
   bool has_return = false;
   bool optional = false;
-  bool error = false;  // if the function can return an error
+  bool error = false; // if the function can return an error
   bool autoType = false;
-  bool globalLocked = false;  // if the function is locked to the global scope
+  bool globalLocked = false; // if the function is locked to the global scope
 
   Function() = default;
   Function(const string &ident, const ScopeMod &scope, const Type &type,
@@ -48,27 +48,16 @@ class Function : public Member, public Statement {
            std::vector<std::string> genericTypes, parse::Parser &parser,
            bool safe = false);
   Function(const Function &Other, bool locked)
-      : scope(Other.scope),
-        type(Other.type),
-        op(Other.op),
-        scopeName(Other.scopeName),
-        ident(Other.ident),
-        args(Other.args),
-        statement(Other.statement),
-        decorator(Other.decorator),
-        decoratorArgs(Other.decoratorArgs),
-        argTypes(Other.argTypes),
+      : scope(Other.scope), type(Other.type), op(Other.op),
+        scopeName(Other.scopeName), ident(Other.ident), args(Other.args),
+        statement(Other.statement), decorator(Other.decorator),
+        decoratorArgs(Other.decoratorArgs), argTypes(Other.argTypes),
         optConvertionIndices(Other.optConvertionIndices),
-        mutability(Other.mutability),
-        isLambda(Other.isLambda),
-        mask(Other.mask),
-        has_return(Other.has_return),
-        optional(Other.optional),
-        useType(Other.useType),
-        genericTypes(Other.genericTypes),
-        autoType(Other.autoType),
-        globalLocked(Other.globalLocked),
-        safe(Other.safe),
+        mutability(Other.mutability), isLambda(Other.isLambda),
+        mask(Other.mask), has_return(Other.has_return),
+        optional(Other.optional), useType(Other.useType),
+        genericTypes(Other.genericTypes), autoType(Other.autoType),
+        globalLocked(Other.globalLocked), safe(Other.safe),
         readOnly(Other.readOnly) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;
@@ -78,8 +67,8 @@ class Function : public Member, public Statement {
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   gen::Expr toExpr(gen::CodeGenerator &generator);
 
- private:
+private:
   void parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
                          parse::Parser &parser);
 };
-};  // namespace ast
+}; // namespace ast
