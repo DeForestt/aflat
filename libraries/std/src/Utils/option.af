@@ -57,9 +57,9 @@ export fn None() -> option::<T> {
 
 types(T)
 export fn optionWrapper(immutable T value) -> option::<T> {
-  const any checker = value; // Note: This is a workaround for the type system to allow checking for NULL even if T is not an 8-byte type.
-  // 0, false, and \0 are not considered NULL in this context.
-  // If T is a reference type, this will check if the reference is NULL.
+  const adr checker = NULL;
+  const adr cpoint = ?checker;
+  cpoint =: value;
   if (checker == NULL) {
     return new option::<T>->None();
   } else {
