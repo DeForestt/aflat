@@ -33,6 +33,6 @@ unique class tuple {
 };
 
 types(T, U)
-fn make_tuple(const T &&first, const U &&second) -> tuple::<T, U> {
+export fn make_tuple(const T &&first, const U &&second) -> tuple::<T, U> {
     return new tuple::<T, U>(first, second);
 };
