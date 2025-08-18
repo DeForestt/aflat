@@ -21,7 +21,8 @@ Dec::Dec(const std::string &ident, links::LinkedList<lex::Token *> &tokens)
 gen::GenerationResult const Dec::generate(gen::CodeGenerator &generator) {
   asmc::File OutputFile = asmc::File();
   gen::Symbol *sym = gen::scope::ScopeManager::getInstance()->get(this->ident);
-  if (sym == nullptr) generator.alert("Identifier not found to decrement");
+  if (sym == nullptr)
+    generator.alert("Identifier not found to decrement");
   generator.canAssign(
       sym->type, "int",
       "type {} does not support decrementing please us int instead");
@@ -34,4 +35,4 @@ gen::GenerationResult const Dec::generate(gen::CodeGenerator &generator) {
   gen::scope::ScopeManager::getInstance()->addAssign(this->ident);
   return {OutputFile, std::nullopt};
 }
-}  // namespace ast
+} // namespace ast

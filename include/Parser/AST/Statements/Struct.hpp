@@ -7,7 +7,7 @@ namespace ast {
  * @brief This class will represent a struct
  */
 class Struct : public Member, public Statement {
- public:
+public:
   Ident ident;
   Statement *statement;
   bool uniqueType = false;
@@ -16,4 +16,4 @@ class Struct : public Member, public Statement {
          bool uniqueType);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
-}  // namespace ast
+} // namespace ast

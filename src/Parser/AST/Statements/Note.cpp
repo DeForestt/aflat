@@ -13,4 +13,4 @@ gen::GenerationResult const Note::generate(gen::CodeGenerator &generator) {
   return {file, std::nullopt};
 }
 
-}  // namespace ast
+} // namespace ast

@@ -13,14 +13,14 @@
 
 namespace ast {
 
-std::vector<ast::Union::Alias *> parseAliases(
-    links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
+std::vector<ast::Union::Alias *>
+parseAliases(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   std::vector<ast::Union::Alias *> aliases;
   lex::OpSym *comma = nullptr;
   bool first = true;
   do {
     if (!first) {
-      tokens.pop();  // pop the comma
+      tokens.pop(); // pop the comma
     } else {
       first = false;
     }
@@ -49,7 +49,7 @@ std::vector<ast::Union::Alias *> parseAliases(
       auto type =
           maybeTypeName ? parser.typeList[maybeTypeName->meta] : nullptr;
       if (type) {
-        tokens.pop();  // pop the type name
+        tokens.pop(); // pop the type name
         auto templateArgs =
             parser.parseTemplateTypeList(tokens, maybeTypeName->lineCount);
 
@@ -70,7 +70,8 @@ std::vector<ast::Union::Alias *> parseAliases(
         auto templateTypes =
             parser.parseTemplateTypeList(tokens, maybeTypeName->lineCount);
         if (!templateTypes.empty()) {
-          for (auto &tName : templateTypes) aliasType.typeName += "." + tName;
+          for (auto &tName : templateTypes)
+            aliasType.typeName += "." + tName;
         }
 
         std::variant<ast::Type, ast::Expr *> typeOrExpr = aliasType;
@@ -113,7 +114,7 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
 
   auto type = ast::Type(this->ident.ident, asmc::QWord);
   type.uniqueType = uniqueType;
-  parser.typeList << type;  // add the type to the typeList
+  parser.typeList << type; // add the type to the typeList
   this->uniqueType = uniqueType;
   auto op = dynamic_cast<lex::OpSym *>(tokens.pop());
 
@@ -129,7 +130,7 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
     this->statement = parser.parseStmt(tokens);
   } else {
     this->statement = nullptr;
-    tokens.pop();  // pop the closing brace
+    tokens.pop(); // pop the closing brace
   }
 };
 
@@ -139,7 +140,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   if (this->genericTypes.size() > 0) {
     generator.genericTypes.insert(
         {this->ident.ident, dynamic_cast<ast::Union *>(ast::deepCopy(
-                                this))});  // add the union to the generic types
+                                this))}); // add the union to the generic types
     return {asmc::File(), std::nullopt};
   }
 
@@ -147,7 +148,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   gen::Union *type = new gen::Union();
 
   type->hidden = this->hidden;
-  type->body = this->statement;  // save the body in case of composition
+  type->body = this->statement; // save the body in case of composition
 
   bool saveScope = generator.globalScope;
   generator.globalScope = false;
@@ -179,7 +180,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   }
 
   asmc::File junkFile =
-      asmc::File();  // We can use this to get the types and size of aliases
+      asmc::File(); // We can use this to get the types and size of aliases
 
   for (const auto &alias : this->aliases) {
     gen::Expr expr;
@@ -190,7 +191,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
 
       auto intLit = new ast::IntLiteral();
       intLit->val = generator.tempCount++ +
-                    1000000;  // Start from a high number to avoid conflicts
+                    1000000; // Start from a high number to avoid conflicts
 
       type->aliases.emplace_back(alias->name, intLit, 4);
     } else if (alias->isType()) {
@@ -264,15 +265,15 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   gen::Symbol symbol;
   symbol.type = ast::Type("any", asmc::AUTO);
   symbol.symbol = boost::uuids::to_string(boost::uuids::random_generator()());
-  symbol.byteMod = maxSize;  // This is the size of the union
+  symbol.byteMod = maxSize; // This is the size of the union
   type->SymbolTable.push(symbol);
 
   // now we need a symbol for the type (just the index of the alias)
   gen::Symbol typeSymbol;
   typeSymbol.type = ast::Type("int", asmc::DWord);
-  typeSymbol.symbol = "type";  // This is the type of the union
+  typeSymbol.symbol = "type"; // This is the type of the union
   typeSymbol.byteMod =
-      maxSize + 4;  // This is the size of the union + 4 bytes for the type
+      maxSize + 4; // This is the size of the union + 4 bytes for the type
   type->SymbolTable.push(typeSymbol);
 
   if (this->statement != nullptr) {
@@ -285,4 +286,4 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
 
   return {OutputFile, std::nullopt};
 }
-};  // namespace ast
+}; // namespace ast

@@ -29,4 +29,4 @@ gen::GenerationResult const Break::generate(gen::CodeGenerator &generator) {
   return {OutputFile, std::nullopt};
 }
 
-};  // namespace ast
+}; // namespace ast

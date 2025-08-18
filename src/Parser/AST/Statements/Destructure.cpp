@@ -26,7 +26,8 @@ Destructure::Destructure(const bool mute,
       throw err::Exception(
           "On line " + std::to_string(tokens.peek()->lineCount) +
           " expected ',' or '}' after identifier in destructuring");
-    if (symbol->Sym == '}') break;
+    if (symbol->Sym == '}')
+      break;
     if (symbol->Sym != ',')
       throw err::Exception(
           "On line " + std::to_string(tokens.peek()->lineCount) +
@@ -46,8 +47,8 @@ Destructure::Destructure(const bool mute,
   this->expr = parser.parseExpr(tokens);
 }
 
-gen::GenerationResult const Destructure::generate(
-    gen::CodeGenerator &generator) {
+gen::GenerationResult const
+Destructure::generate(gen::CodeGenerator &generator) {
   asmc::File file;
   const auto temp_uuid = boost::uuids::random_generator()();
   const auto temp_ident = "**temp_" + boost::uuids::to_string(temp_uuid);
@@ -90,4 +91,4 @@ gen::GenerationResult const Destructure::generate(
   }
   return {file, std::nullopt};
 }
-}  // namespace ast
+} // namespace ast

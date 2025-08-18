@@ -9,7 +9,7 @@ namespace ast {
  * @brief This class is used to represent an import statement
  */
 class Import : public Statement {
- public:
+public:
   std::vector<std::string> imports;
   std::string path;
   std::string nameSpace;
@@ -23,4 +23,4 @@ class Import : public Statement {
 };
 void collectImportNamespaces(ast::Statement *stmt,
                              std::unordered_map<std::string, std::string> &map);
-};  // namespace ast
+}; // namespace ast

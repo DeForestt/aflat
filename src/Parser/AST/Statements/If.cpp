@@ -118,4 +118,4 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
   return {file, std::nullopt};
 };
 
-}  // namespace ast
+} // namespace ast

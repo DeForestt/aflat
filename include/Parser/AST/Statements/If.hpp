@@ -10,7 +10,7 @@ namespace ast {
  * @brief This class will be used to represent an if statement
  */
 class If : public Statement {
- public:
+public:
   Expr *expr;
   Statement *statement;
   Statement *elseStatement;
@@ -19,4 +19,4 @@ class If : public Statement {
   If(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
-}  // namespace ast
+} // namespace ast

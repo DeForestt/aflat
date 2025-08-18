@@ -8,7 +8,7 @@ namespace ast {
  * let {a, b} = Identifier; or let {a, b} = {1, 2};
  */
 class Destructure : public Statement {
- public:
+public:
   std::vector<std::string> identifiers;
   ast::Expr *expr;
   bool mute;
@@ -17,4 +17,4 @@ class Destructure : public Statement {
               parse::Parser &parser);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
-};  // namespace ast
+}; // namespace ast

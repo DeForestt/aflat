@@ -6,24 +6,25 @@
 
 namespace ast {
 List::List(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
-  tokens.pop();  // pop the opening '['
+  tokens.pop(); // pop the opening '['
   do {
     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
         dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ']') {
-      tokens.pop();  // pop the closing ']'
+      tokens.pop(); // pop the closing ']'
       break;
     }
     auto item = parser.parseExpr(tokens);
     this->items.push_back(item);
     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
         dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ',') {
-      tokens.pop();  // pop the comma
+      tokens.pop(); // pop the comma
     }
   } while (true);
 }
 
-gen::GenerationResult const List::generateExpression(
-    gen::CodeGenerator &generator, asmc::Size size, std::string typeHint) {
+gen::GenerationResult const
+List::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
+                         std::string typeHint) {
   asmc::File file;
 
   // get the type of the first item This will be the type of the list
@@ -80,4 +81,4 @@ gen::GenerationResult const List::generateExpression(
       .expr = res,
   };
 }
-}  // namespace ast
+} // namespace ast

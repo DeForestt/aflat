@@ -22,4 +22,4 @@ std::string buildLinkCmd(const std::string &output,
   return "gcc " + flags + output + " " + linkerList;
 }
 
-}  // namespace compilerutils
+} // namespace compilerutils

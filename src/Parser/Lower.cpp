@@ -170,7 +170,8 @@ ast::Function *Lower::findFunction(ast::Statement *stmt, std::string ident,
       // seq->Statment2 = this->lower(seq->Statment2);
     } else if (dynamic_cast<ast::Function *>(stmt) != nullptr) {
       auto func = dynamic_cast<ast::Function *>(stmt);
-      if (func->ident.ident == ident) return func;
+      if (func->ident.ident == ident)
+        return func;
     } else if (dynamic_cast<ast::Class *>(stmt) != nullptr) {
       auto cl = dynamic_cast<ast::Class *>(stmt);
       if (this->findFunction(cl->statement, ident, fromClass) != nullptr) {
@@ -194,7 +195,8 @@ ast::Class *Lower::findClass(ast::Statement *stmt, std::string ident) {
     // seq->Statment2 = this->lower(seq->Statment2);
   } else if (dynamic_cast<ast::Class *>(stmt) != nullptr) {
     auto cl = dynamic_cast<ast::Class *>(stmt);
-    if (cl->ident.ident == ident) return cl;
+    if (cl->ident.ident == ident)
+      return cl;
   }
   return nullptr;
 }

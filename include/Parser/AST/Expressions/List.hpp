@@ -7,14 +7,14 @@
 
 namespace ast {
 class List : public Expr {
- public:
+public:
   std::vector<Expr *> items = std::vector<Expr *>();
   List() = default;
   List(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
 
-  gen::GenerationResult const generateExpression(
-      gen::CodeGenerator &generator, asmc::Size size,
-      std::string typeHint = "") override;
+  gen::GenerationResult const
+  generateExpression(gen::CodeGenerator &generator, asmc::Size size,
+                     std::string typeHint = "") override;
 
   std::string toString() override {
     std::string result = "[";
@@ -28,4 +28,4 @@ class List : public Expr {
     return result;
   }
 };
-}  // namespace ast
+} // namespace ast

@@ -97,4 +97,4 @@ gen::GenerationResult const While::generate(gen::CodeGenerator &generator) {
   generator.currentFunction->has_return = false;
   return {file, std::nullopt};
 }
-}  // namespace ast
+} // namespace ast

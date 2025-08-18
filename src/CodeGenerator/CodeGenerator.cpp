@@ -34,7 +34,8 @@ void gen::CodeGenerator::alert(std::string message, bool error,
     void *array[10];
     int size = backtrace(array, 10);
     char **symbols = backtrace_symbols(array, size);
-    for (int i = 0; i < size; ++i) std::cerr << symbols[i] << std::endl;
+    for (int i = 0; i < size; ++i)
+      std::cerr << symbols[i] << std::endl;
     free(symbols);
   }
   if (error) {
@@ -62,8 +63,7 @@ void gen::CodeGenerator::alert(std::string message, bool error,
 gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser,
                                   const std::string &source,
                                   const std::string &cwd)
-    : parser(parser),
-      source(source),
+    : parser(parser), source(source),
       cwd(cwd.empty() ? std::filesystem::current_path()
                       : std::filesystem::path(cwd)) {
   this->registers << asmc::Register("rax", "eax", "ax", "al");
@@ -101,30 +101,47 @@ gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser,
 
 bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
                                    std::string fmt, bool strict, bool panic) {
-  if (type.typeName == typeName) return true;
-  if (type.fPointerArgs.returnType != nullptr && typeName == "adr") return true;
+  if (type.typeName == typeName)
+    return true;
+  if (type.fPointerArgs.returnType != nullptr && typeName == "adr")
+    return true;
   if (type.typeName == "adr" && typeName.find("~") != std::string::npos)
     return true;
-  if (typeName == "void" && type.typeName == "NULLTYPE") return true;
-  if (typeName == "NULLTYPE" && type.typeName == "void") return true;
-  if (typeName == "generic" && type.typeName == "NULLTYPE") return true;
-  if (typeName == "NULLTYPE" && type.typeName == "generic") return true;
+  if (typeName == "void" && type.typeName == "NULLTYPE")
+    return true;
+  if (typeName == "NULLTYPE" && type.typeName == "void")
+    return true;
+  if (typeName == "generic" && type.typeName == "NULLTYPE")
+    return true;
+  if (typeName == "NULLTYPE" && type.typeName == "generic")
+    return true;
   if (typeName == "void")
     this->alert("cannot use void function as value", true, __FILE__, __LINE__);
   if (typeName == "--std--flex--function" || typeName == "any" ||
       type.typeName == "any")
     return true;
-  if (type.typeName == "int" && typeName == "float") return true;
-  if (type.typeName == "float" && typeName == "int") return true;
-  if (type.typeName == "short" && typeName == "number") return true;
-  if (type.typeName == "int" && typeName == "number") return true;
-  if (type.typeName == "long" && typeName == "number") return true;
-  if (type.typeName == "byte" && typeName == "number") return true;
-  if (type.typeName == "number" && typeName == "short") return true;
-  if (type.typeName == "number" && typeName == "int") return true;
-  if (type.typeName == "number" && typeName == "long") return true;
-  if (type.typeName == "number" && typeName == "float") return true;
-  if (type.typeName == "number" && typeName == "byte") return true;
+  if (type.typeName == "int" && typeName == "float")
+    return true;
+  if (type.typeName == "float" && typeName == "int")
+    return true;
+  if (type.typeName == "short" && typeName == "number")
+    return true;
+  if (type.typeName == "int" && typeName == "number")
+    return true;
+  if (type.typeName == "long" && typeName == "number")
+    return true;
+  if (type.typeName == "byte" && typeName == "number")
+    return true;
+  if (type.typeName == "number" && typeName == "short")
+    return true;
+  if (type.typeName == "number" && typeName == "int")
+    return true;
+  if (type.typeName == "number" && typeName == "long")
+    return true;
+  if (type.typeName == "number" && typeName == "float")
+    return true;
+  if (type.typeName == "number" && typeName == "byte")
+    return true;
 
   gen::Type **expected = this->typeList[type.typeName];
   gen::Class *cl = nullptr;
@@ -139,13 +156,16 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
       // if the type is a class
       gen::Class *cl = dynamic_cast<gen::Class *>(*udef);
       if (cl != nullptr) {
-        if (type.typeName == "adr" && !cl->pedantic) return true;
+        if (type.typeName == "adr" && !cl->pedantic)
+          return true;
         gen::Class *parent = cl->parent;
         if (parent != nullptr) {
-          if (parent->Ident == type.typeName) return true;
+          if (parent->Ident == type.typeName)
+            return true;
         }
       } else {
-        if (type.typeName == "adr") return true;
+        if (type.typeName == "adr")
+          return true;
       }
     }
 
@@ -168,15 +188,18 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     return true;
   }
 
-  if (strict && (type.typeName == "adr" || typeName == "generic")) return true;
+  if (strict && (type.typeName == "adr" || typeName == "generic"))
+    return true;
 
   // compare two function pointers
   if (type.fPointerArgs.returnType != nullptr &&
       typeName.find("~") != std::string::npos) {
     // we need to check return type and args
     auto type2 = this->TypeList[typeName];
-    if (type2 == nullptr) return false;
-    if (type2->fPointerArgs.returnType == nullptr) return false;
+    if (type2 == nullptr)
+      return false;
+    if (type2->fPointerArgs.returnType == nullptr)
+      return false;
     this->canAssign(*type2->fPointerArgs.returnType,
                     type.fPointerArgs.returnType->typeName, fmt);
     // type two should have at least as many required args as type
@@ -265,9 +288,9 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
     for (auto &templateType : templates) {
       if (parse::PRIMITIVE_TYPES.find(templateType) ==
           parse::PRIMITIVE_TYPES.end()) {
-        getType(templateType, OutputFile);  // This ensures that the types are
-                                            // valid and registered in the type
-                                            // list if they are also generic
+        getType(templateType, OutputFile); // This ensures that the types are
+                                           // valid and registered in the type
+                                           // list if they are also generic
       }
     }
 
@@ -471,13 +494,17 @@ bool gen::CodeGenerator::whenSatisfied(const ast::When &when) {
     if (pred.op == ast::WhenOperator::IS && pred.ident == "primitive") {
       bool isPrim = parse::PRIMITIVE_TYPES.find(pred.typeName) !=
                     parse::PRIMITIVE_TYPES.end();
-      if (!pred.negated && !isPrim) return false;
-      if (pred.negated && isPrim) return false;
+      if (!pred.negated && !isPrim)
+        return false;
+      if (pred.negated && isPrim)
+        return false;
       return true;
     } else if (pred.op == ast::WhenOperator::IS) {
       auto equal = pred.typeName == pred.ident;
-      if (!pred.negated && !equal) return false;
-      if (pred.negated && equal) return false;
+      if (!pred.negated && !equal)
+        return false;
+      if (pred.negated && equal)
+        return false;
       return true;
     } else if (pred.op == ast::WhenOperator::HAS) {
       gen::Type **type = this->typeList[pred.typeName];
@@ -488,14 +515,17 @@ bool gen::CodeGenerator::whenSatisfied(const ast::When &when) {
           has = cl->publicNameTable[pred.ident] != nullptr;
         }
       }
-      if (!pred.negated && !has) return false;
-      if (pred.negated && has) return false;
+      if (!pred.negated && !has)
+        return false;
+      if (pred.negated && has)
+        return false;
       return true;
     }
     return false;
   };
 
-  if (when.predicates.empty()) return true;
+  if (when.predicates.empty())
+    return true;
   bool result = evalPred(when.predicates[0]);
   for (size_t i = 1; i < when.predicates.size(); ++i) {
     bool cur = evalPred(when.predicates[i]);

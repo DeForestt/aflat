@@ -68,7 +68,8 @@ std::string removeTildes(const std::string &input) {
   size_t start = input.find_first_not_of('~');
 
   // If no non-tilde character is found, return an empty string
-  if (start == std::string::npos) return "";
+  if (start == std::string::npos)
+    return "";
 
   // Create a substring from the first non-tilde character to the end
   return input.substr(start);
@@ -131,7 +132,8 @@ void ScopeManager::popScope(CodeGenerator *callback, asmc::File &OutputFile,
     this->SStackSize = 0;
   };
   this->scopeStack.pop_back();
-  if (this->pleading.size() > 0) this->pleading.pop_back();
+  if (this->pleading.size() > 0)
+    this->pleading.pop_back();
 };
 
 void ScopeManager::softPop(CodeGenerator *callback, asmc::File &OutputFile) {
@@ -154,7 +156,8 @@ void ScopeManager::softPop(CodeGenerator *callback, asmc::File &OutputFile) {
 
 int ScopeManager::getStackAlignment() {
   // align the stack
-  if (this->maxStackPos < this->stackPos) this->maxStackPos = this->stackPos;
+  if (this->maxStackPos < this->stackPos)
+    this->maxStackPos = this->stackPos;
   int align = 16;
   if (this->stack.size() > 0) {
     align = ((this->maxStackPos + 15) / 16) * 16;
@@ -190,7 +193,8 @@ std::vector<gen::Symbol> ScopeManager::getScope(const bool used) {
   std::vector<gen::Symbol> scope;
   for (int i = this->stack.size() - 1; i >= 0; i--) {
     if (this->stack[i].symbol != "") {
-      if (used) this->stack[i].refCount++;
+      if (used)
+        this->stack[i].refCount++;
       scope.push_back(this->stack[i]);
     }
   }
@@ -202,7 +206,8 @@ void ScopeManager::addAssign(std::string symbol, bool get) {
     if (this->stack[i].symbol == symbol) {
       this->stack[i].assignCount++;
       // cancel the ref that was added when getting the symbol
-      if (get) this->stack[i].refCount--;
+      if (get)
+        this->stack[i].refCount--;
     }
   }
 };
@@ -228,7 +233,8 @@ void ScopeManager::pushIsolated() {
 };
 
 void ScopeManager::popIsolated() {
-  if (this->isolated.empty()) return;
+  if (this->isolated.empty())
+    return;
   isoState state = this->isolated.back();
   this->isolated.pop_back();
   this->stack = state.stack;

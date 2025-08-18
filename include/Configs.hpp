@@ -25,4 +25,4 @@ Config getConfig(std::string content);
 Config loadConfig(const std::string &cfgFile, bool updateDeps = false,
                   bool cleanDeps = false);
 
-}  // namespace cfg
+} // namespace cfg

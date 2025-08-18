@@ -4,8 +4,8 @@
 #include "Parser/AST/Statements/DecAssignArr.hpp"
 
 namespace ast {
-gen::GenerationResult const DecAssignArr::generate(
-    gen::CodeGenerator &generator) {
+gen::GenerationResult const
+DecAssignArr::generate(gen::CodeGenerator &generator) {
   asmc::File file;
   ast::DecArr *dec = this->declare;
   ast::Type adr;
@@ -14,7 +14,8 @@ gen::GenerationResult const DecAssignArr::generate(
   while (dec->indices.pos != nullptr) {
     ast::IntLiteral *lit =
         dynamic_cast<ast::IntLiteral *>(dec->indices.shift());
-    if (lit == nullptr) generator.alert("array index must be an integer");
+    if (lit == nullptr)
+      generator.alert("array index must be an integer");
     adr.indices.push(lit->val);
   }
   adr.indices.invert();
@@ -35,4 +36,4 @@ gen::GenerationResult const DecAssignArr::generate(
   file << assign->generate(generator).file;
   return {file, std::nullopt};
 }
-}  // namespace ast
+} // namespace ast

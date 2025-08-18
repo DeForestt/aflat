@@ -19,7 +19,8 @@ Type **CodeGenerator::instantiateGenericClass(
           true, __FILE__, __LINE__);
   for (size_t i = 0; i < types.size(); i++) {
     newName += types[i];
-    if (i < types.size() - 1) newName += ",";
+    if (i < types.size() - 1)
+      newName += ",";
     genericMap[classStatement->genericTypes[i]] = types[i];
   }
   newName += ">";
@@ -28,10 +29,11 @@ Type **CodeGenerator::instantiateGenericClass(
   classStatement->ident.ident = newName;
   classStatement->genericTypes.clear();
   classStatement->hidden =
-      true;  // we hid the class so all of its functions are private
+      true; // we hid the class so all of its functions are private
   Type **result;
   if (this->typeList[newName] == nullptr) {
-    if (OutputFile.lambdas == nullptr) OutputFile.lambdas = new asmc::File;
+    if (OutputFile.lambdas == nullptr)
+      OutputFile.lambdas = new asmc::File;
     OutputFile.hasLambda = true;
     scope::ScopeManager::getInstance()->pushIsolated();
     this->pushEnv();
@@ -72,7 +74,7 @@ CodeGenerator::resolveSymbol(std::string ident,
   if (sym == nullptr) {
     sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, ident);
     global = true;
-    owned = true;  // global symbols are corporatly owned
+    owned = true; // global symbols are corporatly owned
   }
   if (sym == nullptr)
     return std::make_tuple("", Symbol(), false, pops, nullptr);
@@ -131,7 +133,8 @@ CodeGenerator::resolveSymbol(std::string ident,
   indicies.reset();
   modSym->type.indices.reset();
   Symbol retSym = *modSym;
-  if (readOnly) retSym.mutable_ = false;
+  if (readOnly)
+    retSym.mutable_ = false;
   retSym.readOnly = readOnly || modSym->readOnly;
 
   if (indicies.trail() != 0) {
@@ -213,4 +216,4 @@ CodeGenerator::resolveSymbol(std::string ident,
   return std::make_tuple(access, retSym, true, pops, modSym);
 }
 
-}  // namespace gen
+} // namespace gen

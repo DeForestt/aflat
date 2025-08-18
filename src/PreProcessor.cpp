@@ -19,11 +19,13 @@ std::string slice(std::string &str) {
 
 std::string trim(std::string str) {
   // remove trailing white space
-  while (!str.empty() && std::isspace(str.back())) str.pop_back();
+  while (!str.empty() && std::isspace(str.back()))
+    str.pop_back();
 
   // return residue after leading white space
   std::size_t pos = 0;
-  while (pos < str.size() && std::isspace(str[pos])) ++pos;
+  while (pos < str.size() && std::isspace(str[pos]))
+    ++pos;
   return str.substr(pos);
 }
 
@@ -52,7 +54,8 @@ std::string PreProcessor::PreProcess(std::string code, std::string libPath,
                                      const std::string &currDir) {
   std::string output;
   std::string prevRoot = this->root;
-  if (!currDir.empty()) this->root = currDir;
+  if (!currDir.empty())
+    this->root = currDir;
 
   // loop through each line of code
   std::stringstream input_stringstream(code);
@@ -99,7 +102,8 @@ std::string PreProcessor::PreProcess(std::string code, std::string libPath,
     outfile << output;
     outfile.close();
   }
-  if (!currDir.empty()) this->root = prevRoot;
+  if (!currDir.empty())
+    this->root = prevRoot;
   return output;
 }
 
@@ -155,7 +159,8 @@ std::string PreProcessor::Include(std::string line, std::string libPath) {
       output.reserve(output.size());
       cleanPut = std::accumulate(output.begin(), output.end(), std::string(),
                                  [](std::string &a, char b) {
-                                   if (b != '\n') a += b;
+                                   if (b != '\n')
+                                     a += b;
                                    return a;
                                  });
       return this->PreProcess(

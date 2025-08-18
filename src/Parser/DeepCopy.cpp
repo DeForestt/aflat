@@ -7,8 +7,8 @@
 
 namespace ast {
 
-static links::LinkedList<std::string> copyStringList(
-    const links::LinkedList<std::string> &list) {
+static links::LinkedList<std::string>
+copyStringList(const links::LinkedList<std::string> &list) {
   links::LinkedList<std::string> out;
   auto node = list.head;
   while (node) {
@@ -18,8 +18,8 @@ static links::LinkedList<std::string> copyStringList(
   return out;
 }
 
-static links::LinkedList<Expr *> copyExprList(
-    const links::LinkedList<Expr *> &list) {
+static links::LinkedList<Expr *>
+copyExprList(const links::LinkedList<Expr *> &list) {
   links::LinkedList<Expr *> out;
   auto node = list.head;
   while (node) {
@@ -30,7 +30,8 @@ static links::LinkedList<Expr *> copyExprList(
 }
 
 Statement *deepCopy(const Statement *stmt) {
-  if (!stmt) return nullptr;
+  if (!stmt)
+    return nullptr;
   if (auto seq = dynamic_cast<const Sequence *>(stmt)) {
     auto *copy = new Sequence();
     copy->locked = seq->locked;
@@ -130,9 +131,9 @@ Statement *deepCopy(const Statement *stmt) {
     for (auto alias : un->aliases) {
       if (alias->isType()) {
         // log type info
-        copy->aliases.push_back(new Union::Alias(
-            alias->name,
-            Type(alias->getType().typeName, alias->getType().size)));
+        copy->aliases.push_back(
+            new Union::Alias(alias->name, Type(alias->getType().typeName,
+                                               alias->getType().size)));
       } else if (alias->isConstExpr()) {
         copy->aliases.push_back(new Union::Alias(
             alias->name, static_cast<Expr *>(deepCopy(alias->getConstExpr()))));
@@ -340,4 +341,4 @@ Statement *deepCopy(const Statement *stmt) {
   return nullptr;
 }
 
-}  // namespace ast
+} // namespace ast

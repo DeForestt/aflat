@@ -3,11 +3,11 @@
 
 namespace ast {
 class Bubble : public Expr {
- public:
+public:
   Expr *expr;
   Bubble(Expr *expr) : expr(expr) {}
-  gen::GenerationResult const generateExpression(
-      gen::CodeGenerator &generator, asmc::Size size,
-      std::string typeHint = "") override;
+  gen::GenerationResult const
+  generateExpression(gen::CodeGenerator &generator, asmc::Size size,
+                     std::string typeHint = "") override;
 };
-}  // namespace ast
+} // namespace ast

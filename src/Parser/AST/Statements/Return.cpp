@@ -32,7 +32,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   asmc::File file;
 
   if (implicit && generator.matchScope) {
-    resolver = true;  // if this is an implicit return, and
+    resolver = true; // if this is an implicit return, and
   }
 
   if (resolver) {
@@ -90,7 +90,8 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   if (auto var = dynamic_cast<ast::Var *>(this->expr)) {
     if (var->modList.count == 0 && var->Ident != "my") {
       retSym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
-      if (retSym) retSym->returned = true;
+      if (retSym)
+        retSym->returned = true;
     }
   }
 
@@ -256,9 +257,9 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   if (parse::PRIMITIVE_TYPES.find(from.type) == parse::PRIMITIVE_TYPES.end()) {
     if (!from.owned && from.type != "void" &&
         from.type != "--std--flex--function") {
-      generator.alert(
-          "cannot return a non-owned reference to a type " + from.type, true,
-          __FILE__, __LINE__);
+      generator.alert("cannot return a non-owned reference to a type " +
+                          from.type,
+                      true, __FILE__, __LINE__);
     }
   }
 
@@ -280,11 +281,12 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   file.text << mov;
 
   gen::scope::ScopeManager::getInstance()->softPop(&generator, file);
-  if (retSym) retSym->returned = false;
+  if (retSym)
+    retSym->returned = false;
 
   auto re = new asmc::Return();
   re->logicalLine = this->logicalLine;
   file.text << re;
   return {file, std::nullopt};
 }
-}  // namespace ast
+} // namespace ast

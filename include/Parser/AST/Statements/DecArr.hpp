@@ -7,7 +7,7 @@ namespace ast {
  * @brief Represents a declaration of an array.
  */
 class DecArr : public Statement {
- public:
+public:
   std::string ident;
   Type type;
   int count;
@@ -18,4 +18,4 @@ class DecArr : public Statement {
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 
-}  // namespace ast
+} // namespace ast

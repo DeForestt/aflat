@@ -11,7 +11,8 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
   int i = 0;
   int lineCount = startLine;
   while (i < input.length()) {
-    if (input[i] == '\n') lineCount++;
+    if (input[i] == '\n')
+      lineCount++;
     if (std::isalpha(input[i]) || input[i] == '_') {
       auto l_obj = new LObj();
       l_obj->meta = "";
@@ -216,7 +217,8 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
       } else
         charobj->value = input[i];
       i++;
-      if (input[i] != '\'') throw err::Exception("Unterminated Char Value");
+      if (input[i] != '\'')
+        throw err::Exception("Unterminated Char Value");
       charobj->lineCount = lineCount;
       tokens << charobj;
       i++;

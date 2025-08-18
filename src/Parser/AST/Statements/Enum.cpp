@@ -29,7 +29,8 @@ Enum::Enum(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
     this->values.push_back(ident.meta);
     op = dynamic_cast<lex::OpSym *>(tokens.peek());
-    if (op && op->Sym == ',') tokens.pop();
+    if (op && op->Sym == ',')
+      tokens.pop();
   };
 
   op = dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -50,4 +51,4 @@ gen::GenerationResult const Enum::generate(gen::CodeGenerator &generator) {
   generator.typeList.push(type);
   return {asmc::File(), std::nullopt};
 }
-}  // namespace ast
+} // namespace ast

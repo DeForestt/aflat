@@ -89,7 +89,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   // generated when it is instantiated with specific types.
   if (this->genericTypes.size() > 0) {
     generator.genericTypes.insert(
-        {this->ident.ident, this});  // add the class to the generic types
+        {this->ident.ident, this}); // add the class to the generic types
     return {asmc::File(), std::nullopt};
   }
 
@@ -103,9 +103,11 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
       auto ident = annotations.args[0];
       // find the class in the typeList
       gen::Type **T = generator.typeList[ident];
-      if (T == nullptr) generator.alert("Class not found");
+      if (T == nullptr)
+        generator.alert("Class not found");
       gen::Class *base = dynamic_cast<gen::Class *>(*T);
-      if (base == nullptr) generator.alert("Class not found");
+      if (base == nullptr)
+        generator.alert("Class not found");
       applys.push_back(base);
     }
   }
@@ -113,7 +115,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   asmc::File OutputFile;
   gen::Class *type = new gen::Class();
   type->hidden = this->hidden;
-  type->body = this->statement;  // save the body in case of composition
+  type->body = this->statement; // save the body in case of composition
   bool saveScope = generator.globalScope;
   generator.globalScope = false;
   type->Ident = this->ident.ident;
@@ -223,4 +225,4 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
 
   return {OutputFile, std::nullopt};
 }
-}  // namespace ast
+} // namespace ast

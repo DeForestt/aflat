@@ -23,7 +23,7 @@ struct Annotation {
 };
 
 class Parser {
- public:
+public:
   ast::Statement Output;
   ast::Statement *parseStmt(links::LinkedList<lex::Token *> &tokens,
                             bool singleStmt = false);
@@ -52,13 +52,13 @@ class Parser {
   ast::Type parseFPointerType(links::LinkedList<lex::Token *> &tokens,
                               const std::string typeName);
   ast::ConditionalExpr *parseCondition(links::LinkedList<lex::Token *> &tokens);
-  std::vector<std::string> parseTemplateTypeList(
-      links::LinkedList<lex::Token *> &tokens, int lineCount);
+  std::vector<std::string>
+  parseTemplateTypeList(links::LinkedList<lex::Token *> &tokens, int lineCount);
   ast::When parseWhenClause(links::LinkedList<lex::Token *> &tokens,
                             int lineCount);
-  links::LinkedList<ast::Expr *> parseCallArgsList(
-      links::LinkedList<lex::Token *> &tokens);
+  links::LinkedList<ast::Expr *>
+  parseCallArgsList(links::LinkedList<lex::Token *> &tokens);
 };
-};  // namespace parse
+}; // namespace parse
 
 #endif

@@ -26,7 +26,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     output.access = '$' + std::to_string(intLit->val);
     output.size = asmc::DWord;
-    if (size != asmc::AUTO) output.size = size;
+    if (size != asmc::AUTO)
+      output.size = size;
 
     output.type = "number";
   } else if (dynamic_cast<ast::LongLiteral *>(expr) != nullptr) {
@@ -142,10 +143,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     if (exprCall->typeCast != "") {
       if (output.type != "any" && output.type != "adr" &&
           output.type != "generic")
-        this->alert(
-            "Can only explicitly cast to a type from any, adr, "
-            "or generic",
-            true, __FILE__, __LINE__);
+        this->alert("Can only explicitly cast to a type from any, adr, "
+                    "or generic",
+                    true, __FILE__, __LINE__);
       output.type = exprCall->typeCast;
     }
   } else if (dynamic_cast<ast::Var *>(expr) != nullptr) {
@@ -309,7 +309,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           assign->Ident = tempDecl->ident;
           assign->modList.push(sym.symbol);
           var->Ident = sym.symbol;
-          if (sym.type.isReference) var->clean = true;
+          if (sym.type.isReference)
+            var->clean = true;
           assign->expr = var;
           assign->override = true;
           assign->logicalLine = this->logicalLine;
@@ -323,7 +324,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         for (auto arg : func->argTypes) {
           typeName += arg.typeName + ",";
         }
-        if (func->argTypes.size() > 0) typeName.pop_back();
+        if (func->argTypes.size() > 0)
+          typeName.pop_back();
         typeName += "~";
 
         auto newType = new ast::Type(typeName, asmc::QWord);
@@ -422,10 +424,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     if (var.typeCast != "") {
       if (output.type != "any" && output.type != "adr" &&
           output.type != "generic")
-        this->alert(
-            "Can only explicitly cast to a type from any, adr, "
-            "or generic",
-            true, __FILE__, __LINE__);
+        this->alert("Can only explicitly cast to a type from any, adr, "
+                    "or generic",
+                    true, __FILE__, __LINE__);
       output.type = var.typeCast;
     }
   } else if (dynamic_cast<ast::Buy *>(expr) != nullptr) {
@@ -565,9 +566,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                 cl = cl->parent;
               }
             } else {
-              this->alert(
-                  "class " + cl->Ident + " does not contain a toString method",
-                  true, __FILE__, __LINE__);
+              this->alert("class " + cl->Ident +
+                              " does not contain a toString method",
+                          true, __FILE__, __LINE__);
             }
           }
 
@@ -718,398 +719,399 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       output.owned = true;
       output.type = "--std--flex--function";
       switch (comp.op) {
-        case ast::Plus: {
-          asmc::Add *add = new asmc::Add();
-          output = this->genArithmetic(add, comp, OutputFile);
-          break;
-        }
-        case ast::Minus: {
-          asmc::Sub *sub = new asmc::Sub();
-          output = this->genArithmetic(sub, comp, OutputFile);
-          break;
-        }
-        case ast::AndBit: {
-          asmc::And *andBit = new asmc::And();
-          output = this->genArithmetic(andBit, comp, OutputFile);
-          break;
-        }
-        case ast::OrBit: {
-          asmc::Or *orBit = new asmc::Or();
-          output = this->genArithmetic(orBit, comp, OutputFile);
-          break;
-        }
-        case ast::Less: {
-          asmc::Sal *andBit = new asmc::Sal();
-          gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
-          gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy);
+      case ast::Plus: {
+        asmc::Add *add = new asmc::Add();
+        output = this->genArithmetic(add, comp, OutputFile);
+        break;
+      }
+      case ast::Minus: {
+        asmc::Sub *sub = new asmc::Sub();
+        output = this->genArithmetic(sub, comp, OutputFile);
+        break;
+      }
+      case ast::AndBit: {
+        asmc::And *andBit = new asmc::And();
+        output = this->genArithmetic(andBit, comp, OutputFile);
+        break;
+      }
+      case ast::OrBit: {
+        asmc::Or *orBit = new asmc::Or();
+        output = this->genArithmetic(orBit, comp, OutputFile);
+        break;
+      }
+      case ast::Less: {
+        asmc::Sal *andBit = new asmc::Sal();
+        gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
+        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy);
 
+        this->prepareCompound(comp, OutputFile);
+
+        std::string to1 = this->registers["%cl"]->get(expr1.size);
+        std::string to2 = this->registers["%rdi"]->get(expr1.size);
+        output.access = this->registers["%rdi"]->get(expr1.size);
+
+        if (expr1.op == asmc::Float) {
+          to1 = this->registers["%xmm1"]->get(asmc::DWord);
+          to2 = this->registers["%xmm0"]->get(asmc::DWord);
+          output.access = "%xmm0";
+          output.op = asmc::Float;
+        }
+        // Move the value from edx to ecx
+        asmc::Mov *mov = new asmc::Mov();
+        mov->logicalLine = this->logicalLine;
+        mov->to = to1;
+        mov->from = this->registers["%rdx"]->get(expr1.size);
+        mov->size = expr1.size;
+
+        OutputFile.text << mov;
+
+        andBit->op2 = to2;
+        andBit->op1 = "%cl";
+        andBit->size = expr1.size;
+        andBit->logicalLine = this->logicalLine;
+        OutputFile.text << andBit;
+        output.access = this->registers["%rdi"]->get(expr1.size);
+
+        // move access to rax
+        asmc::Mov *mov2 = new asmc::Mov();
+        mov2->logicalLine = this->logicalLine;
+        mov2->to = this->registers["%rax"]->get(expr1.size);
+        mov2->from = output.access;
+        mov2->size = expr1.size;
+        OutputFile.text << mov2;
+        output.access = this->registers["%rax"]->get(expr1.size);
+
+        break;
+      }
+      case ast::Great: {
+        asmc::Sar *andBit = new asmc::Sar();
+        gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
+        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy);
+
+        this->prepareCompound(comp, OutputFile);
+
+        std::string to1 = this->registers["%cl"]->get(expr1.size);
+        std::string to2 = this->registers["%rdi"]->get(expr1.size);
+        output.access = this->registers["%rdi"]->get(expr1.size);
+
+        if (expr1.op == asmc::Float) {
+          to1 = this->registers["%xmm1"]->get(asmc::DWord);
+          to2 = this->registers["%xmm0"]->get(asmc::DWord);
+          output.access = "%xmm0";
+          output.op = asmc::Float;
+        }
+
+        // Move the value from edx to ecx
+        asmc::Mov *mov = new asmc::Mov();
+        mov->to = to1;
+        mov->from = this->registers["%rdx"]->get(expr1.size);
+        mov->size = expr1.size;
+        mov->logicalLine = this->logicalLine;
+
+        OutputFile.text << mov;
+
+        andBit->op2 = to2;
+        andBit->op1 = "%cl";
+        andBit->size = expr1.size;
+        andBit->logicalLine = this->logicalLine;
+
+        OutputFile.text << andBit;
+
+        output.size = expr1.size;
+        output.type = expr1.type;
+        output.access = to2;
+
+        // move access to rax
+        asmc::Mov *mov2 = new asmc::Mov();
+        mov2->to = this->registers["%rax"]->get(expr1.size);
+        mov2->from = output.access;
+        mov2->size = expr1.size;
+        mov2->logicalLine = this->logicalLine;
+        OutputFile.text << mov2;
+        output.access = this->registers["%rax"]->get(expr1.size);
+        break;
+      }
+      case ast::Mul: {
+        asmc::Mul *mul = new asmc::Mul();
+        output = this->genArithmetic(mul, comp, OutputFile);
+        break;
+      }
+      case ast::Div: {
+        asmc::Div *div = new asmc::Div();
+        div->logicalLine = this->logicalLine;
+
+        gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
+        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy, expr1.size);
+
+        div->op1 = expr2.access;
+        div->opType = expr1.op;
+        div->size = expr1.size;
+
+        std::string to1 = this->registers["%rdx"]->get(expr1.size);
+        std::string to2 = this->registers["%rax"]->get(expr1.size);
+        output.access = this->registers["%rax"]->get(expr1.size);
+
+        if (expr1.op == asmc::Float) {
+          to1 = this->registers["%xmm1"]->get(asmc::DWord);
+          to2 = this->registers["%xmm0"]->get(asmc::DWord);
+          output.access = "%xmm0";
+          div->op1 = to1;
+          div->op2 = to2;
+          div->logicalLine = this->logicalLine;
           this->prepareCompound(comp, OutputFile);
-
-          std::string to1 = this->registers["%cl"]->get(expr1.size);
-          std::string to2 = this->registers["%rdi"]->get(expr1.size);
-          output.access = this->registers["%rdi"]->get(expr1.size);
-
-          if (expr1.op == asmc::Float) {
-            to1 = this->registers["%xmm1"]->get(asmc::DWord);
-            to2 = this->registers["%xmm0"]->get(asmc::DWord);
-            output.access = "%xmm0";
-            output.op = asmc::Float;
-          }
-          // Move the value from edx to ecx
-          asmc::Mov *mov = new asmc::Mov();
+          output.op = asmc::Float;
+        } else {
+          asmc::Mov *mov = new asmc::Mov;
           mov->logicalLine = this->logicalLine;
-          mov->to = to1;
-          mov->from = this->registers["%rdx"]->get(expr1.size);
+          asmc::Mov *eax = new asmc::Mov;
+          eax->logicalLine = this->logicalLine;
+          expr1 = this->GenExpr(comp.expr1, OutputFile);
+
+          eax->from = expr1.access;
+          eax->to = this->registers["%rax"]->get(expr1.size);
+          eax->size = expr1.size;
+          OutputFile.text << eax;
+          mov->op = expr1.op;
+
+          expr2 = this->GenExpr(comp.expr2, OutputFile, expr1.size);
+          mov->from = expr2.access;
+          mov->to = this->registers["%rcx"]->get(expr1.size);
           mov->size = expr1.size;
+          mov->op = expr1.op;
+          div->op1 = mov->to;
+          output.access = this->registers["%rax"]->get(expr1.size);
 
           OutputFile.text << mov;
-
-          andBit->op2 = to2;
-          andBit->op1 = "%cl";
-          andBit->size = expr1.size;
-          andBit->logicalLine = this->logicalLine;
-          OutputFile.text << andBit;
-          output.access = this->registers["%rdi"]->get(expr1.size);
-
-          // move access to rax
-          asmc::Mov *mov2 = new asmc::Mov();
-          mov2->logicalLine = this->logicalLine;
-          mov2->to = this->registers["%rax"]->get(expr1.size);
-          mov2->from = output.access;
-          mov2->size = expr1.size;
-          OutputFile.text << mov2;
-          output.access = this->registers["%rax"]->get(expr1.size);
-
-          break;
         }
-        case ast::Great: {
-          asmc::Sar *andBit = new asmc::Sar();
-          gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
-          gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy);
 
+        OutputFile.text << div;
+        output.size = expr1.size;
+        output.type = expr1.type;
+        break;
+      }
+      case ast::Mod: {
+        asmc::Div *div = new asmc::Div();
+        div->logicalLine = this->logicalLine;
+
+        this->selectReg = 0;
+        gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
+        this->selectReg = 1;
+        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy);
+
+        div->op1 = expr2.access;
+
+        if (expr1.op == asmc::Float) {
+          std::string to1 = this->registers["%xmm1"]->get(asmc::DWord);
+          std::string to2 = this->registers["%xmm0"]->get(asmc::DWord);
+          output.access = "%xmm1";
+          output.op = asmc::Float;
+          div->op1 = to1;
+          div->op2 = to2;
           this->prepareCompound(comp, OutputFile);
-
-          std::string to1 = this->registers["%cl"]->get(expr1.size);
-          std::string to2 = this->registers["%rdi"]->get(expr1.size);
-          output.access = this->registers["%rdi"]->get(expr1.size);
-
-          if (expr1.op == asmc::Float) {
-            to1 = this->registers["%xmm1"]->get(asmc::DWord);
-            to2 = this->registers["%xmm0"]->get(asmc::DWord);
-            output.access = "%xmm0";
-            output.op = asmc::Float;
-          }
-
-          // Move the value from edx to ecx
-          asmc::Mov *mov = new asmc::Mov();
-          mov->to = to1;
-          mov->from = this->registers["%rdx"]->get(expr1.size);
-          mov->size = expr1.size;
+        } else {
+          asmc::Mov *mov = new asmc::Mov;
           mov->logicalLine = this->logicalLine;
+          asmc::Mov *eax = new asmc::Mov;
+          eax->logicalLine = this->logicalLine;
+          expr1 = this->GenExpr(comp.expr1, OutputFile);
+
+          eax->from = expr1.access;
+          eax->to = this->registers["%rax"]->get(expr1.size);
+          eax->size = expr1.size;
+          OutputFile.text << eax;
+          mov->op = expr1.op;
+
+          expr2 = this->GenExpr(comp.expr2, OutputFile, expr1.size);
+          mov->from = expr2.access;
+          mov->to = this->registers["%rcx"]->get(expr1.size);
+          mov->size = expr1.size;
+          mov->op = expr1.op;
+          div->op1 = mov->to;
+          output.access = this->registers["%rax"]->get(expr1.size);
 
           OutputFile.text << mov;
-
-          andBit->op2 = to2;
-          andBit->op1 = "%cl";
-          andBit->size = expr1.size;
-          andBit->logicalLine = this->logicalLine;
-
-          OutputFile.text << andBit;
-
-          output.size = expr1.size;
-          output.type = expr1.type;
-          output.access = to2;
-
-          // move access to rax
-          asmc::Mov *mov2 = new asmc::Mov();
-          mov2->to = this->registers["%rax"]->get(expr1.size);
-          mov2->from = output.access;
-          mov2->size = expr1.size;
-          mov2->logicalLine = this->logicalLine;
-          OutputFile.text << mov2;
-          output.access = this->registers["%rax"]->get(expr1.size);
-          break;
         }
-        case ast::Mul: {
-          asmc::Mul *mul = new asmc::Mul();
-          output = this->genArithmetic(mul, comp, OutputFile);
-          break;
+
+        // Move the value from edx to eax
+        asmc::Mov *mov = new asmc::Mov();
+        mov->logicalLine = this->logicalLine;
+        mov->to = output.access;
+        mov->from = this->registers["%rdx"]->get(expr1.size);
+        mov->size = expr1.size;
+
+        OutputFile.text << div;
+        if (expr1.op != asmc::Float)
+          OutputFile.text << mov;
+        output.size = asmc::DWord;
+        output.type = "int";
+        break;
+      }
+      case ast::CompEqu: {
+        asmc::Cmp *cmp = new asmc::Cmp();
+        cmp->logicalLine = this->logicalLine;
+        gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
+
+        cmp->size = expr1.size;
+        cmp->to = this->registers["%rdi"]->get(expr1.size);
+        cmp->from = this->registers["%rdx"]->get(expr1.size);
+
+        if (expr1.op == asmc::Float) {
+          cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
+          cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+          cmp->op = asmc::Float;
         }
-        case ast::Div: {
-          asmc::Div *div = new asmc::Div();
-          div->logicalLine = this->logicalLine;
 
-          gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
-          gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy, expr1.size);
+        asmc::Sete *sete = new asmc::Sete();
+        sete->logicalLine = this->logicalLine;
+        sete->op = this->registers["%rax"]->get(asmc::Byte);
 
-          div->op1 = expr2.access;
-          div->opType = expr1.op;
-          div->size = expr1.size;
+        OutputFile.text << cmp;
+        OutputFile.text << sete;
 
-          std::string to1 = this->registers["%rdx"]->get(expr1.size);
-          std::string to2 = this->registers["%rax"]->get(expr1.size);
-          output.access = this->registers["%rax"]->get(expr1.size);
+        output.size = asmc::Byte;
+        output.type = "bool";
+        output.access = "%al";
+        break;
+      }
+      case ast::LessCmp: {
+        asmc::Cmp *cmp = new asmc::Cmp();
+        cmp->logicalLine = this->logicalLine;
+        gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
-          if (expr1.op == asmc::Float) {
-            to1 = this->registers["%xmm1"]->get(asmc::DWord);
-            to2 = this->registers["%xmm0"]->get(asmc::DWord);
-            output.access = "%xmm0";
-            div->op1 = to1;
-            div->op2 = to2;
-            div->logicalLine = this->logicalLine;
-            this->prepareCompound(comp, OutputFile);
-            output.op = asmc::Float;
-          } else {
-            asmc::Mov *mov = new asmc::Mov;
-            mov->logicalLine = this->logicalLine;
-            asmc::Mov *eax = new asmc::Mov;
-            eax->logicalLine = this->logicalLine;
-            expr1 = this->GenExpr(comp.expr1, OutputFile);
+        cmp->size = expr1.size;
+        cmp->to = this->registers["%rdi"]->get(expr1.size);
+        cmp->from = this->registers["%rdx"]->get(expr1.size);
 
-            eax->from = expr1.access;
-            eax->to = this->registers["%rax"]->get(expr1.size);
-            eax->size = expr1.size;
-            OutputFile.text << eax;
-            mov->op = expr1.op;
-
-            expr2 = this->GenExpr(comp.expr2, OutputFile, expr1.size);
-            mov->from = expr2.access;
-            mov->to = this->registers["%rcx"]->get(expr1.size);
-            mov->size = expr1.size;
-            mov->op = expr1.op;
-            div->op1 = mov->to;
-            output.access = this->registers["%rax"]->get(expr1.size);
-
-            OutputFile.text << mov;
-          }
-
-          OutputFile.text << div;
-          output.size = expr1.size;
-          output.type = expr1.type;
-          break;
+        if (expr1.op == asmc::Float) {
+          cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
+          cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+          cmp->op = asmc::Float;
         }
-        case ast::Mod: {
-          asmc::Div *div = new asmc::Div();
-          div->logicalLine = this->logicalLine;
 
-          this->selectReg = 0;
-          gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
-          this->selectReg = 1;
-          gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy);
+        asmc::Setl *setl = new asmc::Setl();
+        setl->logicalLine = this->logicalLine;
+        setl->op = this->registers["%rax"]->get(asmc::Byte);
 
-          div->op1 = expr2.access;
+        OutputFile.text << cmp;
+        OutputFile.text << setl;
 
-          if (expr1.op == asmc::Float) {
-            std::string to1 = this->registers["%xmm1"]->get(asmc::DWord);
-            std::string to2 = this->registers["%xmm0"]->get(asmc::DWord);
-            output.access = "%xmm1";
-            output.op = asmc::Float;
-            div->op1 = to1;
-            div->op2 = to2;
-            this->prepareCompound(comp, OutputFile);
-          } else {
-            asmc::Mov *mov = new asmc::Mov;
-            mov->logicalLine = this->logicalLine;
-            asmc::Mov *eax = new asmc::Mov;
-            eax->logicalLine = this->logicalLine;
-            expr1 = this->GenExpr(comp.expr1, OutputFile);
+        output.size = asmc::Byte;
+        output.type = "bool";
+        output.access = "%al";
+        break;
+      }
+      case ast::GreatCmp: {
+        asmc::Cmp *cmp = new asmc::Cmp();
+        cmp->logicalLine = this->logicalLine;
+        gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
-            eax->from = expr1.access;
-            eax->to = this->registers["%rax"]->get(expr1.size);
-            eax->size = expr1.size;
-            OutputFile.text << eax;
-            mov->op = expr1.op;
+        cmp->size = expr1.size;
+        cmp->to = this->registers["%rdi"]->get(expr1.size);
+        cmp->from = this->registers["%rdx"]->get(expr1.size);
 
-            expr2 = this->GenExpr(comp.expr2, OutputFile, expr1.size);
-            mov->from = expr2.access;
-            mov->to = this->registers["%rcx"]->get(expr1.size);
-            mov->size = expr1.size;
-            mov->op = expr1.op;
-            div->op1 = mov->to;
-            output.access = this->registers["%rax"]->get(expr1.size);
-
-            OutputFile.text << mov;
-          }
-
-          // Move the value from edx to eax
-          asmc::Mov *mov = new asmc::Mov();
-          mov->logicalLine = this->logicalLine;
-          mov->to = output.access;
-          mov->from = this->registers["%rdx"]->get(expr1.size);
-          mov->size = expr1.size;
-
-          OutputFile.text << div;
-          if (expr1.op != asmc::Float) OutputFile.text << mov;
-          output.size = asmc::DWord;
-          output.type = "int";
-          break;
+        if (expr1.op == asmc::Float) {
+          cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
+          cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+          cmp->op = asmc::Float;
         }
-        case ast::CompEqu: {
-          asmc::Cmp *cmp = new asmc::Cmp();
-          cmp->logicalLine = this->logicalLine;
-          gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
-          cmp->size = expr1.size;
-          cmp->to = this->registers["%rdi"]->get(expr1.size);
-          cmp->from = this->registers["%rdx"]->get(expr1.size);
+        asmc::Setg *setg = new asmc::Setg();
+        setg->logicalLine = this->logicalLine;
+        setg->op = this->registers["%rax"]->get(asmc::Byte);
 
-          if (expr1.op == asmc::Float) {
-            cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
-            cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
-            cmp->op = asmc::Float;
-          }
+        OutputFile.text << cmp;
+        OutputFile.text << setg;
 
-          asmc::Sete *sete = new asmc::Sete();
-          sete->logicalLine = this->logicalLine;
-          sete->op = this->registers["%rax"]->get(asmc::Byte);
+        output.size = asmc::Byte;
+        output.type = "bool";
+        output.access = "%al";
+        break;
+      }
+      case ast::Leq: {
+        asmc::Cmp *cmp = new asmc::Cmp();
+        cmp->logicalLine = this->logicalLine;
+        gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
-          OutputFile.text << cmp;
-          OutputFile.text << sete;
+        cmp->size = expr1.size;
+        cmp->to = this->registers["%rdi"]->get(expr1.size);
+        cmp->from = this->registers["%rdx"]->get(expr1.size);
 
-          output.size = asmc::Byte;
-          output.type = "bool";
-          output.access = "%al";
-          break;
+        if (expr1.op == asmc::Float) {
+          cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
+          cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+          cmp->op = asmc::Float;
         }
-        case ast::LessCmp: {
-          asmc::Cmp *cmp = new asmc::Cmp();
-          cmp->logicalLine = this->logicalLine;
-          gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
-          cmp->size = expr1.size;
-          cmp->to = this->registers["%rdi"]->get(expr1.size);
-          cmp->from = this->registers["%rdx"]->get(expr1.size);
+        asmc::Setle *setle = new asmc::Setle();
+        setle->logicalLine = this->logicalLine;
+        setle->op = this->registers["%rax"]->get(asmc::Byte);
 
-          if (expr1.op == asmc::Float) {
-            cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
-            cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
-            cmp->op = asmc::Float;
-          }
+        OutputFile.text << cmp;
+        OutputFile.text << setle;
 
-          asmc::Setl *setl = new asmc::Setl();
-          setl->logicalLine = this->logicalLine;
-          setl->op = this->registers["%rax"]->get(asmc::Byte);
+        output.size = asmc::Byte;
+        output.type = "bool";
+        output.access = "%al";
+        break;
+      }
+      case ast::Geq: {
+        asmc::Cmp *cmp = new asmc::Cmp();
+        cmp->logicalLine = this->logicalLine;
+        gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
-          OutputFile.text << cmp;
-          OutputFile.text << setl;
+        cmp->size = expr1.size;
+        cmp->to = this->registers["%rdi"]->get(expr1.size);
+        cmp->from = this->registers["%rdx"]->get(expr1.size);
 
-          output.size = asmc::Byte;
-          output.type = "bool";
-          output.access = "%al";
-          break;
+        if (expr1.op == asmc::Float) {
+          cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
+          cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+          cmp->op = asmc::Float;
         }
-        case ast::GreatCmp: {
-          asmc::Cmp *cmp = new asmc::Cmp();
-          cmp->logicalLine = this->logicalLine;
-          gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
-          cmp->size = expr1.size;
-          cmp->to = this->registers["%rdi"]->get(expr1.size);
-          cmp->from = this->registers["%rdx"]->get(expr1.size);
+        asmc::Setge *setge = new asmc::Setge();
+        setge->logicalLine = this->logicalLine;
+        setge->op = this->registers["%rax"]->get(asmc::Byte);
 
-          if (expr1.op == asmc::Float) {
-            cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
-            cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
-            cmp->op = asmc::Float;
-          }
+        OutputFile.text << cmp;
+        OutputFile.text << setge;
 
-          asmc::Setg *setg = new asmc::Setg();
-          setg->logicalLine = this->logicalLine;
-          setg->op = this->registers["%rax"]->get(asmc::Byte);
+        output.size = asmc::Byte;
+        output.type = "bool";
+        output.access = "%al";
+        break;
+      }
+      case ast::NotEqu: {
+        asmc::Cmp *cmp = new asmc::Cmp();
+        cmp->logicalLine = this->logicalLine;
+        gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
-          OutputFile.text << cmp;
-          OutputFile.text << setg;
+        cmp->size = expr1.size;
+        cmp->to = this->registers["%rdi"]->get(expr1.size);
+        cmp->from = this->registers["%rdx"]->get(expr1.size);
 
-          output.size = asmc::Byte;
-          output.type = "bool";
-          output.access = "%al";
-          break;
+        if (expr1.op == asmc::Float) {
+          cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
+          cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+          cmp->op = asmc::Float;
         }
-        case ast::Leq: {
-          asmc::Cmp *cmp = new asmc::Cmp();
-          cmp->logicalLine = this->logicalLine;
-          gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
-          cmp->size = expr1.size;
-          cmp->to = this->registers["%rdi"]->get(expr1.size);
-          cmp->from = this->registers["%rdx"]->get(expr1.size);
+        asmc::Setne *setne = new asmc::Setne();
+        setne->logicalLine = this->logicalLine;
+        setne->op = this->registers["%rax"]->get(asmc::Byte);
 
-          if (expr1.op == asmc::Float) {
-            cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
-            cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
-            cmp->op = asmc::Float;
-          }
+        OutputFile.text << cmp;
+        OutputFile.text << setne;
 
-          asmc::Setle *setle = new asmc::Setle();
-          setle->logicalLine = this->logicalLine;
-          setle->op = this->registers["%rax"]->get(asmc::Byte);
-
-          OutputFile.text << cmp;
-          OutputFile.text << setle;
-
-          output.size = asmc::Byte;
-          output.type = "bool";
-          output.access = "%al";
-          break;
-        }
-        case ast::Geq: {
-          asmc::Cmp *cmp = new asmc::Cmp();
-          cmp->logicalLine = this->logicalLine;
-          gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
-
-          cmp->size = expr1.size;
-          cmp->to = this->registers["%rdi"]->get(expr1.size);
-          cmp->from = this->registers["%rdx"]->get(expr1.size);
-
-          if (expr1.op == asmc::Float) {
-            cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
-            cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
-            cmp->op = asmc::Float;
-          }
-
-          asmc::Setge *setge = new asmc::Setge();
-          setge->logicalLine = this->logicalLine;
-          setge->op = this->registers["%rax"]->get(asmc::Byte);
-
-          OutputFile.text << cmp;
-          OutputFile.text << setge;
-
-          output.size = asmc::Byte;
-          output.type = "bool";
-          output.access = "%al";
-          break;
-        }
-        case ast::NotEqu: {
-          asmc::Cmp *cmp = new asmc::Cmp();
-          cmp->logicalLine = this->logicalLine;
-          gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
-
-          cmp->size = expr1.size;
-          cmp->to = this->registers["%rdi"]->get(expr1.size);
-          cmp->from = this->registers["%rdx"]->get(expr1.size);
-
-          if (expr1.op == asmc::Float) {
-            cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
-            cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
-            cmp->op = asmc::Float;
-          }
-
-          asmc::Setne *setne = new asmc::Setne();
-          setne->logicalLine = this->logicalLine;
-          setne->op = this->registers["%rax"]->get(asmc::Byte);
-
-          OutputFile.text << cmp;
-          OutputFile.text << setne;
-
-          output.size = asmc::Byte;
-          output.type = "bool";
-          output.access = "%al";
-          break;
-        }
-        default: {
-          alert("Unhandled operator in comparison", true, __FILE__, __LINE__);
-          break;
-        }
+        output.size = asmc::Byte;
+        output.type = "bool";
+        output.access = "%al";
+        break;
+      }
+      default: {
+        alert("Unhandled operator in comparison", true, __FILE__, __LINE__);
+        break;
+      }
       }
       // pop rdx and rdi
       asmc::Pop *pop = new asmc::Pop();
@@ -1125,10 +1127,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     if (comp.typeCast != "") {
       if (output.type != "any" && output.type != "adr" &&
           output.type != "generic")
-        this->alert(
-            "Can only explicitly cast to a type from any, adr, "
-            "or generic",
-            true, __FILE__, __LINE__);
+        this->alert("Can only explicitly cast to a type from any, adr, "
+                    "or generic",
+                    true, __FILE__, __LINE__);
       output.type = comp.typeCast;
     }
   } else if (dynamic_cast<ast::Lambda *>(expr) != nullptr) {
@@ -1147,7 +1148,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     func->scopeName = "global";
     func->isLambda = true;
 
-    if (OutputFile.lambdas == nullptr) OutputFile.lambdas = new asmc::File;
+    if (OutputFile.lambdas == nullptr)
+      OutputFile.lambdas = new asmc::File;
     OutputFile.hasLambda = true;
 
     this->nameTable.push(*func);
@@ -1179,7 +1181,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       typeName += ",";
     }
     // remove the last comma if it exists
-    if (typeName[typeName.size() - 1] == ',') typeName.pop_back();
+    if (typeName[typeName.size() - 1] == ',')
+      typeName.pop_back();
     typeName += "~";
     auto type = new ast::Type(typeName, asmc::QWord);
     type->fPointerArgs.argTypes = func->argTypes;
@@ -1215,10 +1218,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     }
 
     if (malloc == nullptr)
-      alert(
-          "Please import std library in order to use new operator.\n\n -> "
-          ".needs <std> \n\n",
-          true, __FILE__, __LINE__);
+      alert("Please import std library in order to use new operator.\n\n -> "
+            ".needs <std> \n\n",
+            true, __FILE__, __LINE__);
     gen::Type **type = this->getType(newExpr.type.typeName, OutputFile);
     if (type == nullptr)
       alert("Type " + newExpr.type.typeName + " not found", true, __FILE__,
@@ -1492,4 +1494,4 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   return output;
 }
 
-}  // namespace gen
+} // namespace gen

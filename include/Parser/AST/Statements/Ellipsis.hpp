@@ -3,8 +3,8 @@
 
 namespace ast {
 class Ellipsis : public Statement {
- public:
+public:
   Ellipsis() = default;
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
-}  // namespace ast
+} // namespace ast

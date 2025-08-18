@@ -28,4 +28,4 @@ gen::GenerationResult const Continue::generate(gen::CodeGenerator &generator) {
   OutputFile.text << jmp;
   return {OutputFile, std::nullopt};
 }
-};  // namespace ast
+}; // namespace ast

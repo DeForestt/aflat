@@ -21,7 +21,7 @@
  **/
 namespace ast {
 class Union : public Class {
- public:
+public:
   struct Alias {
     std::string name;
     std::optional<std::variant<ast::Type, ast::Expr *>> value;
@@ -45,10 +45,13 @@ class Union : public Class {
       return isConstExpr() ? std::get<ast::Expr *>(*value) : nullptr;
     }
     std::string toString() const {
-      if (isUnit()) return name;
-      if (isType()) return name + "(" + getType().typeName + ")";
-      if (isConstExpr()) return name + "(" + getConstExpr()->toString() + ")";
-      return name;  // Fallback, should not happen
+      if (isUnit())
+        return name;
+      if (isType())
+        return name + "(" + getType().typeName + ")";
+      if (isConstExpr())
+        return name + "(" + getConstExpr()->toString() + ")";
+      return name; // Fallback, should not happen
     }
   };
 
@@ -80,4 +83,4 @@ class Union : public Class {
     return result;
   }
 };
-};  // namespace ast
+}; // namespace ast

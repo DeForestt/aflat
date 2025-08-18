@@ -2,9 +2,8 @@
 #include <iostream>
 #include <string>
 
-template <typename Z>
-class HashMap {
- public:
+template <typename Z> class HashMap {
+public:
   HashMap();
   void insert(std::string key, Z value);
   Z get(std::string key);
@@ -13,7 +12,7 @@ class HashMap {
   int size();
   bool contains(std::string key);
 
- private:
+private:
   struct Node {
     std::string key;
     Z value;
@@ -25,8 +24,7 @@ class HashMap {
   int hash(std::string key);
 };
 
-template <typename Z>
-HashMap<Z>::HashMap() {
+template <typename Z> HashMap<Z>::HashMap() {
   this->tableSize = 100;
   this->count = 0;
   this->table = new Node *[this->tableSize];
@@ -35,8 +33,7 @@ HashMap<Z>::HashMap() {
   }
 }
 
-template <typename Z>
-void HashMap<Z>::insert(std::string key, Z value) {
+template <typename Z> void HashMap<Z>::insert(std::string key, Z value) {
   int index = this->hash(key);
   Node *curr = this->table[index];
   while (curr != nullptr) {
@@ -54,8 +51,7 @@ void HashMap<Z>::insert(std::string key, Z value) {
   this->count++;
 }
 
-template <typename Z>
-Z HashMap<Z>::get(std::string key) {
+template <typename Z> Z HashMap<Z>::get(std::string key) {
   int index = this->hash(key);
   Node *curr = this->table[index];
   while (curr != nullptr) {
@@ -67,8 +63,7 @@ Z HashMap<Z>::get(std::string key) {
   return nullptr;
 }
 
-template <typename Z>
-void HashMap<Z>::remove(std::string key) {
+template <typename Z> void HashMap<Z>::remove(std::string key) {
   int index = this->hash(key);
   Node *curr = this->table[index];
   Node *prev = nullptr;
@@ -88,8 +83,7 @@ void HashMap<Z>::remove(std::string key) {
   }
 }
 
-template <typename Z>
-void HashMap<Z>::clear() {
+template <typename Z> void HashMap<Z>::clear() {
   for (int i = 0; i < this->tableSize; i++) {
     Node *curr = this->table[i];
     while (curr != nullptr) {
@@ -101,13 +95,9 @@ void HashMap<Z>::clear() {
   this->count = 0;
 }
 
-template <typename Z>
-int HashMap<Z>::size() {
-  return this->count;
-}
+template <typename Z> int HashMap<Z>::size() { return this->count; }
 
-template <typename Z>
-bool HashMap<Z>::contains(std::string key) {
+template <typename Z> bool HashMap<Z>::contains(std::string key) {
   int index = this->hash(key);
   if (index < 0 || index >= this->tableSize) {
     std::cout << "Warning: " << key << " returns " << index
@@ -125,8 +115,7 @@ bool HashMap<Z>::contains(std::string key) {
   return false;
 }
 
-template <typename Z>
-int HashMap<Z>::hash(std::string key) {
+template <typename Z> int HashMap<Z>::hash(std::string key) {
   int hash = 0;
   for (int i = 0; i < key.length(); i++) {
     hash += key[i];

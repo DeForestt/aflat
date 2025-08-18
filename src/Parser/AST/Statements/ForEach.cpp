@@ -33,7 +33,7 @@ ForEach::ForEach(links::LinkedList<lex::Token *> &tokens,
 
   auto openCurly = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (openCurly && openCurly->Sym == '{') {
-    tokens.pop();  // Remove the '{'
+    tokens.pop(); // Remove the '{'
     this->implementation = parser.parseStmt(tokens);
   } else {
     this->implementation = parser.parseStmt(tokens, true);
@@ -102,4 +102,4 @@ gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
   };
 }
 
-}  // namespace ast
+} // namespace ast

@@ -14,8 +14,9 @@ using namespace gen::utils;
 
 namespace gen {
 
-links::LinkedList<gen::Symbol> gen::CodeGenerator::GenTable(
-    ast::Statement *STMT, links::LinkedList<gen::Symbol> &table) {
+links::LinkedList<gen::Symbol>
+gen::CodeGenerator::GenTable(ast::Statement *STMT,
+                             links::LinkedList<gen::Symbol> &table) {
   if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
     ast::Sequence *sequence = dynamic_cast<ast::Sequence *>(STMT);
     this->GenTable(sequence->Statement1, table);
@@ -86,10 +87,9 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
     */
     ast::Declare *arg = dynamic_cast<ast::Declare *>(STMT);
     if (intArgsCounter > 6) {
-      alert(
-          "AFlat compiler cannot handle more than 6 int / pointer "
-          "arguments.",
-          true, __FILE__, __LINE__);
+      alert("AFlat compiler cannot handle more than 6 int / pointer "
+            "arguments.",
+            true, __FILE__, __LINE__);
     } else {
       asmc::Size size;
       gen::Symbol symbol;
@@ -262,7 +262,8 @@ asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
     auto imp = dynamic_cast<ast::Import *>(STMT);
     if (imp->hasClasses) {
       auto prev = this->cwd;
-      if (!imp->cwd.empty()) this->cwd = imp->cwd;
+      if (!imp->cwd.empty())
+        this->cwd = imp->cwd;
       if (imp->hasFunctions)
         imp->generateClasses(*this);
       else
@@ -272,4 +273,4 @@ asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
   }
   return OutputFile;
 }
-}  // namespace gen
+} // namespace gen

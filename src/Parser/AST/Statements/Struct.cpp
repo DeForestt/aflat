@@ -37,4 +37,4 @@ gen::GenerationResult const Struct::generate(gen::CodeGenerator &generator) {
   generator.globalScope = saveScope;
   return {asmc::File(), std::nullopt};
 }
-}  // namespace ast
+} // namespace ast

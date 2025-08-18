@@ -9,7 +9,7 @@ namespace ast {
  * @brief this class will represent a for loop
  */
 class For : public Statement {
- public:
+public:
   Statement *declare;
   Expr *expr;
   Statement *increment;
@@ -19,4 +19,4 @@ class For : public Statement {
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 
-}  // namespace ast
+} // namespace ast

@@ -67,8 +67,9 @@ Match::Case::Case(links::LinkedList<lex::Token *> &tokens,
   }
 }
 
-std::vector<Match::Case> const Match::parseCases(
-    links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
+std::vector<Match::Case> const
+Match::parseCases(links::LinkedList<lex::Token *> &tokens,
+                  parse::Parser &parser) {
   std::vector<Match::Case> cases;
   bool firstCase = true;
 
@@ -271,9 +272,10 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
   }
 
   // check for a default cases
-  auto defaultCaseIt = std::find_if(
-      cases.begin(), cases.end(),
-      [&](const Match::Case &c) { return c.pattern.aliasName == "_"; });
+  auto defaultCaseIt =
+      std::find_if(cases.begin(), cases.end(), [&](const Match::Case &c) {
+        return c.pattern.aliasName == "_";
+      });
   if (defaultCaseIt != cases.end()) {
     // push the scope for the default case
     gen::scope::ScopeManager::getInstance()->pushScope(true);
@@ -328,4 +330,4 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
   return {file, result};
 }
 
-}  // namespace ast
+} // namespace ast

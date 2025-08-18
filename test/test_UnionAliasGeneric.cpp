@@ -19,8 +19,10 @@ TEST_CASE("generic type in union alias", "[union][generics]") {
 
   bool result =
       build("tmp/ualias.af", "tmp/ualias.s", cfg::Mutability::Strict, false);
-  if (fs::exists("tmp/ualias.af")) fs::remove("tmp/ualias.af");
-  if (fs::exists("tmp/ualias.s")) fs::remove("tmp/ualias.s");
+  if (fs::exists("tmp/ualias.af"))
+    fs::remove("tmp/ualias.af");
+  if (fs::exists("tmp/ualias.s"))
+    fs::remove("tmp/ualias.s");
   fs::remove("tmp");
 
   REQUIRE(result);

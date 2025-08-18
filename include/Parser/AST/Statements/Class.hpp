@@ -7,7 +7,7 @@ namespace ast {
  * @brief This class will represent a class
  */
 class Class : public Statement {
- public:
+public:
   Ident ident;
   std::string base;
   std::vector<std::string> genericTypes = std::vector<std::string>();
@@ -30,4 +30,4 @@ class Class : public Statement {
     return this->genericTypes;
   }
 };
-};  // namespace ast
+}; // namespace ast

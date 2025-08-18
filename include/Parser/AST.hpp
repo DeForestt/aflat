@@ -14,11 +14,11 @@
 namespace parse {
 class Parser;
 struct Annotation;
-};  // namespace parse
+}; // namespace parse
 
 namespace gen {
 class CodeGenerator;
-};  // namespace gen
+}; // namespace gen
 
 namespace ast {
 
@@ -28,12 +28,12 @@ class Function;
 class DecArr;
 
 class ProgramMember {
- public:
+public:
   virtual std::string toString() { return ""; };
 };
 
 class Ident {
- public:
+public:
   std::string ident;
 };
 
@@ -48,22 +48,22 @@ enum class WhenJoiner {
 };
 
 class WhenPredicat {
- public:
+public:
   bool negated = false;
   WhenOperator op;
   std::string typeName;
   std::string ident;
-  WhenJoiner join = WhenJoiner::AND;  // relation to next predicate
+  WhenJoiner join = WhenJoiner::AND; // relation to next predicate
 };
 
 class When {
- public:
+public:
   std::vector<WhenPredicat> predicates;
 };
 
 class Statement {
- public:
-  std::optional<When> when;  // When clause for templates
+public:
+  std::optional<When> when; // When clause for templates
   bool locked = false;
   int logicalLine = 0;
   virtual std::string toString() { return ""; };
@@ -77,7 +77,7 @@ class Statement {
 };
 
 class Member {
- public:
+public:
   virtual std::string toString() { return ""; };
 };
 
@@ -107,18 +107,18 @@ enum Op {
 enum ScopeMod { Public, Private, Static, Export };
 
 class Expr : public Statement {
- public:
+public:
   virtual std::string toString() override { return ""; };
   Expr *extention = nullptr;
   bool selling = false;
   std::string typeCast = "";
-  virtual gen::GenerationResult const generateExpression(
-      gen::CodeGenerator &generator, asmc::Size size,
-      std::string typeHint = "");
+  virtual gen::GenerationResult const
+  generateExpression(gen::CodeGenerator &generator, asmc::Size size,
+                     std::string typeHint = "");
 };
 
 class ConditionalExpr {
- public:
+public:
   Expr *expr1;
   Op op;
   Expr *expr2;
@@ -129,7 +129,7 @@ class ConditionalExpr {
 };
 
 class Type {
- public:
+public:
   std::string typeName;
   asmc::Size size;
   asmc::OpType opType = asmc::Hard;
@@ -164,30 +164,30 @@ class Type {
 };
 
 class Arg {
- public:
+public:
   virtual std::string toString() { return ""; };
 };
 
 class Program {
- public:
+public:
   ProgramMember members;
 };
 
 class Argument : public Arg, public Statement {
- public:
+public:
   std::string Ident;
   Type type;
   std::string toString() override;
 };
 
 class ParenExpr : public Expr {
- public:
+public:
   Expr *expr;
   std::string toString() override { return "(" + expr->toString() + ")"; }
 };
 
 class CharLiteral : public Expr {
- public:
+public:
   char value;
   std::string toString() override { return std::string(1, value); }
 };
@@ -195,24 +195,24 @@ class CharLiteral : public Expr {
 class Iflush : public Statement {};
 
 class CWrite : public Statement {
- public:
+public:
   Expr *expr;
   std::string toString() override { return "cwrite(" + expr->toString() + ")"; }
 };
 
 class Push : public Statement {
- public:
+public:
   Expr *expr;
   std::string toString() override { return "push(" + expr->toString() + ")"; }
 };
 
 class Pull : public Statement {
- public:
+public:
   Expr *expr;
 };
 
 class Var : public Expr {
- public:
+public:
   std::string Ident;
   links::LinkedList<Expr *> indices;
   links::LinkedList<std::string> modList;
@@ -229,20 +229,20 @@ class Var : public Expr {
 };
 
 class Buy : public Expr {
- public:
+public:
   Expr *expr;
   std::string toString() override { return "$" + expr->toString(); }
 };
 
 class StringLiteral : public Expr {
- public:
+public:
   std::string val;
 
   std::string toString() override { return "\"" + val + "\""; }
 };
 
 class FStringLiteral : public Expr {
- public:
+public:
   std::string original;
   std::string val;
   std::vector<Expr *> args;
@@ -251,25 +251,25 @@ class FStringLiteral : public Expr {
 };
 
 class IntLiteral : public Expr {
- public:
+public:
   int val;
   std::string toString() override { return std::to_string(val); }
 };
 
 class FloatLiteral : public Expr {
- public:
+public:
   std::string val;
   std::string toString() override { return val; }
 };
 
 class LongLiteral : public Expr {
- public:
+public:
   int val;
   std::string toString() override { return std::to_string(val); }
 };
 
 class Compound : public Expr {
- public:
+public:
   Expr *expr1;
   Op op;
   Expr *expr2;
@@ -277,7 +277,7 @@ class Compound : public Expr {
 };
 
 class Reference : public Expr {
- public:
+public:
   std::string Ident;
   links::LinkedList<std::string> modList;
   bool internal = false;
@@ -292,7 +292,7 @@ class Reference : public Expr {
 };
 
 class DeReference : public Expr {
- public:
+public:
   std::string Ident;
   links::LinkedList<std::string> modList;
   Type type;
@@ -309,7 +309,7 @@ class DeReference : public Expr {
 };
 
 class CallExpr : public Expr {
- public:
+public:
   Call *call;
 
   std::vector<std::string> templateTypes;
@@ -317,19 +317,19 @@ class CallExpr : public Expr {
 };
 
 class parenExpr : public Expr {
- public:
+public:
   Expr *expr;
 
   std::string toString() override { return "(" + expr->toString() + ")"; }
 };
 
 class Lambda : public Expr {
- public:
+public:
   Function *function;
 };
 
 class NewExpr : public Expr {
- public:
+public:
   Type type;
   links::LinkedList<Expr *> args;
   std::vector<std::string> templateTypes;
@@ -352,18 +352,18 @@ class NewExpr : public Expr {
 };
 
 class StructList : public Expr {
- public:
+public:
   links::LinkedList<Expr *> args;
 };
 
 class Not : public Expr {
- public:
+public:
   Expr *expr;
   std::string toString() override { return "!" + expr->toString(); }
 };
 
 class IfExpr : public Expr {
- public:
+public:
   Expr *expr;
   Expr *trueExpr;
   Expr *falseExpr;
@@ -374,7 +374,7 @@ class IfExpr : public Expr {
 };
 
 class UnionConstructor : public Expr {
- public:
+public:
   ast::Type unionType;
   std::string variantName;
   Expr *expr;
@@ -386,16 +386,13 @@ class UnionConstructor : public Expr {
   }
   UnionConstructor(Type unionType, std::string variantName, Expr *expr,
                    bool dynamic, std::vector<std::string> templateTypes)
-      : unionType(unionType),
-        variantName(variantName),
-        expr(expr),
-        dynamic(dynamic),
-        templateTypes(std::move(templateTypes)) {}
+      : unionType(unionType), variantName(variantName), expr(expr),
+        dynamic(dynamic), templateTypes(std::move(templateTypes)) {}
   UnionConstructor() = default;
 
-  gen::GenerationResult const generateExpression(
-      gen::CodeGenerator &generator, asmc::Size size,
-      std::string typeHint = "") override;
+  gen::GenerationResult const
+  generateExpression(gen::CodeGenerator &generator, asmc::Size size,
+                     std::string typeHint = "") override;
 
   gen::GenerationResult const getStaticExpr(gen::CodeGenerator &generator,
                                             asmc::Size size,
@@ -408,6 +405,6 @@ class UnionConstructor : public Expr {
 
 Statement *deepCopy(const Statement *stmt);
 
-}  // namespace ast
+} // namespace ast
 
 #endif

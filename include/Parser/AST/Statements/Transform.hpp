@@ -5,7 +5,7 @@
 
 namespace ast {
 class Transform : public Statement {
- public:
+public:
   std::string ident;
   std::string _template;
 
@@ -20,4 +20,4 @@ class Transform : public Statement {
                         std::unordered_map<std::string, std::string> &args,
                         gen::CodeGenerator &generator);
 };
-};  // namespace ast
+}; // namespace ast
