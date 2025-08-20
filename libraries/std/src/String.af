@@ -8,6 +8,7 @@ import option from "Utils/option";
 import {optionWrapper, Some, None} from "Utils/option" under opt;
 import { exp } from "math" under math;
 import Error from "Utils/Error";
+import vector from "Collections/Vector";
 
 import * from "strings" under str;
 import {print, printInt, printHex} from "io" under io;

@@ -6,7 +6,7 @@ unique class tuple {
     private const T first = first;
     private const U second = second;
 
-    fn init(const T &&first, const U &&second) -> Self {
+    fn init(const T first, const U second) -> Self {
         return my;
     };
 
