@@ -79,6 +79,7 @@ private int clearChar(adr pointer, const int size){
 class File{
     adr fileName;
     int file;
+    bool it;
 
     fn write(const adr text) -> int {
         const int length = str.len(text);
@@ -122,6 +123,20 @@ class File{
         return l;
     };
 
+    fn next() -> option::<string> {
+        if !my.it {
+            return opt.None::<string>();
+        };
+        const char[256] ibuff;
+        const int eof = my.read(ibuff, '\n');
+        if (eof == 0) {
+            return opt.Some(new string(ibuff));
+        } else {
+            my.it = false;
+            return opt.Some(new string(ibuff));
+        };
+    };
+
     fn readToEnd() -> result::<string> {
         const int file = my.file;
         const fstat stat = newFstat(file);
@@ -159,6 +174,7 @@ export fn createFile(const adr fileName) -> File! {
         const File file = malloc(File);
         const long flag = #2 | #512 | #64; // O_RDWR | O_CREAT | O_TRUNC
         file.file = sys_open(fileName, flag, 0o0777);
+        file.it = true;
         const int test = file.file;
         if(test < 1) {
                 free(file);
@@ -172,6 +188,7 @@ export fn openFile(const adr fileName) -> File! {
         const File file = malloc(File);
         const long flag = #2;
         file.file = sys_open(fileName, flag, 0o0777);
+        file.it = true;
         const int test = file.file;
         if(test < 0){
                 free(file);
