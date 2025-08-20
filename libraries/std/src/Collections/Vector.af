@@ -11,6 +11,7 @@ import result from "Utils/result";
 import {accept, reject, resultWrapper} from "Utils/result" under res;
 import tuple from "Collections/Tuple";
 import {make_tuple} from "Collections/Tuple";
+import {print} from "String" under str;
 import Enumerator from "Collections/Enumerator";
 
 types(T)
@@ -79,7 +80,7 @@ class vector {
         };
 
         my.count = my.count - 1;
-        const T val = my.head + (my.count * T);
+        const adr val = my.head + (my.count * T);
         return opt.Some::<T>(val as T);
     };
 
@@ -90,7 +91,7 @@ class vector {
         };
         my.count = my.count - 1;
         const T val = my.head + (my.count * T);
-        return opt.Some(val);
+        return opt.Some(val as T);
     };
 
     when (T is primitive and T is not adr)
@@ -173,6 +174,49 @@ class vector {
 
     fn toString() -> string {
         return `vector(size={my.size}, count={my.count})`;
-    };
+    }
+
+    when (T is not primitive or T is adr)
+    fn sort(const adr comparator) -> void {
+        if my.count < 2 {
+            return;
+        };
+        // Implement a simple bubble sort for demonstration purposes
+        for int i = 0; i < my.count - 1; i = i + 1 {
+            for int j = 0; j < my.count - i - 1; j = j + 1 {
+                const adr a = my.head + (j * T);
+                const adr b = my.head + ((j + 1) * T);
+                if comparator(a, b) == true {
+                    // Swap elements
+                    const adr temp = malloc(T);
+                    memcpy(temp, a, T);
+                    memcpy(a, b, T);
+                    memcpy(b, temp, T);
+                    free(temp);
+                };
+            };
+        };
+    }
+
+   when (T is primitive and T is not adr)
+   fn sort(const adr comparator) -> void {
+       if my.count < 2 {
+           return;
+       };
+       // Implement a simple bubble sort for demonstration purposes
+       for int i = 0; i < my.count - 1; i = i + 1 {
+           for int j = 0; j < my.count - i - 1; j = j + 1 {
+               const adr a = my.head + (j * T);
+               const adr b = my.head + ((j + 1) * T);
+               const T a_val = a as T;
+               const T b_val = b as T;
+               const bool c = comparator(a_val, b_val);
+               if c == true {
+                    a =: b_val;
+                    b =: a_val;
+               };
+           };
+       };
+   }
 
 };
