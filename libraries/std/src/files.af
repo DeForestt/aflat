@@ -122,6 +122,16 @@ class File{
         return l;
     };
 
+    fn next() -> option::<string> {
+        const char[256] ibuff;
+        const int eof = my.read(ibuff, '\n');
+        if (eof == 0) {
+            return opt.Some(new string(ibuff));
+        } else {
+            return opt.None::<string>();
+        };
+    };
+
     fn readToEnd() -> result::<string> {
         const int file = my.file;
         const fstat stat = newFstat(file);
