@@ -2,7 +2,10 @@
 .needs <asm>
 .needs <request>
 
-import List from "Collections";
+import result from "Utils/result";
+import option from "Utils/option";
+import {accept, reject, resultWrapper} from "Utils/result" under res;
+import {Some, None, optionWrapper} from "Utils/option" under opt;
 import Map from "Utils/Map";
 import string from "String";
 import Error from "Utils/Error";
@@ -11,6 +14,7 @@ import {len, int_toString} from "strings" under str;
 import {print, printInt, fPrint, printHex} from "io" under io;
 import {worker} from "concurrency" under async;
 import {fString, print} from "String" under st;
+import vector from "Collections/Vector";
 
 class NotFoundError signs Error {
     // 404 Not Found
@@ -158,10 +162,14 @@ class HTTPHeader {
     HTTPHeader init(const adr key, const adr value) {
         return my;
     };
+
+    fn toString() -> string {
+        return `{my.key}: {my.value}`;
+    };
 };
 
 class HTTPMessage {
-    const private List headers = new List(HTTPHeader);
+    const private vector::<HTTPHeader> headers = new vector::<HTTPHeader>();
     private bool switch = false;
     const public Map query = new Map();
     string origin = new string("");
@@ -181,20 +189,20 @@ class HTTPMessage {
         firstLine.trim();
         const let firstLineParts = firstLine.split(' ');
 
-        if (firstLineParts.getCount() < 3) {
+        if (firstLineParts.count() < 3) {
             return -1;
         };
         my.version = firstLineParts.get(0).expect("Invalid HTTP message");
         my.statusCode = firstLineParts.get(1).expect("Invalid HTTP message");
         my.statusMessage = firstLineParts.get(2).expect("Invalid HTTP message");
 
-        for int i = 3; i < firstLineParts.getCount(); i++ {
+        for int i = 3; i < firstLineParts.count(); i++ {
             my.statusMessage = st.fString("%s %s", {my.statusMessage, firstLineParts.get(i)});
         };
 
         my.switch = false;
         
-        for int i = 0; i < lines.getCount(); i = i + 1 {
+        for int i = 0; i < lines.count(); i = i + 1 {
             const string line = lines.get(i).expect("Invalid HTTP message");
             if line == "\n" {
                 my.switch = true;
@@ -210,15 +218,15 @@ class HTTPMessage {
             };
 
             const let sections = line.split(':');
-            if sections.getCount() < 2 {
+            if sections.count() < 2 {
                 continue;
             };
 
             string key = sections.get(0).expect("Invalid HTTP message");
             string value = sections.get(1).expect("Invalid HTTP message");
 
-            if sections.getCount() > 2 {
-                for int j = 2; j < sections.getCount(); j = j + 1 {
+            if sections.count() > 2 {
+                for int j = 2; j < sections.count(); j = j + 1 {
                     value = value + ":";
                     const string t = sections.get(j).expect("Invalid HTTP message");
                     value = value + t;
@@ -227,9 +235,8 @@ class HTTPMessage {
             key = key.trim();
             value = value.trim();
             const HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
-            my.headers.pushBack(n);
+            my.headers.push_back($n);
         };
-
         return 0;
     };
 
@@ -274,7 +281,7 @@ class HTTPMessage {
         // firstLine.trim();
         const let firstLineParts = firstLine.split(' ');
 
-        if firstLineParts.getCount() < 3 {            
+        if firstLineParts.count() < 3 {            
             return;
         };
 
@@ -291,7 +298,7 @@ class HTTPMessage {
 
         my.switch = false;
 
-        for int i = 0; i < lines.getCount(); i = i + 1 {
+        for int i = 0; i < lines.count(); i = i + 1 {
             const string line = lines.get(i).expect("Invalid HTTP message");
             if line == "\n" {
                 my.switch = true;
@@ -307,15 +314,15 @@ class HTTPMessage {
             };
 
             const let sections = line.split(':');
-            if sections.getCount() < 2 {
+            if sections.count() < 2 {
                 continue;
             };
 
             string key = sections.get(0).expect("Invalid HTTP message");
             string value = sections.get(1).expect("Invalid HTTP message");
 
-            if sections.getCount() > 2 {
-                for int j = 2; j < sections.getCount(); j = j + 1 {
+            if sections.count() > 2 {
+                for int j = 2; j < sections.count(); j = j + 1 {
                     value = value + ":";
                     const string t = sections.get(j).expect("Invalid HTTP message");
                     value = value + t;
@@ -324,9 +331,9 @@ class HTTPMessage {
             key = key.trim();
             value = value.trim();
             const HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
-            my.headers.pushBack(n);
+            my.headers.push_back($n);
         };
-
+        return;
     };
 
     HTTPMessage init(const adr rsp, * const bool isReq) {
@@ -336,7 +343,7 @@ class HTTPMessage {
     adr getHeader(const adr key) {
         const adr args = malloc(adr);
         
-        for int i = 0; i < my.headers.getCount(); i = i + 1 {
+        for int i = 0; i < my.headers.count(); i = i + 1 {
             const HTTPHeader header = my.headers.get(i).expect("Get header failed");
             const adr comp = header.key;
             mutable string a = new string(header.key);
@@ -359,7 +366,7 @@ class HTTPRequest {
     private HTTPMethod method = method;
     private adr host;
     private adr endpoint;
-    const private List headers = new List(HTTPHeader);
+    const private vector::<HTTPHeader> headers = new vector::<HTTPHeader>();
     private adr body = "\r\n";
 
     HTTPRequest init(const HTTPMethod method) {
@@ -384,7 +391,7 @@ class HTTPRequest {
 
     int addHeader(const adr key, const adr value) {
         const HTTPHeader header = new HTTPHeader(key, value);
-        my.headers.pushBack(header);
+        my.headers.push_back($header);
     };
 
     void setBody(const adr body) {
@@ -396,29 +403,29 @@ class HTTPRequest {
     };
 
     public string getHeaders() {
-        string res = new string("");
-        for int i = 0; i < my.headers.getCount(); i = i + 1 {
+        string ret = new string("");
+        for int i = 0; i < my.headers.count(); i = i + 1 {
             const HTTPHeader header = my.headers.get(i).expect("Get header failed");
-            res = res + header.key;
-            res = res + ": ";
-            res = res + header.value;
-            res = res + "\r\n";
+            ret = ret + header.key;
+            ret = ret + ": ";
+            ret = ret + header.value;
+            ret = ret + "\r\n";
         };
-        return res;
+        return ret;
     };
 
     string toString() {
-        string res = new string("");
-        res = res + methodToString(my.method);
-        res = res + " ";
-        res = res + my.endpoint + " HTTP/1.1";
-        res = res + "\r\nHost: ";
-        res = res + my.host;
-        res = res + "\r\n";
-        res = res + my.getHeaders();
-        res = res + "\r\n";
-        res = res + my.body;
-        return res;
+        string ret = new string("");
+        ret = ret + methodToString(my.method);
+        ret = ret + " ";
+        ret = ret + my.endpoint + " HTTP/1.1";
+        ret = ret + "\r\nHost: ";
+        ret = ret + my.host;
+        ret = ret + "\r\n";
+        ret = ret + my.getHeaders();
+        ret = ret + "\r\n";
+        ret = ret + my.body;
+        return ret;
     };
 
     HTTPMessage send(const int bufferSize) {
@@ -428,13 +435,13 @@ class HTTPRequest {
         const adr endpoint = my.endpoint;
         const adr msg_prim = msg.cstr();
         request(host, endpoint, "80", msg_prim, buffer, bufferSize);
-        const let res = new string(buffer);
+        const let ret = new string(buffer);
         return new HTTPMessage(buffer);
-    };
+      };
 };
 
 class HTTPResponse {
-    const private List headers = new List(HTTPHeader);
+    const private vector::<HTTPHeader> headers = new vector::<HTTPHeader>();
     const private adr statusMessage = statusMessage;
     const private adr statusCode = statusCode;
     private adr body = body;
@@ -445,7 +452,7 @@ class HTTPResponse {
 
     void addHeader(const adr key, const adr value) {
         const HTTPHeader header = new HTTPHeader(key, value);
-        my.headers.pushBack(header);
+        my.headers.push_back($header);
         return;
     };
 
@@ -454,47 +461,47 @@ class HTTPResponse {
     };
 
     string getHeaders() {
-        string res = new string("");
-        for int i = 0; i < my.headers.getCount(); i = i + 1 {
+        string ret = new string("");
+        for int i = 0; i < my.headers.count(); i = i + 1 {
             const HTTPHeader header = my.headers.get(i).expect("Get header failed");
-            res = res + header.key;
-            res = res + ": ";
-            res = res + header.value;
-            res = res + "\r\n";
+            ret = ret + header.key;
+            ret = ret + ": ";
+            ret = ret + header.value;
+            ret = ret + "\r\n";
         };
-        return res;
+        return ret;
     };
 
     string toString() {
-        string res = new string("");
-        res = res + "HTTP/1.1 ";
-        res = res + my.statusCode;
-        res = res + " ";
-        res = res + my.statusMessage;
-        res = res + "\r\n";
-        res = res + my.getHeaders();
-        res = res + "\r\n";
-        res = res + my.body;
-        res = res + "\r\n";
-        return res;
+        string ret = new string("");
+        ret = ret + "HTTP/1.1 ";
+        ret = ret + my.statusCode;
+        ret = ret + " ";
+        ret = ret + my.statusMessage;
+        ret = ret + "\r\n";
+        ret = ret + my.getHeaders();
+        ret = ret + "\r\n";
+        ret = ret + my.body;
+        ret = ret + "\r\n";
+        return ret;
     };
 
     string getBody() {
-        string res = new string("");
-        res = res + my.body;
-        return res;
+        string ret = new string("");
+        ret = ret + my.body;
+        return ret;
     };
 
     string getStatusCode() {
-        string res = new string("");
-        res = res + my.statusCode;
-        return res;
+        string ret = new string("");
+        ret = ret + my.statusCode;
+        return ret;
     };
 
     string getStatusMessage() {
-        string res = new string("");
-        res = res + my.statusMessage;
-        return res;
+        string ret = new string("");
+        ret = ret + my.statusMessage;
+        return ret;
     };
 };
 
@@ -510,28 +517,32 @@ class EndPointStruct {
     adr _call(const adr ref, const HTTPMessage msg, * const any arg2, * const any arg3, * const any arg4) {
         return my.foo(ref, msg, arg2, arg3, arg4);
     };
+
+    fn toString() -> string {
+        return `EndPointStruct(path: {my.path}, method: {methodToString(my.method)}, foo: {my.foo != NULL})`;
+    };
 };
 
 class HTTPServer {
-    private List endpoints = new List(EndPointStruct);
-    
+    private vector::<EndPointStruct> endpoints = new vector::<EndPointStruct>();
+
     HTTPServer init() {
         return my;
     };
 
     private string get404Error() {
-        string res = new string("");
-        res = res + "HTTP/1.1 404 Not Found\r\n";
-        res = res + "Content-Type: text/html\r\n";
-        res = res + "Content-Length: 0\r\n";
-        res = res + "\r\n";
-        res = res + "<html><body><h1>404 Not Found</h1></body></html>\r\n";
-        return res;
+        string ret = new string("");
+        ret = ret + "HTTP/1.1 404 Not Found\r\n";
+        ret = ret + "Content-Type: text/html\r\n";
+        ret = ret + "Content-Length: 0\r\n";
+        ret = ret + "\r\n";
+        ret = ret + "<html><body><h1>404 Not Found</h1></body></html>\r\n";
+        return ret;
     };
 
     void registerEndpoint(const adr foo, const string path, const HTTPMethod method) {
         const EndPointStruct eps = new EndPointStruct(foo, path, method);
-        my.endpoints.pushBack(eps);
+        my.endpoints.push_back($eps);
         return;
     };
 
@@ -541,7 +552,7 @@ class HTTPServer {
         // HTTPMessage msg = new HTTPMessage(req);
         // string path = msg.endpoint;
         // HTTPMethod method = msg.method;
-        // for int i = 0; i < my.endpoints.getCount(); i = i + 1 {
+        // for int i = 0; i < my.endpoints.count(); i = i + 1 {
         //     EndPointStruct eps = my.endpoints.get(i);
         //     if (eps.path == path) & (eps.method == method) {
         //         HTTPMessage rs = new HTTPMessage(req);

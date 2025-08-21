@@ -1,9 +1,8 @@
 .needs <std>
 .needs <asm>
 
-import List from "Collections";
 import result from "Utils/result";
-import {accept, reject, resultWrapper} from "Utils/result" under prod;
+import {accept, reject, resultWrapper} from "Utils/result" under res;
 import option from "Utils/option";
 import {optionWrapper, Some, None} from "Utils/option" under opt;
 import { exp } from "math" under math;
@@ -211,25 +210,9 @@ safe dynamic class string {
         };
         return true;
     };
-
-    fn toInt() -> int! {
-        if !my.isNumeric() return prod.reject::<int>(new Error("String is not numeric"));
-        return str.str_toInt(my.head);
-    };
     
-    string concat<<+>>(const string other) {
-        const int myLen = str.len(my.head);
-        const int otherLen = str.len(other.head);
-        const adr newHead = malloc(myLen + otherLen + 1);
-        memcpy(newHead, my.head, myLen);
-        memcpy(newHead + myLen, other.head, otherLen + 1);
-        const string newString = new string(newHead);
-        free(newHead);
-        return newString;
-    };
-
-    List split(const char delim) {
-        const List list = new List(string, 1, string.del);
+    fn split(const char delim) -> vector::<string> {
+        const vector::<string> vec = new vector::<string>();
         const int myLen = str.len(my.head);
         adr buff = malloc(1);
         adr save = buff;
@@ -241,8 +224,7 @@ safe dynamic class string {
             if (c == delim) {
                 buff = buff + 1;
                 buff =: '\0';
-                const let s = new string(save);
-                list.pushBack(s);
+                vec.push_back(new string(save));
                 //free(save);
                 buffSize = 1;
             } else {
@@ -258,13 +240,13 @@ safe dynamic class string {
         const let s = new string(save);
         s.seal();
         s.permanent = true;
-        list.pushBack(s.get());
+        vec.push_back(s.get());
         free(save);
-        return list;
+        return vec;
     };
 
-    List splitAtFirst(const char delim) {
-        const List list = new List(string, 1, string.del);
+    fn splitAtFirst(const char delim) -> vector::<string> {
+        const vector::<string> vec = new vector::<string>();
         const int myLen = str.len(my.head);
         adr buff = malloc(1);
         adr save = buff;
@@ -277,7 +259,7 @@ safe dynamic class string {
                 buff = buff + 1;
                 buff =: '\0';
                 const let s = new string(save);
-                list.pushBack(s);
+                vec.push_back($s);
                 //free(save);
                 buffSize = 1;
                 break;
@@ -294,10 +276,27 @@ safe dynamic class string {
         const let s = new string(save);
         s.seal();
         s.permanent = true;
-        list.pushBack(s.get());
+        vec.push_back(s.get());
         free(save);
-        return list;
+        return vec;
     };
+
+    fn toInt() -> int! {
+        if !my.isNumeric() return res.reject::<int>(new Error("String is not numeric"));
+        return str.str_toInt(my.head);
+    };
+    
+    string concat<<+>>(const string other) {
+        const int myLen = str.len(my.head);
+        const int otherLen = str.len(other.head);
+        const adr newHead = malloc(myLen + otherLen + 1);
+        memcpy(newHead, my.head, myLen);
+        memcpy(newHead + myLen, other.head, otherLen + 1);
+        const string newString = new string(newHead);
+        free(newHead);
+        return newString;
+    };
+
 
     int forEach(const adr func, * const adr args) {
         const int myLen = str.len(my.head);
@@ -666,9 +665,9 @@ export int readInt(const string prompt,  ?const int tries) {
     };
 
     const string val = readString(prompt);
-    const let res = val.toInt();
+    const let ret = val.toInt();
 
-    match res {
+    match ret {
         Ok(x) => return x,
         Err(err) => {
             count = count - 1;
