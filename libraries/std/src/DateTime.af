@@ -3,6 +3,7 @@
 
 import string from "String";
 import {print} from "String" under str;
+import vector from "Collections/Vector";
 import result from "Utils/result";
 import option from "Utils/option";
 import Function from "Utils/Functions";
@@ -10,7 +11,6 @@ import Error from "Utils/Error";
 import Render from "Utils/Error/Render";
 import { accept, reject, resultWrapper } from "Utils/result" under res;
 import { optionWrapper, Some, None } from "Utils/option" under opt;
-import vector from "Collections/Vector";
 
 class DateTimeError signs Error {
     const string message = message.copy();
@@ -210,37 +210,6 @@ export DateTime Now(* int timeZone){
     return new DateTime(seconds);
 };
 
-export fn mmddyyyyToDate(const string input, *mutable char splitChar) -> DateTime! {
-    if splitChar == '\0' splitChar = '-';
-    const let l = input.split(splitChar);
-    if l.count() != 3 {
-        return res.reject::<DateTime>(new DateTimeError("Invalid date format"));
-    };
-    const string month = l.get(0).expect("Invalid date format");
-    const string day = l.get(1).expect("Invalid date format");
-    const string year = l.get(2).expect("Invalid date format");
-
-    const string err = "";
-
-    const int month = match month.toInt() {
-        Ok(value) => value,
-        Err(err) => return res.reject::<DateTime>(new DateTimeError(`Invalid month: {err}`))
-    };
-    const int day = match day.toInt() {
-        Ok(value) => value,
-        Err(err) => return res.reject::<DateTime>(new DateTimeError(`Invalid day: {err}`))
-    };
-    const int year = match year.toInt() {
-        Ok(value) => value,
-        Err(err) => return res.reject::<DateTime>(new DateTimeError(`Invalid year: {err}`))
-    };
-
-    if err.len() > 0 return res.reject::<DateTime>(new DateTimeError(err));
-
-    const int seconds = dateRelativeTo(month, day, year, 1970) * 86400;
-
-    return res.accept(new DateTime(seconds));
-};
 
 private int longToInt(const long l) {
     const int[2] buffer;
