@@ -72,3 +72,76 @@ TEST_CASE("when resolution checks primitive", "[when][resolution]") {
   w.predicates.push_back(pred2);
   CHECK(gen.whenSatisfied(w));
 }
+
+TEST_CASE("GenTable skips statements with failing when", "[when][codegen]") {
+  parse::Parser p;
+  gen::CodeGenerator gen("mod", p, "",
+                         std::filesystem::current_path().string());
+
+  links::LinkedList<gen::Symbol> table;
+  auto *decl = new ast::Declare();
+  decl->ident = "x";
+  decl->type = ast::Type("int", asmc::DWord);
+
+  ast::When w;
+  ast::WhenPredicat pred;
+  pred.op = ast::WhenOperator::IS;
+  pred.typeName = "Foo";
+  pred.ident = "primitive";
+  pred.negated = false;
+  w.predicates.push_back(pred);
+  decl->when = w;
+
+  gen.GenTable(decl, table);
+  CHECK(table.head == nullptr);
+}
+
+TEST_CASE("GenArgs skips statements with failing when", "[when][codegen]") {
+  parse::Parser p;
+  gen::CodeGenerator gen("mod", p, "",
+                         std::filesystem::current_path().string());
+
+  ast::Function func;
+  func.argTypes.push_back(ast::Type("int", asmc::DWord));
+  asmc::File outFile;
+  int index = 0;
+
+  auto *decl = new ast::Declare();
+  decl->ident = "x";
+  decl->type = ast::Type("int", asmc::DWord);
+
+  ast::When w;
+  ast::WhenPredicat pred;
+  pred.op = ast::WhenOperator::IS;
+  pred.typeName = "Foo";
+  pred.ident = "primitive";
+  pred.negated = false;
+  w.predicates.push_back(pred);
+  decl->when = w;
+
+  auto out = gen.GenArgs(decl, outFile, func, index);
+  CHECK(out.text.head == nullptr);
+  CHECK(index == 0);
+}
+
+TEST_CASE("ImportsOnly skips statements with failing when", "[when][codegen]") {
+  parse::Parser p;
+  gen::CodeGenerator gen("mod", p, "",
+                         std::filesystem::current_path().string());
+
+  auto *decl = new ast::Declare();
+  decl->ident = "x";
+  decl->type = ast::Type("int", asmc::DWord);
+
+  ast::When w;
+  ast::WhenPredicat pred;
+  pred.op = ast::WhenOperator::IS;
+  pred.typeName = "Foo";
+  pred.ident = "primitive";
+  pred.negated = false;
+  w.predicates.push_back(pred);
+  decl->when = w;
+
+  auto out = gen.ImportsOnly(decl);
+  CHECK(out.text.head == nullptr);
+}

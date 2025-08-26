@@ -17,6 +17,10 @@ namespace gen {
 links::LinkedList<gen::Symbol>
 gen::CodeGenerator::GenTable(ast::Statement *STMT,
                              links::LinkedList<gen::Symbol> &table) {
+  if (STMT->when && !this->whenSatisfied(*STMT->when)) {
+    return table;
+  }
+
   if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
     ast::Sequence *sequence = dynamic_cast<ast::Sequence *>(STMT);
     this->GenTable(sequence->Statement1, table);
@@ -76,6 +80,10 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
                                        asmc::File &OutputFile,
                                        const ast::Function &func, int &index) {
   asmc::File output;
+  if (STMT->when && !this->whenSatisfied(*STMT->when)) {
+    return output;
+  }
+
   if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
     ast::Sequence *sequence = dynamic_cast<ast::Sequence *>(STMT);
     output << this->GenArgs(sequence->Statement1, OutputFile, func, index);
@@ -251,6 +259,10 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
 
 asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
   asmc::File OutputFile = asmc::File();
+  if (STMT->when && !this->whenSatisfied(*STMT->when)) {
+    return OutputFile;
+  }
+
   if (STMT->locked) {
     auto *inst = new asmc::nop();
     inst->logicalLine = STMT->logicalLine;
