@@ -5,6 +5,11 @@
 template <typename Z> class HashMap {
 public:
   HashMap();
+  ~HashMap();
+  HashMap(const HashMap &other);
+  HashMap &operator=(const HashMap &other);
+  HashMap(HashMap &&other) noexcept;
+  HashMap &operator=(HashMap &&other) noexcept;
   void insert(std::string key, Z value);
   Z get(std::string key);
   void remove(std::string key);
@@ -31,6 +36,85 @@ template <typename Z> HashMap<Z>::HashMap() {
   for (int i = 0; i < this->tableSize; i++) {
     this->table[i] = nullptr;
   }
+}
+
+template <typename Z> HashMap<Z>::~HashMap() {
+  clear();
+  delete[] this->table;
+  this->table = nullptr;
+  this->tableSize = 0;
+}
+
+template <typename Z> HashMap<Z>::HashMap(const HashMap &other) : HashMap() {
+  delete[] this->table;
+  this->tableSize = other.tableSize;
+  this->table = new Node *[this->tableSize];
+  for (int i = 0; i < this->tableSize; ++i)
+    this->table[i] = nullptr;
+  for (int i = 0; i < other.tableSize; ++i) {
+    Node *curr = other.table[i];
+    Node **tail = &this->table[i];
+    while (curr != nullptr) {
+      Node *newNode = new Node();
+      newNode->key = curr->key;
+      newNode->value = curr->value;
+      newNode->next = nullptr;
+      *tail = newNode;
+      tail = &newNode->next;
+      curr = curr->next;
+    }
+  }
+  this->count = other.count;
+}
+
+template <typename Z> HashMap<Z> &HashMap<Z>::operator=(const HashMap &other) {
+  if (this != &other) {
+    clear();
+    delete[] this->table;
+    this->tableSize = other.tableSize;
+    this->table = new Node *[this->tableSize];
+    for (int i = 0; i < this->tableSize; ++i)
+      this->table[i] = nullptr;
+    for (int i = 0; i < other.tableSize; ++i) {
+      Node *curr = other.table[i];
+      Node **tail = &this->table[i];
+      while (curr != nullptr) {
+        Node *newNode = new Node();
+        newNode->key = curr->key;
+        newNode->value = curr->value;
+        newNode->next = nullptr;
+        *tail = newNode;
+        tail = &newNode->next;
+        curr = curr->next;
+      }
+    }
+    this->count = other.count;
+  }
+  return *this;
+}
+
+template <typename Z> HashMap<Z>::HashMap(HashMap &&other) noexcept {
+  this->table = other.table;
+  this->tableSize = other.tableSize;
+  this->count = other.count;
+  other.table = nullptr;
+  other.tableSize = 0;
+  other.count = 0;
+}
+
+template <typename Z>
+HashMap<Z> &HashMap<Z>::operator=(HashMap &&other) noexcept {
+  if (this != &other) {
+    clear();
+    delete[] this->table;
+    this->table = other.table;
+    this->tableSize = other.tableSize;
+    this->count = other.count;
+    other.table = nullptr;
+    other.tableSize = 0;
+    other.count = 0;
+  }
+  return *this;
 }
 
 template <typename Z> void HashMap<Z>::insert(std::string key, Z value) {
@@ -84,6 +168,8 @@ template <typename Z> void HashMap<Z>::remove(std::string key) {
 }
 
 template <typename Z> void HashMap<Z>::clear() {
+  if (!this->table)
+    return;
   for (int i = 0; i < this->tableSize; i++) {
     Node *curr = this->table[i];
     while (curr != nullptr) {
@@ -91,6 +177,7 @@ template <typename Z> void HashMap<Z>::clear() {
       curr = curr->next;
       delete temp;
     }
+    this->table[i] = nullptr;
   }
   this->count = 0;
 }

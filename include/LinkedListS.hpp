@@ -155,8 +155,14 @@ template <typename T, typename Z> links::SLinkedList<T, Z>::~SLinkedList() {
 template <typename T, typename Z>
 links::SLinkedList<T, Z>::SLinkedList(const SLinkedList &other)
     : SLinkedList() {
-  for (const auto &v : other)
-    push(v);
+  foo = other.foo;
+  Node<T> **tail = &head;
+  for (const auto &v : other) {
+    Node<T> *n = new Node<T>(v);
+    *tail = n;
+    tail = &n->next;
+    ++count;
+  }
 }
 
 template <typename T, typename Z>
@@ -164,8 +170,14 @@ links::SLinkedList<T, Z> &
 links::SLinkedList<T, Z>::operator=(const SLinkedList &other) {
   if (this != &other) {
     clear();
-    for (const auto &v : other)
-      push(v);
+    foo = other.foo;
+    Node<T> **tail = &head;
+    for (const auto &v : other) {
+      Node<T> *n = new Node<T>(v);
+      *tail = n;
+      tail = &n->next;
+      ++count;
+    }
   }
   return *this;
 }
