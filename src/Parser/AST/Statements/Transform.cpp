@@ -73,8 +73,10 @@ Transform::parse(const std::string &ident, std::string &type, std::string &expr,
   lex::Lexer l = lex::Lexer();
   PreProcessor pp = PreProcessor();
 
-  auto tokens = l.Scan(pp.PreProcess(result, gen::utils::getLibPath("head")));
-  tokens.invert();
+  auto tokenPtrs =
+      l.Scan(pp.PreProcess(result, gen::utils::getLibPath("head")));
+  tokenPtrs.invert();
+  auto tokens = lex::toRawList(tokenPtrs);
   // parse the file
   ast::Statement *statement = generator.parser.parseStmt(tokens);
   auto Lowerer = parse::lower::Lowerer(statement, true);
