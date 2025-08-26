@@ -3,18 +3,21 @@
 #include <ctype.h>
 
 #include <iostream>
+#include <memory>
 
 #include "Exceptions.hpp"
 
-LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
-  LinkedList<lex::Token *> tokens = LinkedList<lex::Token *>();
+LinkedList<std::shared_ptr<lex::Token>> lex::Lexer::Scan(string input,
+                                                         int startLine) {
+  LinkedList<std::shared_ptr<lex::Token>> tokens =
+      LinkedList<std::shared_ptr<lex::Token>>();
   int i = 0;
   int lineCount = startLine;
   while (i < input.length()) {
     if (input[i] == '\n')
       lineCount++;
     if (std::isalpha(input[i]) || input[i] == '_') {
-      auto l_obj = new LObj();
+      auto l_obj = std::make_shared<LObj>();
       l_obj->meta = "";
       while (std::isalpha(input[i]) || std::isdigit(input[i]) ||
              input[i] == '_') {
@@ -26,13 +29,13 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
     } else if (std::isdigit(input[i]) || input[i] == '-') {
       if (input[i] == '-' && !std::isdigit(input[i + 1])) {
         if (input[i + 1] == '>') {
-          auto sym = new lex::Symbol;
+          auto sym = std::make_shared<lex::Symbol>();
           sym->meta = "->";
           i += 2;
           sym->lineCount = lineCount;
           tokens << sym;
         } else {
-          auto sym = new lex::OpSym;
+          auto sym = std::make_shared<lex::OpSym>();
           sym->Sym = '-';
           i++;
           sym->lineCount = lineCount;
@@ -40,7 +43,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
         }
       } else if (input[i] == '0' && input[i + 1] == 'x') {
         i += 2;
-        auto intLit = new lex::INT();
+        auto intLit = std::make_shared<lex::INT>();
         intLit->value = "0x";
         while (std::isxdigit(input[i])) {
           intLit->value += input[i];
@@ -50,7 +53,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
         tokens << intLit;
       } else if (input[i] == '0' && input[i + 1] == 'o') {
         i += 2;
-        auto intLit = new lex::INT();
+        auto intLit = std::make_shared<lex::INT>();
         intLit->value = "0o";
         while (input[i] >= '0' && input[i] <= '7') {
           intLit->value += input[i];
@@ -59,7 +62,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
         intLit->lineCount = lineCount;
         tokens << intLit;
       } else {
-        auto IntLit = new lex::INT();
+        auto IntLit = std::make_shared<lex::INT>();
         IntLit->value = input[i];
         i++;
 
@@ -77,7 +80,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
                                  " on line " + std::to_string(lineCount));
           }
 
-          auto FloatLit = new lex::FloatLit();
+          auto FloatLit = std::make_shared<lex::FloatLit>();
           FloatLit->value = IntLit->value;
           FloatLit->lineCount = lineCount;
           tokens << FloatLit;
@@ -85,7 +88,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
           tokens << IntLit;
       }
     } else if (input[i] == '#') {
-      auto *IntLit = new lex::Long();
+      auto IntLit = std::make_shared<lex::Long>();
       i++;
 
       while (std::isdigit(input[i])) {
@@ -97,7 +100,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
     } else if (std::isspace(input[i])) {
       i++;
     } else if (input[i] == '\"') {
-      auto *stringObj = new StringObj();
+      auto stringObj = std::make_shared<StringObj>();
       stringObj->value = "";
       i++;
       while (input[i] != '\"') {
@@ -136,7 +139,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
       stringObj->lineCount = lineCount;
       tokens.push(stringObj);
     } else if (input[i] == '`') {
-      auto *stringObj = new FStringObj();
+      auto stringObj = std::make_shared<FStringObj>();
       stringObj->value = "";
       i++;
       while (input[i] != '`') {
@@ -175,7 +178,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
       stringObj->lineCount = lineCount;
       tokens.push(stringObj);
     } else if (input[i] == '~') {
-      auto *stringObj = new lex::StringObj();
+      auto stringObj = std::make_shared<lex::StringObj>();
       stringObj->value = "";
       i++;
       while (input[i] != '~') {
@@ -190,7 +193,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
       stringObj->lineCount = lineCount;
       tokens.push(stringObj);
     } else if (input[i] == '\'') {
-      auto charobj = new CharObj();
+      auto charobj = std::make_shared<CharObj>();
       i++;
       if (input[i] == '\\') {
         i++;
@@ -223,63 +226,63 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
       tokens << charobj;
       i++;
     } else if (input[i] == ';') {
-      auto semi = new OpSym;
+      auto semi = std::make_shared<OpSym>();
       semi->Sym = input[i];
       semi->lineCount = lineCount;
       tokens.push(semi);
       i++;
     } else if (input[i] == '?') {
-      auto Ref = new lex::Ref;
+      auto Ref = std::make_shared<lex::Ref>();
       Ref->lineCount = lineCount;
       tokens << Ref;
       i++;
     } else if (input[i] == '(') {
-      auto cPrenth = new OpSym;
+      auto cPrenth = std::make_shared<OpSym>();
       cPrenth->Sym = input[i];
       cPrenth->lineCount = lineCount;
       tokens.push(cPrenth);
       i++;
     } else if (input[i] == ')') {
-      auto cPrenth = new OpSym;
+      auto cPrenth = std::make_shared<OpSym>();
       cPrenth->Sym = input[i];
       cPrenth->lineCount = lineCount;
       tokens.push(cPrenth);
       i++;
     } else if (input[i] == '{') {
-      auto cPrenth = new OpSym;
+      auto cPrenth = std::make_shared<OpSym>();
       cPrenth->Sym = input[i];
       cPrenth->lineCount = lineCount;
       tokens.push(cPrenth);
       i++;
     } else if (input[i] == '}') {
-      lex::OpSym *cPrenth = new OpSym;
+      auto cPrenth = std::make_shared<OpSym>();
       cPrenth->Sym = input[i];
       cPrenth->lineCount = lineCount;
       tokens.push(cPrenth);
       i++;
     } else if (input[i] == '=') {
       if (input[i + 1] == '=') {
-        auto equ = new lex::Symbol;
+        auto equ = std::make_shared<lex::Symbol>();
         equ->meta = "==";
         i++;
         equ->lineCount = lineCount;
         tokens << equ;
       } else {
-        auto equ = new OpSym;
+        auto equ = std::make_shared<OpSym>();
         equ->Sym = input[i];
         equ->lineCount = lineCount;
         tokens << equ;
       }
       i++;
     } else if (input[i] == '<') {
-      auto sym = new lex::Symbol;
+      auto sym = std::make_shared<lex::Symbol>();
       sym->meta = "<";
       if (input[i + 1] == '<') {
-        auto opSym = new lex::OpSym;
+        auto opSym = std::make_shared<lex::OpSym>();
         opSym->Sym = '<';
         opSym->lineCount = lineCount;
         tokens << opSym;
-        free(sym);
+
         i++;
       } else if (input[i + 1] == '=') {
         sym->meta = "<=";
@@ -292,13 +295,12 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
       }
       i++;
     } else if (input[i] == '>') {
-      auto *sym = new lex::Symbol;
+      auto sym = std::make_shared<lex::Symbol>();
       sym->meta = ">";
       if (input[i + 1] == '>') {
-        auto *opSym = new lex::OpSym;
+        auto opSym = std::make_shared<lex::OpSym>();
         opSym->Sym = '>';
         opSym->lineCount = lineCount;
-        free(sym);
         tokens << opSym;
         i++;
       } else if (input[i + 1] == '=') {
@@ -312,13 +314,12 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
       }
       i++;
     } else if (input[i] == '|') {
-      auto *sym = new lex::OpSym;
+      auto sym = std::make_shared<lex::OpSym>();
       sym->Sym = '|';
       if (input[i + 1] == '|') {
-        auto opSym = new lex::Symbol;
+        auto opSym = std::make_shared<lex::Symbol>();
         opSym->meta = "||";
         opSym->lineCount = lineCount;
-        free(sym);
         tokens << opSym;
         i++;
       } else {
@@ -328,67 +329,67 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
       i++;
     } else if (input[i] == '!') {
       if (input[i + 1] == '=') {
-        auto equ = new lex::Symbol;
+        auto equ = std::make_shared<lex::Symbol>();
         equ->meta = "!=";
         i++;
         equ->lineCount = lineCount;
         tokens << equ;
       } else {
-        auto equ = new OpSym;
+        auto equ = std::make_shared<OpSym>();
         equ->Sym = input[i];
         equ->lineCount = lineCount;
         tokens << equ;
       }
       i++;
     } else if (input[i] == ',') {
-      auto com = new OpSym;
+      auto com = std::make_shared<OpSym>();
       com->Sym = input[i];
       com->lineCount = lineCount;
       tokens.push(com);
       i++;
     } else if (input[i] == '+') {
-      auto add = new OpSym;
+      auto add = std::make_shared<OpSym>();
       add->Sym = input[i];
       add->lineCount = lineCount;
       tokens.push(add);
       i++;
     } else if (input[i] == '[') {
-      auto add = new OpSym;
+      auto add = std::make_shared<OpSym>();
       add->Sym = input[i];
       add->lineCount = lineCount;
       tokens.push(add);
       i++;
     } else if (input[i] == ']') {
-      auto add = new OpSym;
+      auto add = std::make_shared<OpSym>();
       add->Sym = input[i];
       add->lineCount = lineCount;
       tokens.push(add);
       i++;
     } else if (input[i] == '*') {
-      auto mul = new OpSym;
+      auto mul = std::make_shared<OpSym>();
       mul->Sym = input[i];
       mul->lineCount = lineCount;
       tokens << mul;
       i++;
     } else if (input[i] == '^') {
-      auto carrot = new OpSym;
+      auto carrot = std::make_shared<OpSym>();
       carrot->Sym = input[i];
       carrot->lineCount = lineCount;
       tokens << carrot;
       i++;
     } else if (input[i] == '%') {
-      auto mul = new OpSym;
+      auto mul = std::make_shared<OpSym>();
       mul->Sym = input[i];
       mul->lineCount = lineCount;
       tokens << mul;
       i++;
     } else if (input[i] == ':') {
-      auto col = new OpSym;
+      auto col = std::make_shared<OpSym>();
       col->Sym = input[i];
       col->lineCount = lineCount;
       i++;
       if (input[i] == ':') {
-        auto sym = new lex::Symbol;
+        auto sym = std::make_shared<lex::Symbol>();
         sym->meta = "::";
         sym->lineCount = lineCount;
         tokens << sym;
@@ -397,31 +398,31 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
         tokens << col;
       }
     } else if (input[i] == '@') {
-      auto at = new OpSym;
+      auto at = std::make_shared<OpSym>();
       at->Sym = input[i];
       at->lineCount = lineCount;
       tokens << at;
       i++;
     } else if (input[i] == '.') {
-      auto mul = new OpSym;
+      auto mul = std::make_shared<OpSym>();
       mul->Sym = input[i];
       mul->lineCount = lineCount;
       tokens << mul;
       i++;
     } else if (input[i] == '/') {
-      auto div = new OpSym;
+      auto div = std::make_shared<OpSym>();
       div->Sym = input[i];
       div->lineCount = lineCount;
       tokens << div;
       i++;
     } else if (input[i] == '&') {
-      auto andBit = new OpSym;
+      auto andBit = std::make_shared<OpSym>();
       andBit->Sym = input[i];
       andBit->lineCount = lineCount;
       tokens << andBit;
       i++;
     } else if (input[i] == '$') {
-      auto dollar = new OpSym;
+      auto dollar = std::make_shared<OpSym>();
       dollar->Sym = input[i];
       dollar->lineCount = lineCount;
       tokens << dollar;
@@ -432,7 +433,7 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
                            std::to_string(lineCount));
     }
   }
-  auto last_semi = new lex::OpSym;
+  auto last_semi = std::make_shared<lex::OpSym>();
   last_semi->Sym = ';';
   last_semi->lineCount = lineCount;
   tokens.push(last_semi);

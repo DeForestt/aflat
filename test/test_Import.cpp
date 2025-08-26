@@ -15,8 +15,9 @@ TEST_CASE("Parser handles mixed import of classes and functions", "[parser]") {
   lex::Lexer l;
   PreProcessor pp;
   auto code = pp.PreProcess("import Foo, {bar} from \"Mod\" under m;", "", "");
-  auto tokens = l.Scan(code);
-  tokens.invert();
+  auto tokenPtrs = l.Scan(code);
+  tokenPtrs.invert();
+  auto tokens = lex::toRawList(tokenPtrs);
   parse::Parser p;
   ast::Statement *stmt = p.parseStmt(tokens);
   auto *seq = dynamic_cast<ast::Sequence *>(stmt);
@@ -40,8 +41,9 @@ TEST_CASE("ImportsOnly ignores functions in mixed import", "[codegen]") {
   PreProcessor pp;
   auto code =
       pp.PreProcess("import Foo, {bar} from \"./Temp\" under m;", "", "");
-  auto tokens = l.Scan(code);
-  tokens.invert();
+  auto tokenPtrs = l.Scan(code);
+  tokenPtrs.invert();
+  auto tokens = lex::toRawList(tokenPtrs);
   parse::Parser p;
   ast::Statement *stmt = p.parseStmt(tokens);
   auto *seq = dynamic_cast<ast::Sequence *>(stmt);
@@ -73,8 +75,9 @@ TEST_CASE("Import applies nested namespaces", "[namespaces]") {
   lex::Lexer l;
   PreProcessor pp;
   auto code = pp.PreProcess("import {call} from \"./Outer\";", "", "");
-  auto tokens = l.Scan(code);
-  tokens.invert();
+  auto tokenPtrs = l.Scan(code);
+  tokenPtrs.invert();
+  auto tokens = lex::toRawList(tokenPtrs);
   parse::Parser p;
   ast::Statement *stmt = p.parseStmt(tokens);
   auto *seq = dynamic_cast<ast::Sequence *>(stmt);
@@ -92,8 +95,9 @@ TEST_CASE("Import applies nested namespaces", "[namespaces]") {
   outerFile.close();
   lex::Lexer l2;
   PreProcessor pp2;
-  auto t2 = l2.Scan(pp2.PreProcess(outerCode, "", ""));
-  t2.invert();
+  auto t2Ptrs = l2.Scan(pp2.PreProcess(outerCode, "", ""));
+  t2Ptrs.invert();
+  auto t2 = lex::toRawList(t2Ptrs);
   parse::Parser p2;
   ast::Statement *root = p2.parseStmt(t2);
   std::unordered_map<std::string, std::string> map;
@@ -161,8 +165,9 @@ TEST_CASE("Imports handle parent directory paths", "[imports]") {
   lex::Lexer l;
   PreProcessor pp;
   auto code = pp.PreProcess("import {call} from \"./sub/Outer\";", "", "");
-  auto tokens = l.Scan(code);
-  tokens.invert();
+  auto tokenPtrs = l.Scan(code);
+  tokenPtrs.invert();
+  auto tokens = lex::toRawList(tokenPtrs);
   parse::Parser p;
   ast::Statement *stmt = p.parseStmt(tokens);
   auto *seq = dynamic_cast<ast::Sequence *>(stmt);
@@ -198,8 +203,9 @@ TEST_CASE("ImportsOnly uses import working directory", "[imports]") {
   PreProcessor pp;
   auto code =
       pp.PreProcess("import {info} from \"./FlatLog\" under log;", "", "");
-  auto tokens = l.Scan(code);
-  tokens.invert();
+  auto tokenPtrs = l.Scan(code);
+  tokenPtrs.invert();
+  auto tokens = lex::toRawList(tokenPtrs);
   parse::Parser p;
   ast::Statement *stmt = p.parseStmt(tokens);
   auto *seq = dynamic_cast<ast::Sequence *>(stmt);
