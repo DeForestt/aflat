@@ -48,6 +48,9 @@ class vector {
             my.head = realloc(my.head, T * my.size);
         };
 
+        when (T is safe and T has get and T is not adr)
+        value.get();
+
         memcpy(my.head + (my.count * T), value, T);
         my.count = my.count + 1;
         return my;
@@ -109,6 +112,8 @@ class vector {
             return opt.None::<T>();
         };
         const T val = my.head + (index * T);
+        when (T is safe and T has get and T is not adr)
+        value.get();
         return opt.Some(val);
     };
 
