@@ -499,6 +499,19 @@ bool gen::CodeGenerator::whenSatisfied(const ast::When &when) {
       if (pred.negated && isPrim)
         return false;
       return true;
+    } else if (pred.op == ast::WhenOperator::IS && pred.ident == "safe") {
+      auto file = asmc::File();
+      auto type = this->getType(pred.typeName, file);
+      auto cls = dynamic_cast<gen::Class *>(*type);
+      if (!cls)
+        return false;
+
+      bool isSafe = cls->safeType;
+      if (!pred.negated && !isSafe)
+        return false;
+      if (pred.negated && isSafe)
+        return false;
+      return true;
     } else if (pred.op == ast::WhenOperator::IS) {
       auto equal = pred.typeName == pred.ident;
       if (!pred.negated && !equal)
