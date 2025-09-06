@@ -431,7 +431,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     }
   } else if (dynamic_cast<ast::Buy *>(expr) != nullptr) {
     auto buy = dynamic_cast<ast::Buy *>(expr);
-    // for now, we will onlt support buying of a variable (lvalue)
+    // for now, we will only support buying of a variable (lvalue)
     auto var = dynamic_cast<ast::Var *>(buy->expr);
     if (var == nullptr) {
       this->alert("buying of non-variable not supported", true, __FILE__,
@@ -449,14 +449,28 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     gen::Symbol *sym = &std::get<1>(resolved);
 
-    // find the _sell function if it exists
+    // Step 1: allocate stack storage for a copy of the value
+    const auto tempName = "$" + std::to_string(this->tempCount++) + "_sell_tmp";
+    int byteMod = gen::scope::ScopeManager::getInstance()->assign(
+        tempName, sym->type, false);
+    std::string dest = "-" + std::to_string(byteMod) + "(%rbp)";
+
+    // Step 2: copy the value to the new storage
+    if (parse::PRIMITIVE_TYPES.find(sym->type.typeName) !=
+        parse::PRIMITIVE_TYPES.end()) {
+      OutputFile << this->setOffset(dest, 0, std::get<0>(resolved),
+                                    sym->type.size);
+    } else {
+      int bytes = sym->type.arraySize * gen::utils::sizeToInt(sym->type.size);
+      OutputFile << this->memMove(std::get<0>(resolved), dest, bytes);
+    }
+
+    // Step 3: call the _sell function on the original object if present
     gen::Type **type = this->typeList[sym->type.typeName];
     if (type != nullptr) {
       gen::Class *classType = dynamic_cast<gen::Class *>(*type);
       if (classType != nullptr) {
-        // check if the class has a destructor
         ast::Function *destructor = classType->nameTable["_sell"];
-
         if (destructor != nullptr) {
           ast::Call *call = new ast::Call();
           call->ident = var->Ident;
@@ -466,20 +480,25 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           ast::CallExpr *callExpr = new ast::CallExpr();
           callExpr->call = call;
           callExpr->logicalLine = this->logicalLine;
-          output = this->GenExpr(callExpr, OutputFile);
-        } else {
-          // just sell it normally
-          output = this->GenExpr(var, OutputFile);
+          this->GenExpr(callExpr, OutputFile);
         }
-      } else {
-        output = this->GenExpr(var, OutputFile);
       }
-    } else {
-      output = this->GenExpr(var, OutputFile);
     }
 
-    // set the symbol to sold...
-    std::get<4>(resolved)->sold = this->logicalLine;
+    // Step 4: return a pointer to the newly copied value
+    asmc::Lea *lea = new asmc::Lea();
+    lea->logicalLine = this->logicalLine;
+    lea->from = dest;
+    lea->to = this->registers["%rax"]->get(asmc::QWord);
+    OutputFile.text << lea;
+
+    output.access = lea->to;
+    output.size = asmc::QWord;
+    output.type = sym->type.typeName;
+
+    // mark the original symbol as sold; re-fetch in case assign() reallocated
+    auto *soldSym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
+    if (soldSym) soldSym->sold = this->logicalLine;
   } else if (dynamic_cast<ast::Reference *>(expr) != nullptr) {
     ast::Reference ref = *dynamic_cast<ast::Reference *>(expr);
 
