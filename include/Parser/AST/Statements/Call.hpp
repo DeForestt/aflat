@@ -17,6 +17,7 @@ public:
   links::LinkedList<std::string> modList;
   std::vector<std::string> genericTypes;
   std::string publify = "";
+  bool slick = false;
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   Call() = default;
   Call(const std::string &ident, const links::LinkedList<Expr *> &args,

@@ -125,6 +125,11 @@ safe dynamic class string {
         return my;
     };
 
+    fn __copy__() -> string {
+        const let n = new string(my.head);
+        return n;
+    };
+
     char at(const int index) {
         if index < 0 | index >= str.len(my.head) return '\0';
         return str.str_at(my.head, index);

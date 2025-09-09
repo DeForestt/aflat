@@ -378,7 +378,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     func->type.typeName = this->publify;
     func->type.size = asmc::QWord;
     func->scopeName = this->publify;
-    if (ident != "init" && ident != "del") {
+    if (ident != "init" && ident != "del" && !this->slick) {
       // find the function in the class
       gen::Class *cl =
           dynamic_cast<gen::Class *>(*generator.typeList[this->publify]);

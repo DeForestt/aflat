@@ -98,10 +98,11 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
 
   file.text << mov;
 
-  auto fromExpr = std::holds_alternative<ast::Type *>(alias.value)
-                      ? generator.GenExpr(expr, file, asmc::QWord)
-                      : generator.GenExpr(std::get<ast::Expr *>(alias.value),
-                                          file, asmc::QWord);
+  auto useExpr = std::holds_alternative<ast::Type *>(alias.value)
+                     ? expr
+                     : std::get<ast::Expr *>(alias.value);
+
+  auto fromExpr = generator.GenExpr(useExpr, file, asmc::QWord);
 
   if (std::holds_alternative<ast::Type *>(alias.value)) {
     if (!generator.canAssign(*std::get<ast::Type *>(alias.value), fromExpr.type,
@@ -109,6 +110,20 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
       fromExpr = generator.GenExpr(
           generator.imply(expr, std::get<ast::Type *>(alias.value)->typeName),
           file);
+    }
+  }
+  if (parse::PRIMITIVE_TYPES.find(fromExpr.type) ==
+      parse::PRIMITIVE_TYPES.end()) {
+    auto tnt = generator.getType(fromExpr.type, file);
+    auto cls = tnt ? dynamic_cast<gen::Class *>(*tnt) : nullptr;
+    if (cls != nullptr && cls->publicNameTable["__copy__"] != nullptr) {
+      auto call = new ast::CallExpr();
+      call->call = new ast::Call();
+      call->call->ident = "__copy__";
+      call->call->publify = fromExpr.type;
+      call->call->Args.push(useExpr);
+      call->logicalLine = logicalLine;
+      fromExpr = generator.GenExpr(call, file, asmc::QWord);
     }
   }
 
@@ -119,7 +134,7 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
     file << generator.setOffset(mov->to, 0, fromExpr.access, fromExpr.size);
   } else {
     file << generator.memMove(fromExpr.access, mov->to, unionGen->largestSize);
-  };
+  }
 
   // set the variant index in the union
   file << generator.setOffset(mov->to, unionGen->largestSize,
