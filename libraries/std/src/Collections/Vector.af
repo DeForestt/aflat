@@ -29,7 +29,7 @@ class vector {
         return my;
     };
 
-    when (T is primitive and T is not adr)
+    when (T is primitive)
     fn push_back(const T value) -> Self {
         if my.count == my.size {
             my.size = my.size * 2;
@@ -41,7 +41,7 @@ class vector {
         return my;
     };
 
-    when (T is not primitive or T is adr)
+    when (T is not primitive and T missing __from__)
     fn push_back(const T &&value) -> Self {
         if my.count == my.size {
             my.size = my.size * 2;
@@ -49,6 +49,19 @@ class vector {
         };
 
         memcpy(my.head + (my.count * T), value, T);
+        my.count = my.count + 1;
+        return my;
+    };
+
+    when (T is not primitive and T has __from__)
+    fn push_back(const T value) -> Self {
+        if my.count == my.size {
+            my.size = my.size * 2;
+            my.head = realloc(my.head, T * my.size);
+        };
+        const generic obj = my.head + (my.count * T);
+        const T obj = obj;
+        obj.__from__(value);
         my.count = my.count + 1;
         return my;
     };
@@ -73,7 +86,7 @@ class vector {
         return my.get(my.count - 1);
     };
 
-    when (T is primitive and T is not adr)
+    when (T is primitive)
     fn pop_back() -> option::<T> {
         if my.count == 0 {
             return opt.None::<T>();
@@ -81,20 +94,22 @@ class vector {
 
         my.count = my.count - 1;
         const adr val = my.head + (my.count * T);
-        return opt.Some::<T>(val as T);
+        const let r = val as T;
+        return opt.Some::<T>(r);
     };
 
-    when (T is not primitive or T is adr)
+    when (T is not primitive)
     fn pop_back() -> option::<T> {
         if my.count == 0 {
             return opt.None::<T>();
         };
         my.count = my.count - 1;
-        const T val = my.head + (my.count * T);
+        const generic val = my.head + (my.count * T);
+        const T val = val;
         return opt.Some(val as T);
     };
 
-    when (T is primitive and T is not adr)
+    when (T is primitive)
     fn get(const int index) -> option::<T> {
         if index >= my.count | index < 0 {
             return opt.None::<T>();
@@ -103,15 +118,15 @@ class vector {
         return opt.Some(val as T);
     };
 
-    when (T is adr or T is not primitive)
+    when (T is not primitive)
     fn get(const int index) -> option::<T> {
         if index >= my.count | index < 0 {
             return opt.None::<T>();
         };
-        const T val = my.head + (index * T);
+        const generic val = my.head + (index * T);
+        const T val = val;
         return opt.Some(val);
     };
-
 
     fn _call(const int index) -> option::<T> {
         return my.get(index);

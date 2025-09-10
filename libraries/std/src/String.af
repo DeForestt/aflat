@@ -125,6 +125,19 @@ safe dynamic class string {
         return my;
     };
 
+    fn __copy__() -> string {
+        const let n = new string(my.head);
+        return n;
+    };
+
+    fn __from__(const string other) -> Self {
+        my.head = malloc(str.len(other.head) + 1);
+        memcpy(my.head, other.head, str.len(other.head) + 1);
+        my.refcount = 1;
+        my.permanent = false;
+        return my;
+    }
+
     char at(const int index) {
         if index < 0 | index >= str.len(my.head) return '\0';
         return str.str_at(my.head, index);

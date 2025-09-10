@@ -236,12 +236,41 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
           mov2->to = "-" + std::to_string(byteMod) + "(%rbp)";
           file.text << mov2;
         } else {
-          auto mov = new asmc::Mov();
-          mov->logicalLine = expr->logicalLine;
-          mov->size = type->size;
-          mov->from = generator.registers["%rdx"]->get(type->size);
-          mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
-          file.text << mov;
+          // if it is a safe type we need to call get
+          // check if from is a class
+          auto t = generator.getType(type->typeName, file);
+          auto cls = t ? dynamic_cast<gen::Class *>(*t) : nullptr;
+          if (cls != nullptr && cls->publicNameTable["get"] != nullptr &&
+              cls->safeType) {
+            // move the rdx to rdi
+            auto mo = new asmc::Mov();
+            mo->logicalLine = expr->logicalLine;
+            mo->size = asmc::QWord;
+            mo->from = generator.registers["%rdx"]->get(asmc::QWord);
+            mo->to = generator.registers["%rdi"]->get(asmc::QWord);
+            generator.intArgsCounter++;
+            file.text << mo;
+            auto call = new ast::CallExpr();
+            call->call = new ast::Call();
+            call->call->ident = "get";
+            call->call->slick = true;
+            call->call->publify = type->typeName;
+            call->logicalLine = logicalLine;
+            auto newFrom = generator.GenExpr(call, file, asmc::QWord);
+            auto mov = new asmc::Mov();
+            mov->logicalLine = expr->logicalLine;
+            mov->size = asmc::QWord;
+            mov->from = newFrom.access;
+            mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
+            file.text << mov;
+          } else {
+            auto mov = new asmc::Mov();
+            mov->logicalLine = expr->logicalLine;
+            mov->size = asmc::QWord;
+            mov->from = generator.registers["%rdx"]->get(asmc::QWord);
+            mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
+            file.text << mov;
+          }
         }
       } else if (std::holds_alternative<ast::Expr *>(alias.value)) {
         auto &expr = std::get<ast::Expr *>(alias.value);
