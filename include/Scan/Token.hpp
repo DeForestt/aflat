@@ -184,4 +184,39 @@ inline Token makeEof(Range r) { return {std::move(r), Eof{}}; }
 inline Token makeError(Range r, std::string msg) {
   return {std::move(r), Error{std::move(msg)}};
 }
+
+inline bool isEof(const Token &t) { return is<Eof>(t); }
+inline bool isError(const Token &t) { return is<Error>(t); }
+inline bool isIdentifier(const Token &t) { return is<Identifier>(t); }
+inline bool isKeyword(const Token &t) { return is<Keyword>(t); }
+inline bool isInteger(const Token &t) { return is<IntegerLiteral>(t); }
+inline bool isFloat(const Token &t) { return is<FloatLiteral>(t); }
+inline bool isString(const Token &t) { return is<StringLiteral>(t); }
+inline bool isChar(const Token &t) { return is<CharLiteral>(t); }
+inline bool isLong(const Token &t) { return is<LongLiteral>(t); }
+inline bool isSymbol(const Token &t) { return is<Symbol>(t); }
+inline bool isTemplate(const Token &t) { return is<TemplateString>(t); }
+
+// TODO: Make these return optionals and handle bad casts better
+inline std::int64_t asInteger(const Token &t) {
+  return get<IntegerLiteral>(t).value;
+}
+inline double asFloat(const Token &t) { return get<FloatLiteral>(t).value; }
+inline const std::string &asString(const Token &t) {
+  return get<StringLiteral>(t).value;
+}
+inline char asChar(const Token &t) { return get<CharLiteral>(t).value; }
+inline std::int64_t asLong(const Token &t) { return get<LongLiteral>(t).value; }
+inline const std::string &asIdentifier(const Token &t) {
+  return get<Identifier>(t).name;
+}
+inline Keyword::Type asKeyword(const Token &t) { return get<Keyword>(t).type; }
+inline Symbol::Type asSymbol(const Token &t) { return get<Symbol>(t).type; }
+inline const std::string &asTemplate(const Token &t) {
+  return get<TemplateString>(t).value;
+}
+inline const std::string &asError(const Token &t) {
+  return get<Error>(t).message;
+}
+
 } // namespace aflat::scan::token

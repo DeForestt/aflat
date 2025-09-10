@@ -12,12 +12,9 @@ namespace aflat::scan {
 class Scanner {
 public:
   Scanner() = delete;
+  explicit Scanner(std::istream &input, token::SourceId source_id = 1);
 
-  // Factory that does I/O and reports errors without exceptions
-  static outcome::result<Scanner, std::error_code> open(const char *path);
-
-  // RAII: move-only
-  ~Scanner() = default;
+  ~Scanner();
   Scanner(Scanner &&) noexcept = default;
   Scanner &operator=(Scanner &&) noexcept = default;
   Scanner(const Scanner &) = delete;
@@ -28,9 +25,7 @@ public:
 
 private:
   struct Impl;
-  std::unique_ptr<Impl> impl_;
-
-  explicit Scanner(std::unique_ptr<Impl> p) noexcept : impl_(std::move(p)) {}
+  Impl *impl_;
 };
 
 } // namespace aflat::scan
