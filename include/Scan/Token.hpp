@@ -161,36 +161,34 @@ template <class Alt> const Alt &get(const Token &t) {
 }
 
 // --- factories (keep call sites terse) ---
-inline Token makeIdentifier(Range r, std::string name) {
-  return {std::move(r), Identifier{std::move(name)}};
+inline Token makeIdentifier(const Range &r, std::string name) {
+  return {r, Identifier{std::move(name)}};
 }
-inline Token makeKeyword(Range r, Keyword::Type type) {
-  return {std::move(r), Keyword{type}};
+inline Token makeKeyword(const Range &r, Keyword::Type type) {
+  return {r, Keyword{type}};
 }
-inline Token makeInteger(Range r, std::int64_t v) {
-  return {std::move(r), IntegerLiteral{v}};
+inline Token makeInteger(const Range &r, std::int64_t v) {
+  return {r, IntegerLiteral{v}};
 }
-inline Token makeFloat(Range r, double v) {
-  return {std::move(r), FloatLiteral{v}};
+inline Token makeFloat(const Range &r, double v) {
+  return {r, FloatLiteral{v}};
 }
-inline Token makeString(Range r, std::string v) {
-  return {std::move(r), StringLiteral{std::move(v)}};
+inline Token makeString(const Range &r, std::string v) {
+  return {r, StringLiteral{std::move(v)}};
 }
-inline Token makeChar(Range r, char v) {
-  return {std::move(r), CharLiteral{v}};
+inline Token makeChar(const Range &r, char v) { return {r, CharLiteral{v}}; }
+inline Token makeLong(const Range &r, std::int64_t v) {
+  return {r, LongLiteral{v}};
 }
-inline Token makeLong(Range r, std::int64_t v) {
-  return {std::move(r), LongLiteral{v}};
+inline Token makeSymbol(const Range &r, Symbol::Type type) {
+  return {r, Symbol{type}};
 }
-inline Token makeSymbol(Range r, Symbol::Type type) {
-  return {std::move(r), Symbol{type}};
-}
-inline Token makeTemplate(Range r, std::string v) {
-  return {std::move(r), TemplateString{std::move(v)}};
+inline Token makeTemplate(const Range &r, std::string v) {
+  return {r, TemplateString{std::move(v)}};
 }
 inline Token makeEof(Range r) { return {std::move(r), Eof{}}; }
-inline Token makeError(Range r, std::string msg) {
-  return {std::move(r), Error{std::move(msg)}};
+inline Token makeError(const Range &r, std::string msg) {
+  return {r, Error{std::move(msg)}};
 }
 
 inline bool isEof(const Token &t) { return is<Eof>(t); }
