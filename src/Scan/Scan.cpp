@@ -114,9 +114,11 @@ struct Scanner::Impl {
     token::Position end_pos = pos;
     token::Range range{start_pos, end_pos};
 
-    // For simplicity, treat all identifiers as the same token type.
-    auto tok = token::makeIdentifier(range, ident_str);
-    return tok;
+    if (auto kw = token::keyword_from(ident_str)) {
+      return token::makeKeyword(range, *kw);
+    }
+
+    return token::makeIdentifier(range, ident_str);
   }
 
   outcome::result<token::Token, std::error_code> next() {
@@ -136,12 +138,8 @@ struct Scanner::Impl {
         return token::makeEof(range);
       }
     } else {
-      if (input.eof()) {
-        auto range = token::Range{pos, pos};
-        return token::makeEof(range);
-      } else {
-        return outcome::failure(std::make_error_code(std::errc::io_error));
-      }
+      auto range = token::Range{pos, pos};
+      return token::makeEof(range);
     }
     if (auto number = try_scan_number(c)) {
       return *number;

@@ -27,7 +27,7 @@
   constexpr std::string_view PREFIX##_to_string(STRUCT::ENUM v) noexcept {     \
     return PREFIX##_strings[static_cast<std::size_t>(v)];                      \
   }                                                                            \
-  inline std::optional<STRUCT::ENUM> PREFIX##_from_string(                     \
+  inline std::optional<STRUCT::ENUM> PREFIX##_from(                            \
       std::string_view s) noexcept {                                           \
     for (std::size_t i = 0;                                                    \
          i < sizeof(PREFIX##_strings) / sizeof(PREFIX##_strings[0]); ++i) {    \
