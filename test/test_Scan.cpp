@@ -93,6 +93,37 @@ TEST_CASE("Scanner scans symbols", "[scanner]") {
   REQUIRE(aflat::scan::token::isEof(eof_token.value()));
 }
 
+TEST_CASE("Scanner scans strings", "[scanner]") {
+  auto input = std::istringstream(R"("hello" `template string`)");
+  aflat::scan::Scanner scanner(input, 1);
+
+  auto token1 = scanner.next();
+  REQUIRE(token1.has_value());
+  REQUIRE(aflat::scan::token::isString(token1.value()));
+  REQUIRE(*aflat::scan::token::asString(token1.value()) == "hello");
+  REQUIRE(token1.value().range.start.line == 1);
+  REQUIRE(token1.value().range.start.column == 1);
+  REQUIRE(token1.value().range.end.line == 1);
+  REQUIRE(token1.value().range.end.column == 7);
+
+  auto token2 = scanner.next();
+  REQUIRE(token2.has_value());
+  REQUIRE(aflat::scan::token::isTemplate(token2.value()));
+  REQUIRE(*aflat::scan::token::asTemplate(token2.value()) == "template string");
+  REQUIRE(token2.value().range.start.line == 1);
+  REQUIRE(token2.value().range.start.column == 9);
+  REQUIRE(token2.value().range.end.line == 1);
+  REQUIRE(token2.value().range.end.column == 26);
+
+  auto token3 = scanner.next();
+  REQUIRE(token3.has_value());
+  REQUIRE(aflat::scan::token::isEof(token3.value()));
+  REQUIRE(token3.value().range.start.line == 1);
+  REQUIRE(token3.value().range.start.column == 26);
+  REQUIRE(token3.value().range.end.line == 1);
+  REQUIRE(token3.value().range.end.column == 26);
+}
+
 TEST_CASE("Scanner scans full program", "[scanner]") {
   auto input = std::istringstream(R"(
         fn main() {

@@ -246,6 +246,9 @@ struct Scanner::Impl {
     if (auto symbol = try_scan_symbol(c)) {
       return *symbol;
     }
+    if (auto str = try_scan_string(c)) {
+      return *str;
+    }
 
     // return an error for unrecognized characters
     return outcome::failure(std::make_error_code(std::errc::invalid_argument));
