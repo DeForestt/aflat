@@ -155,6 +155,68 @@ struct Scanner::Impl {
     return std::nullopt;
   }
 
+  std::optional<token::Token> try_scan_string(char quote_char) {
+    if (quote_char != '"' && quote_char != '`')
+      return std::nullopt;
+    std::string str_val;
+    token::Position start_pos = pos;
+    char c;
+    while (get(c)) {
+      if (c == quote_char) {
+        // end of string
+        token::Position end_pos = pos;
+        token::Range range{start_pos, end_pos};
+        if (quote_char == '`')
+          return token::makeTemplate(range, str_val);
+        return token::makeString(range, str_val);
+      }
+      if (c == '\\') {
+        // handle escape sequences
+        if (get(c)) {
+          switch (c) {
+          case 'n':
+            str_val += '\n';
+            break;
+          case 't':
+            str_val += '\t';
+            break;
+          case 'r':
+            str_val += '\r';
+            break;
+          case '\\':
+            str_val += '\\';
+            break;
+          case '\'':
+            str_val += '\'';
+            break;
+          case '\"':
+            str_val += '\"';
+            break;
+          case '0':
+            str_val += '\0';
+            break;
+          case 'b':
+            str_val += '\b';
+            break;
+          case '`':
+            str_val += '`';
+            break;
+          default:
+            str_val += c; // unknown escape, just add the char
+            break;
+          }
+        } else {
+          // unterminated escape sequence
+          return std::nullopt;
+        }
+      } else {
+        str_val += c;
+      }
+    }
+    // if we reach here, we hit EOF before closing quote
+    return std::nullopt;
+  }
+
   outcome::result<token::Token, std::error_code> next() {
 
     if (peeked_token) {
