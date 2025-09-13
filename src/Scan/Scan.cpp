@@ -16,23 +16,37 @@ struct Scanner::Impl {
 
   explicit Impl(std::istream &input, token::SourceId source_id)
       : input(input), source_id(source_id) {
-    pos = token::Position{source_id, 1, 1, 0};
+    pos = token::Position{source_id, 1, 0, 0};
   }
   bool ok() const { return input.good(); }
 
-  void skip_whitespace() {
-    char c;
-    while (input.get(c)) {
-      if (c == ' ' || c == '\t' || c == '\r') {
-        pos.column++;
-        pos.byte_offset++;
-      } else if (c == '\n') {
+  bool get(char &c) {
+    if (input.get(c)) {
+      pos.column++;
+      pos.byte_offset++;
+      if (c == '\n') {
         pos.line++;
         pos.column = 1;
-        pos.byte_offset++;
-      } else {
-        // put back the non-whitespace character and return
-        input.unget();
+      }
+      return true;
+    } else {
+      c = '\0'; // indicate end of file or error
+      return false;
+    }
+  }
+
+  void unget() {
+    if (input.unget()) {
+      pos.column--;
+      pos.byte_offset--;
+    }
+  }
+
+  void skip_whitespace() {
+    char c;
+    while (get(c)) {
+      if (!std::isspace(c)) {
+        unget();
         break;
       }
     }
@@ -47,11 +61,11 @@ struct Scanner::Impl {
     token::Position start_pos = pos;
     bool floating_point = false;
     char c;
-    while (input.get(c) && (std::isdigit(c) || c == '.' || c == '_')) {
+    while (get(c) && (std::isdigit(c) || c == '.' || c == '_')) {
       if (c == '.') {
         if (floating_point) {
           // second dot in number, stop parsing here
-          input.unget();
+          unget();
           break;
         }
         floating_point = true;
@@ -60,14 +74,11 @@ struct Scanner::Impl {
       if (c != '_') {
         num_str += c;
       }
-
-      pos.column++;
-      pos.byte_offset++;
     }
 
     // put back the non-digit character
     if (input)
-      input.unget();
+      unget();
 
     token::Position end_pos = pos;
     token::Range range{start_pos, end_pos};
@@ -92,21 +103,18 @@ struct Scanner::Impl {
     ident_str += first_char;
     token::Position start_pos = pos;
     char c;
-    while (input.get(c) && (std::isalnum(c) || c == '_')) {
+    while (get(c) && (std::isalnum(c) || c == '_')) {
       ident_str += c;
-      pos.column++;
-      pos.byte_offset++;
     }
 
     // put back the non-identifier character
     if (input)
-      input.unget();
+      unget();
 
     token::Position end_pos = pos;
     token::Range range{start_pos, end_pos};
 
     // For simplicity, treat all identifiers as the same token type.
-    // In a full implementation, you would check against a list of keywords.
     auto tok = token::makeIdentifier(range, ident_str);
     return tok;
   }
@@ -122,13 +130,19 @@ struct Scanner::Impl {
     skip_whitespace();
 
     char c;
-    if (!input.get(c)) {
+    if (get(c)) {
       if (input.eof()) {
         auto range = token::Range{pos, pos};
         return token::makeEof(range);
       }
+    } else {
+      if (input.eof()) {
+        auto range = token::Range{pos, pos};
+        return token::makeEof(range);
+      } else {
+        return outcome::failure(std::make_error_code(std::errc::io_error));
+      }
     }
-
     if (auto number = try_scan_number(c)) {
       return *number;
     }

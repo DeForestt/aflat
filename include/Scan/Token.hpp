@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -12,8 +13,8 @@ using SourceId = std::uint32_t;
 
 struct Position {
   SourceId source = 0;
-  std::size_t line = 1;   // 1-based
-  std::size_t column = 1; // 1-based
+  std::size_t line = 1;   // the scanner will increment with each '\n'
+  std::size_t column = 0; // the scanner will start increment with each get
   std::size_t byte_offset = 0;
 };
 
@@ -197,26 +198,55 @@ inline bool isLong(const Token &t) { return is<LongLiteral>(t); }
 inline bool isSymbol(const Token &t) { return is<Symbol>(t); }
 inline bool isTemplate(const Token &t) { return is<TemplateString>(t); }
 
-// TODO: Make these return optionals and handle bad casts better
-inline std::int64_t asInteger(const Token &t) {
-  return get<IntegerLiteral>(t).value;
+inline std::optional<std::int64_t> asInteger(const Token &t) noexcept {
+  if (is<IntegerLiteral>(t))
+    return get<IntegerLiteral>(t).value;
+  return std::nullopt;
 }
-inline double asFloat(const Token &t) { return get<FloatLiteral>(t).value; }
-inline const std::string &asString(const Token &t) {
-  return get<StringLiteral>(t).value;
+inline std::optional<double> asFloat(const Token &t) noexcept {
+  if (is<FloatLiteral>(t))
+    return get<FloatLiteral>(t).value;
+  return std::nullopt;
 }
-inline char asChar(const Token &t) { return get<CharLiteral>(t).value; }
-inline std::int64_t asLong(const Token &t) { return get<LongLiteral>(t).value; }
-inline const std::string &asIdentifier(const Token &t) {
-  return get<Identifier>(t).name;
+inline std::optional<std::string_view> asString(const Token &t) noexcept {
+  if (is<StringLiteral>(t))
+    return std::string_view(get<StringLiteral>(t).value);
+  return std::nullopt;
 }
-inline Keyword::Type asKeyword(const Token &t) { return get<Keyword>(t).type; }
-inline Symbol::Type asSymbol(const Token &t) { return get<Symbol>(t).type; }
-inline const std::string &asTemplate(const Token &t) {
-  return get<TemplateString>(t).value;
+inline std::optional<char> asChar(const Token &t) noexcept {
+  if (is<CharLiteral>(t))
+    return get<CharLiteral>(t).value;
+  return std::nullopt;
 }
-inline const std::string &asError(const Token &t) {
-  return get<Error>(t).message;
+inline std::optional<std::int64_t> asLong(const Token &t) noexcept {
+  if (is<LongLiteral>(t))
+    return get<LongLiteral>(t).value;
+  return std::nullopt;
+}
+inline std::optional<std::string_view> asIdentifier(const Token &t) noexcept {
+  if (is<Identifier>(t))
+    return std::string_view(get<Identifier>(t).name);
+  return std::nullopt;
+}
+inline std::optional<Keyword::Type> asKeyword(const Token &t) noexcept {
+  if (is<Keyword>(t))
+    return get<Keyword>(t).type;
+  return std::nullopt;
+}
+inline std::optional<Symbol::Type> asSymbol(const Token &t) noexcept {
+  if (is<Symbol>(t))
+    return get<Symbol>(t).type;
+  return std::nullopt;
+}
+inline std::optional<std::string_view> asTemplate(const Token &t) noexcept {
+  if (is<TemplateString>(t))
+    return std::string_view(get<TemplateString>(t).value);
+  return std::nullopt;
+}
+inline std::optional<std::string_view> asError(const Token &t) noexcept {
+  if (is<Error>(t))
+    return std::string_view(get<Error>(t).message);
+  return std::nullopt;
 }
 
 } // namespace aflat::scan::token
