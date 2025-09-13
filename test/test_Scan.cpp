@@ -65,6 +65,34 @@ TEST_CASE("Scanner scans keywords", "[scanner]") {
   REQUIRE(token4.value().range.end.column == 13);
 }
 
+TEST_CASE("Scanner scans symbols", "[scanner]") {
+  auto input = std::istringstream("+-*/==!=<=>==>");
+  aflat::scan::Scanner scanner(input, 1);
+
+  std::vector<aflat::scan::token::Symbol::Type> expected_symbols = {
+      aflat::scan::token::Symbol::Type::Plus,         // +
+      aflat::scan::token::Symbol::Type::Minus,        // -
+      aflat::scan::token::Symbol::Type::Asterisk,     // *
+      aflat::scan::token::Symbol::Type::Slash,        // /
+      aflat::scan::token::Symbol::Type::DoubleEqual,  // ==
+      aflat::scan::token::Symbol::Type::NotEqual,     // !=
+      aflat::scan::token::Symbol::Type::LessEqual,    // <=
+      aflat::scan::token::Symbol::Type::GreaterEqual, // >=
+      aflat::scan::token::Symbol::Type::FatArrow      // =>
+  };
+
+  for (const auto &expected_symbol : expected_symbols) {
+    auto token = scanner.next();
+    REQUIRE(token.has_value());
+    REQUIRE(aflat::scan::token::isSymbol(token.value()));
+    REQUIRE(*aflat::scan::token::asSymbol(token.value()) == expected_symbol);
+  }
+
+  auto eof_token = scanner.next();
+  REQUIRE(eof_token.has_value());
+  REQUIRE(aflat::scan::token::isEof(eof_token.value()));
+}
+
 TEST_CASE("Scanner scans full program", "[scanner]") {
   auto input = std::istringstream(R"(
         fn main() {

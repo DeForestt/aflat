@@ -121,6 +121,40 @@ struct Scanner::Impl {
     return token::makeIdentifier(range, ident_str);
   }
 
+  std::optional<token::Token> try_scan_symbol(char first_char) {
+    // A symbol can be one or two characters.. the parsing will be greedy so we
+    // start by trying to get two characters
+    char second_char;
+    if (!get(second_char)) {
+      // if we can't get a second character, just try to parse the first
+      // character as a
+      if (auto sym = token::symbol_from(std::string(1, first_char))) {
+        token::Position start_pos = pos;
+        token::Position end_pos = pos;
+        token::Range range{start_pos, end_pos};
+        return token::makeSymbol(range, *sym);
+      }
+      return std::nullopt;
+    }
+    std::string sym_str =
+        std::string(1, first_char) + std::string(1, second_char);
+    if (auto sym = token::symbol_from(sym_str)) {
+      token::Position start_pos = pos;
+      token::Position end_pos = pos;
+      token::Range range{start_pos, end_pos};
+      return token::makeSymbol(range, *sym);
+    }
+    // if we can't parse the two character symbol, try the first character alone
+    unget();
+    if (auto sym = token::symbol_from(std::string(1, first_char))) {
+      token::Position start_pos = pos;
+      token::Position end_pos = pos;
+      token::Range range{start_pos, end_pos};
+      return token::makeSymbol(range, *sym);
+    }
+    return std::nullopt;
+  }
+
   outcome::result<token::Token, std::error_code> next() {
 
     if (peeked_token) {
@@ -146,6 +180,9 @@ struct Scanner::Impl {
     }
     if (auto keyword_or_ident = try_scan_keyword_or_ident(c)) {
       return *keyword_or_ident;
+    }
+    if (auto symbol = try_scan_symbol(c)) {
+      return *symbol;
     }
 
     // return an error for unrecognized characters
