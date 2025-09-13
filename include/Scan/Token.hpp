@@ -6,6 +6,8 @@
 #include <utility>
 #include <variant>
 
+#include "Scan/TextEnum.hpp"
+
 namespace aflat::scan::token {
 
 // --- Source identity (swap filename for a small id) ---
@@ -27,6 +29,11 @@ struct Range {
 struct Identifier {
   std::string name;
 };
+
+// KeywordUtils.hpp
+#pragma once
+#include <optional>
+#include <string_view>
 
 struct Keyword {
   enum class Type {
@@ -56,9 +63,114 @@ struct Keyword {
     Case,
     Default,
     Import,
-    Export
+    Export,
+    As,
+    Fn
   } type;
 };
+
+// enum → text
+constexpr std::string_view to_string(Keyword::Type k) noexcept {
+  switch (k) {
+  case Keyword::Type::If:
+    return "if";
+  case Keyword::Type::Else:
+    return "else";
+  case Keyword::Type::While:
+    return "while";
+  case Keyword::Type::For:
+    return "for";
+  case Keyword::Type::Return:
+    return "return";
+  case Keyword::Type::Function:
+    return "function";
+  case Keyword::Type::Let:
+    return "let";
+  case Keyword::Type::Const:
+    return "const";
+  case Keyword::Type::Var:
+    return "var";
+  case Keyword::Type::True:
+    return "true";
+  case Keyword::Type::False:
+    return "false";
+  case Keyword::Type::Null:
+    return "null";
+  case Keyword::Type::Class:
+    return "class";
+  case Keyword::Type::Extends:
+    return "extends";
+  case Keyword::Type::Super:
+    return "super";
+  case Keyword::Type::This:
+    return "this";
+  case Keyword::Type::New:
+    return "new";
+  case Keyword::Type::Delete:
+    return "delete";
+  case Keyword::Type::In:
+    return "in";
+  case Keyword::Type::Of:
+    return "of";
+  case Keyword::Type::Break:
+    return "break";
+  case Keyword::Type::Continue:
+    return "continue";
+  case Keyword::Type::Switch:
+    return "switch";
+  case Keyword::Type::Case:
+    return "case";
+  case Keyword::Type::Default:
+    return "default";
+  case Keyword::Type::Import:
+    return "import";
+  case Keyword::Type::Export:
+    return "export";
+  case Keyword::Type::As:
+    return "as";
+  case Keyword::Type::Fn:
+    return "fn";
+  }
+  return {}; // unreachable if all cases handled
+}
+
+// text → enum (linear scan; fine for a lexer)
+inline std::optional<Keyword::Type> keyword_from(std::string_view s) noexcept {
+#define TRY(name, lit)                                                         \
+  if (s == lit)                                                                \
+  return Keyword::Type::name
+  TRY(If, "if");
+  TRY(Else, "else");
+  TRY(While, "while");
+  TRY(For, "for");
+  TRY(Return, "return");
+  TRY(Function, "function");
+  TRY(Let, "let");
+  TRY(Const, "const");
+  TRY(Var, "var");
+  TRY(True, "true");
+  TRY(False, "false");
+  TRY(Null, "null");
+  TRY(Class, "class");
+  TRY(Extends, "extends");
+  TRY(Super, "super");
+  TRY(This, "this");
+  TRY(New, "new");
+  TRY(Delete, "delete");
+  TRY(In, "in");
+  TRY(Of, "of");
+  TRY(Break, "break");
+  TRY(Continue, "continue");
+  TRY(Switch, "switch");
+  TRY(Case, "case");
+  TRY(Default, "default");
+  TRY(Import, "import");
+  TRY(Export, "export");
+  TRY(As, "as");
+  TRY(Fn, "fn");
+#undef TRY
+  return std::nullopt;
+}
 
 struct IntegerLiteral {
   std::int64_t value;
