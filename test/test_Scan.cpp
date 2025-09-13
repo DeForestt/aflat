@@ -105,12 +105,125 @@ TEST_CASE("Scanner scans full program", "[scanner]") {
 
   aflat::scan::Scanner scanner(input, 1);
   std::vector<aflat::scan::token::Token> tokens;
+
   while (true) {
     auto token = scanner.next();
     REQUIRE(token.has_value());
     tokens.push_back(token.value());
-    if (aflat::scan::token::isEof(token.value())) {
+    if (aflat::scan::token::isEof(token.value()))
       break;
-    }
   }
+
+  // fn main() { let x = 10; let y = 20; let z = x + y; return z; }
+  // Expect: 27 including EOF
+  REQUIRE(tokens.size() == 27);
+
+  using namespace aflat::scan::token;
+
+  // 0: fn
+  REQUIRE(isKeyword(tokens[0]));
+  REQUIRE(*asKeyword(tokens[0]) == Keyword::Type::Fn);
+
+  // 1: main
+  REQUIRE(isIdentifier(tokens[1]));
+  REQUIRE(*asIdentifier(tokens[1]) == "main");
+
+  // 2: (
+  REQUIRE(isSymbol(tokens[2]));
+  REQUIRE(*asSymbol(tokens[2]) == Symbol::Type::LeftParen);
+
+  // 3: )
+  REQUIRE(isSymbol(tokens[3]));
+  REQUIRE(*asSymbol(tokens[3]) == Symbol::Type::RightParen);
+
+  // 4: {
+  REQUIRE(isSymbol(tokens[4]));
+  REQUIRE(*asSymbol(tokens[4]) == Symbol::Type::LeftBrace);
+
+  // 5: let
+  REQUIRE(isKeyword(tokens[5]));
+  REQUIRE(*asKeyword(tokens[5]) == Keyword::Type::Let);
+
+  // 6: x
+  REQUIRE(isIdentifier(tokens[6]));
+  REQUIRE(*asIdentifier(tokens[6]) == "x");
+
+  // 7: =
+  REQUIRE(isSymbol(tokens[7]));
+  REQUIRE(*asSymbol(tokens[7]) == Symbol::Type::Equal);
+
+  // 8: 10
+  REQUIRE(isInteger(tokens[8]));
+  REQUIRE(*asInteger(tokens[8]) == 10);
+
+  // 9: ;
+  REQUIRE(isSymbol(tokens[9]));
+  REQUIRE(*asSymbol(tokens[9]) == Symbol::Type::Semicolon);
+
+  // 10: let
+  REQUIRE(isKeyword(tokens[10]));
+  REQUIRE(*asKeyword(tokens[10]) == Keyword::Type::Let);
+
+  // 11: y
+  REQUIRE(isIdentifier(tokens[11]));
+  REQUIRE(*asIdentifier(tokens[11]) == "y");
+
+  // 12: =
+  REQUIRE(isSymbol(tokens[12]));
+  REQUIRE(*asSymbol(tokens[12]) == Symbol::Type::Equal);
+
+  // 13: 20
+  REQUIRE(isInteger(tokens[13]));
+  REQUIRE(*asInteger(tokens[13]) == 20);
+
+  // 14: ;
+  REQUIRE(isSymbol(tokens[14]));
+  REQUIRE(*asSymbol(tokens[14]) == Symbol::Type::Semicolon);
+
+  // 15: let
+  REQUIRE(isKeyword(tokens[15]));
+  REQUIRE(*asKeyword(tokens[15]) == Keyword::Type::Let);
+
+  // 16: z
+  REQUIRE(isIdentifier(tokens[16]));
+  REQUIRE(*asIdentifier(tokens[16]) == "z");
+
+  // 17: =
+  REQUIRE(isSymbol(tokens[17]));
+  REQUIRE(*asSymbol(tokens[17]) == Symbol::Type::Equal);
+
+  // 18: x
+  REQUIRE(isIdentifier(tokens[18]));
+  REQUIRE(*asIdentifier(tokens[18]) == "x");
+
+  // 19: +
+  REQUIRE(isSymbol(tokens[19]));
+  REQUIRE(*asSymbol(tokens[19]) == Symbol::Type::Plus);
+
+  // 20: y
+  REQUIRE(isIdentifier(tokens[20]));
+  REQUIRE(*asIdentifier(tokens[20]) == "y");
+
+  // 21: ;
+  REQUIRE(isSymbol(tokens[21]));
+  REQUIRE(*asSymbol(tokens[21]) == Symbol::Type::Semicolon);
+
+  // 22: return
+  REQUIRE(isKeyword(tokens[22]));
+  REQUIRE(*asKeyword(tokens[22]) == Keyword::Type::Return);
+
+  // 23: z
+  REQUIRE(isIdentifier(tokens[23]));
+  REQUIRE(*asIdentifier(tokens[23]) == "z");
+
+  // 24: ;
+  REQUIRE(isSymbol(tokens[24]));
+  REQUIRE(*asSymbol(tokens[24]) == Symbol::Type::Semicolon);
+
+  // 25: }
+  REQUIRE(isSymbol(tokens[25]));
+  REQUIRE(*asSymbol(tokens[25]) == Symbol::Type::RightBrace);
+
+  // 26: EOF
+  REQUIRE(isEof(tokens[26]));
 }

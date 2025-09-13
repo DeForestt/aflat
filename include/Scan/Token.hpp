@@ -37,7 +37,6 @@ struct Identifier {
   X(For, "for")                                                                \
   X(Return, "return")                                                          \
   X(Function, "function")                                                      \
-  X(Let, "let")                                                                \
   X(Const, "const")                                                            \
   X(Var, "var")                                                                \
   X(True, "true")                                                              \
@@ -59,11 +58,15 @@ struct Identifier {
   X(Import, "import")                                                          \
   X(Export, "export")                                                          \
   X(As, "as")                                                                  \
-  X(Fn, "fn")
+  X(Fn, "fn")                                                                  \
+  X(Let, "let")                                                                \
+  X(Match, "match")                                                            \
+  X(When, "when")
 
 DEFINE_ENUM_WITH_CONVERSIONS(Keyword, Type, KEYWORD_ITEMS, keyword)
 #undef KEYWORD_ITEMS
 
+#pragma region Symbol
 #define SYMBOL_ITEMS(X)                                                        \
   X(Plus, "+")                                                                 \
   X(Minus, "-")                                                                \
