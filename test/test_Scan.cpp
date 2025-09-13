@@ -94,7 +94,7 @@ TEST_CASE("Scanner scans symbols", "[scanner]") {
 }
 
 TEST_CASE("Scanner scans strings", "[scanner]") {
-  auto input = std::istringstream(R"("hello" `template string`)");
+  auto input = std::istringstream("\"hello\" `template string`");
   aflat::scan::Scanner scanner(input, 1);
 
   auto token1 = scanner.next();
@@ -113,15 +113,15 @@ TEST_CASE("Scanner scans strings", "[scanner]") {
   REQUIRE(token2.value().range.start.line == 1);
   REQUIRE(token2.value().range.start.column == 9);
   REQUIRE(token2.value().range.end.line == 1);
-  REQUIRE(token2.value().range.end.column == 26);
+  REQUIRE(token2.value().range.end.column == 25);
 
   auto token3 = scanner.next();
   REQUIRE(token3.has_value());
   REQUIRE(aflat::scan::token::isEof(token3.value()));
   REQUIRE(token3.value().range.start.line == 1);
-  REQUIRE(token3.value().range.start.column == 26);
+  REQUIRE(token3.value().range.start.column == 25);
   REQUIRE(token3.value().range.end.line == 1);
-  REQUIRE(token3.value().range.end.column == 26);
+  REQUIRE(token3.value().range.end.column == 25);
 }
 
 TEST_CASE("Scanner scans full program", "[scanner]") {
