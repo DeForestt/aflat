@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -18,11 +19,20 @@ struct Position {
   std::size_t line = 1;   // the scanner will increment with each '\n'
   std::size_t column = 0; // the scanner will start increment with each get
   std::size_t byte_offset = 0;
+
+  std::string toString() const {
+    return "line " + std::to_string(line) + ", column " +
+           std::to_string(column);
+  }
 };
 
 struct Range {
   Position start;
   Position end;
+  std::string toString() const {
+    return "line " + std::to_string(start.line) + ", column " +
+           std::to_string(start.column);
+  }
 };
 
 // --- token payloads ---
@@ -61,6 +71,15 @@ struct Identifier {
   X(Fn, "fn")                                                                  \
   X(Let, "let")                                                                \
   X(Match, "match")                                                            \
+  X(Safe, "safe")                                                              \
+  X(Dynamic, "dynamic")                                                        \
+  X(Pedantic, "pedantic")                                                      \
+  X(Types, "types")                                                            \
+  X(Unique, "unique")                                                          \
+  X(Struct, "struct")                                                          \
+  X(Union, "union")                                                            \
+  X(Enum, "enum")                                                              \
+  X(Transform, "transform")                                                    \
   X(When, "when")
 
 DEFINE_ENUM_WITH_CONVERSIONS(Keyword, Type, KEYWORD_ITEMS, keyword)
@@ -101,6 +120,7 @@ DEFINE_ENUM_WITH_CONVERSIONS(Keyword, Type, KEYWORD_ITEMS, keyword)
   X(Question, "?")                                                             \
   X(Tilde, "~")                                                                \
   X(Caret, "^")                                                                \
+  X(At, "@")                                                                   \
   X(Pipe, "|")                                                                 \
   X(Backslash, "\\")
 
@@ -205,56 +225,130 @@ inline bool isChar(const Token &t) { return is<CharLiteral>(t); }
 inline bool isLong(const Token &t) { return is<LongLiteral>(t); }
 inline bool isSymbol(const Token &t) { return is<Symbol>(t); }
 inline bool isTemplate(const Token &t) { return is<TemplateString>(t); }
-
 inline std::optional<std::int64_t> asInteger(const Token &t) noexcept {
   if (is<IntegerLiteral>(t))
-    return get<IntegerLiteral>(t).value;
+    return std::get<IntegerLiteral>(t.kind).value;
   return std::nullopt;
 }
 inline std::optional<double> asFloat(const Token &t) noexcept {
   if (is<FloatLiteral>(t))
-    return get<FloatLiteral>(t).value;
+    return std::get<FloatLiteral>(t.kind).value;
   return std::nullopt;
 }
 inline std::optional<std::string_view> asString(const Token &t) noexcept {
   if (is<StringLiteral>(t))
-    return std::string_view(get<StringLiteral>(t).value);
+    return std::string_view(std::get<StringLiteral>(t.kind).value);
   return std::nullopt;
 }
 inline std::optional<char> asChar(const Token &t) noexcept {
   if (is<CharLiteral>(t))
-    return get<CharLiteral>(t).value;
+    return std::get<CharLiteral>(t.kind).value;
   return std::nullopt;
 }
 inline std::optional<std::int64_t> asLong(const Token &t) noexcept {
   if (is<LongLiteral>(t))
-    return get<LongLiteral>(t).value;
+    return std::get<LongLiteral>(t.kind).value;
   return std::nullopt;
 }
 inline std::optional<std::string_view> asIdentifier(const Token &t) noexcept {
   if (is<Identifier>(t))
-    return std::string_view(get<Identifier>(t).name);
+    return std::string_view(std::get<Identifier>(t.kind).name);
   return std::nullopt;
 }
 inline std::optional<Keyword::Type> asKeyword(const Token &t) noexcept {
   if (is<Keyword>(t))
-    return get<Keyword>(t).type;
+    return std::get<Keyword>(t.kind).type;
   return std::nullopt;
 }
 inline std::optional<Symbol::Type> asSymbol(const Token &t) noexcept {
   if (is<Symbol>(t))
-    return get<Symbol>(t).type;
+    return std::get<Symbol>(t.kind).type;
   return std::nullopt;
 }
 inline std::optional<std::string_view> asTemplate(const Token &t) noexcept {
   if (is<TemplateString>(t))
-    return std::string_view(get<TemplateString>(t).value);
+    return std::string_view(std::get<TemplateString>(t.kind).value);
   return std::nullopt;
 }
 inline std::optional<std::string_view> asError(const Token &t) noexcept {
   if (is<Error>(t))
-    return std::string_view(get<Error>(t).message);
+    return std::string_view(std::get<Error>(t.kind).message);
   return std::nullopt;
+}
+
+inline std::int64_t
+asIntegerOrElse(const Token &t, std::function<std::int64_t()> elseFn) noexcept {
+  if (is<IntegerLiteral>(t))
+    return std::get<IntegerLiteral>(t.kind).value;
+  return elseFn();
+}
+
+inline double asFloatOrElse(const Token &t,
+                            std::function<double()> elseFn) noexcept {
+  if (is<FloatLiteral>(t))
+    return std::get<FloatLiteral>(t.kind).value;
+  return elseFn();
+}
+
+inline std::string_view
+asStringOrElse(const Token &t,
+               std::function<std::string_view()> elseFn) noexcept {
+  if (is<StringLiteral>(t))
+    return std::string_view(std::get<StringLiteral>(t.kind).value);
+  return elseFn();
+}
+
+inline char asCharOrElse(const Token &t,
+                         std::function<char()> elseFn) noexcept {
+  if (is<CharLiteral>(t))
+    return std::get<CharLiteral>(t.kind).value;
+  return elseFn();
+}
+
+inline std::int64_t
+asLongOrElse(const Token &t, std::function<std::int64_t()> elseFn) noexcept {
+  if (is<LongLiteral>(t))
+    return std::get<LongLiteral>(t.kind).value;
+  return elseFn();
+}
+
+inline std::string_view
+asIdentifierOrElse(const Token &t,
+                   std::function<std::string_view()> elseFn) noexcept {
+  if (is<Identifier>(t))
+    return std::string_view(std::get<Identifier>(t.kind).name);
+  return elseFn();
+}
+
+inline Keyword::Type
+asKeywordOrElse(const Token &t,
+                std::function<Keyword::Type()> elseFn) noexcept {
+  if (is<Keyword>(t))
+    return std::get<Keyword>(t.kind).type;
+  return elseFn();
+}
+
+inline Symbol::Type
+asSymbolOrElse(const Token &t, std::function<Symbol::Type()> elseFn) noexcept {
+  if (is<Symbol>(t))
+    return std::get<Symbol>(t.kind).type;
+  return elseFn();
+}
+
+inline std::string_view
+asTemplateOrElse(const Token &t,
+                 std::function<std::string_view()> elseFn) noexcept {
+  if (is<TemplateString>(t))
+    return std::string_view(std::get<TemplateString>(t.kind).value);
+  return elseFn();
+}
+
+inline std::string_view
+asErrorOrElse(const Token &t,
+              std::function<std::string_view()> elseFn) noexcept {
+  if (is<Error>(t))
+    return std::string_view(std::get<Error>(t.kind).message);
+  return elseFn();
 }
 
 } // namespace aflat::scan::token

@@ -217,6 +217,18 @@ struct Scanner::Impl {
     return std::nullopt;
   }
 
+  std::optional<token::Token> peek() {
+    if (!peeked_token) {
+      auto next_token = next();
+      if (next_token) {
+        peeked_token = next_token.value();
+      } else {
+        return std::nullopt;
+      }
+    }
+    return peeked_token;
+  }
+
   outcome::result<token::Token, std::error_code> next() {
 
     if (peeked_token) {
@@ -258,6 +270,10 @@ struct Scanner::Impl {
 outcome::result<token::Token, std::error_code> Scanner::next() {
   return impl_->next();
 }
+
+std::optional<token::Token> Scanner::peek() { return impl_->peek(); }
+
+token::Position Scanner::cursor() const { return impl_->pos; }
 
 Scanner::Scanner(std::istream &input, token::SourceId source_id)
     : impl_(new Impl(input, source_id)) {}

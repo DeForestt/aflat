@@ -22,6 +22,11 @@ public:
 
   // Scanning operations
   outcome::result<token::Token, std::error_code> next();
+  std::optional<token::Token> peek();
+
+  // pass along the current line and column of the scanner for error reporting
+  // (and lsp stuff later)
+  token::Position cursor() const;
 
 private:
   struct Impl;
