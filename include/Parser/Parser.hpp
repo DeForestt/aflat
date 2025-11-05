@@ -9,6 +9,7 @@
 #include "LinkedListS.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/AST/Statements.hpp"
+#include "Scan/Scan.hpp"
 #include "Scanner.hpp"
 
 namespace parse {
@@ -25,9 +26,13 @@ struct Annotation {
 class Parser {
 public:
   ast::Statement Output;
+
+  Parser(int mutability = 0);
+  Parser(aflat::scan::Scanner &scanner, int mutability = 0);
+
   ast::Statement *parseStmt(links::LinkedList<lex::Token *> &tokens,
                             bool singleStmt = false);
-  Parser(int mutability = 0);
+  ast::Statement *parseStmt(bool singleStmt = false);
   ast::Expr *parseExpr(links::LinkedList<lex::Token *> &tokens);
 
   ast::Statement *parseArgs(links::LinkedList<lex::Token *> &tokens,
@@ -58,6 +63,9 @@ public:
                             int lineCount);
   links::LinkedList<ast::Expr *>
   parseCallArgsList(links::LinkedList<lex::Token *> &tokens);
+
+private:
+  aflat::scan::Scanner *scanner;
 };
 }; // namespace parse
 
