@@ -44,3 +44,39 @@ TEST_CASE("Var ownership reflects symbol", "[owned]") {
   auto expr = gen.GenExpr(&var, file);
   REQUIRE(expr.owned);
 }
+
+TEST_CASE("Assignments transfer ownership to destination", "[owned]") {
+  auto parser = parse::Parser();
+  test::mockGen::CodeGenerator gen("mod", parser, "",
+                                   std::filesystem::current_path().string());
+  auto *scope = gen::scope::ScopeManager::getInstance();
+  scope->reset();
+
+  ast::Type t;
+  t.typeName = "Foo";
+  t.size = asmc::QWord;
+
+  scope->assign("dst", t, false);
+  scope->assign("src", t, false);
+
+  auto *srcSym = scope->get("src");
+  REQUIRE(srcSym != nullptr);
+  srcSym->owned = true;
+
+  auto *rhs = new ast::Var();
+  rhs->Ident = "src";
+  rhs->logicalLine = 1;
+
+  ast::Assign assign;
+  assign.Ident = "dst";
+  assign.expr = rhs;
+  assign.logicalLine = 1;
+
+  assign.generate(gen);
+
+  auto *dstSym = scope->get("dst");
+  REQUIRE(dstSym != nullptr);
+  CHECK(dstSym->owned);
+
+  scope->reset();
+}

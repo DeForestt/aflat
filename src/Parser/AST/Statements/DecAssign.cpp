@@ -1,5 +1,7 @@
 #include "Parser/AST/Statements/DecAssign.hpp"
 
+#include "Parser/AST/Statements/Call.hpp"
+
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
@@ -49,7 +51,39 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
           this->expr = ref;
         } else {
           if (!var)
-            allowAdr;
+            allowAdr = true;
+        }
+      }
+
+      if (!dec->type.isReference) {
+        if (auto varExpr = dynamic_cast<ast::Var *>(this->expr)) {
+          if (varExpr->indices.size() == 0) {
+            asmc::File inspector;
+            auto resolved = generator.resolveSymbol(
+                varExpr->Ident, varExpr->modList, inspector, varExpr->indices);
+            if (std::get<2>(resolved)) {
+              auto symbol = std::get<1>(resolved);
+              auto typeEntry = generator.typeList[symbol.type.typeName];
+              if (typeEntry != nullptr) {
+                auto classType = dynamic_cast<gen::Class *>(*typeEntry);
+                while (classType != nullptr) {
+                  if (classType->nameTable["__copy__"] != nullptr) {
+                    auto cloneCall = new ast::Call();
+                    cloneCall->logicalLine = this->logicalLine;
+                    cloneCall->ident = varExpr->Ident;
+                    cloneCall->modList = varExpr->modList;
+                    cloneCall->modList << "clone";
+                    auto callExpr = new ast::CallExpr();
+                    callExpr->logicalLine = this->logicalLine;
+                    callExpr->call = cloneCall;
+                    this->expr = callExpr;
+                    break;
+                  }
+                  classType = classType->parent;
+                }
+              }
+            }
+          }
         }
       }
 

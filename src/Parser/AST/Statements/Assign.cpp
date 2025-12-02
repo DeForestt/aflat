@@ -194,6 +194,12 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   }
   fin->owned = expr.owned;
 
+  if (this->modList.count == 0) {
+    if (auto *resolvedSymbol = std::get<4>(resolved)) {
+      resolvedSymbol->owned = expr.owned;
+    }
+  }
+
   if (generator.TypeList[fin->type.typeName] == nullptr) {
     auto t = new ast::Type();
     t->typeName = fin->type.typeName;
