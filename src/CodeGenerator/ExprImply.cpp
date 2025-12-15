@@ -14,12 +14,21 @@ using namespace gen::utils;
 namespace gen {
 ast::Expr *gen::CodeGenerator::imply(ast::Expr *expr, std::string typeName) {
   // find the type
+  // find the type of the expression
+  auto exprResult = this->GenExpr(expr, *(new asmc::File()), asmc::AUTO, "");
+  std::string exprType = exprResult.type;
+
   auto type = this->typeList[typeName];
   if (type != nullptr) {
     auto cl = dynamic_cast<gen::Class *>(*type);
     if (cl != nullptr) {
-      if (cl->dynamic) {
+      // check if the class has a function called "__from__<exprType>"
+      std::string fromFuncName = "__from__" + exprType;
+      ast::Function *fromFunc = cl->nameTable[fromFuncName];
+      if (cl->dynamic || cl->uniqueType) {
         ast::NewExpr *newExpr = new ast::NewExpr();
+        if (fromFunc)
+          newExpr->initFuncName = fromFuncName;
         newExpr->logicalLine = this->logicalLine;
         newExpr->type.typeName = typeName;
         newExpr->type.safeType = cl->safeType;
