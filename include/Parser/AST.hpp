@@ -333,6 +333,7 @@ public:
   Type type;
   links::LinkedList<Expr *> args;
   std::vector<std::string> templateTypes;
+  std::string initFuncName = "init";
   bool castableMap = false;
 
   std::string toString() override {

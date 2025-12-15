@@ -1232,7 +1232,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                 newExpr.type.typeName + " is not a class",
             true, __FILE__, __LINE__);
     // check if the class has a constructor
-    ast::Function *init = cl->nameTable["init"];
+    ast::Function *init = cl->nameTable[newExpr.initFuncName];
 
     // first call malloc with the size of the class
     ast::CallExpr *callMalloc = new ast::CallExpr();
@@ -1256,7 +1256,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       callInit->logicalLine = newExpr.logicalLine;
       callInit->call = new ast::Call;
       callInit->call->logicalLine = newExpr.logicalLine;
-      callInit->call->ident = "init";
+      callInit->call->ident = init->ident.ident;
+      callInit->call->slick = true;
       callInit->call->Args = newExpr.args;
       callInit->call->modList = links::LinkedList<std::string>();
       callInit->call->publify = cl->Ident;
