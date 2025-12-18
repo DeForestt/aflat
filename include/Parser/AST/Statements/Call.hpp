@@ -2,6 +2,7 @@
 #include <optional>
 #include <string>
 
+#include "LinkedListS.hpp"
 #include "Parser/AST.hpp"
 
 namespace ast {
@@ -35,6 +36,25 @@ public:
         modList(other.modList), genericTypes(other.genericTypes),
         publify(other.publify) {}
   std::string toString() override;
+
+private:
+  gen::GenerationResult
+  generateAttempt(gen::CodeGenerator &generator,
+                  std::optional<int> forcedOverloadIndex,
+                  links::SLinkedList<ast::Function, std::string> *forcedTable,
+                  const std::string &forcedIdent);
+  ast::Function *findFunctionByOverload(
+      links::SLinkedList<ast::Function, std::string> &table,
+      const std::string &ident, std::optional<int> forcedOverloadIndex,
+      links::SLinkedList<ast::Function, std::string> *forcedTable,
+      const std::string &forcedIdent,
+      links::SLinkedList<ast::Function, std::string> *&activeTable,
+      std::string &activeIdent, int &activeIndex);
+  [[noreturn]] void
+  requestOverloadRetry(gen::CodeGenerator &generator,
+                       links::SLinkedList<ast::Function, std::string> *table,
+                       const std::string &ident, int currentIndex,
+                       const std::string &message);
 };
 
 } // namespace ast
