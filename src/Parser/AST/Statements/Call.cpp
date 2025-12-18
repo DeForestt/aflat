@@ -1,13 +1,67 @@
 #include "Parser/AST/Statements/Call.hpp"
 
+#include <exception>
+
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/Parser.hpp"
 
+namespace {
+struct OverloadRetry : public std::exception {
+  int nextIndex;
+  links::SLinkedList<ast::Function, std::string> *table;
+  std::string ident;
+  std::string message;
+  OverloadRetry(int idx,
+                links::SLinkedList<ast::Function, std::string> *sourceTable,
+                std::string functionIdent, std::string reason)
+      : nextIndex(idx), table(sourceTable), ident(std::move(functionIdent)),
+        message(std::move(reason)) {}
+  const char *what() const noexcept override { return message.c_str(); }
+};
+} // namespace
+
 namespace ast {
 
 gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
+  std::optional<int> forcedOverloadIndex;
+  links::SLinkedList<ast::Function, std::string> *forcedTable = nullptr;
+  std::string forcedIdent;
+  std::string lastError;
+
+  while (true) {
+    if (forcedTable != nullptr && forcedOverloadIndex.has_value()) {
+      std::string candidate = forcedIdent;
+      if (forcedOverloadIndex.value() > 0) {
+        candidate += "_ovl" + std::to_string(forcedOverloadIndex.value());
+      }
+      if ((*forcedTable)[candidate] == nullptr) {
+        generator.alert(lastError.empty()
+                            ? "No matching overload for call to " + candidate
+                            : lastError,
+                        true, __FILE__, __LINE__);
+      }
+    }
+
+    Call attempt(*this);
+    try {
+      return attempt.generateAttempt(generator, forcedOverloadIndex,
+                                     forcedTable, forcedIdent);
+    } catch (const OverloadRetry &retry) {
+      forcedOverloadIndex = retry.nextIndex;
+      forcedTable = retry.table;
+      forcedIdent = retry.ident;
+      lastError = retry.message;
+      continue;
+    }
+  }
+}
+
+gen::GenerationResult Call::generateAttempt(
+    gen::CodeGenerator &generator, std::optional<int> forcedOverloadIndex,
+    links::SLinkedList<ast::Function, std::string> *forcedTable,
+    const std::string &forcedIdent) {
   auto flexFunction = ast::Function();
   auto callFunction = ast::Function();
   auto shiftedFunction = ast::Function();
@@ -18,6 +72,9 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   std::string mod = "";
   ast::Function *func;
   bool checkArgs = true;
+  links::SLinkedList<ast::Function, std::string> *overloadTable = nullptr;
+  std::string overloadIdent;
+  int currentOverloadIndex = -1;
   this->modList.invert();
   this->modList.reset();
   std::string ident = this->ident;
@@ -40,9 +97,13 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   int argsCounter = 0;
   std::string allMods = "";
   if (this->modList.pos == nullptr) {
-    func = generator.nameTable[ident];
+    func = findFunctionByOverload(
+        generator.nameTable, ident, forcedOverloadIndex, forcedTable,
+        forcedIdent, overloadTable, overloadIdent, currentOverloadIndex);
     if (func == nullptr) {
-      auto f = generator.genericFunctions[ident];
+      auto f = findFunctionByOverload(
+          generator.genericFunctions, ident, forcedOverloadIndex, forcedTable,
+          forcedIdent, overloadTable, overloadIdent, currentOverloadIndex);
       if (f != nullptr) {
         auto junkFile = asmc::File();
         func = dynamic_cast<ast::Function *>(deepCopy(f));
@@ -101,7 +162,10 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         this->ident = func->ident.ident;
         // get func from the name table so that it can be used with generated
         // return type
-        func = generator.nameTable[func->ident.ident];
+        func = findFunctionByOverload(generator.nameTable, func->ident.ident,
+                                      forcedOverloadIndex, forcedTable,
+                                      forcedIdent, overloadTable, overloadIdent,
+                                      currentOverloadIndex);
         if (func == nullptr) {
           generator.alert(
               "cannot find function after generic generation (this is a bug "
@@ -118,6 +182,9 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         smbl = generator.GlobalSymbolTable.search<std::string>(
             gen::utils::searchSymbol, ident);
       if (smbl != nullptr) {
+        overloadTable = nullptr;
+        overloadIdent.clear();
+        currentOverloadIndex = -1;
         if (smbl->type.typeName == "adr" ||
             smbl->type.fPointerArgs.isFPointer) {
           ast::Var *var = new ast::Var();
@@ -158,13 +225,18 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           auto cl = dynamic_cast<gen::Class *>(type);
           if (cl == nullptr)
             generator.alert("type is not a class " + smbl->type.typeName);
-          auto f = cl->nameTable["_call"];
+          auto f = findFunctionByOverload(
+              cl->nameTable, "_call", forcedOverloadIndex, forcedTable,
+              forcedIdent, overloadTable, overloadIdent, currentOverloadIndex);
           auto tname = smbl->type.typeName;
           if (f == nullptr) {
             // check the parent
             auto parent = cl->parent;
             if (parent != nullptr) {
-              f = parent->nameTable["_call"];
+              f = findFunctionByOverload(parent->nameTable, "_call",
+                                         forcedOverloadIndex, forcedTable,
+                                         forcedIdent, overloadTable,
+                                         overloadIdent, currentOverloadIndex);
               tname = parent->Ident;
               if (f == nullptr)
                 generator.alert("cannot preform this on type " +
@@ -179,6 +251,9 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
             }
           }
 
+          overloadTable = nullptr;
+          overloadIdent.clear();
+          currentOverloadIndex = -1;
           func = &callFunction;
           func->ident.ident = "pub_" + tname + "__call";
           func->type = f->type;
@@ -222,22 +297,26 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
       if (cl != nullptr) {
         bool addPub = true;
         pubname = cl->Ident;
-        func = cl->nameTable[this->modList.touch()];
+        std::string memberIdent = this->modList.touch();
+        func = findFunctionByOverload(
+            cl->nameTable, memberIdent, forcedOverloadIndex, forcedTable,
+            forcedIdent, overloadTable, overloadIdent, currentOverloadIndex);
         gen::Class *parent = cl->parent;
         if (func == nullptr && parent) {
-          func = parent->nameTable[this->modList.touch()];
+          func = findFunctionByOverload(
+              parent->nameTable, memberIdent, forcedOverloadIndex, forcedTable,
+              forcedIdent, overloadTable, overloadIdent, currentOverloadIndex);
           if (func != nullptr)
             pubname = parent->Ident;
         }
         bool shift = true;
         if (func == nullptr) {
-          std::string id = this->modList.touch();
+          std::string id = memberIdent;
           mods.push(id);
           sym = cl->SymbolTable.search<std::string>(gen::utils::searchSymbol,
-                                                    this->modList.touch());
+                                                    memberIdent);
           if (sym != nullptr && (sym->type.typeName == "adr" ||
                                  sym->type.fPointerArgs.isFPointer)) {
-            this->modList.touch();
             ast::Var *var = new ast::Var();
             var->logicalLine = this->logicalLine;
             var->Ident = ident;
@@ -255,6 +334,9 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
 
             //
 
+            overloadTable = nullptr;
+            overloadIdent.clear();
+            currentOverloadIndex = -1;
             func = &flexFunction;
             func->logicalLine = this->logicalLine;
             func->ident.ident =
@@ -278,21 +360,27 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
 
             addPub = false;
           } else if (sym == nullptr) {
-            generator.alert("cannot find function " + this->modList.touch(),
-                            true, __FILE__, __LINE__);
+            generator.alert("cannot find function " + memberIdent, true,
+                            __FILE__, __LINE__);
           } else if (this->modList.pos->next == nullptr) {
             // find the type of the object
             auto objectType = *generator.getType(sym->type.typeName, file);
             auto objectClass = dynamic_cast<gen::Class *>(objectType);
             if (objectClass == nullptr)
               generator.alert("type is not a class " + sym->type.typeName);
-            auto f = objectClass->nameTable["_call"];
+            auto f = findFunctionByOverload(
+                objectClass->nameTable, "_call", forcedOverloadIndex,
+                forcedTable, forcedIdent, overloadTable, overloadIdent,
+                currentOverloadIndex);
             if (f == nullptr)
               generator.alert("cannot preform this on type " +
                               sym->type.typeName +
                               " because it does not implement the _call "
                               "function");
 
+            overloadTable = nullptr;
+            overloadIdent.clear();
+            currentOverloadIndex = -1;
             func = &shiftedFunction;
             func->ident = f->ident;
             func->type = f->type;
@@ -383,7 +471,9 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
       gen::Class *cl =
           dynamic_cast<gen::Class *>(*generator.typeList[this->publify]);
       if (cl != nullptr) {
-        ast::Function *f = cl->nameTable[ident];
+        ast::Function *f = findFunctionByOverload(
+            cl->nameTable, ident, forcedOverloadIndex, forcedTable, forcedIdent,
+            overloadTable, overloadIdent, currentOverloadIndex);
         if (f == nullptr) {
           generator.alert("cannot find function: " + ident + " in class " +
                           this->publify);
@@ -410,7 +500,9 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
       gen::Class *cl = dynamic_cast<gen::Class *>(type);
       if (cl == nullptr)
         generator.alert("not a class: " + this->publify);
-      ast::Function *f = cl->nameTable[ident];
+      ast::Function *f = findFunctionByOverload(
+          cl->nameTable, ident, forcedOverloadIndex, forcedTable, forcedIdent,
+          overloadTable, overloadIdent, currentOverloadIndex);
       if (f == nullptr)
         generator.alert("cannot find function: " + ident + " in " + cl->Ident);
       func->argTypes = f->argTypes;
@@ -452,8 +544,10 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   std::vector<asmc::Instruction *> overflowArgs;
   int i = 0;
   if (this->Args.trail() < func->req)
-    generator.alert("Too few arguments for function: " + ident + " expected: " +
-                    std::to_string(func->argTypes.size()) + " got: 1");
+    this->requestOverloadRetry(
+        generator, overloadTable, overloadIdent, currentOverloadIndex,
+        "Too few arguments for function: " + ident +
+            " expected: " + std::to_string(func->argTypes.size()) + " got: 1");
 
   // create a string of argTypes
   std::string argTypesString = "";
@@ -480,23 +574,28 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         }
         if (sym && func) {
           if (sym->readOnly && !func->readOnly[i]) {
-            generator.alert(
+            this->requestOverloadRetry(
+                generator, overloadTable, overloadIdent, currentOverloadIndex,
                 "Cannot pass immutable variable `" + var->Ident +
-                "` to mutable function argument: " + func->ident.ident);
+                    "` to mutable function argument: " + func->ident.ident);
           }
         }
       }
       if (i >= func->argTypes.size()) {
         generator.logicalLine = arg->logicalLine;
-        generator.alert("Too many arguments for function: " + ident +
-                        " expected: " + std::to_string(func->argTypes.size()) +
-                        " got: " + std::to_string(i + 1));
+        this->requestOverloadRetry(
+            generator, overloadTable, overloadIdent, currentOverloadIndex,
+            "Too many arguments for function: " + ident +
+                " expected: " + std::to_string(func->argTypes.size()) +
+                " got: " + std::to_string(i + 1));
       }
       if (func->argTypes.at(i).isReference) {
         auto toReg = new ast::Reference();
         auto var = dynamic_cast<ast::Var *>(arg);
         if (var == nullptr) {
-          generator.alert("Attempted to pass an rvalue to a reference");
+          this->requestOverloadRetry(
+              generator, overloadTable, overloadIdent, currentOverloadIndex,
+              "Attempted to pass an rvalue to a reference");
         }
         auto sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
         if (!sym) {
@@ -508,14 +607,17 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           generator.alert("cannot find symbol: " + var->Ident);
         }
         if (sym->mutable_ == false && func->mutability[i]) {
-          generator.alert("cannot pass a const reference to a mutable "
-                          "argument: " +
-                          var->Ident);
+          this->requestOverloadRetry(
+              generator, overloadTable, overloadIdent, currentOverloadIndex,
+              "cannot pass a const reference to a mutable argument: " +
+                  var->Ident);
         } else if (func->mutability[i]) {
           gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
         }
         if (!var) {
-          generator.alert("A reference can only point to an lvalue");
+          this->requestOverloadRetry(generator, overloadTable, overloadIdent,
+                                     currentOverloadIndex,
+                                     "A reference can only point to an lvalue");
         }
         toReg->Ident = var->Ident;
         toReg->modList = var->modList;
@@ -527,8 +629,9 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         // make sure that its not a var
         auto var = dynamic_cast<ast::Var *>(arg);
         if (var != nullptr && var->Ident != "NULL") {
-          generator.alert("Attempted to pass an lvalue (" + var->Ident +
-                          ") to an rvalue");
+          this->requestOverloadRetry(
+              generator, overloadTable, overloadIdent, currentOverloadIndex,
+              "Attempted to pass an lvalue (" + var->Ident + ") to an rvalue");
         }
       }
       typeHint = func->argTypes.at(i).typeName;
@@ -539,8 +642,9 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     }
     gen::Expr exp = generator.GenExpr(arg, file, asmc::AUTO, typeHint);
     if (!exp.passable)
-      generator.alert("Cannot pass an lvalue of safe type " + exp.type +
-                      " to a function");
+      this->requestOverloadRetry(
+          generator, overloadTable, overloadIdent, currentOverloadIndex,
+          "Cannot pass an lvalue of safe type " + exp.type + " to a function");
     if (checkArgs && dynamic_cast<ast::CallExpr *>(arg) != nullptr &&
         !func->argTypes.at(i).isRvalue && exp.type != "void" &&
         parse::PRIMITIVE_TYPES.find(exp.type) == parse::PRIMITIVE_TYPES.end()) {
@@ -556,22 +660,24 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     if (!exp.owned && rValue) {
       if (parse::PRIMITIVE_TYPES.find(exp.type) ==
           parse::PRIMITIVE_TYPES.end()) {
-        generator.alert("Attempted to pass an unowned rvalue of type `" +
-                        exp.type +
-                        "` to a function argument that expects to take "
-                        "ownership.  Consider using the sell operator `$`" +
-                        " or ensure that the value is dynamically allocated "
-                        "(statically allocated references ar considered to be "
-                        "borrowed from the stack)");
+        this->requestOverloadRetry(
+            generator, overloadTable, overloadIdent, currentOverloadIndex,
+            "Attempted to pass an unowned rvalue of type `" + exp.type +
+                "` to a function argument that expects to take ownership.  "
+                "Consider using the sell operator `$` or ensure that the "
+                "value is dynamically allocated (statically allocated "
+                "references ar considered to be borrowed from the stack)");
       }
     }
 
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
         generator.logicalLine = arg->logicalLine;
-        generator.alert("Too many arguments for function: " + ident +
-                        " expected: " + std::to_string(func->argTypes.size()) +
-                        " got: " + std::to_string(i + 1));
+        this->requestOverloadRetry(
+            generator, overloadTable, overloadIdent, currentOverloadIndex,
+            "Too many arguments for function: " + ident +
+                " expected: " + std::to_string(func->argTypes.size()) +
+                " got: " + std::to_string(i + 1));
       };
       if (!generator.canAssign(func->argTypes.at(i), exp.type,
                                "function " + ident +
@@ -695,6 +801,37 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   }
   generator.intArgsCounter = 0;
   return {file, std::optional<gen::Expr>(func->toExpr(generator))};
+}
+
+ast::Function *Call::findFunctionByOverload(
+    links::SLinkedList<ast::Function, std::string> &table,
+    const std::string &ident, std::optional<int> forcedOverloadIndex,
+    links::SLinkedList<ast::Function, std::string> *forcedTable,
+    const std::string &forcedIdent,
+    links::SLinkedList<ast::Function, std::string> *&activeTable,
+    std::string &activeIdent, int &activeIndex) {
+  std::string lookupIdent = ident;
+  if (forcedTable == &table && forcedOverloadIndex.has_value() &&
+      forcedIdent == ident && forcedOverloadIndex.value() > 0) {
+    lookupIdent += "_ovl" + std::to_string(forcedOverloadIndex.value());
+  }
+  ast::Function *resolved = table[lookupIdent];
+  if (resolved != nullptr) {
+    activeTable = &table;
+    activeIdent = ident;
+    activeIndex = resolved->overloadIndex;
+  }
+  return resolved;
+}
+
+void Call::requestOverloadRetry(
+    gen::CodeGenerator &generator,
+    links::SLinkedList<ast::Function, std::string> *table,
+    const std::string &ident, int currentIndex, const std::string &message) {
+  if (table == nullptr || currentIndex < 0) {
+    generator.alert(message, true, __FILE__, __LINE__);
+  }
+  throw OverloadRetry(currentIndex + 1, table, ident, message);
 }
 
 std::string Call::toString() {

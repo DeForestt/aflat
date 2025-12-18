@@ -189,8 +189,16 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
   bool isLambda = this->isLambda;
 
   if (generator.scope == nullptr || this->globalLocked) {
-    if (!this->isLambda)
+    if (!this->isLambda) {
+      if (auto firstInstance = generator.nameTable[this->ident.ident]) {
+        if (firstInstance->ident.ident.find('.') == std::string::npos) {
+          this->overloadIndex = firstInstance->overloadIndex + 1;
+          this->ident.ident += "_ovl" + std::to_string(this->overloadIndex);
+          std::cout << "Function overload: " << this->ident.ident << "\n";
+        }
+      }
       generator.nameTable << *this;
+    }
   } else {
     if (!this->isLambda)
       this->scopeName = generator.scope->Ident;

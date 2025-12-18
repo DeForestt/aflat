@@ -38,6 +38,7 @@ public:
   bool error = false; // if the function can return an error
   bool autoType = false;
   bool globalLocked = false; // if the function is locked to the global scope
+  int overloadIndex = 0;
 
   Function() = default;
   Function(const string &ident, const ScopeMod &scope, const Type &type,
