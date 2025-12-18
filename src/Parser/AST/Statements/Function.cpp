@@ -191,10 +191,12 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
   if (generator.scope == nullptr || this->globalLocked) {
     if (!this->isLambda) {
       if (auto firstInstance = generator.nameTable[this->ident.ident]) {
-        if (firstInstance->ident.ident.find('.') == std::string::npos) {
+        bool forwardDeclaration = firstInstance->statement == nullptr;
+        if (!forwardDeclaration &&
+            firstInstance->ident.ident.find('.') == std::string::npos &&
+            this->scopeName == "global") {
           this->overloadIndex = firstInstance->overloadIndex + 1;
           this->ident.ident += "_ovl" + std::to_string(this->overloadIndex);
-          std::cout << "Function overload: " << this->ident.ident << "\n";
         }
       }
       generator.nameTable << *this;
