@@ -3,7 +3,7 @@
 
 import {len, int_toStringL0, str_toInt} from "strings" under str;
 import Function from "Utils/Functions";
-import * from "io" under io;
+import {print} from "io" under io;
 
 class AsyncOutput {
     bool okay;

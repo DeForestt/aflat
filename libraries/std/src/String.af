@@ -9,7 +9,7 @@ import { exp } from "math" under math;
 import Error from "Utils/Error";
 import vector from "Collections/Vector";
 
-import * from "strings" under str;
+import {int_toString, len, str_comp, str_at, str_toInt} from "strings" under str;
 import {print, printInt, printHex} from "io" under io;
 
 private char lower(char c){

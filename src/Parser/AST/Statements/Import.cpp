@@ -188,15 +188,26 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   std::unordered_map<std::string, std::string> nsMap;
   collectImportNamespaces(added, nsMap);
   for (std::string ident : this->imports) {
+    if (ident == "*") {
+      auto seq = dynamic_cast<ast::Sequence *>(added);
+      if (seq != nullptr) {
+        auto allStmts = gen::utils::extractAllFunctions(added);
+        allStmts->namespaceSwap(nsMap);
+        OutputFile << generator.GenSTMT(allStmts);
+      }
+      continue;
+    }
     if (generator.includedClasses.contains(id + "::" + ident))
       continue;
     generator.includedClasses.insert(id + "::" + ident, nullptr);
-    ast::Statement *statement = gen::utils::extract(ident, added, id);
-    if (statement == nullptr) {
+    auto allStmts = gen::utils::extractAll(ident, added, id);
+    if (allStmts.size() <= 0) {
       generator.alert("Identifier " + ident + " not found to import");
-    } else {
-      statement->namespaceSwap(nsMap);
-      OutputFile << generator.GenSTMT(statement);
+    };
+
+    for (auto stmt : allStmts) {
+      stmt->namespaceSwap(nsMap);
+      OutputFile << generator.GenSTMT(stmt);
     }
   }
   if (this->hasFunctions)

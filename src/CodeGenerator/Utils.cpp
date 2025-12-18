@@ -124,6 +124,58 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
   return nullptr;
 }
 
+std::vector<ast::Statement *> gen::utils::extractAll(std::string ident,
+                                                     ast::Statement *stmt,
+                                                     std::string id) {
+  std::vector<ast::Statement *> results;
+  // traverse the statement tree and return all statements with the ident
+  if (stmt == nullptr)
+    return results;
+  if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
+    ast::Sequence *seq = dynamic_cast<ast::Sequence *>(stmt);
+    auto temp1 = extractAll(ident, seq->Statement1, id);
+    results.insert(results.end(), temp1.begin(), temp1.end());
+    auto temp2 = extractAll(ident, seq->Statement2, id);
+    results.insert(results.end(), temp2.begin(), temp2.end());
+  } else if (dynamic_cast<ast::Function *>(stmt)) {
+    ast::Function *func = dynamic_cast<ast::Function *>(stmt);
+    if (func->ident.ident == ident) {
+      func->ident.ident = id + '.' + func->ident.ident;
+      if (func->genericTypes.size() == 0)
+        func->statement = nullptr;
+      if (func->scope != ast::Export)
+        func->locked = true;
+      results.push_back(func);
+    }
+  } else if (dynamic_cast<ast::Class *>(stmt)) {
+    ast::Class *cls = dynamic_cast<ast::Class *>(stmt);
+    if (cls->ident.ident == ident) {
+      if (cls->genericTypes.size() == 0) {
+        shellStatement(cls->statement);
+        cls->includer = true;
+        results.push_back(cls);
+      } else {
+        results.push_back(ast::deepCopy(cls));
+      }
+    }
+  } else if (dynamic_cast<ast::Enum *>(stmt)) {
+    ast::Enum *enm = dynamic_cast<ast::Enum *>(stmt);
+    if (enm->Ident == ident) {
+      results.push_back(stmt);
+    }
+  } else if (dynamic_cast<ast::Transform *>(stmt)) {
+    ast::Transform *trans = dynamic_cast<ast::Transform *>(stmt);
+    ast::Transform *t = new ast::Transform();
+    t->ident = trans->ident;
+    t->_template = trans->_template;
+    t->locked = false;
+    if (t->ident == ident) {
+      results.push_back(t);
+    }
+  }
+  return results;
+}
+
 ast::Sequence *gen::utils::extractAllFunctions(ast::Statement *stmt) {
   // recursively traverse the statement tree and return a new tree with all the
   // functions

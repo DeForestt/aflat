@@ -28,6 +28,7 @@ public:
   std::vector<Type> argTypes;
   std::vector<std::string> genericTypes;
   links::LinkedList<Expr *> decoratorArgs;
+  bool wasGeneric = false;
   std::vector<bool> mutability;
   std::vector<bool> readOnly; // if the argument is read only
   bool isLambda = false;
