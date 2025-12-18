@@ -13,11 +13,19 @@ struct OverloadRetry : public std::exception {
   links::SLinkedList<ast::Function, std::string> *table;
   std::string ident;
   std::string message;
+  bool fatal;
+  std::optional<int> fallbackIndex;
+  bool allowDiscardWarningFallback;
   OverloadRetry(int idx,
                 links::SLinkedList<ast::Function, std::string> *sourceTable,
-                std::string functionIdent, std::string reason)
+                std::string functionIdent, std::string reason,
+                bool fatalError = true,
+                std::optional<int> fallback = std::nullopt,
+                bool allowDiscardWarning = false)
       : nextIndex(idx), table(sourceTable), ident(std::move(functionIdent)),
-        message(std::move(reason)) {}
+        message(std::move(reason)), fatal(fatalError),
+        fallbackIndex(std::move(fallback)),
+        allowDiscardWarningFallback(allowDiscardWarning) {}
   const char *what() const noexcept override { return message.c_str(); }
 };
 } // namespace
@@ -29,6 +37,21 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
   links::SLinkedList<ast::Function, std::string> *forcedTable = nullptr;
   std::string forcedIdent;
   std::string lastError;
+  struct PendingRetryLog {
+    std::string reason;
+    bool clearOnSuccess = true;
+  };
+  std::vector<PendingRetryLog> pendingRetryLogs;
+  struct PendingFallback {
+    int index;
+    links::SLinkedList<ast::Function, std::string> *table;
+    std::string ident;
+    bool allowDiscardWarning;
+    size_t retryLogIndex;
+  };
+  std::optional<PendingFallback> discardWarningFallback;
+  bool allowDiscardWarningForNextAttempt = false;
+  std::optional<size_t> nextOverloadReasonIndex;
 
   while (true) {
     if (forcedTable != nullptr && forcedOverloadIndex.has_value()) {
@@ -37,6 +60,20 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
         candidate += "_ovl" + std::to_string(forcedOverloadIndex.value());
       }
       if ((*forcedTable)[candidate] == nullptr) {
+        if (discardWarningFallback.has_value()) {
+          forcedOverloadIndex = discardWarningFallback->index;
+          forcedTable = discardWarningFallback->table;
+          forcedIdent = discardWarningFallback->ident;
+          allowDiscardWarningForNextAttempt =
+              discardWarningFallback->allowDiscardWarning;
+          if (discardWarningFallback->retryLogIndex < pendingRetryLogs.size()) {
+            pendingRetryLogs[discardWarningFallback->retryLogIndex]
+                .clearOnSuccess = false;
+          }
+          nextOverloadReasonIndex = discardWarningFallback->retryLogIndex;
+          discardWarningFallback.reset();
+          continue;
+        }
         generator.alert(lastError.empty()
                             ? "No matching overload for call to " + candidate
                             : lastError,
@@ -44,15 +81,32 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
       }
     }
 
+    bool currentAllowDiscardWarning = allowDiscardWarningForNextAttempt;
     Call attempt(*this);
+    attempt.allowDiscardWarning = currentAllowDiscardWarning;
+    allowDiscardWarningForNextAttempt = false;
     try {
-      return attempt.generateAttempt(generator, forcedOverloadIndex,
-                                     forcedTable, forcedIdent);
+      auto result = attempt.generateAttempt(generator, forcedOverloadIndex,
+                                            forcedTable, forcedIdent);
+      pendingRetryLogs.clear();
+      nextOverloadReasonIndex.reset();
+      return result;
     } catch (const OverloadRetry &retry) {
+      pendingRetryLogs.push_back(PendingRetryLog{retry.message, true});
+      size_t retryLogIndex = pendingRetryLogs.size() - 1;
+      if (!retry.fatal && retry.fallbackIndex.has_value() &&
+          !discardWarningFallback.has_value()) {
+        discardWarningFallback = PendingFallback{
+            retry.fallbackIndex.value(), retry.table, retry.ident,
+            retry.allowDiscardWarningFallback, retryLogIndex};
+      } else if (retry.fatal) {
+        lastError = retry.message;
+      }
+      nextOverloadReasonIndex = retryLogIndex;
       forcedOverloadIndex = retry.nextIndex;
       forcedTable = retry.table;
       forcedIdent = retry.ident;
-      lastError = retry.message;
+      allowDiscardWarningForNextAttempt = false;
       continue;
     }
   }
@@ -135,6 +189,7 @@ gen::GenerationResult Call::generateAttempt(
         func->genericTypes.clear();
         func->scope = ast::ScopeMod::Private;
         func->globalLocked = true;
+        func->wasGeneric = true;
 
         bool generated = false;
 
@@ -650,11 +705,28 @@ gen::GenerationResult Call::generateAttempt(
         parse::PRIMITIVE_TYPES.find(exp.type) == parse::PRIMITIVE_TYPES.end()) {
       auto t = generator.typeList[exp.type];
       if (t && (*t)->uniqueType) {
-        generator.alert("Discarding non-primitive return value of type `" +
-                            exp.type + "` that is passed to argument " +
-                            std::to_string(i + 1) + " of function `" + ident +
-                            "` without transferring ownership may leak",
-                        false);
+        std::string discardWarning =
+            "Discarding non-primitive return value of type `" + exp.type +
+            "` that is passed to argument " + std::to_string(i + 1) +
+            " of function `" + ident +
+            "` without transferring ownership may leak";
+        bool hasAlternativeOverload = false;
+        if (!this->allowDiscardWarning && overloadTable != nullptr &&
+            currentOverloadIndex >= 0 && !overloadIdent.empty()) {
+          int nextIndex = currentOverloadIndex + 1;
+          if (nextIndex > 0) {
+            std::string nextCandidate = overloadIdent;
+            nextCandidate += "_ovl" + std::to_string(nextIndex);
+            hasAlternativeOverload = (*overloadTable)[nextCandidate] != nullptr;
+          }
+        }
+        if (hasAlternativeOverload) {
+          this->requestOverloadRetry(generator, overloadTable, overloadIdent,
+                                     currentOverloadIndex, discardWarning,
+                                     false, true, true);
+        } else {
+          generator.alert(discardWarning, false);
+        }
       }
     }
     if (!exp.owned && rValue) {
@@ -827,11 +899,18 @@ ast::Function *Call::findFunctionByOverload(
 void Call::requestOverloadRetry(
     gen::CodeGenerator &generator,
     links::SLinkedList<ast::Function, std::string> *table,
-    const std::string &ident, int currentIndex, const std::string &message) {
+    const std::string &ident, int currentIndex, const std::string &message,
+    bool fatal, bool allowFallbackToCurrent,
+    bool allowDiscardWarningOnFallback) {
   if (table == nullptr || currentIndex < 0) {
     generator.alert(message, true, __FILE__, __LINE__);
   }
-  throw OverloadRetry(currentIndex + 1, table, ident, message);
+  std::optional<int> fallbackIndex = std::nullopt;
+  if (allowFallbackToCurrent) {
+    fallbackIndex = currentIndex;
+  }
+  throw OverloadRetry(currentIndex + 1, table, ident, message, fatal,
+                      fallbackIndex, allowDiscardWarningOnFallback);
 }
 
 std::string Call::toString() {

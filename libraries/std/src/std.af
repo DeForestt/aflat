@@ -1,7 +1,7 @@
 .needs <std>
 .needs <asm>
 
-import * from "io" under io;
+import {print, printHex, printInt} from "io" under io;
 import string from "String";
 import Iterator from "Collections/Iterator";
 import Result from "Utils/Result";

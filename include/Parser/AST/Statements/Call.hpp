@@ -34,10 +34,12 @@ public:
   Call(const Call &other)
       : Statement(other), ident(other.ident), Args(other.Args),
         modList(other.modList), genericTypes(other.genericTypes),
-        publify(other.publify) {}
+        publify(other.publify), allowDiscardWarning(other.allowDiscardWarning) {
+  }
   std::string toString() override;
 
 private:
+  bool allowDiscardWarning = false;
   gen::GenerationResult
   generateAttempt(gen::CodeGenerator &generator,
                   std::optional<int> forcedOverloadIndex,
@@ -54,7 +56,9 @@ private:
   requestOverloadRetry(gen::CodeGenerator &generator,
                        links::SLinkedList<ast::Function, std::string> *table,
                        const std::string &ident, int currentIndex,
-                       const std::string &message);
+                       const std::string &message, bool fatal = true,
+                       bool allowFallbackToCurrent = false,
+                       bool allowDiscardWarningOnFallback = false);
 };
 
 } // namespace ast

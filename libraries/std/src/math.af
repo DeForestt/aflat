@@ -3,7 +3,7 @@
 import DateTime from "DateTime.af";
 import {Now} from "DateTime" under dt;
 import {hex_toInt} from "strings" under str;
-import * from "io" under io;
+import {fPrint} from "io" under io;
 
 export int exp(int base, int pow);
 

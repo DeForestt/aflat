@@ -5,7 +5,7 @@ import { worker } from "concurrency" under async;
 import AsyncResult from "concurrency";
 import string from "String";
 import { fString } from "String" under st;
-import * from "io" under io;
+import {print} from "io" under io;
 
 private adr getenv(adr name);
 
