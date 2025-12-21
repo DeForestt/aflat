@@ -139,8 +139,8 @@ class vector {
             if brk == true {
                 return opt.Some::<T>(val);
             };
-            return opt.None::<T>();
         };
+        return opt.None::<T>();
     };
 
     when (T is not primitive or T is adr)
