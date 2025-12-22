@@ -88,8 +88,19 @@ Rebuild using:
 ./rebuild-libs.sh
 ```
 
+When you have modified standard library files, run the rebuild script to regenerate the compiled standard libraries used by the compiler.
+HINT: The ./rebuild-libs.sh script can take an optional argument specifying a spesific library to rebuild. E.g.:
+```bash
+./rebuild-libs.sh JSON
+./rebuild-libs.sh Math
+./rebuild-libs.sh String
+```
+
 Tests: test/
 Contains Catch2-based unit tests.
+
+For testing aflat and standard library features, edit src/main.af and run ./bin/aflat run.
+also add aflat unit tests for STD library features in src/test/test.af
 
 Covers components like the code generator, preprocessor, parser, and ASM.
 
@@ -103,5 +114,3 @@ Code Generation	src/CodeGenerator/, include/CodeGenerator/
 ASM Formatting	src/ASM.cpp, include/ASM.hpp
 
 Any changes to the above affect compiler behavior. These are compiled into bin/aflat via make or CMake. Standard libraries are rebuilt separately.
-
-Let me know if you want this duplicated as a GitHub Wiki page or split into separate dev-focused and contributor-focused versions.
