@@ -11,7 +11,7 @@ import Map from "Utils/Map";
 import result from "Utils/result";
 import {describe, it, assertEqual, assertTrue, fix, getFixture, assertFalse} from "ATest" under test;
 import JSON from "JSON";
-import {String, Number, Boolean, Object, Null} from "JSON" under json;
+import {String, Number, Boolean, Object, Null, parse} from "JSON" under json;
 import { parse } from "JSON/Parse" under parser;
 import Box from "Memory";
 import {wrap} from "Memory" under box;
@@ -215,7 +215,45 @@ fn main() -> int{
                     Err(e) => test.assertEqual(`Object`, `Error: {e}`)
                 };
             });
+
+            test.describe("JSON.parse", fn () {
+                test.it("should parse directly from a string", fn () {
+                    const string jsonString = "\"direct\"";
+                    match json.parse(jsonString) {
+                        Ok(value) => match value.asString() {
+                            Ok(s) => test.assertTrue(`{s}` == "direct"),
+                            Err(e) => test.assertEqual(`String`, `Error: {e}`)
+                        },
+                        Err(e) => test.assertEqual(`String`, `Error: {e}`)
+                    };
+                });
+
+                test.it("should parse nested objects via JSON.parse", fn () {
+                    const string jsonString = "{ \"items\": [1, 2], \"enabled\": true }";
+                    match json.parse(jsonString) {
+                        Ok(value) => match value.asObject() {
+                            Ok(map) => {
+                                match map.get("enabled") {
+                                    Some(v) => match v.get().asBoolean() {
+                                        Ok(flag) => test.assertTrue(flag),
+                                        Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
+                                    },
+                                    None => test.assertTrue(false)
+                                };
+                                match map.get("items") {
+                                    Some(v) => match v.get().asList() {
+                                        Ok(list) => test.assertEqual(list.count(), 2),
+                                        Err(e) => test.assertEqual(`List`, `Error: {e}`)
+                                    },
+                                    None => test.assertTrue(false)
+                                };
+                            },
+                            Err(e) => test.assertEqual(`Object`, `Error: {e}`)
+                        },
+                        Err(e) => test.assertEqual(`Object`, `Error: {e}`)
+                    };
+                });
+            });
         });
     });
 };
-
