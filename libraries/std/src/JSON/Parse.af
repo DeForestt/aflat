@@ -1,6 +1,18 @@
 .needs <std>
-import string from "String";
+import {Some, None, optionWrapper} from "Utils/option" under opt;
+import {accept, reject, resultWrapper} from "Utils/result" under res;
+import {print} from "String" under str;
+import {char_isDigit, char_isWhiteSpace} from "strings" under st;
+import Box from "Memory";
+import {wrap} from "Memory" under box;
+import Error from "Utils/Error";
 import JSON from "JSON";
+import string from "String";
+import result from "Utils/result";
+import option from "Utils/option";
+import vector from "Collections/Vector";
+import unordered_map from "Collections/unordered_map";
+
 
 export fn parse(const string json_) -> JSON! {
     return JSON.parse(json_);
