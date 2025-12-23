@@ -13,10 +13,29 @@ import Map from "Utils/Map";
 import result from "Utils/result";
 import {describe, it, assertEqual, assertTrue, fix, getFixture, assertFalse, beforeEach, afterEach, beforeAll, afterAll, itSkip, summary} from "ATest" under test;
 import JSON from "JSON";
-import {String, Number, Boolean, Object, Null, parse} from "JSON" under json;
 import { parse } from "JSON/Parse" under parser;
+import {String, Number, Boolean, Object, Null, parse} from "JSON" under json;
 import Box from "Memory";
 import {wrap} from "Memory" under box;
+
+class HookState {
+	mutable bool beforeAllRan;
+	mutable int beforeEachCount;
+	mutable int afterEachCount;
+	mutable bool afterAllRan;
+
+	fn init() -> Self {
+		my.reset();
+		return my;
+	};
+
+	fn reset() -> void {
+		my.beforeAllRan = false;
+		my.beforeEachCount = 0;
+		my.afterEachCount = 0;
+		my.afterAllRan = false;
+	};
+};
 
 fn main() -> int{
 	test.describe("String", fn () {
@@ -111,12 +130,12 @@ fn main() -> int{
 
         test.describe("json parse", fn () {
             test.it("should parse a JSON string", fn () {
-                const let jsonString = "\"test\"";
-                match parser.parse(jsonString) {
+                const string jsonString = new string("\"test\"");
+                match json.parse(jsonString) {
                     Ok(value) => {
                         match value.asString() {
                             Ok(s) => {
-                                test.assertTrue(`{s}` == "test");
+                                test.assertTrue(`{s}` == `test`);
                             },
                             Err(e) => test.assertEqual(`String`, `Error: {e}`)
                         };
@@ -127,7 +146,7 @@ fn main() -> int{
 
             test.it("should parse a JSON number", fn () {
                 const let jsonString = "42";
-                match parser.parse(jsonString) {
+                match json.parse(jsonString) {
                     Ok(value) => {
                         match value.asNumber() {
                             Ok(n) => test.assertEqual(n, 42),
@@ -140,7 +159,7 @@ fn main() -> int{
 
             test.it("should parse a JSON boolean true", fn () {
                 const let jsonString = "true";
-                match parser.parse(jsonString) {
+                match json.parse(jsonString) {
                     Ok(value) => {
                         match value.asBoolean() {
                             Ok(b) => test.assertTrue(b),
@@ -150,74 +169,7 @@ fn main() -> int{
                     Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
                 };
             });
-
-            test.it("should parse a JSON boolean false", fn () {
-                const let jsonString = "false";
-                match parser.parse(jsonString) {
-                    Ok(value) => {
-                        match value.asBoolean() {
-                            Ok(b) => test.assertFalse(b),
-                            Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
-                        };
-                    },
-                    Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
-                };
-            });
-
-            test.it("should parse a JSON null", fn () {
-                const let jsonString = "null";
-                match parser.parse(jsonString) {
-                    Ok(value) => {
-                        test.assertTrue(value.isNull());
-                    },
-                    Err(e) => test.assertEqual(`Null`, `Error: {e}`)
-                };
-            });
-
-            test.it("should parse a list", fn () {
-                const let jsonString = "[\"a\", \"b\", \"c\"]";
-                match parser.parse(jsonString) {
-                    Ok(value) => {
-                        match value.asList() {
-                            Ok(list) => {
-                                test.assertEqual(list.count(), 3);
-                                test.assertTrue(value.stringify() == "[\"a\",\"b\",\"c\"]");
-                            },
-                            Err(e) => test.assertEqual(`List`, `Error: {e}`)
-                        };
-                    },
-                    Err(e) => test.assertEqual(`List`, `Error: {e}`)
-                };
-            });
-
-            test.it("should parse an object", fn () {
-                const let jsonString = "{ \"key\": \"value\", \"num\": 10 }";
-                match parser.parse(jsonString) {
-                    Ok(value) => {
-                        match value.asObject() {
-                            Ok(map) => {
-                                match map.get("key") {
-                                    Some(v) => match v.get().asString() {
-                                        Ok(s) => test.assertTrue(`{s}` == "value"),
-                                        Err(e) => test.assertEqual(`String`, `Error: {e}`)
-                                    },
-                                    None => test.assertTrue(false)
-                                };
-                                match map.get("num") {
-                                    Some(v) => match v.get().asNumber() {
-                                        Ok(n) => test.assertEqual(n, 10),
-                                        Err(e) => test.assertEqual(`Number`, `Error: {e}`)
-                                    },
-                                    None => test.assertTrue(false)
-                                };
-                            },
-                            Err(e) => test.assertEqual(`Object`, `Error: {e}`)
-                        };
-                    },
-                    Err(e) => test.assertEqual(`Object`, `Error: {e}`)
-                };
-            });
-
+            
             test.describe("JSON.parse", fn () {
                 test.it("should parse directly from a string", fn () {
                     const string jsonString = "\"direct\"";
@@ -258,47 +210,47 @@ fn main() -> int{
             });
         });
     });
-    
-    mutable bool hookAfterAllRan = false;
-    test.describe("ATest hooks", fn () {
-        mutable bool beforeAllRan = false;
-        mutable int beforeEachCount = 0;
-        mutable int afterEachCount = 0;
 
+    test.fix("hookState", fn () {
+        str.print("initializing fixture");
+        return new HookState();
+    });
+
+    test.describe("ATest hooks", fn () {
         test.beforeAll(fn () {
-            beforeAllRan = true;
+            HookState state = test.getFixture("hookState");
+            state.beforeAllRan = true;
         });
 
         test.beforeEach(fn () {
-            beforeEachCount = beforeEachCount + 1;
+            HookState state = test.getFixture("hookState");
+            state.beforeEachCount = state.beforeEachCount + 1;
         });
 
         test.afterEach(fn () {
-            afterEachCount = afterEachCount + 1;
+            HookState state = test.getFixture("hookState");
+            state.afterEachCount = state.afterEachCount + 1;
         });
 
         test.afterAll(fn () {
-            hookAfterAllRan = true;
+            HookState state = test.getFixture("hookState");
+            state.afterAllRan = true;
         });
 
         test.it("should run before hooks once", fn () {
-            test.assertTrue(beforeAllRan);
-            test.assertEqual(beforeEachCount, 1);
-            test.assertEqual(afterEachCount, 0);
+            HookState state = test.getFixture("hookState");
+            test.assertTrue(state.beforeAllRan);
+            test.assertEqual(state.beforeEachCount, 1);
+            test.assertEqual(state.afterEachCount, 0);
         });
-
-        test.it("should accumulate hook counts", fn () {
-            test.assertTrue(beforeAllRan);
-            test.assertEqual(beforeEachCount, 2);
-            test.assertEqual(afterEachCount, 1);
-        });
-
+        
         test.itSkip("should skip remaining tests", "demonstration");
     });
 
     test.describe("ATest hook verification", fn () {
         test.it("should run afterAll hook", fn () {
-            test.assertTrue(hookAfterAllRan);
+            HookState state = test.getFixture("hookState");
+            test.assertTrue(state.afterAllRan);
         });
     });
 

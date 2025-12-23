@@ -209,8 +209,8 @@ export fn fix(const adr name, const adr setUp, * const adr tearDown) -> void {
 
 export fn getFixture(const string name) -> any {
 	const let fd = getFixtureData();
-	if fd.has(name) {
-		const any data = fd.get(name).orElse(fn () panic("Fixture data not found"));
+	if fd.has(name.cstr()) {
+		const any data = fd.get(name.cstr()).orElse(fn () panic("Fixture data not found"));
 		return data;
 	};
 	const let name = name.cstr();
