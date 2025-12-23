@@ -212,7 +212,6 @@ fn main() -> int{
     });
 
     test.fix("hookState", fn () {
-        str.print("initializing fixture");
         return new HookState();
     });
 
@@ -243,7 +242,7 @@ fn main() -> int{
             test.assertEqual(state.beforeEachCount, 1);
             test.assertEqual(state.afterEachCount, 0);
         });
-        
+
         test.itSkip("should skip remaining tests", "demonstration");
     });
 
