@@ -1,4 +1,6 @@
 .needs <std>
+.needs <test>
+
 import {print} from "String" under str;
 import string from "String";
 import List from "Collections";
@@ -9,7 +11,7 @@ import {Some, None, optionWrapper} from "Utils/option" under opt;
 import {accept, reject, resultWrapper} from "Utils/result" under res;
 import Map from "Utils/Map";
 import result from "Utils/result";
-import {describe, it, assertEqual, assertTrue, fix, getFixture, assertFalse} from "ATest" under test;
+import {describe, it, assertEqual, assertTrue, fix, getFixture, assertFalse, beforeEach, afterEach, beforeAll, afterAll, itSkip, summary} from "ATest" under test;
 import JSON from "JSON";
 import {String, Number, Boolean, Object, Null, parse} from "JSON" under json;
 import { parse } from "JSON/Parse" under parser;
@@ -256,4 +258,49 @@ fn main() -> int{
             });
         });
     });
+    
+    mutable bool hookAfterAllRan = false;
+    test.describe("ATest hooks", fn () {
+        mutable bool beforeAllRan = false;
+        mutable int beforeEachCount = 0;
+        mutable int afterEachCount = 0;
+
+        test.beforeAll(fn () {
+            beforeAllRan = true;
+        });
+
+        test.beforeEach(fn () {
+            beforeEachCount = beforeEachCount + 1;
+        });
+
+        test.afterEach(fn () {
+            afterEachCount = afterEachCount + 1;
+        });
+
+        test.afterAll(fn () {
+            hookAfterAllRan = true;
+        });
+
+        test.it("should run before hooks once", fn () {
+            test.assertTrue(beforeAllRan);
+            test.assertEqual(beforeEachCount, 1);
+            test.assertEqual(afterEachCount, 0);
+        });
+
+        test.it("should accumulate hook counts", fn () {
+            test.assertTrue(beforeAllRan);
+            test.assertEqual(beforeEachCount, 2);
+            test.assertEqual(afterEachCount, 1);
+        });
+
+        test.itSkip("should skip remaining tests", "demonstration");
+    });
+
+    test.describe("ATest hook verification", fn () {
+        test.it("should run afterAll hook", fn () {
+            test.assertTrue(hookAfterAllRan);
+        });
+    });
+
+    test.summary();
 };

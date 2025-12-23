@@ -7,7 +7,11 @@ import unordered_map from "Collections/unordered_map";
 import {Some, None, optionWrapper} from "Utils/option" under opt;
 import {accept, reject, resultWrapper} from "Utils/result" under res;
 import {print} from "String" under str;
+<<<<<<< Updated upstream
 import {char_isDigit, char_isWhiteSpace} from "strings" under st;
+=======
+import {len} from "strings" under st;
+>>>>>>> Stashed changes
 import Box from "Memory";
 import {wrap} from "Memory" under box;
 import Error from "Utils/Error";
@@ -165,7 +169,10 @@ export fn Object(const unordered_map::<Box::<JSON>> map) -> JSON {
 };
 
 export fn String(const adr s) -> JSON {
-    return new JSON->String(s);
+    if s == NULL return new JSON->Null();
+    let v = malloc(st.len(s) + 1);
+    memcpy(v, s, st.len(s) + 1);
+    return new JSON->String(v);
 };
 
 export fn Number(const int n) -> JSON {
