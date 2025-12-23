@@ -512,8 +512,6 @@ class HookState {
     };
 };
 
-mutable HookState sharedHookState = NULL;
-
 fn main() -> int {
     test.fix("hookState", fn () {
         return new HookState();
