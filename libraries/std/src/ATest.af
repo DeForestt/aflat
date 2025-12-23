@@ -47,6 +47,110 @@ class FixtureStruct {
 mutable unordered_map::<FixtureStruct> fixtures = NULL;
 mutable Map fixtureData = NULL;
 
+
+class DescribeContext {
+	DescribeContext parent = NULL;
+	vector::<adr> beforeEachHooks;
+	vector::<adr> afterEachHooks;
+	vector::<adr> beforeAllHooks;
+	vector::<adr> afterAllHooks;
+	bool beforeAllRan;
+
+	fn init() -> Self {
+		my.beforeEachHooks = new vector::<adr>();
+		my.afterEachHooks = new vector::<adr>();
+		my.beforeAllHooks = new vector::<adr>();
+		my.afterAllHooks = new vector::<adr>();
+		my.beforeAllRan = false;
+		return my;
+	};
+
+	fn runBeforeEachHooks() -> void {
+		foreach hook in my.beforeEachHooks {
+			const let cb = hook;
+			cb();
+		};
+	};
+
+	fn runAfterEachHooks() -> void {
+		let idx = my.afterEachHooks.count();
+		while idx > 0 {
+			idx = idx - 1;
+			const adr hook = my.afterEachHooks.get(idx).expect("afterEach hook missing");
+			const let cb = hook;
+			cb();
+		};
+	};
+
+	fn runBeforeAllHooks() -> void {
+		if my.beforeAllRan return;
+		foreach hook in my.beforeAllHooks {
+			const let cb = hook;
+			cb();
+		};
+		my.beforeAllRan = true;
+	};
+
+	fn runAfterAllHooks() -> void {
+		let idx = my.afterAllHooks.count();
+		while idx > 0 {
+			idx = idx - 1;
+			const adr hook = my.afterAllHooks.get(idx).expect("afterAll hook missing");
+			const let cb = hook;
+			cb();
+			};
+		};
+
+		fn toString() -> string {
+			return "DescribeContext";
+		};
+};
+
+mutable DescribeContext rootContext = NULL;
+mutable DescribeContext activeContext = NULL;
+
+fn ensureRootContext() -> void {
+	if rootContext == NULL {
+		rootContext = new DescribeContext();
+	};
+	if activeContext == NULL {
+		activeContext = rootContext;
+	};
+};
+
+fn currentDescribeContext() -> DescribeContext {
+	ensureRootContext();
+	return activeContext;
+};
+
+fn pushDescribeContext() -> void {
+	ensureRootContext();
+	const DescribeContext ctx = new DescribeContext();
+	ctx.parent = activeContext;
+	activeContext = ctx;
+};
+
+fn popDescribeContext() -> DescribeContext {
+	ensureRootContext();
+	const DescribeContext ctx = activeContext;
+	if ctx.parent != NULL {
+		activeContext = ctx.parent;
+	} else {
+		activeContext = rootContext;
+	};
+	return ctx;
+};
+
+mutable int totalTests = 0;
+mutable int failedTests = 0;
+mutable int skippedTests = 0;
+mutable bool currentTestFailed = false;
+
+fn markFailure(const string message) -> void {
+	currentTestFailed = true;
+	str.print(`      {message}\n`);
+};
+
 export fn getFixtures() -> unordered_map::<FixtureStruct> {
 	if fixtures == NULL {
 		fixtures = new unordered_map::<FixtureStruct>();
@@ -80,24 +184,13 @@ export fn tearDownFixtures() -> void {
 	built.clear();
 };
 
-class Description {
-	string text = text;
-	any<> implementation = implementation;
-	fn init(const string text, const any<> implementation) {
-		return my;
-	};
-
-	fn run() -> bool {
-		str.print(my.text + "\n");
-		const let foo = my.implementation;
-		foo();
-		return true;
-	};
-};
-
 export fn describe(const string text, const adr implementation) -> void {
-	const let desc = new Description(text, implementation);
-	desc.run();
+	str.print(text + "\n");
+	pushDescribeContext();
+	const let cb = implementation;
+	cb();
+	const DescribeContext ctx = popDescribeContext();
+	ctx.runAfterAllHooks();
 };
 
 export fn fix(const adr name, const adr setUp, * const adr tearDown) -> void {
@@ -116,8 +209,8 @@ export fn fix(const adr name, const adr setUp, * const adr tearDown) -> void {
 
 export fn getFixture(const string name) -> any {
 	const let fd = getFixtureData();
-	if fd.has(name) {
-		const any data = fd.get(name).orElse(fn () panic("Fixture data not found"));
+	if fd.has(name.cstr()) {
+		const any data = fd.get(name.cstr()).orElse(fn () panic("Fixture data not found"));
 		return data;
 	};
 	const let name = name.cstr();
@@ -128,58 +221,136 @@ export fn getFixture(const string name) -> any {
 	return data;
 };
 
-mutable any<> beforeEachFn = NULL;
+fn runBeforeAllRecursive(const DescribeContext ctx) -> void {
+	if ctx == NULL return;
+	const DescribeContext parent = ctx.parent;
+	if parent != NULL {
+		runBeforeAllRecursive(parent);
+	};
+	ctx.runBeforeAllHooks();
+};
+
+fn runBeforeEachRecursive(const DescribeContext ctx) -> void {
+	if ctx == NULL return;
+	const DescribeContext parent = ctx.parent;
+	if parent != NULL {
+		runBeforeEachRecursive(parent);
+	};
+	ctx.runBeforeEachHooks();
+};
+
+fn runBeforeAllHooksForStack() -> void {
+	const DescribeContext ctx = currentDescribeContext();
+	runBeforeAllRecursive(ctx);
+};
+
+fn runBeforeEachHooksForStack() -> void {
+	const DescribeContext ctx = currentDescribeContext();
+	runBeforeEachRecursive(ctx);
+};
+
+fn runAfterEachHooksForStack() -> void {
+	DescribeContext ctx = currentDescribeContext();
+	while ctx != NULL {
+		ctx.runAfterEachHooks();
+		ctx = ctx.parent;
+	};
+};
 
 export fn beforeEach(const adr implementation) -> void {
-        beforeEachFn = implementation;
+	const DescribeContext ctx = currentDescribeContext();
+	ctx.beforeEachHooks.push_back(implementation);
+};
+
+export fn afterEach(const adr implementation) -> void {
+	const DescribeContext ctx = currentDescribeContext();
+	ctx.afterEachHooks.push_back(implementation);
+};
+
+export fn beforeAll(const adr implementation) -> void {
+	const DescribeContext ctx = currentDescribeContext();
+	ctx.beforeAllHooks.push_back(implementation);
+};
+
+export fn afterAll(const adr implementation) -> void {
+	const DescribeContext ctx = currentDescribeContext();
+	ctx.afterAllHooks.push_back(implementation);
 };
 
 export fn it(const adr text, const adr implementation) -> void {
-        str.print(`  it: {text}\n`);
-        if beforeEachFn != NULL {
-                const let cb = beforeEachFn;
-                cb();
-        };
-        implementation();
-		tearDownFixtures();
+	totalTests = totalTests + 1;
+	currentTestFailed = false;
+	str.print(`  it: {text}\n`);
+	runBeforeAllHooksForStack();
+	runBeforeEachHooksForStack();
+	const let cb = implementation;
+	cb();
+	runAfterEachHooksForStack();
+	tearDownFixtures();
+	if currentTestFailed {
+		failedTests = failedTests + 1;
+		str.print("      ✗ FAILED\n");
+	} else {
+		str.print("      ✓ PASSED\n");
+	};
+};
+
+export fn itSkip(const string text, const string reason) -> void {
+	skippedTests = skippedTests + 1;
+	str.print(`  it: {text} (skipped: {reason})\n`);
 };
 
 types(T)
 export fn assertEqual(const T expected, const T actual) -> void {
 	if expected != actual {
-		str.print(`      Expected {expected} but got {actual}\n`);
+		markFailure(`Expected {expected} but got {actual}`);
+	};
+};
+
+private fn assertEqualStrings(const string expected, const string actual) -> void {
+	if expected != actual {
+		markFailure(`Expected {expected} but got {actual}`);
 	};
 };
 
 types(T)
 export fn assertNotEqual(const T expected, const T actual) -> void {
 	if expected == actual {
-		str.print(`      Expected not {expected} but got {actual}\n`);
+		markFailure(`Expected not {expected} but got {actual}`);
 	};
 };
 
 export fn assertTrue(const bool condition) -> void {
 	if !condition {
-		str.print(`      Expected true but got false\n`);
+		currentTestFailed = true;
+		str.print("      Expected true but got false\n");
 	};
 };
 
 export fn assertFalse(const bool condition) -> void {
 	if condition {
-		str.print(`      Expected false but got true\n`);
+		currentTestFailed = true;
+		str.print("      Expected false but got true\n");
 	};
 };
 
-types(T)
-export fn assertNull(const T value) -> void {
+export fn assertNull(const adr value) -> void {
 	if value != NULL {
-		str.print(`      Expected null but got {value}\n`);
+		markFailure(`Expected null but got {value}`);
 	};
 };
 
-types(any)
-export fn assertNotNull(const any value) -> void {
+export fn assertNotNull(const adr value) -> void {
 	if value == NULL {
-		str.print(`      Expected not null but got null\n`);
+		markFailure("Expected not null but got null");
 	};
+};
+
+export fn fail(const string message) -> void {
+	markFailure(message);
+};
+
+export fn summary() -> void {
+	const int passed = totalTests - failedTests;
+	str.print(`Summary: {passed} passed, {failedTests} failed, {skippedTests} skipped (total: {totalTests})\n`);
 };

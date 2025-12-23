@@ -486,22 +486,82 @@ void buildTemplate(std::string value) {
   outfile.close();
 
   outfile = std::ofstream(value + "/src/test/test.af");
-  outfile << ".needs <std>\n\n";
-  outfile
-      << "import {describe, it, assertEqual} from \"ATest\" under test;\n"
-         "import Map from \"Utils/Map\";\n\n"
-         "fn main() -> int {\n"
-         "\ttest.describe(\"Test Suite 1\", fn (Map __context) -> bool {\n"
-         "\t\ttest.it(\"should pass the first test\", fn (Map __context) {\n"
-         "\t\t\ttest.assertEqual(1, 1);\n"
-         "\t\t});\n"
-         "\t\ttest.it(\"should fail the second test\", fn (Map __context) {\n"
-         "\t\t\ttest.assertEqual(`value`, `other`);\n"
-         "\t\t});\n"
-         "\t\treturn true;\n"
-         "\t});\n"
-         "\treturn 0;\n"
-         "};";
+  outfile << R"(.needs <std>
+.needs <test>
+
+import {beforeAll, beforeEach, afterEach, afterAll,
+        describe, it, itSkip, fix, getFixture,
+        assertEqual, assertTrue, summary} from "ATest" under test;
+
+class HookState {
+    bool beforeAllRan;
+    int beforeEachCount;
+    int afterEachCount;
+    bool afterAllRan;
+
+    fn init() -> Self {
+        my.reset();
+        return my;
+    };
+
+    fn reset() -> void {
+        my.beforeAllRan = false;
+        my.beforeEachCount = 0;
+        my.afterEachCount = 0;
+        my.afterAllRan = false;
+    };
+};
+
+fn main() -> int {
+    test.fix("hookState", fn () {
+        return new HookState();
+    });
+
+    test.describe("Hooks and fixtures", fn () {
+        test.beforeAll(fn () {
+            HookState state = test.getFixture("hookState");
+            state.beforeAllRan = true;
+        });
+
+        test.beforeEach(fn () {
+            HookState state = test.getFixture("hookState");
+            state.beforeEachCount = state.beforeEachCount + 1;
+        });
+
+        test.afterEach(fn () {
+            HookState state = test.getFixture("hookState");
+            state.afterEachCount = state.afterEachCount + 1;
+        });
+
+        test.afterAll(fn () {
+            HookState state = test.getFixture("hookState");
+            state.afterAllRan = true;
+        });
+
+        test.it("tracks hook counts", fn () {
+            HookState state = test.getFixture("hookState");
+            test.assertTrue(state.beforeAllRan);
+            test.assertEqual(state.beforeEachCount, 1);
+            test.assertEqual(state.afterEachCount, 0);
+        });
+
+        test.itSkip("unimplemented behavior", "demonstration");
+    });
+
+    test.describe("Simple assertions", fn () {
+        test.it("compares strings", fn () {
+            test.assertTrue(`aflat` == `aflat`);
+        });
+
+        test.it("adds numbers", fn () {
+            test.assertEqual(2 + 2, 4);
+        });
+    });
+
+    test.summary();
+    return 0;
+};
+)";
   outfile.close();
 
   outfile = std::ofstream(value + "/aflat.cfg");
@@ -539,27 +599,92 @@ void libTemplate(std::string value) {
   outfile.close();
 
   outfile = std::ofstream(value + "/src/test/test.af");
-  outfile << ".needs <std>\n\n";
-  outfile << "import {describe, it, assertEqual} from \"ATest\" under test;\n"
-             "import Map from \"Utils/Map\";\n"
-             "import {"
-          << value
-          << "} from \"src/mod\";\n\n"
-             "fn main() -> int {\n"
-             "\ttest.describe(\""
-          << value
-          << " Test Suite\", fn (Map __context) -> bool {\n"
-             "\t\ttest.it(\"test_"
-          << value
-          << "\", fn (Map __context) {\n"
-             "\t\t\ttest.assertEqual("
-          << value
-          << "(1, 2), 3);\n"
-             "\t\t});\n"
-             "\t\treturn true;\n"
-             "\t});\n"
-             "\treturn 0;\n"
-             "};";
+  outfile << ".needs <std>\n.needs <test>\n\n";
+  outfile << "import {beforeAll, beforeEach, afterEach, afterAll, describe, "
+             "it, itSkip, fix, getFixture, assertEqual, assertTrue, summary} "
+             "from \"ATest\" under test;\n";
+  outfile << "import {" << value << "} from \"src/mod\";\n\n";
+  outfile << R"(class HookState {
+    bool beforeAllRan;
+    int beforeEachCount;
+    int afterEachCount;
+    bool afterAllRan;
+
+    fn init() -> Self {
+        my.reset();
+        return my;
+    };
+
+    fn reset() -> void {
+        my.beforeAllRan = false;
+        my.beforeEachCount = 0;
+        my.afterEachCount = 0;
+        my.afterAllRan = false;
+    };
+};
+
+mutable HookState sharedHookState = NULL;
+
+fn hookState() -> HookState {
+    if sharedHookState == NULL {
+        sharedHookState = new HookState();
+    };
+    return sharedHookState;
+};
+
+fn main() -> int {
+    test.fix("hookState", fn () -> HookState {
+        return hookState();
+    });
+
+    hookState().reset();
+
+    test.describe("Hooks and fixtures", fn () {
+        test.beforeAll(fn () {
+            HookState state = test.getFixture("hookState");
+            state.beforeAllRan = true;
+        });
+
+        test.beforeEach(fn () {
+            HookState state = test.getFixture("hookState");
+            state.beforeEachCount = state.beforeEachCount + 1;
+        });
+
+        test.afterEach(fn () {
+            HookState state = test.getFixture("hookState");
+            state.afterEachCount = state.afterEachCount + 1;
+        });
+
+        test.afterAll(fn () {
+            HookState state = test.getFixture("hookState");
+            state.afterAllRan = true;
+        });
+
+        test.it("tracks hook counts", fn () {
+            HookState state = test.getFixture("hookState");
+            test.assertTrue(state.beforeAllRan);
+            test.assertEqual(state.beforeEachCount, 1);
+            test.assertEqual(state.afterEachCount, 0);
+        });
+
+        test.it("accumulates across tests", fn () {
+            HookState state = test.getFixture("hookState");
+            test.assertEqual(state.beforeEachCount, 2);
+            test.assertEqual(state.afterEachCount, 1);
+        });
+
+        test.itSkip("unimplemented behavior", "demonstration");
+    });
+)";
+  outfile << "    test.describe(\"Library function\", fn () {\n";
+  outfile << "        test.it(\"adds numbers\", fn () {\n";
+  outfile << "            test.assertEqual(" << value << "(1, 2), 3);\n";
+  outfile << "        });\n";
+  outfile << "    });\n\n";
+  outfile << R"(    test.summary();
+    return 0;
+};
+)";
 
   outfile.close();
 }
