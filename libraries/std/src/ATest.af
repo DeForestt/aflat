@@ -307,7 +307,7 @@ export fn assertEqual(const T expected, const T actual) -> void {
 	};
 };
 
-private fn assertEqualStrings(const string expected, const string actual) -> void {
+export fn assertEqualStrings(const string expected, const string actual) -> void {
 	if expected != actual {
 		markFailure(`Expected {expected} but got {actual}`);
 	};
