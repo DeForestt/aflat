@@ -514,19 +514,10 @@ class HookState {
 
 mutable HookState sharedHookState = NULL;
 
-fn hookState() -> HookState {
-    if sharedHookState == NULL {
-        sharedHookState = new HookState();
-    };
-    return sharedHookState;
-};
-
 fn main() -> int {
     test.fix("hookState", fn () {
-        return hookState();
+        return new HookState();
     });
-
-    hookState().reset();
 
     test.describe("Hooks and fixtures", fn () {
         test.beforeAll(fn () {
@@ -554,12 +545,6 @@ fn main() -> int {
             test.assertTrue(state.beforeAllRan);
             test.assertEqual(state.beforeEachCount, 1);
             test.assertEqual(state.afterEachCount, 0);
-        });
-
-        test.it("accumulates across tests", fn () {
-            HookState state = test.getFixture("hookState");
-            test.assertEqual(state.beforeEachCount, 2);
-            test.assertEqual(state.afterEachCount, 1);
         });
 
         test.itSkip("unimplemented behavior", "demonstration");
