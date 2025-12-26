@@ -349,6 +349,31 @@ export fn assertErr(const T resValue) -> void {
 	};
 };
 
+types(T, Z)
+export fn assertSomeValue(const T value, const Z expected) {
+	if value.isSome() {
+		const let actual = value.unwrap();
+		if actual != expected {
+			markFailure(`Expected Some({expected}) but got Some({actual})`);
+		};
+	} else {
+		markFailure(`Expected Some({expected}) but got None`);
+	};
+};
+
+types(T, Z)
+export fn assertOkValue(const T value, const Z expected) {
+	if value.isOk() {
+		const let actual = value.unwrap();
+		if actual != expected {
+			markFailure(`Expected Ok({expected}) but got Ok({actual})`);
+		};
+	} else {
+		const let err = value.unwrapErr();
+		markFailure(`Expected Ok({expected}) but got Err({err})`);
+	};
+};
+
 export fn assertTrue(const bool condition) -> void {
 	if !condition {
 		currentTestFailed = true;

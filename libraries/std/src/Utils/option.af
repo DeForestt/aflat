@@ -30,6 +30,15 @@ union option {
     };
   };
 
+  safe fn unwrap() -> T {
+    match my {
+      Some(value) => return value,
+      None() => {
+        panic("Called unwrap on a None value");
+      }
+    };
+  };
+
   safe fn or(const T &&defaultValue) -> T {
     match my {
       Some(value) => return value,
