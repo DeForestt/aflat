@@ -1361,8 +1361,9 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       int startLine =
           fstringObj.lineCount +
           std::count(original.begin(), original.begin() + pos + offset, '\n');
-      auto tokes = lexer.Scan(expr, startLine);
-      tokes.invert();
+      auto tokesPtrs = lexer.Scan(expr, startLine);
+      tokesPtrs.invert();
+      auto tokes = lex::toRawList(tokesPtrs);
       auto exprAst = this->parseExpr(tokes);
       fstringLiteral->args.push_back(exprAst);
 

@@ -8,9 +8,10 @@
 
 TEST_CASE("Parser parses when clauses", "[parser][when]") {
   lex::Lexer l;
-  auto tokens =
+  auto tokenPtrs =
       l.Scan("when (T is dynamic and T has toString) fn foo() -> int {};", 1);
-  tokens.invert();
+  tokenPtrs.invert();
+  auto tokens = lex::toRawList(tokenPtrs);
   parse::Parser p;
   ast::Statement *stmt = p.parseStmt(tokens);
   auto *seq = dynamic_cast<ast::Sequence *>(stmt);
@@ -32,9 +33,10 @@ TEST_CASE("Parser parses when clauses", "[parser][when]") {
 
 TEST_CASE("Parser parses when clauses with or", "[parser][when]") {
   lex::Lexer l;
-  auto tokens =
+  auto tokenPtrs =
       l.Scan("when (T is dynamic or T has toString) fn foo() -> int {};", 1);
-  tokens.invert();
+  tokenPtrs.invert();
+  auto tokens = lex::toRawList(tokenPtrs);
   parse::Parser p;
   ast::Statement *stmt = p.parseStmt(tokens);
   auto *seq = dynamic_cast<ast::Sequence *>(stmt);

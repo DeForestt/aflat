@@ -314,9 +314,11 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
   try {
     try {
       PreProcessor pp;
-      tokens = scanner.Scan(
+      auto tokenPtrs = scanner.Scan(
           pp.PreProcess(content, libPath,
                         std::filesystem::path(path).parent_path().string()));
+      tokenPtrs.invert();
+      tokens = lex::toRawList(tokenPtrs);
     } catch (int x) {
       int line = 1;
       for (int i = 0; i < x && i < content.size(); ++i)
@@ -325,7 +327,6 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
       error::report(path, line, "unparsable character", content);
       return false;
     }
-    tokens.invert();
     parse::Parser parser(mutability);
 
     auto Prog = parser.parseStmt(tokens);
