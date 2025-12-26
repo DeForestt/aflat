@@ -320,6 +320,35 @@ export fn assertNotEqual(const T expected, const T actual) -> void {
 	};
 };
 
+types(T)
+export fn assertSome(const T optValue) -> void {
+	if !optValue.isSome() {
+		markFailure("Expected Some but got None");
+	};
+};
+
+types(T)
+export fn assertNone(const T optValue) -> void {
+	if optValue.isSome() {
+		markFailure("Expected None but got Some");
+	};
+};
+
+types(T)
+export fn assertOk(const T resValue) -> void {
+	if resValue.isErr() {
+		const let err = resValue.unwrapErr();
+		markFailure(`Expected Ok but got Err: {err}`);
+	};
+};
+
+types(T)
+export fn assertErr(const T resValue) -> void {
+	if resValue.isOk() {
+		markFailure("Expected Err but got Ok");
+	};
+};
+
 export fn assertTrue(const bool condition) -> void {
 	if !condition {
 		currentTestFailed = true;

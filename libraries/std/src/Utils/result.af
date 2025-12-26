@@ -16,6 +16,33 @@ union result {
         };
     };
 
+    safe fn unwrap() -> T {
+        match my {
+            Ok(value) => return value,
+            Err(err) => {
+                panic(`Error: {err}`.cstr());
+            }
+        };
+    };
+
+    safe fn expectErr(const string msg) -> Error {
+        match my {
+            Ok(_) => {
+                panic(`Expected error but got Ok. {msg}`.cstr());
+            },
+            Err(err) => return err
+        };
+    };
+
+    safe fn unwrapErr() -> Error {
+        match my {
+            Ok(_) => {
+                panic("Expected error but got Ok");
+            },
+            Err(err) => return err
+        };
+    };
+
     safe fn isOk() -> bool {
         match my {
             Ok() => return true,
