@@ -1,10 +1,13 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <future>
 #include <iostream>
+#include <map>
+#include <sstream>
 #include <vector>
 
 #include "ASM.hpp"
@@ -36,11 +39,249 @@ struct ModuleResult {
   std::string objPath;
   bool success;
 };
+struct DocInfo {
+  std::map<std::string, std::vector<std::string>> classMethods;
+  std::vector<std::string> functions;
+};
 
 ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
                            const std::string &libPath);
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 bool runConfig(cfg::Config &config, const std::string &libPath);
+
+static std::string stripComments(const std::string &input) {
+  std::string output;
+  output.reserve(input.size());
+  bool inLineComment = false;
+  bool inBlockComment = false;
+  for (size_t i = 0; i < input.size(); ++i) {
+    char c = input[i];
+    char next = (i + 1 < input.size()) ? input[i + 1] : '\0';
+
+    if (inLineComment) {
+      if (c == '\n') {
+        inLineComment = false;
+        output += c;
+      }
+      continue;
+    }
+    if (inBlockComment) {
+      if (c == '*' && next == '/') {
+        inBlockComment = false;
+        ++i;
+      }
+      continue;
+    }
+    if (c == '/' && next == '/') {
+      inLineComment = true;
+      ++i;
+      continue;
+    }
+    if (c == '/' && next == '*') {
+      inBlockComment = true;
+      ++i;
+      continue;
+    }
+    output += c;
+  }
+  return output;
+}
+
+static std::string trim(const std::string &value) {
+  size_t start = 0;
+  while (start < value.size() &&
+         std::isspace(static_cast<unsigned char>(value[start]))) {
+    ++start;
+  }
+  size_t end = value.size();
+  while (end > start &&
+         std::isspace(static_cast<unsigned char>(value[end - 1]))) {
+    --end;
+  }
+  return value.substr(start, end - start);
+}
+
+static std::string extractCallableName(const std::string &line) {
+  size_t paren = line.find('(');
+  if (paren == std::string::npos)
+    return "";
+  size_t end = paren;
+  while (end > 0 && std::isspace(static_cast<unsigned char>(line[end - 1]))) {
+    --end;
+  }
+  if (end == 0)
+    return "";
+  size_t start = end;
+  while (start > 0) {
+    char c = line[start - 1];
+    if (std::isspace(static_cast<unsigned char>(c)))
+      break;
+    start--;
+  }
+  std::string name = line.substr(start, end - start);
+  if (!name.empty() && name.back() == ':')
+    name.pop_back();
+  return trim(name);
+}
+
+static void appendUnique(std::vector<std::string> &items,
+                         const std::string &value) {
+  if (value.empty())
+    return;
+  for (const auto &item : items) {
+    if (item == value)
+      return;
+  }
+  items.push_back(value);
+}
+
+static bool isLikelySignature(const std::string &line) {
+  if (line.find('(') == std::string::npos ||
+      line.find(')') == std::string::npos) {
+    return false;
+  }
+  std::string lowered;
+  lowered.reserve(line.size());
+  for (char c : line) {
+    lowered += static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
+  const std::vector<std::string> blocked = {"if ", "for ", "while ", "switch",
+                                            "return"};
+  for (const auto &word : blocked) {
+    if (lowered.find(word) != std::string::npos)
+      return false;
+  }
+  if (lowered.find("class ") != std::string::npos)
+    return false;
+  if (!line.empty() && line[0] == '.')
+    return false;
+  return true;
+}
+
+static DocInfo parseDocsFromContent(const std::string &content) {
+  DocInfo info;
+  std::string cleaned = stripComments(content);
+  std::istringstream stream(cleaned);
+  std::string line;
+
+  std::string currentClass;
+  std::string pendingClass;
+  int braceDepth = 0;
+  int classBraceDepth = -1;
+
+  while (std::getline(stream, line)) {
+    std::string trimmed = trim(line);
+
+    if (currentClass.empty() && pendingClass.empty()) {
+      size_t classPos = trimmed.find("class ");
+      if (classPos != std::string::npos) {
+        size_t nameStart = classPos + 6;
+        while (nameStart < trimmed.size() &&
+               std::isspace(static_cast<unsigned char>(trimmed[nameStart]))) {
+          ++nameStart;
+        }
+        size_t nameEnd = nameStart;
+        while (nameEnd < trimmed.size() &&
+               (std::isalnum(static_cast<unsigned char>(trimmed[nameEnd])) ||
+                trimmed[nameEnd] == '_')) {
+          ++nameEnd;
+        }
+        if (nameEnd > nameStart) {
+          pendingClass = trimmed.substr(nameStart, nameEnd - nameStart);
+        }
+      }
+    }
+
+    if (!pendingClass.empty() && trimmed.find('{') != std::string::npos) {
+      currentClass = pendingClass;
+      pendingClass.clear();
+      classBraceDepth = braceDepth + 1;
+    }
+
+    if (!currentClass.empty() && braceDepth == classBraceDepth) {
+      if (isLikelySignature(trimmed)) {
+        std::string name = extractCallableName(trimmed);
+        appendUnique(info.classMethods[currentClass], name);
+      }
+    }
+
+    if (currentClass.empty() && braceDepth == 0) {
+      if (isLikelySignature(trimmed)) {
+        std::string name = extractCallableName(trimmed);
+        appendUnique(info.functions, name);
+      }
+    }
+
+    for (char c : trimmed) {
+      if (c == '{') {
+        braceDepth++;
+      } else if (c == '}') {
+        braceDepth--;
+      }
+    }
+
+    if (!currentClass.empty() && braceDepth < classBraceDepth) {
+      currentClass.clear();
+      classBraceDepth = -1;
+    }
+  }
+
+  return info;
+}
+
+static std::string toLower(std::string value) {
+  for (char &c : value) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
+  return value;
+}
+
+static std::string resolveDocsPath(const std::string &input,
+                                   const std::string &libRoot) {
+  if (std::filesystem::exists(input))
+    return input;
+
+  std::vector<std::string> candidates;
+  candidates.push_back(libRoot + "src/" + input);
+  candidates.push_back(libRoot + "src/" + input + ".af");
+  candidates.push_back(libRoot + "src/" + toLower(input) + ".af");
+  candidates.push_back(libRoot + "head/" + input + ".gs");
+  candidates.push_back(libRoot + "head/" + toLower(input) + ".gs");
+
+  for (const auto &candidate : candidates) {
+    if (std::filesystem::exists(candidate))
+      return candidate;
+  }
+  return "";
+}
+
+static void printDocs(const std::string &source, const DocInfo &info) {
+  std::cout << "Docs for " << source << ":\n";
+  if (info.classMethods.empty()) {
+    std::cout << "Classes:\n  (none)\n";
+  } else {
+    std::cout << "Classes:\n";
+    for (const auto &entry : info.classMethods) {
+      std::cout << "  " << entry.first << "\n";
+      if (entry.second.empty()) {
+        std::cout << "    (no methods)\n";
+      } else {
+        for (const auto &method : entry.second) {
+          std::cout << "    - " << method << "\n";
+        }
+      }
+    }
+  }
+
+  if (info.functions.empty()) {
+    std::cout << "Functions:\n  (none)\n";
+  } else {
+    std::cout << "Functions:\n";
+    for (const auto &fn : info.functions) {
+      std::cout << "  - " << fn << "\n";
+    }
+  }
+}
 
 static CompileProgress *gProgress = nullptr;
 static bool gQuiet = false;
@@ -228,6 +469,29 @@ int main(int argc, char *argv[]) {
     std::ofstream cfgOut(cli.configFile, std::ios::trunc);
     cfgOut << cfgContent;
     cfgOut.close();
+    return 0;
+  }
+  if (value == "docs") {
+    if (cli.args.empty()) {
+      printUsage(argv[0]);
+      return 1;
+    }
+    std::string target = cli.args[0];
+    std::string path = resolveDocsPath(target, libPathA);
+    if (path.empty()) {
+      std::cout << "Unable to find docs for: " << target << "\n";
+      return 1;
+    }
+    std::ifstream input(path);
+    if (!input.is_open()) {
+      std::cout << "Unable to open file: " << path << "\n";
+      return 1;
+    }
+    std::string content((std::istreambuf_iterator<char>(input)),
+                        std::istreambuf_iterator<char>());
+    input.close();
+    DocInfo info = parseDocsFromContent(content);
+    printDocs(path, info);
     return 0;
   }
   std::string outputFile = cli.outputFile;
