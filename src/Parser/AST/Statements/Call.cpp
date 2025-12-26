@@ -1,5 +1,6 @@
 #include "Parser/AST/Statements/Call.hpp"
 
+#include <algorithm>
 #include <exception>
 
 #include "CodeGenerator/CodeGenerator.hpp"
@@ -171,6 +172,9 @@ gen::GenerationResult Call::generateAttempt(
           new_ident += "." + this->genericTypes[i];
         }
 
+        // invert the argtypes so that they are in the correct order
+        std::reverse(func->argTypes.begin(), func->argTypes.end());
+
         for (int i = 0; i < func->argTypes.size(); i++) {
           auto type = func->argTypes[i];
 
@@ -184,6 +188,8 @@ gen::GenerationResult Call::generateAttempt(
             }
           }
         }
+        this->Args.invert();
+
         func->replaceTypes(genericMap);
         func->ident.ident = new_ident;
         func->genericTypes.clear();
