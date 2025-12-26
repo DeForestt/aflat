@@ -172,9 +172,7 @@ gen::GenerationResult Call::generateAttempt(
           new_ident += "." + this->genericTypes[i];
         }
 
-        // invert the argtypes so that they are in the correct order
-        std::reverse(func->argTypes.begin(), func->argTypes.end());
-
+        this->Args.invert();
         for (int i = 0; i < func->argTypes.size(); i++) {
           auto type = func->argTypes[i];
 
