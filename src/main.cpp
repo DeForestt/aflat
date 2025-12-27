@@ -555,6 +555,12 @@ static std::string generateReadmeContent(const std::string &projectName) {
          "functions in this project.\n";
   out << "- `aflat docs String` explores a standard "
          "library module.\n\n";
+  out << "### Creating modules\n";
+  out << "Use `aflat module <module name>` to scaffold `src/<module "
+         "name>/mod.af` "
+         "and automatically register it under [dependencies]. For single "
+         "files, "
+         "run `aflat file <name>`.\n\n";
   out << "### Standard library overview\n";
   out << "AFlat ships a batteries-included standard library under "
          "`libraries/std`. "

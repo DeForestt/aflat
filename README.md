@@ -104,6 +104,15 @@ aflat docs libraries/std/src/String.af
 This is the fastest way to explore what a module exposes without opening the
 source directly.
 
+### Creating modules
+Scaffold a new module with:
+```bash
+aflat module <module name>
+```
+This command creates `src/<module name>/mod.af` and adds it under
+`[dependencies]` so it builds automatically. For a standalone file without a
+directory, use `aflat file <name>` instead.
+
 ### Standard library overview
 AFlat ships a batteries-included standard library under `libraries/std`. The
 modules below are the most commonly used building blocks:
