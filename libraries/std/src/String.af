@@ -12,6 +12,7 @@ import vector from "Collections/Vector";
 import {int_toString, len, str_comp, str_at, str_toInt} from "strings" under str;
 import {print, printInt, printHex} from "io" under io;
 
+// Convert an uppercase ASCII character to lowercase; leaves others untouched.
 private char lower(char c){
     if (c > '@'){
         if (c < '['){
@@ -21,6 +22,7 @@ private char lower(char c){
     return c;
 };
 
+// Convert a lowercase ASCII character to uppercase; leaves others untouched.
 private char upper(char c){
     if (c > '`'){
         if (c < '{'){
@@ -56,6 +58,10 @@ private bool reg(const char c, const char p) {
     return false;
 };
 
+/**
+ * High level reference-counted string wrapper that manages allocation,
+ * provides slicing/iteration helpers, and exposes ergonomic utilities.
+ */
 safe dynamic class string {
     private adr head;
     private int refcount = 1;

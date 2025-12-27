@@ -18,6 +18,10 @@ private int charToColor(const char c){
        if c == 'w' return 37;
 };
 
+/**
+ * Read characters from stdin into the provided buffer until a newline,
+ * writing a null terminator and returning 0 on completion.
+ */
 export int readString(adr pointer){
         const char input = ' ';
         const char nl = '\n';
@@ -32,6 +36,7 @@ export int readString(adr pointer){
         return  0;
 };
 
+// Write a single character to stdout.
 export int printChar(const char c){
         sys_write(1, ?c, 1);
         return 0;
@@ -45,6 +50,10 @@ private int clearInput(){
         return 0;
 };
 
+/**
+ * Print a null-terminated string to stdout and optionally wrap it with ANSI
+ * color escape codes when `color` is non-null.
+ */
 export int print(const adr input, * const char color){
         const int len = str.len(input);
         if color != '\0' {
@@ -58,6 +67,7 @@ export int print(const adr input, * const char color){
         return 0;
 };
 
+// Convert a nibble-sized integer (0-15) to its hexadecimal character.
 export char toChar(const int input){
         char output = '0';
         if(input > 9){output = 'X'};
@@ -102,6 +112,7 @@ private char longtoChar(const long input){
         return 'X';
 };
 
+// Convert a hexadecimal character back to its numeric value.
 export int toInt(const char input){
         if(input == '0'){return 0};
         if(input == '1'){return 1};
@@ -122,6 +133,10 @@ export int toInt(const char input){
         return -1;
 };
 
+/**
+ * Read `sigfigs` digits from stdin and convert them into an integer, clearing
+ * the remainder of the line afterward.
+ */
 export int pullInt(const int sigfigs){
         int i = sigfigs - 1;
         int value = 0;
@@ -140,6 +155,7 @@ export int pullInt(const int sigfigs){
         return value;
 };
 
+// Print a signed integer in base 10.
 export int printInt(int input){
         int h = 0;
         const int ten = 10;
@@ -176,6 +192,7 @@ export int printInt(int input){
         return 0;
 };
 
+// Print an unsigned integer without sign handling.
 export int printUnsignedInt(int input){
         int h = 0;
         const int ten = 10;
@@ -207,6 +224,7 @@ export int printUnsignedInt(int input){
         return 0;
 };
 
+// Render the contents of a pointer as hexadecimal characters.
 export int printHex(adr input){
         long h = #0;
         long factor = 0;
@@ -241,6 +259,7 @@ export int printHex(adr input){
         return 0;
 };
 
+// Print a signed 64-bit integer.
 export int printLong(long input){
         long h = 0;
         const long ten = 10;
@@ -276,6 +295,7 @@ export int printLong(long input){
         return 0;
 };
 
+// Emit a floating point value with six fractional digits of precision.
 export int printFloat(const adr f){
 	// use bit manipulation to convert float to int
 	int i = f as int;
@@ -325,11 +345,16 @@ export int printFloat(const adr f){
 	printInt(fracPart);
 };
 
+// Clear the terminal by issuing the ANSI escape sequence.
 export int clear(){
         print("\e[1;1H\e[2J");
         return 0;
 };
 
+/**
+ * Lightweight string formatter similar to printf that supports `{}` slots and
+ * dispatches to the relevant print helpers.
+ */
 export int fPrint(const adr fmt, * adr args) {
     const string s = fmt;
 

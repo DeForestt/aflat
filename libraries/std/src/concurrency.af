@@ -5,6 +5,7 @@ import {len, int_toStringL0, str_toInt} from "strings" under str;
 import Function from "Utils/Functions";
 import {print} from "io" under io;
 
+// Represents the outcome from an asynchronous worker execution.
 class AsyncOutput {
     bool okay;
     any data;
@@ -16,6 +17,7 @@ class AsyncOutput {
     };
 };
 
+// Base thread abstraction exposing the PID getter.
 class Thread {
     contract {
         private int pid;
@@ -23,6 +25,7 @@ class Thread {
     int getPid();
 };
 
+// Simple fork/exec process wrapper.
 class Process signs Thread {
     private adr foo;
 
@@ -31,6 +34,7 @@ class Process signs Thread {
     bool isRunning();
 };
 
+// Bidirectional pipe wrapper exposing read/write operations.
 class Pipe {
     int in;
     int out;
@@ -39,6 +43,7 @@ class Pipe {
     Pipe init();
 };
 
+// Serialized message with helpers to write/read via Pipe.
 class Message{
     int len;
     adr body;
@@ -48,6 +53,7 @@ class Message{
     private Message copy<<=>>(Message msg);
 };
 
+// Managed process with inbox/outbox pipes for message passing.
 class MProcess signs Thread {
     private adr foo;
     private Pipe inbox;
@@ -68,6 +74,10 @@ class FD {
   public int in;
 };
 
+/**
+ * Reference-counted handle used to await background processes or transform
+ * their outputs.
+ */
 safe dynamic pedantic class AsyncResult{
     private MProcess p = p;
     private int refcount = 1;
@@ -124,6 +134,7 @@ safe dynamic pedantic class AsyncResult{
     };
 };
 
+// Helper struct bundling a function pointer and up to four arguments.
 class WorkArgs {
     public adr func = bar;
     public adr arg1 = arg1;
@@ -189,6 +200,7 @@ bool isRunning@Process(){
 
 
 
+// Read a Message structure from the provided pipe.
 export Message readPipe(const Pipe pipe){
     const byte[4] header;
     pipe.read(header, 4);
@@ -241,17 +253,23 @@ int write@Pipe(const adr buf, const int size){
     return ret;
 };
 
+// Terminate the current process with the provided status code.
 export int exit(const int status){
     sys_exit(status);
     return 0;
 };
 
+// Wait for the given thread/process to finish, returning its PID.
 export int wait(const Thread p){
     sys_wait(p.getPid(), NULL, 0, NULL);
     return 0;
 };
 
 // Start a function as a concurrent process
+/**
+ * Spawn a managed process that executes `foo` with up to four arguments and
+ * returns an AsyncResult handle.
+ */
 export AsyncResult worker(const adr foo, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
     const MProcess p = new MProcess(fn (const WorkArgs args, const Pipe __inbox, const Pipe outbox) {
         const adr res = args.run();
@@ -264,6 +282,7 @@ export AsyncResult worker(const adr foo, *const any arg1, *const any arg2, *cons
     return ret; 
 };
 
+// Spawn and await a `Function` directly, returning its AsyncResult wrapper.
 export AsyncResult do(const Function foo) {
     const MProcess p = new MProcess(fn (const Function func, const Pipe __inbox, const Pipe outbox) {
         const adr res = func();
@@ -275,6 +294,10 @@ export AsyncResult do(const Function foo) {
     return ret;
 };
 
+/**
+ * Allocate a shared memory region of `size` bytes and optionally run a
+ * constructor to initialize it, returning a generic pointer.
+ */
 export generic makeShared(const int size, * const adr constructor, * const any arg1, * const any arg2, * const any arg3, * const any arg4) {
     const adr val = mmap(NULL, size, 1 | 2, 1 | 32, -1, 0);
     if constructor != NULL {

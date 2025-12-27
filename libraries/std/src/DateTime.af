@@ -12,6 +12,7 @@ import Render from "Utils/Error/Render";
 import { accept, reject, resultWrapper } from "Utils/result" under res;
 import { optionWrapper, Some, None } from "Utils/option" under opt;
 
+// Generic failure wrapper for DateTime parsing/formatting operations.
 class DateTimeError signs Error {
     const string message = message.copy();
 
@@ -24,6 +25,9 @@ class DateTimeError signs Error {
     };
 };
 
+/**
+ * Basic epoch-based DateTime struct with helper getters and formatting.
+ */
 class DateTime{
     private int seconds;
     private int day;
@@ -203,6 +207,7 @@ int getHour@DateTime(){
     return my.hour;
 };
 
+// Capture the current system time (optionally adjusting timezone) as DateTime.
 export DateTime Now(* int timeZone){
     int seconds = sys_time();
     timeZone = timeZone * 3600;
@@ -217,6 +222,7 @@ private int longToInt(const long l) {
     return buffer[0];
 };
 
+// Return milliseconds since epoch using sys_timespec.
 export int mills() {
     const TimeSpec ts = TimeSpec();
     sys_clock_gettime(1, ts);

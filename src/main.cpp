@@ -39,53 +39,36 @@ struct ModuleResult {
   std::string objPath;
   bool success;
 };
+struct DocEntry {
+  std::string signature;
+  std::vector<std::string> doc;
+};
+
+struct ClassDoc {
+  std::string name;
+  std::vector<std::string> doc;
+  std::vector<DocEntry> methods;
+};
+
+struct UnionDoc {
+  std::string name;
+  std::vector<std::string> doc;
+  std::vector<std::string> variants;
+  std::vector<DocEntry> methods;
+};
+
 struct DocInfo {
-  std::map<std::string, std::vector<std::string>> classMethods;
-  std::vector<std::string> functions;
+  std::map<std::string, ClassDoc> classes;
+  std::map<std::string, UnionDoc> unions;
+  std::vector<DocEntry> enums;
+  std::vector<DocEntry> transforms;
+  std::vector<DocEntry> functions;
 };
 
 ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
                            const std::string &libPath);
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 bool runConfig(cfg::Config &config, const std::string &libPath);
-
-static std::string stripComments(const std::string &input) {
-  std::string output;
-  output.reserve(input.size());
-  bool inLineComment = false;
-  bool inBlockComment = false;
-  for (size_t i = 0; i < input.size(); ++i) {
-    char c = input[i];
-    char next = (i + 1 < input.size()) ? input[i + 1] : '\0';
-
-    if (inLineComment) {
-      if (c == '\n') {
-        inLineComment = false;
-        output += c;
-      }
-      continue;
-    }
-    if (inBlockComment) {
-      if (c == '*' && next == '/') {
-        inBlockComment = false;
-        ++i;
-      }
-      continue;
-    }
-    if (c == '/' && next == '/') {
-      inLineComment = true;
-      ++i;
-      continue;
-    }
-    if (c == '/' && next == '*') {
-      inBlockComment = true;
-      ++i;
-      continue;
-    }
-    output += c;
-  }
-  return output;
-}
 
 static std::string trim(const std::string &value) {
   size_t start = 0;
@@ -101,38 +84,224 @@ static std::string trim(const std::string &value) {
   return value.substr(start, end - start);
 }
 
-static std::string extractCallableName(const std::string &line) {
-  size_t paren = line.find('(');
-  if (paren == std::string::npos)
-    return "";
-  size_t end = paren;
-  while (end > 0 && std::isspace(static_cast<unsigned char>(line[end - 1]))) {
-    --end;
-  }
-  if (end == 0)
-    return "";
-  size_t start = end;
-  while (start > 0) {
-    char c = line[start - 1];
-    if (std::isspace(static_cast<unsigned char>(c)))
-      break;
-    start--;
-  }
-  std::string name = line.substr(start, end - start);
-  if (!name.empty() && name.back() == ':')
-    name.pop_back();
-  return trim(name);
+struct ParsedLine {
+  std::string text;
+  std::vector<std::string> doc;
+};
+
+static bool isNameChar(char c) {
+  return std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == ':' ||
+         c == '<' || c == '>' || c == '.';
 }
 
-static void appendUnique(std::vector<std::string> &items,
-                         const std::string &value) {
-  if (value.empty())
+static std::string extractIdentifier(const std::string &line, size_t start) {
+  while (start < line.size() &&
+         std::isspace(static_cast<unsigned char>(line[start]))) {
+    ++start;
+  }
+  size_t end = start;
+  while (end < line.size() && isNameChar(line[end])) {
+    ++end;
+  }
+  if (end <= start)
+    return "";
+  return trim(line.substr(start, end - start));
+}
+
+static std::string extractClassName(const std::string &line) {
+  size_t classPos = line.find("class ");
+  if (classPos == std::string::npos)
+    return "";
+  return extractIdentifier(line, classPos + 6);
+}
+
+static std::string extractUnionName(const std::string &line) {
+  size_t pos = line.find("union");
+  while (pos != std::string::npos) {
+    bool beforeOk =
+        pos == 0 || (!std::isalnum(static_cast<unsigned char>(line[pos - 1])) &&
+                     line[pos - 1] != '_');
+    size_t after = pos + 5;
+    bool afterOk = after >= line.size() ||
+                   (!std::isalnum(static_cast<unsigned char>(line[after])) &&
+                    line[after] != '_');
+    if (beforeOk && afterOk) {
+      return extractIdentifier(line, after);
+    }
+    pos = line.find("union", after);
+  }
+  return "";
+}
+
+static std::string extractEnumName(const std::string &line) {
+  size_t pos = line.find("enum");
+  while (pos != std::string::npos) {
+    bool beforeOk =
+        pos == 0 || (!std::isalnum(static_cast<unsigned char>(line[pos - 1])) &&
+                     line[pos - 1] != '_');
+    size_t after = pos + 4;
+    bool afterOk = after >= line.size() ||
+                   (!std::isalnum(static_cast<unsigned char>(line[after])) &&
+                    line[after] != '_');
+    if (beforeOk && afterOk) {
+      std::string name = extractIdentifier(line, after);
+      if (name == "class") {
+        size_t classPos = line.find("class", after);
+        if (classPos != std::string::npos)
+          return extractIdentifier(line, classPos + 5);
+      }
+      return name;
+    }
+    pos = line.find("enum", after);
+  }
+  return "";
+}
+
+static std::string trimDocLine(const std::string &line) {
+  std::string result = trim(line);
+  if (!result.empty() && result[0] == '*') {
+    result.erase(result.begin());
+    result = trim(result);
+  }
+  return result;
+}
+
+static void finalizeDocBuffer(std::vector<std::string> &docs,
+                              std::string &buffer) {
+  std::string cleaned = trimDocLine(buffer);
+  if (!cleaned.empty())
+    docs.push_back(cleaned);
+  buffer.clear();
+}
+
+static std::vector<ParsedLine> preprocessLines(const std::string &content) {
+  std::vector<ParsedLine> lines;
+  std::istringstream stream(content);
+  bool inBlockComment = false;
+  bool blockIsDoc = false;
+  std::string docBuffer;
+  std::vector<std::string> pendingDoc;
+  std::string line;
+
+  while (std::getline(stream, line)) {
+    std::string codeLine;
+    size_t i = 0;
+    while (i < line.size()) {
+      char c = line[i];
+      char next = (i + 1 < line.size()) ? line[i + 1] : '\0';
+
+      if (inBlockComment) {
+        if (blockIsDoc) {
+          if (c == '*' && next == '/') {
+            finalizeDocBuffer(pendingDoc, docBuffer);
+            inBlockComment = false;
+            blockIsDoc = false;
+            i += 2;
+            continue;
+          }
+          docBuffer += c;
+          ++i;
+          continue;
+        }
+
+        if (c == '*' && next == '/') {
+          inBlockComment = false;
+          i += 2;
+          continue;
+        }
+        ++i;
+        continue;
+      }
+
+      if (c == '/' && next == '*') {
+        std::string before = line.substr(0, i);
+        bool atLineStart = trim(before).empty();
+        bool isDoc = atLineStart;
+        inBlockComment = true;
+        blockIsDoc = isDoc;
+        if (blockIsDoc)
+          docBuffer.clear();
+        size_t advance = 2;
+        if (isDoc && i + 2 < line.size() && line[i + 2] == '*')
+          advance = 3;
+        i += advance;
+        continue;
+      }
+
+      if (c == '/' && next == '/') {
+        std::string before = line.substr(0, i);
+        if (trim(before).empty()) {
+          std::string docText = trim(line.substr(i + 2));
+          if (!docText.empty())
+            pendingDoc.push_back(docText);
+        }
+        break;
+      }
+
+      codeLine += c;
+      ++i;
+    }
+
+    if (inBlockComment && blockIsDoc) {
+      finalizeDocBuffer(pendingDoc, docBuffer);
+    }
+
+    std::string trimmedCode = trim(codeLine);
+    if (!trimmedCode.empty()) {
+      ParsedLine info;
+      info.text = trimmedCode;
+      info.doc = pendingDoc;
+      lines.push_back(std::move(info));
+      pendingDoc.clear();
+    }
+  }
+
+  return lines;
+}
+
+static std::string extractSignature(const std::string &line) {
+  std::string signature = trim(line);
+  size_t blockPos = signature.find('{');
+  size_t lambdaPos = signature.find("=>");
+  if (blockPos != std::string::npos)
+    signature = trim(signature.substr(0, blockPos));
+  else if (lambdaPos != std::string::npos)
+    signature = trim(signature.substr(0, lambdaPos));
+
+  while (!signature.empty() &&
+         (signature.back() == ';' || signature.back() == ',')) {
+    signature.pop_back();
+  }
+  return trim(signature);
+}
+
+static void appendUnique(std::vector<DocEntry> &items,
+                         const std::string &signature,
+                         const std::vector<std::string> &doc) {
+  if (signature.empty())
+    return;
+  for (auto &item : items) {
+    if (item.signature == signature) {
+      if (item.doc.empty() && !doc.empty())
+        item.doc = doc;
+      return;
+    }
+  }
+  DocEntry entry;
+  entry.signature = signature;
+  entry.doc = doc;
+  items.push_back(std::move(entry));
+}
+
+static void appendUniqueVariant(std::vector<std::string> &items,
+                                const std::string &variant) {
+  if (variant.empty())
     return;
   for (const auto &item : items) {
-    if (item == value)
+    if (item == variant)
       return;
   }
-  items.push_back(value);
+  items.push_back(variant);
 }
 
 static bool isLikelySignature(const std::string &line) {
@@ -145,8 +314,8 @@ static bool isLikelySignature(const std::string &line) {
   for (char c : line) {
     lowered += static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
-  const std::vector<std::string> blocked = {"if ", "for ", "while ", "switch",
-                                            "return"};
+  const std::vector<std::string> blocked = {"if ",    "for ",   "while ",
+                                            "switch", "return", "match "};
   for (const auto &word : blocked) {
     if (lowered.find(word) != std::string::npos)
       return false;
@@ -158,37 +327,82 @@ static bool isLikelySignature(const std::string &line) {
   return true;
 }
 
+static bool containsWord(const std::string &line, const std::string &word) {
+  size_t pos = line.find(word);
+  while (pos != std::string::npos) {
+    bool beforeOk =
+        pos == 0 || (!std::isalnum(static_cast<unsigned char>(line[pos - 1])) &&
+                     line[pos - 1] != '_');
+    size_t end = pos + word.size();
+    bool afterOk = end >= line.size() ||
+                   (!std::isalnum(static_cast<unsigned char>(line[end])) &&
+                    line[end] != '_');
+    if (beforeOk && afterOk)
+      return true;
+    pos = line.find(word, end);
+  }
+  return false;
+}
+
+static bool beginsWithWord(const std::string &line, const std::string &word) {
+  if (line.size() < word.size())
+    return false;
+  if (line.compare(0, word.size(), word) != 0)
+    return false;
+  if (line.size() == word.size())
+    return true;
+  char c = line[word.size()];
+  return std::isspace(static_cast<unsigned char>(c));
+}
+
+static bool isDecoratorLine(const std::string &line) {
+  return !line.empty() && line[0] == '@';
+}
+
 static DocInfo parseDocsFromContent(const std::string &content) {
   DocInfo info;
-  std::string cleaned = stripComments(content);
-  std::istringstream stream(cleaned);
-  std::string line;
+  std::vector<ParsedLine> lines = preprocessLines(content);
 
   std::string currentClass;
   std::string pendingClass;
+  std::vector<std::string> pendingClassDoc;
+  std::string currentUnion;
+  std::string pendingUnion;
+  std::vector<std::string> pendingUnionDoc;
   int braceDepth = 0;
   int classBraceDepth = -1;
+  int unionBraceDepth = -1;
+  bool collectingUnionVariants = false;
+  std::vector<std::string> carryDoc;
 
-  while (std::getline(stream, line)) {
-    std::string trimmed = trim(line);
-
+  for (const auto &lineInfo : lines) {
+    std::vector<std::string> docLines;
+    if (!lineInfo.doc.empty()) {
+      docLines = lineInfo.doc;
+    } else {
+      docLines = carryDoc;
+    }
+    bool docUsed = false;
+    std::string trimmed = lineInfo.text;
+    if (trimmed.empty())
+      continue;
     if (currentClass.empty() && pendingClass.empty()) {
-      size_t classPos = trimmed.find("class ");
-      if (classPos != std::string::npos) {
-        size_t nameStart = classPos + 6;
-        while (nameStart < trimmed.size() &&
-               std::isspace(static_cast<unsigned char>(trimmed[nameStart]))) {
-          ++nameStart;
-        }
-        size_t nameEnd = nameStart;
-        while (nameEnd < trimmed.size() &&
-               (std::isalnum(static_cast<unsigned char>(trimmed[nameEnd])) ||
-                trimmed[nameEnd] == '_')) {
-          ++nameEnd;
-        }
-        if (nameEnd > nameStart) {
-          pendingClass = trimmed.substr(nameStart, nameEnd - nameStart);
-        }
+      std::string className = extractClassName(trimmed);
+      if (!className.empty()) {
+        pendingClass = className;
+        pendingClassDoc = docLines;
+        docLines.clear();
+        docUsed = true;
+      }
+    }
+
+    if (currentUnion.empty() && pendingUnion.empty()) {
+      std::string unionName = extractUnionName(trimmed);
+      if (!unionName.empty()) {
+        pendingUnion = unionName;
+        pendingUnionDoc = docLines;
+        docLines.clear();
+        docUsed = true;
       }
     }
 
@@ -196,20 +410,85 @@ static DocInfo parseDocsFromContent(const std::string &content) {
       currentClass = pendingClass;
       pendingClass.clear();
       classBraceDepth = braceDepth + 1;
+      ClassDoc &cls = info.classes[currentClass];
+      cls.name = currentClass;
+      if (cls.doc.empty())
+        cls.doc = pendingClassDoc;
+      pendingClassDoc.clear();
     }
 
+    if (!pendingUnion.empty() && trimmed.find('{') != std::string::npos) {
+      currentUnion = pendingUnion;
+      pendingUnion.clear();
+      unionBraceDepth = braceDepth + 1;
+      UnionDoc &uni = info.unions[currentUnion];
+      uni.name = currentUnion;
+      if (uni.doc.empty())
+        uni.doc = pendingUnionDoc;
+      pendingUnionDoc.clear();
+      collectingUnionVariants = true;
+    }
+
+    bool decoratorLine = isDecoratorLine(trimmed);
+
     if (!currentClass.empty() && braceDepth == classBraceDepth) {
-      if (isLikelySignature(trimmed)) {
-        std::string name = extractCallableName(trimmed);
-        appendUnique(info.classMethods[currentClass], name);
+      if (!decoratorLine && isLikelySignature(trimmed)) {
+        std::string signature = extractSignature(trimmed);
+        appendUnique(info.classes[currentClass].methods, signature, docLines);
+        docLines.clear();
+        docUsed = true;
+      }
+    }
+
+    if (!currentUnion.empty() && braceDepth == unionBraceDepth) {
+      if (!decoratorLine && containsWord(trimmed, "fn") &&
+          isLikelySignature(trimmed)) {
+        collectingUnionVariants = false;
+        std::string signature = extractSignature(trimmed);
+        appendUnique(info.unions[currentUnion].methods, signature, docLines);
+        docLines.clear();
+        docUsed = true;
+      } else if (collectingUnionVariants) {
+        std::string variant = trim(trimmed);
+        while (!variant.empty() &&
+               (variant.back() == ',' || variant.back() == ';')) {
+          variant.pop_back();
+        }
+        variant = trim(variant);
+        if (!variant.empty() && variant != "{" && variant != "}") {
+          appendUniqueVariant(info.unions[currentUnion].variants, variant);
+          docLines.clear();
+          docUsed = true;
+        }
       }
     }
 
     if (currentClass.empty() && braceDepth == 0) {
-      if (isLikelySignature(trimmed)) {
-        std::string name = extractCallableName(trimmed);
-        appendUnique(info.functions, name);
+      if (!decoratorLine && isLikelySignature(trimmed)) {
+        std::string signature = extractSignature(trimmed);
+        appendUnique(info.functions, signature, docLines);
+        docLines.clear();
+        docUsed = true;
+      } else if (containsWord(trimmed, "enum") &&
+                 trimmed.find('{') != std::string::npos) {
+        std::string enumName = extractEnumName(trimmed);
+        if (enumName.empty())
+          enumName = trimmed;
+        appendUnique(info.enums, enumName, docLines);
+        docLines.clear();
+        docUsed = true;
+      } else if (beginsWithWord(trimmed, "transform")) {
+        appendUnique(info.transforms, trimmed, docLines);
+        docLines.clear();
+        docUsed = true;
       }
+    }
+
+    bool allowCarry = decoratorLine || trimmed.rfind("types(", 0) == 0;
+    if (!docUsed && allowCarry) {
+      carryDoc = docLines;
+    } else {
+      carryDoc.clear();
     }
 
     for (char c : trimmed) {
@@ -223,6 +502,12 @@ static DocInfo parseDocsFromContent(const std::string &content) {
     if (!currentClass.empty() && braceDepth < classBraceDepth) {
       currentClass.clear();
       classBraceDepth = -1;
+    }
+
+    if (!currentUnion.empty() && braceDepth < unionBraceDepth) {
+      currentUnion.clear();
+      unionBraceDepth = -1;
+      collectingUnionVariants = false;
     }
   }
 
@@ -255,32 +540,108 @@ static std::string resolveDocsPath(const std::string &input,
   return "";
 }
 
+static std::string generateReadmeContent(const std::string &projectName) {
+  std::string displayName = projectName.empty() ? "AFlat Project" : projectName;
+  std::ostringstream out;
+  out << "# " << displayName << "\n\n";
+  out << "This project was generated with the AFlat toolchain. Use the "
+         "commands below to build, run, test, and explore the codebase.\n\n";
+  out << "## Build & Run\n";
+  out << "- `aflat build` – compile sources defined in `aflat.cfg`.\n";
+  out << "- `aflat run` – build and execute the resulting binary.\n";
+  out << "- `aflat test` – build and run the configured test target.\n\n";
+  out << "## Inspecting Code\n";
+  out << "- `aflat docs src/main.af` lists classes, unions, transforms, and "
+         "functions in this project.\n";
+  out << "- `aflat docs String` explores a standard "
+         "library module.\n\n";
+  out << "## Refreshing This README\n";
+  out << "Run `aflat readme [path] [name]` to regenerate these instructions "
+         "for any folder.\n";
+  return out.str();
+}
+
+static void printDocLines(const std::vector<std::string> &doc,
+                          const std::string &indent) {
+  for (const auto &line : doc) {
+    std::cout << indent;
+    if (!line.empty())
+      std::cout << line;
+    std::cout << "\n";
+  }
+}
+
+static void printDocEntries(const std::string &title,
+                            const std::vector<DocEntry> &entries) {
+  std::cout << title << ":\n";
+  if (entries.empty()) {
+    std::cout << "  (none)\n";
+    return;
+  }
+  for (const auto &entry : entries) {
+    std::cout << "  - " << entry.signature << "\n";
+    if (!entry.doc.empty())
+      printDocLines(entry.doc, "    ");
+  }
+}
+
 static void printDocs(const std::string &source, const DocInfo &info) {
   std::cout << "Docs for " << source << ":\n";
-  if (info.classMethods.empty()) {
+  if (info.classes.empty()) {
     std::cout << "Classes:\n  (none)\n";
   } else {
     std::cout << "Classes:\n";
-    for (const auto &entry : info.classMethods) {
-      std::cout << "  " << entry.first << "\n";
-      if (entry.second.empty()) {
-        std::cout << "    (no methods)\n";
+    for (const auto &entry : info.classes) {
+      const ClassDoc &cls = entry.second;
+      std::cout << "  " << cls.name << "\n";
+      if (!cls.doc.empty())
+        printDocLines(cls.doc, "    ");
+      std::cout << "    Methods:\n";
+      if (cls.methods.empty()) {
+        std::cout << "      (none)\n";
       } else {
-        for (const auto &method : entry.second) {
-          std::cout << "    - " << method << "\n";
+        for (const auto &method : cls.methods) {
+          std::cout << "      - " << method.signature << "\n";
+          if (!method.doc.empty())
+            printDocLines(method.doc, "        ");
         }
       }
     }
   }
 
-  if (info.functions.empty()) {
-    std::cout << "Functions:\n  (none)\n";
+  std::cout << "Unions:\n";
+  if (info.unions.empty()) {
+    std::cout << "  (none)\n";
   } else {
-    std::cout << "Functions:\n";
-    for (const auto &fn : info.functions) {
-      std::cout << "  - " << fn << "\n";
+    for (const auto &entry : info.unions) {
+      const UnionDoc &uni = entry.second;
+      std::cout << "  " << uni.name << "\n";
+      if (!uni.doc.empty())
+        printDocLines(uni.doc, "    ");
+      std::cout << "    Variants:\n";
+      if (uni.variants.empty()) {
+        std::cout << "      (none)\n";
+      } else {
+        for (const auto &variant : uni.variants) {
+          std::cout << "      - " << variant << "\n";
+        }
+      }
+      std::cout << "    Methods:\n";
+      if (uni.methods.empty()) {
+        std::cout << "      (none)\n";
+      } else {
+        for (const auto &method : uni.methods) {
+          std::cout << "      - " << method.signature << "\n";
+          if (!method.doc.empty())
+            printDocLines(method.doc, "        ");
+        }
+      }
     }
   }
+
+  printDocEntries("Enums", info.enums);
+  printDocEntries("Transforms", info.transforms);
+  printDocEntries("Functions", info.functions);
 }
 
 static CompileProgress *gProgress = nullptr;
@@ -469,6 +830,49 @@ int main(int argc, char *argv[]) {
     std::ofstream cfgOut(cli.configFile, std::ios::trunc);
     cfgOut << cfgContent;
     cfgOut.close();
+    return 0;
+  }
+  if (value == "readme") {
+    namespace fs = std::filesystem;
+    std::string targetPath = cli.args.empty() ? "." : cli.args[0];
+    std::string overrideName =
+        cli.args.size() >= 2 ? cli.args[1] : std::string();
+    fs::path dest(targetPath);
+    if (dest.empty())
+      dest = fs::current_path();
+    bool treatAsDirectory = (fs::exists(dest) && fs::is_directory(dest)) ||
+                            (!dest.has_extension() && !fs::exists(dest));
+    fs::path filePath = dest;
+    if (treatAsDirectory) {
+      if (!fs::exists(dest))
+        fs::create_directories(dest);
+      filePath = dest / "README.md";
+    } else {
+      fs::path parent = filePath.parent_path();
+      if (!parent.empty() && !fs::exists(parent))
+        fs::create_directories(parent);
+    }
+    if (fs::exists(filePath)) {
+      std::cout << "README already exists at " << filePath
+                << ". Remove it or specify a new path to regenerate.\n";
+      return 1;
+    }
+    std::string readmeName = overrideName;
+    if (readmeName.empty()) {
+      fs::path basePath =
+          treatAsDirectory ? fs::path(dest) : filePath.parent_path();
+      if (basePath.empty())
+        basePath = fs::current_path();
+      fs::path resolved = fs::absolute(basePath);
+      std::string candidate = resolved.filename().string();
+      if (candidate.empty() || candidate == "." || candidate == "..")
+        candidate = "AFlat Project";
+      readmeName = candidate;
+    }
+    std::ofstream readme(filePath);
+    readme << generateReadmeContent(readmeName) << "\n";
+    readme.close();
+    std::cout << "Created README at " << filePath << "\n";
     return 0;
   }
   if (value == "docs") {
@@ -835,6 +1239,10 @@ fn main() -> int {
   outfile << "main = main\n";
   outfile << "test = test/test\n";
   outfile.close();
+
+  outfile = std::ofstream(value + "/README.md");
+  outfile << generateReadmeContent(value) << "\n";
+  outfile.close();
 }
 
 /*
@@ -950,6 +1358,10 @@ fn main() -> int {
 };
 )";
 
+  outfile.close();
+
+  outfile = std::ofstream(value + "/README.md");
+  outfile << generateReadmeContent(value) << "\n";
   outfile.close();
 }
 

@@ -12,6 +12,7 @@ import {Some, None, optionWrapper} from "Utils/option" under opt;
 import result from "Utils/result";
 import {accept, reject, resultWrapper} from "Utils/result" under res;
 
+// Tagged union representing the canonical value types a CLI argument can hold.
 union CLAValue {
 	String(string),
 	Number(int),
@@ -37,6 +38,7 @@ union CLAValue {
 	}
 };
 
+// User-provided argument descriptor consumed while building the parser state.
 class Argument {
 	const string longName = longName;
 	const string shortName = shortName;
@@ -52,11 +54,16 @@ class Argument {
 	};
 };
 
+// Internal accumulator for parsed arguments before exposing them publicly.
 class CLAInternalArgs {
 	unordered_map::<Argument> arguments;
 	string tag;
 };
 
+/**
+ * Front-end helper for defining, parsing, and querying command line arguments
+ * with both long and short option support.
+ */
 class CommandLineArgs {
 	const int argc = argc;
 	const adr argv = argv;

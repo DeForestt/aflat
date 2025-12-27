@@ -3,11 +3,13 @@
 import {toInt, toChar, printFloat, printInt, print} from "io" under io;
 import {exp} from "math" under math;
 
+// Interpret an int as a char via pointer casting.
 export char ascii(const int input){
 	const adr caster = ?input;
 	return caster as char;
 };
 
+// Return the length of a null-terminated string.
 export int len(adr input){
 	const char null = ascii(0);
     int i = 0;
@@ -18,6 +20,7 @@ export int len(adr input){
 	return i;
 };
 
+// Compare two strings for equality returning 1/0.
 export int str_comp(adr str1, adr str2){
         const int len1 = len(str1);
         const int len2 = len(str2);
@@ -38,6 +41,7 @@ export int str_comp(adr str1, adr str2){
         return 1;
 };
 
+// Concatenate str1 and str2 into pointer, null-terminating the result.
 export int str_concat(adr str1, adr str2, adr pointer){
     const char null = '\0';
     char loader;
@@ -60,6 +64,7 @@ export int str_concat(adr str1, adr str2, adr pointer){
     return 0;
 };
 
+// Convert a decimal string to an int, handling optional leading minus.
 export int str_toInt(adr input){
     int mul = 1;
     const char ch1 = input as char;
@@ -85,6 +90,7 @@ export int str_toInt(adr input){
     return result;
 };
 
+// Convert an integer to a decimal string in-place.
 export int int_toString(int input, adr buffer){
         int h = 0;
         const int ten = 10;
@@ -128,6 +134,7 @@ export int int_toString(int input, adr buffer){
         return 0;
 };
 
+// Convert an integer to a zero-padded decimal string with a minimum width.
 export int int_toStringL0(int input, adr buffer, const int size){
 	// load the buffer with the string representation of the input with leading zeros
 	int h = 0;
@@ -197,6 +204,7 @@ export int int_toStringL0(int input, adr buffer, const int size){
 	buffer =: '\0';
 };
 
+// Return the first index of `find` or -1 if not present.
 export int str_find(adr in, const char find){
     int i = 0;
     const int len = len(in);
@@ -209,6 +217,7 @@ export int str_find(adr in, const char find){
     return -1;
 };
 
+// Split a string on a separator into two buffers.
 export int str_split(adr str, const char sep, adr buff1, const adr buff2){
 	const char null = ascii(0);
 	char check = str as char;
@@ -235,6 +244,7 @@ export int str_split(adr str, const char sep, adr buff1, const adr buff2){
 	return 0;
 };
 
+// Convert a single digit character into its float representation.
 export float charToFloat(const char a){
     float result = 0.00;
     if (a == '0'){result = 0.00;};
@@ -251,6 +261,7 @@ export float charToFloat(const char a){
 };
 
 // deprecated
+// Parse a decimal string into a float using base-10 arithmetic.
 export int str_toFloat(adr input){
 	const char[20] whole;
 	const char[20] decimal;
@@ -297,12 +308,14 @@ export int str_toFloat(adr input){
 };
 
 // deprecated
+// Print a float stored in memory using io.printFloat.
 export int sPrintFloat(const adr input){
 	io.printFloat(input);
 	return 0;
 };
 
 // deprecated
+// Convert a float pointed to by `input` into a string with optional sign.
 export int float_toString(const adr input, const adr obuff, const int signed){
 
 	if(input == #0){
@@ -412,6 +425,7 @@ export int float_toString(const adr input, const adr obuff, const int signed){
 	return 0;	
 };
 
+// Copy a substring of length `length` starting at `start` into buff and return it.
 export adr str_subString(const int start, const int length, adr str, const adr buff) {
 	adr cleanStart = NULL;
 	cleanStart = ?start;
@@ -435,6 +449,7 @@ export adr str_subString(const int start, const int length, adr str, const adr b
 	return buff;
 };
 
+// Reverse a string into the destination buffer.
 export adr str_reverse(const adr in, adr buff){
 	const int length = len(in);
 	const adr buffPtr = buff;
@@ -455,6 +470,7 @@ export adr str_reverse(const adr in, adr buff){
 	return buffPtr;
 };
 
+// Return the character at index i or '\0' when out of bounds.
 export char str_at(adr str, const int i){
 	for int j = 0; j < i; j = j + 1; {
 		str = str + #1;
@@ -463,6 +479,7 @@ export char str_at(adr str, const int i){
 	return ch;
 };
 
+// Invoke callback for each character in the string, passing index/args.
 export int str_forEach(const adr s, const int<char, *int, any> foo, const adr args){
 	const int in = len(s);
 	int i;
@@ -476,14 +493,17 @@ export int str_forEach(const adr s, const int<char, *int, any> foo, const adr ar
 	return 0;
 };
 
+// Determine if the char is an ASCII digit.
 export bool char_isDigit(const char c) {
   return c >= '0' & c <= '9';
 };
 
+// Determine if the char is an ASCII whitespace character.
 export bool char_isWhiteSpace(const char c) {
   return (c == ' ') | (c == '\n') | (c == '\t') | (c == '\r');
 };
 
+// Convert a hexadecimal string (with optional 0x) to an integer.
 export int hex_toInt(adr hex){
 	int result = 0;
 	int i = 0;

@@ -151,6 +151,7 @@ fn markFailure(const string message) -> void {
 	str.print(`      {message}\n`);
 };
 
+// Accessor for the global fixture registry.
 export fn getFixtures() -> unordered_map::<FixtureStruct> {
 	if fixtures == NULL {
 		fixtures = new unordered_map::<FixtureStruct>();
@@ -158,6 +159,7 @@ export fn getFixtures() -> unordered_map::<FixtureStruct> {
 	return fixtures;
 };
 
+// Map storing per-fixture state created during setUp.
 export fn getFixtureData() -> Map {
 	if fixtureData == NULL {
 		fixtureData = new Map();
@@ -169,6 +171,7 @@ fn builtList() -> List {
 	return getFixtureData().keys();
 };
 
+// Invoke tearDown hooks for all built fixtures.
 export fn tearDownFixtures() -> void {
 	const let built = getFixtureData();
 	const let fixtures = getFixtures();
@@ -184,6 +187,7 @@ export fn tearDownFixtures() -> void {
 	built.clear();
 };
 
+// Define a describe block with its nested tests and hooks.
 export fn describe(const string text, const adr implementation) -> void {
 	str.print(text + "\n");
 	pushDescribeContext();
@@ -193,6 +197,7 @@ export fn describe(const string text, const adr implementation) -> void {
 	ctx.runAfterAllHooks();
 };
 
+// Register a named fixture with optional teardown handler.
 export fn fix(const adr name, const adr setUp, * const adr tearDown) -> void {
 	const let fixtures = getFixtures();
 	if fixtures.has(name) {
@@ -207,6 +212,7 @@ export fn fix(const adr name, const adr setUp, * const adr tearDown) -> void {
 	fixtures.set(name, new FixtureStruct(setUp, tearDown));
 };
 
+// Retrieve fixture data, invoking setUp lazily when necessary.
 export fn getFixture(const string name) -> any {
 	const let fd = getFixtureData();
 	if fd.has(name.cstr()) {
@@ -257,26 +263,31 @@ fn runAfterEachHooksForStack() -> void {
 	};
 };
 
+// Register a hook executed before each test in the current describe block.
 export fn beforeEach(const adr implementation) -> void {
 	const DescribeContext ctx = currentDescribeContext();
 	ctx.beforeEachHooks.push_back(implementation);
 };
 
+// Register a hook executed after each test in the current describe block.
 export fn afterEach(const adr implementation) -> void {
 	const DescribeContext ctx = currentDescribeContext();
 	ctx.afterEachHooks.push_back(implementation);
 };
 
+// Register a hook executed once before any tests in the describe block.
 export fn beforeAll(const adr implementation) -> void {
 	const DescribeContext ctx = currentDescribeContext();
 	ctx.beforeAllHooks.push_back(implementation);
 };
 
+// Register a hook executed once after all tests in the describe block.
 export fn afterAll(const adr implementation) -> void {
 	const DescribeContext ctx = currentDescribeContext();
 	ctx.afterAllHooks.push_back(implementation);
 };
 
+// Define a concrete test case with the supplied body.
 export fn it(const adr text, const adr implementation) -> void {
 	totalTests = totalTests + 1;
 	currentTestFailed = false;
@@ -295,12 +306,14 @@ export fn it(const adr text, const adr implementation) -> void {
 	};
 };
 
+// Mark a test as skipped along with a justification.
 export fn itSkip(const string text, const string reason) -> void {
 	skippedTests = skippedTests + 1;
 	str.print(`  it: {text} (skipped: {reason})\n`);
 };
 
 types(T)
+// Assert equality of two values using == semantics.
 export fn assertEqual(const T expected, const T actual) -> void {
 	if expected != actual {
 		markFailure(`Expected {expected} but got {actual}`);
@@ -314,6 +327,7 @@ private fn assertEqualStrings(const string expected, const string actual) -> voi
 };
 
 types(T)
+// Assert inequality of two values.
 export fn assertNotEqual(const T expected, const T actual) -> void {
 	if expected == actual {
 		markFailure(`Expected not {expected} but got {actual}`);
@@ -321,6 +335,7 @@ export fn assertNotEqual(const T expected, const T actual) -> void {
 };
 
 types(T)
+// Assert that an option value is Some.
 export fn assertSome(const T optValue) -> void {
 	if !optValue.isSome() {
 		markFailure("Expected Some but got None");
@@ -328,6 +343,7 @@ export fn assertSome(const T optValue) -> void {
 };
 
 types(T)
+// Assert that an option value is None.
 export fn assertNone(const T optValue) -> void {
 	if optValue.isSome() {
 		markFailure("Expected None but got Some");
@@ -335,6 +351,7 @@ export fn assertNone(const T optValue) -> void {
 };
 
 types(T)
+// Assert that a result value is Ok.
 export fn assertOk(const T resValue) -> void {
 	if resValue.isErr() {
 		const let err = resValue.unwrapErr();
@@ -343,6 +360,7 @@ export fn assertOk(const T resValue) -> void {
 };
 
 types(T)
+// Assert that a result value is Err.
 export fn assertErr(const T resValue) -> void {
 	if resValue.isOk() {
 		markFailure("Expected Err but got Ok");
@@ -350,6 +368,7 @@ export fn assertErr(const T resValue) -> void {
 };
 
 types(T, Z)
+// Assert an option is Some and equals the expected value.
 export fn assertSomeValue(const T value, const Z expected) {
 	if value.isSome() {
 		const let actual = value.unwrap();
@@ -362,6 +381,7 @@ export fn assertSomeValue(const T value, const Z expected) {
 };
 
 types(T, Z)
+// Assert a result is Ok and equals the expected value.
 export fn assertOkValue(const T value, const Z expected) {
 	if value.isOk() {
 		const let actual = value.unwrap();
@@ -374,6 +394,7 @@ export fn assertOkValue(const T value, const Z expected) {
 	};
 };
 
+// Assert that a condition is true.
 export fn assertTrue(const bool condition) -> void {
 	if !condition {
 		currentTestFailed = true;
@@ -381,6 +402,7 @@ export fn assertTrue(const bool condition) -> void {
 	};
 };
 
+// Assert that a condition is false.
 export fn assertFalse(const bool condition) -> void {
 	if condition {
 		currentTestFailed = true;
@@ -388,22 +410,26 @@ export fn assertFalse(const bool condition) -> void {
 	};
 };
 
+// Assert that a pointer is NULL.
 export fn assertNull(const adr value) -> void {
 	if value != NULL {
 		markFailure(`Expected null but got {value}`);
 	};
 };
 
+// Assert that a pointer is not NULL.
 export fn assertNotNull(const adr value) -> void {
 	if value == NULL {
 		markFailure("Expected not null but got null");
 	};
 };
 
+// Explicitly fail the current test with a message.
 export fn fail(const string message) -> void {
 	markFailure(message);
 };
 
+// Print a summary of total/passed/skipped tests.
 export fn summary() -> void {
 	const int passed = totalTests - failedTests;
 	str.print(`Summary: {passed} passed, {failedTests} failed, {skippedTests} skipped (total: {totalTests})\n`);

@@ -63,6 +63,7 @@ safe dynamic class Property {
     };
 };
 
+// Backing-field helper that exposes a read/write property and notifies observers.
 transform observable 
 ~
 ${scope} ${mut} ${type} __${ident} = ${expr};
@@ -77,6 +78,7 @@ fn ${ident}() -> Map : Property {{
 }};
 ~;
 
+// Readonly property wrapper that panics when writes are attempted.
 transform readonly 
 ~
 private mutable ${type} __${ident} = ${expr};
@@ -91,6 +93,7 @@ fn ${ident}() -> Map : Property {{
 }};
 ~;
 
+// Property wrapper that runs the supplied expression each time it is read.
 transform computed 
 ~
 fn ${ident}() -> adr : Property {{
@@ -104,6 +107,7 @@ fn ${ident}() -> adr : Property {{
 }};
 ~;
 
+// Lazily initializes the property the first time it's accessed, caching the value.
 transform lazy 
 ~
 private mutable ${type} __${ident} = NULL;
@@ -121,6 +125,7 @@ fn ${ident}() -> Map : Property {{
 }};
 ~;
 
+// Fluent builder helper that sets a default value and provides a with_* mutator.
 transform with 
 ~
 ${scope} mutable ${type} ${ident} = ${expr}; // default value
@@ -130,7 +135,7 @@ fn with_${ident}(const ${type} x) -> ${Self} {
 };
 ~;
 
-// just like with, but it takes ownership of the value
+// Fluent builder helper that consumes/owns the supplied value.
 transform with_owned 
 ~
 ${scope} ${mut} ${type} ${ident} = ${expr}; // default value
@@ -140,6 +145,7 @@ fn with_${ident}(const &&${type} x) -> ${Self} {
 };
 ~;
 
+// Property wrapper that clamps assigned values into the provided [min,max] range.
 transform clamped 
 ~
 ${scope} ${mut} ${type} __${ident} = ${expr}; // default value

@@ -95,6 +95,7 @@ class OtherHTTPError signs Error {
     };
 };
 
+// Supported HTTP verbs.
 enum HTTPMethod {
     GET,
     POST,
@@ -107,10 +108,12 @@ enum HTTPMethod {
     PATCH
 };
 
+// Start a simple HTTP server listening on `port` that dispatches to callback.
 export adr listen(const short port, const int bufferSize, const adr callback, const adr args) {
     _aflat_server_spinUp(port, bufferSize, callback, args);
 };
 
+// Convert an HTTPMethod enum to its literal string.
 export string methodToString(const HTTPMethod method) {
     if method == HTTPMethod.GET 
         return `GET`
@@ -132,6 +135,7 @@ export string methodToString(const HTTPMethod method) {
         return `UNKNOWN`;
 };
 
+// Parse a method string into its enum representation.
 export HTTPMethod stringToMethod(const string method) {
     if method == "GET"
         return HTTPMethod.GET
@@ -574,6 +578,10 @@ class HTTPServer {
 };
 
 
+/**
+ * Async worker entry point that services an HTTPRequest and writes the
+ * response back to the requester.
+ */
 export any requestWorker(const HTTPRequest _arg) : async.worker {
     return _arg.send(10000000);
 };

@@ -10,6 +10,10 @@ import {print} from "io" under io;
 private adr getenv(adr name);
 
 
+/**
+ * Thin wrapper around `sys_execve` that populates a default environment when
+ * none is provided.
+ */
 export int execve(const adr path, * const adr argv, * adr envp){
     if envp == NULL{
         const let USER = st.fString("USER=%a", {getenv("USER")});
@@ -21,12 +25,17 @@ export int execve(const adr path, * const adr argv, * adr envp){
     return sys_execve(path, argv, envp);
 };
 
+// Async worker trampoline for spawning execve via the concurrency API.
 export any execWorker(const adr _arg) : async.worker {
     const adr[3] arg = _arg;
     execve(arg[0], arg[1], arg[2]);
     return "success";
 };
 
+/**
+ * Fork/exec convenience helper that waits for the child process to exit and
+ * returns its status code.
+ */
 export int exec(const adr path, * const adr argv, * const adr envp) {
     const int pid = sys_fork();
     if pid == 0 {
@@ -39,15 +48,18 @@ export int exec(const adr path, * const adr argv, * const adr envp) {
     };
 };
 
+// Execute a shell command via /bin/sh -c.
 export int system(const adr cmd) {
     const let argv = {"/bin/sh", "-c", cmd, NULL};
     return exec("/bin/sh", argv, NULL);
 };
 
+// Retrieve an environment variable or NULL if missing.
 export adr envVar(const adr name) {
     return getenv(name);
 };
 
+// Determine whether the named environment variable exists.
 export bool isSet(const adr name) {
     return getenv(name) != NULL;
 };

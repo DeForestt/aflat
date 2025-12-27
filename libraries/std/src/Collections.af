@@ -11,6 +11,7 @@ import {some, none} from "Utils/Option" under opt;
 import Error from "Utils/Error";
 import Render from "Utils/Error/Render";
 
+// Error type thrown when list indexes exceed current bounds.
 class IndexOutOfRangeError signs Error {
     const string message = message.copy();
 
@@ -23,6 +24,9 @@ class IndexOutOfRangeError signs Error {
     };
 }
 
+/**
+ * Dynamically-sized homogeneous collection backed by a growable buffer.
+ */
 class List {
     private adr head = malloc(typeSize * size);
     private int typeSize = typeSize;

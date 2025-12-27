@@ -16,6 +16,7 @@ import vector from "Collections/Vector";
 
 fn strerror(int code) -> adr;
 
+// Error wrapper for failures encountered when opening files.
 class FileError signs Error {
         int code = code * -1;
 
@@ -29,6 +30,7 @@ class FileError signs Error {
         };
 };
 
+// Error wrapper for read failures (including EOF conditions).
 class ReadError signs Error {
         private int code = code * -1;
         private string renderMessage() : Render {
@@ -44,6 +46,7 @@ class ReadError signs Error {
         };
 };
 
+// Minimal struct mirroring Linux `stat` layout for use with syscalls.
 class fstat{
     long st_dev;
     long st_ino;
@@ -76,6 +79,10 @@ private int clearChar(adr pointer, const int size){
         };
 };
 
+/**
+ * File descriptor wrapper with convenience helpers for reading, iterating,
+ * and writing text/bytes.
+ */
 class File{
     adr fileName;
     int file;
@@ -170,6 +177,7 @@ class File{
     };
 };
 
+// Create or truncate a file for read/write access, returning File! result.
 export fn createFile(const adr fileName) -> File! {
         const File file = malloc(File);
         const long flag = #2 | #512 | #64; // O_RDWR | O_CREAT | O_TRUNC
@@ -184,6 +192,7 @@ export fn createFile(const adr fileName) -> File! {
         return file;
 };
 
+// Open an existing file for read/write access, returning File! result.
 export fn openFile(const adr fileName) -> File! {
         const File file = malloc(File);
         const long flag = #2;
@@ -259,4 +268,3 @@ safe dynamic pedantic class FileManager {
   };
 
 };
-
