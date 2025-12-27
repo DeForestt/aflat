@@ -547,14 +547,156 @@ static std::string generateReadmeContent(const std::string &projectName) {
   out << "This project was generated with the AFlat toolchain. Use the "
          "commands below to build, run, test, and explore the codebase.\n\n";
   out << "## Build & Run\n";
-  out << "- `aflat build` – compile sources defined in `aflat.cfg`.\n";
-  out << "- `aflat run` – build and execute the resulting binary.\n";
-  out << "- `aflat test` – build and run the configured test target.\n\n";
+  out << "- `aflat build` - compile sources defined in `aflat.cfg`.\n";
+  out << "- `aflat run` - build and execute the resulting binary.\n";
+  out << "- `aflat test` - build and run the configured test target.\n\n";
   out << "## Inspecting Code\n";
   out << "- `aflat docs src/main.af` lists classes, unions, transforms, and "
          "functions in this project.\n";
   out << "- `aflat docs String` explores a standard "
          "library module.\n\n";
+  out << "### Standard library overview\n";
+  out << "AFlat ships a batteries-included standard library under "
+         "`libraries/std`. "
+         "The modules below are the most commonly used building blocks:\n\n";
+  out << "#### Runtime & strings\n";
+  out << "- `std` - Arena allocator, `malloc`/`free`, `memcpy`, `panic`, "
+         "`sleep`, and other intrinsics (libraries/std/src/std.af).\n";
+  out << "- `std-cmp` - Compatibility shim that swaps in libc memory helpers "
+         "plus panic/assert when the arena can't be used "
+         "(libraries/std/src/std-cmp.af).\n";
+  out << "- `Memory` - RefCounted base class alongside the generic "
+         "`Box`/`wrap` "
+         "helpers for owning values (libraries/std/src/Memory.af).\n";
+  out << "- `String` - Assembly-backed string primitive covering allocation, "
+         "slicing, iteration, comparisons, casing, and conversions "
+         "(libraries/std/src/String.af).\n";
+  out << "- `strings` - Standalone utilities such as `len`, concat, ASCII "
+         "helpers, "
+         "and int/float parsing/formatting (libraries/std/src/strings.af).\n";
+  out << "- `System` - Thin syscall wrappers for `execve`, `exec`, shell "
+         "execution, "
+         "and environment-variable helpers (libraries/std/src/System.af).\n\n";
+  out << "#### Numerics & IO\n";
+  out << "- `math` - Numeric helpers including `Random`, integer/float "
+         "exponentiation, "
+         "square roots, conversions, and absolute values "
+         "(libraries/std/src/math.af).\n";
+  out << "- `io` - Terminal IO functions for reading strings, printing "
+         "chars/ints/hex, "
+         "and emitting ANSI-colored output (libraries/std/src/io.af).\n";
+  out << "- `files` - File descriptor wrapper with `FileError`/`ReadError`, "
+         "buffered reads, "
+         "iterators, and write helpers (libraries/std/src/files.af).\n";
+  out << "- `DateTime` - Epoch-based `DateTime` struct with parsing, getters, "
+         "formatting, "
+         "and day-of-week math (libraries/std/src/DateTime.af).\n\n";
+  out << "#### Collections & iteration\n";
+  out << "- `Collections` - Generic `List` implementation with push/pop/find "
+         "helpers and "
+         "bounds-checked access (libraries/std/src/Collections.af).\n";
+  out << "- `Collections/Vector` - Type-parametric `vector` supporting "
+         "copy/move semantics, "
+         "iterators, sorting, and optional accessors "
+         "(libraries/std/src/Collections/Vector.af).\n";
+  out << "- `Collections/unordered_map` - Hash-tree-backed associative "
+         "container with `set`/`get`/`keys` "
+         "and Option-aware lookups "
+         "(libraries/std/src/Collections/unordered_map.af).\n";
+  out << "- `Collections/Iterator` - Base iterator abstraction plus "
+         "`Next`/`Peek` decorators to wire callbacks "
+         "(libraries/std/src/Collections/Iterator.af).\n";
+  out << "- `Collections/Enumerator` - Adds index-aware enumeration and "
+         "exposes the numeric `Range` iterator "
+         "(libraries/std/src/Collections/Enumerator.af).\n";
+  out << "- `Collections/Scroller` - List-backed iterator that yields "
+         "sequential elements with peek support "
+         "(libraries/std/src/Collections/Scroller.af).\n";
+  out << "- `Collections/Tuple` - Value-type tuples with ownership-safe "
+         "destruction and `make_tuple` helper "
+         "(libraries/std/src/Collections/Tuple.af).\n\n";
+  out << "#### Data modeling & serialization\n";
+  out << "- `JSON` - Tagged union covering JSON primitives, casting helpers, "
+         "mutation, and pretty printing "
+         "(libraries/std/src/JSON.af).\n";
+  out << "- `JSON/Parse` - Wrapper that routes to `JSON.parse` for turning "
+         "strings into JSON values "
+         "(libraries/std/src/JSON/Parse.af).\n";
+  out << "- `JSON/Property` - Reserved module for future JSON/property "
+         "bindings (libraries/std/src/JSON/Property.af).\n\n";
+  out << "#### HTTP & networking\n";
+  out << "- `HTTP` - HTTP errors, verb enum, request parser, "
+         "`HTTPMessage`/`HTTPResponse`, and `listen` helper "
+         "(libraries/std/src/HTTP.af).\n";
+  out << "- `HTTP/Endpoint` - Endpoint wrapper/registry plus pluggable "
+         "NotFound handler "
+         "(libraries/std/src/HTTP/Endpoint.af).\n";
+  out << "- `HTTP/Endpoints` - Sugar classes for registering "
+         "GET/POST/PUT/DELETE/etc. handlers "
+         "(libraries/std/src/HTTP/Endpoints.af).\n";
+  out << "- `HTTP/Server` - Middleware-aware server that dispatches endpoints, "
+         "supports wildcards, and formats "
+         "error responses (libraries/std/src/HTTP/Server.af).\n";
+  out << "- `HTTP/Middleware` - Before/after middleware registration helper "
+         "applied per request "
+         "(libraries/std/src/HTTP/Middleware.af).\n";
+  out << "- `request.c` - C shim exposing `request`, `_aflat_server_spinUp`, "
+         "and `serve` socket utilities "
+         "(libraries/std/src/request.c).\n\n";
+  out << "#### Utility types & error handling\n";
+  out << "- `Utils/Option` - Ref-counted Option class with `resolve`, `match`, "
+         "and defaulting helpers "
+         "(libraries/std/src/Utils/Option.af).\n";
+  out << "- `Utils/option` - Lightweight union mirroring Rust's Option with "
+         "`Some`/`None` constructors "
+         "(libraries/std/src/Utils/option.af).\n";
+  out << "- `Utils/Result` - Class-based result value for bridging APIs that "
+         "expect dynamic success/error payloads "
+         "(libraries/std/src/Utils/Result.af).\n";
+  out << "- `Utils/result` - Rust-style `result<T>` union with ergonomic "
+         "constructors and unwrap helpers "
+         "(libraries/std/src/Utils/result.af).\n";
+  out << "- `Utils/Error` - Base `Error` class with type metadata, render "
+         "hooks, and pattern matching "
+         "(libraries/std/src/Utils/Error.af).\n";
+  out << "- `Utils/Error/Render` - Decorator that lets errors plug in a render "
+         "callback "
+         "(libraries/std/src/Utils/Error/Render.af).\n\n";
+  out << "#### Utility infrastructure & patterns\n";
+  out << "- `Utils/Functions` - Capturing function wrapper that invokes stored "
+         "callbacks with optional captures "
+         "(libraries/std/src/Utils/Functions.af).\n";
+  out << "- `Utils/Defer` - RAII helper that runs a `Function` when the object "
+         "leaves scope unless dismissed "
+         "(libraries/std/src/Utils/Defer.af).\n";
+  out << "- `Utils/Map` - Tree-backed map with hashing, normalization, and "
+         "Option-returning lookups "
+         "(libraries/std/src/Utils/Map.af).\n";
+  out << "- `Utils/Object` - Dynamic object base with type tagging, validation "
+         "hooks, and match support "
+         "(libraries/std/src/Utils/Object.af).\n";
+  out << "- `Utils/Properties` - Property decorators (`computed`, `readonly`, "
+         "`lazy`, `observable`, `clamped`, `with`) "
+         "plus supporting classes (libraries/std/src/Utils/Properties.af).\n";
+  out << "- `Utils/Observable` - Observer list that notifies subscribers when "
+         "events fire "
+         "(libraries/std/src/Utils/Observable.af).\n\n";
+  out << "#### Tooling & frameworks\n";
+  out << "- `ATest` - BDD-style testing DSL with fixtures, describe contexts, "
+         "hooks, and reporting helpers "
+         "(libraries/std/src/ATest.af).\n";
+  out << "- `concurrency` - Process/thread abstractions (`Process`, "
+         "`MProcess`), message pipes, and `AsyncResult` handles "
+         "(libraries/std/src/concurrency.af).\n";
+  out << "- `CLArgs` - Command-line parser with long/short flags, typed "
+         "values, validation, and help text "
+         "(libraries/std/src/CLArgs.af).\n";
+  out << "- `Web/Content` - File-backed templating utility that applies "
+         "bindings before rendering "
+         "(libraries/std/src/Web/Content.af).\n";
+  out << "- `Web/Content/Bind` - Binding helper that registers template "
+         "placeholders and preprocessors "
+         "(libraries/std/src/Web/Content/Bind.af).\n\n";
   out << "## Refreshing This README\n";
   out << "Run `aflat readme [path] [name]` to regenerate these instructions "
          "for any folder.\n";
@@ -935,7 +1077,7 @@ static std::string sanitizeGenerics(const std::string &input) {
         inSingleQuote = !inSingleQuote;
       result += c;
     } else if (!inSingleQuote && !inDoubleQuote) {
-      // Outside of quotes → replace < and >
+      // Outside of quotes -> replace < and >
       if (c == '<') {
         result += "__std__generic__start__";
         genericDepth++;
@@ -948,7 +1090,7 @@ static std::string sanitizeGenerics(const std::string &input) {
         result += c;
       }
     } else {
-      // Inside quotes → just append
+      // Inside quotes -> just append
       result += c;
     }
   }
@@ -1157,26 +1299,16 @@ void buildTemplate(std::string value) {
   outfile << R"(.needs <std>
 .needs <test>
 
-import {beforeAll, beforeEach, afterEach, afterAll,
-        describe, it, itSkip, fix, getFixture,
-        assertEqual, assertTrue, summary} from "ATest" under test;
+import {beforeAll, beforeEach, afterEach, afterAll, describe, it, itSkip, fix, getFixture, assertEqual, assertTrue, summary} from "ATest" under test;
 
 class HookState {
-    bool beforeAllRan;
-    int beforeEachCount;
-    int afterEachCount;
-    bool afterAllRan;
+    mutable bool beforeAllRan = false;
+    mutable int beforeEachCount = 0;
+    mutable int afterEachCount = 0;
+    mutable bool afterAllRan = false;
 
     fn init() -> Self {
-        my.reset();
         return my;
-    };
-
-    fn reset() -> void {
-        my.beforeAllRan = false;
-        my.beforeEachCount = 0;
-        my.afterEachCount = 0;
-        my.afterAllRan = false;
     };
 };
 
