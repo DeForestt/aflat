@@ -13,6 +13,10 @@ import Box from "Memory";
 import {wrap} from "Memory" under box;
 import Error from "Utils/Error";
 
+/**
+ * Dynamically typed JSON value supporting rich constructors plus convenience
+ * methods to cast to native aflat types.
+ */
 union JSON {
     String(adr),
     Number(int),
@@ -161,10 +165,12 @@ union JSON {
     };
 };
 
+// Wrap an unordered_map into a JSON Object variant.
 export fn Object(const unordered_map::<Box::<JSON>> map) -> JSON {
     return new JSON->Object(map);
 };
 
+// Create a JSON String from an adr pointer.
 export fn String(const adr s) -> JSON {
     if s == NULL return new JSON->Null();
     let v = malloc(st.len(s) + 1);
@@ -172,18 +178,22 @@ export fn String(const adr s) -> JSON {
     return new JSON->String(v);
 };
 
+// Create a JSON Number from a scalar integer value.
 export fn Number(const int n) -> JSON {
     return new JSON->Number(n);
 };
 
+// Create a JSON Boolean from a bool.
 export fn Boolean(const bool b) -> JSON {
     return new JSON->Boolean(b);
 };
 
+// Wrap an array of JSON boxes into the JSON List variant.
 export fn List(const vector::<Box::<JSON>> list) -> JSON {
     return new JSON->List(list);
 };
 
+// Convenience creator for the JSON Null sentinel.
 export fn Null() -> JSON {
     return new JSON->Null();
 };
@@ -296,6 +306,7 @@ private fn parseInternal(const string json_) -> JSON! {
     return new Error(`JSON is empty or is not valid: {json_}`);
 };
 
+// Parse a string buffer into a JSON document, returning Result semantics.
 export fn parse(const string jsonStr) -> JSON! {
     return parseInternal(jsonStr);
 };

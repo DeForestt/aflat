@@ -3,6 +3,10 @@ import {print} from "String" under str;
 import string from "String" under str;
 
 types(T)
+/**
+ * Optional value container inspired by Rust's Option. Wraps a `Some(T)` or
+ * sentinel `None` and provides ergonomic helpers for safe unwrapping.
+ */
 union option {
   Some(T),
   None
@@ -55,16 +59,22 @@ union option {
 };
 
 types(T)
+// Wrap a value in the `Some` variant for ergonomic construction.
 export fn Some(const T val) -> option::<T> {
   return new option::<T>->Some(val);
 };
 
 types(T)
+// Obtain a typed `None` value for the requested generic parameter.
 export fn None() -> option::<T> {
   return new option::<T>->None();
 };
 
 types(T)
+/**
+ * Wrap an arbitrary value by probing whether it represents NULL when cast to
+ * an adr, mirroring aflat's implicit optional semantics.
+ */
 export fn optionWrapper(immutable T value) -> option::<T> {
   const adr checker = NULL;
   const adr cpoint = ?checker;

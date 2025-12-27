@@ -1,6 +1,9 @@
 .needs <std> 
 import string from "String";
 
+/**
+ * Base helper that tracks reference counts with optional locking semantics.
+ */
 class RefCounted {
 	private mutable int refCount = 0;
 	private mutable bool locked = false;
@@ -28,6 +31,9 @@ class RefCounted {
 };
 
 types(T)
+/**
+ * Heap box wrapper that owns a copy of `T` and provides simple getters/setters.
+ */
 class Box {
 	private mutable T value = value;
 
@@ -50,6 +56,7 @@ class Box {
 };
 
 types(T)
+// Convenience helper to allocate a Box for a value.
 export fn wrap(const T value) -> Box::<T> {
 	return new Box::<T>(value);
 };

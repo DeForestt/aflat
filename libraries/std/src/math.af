@@ -7,6 +7,9 @@ import {fPrint} from "io" under io;
 
 export int exp(int base, int pow);
 
+/**
+ * Simple linear congruential generator seeded from DateTime.
+ */
 class Random {
 	private int seed;
 
@@ -28,6 +31,7 @@ class Random {
 	};
 };
 
+// Integer exponentiation for positive powers.
 export int exp(const int base, const int pow){
 	int i = 0;
 	int output = 1;
@@ -38,6 +42,7 @@ export int exp(const int base, const int pow){
 	return output;
 };
 
+// reinterpret float bits to integer while preserving sign and magnitude.
 export int floatToInt(const float f){
 	int i = f;
 	const int sign = i >> 31;
@@ -60,6 +65,7 @@ export int floatToInt(const float f){
 	return whole;
 };
 
+// naive integer to float conversion using repeated addition.
 export float intToFloat(const int i){
 	// for now, we will cheat by using a for loop
 	// TODO: implement this properly
@@ -69,6 +75,7 @@ export float intToFloat(const int i){
 	return f;
 };
 
+// Integer square root via linear search.
 export int sqrt(const int n){
 	int i = 0;
 	while (i * i < n)
@@ -76,6 +83,7 @@ export int sqrt(const int n){
 	return i;
 };
 
+// Exponentiation for 64-bit operands.
 export long longExp(const long base, const int pow){
 	int i = 0;
 	long output = 1;
@@ -86,6 +94,7 @@ export long longExp(const long base, const int pow){
 	return output;
 };
 
+// Single digit of a long division result for decimal expansion.
 export int longDiv(const int int1, const int int2){
 	int remainder = int1 % int2;
 	remainder = remainder * 10;
@@ -93,12 +102,14 @@ export int longDiv(const int int1, const int int2){
 	return remainder;
 };
 
+// Absolute value helper for ints.
 export int abs(const int input){
 	if input < 0
 		return input * -1;
 	return input;
 };
 
+// Float exponentiation implemented via repeated multiplication.
 export float floatExp(const float base, const int pow){
 	int i = 0;
 	let output = 1.0;
@@ -109,6 +120,7 @@ export float floatExp(const float base, const int pow){
 	return output;
 };
 
+// Absolute value helper for floats.
 export float floatAbs(const float input){
 	if input < 0.0
 		return input * -1.0;

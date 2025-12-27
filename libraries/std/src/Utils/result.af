@@ -3,6 +3,10 @@ import string from "String";
 import Error from "Utils/Error";
 
 types(T)
+/**
+ * Result type that carries either `Ok(T)` success values or `Err(Error)`
+ * failures, closely mirroring Rust's Result ergonomics.
+ */
 union result {
     Ok(T),
     Err(Error)
@@ -66,16 +70,22 @@ union result {
 };
 
 types(T)
+// Convenience constructor for building an `Ok` from a value.
 export fn accept(const T value) -> result::<T> {
     return new result::<T>->Ok(value);
 };
 
 types(T)
+// Convenience constructor for building an `Err` from an Error.
 export fn reject(const Error err) -> result::<T> {
     return new result::<T>->Err(err);
 };
 
 types(T)
+/**
+ * Wraps a move-only value when interfacing with APIs that expect `result<T>`
+ * responses, defaulting to `Ok` semantics.
+ */
 export fn resultWrapper(const T value) -> result::<T> {
     return new result::<T>->Ok(value);
 };

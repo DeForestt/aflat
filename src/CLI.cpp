@@ -92,6 +92,8 @@ void printUsage(const char *prog) {
       << "  file <name>         Add a single source file\n"
       << "  module <name>       Add a folder-based module (mod.af)\n"
       << "  install <repo>      Add git dependency (use --name to set module)\n"
+      << "  readme [dir] [name] Generate README scaffolding\n"
+      << "  docs <lib|file>     Show classes and functions for a library/file\n"
       << "  update              Update AFlat\n"
       << "  clean               Remove ./bin directory\n"
       << "  <file> [out.s]      Compile single file\n\n"
