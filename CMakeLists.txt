@@ -6,7 +6,7 @@ set (GCC_COMPILER_FLAGS -O3 -march=native -fpermissive)
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ../bin)
 project(aflat VERSION 1.1.0)
 
-file(GLOB_RECURSE aflat_SRC
+file(GLOB_RECURSE aflat_SRC CONFIGURE_DEPENDS
     src/*.cpp
 ) 
 
@@ -24,7 +24,7 @@ target_link_libraries(aflat PRIVATE Threads::Threads)
 target_include_directories(aflat PRIVATE include/) 
 
 # Testing -->
-file(GLOB_RECURSE testing_Modules
+file(GLOB_RECURSE testing_Modules CONFIGURE_DEPENDS
     test/*.cpp
     src/CodeGenerator/*.cpp
     src/*.cpp
