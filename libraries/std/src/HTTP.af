@@ -184,6 +184,7 @@ class HTTPMessage {
     string statusMessage;
     HTTPMethod method;
     Map metadata = new Map();
+
     private int parse(const adr rsi) {
         const string rsp = new string(rsi);
         my.origin = rsp;
@@ -302,15 +303,15 @@ class HTTPMessage {
 
         my.switch = false;
 
-        for int i = 0; i < lines.count(); i = i + 1 {
-            const string line = lines.get(i).expect("Invalid HTTP message");
+        for int i = 1; i < lines.count(); i = i + 1 {
+            if i == 0 {
+                continue;
+            };
+            const string line = lines.get(i).expect("Invalid HTTP message").copy();
             if line == "\n" {
                 my.switch = true;
                 continue;
             };
-            
-            if i == 0
-                continue;
 
             if my.switch {
                 my.body = my.body + line + "\r\n";
@@ -322,13 +323,13 @@ class HTTPMessage {
                 continue;
             };
 
-            string key = sections.get(0).expect("Invalid HTTP message");
-            string value = sections.get(1).expect("Invalid HTTP message");
+            string key = sections.get(0).expect("Invalid HTTP message").copy();
+            string value = sections.get(1).expect("Invalid HTTP message").copy();
 
             if sections.count() > 2 {
                 for int j = 2; j < sections.count(); j = j + 1 {
                     value = value + ":";
-                    const string t = sections.get(j).expect("Invalid HTTP message");
+                    const string t = sections.get(j).expect("Invalid HTTP message").copy();
                     value = value + t;
                 };
             };
@@ -551,21 +552,6 @@ class HTTPServer {
     };
 
     bool processRequests(const adr req, const adr rsp) {
-        st.print("Processing request:\n");
-        st.print({req});
-        // HTTPMessage msg = new HTTPMessage(req);
-        // string path = msg.endpoint;
-        // HTTPMethod method = msg.method;
-        // for int i = 0; i < my.endpoints.count(); i = i + 1 {
-        //     EndPointStruct eps = my.endpoints.get(i);
-        //     if (eps.path == path) & (eps.method == method) {
-        //         HTTPMessage rs = new HTTPMessage(req);
-        //         let ret = eps(NULL, rs);
-        //         rsp =: ret;
-        //         delete msg;
-        //         return true;
-        //     };
-        // };
         st.print("404 Not Found\n");
         const let err = my.get404Error();
         rsp =: "HTTP/1.1 404 Not Found\r\n<html><body><h1>404 Not Found</h1></body></html>\r\n";

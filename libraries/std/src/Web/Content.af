@@ -19,7 +19,11 @@ class Content {
 
     void loadFile(const adr fileName) {
 		const File f = fs.openFile(fileName).expect("Failed to open file");
-		my.cleanContent = f.readToEnd().expect("Failed to read file");
+		my.cleanContent = "";
+        
+        foreach line in f {
+            my.cleanContent = `{my.cleanContent}{line}\n`;
+        };
 		my.content = my.cleanContent.cstr();
 		return;
     };

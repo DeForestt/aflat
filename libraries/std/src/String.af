@@ -83,15 +83,7 @@ safe dynamic class string {
     };
 
     fn debugRefCount() {
-        if my.debug & my.head != NULL {
-            if my.refcount < 0 {
-                my.refcount = 0;
-            };
-            io.print(my.head);
-            io.print(" RefCount: ");
-            io.printInt(my.refcount);
-            io.print("\n");
-        };
+        return;
     };
 
     int del() {

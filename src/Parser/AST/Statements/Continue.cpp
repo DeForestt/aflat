@@ -21,6 +21,8 @@ gen::GenerationResult const Continue::generate(gen::CodeGenerator &generator) {
   if (generator.continueContext.size() < this->level)
     generator.alert("Attempted to continue deeper than the current loop");
 
+  // we need to pop the scope before continuing to avoid memory leaks
+
   int index = this->level - 1;
   asmc::Jmp *jmp = new asmc::Jmp();
   jmp->logicalLine = this->logicalLine;

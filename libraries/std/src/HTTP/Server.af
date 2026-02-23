@@ -8,9 +8,13 @@ import {methodToString} from "HTTP" under http;
 import string from "String";
 import {print} from "String" under str;
 import {printHex} from "io" under io;
+import {Some, None} from "Utils/option" under opt;
+import {accept, reject} from "Utils/result" under res;
 import Middleware from "HTTP/Middleware";
 import Error from "Utils/Error";
-import Map from "Utils/Map";
+import option from "Utils/option";
+import result from "Utils/result";
+
 class Server {
     contract {
         const List endpoints = new List(Endpoint);
@@ -39,7 +43,9 @@ class Server {
     };
 
     void listen() {
-        str.print(`listening on port: {my.port}\n`);
+        const let preamble = "http:";
+        const let slash = '/';
+        str.print(`listening on port: {preamble}{slash}{slash}localhost:{my.port}\n`);
         serve(my.port, fn (const adr msg, const Server self) {
             const HTTPMessage msg = new HTTPMessage(msg, true);
             const string method = http.methodToString(msg.method);
@@ -66,7 +72,7 @@ class Server {
 
                 if e.method == msg.method & wildE == subMsg {
                     const let handler = e.imp;
-                    Result response;
+                    result::<HTTPResponse> response;
 
                     if wildE == msg.endpoint {
                         response = handler(self, data, NULL);
@@ -75,17 +81,10 @@ class Server {
                         response = handler(self, data, path);
                     };
 
-                    HTTPResponse r = response.match({
-                        "ok": fn (const HTTPResponse &&res) return res,
-                        "NotFoundError": fn (const NotFoundError err) return new HTTPResponse(err.render().cstr(), "404", "Not Found"),
-                        "ForbiddenError": fn (const ForbiddenError err) return new HTTPResponse(err.render().cstr(), "403", "Forbidden"),
-                        "BadRequestError": fn (const BadRequestError err) return new HTTPResponse(err.render().cstr(), "400", "Bad Request"),
-                        "NotImplementedError": fn (const NotImplementedError err) return new HTTPResponse(err.render().cstr(), "501", "Not Implemented"),
-                        "_": fn (const Error err) {
-                            const let val = err.render();
-                            return new HTTPResponse(val.cstr(), "500", "Internal Server Error");
-                        }
-                    });
+                    HTTPResponse r = match response {
+                        Ok(val) => val,
+                        Err(e) => resolve new HTTPResponse(e.render().cstr(), "500", "Internal Server Error")
+                    };
 
                     for int j = 0; j < self.middlewares.getCount(); j = j + 1 {
                         const Middleware m = self.middlewares.get(j).expect("Middleware count currupted");
