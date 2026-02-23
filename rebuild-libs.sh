@@ -1,5 +1,26 @@
+AF_FLAGS=()
+
+function usage {
+    echo "Usage: $0 [-d] [library]"
+    echo "  -d    Compile libraries with aflat's debug flag"
+    exit 1
+}
+
+while getopts ":d" opt; do
+    case "$opt" in
+        d) AF_FLAGS=(-d) ;;
+        *) usage ;;
+    esac
+done
+
+shift $((OPTIND - 1))
+
+if [ $# -gt 1 ]; then
+    usage
+fi
+
 function aflat {
-    ./bin/aflat $1 $2 $3
+    ./bin/aflat "${AF_FLAGS[@]}" "$@"
 }
 
 # Function to compile a specific library

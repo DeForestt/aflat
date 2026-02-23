@@ -89,9 +89,10 @@ gen::GenerationResult const For::generate(gen::CodeGenerator &generator) {
 
   gen::scope::ScopeManager::getInstance()->pushScope(true);
   OutputFile << generator.GenSTMT(this->Run);
+  gen::scope::ScopeManager::getInstance()->popScope(&generator, OutputFile);
   OutputFile.text << continueLabel;
   OutputFile << generator.GenSTMT(this->increment);
-  gen::scope::ScopeManager::getInstance()->popScope(&generator, OutputFile);
+
   OutputFile.text << label2;
   generator.breakContext.pop();
   generator.continueContext.pop();
