@@ -46,30 +46,6 @@ class ReadError signs Error {
         };
 };
 
-// Minimal struct mirroring Linux `stat` layout for use with syscalls.
-class fstat{
-    long st_dev;
-    long st_ino;
-    int st_mode;
-    int alligner;
-    long st_nlink;
-    int st_uid;
-    int st_gid;
-    long st_rdev;
-    long st_size;
-    long st_blksize;
-    long st_blocks;
-    Times st_atime;
-    Times st_mtime;
-    Times st_ctime;
-};
-
-private fn newFstat(const int file) -> fstat {
-  const let stat = new fstat();
-  sys_fstat(file, stat);
-  return stat;
-};
-
 private int clearChar(adr pointer, const int size){
         int i = 0;
         while(i < size){
@@ -146,8 +122,23 @@ class File{
 
     fn readToEnd() -> result::<string> {
         const int file = my.file;
-        const fstat stat = newFstat(file);
-        const int size = 0 + stat.st_size;
+        const long current = sys_lseek(file, 0, 1); // SEEK_CUR
+        if current < 0 {
+            return res.reject::<string>(new ReadError(0 + current));
+        };
+        const long endPos = sys_lseek(file, 0, 2); // SEEK_END
+        if endPos < 0 {
+            return res.reject::<string>(new ReadError(0 + endPos));
+        };
+        const long remaining = endPos - current;
+        const long reset = sys_lseek(file, current, 0); // SEEK_SET
+        if reset < 0 {
+            return res.reject::<string>(new ReadError(0 + reset));
+        };
+        if remaining <= 0 {
+            return res.reject::<string>(new ReadError(1));
+        };
+        const int size = 0 + remaining;
         const adr buffer = malloc(1 + size);
         const int err = sys_read(file, buffer, size);
         if err < -1 {
@@ -157,7 +148,7 @@ class File{
             free(buffer);
             return res.reject::<string>(new ReadError(1));
         };
-        const adr pointer = buffer + stat.st_size;
+        const adr pointer = buffer + err;
         pointer =: '\0';
         const string text = new string(buffer);
         free(buffer);

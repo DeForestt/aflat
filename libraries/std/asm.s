@@ -24,6 +24,7 @@
 .global sys_execve
 .global sys_clock_gettime
 .global sys_seek
+.global sys_lseek
 
 brk:
     pushq	%rbp
@@ -276,6 +277,7 @@ sys_clock_gettime:
     ret
 
 sys_seek:
+sys_lseek:
     pushq	%rbp
     movq	%rsp, %rbp
     pushq	%rbx
@@ -284,4 +286,3 @@ sys_seek:
     syscall
     leave
     ret
-
