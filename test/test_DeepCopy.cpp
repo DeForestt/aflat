@@ -6,8 +6,9 @@
 TEST_CASE("deepCopy clones statements", "[deepcopy]") {
   lex::Lexer l;
   parse::Parser p;
-  auto tokens = l.Scan("return 1;");
-  tokens.invert();
+  auto tokenPtrs = l.Scan("return 1;");
+  tokenPtrs.invert();
+  auto tokens = lex::toRawList(tokenPtrs);
   ast::Statement *stmt = p.parseStmt(tokens, true);
   auto *ret = dynamic_cast<ast::Return *>(stmt);
   REQUIRE(ret != nullptr);

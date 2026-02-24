@@ -4,6 +4,7 @@
 #include <string>
 
 #include "LinkedList.hpp"
+#include <memory>
 
 using links::LinkedList;
 using std::string;
@@ -104,8 +105,18 @@ public:
 that the parser will be able to understand*/
 class Lexer {
 public:
-  LinkedList<Token *> Scan(string input, int startLine = 1);
+  LinkedList<std::shared_ptr<Token>> Scan(string input, int startLine = 1);
 };
+
+template <typename T>
+links::LinkedList<T *>
+toRawList(const links::LinkedList<std::shared_ptr<T>> &list) {
+  links::LinkedList<T *> out;
+  for (const auto &ptr : list) {
+    out << ptr.get();
+  }
+  return out;
+}
 
 }; // namespace lex
 #endif

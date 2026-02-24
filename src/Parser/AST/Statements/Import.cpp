@@ -174,9 +174,10 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     lex::Lexer l = lex::Lexer();
     PreProcessor pp = PreProcessor();
 
-    auto tokens = l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head"),
-                                       generator.cwd.string()));
-    tokens.invert();
+    auto tokenPtrs = l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head"),
+                                          generator.cwd.string()));
+    tokenPtrs.invert();
+    auto tokens = lex::toRawList(tokenPtrs);
     // parse the file
     parse::Parser p = parse::Parser();
     ast::Statement *statement = p.parseStmt(tokens);
@@ -260,9 +261,10 @@ Import::generateClasses(gen::CodeGenerator &generator) {
     lex::Lexer l = lex::Lexer();
     PreProcessor pp = PreProcessor();
 
-    auto tokens = l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head"),
-                                       generator.cwd.string()));
-    tokens.invert();
+    auto tokenPtrs = l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head"),
+                                          generator.cwd.string()));
+    tokenPtrs.invert();
+    auto tokens = lex::toRawList(tokenPtrs);
     parse::Parser p = parse::Parser();
     if (this->path.find("./") != std::string::npos)
       p.mutability = generator.mutability;
