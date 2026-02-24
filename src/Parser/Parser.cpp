@@ -9,11 +9,13 @@
 #include "Parser/AST/Expressions/Bubble.hpp"
 #include "Parser/AST/Expressions/List.hpp"
 #include "Parser/AST/Statements/Match.hpp"
+#include "Scan/Token.hpp"
 #include "Scanner.hpp"
 
 ast::Expr *prioritizeExpr(ast::Expr *expr);
 
-parse::Parser::Parser(int mutability) {
+parse::Parser::Parser(int mutability)
+    : scanner(nullptr), mutability(mutability) {
   this->typeList.foo = ast::Type::compare;
   this->mutability = mutability;
 
@@ -33,6 +35,11 @@ parse::Parser::Parser(int mutability) {
   this->addType("let", asmc::Hard, asmc::QWord, true, false);
   // create a dummy type for typeOf
   this->addType("typeOf", asmc::Hard, asmc::QWord, true, false);
+}
+
+parse::Parser::Parser(aflat::scan::Scanner &scanner, int mutability)
+    : Parser(mutability) {
+  this->scanner = &scanner;
 }
 
 void parse::Parser::addType(std::string name, asmc::OpType opType,

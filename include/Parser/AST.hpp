@@ -9,6 +9,7 @@
 #include "ASM.hpp"
 #include "CodeGenerator/GenerationResult.hpp"
 #include "LinkedList.hpp"
+#include "Scan/Token.hpp"
 #include "Scanner.hpp"
 
 namespace parse {
@@ -65,6 +66,7 @@ class Statement {
 public:
   std::optional<When> when; // When clause for templates
   bool locked = false;
+  aflat::scan::token::Range range;
   int logicalLine = 0;
   virtual std::string toString() { return ""; };
   virtual void replaceTypes(std::unordered_map<std::string, std::string> map);
