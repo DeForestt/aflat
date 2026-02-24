@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -6,6 +7,96 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+static int _parse_content_length(const char *buffer, size_t header_len,
+                                 size_t *content_length) {
+  const char *needle = "content-length:";
+  size_t needle_len = strlen(needle);
+
+  for (size_t i = 0; i + needle_len <= header_len; ++i) {
+    size_t j = 0;
+    for (; j < needle_len; ++j) {
+      unsigned char current = buffer[i + j];
+      if (isupper(current)) current = (unsigned char)tolower(current);
+      if (current != (unsigned char)needle[j]) break;
+    }
+    if (j == needle_len) {
+      size_t pos = i + needle_len;
+      while (pos < header_len &&
+             (buffer[pos] == ' ' || buffer[pos] == '\t'))  // skip ws
+        pos++;
+
+      size_t value = 0;
+      int found_digit = 0;
+      while (pos < header_len && buffer[pos] >= '0' && buffer[pos] <= '9') {
+        found_digit = 1;
+        value = value * 10 + (size_t)(buffer[pos] - '0');
+        pos++;
+      }
+      if (found_digit) {
+        *content_length = value;
+        return 1;
+      }
+      break;
+    }
+  }
+
+  *content_length = 0;
+  return 0;
+}
+
+static ssize_t _aflat_read_request(int socket_fd, size_t initial_size,
+                                   char **out_request) {
+  size_t capacity = initial_size > 0 ? initial_size : 4096;
+  if (capacity < 1024) capacity = 1024;
+
+  char *buffer = malloc(capacity);
+  if (!buffer) return -1;
+
+  size_t total = 0;
+  ssize_t header_end = -1;
+  size_t content_length = 0;
+
+  while (1) {
+    if (total + 1 >= capacity) {
+      size_t new_capacity = capacity * 2;
+      char *tmp = realloc(buffer, new_capacity);
+      if (!tmp) {
+        free(buffer);
+        return -1;
+      }
+      buffer = tmp;
+      capacity = new_capacity;
+    }
+
+    ssize_t bytes = read(socket_fd, buffer + total, capacity - total - 1);
+    if (bytes < 0) {
+      free(buffer);
+      return -1;
+    }
+    if (bytes == 0) break;
+
+    total += (size_t)bytes;
+    buffer[total] = '\0';
+
+    if (header_end == -1) {
+      char *header_boundary = strstr(buffer, "\r\n\r\n");
+      if (header_boundary != NULL) {
+        header_end = (ssize_t)(header_boundary - buffer + 4);
+        _parse_content_length(buffer, (size_t)header_end, &content_length);
+      }
+    }
+
+    if (header_end != -1) {
+      size_t required_total = (size_t)header_end + content_length;
+      if (total >= required_total) break;
+    }
+  }
+
+  buffer[total] = '\0';
+  *out_request = buffer;
+  return (ssize_t)total;
+}
 
 void error(const char *msg) {
   perror(msg);
@@ -68,12 +159,16 @@ int _aflat_server_spinUp(short port, int requestSize,
 
   while (1) {
     clientSocket = accept(serverSocket, NULL, NULL);
-    char request[requestSize];
+    char *request = NULL;
     char **response = malloc(sizeof(char *));
-    bzero(request, requestSize);
-    read(clientSocket, &request, sizeof(request) - 1);
+    if (_aflat_read_request(clientSocket, (size_t)requestSize, &request) < 0) {
+      close(clientSocket);
+      free(response);
+      continue;
+    }
     requestHandler(request, response);
     send(clientSocket, *response, strlen(*response), 0);
+    free(request);
     free(response);
   }
   return 0;
@@ -90,7 +185,6 @@ int _serve(int port, char *(*handler)(char *, void *), void *data) {
   struct sockaddr_in address;
   int opt = 1;
   int addrlen = sizeof(address);
-  char buffer[1024] = {0};
 
   server_fd = socket(AF_INET, SOCK_STREAM, 0);
   setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
@@ -108,9 +202,15 @@ int _serve(int port, char *(*handler)(char *, void *), void *data) {
     exit(EXIT_FAILURE);
   }
 
-  read(new_socket, buffer, 1024);
-  char *response = handler(buffer, data);
+  char *request = NULL;
+  if (_aflat_read_request(new_socket, 4096, &request) < 0) {
+    close(new_socket);
+    close(server_fd);
+    return -1;
+  }
+  char *response = handler(request, data);
   send(new_socket, response, strlen(response), 0);
+  free(request);
   close(new_socket);
   close(server_fd);
   return 0;
@@ -146,10 +246,14 @@ int serve(int port, char *(*handler)(char *, void *), void *data) {
 
     if (pid == 0) {  // Child process
       close(server_fd);
-      char buffer[1024] = {0};
-      read(new_socket, buffer, 1024);
-      char *response = handler(buffer, data);
+      char *request = NULL;
+      if (_aflat_read_request(new_socket, 4096, &request) < 0) {
+        close(new_socket);
+        exit(EXIT_FAILURE);
+      }
+      char *response = handler(request, data);
       send(new_socket, response, strlen(response), 0);
+      free(request);
       close(new_socket);
       exit(0);  // End child process
     } else {
@@ -182,10 +286,14 @@ int serve_sync(int port, char *(*handler)(char *, void *), void *data) {
       continue;
     }
 
-    char buffer[1024] = {0};
-    read(new_socket, buffer, 1024);
-    char *response = handler(buffer, data);
+    char *request = NULL;
+    if (_aflat_read_request(new_socket, 4096, &request) < 0) {
+      close(new_socket);
+      continue;
+    }
+    char *response = handler(request, data);
     send(new_socket, response, strlen(response), 0);
+    free(request);
     close(new_socket);
   }
   close(server_fd);
