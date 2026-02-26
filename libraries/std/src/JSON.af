@@ -199,32 +199,81 @@ export fn Null() -> JSON {
 };
 
 private fn parseInternal(const string json_) -> JSON!;
+private fn formatParseContext(const string source, const int position) -> string;
+private fn parseError(const string source, const string reason, const int position) -> Error;
+
+private fn formatParseContext(const string source, const int position) -> string {
+    const int length = source.len();
+    int clamped = position;
+    if clamped < 0 clamped = 0;
+    if clamped > length clamped = length;
+    int line = 1;
+    int column = 1;
+    int lineStart = 0;
+    for int i = 0; i < clamped & i < length; i = i + 1 {
+        const char current = source.at(i);
+        if current == '\n' {
+            line = line + 1;
+            column = 1;
+            lineStart = i + 1;
+        } else {
+            column = column + 1;
+        };
+    };
+    string snippet = "";
+    int idx = lineStart;
+    while idx < length {
+        const char c = source.at(idx);
+        if c == '\n' {
+            break;
+        };
+        snippet = `{snippet}{c}`;
+        idx = idx + 1;
+    };
+    int caretOffset = clamped - lineStart;
+    if caretOffset < 0 caretOffset = 0;
+    string caretLine = "";
+    for int i = 0; i < caretOffset; i = i + 1 {
+        caretLine = `{caretLine} `;
+    };
+    caretLine = `{caretLine}^`;
+    return `At line {line}, column {column}:\n{snippet}\n{caretLine}`;
+};
+
+private fn parseError(const string source, const string reason, const int position) -> Error {
+    const let context = formatParseContext(source, position);
+    return new Error(`JSON parse error: {reason}\n{context}`);
+};
 
 private fn parseStringValue(const string value) -> JSON! {
     string builder = "";
+    int lastPos = value.tell();
     foreach c in value {
         if c == '\"' {
             return String(builder.cstr());
         };
         builder = `{builder}{c}`;
+        lastPos = value.tell();
     };
-    return new Error("Unterminated string in JSON");
+    return parseError(value, "Unterminated string literal", lastPos);
 };
 
 private fn parseBooleanValue(const string value) -> JSON! {
+    const int startPos = if value.tell() > 0 value.tell() - 1 else 0;
     if value.consume("rue") {
         return Boolean(true);
     } else if value.consume("alse") {
         return Boolean(false);
     };
-    return new Error(`Invalid boolean in JSON: {value}`);
+    return parseError(value, "Invalid boolean literal (expected 'true' or 'false')", startPos);
 };
 
 private fn parseNullValue(const string value) -> JSON! {
+    const int startPos = if value.tell() > 0 value.tell() - 1 else 0;
     if value.consume("ull") {
         return Null();
     };
-    return new Error(`Invalid null in JSON: {value}`);
+    return parseError(value, "Invalid null literal (expected 'null')", startPos);
 };
 
 private fn parseArrayValue(const string value) -> JSON! {
@@ -256,25 +305,34 @@ private fn parseObjectValue(const string value) -> JSON! {
 
         const let key = match parseInternal(value)!.asString() {
             Ok(s) => s,
-            Err(e) => return new Error(`Expected string key in JSON object: {e}`)
+            Err(e) => return parseError(value, `Expected string key in JSON object: {e.toString()}`, value.tell())
         };
-        const let colon = value.next().or('n');
-        if !(`{colon}` == ":") {
-            return new Error(`Expected ':' after key in JSON object: {value} but found '{colon}'`);
+        const int colonPos = value.tell();
+        const let colonOption = value.next();
+        if colonOption.isNone() {
+            return parseError(value, "Expected ':' after key in JSON object but reached end of input", value.len());
+        };
+        const let colon = colonOption.unwrap();
+        if colon != ':' {
+            return parseError(value, `Expected ':' after key in JSON object but found '{colon}'`, colonPos);
         };
         const let parsedVal = parseInternal(value)!;
         map.set(key, box.wrap(parsedVal));
         while st.char_isWhiteSpace(value.peek().or('n')) v = value.next();
         v = value.peek();
-        if `{v.or('v')}` == "," {
+        if v.isNone() {
+            return parseError(value, "Expected ',' or '}' in JSON object but reached end of input", value.len());
+        };
+        const let nextChar = v.unwrap();
+        if nextChar == ',' {
             value.next();
             while st.char_isWhiteSpace(value.peek().or('n')) v = value.next();
             v = value.peek();
-        } else if `{v.or('v')}` == "}" {
+        } else if nextChar == '}' {
             value.next();
             return new JSON->Object(map);
         } else {
-            return new Error(`Expected ',' or '}' in JSON object: {value}`);
+            return parseError(value, `Unexpected character '{nextChar}' in JSON object; expected ',' or '}'`, value.tell());
         };
     };
 };
@@ -285,6 +343,7 @@ private fn parseInternal(const string json_) -> JSON! {
         if c == '\"' return parseStringValue(json_);
         if st.char_isDigit(c) {
             string numStr = `{c}`;
+            const int numberStart = if json_.tell() > 0 json_.tell() - 1 else 0;
             while st.char_isDigit(json_.peek().or('v')) {
                 match json_.next() {
                     Some(nc) => numStr = `{numStr}{nc}`,
@@ -293,7 +352,7 @@ private fn parseInternal(const string json_) -> JSON! {
             };
             match numStr.toInt() {
                 Ok(num) => return Number(num),
-                Err(e) => return new Error(`Invalid number in JSON: {numStr} - {e}`)
+                Err(e) => return parseError(json_, `Invalid number literal {numStr} - {e}`, numberStart)
             };
         };
         if c == 't' | c == 'f' return parseBooleanValue(json_);
@@ -301,9 +360,10 @@ private fn parseInternal(const string json_) -> JSON! {
         if c == '[' return parseArrayValue(json_);
         if c == '{' return parseObjectValue(json_);
 
-        return new Error(`Unsupported JSON value: {json_} : {c}`);
+        const int position = if json_.tell() > 0 json_.tell() - 1 else 0;
+        return parseError(json_, `Unexpected character '{c}'`, position);
     };
-    return new Error(`JSON is empty or is not valid: {json_}`);
+    return parseError(json_, "Unexpected end of input", json_.len());
 };
 
 // Parse a string buffer into a JSON document, returning Result semantics.

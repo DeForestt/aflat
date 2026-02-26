@@ -159,6 +159,10 @@ safe dynamic class string {
         return opt.Some(c);
     };
 
+    fn tell() -> int {
+        return my.itter;
+    };
+
     fn consume(const string s) -> bool {
         const int slen = s.len();
         if my.itter + slen > my.len() return false;
