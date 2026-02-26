@@ -130,7 +130,7 @@ Function::Function(const ScopeMod &scope,
     if (typeName == nullptr)
       throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
                            " Expected Identifier");
-    auto type = parser.typeList[typeName->meta];
+    auto type = parser.getTypeList()[typeName->meta];
     if (type == nullptr)
       type = new Type(typeName->meta, asmc::QWord);
     auto templateTypeList =
@@ -155,7 +155,7 @@ Function::Function(const ScopeMod &scope,
     this->type.pedantic = type->pedantic;
     this->type.typeHint = type->typeHint;
   } else {
-    this->type = *parser.typeList["void"];
+    this->type = *parser.getTypeList()["void"];
     this->autoType = true;
   }
   this->useType = this->type;

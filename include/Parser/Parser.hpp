@@ -1,6 +1,7 @@
 #ifndef PARSE
 #define PARSE
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -24,10 +25,15 @@ struct Annotation {
 
 class Parser {
 public:
-  ast::Statement Output;
+  Parser(int mutability = 0);
+  ~Parser();
+  Parser(Parser &&) noexcept;
+  Parser &operator=(Parser &&) noexcept;
+  Parser(const Parser &) = delete;
+  Parser &operator=(const Parser &) = delete;
+
   ast::Statement *parseStmt(links::LinkedList<lex::Token *> &tokens,
                             bool singleStmt = false);
-  Parser(int mutability = 0);
   ast::Expr *parseExpr(links::LinkedList<lex::Token *> &tokens);
 
   ast::Statement *parseArgs(links::LinkedList<lex::Token *> &tokens,
@@ -47,8 +53,6 @@ public:
                bool unique = false);
   void addType(std::string name, asmc::OpType opType, asmc::Size size,
                bool isGeneric, bool unique = false);
-  int mutability;
-  links::SLinkedList<ast::Type, std::string> typeList;
   ast::Type parseFPointerType(links::LinkedList<lex::Token *> &tokens,
                               const std::string typeName);
   ast::ConditionalExpr *parseCondition(links::LinkedList<lex::Token *> &tokens);
@@ -58,6 +62,17 @@ public:
                             int lineCount);
   links::LinkedList<ast::Expr *>
   parseCallArgsList(links::LinkedList<lex::Token *> &tokens);
+
+  links::SLinkedList<ast::Type, std::string> &getTypeList();
+  const links::SLinkedList<ast::Type, std::string> &getTypeList() const;
+  ast::Statement &getOutput();
+  const ast::Statement &getOutput() const;
+  int getMutability() const;
+  void setMutability(int value);
+
+private:
+  struct Impl;
+  std::unique_ptr<Impl> impl;
 };
 }; // namespace parse
 

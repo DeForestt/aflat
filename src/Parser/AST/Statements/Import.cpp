@@ -74,7 +74,7 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
         t.size = asmc::QWord;
         t.typeName = nt->meta;
         t.opType = asmc::Hard;
-        parser.typeList << t;
+        parser.getTypeList() << t;
         tokens.pop();
       } else {
         break;
@@ -265,7 +265,7 @@ Import::generateClasses(gen::CodeGenerator &generator) {
     tokens.invert();
     parse::Parser p = parse::Parser();
     if (this->path.find("./") != std::string::npos)
-      p.mutability = generator.mutability;
+      p.setMutability(generator.mutability);
     ast::Statement *statement = p.parseStmt(tokens);
     auto Lowerer = parse::lower::Lowerer(statement);
     added = statement;

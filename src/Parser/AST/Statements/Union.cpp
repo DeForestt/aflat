@@ -47,7 +47,7 @@ parseAliases(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
       tokens.pop();
       auto maybeTypeName = dynamic_cast<lex::LObj *>(tokens.peek());
       auto type =
-          maybeTypeName ? parser.typeList[maybeTypeName->meta] : nullptr;
+          maybeTypeName ? parser.getTypeList()[maybeTypeName->meta] : nullptr;
       if (type) {
         tokens.pop(); // pop the type name
         auto templateArgs =
@@ -114,7 +114,7 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
 
   auto type = ast::Type(this->ident.ident, asmc::QWord);
   type.uniqueType = uniqueType;
-  parser.typeList << type; // add the type to the typeList
+  parser.getTypeList() << type; // add the type to the typeList
   this->uniqueType = uniqueType;
   auto op = dynamic_cast<lex::OpSym *>(tokens.pop());
 

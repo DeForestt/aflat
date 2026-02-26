@@ -38,7 +38,7 @@ Enum::Enum(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
                          " Unclosed Enum");
   tokens.pop();
-  parser.typeList << ast::Type(this->Ident, asmc::DWord);
+  parser.getTypeList() << ast::Type(this->Ident, asmc::DWord);
 }
 
 gen::GenerationResult const Enum::generate(gen::CodeGenerator &generator) {

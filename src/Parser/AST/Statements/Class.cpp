@@ -26,7 +26,7 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
     if (sig.meta == "signs") {
       auto *ident = dynamic_cast<lex::LObj *>(tokens.pop());
       if (ident != nullptr) {
-        if (parser.typeList[ident->meta] == nullptr)
+        if (parser.getTypeList()[ident->meta] == nullptr)
           throw err::Exception(
               "Line: " + std::to_string(tokens.peek()->lineCount) + " Type " +
               ident->meta + " not found");
@@ -53,11 +53,11 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
   t.size = asmc::QWord;
   t.typeName = this->ident.ident;
   // Check if the class is in the typeList
-  if (parser.typeList[this->ident.ident] != nullptr)
+  if (parser.getTypeList()[this->ident.ident] != nullptr)
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
                          " Class " + this->ident.ident + " already exists");
   t.uniqueType = unique;
-  parser.typeList << t;
+  parser.getTypeList() << t;
   // check if there is a contract
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto contract = *dynamic_cast<lex::LObj *>(tokens.peek());
