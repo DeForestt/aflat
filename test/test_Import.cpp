@@ -53,9 +53,9 @@ TEST_CASE("ImportsOnly ignores functions in mixed import", "[codegen]") {
                                    std::filesystem::current_path().string());
   gen.ImportsOnly(imp);
 
-  REQUIRE(gen.includedClasses.contains("Temp::Foo"));
-  REQUIRE_FALSE(gen.includedClasses.contains("Temp::bar"));
-  REQUIRE_FALSE(gen.nameSpaceTable.contains("m"));
+  REQUIRE(gen.includedClasses().contains("Temp::Foo"));
+  REQUIRE_FALSE(gen.includedClasses().contains("Temp::bar"));
+  REQUIRE_FALSE(gen.nameSpaceTable().contains("m"));
 
   std::remove("Temp.af");
 }
@@ -213,10 +213,10 @@ TEST_CASE("ImportsOnly uses import working directory", "[imports]") {
 
   auto path =
       std::filesystem::absolute("FlatLog/mod.af").lexically_normal().string();
-  auto *added = gen.includedMemo.get(path);
+  auto *added = gen.includedMemo().get(path);
   REQUIRE(added != nullptr);
 
-  gen.cwd = std::filesystem::current_path();
+  gen.cwd() = std::filesystem::current_path();
   REQUIRE_NOTHROW(gen.ImportsOnly(added));
 
   std::filesystem::remove_all("FlatLog");

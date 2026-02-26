@@ -19,9 +19,9 @@ TEST_CASE("returning variable doesn't mark it sold", "[return]") {
   ast::Function func;
   func.ident.ident = "func";
   func.type = ast::Type("Foo", asmc::QWord);
-  gen.currentFunction = &func;
-  gen.inFunction = true;
-  gen.returnType = func.type;
+  gen.currentFunction() = &func;
+  gen.inFunction() = true;
+  gen.returnType() = func.type;
 
   auto scope = gen::scope::ScopeManager::getInstance();
   scope->reset();

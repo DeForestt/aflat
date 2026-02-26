@@ -21,7 +21,7 @@ TEST_CASE("unused non-primitive return value warns", "[leak-warning]") {
   ast::Function make;
   make.ident.ident = "make";
   make.type = ast::Type("Foo", asmc::QWord);
-  gen.nameTable.push(make);
+  gen.nameTable().push(make);
 
   ast::Call call;
   call.ident = "make";
@@ -49,14 +49,14 @@ TEST_CASE("returning non-primitive value does not warn", "[leak-warning]") {
   ast::Function make;
   make.ident.ident = "make";
   make.type = ast::Type("Foo", asmc::QWord);
-  gen.nameTable.push(make);
+  gen.nameTable().push(make);
 
   ast::Function func;
   func.ident.ident = "func";
   func.type = ast::Type("Foo", asmc::QWord);
-  gen.currentFunction = &func;
-  gen.inFunction = true;
-  gen.returnType = func.type;
+  gen.currentFunction() = &func;
+  gen.inFunction() = true;
+  gen.returnType() = func.type;
 
   gen::scope::ScopeManager::getInstance()->reset();
   gen::scope::ScopeManager::getInstance()->pushScope(true);
@@ -91,7 +91,7 @@ TEST_CASE("passing temporary to non-owned parameter warns", "[leak-warning]") {
   ast::Function produce;
   produce.ident.ident = "produce";
   produce.type = ast::Type("Foo", asmc::QWord);
-  gen.nameTable.push(produce);
+  gen.nameTable().push(produce);
 
   ast::Function consume;
   consume.ident.ident = "consume";
@@ -99,7 +99,7 @@ TEST_CASE("passing temporary to non-owned parameter warns", "[leak-warning]") {
   consume.argTypes.push_back(ast::Type("Foo", asmc::QWord));
   consume.mutability.push_back(false);
   consume.req = 1;
-  gen.nameTable.push(consume);
+  gen.nameTable().push(consume);
 
   auto inner = new ast::CallExpr();
   inner->call = new ast::Call();
@@ -134,7 +134,7 @@ TEST_CASE("passing temporary to owned parameter does not warn",
   ast::Function produce;
   produce.ident.ident = "produce";
   produce.type = ast::Type("Foo", asmc::QWord);
-  gen.nameTable.push(produce);
+  gen.nameTable().push(produce);
 
   ast::Function take;
   take.ident.ident = "take";
@@ -144,7 +144,7 @@ TEST_CASE("passing temporary to owned parameter does not warn",
   take.argTypes.push_back(param);
   take.mutability.push_back(false);
   take.req = 1;
-  gen.nameTable.push(take);
+  gen.nameTable().push(take);
 
   auto inner = new ast::CallExpr();
   inner->call = new ast::Call();

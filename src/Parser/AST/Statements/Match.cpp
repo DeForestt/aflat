@@ -127,8 +127,8 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
     return {.file = file, .expr = std::nullopt};
   }
 
-  auto saveMatchScope = generator.matchScope;
-  generator.matchScope = this;
+  auto saveMatchScope = generator.matchScope();
+  generator.matchScope() = this;
 
   auto matchID = boost::uuids::to_string(boost::uuids::random_generator()());
   matchID.erase(std::remove(matchID.begin(), matchID.end(), '-'),
@@ -145,14 +145,14 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
   auto pushRdx = new asmc::Push();
   pushRdx->logicalLine = expr->logicalLine;
   pushRdx->size = asmc::QWord;
-  pushRdx->op = generator.registers["%rdx"]->get(asmc::QWord);
+  pushRdx->op = generator.registers()["%rdx"]->get(asmc::QWord);
   file.text << pushRdx;
 
   // move the output to eax;
   auto move = new asmc::Mov();
   move->logicalLine = expr->logicalLine;
   move->size = asmc::QWord;
-  move->to = generator.registers["%rdx"]->get(asmc::QWord);
+  move->to = generator.registers()["%rdx"]->get(asmc::QWord);
   move->from = exprResult.access;
   file.text << move;
 
@@ -160,9 +160,9 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
   auto moveTypeTag = new asmc::Mov();
   moveTypeTag->logicalLine = expr->logicalLine;
   moveTypeTag->size = asmc::DWord;
-  moveTypeTag->to = generator.registers["%rax"]->get(asmc::DWord);
+  moveTypeTag->to = generator.registers()["%rax"]->get(asmc::DWord);
   moveTypeTag->from = std::to_string(unionType->largestSize) + "(" +
-                      generator.registers["%rdx"]->get(asmc::QWord) + ")";
+                      generator.registers()["%rdx"]->get(asmc::QWord) + ")";
   file.text << moveTypeTag;
 
   // make sure that each case name is an actual alias of the union type
@@ -192,7 +192,7 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
     }
     auto cmp = new asmc::Cmp();
     cmp->logicalLine = expr->logicalLine;
-    cmp->to = generator.registers["%rax"]->get(asmc::DWord);
+    cmp->to = generator.registers()["%rax"]->get(asmc::DWord);
     cmp->size = asmc::DWord;
     cmp->from = "$" + std::to_string(i);
     file.text << cmp;
@@ -225,14 +225,15 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
           mov->logicalLine = expr->logicalLine;
           mov->size = asmc::QWord;
           ;
-          mov->from = "(" + generator.registers["%rdx"]->get(asmc::QWord) + ")";
-          mov->to = generator.registers["%rax"]->get(asmc::QWord);
+          mov->from =
+              "(" + generator.registers()["%rdx"]->get(asmc::QWord) + ")";
+          mov->to = generator.registers()["%rax"]->get(asmc::QWord);
           file.text << mov;
 
           auto mov2 = new asmc::Mov();
           mov2->logicalLine = expr->logicalLine;
           mov2->size = type->size;
-          mov2->from = generator.registers["%rax"]->get(type->size);
+          mov2->from = generator.registers()["%rax"]->get(type->size);
           mov2->to = "-" + std::to_string(byteMod) + "(%rbp)";
           file.text << mov2;
         } else {
@@ -246,9 +247,9 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
             auto mo = new asmc::Mov();
             mo->logicalLine = expr->logicalLine;
             mo->size = asmc::QWord;
-            mo->from = generator.registers["%rdx"]->get(asmc::QWord);
-            mo->to = generator.registers["%rdi"]->get(asmc::QWord);
-            generator.intArgsCounter++;
+            mo->from = generator.registers()["%rdx"]->get(asmc::QWord);
+            mo->to = generator.registers()["%rdi"]->get(asmc::QWord);
+            generator.intArgsCounter()++;
             file.text << mo;
             auto call = new ast::CallExpr();
             call->call = new ast::Call();
@@ -267,7 +268,7 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
             auto mov = new asmc::Mov();
             mov->logicalLine = expr->logicalLine;
             mov->size = asmc::QWord;
-            mov->from = generator.registers["%rdx"]->get(asmc::QWord);
+            mov->from = generator.registers()["%rdx"]->get(asmc::QWord);
             mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
             file.text << mov;
           }
@@ -345,17 +346,17 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
   auto popRdx = new asmc::Pop();
   popRdx->logicalLine = expr->logicalLine;
   popRdx->size = asmc::QWord;
-  popRdx->op = generator.registers["%rdx"]->get(asmc::QWord);
+  popRdx->op = generator.registers()["%rdx"]->get(asmc::QWord);
   file.text << popRdx;
 
   gen::Expr result = {
-      .access = generator.registers["%rax"]->get(returns.size),
+      .access = generator.registers()["%rax"]->get(returns.size),
       .type = returns.typeName,
       .size = returns.size,
       .passable = true,
       .owned = exprResult.owned,
   };
-  generator.matchScope = saveMatchScope;
+  generator.matchScope() = saveMatchScope;
   return {file, result};
 }
 

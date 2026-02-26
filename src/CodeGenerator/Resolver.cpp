@@ -31,18 +31,18 @@ Type **CodeGenerator::instantiateGenericClass(
   classStatement->hidden =
       true; // we hid the class so all of its functions are private
   Type **result;
-  if (this->typeList[newName] == nullptr) {
+  if (typeList()[newName] == nullptr) {
     if (OutputFile.lambdas == nullptr)
       OutputFile.lambdas = new asmc::File;
     OutputFile.hasLambda = true;
     scope::ScopeManager::getInstance()->pushIsolated();
     this->pushEnv();
     OutputFile.lambdas->operator<<(this->GenSTMT(classStatement));
-    result = this->typeList[newName];
+    result = typeList()[newName];
     this->popEnv();
     scope::ScopeManager::getInstance()->popIsolated();
   } else {
-    result = this->typeList[newName];
+    result = typeList()[newName];
   }
   return result;
 }
@@ -58,8 +58,8 @@ CodeGenerator::resolveSymbol(std::string ident,
   modList.reset();
 
   std::string nsp;
-  if (this->nameSpaceTable.contains(ident)) {
-    nsp = this->nameSpaceTable.get(ident) + ".";
+  if (nameSpaceTable().contains(ident)) {
+    nsp = nameSpaceTable().get(ident) + ".";
     if (modList.count == 0)
       alert("NameSpace " + ident + " cannot be used as a variable", true,
             __FILE__, __LINE__);
@@ -72,7 +72,7 @@ CodeGenerator::resolveSymbol(std::string ident,
   bool readOnly = sym ? sym->readOnly : false;
 
   if (sym == nullptr) {
-    sym = this->GlobalSymbolTable.search<std::string>(searchSymbol, ident);
+    sym = GlobalSymbolTable().search<std::string>(searchSymbol, ident);
     global = true;
     owned = true; // global symbols are corporatly owned
   }
@@ -92,13 +92,13 @@ CodeGenerator::resolveSymbol(std::string ident,
   const int checkTo = (internal) ? 1 : 0;
   if (modList.trail() > checkTo) {
     asmc::Push *push = new asmc::Push;
-    push->logicalLine = this->logicalLine;
-    push->op = this->registers["%r14"]->get(asmc::QWord);
+    push->logicalLine = logicalLine();
+    push->op = registers()["%r14"]->get(asmc::QWord);
     OutputFile.text << push;
     while (modList.trail() > checkTo) {
       Type *type = *this->getType(last.typeName, OutputFile);
       std::string sto = modList.touch();
-      if (this->scope == *this->typeList[last.typeName]) {
+      if (scope() == *typeList()[last.typeName]) {
         modSym = type->SymbolTable.search<std::string>(searchSymbol,
                                                        modList.shift());
       } else {
@@ -113,17 +113,17 @@ CodeGenerator::resolveSymbol(std::string ident,
       int tbyte = modSym->byteMod;
       asmc::Mov *mov = new asmc::Mov();
       mov->size = asmc::QWord;
-      mov->to = this->registers["%r14"]->get(asmc::QWord);
+      mov->to = registers()["%r14"]->get(asmc::QWord);
       mov->from = access;
-      mov->logicalLine = this->logicalLine;
+      mov->logicalLine = logicalLine();
       OutputFile.text << mov;
       access = std::to_string(tbyte - (sizeToInt(last.size) * last.arraySize)) +
                '(' + mov->to + ')';
     }
 
     asmc::Pop *pop = new asmc::Pop;
-    pop->op = this->registers["%r14"]->get(asmc::QWord);
-    pop->logicalLine = this->logicalLine;
+    pop->op = registers()["%r14"]->get(asmc::QWord);
+    pop->logicalLine = logicalLine();
     pops.text << pop;
   };
 
@@ -150,8 +150,8 @@ CodeGenerator::resolveSymbol(std::string ident,
 
     asmc::Mov *zero = new asmc::Mov();
     zero->from = "$0";
-    zero->to = this->registers["%r12"]->get(asmc::QWord);
-    zero->logicalLine = this->logicalLine;
+    zero->to = registers()["%r12"]->get(asmc::QWord);
+    zero->logicalLine = logicalLine();
     zero->size = asmc::QWord;
 
     OutputFile.text << zero;
@@ -160,56 +160,56 @@ CodeGenerator::resolveSymbol(std::string ident,
       ast::Expr *index = indicies.shift();
       Expr expr = this->GenExpr(index, OutputFile);
       asmc::Xor *xr = new asmc::Xor();
-      xr->op1 = this->registers["%r13"]->get(asmc::QWord);
-      xr->op2 = this->registers["%r13"]->get(asmc::QWord);
-      xr->logicalLine = this->logicalLine;
+      xr->op1 = registers()["%r13"]->get(asmc::QWord);
+      xr->op2 = registers()["%r13"]->get(asmc::QWord);
+      xr->logicalLine = logicalLine();
       OutputFile.text << xr;
 
       asmc::Mov *mov = new asmc::Mov();
       mov->size = asmc::DWord;
-      mov->to = this->registers["%r13"]->get(asmc::DWord);
+      mov->to = registers()["%r13"]->get(asmc::DWord);
       mov->from = expr.access;
-      mov->logicalLine = this->logicalLine;
+      mov->logicalLine = logicalLine();
       OutputFile.text << mov;
 
       asmc::Mul *mul = new asmc::Mul();
-      mul->op2 = this->registers["%r13"]->get(asmc::QWord);
+      mul->op2 = registers()["%r13"]->get(asmc::QWord);
       mul->op1 = '$' + std::to_string(count);
-      mul->logicalLine = this->logicalLine;
+      mul->logicalLine = logicalLine();
       OutputFile.text << mul;
 
       asmc::Add *add = new asmc::Add();
-      add->op1 = this->registers["%r13"]->get(asmc::QWord);
-      add->op2 = this->registers["%r12"]->get(asmc::QWord);
+      add->op1 = registers()["%r13"]->get(asmc::QWord);
+      add->op2 = registers()["%r12"]->get(asmc::QWord);
       add->size = asmc::QWord;
-      add->logicalLine = this->logicalLine;
+      add->logicalLine = logicalLine();
 
       OutputFile.text << add;
       count = modSym->type.indices.shift();
     };
     asmc::Mul *mul = new asmc::Mul();
-    mul->op2 = this->registers["%r12"]->get(asmc::QWord);
+    mul->op2 = registers()["%r12"]->get(asmc::QWord);
     mul->op1 = '$' + std::to_string(multiplier);
     mul->size = asmc::QWord;
-    mul->logicalLine = this->logicalLine;
+    mul->logicalLine = logicalLine();
 
     OutputFile.text << mul;
     asmc::Mov *mov = new asmc::Mov();
     mov->size = asmc::QWord;
-    mov->to = this->registers["%rdx"]->get(asmc::QWord);
+    mov->to = registers()["%rdx"]->get(asmc::QWord);
     mov->from = access;
-    mov->logicalLine = this->logicalLine;
+    mov->logicalLine = logicalLine();
     OutputFile.text << mov;
 
     asmc::Add *add = new asmc::Add();
-    add->op1 = this->registers["%rdx"]->get(asmc::QWord);
-    add->op2 = this->registers["%r12"]->get(asmc::QWord);
+    add->op1 = registers()["%rdx"]->get(asmc::QWord);
+    add->op2 = registers()["%r12"]->get(asmc::QWord);
     add->size = asmc::QWord;
-    add->logicalLine = this->logicalLine;
+    add->logicalLine = logicalLine();
 
     OutputFile.text << add;
 
-    access = '(' + this->registers["%r12"]->get(asmc::QWord) + ')';
+    access = '(' + registers()["%r12"]->get(asmc::QWord) + ')';
     retSym.type = *retSym.type.typeHint;
   };
   retSym.owned = owned;

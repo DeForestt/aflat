@@ -76,7 +76,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   }
 
   // check if the symbol is a class
-  gen::Type **t = generator.typeList[symbol->type.typeName];
+  gen::Type **t = generator.typeList()[symbol->type.typeName];
   if (t != nullptr) {
     gen::Class *cl = dynamic_cast<gen::Class *>(*t);
     if (cl != nullptr) {
@@ -137,9 +137,9 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   mov2->from = expr.access;
 
   if (expr.op == asmc::Float)
-    mov2->to = generator.registers["%xmm0"]->get(expr.size);
+    mov2->to = generator.registers()["%xmm0"]->get(expr.size);
   else
-    mov2->to = generator.registers["%rbx"]->get(expr.size);
+    mov2->to = generator.registers()["%rbx"]->get(expr.size);
   mov->from = mov2->to;
 
   this->modList.invert();
@@ -153,19 +153,19 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
     m1->logicalLine = this->logicalLine;
     m1->from = output;
     m1->size = asmc::QWord;
-    m1->to = generator.registers["%r9"]->get(asmc::QWord);
-    mov->to = "(" + generator.registers["%r9"]->get(asmc::QWord) + ")";
+    m1->to = generator.registers()["%r9"]->get(asmc::QWord);
+    mov->to = "(" + generator.registers()["%r9"]->get(asmc::QWord) + ")";
 
     asmc::Push *push = new asmc::Push();
     push->logicalLine = this->logicalLine;
     push->size = asmc::QWord;
-    push->op = generator.registers["%r9"]->get(asmc::QWord);
+    push->op = generator.registers()["%r9"]->get(asmc::QWord);
     file.text << push;
 
     pop = new asmc::Pop();
     pop->logicalLine = this->logicalLine;
     pop->size = asmc::QWord;
-    pop->op = generator.registers["%r11"]->get(asmc::QWord);
+    pop->op = generator.registers()["%r11"]->get(asmc::QWord);
 
     file.text << push;
     file.text << m1;
@@ -194,12 +194,12 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   }
   fin->owned = expr.owned;
 
-  if (generator.TypeList[fin->type.typeName] == nullptr) {
+  if (generator.TypeList()[fin->type.typeName] == nullptr) {
     auto t = new ast::Type();
     t->typeName = fin->type.typeName;
     t->size = fin->type.size;
     t->fPointerArgs = fin->type.fPointerArgs;
-    generator.TypeList.push(*t);
+    generator.TypeList().push(*t);
   }
 
   return {file, std::nullopt};

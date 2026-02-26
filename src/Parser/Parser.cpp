@@ -2,7 +2,9 @@
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <unordered_set>
+#include <utility>
 
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
@@ -13,7 +15,49 @@
 
 ast::Expr *prioritizeExpr(ast::Expr *expr);
 
-parse::Parser::Parser(int mutability) {
+namespace parse {
+
+struct Parser::Impl {
+  Impl(Parser &parser, int mutability);
+
+  void addType(std::string name, asmc::OpType opType, asmc::Size size,
+               bool unique = false);
+  void addType(std::string name, asmc::OpType opType, asmc::Size size,
+               bool isGeneric, bool unique = false);
+  ast::Statement *parseStmt(links::LinkedList<lex::Token *> &tokens,
+                            bool singleStmt = false);
+  links::LinkedList<ast::Expr *>
+  parseCallArgsList(links::LinkedList<lex::Token *> &tokens);
+  ast::Statement *parseArgs(links::LinkedList<lex::Token *> &tokens,
+                            char delimn, char close,
+                            std::vector<ast::Type> &types, int &requiered,
+                            std::vector<bool> &mutability,
+                            std::vector<int> &optConvertionIndices,
+                            std::vector<bool> &readOnly, bool forEach);
+  ast::Statement *parseArgs(links::LinkedList<lex::Token *> &tokens,
+                            char delimn, char close,
+                            std::vector<ast::Type> &types, int &requiered,
+                            std::vector<bool> &mutability,
+                            std::vector<int> &optConvertionIndices,
+                            std::vector<bool> &readOnly);
+  ast::Type parseFPointerType(links::LinkedList<lex::Token *> &tokens,
+                              const std::string typeName);
+  ast::ConditionalExpr *parseCondition(links::LinkedList<lex::Token *> &tokens);
+  std::vector<std::string>
+  parseTemplateTypeList(links::LinkedList<lex::Token *> &tokens, int lineCount);
+  ast::When parseWhenClause(links::LinkedList<lex::Token *> &tokens,
+                            int lineCount);
+  ast::Expr *parseExpr(links::LinkedList<lex::Token *> &tokens);
+
+  ast::Statement Output;
+  links::SLinkedList<ast::Type, std::string> typeList;
+  int mutability;
+  Parser &parser;
+};
+
+} // namespace parse
+
+parse::Parser::Impl::Impl(Parser &parser, int mutability) : parser(parser) {
   this->typeList.foo = ast::Type::compare;
   this->mutability = mutability;
 
@@ -35,8 +79,8 @@ parse::Parser::Parser(int mutability) {
   this->addType("typeOf", asmc::Hard, asmc::QWord, true, false);
 }
 
-void parse::Parser::addType(std::string name, asmc::OpType opType,
-                            asmc::Size size, bool unique) {
+void parse::Parser::Impl::addType(std::string name, asmc::OpType opType,
+                                  asmc::Size size, bool unique) {
   ast::Type type;
   type.typeName = name;
   type.opType = opType;
@@ -46,8 +90,9 @@ void parse::Parser::addType(std::string name, asmc::OpType opType,
   this->typeList << type;
 }
 
-void parse::Parser::addType(std::string name, asmc::OpType opType,
-                            asmc::Size size, bool isGeneric, bool unique) {
+void parse::Parser::Impl::addType(std::string name, asmc::OpType opType,
+                                  asmc::Size size, bool isGeneric,
+                                  bool unique) {
   ast::Type type = ast::Type(name, size);
   type.opType = opType;
   type.isGeneric = isGeneric;
@@ -91,8 +136,8 @@ int getOpPriority(ast::Op op) {
  * parse return: AST::Statement - the parsed statement
  */
 ast::Statement *
-parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
-                         bool singleStmt) {
+parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
+                               bool singleStmt) {
   ast::Statement *output = new ast::Statement;
   std::vector<parse::Annotation> annotations;
   std::optional<ast::When> whenClause;
@@ -521,7 +566,7 @@ parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
             tokens.pop();
             output =
                 new ast::Function(ident.meta, scope, type, overload, scopeName,
-                                  tokens, *this, optional, safeType);
+                                  tokens, parser, optional, safeType);
             output->logicalLine = obj.lineCount;
             output->when = whenClause;
           } else if (sym.Sym == '=') {
@@ -529,8 +574,8 @@ parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
             auto decl = new ast::Declare(ident.meta, scope, obj.meta, isMutable,
                                          type, requestType, modList);
             decl->readOnly = isImmutable;
-            output =
-                new ast::DecAssign(decl, isMutable, tokens, *this, annotations);
+            output = new ast::DecAssign(decl, isMutable, tokens, parser,
+                                        annotations);
           }
         } else {
           auto decl = new ast::Declare(ident.meta, scope, obj.meta, isMutable,
@@ -580,7 +625,7 @@ parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
           }
         } else if (sym->Sym == '{') {
           tokens.pop();
-          output = new ast::Destructure(isMutable, tokens, *this);
+          output = new ast::Destructure(isMutable, tokens, parser);
         } else
           throw err::Exception(
               "Line: " + std::to_string(tokens.peek()->lineCount) +
@@ -590,16 +635,16 @@ parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
                              "Unparsable token found");
       }
     } else if (obj.meta == "return") {
-      output = new ast::Return(tokens, *this);
+      output = new ast::Return(tokens, parser);
     } else if (obj.meta == "resolve") {
-      auto ret = new ast::Return(tokens, *this);
+      auto ret = new ast::Return(tokens, parser);
       ret->resolver = true;
       output = ret;
     } else if (obj.meta == "fn") {
-      output = new ast::Function(scope, tokens, typeNames, *this, safeType);
+      output = new ast::Function(scope, tokens, typeNames, parser, safeType);
       output->when = whenClause;
     } else if (obj.meta == "match") {
-      output = new ast::Match(tokens, *this);
+      output = new ast::Match(tokens, parser);
     } else if (obj.meta == "push") {
       auto push = new ast::Push;
       push->expr = this->parseExpr(tokens);
@@ -625,28 +670,28 @@ parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
       note->logicalLine = obj.lineCount;
       output = note;
     } else if (obj.meta == "if") {
-      output = new ast::If(tokens, *this);
+      output = new ast::If(tokens, parser);
     } else if (obj.meta == "while") {
-      output = new ast::While(tokens, *this);
+      output = new ast::While(tokens, parser);
     } else if (obj.meta == "for") {
-      output = new ast::For(tokens, *this);
+      output = new ast::For(tokens, parser);
     } else if (obj.meta == "foreach") {
-      output = new ast::ForEach(tokens, *this);
+      output = new ast::ForEach(tokens, parser);
     } else if (obj.meta == "struct") {
-      output = new ast::Struct(tokens, *this, uniqueType);
+      output = new ast::Struct(tokens, parser, uniqueType);
     } else if (obj.meta == "class") {
-      output = new ast::Class(tokens, *this, safeType, dynamicType, pedantic,
+      output = new ast::Class(tokens, parser, safeType, dynamicType, pedantic,
                               uniqueType, annotations, typeNames);
     } else if (obj.meta == "union") {
-      output = new ast::Union(tokens, *this, uniqueType, typeNames);
+      output = new ast::Union(tokens, parser, uniqueType, typeNames);
     } else if (obj.meta == "enum") {
-      output = new ast::Enum(tokens, *this);
+      output = new ast::Enum(tokens, parser);
     } else if (obj.meta == "import") {
-      output = new ast::Import(tokens, *this);
+      output = new ast::Import(tokens, parser);
     } else if (obj.meta == "transform") {
       output = new ast::Transform(tokens);
     } else if (obj.meta == "delete") {
-      output = new ast::Delete(tokens, *this);
+      output = new ast::Delete(tokens, parser);
     } else if (obj.meta == "continue") {
       output = new ast::Continue(tokens);
     } else if (obj.meta == "break") {
@@ -709,7 +754,7 @@ parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
         }
 
         if (sym.Sym == '=') {
-          output = new ast::Assign(obj.meta, indices, modList, tokens, *this);
+          output = new ast::Assign(obj.meta, indices, modList, tokens, parser);
         } else if (sym.Sym == '(') {
           output = new ast::Call(obj.meta, this->parseCallArgsList(tokens),
                                  modList, genericTypes);
@@ -758,7 +803,7 @@ parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
   } else if (tokens.peek() && tokens.count > 0) {
     auto close_curl = dynamic_cast<lex::OpSym *>(tokens.peek());
     if (!close_curl || (close_curl->Sym != '}' && close_curl->Sym != ';')) {
-      auto ret = new ast::Return(tokens, *this);
+      auto ret = new ast::Return(tokens, parser);
       ret->implicit = true;
       output = ret;
       if (whenClause)
@@ -888,8 +933,8 @@ parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
   return output;
 }
 
-links::LinkedList<ast::Expr *>
-parse::Parser::parseCallArgsList(links::LinkedList<lex::Token *> &tokens) {
+links::LinkedList<ast::Expr *> parse::Parser::Impl::parseCallArgsList(
+    links::LinkedList<lex::Token *> &tokens) {
   links::LinkedList<ast::Expr *> args;
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
       dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ')') {
@@ -912,7 +957,7 @@ parse::Parser::parseCallArgsList(links::LinkedList<lex::Token *> &tokens) {
   return args;
 }
 
-ast::Statement *parse::Parser::parseArgs(
+ast::Statement *parse::Parser::Impl::parseArgs(
     links::LinkedList<lex::Token *> &tokens, char deliminator, char close,
     std::vector<ast::Type> &types, int &required, std::vector<bool> &mutability,
     std::vector<int> &optConvertionIndices, std::vector<bool> &readOnly) {
@@ -920,7 +965,7 @@ ast::Statement *parse::Parser::parseArgs(
                          mutability, optConvertionIndices, readOnly, false);
 }
 
-ast::Statement *parse::Parser::parseArgs(
+ast::Statement *parse::Parser::Impl::parseArgs(
     links::LinkedList<lex::Token *> &tokens, char deliminator, char close,
     std::vector<ast::Type> &types, int &required, std::vector<bool> &mutability,
     std::vector<int> &optConvertionIndices, std::vector<bool> &readOnly,
@@ -1091,8 +1136,8 @@ ast::Statement *parse::Parser::parseArgs(
 }
 
 ast::Type
-parse::Parser::parseFPointerType(links::LinkedList<lex::Token *> &tokens,
-                                 const std::string typeName) {
+parse::Parser::Impl::parseFPointerType(links::LinkedList<lex::Token *> &tokens,
+                                       const std::string typeName) {
   tokens.pop();
   auto callTypeList = std::vector<ast::Type>();
   std::string newTypeName = typeName + "~";
@@ -1145,9 +1190,8 @@ parse::Parser::parseFPointerType(links::LinkedList<lex::Token *> &tokens,
   return type;
 }
 
-std::vector<std::string>
-parse::Parser::parseTemplateTypeList(links::LinkedList<lex::Token *> &tokens,
-                                     int lineCount) {
+std::vector<std::string> parse::Parser::Impl::parseTemplateTypeList(
+    links::LinkedList<lex::Token *> &tokens, int lineCount) {
   std::vector<std::string> list;
   auto templateSym = dynamic_cast<lex::Symbol *>(tokens.peek());
   if (templateSym != nullptr && templateSym->meta == "::") {
@@ -1199,8 +1243,8 @@ parse::Parser::parseTemplateTypeList(links::LinkedList<lex::Token *> &tokens,
 }
 
 ast::When
-parse::Parser::parseWhenClause(links::LinkedList<lex::Token *> &tokens,
-                               int lineCount) {
+parse::Parser::Impl::parseWhenClause(links::LinkedList<lex::Token *> &tokens,
+                                     int lineCount) {
   ast::When when;
   while (true) {
     auto typeTok = dynamic_cast<lex::LObj *>(tokens.pop());
@@ -1275,7 +1319,7 @@ parse::Parser::parseWhenClause(links::LinkedList<lex::Token *> &tokens,
 }
 
 ast::ConditionalExpr *
-parse::Parser::parseCondition(links::LinkedList<lex::Token *> &tokens) {
+parse::Parser::Impl::parseCondition(links::LinkedList<lex::Token *> &tokens) {
   auto output = new ast::ConditionalExpr();
 
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
@@ -1321,7 +1365,8 @@ parse::Parser::parseCondition(links::LinkedList<lex::Token *> &tokens) {
   return output;
 }
 
-ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
+ast::Expr *
+parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
   auto output = new ast::Expr();
   if (dynamic_cast<lex::StringObj *>(tokens.peek()) != nullptr) {
     auto stringObj = *dynamic_cast<lex::StringObj *>(tokens.peek());
@@ -1575,7 +1620,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         output = newExpr;
       }
     } else if (obj.meta == "match") {
-      output = new ast::Match(tokens, *this);
+      output = new ast::Match(tokens, parser);
     } else if (obj.meta == "if") {
       auto ifExpr = new ast::IfExpr();
       ifExpr->logicalLine = obj.lineCount;
@@ -1747,7 +1792,7 @@ ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
   } else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
     auto eq = *dynamic_cast<lex::OpSym *>(tokens.peek());
     if (eq.Sym == '[') {
-      output = new ast::List(tokens, *this);
+      output = new ast::List(tokens, parser);
     } else if (eq.Sym == '(') {
       tokens.pop();
       auto paren = new ast::ParenExpr();
@@ -2048,3 +2093,97 @@ ast::Expr *prioritizeExpr(ast::Expr *expr) {
   }
   return root;
 };
+
+parse::Parser::Parser(int mutability)
+    : impl(std::make_unique<Impl>(*this, mutability)) {}
+
+parse::Parser::~Parser() = default;
+
+parse::Parser::Parser(Parser &&) noexcept = default;
+
+parse::Parser &parse::Parser::operator=(Parser &&) noexcept = default;
+
+ast::Statement *
+parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
+                         bool singleStmt) {
+  return impl->parseStmt(tokens, singleStmt);
+}
+
+ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
+  return impl->parseExpr(tokens);
+}
+
+links::LinkedList<ast::Expr *>
+parse::Parser::parseCallArgsList(links::LinkedList<lex::Token *> &tokens) {
+  return impl->parseCallArgsList(tokens);
+}
+
+ast::Statement *
+parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens, char delimn,
+                         char close, std::vector<ast::Type> &types,
+                         int &requiered, std::vector<bool> &mutability,
+                         std::vector<int> &optConvertionIndices,
+                         std::vector<bool> &readOnly, bool forEach) {
+  return impl->parseArgs(tokens, delimn, close, types, requiered, mutability,
+                         optConvertionIndices, readOnly, forEach);
+}
+
+ast::Statement *
+parse::Parser::parseArgs(links::LinkedList<lex::Token *> &tokens, char delimn,
+                         char close, std::vector<ast::Type> &types,
+                         int &requiered, std::vector<bool> &mutability,
+                         std::vector<int> &optConvertionIndices,
+                         std::vector<bool> &readOnly) {
+  return impl->parseArgs(tokens, delimn, close, types, requiered, mutability,
+                         optConvertionIndices, readOnly);
+}
+
+void parse::Parser::addType(std::string name, asmc::OpType opType,
+                            asmc::Size size, bool unique) {
+  impl->addType(std::move(name), opType, size, false, unique);
+}
+
+void parse::Parser::addType(std::string name, asmc::OpType opType,
+                            asmc::Size size, bool isGeneric, bool unique) {
+  impl->addType(std::move(name), opType, size, isGeneric, unique);
+}
+
+ast::Type
+parse::Parser::parseFPointerType(links::LinkedList<lex::Token *> &tokens,
+                                 const std::string typeName) {
+  return impl->parseFPointerType(tokens, typeName);
+}
+
+ast::ConditionalExpr *
+parse::Parser::parseCondition(links::LinkedList<lex::Token *> &tokens) {
+  return impl->parseCondition(tokens);
+}
+
+std::vector<std::string>
+parse::Parser::parseTemplateTypeList(links::LinkedList<lex::Token *> &tokens,
+                                     int lineCount) {
+  return impl->parseTemplateTypeList(tokens, lineCount);
+}
+
+ast::When
+parse::Parser::parseWhenClause(links::LinkedList<lex::Token *> &tokens,
+                               int lineCount) {
+  return impl->parseWhenClause(tokens, lineCount);
+}
+
+links::SLinkedList<ast::Type, std::string> &parse::Parser::getTypeList() {
+  return impl->typeList;
+}
+
+const links::SLinkedList<ast::Type, std::string> &
+parse::Parser::getTypeList() const {
+  return impl->typeList;
+}
+
+ast::Statement &parse::Parser::getOutput() { return impl->Output; }
+
+const ast::Statement &parse::Parser::getOutput() const { return impl->Output; }
+
+int parse::Parser::getMutability() const { return impl->mutability; }
+
+void parse::Parser::setMutability(int value) { impl->mutability = value; }

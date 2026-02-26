@@ -57,9 +57,9 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
 
   asmc::Label *label1 = new asmc::Label();
   label1->logicalLine = this->logicalLine;
-  label1->label = ".L" + generator.nameTable.head->data.ident.ident +
-                  std::to_string(generator.labelCount);
-  generator.labelCount++;
+  label1->label = ".L" + generator.nameTable().head->data.ident.ident +
+                  std::to_string(generator.labelCount());
+  generator.labelCount()++;
 
   gen::Expr expr = generator.GenExpr(this->expr, file);
 
@@ -76,7 +76,7 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
 
   mov1->from = expr.access;
 
-  mov1->to = generator.registers["%rax"]->get(mov1->size);
+  mov1->to = generator.registers()["%rax"]->get(mov1->size);
 
   asmc::Cmp *cmp = new asmc::Cmp();
   cmp->logicalLine = this->logicalLine;
@@ -96,9 +96,9 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
   if (this->elseStatement != nullptr) {
     asmc::Label *end = new asmc::Label();
     end->logicalLine = this->logicalLine;
-    end->label = ".L" + generator.nameTable.head->data.ident.ident +
-                 std::to_string(generator.labelCount);
-    generator.labelCount++;
+    end->label = ".L" + generator.nameTable().head->data.ident.ident +
+                 std::to_string(generator.labelCount());
+    generator.labelCount()++;
     asmc::Jmp *jmp = new asmc::Jmp();
     jmp->logicalLine = this->logicalLine;
     jmp->to = end->label;
@@ -114,7 +114,7 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
     gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
     file.text << label1;
   };
-  generator.currentFunction->has_return = false;
+  generator.currentFunction()->has_return = false;
   return {file, std::nullopt};
 };
 

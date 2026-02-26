@@ -24,8 +24,8 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
   asmc::File file;
   ast::Declare *dec = this->declare;
   bool allowAdr = false;
-  if (!generator.globalScope) {
-    if (generator.scope == nullptr || generator.inFunction) {
+  if (!generator.globalScope()) {
+    if (generator.scope() == nullptr || generator.inFunction()) {
       if (dec->type.isReference) {
         auto var = dynamic_cast<ast::Var *>(this->expr);
         if (var && !var->clean) {
@@ -87,7 +87,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
         dec->type.opType = expr.op;
         if (expr.type.find("~") != std::string::npos) {
           // find the type in TypeList
-          auto t = generator.TypeList[expr.type];
+          auto t = generator.TypeList()[expr.type];
           if (t == nullptr)
             generator.alert("Function Pointer type not found " + expr.type +
                             " on line " + std::to_string(this->logicalLine));
@@ -107,15 +107,15 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       mov2->size = dec->type.size;
       mov2->from = expr.access;
       if (expr.op == asmc::Float)
-        mov2->to = generator.registers["%xmm0"]->get(expr.size);
+        mov2->to = generator.registers()["%xmm0"]->get(expr.size);
       else
-        mov2->to = generator.registers["%rbx"]->get(dec->type.size);
+        mov2->to = generator.registers()["%rbx"]->get(dec->type.size);
 
       mov->op = expr.op;
 
       mov2->op = expr.op;
       mov->size = dec->type.size;
-      mov->from = generator.registers["%rbx"]->get(dec->type.size);
+      mov->from = generator.registers()["%rbx"]->get(dec->type.size);
       mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
 
       mov->from = mov2->to;
@@ -127,12 +127,12 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
     } else {
       if (this->annotations.size() > 0) {
         for (auto &annotation : this->annotations) {
-          if (generator.transforms.find(annotation.name) ==
-              generator.transforms.end()) {
+          if (generator.transforms().find(annotation.name) ==
+              generator.transforms().end()) {
             generator.alert("Template " + annotation.name + " not found");
           }
           auto expr_str = this->expr->toString();
-          auto transform = generator.transforms[annotation.name];
+          auto transform = generator.transforms()[annotation.name];
           std::string mut = this->mute ? "mutable" : "const";
           std::string scope =
               this->declare->scope == ast::Public ? "public" : "private";
@@ -156,7 +156,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
         }
       } else {
         // add the this to the class default list
-        generator.scope->defaultValues.push_back(*this);
+        generator.scope()->defaultValues.push_back(*this);
         // generate the declare
         dec->mut = this->mute;
         file << generator.GenSTMT(dec);
@@ -169,7 +169,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
     Symbol.symbol = dec->ident;
     Symbol.mutable_ = this->mute;
     Symbol.readOnly = this->declare->readOnly;
-    auto Table = &generator.GlobalSymbolTable;
+    auto Table = &generator.GlobalSymbolTable();
 
     auto var = new asmc::LinkTask();
     auto label = new asmc::Label();
@@ -197,13 +197,13 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
   };
 
   if (dec->type.fPointerArgs.isFPointer &&
-      generator.typeList[dec->TypeName] == nullptr &&
+      generator.typeList()[dec->TypeName] == nullptr &&
       this->annotations.size() == 0) {
     auto newType = new ast::Type();
     newType->typeName = dec->TypeName;
     newType->size = asmc::QWord;
     newType->fPointerArgs = dec->type.fPointerArgs;
-    generator.TypeList.push(*newType);
+    generator.TypeList().push(*newType);
   }
   return {file, std::nullopt};
 }

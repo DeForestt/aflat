@@ -17,7 +17,7 @@ TEST_CASE("deScope cleans owned non-primitives", "[deScope]") {
 
   ast::Function freeFunc;
   freeFunc.ident.ident = "free";
-  gen.nameTable.push(freeFunc);
+  gen.nameTable().push(freeFunc);
 
   gen::Symbol sym;
   sym.symbol = "obj";
@@ -41,7 +41,7 @@ TEST_CASE("deScope skips primitives, sold, and returned symbols", "[deScope]") {
 
   ast::Function freeFunc;
   freeFunc.ident.ident = "free";
-  gen.nameTable.push(freeFunc);
+  gen.nameTable().push(freeFunc);
 
   gen::Symbol primitive;
   primitive.symbol = "x";

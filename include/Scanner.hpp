@@ -1,6 +1,7 @@
 #ifndef LEX
 #define LEX
 
+#include <memory>
 #include <string>
 
 #include "LinkedList.hpp"
@@ -104,7 +105,18 @@ public:
 that the parser will be able to understand*/
 class Lexer {
 public:
+  Lexer();
+  ~Lexer();
+  Lexer(Lexer &&) noexcept;
+  Lexer &operator=(Lexer &&) noexcept;
+  Lexer(const Lexer &) = delete;
+  Lexer &operator=(const Lexer &) = delete;
+
   LinkedList<Token *> Scan(string input, int startLine = 1);
+
+private:
+  struct Impl;
+  std::unique_ptr<Impl> impl;
 };
 
 }; // namespace lex

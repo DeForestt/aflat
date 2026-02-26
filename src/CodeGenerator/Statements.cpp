@@ -54,12 +54,11 @@ gen::CodeGenerator::GenTable(ast::Statement *STMT,
 
     offset = offset * dec->count;
 
-    if (this->SymbolTable.search<std::string>(searchSymbol, dec->ident) !=
-        nullptr)
+    if (SymbolTable().search<std::string>(searchSymbol, dec->ident) != nullptr)
       alert("redefined variable" + dec->ident, true, __FILE__, __LINE__);
 
     gen::Symbol Symbol;
-    if (this->SymbolTable.head == nullptr) {
+    if (SymbolTable().head == nullptr) {
       Symbol.byteMod = offset;
     } else {
       Symbol.byteMod = table.head->data.byteMod + offset;
@@ -86,7 +85,7 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
         **also needs to be added to symbol table**
     */
     ast::Declare *arg = dynamic_cast<ast::Declare *>(STMT);
-    if (intArgsCounter > 6) {
+    if (intArgsCounter() > 6) {
       alert("AFlat compiler cannot handle more than 6 int / pointer "
             "arguments.",
             true, __FILE__, __LINE__);
@@ -94,7 +93,7 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
       asmc::Size size;
       gen::Symbol symbol;
       asmc::Mov *mov = new asmc::Mov();
-      mov->logicalLine = this->logicalLine;
+      mov->logicalLine = logicalLine();
 
       if (arg->requestType != "") {
         asmc::File dumby;
@@ -119,7 +118,7 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
             cl->publicSymbols.push(newSym);
           }
 
-          this->typeList.push(cl);
+          typeList().push(cl);
           arg->type = ast::Type(cl->Ident, asmc::QWord);
         } else {
           alert(
@@ -139,7 +138,7 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
 
       size = arg->type.size;
       arg->type.arraySize = 1;
-      mov->from = this->intArgs[intArgsCounter].get(arg->type.size);
+      mov->from = intArgs()[intArgsCounter()].get(arg->type.size);
 
       int mod = gen::scope::ScopeManager::getInstance()->assign(
           arg->ident, arg->type, false, arg->mut);
@@ -152,7 +151,7 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
       mov->size = size;
       mov->to = "-" + std::to_string(mod) + +"(%rbp)";
       OutputFile.text << mov;
-      intArgsCounter++;
+      intArgsCounter()++;
 
       // check if the index is in the functions optConvertionIndices
       if (std::find(func.optConvertionIndices.begin(),
@@ -192,7 +191,7 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
 
 asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
   asmc::File OutputFile = asmc::File();
-  this->logicalLine = STMT->logicalLine;
+  logicalLine() = STMT->logicalLine;
 
   if (STMT->when && !this->whenSatisfied(*STMT->when)) {
     return OutputFile;
@@ -200,7 +199,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
 
   if (STMT->locked) {
     auto *inst = new asmc::nop();
-    inst->logicalLine = this->logicalLine;
+    inst->logicalLine = logicalLine();
     OutputFile.text.push(inst);
   } else
     try {
@@ -211,14 +210,14 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
           const auto &expr = result.expr.value();
           if (expr.type != "void" && parse::PRIMITIVE_TYPES.find(expr.type) ==
                                          parse::PRIMITIVE_TYPES.end()) {
-            auto t = this->typeList[expr.type];
+            auto t = typeList()[expr.type];
             if (t && (*t)->uniqueType) {
               this->alert("Discarding non-primitive return value of type `" +
                               expr.type + "` may leak",
                           false);
               scope::ScopeManager::getInstance()->pushScope(false);
               const auto tempName =
-                  "$" + std::to_string(this->tempCount++) + "_unused";
+                  "$" + std::to_string(tempCount()++) + "_unused";
               ast::Type tmpType(expr.type, expr.size);
               tmpType.opType = expr.op;
               auto mod = scope::ScopeManager::getInstance()->assign(
@@ -228,7 +227,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
                 sym->owned = expr.owned;
               }
               auto *mov = new asmc::Mov();
-              mov->logicalLine = this->logicalLine;
+              mov->logicalLine = logicalLine();
               mov->size = expr.size;
               mov->op = expr.op;
               mov->from = expr.access;
@@ -243,7 +242,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
         OutputFile << result.file;
       }
     } catch (err::Exception &e) {
-      this->errorFlag = true;
+      errorFlag() = true;
     }
 
   return OutputFile;
@@ -261,14 +260,14 @@ asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
   } else if (dynamic_cast<ast::Import *>(STMT) != nullptr) {
     auto imp = dynamic_cast<ast::Import *>(STMT);
     if (imp->hasClasses) {
-      auto prev = this->cwd;
+      auto prev = cwd();
       if (!imp->cwd.empty())
-        this->cwd = imp->cwd;
+        cwd() = imp->cwd;
       if (imp->hasFunctions)
         imp->generateClasses(*this);
       else
         imp->generate(*this);
-      this->cwd = prev;
+      cwd() = prev;
     }
   }
   return OutputFile;

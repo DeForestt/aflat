@@ -16,15 +16,15 @@ Break::Break(links::LinkedList<lex::Token *> &tokens) {
 
 gen::GenerationResult const Break::generate(gen::CodeGenerator &generator) {
   asmc::File OutputFile;
-  if (generator.breakContext.size() == 0)
+  if (generator.breakContext().size() == 0)
     generator.alert("Attempted to break outside of a loop");
-  if (generator.breakContext.size() < this->level)
+  if (generator.breakContext().size() < this->level)
     generator.alert("Attempted to break deeper than the current loop");
 
   int index = this->level - 1;
   asmc::Jmp *jmp = new asmc::Jmp();
   jmp->logicalLine = this->logicalLine;
-  jmp->to = generator.breakContext.get(index);
+  jmp->to = generator.breakContext().get(index);
   OutputFile.text << jmp;
   return {OutputFile, std::nullopt};
 }

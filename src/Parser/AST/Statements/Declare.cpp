@@ -34,7 +34,7 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
         cl->publicSymbols.push(newSym);
       }
 
-      generator.typeList.push(cl);
+      generator.typeList().push(cl);
       this->type = ast::Type(cl->Ident, asmc::QWord);
     } else {
       generator.alert("The symbol " + this->requestType +
@@ -43,10 +43,10 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
     }
   }
 
-  if (!generator.globalScope) {
+  if (!generator.globalScope()) {
     // if the there  is no scope use the scope manager otherwise use the
     // scope
-    if (generator.scope == nullptr || generator.inFunction) {
+    if (generator.scope() == nullptr || generator.inFunction()) {
       auto mod = gen::scope::ScopeManager::getInstance()->assign(
           this->ident, this->type, false, this->mut, this->readOnly);
       auto def = new asmc::Define();
@@ -57,7 +57,7 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
       file.text << def;
     } else {
       // add the symbol to the class symbol table
-      Table = &generator.scope->SymbolTable;
+      Table = &generator.scope()->SymbolTable;
       if (Table->search<std::string>(gen::utils::searchSymbol, this->ident) !=
           nullptr)
         generator.alert("redefined variable: " + this->ident);
@@ -73,11 +73,11 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
       Symbol.readOnly = this->readOnly;
       Table->push(Symbol);
       // if the symbol is public add it to the public symbol table
-      if (this->scope == ast::Public && generator.scope != nullptr)
-        generator.scope->publicSymbols.push(Symbol);
+      if (this->scope == ast::Public && generator.scope() != nullptr)
+        generator.scope()->publicSymbols.push(Symbol);
     };
   } else {
-    Table = &generator.GlobalSymbolTable;
+    Table = &generator.GlobalSymbolTable();
     auto var = new asmc::LinkTask();
     auto label = new asmc::Label();
     if (Table->search<std::string>(gen::utils::searchSymbol, this->ident) !=
@@ -104,7 +104,7 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
     newType->typeName = this->TypeName;
     newType->size = asmc::QWord;
     newType->fPointerArgs = this->type.fPointerArgs;
-    generator.TypeList.push(*newType);
+    generator.TypeList().push(*newType);
   }
   return {file, std::nullopt};
 }

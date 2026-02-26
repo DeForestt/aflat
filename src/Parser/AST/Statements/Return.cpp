@@ -31,31 +31,31 @@ Return::Return(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   asmc::File file;
 
-  if (implicit && generator.matchScope) {
+  if (implicit && generator.matchScope()) {
     resolver = true; // if this is an implicit return, and
   }
 
   if (resolver) {
     auto from = generator.GenExpr(this->expr, file);
-    if (generator.matchScope == nullptr) {
+    if (generator.matchScope() == nullptr) {
       generator.alert(
           "cannot use a resolver return outside of a match statement", true,
           __FILE__, __LINE__);
     }
-    if (generator.matchScope->returns.typeName == "void") {
+    if (generator.matchScope()->returns.typeName == "void") {
       auto it = parse::PRIMITIVE_TYPES.find(from.type);
       auto size = asmc::QWord;
       if (it != parse::PRIMITIVE_TYPES.end()) {
         size = gen::utils::toSize(it->second);
       }
-      generator.matchScope->returns.typeName = from.type;
-      generator.matchScope->returns.size = size;
+      generator.matchScope()->returns.typeName = from.type;
+      generator.matchScope()->returns.size = size;
     } else if (!generator.canAssign(
-                   generator.matchScope->returns, from.type,
+                   generator.matchScope()->returns, from.type,
                    "the return type of the match statement is {} but "
                    "the resolver returns {}")) {
       auto imo =
-          generator.imply(this->expr, generator.matchScope->returns.typeName);
+          generator.imply(this->expr, generator.matchScope()->returns.typeName);
       from = generator.GenExpr(imo, file);
     }
     // if this is a resolver, we just need to put the expression into %rax
@@ -63,7 +63,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       auto mov = new asmc::Mov();
       mov->logicalLine = this->logicalLine;
       mov->from = from.access;
-      mov->to = generator.registers["%rax"]->get(from.size);
+      mov->to = generator.registers()["%rax"]->get(from.size);
       mov->size = from.size;
       mov->op = from.op;
       file.text << mov;
@@ -71,7 +71,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       auto mov = new asmc::Mov();
       mov->logicalLine = this->logicalLine;
       mov->from = from.access;
-      mov->to = generator.registers["%xmm0"]->get(from.size);
+      mov->to = generator.registers()["%xmm0"]->get(from.size);
       mov->size = from.size;
       mov->op = from.op;
       file.text << mov;
@@ -95,15 +95,15 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     }
   }
 
-  if (generator.currentFunction->optional) {
+  if (generator.currentFunction()->optional) {
     // if fromtype is not option.typeName, we need to convert it to
     // option.typeName
-    if (from.type != "option<" + generator.returnType.typeName + ">") {
+    if (from.type != "option<" + generator.returnType().typeName + ">") {
       if (!this->empty &&
-          !generator.canAssign(generator.returnType, from.type,
+          !generator.canAssign(generator.returnType(), from.type,
                                "the return type of this function is {} but the "
                                "expression returns {}")) {
-        auto imp = generator.imply(this->expr, generator.returnType.typeName);
+        auto imp = generator.imply(this->expr, generator.returnType().typeName);
         this->expr = imp;
       }
       if (this->empty) {
@@ -120,10 +120,10 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       call->logicalLine = this->logicalLine;
       from = generator.GenExpr(call, file);
     }
-  } else if (generator.currentFunction->error) {
+  } else if (generator.currentFunction()->error) {
     // if fromtype is not result.typeName, we need to convert it to
     // result.typeName
-    if (from.type != "result<" + generator.returnType.typeName + ">") {
+    if (from.type != "result<" + generator.returnType().typeName + ">") {
       bool isError = false;
       if (parse::PRIMITIVE_TYPES.find(from.type) ==
           parse::PRIMITIVE_TYPES.end()) {
@@ -147,19 +147,20 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
         auto reject = new ast::Call();
         reject->ident = "result.reject";
         reject->Args.push(this->expr);
-        reject->genericTypes.push_back(generator.returnType.typeName);
+        reject->genericTypes.push_back(generator.returnType().typeName);
         auto call = new ast::CallExpr();
         call->call = reject;
         call->logicalLine = this->logicalLine;
-        call->templateTypes = generator.currentFunction->genericTypes;
+        call->templateTypes = generator.currentFunction()->genericTypes;
         from = generator.GenExpr(call, file);
       } else {
         if (!this->empty &&
             !generator.canAssign(
-                generator.returnType, from.type,
+                generator.returnType(), from.type,
                 "the return type of this function is {} but the "
                 "expression returns {}")) {
-          auto imp = generator.imply(this->expr, generator.returnType.typeName);
+          auto imp =
+              generator.imply(this->expr, generator.returnType().typeName);
           this->expr = imp;
         }
         if (this->empty) {
@@ -179,50 +180,52 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     }
   }
 
-  if (generator.currentFunction->isLambda &&
-      generator.lambdaReturns == "void") {
+  if (generator.currentFunction()->isLambda &&
+      generator.lambdaReturns() == "void") {
     // adopt the new return type
-    generator.lambdaReturns = from.type;
-    generator.lambdaSize = from.size;
-    generator.returnType = ast::Type(from.type, from.size);
+    generator.lambdaReturns() = from.type;
+    generator.lambdaSize() = from.size;
+    generator.returnType() = ast::Type(from.type, from.size);
   }
 
-  if (generator.currentFunction->autoType) {
-    generator.currentFunction->autoType = false;
-    generator.currentFunction->type = ast::Type(from.type, from.size);
+  if (generator.currentFunction()->autoType) {
+    generator.currentFunction()->autoType = false;
+    generator.currentFunction()->type = ast::Type(from.type, from.size);
 
-    if (generator.scope == nullptr ||
-        generator.currentFunction->genericTypes.size() > 0 ||
-        generator.currentFunction->globalLocked) {
-      if (generator.nameTable[generator.currentFunction->ident.ident] !=
+    if (generator.scope() == nullptr ||
+        generator.currentFunction()->genericTypes.size() > 0 ||
+        generator.currentFunction()->globalLocked) {
+      if (generator.nameTable()[generator.currentFunction()->ident.ident] !=
           nullptr) {
-        generator.nameTable[generator.currentFunction->ident.ident]->type =
+        generator.nameTable()[generator.currentFunction()->ident.ident]->type =
             ast::Type(from.type, from.size);
-        generator.nameTable[generator.currentFunction->ident.ident]->useType =
-            ast::Type(from.type, from.size);
+        generator.nameTable()[generator.currentFunction()->ident.ident]
+            ->useType = ast::Type(from.type, from.size);
       }
     } else {
-      if (generator.scope->nameTable[generator.currentFunction->ident.ident] ==
+      if (generator.scope()
+              ->nameTable[generator.currentFunction()->ident.ident] ==
           nullptr) {
         generator.alert("the function " +
-                            generator.currentFunction->ident.ident +
+                            generator.currentFunction()->ident.ident +
                             " is not defined in the current scope `" +
-                            generator.scope->Ident +
+                            generator.scope()->Ident +
                             "` , but it is being returned "
                             "from",
                         true, __FILE__, __LINE__);
       }
-      generator.scope->nameTable[generator.currentFunction->ident.ident]->type =
-          ast::Type(from.type, from.size);
+      generator.scope()
+          ->nameTable[generator.currentFunction()->ident.ident]
+          ->type = ast::Type(from.type, from.size);
       const auto pub =
-          generator.scope
-              ->publicNameTable[generator.currentFunction->ident.ident];
+          generator.scope()
+              ->publicNameTable[generator.currentFunction()->ident.ident];
       if (pub != nullptr) {
         pub->type = ast::Type(from.type, from.size);
       }
     }
 
-    generator.returnType = ast::Type(from.type, from.size);
+    generator.returnType() = ast::Type(from.type, from.size);
   }
 
   if (!from.passable) {
@@ -236,21 +239,21 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     mov2->logicalLine = this->logicalLine;
     mov2->size = from.size;
     mov2->from = from.access;
-    mov2->to = generator.registers["%rax"]->get(from.size);
+    mov2->to = generator.registers()["%rax"]->get(from.size);
     mov2->op = from.op;
     file.text << mov2;
     auto push = new asmc::Push();
     push->logicalLine = this->logicalLine;
-    push->op = generator.registers["%rax"]->get(asmc::QWord);
+    push->op = generator.registers()["%rax"]->get(asmc::QWord);
     file.text << push;
   };
 
-  if (!generator.currentFunction->optional &&
-      !generator.currentFunction->error &&
-      !generator.canAssign(generator.returnType, from.type,
+  if (!generator.currentFunction()->optional &&
+      !generator.currentFunction()->error &&
+      !generator.canAssign(generator.returnType(), from.type,
                            "the return type of this function is {} but the "
                            "expression returns {}")) {
-    auto imp = generator.imply(this->expr, generator.returnType.typeName);
+    auto imp = generator.imply(this->expr, generator.returnType().typeName);
     from = generator.GenExpr(imp, file);
   };
 
@@ -266,13 +269,13 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   if (from.op != asmc::Float) {
     auto pop = new asmc::Pop();
     pop->logicalLine = this->logicalLine;
-    pop->op = generator.registers["%rax"]->get(asmc::QWord);
+    pop->op = generator.registers()["%rax"]->get(asmc::QWord);
     file.text << pop;
   };
 
   std::string move2 = (from.op == asmc::Float)
-                          ? generator.registers["%xmm0"]->get(from.size)
-                          : generator.registers["%rax"]->get(from.size);
+                          ? generator.registers()["%xmm0"]->get(from.size)
+                          : generator.registers()["%rax"]->get(from.size);
 
   mov->from = from.access;
   mov->to = move2;

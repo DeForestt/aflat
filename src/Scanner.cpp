@@ -3,10 +3,18 @@
 #include <ctype.h>
 
 #include <iostream>
+#include <memory>
+#include <utility>
 
 #include "Exceptions.hpp"
 
-LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
+namespace lex {
+
+struct Lexer::Impl {
+  LinkedList<Token *> Scan(string input, int startLine);
+};
+
+LinkedList<Token *> Lexer::Impl::Scan(string input, int startLine) {
   LinkedList<lex::Token *> tokens = LinkedList<lex::Token *>();
   int i = 0;
   int lineCount = startLine;
@@ -438,3 +446,17 @@ LinkedList<lex::Token *> lex::Lexer::Scan(string input, int startLine) {
   tokens.push(last_semi);
   return tokens;
 }
+
+Lexer::Lexer() : impl(std::make_unique<Impl>()) {}
+
+Lexer::~Lexer() = default;
+
+Lexer::Lexer(Lexer &&) noexcept = default;
+
+Lexer &Lexer::operator=(Lexer &&) noexcept = default;
+
+LinkedList<Token *> Lexer::Scan(string input, int startLine) {
+  return impl->Scan(std::move(input), startLine);
+}
+
+} // namespace lex

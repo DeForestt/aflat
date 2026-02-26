@@ -139,8 +139,8 @@ gen::GenerationResult Call::generateAttempt(
   }
 
   std::string nsp;
-  if (generator.nameSpaceTable.contains(ident)) {
-    nsp = generator.nameSpaceTable.get(ident) + ".";
+  if (generator.nameSpaceTable().contains(ident)) {
+    nsp = generator.nameSpaceTable().get(ident) + ".";
     ident = nsp + this->modList.shift();
   }
 
@@ -148,16 +148,16 @@ gen::GenerationResult Call::generateAttempt(
   // first push rdx
   links::LinkedList<std::string> stack;
 
-  generator.intArgsCounter = 0;
+  generator.intArgsCounter() = 0;
   int argsCounter = 0;
   std::string allMods = "";
   if (this->modList.pos == nullptr) {
     func = findFunctionByOverload(
-        generator.nameTable, ident, forcedOverloadIndex, forcedTable,
+        generator.nameTable(), ident, forcedOverloadIndex, forcedTable,
         forcedIdent, overloadTable, overloadIdent, currentOverloadIndex);
     if (func == nullptr) {
       auto f = findFunctionByOverload(
-          generator.genericFunctions, ident, forcedOverloadIndex, forcedTable,
+          generator.genericFunctions(), ident, forcedOverloadIndex, forcedTable,
           forcedIdent, overloadTable, overloadIdent, currentOverloadIndex);
       if (f != nullptr) {
         auto junkFile = asmc::File();
@@ -201,27 +201,27 @@ gen::GenerationResult Call::generateAttempt(
           file.lambdas = new asmc::File();
           file.hasLambda = true;
         }
-        auto saveReturnType = generator.returnType;
-        if (generator.generatedFunctionNames.find(new_ident) ==
-            generator.generatedFunctionNames.end()) {
+        auto saveReturnType = generator.returnType();
+        if (generator.generatedFunctionNames().find(new_ident) ==
+            generator.generatedFunctionNames().end()) {
           gen::scope::ScopeManager::getInstance()->pushScope(true);
           file.lambdas->operator<<(generator.GenSTMT(func));
           gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
-          generator.generatedFunctionNames.insert(new_ident);
+          generator.generatedFunctionNames().insert(new_ident);
           generated = true;
         } else {
           gen::scope::ScopeManager::getInstance()->pushScope(true);
           generator.GenSTMT(func);
           gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
-          generator.generatedFunctionNames.insert(new_ident);
+          generator.generatedFunctionNames().insert(new_ident);
           generated = true;
         }
-        generator.returnType = saveReturnType;
+        generator.returnType() = saveReturnType;
 
         this->ident = func->ident.ident;
         // get func from the name table so that it can be used with generated
         // return type
-        func = findFunctionByOverload(generator.nameTable, func->ident.ident,
+        func = findFunctionByOverload(generator.nameTable(), func->ident.ident,
                                       forcedOverloadIndex, forcedTable,
                                       forcedIdent, overloadTable, overloadIdent,
                                       currentOverloadIndex);
@@ -238,7 +238,7 @@ gen::GenerationResult Call::generateAttempt(
     if (func == nullptr) {
       gen::Symbol *smbl = gen::scope::ScopeManager::getInstance()->get(ident);
       if (smbl == nullptr)
-        smbl = generator.GlobalSymbolTable.search<std::string>(
+        smbl = generator.GlobalSymbolTable().search<std::string>(
             gen::utils::searchSymbol, ident);
       if (smbl != nullptr) {
         overloadTable = nullptr;
@@ -257,12 +257,13 @@ gen::GenerationResult Call::generateAttempt(
           mov->logicalLine = this->logicalLine;
           mov->size = exp1.size;
           mov->from = exp1.access;
-          mov->to = generator.registers["%r11"]->get(exp1.size);
+          mov->to = generator.registers()["%r11"]->get(exp1.size);
           file.text << mov;
 
           func = &flexFunction;
           func->logicalLine = this->logicalLine;
-          func->ident.ident = '*' + generator.registers["%r11"]->get(exp1.size);
+          func->ident.ident =
+              '*' + generator.registers()["%r11"]->get(exp1.size);
           func->type.arraySize = 0;
           func->type.size = asmc::QWord;
           func->type.typeName = "--std--flex--function";
@@ -329,7 +330,7 @@ gen::GenerationResult Call::generateAttempt(
           mov->logicalLine = this->logicalLine;
           mov->size = exp1.size;
           mov->from = exp1.access;
-          mov->to = generator.intArgs[argsCounter].get(exp1.size);
+          mov->to = generator.intArgs()[argsCounter].get(exp1.size);
           file.text << mov;
           argsCounter++;
         }
@@ -388,7 +389,7 @@ gen::GenerationResult Call::generateAttempt(
             mov->logicalLine = this->logicalLine;
             mov->size = exp1.size;
             mov->from = exp1.access;
-            mov->to = generator.registers["%r11"]->get(exp1.size);
+            mov->to = generator.registers()["%r11"]->get(exp1.size);
             file.text << mov;
 
             //
@@ -399,7 +400,7 @@ gen::GenerationResult Call::generateAttempt(
             func = &flexFunction;
             func->logicalLine = this->logicalLine;
             func->ident.ident =
-                '*' + generator.registers["%r11"]->get(exp1.size);
+                '*' + generator.registers()["%r11"]->get(exp1.size);
             func->type = sym->type;
             func->type.typeName = "--std--flex--function";
             checkArgs = false;
@@ -484,11 +485,11 @@ gen::GenerationResult Call::generateAttempt(
           mov2->size = exp.size;
 
           mov->from = '(' + exp.access + ')';
-          mov->to = generator.registers["%eax"]->get(exp.size);
-          mov2->from = generator.registers["%eax"]->get(exp.size);
-          mov2->to = generator.intArgs[argsCounter].get(exp.size);
-          push->op = generator.intArgs[argsCounter].get(asmc::QWord);
-          stack << generator.intArgs[argsCounter].get(asmc::QWord);
+          mov->to = generator.registers()["%eax"]->get(exp.size);
+          mov2->from = generator.registers()["%eax"]->get(exp.size);
+          mov2->to = generator.intArgs()[argsCounter].get(exp.size);
+          push->op = generator.intArgs()[argsCounter].get(asmc::QWord);
+          stack << generator.intArgs()[argsCounter].get(asmc::QWord);
 
           argsCounter++;
           file.text << push;
@@ -528,7 +529,7 @@ gen::GenerationResult Call::generateAttempt(
     if (ident != "init" && ident != "del" && !this->slick) {
       // find the function in the class
       gen::Class *cl =
-          dynamic_cast<gen::Class *>(*generator.typeList[this->publify]);
+          dynamic_cast<gen::Class *>(*generator.typeList()[this->publify]);
       if (cl != nullptr) {
         ast::Function *f = findFunctionByOverload(
             cl->nameTable, ident, forcedOverloadIndex, forcedTable, forcedIdent,
@@ -577,7 +578,7 @@ gen::GenerationResult Call::generateAttempt(
 
   asmc::Push *push = new asmc::Push();
   push->logicalLine = this->logicalLine;
-  push->op = generator.registers["%rdx"]->get(asmc::QWord);
+  push->op = generator.registers()["%rdx"]->get(asmc::QWord);
   file.text << push;
   stack << push->op;
 
@@ -587,13 +588,13 @@ gen::GenerationResult Call::generateAttempt(
   }
 
   if (func->scope == ast::Private && func->scopeName != "global") {
-    if (generator.scope == nullptr)
+    if (generator.scope() == nullptr)
       generator.alert("attempt to this private function: " + allMods +
                       func->ident.ident + " from global scope");
-    if (func->scopeName != generator.scope->Ident)
+    if (func->scopeName != generator.scope()->Ident)
       generator.alert("Attempt to this private function " + allMods +
                       func->ident.ident + " from wrong scope: " +
-                      generator.scope->Ident + " != " + func->scopeName);
+                      generator.scope()->Ident + " != " + func->scopeName);
   }
 
   this->Args.invert();
@@ -628,7 +629,7 @@ gen::GenerationResult Call::generateAttempt(
       if (var != nullptr) {
         auto sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
         if (!sym) {
-          sym = generator.GlobalSymbolTable.search<std::string>(
+          sym = generator.GlobalSymbolTable().search<std::string>(
               gen::utils::searchSymbol, var->Ident);
         }
         if (sym && func) {
@@ -641,7 +642,7 @@ gen::GenerationResult Call::generateAttempt(
         }
       }
       if (i >= func->argTypes.size()) {
-        generator.logicalLine = arg->logicalLine;
+        generator.logicalLine() = arg->logicalLine;
         this->requestOverloadRetry(
             generator, overloadTable, overloadIdent, currentOverloadIndex,
             "Too many arguments for function: " + ident +
@@ -658,7 +659,7 @@ gen::GenerationResult Call::generateAttempt(
         }
         auto sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
         if (!sym) {
-          sym = generator.GlobalSymbolTable.search<std::string>(
+          sym = generator.GlobalSymbolTable().search<std::string>(
               gen::utils::searchSymbol, var->Ident);
         }
 
@@ -707,7 +708,7 @@ gen::GenerationResult Call::generateAttempt(
     if (checkArgs && dynamic_cast<ast::CallExpr *>(arg) != nullptr &&
         !func->argTypes.at(i).isRvalue && exp.type != "void" &&
         parse::PRIMITIVE_TYPES.find(exp.type) == parse::PRIMITIVE_TYPES.end()) {
-      auto t = generator.typeList[exp.type];
+      auto t = generator.typeList()[exp.type];
       if (t && (*t)->uniqueType) {
         std::string discardWarning =
             "Discarding non-primitive return value of type `" + exp.type +
@@ -748,7 +749,7 @@ gen::GenerationResult Call::generateAttempt(
 
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
-        generator.logicalLine = arg->logicalLine;
+        generator.logicalLine() = arg->logicalLine;
         this->requestOverloadRetry(
             generator, overloadTable, overloadIdent, currentOverloadIndex,
             "Too many arguments for function: " + ident +
@@ -777,14 +778,14 @@ gen::GenerationResult Call::generateAttempt(
       mov->logicalLine = this->logicalLine;
       mov->size = exp.size;
       mov->from = exp.access;
-      mov->to = generator.registers["%xmm0"]->get(exp.size);
+      mov->to = generator.registers()["%xmm0"]->get(exp.size);
       file.text << mov;
 
       asmc::Mov *mov2 = new asmc::Mov();
       mov2->op = asmc::Float;
       mov2->logicalLine = this->logicalLine;
       mov2->size = exp.size;
-      mov2->from = generator.registers["%xmm0"]->get(exp.size);
+      mov2->from = generator.registers()["%xmm0"]->get(exp.size);
       mov2->to = "-" + std::to_string(bytemod) + "(%rbp)";
       file.text << mov2;
       // move to eax
@@ -792,29 +793,29 @@ gen::GenerationResult Call::generateAttempt(
       // clear out eax
       asmc::Xor *xory = new asmc::Xor();
       xory->logicalLine = this->logicalLine;
-      xory->op1 = generator.registers["%eax"]->get(asmc::QWord);
-      xory->op2 = generator.registers["%eax"]->get(asmc::QWord);
+      xory->op1 = generator.registers()["%eax"]->get(asmc::QWord);
+      xory->op2 = generator.registers()["%eax"]->get(asmc::QWord);
       file.text << xory;
 
       asmc::Mov *mov3 = new asmc::Mov();
       mov3->logicalLine = this->logicalLine;
       mov3->size = asmc::DWord;
       mov3->from = "-" + std::to_string(bytemod) + "(%rbp)";
-      mov3->to = generator.registers["%eax"]->get(asmc::DWord);
+      mov3->to = generator.registers()["%eax"]->get(asmc::DWord);
       file.text << mov3;
 
       asmc::Push *pushArg = new asmc::Push();
       pushArg->logicalLine = this->logicalLine;
 
-      pushArg->op = generator.intArgs[argsCounter].get(asmc::QWord);
+      pushArg->op = generator.intArgs()[argsCounter].get(asmc::QWord);
 
       file.text << pushArg;
 
       asmc::Mov *mov4 = new asmc::Mov();
       mov4->logicalLine = this->logicalLine;
       mov4->size = asmc::DWord;
-      mov4->from = generator.registers["%eax"]->get(asmc::DWord);
-      mov4->to = generator.intArgs[argsCounter].get(asmc::DWord);
+      mov4->from = generator.registers()["%eax"]->get(asmc::DWord);
+      mov4->to = generator.intArgs()[argsCounter].get(asmc::DWord);
       file.text << mov4;
     } else {
       asmc::Mov *mov = new asmc::Mov();
@@ -827,11 +828,11 @@ gen::GenerationResult Call::generateAttempt(
       mov2->size = exp.size;
 
       mov->from = exp.access;
-      mov->to = generator.registers["%eax"]->get(exp.size);
-      mov2->from = generator.registers["%eax"]->get(exp.size);
-      mov2->to = generator.intArgs[argsCounter].get(exp.size);
-      pushArg->op = generator.intArgs[argsCounter].get(asmc::QWord);
-      stack << generator.intArgs[argsCounter].get(asmc::QWord);
+      mov->to = generator.registers()["%eax"]->get(exp.size);
+      mov2->from = generator.registers()["%eax"]->get(exp.size);
+      mov2->to = generator.intArgs()[argsCounter].get(exp.size);
+      pushArg->op = generator.intArgs()[argsCounter].get(asmc::QWord);
+      stack << generator.intArgs()[argsCounter].get(asmc::QWord);
 
       file.text << pushArg;
       file.text << mov;
@@ -850,7 +851,7 @@ gen::GenerationResult Call::generateAttempt(
     move->logicalLine = this->logicalLine;
     move->size = asmc::QWord;
     move->from = "$0";
-    move->to = generator.intArgs[argsCounter].get(asmc::QWord);
+    move->to = generator.intArgs()[argsCounter].get(asmc::QWord);
     argsCounter++;
     argsUsed++;
     file.text << move;
@@ -875,7 +876,7 @@ gen::GenerationResult Call::generateAttempt(
     pop->op = stack.pop();
     file.text << pop;
   }
-  generator.intArgsCounter = 0;
+  generator.intArgsCounter() = 0;
   return {file, std::optional<gen::Expr>(func->toExpr(generator))};
 }
 

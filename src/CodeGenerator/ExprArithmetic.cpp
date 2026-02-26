@@ -29,19 +29,19 @@ gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound,
   }
 
   mov1->op = expr2.op;
-  mov1->to = this->registers[r1]->get(expr2.size);
+  mov1->to = registers()[r1]->get(expr2.size);
   mov1->from = expr2.access;
   mov1->size = expr2.size;
-  mov1->logicalLine = this->logicalLine;
+  mov1->logicalLine = logicalLine();
   if (!isDiv)
     OutputFile.text << mov1;
 
   gen::Expr expr1 = this->GenExpr(compound.expr1, OutputFile);
   mov2->op = expr1.op;
-  mov2->to = this->registers[r2]->get(expr1.size);
+  mov2->to = registers()[r2]->get(expr1.size);
   mov2->from = expr1.access;
   mov2->size = expr1.size;
-  mov2->logicalLine = this->logicalLine;
+  mov2->logicalLine = logicalLine();
   OutputFile.text << mov2;
 
   return expr1;
@@ -56,14 +56,14 @@ gen::Expr gen::CodeGenerator::genArithmetic(asmc::ArithInst *inst,
   inst->opType = expr.op;
   inst->size = expr.size;
 
-  std::string to1 = this->registers["%rdx"]->get(expr.size);
-  std::string to2 = this->registers["%rdi"]->get(expr.size);
+  std::string to1 = registers()["%rdx"]->get(expr.size);
+  std::string to2 = registers()["%rdi"]->get(expr.size);
 
-  output.access = this->registers["%rax"]->get(expr.size);
+  output.access = registers()["%rax"]->get(expr.size);
 
   if (expr.op == asmc::Float) {
-    to1 = this->registers["%xmm1"]->get(asmc::DWord);
-    to2 = this->registers["%xmm0"]->get(asmc::DWord);
+    to1 = registers()["%xmm1"]->get(asmc::DWord);
+    to2 = registers()["%xmm0"]->get(asmc::DWord);
     output.access = "%xmm2";
     output.op = asmc::Float;
   }
@@ -73,19 +73,19 @@ gen::Expr gen::CodeGenerator::genArithmetic(asmc::ArithInst *inst,
   mov->to = output.access;
   mov->op = output.op;
   mov->size = expr.size;
-  mov->logicalLine = this->logicalLine;
+  mov->logicalLine = logicalLine();
 
   asmc::Pop *pop1 = new asmc::Pop();
-  pop1->op = this->registers[to1]->get(asmc::QWord);
-  pop1->logicalLine = this->logicalLine;
+  pop1->op = registers()[to1]->get(asmc::QWord);
+  pop1->logicalLine = logicalLine();
 
   asmc::Pop *pop2 = new asmc::Pop();
-  pop2->op = this->registers[to2]->get(asmc::QWord);
-  pop2->logicalLine = this->logicalLine;
+  pop2->op = registers()[to2]->get(asmc::QWord);
+  pop2->logicalLine = logicalLine();
 
   inst->op2 = to2;
   inst->op1 = to1;
-  inst->logicalLine = this->logicalLine;
+  inst->logicalLine = logicalLine();
   OutputFile.text << inst;
   OutputFile.text << mov;
   output.size = expr.size;

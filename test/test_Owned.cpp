@@ -12,7 +12,7 @@ TEST_CASE("CallExpr ownership", "[owned]") {
   ast::Function func;
   func.ident.ident = "foo";
   func.type = ast::Type("int", asmc::DWord);
-  gen.nameTable.push(func);
+  gen.nameTable().push(func);
 
   auto call = new ast::CallExpr();
   call->call = new ast::Call();

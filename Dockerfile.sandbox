@@ -1,0 +1,47 @@
+# ---- builder ----
+FROM ubuntu:22.04 AS builder
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    git \
+    libboost-all-dev \
+    bash \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV AFLAT_ROOT=/opt/aflat
+
+# Shallow clone to reduce size/time
+RUN git clone --depth 1 https://github.com/DeForestt/aflat.git ${AFLAT_ROOT}
+
+RUN cmake -S ${AFLAT_ROOT} -B ${AFLAT_ROOT}/build -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build ${AFLAT_ROOT}/build --target aflat \
+    && cd ${AFLAT_ROOT} && bash rebuild-libs.sh
+
+
+
+# ---- runtime ----
+FROM ubuntu:22.04
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc
+    
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libc6-dev \
+    bash
+
+RUN rm -rf /var/lib/apt/lists/*
+
+ENV AFLAT_ROOT=/opt/aflat
+COPY --from=builder ${AFLAT_ROOT}/bin ${AFLAT_ROOT}/bin
+COPY --from=builder ${AFLAT_ROOT}/libraries ${AFLAT_ROOT}/libraries
+
+ENV PATH=${AFLAT_ROOT}/bin:$PATH
+WORKDIR /workspace
+
+ENTRYPOINT ["/bin/sh"]
+CMD ["-c", "aflat --help"]

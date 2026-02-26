@@ -47,7 +47,7 @@ parseAliases(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
       tokens.pop();
       auto maybeTypeName = dynamic_cast<lex::LObj *>(tokens.peek());
       auto type =
-          maybeTypeName ? parser.typeList[maybeTypeName->meta] : nullptr;
+          maybeTypeName ? parser.getTypeList()[maybeTypeName->meta] : nullptr;
       if (type) {
         tokens.pop(); // pop the type name
         auto templateArgs =
@@ -114,7 +114,7 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
 
   auto type = ast::Type(this->ident.ident, asmc::QWord);
   type.uniqueType = uniqueType;
-  parser.typeList << type; // add the type to the typeList
+  parser.getTypeList() << type; // add the type to the typeList
   this->uniqueType = uniqueType;
   auto op = dynamic_cast<lex::OpSym *>(tokens.pop());
 
@@ -138,7 +138,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   // if the union is generic, do not generate code for it. It will be
   // generated when it is instantiated with specific types.
   if (this->genericTypes.size() > 0) {
-    generator.genericTypes.insert(
+    generator.genericTypes().insert(
         {this->ident.ident, dynamic_cast<ast::Union *>(ast::deepCopy(
                                 this))}); // add the union to the generic types
     return {asmc::File(), std::nullopt};
@@ -150,8 +150,8 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   type->hidden = this->hidden;
   type->body = this->statement; // save the body in case of composition
 
-  bool saveScope = generator.globalScope;
-  generator.globalScope = false;
+  bool saveScope = generator.globalScope();
+  generator.globalScope() = false;
   type->Ident = this->ident.ident;
   type->nameTable.foo = gen::utils::compareFunc;
   type->publicNameTable.foo = gen::utils::compareFunc;
@@ -159,7 +159,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   type->dynamic = this->dynamic;
   type->pedantic = this->pedantic;
   type->uniqueType = this->uniqueType;
-  generator.scope = type;
+  generator.scope() = type;
 
   type->overloadTable.foo = [](ast::Function func, ast::Op op) {
     if (func.op == op) {
@@ -168,7 +168,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
     return false;
   };
 
-  generator.typeList.push(type);
+  generator.typeList().push(type);
 
   auto hoist = gen::utils::copyAllFunctionShells(this->statement);
   if (hoist != nullptr) {
@@ -190,7 +190,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
       // number just in case
 
       auto intLit = new ast::IntLiteral();
-      intLit->val = generator.tempCount++ +
+      intLit->val = generator.tempCount()++ +
                     1000000; // Start from a high number to avoid conflicts
 
       type->aliases.emplace_back(alias->name, intLit, 4);
@@ -281,8 +281,8 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
     OutputFile << file;
   }
 
-  generator.globalScope = saveScope;
-  generator.scope = nullptr;
+  generator.globalScope() = saveScope;
+  generator.scope() = nullptr;
 
   return {OutputFile, std::nullopt};
 }

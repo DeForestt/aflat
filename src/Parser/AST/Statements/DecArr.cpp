@@ -27,7 +27,7 @@ gen::GenerationResult const DecArr::generate(gen::CodeGenerator &generator) {
   type.arraySize = index;
   this->type.arraySize = index;
   links::LinkedList<gen::Symbol> *Table;
-  if (generator.scope == nullptr || generator.inFunction) {
+  if (generator.scope() == nullptr || generator.inFunction()) {
     gen::scope::ScopeManager::getInstance()->assign("." + this->ident, type,
                                                     false, false);
     // create a pointer to the array
@@ -52,7 +52,7 @@ gen::GenerationResult const DecArr::generate(gen::CodeGenerator &generator) {
 
     file << generator.GenSTMT(assign);
   } else {
-    Table = &generator.scope->SymbolTable;
+    Table = &generator.scope()->SymbolTable;
 
     if (Table->search<std::string>(gen::utils::searchSymbol, this->ident) !=
         nullptr)
