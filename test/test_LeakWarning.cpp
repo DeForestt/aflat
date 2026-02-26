@@ -54,9 +54,9 @@ TEST_CASE("returning non-primitive value does not warn", "[leak-warning]") {
   ast::Function func;
   func.ident.ident = "func";
   func.type = ast::Type("Foo", asmc::QWord);
-  gen.currentFunction = &func;
-  gen.inFunction = true;
-  gen.returnType = func.type;
+  gen.currentFunction() = &func;
+  gen.inFunction() = true;
+  gen.returnType() = func.type;
 
   gen::scope::ScopeManager::getInstance()->reset();
   gen::scope::ScopeManager::getInstance()->pushScope(true);
