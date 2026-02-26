@@ -7,6 +7,7 @@ import Box from "Memory";
 import {wrap} from "Memory" under box;
 import Error from "Utils/Error";
 import JSON from "JSON";
+import {parse} from "JSON" under json;
 import string from "String";
 import result from "Utils/result";
 import option from "Utils/option";
@@ -15,5 +16,5 @@ import unordered_map from "Collections/unordered_map";
 
 
 export fn parse(const string json_) -> JSON! {
-    return JSON.parse(json_);
+    return json.parse(json_);
 };
