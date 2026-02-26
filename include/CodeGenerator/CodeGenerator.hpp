@@ -1,6 +1,7 @@
 #ifndef GEN
 #define GEN
 
+#include <array>
 #include <filesystem>
 #include <set>
 #include <tuple>
