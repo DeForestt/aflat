@@ -56,27 +56,27 @@ gen::GenerationResult const For::generate(gen::CodeGenerator &generator) {
 
   asmc::Label *label1 = new asmc::Label();
   label1->logicalLine = this->logicalLine;
-  label1->label = ".L" + generator.nameTable.head->data.ident.ident +
-                  std::to_string(generator.labelCount);
-  generator.labelCount++;
+  label1->label = ".L" + generator.nameTable().head->data.ident.ident +
+                  std::to_string(generator.labelCount());
+  generator.labelCount()++;
 
   asmc::Label *label2 = new asmc::Label();
   label2->logicalLine = this->logicalLine;
-  label2->label = ".L" + generator.nameTable.head->data.ident.ident +
-                  std::to_string(generator.labelCount);
-  generator.labelCount++;
+  label2->label = ".L" + generator.nameTable().head->data.ident.ident +
+                  std::to_string(generator.labelCount());
+  generator.labelCount()++;
 
   asmc::Label *breakLabel = new asmc::Label();
   breakLabel->logicalLine = this->logicalLine;
-  breakLabel->label = ".L" + generator.nameTable.head->data.ident.ident +
-                      std::to_string(generator.labelCount);
-  generator.labelCount++;
+  breakLabel->label = ".L" + generator.nameTable().head->data.ident.ident +
+                      std::to_string(generator.labelCount());
+  generator.labelCount()++;
 
   asmc::Label *continueLabel = new asmc::Label();
   continueLabel->logicalLine = this->logicalLine;
-  continueLabel->label = ".L" + generator.nameTable.head->data.ident.ident +
-                         std::to_string(generator.labelCount);
-  generator.labelCount++;
+  continueLabel->label = ".L" + generator.nameTable().head->data.ident.ident +
+                         std::to_string(generator.labelCount());
+  generator.labelCount()++;
   OutputFile << generator.GenSTMT(this->declare);
   asmc::Jmp *jmp = new asmc::Jmp();
   jmp->to = label2->label;
@@ -84,8 +84,8 @@ gen::GenerationResult const For::generate(gen::CodeGenerator &generator) {
 
   OutputFile.text << label1;
 
-  generator.breakContext.push(breakLabel->label);
-  generator.continueContext.push(continueLabel->label);
+  generator.breakContext().push(breakLabel->label);
+  generator.continueContext().push(continueLabel->label);
 
   gen::scope::ScopeManager::getInstance()->pushScope(true);
   OutputFile << generator.GenSTMT(this->Run);
@@ -94,8 +94,8 @@ gen::GenerationResult const For::generate(gen::CodeGenerator &generator) {
   OutputFile << generator.GenSTMT(this->increment);
 
   OutputFile.text << label2;
-  generator.breakContext.pop();
-  generator.continueContext.pop();
+  generator.breakContext().pop();
+  generator.continueContext().pop();
 
   gen::Expr expr = generator.GenExpr(this->expr, OutputFile);
 
@@ -112,7 +112,7 @@ gen::GenerationResult const For::generate(gen::CodeGenerator &generator) {
 
   mov->from = expr.access;
 
-  mov->to = generator.registers["%eax"]->get(mov->size);
+  mov->to = generator.registers()["%eax"]->get(mov->size);
 
   asmc::Cmp *cmp = new asmc::Cmp();
   cmp->logicalLine = this->logicalLine;
@@ -129,7 +129,7 @@ gen::GenerationResult const For::generate(gen::CodeGenerator &generator) {
   OutputFile.text << je;
   OutputFile.text << breakLabel;
   gen::scope::ScopeManager::getInstance()->popScope(&generator, OutputFile);
-  generator.currentFunction->has_return = false;
+  generator.currentFunction()->has_return = false;
   return {OutputFile, std::nullopt};
 }
 

@@ -48,7 +48,7 @@ gen::GenerationResult const Enum::generate(gen::CodeGenerator &generator) {
   for (std::string s : this->values)
     type->values << gen::Enum::EnumValue(s, i++);
 
-  generator.typeList.push(type);
+  generator.typeList().push(type);
   return {asmc::File(), std::nullopt};
 }
 } // namespace ast

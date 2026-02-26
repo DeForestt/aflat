@@ -1162,7 +1162,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     gen::CodeGenerator genny(
         outputID, parser, content,
         std::filesystem::path(path).parent_path().string());
-    genny.mutability = mutability;
+    genny.mutability() = mutability;
     auto file = genny.GenSTMT(Prog);
     if (!gQuiet) {
       if (gProgress)

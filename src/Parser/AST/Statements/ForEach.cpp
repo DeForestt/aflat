@@ -43,13 +43,13 @@ ForEach::ForEach(links::LinkedList<lex::Token *> &tokens,
 gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
   asmc::File file;
   gen::scope::ScopeManager::getInstance()->pushScope(true);
-  generator.logicalLine = this->logicalLine;
+  generator.logicalLine() = this->logicalLine;
 
   auto decl = new ast::DecAssign();
   decl->logicalLine = this->logicalLine;
   decl->declare = new ast::Declare();
   decl->declare->logicalLine = this->logicalLine;
-  decl->declare->ident = "_foreach_" + std::to_string(generator.tempCount++);
+  decl->declare->ident = "_foreach_" + std::to_string(generator.tempCount()++);
   decl->declare->type.typeName = "let";
   decl->mute = false;
   decl->declare->mut = false;

@@ -46,13 +46,13 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
     generator.alert("Variable " + this->ident + " was sold on line " +
                     std::to_string(sym->sold) + " and cannot be deleted");
 
-  ast::Function *free = generator.nameTable["free"];
+  ast::Function *free = generator.nameTable()["free"];
   if (free == nullptr)
     generator.alert(
         "Please import std library in order to use delete operator.\n\n -> "
         ".needs <std> \n\n");
 
-  gen::Type **type = generator.typeList[sym->type.typeName];
+  gen::Type **type = generator.typeList()[sym->type.typeName];
   if (type != nullptr) {
     gen::Class *classType = dynamic_cast<gen::Class *>(*type);
     if (classType != nullptr) {

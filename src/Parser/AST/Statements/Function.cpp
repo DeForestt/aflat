@@ -178,19 +178,19 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
   // if the function is generic, do not generate code for it. It will be
   // generated when it is called with specific types.
   if (this->genericTypes.size() > 0) {
-    generator.genericFunctions << *this;
+    generator.genericFunctions() << *this;
     return {asmc::File(), std::nullopt};
   }
 
   bool hidden = false;
   asmc::File file;
-  ast::Function *saveFunc = generator.currentFunction;
-  int saveIntArgs = generator.intArgsCounter;
+  ast::Function *saveFunc = generator.currentFunction();
+  int saveIntArgs = generator.intArgsCounter();
   bool isLambda = this->isLambda;
 
-  if (generator.scope == nullptr || this->globalLocked) {
+  if (generator.scope() == nullptr || this->globalLocked) {
     if (!this->isLambda) {
-      if (auto firstInstance = generator.nameTable[this->ident.ident]) {
+      if (auto firstInstance = generator.nameTable()[this->ident.ident]) {
         bool forwardDeclaration =
             (firstInstance->statement == nullptr && this->statement != nullptr);
         if (!forwardDeclaration &&
@@ -200,45 +200,46 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
           this->ident.ident += "_ovl" + std::to_string(this->overloadIndex);
         }
       }
-      generator.nameTable << *this;
+      generator.nameTable() << *this;
     }
   } else {
     if (!this->isLambda)
-      this->scopeName = generator.scope->Ident;
-    generator.scope->nameTable << *this;
+      this->scopeName = generator.scope()->Ident;
+    generator.scope()->nameTable << *this;
     if (this->op != ast::None)
       if (!this->isLambda)
-        this->scopeName = generator.scope->Ident;
-    generator.scope->overloadTable << *this;
+        this->scopeName = generator.scope()->Ident;
+    generator.scope()->overloadTable << *this;
     if (this->scope == ast::Public)
       if (!this->isLambda)
-        generator.scope->publicNameTable << *this;
+        generator.scope()->publicNameTable << *this;
   }
 
   if (this->statement != nullptr && !this->hidden) {
     gen::scope::ScopeManager::getInstance()->pushScope(true);
-    generator.currentFunction = this;
-    bool saveIn = generator.inFunction;
-    generator.inFunction = true;
-    gen::Class *saveScope = generator.scope;
-    bool saveGlobal = generator.globalScope;
-    generator.globalScope = false;
+    generator.currentFunction() = this;
+    bool saveIn = generator.inFunction();
+    generator.inFunction() = true;
+    gen::Class *saveScope = generator.scope();
+    bool saveGlobal = generator.globalScope();
+    generator.globalScope() = false;
 
     auto label = new asmc::Label;
     label->logicalLine = this->logicalLine;
-    if (generator.scope == nullptr || this->isLambda || this->globalLocked)
+    if (generator.scope() == nullptr || this->isLambda || this->globalLocked)
       label->label = this->ident.ident;
     else
-      label->label = "pub_" + generator.scope->Ident + "_" + this->ident.ident;
+      label->label =
+          "pub_" + generator.scope()->Ident + "_" + this->ident.ident;
     if (this->scopeName != "global") {
       label->label = "pub_" + this->scopeName + "_" + this->ident.ident;
-      gen::Type *tScope = *generator.typeList[this->scopeName];
+      gen::Type *tScope = *generator.typeList()[this->scopeName];
       if (tScope == nullptr)
         generator.alert("Failed to locate function Scope");
       if (dynamic_cast<gen::Class *>(tScope) == nullptr)
         generator.alert("Can only scope to  a class");
-      generator.scope = dynamic_cast<gen::Class *>(tScope);
-      if (generator.scope->hidden) {
+      generator.scope() = dynamic_cast<gen::Class *>(tScope);
+      if (generator.scope()->hidden) {
         hidden = true;
       }
     }
@@ -256,10 +257,10 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       auto link = new asmc::LinkTask();
       link->logicalLine = this->logicalLine;
       link->command = "global";
-      link->operand = generator.moduleId + '.' + label->label;
+      link->operand = generator.moduleId() + '.' + label->label;
       file.linker.push(link);
       auto label2 = new asmc::Label();
-      label2->label = generator.moduleId + '.' + label->label;
+      label2->label = generator.moduleId() + '.' + label->label;
       file.text << label2;
     }
 
@@ -275,14 +276,14 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     push3->logicalLine = this->logicalLine;
 
     int AlignmentLoc = file.text.count;
-    generator.intArgsCounter = 0;
+    generator.intArgsCounter() = 0;
 
     this->useType = this->type;
 
-    if (generator.scope != nullptr && this->type.typeName == "Self") {
-      this->useType = Type(generator.scope->Ident, asmc::QWord);
+    if (generator.scope() != nullptr && this->type.typeName == "Self") {
+      this->useType = Type(generator.scope()->Ident, asmc::QWord);
       // needs to change useType in the class nameTables
-      auto cl = generator.typeList[this->scopeName];
+      auto cl = generator.typeList()[this->scopeName];
       if (cl != nullptr) {
         auto c = dynamic_cast<gen::Class *>(*cl);
         if (c != nullptr) {
@@ -298,21 +299,23 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       }
     }
 
-    generator.returnType = this->useType;
+    generator.returnType() = this->useType;
 
     auto link = new asmc::LinkTask();
     link->logicalLine = this->logicalLine;
     link->command = "global";
     link->operand = label->label;
 
-    if (generator.scope != nullptr && !this->isLambda && !this->globalLocked) {
+    if (generator.scope() != nullptr && !this->isLambda &&
+        !this->globalLocked) {
       // add the opo to the arguments of the function
       auto movy = new asmc::Mov();
       movy->logicalLine = this->logicalLine;
-      movy->from = generator.intArgs[generator.intArgsCounter].get(asmc::QWord);
+      movy->from =
+          generator.intArgs()[generator.intArgsCounter()].get(asmc::QWord);
 
       auto ty = ast::Type();
-      ty.typeName = generator.scope->Ident;
+      ty.typeName = generator.scope()->Ident;
       ty.size = asmc::QWord;
 
       int byteMod = gen::scope::ScopeManager::getInstance()->assign(
@@ -323,7 +326,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       movy->size = asmc::QWord;
       movy->to = "-" + std::to_string(byteMod) + +"(%rbp)";
       file.text << movy;
-      generator.intArgsCounter++;
+      generator.intArgsCounter()++;
     };
     int counter = 0;
     auto argmute = generator.GenArgs(this->args, file, *this, counter);
@@ -333,10 +336,10 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     file << argmute;
 
     // if the function is 'init' and scope is a class, add the default value
-    if (this->ident.ident == "init" && generator.scope != nullptr &&
+    if (this->ident.ident == "init" && generator.scope() != nullptr &&
         !globalLocked) {
       // add all of the default values from the scopes list
-      for (ast::DecAssign it : generator.scope->defaultValues) {
+      for (ast::DecAssign it : generator.scope()->defaultValues) {
         ast::Assign assign = ast::Assign();
         assign.Ident = ("my");
         assign.override = true;
@@ -350,7 +353,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     asmc::File statement = generator.GenSTMT(this->statement);
     // check if the last statement is a return statement
     if (statement.text.count > 0) {
-      if (!generator.currentFunction->has_return) {
+      if (!generator.currentFunction()->has_return) {
         // if the function name is init then we need to alert to return
         // 'my'
         if (this->ident.ident == "init") {
@@ -382,33 +385,33 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     sub->op1 =
         "$" + std::to_string(
                   gen::scope::ScopeManager::getInstance()->getStackAlignment());
-    sub->op2 = generator.registers["%rsp"]->get(asmc::QWord);
+    sub->op2 = generator.registers()["%rsp"]->get(asmc::QWord);
     file.text.insert(sub, AlignmentLoc + 1);
 
-    generator.scope = saveScope;
-    generator.globalScope = saveGlobal;
-    generator.inFunction = saveIn;
+    generator.scope() = saveScope;
+    generator.globalScope() = saveGlobal;
+    generator.inFunction() = saveIn;
     gen::scope::ScopeManager::getInstance()->popScope(&generator, file, true);
   }
 
-  generator.intArgsCounter = saveIntArgs;
-  generator.currentFunction = saveFunc;
+  generator.intArgsCounter() = saveIntArgs;
+  generator.currentFunction() = saveFunc;
   return {file, std::nullopt};
 };
 
 gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
   gen::Expr output;
   auto tn = useType.typeName != "" ? useType.typeName : type.typeName;
-  if (generator.scope != nullptr && tn == "Self") {
-    tn = generator.scope->Ident;
+  if (generator.scope() != nullptr && tn == "Self") {
+    tn = generator.scope()->Ident;
   }
   output.type = this->optional ? "option<" + tn + ">"
                 : this->error  ? "result<" + tn + ">"
                                : tn;
   output.size = this->optional || this->error ? asmc::QWord : this->type.size;
-  output.access = generator.registers["%rax"]->get(output.size);
+  output.access = generator.registers()["%rax"]->get(output.size);
   if (this->type.typeName == "float") {
-    output.access = generator.registers["%xmm0"]->get(output.size);
+    output.access = generator.registers()["%xmm0"]->get(output.size);
     output.op = asmc::Float;
   }
   return output;

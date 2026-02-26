@@ -132,7 +132,7 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   std::filesystem::path importPath = this->path;
   if (importPath.is_relative()) {
     if (!this->path.empty() && this->path[0] == '.') {
-      importPath = generator.cwd / importPath;
+      importPath = generator.cwd() / importPath;
     } else {
       importPath = gen::utils::getLibPath("src") / importPath;
     }
@@ -142,15 +142,15 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   importPath = std::filesystem::absolute(importPath).lexically_normal();
   this->path = importPath.string();
   this->cwd = importPath.parent_path().string();
-  auto prevCwd = generator.cwd;
-  generator.cwd = importPath.parent_path();
+  auto prevCwd = generator.cwd();
+  generator.cwd() = importPath.parent_path();
 
   std::string id = this->path.substr(this->path.find_last_of("/") + 1);
   // remove the .af extension
   id = id.substr(0, id.find_last_of("."));
   ast::Statement *added;
-  if (generator.includedMemo.contains(this->path))
-    added = generator.includedMemo.get(this->path);
+  if (generator.includedMemo().contains(this->path))
+    added = generator.includedMemo().get(this->path);
   else {
     // scan the file
     std::ifstream file(this->path);
@@ -162,11 +162,11 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
       file.open(this->path);
       if (!file.is_open()) {
         generator.alert("File " + this->path + " not found");
-        generator.cwd = prevCwd;
+        generator.cwd() = prevCwd;
         return {OutputFile, std::nullopt};
       }
       this->cwd = std::filesystem::path(this->path).parent_path().string();
-      generator.cwd = std::filesystem::path(this->path).parent_path();
+      generator.cwd() = std::filesystem::path(this->path).parent_path();
     }
 
     std::string text = std::string((std::istreambuf_iterator<char>(file)),
@@ -175,14 +175,14 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     PreProcessor pp = PreProcessor();
 
     auto tokens = l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head"),
-                                       generator.cwd.string()));
+                                       generator.cwd().string()));
     tokens.invert();
     // parse the file
     parse::Parser p = parse::Parser();
     ast::Statement *statement = p.parseStmt(tokens);
     auto Lowerer = parse::lower::Lowerer(statement);
     added = statement;
-    generator.includedMemo.insert(this->path, added);
+    generator.includedMemo().insert(this->path, added);
     generator.ImportsOnly(added);
   }
   std::unordered_map<std::string, std::string> nsMap;
@@ -197,9 +197,9 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
       }
       continue;
     }
-    if (generator.includedClasses.contains(id + "::" + ident))
+    if (generator.includedClasses().contains(id + "::" + ident))
       continue;
-    generator.includedClasses.insert(id + "::" + ident, nullptr);
+    generator.includedClasses().insert(id + "::" + ident, nullptr);
     auto allStmts = gen::utils::extractAll(ident, added, id);
     if (allStmts.size() <= 0) {
       generator.alert("Identifier " + ident + " not found to import");
@@ -211,8 +211,8 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     }
   }
   if (this->hasFunctions)
-    generator.nameSpaceTable.insert(this->nameSpace, id);
-  generator.cwd = prevCwd;
+    generator.nameSpaceTable().insert(this->nameSpace, id);
+  generator.cwd() = prevCwd;
   return {OutputFile, std::nullopt};
 }
 
@@ -222,7 +222,7 @@ Import::generateClasses(gen::CodeGenerator &generator) {
   std::filesystem::path importPath = this->path;
   if (importPath.is_relative()) {
     if (!this->path.empty() && this->path[0] == '.') {
-      importPath = generator.cwd / importPath;
+      importPath = generator.cwd() / importPath;
     } else {
       importPath = gen::utils::getLibPath("src") / importPath;
     }
@@ -232,14 +232,14 @@ Import::generateClasses(gen::CodeGenerator &generator) {
   importPath = std::filesystem::absolute(importPath).lexically_normal();
   this->path = importPath.string();
   this->cwd = importPath.parent_path().string();
-  auto prevCwd = generator.cwd;
-  generator.cwd = importPath.parent_path();
+  auto prevCwd = generator.cwd();
+  generator.cwd() = importPath.parent_path();
 
   std::string id = this->path.substr(this->path.find_last_of("/") + 1);
   id = id.substr(0, id.find_last_of("."));
   ast::Statement *added;
-  if (generator.includedMemo.contains(this->path))
-    added = generator.includedMemo.get(this->path);
+  if (generator.includedMemo().contains(this->path))
+    added = generator.includedMemo().get(this->path);
   else {
     std::ifstream file(this->path);
     if (!file.is_open()) {
@@ -248,11 +248,11 @@ Import::generateClasses(gen::CodeGenerator &generator) {
       file.open(this->path);
       if (!file.is_open()) {
         generator.alert("File " + this->path + " not found");
-        generator.cwd = prevCwd;
+        generator.cwd() = prevCwd;
         return {OutputFile, std::nullopt};
       }
       this->cwd = std::filesystem::path(this->path).parent_path().string();
-      generator.cwd = std::filesystem::path(this->path).parent_path();
+      generator.cwd() = std::filesystem::path(this->path).parent_path();
     }
 
     std::string text = std::string((std::istreambuf_iterator<char>(file)),
@@ -261,15 +261,15 @@ Import::generateClasses(gen::CodeGenerator &generator) {
     PreProcessor pp = PreProcessor();
 
     auto tokens = l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head"),
-                                       generator.cwd.string()));
+                                       generator.cwd().string()));
     tokens.invert();
     parse::Parser p = parse::Parser();
     if (this->path.find("./") != std::string::npos)
-      p.setMutability(generator.mutability);
+      p.setMutability(generator.mutability());
     ast::Statement *statement = p.parseStmt(tokens);
     auto Lowerer = parse::lower::Lowerer(statement);
     added = statement;
-    generator.includedMemo.insert(this->path, added);
+    generator.includedMemo().insert(this->path, added);
     generator.ImportsOnly(added);
   }
 
@@ -284,14 +284,14 @@ Import::generateClasses(gen::CodeGenerator &generator) {
         dynamic_cast<ast::Enum *>(statement) == nullptr &&
         dynamic_cast<ast::Transform *>(statement) == nullptr)
       continue;
-    if (generator.includedClasses.contains(id + "::" + ident))
+    if (generator.includedClasses().contains(id + "::" + ident))
       continue;
-    generator.includedClasses.insert(id + "::" + ident, nullptr);
+    generator.includedClasses().insert(id + "::" + ident, nullptr);
     statement->namespaceSwap(nsMap);
     OutputFile << generator.GenSTMT(statement);
   }
 
-  generator.cwd = prevCwd;
+  generator.cwd() = prevCwd;
   return {OutputFile, std::nullopt};
 }
 } // namespace ast

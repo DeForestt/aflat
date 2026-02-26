@@ -19,7 +19,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                                       asmc::Size size, std::string typeHint) {
   gen::Expr output;
   output.op = asmc::Hard;
-  this->logicalLine = expr->logicalLine;
+  logicalLine() = expr->logicalLine;
 
   if (dynamic_cast<ast::IntLiteral *>(expr) != nullptr) {
     ast::IntLiteral *intLit = dynamic_cast<ast::IntLiteral *>(expr);
@@ -45,11 +45,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     ast::Call *call = exprCall->call;
 
     // check if the call ident is a class name
-    Type **t = this->typeList[call->ident];
+    Type **t = typeList()[call->ident];
     bool genericCall = false;
 
     if (t == nullptr) {
-      auto cls = this->genericTypes[call->ident];
+      auto cls = genericTypes()[call->ident];
       if (cls != nullptr) {
         genericCall = true;
         std::string new_class_name;
@@ -58,7 +58,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         call->ident = new_class_name;
         if (t == nullptr) {
           alert("Something went wrong with the generic class " + call->ident +
-                    " in " + this->moduleId,
+                    " in " + moduleId(),
                 true, __FILE__, __LINE__);
         }
       }
@@ -84,12 +84,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
         //
         asmc::Lea *lea = new asmc::Lea();
-        lea->to = this->registers["%rax"]->get(asmc::QWord);
+        lea->to = registers()["%rax"]->get(asmc::QWord);
         lea->from = '-' + std::to_string(bMod) + "(%rbp)";
-        lea->logicalLine = this->logicalLine;
+        lea->logicalLine = logicalLine();
         // ASMC::Mov * mov = new ASMC::Mov();
         OutputFile.text << lea;
-        std::string pointer = registers["%rax"]->get(asmc::QWord);
+        std::string pointer = registers()["%rax"]->get(asmc::QWord);
 
         // check if the class has a constructor
         ast::Function *init = cl->nameTable["init"];
@@ -109,13 +109,13 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           asmc::Mov *mov = new asmc::Mov();
 
           asmc::Push *push = new asmc::Push();
-          push->op = mov->to = this->intArgs[0].get(asmc::QWord);
-          push->logicalLine = this->logicalLine;
+          push->op = mov->to = intArgs()[0].get(asmc::QWord);
+          push->logicalLine = logicalLine();
           OutputFile.text << push;
           mov->size = asmc::QWord;
-          mov->from = this->registers["%eax"]->get(asmc::QWord);
-          mov->to = this->intArgs[0].get(asmc::QWord);
-          mov->logicalLine = this->logicalLine;
+          mov->from = registers()["%eax"]->get(asmc::QWord);
+          mov->to = intArgs()[0].get(asmc::QWord);
+          mov->logicalLine = logicalLine();
           OutputFile.text << mov;
           gen::Expr afterInit = this->GenExpr(callInit, OutputFile);
           output.access = afterInit.access;
@@ -134,9 +134,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       if (size != asmc::AUTO &&
           (output.type == "any" || output.type == "--std--flex--function"))
         output.size = size;
-      output.access = this->registers["%rax"]->get(output.size);
+      output.access = registers()["%rax"]->get(output.size);
       if (output.type == "float") {
-        output.access = this->registers["%xmm0"]->get(output.size);
+        output.access = registers()["%xmm0"]->get(output.size);
         output.op = asmc::Float;
       }
     }
@@ -161,15 +161,15 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       std::string nsp;
       var.modList.invert();
       var.modList.reset();
-      if (this->nameSpaceTable.contains(var.Ident)) {
-        nsp = this->nameSpaceTable.get(ident) + ".";
+      if (nameSpaceTable().contains(var.Ident)) {
+        nsp = nameSpaceTable().get(ident) + ".";
         if (var.modList.trail() == 0)
           alert("NameSpace " + ident + " cannot be used as a variable", true,
                 __FILE__, __LINE__);
         ident = nsp + var.modList.shift();
       };
 
-      Type **t = this->typeList[ident];
+      Type **t = typeList()[ident];
       if (ident.find("<") != std::string::npos) {
         t = this->getType(ident, OutputFile);
       }
@@ -259,7 +259,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.size = asmc::Byte;
         output.access = "$0";
         output.type = "bool";
-      } else if (this->inFunction && var.Ident == "state") {
+      } else if (inFunction() && var.Ident == "state") {
         auto inScope = gen::scope::ScopeManager::getInstance()->getScope(true);
         gen::Class *cl = new gen::Class();
         cl->Ident = boost::uuids::to_string(boost::uuids::random_generator()());
@@ -275,7 +275,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           cl->publicSymbols.push(newSym);
         }
 
-        this->typeList.push(cl);
+        typeList().push(cl);
         auto tempDecl = new ast::Declare();
         tempDecl->type = ast::Type(cl->Ident, asmc::QWord);
         tempDecl->ident =
@@ -284,23 +284,23 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
         auto call = new ast::Call();
         call->ident = cl->Ident;
-        call->logicalLine = this->logicalLine;
+        call->logicalLine = logicalLine();
 
         auto callExpr = new ast::NewExpr();
         callExpr->type = tempDecl->type;
-        callExpr->logicalLine = this->logicalLine;
+        callExpr->logicalLine = logicalLine();
 
         auto tempDecAssign = new ast::DecAssign();
         tempDecAssign->declare = tempDecl;
         tempDecAssign->expr = callExpr;
         tempDecAssign->mute = false;
-        tempDecAssign->logicalLine = this->logicalLine;
+        tempDecAssign->logicalLine = logicalLine();
 
         OutputFile << tempDecAssign->generate(*this).file;
 
         auto tempVar = new ast::Var();
         tempVar->Ident = tempDecl->ident;
-        tempVar->logicalLine = this->logicalLine;
+        tempVar->logicalLine = logicalLine();
 
         // now we assign all the values to the new object
         for (auto sym : inScope) {
@@ -313,13 +313,13 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
             var->clean = true;
           assign->expr = var;
           assign->override = true;
-          assign->logicalLine = this->logicalLine;
+          assign->logicalLine = logicalLine();
           OutputFile << assign->generate(*this).file;
         }
 
         output = this->GenExpr(tempVar, OutputFile);
-      } else if (this->nameTable[ident] != nullptr) {
-        auto func = this->nameTable[ident];
+      } else if (nameTable()[ident] != nullptr) {
+        auto func = nameTable()[ident];
         auto typeName = func->type.typeName + "~";
         for (auto arg : func->argTypes) {
           typeName += arg.typeName + ",";
@@ -334,20 +334,19 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         newType->fPointerArgs.isFPointer = true;
         newType->fPointerArgs.requiredArgs = func->req;
 
-        this->TypeList.push(*newType);
+        TypeList().push(*newType);
 
         output.size = asmc::QWord;
-        output.access = '$' + this->nameTable[ident]->ident.ident;
+        output.access = '$' + nameTable()[ident]->ident.ident;
         output.type = typeName;
-      } else if (this->scope != nullptr &&
-                 this->scope->nameTable[ident] != nullptr) {
+      } else if (scope() != nullptr && scope()->nameTable[ident] != nullptr) {
         output.size = asmc::QWord;
-        output.access = "$pub_" + this->scope->Ident + "_" + ident;
+        output.access = "$pub_" + scope()->Ident + "_" + ident;
         output.type = "adr";
-      } else if (this->scope != nullptr && var.Ident == "__typeName__") {
+      } else if (scope() != nullptr && var.Ident == "__typeName__") {
         ast::StringLiteral *strLit = new ast::StringLiteral();
-        strLit->val = this->scope->Ident;
-        strLit->logicalLine = this->logicalLine;
+        strLit->val = scope()->Ident;
+        strLit->logicalLine = logicalLine();
         output = this->GenExpr(strLit, OutputFile);
       } else {
         alert("variable not found " + ident, true, __FILE__, __LINE__);
@@ -379,7 +378,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
         // check if the symbol type is a class
         auto cont = true;
-        gen::Type **t = this->typeList[sym.type.typeName];
+        gen::Type **t = typeList()[sym.type.typeName];
         if (t && !var.selling) {
           gen::Class *cl = dynamic_cast<gen::Class *>(*t);
           if (cl) {
@@ -406,14 +405,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         if (cont) {
           asmc::Mov *mov = new asmc::Mov();
           std::string move2 = (output.op == asmc::Float)
-                                  ? this->registers["%xmm0"]->get(asmc::QWord)
-                                  : this->registers["%r15"]->get(output.size);
+                                  ? registers()["%xmm0"]->get(asmc::QWord)
+                                  : registers()["%r15"]->get(output.size);
 
           mov->to = move2;
           mov->from = std::get<0>(resolved);
           mov->size = output.size;
           mov->op = output.op;
-          mov->logicalLine = this->logicalLine;
+          mov->logicalLine = logicalLine();
           OutputFile.text << mov;
           output.access = mov->to;
           OutputFile << std::get<3>(resolved);
@@ -450,7 +449,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     gen::Symbol *sym = &std::get<1>(resolved);
 
     // find the _sell function if it exists
-    gen::Type **type = this->typeList[sym->type.typeName];
+    gen::Type **type = typeList()[sym->type.typeName];
     if (type != nullptr) {
       gen::Class *classType = dynamic_cast<gen::Class *>(*type);
       if (classType != nullptr) {
@@ -465,7 +464,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           call->Args = LinkedList<ast::Expr *>();
           ast::CallExpr *callExpr = new ast::CallExpr();
           callExpr->call = call;
-          callExpr->logicalLine = this->logicalLine;
+          callExpr->logicalLine = logicalLine();
           output = this->GenExpr(callExpr, OutputFile);
         } else {
           // just sell it normally
@@ -479,7 +478,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     }
 
     // set the symbol to sold...
-    std::get<4>(resolved)->sold = this->logicalLine;
+    std::get<4>(resolved)->sold = logicalLine();
   } else if (dynamic_cast<ast::Reference *>(expr) != nullptr) {
     ast::Reference ref = *dynamic_cast<ast::Reference *>(expr);
 
@@ -488,16 +487,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                             links::LinkedList<ast::Expr *>(), ref.internal);
 
     asmc::Lea *lea = new asmc::Lea();
-    lea->logicalLine = this->logicalLine;
+    lea->logicalLine = logicalLine();
 
     if (std::get<2>(resolved)) {
       lea->from = std::get<0>(resolved);
     } else
       alert("variable not found " + ref.Ident, true, __FILE__, __LINE__);
-    lea->to = this->registers["%rax"]->get(asmc::QWord);
+    lea->to = registers()["%rax"]->get(asmc::QWord);
 
-    output.access = registers["%rax"]->get(asmc::QWord);
-    output.access = registers["%rax"]->get(asmc::QWord);
+    output.access = registers()["%rax"]->get(asmc::QWord);
+    output.access = registers()["%rax"]->get(asmc::QWord);
     output.size = asmc::QWord;
     output.op = asmc::OpType::Hard;
     output.type = "adr";
@@ -507,16 +506,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     ast::StringLiteral str = *dynamic_cast<ast::StringLiteral *>(expr);
     asmc::StringLiteral *strLit = new asmc::StringLiteral();
     asmc::Label *label = new asmc::Label();
-    strLit->logicalLine = this->logicalLine;
-    label->logicalLine = this->logicalLine;
-    if (this->scope == nullptr)
-      label->label = ".str" + this->nameTable.head->data.ident.ident +
-                     std::to_string(this->labelCount);
+    strLit->logicalLine = logicalLine();
+    label->logicalLine = logicalLine();
+    if (scope() == nullptr)
+      label->label = ".str" + nameTable().head->data.ident.ident +
+                     std::to_string(labelCount());
     else
-      label->label = ".str" + scope->Ident + '.' +
-                     scope->nameTable.head->data.ident.ident +
-                     std::to_string(this->labelCount);
-    this->labelCount++;
+      label->label = ".str" + scope()->Ident + '.' +
+                     scope()->nameTable.head->data.ident.ident +
+                     std::to_string(labelCount());
+    labelCount()++;
     strLit->value = str.val;
     OutputFile.data << label;
     OutputFile.data << strLit;
@@ -529,16 +528,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     auto call = new ast::CallExpr();
     call->call = new ast::Call();
     call->call->ident = "_fCstr";
-    call->call->logicalLine = this->logicalLine;
-    call->logicalLine = this->logicalLine;
+    call->call->logicalLine = logicalLine();
+    call->logicalLine = logicalLine();
 
     ast::StringLiteral *strLit = new ast::StringLiteral();
     strLit->val = str.val;
-    strLit->logicalLine = this->logicalLine;
+    strLit->logicalLine = logicalLine();
     call->call->Args << strLit;
 
     ast::StructList *list = new ast::StructList();
-    list->logicalLine = this->logicalLine;
+    list->logicalLine = logicalLine();
 
     // swap the placeholders with correct wildcard
     std::string::size_type pos;
@@ -552,7 +551,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
       auto exp = this->GenExpr(expr, file);
 
-      gen::Type **t = this->typeList[exp.type];
+      gen::Type **t = typeList()[exp.type];
       if (t) {
         gen::Class *cl = dynamic_cast<gen::Class *>(*t);
         if (cl && cl->Ident != "string") {
@@ -575,8 +574,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           ast::CallExpr *call = new ast::CallExpr();
           call->call = new ast::Call();
           call->call->ident = "toString";
-          call->call->logicalLine = this->logicalLine;
-          call->logicalLine = this->logicalLine;
+          call->call->logicalLine = logicalLine();
+          call->logicalLine = logicalLine();
           call->call->Args << expr;
           call->call->publify = cl->Ident;
           expr = call;
@@ -611,32 +610,32 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     ast::FloatLiteral *floatLit = dynamic_cast<ast::FloatLiteral *>(expr);
     asmc::FloatLiteral *fltLit = new asmc::FloatLiteral();
     asmc::Label *label = new asmc::Label();
-    fltLit->logicalLine = this->logicalLine;
-    label->logicalLine = this->logicalLine;
-    if (this->scope == nullptr)
-      label->label = ".float" + this->nameTable.head->data.ident.ident +
-                     std::to_string(this->labelCount);
+    fltLit->logicalLine = logicalLine();
+    label->logicalLine = logicalLine();
+    if (scope() == nullptr)
+      label->label = ".float" + nameTable().head->data.ident.ident +
+                     std::to_string(labelCount());
     else
-      label->label = ".float" + scope->Ident + '.' +
-                     scope->nameTable.head->data.ident.ident +
-                     std::to_string(this->labelCount);
-    this->labelCount++;
+      label->label = ".float" + scope()->Ident + '.' +
+                     scope()->nameTable.head->data.ident.ident +
+                     std::to_string(labelCount());
+    labelCount()++;
     fltLit->value = floatLit->val;
 
     // move value to the xmm0 register
     asmc::Mov *mov = new asmc::Mov();
     mov->size = asmc::DWord;
     mov->op = asmc::Float;
-    mov->to = this->registers["%xmm0"]->get(asmc::DWord);
+    mov->to = registers()["%xmm0"]->get(asmc::DWord);
     mov->from = label->label;
 
     output.op = asmc::Float;
-    mov->logicalLine = this->logicalLine;
+    mov->logicalLine = logicalLine();
 
     OutputFile.text << mov;
     OutputFile.data << label;
     OutputFile.data << fltLit;
-    output.access = this->registers["%xmm0"]->get(asmc::DWord);
+    output.access = registers()["%xmm0"]->get(asmc::DWord);
     output.size = asmc::DWord;
     output.type = "int";
   } else if (dynamic_cast<ast::DeReference *>(expr)) {
@@ -656,16 +655,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     asmc::Mov *mov = new asmc::Mov();
     asmc::Mov *mov2 = new asmc::Mov();
 
-    mov->logicalLine = this->logicalLine;
-    mov2->logicalLine = this->logicalLine;
+    mov->logicalLine = logicalLine();
+    mov2->logicalLine = logicalLine();
 
     mov->size = asmc::QWord;
     mov->from = std::get<0>(resolved);
-    mov->to = this->registers["%rax"]->get(asmc::QWord);
+    mov->to = registers()["%rax"]->get(asmc::QWord);
 
-    mov2->from = "(" + this->registers["%rax"]->get(asmc::QWord) + ")";
+    mov2->from = "(" + registers()["%rax"]->get(asmc::QWord) + ")";
     mov2->size = deRef.type.size;
-    mov2->to = this->registers["%rax"]->get(deRef.type.size);
+    mov2->to = registers()["%rax"]->get(deRef.type.size);
 
     output.access = mov2->to;
     output.size = mov2->size;
@@ -681,7 +680,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     // gen expr 1 and check if it is a class
     asmc::File dd = asmc::File();
     std::string optn = this->GenExpr(comp.expr1, dd).type;
-    gen::Type **type = this->typeList[optn];
+    gen::Type **type = typeList()[optn];
     if (type != nullptr) {
       gen::Class *cls = dynamic_cast<gen::Class *>(*type);
       if (cls != nullptr) {
@@ -692,7 +691,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     if (opor != nullptr) {
       ast::CallExpr *call = new ast::CallExpr();
-      call->logicalLine = this->logicalLine;
+      call->logicalLine = logicalLine();
       call->call = new ast::Call;
       call->call->logicalLine = comp.logicalLine;
       call->call->ident = opor->ident.ident;
@@ -708,12 +707,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     } else {
       // push rdi and rdx to stack
       asmc::Push *push1 = new asmc::Push();
-      push1->logicalLine = this->logicalLine;
-      push1->op = this->registers["%rdi"]->get(asmc::QWord);
+      push1->logicalLine = logicalLine();
+      push1->op = registers()["%rdi"]->get(asmc::QWord);
       OutputFile.text << push1;
       asmc::Push *push2 = new asmc::Push();
-      push2->logicalLine = this->logicalLine;
-      push2->op = this->registers["%rdx"]->get(asmc::QWord);
+      push2->logicalLine = logicalLine();
+      push2->op = registers()["%rdx"]->get(asmc::QWord);
       OutputFile.text << push2;
       output.op = asmc::Hard;
       output.owned = true;
@@ -746,21 +745,21 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
         this->prepareCompound(comp, OutputFile);
 
-        std::string to1 = this->registers["%cl"]->get(expr1.size);
-        std::string to2 = this->registers["%rdi"]->get(expr1.size);
-        output.access = this->registers["%rdi"]->get(expr1.size);
+        std::string to1 = registers()["%cl"]->get(expr1.size);
+        std::string to2 = registers()["%rdi"]->get(expr1.size);
+        output.access = registers()["%rdi"]->get(expr1.size);
 
         if (expr1.op == asmc::Float) {
-          to1 = this->registers["%xmm1"]->get(asmc::DWord);
-          to2 = this->registers["%xmm0"]->get(asmc::DWord);
+          to1 = registers()["%xmm1"]->get(asmc::DWord);
+          to2 = registers()["%xmm0"]->get(asmc::DWord);
           output.access = "%xmm0";
           output.op = asmc::Float;
         }
         // Move the value from edx to ecx
         asmc::Mov *mov = new asmc::Mov();
-        mov->logicalLine = this->logicalLine;
+        mov->logicalLine = logicalLine();
         mov->to = to1;
-        mov->from = this->registers["%rdx"]->get(expr1.size);
+        mov->from = registers()["%rdx"]->get(expr1.size);
         mov->size = expr1.size;
 
         OutputFile.text << mov;
@@ -768,18 +767,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         andBit->op2 = to2;
         andBit->op1 = "%cl";
         andBit->size = expr1.size;
-        andBit->logicalLine = this->logicalLine;
+        andBit->logicalLine = logicalLine();
         OutputFile.text << andBit;
-        output.access = this->registers["%rdi"]->get(expr1.size);
+        output.access = registers()["%rdi"]->get(expr1.size);
 
         // move access to rax
         asmc::Mov *mov2 = new asmc::Mov();
-        mov2->logicalLine = this->logicalLine;
-        mov2->to = this->registers["%rax"]->get(expr1.size);
+        mov2->logicalLine = logicalLine();
+        mov2->to = registers()["%rax"]->get(expr1.size);
         mov2->from = output.access;
         mov2->size = expr1.size;
         OutputFile.text << mov2;
-        output.access = this->registers["%rax"]->get(expr1.size);
+        output.access = registers()["%rax"]->get(expr1.size);
 
         break;
       }
@@ -790,13 +789,13 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
         this->prepareCompound(comp, OutputFile);
 
-        std::string to1 = this->registers["%cl"]->get(expr1.size);
-        std::string to2 = this->registers["%rdi"]->get(expr1.size);
-        output.access = this->registers["%rdi"]->get(expr1.size);
+        std::string to1 = registers()["%cl"]->get(expr1.size);
+        std::string to2 = registers()["%rdi"]->get(expr1.size);
+        output.access = registers()["%rdi"]->get(expr1.size);
 
         if (expr1.op == asmc::Float) {
-          to1 = this->registers["%xmm1"]->get(asmc::DWord);
-          to2 = this->registers["%xmm0"]->get(asmc::DWord);
+          to1 = registers()["%xmm1"]->get(asmc::DWord);
+          to2 = registers()["%xmm0"]->get(asmc::DWord);
           output.access = "%xmm0";
           output.op = asmc::Float;
         }
@@ -804,16 +803,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         // Move the value from edx to ecx
         asmc::Mov *mov = new asmc::Mov();
         mov->to = to1;
-        mov->from = this->registers["%rdx"]->get(expr1.size);
+        mov->from = registers()["%rdx"]->get(expr1.size);
         mov->size = expr1.size;
-        mov->logicalLine = this->logicalLine;
+        mov->logicalLine = logicalLine();
 
         OutputFile.text << mov;
 
         andBit->op2 = to2;
         andBit->op1 = "%cl";
         andBit->size = expr1.size;
-        andBit->logicalLine = this->logicalLine;
+        andBit->logicalLine = logicalLine();
 
         OutputFile.text << andBit;
 
@@ -823,12 +822,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
         // move access to rax
         asmc::Mov *mov2 = new asmc::Mov();
-        mov2->to = this->registers["%rax"]->get(expr1.size);
+        mov2->to = registers()["%rax"]->get(expr1.size);
         mov2->from = output.access;
         mov2->size = expr1.size;
-        mov2->logicalLine = this->logicalLine;
+        mov2->logicalLine = logicalLine();
         OutputFile.text << mov2;
-        output.access = this->registers["%rax"]->get(expr1.size);
+        output.access = registers()["%rax"]->get(expr1.size);
         break;
       }
       case ast::Mul: {
@@ -838,7 +837,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
       case ast::Div: {
         asmc::Div *div = new asmc::Div();
-        div->logicalLine = this->logicalLine;
+        div->logicalLine = logicalLine();
 
         gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
         gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy, expr1.size);
@@ -847,39 +846,39 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         div->opType = expr1.op;
         div->size = expr1.size;
 
-        std::string to1 = this->registers["%rdx"]->get(expr1.size);
-        std::string to2 = this->registers["%rax"]->get(expr1.size);
-        output.access = this->registers["%rax"]->get(expr1.size);
+        std::string to1 = registers()["%rdx"]->get(expr1.size);
+        std::string to2 = registers()["%rax"]->get(expr1.size);
+        output.access = registers()["%rax"]->get(expr1.size);
 
         if (expr1.op == asmc::Float) {
-          to1 = this->registers["%xmm1"]->get(asmc::DWord);
-          to2 = this->registers["%xmm0"]->get(asmc::DWord);
+          to1 = registers()["%xmm1"]->get(asmc::DWord);
+          to2 = registers()["%xmm0"]->get(asmc::DWord);
           output.access = "%xmm0";
           div->op1 = to1;
           div->op2 = to2;
-          div->logicalLine = this->logicalLine;
+          div->logicalLine = logicalLine();
           this->prepareCompound(comp, OutputFile);
           output.op = asmc::Float;
         } else {
           asmc::Mov *mov = new asmc::Mov;
-          mov->logicalLine = this->logicalLine;
+          mov->logicalLine = logicalLine();
           asmc::Mov *eax = new asmc::Mov;
-          eax->logicalLine = this->logicalLine;
+          eax->logicalLine = logicalLine();
           expr1 = this->GenExpr(comp.expr1, OutputFile);
 
           eax->from = expr1.access;
-          eax->to = this->registers["%rax"]->get(expr1.size);
+          eax->to = registers()["%rax"]->get(expr1.size);
           eax->size = expr1.size;
           OutputFile.text << eax;
           mov->op = expr1.op;
 
           expr2 = this->GenExpr(comp.expr2, OutputFile, expr1.size);
           mov->from = expr2.access;
-          mov->to = this->registers["%rcx"]->get(expr1.size);
+          mov->to = registers()["%rcx"]->get(expr1.size);
           mov->size = expr1.size;
           mov->op = expr1.op;
           div->op1 = mov->to;
-          output.access = this->registers["%rax"]->get(expr1.size);
+          output.access = registers()["%rax"]->get(expr1.size);
 
           OutputFile.text << mov;
         }
@@ -891,18 +890,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
       case ast::Mod: {
         asmc::Div *div = new asmc::Div();
-        div->logicalLine = this->logicalLine;
+        div->logicalLine = logicalLine();
 
-        this->selectReg = 0;
+        selectReg() = 0;
         gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
-        this->selectReg = 1;
+        selectReg() = 1;
         gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy);
 
         div->op1 = expr2.access;
 
         if (expr1.op == asmc::Float) {
-          std::string to1 = this->registers["%xmm1"]->get(asmc::DWord);
-          std::string to2 = this->registers["%xmm0"]->get(asmc::DWord);
+          std::string to1 = registers()["%xmm1"]->get(asmc::DWord);
+          std::string to2 = registers()["%xmm0"]->get(asmc::DWord);
           output.access = "%xmm1";
           output.op = asmc::Float;
           div->op1 = to1;
@@ -910,33 +909,33 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           this->prepareCompound(comp, OutputFile);
         } else {
           asmc::Mov *mov = new asmc::Mov;
-          mov->logicalLine = this->logicalLine;
+          mov->logicalLine = logicalLine();
           asmc::Mov *eax = new asmc::Mov;
-          eax->logicalLine = this->logicalLine;
+          eax->logicalLine = logicalLine();
           expr1 = this->GenExpr(comp.expr1, OutputFile);
 
           eax->from = expr1.access;
-          eax->to = this->registers["%rax"]->get(expr1.size);
+          eax->to = registers()["%rax"]->get(expr1.size);
           eax->size = expr1.size;
           OutputFile.text << eax;
           mov->op = expr1.op;
 
           expr2 = this->GenExpr(comp.expr2, OutputFile, expr1.size);
           mov->from = expr2.access;
-          mov->to = this->registers["%rcx"]->get(expr1.size);
+          mov->to = registers()["%rcx"]->get(expr1.size);
           mov->size = expr1.size;
           mov->op = expr1.op;
           div->op1 = mov->to;
-          output.access = this->registers["%rax"]->get(expr1.size);
+          output.access = registers()["%rax"]->get(expr1.size);
 
           OutputFile.text << mov;
         }
 
         // Move the value from edx to eax
         asmc::Mov *mov = new asmc::Mov();
-        mov->logicalLine = this->logicalLine;
+        mov->logicalLine = logicalLine();
         mov->to = output.access;
-        mov->from = this->registers["%rdx"]->get(expr1.size);
+        mov->from = registers()["%rdx"]->get(expr1.size);
         mov->size = expr1.size;
 
         OutputFile.text << div;
@@ -948,22 +947,22 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
       case ast::CompEqu: {
         asmc::Cmp *cmp = new asmc::Cmp();
-        cmp->logicalLine = this->logicalLine;
+        cmp->logicalLine = logicalLine();
         gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
         cmp->size = expr1.size;
-        cmp->to = this->registers["%rdi"]->get(expr1.size);
-        cmp->from = this->registers["%rdx"]->get(expr1.size);
+        cmp->to = registers()["%rdi"]->get(expr1.size);
+        cmp->from = registers()["%rdx"]->get(expr1.size);
 
         if (expr1.op == asmc::Float) {
-          cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
-          cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+          cmp->to = registers()["%xmm0"]->get(asmc::DWord);
+          cmp->from = registers()["%xmm1"]->get(asmc::DWord);
           cmp->op = asmc::Float;
         }
 
         asmc::Sete *sete = new asmc::Sete();
-        sete->logicalLine = this->logicalLine;
-        sete->op = this->registers["%rax"]->get(asmc::Byte);
+        sete->logicalLine = logicalLine();
+        sete->op = registers()["%rax"]->get(asmc::Byte);
 
         OutputFile.text << cmp;
         OutputFile.text << sete;
@@ -975,22 +974,22 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
       case ast::LessCmp: {
         asmc::Cmp *cmp = new asmc::Cmp();
-        cmp->logicalLine = this->logicalLine;
+        cmp->logicalLine = logicalLine();
         gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
         cmp->size = expr1.size;
-        cmp->to = this->registers["%rdi"]->get(expr1.size);
-        cmp->from = this->registers["%rdx"]->get(expr1.size);
+        cmp->to = registers()["%rdi"]->get(expr1.size);
+        cmp->from = registers()["%rdx"]->get(expr1.size);
 
         if (expr1.op == asmc::Float) {
-          cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
-          cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+          cmp->to = registers()["%xmm0"]->get(asmc::DWord);
+          cmp->from = registers()["%xmm1"]->get(asmc::DWord);
           cmp->op = asmc::Float;
         }
 
         asmc::Setl *setl = new asmc::Setl();
-        setl->logicalLine = this->logicalLine;
-        setl->op = this->registers["%rax"]->get(asmc::Byte);
+        setl->logicalLine = logicalLine();
+        setl->op = registers()["%rax"]->get(asmc::Byte);
 
         OutputFile.text << cmp;
         OutputFile.text << setl;
@@ -1002,22 +1001,22 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
       case ast::GreatCmp: {
         asmc::Cmp *cmp = new asmc::Cmp();
-        cmp->logicalLine = this->logicalLine;
+        cmp->logicalLine = logicalLine();
         gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
         cmp->size = expr1.size;
-        cmp->to = this->registers["%rdi"]->get(expr1.size);
-        cmp->from = this->registers["%rdx"]->get(expr1.size);
+        cmp->to = registers()["%rdi"]->get(expr1.size);
+        cmp->from = registers()["%rdx"]->get(expr1.size);
 
         if (expr1.op == asmc::Float) {
-          cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
-          cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+          cmp->to = registers()["%xmm0"]->get(asmc::DWord);
+          cmp->from = registers()["%xmm1"]->get(asmc::DWord);
           cmp->op = asmc::Float;
         }
 
         asmc::Setg *setg = new asmc::Setg();
-        setg->logicalLine = this->logicalLine;
-        setg->op = this->registers["%rax"]->get(asmc::Byte);
+        setg->logicalLine = logicalLine();
+        setg->op = registers()["%rax"]->get(asmc::Byte);
 
         OutputFile.text << cmp;
         OutputFile.text << setg;
@@ -1029,22 +1028,22 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
       case ast::Leq: {
         asmc::Cmp *cmp = new asmc::Cmp();
-        cmp->logicalLine = this->logicalLine;
+        cmp->logicalLine = logicalLine();
         gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
         cmp->size = expr1.size;
-        cmp->to = this->registers["%rdi"]->get(expr1.size);
-        cmp->from = this->registers["%rdx"]->get(expr1.size);
+        cmp->to = registers()["%rdi"]->get(expr1.size);
+        cmp->from = registers()["%rdx"]->get(expr1.size);
 
         if (expr1.op == asmc::Float) {
-          cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
-          cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+          cmp->to = registers()["%xmm0"]->get(asmc::DWord);
+          cmp->from = registers()["%xmm1"]->get(asmc::DWord);
           cmp->op = asmc::Float;
         }
 
         asmc::Setle *setle = new asmc::Setle();
-        setle->logicalLine = this->logicalLine;
-        setle->op = this->registers["%rax"]->get(asmc::Byte);
+        setle->logicalLine = logicalLine();
+        setle->op = registers()["%rax"]->get(asmc::Byte);
 
         OutputFile.text << cmp;
         OutputFile.text << setle;
@@ -1056,22 +1055,22 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
       case ast::Geq: {
         asmc::Cmp *cmp = new asmc::Cmp();
-        cmp->logicalLine = this->logicalLine;
+        cmp->logicalLine = logicalLine();
         gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
         cmp->size = expr1.size;
-        cmp->to = this->registers["%rdi"]->get(expr1.size);
-        cmp->from = this->registers["%rdx"]->get(expr1.size);
+        cmp->to = registers()["%rdi"]->get(expr1.size);
+        cmp->from = registers()["%rdx"]->get(expr1.size);
 
         if (expr1.op == asmc::Float) {
-          cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
-          cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+          cmp->to = registers()["%xmm0"]->get(asmc::DWord);
+          cmp->from = registers()["%xmm1"]->get(asmc::DWord);
           cmp->op = asmc::Float;
         }
 
         asmc::Setge *setge = new asmc::Setge();
-        setge->logicalLine = this->logicalLine;
-        setge->op = this->registers["%rax"]->get(asmc::Byte);
+        setge->logicalLine = logicalLine();
+        setge->op = registers()["%rax"]->get(asmc::Byte);
 
         OutputFile.text << cmp;
         OutputFile.text << setge;
@@ -1083,22 +1082,22 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
       case ast::NotEqu: {
         asmc::Cmp *cmp = new asmc::Cmp();
-        cmp->logicalLine = this->logicalLine;
+        cmp->logicalLine = logicalLine();
         gen::Expr expr1 = this->prepareCompound(comp, OutputFile);
 
         cmp->size = expr1.size;
-        cmp->to = this->registers["%rdi"]->get(expr1.size);
-        cmp->from = this->registers["%rdx"]->get(expr1.size);
+        cmp->to = registers()["%rdi"]->get(expr1.size);
+        cmp->from = registers()["%rdx"]->get(expr1.size);
 
         if (expr1.op == asmc::Float) {
-          cmp->to = this->registers["%xmm0"]->get(asmc::DWord);
-          cmp->from = this->registers["%xmm1"]->get(asmc::DWord);
+          cmp->to = registers()["%xmm0"]->get(asmc::DWord);
+          cmp->from = registers()["%xmm1"]->get(asmc::DWord);
           cmp->op = asmc::Float;
         }
 
         asmc::Setne *setne = new asmc::Setne();
-        setne->logicalLine = this->logicalLine;
-        setne->op = this->registers["%rax"]->get(asmc::Byte);
+        setne->logicalLine = logicalLine();
+        setne->op = registers()["%rax"]->get(asmc::Byte);
 
         OutputFile.text << cmp;
         OutputFile.text << setne;
@@ -1115,12 +1114,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
       // pop rdx and rdi
       asmc::Pop *pop = new asmc::Pop();
-      pop->logicalLine = this->logicalLine;
-      pop->op = this->registers["%rdx"]->get(asmc::QWord);
+      pop->logicalLine = logicalLine();
+      pop->op = registers()["%rdx"]->get(asmc::QWord);
       OutputFile.text << pop;
       asmc::Pop *pop2 = new asmc::Pop();
-      pop2->logicalLine = this->logicalLine;
-      pop2->op = this->registers["%rdi"]->get(asmc::QWord);
+      pop2->logicalLine = logicalLine();
+      pop2->op = registers()["%rdi"]->get(asmc::QWord);
       OutputFile.text << pop2;
     }
 
@@ -1135,16 +1134,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   } else if (dynamic_cast<ast::Lambda *>(expr) != nullptr) {
     ast::Lambda lambda = *dynamic_cast<ast::Lambda *>(expr);
     ast::Function *func = lambda.function;
-    bool inFunc = this->inFunction;
-    bool gScope = this->globalScope;
+    bool inFunc = inFunction();
+    bool gScope = globalScope();
 
     auto mills = std::chrono::duration_cast<std::chrono::milliseconds>(
                      std::chrono::system_clock::now().time_since_epoch())
                      .count();
     std::string id =
-        "lambda_" + std::to_string(mills) + "_" + std::to_string(labelCount);
+        "lambda_" + std::to_string(mills) + "_" + std::to_string(labelCount());
     func->ident.ident = id;
-    labelCount++;
+    labelCount()++;
     func->scopeName = "global";
     func->isLambda = true;
 
@@ -1152,30 +1151,30 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       OutputFile.lambdas = new asmc::File;
     OutputFile.hasLambda = true;
 
-    this->nameTable.push(*func);
-    ast::Type saveRetType = this->returnType;
+    nameTable().push(*func);
+    ast::Type saveRetType = returnType();
 
-    auto saveLambdaReturns = this->lambdaReturns = "void";
-    auto saveLambdaSize = this->lambdaSize = asmc::QWord;
+    auto saveLambdaReturns = lambdaReturns() = "void";
+    auto saveLambdaSize = lambdaSize() = asmc::QWord;
 
     if (func->autoType) {
       ;
-      this->returnType.typeName = "--std--flex--function";
+      returnType().typeName = "--std--flex--function";
     } else {
-      this->returnType = func->type;
-      this->lambdaReturns = func->type.typeName;
-      this->lambdaSize = func->type.size;
+      returnType() = func->type;
+      lambdaReturns() = func->type.typeName;
+      lambdaSize() = func->type.size;
     }
 
     gen::scope::ScopeManager::getInstance()->pushScope(true);
     OutputFile.lambdas->operator<<(this->GenSTMT(func));
     gen::scope::ScopeManager::getInstance()->popScope(this, OutputFile);
 
-    this->returnType = saveRetType;
+    returnType() = saveRetType;
 
-    this->nameTable.pop();
+    nameTable().pop();
 
-    auto typeName = lambdaReturns + "~";
+    auto typeName = lambdaReturns() + "~";
     for (auto arg : func->argTypes) {
       typeName += arg.typeName;
       typeName += ",";
@@ -1187,15 +1186,15 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     auto type = new ast::Type(typeName, asmc::QWord);
     type->fPointerArgs.argTypes = func->argTypes;
     type->fPointerArgs.returnType =
-        new ast::Type(lambdaReturns, this->lambdaSize);
+        new ast::Type(lambdaReturns(), lambdaSize());
     type->fPointerArgs.isFPointer = true;
     type->fPointerArgs.requiredArgs = func->req;
-    this->TypeList.push(*type);
+    TypeList().push(*type);
 
-    this->inFunction = inFunc;
-    this->globalScope = gScope;
-    this->lambdaReturns = saveLambdaReturns;
-    this->lambdaSize = saveLambdaSize;
+    inFunction() = inFunc;
+    globalScope() = gScope;
+    lambdaReturns() = saveLambdaReturns;
+    lambdaSize() = saveLambdaSize;
 
     output.access = "$" + id;
     output.size = asmc::QWord;
@@ -1203,7 +1202,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.owned = true;
   } else if (dynamic_cast<ast::NewExpr *>(expr) != nullptr) {
     ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);
-    ast::Function *malloc = this->nameTable["malloc"];
+    ast::Function *malloc = nameTable()["malloc"];
 
     if (newExpr.type.typeName == "Map" &&
         typeHint.rfind("unordered_map", 0) == 0) {
@@ -1262,13 +1261,13 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       callInit->call->modList = links::LinkedList<std::string>();
       callInit->call->publify = cl->Ident;
       asmc::Mov *mov = new asmc::Mov();
-      mov->logicalLine = this->logicalLine;
+      mov->logicalLine = logicalLine();
       asmc::Push *push = new asmc::Push();
-      push->logicalLine = this->logicalLine;
-      push->op = mov->to = this->registers["%rdi"]->get(asmc::QWord);
+      push->logicalLine = logicalLine();
+      push->op = mov->to = registers()["%rdi"]->get(asmc::QWord);
       OutputFile.text << push;
       mov->size = asmc::QWord;
-      mov->from = this->registers["%eax"]->get(asmc::QWord);
+      mov->from = registers()["%eax"]->get(asmc::QWord);
       OutputFile.text << mov;
       gen::Expr afterInit = this->GenExpr(callInit, OutputFile);
       output.access = afterInit.access;
@@ -1284,14 +1283,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     gen::Expr expr = this->GenExpr(no.expr, OutputFile);
 
     asmc::Movzbl *movzbl = new asmc::Movzbl();
-    movzbl->logicalLine = this->logicalLine;
+    movzbl->logicalLine = logicalLine();
     movzbl->from = expr.access;
-    movzbl->to = this->registers["%eax"]->get(asmc::DWord);
+    movzbl->to = registers()["%eax"]->get(asmc::DWord);
 
     asmc::Xor *xr = new asmc::Xor();
-    xr->logicalLine = this->logicalLine;
+    xr->logicalLine = logicalLine();
     xr->op1 = "$1";
-    xr->op2 = this->registers["%eax"]->get(asmc::DWord);
+    xr->op2 = registers()["%eax"]->get(asmc::DWord);
 
     ast::Type boolType = ast::Type();
 
@@ -1306,7 +1305,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     OutputFile.text << xr;
     output.size = asmc::Byte;
     output.type = boolType.typeName;
-    output.access = this->registers["%eax"]->get(asmc::Byte);
+    output.access = registers()["%eax"]->get(asmc::Byte);
   } else if (dynamic_cast<ast::StructList *>(expr) != nullptr) {
     ast::StructList structList = *dynamic_cast<ast::StructList *>(expr);
     structList.args.invert();
@@ -1342,14 +1341,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       ast::Expr *expr = structList.args.shift();
       gen::Expr genExpr = this->GenExpr(expr, OutputFile);
       asmc::Mov *mov = new asmc::Mov();
-      mov->logicalLine = this->logicalLine;
+      mov->logicalLine = logicalLine();
       mov->from = genExpr.access;
-      mov->to = this->registers["%eax"]->get(genExpr.size);
+      mov->to = registers()["%eax"]->get(genExpr.size);
       mov->size = genExpr.size;
       OutputFile.text << mov;
       asmc::Mov *mov2 = new asmc::Mov();
-      mov2->logicalLine = this->logicalLine;
-      mov2->from = this->registers["%eax"]->get(genExpr.size);
+      mov2->logicalLine = logicalLine();
+      mov2->from = registers()["%eax"]->get(genExpr.size);
       mov2->to = "-" + std::to_string(bMod - offset) + "(%rbp)";
       mov2->size = genExpr.size;
       OutputFile.text << mov2;
@@ -1358,12 +1357,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     // create a pointer to the struct
     asmc::Lea *lea = new asmc::Lea();
-    lea->logicalLine = this->logicalLine;
+    lea->logicalLine = logicalLine();
     lea->from = "-" + std::to_string(bMod) + "(%rbp)";
-    lea->to = this->registers["%rax"]->get(asmc::QWord);
+    lea->to = registers()["%rax"]->get(asmc::QWord);
     OutputFile.text << lea;
 
-    output.access = this->registers["%rax"]->get(asmc::QWord);
+    output.access = registers()["%rax"]->get(asmc::QWord);
     output.size = asmc::QWord;
     output.type = "adr";
   } else if (dynamic_cast<ast::IfExpr *>(expr) != nullptr) {
@@ -1371,14 +1370,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     asmc::Label *label1 = new asmc::Label();
     label1->logicalLine = ifExpr->logicalLine;
-    label1->label = ".L" + this->nameTable.head->data.ident.ident +
-                    std::to_string(this->labelCount);
-    this->labelCount++;
+    label1->label = ".L" + nameTable().head->data.ident.ident +
+                    std::to_string(labelCount());
+    labelCount()++;
     asmc::Label *label2 = new asmc::Label();
     label2->logicalLine = ifExpr->logicalLine;
-    label2->label = ".L" + this->nameTable.head->data.ident.ident +
-                    std::to_string(this->labelCount);
-    this->labelCount++;
+    label2->label = ".L" + nameTable().head->data.ident.ident +
+                    std::to_string(labelCount());
+    labelCount()++;
 
     gen::Expr cond = this->GenExpr(ifExpr->expr, OutputFile);
     ast::Type boolType = ast::Type();
@@ -1389,35 +1388,35 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                     "if condition must be a bool cannot resolve {} and {}");
 
     asmc::Mov *mov = new asmc::Mov();
-    mov->logicalLine = this->logicalLine;
+    mov->logicalLine = logicalLine();
     mov->from = cond.access;
-    mov->to = this->registers["%eax"]->get(asmc::Byte);
+    mov->to = registers()["%eax"]->get(asmc::Byte);
     mov->size = asmc::Byte;
     OutputFile.text << mov;
 
     asmc::Cmp *cmp = new asmc::Cmp();
-    cmp->logicalLine = this->logicalLine;
+    cmp->logicalLine = logicalLine();
     cmp->from = "$0";
-    cmp->to = this->registers["%eax"]->get(asmc::Byte);
+    cmp->to = registers()["%eax"]->get(asmc::Byte);
     cmp->size = asmc::Byte;
 
     OutputFile.text << cmp;
 
     asmc::Je *je = new asmc::Je();
-    je->logicalLine = this->logicalLine;
+    je->logicalLine = logicalLine();
     je->to = label1->label;
     OutputFile.text << je;
 
     gen::Expr trueExpr = this->GenExpr(ifExpr->trueExpr, OutputFile);
     asmc::Mov *mov2 = new asmc::Mov();
-    mov2->logicalLine = this->logicalLine;
+    mov2->logicalLine = logicalLine();
     mov2->from = trueExpr.access;
-    mov2->to = this->registers["%eax"]->get(trueExpr.size);
+    mov2->to = registers()["%eax"]->get(trueExpr.size);
     mov2->size = trueExpr.size;
     OutputFile.text << mov2;
 
     asmc::Jmp *jmp = new asmc::Jmp();
-    jmp->logicalLine = this->logicalLine;
+    jmp->logicalLine = logicalLine();
     jmp->to = label2->label;
     OutputFile.text << jmp;
 
@@ -1427,9 +1426,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                   __LINE__);
     gen::Expr falseExpr = this->GenExpr(ifExpr->falseExpr, OutputFile);
     asmc::Mov *mov3 = new asmc::Mov();
-    mov3->logicalLine = this->logicalLine;
+    mov3->logicalLine = logicalLine();
     mov3->from = falseExpr.access;
-    mov3->to = this->registers["%eax"]->get(falseExpr.size);
+    mov3->to = registers()["%eax"]->get(falseExpr.size);
     mov3->size = falseExpr.size;
     OutputFile.text << mov3;
 
@@ -1441,7 +1440,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         type, falseExpr.type,
         "if expression must return the same type cannot resolve {} and {}");
 
-    output.access = this->registers["%eax"]->get(trueExpr.size);
+    output.access = registers()["%eax"]->get(trueExpr.size);
     output.size = trueExpr.size;
     output.type = trueExpr.type;
   } else {
@@ -1459,12 +1458,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     type.typeName = output.type;
     type.size = output.size;
 
-    const auto tempName = "$" + std::to_string(this->tempCount++) + "_temp";
+    const auto tempName = "$" + std::to_string(tempCount()++) + "_temp";
 
     auto mod =
         gen::scope::ScopeManager::getInstance()->assign(tempName, type, false);
     auto mov2 = new asmc::Mov();
-    mov2->logicalLine = this->logicalLine;
+    mov2->logicalLine = logicalLine();
     mov2->from = output.access;
     mov2->to = "-" + std::to_string(mod) + "(%rbp)";
     mov2->size = output.size;

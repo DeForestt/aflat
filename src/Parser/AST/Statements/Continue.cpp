@@ -16,9 +16,9 @@ Continue::Continue(links::LinkedList<lex::Token *> &tokens) {
 
 gen::GenerationResult const Continue::generate(gen::CodeGenerator &generator) {
   asmc::File OutputFile;
-  if (generator.continueContext.size() == 0)
+  if (generator.continueContext().size() == 0)
     generator.alert("Attempted to continue outside of a loop");
-  if (generator.continueContext.size() < this->level)
+  if (generator.continueContext().size() < this->level)
     generator.alert("Attempted to continue deeper than the current loop");
 
   // we need to pop the scope before continuing to avoid memory leaks
@@ -26,7 +26,7 @@ gen::GenerationResult const Continue::generate(gen::CodeGenerator &generator) {
   int index = this->level - 1;
   asmc::Jmp *jmp = new asmc::Jmp();
   jmp->logicalLine = this->logicalLine;
-  jmp->to = generator.continueContext.get(index);
+  jmp->to = generator.continueContext().get(index);
   OutputFile.text << jmp;
   return {OutputFile, std::nullopt};
 }

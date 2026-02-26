@@ -88,7 +88,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   // if the class is generic, do not generate code for it. It will be
   // generated when it is instantiated with specific types.
   if (this->genericTypes.size() > 0) {
-    generator.genericTypes.insert(
+    generator.genericTypes().insert(
         {this->ident.ident, this}); // add the class to the generic types
     return {asmc::File(), std::nullopt};
   }
@@ -102,7 +102,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
         generator.alert("@Apply needs 1 argument");
       auto ident = annotations.args[0];
       // find the class in the typeList
-      gen::Type **T = generator.typeList[ident];
+      gen::Type **T = generator.typeList()[ident];
       if (T == nullptr)
         generator.alert("Class not found");
       gen::Class *base = dynamic_cast<gen::Class *>(*T);
@@ -116,8 +116,8 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   gen::Class *type = new gen::Class();
   type->hidden = this->hidden;
   type->body = this->statement; // save the body in case of composition
-  bool saveScope = generator.globalScope;
-  generator.globalScope = false;
+  bool saveScope = generator.globalScope();
+  generator.globalScope() = false;
   type->Ident = this->ident.ident;
   type->nameTable.foo = gen::utils::compareFunc;
   type->publicNameTable.foo = gen::utils::compareFunc;
@@ -125,7 +125,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   type->dynamic = this->dynamic;
   type->pedantic = this->pedantic;
   type->uniqueType = this->uniqueType;
-  generator.scope = type;
+  generator.scope() = type;
   type->overloadTable.foo = [](ast::Function func, ast::Op op) {
     if (func.op == op) {
       return true;
@@ -133,10 +133,10 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
     return false;
   };
   type->SymbolTable;
-  generator.typeList.push(type);
+  generator.typeList().push(type);
   // write any signed contracts
   if (this->base != "") {
-    gen::Type **T = generator.typeList[this->base];
+    gen::Type **T = generator.typeList()[this->base];
     if (T != nullptr) {
       gen::Class *base = dynamic_cast<gen::Class *>(*T);
       asmc::File contractFile;
@@ -199,7 +199,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   asmc::File file = generator.GenSTMT(this->statement);
 
   if (gen::utils::extract("init", this->statement) == nullptr &&
-      generator.scope->defaultValues.size() > 0) {
+      generator.scope()->defaultValues.size() > 0) {
     ast::Function *func = new ast::Function();
     func->logicalLine = this->logicalLine;
     ast::Return *ret = new ast::Return();
@@ -220,8 +220,8 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
     file << generator.GenSTMT(func);
   }
   OutputFile << file;
-  generator.globalScope = saveScope;
-  generator.scope = nullptr;
+  generator.globalScope() = saveScope;
+  generator.scope() = nullptr;
 
   return {OutputFile, std::nullopt};
 }

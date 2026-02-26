@@ -28,7 +28,7 @@ Transform::Transform(links::LinkedList<lex::Token *> &tokens) {
 }
 
 gen::GenerationResult const Transform::generate(gen::CodeGenerator &generator) {
-  generator.transforms[ident] = *this;
+  generator.transforms()[ident] = *this;
   return gen::GenerationResult();
 }
 
@@ -55,9 +55,9 @@ Transform::parse(const std::string &ident, std::string &type, std::string &expr,
   }
 
   // replace Self with scope
-  if (generator.scope != nullptr)
+  if (generator.scope() != nullptr)
     result = std::regex_replace(result, std::regex("\\$\\{Self\\}"),
-                                generator.scope->Ident);
+                                generator.scope()->Ident);
 
   // replace \" with "
   result = std::regex_replace(result, std::regex("\\\\\""), "\"");
@@ -76,7 +76,7 @@ Transform::parse(const std::string &ident, std::string &type, std::string &expr,
   auto tokens = l.Scan(pp.PreProcess(result, gen::utils::getLibPath("head")));
   tokens.invert();
   // parse the file
-  ast::Statement *statement = generator.parser.parseStmt(tokens);
+  ast::Statement *statement = generator.parser().parseStmt(tokens);
   auto Lowerer = parse::lower::Lowerer(statement, true);
 
   return statement;

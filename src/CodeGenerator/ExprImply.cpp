@@ -18,7 +18,7 @@ ast::Expr *gen::CodeGenerator::imply(ast::Expr *expr, std::string typeName) {
   auto exprResult = this->GenExpr(expr, *(new asmc::File()), asmc::AUTO, "");
   std::string exprType = exprResult.type;
 
-  auto type = this->typeList[typeName];
+  auto type = typeList()[typeName];
   if (type != nullptr) {
     auto cl = dynamic_cast<gen::Class *>(*type);
     if (cl != nullptr) {
@@ -29,7 +29,7 @@ ast::Expr *gen::CodeGenerator::imply(ast::Expr *expr, std::string typeName) {
         ast::NewExpr *newExpr = new ast::NewExpr();
         if (fromFunc)
           newExpr->initFuncName = fromFuncName;
-        newExpr->logicalLine = this->logicalLine;
+        newExpr->logicalLine = logicalLine();
         newExpr->type.typeName = typeName;
         newExpr->type.safeType = cl->safeType;
         newExpr->type.opType = asmc::Hard;
@@ -38,11 +38,11 @@ ast::Expr *gen::CodeGenerator::imply(ast::Expr *expr, std::string typeName) {
         return newExpr;
       } else {
         ast::Call *init = new ast::Call();
-        init->logicalLine = this->logicalLine;
+        init->logicalLine = logicalLine();
         init->ident = typeName;
         init->Args.push(expr);
         ast::CallExpr *call = new ast::CallExpr;
-        call->logicalLine = this->logicalLine;
+        call->logicalLine = logicalLine();
         call->call = init;
         return call;
       }

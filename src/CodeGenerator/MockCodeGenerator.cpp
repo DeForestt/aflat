@@ -12,7 +12,7 @@ CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser,
     : gen::CodeGenerator(moduleId, parser, source, cwd), parser(parser) {}
 
 bool CodeGenerator::addType(gen::Type *type) {
-  this->typeList.push(type);
+  typeList().push(type);
   return true;
 }
 } // namespace mockGen

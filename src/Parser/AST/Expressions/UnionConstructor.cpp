@@ -86,7 +86,7 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
   file << internalAccess.file;
 
   // create a temporary variable to hold the union
-  auto tempName = "$" + std::to_string(generator.tempCount++) + "_temp";
+  auto tempName = "$" + std::to_string(generator.tempCount()++) + "_temp";
   auto mod = gen::scope::ScopeManager::getInstance()->assign(tempName,
                                                              unionType, false);
 

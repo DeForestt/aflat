@@ -20,44 +20,6 @@ namespace gen {
 
 class CodeGenerator {
 public:
-  Type **getType(std::string ident, asmc::File &OutputFile);
-#pragma region State Variables
-  parse::Parser &parser;
-  gen::Class *scope;
-  ast::Match *matchScope = nullptr;
-  ast::Type returnType;
-  int scopePop = 0;
-  int mutability = 0;
-  int labelCount = 0;
-  int intArgsCounter;
-  int selectReg = 0;
-  bool globalScope = true;
-  bool inFunction = false;
-  bool returnFlag = false;
-  bool errorFlag = false;
-  HashMap<ast::Statement *> includedMemo;
-  HashMap<ast::Statement *> includedClasses;
-  HashMap<std::string> nameSpaceTable;
-  std::unordered_map<std::string, std::string> genericTypeConversions;
-  std::set<std::string> generatedFunctionNames;
-  std::set<std::string> generatedClassNames;
-  ast::Function *currentFunction = nullptr;
-  std::string lambdaReturns = "";
-  asmc::Size lambdaSize = asmc::AUTO;
-#pragma endregion
-
-#pragma region Item Lists
-  links::SLinkedList<gen::Type *, std::string> typeList;
-  std::unordered_map<std::string, ast::Class *> genericTypes;
-  links::SLinkedList<asmc::Register, std::string> registers;
-  links::LinkedList<Symbol> SymbolTable;
-  links::LinkedList<Symbol> GlobalSymbolTable;
-  links::SLinkedList<ast::Function, std::string> nameTable;
-  links::SLinkedList<ast::Function, std::string> genericFunctions;
-  links::SLinkedList<ast::Type, std::string> TypeList;
-  std::unordered_map<std::string, ast::Transform> transforms;
-#pragma endregion
-
   struct EnvState {
     links::LinkedList<Symbol> SymbolTable;
     links::LinkedList<Symbol> GlobalSymbolTable;
@@ -83,16 +45,15 @@ public:
     ast::Match *matchScope;
   };
 
-  std::vector<EnvState> envStack;
+  CodeGenerator(std::string moduleId, parse::Parser &parser,
+                const std::string &source = "", const std::string &cwd = "");
+  ~CodeGenerator();
+  CodeGenerator(CodeGenerator &&) noexcept;
+  CodeGenerator &operator=(CodeGenerator &&) noexcept;
+  CodeGenerator(const CodeGenerator &) = delete;
+  CodeGenerator &operator=(const CodeGenerator &) = delete;
 
-  asmc::Register intArgs[6] = {asmc::Register("rdi", "edi", "di", "dil"),
-                               asmc::Register("rsi", "esi", "si", "sil"),
-                               asmc::Register("rdx", "edx", "dx", "dl"),
-                               asmc::Register("rcx", "ecx", "cx", "cl"),
-                               asmc::Register("r8", "r8d", "r8w", "r8b"),
-                               asmc::Register("r9", "r9d", "r9w", "r9b")};
-  int logicalLine = 0;
-  int tempCount = 0;
+  Type **getType(std::string ident, asmc::File &OutputFile);
   asmc::File GenArgs(ast::Statement *STMT, asmc::File &OutputFile,
                      const ast::Function &func, int &index);
   ast::Function GenCall(ast::Call *call, asmc::File &OutputFile);
@@ -109,13 +70,6 @@ public:
   bool canAssign(ast::Type type, std::string typeName, std::string fmt,
                  bool strict = false, bool panic = true);
 
-  std::string moduleId;
-  std::string source;
-  std::filesystem::path cwd;
-
-  links::LinkedList<std::string> breakContext;
-  links::LinkedList<std::string> continueContext;
-
   void pushEnv();
   void popEnv();
 
@@ -129,7 +83,6 @@ public:
   links::LinkedList<gen::Symbol>
   GenTable(ast::Statement *STMT, links::LinkedList<gen::Symbol> &table);
   bool whenSatisfied(const ast::When &when);
-  // a function for warnings or errors
   void alert(std::string message, bool error = true, const char *file = nullptr,
              int line = 0);
   static void enableAlertTrace(bool enable);
@@ -137,13 +90,90 @@ public:
                                       const std::vector<std::string> &types,
                                       std::string &newName,
                                       asmc::File &OutputFile);
-  CodeGenerator(std::string moduleId, parse::Parser &parser,
-                const std::string &source = "", const std::string &cwd = "");
   asmc::File *deScope(gen::Symbol &sym);
-  bool hasError() const { return errorFlag; }
+  bool hasError() const;
+
+  parse::Parser &parser();
+  const parse::Parser &parser() const;
+  gen::Class *&scope();
+  const gen::Class *scope() const;
+  ast::Match *&matchScope();
+  const ast::Match *matchScope() const;
+  ast::Type &returnType();
+  const ast::Type &returnType() const;
+  int &scopePop();
+  const int &scopePop() const;
+  int &mutability();
+  const int &mutability() const;
+  int &labelCount();
+  const int &labelCount() const;
+  int &intArgsCounter();
+  const int &intArgsCounter() const;
+  int &selectReg();
+  const int &selectReg() const;
+  bool &globalScope();
+  const bool &globalScope() const;
+  bool &inFunction();
+  const bool &inFunction() const;
+  bool &returnFlag();
+  const bool &returnFlag() const;
+  bool &errorFlag();
+  const bool &errorFlag() const;
+  HashMap<ast::Statement *> &includedMemo();
+  HashMap<ast::Statement *> &includedClasses();
+  HashMap<std::string> &nameSpaceTable();
+  std::unordered_map<std::string, std::string> &genericTypeConversions();
+  std::set<std::string> &generatedFunctionNames();
+  const std::set<std::string> &generatedFunctionNames() const;
+  std::set<std::string> &generatedClassNames();
+  ast::Function *&currentFunction();
+  const ast::Function *currentFunction() const;
+  std::string &lambdaReturns();
+  const std::string &lambdaReturns() const;
+  asmc::Size &lambdaSize();
+  const asmc::Size &lambdaSize() const;
+  links::SLinkedList<gen::Type *, std::string> &typeList();
+  const links::SLinkedList<gen::Type *, std::string> &typeList() const;
+  std::unordered_map<std::string, ast::Class *> &genericTypes();
+  const std::unordered_map<std::string, ast::Class *> &genericTypes() const;
+  links::SLinkedList<asmc::Register, std::string> &registers();
+  const links::SLinkedList<asmc::Register, std::string> &registers() const;
+  links::LinkedList<Symbol> &SymbolTable();
+  const links::LinkedList<Symbol> &SymbolTable() const;
+  links::LinkedList<Symbol> &GlobalSymbolTable();
+  const links::LinkedList<Symbol> &GlobalSymbolTable() const;
+  links::SLinkedList<ast::Function, std::string> &nameTable();
+  const links::SLinkedList<ast::Function, std::string> &nameTable() const;
+  links::SLinkedList<ast::Function, std::string> &genericFunctions();
+  const links::SLinkedList<ast::Function, std::string> &
+  genericFunctions() const;
+  links::SLinkedList<ast::Type, std::string> &TypeList();
+  const links::SLinkedList<ast::Type, std::string> &TypeList() const;
+  std::unordered_map<std::string, ast::Transform> &transforms();
+  const std::unordered_map<std::string, ast::Transform> &transforms() const;
+  std::vector<EnvState> &envStack();
+  const std::vector<EnvState> &envStack() const;
+  std::array<asmc::Register, 6> &intArgs();
+  const std::array<asmc::Register, 6> &intArgs() const;
+  int &logicalLine();
+  const int &logicalLine() const;
+  int &tempCount();
+  const int &tempCount() const;
+  std::filesystem::path &cwd();
+  const std::filesystem::path &cwd() const;
+  std::string &moduleId();
+  const std::string &moduleId() const;
+  std::string &source();
+  const std::string &source() const;
+  links::LinkedList<std::string> &breakContext();
+  const links::LinkedList<std::string> &breakContext() const;
+  links::LinkedList<std::string> &continueContext();
+  const links::LinkedList<std::string> &continueContext() const;
 
 private:
   static bool traceAlert;
+  struct Impl;
+  std::unique_ptr<Impl> impl;
 };
 } // namespace gen
 
