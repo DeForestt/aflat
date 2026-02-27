@@ -276,6 +276,10 @@ gen::GenerationResult Call::generateAttempt(
             func->req = smbl->type.fPointerArgs.requiredArgs;
             func->optConvertionIndices =
                 smbl->type.fPointerArgs.optConvertionIndices;
+            func->readOnly.assign(func->argTypes.size(), false);
+            func->returnImmutable = smbl->type.fPointerArgs.returnImmutable;
+            func->returnLowOwnership =
+                smbl->type.fPointerArgs.returnLowOwnership;
             checkArgs = true;
           }
           func->useType = func->type;
@@ -320,6 +324,9 @@ gen::GenerationResult Call::generateAttempt(
           func->req = f->req;
           func->optConvertionIndices = f->optConvertionIndices;
           func->argTypes = f->argTypes;
+          func->readOnly = f->readOnly;
+          func->returnImmutable = f->returnImmutable;
+          func->returnLowOwnership = f->returnLowOwnership;
           auto var = new ast::Var();
           var->logicalLine = this->logicalLine;
           var->Ident = smbl->symbol;
@@ -414,6 +421,10 @@ gen::GenerationResult Call::generateAttempt(
               func->req = sym->type.fPointerArgs.requiredArgs;
               func->optConvertionIndices =
                   sym->type.fPointerArgs.optConvertionIndices;
+              func->readOnly.assign(func->argTypes.size(), false);
+              func->returnImmutable = sym->type.fPointerArgs.returnImmutable;
+              func->returnLowOwnership =
+                  sym->type.fPointerArgs.returnLowOwnership;
               checkArgs = true;
             }
             func->useType = func->type;
@@ -448,6 +459,9 @@ gen::GenerationResult Call::generateAttempt(
             func->argTypes = f->argTypes;
             func->optConvertionIndices = f->optConvertionIndices;
             func->safe = f->safe;
+            func->readOnly = f->readOnly;
+            func->returnImmutable = f->returnImmutable;
+            func->returnLowOwnership = f->returnLowOwnership;
             pubname = sym->type.typeName;
             shift = false;
           }
@@ -539,6 +553,8 @@ gen::GenerationResult Call::generateAttempt(
                           this->publify);
         };
         func->type = f->type;
+        func->returnImmutable = f->returnImmutable;
+        func->returnLowOwnership = f->returnLowOwnership;
         func->scope = f->scope;
         func->scopeName = f->scopeName;
         ast::Type t;
@@ -546,6 +562,8 @@ gen::GenerationResult Call::generateAttempt(
         t.size = asmc::QWord;
         func->argTypes = f->argTypes;
         func->argTypes.push_back(t);
+        func->readOnly = f->readOnly;
+        func->readOnly.push_back(true);
         if (immutableSymbol && !f->safe) {
           generator.alert("Immutable objects can only call safe functions: " +
                               func->ident.ident,
@@ -567,6 +585,9 @@ gen::GenerationResult Call::generateAttempt(
         generator.alert("cannot find function: " + ident + " in " + cl->Ident);
       func->argTypes = f->argTypes;
       func->req = f->req;
+      func->readOnly = f->readOnly;
+      func->returnImmutable = f->returnImmutable;
+      func->returnLowOwnership = f->returnLowOwnership;
       if (immutableSymbol && !f->safe) {
         generator.alert("Immutable objects can only call safe functions: " +
                             func->ident.ident,
@@ -746,6 +767,22 @@ gen::GenerationResult Call::generateAttempt(
                 "references ar considered to be borrowed from the stack)");
       }
     }
+    if (exp.requiresImmutableBinding) {
+      bool paramImmutable = false;
+      if (checkArgs && i < func->readOnly.size()) {
+        paramImmutable = func->readOnly[i];
+      }
+      if (!paramImmutable) {
+        auto source = exp.immutableBindingSource.empty()
+                          ? std::string("this expression")
+                          : exp.immutableBindingSource;
+        this->requestOverloadRetry(
+            generator, overloadTable, overloadIdent, currentOverloadIndex,
+            "Argument " + std::to_string(i + 1) + " receives value from `" +
+                source + "` which must be bound to an immutable parameter",
+            false);
+      }
+    }
 
     if (checkArgs) {
       if (i >= func->argTypes.size()) {
@@ -763,7 +800,9 @@ gen::GenerationResult Call::generateAttempt(
                                    "the argument type(s) are (" +
                                    argTypesString + ")")) {
         ast::Expr *init = generator.imply(rem, func->argTypes.at(i).typeName);
+        auto prev = exp;
         exp = generator.GenExpr(init, file);
+        exp.adoptImmutableRequirement(prev);
       };
     };
     i++;

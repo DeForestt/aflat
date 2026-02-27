@@ -130,7 +130,6 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       auto callGen = call->generate(*this);
       OutputFile << callGen.file;
       output = callGen.expr.value();
-      output.owned = true;
       if (size != asmc::AUTO &&
           (output.type == "any" || output.type == "--std--flex--function"))
         output.size = size;
@@ -333,6 +332,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         newType->fPointerArgs.argTypes = func->argTypes;
         newType->fPointerArgs.isFPointer = true;
         newType->fPointerArgs.requiredArgs = func->req;
+        newType->fPointerArgs.returnImmutable = func->returnImmutable;
+        newType->fPointerArgs.returnLowOwnership = func->returnLowOwnership;
 
         TypeList().push(*newType);
 
@@ -1189,6 +1190,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         new ast::Type(lambdaReturns(), lambdaSize());
     type->fPointerArgs.isFPointer = true;
     type->fPointerArgs.requiredArgs = func->req;
+    type->fPointerArgs.returnImmutable = func->returnImmutable;
+    type->fPointerArgs.returnLowOwnership = func->returnLowOwnership;
     TypeList().push(*type);
 
     inFunction() = inFunc;

@@ -65,14 +65,18 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
                 !generator.canAssign(testType, expr.type,
                                      "type {} cannot be assigned to type {}"),
             dec->trust) {
+          auto prev = expr;
           expr =
               generator.GenExpr(generator.imply(this->expr, testType.typeName),
                                 file, testType.size, testType.typeName);
+          expr.adoptImmutableRequirement(prev);
         };
       };
 
       if (dec->type.typeName == "string" && expr.type == "adr") {
+        auto prev = expr;
         expr = generator.GenExpr(generator.imply(this->expr, "string"), file);
+        expr.adoptImmutableRequirement(prev);
       }
 
       if (dec->type.typeName == "let") {
@@ -93,6 +97,15 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
                             " on line " + std::to_string(this->logicalLine));
           dec->type = *t;
         }
+      }
+
+      if (expr.requiresImmutableBinding && !this->declare->readOnly) {
+        auto source = expr.immutableBindingSource.empty()
+                          ? std::string("this expression")
+                          : expr.immutableBindingSource;
+        generator.alert("value produced by `" + source +
+                            "` must be bound to an immutable symbol",
+                        true, __FILE__, __LINE__);
       }
 
       int byteMod = gen::scope::ScopeManager::getInstance()->assign(
@@ -182,9 +195,19 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
     if (!generator.canAssign(
             dec->type, exp.type,
             "cannot assign type {} cannot be assigned to type {}")) {
+      auto prev = exp;
       exp = generator.GenExpr(generator.imply(this->expr, dec->type.typeName),
                               file);
+      exp.adoptImmutableRequirement(prev);
     };
+    if (exp.requiresImmutableBinding && !this->declare->readOnly) {
+      auto source = exp.immutableBindingSource.empty()
+                        ? std::string("this expression")
+                        : exp.immutableBindingSource;
+      generator.alert("value produced by `" + source +
+                          "` must be bound to an immutable symbol",
+                      true, __FILE__, __LINE__);
+    }
     var->operand = exp.access.erase(0, 1);
     Symbol.type.opType = exp.op;
     Symbol.owned = exp.owned;

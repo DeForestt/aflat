@@ -154,6 +154,8 @@ public:
     std::string id;
     asmc::Size size;
     bool isFPointer = false;
+    bool returnImmutable = false;
+    bool returnLowOwnership = false;
   };
 
   FPointerArgs fPointerArgs;

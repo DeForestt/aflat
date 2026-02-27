@@ -107,9 +107,11 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
   if (std::holds_alternative<ast::Type *>(alias.value)) {
     if (!generator.canAssign(*std::get<ast::Type *>(alias.value), fromExpr.type,
                              "Cannot assign type {} to union variant {}")) {
+      auto prev = fromExpr;
       fromExpr = generator.GenExpr(
           generator.imply(expr, std::get<ast::Type *>(alias.value)->typeName),
           file);
+      fromExpr.adoptImmutableRequirement(prev);
     }
   }
   if (parse::PRIMITIVE_TYPES.find(fromExpr.type) ==
@@ -123,7 +125,9 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
       call->call->publify = fromExpr.type;
       call->call->Args.push(useExpr);
       call->logicalLine = logicalLine;
+      auto prev = fromExpr;
       fromExpr = generator.GenExpr(call, file, asmc::QWord);
+      fromExpr.adoptImmutableRequirement(prev);
     }
   }
 
