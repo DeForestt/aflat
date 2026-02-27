@@ -8,7 +8,9 @@ import {Some, None, optionWrapper} from "Utils/option" under opt;
 import {accept, reject, resultWrapper} from "Utils/result" under res;
 import {print} from "String" under str;
 import {char_isDigit, char_isWhiteSpace} from "strings" under st;
+import {hex_toInt} from "strings" under st;
 import {len} from "strings" under st;
+import {toChar, toInt} from "io" under io;
 import Box from "Memory";
 import {wrap} from "Memory" under box;
 import Error from "Utils/Error";
@@ -245,17 +247,85 @@ private fn parseError(const string source, const string reason, const int positi
     return new Error(`JSON parse error: {reason}\n{context}`);
 };
 
+private fn isHexDigit(const char c) -> bool {
+    if c >= '0' & c <= '9' return true;
+    if c >= 'a' & c <= 'f' return true;
+    if c >= 'A' & c <= 'F' return true;
+    return false;
+};
+
 private fn parseStringValue(const string value) -> JSON! {
     string builder = "";
     int lastPos = value.tell();
-    foreach c in value {
-        if c == '\"' {
-            return String(builder.cstr());
+    while true {
+        match value.next() {
+            Some(c) => {
+                lastPos = value.tell();
+                if c == '\\' {
+                    const int escapePos = if value.tell() > 0 value.tell() - 1 else 0;
+                    match value.next() {
+                        Some(escapeChar) => {
+                            lastPos = value.tell();
+                            if escapeChar == '\"' {
+                                const char quote = '\"';
+                                builder = `{builder}{quote}`;
+                            } else if escapeChar == '\\' {
+                                const char backslash = '\\';
+                                builder = `{builder}{backslash}`;
+                            } else if escapeChar == '/' {
+                                const char slash = '/';
+                                builder = `{builder}{slash}`;
+                            } else if escapeChar == 'b' {
+                                const char backspace = io.toChar(8);
+                                builder = `{builder}{backspace}`;
+                            } else if escapeChar == 'f' {
+                                const char formFeed = io.toChar(12);
+                                builder = `{builder}{formFeed}`;
+                            } else if escapeChar == 'n' {
+                                const char newline = '\n';
+                                builder = `{builder}{newline}`;
+                            } else if escapeChar == 'r' {
+                                const char carriageReturn = '\r';
+                                builder = `{builder}{carriageReturn}`;
+                            } else if escapeChar == 't' {
+                                const char tab = '\t';
+                                builder = `{builder}{tab}`;
+                            } else if escapeChar == 'u' {
+                                string hexDigits = "";
+                                for int i = 0; i < 4; i = i + 1 {
+                                    match value.next() {
+                                        Some(hexChar) => {
+                                            lastPos = value.tell();
+                                            if !isHexDigit(hexChar) {
+                                                const int invalidPos = if value.tell() > 0 value.tell() - 1 else 0;
+                                                return parseError(value, "Invalid unicode escape sequence in string literal", invalidPos);
+                                            };
+                                            hexDigits = `{hexDigits}{hexChar}`;
+                                        },
+                                        None => return parseError(value, "Unterminated unicode escape sequence in string literal", value.len())
+                                    };
+                                };
+                                const let unicodeValue = st.hex_toInt(hexDigits.cstr());
+                                const char unicodeChar = io.toChar(unicodeValue);
+                                builder = `{builder}{unicodeChar}`;
+                            } else {
+                                return parseError(value, `Invalid escape character '\\{escapeChar}' in string literal`, escapePos);
+                            };
+                        },
+                        None => return parseError(value, "Unterminated escape sequence in string literal", escapePos)
+                    };
+                } else if c == '\"' {
+                    return String(builder.cstr());
+                } else if c == '\n' | c == '\r' {
+                    const int newlinePos = if value.tell() > 0 value.tell() - 1 else 0;
+                    return parseError(value, "Unescaped newline in string literal", newlinePos);
+                } else {
+                    builder = `{builder}{c}`;
+                };
+            },
+            None => return parseError(value, "Unterminated string literal", lastPos)
         };
-        builder = `{builder}{c}`;
-        lastPos = value.tell();
     };
-    return parseError(value, "Unterminated string literal", lastPos);
 };
 
 private fn parseBooleanValue(const string value) -> JSON! {
@@ -342,18 +412,14 @@ private fn parseInternal(const string json_) -> JSON! {
         if st.char_isWhiteSpace(c) continue;
         if c == '\"' return parseStringValue(json_);
         if st.char_isDigit(c) {
-            string numStr = `{c}`;
-            const int numberStart = if json_.tell() > 0 json_.tell() - 1 else 0;
+            int num = io.toInt(c);
             while st.char_isDigit(json_.peek().or('v')) {
                 match json_.next() {
-                    Some(nc) => numStr = `{numStr}{nc}`,
+                    Some(nc) => num = (num * 10) + io.toInt(nc),
                     None => break
                 };
             };
-            match numStr.toInt() {
-                Ok(num) => return Number(num),
-                Err(e) => return parseError(json_, `Invalid number literal {numStr} - {e}`, numberStart)
-            };
+            return Number(num);
         };
         if c == 't' | c == 'f' return parseBooleanValue(json_);
         if c == 'n' return parseNullValue(json_);
