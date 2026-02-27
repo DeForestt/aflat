@@ -125,9 +125,20 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
     if (!generator.canAssign(
             symbol->type, expr.type,
             "symbol of type {} cannot be assigned to type {}")) {
+      auto prev = expr;
       expr = generator.GenExpr(
           generator.imply(this->expr, symbol->type.typeName), file);
+      expr.adoptImmutableRequirement(prev);
     }
+  }
+
+  if (expr.requiresImmutableBinding && !symbol->readOnly) {
+    auto source = expr.immutableBindingSource.empty()
+                      ? std::string("this expression")
+                      : expr.immutableBindingSource;
+    generator.alert("value produced by `" + source +
+                        "` must be bound to an immutable symbol",
+                    true, __FILE__, __LINE__);
   }
 
   mov->op = expr.op;

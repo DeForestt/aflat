@@ -80,6 +80,10 @@ fn <function name>(<arguments>) -> <return type>? {
 - Return types are optional; if omitted, they are inferred where possible.
 - If a function has an optional return type (denoted with `?`), it is sugar for
   returning `option<T>`.
+- Prefix the return type with `immutable` to indicate the value must be bound to
+  an immutable symbol by the caller, or with `lown` to signal that ownership is
+  not transferred by the return value. The modifiers may be combined when both
+  constraints apply.
 - Prefixing an argument with `?` likewise treats it as `option<T>` and allows the
   caller to omit the argument entirely, in which case `None()` is passed.
 - The returned `option` is created automatically: returning a value yields `Some(value)` while `return;` (or falling off the end) yields `None()`.

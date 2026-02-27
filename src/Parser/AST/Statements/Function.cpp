@@ -126,6 +126,23 @@ Function::Function(const ScopeMod &scope,
   auto arrow = dynamic_cast<lex::Symbol *>(tokens.peek());
   if (arrow && arrow->meta == "->") {
     tokens.pop();
+
+    while (true) {
+      if (auto modifier = dynamic_cast<lex::LObj *>(tokens.peek())) {
+        if (modifier->meta == "immutable") {
+          this->returnImmutable = true;
+          tokens.pop();
+          continue;
+        }
+        if (modifier->meta == "lown") {
+          this->returnLowOwnership = true;
+          tokens.pop();
+          continue;
+        }
+      }
+      break;
+    }
+
     auto typeName = dynamic_cast<lex::LObj *>(tokens.pop());
     if (typeName == nullptr)
       throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
@@ -414,6 +431,10 @@ gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
     output.access = generator.registers()["%xmm0"]->get(output.size);
     output.op = asmc::Float;
   }
+  output.owned = output.type != "void" && !this->returnLowOwnership;
+  output.requiresImmutableBinding = this->returnImmutable;
+  if (this->returnImmutable)
+    output.immutableBindingSource = this->ident.ident;
   return output;
 };
 } // namespace ast

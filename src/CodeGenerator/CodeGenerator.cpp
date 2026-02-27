@@ -259,6 +259,12 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
       return false;
     this->canAssign(*type2->fPointerArgs.returnType,
                     type.fPointerArgs.returnType->typeName, fmt);
+    if (type.fPointerArgs.returnImmutable !=
+        type2->fPointerArgs.returnImmutable)
+      return false;
+    if (type.fPointerArgs.returnLowOwnership !=
+        type2->fPointerArgs.returnLowOwnership)
+      return false;
     // type two should have at least as many required args as type
     if (type2->fPointerArgs.requiredArgs < type.fPointerArgs.requiredArgs)
       return false;

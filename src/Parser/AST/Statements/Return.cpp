@@ -56,7 +56,9 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
                    "the resolver returns {}")) {
       auto imo =
           generator.imply(this->expr, generator.matchScope()->returns.typeName);
+      auto prev = from;
       from = generator.GenExpr(imo, file);
+      from.adoptImmutableRequirement(prev);
     }
     // if this is a resolver, we just need to put the expression into %rax
     if (from.op != asmc::Float) {
@@ -118,7 +120,9 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       auto call = new ast::CallExpr();
       call->call = optionConvertion;
       call->logicalLine = this->logicalLine;
+      auto prev = from;
       from = generator.GenExpr(call, file);
+      from.adoptImmutableRequirement(prev);
     }
   } else if (generator.currentFunction()->error) {
     // if fromtype is not result.typeName, we need to convert it to
@@ -152,7 +156,9 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
         call->call = reject;
         call->logicalLine = this->logicalLine;
         call->templateTypes = generator.currentFunction()->genericTypes;
+        auto prev = from;
         from = generator.GenExpr(call, file);
+        from.adoptImmutableRequirement(prev);
       } else {
         if (!this->empty &&
             !generator.canAssign(
@@ -175,9 +181,22 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
         auto call = new ast::CallExpr();
         call->call = resultConvertion;
         call->logicalLine = this->logicalLine;
+        auto prev = from;
         from = generator.GenExpr(call, file);
+        from.adoptImmutableRequirement(prev);
       }
     }
+  }
+
+  if (from.requiresImmutableBinding &&
+      !generator.currentFunction()->returnImmutable) {
+    auto source = from.immutableBindingSource.empty()
+                      ? std::string("this expression")
+                      : from.immutableBindingSource;
+    generator.alert("return value derived from `" + source +
+                        "` must be bound to an immutable symbol; "
+                        "mark the function's return type as immutable",
+                    true, __FILE__, __LINE__);
   }
 
   if (generator.currentFunction()->isLambda &&
@@ -254,12 +273,15 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
                            "the return type of this function is {} but the "
                            "expression returns {}")) {
     auto imp = generator.imply(this->expr, generator.returnType().typeName);
+    auto prev = from;
     from = generator.GenExpr(imp, file);
+    from.adoptImmutableRequirement(prev);
   };
 
   if (parse::PRIMITIVE_TYPES.find(from.type) == parse::PRIMITIVE_TYPES.end()) {
     if (!from.owned && from.type != "void" &&
-        from.type != "--std--flex--function") {
+        from.type != "--std--flex--function" &&
+        !generator.currentFunction()->returnLowOwnership) {
       generator.alert("cannot return a non-owned reference to a type " +
                           from.type,
                       true, __FILE__, __LINE__);

@@ -38,7 +38,9 @@ public:
   bool optional = false;
   bool error = false; // if the function can return an error
   bool autoType = false;
-  bool globalLocked = false; // if the function is locked to the global scope
+  bool globalLocked = false;    // if the function is locked to the global scope
+  bool returnImmutable = false; // if callers must bind return to immutable sym
+  bool returnLowOwnership = false; // if the return value does not yield owner
   int overloadIndex = 0;
 
   Function() = default;
@@ -60,7 +62,8 @@ public:
         optional(Other.optional), useType(Other.useType),
         genericTypes(Other.genericTypes), autoType(Other.autoType),
         globalLocked(Other.globalLocked), safe(Other.safe),
-        readOnly(Other.readOnly) {
+        readOnly(Other.readOnly), returnImmutable(Other.returnImmutable),
+        returnLowOwnership(Other.returnLowOwnership) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;
     this->hidden = Other.hidden;
