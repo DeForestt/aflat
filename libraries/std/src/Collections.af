@@ -101,7 +101,7 @@ class List {
             panic("Cannot push a reference by value");
         const let v = create(my.typeSize, value);
         my.pushBack(v);
-        free(v);
+        free($v);
     };
 
     private any unwrapGet(const int i) {

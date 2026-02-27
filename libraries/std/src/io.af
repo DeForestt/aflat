@@ -54,7 +54,7 @@ private int clearInput(){
  * Print a null-terminated string to stdout and optionally wrap it with ANSI
  * color escape codes when `color` is non-null.
  */
-export int print(const adr input, * const char color){
+export int print(immutable adr input, * const char color){
         const int len = str.len(input);
         if color != '\0' {
                 print("\e[");

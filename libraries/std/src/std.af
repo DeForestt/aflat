@@ -114,7 +114,7 @@ int memcpy (adr dst, adr src, const int size){
     return 0;
 };
 
-int free(const adr ptr){
+int free(const adr &&ptr){
     if(ptr == NULL){
         return 0;
     };
@@ -182,7 +182,7 @@ adr realloc(const adr ptr, const int size){
     if (new_ptr == NULL){return NULL;};
     const int bsize = block.size;
     memcpy(new_ptr, ptr, bsize);
-    free(ptr);
+    free($ptr);
     return new_ptr;
 };
 
@@ -243,7 +243,7 @@ int sleep(const int seconds, *const int nanoseconds){
     t.tv_sec = sec;
     t.tv_nsec = nsec;
     sys_nsleep(t);
-    free(t);
+    free($t);
     return 0;
 };
 

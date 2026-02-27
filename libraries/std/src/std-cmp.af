@@ -98,7 +98,7 @@ int sleep(const int seconds, * const int nanoseconds){
     t.tv_sec = sec;
     t.tv_nsec = nsec;
     sys_nsleep(t);
-    free(t);
+    free($t);
     return 0;
 };
 

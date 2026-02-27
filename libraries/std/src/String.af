@@ -256,7 +256,7 @@ safe dynamic class string {
         s.seal();
         s.permanent = true;
         vec.push_back(s.get());
-        free(save);
+        free($save);
         return vec;
     };
 
@@ -292,7 +292,7 @@ safe dynamic class string {
         s.seal();
         s.permanent = true;
         vec.push_back(s.get());
-        free(save);
+        free($save);
         return vec;
     };
 
@@ -308,7 +308,7 @@ safe dynamic class string {
         memcpy(newHead, my.head, myLen);
         memcpy(newHead + myLen, other.head, otherLen + 1);
         const string newString = new string(newHead);
-        free(newHead);
+        free($newHead);
         return newString;
     };
 
@@ -346,7 +346,7 @@ safe dynamic class string {
         };
         newhead =: '\0';
         const string newString = save;
-        free(save);
+        free($save);
         return newString;
     };
 
@@ -364,7 +364,7 @@ safe dynamic class string {
         };
         newhead =: '\0';
         const string newString = save;
-        free(save);
+        free($save);
         return newString;
     };
 
@@ -389,7 +389,7 @@ safe dynamic class string {
         };
         newhead =: '\0';
         const string newString = save;
-        free(save);
+        free($save);
         return newString;
     };
 
@@ -402,7 +402,7 @@ safe dynamic class string {
             if (c == old) newHead[i] = n;
         };
         const string newString = newHead;
-        free(newHead);
+        free($newHead);
         return newString;
     };
 
@@ -460,7 +460,7 @@ safe dynamic class string {
         };
         newHead =: '\0';
         const string newString = new string(save);
-        free(save);
+        free($save);
         return newString;
     };
 
@@ -579,7 +579,7 @@ export string readString(*const string prompt) {
         i = i + 1;
     };
     const string n = new string(buff);
-    free(save);
+    free($save);
     return n.copy();
 };
 

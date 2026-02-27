@@ -175,7 +175,7 @@ export fn Object(const unordered_map::<Box::<JSON>> map) -> JSON {
 // Create a JSON String from an adr pointer.
 export fn String(const adr s) -> JSON {
     if s == NULL return new JSON->Null();
-    let v = malloc(st.len(s) + 1);
+    const let v = malloc(st.len(s) + 1);
     memcpy(v, s, st.len(s) + 1);
     return new JSON->String(v);
 };
