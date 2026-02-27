@@ -207,7 +207,7 @@ class vector {
                     memcpy(temp, a, T);
                     memcpy(a, b, T);
                     memcpy(b, temp, T);
-                    free(temp);
+                    free($temp);
                 };
             };
         };

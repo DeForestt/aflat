@@ -142,16 +142,18 @@ class File{
         const adr buffer = malloc(1 + size);
         const int err = sys_read(file, buffer, size);
         if err < -1 {
-            free(buffer);
+            const let extra = buffer;
+            free($extra);
             return res.reject::<string>(new ReadError(err));
         } else if err == 0 {
-            free(buffer);
+            const let extra = buffer;
+            free($extra);
             return res.reject::<string>(new ReadError(1));
         };
         const adr pointer = buffer + err;
         pointer =: '\0';
         const string text = new string(buffer);
-        free(buffer);
+        free($buffer);
         return res.accept(text);
     };
 
@@ -176,7 +178,8 @@ export fn createFile(const adr fileName) -> File! {
         file.it = true;
         const int test = file.file;
         if(test < 1) {
-                free(file);
+                const let extra = file;
+                free($extra);
                 return res.reject::<File>(new FileError(test));
         };
 
@@ -191,7 +194,8 @@ export fn openFile(const adr fileName) -> File! {
         file.it = true;
         const int test = file.file;
         if(test < 0){
-                free(file);
+                const let extra = file;
+                free($extra);
                 return res.reject::<File>(new FileError(test));
         };
         file.fileName = fileName;
@@ -236,7 +240,7 @@ safe dynamic pedantic class FileManager {
     my.refcount = my.refcount - 1;
     if (my.refcount == 0) {
       my.del();
-      free(my);
+      free($my);
     };
   };
   
