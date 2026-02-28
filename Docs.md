@@ -118,6 +118,50 @@ fn maybeDivide(int a, ?int b) -> int? {
 };
 ```
 
+### Function & Method Overloading
+AFlat lets you declare multiple functions with the same name as long as their
+parameter lists differ. At the call site the compiler selects the first
+candidate whose parameter types (after any implicit conversions) match the
+arguments. When a match fails, the compiler falls back to the next available
+overload before reporting an error.
+
+This mechanism applies equally to free functions and class/struct methods, so
+member APIs can expose type-specialised implementations without manual
+dispatchers.
+
+```aflat
+fn log(int value) -> void {
+    str.print(`int: {value}\n`);
+};
+
+fn log(string value) -> void {
+    str.print(`string: {value}\n`);
+};
+
+class Tricky {
+    fn log(int value) -> void {
+        str.print(`member int: {value}\n`);
+    };
+
+    fn log(string value) -> void {
+        str.print(`member string: {value}\n`);
+    };
+};
+
+fn demo() {
+    log(5);          // picks log(int)
+    log(`hello`);    // picks log(string)
+
+    let logger = new Tricky();
+    logger.log(5);     // resolves to Tricky::log(int)
+    logger.log(`hi`);  // resolves to Tricky::log(string)
+};
+```
+
+> ℹ️ When an overload requires an implicit conversion (e.g., via a
+> `__from__Type` helper), that conversion is attempted before the compiler
+> considers the next overload.
+
 ### The `main` Function
 The `main` function is the entry point for AFlat programs. It can optionally take `argc` and `argv` for command-line arguments.
 

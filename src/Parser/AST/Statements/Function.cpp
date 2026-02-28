@@ -205,23 +205,31 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
   int saveIntArgs = generator.intArgsCounter();
   bool isLambda = this->isLambda;
 
-  if (generator.scope() == nullptr || this->globalLocked) {
-    if (!this->isLambda) {
-      if (auto firstInstance = generator.nameTable()[this->ident.ident]) {
-        bool forwardDeclaration =
-            (firstInstance->statement == nullptr && this->statement != nullptr);
-        if (!forwardDeclaration &&
-            // firstInstance->ident.ident.find('.') == std::string::npos &&
-            !firstInstance->wasGeneric && this->scopeName == "global") {
-          this->overloadIndex = firstInstance->overloadIndex + 1;
-          this->ident.ident += "_ovl" + std::to_string(this->overloadIndex);
+  auto assignOverloadSuffix =
+      [&](links::SLinkedList<ast::Function, std::string> &table,
+          bool requireGlobalScope) {
+        if (this->isLambda)
+          return;
+        if (auto *firstInstance = table[this->ident.ident]) {
+          bool forwardDeclaration = (firstInstance->statement == nullptr &&
+                                     this->statement != nullptr);
+          if (!forwardDeclaration && !firstInstance->wasGeneric &&
+              (!requireGlobalScope || this->scopeName == "global")) {
+            this->overloadIndex = firstInstance->overloadIndex + 1;
+            this->ident.ident += "_ovl" + std::to_string(this->overloadIndex);
+          }
         }
-      }
+      };
+
+  if (generator.scope() == nullptr || this->globalLocked) {
+    assignOverloadSuffix(generator.nameTable(), true);
+    if (!this->isLambda) {
       generator.nameTable() << *this;
     }
   } else {
     if (!this->isLambda)
       this->scopeName = generator.scope()->Ident;
+    assignOverloadSuffix(generator.scope()->nameTable, false);
     generator.scope()->nameTable << *this;
     if (this->op != ast::None)
       if (!this->isLambda)

@@ -67,7 +67,7 @@ public:
   asmc::File memMove(std::string from, std::string to, int bytes);
   asmc::File setOffset(std::string to, int offset, std::string from,
                        asmc::Size size);
-  ast::Expr *imply(ast::Expr *expr, std::string typeName);
+  ast::Expr *imply(ast::Expr *expr, std::string typeName, bool panic = true);
   bool canAssign(ast::Type type, std::string typeName, std::string fmt,
                  bool strict = false, bool panic = true);
 
