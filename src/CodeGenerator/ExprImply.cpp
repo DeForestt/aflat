@@ -12,7 +12,8 @@
 using namespace gen::utils;
 
 namespace gen {
-ast::Expr *gen::CodeGenerator::imply(ast::Expr *expr, std::string typeName) {
+ast::Expr *gen::CodeGenerator::imply(ast::Expr *expr, std::string typeName,
+                                     bool panic) {
   // find the type
   // find the type of the expression
   auto exprResult = this->GenExpr(expr, *(new asmc::File()), asmc::AUTO, "");
@@ -48,10 +49,12 @@ ast::Expr *gen::CodeGenerator::imply(ast::Expr *expr, std::string typeName) {
       }
     }
   }
-  this->alert("Cannot imply type " + typeName +
-                  " from expression of type at line " +
-                  std::to_string(expr->logicalLine),
-              true, __FILE__, __LINE__);
+  if (panic) {
+    this->alert("Cannot imply type " + typeName +
+                    " from expression of type at line " +
+                    std::to_string(expr->logicalLine),
+                true, __FILE__, __LINE__);
+  }
   return nullptr;
 }
 } // namespace gen

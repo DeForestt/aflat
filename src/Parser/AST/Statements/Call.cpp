@@ -6,6 +6,7 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
+#include "Exceptions.hpp"
 #include "Parser/Parser.hpp"
 
 namespace {
@@ -793,17 +794,41 @@ gen::GenerationResult Call::generateAttempt(
                 " expected: " + std::to_string(func->argTypes.size()) +
                 " got: " + std::to_string(i + 1));
       };
-      if (!generator.canAssign(func->argTypes.at(i), exp.type,
-                               "function " + ident +
-                                   " expected type `{}` but received type `{}` "
-                                   "these types are irreconcilable "
-                                   "the argument type(s) are (" +
-                                   argTypesString + ")")) {
-        ast::Expr *init = generator.imply(rem, func->argTypes.at(i).typeName);
-        auto prev = exp;
-        exp = generator.GenExpr(init, file);
-        exp.adoptImmutableRequirement(prev);
+      bool canRetry = overloadTable != nullptr && currentOverloadIndex >= 0 &&
+                      !overloadIdent.empty();
+      auto ensureAssignable = [&](gen::Expr &value) {
+        if (generator.canAssign(func->argTypes.at(i), value.type, "", false,
+                                false)) {
+          return true;
+        }
+        try {
+          ast::Expr *init =
+              generator.imply(rem, func->argTypes.at(i).typeName, !canRetry);
+          if (init == nullptr)
+            return false;
+          auto prev = value;
+          value = generator.GenExpr(init, file);
+          value.adoptImmutableRequirement(prev);
+        } catch (const err::Exception &) {
+          return false;
+        }
+        return generator.canAssign(func->argTypes.at(i), value.type, "", false,
+                                   false);
       };
+
+      if (!ensureAssignable(exp)) {
+        std::string mismatchMessage =
+            "function " + ident +
+            " expected type `{}` but received type `{}` these types are "
+            "irreconcilable the argument type(s) are (" +
+            argTypesString + ")";
+        if (canRetry) {
+          this->requestOverloadRetry(generator, overloadTable, overloadIdent,
+                                     currentOverloadIndex, mismatchMessage);
+        } else {
+          generator.canAssign(func->argTypes.at(i), exp.type, mismatchMessage);
+        }
+      }
     };
     i++;
     if (exp.op == asmc::Float) {
