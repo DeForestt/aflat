@@ -134,7 +134,7 @@ Function::Function(const ScopeMod &scope,
           tokens.pop();
           continue;
         }
-        if (modifier->meta == "lown") {
+        if (modifier->meta == "loan") {
           this->returnLowOwnership = true;
           tokens.pop();
           continue;

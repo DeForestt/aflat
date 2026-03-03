@@ -81,7 +81,7 @@ fn <function name>(<arguments>) -> <return type>? {
 - If a function has an optional return type (denoted with `?`), it is sugar for
   returning `option<T>`.
 - Prefix the return type with `immutable` to indicate the value must be bound to
-  an immutable symbol by the caller, or with `lown` to signal that ownership is
+  an immutable symbol by the caller, or with `loan` to signal that ownership is
   not transferred by the return value. The modifiers may be combined when both
   constraints apply.
 - Prefixing an argument with `?` likewise treats it as `option<T>` and allows the

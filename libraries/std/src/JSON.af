@@ -10,6 +10,7 @@ import {print} from "String" under str;
 import {char_isDigit, char_isWhiteSpace} from "strings" under st;
 import {hex_toInt} from "strings" under st;
 import {len} from "strings" under st;
+import {str_at} from "strings" under st;
 import {toChar, toInt} from "io" under io;
 import Box from "Memory";
 import {wrap} from "Memory" under box;
@@ -106,6 +107,21 @@ union JSON {
         return `{c1}{s}{c2}`;
     };
 
+    // Replace literal newlines in a JSON string with the printable escape sequence.
+    private fn escapeStringNewlines(const adr value) -> string {
+        mutable string builder = "";
+        const int length = st.len(value);
+        for int i = 0; i < length; i++ {
+            const char c = st.str_at(value, i);
+            if c == '\n' {
+                builder = `{builder}\\n`;
+            } else {
+                builder = `{builder}{c}`;
+            };
+        };
+        return builder;
+    };
+
     fn stringify(?const int indent_) -> string {
         const let indent = 1 * indent_.or(0); // If 0, there will never be any indentation
         const let nextIndent = if indent > 0 indent + 1 else 0;
@@ -117,7 +133,8 @@ union JSON {
         
         match my {
             String(s) => {
-                const let value = my.wrap(s, '"', '"');
+                const let escaped = my.escapeStringNewlines(s);
+                const let value = my.wrap(escaped, '"', '"');
                 return `{indentStr}{value}`;
             },
             Number(n) => return `{indentStr}{n}`,
