@@ -114,7 +114,11 @@ union JSON {
         for int i = 0; i < length; i++ {
             const char c = st.str_at(value, i);
             if c == '\n' {
-                builder = `{builder}\\n`;
+                const char slash = '\\';
+                builder = `{builder}{slash}n`;
+            } else if c == '\r' {
+                const char slash = '\\';
+                builder = `{builder}{slash}r`;
             } else {
                 builder = `{builder}{c}`;
             };
