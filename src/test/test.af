@@ -78,6 +78,21 @@ fn main() -> int{
             test.assertTrue(s.replaceChar(' ', '_') == "foo_bar");
         });
 
+        test.it("should replace substrings", fn () {
+            string s = "foo foo";
+            test.assertTrue(s.replace("foo", "bar") == "bar bar");
+        });
+
+        test.it("should leave strings unchanged when the substring is missing", fn () {
+            string s = "alpha";
+            test.assertTrue(s.replace("z", "") == "alpha");
+        });
+
+        test.it("should ignore empty substrings", fn () {
+            string s = "beta";
+            test.assertTrue(s.replace(new string(""), "x") == "beta");
+        });
+
         test.it("should create substrings", fn () {
             string s = "hello";
             test.assertTrue(s.subString(1, 4) == "ell");

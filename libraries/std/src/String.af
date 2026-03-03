@@ -429,38 +429,41 @@ safe dynamic class string {
         const int myLen = str.len(my.head);
         const int subLen = str.len(sub.head);
         const int nLen = str.len(n.head);
-        int newLen = myLen - subLen + nLen;
-        adr newHead = malloc(newLen + 1);
-        adr save = newHead;
-        int i = 0;
-        while(i < myLen) {
-            const int index = my.find(sub, i);
-            if (index == -1) {
-                memcpy(newHead, my.head + i, myLen - i);
-                newHead = newHead + myLen - i;
-                i = myLen;
-            } else {
-                // check if there is enough space
-                if newHead + index - i + nLen > save + newLen {
-                    // not enough space
-                    // reallocate
-                    const int newNewLen = newLen + 100;
-                    const adr newNewHead = realloc(save, newNewLen + 1);
-                    newHead = newNewHead + (newHead - save);
-                    save = newNewHead;
-                    newLen = newNewLen;
-                };
+        if (subLen == 0) return new string(my.head);
 
-                memcpy(newHead, my.head + i, index - i);
-                newHead = newHead + index - i;
-                memcpy(newHead, n.head, nLen);
-                newHead = newHead + nLen;
-                i = index + subLen;
-            };
+        int occurrences = 0;
+        int searchIndex = 0;
+        while(true) {
+            const int index = my.find(sub, searchIndex);
+            if (index == -1) break;
+            occurrences = occurrences + 1;
+            searchIndex = index + subLen;
         };
-        newHead =: '\0';
-        const string newString = new string(save);
-        free($save);
+
+        if (occurrences == 0) return new string(my.head);
+
+        const int newLen = myLen + occurrences * (nLen - subLen);
+        const adr head = malloc(newLen + 1);
+        adr write = head;
+        int read = 0;
+
+        while(true) {
+            const int index = my.find(sub, read);
+            if (index == -1) break;
+
+            const int chunk = index - read;
+            memcpy(write, my.head + read, chunk);
+            write = write + chunk;
+            memcpy(write, n.head, nLen);
+            write = write + nLen;
+            read = index + subLen;
+        };
+
+        memcpy(write, my.head + read, myLen - read);
+        write = write + myLen - read;
+        write =: '\0';
+        const string newString = new string(head);
+        free($head);
         return newString;
     };
 
