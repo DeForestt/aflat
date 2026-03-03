@@ -107,18 +107,20 @@ union JSON {
         return `{c1}{s}{c2}`;
     };
 
-    // Replace literal newlines in a JSON string with the printable escape sequence.
+    // Replace literal newline-like characters in a JSON string with printable escape sequences.
     private fn escapeStringNewlines(const adr value) -> string {
         mutable string builder = "";
         const int length = st.len(value);
+        const char slash = '\\';
+        const char formFeed = io.toChar(12);
         for int i = 0; i < length; i++ {
             const char c = st.str_at(value, i);
             if c == '\n' {
-                const char slash = '\\';
                 builder = `{builder}{slash}n`;
             } else if c == '\r' {
-                const char slash = '\\';
                 builder = `{builder}{slash}r`;
+            } else if c == formFeed {
+                builder = `{builder}{slash}f`;
             } else {
                 builder = `{builder}{c}`;
             };
