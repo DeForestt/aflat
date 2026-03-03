@@ -36,7 +36,10 @@ class Content {
             const Bind binding = my.bindings.get(i).expect("Binding count corrupted");
             const string key = binding.key;
             const string val = binding.val;
+            val.get();
+            key.get();
             buffer = buffer.replace(key, val);
+            buffer.get();
         };
         return buffer.cstr();
     };
