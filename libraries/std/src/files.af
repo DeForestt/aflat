@@ -5,12 +5,12 @@ import {len} from "strings" under str;
 import string from "String";
 import {print} from "String" under st;
 import {printLong, printHex, printInt, print} from "io" under io;
-import result from "Utils/result";
+import result from "Utils/result_union";
 import Error from "Utils/Error";
 import Render from "Utils/Error/Render";
-import { accept, reject, resultWrapper } from "Utils/result" under res;
-import option from "Utils/option";
-import {Some, None} from "Utils/option" under opt;
+import { accept, reject, resultWrapper } from "Utils/result_union" under res;
+import option from "Utils/option_union";
+import {Some, None} from "Utils/option_union" under opt;
 import vector from "Collections/Vector";
 
 

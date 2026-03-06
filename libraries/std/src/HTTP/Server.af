@@ -8,12 +8,12 @@ import {methodToString} from "HTTP" under http;
 import string from "String";
 import {print} from "String" under str;
 import {printHex} from "io" under io;
-import {Some, None} from "Utils/option" under opt;
-import {accept, reject} from "Utils/result" under res;
+import {Some, None} from "Utils/option_union" under opt;
+import {accept, reject} from "Utils/result_union" under res;
 import Middleware from "HTTP/Middleware";
 import Error from "Utils/Error";
-import option from "Utils/option";
-import result from "Utils/result";
+import option from "Utils/option_union";
+import result from "Utils/result_union";
 
 class Server {
     contract {

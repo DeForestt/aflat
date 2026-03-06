@@ -2,10 +2,10 @@
 .needs <asm>
 .needs <request>
 
-import result from "Utils/result";
-import option from "Utils/option";
-import {accept, reject, resultWrapper} from "Utils/result" under res;
-import {Some, None, optionWrapper} from "Utils/option" under opt;
+import result from "Utils/result_union";
+import option from "Utils/option_union";
+import {accept, reject, resultWrapper} from "Utils/result_union" under res;
+import {Some, None, optionWrapper} from "Utils/option_union" under opt;
 import Map from "Utils/Map";
 import string from "String";
 import Error from "Utils/Error";

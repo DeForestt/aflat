@@ -30,6 +30,13 @@ cmake ..
 make
 ```
 For quick rebuilds you can simply run `make` again from the build directory.
+For Apple Silicon (arm64) builds, configure CMake with:
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
+cmake --build build --target aflat
+```
+`-march=native` is disabled by default on macOS so this can compile cleanly on Apple Silicon.
+
 After building, generate the standard library objects:
 ```bash
 ../rebuild-libs.sh

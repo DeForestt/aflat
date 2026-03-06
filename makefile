@@ -1,5 +1,13 @@
 CXX       := g++
-CXX_FLAGS := -std=c++17 -O3 -march=native -fpermissive -g
+CXX_FLAGS := -std=c++17 -O3 -fpermissive -g
+
+ifeq ($(shell uname -s),Darwin)
+  NATIVE_ARCH_FLAGS :=
+else
+  NATIVE_ARCH_FLAGS := -march=native
+endif
+
+CXX_FLAGS += $(NATIVE_ARCH_FLAGS)
 
 BIN     := bin
 SRC     := src

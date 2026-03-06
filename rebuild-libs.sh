@@ -46,8 +46,8 @@ function compile_single {
             aflat ./libraries/std/src/Utils/Result.af -o ./libraries/std/Result.s
             mv ./libraries/std/Result.s ./libraries/std/Utils_Result.s ;;
         "result") 
-            aflat ./libraries/std/src/Utils/result.af -o ./libraries/std/result.s
-            mv ./libraries/std/result.s ./libraries/std/Utils_result.s ;;
+            aflat ./libraries/std/src/Utils/result_union.af -o ./libraries/std/result.s
+            mv ./libraries/std/result.s ./libraries/std/Utils_result_union.s ;;
         "Functions") 
             aflat ./libraries/std/src/Utils/Functions.af -o ./libraries/std/Functions.s
             mv ./libraries/std/Functions.s ./libraries/std/Utils_Functions.s ;;
@@ -61,8 +61,8 @@ function compile_single {
             aflat ./libraries/std/src/Utils/Option.af -o ./libraries/std/Option.s
             mv ./libraries/std/Option.s ./libraries/std/Utils_Option.s ;;
         "option") 
-            aflat ./libraries/std/src/Utils/option.af -o ./libraries/std/option.s
-            mv ./libraries/std/option.s ./libraries/std/Utils_option.s ;;
+            aflat ./libraries/std/src/Utils/option_union.af -o ./libraries/std/option.s
+            mv ./libraries/std/option.s ./libraries/std/Utils_option_union.s ;;
         "Properties") 
             aflat ./libraries/std/src/Utils/Properties.af -o ./libraries/std/Properties.s
             mv ./libraries/std/Properties.s ./libraries/std/Utils_Properties.s ;;
@@ -140,8 +140,8 @@ wait
 aflat ./libraries/std/src/Utils/Result.af -o ./libraries/std/Result.s
 mv ./libraries/std/Result.s ./libraries/std/Utils_Result.s
 
-aflat ./libraries/std/src/Utils/result.af -o ./libraries/std/result.s
-mv ./libraries/std/result.s ./libraries/std/Utils_result.s
+aflat ./libraries/std/src/Utils/result_union.af -o ./libraries/std/result.s
+mv ./libraries/std/result.s ./libraries/std/Utils_result_union.s
 
 aflat ./libraries/std/src/Utils/Functions.af -o ./libraries/std/Functions.s
 mv ./libraries/std/Functions.s ./libraries/std/Utils_Functions.s
@@ -155,8 +155,8 @@ mv ./libraries/std/Map.s ./libraries/std/Utils_Map.s
 aflat ./libraries/std/src/Utils/Option.af -o ./libraries/std/Option.s
 mv ./libraries/std/Option.s ./libraries/std/Utils_Option.s
 
-aflat ./libraries/std/src/Utils/option.af -o ./libraries/std/option.s
-mv ./libraries/std/option.s ./libraries/std/Utils_option.s
+aflat ./libraries/std/src/Utils/option_union.af -o ./libraries/std/option.s
+mv ./libraries/std/option.s ./libraries/std/Utils_option_union.s
 
 aflat ./libraries/std/src/Utils/Properties.af -o ./libraries/std/Properties.s
 mv ./libraries/std/Properties.s ./libraries/std/Utils_Properties.s

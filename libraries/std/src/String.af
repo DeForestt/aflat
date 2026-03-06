@@ -1,10 +1,10 @@
 .needs <std>
 .needs <asm>
 
-import result from "Utils/result";
-import {accept, reject, resultWrapper} from "Utils/result" under res;
-import option from "Utils/option";
-import {optionWrapper, Some, None} from "Utils/option" under opt;
+import result from "Utils/result_union";
+import {accept, reject, resultWrapper} from "Utils/result_union" under res;
+import option from "Utils/option_union";
+import {optionWrapper, Some, None} from "Utils/option_union" under opt;
 import { exp } from "math" under math;
 import Error from "Utils/Error";
 import vector from "Collections/Vector";

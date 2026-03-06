@@ -49,8 +49,8 @@ Handles parsing of the program arguments.
 .needs <std>
 import string from "String";
 import { print } from "String" under str;
-import {Some, None, optionWrapper} from "Utils/option" under opt;
-import {accept, reject, resultWrapper} from "Utils/result" under res;
+import {Some, None, optionWrapper} from "Utils/option_union" under opt;
+import {accept, reject, resultWrapper} from "Utils/result_union" under res;
 import CLAValue, Argument, CommandLineArgs from "CLArgs";
 
 fn main(int argc, adr argv) -> int {

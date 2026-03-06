@@ -1,5 +1,11 @@
 #include <unistd.h>
 
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+
+#include <cstring>
+
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -26,7 +32,7 @@
 #include "Scanner.hpp"
 
 std::string preProcess(std::string input);
-std::string getExePath();
+std::string getExecutablePath();
 void buildTemplate(std::string value);
 void libTemplate(std::string value);
 bool build(std::string path, std::string output, cfg::Mutability mutability,
@@ -810,7 +816,7 @@ int main(int argc, char *argv[]) {
     std::filesystem::remove_all(".cache");
   gen::CodeGenerator::enableAlertTrace(cli.traceAlerts);
 
-  std::string filename = getExePath();
+  std::string filename = getExecutablePath();
   std::string exepath = filename.substr(0, filename.find_last_of("/"));
   std::string libPathA =
       exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/";
@@ -1117,7 +1123,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
       std::cout << "[parsing] " << origPath << std::endl;
   }
 
-  auto filename = getExePath();
+  auto filename = getExecutablePath();
   auto wd = std::filesystem::current_path();
   auto exepath = filename.substr(0, filename.find_last_of("/"));
   auto libPath =
@@ -1270,15 +1276,29 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
 };
 
 /*
- * function name:   getExePath
+ * function name:   getExecutablePath
  * description:     gets the path of the executable
  * parameters:      none
  * return value:    string - the path of the executable
  */
-std::string getExePath() {
-  char result[200];
-  auto count = readlink("/proc/self/exe", result, 200);
+std::string getExecutablePath() {
+  char result[1024] = {0};
+#if defined(__linux__)
+  auto count = readlink("/proc/self/exe", result, sizeof(result) - 1);
   return std::string(result, (count > 0) ? count : 0);
+#elif defined(__APPLE__)
+  uint32_t size = sizeof(result);
+  if (_NSGetExecutablePath(result, &size) == 0)
+    return std::string(result);
+  std::string resolved(size, '\0');
+  if (_NSGetExecutablePath(resolved.data(), &size) == 0) {
+    resolved.resize(std::strlen(resolved.c_str()));
+    return resolved;
+  }
+  return "";
+#else
+  return "";
+#endif
 }
 
 /*
@@ -1686,8 +1706,9 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       "CLArgs.s",
       "System.s",
       "Utils_Result.s",
-      "Utils_result.s",
+      "Utils_result_union.s",
       "Utils_Option.s",
+      "Utils_option_union.s",
       "Utils_Functions.s",
       "Utils_Map.s",
       "Utils_Properties.s",
