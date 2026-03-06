@@ -130,8 +130,8 @@ Now we will make a simple guessing game.  The program will ask the user to guess
 import string from "String";
 import { readString, print } from "String" under str;
 import Error from "Utils/Error"; // we need to import the Error type to use it in the match call for error handling
-import result from "Utils/result"; // we need to import the Result type to use it in the match call for error handling
-import { accept, reject } from "Utils/result"; // result expects these two functions to be imported
+import result from "Utils/result_union"; // we need to import the Result type to use it in the match call for error handling
+import { accept, reject } from "Utils/result_union"; // result expects these two functions to be imported
 
 fn main() -> int {
 		// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
@@ -164,8 +164,8 @@ This game is a bit too hard.  We cannot expect to guess the number in just one t
 import string from "String";
 import { readString, print } from "String" under str;
 import Error from "Utils/Error";
-import result from "Utils/result";
-import { accept, reject } from "Utils/result";
+import result from "Utils/result_union";
+import { accept, reject } from "Utils/result_union";
 
 fn main() -> int {
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
@@ -212,8 +212,8 @@ This game gets boring quickly.  We need to make sure that the program doesn't al
 import string from "String";
 import { readString, print } from "String" under str;
 import Error from "Utils/Error";
-import result from "Utils/result";
-import { accept, reject } from "Utils/result";
+import result from "Utils/result_union";
+import { accept, reject } from "Utils/result_union";
 
 fn main() -> int {
 	// here we will specify the type of the variable instead of letting the compiler infer it... this is suggested when using numbers that could be int, long, or short.
@@ -423,8 +423,8 @@ The code that we have here is great, but we can see how it can become very long 
 import string from "String";
 import { print } from "String" under str;
 import vector from "Collections/Vector"; // We need to import the Vector class to create a list of students
-import option from "Utils/option"; // vector expects the option module to be imported
-import {Some, None} from "Utils/option"; // vector expects the Some and None classes to be imported
+import option from "Utils/option_union"; // vector expects the option module to be imported
+import {Some, None} from "Utils/option_union"; // vector expects the Some and None classes to be imported
 // Vectors can be iterated over directly; Scroller is optional for manual control
 
 class Student {
@@ -506,8 +506,8 @@ Now it can bee imported into our main program the same way we would import any c
 import string from "String";
 import { print } from "String" under str;
 import vector from "Collections/Vector"; // We need to import the Vector class to create a list of students
-import option from "Utils/option"; // vector expects the option module to be imported
-import {Some, None} from "Utils/option"; // vector expects the Some and None classes to be imported
+import option from "Utils/option_union"; // vector expects the option module to be imported
+import {Some, None} from "Utils/option_union"; // vector expects the Some and None classes to be imported
 
 import Student from "./Student"; // Now we can import the Student module.  Note that If `Student.af` does not exist, it will look for `Student/mod.af`
 
@@ -540,8 +540,8 @@ Now that we have the Assignment class, add a list of assignments as a field in o
 import string from "String";
 import { print } from "String" under str;
 import vector from "Collections/Vector";
-import option from "Utils/option";
-import {Some, None} from "Utils/option";
+import option from "Utils/option_union";
+import {Some, None} from "Utils/option_union";
 import Assignment from "../Assignment";
 
 class Student {
@@ -574,8 +574,8 @@ Now we should create a method to add an assignment to the student's list of assi
 import string from "String";
 import { print } from "String" under str;
 import vector from "Collections/Vector";
-import option from "Utils/option";
-import {Some, None} from "Utils/option";
+import option from "Utils/option_union";
+import {Some, None} from "Utils/option_union";
 import Assignment from "../Assignment";
 
 class Student {
@@ -630,8 +630,8 @@ Now lets rewrite our main program to use our new student module.
 import string from "String";
 import { print } from "String" under str;
 import vector from "Collections/Vector";
-import option from "Utils/option";
-import {Some, None} from "Utils/option";
+import option from "Utils/option_union";
+import {Some, None} from "Utils/option_union";
 import Student from "./Student";
 import Assignment from "./Assignment";
 
@@ -654,8 +654,8 @@ You may have noticed that there is no reason for anything outside of the student
 import string from "String";
 import { print } from "String" under str;
 import vector from "Collections/Vector";
-import option from "Utils/option";
-import {Some, None} from "Utils/option";
+import option from "Utils/option_union";
+import {Some, None} from "Utils/option_union";
 import Assignment from "../Assignment";
 
 class Student {
@@ -708,8 +708,8 @@ Now lets build out a student roster system. Delete everything in the main module
 import string from "String";
 import { print, readString } from "String" under str;
 import vector from "Collections/Vector";
-import option from "Utils/option";
-import {Some, None} from "Utils/option";
+import option from "Utils/option_union";
+import {Some, None} from "Utils/option_union";
 import Student from "./Student";
 import Assignment from "./Assignment";
 
@@ -890,9 +890,9 @@ All together, the main module should look like this:
 import string from "String";
 import { print, readString } from "String" under str;
 import vector from "Collections/Vector";
-import option from "Utils/option";
-import result from "Utils/result";
-import {Some, None} from "Utils/option";
+import option from "Utils/option_union";
+import result from "Utils/result_union";
+import {Some, None} from "Utils/option_union";
 import Student from "./Student";
 import Assignment from "./Assignment";
 
@@ -998,7 +998,7 @@ fail should return `result::<T>` or use the shorthand `T!` for the return type.
 Example of a function that returns a result:
 
 ```js
-import {accept, reject} from "Utils/result" under pr;
+import {accept, reject} from "Utils/result_union" under pr;
 
 fn divide(int a, int b) -> int! {
         if b == 0
