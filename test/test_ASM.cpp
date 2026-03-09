@@ -50,3 +50,12 @@ TEST_CASE("ASM File optimize removes redundant moves and nops", "[asm]") {
   REQUIRE(m != nullptr);
   REQUIRE(m->to == "%rbx");
 }
+
+TEST_CASE("ASM StringLiteral escapes unsupported backslash sequences",
+          "[asm]") {
+  asmc::StringLiteral lit;
+  lit.value = "Invalid escape character \\%c in string literal";
+  REQUIRE(lit.toString() ==
+          "\t.asciz\t \"Invalid escape character \\\\%c in string "
+          "literal\"\n");
+}
