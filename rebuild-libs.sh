@@ -15,6 +15,28 @@ done
 
 shift $((OPTIND - 1))
 
+function check_case_collisions {
+    local root="./libraries/std/src"
+    local collisions
+
+    collisions=$(find "$root" -type f -name '*.af' |         sed "s#^$root/##" |         awk '{
+            k=tolower($0)
+            if (seen[k] && seen[k] != $0)
+                print seen[k] " <-> " $0
+            else
+                seen[k]=$0
+        }')
+
+    if [ -n "$collisions" ]; then
+        echo "Error: case-insensitive filename collisions detected in $root:" >&2
+        echo "$collisions" >&2
+        echo "Rename one side of each pair to keep macOS builds deterministic." >&2
+        exit 1
+    fi
+}
+
+check_case_collisions
+
 if [ $# -gt 1 ]; then
     usage
 fi
