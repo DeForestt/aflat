@@ -1,5 +1,5 @@
 .needs <std>
-import Result from "Utils/Result";
+import Result from "Utils/ResultClass";
 import string from "String";
 import Error from "Utils/Error";
 import option from "Utils/option";

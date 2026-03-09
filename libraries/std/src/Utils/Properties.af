@@ -1,6 +1,6 @@
 .needs <std>
 import Map from "Utils/Map";
-import Option from "Utils/Option";
+import Option from "Utils/OptionClass";
 import List from "Collections";
 import Iterator from "Collections/Iterator";
 import Scroller from "Collections/Scroller";

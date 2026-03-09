@@ -2,7 +2,7 @@
 
 import string from "String";
 import Render from "Utils/Error/Render";
-import Option from "Utils/Option";
+import Option from "Utils/OptionClass";
 import Map from "Utils/Map";
 
 pedantic class Error {

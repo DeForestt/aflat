@@ -24,6 +24,7 @@ ast::Sequence *extractAllFunctions(ast::Statement *stmt);
 ast::Sequence *extractAllDeclarations(ast::Statement *stmt);
 ast::Sequence *copyAllFunctionShells(ast::Statement *stmt);
 void shellStatement(ast::Statement *stmt);
+std::string getExecutablePath();
 std::string getLibPath(std::string lib);
 std::string generateUUID();
 

@@ -2,9 +2,9 @@
 
 import Iterator, Next, Peek from "Collections/Iterator";
 import List from "Collections";
-import Result from "Utils/Result";
+import Result from "Utils/ResultClass";
 import string from "String";
-import { accept, reject } from "Utils/Result" under res;
+import { accept, reject } from "Utils/ResultClass" under res;
 import EndOfRange from "Collections/Enumerator";
 
 class Scroller signs Iterator {

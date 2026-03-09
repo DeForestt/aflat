@@ -3,7 +3,7 @@
 import Endpoint, NotFoundImpl from "HTTP/Endpoint";
 import List from "Collections";
 import HTTPMessage, HTTPMethod, HTTPResponse, NotFoundError, ForbiddenError, BadRequestError, InternalServerError, OtherHTTPError, NotImplementedError from "HTTP";
-import Result from "Utils/Result";
+import Result from "Utils/ResultClass";
 import {methodToString} from "HTTP" under http;
 import string from "String";
 import {print} from "String" under str;

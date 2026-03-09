@@ -125,7 +125,41 @@ std::string asmc::Movl::toString() {
 }
 
 std::string asmc::StringLiteral::toString() {
-  return "\t.asciz\t \"" + this->value + "\"\n";
+  std::string escaped;
+  escaped.reserve(this->value.size());
+
+  for (size_t i = 0; i < this->value.size(); ++i) {
+    char c = this->value[i];
+
+    if (c == '\\') {
+      if (i + 1 < this->value.size()) {
+        char next = this->value[i + 1];
+        bool knownEscape =
+            (next == '\\' || next == '"' || next == '\'' || next == '?' ||
+             next == 'a' || next == 'b' || next == 'f' || next == 'n' ||
+             next == 'r' || next == 't' || next == 'v' || next == 'x' ||
+             next == 'X' || next == 'u' || next == 'U' ||
+             (next >= '0' && next <= '7'));
+        if (knownEscape) {
+          escaped += '\\';
+          escaped += next;
+          ++i;
+          continue;
+        }
+      }
+      escaped += "\\\\";
+      continue;
+    }
+
+    if (c == '"') {
+      escaped += "\\\"";
+      continue;
+    }
+
+    escaped += c;
+  }
+
+  return "\t.asciz\t \"" + escaped + "\"\n";
 }
 
 std::string asmc::FloatLiteral::toString() {

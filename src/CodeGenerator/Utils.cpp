@@ -2,6 +2,12 @@
 
 #include <unistd.h>
 
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+
+#include <cstring>
+
 #include "CodeGenerator/CodeGenerator.hpp"
 
 using namespace gen::utils;
@@ -270,10 +276,28 @@ ast::Sequence *gen::utils::extractAllDeclarations(ast::Statement *stmt) {
   return nullptr;
 }
 
+std::string gen::utils::getExecutablePath() {
+  char result[1024] = {0};
+#if defined(__linux__)
+  ssize_t count = readlink("/proc/self/exe", result, sizeof(result) - 1);
+  return std::string(result, (count > 0) ? count : 0);
+#elif defined(__APPLE__)
+  uint32_t size = sizeof(result);
+  if (_NSGetExecutablePath(result, &size) == 0)
+    return std::string(result);
+  std::string resolved(size, '\0');
+  if (_NSGetExecutablePath(resolved.data(), &size) == 0) {
+    resolved.resize(std::strlen(resolved.c_str()));
+    return resolved;
+  }
+  return "";
+#else
+  return "";
+#endif
+}
+
 std::string gen::utils::getLibPath(std::string lib) {
-  char result[200];
-  ssize_t count = readlink("/proc/self/exe", result, 200);
-  std::string filename = std::string(result, (count > 0) ? count : 0);
+  std::string filename = getExecutablePath();
   std::string exepath = filename.substr(0, filename.find_last_of("/"));
   std::string libPath = exepath.substr(0, exepath.find_last_of("/")) +
                         "/libraries/std/" + lib + "/";

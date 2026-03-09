@@ -1,5 +1,11 @@
 #include <unistd.h>
 
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+
+#include <cstring>
+
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
@@ -7,6 +13,7 @@
 #include <future>
 #include <iostream>
 #include <map>
+#include <regex>
 #include <sstream>
 #include <vector>
 
@@ -26,7 +33,7 @@
 #include "Scanner.hpp"
 
 std::string preProcess(std::string input);
-std::string getExePath();
+std::string getExecutablePath();
 void buildTemplate(std::string value);
 void libTemplate(std::string value);
 bool build(std::string path, std::string output, cfg::Mutability mutability,
@@ -652,13 +659,13 @@ static std::string generateReadmeContent(const std::string &projectName) {
   out << "#### Utility types & error handling\n";
   out << "- `Utils/Option` - Ref-counted Option class with `resolve`, `match`, "
          "and defaulting helpers "
-         "(libraries/std/src/Utils/Option.af).\n";
+         "(libraries/std/src/Utils/OptionClass.af).\n";
   out << "- `Utils/option` - Lightweight union mirroring Rust's Option with "
          "`Some`/`None` constructors "
          "(libraries/std/src/Utils/option.af).\n";
   out << "- `Utils/Result` - Class-based result value for bridging APIs that "
          "expect dynamic success/error payloads "
-         "(libraries/std/src/Utils/Result.af).\n";
+         "(libraries/std/src/Utils/ResultClass.af).\n";
   out << "- `Utils/result` - Rust-style `result<T>` union with ergonomic "
          "constructors and unwrap helpers "
          "(libraries/std/src/Utils/result.af).\n";
@@ -810,7 +817,7 @@ int main(int argc, char *argv[]) {
     std::filesystem::remove_all(".cache");
   gen::CodeGenerator::enableAlertTrace(cli.traceAlerts);
 
-  std::string filename = getExePath();
+  std::string filename = getExecutablePath();
   std::string exepath = filename.substr(0, filename.find_last_of("/"));
   std::string libPathA =
       exepath.substr(0, exepath.find_last_of("/")) + "/libraries/std/";
@@ -1062,6 +1069,86 @@ int main(int argc, char *argv[]) {
 }
 #endif
 
+static std::string mangleAppleSymbol(const std::string &symbol) {
+#if defined(__APPLE__)
+  if (symbol.empty())
+    return symbol;
+  if (symbol[0] == '_' || symbol[0] == '.' ||
+      (symbol[0] >= '0' && symbol[0] <= '9'))
+    return symbol;
+  return "_" + symbol;
+#else
+  return symbol;
+#endif
+}
+
+static std::string makeAppleAsmCompatible(const std::string &line) {
+#if defined(__APPLE__)
+  std::string fixed = line;
+
+  auto apply = [&](const std::regex &pattern, auto transform) {
+    std::string out;
+    std::smatch match;
+    auto searchStart = fixed.cbegin();
+
+    while (std::regex_search(searchStart, fixed.cend(), match, pattern)) {
+      out.append(searchStart, match[0].first);
+      out += transform(match);
+      searchStart = match[0].second;
+    }
+
+    out.append(searchStart, fixed.cend());
+    fixed.swap(out);
+  };
+
+  apply(
+      std::regex(R"((\\bmovq\s+)\$([A-Za-z_.][A-Za-z0-9_.]*),\s*(%[a-z0-9]+))"),
+      [&](const std::smatch &m) {
+        return "leaq	" + mangleAppleSymbol(m[2].str()) + "(%rip)," +
+               m[3].str();
+      });
+
+  apply(
+      std::regex(
+          R"((\\bmov(?:q|l|w|b|ss|sd)\s+)([A-Za-z_.][A-Za-z0-9_.]*),\s*(%[a-z0-9]+))"),
+      [&](const std::smatch &m) {
+        return m[1].str() + mangleAppleSymbol(m[2].str()) + "(%rip)," +
+               m[3].str();
+      });
+
+  apply(
+      std::regex(
+          R"((\\bmov(?:q|l|w|b|ss|sd)\s+)(%[a-z0-9]+),\s*([A-Za-z_.][A-Za-z0-9_.]*))"),
+      [&](const std::smatch &m) {
+        return m[1].str() + m[2].str() + "," + mangleAppleSymbol(m[3].str()) +
+               "(%rip)";
+      });
+
+  apply(std::regex(R"((\s*\.global\s+)([A-Za-z_.][A-Za-z0-9_.]*))"),
+        [&](const std::smatch &m) {
+          return m[1].str() + mangleAppleSymbol(m[2].str());
+        });
+
+  apply(std::regex(R"(^\s*([A-Za-z_][A-Za-z0-9_.]*):)"),
+        [&](const std::smatch &m) {
+          std::string whole = m[1].str();
+          std::string label = whole.substr(0, whole.size() - 1);
+          return mangleAppleSymbol(label) + ":";
+        });
+
+  apply(
+      std::regex(
+          R"((\\b(?:call|jmp|je|jne|jg|jge|jl|jle)\s+)([A-Za-z_.][A-Za-z0-9_.]*))"),
+      [&](const std::smatch &m) {
+        return m[1].str() + mangleAppleSymbol(m[2].str());
+      });
+
+  return fixed;
+#else
+  return line;
+#endif
+}
+
 static std::string sanitizeGenerics(const std::string &input) {
   std::string result;
   bool inSingleQuote = false;
@@ -1117,7 +1204,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
       std::cout << "[parsing] " << origPath << std::endl;
   }
 
-  auto filename = getExePath();
+  auto filename = getExecutablePath();
   auto wd = std::filesystem::current_path();
   auto exepath = filename.substr(0, filename.find_last_of("/"));
   auto libPath =
@@ -1201,7 +1288,8 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
 
     // output linker commands
     while (file.linker.head != nullptr) {
-      ofs << sanitizeGenerics(file.linker.pop()->toString());
+      ofs << makeAppleAsmCompatible(
+          sanitizeGenerics(file.linker.pop()->toString()));
     }
     // text section output
     ofs << "\n\n.text\n\n";
@@ -1225,7 +1313,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
         else if (logicalLine > 0 &&
                  dynamic_cast<asmc::Define *>(inst) != nullptr)
           ofs << ".line " << logicalLine - 1 << "\n";
-      auto str = sanitizeGenerics(inst->toString());
+      auto str = makeAppleAsmCompatible(sanitizeGenerics(inst->toString()));
       // replace '\n' with "\n .line " + line number
       // while(str.find('\n') != std::string::npos){
       //   auto index = str.find('\n');
@@ -1242,13 +1330,15 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     // data section output
     ofs << "\n\n.data\n\n";
     while (file.data.head != nullptr) {
-      ofs << sanitizeGenerics(file.data.pop()->toString());
+      ofs << makeAppleAsmCompatible(
+          sanitizeGenerics(file.data.pop()->toString()));
     }
 
     // bss section output
     ofs << "\n\n.bss\n\n";
     while (file.bss.head != nullptr) {
-      ofs << sanitizeGenerics(file.bss.pop()->toString());
+      ofs << makeAppleAsmCompatible(
+          sanitizeGenerics(file.bss.pop()->toString()));
     }
     ofs.close();
     if (!gQuiet) {
@@ -1270,15 +1360,29 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
 };
 
 /*
- * function name:   getExePath
+ * function name:   getExecutablePath
  * description:     gets the path of the executable
  * parameters:      none
  * return value:    string - the path of the executable
  */
-std::string getExePath() {
-  char result[200];
-  auto count = readlink("/proc/self/exe", result, 200);
+std::string getExecutablePath() {
+  char result[1024] = {0};
+#if defined(__linux__)
+  auto count = readlink("/proc/self/exe", result, sizeof(result) - 1);
   return std::string(result, (count > 0) ? count : 0);
+#elif defined(__APPLE__)
+  uint32_t size = sizeof(result);
+  if (_NSGetExecutablePath(result, &size) == 0)
+    return std::string(result);
+  std::string resolved(size, '\0');
+  if (_NSGetExecutablePath(resolved.data(), &size) == 0) {
+    resolved.resize(std::strlen(resolved.c_str()));
+    return resolved;
+  }
+  return "";
+#else
+  return "";
+#endif
 }
 
 /*
@@ -1547,12 +1651,7 @@ bool compileCFile(const std::string &path, bool debug) {
   }
 
   fs::create_directories(fs::path(obj).parent_path());
-  std::string flags;
-  if (debug)
-    flags = "-g -c -no-pie -z noexecstack ";
-  else
-    flags = "-O3 -march=native -c -no-pie -z noexecstack ";
-  std::string cmd = "gcc " + flags + src + " -o " + obj;
+  std::string cmd = compilerutils::buildCObjectCmd(src, obj, debug);
 
   if (!gQuiet) {
     if (gProgress)
@@ -1597,7 +1696,8 @@ ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
   if (!useCached) {
     fs::create_directories(fs::path(asmPath).parent_path());
     if (build(src, asmPath, config.mutability, config.debug)) {
-      std::string cmd = "gcc -c " + asmPath + " -o " + objPath;
+      std::string cmd =
+          compilerutils::buildAssembleCmd(asmPath, objPath, config.debug);
       if (system(cmd.c_str()) != 0) {
         return {objPath, false};
       }
@@ -1685,9 +1785,10 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       "ATest.s",
       "CLArgs.s",
       "System.s",
-      "Utils_Result.s",
+      "Utils_ResultClass.s",
       "Utils_result.s",
-      "Utils_Option.s",
+      "Utils_OptionClass.s",
+      "Utils_option.s",
       "Utils_Functions.s",
       "Utils_Map.s",
       "Utils_Properties.s",

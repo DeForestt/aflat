@@ -4,7 +4,7 @@ import {str_at} from "strings" under st;
 import { print } from "String" under str;
 import unordered_map from "Collections/unordered_map";
 import Error from "Utils/Error";
-import Option from "Utils/Option";
+import Option from "Utils/OptionClass";
 import option from "Utils/option";
 import Scroller from "Collections/Scroller";
 import vector from "Collections/Vector";

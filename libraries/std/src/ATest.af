@@ -5,7 +5,7 @@ import List from "Collections";
 import Map from "Utils/Map";
 import unordered_map from "Collections/unordered_map";
 import vector from "Collections/Vector";
-import Result from "Utils/Result";
+import Result from "Utils/ResultClass";
 import Error from "Utils/Error";
 import option from "Utils/option";
 import result from "Utils/result";

@@ -1,9 +1,9 @@
 .needs <std>
 import string from "String";
 import Map from "Utils/Map";
-import Result from "Utils/Result";
-import Option from "Utils/Option";
-import { accept, reject } from "Utils/Result" under res;
+import Result from "Utils/ResultClass";
+import Option from "Utils/OptionClass";
+import { accept, reject } from "Utils/ResultClass" under res;
 import Error from "Utils/Error";
 
 class Object {

@@ -1,13 +1,13 @@
 .needs <std>
 
 import string from "String";
-import Result from "Utils/Result";
+import Result from "Utils/ResultClass";
 import Iterator from "Collections/Iterator";
 import Scroller from "Collections/Scroller";
-import Option from "Utils/Option";
-import Result from "Utils/Result";
-import {accept, reject} from "Utils/Result" under res;
-import {some, none} from "Utils/Option" under opt;
+import Option from "Utils/OptionClass";
+import Result from "Utils/ResultClass";
+import {accept, reject} from "Utils/ResultClass" under res;
+import {some, none} from "Utils/OptionClass" under opt;
 import Error from "Utils/Error";
 import Render from "Utils/Error/Render";
 

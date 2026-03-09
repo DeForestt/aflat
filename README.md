@@ -30,6 +30,13 @@ cmake ..
 make
 ```
 For quick rebuilds you can simply run `make` again from the build directory.
+For Apple Silicon (arm64) builds, configure CMake with:
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
+cmake --build build --target aflat
+```
+`-march=native` is disabled by default on macOS so this can compile cleanly on Apple Silicon.
+
 After building, generate the standard library objects:
 ```bash
 ../rebuild-libs.sh
@@ -154,9 +161,9 @@ modules below are the most commonly used building blocks:
 - `request.c` - C shim exposing `request`, `_aflat_server_spinUp`, and `serve` socket utilities (libraries/std/src/request.c).
 
 #### Utility types & error handling
-- `Utils/Option` - Ref-counted Option class with `resolve`, `match`, and defaulting helpers (libraries/std/src/Utils/Option.af).
+- `Utils/OptionClass` - Ref-counted Option class with `resolve`, `match`, and defaulting helpers (libraries/std/src/Utils/OptionClass.af).
 - `Utils/option` - Lightweight union mirroring Rust's Option with `Some`/`None` constructors (libraries/std/src/Utils/option.af).
-- `Utils/Result` - Class-based result value for bridging APIs that expect dynamic success/error payloads (libraries/std/src/Utils/Result.af).
+- `Utils/ResultClass` - Class-based result value for bridging APIs that expect dynamic success/error payloads (libraries/std/src/Utils/ResultClass.af).
 - `Utils/result` - Rust-style `result<T>` union with ergonomic constructors and unwrap helpers (libraries/std/src/Utils/result.af).
 - `Utils/Error` - Base `Error` class with type metadata, render hooks, and pattern matching (libraries/std/src/Utils/Error.af).
 - `Utils/Error/Render` - Decorator that lets errors plug in a render callback (libraries/std/src/Utils/Error/Render.af).
