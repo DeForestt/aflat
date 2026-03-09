@@ -1069,21 +1069,79 @@ int main(int argc, char *argv[]) {
 }
 #endif
 
+static std::string mangleAppleSymbol(const std::string &symbol) {
+#if defined(__APPLE__)
+  if (symbol.empty())
+    return symbol;
+  if (symbol[0] == '_' || symbol[0] == '.' ||
+      (symbol[0] >= '0' && symbol[0] <= '9'))
+    return symbol;
+  return "_" + symbol;
+#else
+  return symbol;
+#endif
+}
+
 static std::string makeAppleAsmCompatible(const std::string &line) {
 #if defined(__APPLE__)
   std::string fixed = line;
 
-  static const std::regex absLabelToReg(
-      R"((\bmovq\s+)\$([A-Za-z_.][A-Za-z0-9_.]*),\s*(%[a-z0-9]+))");
-  fixed = std::regex_replace(fixed, absLabelToReg, "leaq	$2(%rip),$3");
+  auto apply = [&](const std::regex &pattern, auto transform) {
+    std::string out;
+    std::smatch match;
+    auto searchStart = fixed.cbegin();
 
-  static const std::regex globalToReg(
-      R"((\bmov(?:q|l|w|b|ss|sd)\s+)([A-Za-z_.][A-Za-z0-9_.]*),\s*(%[a-z0-9]+))");
-  fixed = std::regex_replace(fixed, globalToReg, "$1$2(%rip),$3");
+    while (std::regex_search(searchStart, fixed.cend(), match, pattern)) {
+      out.append(searchStart, match[0].first);
+      out += transform(match);
+      searchStart = match[0].second;
+    }
 
-  static const std::regex regToGlobal(
-      R"((\bmov(?:q|l|w|b|ss|sd)\s+)(%[a-z0-9]+),\s*([A-Za-z_.][A-Za-z0-9_.]*))");
-  fixed = std::regex_replace(fixed, regToGlobal, "$1$2,$3(%rip)");
+    out.append(searchStart, fixed.cend());
+    fixed.swap(out);
+  };
+
+  apply(
+      std::regex(R"((\\bmovq\s+)\$([A-Za-z_.][A-Za-z0-9_.]*),\s*(%[a-z0-9]+))"),
+      [&](const std::smatch &m) {
+        return "leaq	" + mangleAppleSymbol(m[2].str()) + "(%rip)," +
+               m[3].str();
+      });
+
+  apply(
+      std::regex(
+          R"((\\bmov(?:q|l|w|b|ss|sd)\s+)([A-Za-z_.][A-Za-z0-9_.]*),\s*(%[a-z0-9]+))"),
+      [&](const std::smatch &m) {
+        return m[1].str() + mangleAppleSymbol(m[2].str()) + "(%rip)," +
+               m[3].str();
+      });
+
+  apply(
+      std::regex(
+          R"((\\bmov(?:q|l|w|b|ss|sd)\s+)(%[a-z0-9]+),\s*([A-Za-z_.][A-Za-z0-9_.]*))"),
+      [&](const std::smatch &m) {
+        return m[1].str() + m[2].str() + "," + mangleAppleSymbol(m[3].str()) +
+               "(%rip)";
+      });
+
+  apply(std::regex(R"((\s*\.global\s+)([A-Za-z_.][A-Za-z0-9_.]*))"),
+        [&](const std::smatch &m) {
+          return m[1].str() + mangleAppleSymbol(m[2].str());
+        });
+
+  apply(std::regex(R"(^\s*([A-Za-z_][A-Za-z0-9_.]*):)"),
+        [&](const std::smatch &m) {
+          std::string whole = m[1].str();
+          std::string label = whole.substr(0, whole.size() - 1);
+          return mangleAppleSymbol(label) + ":";
+        });
+
+  apply(
+      std::regex(
+          R"((\\b(?:call|jmp|je|jne|jg|jge|jl|jle)\s+)([A-Za-z_.][A-Za-z0-9_.]*))"),
+      [&](const std::smatch &m) {
+        return m[1].str() + mangleAppleSymbol(m[2].str());
+      });
 
   return fixed;
 #else
