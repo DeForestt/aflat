@@ -4,11 +4,11 @@
 import {print, printHex, printInt} from "io" under io;
 import string from "String";
 import Iterator from "Collections/Iterator";
-import Result from "Utils/Result";
-import { accept, reject } from "Utils/Result" under res;
+import Result from "Utils/ResultClass";
+import { accept, reject } from "Utils/ResultClass" under res;
 import { fString } from "String" under st;
-import Option from "Utils/Option";
-import { some, none } from "Utils/Option" under opt;
+import Option from "Utils/OptionClass";
+import { some, none } from "Utils/OptionClass" under opt;
 
 Block head = NULL;
 

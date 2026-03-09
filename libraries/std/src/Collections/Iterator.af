@@ -1,7 +1,7 @@
 .needs <std>
-import Result from "Utils/Result";
+import Result from "Utils/ResultClass";
 import Function from "Utils/Functions";
-import { accept, reject } from "Utils/Result" under std;
+import { accept, reject } from "Utils/ResultClass" under std;
 import Map from "Utils/Map";
 
 class Iterator {

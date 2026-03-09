@@ -4,8 +4,8 @@ import Server from "HTTP/Server";
 import HTTPMessage from "HTTP";
 import string from "String";
 import unordered_map from "Collections/unordered_map";
-import option from "Utils/option_union";
-import {Some, None} from "Utils/option_union" under opt;
+import option from "Utils/option";
+import {Some, None} from "Utils/option" under opt;
 
 class Middleware {
     const unordered_map::<adr> implementations = implementations(server);

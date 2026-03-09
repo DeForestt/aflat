@@ -65,11 +65,11 @@ function compile_single {
         "System") aflat ./libraries/std/src/System.af -o ./libraries/std/System.s ;;
         "Memory") aflat ./libraries/std/src/Memory.af -o ./libraries/std/Memory.s ;;
         "Result") 
-            aflat ./libraries/std/src/Utils/Result.af -o ./libraries/std/Result.s
-            mv ./libraries/std/Result.s ./libraries/std/Utils_Result.s ;;
+            aflat ./libraries/std/src/Utils/ResultClass.af -o ./libraries/std/ResultClass.s
+            mv ./libraries/std/ResultClass.s ./libraries/std/Utils_ResultClass.s ;;
         "result") 
-            aflat ./libraries/std/src/Utils/result_union.af -o ./libraries/std/result.s
-            mv ./libraries/std/result.s ./libraries/std/Utils_result_union.s ;;
+            aflat ./libraries/std/src/Utils/result.af -o ./libraries/std/result.s
+            mv ./libraries/std/result.s ./libraries/std/Utils_result.s ;;
         "Functions") 
             aflat ./libraries/std/src/Utils/Functions.af -o ./libraries/std/Functions.s
             mv ./libraries/std/Functions.s ./libraries/std/Utils_Functions.s ;;
@@ -80,11 +80,11 @@ function compile_single {
             aflat ./libraries/std/src/Utils/Map.af -o ./libraries/std/Map.s
             mv ./libraries/std/Map.s ./libraries/std/Utils_Map.s ;;
         "Option") 
-            aflat ./libraries/std/src/Utils/Option.af -o ./libraries/std/Option.s
-            mv ./libraries/std/Option.s ./libraries/std/Utils_Option.s ;;
+            aflat ./libraries/std/src/Utils/OptionClass.af -o ./libraries/std/OptionClass.s
+            mv ./libraries/std/OptionClass.s ./libraries/std/Utils_OptionClass.s ;;
         "option") 
-            aflat ./libraries/std/src/Utils/option_union.af -o ./libraries/std/option.s
-            mv ./libraries/std/option.s ./libraries/std/Utils_option_union.s ;;
+            aflat ./libraries/std/src/Utils/option.af -o ./libraries/std/option.s
+            mv ./libraries/std/option.s ./libraries/std/Utils_option.s ;;
         "Properties") 
             aflat ./libraries/std/src/Utils/Properties.af -o ./libraries/std/Properties.s
             mv ./libraries/std/Properties.s ./libraries/std/Utils_Properties.s ;;
@@ -159,11 +159,11 @@ aflat ./libraries/std/src/Memory.af -o ./libraries/std/Memory.s &
 wait
 
 # Handle Utils files that need renaming (run sequentially to avoid conflicts)
-aflat ./libraries/std/src/Utils/Result.af -o ./libraries/std/Result.s
-mv ./libraries/std/Result.s ./libraries/std/Utils_Result.s
+aflat ./libraries/std/src/Utils/ResultClass.af -o ./libraries/std/ResultClass.s
+mv ./libraries/std/ResultClass.s ./libraries/std/Utils_ResultClass.s
 
-aflat ./libraries/std/src/Utils/result_union.af -o ./libraries/std/result.s
-mv ./libraries/std/result.s ./libraries/std/Utils_result_union.s
+aflat ./libraries/std/src/Utils/result.af -o ./libraries/std/result.s
+mv ./libraries/std/result.s ./libraries/std/Utils_result.s
 
 aflat ./libraries/std/src/Utils/Functions.af -o ./libraries/std/Functions.s
 mv ./libraries/std/Functions.s ./libraries/std/Utils_Functions.s
@@ -174,11 +174,11 @@ mv ./libraries/std/Observable.s ./libraries/std/Utils_Observable.s
 aflat ./libraries/std/src/Utils/Map.af -o ./libraries/std/Map.s
 mv ./libraries/std/Map.s ./libraries/std/Utils_Map.s
 
-aflat ./libraries/std/src/Utils/Option.af -o ./libraries/std/Option.s
-mv ./libraries/std/Option.s ./libraries/std/Utils_Option.s
+aflat ./libraries/std/src/Utils/OptionClass.af -o ./libraries/std/OptionClass.s
+mv ./libraries/std/OptionClass.s ./libraries/std/Utils_OptionClass.s
 
-aflat ./libraries/std/src/Utils/option_union.af -o ./libraries/std/option.s
-mv ./libraries/std/option.s ./libraries/std/Utils_option_union.s
+aflat ./libraries/std/src/Utils/option.af -o ./libraries/std/option.s
+mv ./libraries/std/option.s ./libraries/std/Utils_option.s
 
 aflat ./libraries/std/src/Utils/Properties.af -o ./libraries/std/Properties.s
 mv ./libraries/std/Properties.s ./libraries/std/Utils_Properties.s

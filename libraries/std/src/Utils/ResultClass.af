@@ -2,7 +2,7 @@
 import string from "String";
 import Function from "Utils/Functions";
 import Computed from "Utils/Properties";
-import Option from "Utils/Option";
+import Option from "Utils/OptionClass";
 import Error from "Utils/Error";
 import Map from "Utils/Map";
 

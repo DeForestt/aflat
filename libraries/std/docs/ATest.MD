@@ -27,7 +27,7 @@ Functions in `ATest` are all untyped `any` function pointers unless otherwise no
 .needs <std>
 import {describe, it, beforeEach, fix, getFixture,
         assertEqual, assertNotNull, assertTrue, assertSuccess} from "ATest" under test;
-import Result from "Utils/Result";
+import Result from "Utils/ResultClass";
 
 fn alwaysOk() -> Result {
     return Result.accept(42);

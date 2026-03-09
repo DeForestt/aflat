@@ -1,8 +1,8 @@
 .needs <std>
 
 import string, {print} from "String" under str;
-import option from "Utils/option_union";
-import { Some, None } from "Utils/option_union" under opt;
+import option from "Utils/option";
+import { Some, None } from "Utils/option" under opt;
 
 types(A)
 class TestClass {

@@ -1092,9 +1092,9 @@ Example:
 import {print} from "String" under str;
 import string from "String";
 import Error from "Utils/Error";
-import {Some, None} from "Utils/option_union";
-import result from "Utils/result_union";
-import {accept, reject} from "Utils/result_union" under res;
+import {Some, None} from "Utils/option";
+import result from "Utils/result";
+import {accept, reject} from "Utils/result" under res;
 
 fn divide(int a, ?int b) -> int! {
     match b {
