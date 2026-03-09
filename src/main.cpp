@@ -1567,12 +1567,7 @@ bool compileCFile(const std::string &path, bool debug) {
   }
 
   fs::create_directories(fs::path(obj).parent_path());
-  std::string flags;
-  if (debug)
-    flags = "-g -c -no-pie -z noexecstack ";
-  else
-    flags = "-O3 -march=native -c -no-pie -z noexecstack ";
-  std::string cmd = "gcc " + flags + src + " -o " + obj;
+  std::string cmd = compilerutils::buildCObjectCmd(src, obj, debug);
 
   if (!gQuiet) {
     if (gProgress)
@@ -1617,7 +1612,8 @@ ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
   if (!useCached) {
     fs::create_directories(fs::path(asmPath).parent_path());
     if (build(src, asmPath, config.mutability, config.debug)) {
-      std::string cmd = "gcc -c " + asmPath + " -o " + objPath;
+      std::string cmd =
+          compilerutils::buildAssembleCmd(asmPath, objPath, config.debug);
       if (system(cmd.c_str()) != 0) {
         return {objPath, false};
       }

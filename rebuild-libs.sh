@@ -1,3 +1,12 @@
+CC_BIN=${CC:-gcc}
+ARCH_FLAGS=""
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    CC_BIN=${CC:-clang}
+    if [[ "$(uname -m)" == "arm64" ]]; then
+        ARCH_FLAGS="-arch x86_64"
+    fi
+fi
+
 AF_FLAGS=()
 
 function usage {
@@ -114,7 +123,7 @@ function compile_single {
         "Scroller") aflat ./libraries/std/src/Collections/Scroller.af -o ./libraries/std/Scroller.s ;;
         "Enumerator") aflat ./libraries/std/src/Collections/Enumerator.af -o ./libraries/std/Enumerator.s ;;
         "Vector") aflat ./libraries/std/src/Collections/Vector.af -o ./libraries/std/vector.s ;;
-        "request") gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c ;;
+        "request") $CC_BIN $ARCH_FLAGS -g -S -o ./libraries/std/request.s ./libraries/std/src/request.c ;;
         *)
             echo "Unknown library: $1"
             echo "Available libraries:"
@@ -215,7 +224,7 @@ aflat ./libraries/std/src/JSON/Parse.af -o ./libraries/std/Parse.s
 mv ./libraries/std/Parse.s ./libraries/std/JSON_Parse.s
 
 # Compile C file
-gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c &
+$CC_BIN $ARCH_FLAGS -g -S -o ./libraries/std/request.s ./libraries/std/src/request.c &
 
 # Wait for all background processes to complete
 wait
