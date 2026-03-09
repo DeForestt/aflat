@@ -13,6 +13,7 @@
 #include <future>
 #include <iostream>
 #include <map>
+#include <regex>
 #include <sstream>
 #include <vector>
 
@@ -1068,6 +1069,16 @@ int main(int argc, char *argv[]) {
 }
 #endif
 
+static std::string makeAppleAsmCompatible(const std::string &line) {
+#if defined(__APPLE__)
+  static const std::regex absLabelMove(
+      R"((\bmov(?:q)?\s+)\$([A-Za-z_.$][A-Za-z0-9_.$]*),\s*(%[a-z0-9]+))");
+  return std::regex_replace(line, absLabelMove, "leaq\t$2(%rip),$3");
+#else
+  return line;
+#endif
+}
+
 static std::string sanitizeGenerics(const std::string &input) {
   std::string result;
   bool inSingleQuote = false;
@@ -1207,7 +1218,8 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
 
     // output linker commands
     while (file.linker.head != nullptr) {
-      ofs << sanitizeGenerics(file.linker.pop()->toString());
+      ofs << makeAppleAsmCompatible(
+          sanitizeGenerics(file.linker.pop()->toString()));
     }
     // text section output
     ofs << "\n\n.text\n\n";
@@ -1231,7 +1243,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
         else if (logicalLine > 0 &&
                  dynamic_cast<asmc::Define *>(inst) != nullptr)
           ofs << ".line " << logicalLine - 1 << "\n";
-      auto str = sanitizeGenerics(inst->toString());
+      auto str = makeAppleAsmCompatible(sanitizeGenerics(inst->toString()));
       // replace '\n' with "\n .line " + line number
       // while(str.find('\n') != std::string::npos){
       //   auto index = str.find('\n');
@@ -1248,13 +1260,15 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     // data section output
     ofs << "\n\n.data\n\n";
     while (file.data.head != nullptr) {
-      ofs << sanitizeGenerics(file.data.pop()->toString());
+      ofs << makeAppleAsmCompatible(
+          sanitizeGenerics(file.data.pop()->toString()));
     }
 
     // bss section output
     ofs << "\n\n.bss\n\n";
     while (file.bss.head != nullptr) {
-      ofs << sanitizeGenerics(file.bss.pop()->toString());
+      ofs << makeAppleAsmCompatible(
+          sanitizeGenerics(file.bss.pop()->toString()));
     }
     ofs.close();
     if (!gQuiet) {
