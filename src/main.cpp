@@ -1074,15 +1074,15 @@ static std::string makeAppleAsmCompatible(const std::string &line) {
   std::string fixed = line;
 
   static const std::regex absLabelToReg(
-      R"((\bmovq\s+)\$([A-Za-z_.$][A-Za-z0-9_.$]*),\s*(%[a-z0-9]+))");
+      R"((\bmovq\s+)\$([A-Za-z_.][A-Za-z0-9_.]*),\s*(%[a-z0-9]+))");
   fixed = std::regex_replace(fixed, absLabelToReg, "leaq	$2(%rip),$3");
 
   static const std::regex globalToReg(
-      R"((\bmov(?:q|l|w|b|ss|sd)\s+)([A-Za-z_.$][A-Za-z0-9_.$]*),\s*(%[a-z0-9]+))");
+      R"((\bmov(?:q|l|w|b|ss|sd)\s+)([A-Za-z_.][A-Za-z0-9_.]*),\s*(%[a-z0-9]+))");
   fixed = std::regex_replace(fixed, globalToReg, "$1$2(%rip),$3");
 
   static const std::regex regToGlobal(
-      R"((\bmov(?:q|l|w|b|ss|sd)\s+)(%[a-z0-9]+),\s*([A-Za-z_.$][A-Za-z0-9_.$]*))");
+      R"((\bmov(?:q|l|w|b|ss|sd)\s+)(%[a-z0-9]+),\s*([A-Za-z_.][A-Za-z0-9_.]*))");
   fixed = std::regex_replace(fixed, regToGlobal, "$1$2,$3(%rip)");
 
   return fixed;
