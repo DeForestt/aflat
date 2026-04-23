@@ -109,3 +109,13 @@ adr _fCstr(const adr fmt, * const adr args) {
     const let ret = st.fString(new string(fmt), args);
     return ret;
 };
+
+adr create(const int size, * const any value) {
+    const adr ptr = malloc(size);
+    if (ptr == NULL) {
+        return NULL;
+    };
+    
+    memcpy(ptr, ?value, size);
+    return ptr;
+};

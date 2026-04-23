@@ -9,12 +9,12 @@ import {Some, None, optionWrapper} from "Utils/option" under opt;
 import Map from "Utils/Map";
 import string from "String";
 import Error from "Utils/Error";
-import Result from "Utils/Result";
 import {len, int_toString} from "strings" under str;
 import {print, printInt, fPrint, printHex} from "io" under io;
 import {worker} from "concurrency" under async;
 import {fString, print} from "String" under st;
 import vector from "Collections/Vector";
+import with from "Utils/Properties";
 
 class NotFoundError signs Error {
     // 404 Not Found
@@ -345,6 +345,10 @@ class HTTPMessage {
         if isReq my.parseReq(rsp) else my.parse(rsp);
     };
 
+    fn toString() -> string {
+        return my.origin;
+    };
+
     adr getHeader(const adr key) {
         const adr args = malloc(adr);
         
@@ -368,16 +372,55 @@ class HTTPMessage {
 };
 
 class HTTPRequest {
-    private HTTPMethod method = method;
-    private adr host;
-    private adr endpoint;
+    @with private HTTPMethod method = HTTPMethod.GET;
+    @with private adr host = "";
+    @with private adr endpoint = "/";
+    @with private adr port = "";
+
     const private vector::<HTTPHeader> headers = new vector::<HTTPHeader>();
     private adr body = "\r\n";
 
-    HTTPRequest init(const HTTPMethod method) {
-        my.host = "";
-        my.endpoint = "/";
+    HTTPRequest init() {
         return my;
+    };
+
+    private string normalizedHost() {
+        mutable string host = new string(my.host);
+        if host.len() >= 8 {
+            if host.subString(0, 8) == "https://" {
+                host = host.subString(8, host.len());
+            };
+        };
+        if host.len() >= 7 {
+            if host.subString(0, 7) == "http://" {
+                host = host.subString(7, host.len());
+            };
+        };
+        if host.indexOf('/') != -1 {
+            host = host.subString(0, host.indexOf('/'));
+        };
+        return host;
+    };
+
+    private string normalizedEndpoint() {
+        const string endpoint = new string(my.endpoint);
+        if endpoint.len() >= 8 {
+            if endpoint.subString(0, 8) == "https://" {
+                return endpoint;
+            };
+        };
+        if endpoint.len() >= 7 {
+            if endpoint.subString(0, 7) == "http://" {
+                return endpoint;
+            };
+        };
+        if endpoint.len() == 0 {
+            return new string("/");
+        };
+        if endpoint.subString(0, 1) == "/" {
+            return endpoint;
+        };
+        return `/{endpoint}`;
     };
 
     int setHost(const adr host) {
@@ -421,11 +464,13 @@ class HTTPRequest {
 
     string toString() {
         string ret = new string("");
+        const string endpoint = my.normalizedEndpoint();
+        const string host = my.normalizedHost();
         ret = ret + methodToString(my.method);
         ret = ret + " ";
-        ret = ret + my.endpoint + " HTTP/1.1";
+        ret = ret + endpoint + " HTTP/1.1";
         ret = ret + "\r\nHost: ";
-        ret = ret + my.host;
+        ret = ret + host;
         ret = ret + "\r\n";
         ret = ret + my.getHeaders();
         ret = ret + "\r\n";
@@ -433,15 +478,23 @@ class HTTPRequest {
         return ret;
     };
 
-    HTTPMessage send(const int bufferSize) {
+    result::<HTTPMessage> send(const int bufferSize) {
         const string msg = my.toString();
         const adr buffer = malloc(bufferSize);
-        const adr host = my.host;
-        const adr endpoint = my.endpoint;
+        const string host = my.normalizedHost();
+        const string endpoint = my.normalizedEndpoint();
+        const adr port = my.port;
         const adr msg_prim = msg.cstr();
-        request(host, endpoint, "80", msg_prim, buffer, bufferSize);
-        const let ret = new string(buffer);
-        return new HTTPMessage(buffer);
+        const bool okay = request(host.cstr(), endpoint.cstr(), port, msg_prim, buffer, bufferSize);
+        if okay {
+            return res.accept::<HTTPMessage>(new HTTPMessage(buffer));
+        };
+
+        const string errorMessage = if str.len(buffer) > 0
+            new string(buffer)
+        else
+            new string("HTTP request failed");
+        return res.reject::<HTTPMessage>(new Error(errorMessage));
       };
 };
 

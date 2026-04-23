@@ -76,6 +76,7 @@ public:
   bool dynamic = false;
   bool safeType = false;
   bool pedantic = false;
+  bool declarationOnly = false;
   links::SLinkedList<ast::Function, std::string> publicNameTable;
   links::SLinkedList<ast::Function, ast::Op> overloadTable;
   links::SLinkedList<ast::Function, std::string> nameTable;

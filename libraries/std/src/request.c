@@ -1,6 +1,6 @@
 #include <ctype.h>
-#include <netdb.h>
 #include <netinet/in.h>
+#include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -103,37 +103,211 @@ void error(const char *msg) {
   exit(0);
 }
 
+static int _header_is(const char *header, const char *name) {
+  size_t name_len = strlen(name);
+  for (size_t i = 0; i < name_len; ++i) {
+    unsigned char a = (unsigned char)header[i];
+    unsigned char b = (unsigned char)name[i];
+    if (tolower(a) != tolower(b)) return 0;
+  }
+  return header[name_len] == ':';
+}
+
+static char *_dup_range(const char *start, size_t len) {
+  char *out = malloc(len + 1);
+  if (!out) return NULL;
+  memcpy(out, start, len);
+  out[len] = '\0';
+  return out;
+}
+
+static char *_dup_trimmed_line(const char *start, size_t len) {
+  while (len > 0 && (start[len - 1] == '\r' || start[len - 1] == '\n')) len--;
+  return _dup_range(start, len);
+}
+
+static char *_build_url(const char *host, const char *port, const char *path) {
+  const char *safe_path = path ? path : "/";
+  const char *safe_port = port ? port : "";
+  if (safe_path[0] == '\0') safe_path = "/";
+  if (strncmp(safe_path, "http://", 7) == 0 ||
+      strncmp(safe_path, "https://", 8) == 0) {
+    return _dup_range(safe_path, strlen(safe_path));
+  }
+
+  size_t need_slash = safe_path[0] == '/' ? 0 : 1;
+  if (strncmp(host, "http://", 7) == 0 || strncmp(host, "https://", 8) == 0) {
+    size_t len = strlen(host) + need_slash + strlen(safe_path) + 1;
+    char *url = malloc(len);
+    if (!url) return NULL;
+    snprintf(url, len, "%s%s%s", host, need_slash ? "/" : "", safe_path);
+    return url;
+  }
+
+  const char *scheme =
+      (safe_port[0] != '\0' && strcmp(safe_port, "80") == 0) ? "http"
+                                                              : "https";
+  int include_port =
+      safe_port[0] != '\0' &&
+      !((strcmp(scheme, "http") == 0 && strcmp(safe_port, "80") == 0) ||
+        (strcmp(scheme, "https") == 0 && strcmp(safe_port, "443") == 0));
+  size_t len = strlen(scheme) + strlen("://") + strlen(host) +
+               (include_port ? 1 + strlen(safe_port) : 0) + need_slash +
+               strlen(safe_path) + 1;
+  char *url = malloc(len);
+  if (!url) return NULL;
+  snprintf(url, len, "%s://%s%s%s%s%s", scheme, host,
+           include_port ? ":" : "", include_port ? safe_port : "",
+           need_slash ? "/" : "", safe_path);
+  return url;
+}
+
 int request(char *host, char *path, char *port, char *msg, char *response,
             int response_size) {
-  int sockfd, portno, n;
-  struct sockaddr_in serv_addr;
-  struct hostent *server;
+  int pipefd[2];
+  pid_t pid;
+  int status = 0;
+  ssize_t bytes = 0;
+  size_t total = 0;
+  const char *header_end;
+  const char *body;
+  const char *line_start;
+  const char *line_end;
+  char *msg_copy = NULL;
+  char *method = NULL;
+  char *url = NULL;
+  char *headers[128];
+  char *argv[270];
+  int header_count = 0;
+  int argc = 0;
 
-  portno = atoi(port);
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (sockfd < 0) error("ERROR opening socket");
-  server = gethostbyname(host);
-  if (server == NULL) {
-    fprintf(stderr, "ERROR, no such host");
+  if (host == NULL || port == NULL || msg == NULL || response == NULL ||
+      response_size <= 0) {
+    fprintf(stderr, "ERROR, invalid request arguments\n");
     return 0;
-  };
-  bzero((char *)&serv_addr, sizeof(serv_addr));
-  serv_addr.sin_family = AF_INET;
-  bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr,
-        server->h_length);
-  serv_addr.sin_port = htons(portno);
-  if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    error("ERROR connecting");
+  }
 
-  n = write(sockfd, msg, strlen(msg));
-  if (n < 0) error("ERROR writing to socket");
-
-  // read response
   bzero(response, response_size);
-  n = read(sockfd, response, response_size - 1);
-  if (n < 0) error("ERROR reading from socket");
-  close(sockfd);
-  return 1;
+  for (size_t i = 0; i < sizeof(headers) / sizeof(headers[0]); ++i) {
+    headers[i] = NULL;
+  }
+
+  header_end = strstr(msg, "\r\n\r\n");
+  body = header_end ? header_end + 4 : msg + strlen(msg);
+
+  line_end = strstr(msg, "\r\n");
+  if (!line_end) {
+    fprintf(stderr, "ERROR, invalid HTTP request line\n");
+    return 0;
+  }
+
+  msg_copy = _dup_range(msg, (size_t)(line_end - msg));
+  if (!msg_copy) {
+    fprintf(stderr, "ERROR, out of memory\n");
+    return 0;
+  }
+  method = strtok(msg_copy, " ");
+  if (!method) {
+    fprintf(stderr, "ERROR, invalid HTTP method\n");
+    free(msg_copy);
+    return 0;
+  }
+
+  url = _build_url(host, port, path);
+  if (!url) {
+    fprintf(stderr, "ERROR, out of memory\n");
+    free(msg_copy);
+    return 0;
+  }
+
+  line_start = line_end + 2;
+  while (header_end && line_start < header_end && header_count < 127) {
+    line_end = strstr(line_start, "\r\n");
+    if (!line_end || line_end == line_start) break;
+
+    char *header = _dup_trimmed_line(line_start, (size_t)(line_end - line_start));
+    if (!header) break;
+    if (!_header_is(header, "Host") && !_header_is(header, "Content-Length")) {
+      headers[header_count++] = header;
+    } else {
+      free(header);
+    }
+    line_start = line_end + 2;
+  }
+
+  if (pipe(pipefd) != 0) {
+    perror("pipe");
+    free(url);
+    free(msg_copy);
+    for (int i = 0; i < header_count; ++i) free(headers[i]);
+    return 0;
+  }
+
+  pid = fork();
+  if (pid < 0) {
+    perror("fork");
+    close(pipefd[0]);
+    close(pipefd[1]);
+    free(url);
+    free(msg_copy);
+    for (int i = 0; i < header_count; ++i) free(headers[i]);
+    return 0;
+  }
+
+  if (pid == 0) {
+    dup2(pipefd[1], STDOUT_FILENO);
+    dup2(pipefd[1], STDERR_FILENO);
+    close(pipefd[0]);
+    close(pipefd[1]);
+
+    argv[argc++] = "curl";
+    argv[argc++] = "--silent";
+    argv[argc++] = "--show-error";
+    argv[argc++] = "--include";
+    argv[argc++] = "--http1.1";
+    argv[argc++] = "--request";
+    argv[argc++] = method;
+    argv[argc++] = "--url";
+    argv[argc++] = url;
+
+    for (int i = 0; i < header_count; ++i) {
+      argv[argc++] = "-H";
+      argv[argc++] = headers[i];
+    }
+
+    if (header_end && body[0] != '\0') {
+      argv[argc++] = "--data-binary";
+      argv[argc++] = (char *)body;
+    }
+
+    argv[argc] = NULL;
+    execvp("curl", argv);
+    _exit(127);
+  }
+
+  close(pipefd[1]);
+  while (total + 1 < (size_t)response_size) {
+    bytes = read(pipefd[0], response + total, (size_t)response_size - total - 1);
+    if (bytes < 0) {
+      close(pipefd[0]);
+      free(url);
+      free(msg_copy);
+      for (int i = 0; i < header_count; ++i) free(headers[i]);
+      return 0;
+    }
+    if (bytes == 0) break;
+    total += (size_t)bytes;
+  }
+  response[total] = '\0';
+  close(pipefd[0]);
+
+  waitpid(pid, &status, 0);
+
+  free(url);
+  free(msg_copy);
+  for (int i = 0; i < header_count; ++i) free(headers[i]);
+
+  return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
 #define SIZE 1024
