@@ -67,7 +67,7 @@ asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
     }
   }
 
-  if (nameTable()["free"] != nullptr) {
+  if (nameTable()["af_free"] != nullptr) {
     auto var = new ast::Var();
     var->logicalLine = logicalLine();
     var->Ident = sym.symbol;
@@ -75,7 +75,7 @@ asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
 
     auto freeCall = new ast::Call();
     freeCall->logicalLine = logicalLine();
-    freeCall->ident = "free";
+    freeCall->ident = "af_free";
     freeCall->Args = LinkedList<ast::Expr *>();
     freeCall->Args.push(var);
     freeCall->modList = LinkedList<std::string>();

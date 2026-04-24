@@ -139,21 +139,21 @@ class File{
             return res.reject::<string>(new ReadError(1));
         };
         const int size = 0 + remaining;
-        const adr buffer = malloc(1 + size);
+        const adr buffer = af_malloc(1 + size);
         const int err = sys_read(file, buffer, size);
         if err < -1 {
             const let extra = buffer;
-            free($extra);
+            af_free($extra);
             return res.reject::<string>(new ReadError(err));
         } else if err == 0 {
             const let extra = buffer;
-            free($extra);
+            af_free($extra);
             return res.reject::<string>(new ReadError(1));
         };
         const adr pointer = buffer + err;
         pointer =: '\0';
         const string text = new string(buffer);
-        free($buffer);
+        af_free($buffer);
         return res.accept(text);
     };
 
@@ -172,14 +172,14 @@ class File{
 
 // Create or truncate a file for read/write access, returning File! result.
 export fn createFile(const adr fileName) -> File! {
-        const File file = malloc(File);
+        const File file = af_malloc(File);
         const long flag = #2 | #512 | #64; // O_RDWR | O_CREAT | O_TRUNC
         file.file = sys_open(fileName, flag, 0o0777);
         file.it = true;
         const int test = file.file;
         if(test < 1) {
                 const let extra = file;
-                free($extra);
+                af_free($extra);
                 return res.reject::<File>(new FileError(test));
         };
 
@@ -188,14 +188,14 @@ export fn createFile(const adr fileName) -> File! {
 
 // Open an existing file for read/write access, returning File! result.
 export fn openFile(const adr fileName) -> File! {
-        const File file = malloc(File);
+        const File file = af_malloc(File);
         const long flag = #2;
         file.file = sys_open(fileName, flag, 0o0777);
         file.it = true;
         const int test = file.file;
         if(test < 0){
                 const let extra = file;
-                free($extra);
+                af_free($extra);
                 return res.reject::<File>(new FileError(test));
         };
         file.fileName = fileName;
@@ -240,7 +240,7 @@ safe dynamic pedantic class FileManager {
     my.refcount = my.refcount - 1;
     if (my.refcount == 0) {
       my.del();
-      free($my);
+      af_free($my);
     };
   };
   

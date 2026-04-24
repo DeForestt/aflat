@@ -1,5 +1,7 @@
 #include <ctype.h>
+#include <errno.h>
 #include <netinet/in.h>
+#include <spawn.h>
 #include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +9,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+extern char **environ;
 
 static int _parse_content_length(const char *buffer, size_t header_len,
                                  size_t *content_length) {
@@ -140,7 +144,17 @@ static char *_build_url(const char *host, const char *port, const char *path) {
     size_t len = strlen(host) + need_slash + strlen(safe_path) + 1;
     char *url = malloc(len);
     if (!url) return NULL;
-    snprintf(url, len, "%s%s%s", host, need_slash ? "/" : "", safe_path);
+    char *write = url;
+    size_t host_len = strlen(host);
+    memcpy(write, host, host_len);
+    write += host_len;
+    if (need_slash) {
+      *write++ = '/';
+    }
+    size_t path_len = strlen(safe_path);
+    memcpy(write, safe_path, path_len);
+    write += path_len;
+    *write = '\0';
     return url;
   }
 
@@ -151,14 +165,34 @@ static char *_build_url(const char *host, const char *port, const char *path) {
       safe_port[0] != '\0' &&
       !((strcmp(scheme, "http") == 0 && strcmp(safe_port, "80") == 0) ||
         (strcmp(scheme, "https") == 0 && strcmp(safe_port, "443") == 0));
-  size_t len = strlen(scheme) + strlen("://") + strlen(host) +
+  size_t len = strlen(scheme) + 3 + strlen(host) +
                (include_port ? 1 + strlen(safe_port) : 0) + need_slash +
                strlen(safe_path) + 1;
   char *url = malloc(len);
   if (!url) return NULL;
-  snprintf(url, len, "%s://%s%s%s%s%s", scheme, host,
-           include_port ? ":" : "", include_port ? safe_port : "",
-           need_slash ? "/" : "", safe_path);
+  char *write = url;
+  size_t scheme_len = strlen(scheme);
+  size_t host_len = strlen(host);
+  size_t path_len = strlen(safe_path);
+  size_t port_len = strlen(safe_port);
+
+  memcpy(write, scheme, scheme_len);
+  write += scheme_len;
+  memcpy(write, "://", 3);
+  write += 3;
+  memcpy(write, host, host_len);
+  write += host_len;
+  if (include_port) {
+    *write++ = ':';
+    memcpy(write, safe_port, port_len);
+    write += port_len;
+  }
+  if (need_slash) {
+    *write++ = '/';
+  }
+  memcpy(write, safe_path, path_len);
+  write += path_len;
+  *write = '\0';
   return url;
 }
 
@@ -235,6 +269,28 @@ int request(char *host, char *path, char *port, char *msg, char *response,
     line_start = line_end + 2;
   }
 
+  argv[argc++] = "curl";
+  argv[argc++] = "--silent";
+  argv[argc++] = "--show-error";
+  argv[argc++] = "--include";
+  argv[argc++] = "--http1.1";
+  argv[argc++] = "--request";
+  argv[argc++] = method;
+  argv[argc++] = "--url";
+  argv[argc++] = url;
+
+  for (int i = 0; i < header_count; ++i) {
+    argv[argc++] = "-H";
+    argv[argc++] = headers[i];
+  }
+
+  if (header_end && body[0] != '\0') {
+    argv[argc++] = "--data-binary";
+    argv[argc++] = (char *)body;
+  }
+
+  argv[argc] = NULL;
+
   if (pipe(pipefd) != 0) {
     perror("pipe");
     free(url);
@@ -243,9 +299,9 @@ int request(char *host, char *path, char *port, char *msg, char *response,
     return 0;
   }
 
-  pid = fork();
-  if (pid < 0) {
-    perror("fork");
+  posix_spawn_file_actions_t actions;
+  if (posix_spawn_file_actions_init(&actions) != 0) {
+    perror("posix_spawn_file_actions_init");
     close(pipefd[0]);
     close(pipefd[1]);
     free(url);
@@ -254,35 +310,22 @@ int request(char *host, char *path, char *port, char *msg, char *response,
     return 0;
   }
 
-  if (pid == 0) {
-    dup2(pipefd[1], STDOUT_FILENO);
-    dup2(pipefd[1], STDERR_FILENO);
+  posix_spawn_file_actions_adddup2(&actions, pipefd[1], STDOUT_FILENO);
+  posix_spawn_file_actions_adddup2(&actions, pipefd[1], STDERR_FILENO);
+  posix_spawn_file_actions_addclose(&actions, pipefd[0]);
+  posix_spawn_file_actions_addclose(&actions, pipefd[1]);
+
+  int spawn_status = posix_spawnp(&pid, "curl", &actions, NULL, argv, environ);
+  posix_spawn_file_actions_destroy(&actions);
+  if (spawn_status != 0) {
+    errno = spawn_status;
+    perror("posix_spawnp");
     close(pipefd[0]);
     close(pipefd[1]);
-
-    argv[argc++] = "curl";
-    argv[argc++] = "--silent";
-    argv[argc++] = "--show-error";
-    argv[argc++] = "--include";
-    argv[argc++] = "--http1.1";
-    argv[argc++] = "--request";
-    argv[argc++] = method;
-    argv[argc++] = "--url";
-    argv[argc++] = url;
-
-    for (int i = 0; i < header_count; ++i) {
-      argv[argc++] = "-H";
-      argv[argc++] = headers[i];
-    }
-
-    if (header_end && body[0] != '\0') {
-      argv[argc++] = "--data-binary";
-      argv[argc++] = (char *)body;
-    }
-
-    argv[argc] = NULL;
-    execvp("curl", argv);
-    _exit(127);
+    free(url);
+    free(msg_copy);
+    for (int i = 0; i < header_count; ++i) free(headers[i]);
+    return 0;
   }
 
   close(pipefd[1]);

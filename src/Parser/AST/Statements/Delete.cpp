@@ -46,8 +46,8 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
     generator.alert("Variable " + this->ident + " was sold on line " +
                     std::to_string(sym->sold) + " and cannot be deleted");
 
-  ast::Function *free = generator.nameTable()["free"];
-  if (free == nullptr)
+  ast::Function *af_free = generator.nameTable()["af_free"];
+  if (af_free == nullptr)
     generator.alert(
         "Please import std library in order to use delete operator.\n\n -> "
         ".needs <std> \n\n");
@@ -70,7 +70,7 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
       };
     }
   };
-  // call free
+  // call af_free
   ast::Var *var = new ast::Var();
   var->logicalLine = this->logicalLine;
   var->Ident = this->ident;
@@ -78,7 +78,7 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
 
   ast::Call *freeCall = new ast::Call();
   freeCall->logicalLine = this->logicalLine;
-  freeCall->ident = "free";
+  freeCall->ident = "af_free";
   freeCall->modList = LinkedList<std::string>();
   freeCall->Args = LinkedList<ast::Expr *>();
   freeCall->Args.push(var);

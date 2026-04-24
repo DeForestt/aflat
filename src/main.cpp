@@ -566,7 +566,8 @@ static std::string generateReadmeContent(const std::string &projectName) {
          "`libraries/std`. "
          "The modules below are the most commonly used building blocks:\n\n";
   out << "#### Runtime & strings\n";
-  out << "- `std` - Arena allocator, `malloc`/`free`, `memcpy`, `panic`, "
+  out << "- `std` - Arena allocator, `af_malloc`/`af_free`, `af_memcpy`, "
+         "`panic`, "
          "`sleep`, and other intrinsics (libraries/std/src/std.af).\n";
   out << "- `std-cmp` - Compatibility shim that swaps in libc memory helpers "
          "plus panic/assert when the arena can't be used "
