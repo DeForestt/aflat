@@ -9,12 +9,12 @@ import {Some, None, optionWrapper} from "Utils/option" under opt;
 import Map from "Utils/Map";
 import string from "String";
 import Error from "Utils/Error";
-import Result from "Utils/Result";
 import {len, int_toString} from "strings" under str;
 import {print, printInt, fPrint, printHex} from "io" under io;
 import {worker} from "concurrency" under async;
 import {fString, print} from "String" under st;
 import vector from "Collections/Vector";
+import with from "Utils/Properties";
 
 class NotFoundError signs Error {
     // 404 Not Found
@@ -160,11 +160,35 @@ export HTTPMethod stringToMethod(const string method) {
 };
 
 class HTTPHeader {
-    const adr key = key;
-    const adr value = value;
+    adr key = "";
+    adr value = "";
 
     HTTPHeader init(const adr key, const adr value) {
+        my.key = af_malloc(str.len(key) + 1);
+        af_memcpy(my.key, key, str.len(key) + 1);
+        my.value = af_malloc(str.len(value) + 1);
+        af_memcpy(my.value, value, str.len(value) + 1);
         return my;
+    };
+
+    fn __from__(const HTTPHeader other) -> Self {
+        my.key = af_malloc(str.len(other.key) + 1);
+        af_memcpy(my.key, other.key, str.len(other.key) + 1);
+        my.value = af_malloc(str.len(other.value) + 1);
+        af_memcpy(my.value, other.value, str.len(other.value) + 1);
+        return my;
+    };
+
+    int del() {
+        if my.key != NULL {
+            af_free(my.key);
+            my.key = NULL;
+        };
+        if my.value != NULL {
+            af_free(my.value);
+            my.value = NULL;
+        };
+        return 0;
     };
 
     fn toString() -> string {
@@ -184,6 +208,24 @@ class HTTPMessage {
     string statusMessage;
     HTTPMethod method;
     Map metadata = new Map();
+
+    fn __from__(const HTTPMessage other) -> Self {
+        my.switch = other.switch;
+        my.origin = other.origin.copy();
+        my.body = other.body.copy();
+        my.version = other.version.copy();
+        my.statusCode = other.statusCode.copy();
+        my.endpoint = other.endpoint.copy();
+        my.statusMessage = other.statusMessage.copy();
+        my.method = other.method;
+
+        for int i = 0; i < other.headers.count(); i = i + 1 {
+            const HTTPHeader header = other.headers.get(i).expect("Copy header failed");
+            my.headers.push_back(header);
+        };
+
+        return my;
+    };
 
     private int parse(const adr rsi) {
         const string rsp = new string(rsi);
@@ -252,8 +294,8 @@ class HTTPMessage {
         else
             mq.subString(mq.indexOf('=') + 1, mq.indexOf('&'));
 
-        const let valptr = malloc(str.len(value) + 1);
-        memcpy(valptr, value.cstr(), str.len(value.cstr()) + 1);
+        const let valptr = af_malloc(str.len(value) + 1);
+        af_memcpy(valptr, value.cstr(), str.len(value.cstr()) + 1);
         const let endPointer = valptr + str.len(value.cstr());
         endPointer =: '\0';
         my.query.set(key.cstr(), valptr);
@@ -345,43 +387,126 @@ class HTTPMessage {
         if isReq my.parseReq(rsp) else my.parse(rsp);
     };
 
-    adr getHeader(const adr key) {
-        const adr args = malloc(adr);
-        
+    fn toString() -> string {
+        return my.origin;
+    };
+
+    string getHeader(const adr key) {
         for int i = 0; i < my.headers.count(); i = i + 1 {
             const HTTPHeader header = my.headers.get(i).expect("Get header failed");
-            const adr comp = header.key;
+            const string comp = new string(header.key);
             mutable string a = new string(header.key);
             a = a.trim('\n');
             a = a.trim('\r');
             a = a.trim(' ');
             if a == comp {
-                return header.value;
+                return new string(header.value);
             };
             delete a;
         };
-        
-        args =: key;
-        const adr ret = args as adr;
-        return ret;
+        return new string(key);
     };
 };
 
 class HTTPRequest {
-    private HTTPMethod method = method;
-    private adr host;
-    private adr endpoint;
+    @with private HTTPMethod method = HTTPMethod.GET;
+    @with private adr host = "";
+    @with private adr endpoint = "/";
+    @with private adr port = "";
+
     const private vector::<HTTPHeader> headers = new vector::<HTTPHeader>();
     private adr body = "\r\n";
 
-    HTTPRequest init(const HTTPMethod method) {
-        my.host = "";
-        my.endpoint = "/";
+    HTTPRequest init() {
         return my;
     };
 
+    fn __from__(const HTTPRequest other) -> Self {
+        my.method = other.method;
+
+        my.host = af_malloc(str.len(other.host) + 1);
+        af_memcpy(my.host, other.host, str.len(other.host) + 1);
+
+        my.endpoint = af_malloc(str.len(other.endpoint) + 1);
+        af_memcpy(my.endpoint, other.endpoint, str.len(other.endpoint) + 1);
+
+        my.port = af_malloc(str.len(other.port) + 1);
+        af_memcpy(my.port, other.port, str.len(other.port) + 1);
+
+        my.body = af_malloc(str.len(other.body) + 1);
+        af_memcpy(my.body, other.body, str.len(other.body) + 1);
+
+        for int i = 0; i < other.headers.count(); i = i + 1 {
+            const HTTPHeader header = other.headers.get(i).expect("Copy header failed");
+            my.addHeader(header.key, header.value);
+        };
+
+        return my;
+    };
+
+    int del() {
+        if my.host != NULL {
+            af_free(my.host);
+            my.host = NULL;
+        };
+        if my.endpoint != NULL {
+            af_free(my.endpoint);
+            my.endpoint = NULL;
+        };
+        if my.port != NULL {
+            af_free(my.port);
+            my.port = NULL;
+        };
+        if my.body != NULL {
+            af_free(my.body);
+            my.body = NULL;
+        };
+        return 0;
+    };
+
+    private string normalizedHost() {
+        mutable string host = new string(my.host);
+        if host.len() >= 8 {
+            if host.subString(0, 8) == "https://" {
+                host = host.subString(8, host.len());
+            };
+        };
+        if host.len() >= 7 {
+            if host.subString(0, 7) == "http://" {
+                host = host.subString(7, host.len());
+            };
+        };
+        if host.indexOf('/') != -1 {
+            host = host.subString(0, host.indexOf('/'));
+        };
+        return host;
+    };
+
+    private string normalizedEndpoint() {
+        const string endpoint = new string(my.endpoint);
+        if endpoint.len() >= 8 {
+            if endpoint.subString(0, 8) == "https://" {
+                return endpoint;
+            };
+        };
+        if endpoint.len() >= 7 {
+            if endpoint.subString(0, 7) == "http://" {
+                return endpoint;
+            };
+        };
+        if endpoint.len() == 0 {
+            return new string("/");
+        };
+        if endpoint.subString(0, 1) == "/" {
+            return endpoint;
+        };
+        return `/{endpoint}`;
+    };
+
     int setHost(const adr host) {
-        my.host = host;
+        const adr copy = af_malloc(str.len(host) + 1);
+        af_memcpy(copy, host, str.len(host) + 1);
+        my.host = copy;
         return 0;
     };
 
@@ -390,7 +515,9 @@ class HTTPRequest {
     };
 
     int setEndpoint(const adr endpoint) {
-        my.endpoint = endpoint;
+        const adr copy = af_malloc(str.len(endpoint) + 1);
+        af_memcpy(copy, endpoint, str.len(endpoint) + 1);
+        my.endpoint = copy;
         return 0;
     };
 
@@ -399,59 +526,131 @@ class HTTPRequest {
         my.headers.push_back($header);
     };
 
+    private adr headersBuffer() {
+        int total = 1;
+        for int i = 0; i < my.headers.count(); i = i + 1 {
+            const HTTPHeader header = my.headers.get(i).expect("Get header failed");
+            total = total + str.len(header.key) + 2 + str.len(header.value) + 2;
+        };
+
+        const adr out = af_malloc(total);
+        adr write = out;
+        for int i = 0; i < my.headers.count(); i = i + 1 {
+            const HTTPHeader header = my.headers.get(i).expect("Get header failed");
+            af_memcpy(write, header.key, str.len(header.key));
+            write = write + str.len(header.key);
+            af_memcpy(write, ": ", 2);
+            write = write + 2;
+            af_memcpy(write, header.value, str.len(header.value));
+            write = write + str.len(header.value);
+            af_memcpy(write, "\r\n", 2);
+            write = write + 2;
+        };
+        write =: '\0';
+        return out;
+    };
+
     void setBody(const adr body) {
-        my.body = body;
-        const adr contentLen = malloc(10);
+        const adr copy = af_malloc(str.len(body) + 1);
+        af_memcpy(copy, body, str.len(body) + 1);
+        my.body = copy;
+        const adr contentLen = af_malloc(10);
         const int size = str.len(body);
         str.int_toString(size, contentLen);
         my.addHeader("Content-Length", contentLen);
     };
 
     public string getHeaders() {
-        string ret = new string("");
-        for int i = 0; i < my.headers.count(); i = i + 1 {
-            const HTTPHeader header = my.headers.get(i).expect("Get header failed");
-            ret = ret + header.key;
-            ret = ret + ": ";
-            ret = ret + header.value;
-            ret = ret + "\r\n";
-        };
+        const adr raw = my.headersBuffer();
+        const string ret = new string(raw);
+        af_free(raw);
         return ret;
+    };
+
+    private adr rawToString() {
+        const string endpoint = my.normalizedEndpoint();
+        const string host = my.normalizedHost();
+        const string method = methodToString(my.method);
+        const adr headers = my.headersBuffer();
+        const int total = method.len() + 1 + endpoint.len() + 9 + 8 + host.len() + 2 +
+                          str.len(headers) + 2 + str.len(my.body) + 1;
+        adr out = af_malloc(total);
+        adr write = out;
+
+        af_memcpy(write, method.cstr(), method.len());
+        write = write + method.len();
+        write =: ' ';
+        write = write + 1;
+        af_memcpy(write, endpoint.cstr(), endpoint.len());
+        write = write + endpoint.len();
+        af_memcpy(write, " HTTP/1.1\r\nHost: ", 17);
+        write = write + 17;
+        af_memcpy(write, host.cstr(), host.len());
+        write = write + host.len();
+        af_memcpy(write, "\r\n", 2);
+        write = write + 2;
+        af_memcpy(write, headers, str.len(headers));
+        write = write + str.len(headers);
+        af_memcpy(write, "\r\n", 2);
+        write = write + 2;
+        af_memcpy(write, my.body, str.len(my.body));
+        write = write + str.len(my.body);
+        write =: '\0';
+
+        af_free(headers);
+        return out;
     };
 
     string toString() {
-        string ret = new string("");
-        ret = ret + methodToString(my.method);
-        ret = ret + " ";
-        ret = ret + my.endpoint + " HTTP/1.1";
-        ret = ret + "\r\nHost: ";
-        ret = ret + my.host;
-        ret = ret + "\r\n";
-        ret = ret + my.getHeaders();
-        ret = ret + "\r\n";
-        ret = ret + my.body;
+        const adr out = my.rawToString();
+        const string ret = new string(out);
+        af_free(out);
         return ret;
     };
 
-    HTTPMessage send(const int bufferSize) {
-        const string msg = my.toString();
-        const adr buffer = malloc(bufferSize);
+    result::<HTTPMessage> send(const int bufferSize) {
+        const adr msg = my.rawToString();
+        const adr buffer = af_malloc(bufferSize);
         const adr host = my.host;
         const adr endpoint = my.endpoint;
-        const adr msg_prim = msg.cstr();
-        request(host, endpoint, "80", msg_prim, buffer, bufferSize);
-        const let ret = new string(buffer);
-        return new HTTPMessage(buffer);
+        const adr port = my.port;
+        const bool okay = request(host, endpoint, port, msg, buffer, bufferSize);
+        af_free(msg);
+        if okay {
+            return res.accept::<HTTPMessage>(new HTTPMessage(buffer));
+        };
+
+        const string errorMessage = if str.len(buffer) > 0
+            new string(buffer)
+        else
+            new string("HTTP request failed");
+        return res.reject::<HTTPMessage>(new Error(errorMessage));
       };
 };
 
 class HTTPResponse {
     const private vector::<HTTPHeader> headers = new vector::<HTTPHeader>();
-    const private adr statusMessage = statusMessage;
-    const private adr statusCode = statusCode;
-    private adr body = body;
+    private string statusMessage = "";
+    private string statusCode = "";
+    private string body = "";
+
+    fn __from__(const HTTPResponse other) -> Self {
+        my.statusMessage = other.statusMessage.copy();
+        my.statusCode = other.statusCode.copy();
+        my.body = other.body.copy();
+
+        for int i = 0; i < other.headers.count(); i = i + 1 {
+            const HTTPHeader header = other.headers.get(i).expect("Copy header failed");
+            my.headers.push_back(header);
+        };
+
+        return my;
+    };
     
     HTTPResponse init(const adr body, const adr statusCode, const adr statusMessage) {
+        my.body = new string(body);
+        my.statusCode = new string(statusCode);
+        my.statusMessage = new string(statusMessage);
         return my;
     };
 
@@ -462,7 +661,7 @@ class HTTPResponse {
     };
 
     void setBody(const adr body) {
-        my.body = body;
+        my.body = new string(body);
     };
 
     string getHeaders() {

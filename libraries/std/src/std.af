@@ -45,7 +45,7 @@ Block requestSpace(const Block last, const int size){
 };
 
 Time newTime(const adr count){
-    const Time this = malloc(Time);
+    const Time this = af_malloc(Time);
     this.amount = count;
     return this;
 };
@@ -102,7 +102,7 @@ int deFragAll(const Block head){
 };
 
 //Interface
-int memcpy (adr dst, adr src, const int size){
+int af_memcpy (adr dst, adr src, const int size){
     int i = 0;
     while(i < size){
         const byte b = src as byte;
@@ -114,7 +114,7 @@ int memcpy (adr dst, adr src, const int size){
     return 0;
 };
 
-int free(const adr &&ptr){
+int af_free(const adr &&ptr){
     if(ptr == NULL){
         return 0;
     };
@@ -134,7 +134,7 @@ int blockSize(const adr ptr) {
     return block.size;
 };
 
-adr malloc(const int size){
+adr af_malloc(const int size){
 
     Block block;
 
@@ -167,9 +167,9 @@ adr malloc(const int size){
     return ret; // doing this cheats past the ownership system
 };
 
-adr realloc(const adr ptr, const int size){
+adr af_realloc(const adr ptr, const int size){
     if (ptr == NULL){
-        return malloc(size);
+        return af_malloc(size);
     };
 
     const Block block = getBlock(ptr);
@@ -178,11 +178,11 @@ adr realloc(const adr ptr, const int size){
         return ptr;
     };
     
-    const adr new_ptr = malloc(size);
+    const adr new_ptr = af_malloc(size);
     if (new_ptr == NULL){return NULL;};
     const int bsize = block.size;
-    memcpy(new_ptr, ptr, bsize);
-    free($ptr);
+    af_memcpy(new_ptr, ptr, bsize);
+    af_free($ptr);
     return new_ptr;
 };
 
@@ -203,7 +203,7 @@ int inspectHeap() {
 };
 
 Bit newBit(const int value){
-	const Bit b = malloc(Bit);
+	const Bit b = af_malloc(Bit);
 	b.value = value;
 	b.last = NULL;
 	b.next = NULL;
@@ -211,7 +211,7 @@ Bit newBit(const int value){
 };
 
 Times newTimes(){
-    const Times t = malloc(Times);
+    const Times t = af_malloc(Times);
     t.tms_cstime = 0;
     t.tms_cutime = 0;
     t.tms_stime = 0;
@@ -243,7 +243,7 @@ int sleep(const int seconds, *const int nanoseconds){
     t.tv_sec = sec;
     t.tv_nsec = nsec;
     sys_nsleep(t);
-    free($t);
+    af_free($t);
     return 0;
 };
 
@@ -257,12 +257,12 @@ adr _fCstr(const adr fmt, * const adr args) {
 };
 
 adr create(const int size, * const any value) {
-    const adr ptr = malloc(size);
+    const adr ptr = af_malloc(size);
     if (ptr == NULL) {
         return NULL;
     };
     
-    memcpy(ptr, ?value, size);
+    af_memcpy(ptr, ?value, size);
     return ptr;
 };
 

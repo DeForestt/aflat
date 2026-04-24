@@ -70,8 +70,8 @@ safe dynamic class string {
     private int itter = 0;
 
     string init(const adr head) {
-        my.head = malloc(str.len(head) + 1);
-        memcpy(my.head, head, str.len(head) + 1);
+        my.head = af_malloc(str.len(head) + 1);
+        af_memcpy(my.head, head, str.len(head) + 1);
         my.refcount = 1;
         my.permanent = false;
         return my;
@@ -89,7 +89,7 @@ safe dynamic class string {
     int del() {
         if my.permanent return 0;
         if my.head != NULL {
-            free(my.head);
+            af_free(my.head);
             my.head = NULL;
         };
         my.refcount = 0;
@@ -114,10 +114,10 @@ safe dynamic class string {
     string cpy<<=>>(const string other) {
         if other.head == my.head return my; // self assignment
         if my.head != NULL {
-            free(my.head);
+            af_free(my.head);
         };
-        my.head = malloc(str.len(other.head) + 1);
-        memcpy(my.head, other.head, str.len(other.head) + 1);
+        my.head = af_malloc(str.len(other.head) + 1);
+        af_memcpy(my.head, other.head, str.len(other.head) + 1);
         my.refcount = 1;
         my.permanent = false;
         return my;
@@ -129,8 +129,8 @@ safe dynamic class string {
     };
 
     fn __from__(const string other) -> Self {
-        my.head = malloc(str.len(other.head) + 1);
-        memcpy(my.head, other.head, str.len(other.head) + 1);
+        my.head = af_malloc(str.len(other.head) + 1);
+        af_memcpy(my.head, other.head, str.len(other.head) + 1);
         my.refcount = 1;
         my.permanent = false;
         return my;
@@ -181,17 +181,17 @@ safe dynamic class string {
      * copy the string into a buffer
      */
     fn copyTo(const adr buff) -> int {
-        memcpy(buff, my.head, str.len(my.head) + 1);
+        af_memcpy(buff, my.head, str.len(my.head) + 1);
         return 0;
     };
 
     bool input(const adr prompt) {
         if my.head != NULL {
-            free(my.head);
+            af_free(my.head);
         };
         if prompt != NULL
             io.print(prompt);
-        adr buff = malloc(1);
+        adr buff = af_malloc(1);
         adr save = buff;
         int buffSize = 1;
         const char input = ' ';
@@ -204,7 +204,7 @@ safe dynamic class string {
             buff =: input;
             if(input == nl){buff =: null};
             buffSize = buffSize + 1;
-            save = realloc(save, buffSize);
+            save = af_realloc(save, buffSize);
             buff = save;
             i = i + 1;
         };
@@ -229,7 +229,7 @@ safe dynamic class string {
     fn split(const char delim) -> vector::<string> {
         const vector::<string> vec = new vector::<string>();
         const int myLen = str.len(my.head);
-        adr buff = malloc(1);
+        adr buff = af_malloc(1);
         adr save = buff;
         int buffSize = 1;
 
@@ -240,11 +240,11 @@ safe dynamic class string {
                 buff = buff + 1;
                 buff =: '\0';
                 vec.push_back(new string(save));
-                //free(save);
+                //af_free(save);
                 buffSize = 1;
             } else {
                 buffSize = buffSize + 1;
-                save = realloc(save, buffSize);
+                save = af_realloc(save, buffSize);
                 buff = save;
                 buff = buff + buffSize - 2;
                 buff =: c;
@@ -256,14 +256,14 @@ safe dynamic class string {
         s.seal();
         s.permanent = true;
         vec.push_back(s.get());
-        free($save);
+        af_free($save);
         return vec;
     };
 
     fn splitAtFirst(const char delim) -> vector::<string> {
         const vector::<string> vec = new vector::<string>();
         const int myLen = str.len(my.head);
-        adr buff = malloc(1);
+        adr buff = af_malloc(1);
         adr save = buff;
         int buffSize = 1;
 
@@ -275,12 +275,12 @@ safe dynamic class string {
                 buff =: '\0';
                 const let s = new string(save);
                 vec.push_back($s);
-                //free(save);
+                //af_free(save);
                 buffSize = 1;
                 break;
             } else {
                 buffSize = buffSize + 1;
-                save = realloc(save, buffSize);
+                save = af_realloc(save, buffSize);
                 buff = save;
                 buff = buff + buffSize - 2;
                 buff =: c;
@@ -292,7 +292,7 @@ safe dynamic class string {
         s.seal();
         s.permanent = true;
         vec.push_back(s.get());
-        free($save);
+        af_free($save);
         return vec;
     };
 
@@ -304,11 +304,11 @@ safe dynamic class string {
     string concat<<+>>(const string other) {
         const int myLen = str.len(my.head);
         const int otherLen = str.len(other.head);
-        const adr newHead = malloc(myLen + otherLen + 1);
-        memcpy(newHead, my.head, myLen);
-        memcpy(newHead + myLen, other.head, otherLen + 1);
+        const adr newHead = af_malloc(myLen + otherLen + 1);
+        af_memcpy(newHead, my.head, myLen);
+        af_memcpy(newHead + myLen, other.head, otherLen + 1);
         const string newString = new string(newHead);
-        free($newHead);
+        af_free($newHead);
         return newString;
     };
 
@@ -333,7 +333,7 @@ safe dynamic class string {
     };
 
     string toUpper() {
-        adr newhead = malloc(my.len() + 1);
+        adr newhead = af_malloc(my.len() + 1);
         const adr save = newhead;
         const int length = my.len();
         int i = 0;
@@ -346,12 +346,12 @@ safe dynamic class string {
         };
         newhead =: '\0';
         const string newString = save;
-        free($save);
+        af_free($save);
         return newString;
     };
 
     string toLower() {
-        adr newhead = malloc(my.len() + 1);
+        adr newhead = af_malloc(my.len() + 1);
         const adr save = newhead;
         const int length = my.len();
         int i = 0;
@@ -364,12 +364,12 @@ safe dynamic class string {
         };
         newhead =: '\0';
         const string newString = save;
-        free($save);
+        af_free($save);
         return newString;
     };
 
     string title() {
-        adr newhead = malloc(my.len() + 1);
+        adr newhead = af_malloc(my.len() + 1);
         const adr save = newhead;
         const int length = my.len();
         int i = 0;
@@ -389,20 +389,20 @@ safe dynamic class string {
         };
         newhead =: '\0';
         const string newString = save;
-        free($save);
+        af_free($save);
         return newString;
     };
 
     string replaceChar(const char old, const char n) {
-        char[10] newHead = malloc(my.len() + 1);
+        char[10] newHead = af_malloc(my.len() + 1);
         const int length = my.len();
-        memcpy(newHead, my.head, length + 1);
+        af_memcpy(newHead, my.head, length + 1);
         for int i = 0; i < length; i = i + 1 {
             const char c = newHead[i];
             if (c == old) newHead[i] = n;
         };
         const string newString = newHead;
-        free($newHead);
+        af_free($newHead);
         return newString;
     };
 
@@ -443,7 +443,7 @@ safe dynamic class string {
         if (occurrences == 0) return new string(my.head);
 
         const int newLen = myLen + occurrences * (nLen - subLen);
-        const adr head = malloc(newLen + 1);
+        const adr head = af_malloc(newLen + 1);
         adr write = head;
         int read = 0;
 
@@ -452,18 +452,18 @@ safe dynamic class string {
             if (index == -1) break;
 
             const int chunk = index - read;
-            memcpy(write, my.head + read, chunk);
+            af_memcpy(write, my.head + read, chunk);
             write = write + chunk;
-            memcpy(write, n.head, nLen);
+            af_memcpy(write, n.head, nLen);
             write = write + nLen;
             read = index + subLen;
         };
 
-        memcpy(write, my.head + read, myLen - read);
+        af_memcpy(write, my.head + read, myLen - read);
         write = write + myLen - read;
         write =: '\0';
         const string newString = new string(head);
-        free($head);
+        af_free($head);
         return newString;
     };
 
@@ -471,8 +471,8 @@ safe dynamic class string {
         const int length = my.len();
         if (start < 0) | (start > length) | (end < 0) | (end > length) | (start > end) return new string("");
         const int newLength = end - start;
-        char[10] newHead = malloc(newLength + 1);
-        memcpy(newHead, my.head + start, newLength);
+        char[10] newHead = af_malloc(newLength + 1);
+        af_memcpy(newHead, my.head + start, newLength);
         newHead[newLength] = '\0';
         return new string(newHead);
     };
@@ -499,8 +499,8 @@ safe dynamic class string {
 
     string push(const char ch) {
         const int length = my.len();
-        const char[10] newHead = malloc(length + 2);
-        memcpy(newHead, my.head, length);
+        const char[10] newHead = af_malloc(length + 2);
+        af_memcpy(newHead, my.head, length);
         adr next = newHead + length;
         next =: ch;
         next = next + 1;
@@ -511,10 +511,10 @@ safe dynamic class string {
     string insert(const int i, const string n) {
         const int length = my.len();
         const int nLength = n.len();
-        char[10] newHead = malloc(length + nLength + 1);
-        memcpy(newHead, my.head, i);
-        memcpy(newHead + i, n.head, nLength);
-        memcpy(newHead + i + nLength, my.head + i, length - i);
+        char[10] newHead = af_malloc(length + nLength + 1);
+        af_memcpy(newHead, my.head, i);
+        af_memcpy(newHead + i, n.head, nLength);
+        af_memcpy(newHead + i + nLength, my.head + i, length - i);
         newHead[length + nLength] = '\0';
         return new string(newHead);
     };
@@ -564,7 +564,7 @@ export int print(const string obj) {
 
 export string readString(*const string prompt) {
     if prompt != NULL print(prompt);
-    adr buff = malloc(1);
+    adr buff = af_malloc(1);
     adr save = buff;
     int buffSize = 1;
     const char input = ' ';
@@ -577,12 +577,12 @@ export string readString(*const string prompt) {
         buff =: input;
         if(input == nl){buff =: null};
         buffSize = buffSize + 1;
-        save = realloc(save, buffSize);
+        save = af_realloc(save, buffSize);
         buff = save;
         i = i + 1;
     };
     const string n = new string(buff);
-    free($save);
+    af_free($save);
     return n.copy();
 };
 

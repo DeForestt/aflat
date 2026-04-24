@@ -24,7 +24,7 @@ class vector {
     fn init(*const int size) -> Self {
         if size == 0 {
             my.size = 1; 
-            my.head = malloc(T * my.size);
+            my.head = af_malloc(T * my.size);
         };
         return my;
     };
@@ -33,10 +33,10 @@ class vector {
     fn push_back(const T value) -> Self {
         if my.count == my.size {
             my.size = my.size * 2;
-            my.head = realloc(my.head, T * my.size);
+            my.head = af_realloc(my.head, T * my.size);
         };
 
-        memcpy(my.head + (my.count * T), ?value, T);
+        af_memcpy(my.head + (my.count * T), ?value, T);
         my.count = my.count + 1;
         return my;
     };
@@ -45,10 +45,10 @@ class vector {
     fn push_back(const T &&value) -> Self {
         if my.count == my.size {
             my.size = my.size * 2;
-            my.head = realloc(my.head, T * my.size);
+            my.head = af_realloc(my.head, T * my.size);
         };
 
-        memcpy(my.head + (my.count * T), value, T);
+        af_memcpy(my.head + (my.count * T), value, T);
         my.count = my.count + 1;
         return my;
     };
@@ -57,7 +57,7 @@ class vector {
     fn push_back(const T value) -> Self {
         if my.count == my.size {
             my.size = my.size * 2;
-            my.head = realloc(my.head, T * my.size);
+            my.head = af_realloc(my.head, T * my.size);
         };
         const generic obj = my.head + (my.count * T);
         const T obj = obj;
@@ -148,7 +148,7 @@ class vector {
         if index >= my.count {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
-        memcpy(my.head + (index * T), value, T);
+        af_memcpy(my.head + (index * T), value, T);
         return res.accept(true);
     };
 
@@ -157,7 +157,7 @@ class vector {
         if index >= my.count {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
-        memcpy(my.head + (index * T), ?value, T);
+        af_memcpy(my.head + (index * T), ?value, T);
         return res.accept(true);
     };
 
@@ -175,9 +175,9 @@ class vector {
         const let totalSize = totalCount * T;
         if totalSize > my.size {
             my.size = totalSize;
-            my.head = realloc(my.head, T * my.size);
+            my.head = af_realloc(my.head, T * my.size);
         };
-        memcpy(my.head + (my.count * T), other.head, other.count() * T);
+        af_memcpy(my.head + (my.count * T), other.head, other.count() * T);
         my.count = totalCount;
         return my;
     };
@@ -203,11 +203,11 @@ class vector {
                 const adr b = my.head + ((j + 1) * T);
                 if comparator(a, b) == true {
                     // Swap elements
-                    const adr temp = malloc(T);
-                    memcpy(temp, a, T);
-                    memcpy(a, b, T);
-                    memcpy(b, temp, T);
-                    free($temp);
+                    const adr temp = af_malloc(T);
+                    af_memcpy(temp, a, T);
+                    af_memcpy(a, b, T);
+                    af_memcpy(b, temp, T);
+                    af_free($temp);
                 };
             };
         };

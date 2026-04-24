@@ -28,7 +28,7 @@ class IndexOutOfRangeError signs Error {
  * Dynamically-sized homogeneous collection backed by a growable buffer.
  */
 class List {
-    private adr head = malloc(typeSize * size);
+    private adr head = af_malloc(typeSize * size);
     private int typeSize = typeSize;
     private int size = size;
     private int count = 0;
@@ -39,7 +39,7 @@ class List {
     List init(const int typeSize, *const int size, *const adr delFunc, *const adr ini) {
         if size == 0 {
             my.size = 1;
-            my.head = malloc(typeSize);
+            my.head = af_malloc(typeSize);
         };
         return my;
     };
@@ -51,10 +51,10 @@ class List {
     int pushBack(const adr value) {
         if my.count == my.size {
             my.size = my.size * 2;
-            my.head = realloc(my.head, my.typeSize * my.size);
+            my.head = af_realloc(my.head, my.typeSize * my.size);
         };
 
-        memcpy(my.head + (my.count * my.typeSize), value, my.typeSize);
+        af_memcpy(my.head + (my.count * my.typeSize), value, my.typeSize);
 
         if my.ini != NULL {
             my.ini(my.head + (my.count * my.typeSize));
@@ -101,7 +101,7 @@ class List {
             panic("Cannot push a reference by value");
         const let v = create(my.typeSize, value);
         my.pushBack(v);
-        free($v);
+        af_free($v);
     };
 
     private any unwrapGet(const int i) {
@@ -132,7 +132,7 @@ class List {
             return 1;
         };
 
-        memcpy(my.head + (index * my.typeSize), value, my.typeSize);
+        af_memcpy(my.head + (index * my.typeSize), value, my.typeSize);
         return 0;
     };
 
@@ -143,11 +143,11 @@ class List {
 
         if my.count == my.size {
             my.size = my.size * 2;
-            my.head = realloc(my.head, my.typeSize * my.size);
+            my.head = af_realloc(my.head, my.typeSize * my.size);
         };
         
-        memcpy(my.head + ((index + 1) * my.typeSize), my.head + (index * my.typeSize), my.typeSize * (my.count - index));
-        memcpy(my.head + (index * my.typeSize), value, my.typeSize);
+        af_memcpy(my.head + ((index + 1) * my.typeSize), my.head + (index * my.typeSize), my.typeSize * (my.count - index));
+        af_memcpy(my.head + (index * my.typeSize), value, my.typeSize);
         my.count = my.count + 1;
     };
 
@@ -161,7 +161,7 @@ class List {
             delFunc(my.get(index));
         };
 
-        memcpy(my.head + (index * my.typeSize), my.head + ((index + 1) * my.typeSize), my.typeSize * (my.count - index));
+        af_memcpy(my.head + (index * my.typeSize), my.head + ((index + 1) * my.typeSize), my.typeSize * (my.count - index));
         my.count = my.count - 1;
     };
 
@@ -227,7 +227,7 @@ class List {
     int del() {
         if my.delFunc != NULL
             my.forEach(my.delFunc);
-        free(my.head);
+        af_free(my.head);
         return 0;
     };
 };

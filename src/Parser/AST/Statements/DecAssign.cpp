@@ -165,7 +165,31 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
           if (!result) {
             generator.alert("Template " + annotation.name + " failed to parse");
           }
-          file << result->generate(generator).file;
+          if (generator.scope() != nullptr &&
+              generator.scope()->declarationOnly) {
+            ast::Statement *declarations =
+                gen::utils::extractAllDeclarations(result);
+            ast::Statement *functionShells =
+                gen::utils::copyAllFunctionShells(result);
+
+            ast::Statement *shellOnly = nullptr;
+            if (declarations != nullptr && functionShells != nullptr) {
+              auto *seq = new ast::Sequence();
+              seq->Statement1 = declarations;
+              seq->Statement2 = functionShells;
+              shellOnly = seq;
+            } else if (declarations != nullptr) {
+              shellOnly = declarations;
+            } else {
+              shellOnly = functionShells;
+            }
+
+            if (shellOnly != nullptr) {
+              file << shellOnly->generate(generator).file;
+            }
+          } else {
+            file << result->generate(generator).file;
+          }
         }
       } else {
         // add the this to the class default list

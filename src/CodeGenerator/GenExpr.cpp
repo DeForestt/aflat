@@ -1205,7 +1205,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.owned = true;
   } else if (dynamic_cast<ast::NewExpr *>(expr) != nullptr) {
     ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);
-    ast::Function *malloc = nameTable()["malloc"];
+    ast::Function *af_malloc = nameTable()["af_malloc"];
 
     if (newExpr.type.typeName == "Map" &&
         typeHint.rfind("unordered_map", 0) == 0) {
@@ -1219,7 +1219,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
     }
 
-    if (malloc == nullptr)
+    if (af_malloc == nullptr)
       alert("Please import std library in order to use new operator.\n\n -> "
             ".needs <std> \n\n",
             true, __FILE__, __LINE__);
@@ -1236,12 +1236,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     // check if the class has a constructor
     ast::Function *init = cl->nameTable[newExpr.initFuncName];
 
-    // first call malloc with the size of the class
+    // first call af_malloc with the size of the class
     ast::CallExpr *callMalloc = new ast::CallExpr();
     callMalloc->logicalLine = newExpr.logicalLine;
     callMalloc->call = new ast::Call;
     callMalloc->call->logicalLine = newExpr.logicalLine;
-    callMalloc->call->ident = malloc->ident.ident;
+    callMalloc->call->ident = af_malloc->ident.ident;
     callMalloc->call->Args = links::LinkedList<ast::Expr *>();
     ast::IntLiteral *size = new ast::IntLiteral();
     size->val = cl->SymbolTable.head->data.byteMod;

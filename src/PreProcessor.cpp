@@ -10,9 +10,37 @@
 // helper functons
 
 std::string slice(std::string &str) {
-  auto index = str.find("//");
-  if (index != std::string::npos) {
-    str = str.substr(0, index);
+  bool inDoubleQuote = false;
+  bool inSingleQuote = false;
+  bool escaped = false;
+
+  for (size_t i = 0; i + 1 < str.size(); ++i) {
+    char c = str[i];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (c == '\\') {
+      escaped = true;
+      continue;
+    }
+
+    if (!inSingleQuote && c == '"') {
+      inDoubleQuote = !inDoubleQuote;
+      continue;
+    }
+
+    if (!inDoubleQuote && c == '\'') {
+      inSingleQuote = !inSingleQuote;
+      continue;
+    }
+
+    if (!inDoubleQuote && !inSingleQuote && c == '/' && str[i + 1] == '/') {
+      str = str.substr(0, i);
+      break;
+    }
   }
   return str;
 }
@@ -27,6 +55,43 @@ std::string trim(std::string str) {
   while (pos < str.size() && std::isspace(str[pos]))
     ++pos;
   return str.substr(pos);
+}
+
+static bool findBlockCommentStart(const std::string &line, size_t &index) {
+  bool inDoubleQuote = false;
+  bool inSingleQuote = false;
+  bool escaped = false;
+
+  for (size_t i = 0; i + 1 < line.size(); ++i) {
+    char c = line[i];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (c == '\\') {
+      escaped = true;
+      continue;
+    }
+
+    if (!inSingleQuote && c == '"') {
+      inDoubleQuote = !inDoubleQuote;
+      continue;
+    }
+
+    if (!inDoubleQuote && c == '\'') {
+      inSingleQuote = !inSingleQuote;
+      continue;
+    }
+
+    if (!inDoubleQuote && !inSingleQuote && c == '/' && line[i + 1] == '*') {
+      index = i;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // Definition
@@ -63,12 +128,17 @@ std::string PreProcessor::PreProcess(std::string code, std::string libPath,
 
   while (getline(input_stringstream, line, '\n')) {
     // Ignore multiline comments
-    if (line.find("/*") != std::string::npos) {
-      while (line.find("*/") == std::string::npos) {
+    size_t blockStart = 0;
+    if (findBlockCommentStart(line, blockStart)) {
+      std::string prefix = line.substr(0, blockStart);
+      std::string commentTail = line.substr(blockStart + 2);
+
+      while (commentTail.find("*/") == std::string::npos) {
         getline(input_stringstream, line, '\n');
         output += '\n';
+        commentTail = line;
       }
-      line = line.substr(line.find("*/") + 2);
+      line = prefix + commentTail.substr(commentTail.find("*/") + 2);
     }
 
     line = trim(line);

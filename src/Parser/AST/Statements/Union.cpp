@@ -159,6 +159,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   type->dynamic = this->dynamic;
   type->pedantic = this->pedantic;
   type->uniqueType = this->uniqueType;
+  type->declarationOnly = this->includer;
   generator.scope() = type;
 
   type->overloadTable.foo = [](ast::Function func, ast::Op op) {
