@@ -30,7 +30,7 @@ TEST_CASE("Parser handles mixed import of classes and functions", "[parser]") {
   REQUIRE(imp->imports[1] == "bar");
 }
 
-TEST_CASE("ImportsOnly ignores functions in mixed import", "[codegen]") {
+TEST_CASE("ImportsOnly emits functions in mixed import", "[codegen]") {
   std::ofstream mod("Temp.af");
   mod << "class Foo {}\n";
   mod << "export int bar() { return 0; };\n";
@@ -54,10 +54,140 @@ TEST_CASE("ImportsOnly ignores functions in mixed import", "[codegen]") {
   gen.ImportsOnly(imp);
 
   REQUIRE(gen.includedClasses().contains("Temp::Foo"));
-  REQUIRE_FALSE(gen.includedClasses().contains("Temp::bar"));
-  REQUIRE_FALSE(gen.nameSpaceTable().contains("m"));
+  REQUIRE(gen.includedClasses().contains("Temp::bar"));
+  REQUIRE(gen.nameSpaceTable().contains("m"));
 
   std::remove("Temp.af");
+}
+
+TEST_CASE("Mixed imports preload class definitions", "[imports]") {
+  std::ofstream base("MixedBase.af");
+  base << "class Base {}\n";
+  base << "export int helper() { return 0; };\n";
+  base.close();
+
+  std::ofstream child("MixedChild.af");
+  child << "import Base, {helper} from \"./MixedBase\";\n";
+  child << "class Derived signs Base {\n";
+  child << "  Derived init() { return my; };\n";
+  child << "};\n";
+  child.close();
+
+  lex::Lexer l;
+  PreProcessor pp;
+  auto code = pp.PreProcess("import {Derived} from \"./MixedChild\";", "", "");
+  auto tokens = l.Scan(code);
+  tokens.invert();
+  parse::Parser p;
+  ast::Statement *stmt = p.parseStmt(tokens);
+  auto *seq = dynamic_cast<ast::Sequence *>(stmt);
+  REQUIRE(seq != nullptr);
+  auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
+  REQUIRE(imp != nullptr);
+
+  test::mockGen::CodeGenerator gen("mod", p, "",
+                                   std::filesystem::current_path().string());
+  imp->generate(gen);
+
+  REQUIRE_FALSE(gen.hasError());
+  REQUIRE(gen.includedMemo().contains(
+      std::filesystem::absolute("MixedBase.af").lexically_normal().string()));
+
+  std::remove("MixedBase.af");
+  std::remove("MixedChild.af");
+}
+
+TEST_CASE("Function imports are emitted after class preloading", "[imports]") {
+  std::ofstream base("Preload.af");
+  base << "class Base {}\n";
+  base << "export int accept() { return 0; };\n";
+  base.close();
+
+  std::ofstream mod("ResultImport.af");
+  mod << "import Base, {accept} from \"./Preload\";\n";
+  mod << "export int call() { return 0; };\n";
+  mod.close();
+
+  lex::Lexer l;
+  PreProcessor pp;
+  auto code = pp.PreProcess("import {call} from \"./ResultImport\";", "", "");
+  auto tokens = l.Scan(code);
+  tokens.invert();
+  parse::Parser p;
+  ast::Statement *stmt = p.parseStmt(tokens);
+  auto *seq = dynamic_cast<ast::Sequence *>(stmt);
+  REQUIRE(seq != nullptr);
+  auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
+  REQUIRE(imp != nullptr);
+
+  test::mockGen::CodeGenerator gen("mod", p, "",
+                                   std::filesystem::current_path().string());
+  REQUIRE_NOTHROW(imp->generate(gen));
+  REQUIRE_FALSE(gen.hasError());
+
+  std::remove("Preload.af");
+  std::remove("ResultImport.af");
+}
+
+TEST_CASE("Imported error-returning functions keep expect available",
+          "[imports]") {
+  std::ofstream src("ErrSource.af");
+  src << "export fn fail() -> int! { return 0; };\n";
+  src.close();
+
+  std::ofstream use("ErrUse.af");
+  use << "import {fail} from \"./ErrSource\";\n";
+  use << "export int call() { const int value = fail().expect(\"boom\"); "
+         "return value; };\n";
+  use.close();
+
+  lex::Lexer l;
+  PreProcessor pp;
+  auto code = pp.PreProcess("import {call} from \"./ErrUse\";", "", "");
+  auto tokens = l.Scan(code);
+  tokens.invert();
+  parse::Parser p;
+  ast::Statement *stmt = p.parseStmt(tokens);
+  auto *seq = dynamic_cast<ast::Sequence *>(stmt);
+  REQUIRE(seq != nullptr);
+  auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
+  REQUIRE(imp != nullptr);
+
+  test::mockGen::CodeGenerator gen("mod", p, "",
+                                   std::filesystem::current_path().string());
+  REQUIRE_NOTHROW(imp->generate(gen));
+  REQUIRE_FALSE(gen.hasError());
+
+  std::remove("ErrSource.af");
+  std::remove("ErrUse.af");
+}
+
+TEST_CASE("extractAll does not poison function names", "[imports]") {
+  std::ofstream mod("ExtractAll.af");
+  mod << "class Thing {}\n";
+  mod << "export int accept() { return 0; };\n";
+  mod.close();
+
+  std::ifstream file("ExtractAll.af");
+  REQUIRE(file.is_open());
+  std::string text((std::istreambuf_iterator<char>(file)),
+                   std::istreambuf_iterator<char>());
+
+  lex::Lexer l;
+  PreProcessor pp;
+  auto tokens = l.Scan(pp.PreProcess(text, "", ""));
+  tokens.invert();
+  parse::Parser p;
+  ast::Statement *root = p.parseStmt(tokens);
+  REQUIRE(root != nullptr);
+
+  auto matches = gen::utils::extractAll("accept", root, "Result");
+  REQUIRE_FALSE(matches.empty());
+
+  auto again = gen::utils::extractAll("accept", root, "Result");
+  REQUIRE_FALSE(again.empty());
+
+  std::remove("ExtractAll.af");
 }
 
 TEST_CASE("Import applies nested namespaces", "[namespaces]") {
@@ -221,4 +351,70 @@ TEST_CASE("ImportsOnly uses import working directory", "[imports]") {
 
   std::filesystem::remove_all("FlatLog");
   std::filesystem::remove("main.af");
+}
+
+TEST_CASE("Cyclic imports do not recurse forever", "[imports]") {
+  std::filesystem::create_directories("cycle");
+
+  std::ofstream a("cycle/A.af");
+  a << "import {bar} from \"./B\";\n";
+  a << "export int foo() { return bar(); };\n";
+  a.close();
+
+  std::ofstream b("cycle/B.af");
+  b << "import {foo} from \"./A\";\n";
+  b << "export int bar() { return 0; };\n";
+  b.close();
+
+  lex::Lexer l;
+  PreProcessor pp;
+  auto code = pp.PreProcess("import {foo} from \"./cycle/A\";", "", "");
+  auto tokens = l.Scan(code);
+  tokens.invert();
+  parse::Parser p;
+  ast::Statement *stmt = p.parseStmt(tokens);
+  auto *seq = dynamic_cast<ast::Sequence *>(stmt);
+  REQUIRE(seq != nullptr);
+  auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
+  REQUIRE(imp != nullptr);
+
+  test::mockGen::CodeGenerator gen("mod", p, "",
+                                   std::filesystem::current_path().string());
+  REQUIRE_NOTHROW(imp->generate(gen));
+  REQUIRE_FALSE(gen.hasError());
+  REQUIRE(gen.includedMemo().contains(
+      std::filesystem::absolute("cycle/A.af").lexically_normal().string()));
+  REQUIRE(gen.includedMemo().contains(
+      std::filesystem::absolute("cycle/B.af").lexically_normal().string()));
+
+  std::filesystem::remove_all("cycle");
+}
+
+TEST_CASE("Imported namespaces do not leak into parent imports", "[imports]") {
+  std::ofstream inner("LeakInner.af");
+  inner << "import {print} from \"String\" under str;\n";
+  inner << "export int child() { return 0; };\n";
+  inner.close();
+
+  lex::Lexer l;
+  PreProcessor pp;
+  auto code =
+      pp.PreProcess("import {child} from \"./LeakInner\" under inner;", "", "");
+  auto tokens = l.Scan(code);
+  tokens.invert();
+  parse::Parser p;
+  ast::Statement *stmt = p.parseStmt(tokens);
+  auto *seq = dynamic_cast<ast::Sequence *>(stmt);
+  REQUIRE(seq != nullptr);
+  auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
+  REQUIRE(imp != nullptr);
+
+  test::mockGen::CodeGenerator gen("mod", p, "",
+                                   std::filesystem::current_path().string());
+  imp->generate(gen);
+
+  REQUIRE(gen.nameSpaceTable().contains("inner"));
+  REQUIRE_FALSE(gen.nameSpaceTable().contains("str"));
+
+  std::remove("LeakInner.af");
 }
