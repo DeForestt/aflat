@@ -14,6 +14,8 @@ namespace lex {
 class Token {
 public:
   int lineCount;
+  int column = 1;
+  int length = 1;
   virtual string toString() const {
     return "Token at line " + std::to_string(lineCount);
   }

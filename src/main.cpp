@@ -18,6 +18,7 @@
 #include "Configs.hpp"
 #include "ErrorReporter.hpp"
 #include "Exceptions.hpp"
+#include "LSP.hpp"
 #include "LinkedList.hpp"
 #include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
@@ -942,6 +943,10 @@ int main(int argc, char *argv[]) {
   }
   if (value == "clean") {
     std::filesystem::remove_all("./bin");
+    return 0;
+  }
+  if (value == "lsp") {
+    startLanguageServer();
     return 0;
   }
   if (value == "install") {
