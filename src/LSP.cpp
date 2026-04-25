@@ -795,6 +795,681 @@ struct SemanticToken {
   int modifiers = 0;
 };
 
+struct TokenSpan {
+  int line = 0;
+  int column = 0;
+  int length = 1;
+};
+
+struct SignatureParameter {
+  std::string label;
+};
+
+struct SignatureInfo {
+  std::string name;
+  std::string label;
+  std::string documentation;
+  std::vector<SignatureParameter> parameters;
+  int activeParameter = 0;
+  std::string uri;
+  int line = 0;
+};
+
+struct IndexedSymbol {
+  std::string name;
+  std::string uri;
+  int line = 0;
+  int column = 0;
+  int length = 1;
+  int kind = 13;
+  std::string detail;
+  std::string signature;
+  bool isFunction = false;
+};
+
+struct DocumentIndex {
+  std::vector<IndexedSymbol> symbols;
+  std::vector<SignatureInfo> signatures;
+};
+
+constexpr int LSP_SYMBOL_CLASS = 5;
+constexpr int LSP_SYMBOL_ENUM = 10;
+constexpr int LSP_SYMBOL_FUNCTION = 12;
+constexpr int LSP_SYMBOL_VARIABLE = 13;
+constexpr int LSP_SYMBOL_ENUM_MEMBER = 22;
+constexpr int LSP_SYMBOL_STRUCT = 23;
+
+std::vector<lex::Token *>
+tokenVector(const links::LinkedList<lex::Token *> &tokens);
+
+TokenSpan defaultSpanForName(const std::string &name) {
+  return {0, 0, std::max(1, static_cast<int>(name.size()))};
+}
+
+std::string typeName(const ast::Type &type) {
+  return type.typeName.empty() ? "void" : type.typeName;
+}
+
+std::string trimSignatureWhitespace(std::string value) {
+  while (!value.empty() &&
+         std::isspace(static_cast<unsigned char>(value.back())))
+    value.pop_back();
+  size_t pos = 0;
+  while (pos < value.size() &&
+         std::isspace(static_cast<unsigned char>(value[pos]))) {
+    ++pos;
+  }
+  return value.substr(pos);
+}
+
+void appendParamLabel(std::vector<SignatureParameter> &params,
+                      const std::string &label) {
+  if (!label.empty())
+    params.push_back(SignatureParameter{label});
+}
+
+void collectSignatureParameters(ast::Statement *stmt,
+                                std::vector<SignatureParameter> &params);
+
+std::string makeFunctionLabel(const ast::Function *func,
+                              std::vector<SignatureParameter> &params) {
+  collectSignatureParameters(func ? func->args : nullptr, params);
+
+  std::string label = "fn ";
+  label += func ? func->ident.ident : "";
+  label += "(";
+  for (size_t i = 0; i < params.size(); ++i) {
+    if (i != 0)
+      label += ", ";
+    label += params[i].label;
+  }
+  label += ")";
+  auto ret = func ? typeName(func->type) : std::string();
+  if (!ret.empty() && ret != "void") {
+    label += " -> ";
+    label += ret;
+  }
+  return label;
+}
+
+void addSymbol(DocumentIndex &index, const std::string &name,
+               const std::string &uri, const TokenSpan &span, int kind,
+               const std::string &detail = "",
+               const std::string &signature = "", bool isFunction = false) {
+  index.symbols.push_back(IndexedSymbol{name, uri, span.line, span.column,
+                                        span.length, kind, detail, signature,
+                                        isFunction});
+}
+
+void addSignature(DocumentIndex &index, const SignatureInfo &signature) {
+  index.signatures.push_back(signature);
+}
+
+std::string statementLabel(ast::Statement *stmt) {
+  if (stmt == nullptr)
+    return {};
+  if (auto *decl = dynamic_cast<ast::Declare *>(stmt)) {
+    std::string label = decl->ident;
+    std::string typ =
+        decl->TypeName.empty() ? typeName(decl->type) : decl->TypeName;
+    if (!typ.empty())
+      label += ": " + typ;
+    return label;
+  }
+  if (auto *arg = dynamic_cast<ast::Argument *>(stmt)) {
+    std::string label = arg->Ident;
+    std::string typ = typeName(arg->type);
+    if (!typ.empty())
+      label += ": " + typ;
+    return label;
+  }
+  if (auto *seq = dynamic_cast<ast::Sequence *>(stmt))
+    return statementLabel(seq->Statement1) + ", " +
+           statementLabel(seq->Statement2);
+  return stmt->toString();
+}
+
+void collectSignatureParameters(ast::Statement *stmt,
+                                std::vector<SignatureParameter> &params) {
+  if (stmt == nullptr)
+    return;
+  if (auto *seq = dynamic_cast<ast::Sequence *>(stmt)) {
+    collectSignatureParameters(seq->Statement1, params);
+    collectSignatureParameters(seq->Statement2, params);
+    return;
+  }
+  if (auto *decl = dynamic_cast<ast::Declare *>(stmt)) {
+    appendParamLabel(params, statementLabel(decl));
+    return;
+  }
+  if (auto *arg = dynamic_cast<ast::Argument *>(stmt)) {
+    appendParamLabel(params, statementLabel(arg));
+    return;
+  }
+}
+
+void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
+                               DocumentIndex &index) {
+  if (stmt == nullptr)
+    return;
+
+  if (auto *seq = dynamic_cast<ast::Sequence *>(stmt)) {
+    collectIndexFromStatement(seq->Statement1, uri, index);
+    collectIndexFromStatement(seq->Statement2, uri, index);
+    return;
+  }
+
+  if (auto *func = dynamic_cast<ast::Function *>(stmt)) {
+    std::vector<SignatureParameter> params;
+    SignatureInfo signature;
+    signature.name = func->ident.ident;
+    signature.label = makeFunctionLabel(func, params);
+    signature.parameters = params;
+    signature.documentation = typeName(func->type);
+    signature.uri = uri;
+    signature.line = std::max(0, func->logicalLine - 1);
+    addSignature(index, signature);
+    addSymbol(
+        index, func->ident.ident, uri,
+        TokenSpan{std::max(0, func->logicalLine - 1), 0,
+                  std::max(1, static_cast<int>(func->ident.ident.size()))},
+        LSP_SYMBOL_FUNCTION, signature.documentation, signature.label, true);
+    collectIndexFromStatement(func->args, uri, index);
+    collectIndexFromStatement(func->statement, uri, index);
+    return;
+  }
+
+  if (auto *cls = dynamic_cast<ast::Class *>(stmt)) {
+    addSymbol(index, cls->ident.ident, uri,
+              TokenSpan{std::max(0, cls->logicalLine - 1), 0,
+                        std::max(1, static_cast<int>(cls->ident.ident.size()))},
+              LSP_SYMBOL_CLASS);
+    collectIndexFromStatement(cls->contract, uri, index);
+    collectIndexFromStatement(cls->statement, uri, index);
+    return;
+  }
+
+  if (auto *strct = dynamic_cast<ast::Struct *>(stmt)) {
+    addSymbol(
+        index, strct->ident.ident, uri,
+        TokenSpan{std::max(0, strct->logicalLine - 1), 0,
+                  std::max(1, static_cast<int>(strct->ident.ident.size()))},
+        LSP_SYMBOL_STRUCT);
+    collectIndexFromStatement(strct->statement, uri, index);
+    return;
+  }
+
+  if (auto *uni = dynamic_cast<ast::Union *>(stmt)) {
+    addSymbol(index, uni->ident.ident, uri,
+              TokenSpan{std::max(0, uni->logicalLine - 1), 0,
+                        std::max(1, static_cast<int>(uni->ident.ident.size()))},
+              LSP_SYMBOL_CLASS);
+    collectIndexFromStatement(uni->statement, uri, index);
+    return;
+  }
+
+  if (auto *enm = dynamic_cast<ast::Enum *>(stmt)) {
+    addSymbol(index, enm->Ident, uri,
+              TokenSpan{std::max(0, enm->logicalLine - 1), 0,
+                        std::max(1, static_cast<int>(enm->Ident.size()))},
+              LSP_SYMBOL_ENUM);
+    for (const auto &value : enm->values) {
+      addSymbol(index, value, uri,
+                TokenSpan{std::max(0, enm->logicalLine - 1), 0,
+                          std::max(1, static_cast<int>(value.size()))},
+                LSP_SYMBOL_ENUM_MEMBER);
+    }
+    return;
+  }
+
+  if (auto *decl = dynamic_cast<ast::Declare *>(stmt)) {
+    if (!decl->ident.empty()) {
+      addSymbol(index, decl->ident, uri,
+                TokenSpan{std::max(0, decl->logicalLine - 1), 0,
+                          std::max(1, static_cast<int>(decl->ident.size()))},
+                LSP_SYMBOL_VARIABLE,
+                decl->TypeName.empty() ? typeName(decl->type) : decl->TypeName);
+    }
+    return;
+  }
+
+  if (auto *arg = dynamic_cast<ast::Argument *>(stmt)) {
+    if (!arg->Ident.empty()) {
+      addSymbol(index, arg->Ident, uri,
+                TokenSpan{std::max(0, arg->logicalLine - 1), 0,
+                          std::max(1, static_cast<int>(arg->Ident.size()))},
+                LSP_SYMBOL_VARIABLE, typeName(arg->type));
+    }
+    return;
+  }
+
+  if (auto *dec = dynamic_cast<ast::Dec *>(stmt)) {
+    if (!dec->ident.empty()) {
+      addSymbol(index, dec->ident, uri,
+                TokenSpan{std::max(0, dec->logicalLine - 1), 0,
+                          std::max(1, static_cast<int>(dec->ident.size()))},
+                LSP_SYMBOL_VARIABLE);
+    }
+    return;
+  }
+
+  if (auto *decArr = dynamic_cast<ast::DecArr *>(stmt)) {
+    if (!decArr->ident.empty()) {
+      addSymbol(index, decArr->ident, uri,
+                TokenSpan{std::max(0, decArr->logicalLine - 1), 0,
+                          std::max(1, static_cast<int>(decArr->ident.size()))},
+                LSP_SYMBOL_VARIABLE);
+    }
+    return;
+  }
+
+  if (auto *decAssign = dynamic_cast<ast::DecAssign *>(stmt)) {
+    if (decAssign->declare != nullptr && !decAssign->declare->ident.empty()) {
+      addSymbol(index, decAssign->declare->ident, uri,
+                TokenSpan{std::max(0, decAssign->logicalLine - 1), 0,
+                          std::max(1, static_cast<int>(
+                                          decAssign->declare->ident.size()))},
+                LSP_SYMBOL_VARIABLE, decAssign->declare->TypeName);
+    }
+    collectIndexFromStatement(decAssign->expr, uri, index);
+    return;
+  }
+
+  if (auto *decAssignArr = dynamic_cast<ast::DecAssignArr *>(stmt)) {
+    if (decAssignArr->declare != nullptr &&
+        !decAssignArr->declare->ident.empty()) {
+      addSymbol(
+          index, decAssignArr->declare->ident, uri,
+          TokenSpan{std::max(0, decAssignArr->logicalLine - 1), 0,
+                    std::max(1, static_cast<int>(
+                                    decAssignArr->declare->ident.size()))},
+          LSP_SYMBOL_VARIABLE, typeName(decAssignArr->declare->type));
+    }
+    collectIndexFromStatement(decAssignArr->expr, uri, index);
+    return;
+  }
+
+  if (auto *destructure = dynamic_cast<ast::Destructure *>(stmt)) {
+    for (const auto &name : destructure->identifiers) {
+      addSymbol(index, name, uri,
+                TokenSpan{std::max(0, destructure->logicalLine - 1), 0,
+                          std::max(1, static_cast<int>(name.size()))},
+                LSP_SYMBOL_VARIABLE);
+    }
+    collectIndexFromStatement(destructure->expr, uri, index);
+    return;
+  }
+
+  if (auto *fe = dynamic_cast<ast::ForEach *>(stmt)) {
+    if (!fe->binding_identifier.empty()) {
+      addSymbol(index, fe->binding_identifier, uri,
+                TokenSpan{std::max(0, fe->logicalLine - 1), 0,
+                          std::max(1, static_cast<int>(
+                                          fe->binding_identifier.size()))},
+                LSP_SYMBOL_VARIABLE);
+    }
+    collectIndexFromStatement(fe->iterator, uri, index);
+    collectIndexFromStatement(fe->implementation, uri, index);
+    return;
+  }
+
+  if (auto *f = dynamic_cast<ast::For *>(stmt)) {
+    collectIndexFromStatement(f->declare, uri, index);
+    collectIndexFromStatement(f->increment, uri, index);
+    collectIndexFromStatement(f->Run, uri, index);
+    return;
+  }
+
+  if (auto *iff = dynamic_cast<ast::If *>(stmt)) {
+    collectIndexFromStatement(iff->expr, uri, index);
+    collectIndexFromStatement(iff->statement, uri, index);
+    collectIndexFromStatement(iff->elseStatement, uri, index);
+    collectIndexFromStatement(iff->elseIf, uri, index);
+    return;
+  }
+
+  if (auto *wh = dynamic_cast<ast::While *>(stmt)) {
+    collectIndexFromStatement(wh->expr, uri, index);
+    collectIndexFromStatement(wh->stmt, uri, index);
+    return;
+  }
+
+  if (auto *ret = dynamic_cast<ast::Return *>(stmt)) {
+    collectIndexFromStatement(ret->expr, uri, index);
+    return;
+  }
+
+  if (auto *call = dynamic_cast<ast::Call *>(stmt)) {
+    for (auto *arg : call->Args) {
+      collectIndexFromStatement(arg, uri, index);
+    }
+    return;
+  }
+
+  if (auto *transform = dynamic_cast<ast::Transform *>(stmt)) {
+    if (!transform->ident.empty()) {
+      addSymbol(
+          index, transform->ident, uri,
+          TokenSpan{std::max(0, transform->logicalLine - 1), 0,
+                    std::max(1, static_cast<int>(transform->ident.size()))},
+          LSP_SYMBOL_FUNCTION);
+    }
+    return;
+  }
+
+  if (auto *match = dynamic_cast<ast::Match *>(stmt)) {
+    collectIndexFromStatement(match->expr, uri, index);
+    for (const auto &c : match->cases) {
+      if (!c.pattern.aliasName.empty()) {
+        addSymbol(index, c.pattern.aliasName, uri,
+                  TokenSpan{std::max(0, match->logicalLine - 1), 0,
+                            std::max(1, static_cast<int>(
+                                            c.pattern.aliasName.size()))},
+                  LSP_SYMBOL_VARIABLE);
+      }
+      if (c.pattern.veriableName && !c.pattern.veriableName->empty()) {
+        addSymbol(index, *c.pattern.veriableName, uri,
+                  TokenSpan{std::max(0, match->logicalLine - 1), 0,
+                            std::max(1, static_cast<int>(
+                                            c.pattern.veriableName->size()))},
+                  LSP_SYMBOL_VARIABLE);
+      }
+      collectIndexFromStatement(c.statement, uri, index);
+    }
+    return;
+  }
+}
+
+TokenSpan findTokenSpan(const std::vector<lex::Token *> &tokens, int line,
+                        const std::string &name) {
+  for (auto *token : tokens) {
+    auto *word = dynamic_cast<lex::LObj *>(token);
+    if (word == nullptr)
+      continue;
+    if (token->lineCount - 1 == line && word->meta == name) {
+      return {line, std::max(0, token->column - 1), std::max(1, token->length)};
+    }
+  }
+  for (auto *token : tokens) {
+    auto *word = dynamic_cast<lex::LObj *>(token);
+    if (word != nullptr && word->meta == name) {
+      return {std::max(0, token->lineCount - 1), std::max(0, token->column - 1),
+              std::max(1, token->length)};
+    }
+  }
+  return defaultSpanForName(name);
+}
+
+void indexFileRecursive(const std::string &uri, const std::string &text,
+                        const std::string &libPath,
+                        std::unordered_set<std::string> &visited,
+                        DocumentIndex &index) {
+  auto path = pathFromUri(uri);
+  if (visited.count(path) != 0)
+    return;
+  visited.insert(path);
+
+  lex::Lexer scanner;
+  PreProcessor pp;
+  std::string currentDir = std::filesystem::path(path).parent_path().string();
+
+  try {
+    auto preprocessed = pp.PreProcess(text, libPath, currentDir);
+    auto tokens = scanner.Scan(preprocessed);
+    tokens.invert();
+    auto tokenList = tokenVector(tokens);
+    parse::Parser parser;
+    auto *stmt = parser.parseStmt(tokens);
+    collectIndexFromStatement(stmt, uri, index);
+    for (auto &symbol : index.symbols) {
+      if (symbol.uri == uri) {
+        auto span = findTokenSpan(tokenList, symbol.line, symbol.name);
+        symbol.column = span.column;
+        symbol.length = span.length;
+      }
+    }
+    destroyTokens(tokens);
+
+    for (const auto &include : pp.getIncludes()) {
+      std::string includeText = readFile(include);
+      if (!includeText.empty()) {
+        indexFileRecursive(encodeUriPath(include), includeText, libPath,
+                           visited, index);
+      }
+    }
+  } catch (...) {
+    // Best effort indexing. Missing or malformed files should not block LSP.
+  }
+}
+
+DocumentIndex buildDocumentIndex(const std::string &uri,
+                                 const std::string &text,
+                                 const std::string &libPath) {
+  DocumentIndex index;
+  std::unordered_set<std::string> visited;
+  indexFileRecursive(uri, text, libPath, visited, index);
+  return index;
+}
+
+std::optional<IndexedSymbol>
+findBestSymbol(const DocumentIndex &index, const std::string &name,
+               std::optional<int> kind = std::nullopt) {
+  std::optional<IndexedSymbol> best;
+  for (const auto &symbol : index.symbols) {
+    if (symbol.name != name)
+      continue;
+    if (kind.has_value() && symbol.kind != kind.value())
+      continue;
+    if (!best.has_value() || symbol.line < best->line ||
+        (symbol.line == best->line && symbol.column < best->column)) {
+      best = symbol;
+    }
+  }
+  return best;
+}
+
+std::vector<IndexedSymbol> findSymbols(const DocumentIndex &index,
+                                       const std::string &name) {
+  std::vector<IndexedSymbol> matches;
+  for (const auto &symbol : index.symbols) {
+    if (symbol.name == name)
+      matches.push_back(symbol);
+  }
+  std::sort(matches.begin(), matches.end(),
+            [](const IndexedSymbol &a, const IndexedSymbol &b) {
+              if (a.uri != b.uri)
+                return a.uri < b.uri;
+              if (a.line != b.line)
+                return a.line < b.line;
+              return a.column < b.column;
+            });
+  return matches;
+}
+
+JsonValue makeLocation(const std::string &uri, int line, int column,
+                       int length) {
+  return JsonValue(JsonValue::Object{
+      {"uri", JsonValue(uri)},
+      {"range",
+       JsonValue(JsonValue::Object{
+           {"start", JsonValue(JsonValue::Object{
+                         {"line", JsonValue(std::max(0, line))},
+                         {"character", JsonValue(std::max(0, column))},
+                     })},
+           {"end", JsonValue(JsonValue::Object{
+                       {"line", JsonValue(std::max(0, line))},
+                       {"character",
+                        JsonValue(std::max(0, column + std::max(1, length)))},
+                   })},
+       })},
+  });
+}
+
+JsonValue makeSymbolInformation(const IndexedSymbol &symbol) {
+  return JsonValue(JsonValue::Object{
+      {"name", JsonValue(symbol.name)},
+      {"kind", JsonValue(symbol.kind)},
+      {"location",
+       makeLocation(symbol.uri, symbol.line, symbol.column, symbol.length)},
+  });
+}
+
+JsonValue makeSignatureHelp(const DocumentIndex &index, const std::string &name,
+                            int activeParameter) {
+  JsonValue::Array signatures;
+  for (const auto &sig : index.signatures) {
+    if (sig.name != name)
+      continue;
+    JsonValue::Array params;
+    for (const auto &param : sig.parameters) {
+      params.push_back(JsonValue(JsonValue::Object{
+          {"label", JsonValue(param.label)},
+      }));
+    }
+    signatures.push_back(JsonValue(JsonValue::Object{
+        {"label", JsonValue(sig.label)},
+        {"documentation", JsonValue(sig.documentation)},
+        {"parameters", JsonValue(std::move(params))},
+        {"activeParameter", JsonValue(std::max(0, activeParameter))},
+    }));
+  }
+
+  if (signatures.empty()) {
+    return JsonValue(JsonValue::Object{
+        {"signatures", JsonValue(JsonValue::Array{})},
+        {"activeSignature", JsonValue(0)},
+        {"activeParameter", JsonValue(0)},
+    });
+  }
+
+  return JsonValue(JsonValue::Object{
+      {"signatures", JsonValue(std::move(signatures))},
+      {"activeSignature", JsonValue(0)},
+      {"activeParameter", JsonValue(std::max(0, activeParameter))},
+  });
+}
+
+std::optional<size_t>
+tokenIndexAtPosition(const std::vector<lex::Token *> &tokens, int line,
+                     int character) {
+  for (size_t i = 0; i < tokens.size(); ++i) {
+    const auto *token = tokens[i];
+    int tokenLine = token->lineCount - 1;
+    int start = std::max(0, token->column - 1);
+    int end = start + std::max(1, token->length);
+    if (tokenLine == line && character >= start && character < end)
+      return i;
+  }
+  return std::nullopt;
+}
+
+std::optional<std::string>
+identifierAtPosition(const std::vector<lex::Token *> &tokens, int line,
+                     int character) {
+  auto index = tokenIndexAtPosition(tokens, line, character);
+  if (!index.has_value())
+    return std::nullopt;
+  if (auto *word = dynamic_cast<lex::LObj *>(tokens[index.value()])) {
+    return word->meta;
+  }
+  if (index.value() > 0) {
+    if (auto *word = dynamic_cast<lex::LObj *>(tokens[index.value() - 1])) {
+      return word->meta;
+    }
+  }
+  return std::nullopt;
+}
+
+struct CallContext {
+  std::string name;
+  int activeParameter = 0;
+};
+
+std::optional<CallContext>
+findCallContext(const std::vector<lex::Token *> &tokens, int line,
+                int character) {
+  auto cursorIndex = tokenIndexAtPosition(tokens, line, character);
+  if (!cursorIndex.has_value())
+    return std::nullopt;
+
+  int depth = 0;
+  std::optional<size_t> openParen;
+  for (size_t i = 0; i <= cursorIndex.value() && i < tokens.size(); ++i) {
+    auto *token = tokens[i];
+    auto *op = dynamic_cast<lex::OpSym *>(token);
+    auto *sym = dynamic_cast<lex::Symbol *>(token);
+    if (op != nullptr) {
+      if (op->Sym == '(') {
+        openParen = i;
+        ++depth;
+      } else if (op->Sym == ')') {
+        if (depth > 0)
+          --depth;
+        if (depth == 0)
+          openParen.reset();
+      }
+    } else if (sym != nullptr) {
+      if (sym->meta == "(") {
+        openParen = i;
+        ++depth;
+      } else if (sym->meta == ")") {
+        if (depth > 0)
+          --depth;
+        if (depth == 0)
+          openParen.reset();
+      }
+    }
+  }
+
+  if (!openParen.has_value() || openParen.value() == 0)
+    return std::nullopt;
+
+  size_t nameIndex = openParen.value() - 1;
+  while (nameIndex > 0) {
+    if (dynamic_cast<lex::LObj *>(tokens[nameIndex]) != nullptr)
+      break;
+    auto *op = dynamic_cast<lex::OpSym *>(tokens[nameIndex]);
+    auto *sym = dynamic_cast<lex::Symbol *>(tokens[nameIndex]);
+    if (op == nullptr && sym == nullptr)
+      break;
+    if (op != nullptr && op->Sym != '.' && op->Sym != ':')
+      break;
+    if (sym != nullptr && sym->meta != "::")
+      break;
+    --nameIndex;
+  }
+
+  auto *nameToken = dynamic_cast<lex::LObj *>(tokens[nameIndex]);
+  if (nameToken == nullptr)
+    return std::nullopt;
+
+  int nested = 0;
+  int activeParameter = 0;
+  for (size_t i = openParen.value() + 1;
+       i <= cursorIndex.value() && i < tokens.size(); ++i) {
+    auto *token = tokens[i];
+    auto *op = dynamic_cast<lex::OpSym *>(token);
+    auto *sym = dynamic_cast<lex::Symbol *>(token);
+    bool isOpen =
+        (op && (op->Sym == '(' || op->Sym == '[' || op->Sym == '{')) ||
+        (sym && (sym->meta == "(" || sym->meta == "[" || sym->meta == "{"));
+    bool isClose =
+        (op && (op->Sym == ')' || op->Sym == ']' || op->Sym == '}')) ||
+        (sym && (sym->meta == ")" || sym->meta == "]" || sym->meta == "}"));
+    bool isComma = (op && op->Sym == ',');
+    if (isOpen) {
+      ++nested;
+    } else if (isClose) {
+      if (nested > 0)
+        --nested;
+    } else if (isComma && nested == 0) {
+      ++activeParameter;
+    }
+  }
+
+  return CallContext{nameToken->meta, activeParameter};
+}
+
 enum SemanticTokenKind {
   TK_NAMESPACE = 0,
   TK_TYPE = 1,
@@ -1286,6 +1961,226 @@ private:
     sendResponse(id, result);
   }
 
+  void handleDefinition(const JsonValue &id, const JsonValue &params) {
+    const auto *textDocument = findPath(params, {"textDocument"});
+    const auto *position = findMember(params, "position");
+    auto uriValue = asString(findMember(*textDocument, "uri"));
+    if (!uriValue || position == nullptr) {
+      sendResponse(id, JsonValue(JsonValue::Array{}));
+      return;
+    }
+
+    auto line = asInt(findMember(*position, "line")).value_or(0);
+    auto character = asInt(findMember(*position, "character")).value_or(0);
+    try {
+      std::string text = documentText(*uriValue);
+      lex::Lexer scanner;
+      auto tokens = scanner.Scan(text);
+      tokens.invert();
+      auto tokenList = tokenVector(tokens);
+      auto index = buildDocumentIndex(*uriValue, text, libPath);
+
+      auto name = identifierAtPosition(tokenList, line, character);
+      if (!name.has_value()) {
+        destroyTokens(tokens);
+        sendResponse(id, JsonValue(JsonValue::Array{}));
+        return;
+      }
+
+      std::optional<int> kind = std::nullopt;
+      if (auto ctx = findCallContext(tokenList, line, character)) {
+        kind = LSP_SYMBOL_FUNCTION;
+      }
+
+      JsonValue::Array locations;
+      auto matches = findSymbols(index, *name);
+      for (const auto &symbol : matches) {
+        if (kind.has_value() && symbol.kind != kind.value())
+          continue;
+        locations.push_back(makeLocation(symbol.uri, symbol.line, symbol.column,
+                                         symbol.length));
+      }
+      destroyTokens(tokens);
+      sendResponse(id, JsonValue(std::move(locations)));
+    } catch (...) {
+      sendResponse(id, JsonValue(JsonValue::Array{}));
+    }
+  }
+
+  void handleHover(const JsonValue &id, const JsonValue &params) {
+    const auto *textDocument = findPath(params, {"textDocument"});
+    const auto *position = findMember(params, "position");
+    auto uriValue = asString(findMember(*textDocument, "uri"));
+    if (!uriValue || position == nullptr) {
+      sendResponse(id, JsonValue(nullptr));
+      return;
+    }
+
+    auto line = asInt(findMember(*position, "line")).value_or(0);
+    auto character = asInt(findMember(*position, "character")).value_or(0);
+    try {
+      std::string text = documentText(*uriValue);
+      lex::Lexer scanner;
+      auto tokens = scanner.Scan(text);
+      tokens.invert();
+      auto tokenList = tokenVector(tokens);
+      auto index = buildDocumentIndex(*uriValue, text, libPath);
+
+      auto name = identifierAtPosition(tokenList, line, character);
+      if (!name.has_value()) {
+        destroyTokens(tokens);
+        sendResponse(id, JsonValue(nullptr));
+        return;
+      }
+
+      auto symbol = findBestSymbol(index, *name);
+      if (!symbol.has_value()) {
+        destroyTokens(tokens);
+        sendResponse(id, JsonValue(nullptr));
+        return;
+      }
+
+      std::string contents =
+          symbol->signature.empty() ? symbol->name : symbol->signature;
+      if (!symbol->detail.empty()) {
+        contents += "\n";
+        contents += symbol->detail;
+      }
+
+      destroyTokens(tokens);
+      sendResponse(
+          id,
+          JsonValue(JsonValue::Object{
+              {"contents", JsonValue(JsonValue::Object{
+                               {"kind", JsonValue("markdown")},
+                               {"value", JsonValue(contents)},
+                           })},
+              {"range",
+               JsonValue(JsonValue::Object{
+                   {"start", JsonValue(JsonValue::Object{
+                                 {"line", JsonValue(symbol->line)},
+                                 {"character", JsonValue(symbol->column)},
+                             })},
+                   {"end",
+                    JsonValue(JsonValue::Object{
+                        {"line", JsonValue(symbol->line)},
+                        {"character", JsonValue(symbol->column +
+                                                std::max(1, symbol->length))},
+                    })},
+               })},
+          }));
+    } catch (...) {
+      sendResponse(id, JsonValue(nullptr));
+    }
+  }
+
+  void handleSignatureHelp(const JsonValue &id, const JsonValue &params) {
+    const auto *textDocument = findPath(params, {"textDocument"});
+    const auto *position = findMember(params, "position");
+    auto uriValue = asString(findMember(*textDocument, "uri"));
+    if (!uriValue || position == nullptr) {
+      sendResponse(id, JsonValue(JsonValue::Object{
+                           {"signatures", JsonValue(JsonValue::Array{})},
+                           {"activeSignature", JsonValue(0)},
+                           {"activeParameter", JsonValue(0)},
+                       }));
+      return;
+    }
+
+    auto line = asInt(findMember(*position, "line")).value_or(0);
+    auto character = asInt(findMember(*position, "character")).value_or(0);
+    try {
+      std::string text = documentText(*uriValue);
+      lex::Lexer scanner;
+      auto tokens = scanner.Scan(text);
+      tokens.invert();
+      auto tokenList = tokenVector(tokens);
+      auto index = buildDocumentIndex(*uriValue, text, libPath);
+
+      auto context = findCallContext(tokenList, line, character);
+      if (!context.has_value()) {
+        destroyTokens(tokens);
+        sendResponse(id, JsonValue(JsonValue::Object{
+                             {"signatures", JsonValue(JsonValue::Array{})},
+                             {"activeSignature", JsonValue(0)},
+                             {"activeParameter", JsonValue(0)},
+                         }));
+        return;
+      }
+
+      destroyTokens(tokens);
+      sendResponse(id, makeSignatureHelp(index, context->name,
+                                         context->activeParameter));
+    } catch (...) {
+      sendResponse(id, JsonValue(JsonValue::Object{
+                           {"signatures", JsonValue(JsonValue::Array{})},
+                           {"activeSignature", JsonValue(0)},
+                           {"activeParameter", JsonValue(0)},
+                       }));
+    }
+  }
+
+  void handleReferences(const JsonValue &id, const JsonValue &params) {
+    const auto *textDocument = findPath(params, {"textDocument"});
+    const auto *position = findMember(params, "position");
+    auto uriValue = asString(findMember(*textDocument, "uri"));
+    if (!uriValue || position == nullptr) {
+      sendResponse(id, JsonValue(JsonValue::Array{}));
+      return;
+    }
+
+    auto line = asInt(findMember(*position, "line")).value_or(0);
+    auto character = asInt(findMember(*position, "character")).value_or(0);
+    try {
+      std::string text = documentText(*uriValue);
+      lex::Lexer scanner;
+      auto tokens = scanner.Scan(text);
+      tokens.invert();
+      auto tokenList = tokenVector(tokens);
+      auto index = buildDocumentIndex(*uriValue, text, libPath);
+
+      auto name = identifierAtPosition(tokenList, line, character);
+      if (!name.has_value()) {
+        destroyTokens(tokens);
+        sendResponse(id, JsonValue(JsonValue::Array{}));
+        return;
+      }
+
+      JsonValue::Array locations;
+      for (const auto &symbol : findSymbols(index, *name)) {
+        locations.push_back(makeLocation(symbol.uri, symbol.line, symbol.column,
+                                         symbol.length));
+      }
+      destroyTokens(tokens);
+      sendResponse(id, JsonValue(std::move(locations)));
+    } catch (...) {
+      sendResponse(id, JsonValue(JsonValue::Array{}));
+    }
+  }
+
+  void handleDocumentSymbols(const JsonValue &id, const JsonValue &params) {
+    const auto *textDocument = findPath(params, {"textDocument"});
+    auto uriValue = asString(findMember(*textDocument, "uri"));
+    if (!uriValue) {
+      sendResponse(id, JsonValue(JsonValue::Array{}));
+      return;
+    }
+
+    try {
+      std::string text = documentText(*uriValue);
+      auto index = buildDocumentIndex(*uriValue, text, libPath);
+      JsonValue::Array symbols;
+      for (const auto &symbol : index.symbols) {
+        if (symbol.uri == *uriValue) {
+          symbols.push_back(makeSymbolInformation(symbol));
+        }
+      }
+      sendResponse(id, JsonValue(std::move(symbols)));
+    } catch (...) {
+      sendResponse(id, JsonValue(JsonValue::Array{}));
+    }
+  }
+
   void handleRequest(const JsonValue &message) {
     const auto *method = findMember(message, "method");
     auto methodValue = asString(method);
@@ -1329,8 +2224,21 @@ private:
       JsonValue::Object capabilities{
           {"textDocumentSync", JsonValue(1)},
           {"completionProvider", JsonValue(std::move(completionProvider))},
-          {"definitionProvider", JsonValue(false)},
-          {"hoverProvider", JsonValue(false)},
+          {"definitionProvider", JsonValue(true)},
+          {"hoverProvider", JsonValue(true)},
+          {"referencesProvider", JsonValue(true)},
+          {"documentSymbolProvider", JsonValue(true)},
+          {"signatureHelpProvider",
+           JsonValue(JsonValue::Object{
+               {"triggerCharacters", JsonValue(JsonValue::Array{
+                                         JsonValue("("),
+                                         JsonValue(","),
+                                     })},
+               {"retriggerCharacters", JsonValue(JsonValue::Array{
+                                           JsonValue(","),
+                                           JsonValue(")"),
+                                       })},
+           })},
           {"semanticTokensProvider",
            JsonValue(std::move(semanticTokensProvider))},
           {"documentFormattingProvider", JsonValue(false)},
@@ -1385,6 +2293,50 @@ private:
                               {"items", JsonValue(JsonValue::Array{})},
                           }));
       }
+      return;
+    }
+
+    if (*methodValue == "textDocument/definition") {
+      if (id != nullptr && params != nullptr)
+        handleDefinition(*id, *params);
+      else if (id != nullptr)
+        sendResponse(*id, JsonValue(JsonValue::Array{}));
+      return;
+    }
+
+    if (*methodValue == "textDocument/hover") {
+      if (id != nullptr && params != nullptr)
+        handleHover(*id, *params);
+      else if (id != nullptr)
+        sendResponse(*id, JsonValue(nullptr));
+      return;
+    }
+
+    if (*methodValue == "textDocument/signatureHelp") {
+      if (id != nullptr && params != nullptr)
+        handleSignatureHelp(*id, *params);
+      else if (id != nullptr)
+        sendResponse(*id, JsonValue(JsonValue::Object{
+                              {"signatures", JsonValue(JsonValue::Array{})},
+                              {"activeSignature", JsonValue(0)},
+                              {"activeParameter", JsonValue(0)},
+                          }));
+      return;
+    }
+
+    if (*methodValue == "textDocument/references") {
+      if (id != nullptr && params != nullptr)
+        handleReferences(*id, *params);
+      else if (id != nullptr)
+        sendResponse(*id, JsonValue(JsonValue::Array{}));
+      return;
+    }
+
+    if (*methodValue == "textDocument/documentSymbol") {
+      if (id != nullptr && params != nullptr)
+        handleDocumentSymbols(*id, *params);
+      else if (id != nullptr)
+        sendResponse(*id, JsonValue(JsonValue::Array{}));
       return;
     }
 
