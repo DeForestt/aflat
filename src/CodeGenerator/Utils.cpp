@@ -85,12 +85,14 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
   } else if (dynamic_cast<ast::Class *>(stmt)) {
     ast::Class *cls = dynamic_cast<ast::Class *>(stmt);
     if (cls->ident.ident == ident) {
-      if (cls->genericTypes.size() == 0) {
-        shellStatement(cls->statement);
-        cls->includer = true;
-        return cls;
+      auto *copy = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
+      if (copy == nullptr)
+        return nullptr;
+      if (copy->genericTypes.size() == 0) {
+        shellStatement(copy->statement);
+        copy->includer = true;
       }
-      return ast::deepCopy(cls);
+      return copy;
     }
   } else if (dynamic_cast<ast::Enum *>(stmt)) {
     ast::Enum *enm = dynamic_cast<ast::Enum *>(stmt);
@@ -109,12 +111,13 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
   } else if (dynamic_cast<ast::Function *>(stmt)) {
     ast::Function *func = dynamic_cast<ast::Function *>(stmt);
     if (func->ident.ident == ident || ident == "*") {
-      func->ident.ident = id + '.' + func->ident.ident;
-      if (func->genericTypes.size() == 0)
-        func->statement = nullptr;
-      if (func->scope != ast::Export)
-        func->locked = true;
-      return func;
+      auto *copy = new ast::Function(*func, func->locked);
+      copy->ident.ident = id + '.' + copy->ident.ident;
+      if (copy->genericTypes.size() == 0)
+        copy->statement = nullptr;
+      if (copy->scope != ast::Export)
+        copy->locked = true;
+      return copy;
     }
   } else
     stmt->locked = true;
@@ -140,23 +143,25 @@ std::vector<ast::Statement *> gen::utils::extractAll(std::string ident,
   } else if (dynamic_cast<ast::Function *>(stmt)) {
     ast::Function *func = dynamic_cast<ast::Function *>(stmt);
     if (func->ident.ident == ident) {
-      func->ident.ident = id + '.' + func->ident.ident;
-      if (func->genericTypes.size() == 0)
-        func->statement = nullptr;
-      if (func->scope != ast::Export)
-        func->locked = true;
-      results.push_back(func);
+      auto *copy = new ast::Function(*func, func->locked);
+      copy->ident.ident = id + '.' + copy->ident.ident;
+      if (copy->genericTypes.size() == 0)
+        copy->statement = nullptr;
+      if (copy->scope != ast::Export)
+        copy->locked = true;
+      results.push_back(copy);
     }
   } else if (dynamic_cast<ast::Class *>(stmt)) {
     ast::Class *cls = dynamic_cast<ast::Class *>(stmt);
     if (cls->ident.ident == ident) {
-      if (cls->genericTypes.size() == 0) {
-        shellStatement(cls->statement);
-        cls->includer = true;
-        results.push_back(cls);
-      } else {
-        results.push_back(ast::deepCopy(cls));
+      auto *copy = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
+      if (copy == nullptr)
+        return results;
+      if (copy->genericTypes.size() == 0) {
+        shellStatement(copy->statement);
+        copy->includer = true;
       }
+      results.push_back(copy);
     }
   } else if (dynamic_cast<ast::Enum *>(stmt)) {
     ast::Enum *enm = dynamic_cast<ast::Enum *>(stmt);

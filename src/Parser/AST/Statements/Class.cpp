@@ -143,10 +143,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
       asmc::File contractFile;
       if (base != nullptr) {
         // check if the base class has a contract
-        if (base->contract == nullptr)
-          err::Exception("Base class does not have a contract");
-        // if my contact is not nullptr stitch it with the base
-        if (this->contract != nullptr) {
+        if (base->contract != nullptr && this->contract != nullptr) {
           ast::Sequence *seq = new ast::Sequence();
           seq->Statement1 = this->contract;
           seq->Statement2 = base->contract;
@@ -154,11 +151,14 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
           type->parent = base;
           contractFile = generator.GenSTMT(seq);
           OutputFile << contractFile;
-        } else {
+        } else if (base->contract != nullptr) {
           type->contract = base->contract;
           type->parent = base;
           contractFile = generator.GenSTMT(base->contract);
           OutputFile << contractFile;
+          type->contract = this->contract;
+        } else {
+          type->parent = base;
           type->contract = this->contract;
         }
         // set class constraints to at least the base class constraints

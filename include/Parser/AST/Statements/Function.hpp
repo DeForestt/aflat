@@ -63,7 +63,7 @@ public:
         genericTypes(Other.genericTypes), autoType(Other.autoType),
         globalLocked(Other.globalLocked), safe(Other.safe),
         readOnly(Other.readOnly), returnImmutable(Other.returnImmutable),
-        returnLowOwnership(Other.returnLowOwnership) {
+        returnLowOwnership(Other.returnLowOwnership), error(Other.error) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;
     this->hidden = Other.hidden;

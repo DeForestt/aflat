@@ -15,7 +15,8 @@ class Observable {
 
 	private fn notify(const any event) -> void {
 		for int i = 0; i < my.subscribers.getCount(); i++ {
-			const Function f = my.subscribers.get(i).expect("Expected Function in Observable subscribers list");
+			const let r = my.subscribers.get(i);
+      const Function f = r.expect("Expected Funtion in Observable subscribers list");
 			f(event);
 		}
 		return;

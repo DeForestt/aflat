@@ -248,27 +248,32 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
   return OutputFile;
 }
 
-asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT) {
+asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT,
+                                           bool emitFunctions) {
   asmc::File OutputFile = asmc::File();
   if (STMT->locked) {
     auto *inst = new asmc::nop();
     inst->logicalLine = STMT->logicalLine;
     OutputFile.text.push(inst);
   } else if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
-    this->ImportsOnly(dynamic_cast<ast::Sequence *>(STMT)->Statement1);
-    this->ImportsOnly(dynamic_cast<ast::Sequence *>(STMT)->Statement2);
+    this->ImportsOnly(dynamic_cast<ast::Sequence *>(STMT)->Statement1,
+                      emitFunctions);
+    this->ImportsOnly(dynamic_cast<ast::Sequence *>(STMT)->Statement2,
+                      emitFunctions);
   } else if (dynamic_cast<ast::Import *>(STMT) != nullptr) {
     auto imp = dynamic_cast<ast::Import *>(STMT);
-    if (imp->hasClasses) {
-      auto prev = cwd();
-      if (!imp->cwd.empty())
-        cwd() = imp->cwd;
-      if (imp->hasFunctions)
-        imp->generateClasses(*this);
-      else
-        imp->generate(*this);
-      cwd() = prev;
-    }
+    if (!imp->hasClasses && !imp->hasFunctions)
+      return OutputFile;
+
+    auto prev = cwd();
+    if (!imp->cwd.empty())
+      cwd() = imp->cwd;
+
+    imp->generateClasses(*this);
+    if (emitFunctions && imp->hasFunctions)
+      imp->generate(*this);
+
+    cwd() = prev;
   }
   return OutputFile;
 }

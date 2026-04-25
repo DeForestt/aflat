@@ -123,6 +123,8 @@ Statement *deepCopy(const Statement *stmt) {
     auto *copy = new Union();
     copy->ident = un->ident;
     copy->statement = deepCopy(un->statement);
+    if (copy->statement == nullptr && un->statement != nullptr)
+      copy->statement = new Statement(*un->statement);
     copy->genericTypes = std::vector<std::string>(un->genericTypes);
     copy->safeType = un->safeType;
     copy->dynamic = un->dynamic;
@@ -147,11 +149,15 @@ Statement *deepCopy(const Statement *stmt) {
     auto *copy = new Class(*cls);
     copy->contract = deepCopy(cls->contract);
     copy->statement = deepCopy(cls->statement);
+    if (copy->statement == nullptr && cls->statement != nullptr)
+      copy->statement = new Statement(*cls->statement);
     return copy;
   }
   if (auto strct = dynamic_cast<const Struct *>(stmt)) {
     auto *copy = new Struct(*strct);
     copy->statement = deepCopy(strct->statement);
+    if (copy->statement == nullptr && strct->statement != nullptr)
+      copy->statement = new Statement(*strct->statement);
     return copy;
   }
   if (auto imp = dynamic_cast<const Import *>(stmt)) {

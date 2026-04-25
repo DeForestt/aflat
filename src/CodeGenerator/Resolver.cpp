@@ -58,14 +58,6 @@ CodeGenerator::resolveSymbol(std::string ident,
   modList.reset();
 
   std::string nsp;
-  if (nameSpaceTable().contains(ident)) {
-    nsp = nameSpaceTable().get(ident) + ".";
-    if (modList.count == 0)
-      alert("NameSpace " + ident + " cannot be used as a variable", true,
-            __FILE__, __LINE__);
-    ident = nsp + modList.shift();
-  };
-
   bool global = false;
   bool owned = false;
   Symbol *sym = scope::ScopeManager::getInstance()->get(ident);
@@ -76,6 +68,25 @@ CodeGenerator::resolveSymbol(std::string ident,
     global = true;
     owned = true; // global symbols are corporatly owned
   }
+
+  if (sym == nullptr && nameSpaceTable().contains(ident)) {
+    nsp = nameSpaceTable().get(ident) + ".";
+    if (modList.count == 0)
+      alert("NameSpace " + ident + " cannot be used as a variable", true,
+            __FILE__, __LINE__);
+    ident = nsp + modList.shift();
+
+    global = false;
+    owned = false;
+    sym = scope::ScopeManager::getInstance()->get(ident);
+    readOnly = sym ? sym->readOnly : false;
+    if (sym == nullptr) {
+      sym = GlobalSymbolTable().search<std::string>(searchSymbol, ident);
+      global = true;
+      owned = true;
+    }
+  }
+
   if (sym == nullptr)
     return std::make_tuple("", Symbol(), false, pops, nullptr);
 

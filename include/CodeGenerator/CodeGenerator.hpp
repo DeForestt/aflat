@@ -30,6 +30,7 @@ public:
     HashMap<ast::Statement *> includedMemo;
     HashMap<ast::Statement *> includedClasses;
     HashMap<std::string> nameSpaceTable;
+    std::set<std::string> activeImports;
     std::unordered_map<std::string, std::string> genericTypeConversions;
     std::set<std::string> generatedFunctionNames;
     links::SLinkedList<gen::Type *, std::string> typeList;
@@ -80,7 +81,7 @@ public:
                 bool internal = false);
 
   asmc::File GenSTMT(ast::Statement *stmt);
-  asmc::File ImportsOnly(ast::Statement *stmt);
+  asmc::File ImportsOnly(ast::Statement *stmt, bool emitFunctions = true);
   links::LinkedList<gen::Symbol>
   GenTable(ast::Statement *STMT, links::LinkedList<gen::Symbol> &table);
   bool whenSatisfied(const ast::When &when);
@@ -123,6 +124,7 @@ public:
   HashMap<ast::Statement *> &includedMemo();
   HashMap<ast::Statement *> &includedClasses();
   HashMap<std::string> &nameSpaceTable();
+  std::set<std::string> &activeImports();
   std::unordered_map<std::string, std::string> &genericTypeConversions();
   std::set<std::string> &generatedFunctionNames();
   const std::set<std::string> &generatedFunctionNames() const;

@@ -341,8 +341,8 @@ LinkedList<Token *> Lexer::Impl::Scan(string input, int startLine) {
       if (i + 1 < input.length() && input[i + 1] == '<') {
         auto *op = new lex::OpSym;
         op->Sym = '<';
-        ++i;
-        ++columnCount;
+        i += 2;
+        columnCount += 2;
         tokens << stamp(op, tokenLine, tokenColumn, tokenStart, i);
       } else if (i + 1 < input.length() && input[i + 1] == '=') {
         auto *sym = new lex::Symbol;
@@ -364,8 +364,8 @@ LinkedList<Token *> Lexer::Impl::Scan(string input, int startLine) {
       if (i + 1 < input.length() && input[i + 1] == '>') {
         auto *op = new lex::OpSym;
         op->Sym = '>';
-        ++i;
-        ++columnCount;
+        i += 2;
+        columnCount += 2;
         tokens << stamp(op, tokenLine, tokenColumn, tokenStart, i);
       } else if (i + 1 < input.length() && input[i + 1] == '=') {
         auto *sym = new lex::Symbol;
