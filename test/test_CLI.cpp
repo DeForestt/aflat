@@ -63,3 +63,11 @@ TEST_CASE("CLI concurrent build flag", "[cli]") {
   REQUIRE(opts.concurrent == true);
   REQUIRE(opts.command == "build");
 }
+
+TEST_CASE("CLI lsp command", "[cli]") {
+  const char *argv[] = {"aflat", "lsp"};
+  CommandLineOptions opts;
+  REQUIRE(parseCommandLine(2, (char **)argv, opts));
+  REQUIRE(opts.command == "lsp");
+  REQUIRE(opts.args.empty());
+}

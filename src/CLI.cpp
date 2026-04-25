@@ -96,6 +96,7 @@ void printUsage(const char *prog) {
       << "  docs <lib|file>     Show classes and functions for a library/file\n"
       << "  update              Update AFlat\n"
       << "  clean               Remove ./bin directory\n"
+      << "  lsp                 Start the language server\n"
       << "  <file> [out.s]      Compile single file\n\n"
       << "Options:\n"
       << "  -o, --output <file> Output file when compiling a single file\n"

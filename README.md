@@ -40,6 +40,9 @@ alias aflat="<path to build>/bin/aflat"
 ```
 Alternatively add the `bin` directory to your `PATH`.
 
+If you want Neovim integration, point your LSP client at `aflat lsp`. The
+server speaks stdio JSON-RPC and emits diagnostics for open/save events.
+
 This readme assumes that the aflat bin directory is in your path or an alias is set.
 
 ### Creating a new project
