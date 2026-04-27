@@ -6,7 +6,6 @@ import HTTPMessage, HTTPMethod, HTTPResponse, NotFoundError, ForbiddenError, Bad
 import Result from "Utils/Result";
 import {methodToString} from "HTTP" under http;
 import string from "String";
-import {print} from "String" under str;
 import {printHex} from "io" under io;
 import {Some, None} from "Utils/option" under opt;
 import {accept, reject} from "Utils/result" under res;
@@ -15,6 +14,7 @@ import Error from "Utils/Error";
 import option from "Utils/option";
 import result from "Utils/result";
 import uni_string from "uni_string";
+import {print} from "uni_string" under uni;
 
 class Server {
     contract {
@@ -46,11 +46,11 @@ class Server {
     void listen() {
         const let preamble = "http:";
         const let slash = '/';
-        str.print(`listening on port: {preamble}{slash}{slash}localhost:{my.port}\n`);
+        uni.print(`listening on port: {preamble}{slash}{slash}localhost:{my.port}\n`);
         serve(my.port, fn (const adr msg, const Server self) {
             const HTTPMessage msg = new HTTPMessage(msg, true);
-            const string method = http.methodToString(msg.method);
-            const string endpoint = msg.endpoint;
+            const uni_string method = http.methodToString(msg.method);
+            const uni_string endpoint = msg.endpoint;
             mutable HTTPMessage data = msg;
 
             for int k = 0; k < self.middlewares.getCount(); k = k + 1 {
@@ -63,13 +63,11 @@ class Server {
             for int i = 0; i < self.endpoints.getCount(); i = i + 1 {
                 const Endpoint e = self.endpoints.get(i).expect("Endpoint count currupted");
 
-                string wildE = e.path.copy();
-                string subMsg = msg.endpoint.copy();
-
-                if wildE.find("/:*", 0) != -1 {
-                    wildE = wildE.subString(0, wildE.find("/:*", 0));
-                    subMsg = subMsg.subString(0, wildE.len());
-                };
+                const uni_string wildE = if e.path.find("/:*", 0) != -1
+                    e.path.subString(0, e.path.find("/:*", 0))
+                else
+                    e.path.copy();
+                const uni_string subMsg = msg.endpoint.subString(0, wildE.len());
 
                 if e.method == msg.method & wildE == subMsg {
                     const let handler = e.imp;

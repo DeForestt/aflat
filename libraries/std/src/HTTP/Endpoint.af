@@ -1,5 +1,6 @@
 .needs <std>
 import string from "String";
+import uni_string from "uni_string";
 import Server from "HTTP/Server";
 import Map from "Utils/Map";
 import HTTPMethod, HTTPResponse, HTTPMessage from "HTTP";
@@ -10,17 +11,21 @@ import {printHex, printInt} from "io" under io;
 class Endpoint {
     contract {
         const adr imp = imp;
-        const string path = path;
+        const uni_string path = path;
         HTTPMethod method;
     };
     
-    Endpoint init(const any<Server, HTTPMessage> imp, const Server context, const string path, const HTTPMethod method) {
+    Endpoint init(const any<Server, HTTPMessage> imp, const Server context, const uni_string path, const HTTPMethod method) {
         my.method = method;
         context.addEndpoint(my);
     };
     
     string toString() {
-        return `{http.methodToString(my.method)} {my.path}`;
+        string ret = new string("");
+        ret = ret + http.methodToString(my.method).toString();
+        ret = ret + " ";
+        ret = ret + my.path.toString();
+        return ret;
     };
 
     HTTPResponse _call(const Server context, * const HTTPMessage msg) {
@@ -31,7 +36,7 @@ class Endpoint {
 
 class Endpoints {
     int id = 0;
-    Endpoints init(const Map<Server> imp, const Server context, const string path) {
+    Endpoints init(const Map<Server> imp, const Server context, const uni_string path) {
         const let endpoints = imp(context);
         if endpoints.has("GET") {
             const let get = new Endpoint(endpoints.get("GET").or(NULL), context, path, HTTPMethod.GET);
