@@ -60,22 +60,12 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
 
       const auto testType =
           allowAdr ? ast::Type("adr", asmc::QWord) : dec->type;
-      if (!dec->trust) {
-        if (dec->type.typeName != "let" &&
-                !generator.canAssign(testType, expr.type,
-                                     "type {} cannot be assigned to type {}"),
-            dec->trust) {
-          auto prev = expr;
-          expr =
-              generator.GenExpr(generator.imply(this->expr, testType.typeName),
-                                file, testType.size, testType.typeName);
-          expr.adoptImmutableRequirement(prev);
-        };
-      };
-
-      if (dec->type.typeName == "string" && expr.type == "adr") {
+      if (!dec->trust && dec->type.typeName != "let" &&
+          !generator.canAssign(testType, expr.type,
+                               "type {} cannot be assigned to type {}")) {
         auto prev = expr;
-        expr = generator.GenExpr(generator.imply(this->expr, "string"), file);
+        expr = generator.GenExpr(generator.imply(this->expr, testType.typeName),
+                                 file, testType.size, testType.typeName);
         expr.adoptImmutableRequirement(prev);
       }
 
