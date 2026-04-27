@@ -587,7 +587,7 @@ export string readString(*const string prompt) {
 };
 
 export string floatToString(const float f) {
-    let output = ``;
+  string output = ``;
 	// use bit manipulation to convert float to int
 	int i = f;
 	// get sign

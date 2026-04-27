@@ -32,7 +32,7 @@ class RefCounted {
 
 types(T)
 /**
- * Heap box wrapper that owns a copy of `T` and provides simple getters/setters.
+ * Heap box wrapper that owns a `T` and provides simple getters/setters.
  */
 class Box {
 	private mutable T value = value;
@@ -56,7 +56,54 @@ class Box {
 };
 
 types(T)
+/**
+ * Heap owner wrapper that takes exclusive ownership of a `T`.
+ */
+class owned {
+	private mutable T value = value;
+  private mutable bool valid = true;
+
+	fn init(const T value) -> Self {
+		return my;
+	};
+
+	fn _set(const T &&value) -> Self {
+		my.value = value;
+		return my;
+	};
+
+
+	safe fn view() -> loan immutable T {
+		return my.value;
+	};
+
+	fn del() {
+    if my.valid == false return;
+		when(T is adr)
+		af_free(my.value);
+
+		when(T is not primitive and T is not adr)
+		delete my.value;
+	};
+
+  fn release() -> T {
+    my.valid = false;
+    return my.value;
+  };
+
+	fn toString() -> string {
+		return `owned({my.value})`;
+	};
+};
+
+types(T)
 // Convenience helper to allocate a Box for a value.
 export fn wrap(const T value) -> Box::<T> {
 	return new Box::<T>(value);
+};
+
+types(T)
+// Convenience helper to allocate an owned wrapper for a value.
+export fn own(const T value) -> owned::<T> {
+	return new owned::<T>(value);
 };

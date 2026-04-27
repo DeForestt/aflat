@@ -14,6 +14,7 @@ import Middleware from "HTTP/Middleware";
 import Error from "Utils/Error";
 import option from "Utils/option";
 import result from "Utils/result";
+import uni_string from "uni_string";
 
 class Server {
     contract {
@@ -104,7 +105,7 @@ class Server {
                 return r.toString().cstr();
             };
 
-            const HTTPResponse r = new HTTPResponse(`Endpoint: [{method}] {endpoint} not implemented`.cstr(), "501", "Not Implemented");
+            const HTTPResponse r = new HTTPResponse(`Endpoint: [{method}] {endpoint} not implemented`.as_buf().release(), "501", "Not Implemented");
             return r.toString().cstr();
         }, my);
     };

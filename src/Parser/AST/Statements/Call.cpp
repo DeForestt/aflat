@@ -710,7 +710,7 @@ gen::GenerationResult Call::generateAttempt(
         rValue = true;
         // make sure that its not a var
         auto var = dynamic_cast<ast::Var *>(arg);
-        if (var != nullptr && var->Ident != "NULL") {
+        if (var != nullptr && var->Ident != "NULL" && !var->selling) {
           this->requestOverloadRetry(
               generator, overloadTable, overloadIdent, currentOverloadIndex,
               "Attempted to pass an lvalue (" + var->Ident + ") to an rvalue");

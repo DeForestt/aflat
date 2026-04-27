@@ -647,7 +647,7 @@ class HTTPResponse {
         return my;
     };
     
-    HTTPResponse init(const adr body, const adr statusCode, const adr statusMessage) {
+    HTTPResponse init(const adr body, immutable adr statusCode, const adr statusMessage) {
         my.body = new string(body);
         my.statusCode = new string(statusCode);
         my.statusMessage = new string(statusMessage);

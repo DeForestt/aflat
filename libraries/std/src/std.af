@@ -7,6 +7,7 @@ import Iterator from "Collections/Iterator";
 import Result from "Utils/Result";
 import { accept, reject } from "Utils/Result" under res;
 import { fString } from "String" under st;
+import { len, str_at, int_toString } from "strings" under strs;
 import Option from "Utils/Option";
 import { some, none } from "Utils/Option" under opt;
 
@@ -102,13 +103,14 @@ int deFragAll(const Block head){
 };
 
 //Interface
-int af_memcpy (adr dst, adr src, const int size){
+int af_memcpy (adr dst, immutable adr src, const int size){
     int i = 0;
+    mutable adr cursor = src;
     while(i < size){
-        const byte b = src as byte;
+        const byte b = cursor as byte;
         dst =: b;
         dst = dst + #1;
-        src = src + #1;
+        cursor = cursor + #1;
         i = i + 1;
     };
     return 0;
@@ -254,6 +256,106 @@ adr _fCstr(const adr fmt, * const adr args) {
     const let s = new string(fmt);
     const let ret = st.fString(s, args);
     return ret;
+};
+
+adr _fUCstr(const adr fmt, * adr args) {
+    mutable adr out = af_malloc(1);
+    mutable adr save = out;
+    int capacity = 1;
+    int length = 0;
+    out =: '\0';
+
+    const int fmtLen = strs.len(fmt);
+    for int i = 0; i < fmtLen; i = i + 1 {
+        const char ch = strs.str_at(fmt, i);
+        if (ch == '%') {
+            i = i + 1;
+            if (i >= fmtLen) {
+                break;
+            };
+            const char spec = strs.str_at(fmt, i);
+            if (spec == 'a' | spec == 's') {
+                const adr src = args as adr;
+                const int srcLen = strs.len(src);
+                capacity = capacity + srcLen;
+                save = af_realloc(save, capacity);
+                out = save;
+                af_memcpy(out + length, src, srcLen);
+                length = length + srcLen;
+                out = out + length;
+                out =: '\0';
+                out = save;
+                args = args + adr;
+            } else if (spec == 'c') {
+                capacity = capacity + 1;
+                save = af_realloc(save, capacity);
+                out = save;
+                out = out + length;
+                out =: args as char;
+                length = length + 1;
+                out = out + 1;
+                out =: '\0';
+                out = save;
+                args = args + char;
+            } else if (spec == 'd') {
+                const char[16] buff;
+                const int n = args as int;
+                if (n == 0) {
+                    buff =: '0';
+                    buff =: '\0';
+                } else {
+                    strs.int_toString(n, buff);
+                };
+                const int buffLen = strs.len(buff);
+                capacity = capacity + buffLen;
+                save = af_realloc(save, capacity);
+                out = save;
+                af_memcpy(out + length, buff, buffLen);
+                length = length + buffLen;
+                out = out + length;
+                out =: '\0';
+                out = save;
+                args = args + int;
+            } else if (spec == 'b') {
+                const bool b = args as bool;
+                const adr word = if b "true" else "false";
+                const int wordLen = strs.len(word);
+                capacity = capacity + wordLen;
+                save = af_realloc(save, capacity);
+                out = save;
+                af_memcpy(out + length, word, wordLen);
+                length = length + wordLen;
+                out = out + length;
+                out =: '\0';
+                out = save;
+                args = args + bool;
+            } else {
+                capacity = capacity + 2;
+                save = af_realloc(save, capacity);
+                out = save;
+                out = out + length;
+                out =: '%';
+                out = out + 1;
+                out =: spec;
+                length = length + 2;
+                out = out + 1;
+                out =: '\0';
+                out = save;
+            };
+        } else {
+            capacity = capacity + 1;
+            save = af_realloc(save, capacity);
+            out = save;
+            out = out + length;
+            out =: ch;
+            length = length + 1;
+            out = out + 1;
+            out =: '\0';
+            out = save;
+        };
+    };
+
+    return save;
 };
 
 adr create(const int size, * const any value) {

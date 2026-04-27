@@ -36,7 +36,8 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   }
 
   if (resolver) {
-    auto from = generator.GenExpr(this->expr, file);
+    auto from = generator.GenExpr(this->expr, file, asmc::AUTO,
+                                  generator.matchScope()->returns.typeName);
     if (generator.matchScope() == nullptr) {
       generator.alert(
           "cannot use a resolver return outside of a match statement", true,
@@ -86,7 +87,8 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
 
   auto trashFile = asmc::File();
 
-  gen::Expr from = generator.GenExpr(this->expr, file);
+  gen::Expr from = generator.GenExpr(this->expr, file, asmc::AUTO,
+                                     generator.returnType().typeName);
 
   gen::Symbol *retSym = nullptr;
   if (auto var = dynamic_cast<ast::Var *>(this->expr)) {

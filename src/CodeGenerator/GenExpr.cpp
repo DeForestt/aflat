@@ -478,8 +478,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       output = this->GenExpr(var, OutputFile);
     }
 
-    // set the symbol to sold...
-    std::get<4>(resolved)->sold = logicalLine();
+    // Primitive values are copied by value, so selling them should not poison
+    // the original symbol. Only real heap-owning values participate in sold
+    // tracking.
+    if (parse::PRIMITIVE_TYPES.find(output.type) ==
+        parse::PRIMITIVE_TYPES.end()) {
+      output.owned = true;
+      std::get<4>(resolved)->sold = logicalLine();
+    }
   } else if (dynamic_cast<ast::Reference *>(expr) != nullptr) {
     ast::Reference ref = *dynamic_cast<ast::Reference *>(expr);
 
@@ -605,8 +611,30 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     };
 
     call->call->Args << list;
-    output = this->GenExpr(call, OutputFile);
-    output.type = "string";
+    const bool wantsString = typeHint.find("string") != std::string::npos &&
+                             typeHint.find("uni_string") == std::string::npos;
+    if (wantsString) {
+      output = this->GenExpr(call, OutputFile);
+      output.type = "string";
+    } else if (this->getType("uni_string", OutputFile) != nullptr) {
+      ast::CallExpr *ownedCall = new ast::CallExpr();
+      ownedCall->call = new ast::Call();
+      ownedCall->call->ident = "_fUCstr";
+      ownedCall->call->logicalLine = logicalLine();
+      ownedCall->logicalLine = logicalLine();
+      ownedCall->call->Args.push(strLit);
+      ownedCall->call->Args.push(list);
+
+      ast::NewExpr *ownedStr = new ast::NewExpr();
+      ownedStr->logicalLine = logicalLine();
+      ownedStr->type.typeName = "uni_string";
+      ownedStr->args.push(ownedCall);
+      output = this->GenExpr(ownedStr, OutputFile);
+      output.type = "uni_string";
+    } else {
+      output = this->GenExpr(call, OutputFile);
+      output.type = "string";
+    }
   } else if (dynamic_cast<ast::FloatLiteral *>(expr) != nullptr) {
     ast::FloatLiteral *floatLit = dynamic_cast<ast::FloatLiteral *>(expr);
     asmc::FloatLiteral *fltLit = new asmc::FloatLiteral();
