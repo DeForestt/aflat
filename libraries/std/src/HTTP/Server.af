@@ -64,10 +64,10 @@ class Server {
                 const Endpoint e = self.endpoints.get(i).expect("Endpoint count currupted");
 
                 const uni_string wildE = if e.path.find("/:*", 0) != -1
-                    e.path.subString(0, e.path.find("/:*", 0))
+                    e.path.subString(0, e.path.find("/:*", 0)).cstr()
                 else
                     e.path.copy();
-                const uni_string subMsg = msg.endpoint.subString(0, wildE.len());
+                const uni_string subMsg = msg.endpoint.subString(0, wildE.len()).cstr();
 
                 if e.method == msg.method & wildE == subMsg {
                     const let handler = e.imp;

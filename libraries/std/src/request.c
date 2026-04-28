@@ -358,6 +358,7 @@ int request(char *host, char *path, char *port, char *msg, char *response,
 
 int _aflat_server_spinUp(short port, int requestSize,
                          char *(*requestHandler)(char *, char **)) {
+  printf("starting up server");
   int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
   struct sockaddr_in serverAddress;
@@ -372,17 +373,19 @@ int _aflat_server_spinUp(short port, int requestSize,
     printf("Error: The server is not listening.\n");
     return 1;
   }
+  printf("Listening now\n");
   int clientSocket;
 
   while (1) {
     clientSocket = accept(serverSocket, NULL, NULL);
     char *request = NULL;
-    char **response = malloc(sizeof(char *));
+    char **response = malloc(sizeof(*response));
     if (_aflat_read_request(clientSocket, (size_t)requestSize, &request) < 0) {
       close(clientSocket);
       free(response);
       continue;
     }
+    printf("got a request: %s", request);
     requestHandler(request, response);
     send(clientSocket, *response, strlen(*response), 0);
     free(request);
