@@ -37,6 +37,7 @@ function compile_single {
         "std") aflat ./libraries/std/src/std.af -o ./libraries/std/std.s ;;
         "strings") aflat ./libraries/std/src/strings.af -o ./libraries/std/strings.s ;;
         "String") aflat ./libraries/std/src/String.af -o ./libraries/std/String.s ;;
+        "uni_string") aflat ./libraries/std/src/uni_string.af -o ./libraries/std/uni_string.s ;;
         "ATest") aflat ./libraries/std/src/ATest.af -o ./libraries/std/ATest.s ;;
         "HTTP") aflat ./libraries/std/src/HTTP.af -o ./libraries/std/HTTP.s ;;
         "CLArgs") aflat ./libraries/std/src/CLArgs.af -o ./libraries/std/CLArgs.s ;;
@@ -97,7 +98,7 @@ function compile_single {
             echo "Unknown library: $1"
             echo "Available libraries:"
             echo "  Collections, concurrency, DateTime, files, io, math, std-cmp, std"
-            echo "  strings, String, ATest, HTTP, CLArgs, System, Memory"
+            echo "  strings, String, uni_string, ATest, HTTP, CLArgs, System, Memory"
             echo "  Result, result, Functions, Observable, Map, Option, option"
             echo "  Properties, Object, Error, Defer, unordered_map, Error_Render"
             echo "  HTTP_Endpoint, HTTP_Middleware, HTTP_Server, HTTP_Endpoints"
@@ -127,6 +128,7 @@ aflat ./libraries/std/src/std-cmp.af -o ./libraries/std/std-cmp.s &
 aflat ./libraries/std/src/std.af -o ./libraries/std/std.s &
 aflat ./libraries/std/src/strings.af -o ./libraries/std/strings.s &
 aflat ./libraries/std/src/String.af -o ./libraries/std/String.s &
+aflat ./libraries/std/src/uni_string.af -o ./libraries/std/uni_string.s &
 aflat ./libraries/std/src/ATest.af -o ./libraries/std/ATest.s &
 aflat ./libraries/std/src/HTTP.af -o ./libraries/std/HTTP.s &
 aflat ./libraries/std/src/CLArgs.af -o ./libraries/std/CLArgs.s &

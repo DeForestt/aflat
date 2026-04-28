@@ -229,6 +229,10 @@ safe dynamic class string {
     fn split(const char delim) -> vector::<string> {
         const vector::<string> vec = new vector::<string>();
         const int myLen = str.len(my.head);
+        io.print("[String.split] start\n");
+        io.print("[String.split] source: ");
+        io.print(my.head);
+        io.print("\n");
         adr buff = af_malloc(1);
         adr save = buff;
         int buffSize = 1;
@@ -237,6 +241,9 @@ safe dynamic class string {
             const adr curr = my.head + i;
             const char c = curr as char;
             if (c == delim) {
+                io.print("[String.split] token: ");
+                io.print(save);
+                io.print("\n");
                 buff = buff + 1;
                 buff =: '\0';
                 vec.push_back(new string(save));
@@ -252,11 +259,15 @@ safe dynamic class string {
         };
         buff = buff + 1;
         buff =: '\0';
+        io.print("[String.split] final token: ");
+        io.print(save);
+        io.print("\n");
         const let s = new string(save);
         s.seal();
         s.permanent = true;
         vec.push_back(s.get());
         af_free($save);
+        io.print("[String.split] done\n");
         return vec;
     };
 
@@ -587,7 +598,7 @@ export string readString(*const string prompt) {
 };
 
 export string floatToString(const float f) {
-    let output = ``;
+  string output = ``;
 	// use bit manipulation to convert float to int
 	int i = f;
 	// get sign

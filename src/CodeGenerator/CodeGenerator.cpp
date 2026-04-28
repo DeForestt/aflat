@@ -215,8 +215,21 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
       // if the type is a class
       gen::Class *cl = dynamic_cast<gen::Class *>(*udef);
       if (cl != nullptr) {
-        if (type.typeName == "adr" && !cl->pedantic)
-          return true;
+        if (type.typeName == "adr") {
+          if (cl->dynamic || cl->uniqueType)
+            return false;
+          if (cl->nameTable.count > 0) {
+            ast::Function *init = cl->nameTable["init"];
+            if (init) {
+              if (init->req == 1 &&
+                  this->canAssign(init->argTypes[0], typeName, fmt)) {
+                return false;
+              }
+            }
+          }
+          if (!cl->pedantic)
+            return true;
+        }
         gen::Class *parent = cl->parent;
         if (parent != nullptr) {
           if (parent->Ident == type.typeName)
@@ -244,6 +257,16 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   if ((type.size == asmc::QWord &&
        (typeName == "adr" || typeName == "generic")) &&
       (strict || !cl || !cl->pedantic)) {
+    if (typeName == "adr" && cl != nullptr && (cl->dynamic || cl->uniqueType)) {
+      return false;
+    }
+    if (typeName == "adr" && cl != nullptr && cl->nameTable.count > 0) {
+      ast::Function *init = cl->nameTable["init"];
+      if (init && init->req == 1 &&
+          this->canAssign(init->argTypes[0], typeName, fmt)) {
+        return false;
+      }
+    }
     return true;
   }
 

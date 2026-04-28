@@ -46,6 +46,40 @@ LinkedList<Token *> Lexer::Impl::Scan(string input, int startLine) {
       continue;
     }
 
+    // Skip comments before tokenizing the next symbol.
+    if (input[i] == '/' && i + 1 < input.length()) {
+      if (input[i + 1] == '/') {
+        i += 2;
+        columnCount += 2;
+        while (i < input.length() && input[i] != '\n') {
+          ++i;
+          ++columnCount;
+        }
+        continue;
+      }
+      if (input[i + 1] == '*') {
+        i += 2;
+        columnCount += 2;
+        while (i < input.length()) {
+          if (input[i] == '\n') {
+            ++lineCount;
+            columnCount = 1;
+            ++i;
+            continue;
+          }
+          if (input[i] == '*' && i + 1 < input.length() &&
+              input[i + 1] == '/') {
+            i += 2;
+            columnCount += 2;
+            break;
+          }
+          ++i;
+          ++columnCount;
+        }
+        continue;
+      }
+    }
+
     const int tokenLine = lineCount;
     const int tokenColumn = columnCount;
     const size_t tokenStart = i;

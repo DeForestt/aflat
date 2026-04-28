@@ -1616,61 +1616,78 @@ JsonValue buildSemanticTokens(const std::string &text,
   try {
     highlightTokens = scanner.Scan(text);
     highlightTokens.invert();
-    try {
-      auto preprocessed = pp.PreProcess(text, libPath, currentDir);
-      parseTokens = scanner.Scan(preprocessed);
-      parseTokens.invert();
-
-      parse::Parser parser;
-      auto *stmt = parser.parseStmt(parseTokens);
-      collectTypeNames(parser, symbols);
-      collectStatementSymbols(stmt, symbols);
-    } catch (...) {
-      // Fall back to scanner-only highlighting when the parser cannot build
-      // symbol context for the current buffer.
-    }
-
-    auto tokenList = tokenVector(highlightTokens);
-    semanticTokens.reserve(tokenList.size());
-    for (size_t i = 0; i < tokenList.size(); ++i) {
-      int kind = semanticKindForToken(tokenList, i, symbols);
-      if (kind < 0)
-        continue;
-      auto *token = tokenList[i];
-      int line = token->lineCount - 1;
-      int column = std::max(0, token->column - 1);
-      int length = std::max(1, token->length);
-
-      if (kind == TK_OPERATOR) {
-        size_t j = i;
-        while (j + 1 < tokenList.size()) {
-          auto *current = tokenList[j];
-          auto *next = tokenList[j + 1];
-          if (next->lineCount != current->lineCount)
-            break;
-          if (next->column != current->column + current->length)
-            break;
-          auto *currentOp = dynamic_cast<lex::OpSym *>(current);
-          auto *nextOp = dynamic_cast<lex::OpSym *>(next);
-          if (currentOp == nullptr || nextOp == nullptr)
-            break;
-          if (currentOp->Sym != nextOp->Sym)
-            break;
-          if (semanticKindForToken(tokenList, j + 1, symbols) != TK_OPERATOR)
-            break;
-          length += std::max(1, next->length);
-          ++j;
-        }
-        i = j;
-      }
-
-      semanticTokens.push_back({line, column, length, kind, 0});
-    }
+  } catch (const err::Exception &e) {
+    destroyTokens(parseTokens);
+    destroyTokens(highlightTokens);
+    return JsonValue(
+        JsonValue::Object{{"data", JsonValue(JsonValue::Array{})}});
+  } catch (const std::exception &e) {
+    destroyTokens(parseTokens);
+    destroyTokens(highlightTokens);
+    return JsonValue(
+        JsonValue::Object{{"data", JsonValue(JsonValue::Array{})}});
+  } catch (int offset) {
+    destroyTokens(parseTokens);
+    destroyTokens(highlightTokens);
+    return JsonValue(
+        JsonValue::Object{{"data", JsonValue(JsonValue::Array{})}});
   } catch (...) {
     destroyTokens(parseTokens);
     destroyTokens(highlightTokens);
     return JsonValue(
         JsonValue::Object{{"data", JsonValue(JsonValue::Array{})}});
+  }
+
+  try {
+    auto preprocessed = pp.PreProcess(text, libPath, currentDir);
+    parseTokens = scanner.Scan(preprocessed);
+    parseTokens.invert();
+
+    parse::Parser parser;
+    auto *stmt = parser.parseStmt(parseTokens);
+    collectTypeNames(parser, symbols);
+    collectStatementSymbols(stmt, symbols);
+  } catch (const err::Exception &e) {
+  } catch (const std::exception &e) {
+  } catch (int offset) {
+  } catch (...) {
+  }
+
+  auto tokenList = tokenVector(highlightTokens);
+  semanticTokens.reserve(tokenList.size());
+  for (size_t i = 0; i < tokenList.size(); ++i) {
+    int kind = semanticKindForToken(tokenList, i, symbols);
+    if (kind < 0)
+      continue;
+    auto *token = tokenList[i];
+    int line = token->lineCount - 1;
+    int column = std::max(0, token->column - 1);
+    int length = std::max(1, token->length);
+
+    if (kind == TK_OPERATOR) {
+      size_t j = i;
+      while (j + 1 < tokenList.size()) {
+        auto *current = tokenList[j];
+        auto *next = tokenList[j + 1];
+        if (next->lineCount != current->lineCount)
+          break;
+        if (next->column != current->column + current->length)
+          break;
+        auto *currentOp = dynamic_cast<lex::OpSym *>(current);
+        auto *nextOp = dynamic_cast<lex::OpSym *>(next);
+        if (currentOp == nullptr || nextOp == nullptr)
+          break;
+        if (currentOp->Sym != nextOp->Sym)
+          break;
+        if (semanticKindForToken(tokenList, j + 1, symbols) != TK_OPERATOR)
+          break;
+        length += std::max(1, next->length);
+        ++j;
+      }
+      i = j;
+    }
+
+    semanticTokens.push_back({line, column, length, kind, 0});
   }
 
   destroyTokens(parseTokens);

@@ -1594,11 +1594,12 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
           tokens.pop();
           auto testSym = dynamic_cast<lex::OpSym *>(tokens.peek());
           newExpr->args = links::LinkedList<ast::Expr *>();
-          if (testSym != nullptr && testSym->Sym != '[') {
+          if (testSym != nullptr && testSym->Sym != '[' &&
+              testSym->Sym != '{' && testSym->Sym != '$') {
             auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
             if (symp->Sym != ')')
-              throw err::Exception(
-                  &"Expected closed parenthesis got "[symp->Sym]);
+              throw err::Exception("Expected closed parenthesis got " +
+                                   std::string(1, symp->Sym));
           } else {
             bool pop = false;
             do {
@@ -1612,8 +1613,8 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
             if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
               auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
               if (symp->Sym != ')')
-                throw err::Exception(
-                    &"Expected closed parenthesis got "[symp->Sym]);
+                throw err::Exception("Expected closed parenthesis got " +
+                                     std::string(1, symp->Sym));
             }
           }
         }

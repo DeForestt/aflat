@@ -1,6 +1,7 @@
 .needs <std>
-import {print} from "String" under str;
-import string from "String";
+import uni_string from "uni_string";
+import {print} from "uni_string" under uni;
+import {print} from "io" under io;
 import List from "Collections";
 import Map from "Utils/Map";
 import unordered_map from "Collections/unordered_map";
@@ -39,7 +40,7 @@ class FixtureStruct {
 		return my.setUp();
 	};
 
-	fn toString() -> string {
+	fn toString() -> uni_string {
 		return `FixtureStruct(setUp: {my.setUp != NULL}, tearDown: {my.tearDown != NULL})`;
 	};
 };
@@ -101,9 +102,9 @@ class DescribeContext {
 			};
 		};
 
-		fn toString() -> string {
-			return "DescribeContext";
-		};
+	fn toString() -> uni_string {
+		return `DescribeContext`;
+	};
 };
 
 mutable DescribeContext rootContext = NULL;
@@ -146,9 +147,9 @@ mutable int failedTests = 0;
 mutable int skippedTests = 0;
 mutable bool currentTestFailed = false;
 
-fn markFailure(const string message) -> void {
+fn markFailure(const uni_string message) -> void {
 	currentTestFailed = true;
-	str.print(`      {message}\n`);
+	uni.print(`      {message}\n`);
 };
 
 // Accessor for the global fixture registry.
@@ -188,8 +189,9 @@ export fn tearDownFixtures() -> void {
 };
 
 // Define a describe block with its nested tests and hooks.
-export fn describe(const string text, const adr implementation) -> void {
-	str.print(text + "\n");
+export fn describe(const adr text, const adr implementation) -> void {
+	io.print(text);
+	io.print("\n");
 	pushDescribeContext();
 	const let cb = implementation;
 	cb();
@@ -213,17 +215,18 @@ export fn fix(const adr name, const adr setUp, * const adr tearDown) -> void {
 };
 
 // Retrieve fixture data, invoking setUp lazily when necessary.
-export fn getFixture(const string name) -> any {
+export fn getFixture(const uni_string name) -> any {
 	const let fd = getFixtureData();
-	if fd.has(name.cstr()) {
-		const any data = fd.get(name.cstr()).orElse(fn () panic("Fixture data not found"));
+	const let fixtureNameString = name.toString();
+	const adr fixtureName = fixtureNameString.cstr();
+	if fd.has(fixtureName) {
+		const any data = fd.get(fixtureName).orElse(fn () panic("Fixture data not found"));
 		return data;
 	};
-	const let name = name.cstr();
 	const let fixtures = getFixtures();
-	const let fixture = fixtures.get(name).expect("Fixture not found");
+	const FixtureStruct fixture = fixtures.get(fixtureName).expect("Fixture not found");
 	const any data = fixture.setUp();
-	fd.set(name, data);
+	fd.set(fixtureName, data);
 	return data;
 };
 
@@ -291,7 +294,7 @@ export fn afterAll(const adr implementation) -> void {
 export fn it(const adr text, const adr implementation) -> void {
 	totalTests = totalTests + 1;
 	currentTestFailed = false;
-	str.print(`  it: {text}\n`);
+	uni.print(`  it: {text}\n`);
 	runBeforeAllHooksForStack();
 	runBeforeEachHooksForStack();
 	const let cb = implementation;
@@ -300,16 +303,16 @@ export fn it(const adr text, const adr implementation) -> void {
 	tearDownFixtures();
 	if currentTestFailed {
 		failedTests = failedTests + 1;
-		str.print("      ✗ FAILED\n");
+		io.print("      ✗ FAILED\n");
 	} else {
-		str.print("      ✓ PASSED\n");
+		io.print("      ✓ PASSED\n");
 	};
 };
 
 // Mark a test as skipped along with a justification.
-export fn itSkip(const string text, const string reason) -> void {
+export fn itSkip(const uni_string text, const uni_string reason) -> void {
 	skippedTests = skippedTests + 1;
-	str.print(`  it: {text} (skipped: {reason})\n`);
+	uni.print(`  it: {text} (skipped: {reason})\n`);
 };
 
 types(T)
@@ -320,7 +323,7 @@ export fn assertEqual(const T expected, const T actual) -> void {
 	};
 };
 
-private fn assertEqualStrings(const string expected, const string actual) -> void {
+private fn assertEqualStrings(const uni_string expected, const uni_string actual) -> void {
 	if expected != actual {
 		markFailure(`Expected {expected} but got {actual}`);
 	};
@@ -398,7 +401,7 @@ export fn assertOkValue(const T value, const Z expected) {
 export fn assertTrue(const bool condition) -> void {
 	if !condition {
 		currentTestFailed = true;
-		str.print("      Expected true but got false\n");
+		io.print("      Expected true but got false\n");
 	};
 };
 
@@ -406,7 +409,7 @@ export fn assertTrue(const bool condition) -> void {
 export fn assertFalse(const bool condition) -> void {
 	if condition {
 		currentTestFailed = true;
-		str.print("      Expected false but got true\n");
+		io.print("      Expected false but got true\n");
 	};
 };
 
@@ -425,12 +428,12 @@ export fn assertNotNull(const adr value) -> void {
 };
 
 // Explicitly fail the current test with a message.
-export fn fail(const string message) -> void {
+export fn fail(const uni_string message) -> void {
 	markFailure(message);
 };
 
 // Print a summary of total/passed/skipped tests.
 export fn summary() -> void {
 	const int passed = totalTests - failedTests;
-	str.print(`Summary: {passed} passed, {failedTests} failed, {skippedTests} skipped (total: {totalTests})\n`);
+	uni.print(`Summary: {passed} passed, {failedTests} failed, {skippedTests} skipped (total: {totalTests})\n`);
 };

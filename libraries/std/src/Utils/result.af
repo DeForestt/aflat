@@ -1,6 +1,7 @@
 .needs <std>
 import string from "String";
 import Error from "Utils/Error";
+import uni_string from "uni_string";
 
 types(T)
 /**
@@ -15,7 +16,7 @@ union result {
         match my {
             Ok(value) => return value,
             Err(err) => {
-                panic(`Error: {err}. {msg}`.cstr());
+                panic(`Error: {err}. {msg}`.get_buf());
             }
         };
     };
@@ -24,7 +25,7 @@ union result {
         match my {
             Ok(value) => return value,
             Err(err) => {
-                panic(`Error: {err}`.cstr());
+                panic(`Error: {err}`.get_buf());
             }
         };
     };
@@ -32,7 +33,7 @@ union result {
     safe fn expectErr(const string msg) -> Error {
         match my {
             Ok(_) => {
-                panic(`Expected error but got Ok. {msg}`.cstr());
+                panic(`Expected error but got Ok. {msg}`.get_buf());
             },
             Err(err) => return err
         };
