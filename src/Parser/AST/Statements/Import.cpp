@@ -84,6 +84,19 @@ collectImportNamespacesImpl(ast::Statement *stmt,
   }
 }
 
+static void
+collectFunctionNamesImpl(ast::Statement *stmt,
+                         std::unordered_map<std::string, std::string> &map) {
+  if (!stmt)
+    return;
+  if (auto seq = dynamic_cast<ast::Sequence *>(stmt)) {
+    collectFunctionNamesImpl(seq->Statement1, map);
+    collectFunctionNamesImpl(seq->Statement2, map);
+  } else if (auto func = dynamic_cast<ast::Function *>(stmt)) {
+    map.emplace(func->ident.ident, "");
+  }
+}
+
 static void registerClassShells(ast::Statement *stmt,
                                 gen::CodeGenerator &generator) {
   if (stmt == nullptr)
@@ -346,7 +359,12 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
       if (ident == "*") {
         auto seq = dynamic_cast<ast::Sequence *>(added);
         if (seq != nullptr) {
-          auto allStmts = gen::utils::extractAllFunctions(added);
+          auto allStmts = gen::utils::extractAllFunctions(added, id);
+          std::unordered_map<std::string, std::string> functionNsMap;
+          collectFunctionNamesImpl(added, functionNsMap);
+          for (const auto &[name, _] : functionNsMap) {
+            nsMap[name] = id;
+          }
           allStmts->namespaceSwap(nsMap);
           OutputFile << generator.GenSTMT(allStmts);
         }

@@ -15,7 +15,8 @@ import option from "Utils/option";
 import result from "Utils/result";
 import uni_string from "uni_string";
 import {print} from "uni_string" under uni;
-
+import {print} from "io" under io;
+ 
 class Server {
     contract {
         const List endpoints = new List(Endpoint);
@@ -47,10 +48,10 @@ class Server {
         const let preamble = "http:";
         const let slash = '/';
         uni.print(`listening on port: {preamble}{slash}{slash}localhost:{my.port}\n`);
-        serve(my.port, fn (const adr msg, const Server self) {
-            const HTTPMessage msg = new HTTPMessage(msg, true);
-            const uni_string method = http.methodToString(msg.method);
-            const uni_string endpoint = msg.endpoint;
+        serve_sync(my.port, fn (const adr _msg, const Server self) {
+            const let msg = new HTTPMessage(_msg, true);
+            const uni_string method = http.methodToString(msg.method).cstr();
+            const uni_string endpoint = msg.endpoint.cstr();
             mutable HTTPMessage data = msg;
 
             for int k = 0; k < self.middlewares.getCount(); k = k + 1 {

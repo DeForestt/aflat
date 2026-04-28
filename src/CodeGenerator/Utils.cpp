@@ -182,20 +182,25 @@ std::vector<ast::Statement *> gen::utils::extractAll(std::string ident,
 }
 
 ast::Sequence *gen::utils::extractAllFunctions(ast::Statement *stmt) {
+  return extractAllFunctions(stmt, "");
+}
+
+ast::Sequence *gen::utils::extractAllFunctions(ast::Statement *stmt,
+                                               const std::string &prefix) {
   // recursively traverse the statement tree and return a new tree with all the
   // functions
   if (stmt == nullptr)
     return nullptr;
   if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
     ast::Sequence *seq = dynamic_cast<ast::Sequence *>(stmt);
-    ast::Statement *temp = extractAllFunctions(seq->Statement1);
+    ast::Statement *temp = extractAllFunctions(seq->Statement1, prefix);
     if (temp != nullptr) {
       auto sequence = new ast::Sequence();
       sequence->Statement1 = temp;
-      sequence->Statement2 = extractAllFunctions(seq->Statement2);
+      sequence->Statement2 = extractAllFunctions(seq->Statement2, prefix);
       return sequence;
     } else {
-      return extractAllFunctions(seq->Statement2);
+      return extractAllFunctions(seq->Statement2, prefix);
     }
   } else if (dynamic_cast<ast::Function *>(stmt)) {
     ast::Function *func = dynamic_cast<ast::Function *>(stmt);
@@ -203,6 +208,8 @@ ast::Sequence *gen::utils::extractAllFunctions(ast::Statement *stmt) {
     f->locked = false;
     f->useType = f->type;
     f->hidden = false;
+    if (!prefix.empty())
+      f->ident.ident = prefix + '.' + f->ident.ident;
     auto sequence = new ast::Sequence();
     sequence->Statement1 = f;
     sequence->Statement2 = nullptr;

@@ -22,7 +22,7 @@ class Endpoint {
     
     string toString() {
         string ret = new string("");
-        ret = ret + http.methodToString(my.method).toString();
+        ret = ret + http.methodToString(my.method);
         ret = ret + " ";
         ret = ret + my.path.toString();
         return ret;
