@@ -1,5 +1,6 @@
 .needs <std> 
 import string from "String";
+import uni_string from "uni_string";
 
 /**
  * Base helper that tracks reference counts with optional locking semantics.
@@ -59,7 +60,7 @@ types(T)
 /**
  * Heap owner wrapper that takes exclusive ownership of a `T`.
  */
-class owned {
+unique class owned {
 	private mutable T value = value;
   private mutable bool valid = true;
 
@@ -91,7 +92,7 @@ class owned {
     return my.value;
   };
 
-	fn toString() -> string {
+	fn toString() -> uni_string {
 		return `owned({my.value})`;
 	};
 };

@@ -23,7 +23,7 @@ safe dynamic class Bind {
         my.context.bindings.pushBack(my);
     };
 
-    adr get() {
+    string get() {
         return my.value;
     };
 
