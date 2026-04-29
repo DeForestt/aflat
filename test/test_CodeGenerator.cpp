@@ -9,7 +9,7 @@
   auto mockGen = test::mockGen::CodeGenerator(                                 \
       "mod", parser, "", std::filesystem::current_path().string());
 
-bool compareFunc(ast::Function F, std::string input) {
+bool compareFunc(const ast::Function &F, const std::string &input) {
   if (input == F.ident.ident) {
     return true;
   }
