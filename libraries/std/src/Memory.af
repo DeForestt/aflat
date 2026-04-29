@@ -58,7 +58,7 @@ class Box {
 
 types(T)
 /**
- * Heap owner wrapper that takes exclusive ownership of a `T`.
+ * unique heap owner wrapper that takes exclusive ownership of a `T`.
  */
 unique class owned {
 	private mutable T value = value;
