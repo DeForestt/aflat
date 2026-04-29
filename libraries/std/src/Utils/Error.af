@@ -16,7 +16,7 @@ pedantic class Error {
 
     public void setRender(const adr render) {
         if my._render != NULL
-            return panic("Render already set.");
+            panic("Render already set.");
 
         my._render = render;
     };
