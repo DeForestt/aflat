@@ -21,8 +21,12 @@ jobs:
       - name: Configure CMake
         working-directory: ${{github.workspace}}/build
         run: cmake ..
-      - name: Build
-        run: cmake --build build && bash ./rebuild-libs.sh && ./bin/aflat build
+      - name: Build compiler
+        run: cmake --build build
+      - name: Build stdlib
+        run: bash ./rebuild-libs.sh
+      - name: Build project
+        run: ./bin/aflat build
       - name: Test
         working-directory: ${{github.workspace}}/bin
         run: ./a.test 

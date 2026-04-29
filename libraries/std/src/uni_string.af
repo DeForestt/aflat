@@ -3,7 +3,7 @@
 import string from "String";
 import {accept, reject} from "Utils/result" under res;
 import {print, printInt, printHex} from "io" under io;
-import {len, str_at, str_comp, str_concat, str_subString} from "strings" under st;
+import {len, str_at, str_comp, str_concat, str_subString, int_toString} from "strings" under st;
 import vector from "Collections/Vector";
 import option from "Utils/option";
 import {Some, None} from "Utils/option" under opt;
