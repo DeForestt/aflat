@@ -65,7 +65,7 @@ public:
   bool hidden = false;
   links::LinkedList<Symbol> publicSymbols;
   links::LinkedList<Symbol> SymbolTable;
-  static bool compare(Type *t, std::string ident);
+  static bool compare(Type *const &t, const std::string &ident);
   virtual int poly() { return 0; }
   int size;
   bool uniqueType = false;
@@ -116,8 +116,8 @@ public:
   Enum();
 
   links::SLinkedList<EnumValue, std::string> values;
-  static bool compare(Type *t, std::string ident);
-  static bool compareEnum(EnumValue e, std::string ident);
+  static bool compare(Type *const &t, const std::string &ident);
+  static bool compareEnum(const EnumValue &e, const std::string &ident);
 };
 
 inline void bump(FieldState &fs, uint32_t siteId) {

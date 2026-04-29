@@ -47,7 +47,7 @@ safe dynamic class Property {
 
     fn get() -> any {
         const let getter = my.getter;
-        if (getter == NULL) panic("Attempt to read from a property without a getter.");
+        if (getter == NULL) return panic("Attempt to read from a property without a getter.");
         return getter(my.context);
     };
 

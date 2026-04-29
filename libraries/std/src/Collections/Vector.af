@@ -155,11 +155,22 @@ class vector {
     };
 
     when (T is not primitive or T is adr)
-    fn set(const int index, const T &&value) -> result::<bool> {
+    fn set(const int index, const any value) -> result::<bool> {
         if index >= my.count {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
         af_memcpy(my.head + (index * T), value, T);
+        return res.accept(true);
+    };
+
+    when (T is not primitive and T has __from__)
+    fn set(const int index, const T value) -> result::<bool> {
+        if index >= my.count {
+            return res.reject::<bool>(new Error("Index out of bounds"));
+        };
+        const generic obj = my.head + (index * T);
+        const T obj = obj;
+        obj.__from__(value);
         return res.accept(true);
     };
 

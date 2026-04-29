@@ -6,7 +6,7 @@
 namespace links {
 template <typename T, typename Z> class SLinkedList {
 public:
-  bool (*foo)(T, Z);
+  bool (*foo)(const T &, const Z &);
   int count;
 
   Node<T> *head;
@@ -129,9 +129,9 @@ template <typename T, typename Z> T *links::SLinkedList<T, Z>::at(int i) {
 template <typename T, typename Z>
 T *links::SLinkedList<T, Z>::operator[](Z input) {
   links::Node<T> *pointer = this->head;
-  if (this->head == nullptr)
+  if (this->head == nullptr || this->foo == nullptr)
     return nullptr;
-  if ((*foo)(this->head->data, input))
+  if (foo(this->head->data, input))
     return &this->head->data;
   while (pointer->next != nullptr) {
     pointer = pointer->next;

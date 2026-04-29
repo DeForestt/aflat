@@ -1,7 +1,7 @@
 #include "LinkedListS.hpp"
 #include "catch.hpp"
 
-static bool comp(int a, int b) { return a == b; }
+static bool comp(const int &a, const int &b) { return a == b; }
 
 TEST_CASE("SLinkedList basic operations", "[slinkedlist]") {
   links::SLinkedList<int, int> list;

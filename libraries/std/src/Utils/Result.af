@@ -17,6 +17,10 @@ dynamic safe pedantic class Result {
 	private mutable Error error = error;
 	private mutable int refcount = 1;
 
+	safe fn trap(const adr msg) -> void {
+		panic(msg);
+	};
+
 	Result get() {
 		my.refcount = my.refcount + 1;
 		return my;
@@ -44,7 +48,7 @@ dynamic safe pedantic class Result {
 		if my.success
 			return my.value
 		else
-			panic(message.cstr());
+			{ my.trap(message.cstr()); return my.value; };
 	};
 
 	public Error getError() {
@@ -67,11 +71,12 @@ dynamic safe pedantic class Result {
 		if my.success {
 			if cases.has("ok") {
 				const adr foo = cases.get("ok").orElse(
-					fn () panic("No case for ok")
+					fn () { panic("No case for ok"); return my.value; }
 				);
 				return foo(my.value, arg1, arg2, arg3, arg4);
 			} else {
-				panic("No case for ok");
+				my.trap("No case for ok");
+				return my.value;
 			};
 		};
 

@@ -2,9 +2,11 @@
 
 namespace gen {
 
-bool Type::compare(Type *t, std::string ident) { return ident == t->Ident; }
+bool Type::compare(Type *const &t, const std::string &ident) {
+  return ident == t->Ident;
+}
 
-bool Enum::compareEnum(Enum::EnumValue e, std::string ident) {
+bool Enum::compareEnum(const Enum::EnumValue &e, const std::string &ident) {
   return e.name == ident;
 }
 

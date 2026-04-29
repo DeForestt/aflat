@@ -3,6 +3,10 @@ import string from "String";
 import Error from "Utils/Error";
 import uni_string from "uni_string";
 
+export fn abort(const adr msg) -> any {
+    return NULL;
+};
+
 types(T)
 /**
  * Result type that carries either `Ok(T)` success values or `Err(Error)`
@@ -12,38 +16,30 @@ union result {
     Ok(T),
     Err(Error)
 
-    safe fn expect(const string msg) -> T {
+    safe fn expect(const string msg) -> any {
         match my {
             Ok(value) => return value,
-            Err(err) => {
-                panic(`Error: {err}. {msg}`.get_buf());
-            }
+            Err(err) => return NULL
         };
     };
 
-    safe fn unwrap() -> T {
+    safe fn unwrap() -> any {
         match my {
             Ok(value) => return value,
-            Err(err) => {
-                panic(`Error: {err}`.get_buf());
-            }
+            Err(err) => return NULL
         };
     };
 
-    safe fn expectErr(const string msg) -> Error {
+    safe fn expectErr(const string msg) -> any {
         match my {
-            Ok(_) => {
-                panic(`Expected error but got Ok. {msg}`.get_buf());
-            },
+            Ok(_) => return NULL,
             Err(err) => return err
         };
     };
 
-    safe fn unwrapErr() -> Error {
+    safe fn unwrapErr() -> any {
         match my {
-            Ok(_) => {
-                panic("Expected error but got Ok");
-            },
+            Ok(_) => return NULL,
             Err(err) => return err
         };
     };

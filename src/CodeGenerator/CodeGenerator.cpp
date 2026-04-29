@@ -208,6 +208,15 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     cl = dynamic_cast<gen::Class *>(*expected);
   }
 
+  auto hasAdrInitializer = [](gen::Class *cls) {
+    if (cls == nullptr || cls->nameTable.count == 0) {
+      return false;
+    }
+    ast::Function *init = cls->nameTable["init"];
+    return init != nullptr && init->req == 1 && !init->argTypes.empty() &&
+           init->argTypes[0].typeName == "adr";
+  };
+
   if (typeName != "generic") {
     // search the type list for the type
     gen::Type **udef = impl->typeList[typeName];
@@ -219,12 +228,12 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
           if (cl->dynamic || cl->uniqueType)
             return false;
           if (cl->nameTable.count > 0) {
-            ast::Function *init = cl->nameTable["init"];
-            if (init) {
-              if (init->req == 1 &&
-                  this->canAssign(init->argTypes[0], typeName, fmt)) {
-                return false;
-              }
+            ast::Function *from = cl->nameTable["__from__adr"];
+            if (from) {
+              return false;
+            }
+            if (hasAdrInitializer(cl)) {
+              return false;
             }
           }
           if (!cl->pedantic)
@@ -242,14 +251,8 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     }
 
     if (cl && !strict) {
-      if (cl->nameTable.count > 0) {
-        ast::Function *init = cl->nameTable["init"];
-        if (init) {
-          if (init->req == 1 &&
-              this->canAssign(init->argTypes[0], typeName, fmt)) {
-            return false;
-          }
-        }
+      if (hasAdrInitializer(cl)) {
+        return false;
       }
     }
   }
@@ -260,12 +263,8 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     if (typeName == "adr" && cl != nullptr && (cl->dynamic || cl->uniqueType)) {
       return false;
     }
-    if (typeName == "adr" && cl != nullptr && cl->nameTable.count > 0) {
-      ast::Function *init = cl->nameTable["init"];
-      if (init && init->req == 1 &&
-          this->canAssign(init->argTypes[0], typeName, fmt)) {
-        return false;
-      }
+    if (typeName == "adr" && hasAdrInitializer(cl)) {
+      return false;
     }
     return true;
   }

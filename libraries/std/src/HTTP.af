@@ -293,7 +293,7 @@ class HTTPMessage {
         else
             mq.subString(mq.indexOf('=') + 1, mq.indexOf('&'));
 
-        const let valptr = af_malloc(str.len(value) + 1);
+        const let valptr = af_malloc(str.len(value.cstr()) + 1);
         af_memcpy(valptr, value.cstr(), str.len(value.cstr()) + 1);
         const let endPointer = valptr + str.len(value.cstr());
         endPointer =: '\0';
@@ -355,7 +355,7 @@ class HTTPMessage {
             if i == 0 {
                 continue;
             };
-            const string line = lines.get(i).expect("Invalid HTTP message").copy();
+            const string line = lines.get(i).expect("Invalid HTTP message");
             if line == "\n" {
                 my.switch = true;
                 continue;
@@ -371,13 +371,13 @@ class HTTPMessage {
                 continue;
             };
 
-            string key = sections.get(0).expect("Invalid HTTP message").copy();
-            string value = sections.get(1).expect("Invalid HTTP message").copy();
+            string key = sections.get(0).expect("Invalid HTTP message");
+            string value = sections.get(1).expect("Invalid HTTP message");
 
             if sections.count() > 2 {
                 for int j = 2; j < sections.count(); j = j + 1 {
                     value = value + ":";
-                    const string t = sections.get(j).expect("Invalid HTTP message").copy();
+                    const string t = sections.get(j).expect("Invalid HTTP message");
                     value = value + t;
                 };
             };

@@ -162,7 +162,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   type->declarationOnly = this->includer;
   generator.scope() = type;
 
-  type->overloadTable.foo = [](ast::Function func, ast::Op op) {
+  type->overloadTable.foo = [](const ast::Function &func, const ast::Op &op) {
     if (func.op == op) {
       return true;
     }

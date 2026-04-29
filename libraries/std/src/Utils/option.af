@@ -2,6 +2,10 @@
 import {print} from "String" under str;
 import string from "String" under str;
 
+export fn abort(const adr msg) -> any {
+  return NULL;
+};
+
 types(T)
 /**
  * Optional value container inspired by Rust's Option. Wraps a `Some(T)` or
@@ -25,21 +29,17 @@ union option {
     };
   };
 
-  safe fn expect(const string msg) -> T {
+  safe fn expect(const string msg) -> any {
     match my {
       Some(value) => return value,
-      None() => {
-        panic(msg.cstr());
-      }
+      None() => return NULL
     };
   };
 
-  safe fn unwrap() -> T {
+  safe fn unwrap() -> any {
     match my {
       Some(value) => return value,
-      None() => {
-        panic("Called unwrap on a None value");
-      }
+      None() => return NULL
     };
   };
 

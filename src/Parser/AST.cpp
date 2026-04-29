@@ -6,7 +6,7 @@
 
 using namespace ast;
 
-bool Type::compare(ast::Type t, std::string name) {
+bool Type::compare(const ast::Type &t, const std::string &name) {
   if (t.typeName == name)
     return true;
   return false;
