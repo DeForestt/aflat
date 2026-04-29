@@ -29,6 +29,17 @@ copyExprList(const links::LinkedList<Expr *> &list) {
   return out;
 }
 
+static void copyExprFields(Expr *dst, const Expr *src) {
+  if (dst == nullptr || src == nullptr)
+    return;
+  dst->locked = src->locked;
+  dst->logicalLine = src->logicalLine;
+  dst->when = src->when;
+  dst->selling = src->selling;
+  dst->typeCast = src->typeCast;
+  dst->extention = static_cast<Expr *>(deepCopy(src->extention));
+}
+
 Statement *deepCopy(const Statement *stmt) {
   if (!stmt)
     return nullptr;
@@ -184,31 +195,44 @@ Statement *deepCopy(const Statement *stmt) {
     copy->internal = var->internal;
     copy->selling = var->selling;
     copy->typeCast = var->typeCast;
+    copyExprFields(copy, var);
     return copy;
   }
   if (auto strlit = dynamic_cast<const StringLiteral *>(stmt)) {
-    return new StringLiteral(*strlit);
+    auto *copy = new StringLiteral(*strlit);
+    copyExprFields(copy, strlit);
+    return copy;
   }
   if (auto flit = dynamic_cast<const FloatLiteral *>(stmt)) {
-    return new FloatLiteral(*flit);
+    auto *copy = new FloatLiteral(*flit);
+    copyExprFields(copy, flit);
+    return copy;
   }
   if (auto ilit = dynamic_cast<const IntLiteral *>(stmt)) {
-    return new IntLiteral(*ilit);
+    auto *copy = new IntLiteral(*ilit);
+    copyExprFields(copy, ilit);
+    return copy;
   }
   if (auto llit = dynamic_cast<const LongLiteral *>(stmt)) {
-    return new LongLiteral(*llit);
+    auto *copy = new LongLiteral(*llit);
+    copyExprFields(copy, llit);
+    return copy;
   }
   if (auto charlit = dynamic_cast<const CharLiteral *>(stmt)) {
-    return new CharLiteral(*charlit);
+    auto *copy = new CharLiteral(*charlit);
+    copyExprFields(copy, charlit);
+    return copy;
   }
   if (auto newe = dynamic_cast<const NewExpr *>(stmt)) {
     auto *copy = new NewExpr(*newe);
     copy->args = copyExprList(newe->args);
+    copyExprFields(copy, newe);
     return copy;
   }
   if (auto structList = dynamic_cast<const StructList *>(stmt)) {
     auto *copy = new StructList();
     copy->args = copyExprList(structList->args);
+    copyExprFields(copy, structList);
     return copy;
   }
   if (auto comp = dynamic_cast<const Compound *>(stmt)) {
@@ -216,47 +240,56 @@ Statement *deepCopy(const Statement *stmt) {
     copy->expr1 = static_cast<Expr *>(deepCopy(comp->expr1));
     copy->expr2 = static_cast<Expr *>(deepCopy(comp->expr2));
     copy->op = comp->op;
+    copyExprFields(copy, comp);
     return copy;
   }
   if (auto ref = dynamic_cast<const Reference *>(stmt)) {
     auto *copy = new Reference(*ref);
     copy->modList = copyStringList(ref->modList);
+    copyExprFields(copy, ref);
     return copy;
   }
   if (auto deref = dynamic_cast<const DeReference *>(stmt)) {
     auto *copy = new DeReference(*deref);
     copy->modList = copyStringList(deref->modList);
+    copyExprFields(copy, deref);
     return copy;
   }
   if (auto par = dynamic_cast<const ParenExpr *>(stmt)) {
     auto *copy = new ParenExpr();
     copy->expr = static_cast<Expr *>(deepCopy(par->expr));
+    copyExprFields(copy, par);
     return copy;
   }
   if (auto par2 = dynamic_cast<const parenExpr *>(stmt)) {
     auto *copy = new parenExpr();
     copy->expr = static_cast<Expr *>(deepCopy(par2->expr));
+    copyExprFields(copy, par2);
     return copy;
   }
   if (auto callExpr = dynamic_cast<const CallExpr *>(stmt)) {
     auto *copy = new CallExpr();
     copy->templateTypes = std::vector<std::string>(callExpr->templateTypes);
     copy->call = static_cast<Call *>(deepCopy(callExpr->call));
+    copyExprFields(copy, callExpr);
     return copy;
   }
   if (auto lambda = dynamic_cast<const Lambda *>(stmt)) {
     auto *copy = new Lambda();
     copy->function = static_cast<Function *>(deepCopy(lambda->function));
+    copyExprFields(copy, lambda);
     return copy;
   }
   if (auto buy = dynamic_cast<const Buy *>(stmt)) {
     auto *copy = new Buy();
     copy->expr = static_cast<Expr *>(deepCopy(buy->expr));
+    copyExprFields(copy, buy);
     return copy;
   }
   if (auto notExpr = dynamic_cast<const Not *>(stmt)) {
     auto *copy = new Not();
     copy->expr = static_cast<Expr *>(deepCopy(notExpr->expr));
+    copyExprFields(copy, notExpr);
     return copy;
   }
   if (auto ifExpr = dynamic_cast<const IfExpr *>(stmt)) {
@@ -264,6 +297,7 @@ Statement *deepCopy(const Statement *stmt) {
     copy->expr = static_cast<Expr *>(deepCopy(ifExpr->expr));
     copy->trueExpr = static_cast<Expr *>(deepCopy(ifExpr->trueExpr));
     copy->falseExpr = static_cast<Expr *>(deepCopy(ifExpr->falseExpr));
+    copyExprFields(copy, ifExpr);
     return copy;
   }
   if (auto dec = dynamic_cast<const Dec *>(stmt)) {
@@ -320,6 +354,7 @@ Statement *deepCopy(const Statement *stmt) {
     for (auto &arg : format->args) {
       copy->args.push_back(static_cast<Expr *>(deepCopy(arg)));
     }
+    copyExprFields(copy, format);
     return copy;
   }
   if (auto unionConstructor = dynamic_cast<const UnionConstructor *>(stmt)) {
@@ -329,6 +364,7 @@ Statement *deepCopy(const Statement *stmt) {
     copy->expr = static_cast<Expr *>(deepCopy(unionConstructor->expr));
     copy->dynamic = unionConstructor->dynamic;
     copy->templateTypes = unionConstructor->templateTypes;
+    copyExprFields(copy, unionConstructor);
     return copy;
   }
   if (auto match = dynamic_cast<const Match *>(stmt)) {

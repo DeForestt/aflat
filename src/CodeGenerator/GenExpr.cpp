@@ -1501,8 +1501,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     mov2->op = output.op;
     OutputFile.text << mov2;
 
-    auto call = dynamic_cast<ast::CallExpr *>(expr->extention);
-    auto var = dynamic_cast<ast::Var *>(expr->extention);
+    auto extension = static_cast<ast::Expr *>(ast::deepCopy(expr->extention));
+    auto call = dynamic_cast<ast::CallExpr *>(extension);
+    auto var = dynamic_cast<ast::Var *>(extension);
 
     if (call != nullptr) {
       call->call->modList.invert();
@@ -1519,7 +1520,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                   __LINE__);
     }
 
-    output = this->GenExpr(expr->extention, OutputFile, size);
+    output = this->GenExpr(extension, OutputFile, size);
   }
 
   return output;
