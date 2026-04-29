@@ -1,5 +1,6 @@
 #include "Parser/AST/Statements/Declare.hpp"
 
+#include <algorithm>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -62,11 +63,9 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
           nullptr)
         generator.alert("redefined variable: " + this->ident);
       gen::Symbol Symbol;
-      if (Table->head == nullptr) {
-        Symbol.byteMod = offset;
-      } else {
-        Symbol.byteMod = Table->head->data.byteMod + offset;
-      }
+      int alignment = std::max(1, std::min(offset, 8));
+      int current = Table->head == nullptr ? 0 : Table->peek().byteMod;
+      Symbol.byteMod = gen::utils::alignTo(current, alignment) + offset;
       Symbol.type = this->type;
       Symbol.symbol = this->ident;
       Symbol.mutable_ = this->mut;

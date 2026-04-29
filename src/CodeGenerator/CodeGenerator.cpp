@@ -160,6 +160,12 @@ gen::CodeGenerator::operator=(CodeGenerator &&) noexcept = default;
 
 bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
                                    std::string fmt, bool strict, bool panic) {
+  auto isObjectCompatibleValue = [](const std::string &name) {
+    return name == "adr" ||
+           (name != "void" &&
+            parse::PRIMITIVE_TYPES.find(name) == parse::PRIMITIVE_TYPES.end());
+  };
+
   if (type.typeName == typeName)
     return true;
   if (type.fPointerArgs.returnType != nullptr && typeName == "adr")
@@ -179,6 +185,14 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   if (typeName == "--std--flex--function" || typeName == "any" ||
       type.typeName == "any")
     return true;
+  if (typeName == "object") {
+    if (isObjectCompatibleValue(type.typeName))
+      return true;
+  }
+  if (type.typeName == "object") {
+    if (isObjectCompatibleValue(typeName))
+      return true;
+  }
   if (type.typeName == "int" && typeName == "float")
     return true;
   if (type.typeName == "float" && typeName == "int")
@@ -217,7 +231,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
            init->argTypes[0].typeName == "adr";
   };
 
-  if (typeName != "generic") {
+  if (typeName != "generic" && typeName != "object") {
     // search the type list for the type
     gen::Type **udef = impl->typeList[typeName];
     if (udef != nullptr) {
@@ -258,7 +272,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
   }
 
   if ((type.size == asmc::QWord &&
-       (typeName == "adr" || typeName == "generic")) &&
+       (typeName == "adr" || typeName == "generic" || typeName == "object")) &&
       (strict || !cl || !cl->pedantic)) {
     if (typeName == "adr" && cl != nullptr && (cl->dynamic || cl->uniqueType)) {
       return false;
@@ -269,7 +283,8 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     return true;
   }
 
-  if (strict && (type.typeName == "adr" || typeName == "generic"))
+  if (strict &&
+      (type.typeName == "adr" || typeName == "generic" || typeName == "object"))
     return true;
 
   // compare two function pointers

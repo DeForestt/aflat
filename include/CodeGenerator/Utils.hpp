@@ -12,6 +12,7 @@
 namespace gen::utils {
 bool searchSymbol(gen::Symbol sym, std::string str);
 int sizeToInt(asmc::Size size);
+int alignTo(int value, int alignment);
 asmc::Size toSize(size_t size);
 
 bool compareFunc(const ast::Function &F, const std::string &input);

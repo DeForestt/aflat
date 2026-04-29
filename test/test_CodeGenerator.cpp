@@ -59,6 +59,27 @@ TEST_CASE("cannAssign returns false if it can implicit cast", "[canAssign]") {
   CHECK_THROWS(!mockGen.canAssign(testType, "takes", "ERROR"));
 }
 
+TEST_CASE("object accepts non-primitive values but rejects primitives",
+          "[canAssign]") {
+  auto objectTarget = ast::Type();
+  auto objectSource = ast::Type();
+  auto intSource = ast::Type();
+  auto adrSource = ast::Type();
+  MOCKGEN
+
+  objectTarget.typeName = "object";
+  objectSource.typeName = "Foo";
+  intSource.typeName = "int";
+  adrSource.typeName = "adr";
+
+  CHECK(mockGen.canAssign(objectSource, "object", "ERROR"));
+  CHECK(mockGen.canAssign(adrSource, "object", "ERROR"));
+  CHECK(mockGen.canAssign(objectTarget, "Foo", "ERROR"));
+  CHECK(mockGen.canAssign(objectTarget, "adr", "ERROR"));
+  CHECK_THROWS(mockGen.canAssign(intSource, "object", "ERROR"));
+  CHECK_THROWS(mockGen.canAssign(objectTarget, "int", "ERROR"));
+}
+
 TEST_CASE("memMove generates copy loop", "[memmove]") {
   auto parser = parse::Parser();
   gen::CodeGenerator gen("mod", parser, "",

@@ -34,6 +34,12 @@ int gen::utils::sizeToInt(asmc::Size size) {
   }
 }
 
+int gen::utils::alignTo(int value, int alignment) {
+  if (alignment <= 1)
+    return value;
+  return ((value + alignment - 1) / alignment) * alignment;
+}
+
 asmc::Size gen::utils::toSize(size_t size) {
   switch (size) {
   case 1:

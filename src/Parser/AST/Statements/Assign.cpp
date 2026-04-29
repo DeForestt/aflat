@@ -121,6 +121,17 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   gen::Expr expr = generator.GenExpr(this->expr, file, symbol->type.size,
                                      symbol->type.typeName);
 
+  if (!this->reference && !symbol->type.isReference &&
+      parse::PRIMITIVE_TYPES.find(expr.type) == parse::PRIMITIVE_TYPES.end()) {
+    if (auto *sourceVar = dynamic_cast<ast::Var *>(this->expr)) {
+      auto sourceResolved = generator.resolveSymbol(
+          sourceVar->Ident, sourceVar->modList, file, sourceVar->indices);
+      if (std::get<2>(sourceResolved)) {
+        std::get<4>(sourceResolved)->sold = this->logicalLine;
+      }
+    }
+  }
+
   if (!this->reference || symbol->type.isReference) {
     if (!generator.canAssign(
             symbol->type, expr.type,

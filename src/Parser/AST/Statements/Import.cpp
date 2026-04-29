@@ -177,11 +177,10 @@ static void registerClassShells(ast::Statement *stmt,
       symbol.readOnly = false;
       const int bytes = gen::utils::sizeToInt(typeInfo.size) *
                         std::max(1, count) * std::max(1, typeInfo.arraySize);
-      if (table.head == nullptr) {
-        symbol.byteMod = bytes;
-      } else {
-        symbol.byteMod = table.head->data.byteMod + bytes;
-      }
+      int alignment =
+          std::max(1, std::min(gen::utils::sizeToInt(typeInfo.size), 8));
+      int current = table.head == nullptr ? 0 : table.peek().byteMod;
+      symbol.byteMod = gen::utils::alignTo(current, alignment) + bytes;
       table.push(symbol);
     };
 

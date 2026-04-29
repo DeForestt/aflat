@@ -9,7 +9,10 @@
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
+#include "Parser/AST/Statements/Assign.hpp"
 #include "Parser/AST/Statements/DecAssign.hpp"
+#include "Parser/AST/Statements/For.hpp"
+#include "Parser/AST/Statements/Sequence.hpp"
 #include "Scanner.hpp"
 
 namespace ast {
@@ -57,42 +60,72 @@ gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
 
   file << decl->generate(generator).file;
 
-  // create the while loop
+  const std::string itemIdent = decl->declare->ident + "_item";
+  auto makeNextCall = [&]() {
+    auto nextCall = new ast::Call();
+    nextCall->logicalLine = this->logicalLine;
+    nextCall->ident = decl->declare->ident;
+    nextCall->modList << "next";
+    auto nextCallExpr = new ast::CallExpr();
+    nextCallExpr->logicalLine = this->logicalLine;
+    nextCallExpr->call = nextCall;
+    return nextCallExpr;
+  };
 
-  auto whileLoop = new ast::While();
-  whileLoop->logicalLine = this->logicalLine;
-  auto trueVar = new ast::Var();
-  trueVar->logicalLine = this->logicalLine;
-  trueVar->Ident = "true";
-  whileLoop->expr = trueVar;
+  auto itemDecl = new ast::DecAssign();
+  itemDecl->logicalLine = this->logicalLine;
+  itemDecl->declare = new ast::Declare();
+  itemDecl->declare->logicalLine = this->logicalLine;
+  itemDecl->declare->ident = itemIdent;
+  itemDecl->declare->type.typeName = "let";
+  itemDecl->declare->mut = true;
+  itemDecl->mute = true;
+  itemDecl->expr = makeNextCall();
 
-  // We need a match statement to make up the body of the while loop
+  auto forLoop = new ast::For();
+  forLoop->logicalLine = this->logicalLine;
+  forLoop->declare = itemDecl;
 
-  // Create the call for the nextDecl
-  auto nextCall = new ast::Call();
-  nextCall->logicalLine = this->logicalLine;
-  nextCall->ident = decl->declare->ident;
-  nextCall->modList << "next";
+  auto isSomeCall = new ast::CallExpr();
+  isSomeCall->logicalLine = this->logicalLine;
+  isSomeCall->call = new ast::Call();
+  isSomeCall->call->logicalLine = this->logicalLine;
+  isSomeCall->call->ident = itemIdent;
+  isSomeCall->call->modList << "isSome";
+  forLoop->expr = isSomeCall;
 
-  auto nextCallExpr = new ast::CallExpr();
-  nextCallExpr->logicalLine = this->logicalLine;
-  nextCallExpr->call = nextCall;
+  auto updateNext = new ast::Assign();
+  updateNext->logicalLine = this->logicalLine;
+  updateNext->Ident = itemIdent;
+  updateNext->expr = makeNextCall();
+  forLoop->increment = updateNext;
 
-  // Create the match Statement
-  auto match = new ast::Match();
-  match->logicalLine = this->logicalLine;
-  match->expr = nextCallExpr;
+  auto someBinding = new ast::DecAssign();
+  someBinding->logicalLine = this->logicalLine;
+  someBinding->declare = new ast::Declare();
+  someBinding->declare->logicalLine = this->logicalLine;
+  someBinding->declare->ident = this->binding_identifier;
+  someBinding->declare->type.typeName = "let";
+  someBinding->declare->mut = false;
+  someBinding->mute = false;
+  auto expectCall = new ast::CallExpr();
+  expectCall->logicalLine = this->logicalLine;
+  expectCall->call = new ast::Call();
+  expectCall->call->logicalLine = this->logicalLine;
+  expectCall->call->ident = itemIdent;
+  expectCall->call->modList << "expect";
+  auto expectMsg = new ast::StringLiteral();
+  expectMsg->val = "Failed to get next value in foreach";
+  expectCall->call->Args.push(expectMsg);
+  someBinding->expr = expectCall;
 
-  auto somePattern = ast::Match::Pattern("Some", this->binding_identifier);
-  auto someCase = ast::Match::Case(somePattern, this->implementation);
+  auto someBody = new ast::Sequence();
+  someBody->logicalLine = this->logicalLine;
+  someBody->Statement1 = someBinding;
+  someBody->Statement2 = this->implementation;
 
-  match->cases.push_back(someCase);
-  auto nonePattern = ast::Match::Pattern("None", std::nullopt);
-  auto noneCase = ast::Match::Case(nonePattern, new ast::Break());
-  match->cases.push_back(noneCase);
-
-  whileLoop->stmt = match;
-  file << whileLoop->generate(generator).file;
+  forLoop->Run = someBody;
+  file << forLoop->generate(generator).file;
 
   gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
 

@@ -46,6 +46,12 @@ The generic type is essentially the same as the adr type, but it is used to indi
 generic g = NULL;
 ```
 
+### object
+The object type is like `any`, but it only accepts non-primitive values. Use it when a function or variable should work with references and user-defined types, while still rejecting numeric and boolean primitives.
+```js
+object o = NULL;
+```
+
 ### type inference
 Aflat supports type inference at declaration with the `let` keyword. This should not be used when declaring a numeric type such as short, int, or long.  Because aflat returns type `number` from an int literal.  The number type is a union of all numeric types and will break your code if it is tied to a variable.  You should also take note that implicit casting will not happen when using type inference.
 
@@ -58,7 +64,7 @@ Any Type Defined by a user will be an 8 bit memory reference to the given type
 ```js
 Type a = new Type();
 ```
-A user defined type can be cast to and from an adr or generic... be careful! This is not type safe!
+A user defined type can be cast to and from an adr, generic, or object... be careful! This is not type safe!
 ```js
 adr b = NULL;
 Type a = b;

@@ -10,8 +10,13 @@
 
 using namespace gen::utils;
 
-bool startsWith(const std::string &s, const std::string &prefix) {
+static bool startsWith(const std::string &s, const std::string &prefix) {
   return s.size() >= prefix.size() && s.compare(0, prefix.size(), prefix) == 0;
+}
+
+static bool canExplicitlyCastFrom(const std::string &typeName) {
+  return typeName == "any" || typeName == "adr" || typeName == "generic" ||
+         typeName == "object";
 }
 
 namespace gen {
@@ -117,8 +122,23 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           mov->to = intArgs()[0].get(asmc::QWord);
           mov->logicalLine = logicalLine();
           OutputFile.text << mov;
-          gen::Expr afterInit = this->GenExpr(callInit, OutputFile);
-          output.access = afterInit.access;
+          const int returnSlot =
+              gen::scope::ScopeManager::getInstance()->assign(
+                  "", ast::Type("adr", asmc::QWord), false, false);
+          auto savePointer = new asmc::Mov();
+          savePointer->logicalLine = logicalLine();
+          savePointer->size = asmc::QWord;
+          savePointer->from = intArgs()[0].get(asmc::QWord);
+          savePointer->to = "-" + std::to_string(returnSlot) + "(%rbp)";
+          OutputFile.text << savePointer;
+          this->GenExpr(callInit, OutputFile);
+          auto restore = new asmc::Mov();
+          restore->logicalLine = logicalLine();
+          restore->size = asmc::QWord;
+          restore->from = "-" + std::to_string(returnSlot) + "(%rbp)";
+          restore->to = registers()["%rax"]->get(asmc::QWord);
+          OutputFile.text << restore;
+          output.access = pointer;
           output.size = asmc::QWord;
           output.type = cl->Ident;
           output.owned = false;
@@ -131,7 +151,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       OutputFile << callGen.file;
       output = callGen.expr.value();
       if (size != asmc::AUTO &&
-          (output.type == "any" || output.type == "--std--flex--function"))
+          (output.type == "any" || output.type == "object" ||
+           output.type == "--std--flex--function"))
         output.size = size;
       output.access = registers()["%rax"]->get(output.size);
       if (output.type == "float") {
@@ -140,10 +161,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
     }
     if (exprCall->typeCast != "") {
-      if (output.type != "any" && output.type != "adr" &&
-          output.type != "generic")
+      if (!canExplicitlyCastFrom(output.type))
         this->alert("Can only explicitly cast to a type from any, adr, "
-                    "or generic",
+                    "generic, or object",
                     true, __FILE__, __LINE__);
       output.type = exprCall->typeCast;
     }
@@ -422,10 +442,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     }
 
     if (var.typeCast != "") {
-      if (output.type != "any" && output.type != "adr" &&
-          output.type != "generic")
+      if (!canExplicitlyCastFrom(output.type))
         this->alert("Can only explicitly cast to a type from any, adr, "
-                    "or generic",
+                    "generic, or object",
                     true, __FILE__, __LINE__);
       output.type = var.typeCast;
     }
@@ -587,6 +606,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           call->call->publify = cl->Ident;
           expr = call;
         }
+        exp = this->GenExpr(expr, file);
+      }
+
+      if (exp.type == "string") {
+        auto call = new ast::CallExpr();
+        call->call = new ast::Call();
+        call->call->ident = "cstr";
+        call->call->logicalLine = logicalLine();
+        call->logicalLine = logicalLine();
+        call->call->Args << expr;
+        call->call->publify = "string";
+        expr = call;
         exp = this->GenExpr(expr, file);
       }
 
@@ -1153,10 +1184,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     }
 
     if (comp.typeCast != "") {
-      if (output.type != "any" && output.type != "adr" &&
-          output.type != "generic")
+      if (!canExplicitlyCastFrom(output.type))
         this->alert("Can only explicitly cast to a type from any, adr, "
-                    "or generic",
+                    "generic, or object",
                     true, __FILE__, __LINE__);
       output.type = comp.typeCast;
     }

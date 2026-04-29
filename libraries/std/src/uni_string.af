@@ -23,11 +23,19 @@ unique class uni_string {
   };
 
   fn __from__string(immutable string s) {
+    my.buf = NULL;
+    my.size = 0;
+    my.iter = 0;
     my.copy_from(s.cstr());
+    return my;
   };
 
   fn __from__adr(immutable adr s) {
+    my.buf = NULL;
+    my.size = 0;
+    my.iter = 0;
     my.copy_from(s);
+    return my;
   };
 
   fn del() {

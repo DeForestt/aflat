@@ -72,3 +72,9 @@ TEST_CASE("when resolution checks primitive", "[when][resolution]") {
   w.predicates.push_back(pred2);
   CHECK(gen.whenSatisfied(w));
 }
+
+TEST_CASE("parser registers object type", "[parser][types]") {
+  parse::Parser p;
+
+  CHECK(p.getTypeList()["object"] != nullptr);
+}

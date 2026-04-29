@@ -92,7 +92,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
 
   gen::Symbol *retSym = nullptr;
   if (auto var = dynamic_cast<ast::Var *>(this->expr)) {
-    if (var->modList.count == 0 && var->Ident != "my") {
+    if (var->modList.count == 0) {
       retSym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
       if (retSym)
         retSym->returned = true;

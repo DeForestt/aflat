@@ -30,7 +30,8 @@ union option {  Some(T),
     };
   };
 
-  safe fn expect(const string msg) -> T {
+  when (T is primitive)
+  safe fn expect(const string msg) -> loan T {
     match my {
       Some(value) => return value,
       None() => {
@@ -39,7 +40,18 @@ union option {  Some(T),
     };
   };
 
-  safe fn unwrap() -> T {
+  when (T is not primitive)
+  safe fn expect(const string msg) -> loan T {
+    match my {
+      Some(value) => return $value,
+      None() => {
+        panic(msg.cstr());
+      }
+    };
+  };
+
+  when (T is primitive)
+  safe fn unwrap() -> loan T {
     match my {
       Some(value) => return value,
       None() => {
@@ -48,10 +60,29 @@ union option {  Some(T),
     };
   };
 
-  safe fn or(const T &&defaultValue) -> T {
+  when (T is not primitive)
+  safe fn unwrap() -> loan T {
+    match my {
+      Some(value) => return $value,
+      None() => {
+        panic("unwrapped bad value");
+      }
+    };
+  };
+
+  when (T is primitive)
+  safe fn or(const T &&defaultValue) -> loan T {
     match my {
       Some(value) => return value,
       None() => return defaultValue
+    };
+  };
+
+  when (T is not primitive)
+  safe fn or(const T &&defaultValue) -> loan T {
+    match my {
+      Some(value) => return $value,
+      None() => return $defaultValue
     };
   };
 
@@ -87,6 +118,6 @@ export fn optionWrapper(immutable T value) -> option::<T> {
   if (checker == NULL) {
     return new option::<T>->None();
   } else {
-    return new option::<T>->Some(value);
+    return new option::<T>->Some($value);
   }
 };

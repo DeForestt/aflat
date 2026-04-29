@@ -31,19 +31,19 @@ class Bit{
 
 Bit newBit(int value);
 
-int af_free(any ptr);
-int blockSize(adr ptr);
-Time newTime(adr size);
+int af_free(object ptr);
+int blockSize(object ptr);
+Time newTime(object size);
 adr af_malloc(int size);
-adr af_realloc(adr ptr, int size);
+adr af_realloc(object ptr, int size);
 int inspectHeap();
-int af_memcpy(adr dst, immutable adr src, int size);
-int panic(adr msg);
-int assert(bool cond, * adr message);
+int af_memcpy(object dst, immutable object src, int size);
+int panic(object msg);
+int assert(bool cond, * object message);
 int sleep(int seconds, * int nanoseconds);
-adr _fCstr(adr fmt, * adr args);
-adr _fUCstr(adr fmt, * adr args);
-adr mmap(adr addr, int len, int prot, int flags, int fd, int offset);
+adr _fCstr(object fmt, * object args);
+adr _fUCstr(object fmt, * object args);
+adr mmap(object addr, int len, int prot, int flags, int fd, int offset);
 adr create(const int size, ? const any value);
-void _fEachOr(const adr iterator, const adr callback, *const any args);
+void _fEachOr(const object iterator, const adr callback, *const any args);
 adr _toOption(const any value);

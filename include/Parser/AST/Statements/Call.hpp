@@ -34,8 +34,8 @@ public:
   Call(const Call &other)
       : Statement(other), ident(other.ident), Args(other.Args),
         modList(other.modList), genericTypes(other.genericTypes),
-        publify(other.publify), allowDiscardWarning(other.allowDiscardWarning) {
-  }
+        publify(other.publify), slick(other.slick),
+        allowDiscardWarning(other.allowDiscardWarning) {}
   std::string toString() override;
 
 private:

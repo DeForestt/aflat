@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -31,16 +32,14 @@ gen::CodeGenerator::GenTable(ast::Statement *STMT,
     gen::Symbol symbol;
 
     int offset = gen::utils::sizeToInt(arg->type.size);
+    int alignment = std::max(1, std::min(offset, 8));
+    int current = table.head == nullptr ? 0 : table.peek().byteMod;
 
     if (table.search<std::string>(searchSymbol, arg->ident) != nullptr)
       alert("redefined variable:" + arg->ident, true, __FILE__, __LINE__);
 
     symbol.symbol = arg->ident;
-    if (table.head == nullptr) {
-      symbol.byteMod = offset;
-    } else {
-      symbol.byteMod = table.peek().byteMod + offset;
-    }
+    symbol.byteMod = gen::utils::alignTo(current, alignment) + offset;
     symbol.type = arg->type;
     table << symbol;
   } else if (dynamic_cast<ast::DecArr *>(STMT) != nullptr) {
@@ -49,20 +48,16 @@ gen::CodeGenerator::GenTable(ast::Statement *STMT,
        **also needs to be added to symbol table**
    */
     ast::DecArr *dec = dynamic_cast<ast::DecArr *>(STMT);
-    int offset = 0;
-    offset = gen::utils::sizeToInt(dec->type.size);
-
+    int offset = gen::utils::sizeToInt(dec->type.size);
+    int alignment = std::max(1, std::min(offset, 8));
     offset = offset * dec->count;
+    int current = table.head == nullptr ? 0 : table.peek().byteMod;
 
     if (SymbolTable().search<std::string>(searchSymbol, dec->ident) != nullptr)
       alert("redefined variable" + dec->ident, true, __FILE__, __LINE__);
 
     gen::Symbol Symbol;
-    if (SymbolTable().head == nullptr) {
-      Symbol.byteMod = offset;
-    } else {
-      Symbol.byteMod = table.head->data.byteMod + offset;
-    }
+    Symbol.byteMod = gen::utils::alignTo(current, alignment) + offset;
     Symbol.type = dec->type;
     Symbol.symbol = dec->ident;
     table << Symbol;
@@ -112,7 +107,12 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
           for (auto sym = inScope.rbegin(); sym != inScope.rend(); sym++) {
             auto newSym = *sym;
 
-            byteMod += gen::utils::sizeToInt(sym->type.size);
+            int fieldSize = gen::utils::sizeToInt(sym->type.size) *
+                            std::max(1, sym->type.arraySize);
+            int alignment =
+                std::max(1, std::min(gen::utils::sizeToInt(sym->type.size), 8));
+            byteMod = gen::utils::alignTo(byteMod, alignment);
+            byteMod += fieldSize;
             newSym.byteMod = byteMod;
             cl->SymbolTable.push(newSym);
             cl->publicSymbols.push(newSym);

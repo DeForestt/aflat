@@ -139,6 +139,8 @@ gen::GenerationResult Call::generateAttempt(
   links::SLinkedList<ast::Function, std::string> *overloadTable = nullptr;
   std::string overloadIdent;
   int currentOverloadIndex = -1;
+  bool hasHiddenReceiver = false;
+  int hiddenReceiverSlot = -1;
   this->modList.invert();
   this->modList.reset();
   std::string ident = this->ident;
@@ -511,6 +513,7 @@ gen::GenerationResult Call::generateAttempt(
           mov2->to = generator.intArgs()[argsCounter].get(exp.size);
           push->op = generator.intArgs()[argsCounter].get(asmc::QWord);
           stack << generator.intArgs()[argsCounter].get(asmc::QWord);
+          hasHiddenReceiver = true;
 
           argsCounter++;
           file.text << push;
@@ -577,7 +580,7 @@ gen::GenerationResult Call::generateAttempt(
       };
     } else {
       argsCounter++;
-      stack.push("%rdi");
+      hasHiddenReceiver = true;
       // find the class
       gen::Type *type = *generator.getType(this->publify, file);
       gen::Class *cl = dynamic_cast<gen::Class *>(type);
@@ -606,6 +609,21 @@ gen::GenerationResult Call::generateAttempt(
   push->op = generator.registers()["%rdx"]->get(asmc::QWord);
   file.text << push;
   stack << push->op;
+
+  if (hasHiddenReceiver) {
+    ast::Type receiverType("adr", asmc::QWord);
+    hiddenReceiverSlot = gen::scope::ScopeManager::getInstance()->assign(
+        "", receiverType, false, false);
+    auto saveReceiver = new asmc::Mov();
+    saveReceiver->logicalLine = this->logicalLine;
+    saveReceiver->size = asmc::QWord;
+    saveReceiver->from = generator.registers()["%rdi"]->get(asmc::QWord);
+    saveReceiver->to = "-" + std::to_string(hiddenReceiverSlot) + "(%rbp)";
+    file.text << saveReceiver;
+  }
+  if (hasHiddenReceiver) {
+    argsCounter = 1;
+  }
 
   if (func == nullptr) {
     generator.alert("Cannot Find Function: " + ident + allMods, true, __FILE__,
@@ -730,7 +748,16 @@ gen::GenerationResult Call::generateAttempt(
       this->requestOverloadRetry(
           generator, overloadTable, overloadIdent, currentOverloadIndex,
           "Cannot pass an lvalue of safe type " + exp.type + " to a function");
-    if (checkArgs && dynamic_cast<ast::CallExpr *>(arg) != nullptr &&
+    const bool isOptionSomeSink =
+        (this->publify == "option" ||
+         ident.find("option") != std::string::npos ||
+         (func != nullptr && func->scopeName == "option")) &&
+        (ident.find("Some") != std::string::npos ||
+         (func != nullptr &&
+          func->ident.ident.find("Some") != std::string::npos));
+
+    if (!isOptionSomeSink && checkArgs &&
+        dynamic_cast<ast::CallExpr *>(arg) != nullptr &&
         !func->argTypes.at(i).isRvalue && exp.type != "void" &&
         parse::PRIMITIVE_TYPES.find(exp.type) == parse::PRIMITIVE_TYPES.end()) {
       auto t = generator.typeList()[exp.type];
@@ -926,6 +953,15 @@ gen::GenerationResult Call::generateAttempt(
   // add the overflow arguments
   for (auto inst : overflowArgs) {
     file.text << inst;
+  }
+
+  if (hasHiddenReceiver) {
+    auto restoreReceiver = new asmc::Mov();
+    restoreReceiver->logicalLine = this->logicalLine;
+    restoreReceiver->size = asmc::QWord;
+    restoreReceiver->from = "-" + std::to_string(hiddenReceiverSlot) + "(%rbp)";
+    restoreReceiver->to = generator.registers()["%rdi"]->get(asmc::QWord);
+    file.text << restoreReceiver;
   }
 
   // this->Args = args;

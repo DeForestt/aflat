@@ -1,12 +1,22 @@
 .needs <std>
 
 import uni_string from "uni_string";
-import {print} from "uni_string" under uni;
-import {printInt} from "io" under io;
-fn main() {
-    const uni_string deepChain = new uni_string("Chaining")
-        .concat(new uni_string(" test"))
-        .concat(` test2\n`);
 
-    uni.print(deepChain);
+unique class Probe {
+  mutable uni_string name = "";
+
+  fn init(immutable adr name) -> Probe {
+    my.name.copy_from(name);
+    return my;
+  };
+
+  fn del() -> void {
+    let name = my.name;
+    delete name;
+  };
+};
+
+fn main() -> int {
+  let p = new Probe("John Doe");
+  return 0;
 };

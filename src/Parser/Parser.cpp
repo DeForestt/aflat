@@ -72,6 +72,7 @@ parse::Parser::Impl::Impl(Parser &parser, int mutability) : parser(parser) {
   this->addType("generic", asmc::Hard, asmc::QWord, true, false);
   this->addType("void", asmc::Hard, asmc::QWord);
   this->addType("any", asmc::Hard, asmc::QWord, true, false);
+  this->addType("object", asmc::Hard, asmc::QWord, true, false);
   this->addType("Self", asmc::Hard, asmc::QWord);
   // create a dummy type for let
   this->addType("let", asmc::Hard, asmc::QWord, true, false);
