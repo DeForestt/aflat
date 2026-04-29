@@ -1,6 +1,8 @@
 .needs <std>
 import {print} from "String" under str;
 import string from "String" under str;
+import uni_string from "uni_string";
+
 
 export fn abort(const adr msg) -> any {
   return NULL;
@@ -11,8 +13,7 @@ types(T)
  * Optional value container inspired by Rust's Option. Wraps a `Some(T)` or
  * sentinel `None` and provides ergonomic helpers for safe unwrapping.
  */
-union option {
-  Some(T),
+union option {  Some(T),
   None
 
   safe fn isSome() -> bool {
@@ -29,17 +30,21 @@ union option {
     };
   };
 
-  safe fn expect(const string msg) -> any {
+  safe fn expect(const string msg) -> T {
     match my {
       Some(value) => return value,
-      None() => return NULL
+      None() => {
+        panic(msg.cstr());
+      }
     };
   };
 
-  safe fn unwrap() -> any {
+  safe fn unwrap() -> T {
     match my {
       Some(value) => return value,
-      None() => return NULL
+      None() => {
+        panic("unwrapped bad value");
+      }
     };
   };
 

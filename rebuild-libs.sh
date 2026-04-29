@@ -1,3 +1,5 @@
+set -euo pipefail
+
 AF_FLAGS=()
 
 function usage {
@@ -21,6 +23,17 @@ fi
 
 function aflat {
     ./bin/aflat "${AF_FLAGS[@]}" "$@"
+}
+
+function wait_for_jobs {
+    local pids=("$@")
+    local status=0
+    for pid in "${pids[@]}"; do
+        if ! wait "$pid"; then
+            status=1
+        fi
+    done
+    return "$status"
 }
 
 # Function to compile a specific library
@@ -118,25 +131,26 @@ fi
 # Otherwise, compile all libraries in parallel
 
 # Compile core libraries in parallel
-aflat ./libraries/std/src/Collections.af -o ./libraries/std/Collections.s &
-aflat ./libraries/std/src/concurrency.af -o ./libraries/std/concurrency.s &
-aflat ./libraries/std/src/DateTime.af -o ./libraries/std/DateTime.s &
-aflat ./libraries/std/src/files.af -o ./libraries/std/files.s &
-aflat ./libraries/std/src/io.af -o ./libraries/std/io.s &
-aflat ./libraries/std/src/math.af -o ./libraries/std/math.s &
-aflat ./libraries/std/src/std-cmp.af -o ./libraries/std/std-cmp.s &
-aflat ./libraries/std/src/std.af -o ./libraries/std/std.s &
-aflat ./libraries/std/src/strings.af -o ./libraries/std/strings.s &
-aflat ./libraries/std/src/String.af -o ./libraries/std/String.s &
-aflat ./libraries/std/src/uni_string.af -o ./libraries/std/uni_string.s &
-aflat ./libraries/std/src/ATest.af -o ./libraries/std/ATest.s &
-aflat ./libraries/std/src/HTTP.af -o ./libraries/std/HTTP.s &
-aflat ./libraries/std/src/CLArgs.af -o ./libraries/std/CLArgs.s &
-aflat ./libraries/std/src/System.af -o ./libraries/std/System.s &
-aflat ./libraries/std/src/Memory.af -o ./libraries/std/Memory.s &
+core_pids=()
+aflat ./libraries/std/src/Collections.af -o ./libraries/std/Collections.s & core_pids+=($!)
+aflat ./libraries/std/src/concurrency.af -o ./libraries/std/concurrency.s & core_pids+=($!)
+aflat ./libraries/std/src/DateTime.af -o ./libraries/std/DateTime.s & core_pids+=($!)
+aflat ./libraries/std/src/files.af -o ./libraries/std/files.s & core_pids+=($!)
+aflat ./libraries/std/src/io.af -o ./libraries/std/io.s & core_pids+=($!)
+aflat ./libraries/std/src/math.af -o ./libraries/std/math.s & core_pids+=($!)
+aflat ./libraries/std/src/std-cmp.af -o ./libraries/std/std-cmp.s & core_pids+=($!)
+aflat ./libraries/std/src/std.af -o ./libraries/std/std.s & core_pids+=($!)
+aflat ./libraries/std/src/strings.af -o ./libraries/std/strings.s & core_pids+=($!)
+aflat ./libraries/std/src/String.af -o ./libraries/std/String.s & core_pids+=($!)
+aflat ./libraries/std/src/uni_string.af -o ./libraries/std/uni_string.s & core_pids+=($!)
+aflat ./libraries/std/src/ATest.af -o ./libraries/std/ATest.s & core_pids+=($!)
+aflat ./libraries/std/src/HTTP.af -o ./libraries/std/HTTP.s & core_pids+=($!)
+aflat ./libraries/std/src/CLArgs.af -o ./libraries/std/CLArgs.s & core_pids+=($!)
+aflat ./libraries/std/src/System.af -o ./libraries/std/System.s & core_pids+=($!)
+aflat ./libraries/std/src/Memory.af -o ./libraries/std/Memory.s & core_pids+=($!)
 
 # Wait for the first batch to complete
-wait
+wait_for_jobs "${core_pids[@]}"
 
 # Handle Utils files that need renaming (run sequentially to avoid conflicts)
 aflat ./libraries/std/src/Utils/Result.af -o ./libraries/std/Result.s
@@ -173,31 +187,32 @@ aflat ./libraries/std/src/Utils/Defer.af -o ./libraries/std/Defer.s
 mv ./libraries/std/Defer.s ./libraries/std/Utils_Defer.s
 
 # Compile remaining libraries in parallel
-aflat ./libraries/std/src/Collections/unordered_map.af -o ./libraries/std/unordered_map.s &
+more_pids=()
+aflat ./libraries/std/src/Collections/unordered_map.af -o ./libraries/std/unordered_map.s & more_pids+=($!)
 
-aflat ./libraries/std/src/Utils/Error/Render.af -o ./libraries/std/Error_Render.s &
-aflat ./libraries/std/src/HTTP/Endpoint.af -o ./libraries/std/HTTP_Endpoint.s &
-aflat ./libraries/std/src/HTTP/Middleware.af -o ./libraries/std/HTTP_Middleware.s &
-aflat ./libraries/std/src/HTTP/Server.af -o ./libraries/std/HTTP_Server.s &
-aflat ./libraries/std/src/HTTP/Endpoints.af -o ./libraries/std/HTTP_Endpoints.s &
-aflat ./libraries/std/src/Web/Content.af -o ./libraries/std/Web_Content.s &
-aflat ./libraries/std/src/Web/Content/Bind.af -o ./libraries/std/Web_Content_Bind.s &
-aflat ./libraries/std/src/JSON.af -o ./libraries/std/JSON.s &
-aflat ./libraries/std/src/JSON/Property.af -o ./libraries/std/JSON_Property.s &
-aflat ./libraries/std/src/Collections/Iterator.af -o ./libraries/std/Iterator.s &
-aflat ./libraries/std/src/Collections/Scroller.af -o ./libraries/std/Scroller.s &
-aflat ./libraries/std/src/Collections/Enumerator.af -o ./libraries/std/Enumerator.s &
-aflat ./libraries/std/src/Collections/Vector.af -o ./libraries/std/vector.s &
-aflat ./libraries/std/src/Collections/Tuple.af -o ./libraries/std/Tuple.s &
+aflat ./libraries/std/src/Utils/Error/Render.af -o ./libraries/std/Error_Render.s & more_pids+=($!)
+aflat ./libraries/std/src/HTTP/Endpoint.af -o ./libraries/std/HTTP_Endpoint.s & more_pids+=($!)
+aflat ./libraries/std/src/HTTP/Middleware.af -o ./libraries/std/HTTP_Middleware.s & more_pids+=($!)
+aflat ./libraries/std/src/HTTP/Server.af -o ./libraries/std/HTTP_Server.s & more_pids+=($!)
+aflat ./libraries/std/src/HTTP/Endpoints.af -o ./libraries/std/HTTP_Endpoints.s & more_pids+=($!)
+aflat ./libraries/std/src/Web/Content.af -o ./libraries/std/Web_Content.s & more_pids+=($!)
+aflat ./libraries/std/src/Web/Content/Bind.af -o ./libraries/std/Web_Content_Bind.s & more_pids+=($!)
+aflat ./libraries/std/src/JSON.af -o ./libraries/std/JSON.s & more_pids+=($!)
+aflat ./libraries/std/src/JSON/Property.af -o ./libraries/std/JSON_Property.s & more_pids+=($!)
+aflat ./libraries/std/src/Collections/Iterator.af -o ./libraries/std/Iterator.s & more_pids+=($!)
+aflat ./libraries/std/src/Collections/Scroller.af -o ./libraries/std/Scroller.s & more_pids+=($!)
+aflat ./libraries/std/src/Collections/Enumerator.af -o ./libraries/std/Enumerator.s & more_pids+=($!)
+aflat ./libraries/std/src/Collections/Vector.af -o ./libraries/std/vector.s & more_pids+=($!)
+aflat ./libraries/std/src/Collections/Tuple.af -o ./libraries/std/Tuple.s & more_pids+=($!)
 
 # Handle JSON/Parse separately since it needs renaming
 aflat ./libraries/std/src/JSON/Parse.af -o ./libraries/std/Parse.s
 mv ./libraries/std/Parse.s ./libraries/std/JSON_Parse.s
 
 # Compile C file
-gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c &
+gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c & more_pids+=($!)
 
 # Wait for all background processes to complete
-wait
+wait_for_jobs "${more_pids[@]}"
 
 echo "All libraries compiled successfully!"

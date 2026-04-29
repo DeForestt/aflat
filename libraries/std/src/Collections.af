@@ -48,7 +48,7 @@ class List {
         return my.head;
     };
 
-    int pushBack(const adr value) {
+    int pushBack(const any value) {
         if my.count == my.size {
             my.size = my.size * 2;
             my.head = af_realloc(my.head, my.typeSize * my.size);

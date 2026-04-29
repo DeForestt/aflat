@@ -16,14 +16,14 @@ class Iterator {
 
     Result next() {
         if my._next == NULL
-            return panic("No next function attached to iterator.");
+            panic("No next function attached to iterator.");
         
         return my._next();
     };
 
     Result peek() {
         if my._peek == NULL
-            return panic("No peek function attached to iterator.");
+            panic("No peek function attached to iterator.");
         
         return my._peek();
     };
@@ -35,7 +35,7 @@ class Next {
 
     Next init(const Result<> foo, const Iterator context) {
         if context._next != NULL
-            return panic("Cannot overwrite next function on iterator.");
+            panic("Cannot overwrite next function on iterator.");
         context._next = foo;
         return my;
     };
@@ -47,7 +47,7 @@ class Peek {
 
     Peek init(const Result<> foo, const Iterator context) {
         if context._peek != NULL
-            return panic("Cannot overwrite peek function on iterator.");
+            panic("Cannot overwrite peek function on iterator.");
         context._peek = foo;
         return my;
     };

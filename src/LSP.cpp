@@ -657,6 +657,10 @@ void collectStatementSymbols(ast::Statement *stmt, SemanticSymbolSets &symbols,
   if (auto *uni = dynamic_cast<ast::Union *>(stmt)) {
     if (!uni->ident.ident.empty())
       symbols.classes.insert(uni->ident.ident);
+    for (const auto *alias : uni->aliases) {
+      if (alias != nullptr && !alias->name.empty())
+        symbols.enumMembers.insert(alias->name);
+    }
     collectStatementSymbols(uni->statement, symbols, inParams);
     return;
   }

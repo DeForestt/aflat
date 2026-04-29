@@ -817,11 +817,10 @@ gen::GenerationResult Call::generateAttempt(
       };
 
       if (!ensureAssignable(exp)) {
-        std::string mismatchMessage =
-            "function " + ident +
-            " expected type `{}` but received type `{}` these types are "
-            "irreconcilable the argument type(s) are (" +
-            argTypesString + ")";
+        std::string mismatchMessage = gen::utils::format(
+            "function {} expected type `{}` but received type `{}` these "
+            "types are irreconcilable the argument type(s) are ({})",
+            ident, func->argTypes.at(i).typeName, exp.type, argTypesString);
         if (canRetry) {
           this->requestOverloadRetry(generator, overloadTable, overloadIdent,
                                      currentOverloadIndex, mismatchMessage);

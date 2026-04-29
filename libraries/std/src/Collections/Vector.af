@@ -112,11 +112,6 @@ class vector {
 
     when (T is primitive)
     fn get(const int index) -> option::<T> {
-        io.print("[Vector.get] primitive index=");
-        io.printInt(index);
-        io.print(" count=");
-        io.printInt(my.count);
-        io.print("\n");
         if index >= my.count | index < 0 {
             return opt.None::<T>();
         };
@@ -126,11 +121,6 @@ class vector {
 
     when (T is not primitive)
     fn get(const int index) -> option::<T> {
-        io.print("[Vector.get] object index=");
-        io.printInt(index);
-        io.print(" count=");
-        io.printInt(my.count);
-        io.print("\n");
         if index >= my.count | index < 0 {
             return opt.None::<T>();
         };
