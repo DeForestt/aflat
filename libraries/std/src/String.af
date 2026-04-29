@@ -700,7 +700,7 @@ export int readInt(const string prompt,  ?const int tries) {
         Ok(x) => return x,
         Err(err) => {
             count = count - 1;
-            if count <= 0 panic(`Failed to enter an integer: {err}`);
+            if count <= 0 return 0;
             return readInt(`{err} please try again ({count} tries left): `, count);
         }
     };

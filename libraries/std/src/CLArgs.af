@@ -2,6 +2,7 @@
 import string from "String";
 import {str_at} from "strings" under st;
 import { print } from "String" under str;
+import { print } from "io" under io;
 import unordered_map from "Collections/unordered_map";
 import Error from "Utils/Error";
 import Option from "Utils/Option";

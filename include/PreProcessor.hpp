@@ -15,7 +15,7 @@ public:
   std::string value;
 
   // Compair a definition and a string
-  static bool compair(Definition def, std::string str);
+  static bool compair(const Definition &def, const std::string &str);
 };
 
 class PreProcessor {

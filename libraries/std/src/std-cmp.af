@@ -74,7 +74,7 @@ Times newTimes(){
     return t;
 };
 
-int panic(const adr msg){
+any panic(const adr msg){
     io.print("Panic: ", 'r'); io.print(msg);
     io.print("\n");
     sys_exit(1);
@@ -107,7 +107,7 @@ int sleep(const int seconds, * const int nanoseconds){
  */
 adr _fCstr(const adr fmt, * const adr args) {
     const let ret = st.fString(new string(fmt), args);
-    return ret;
+    return ret.cstr();
 };
 
 adr create(const int size, * const any value) {

@@ -56,7 +56,7 @@ bool gen::utils::searchSymbol(gen::Symbol sym, std::string str) {
     return false;
 }
 
-bool gen::utils::compareFunc(ast::Function F, std::string input) {
+bool gen::utils::compareFunc(const ast::Function &F, const std::string &input) {
   if (input == F.ident.ident) {
     return true;
   }

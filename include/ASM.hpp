@@ -311,7 +311,7 @@ public:
   // a linked list of int process id's that are using this register
   links::LinkedList<int> users;
   std::string get(asmc::Size wants);
-  static bool compare(Register R, std::string input) {
+  static bool compare(const Register &R, const std::string &input) {
     if (input == R.qWord || input == R.dWord || input == R.word ||
         input == R.byte) {
       return true;

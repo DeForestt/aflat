@@ -181,7 +181,7 @@ export fn tearDownFixtures() -> void {
 	foreach key in keys {
 		if built.has(key) {
 			const any data = built.get(key).orElse(fn () panic("Fixture data not found"));
-			const let fixture = fixtures.get(key).expect("Fixture not found");
+			const FixtureStruct fixture = fixtures.get(key).expect("Fixture not found");
 			fixture.tearDown(data);
 		};
 	};
@@ -204,7 +204,7 @@ export fn fix(const adr name, const adr setUp, * const adr tearDown) -> void {
 	const let fixtures = getFixtures();
 	if fixtures.has(name) {
 		const let fixtureData = getFixtureData();
-		const let fixture = fixtures.get(name).expect("Fixture not found");
+		const FixtureStruct fixture = fixtures.get(name).expect("Fixture not found");
 		if fixtureData.has(name) {
 			const any data = fixtureData.get(name).orElse(fn () panic("Fixture data not found"));
 			fixture.tearDown(data);

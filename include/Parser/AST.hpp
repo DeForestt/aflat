@@ -134,7 +134,7 @@ public:
   asmc::Size size;
   asmc::OpType opType = asmc::Hard;
   int arraySize = 1;
-  static bool compare(Type t, std::string name);
+  static bool compare(const Type &t, const std::string &name);
   links::LinkedList<int> indices;
   bool isGeneric = false;
   bool safeType = false;

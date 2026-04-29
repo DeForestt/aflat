@@ -9,6 +9,10 @@ dynamic safe pedantic class Option {
     private mutable bool hasValue = hasValue;
     private mutable int refcount = 1;
 
+    safe fn trap(const adr msg) -> void {
+        panic(msg);
+    };
+
     Option get() {
         my.refcount = my.refcount + 1;
         return my;
@@ -38,7 +42,7 @@ dynamic safe pedantic class Option {
     // match function is the new canonical way to work with an Option it will use a named match rather than 2 anonymous functions
     public any match(const Map cases, *const any arg, *const any arg2) {
         const let some_none = if my.hasValue "some" else "none";
-        const adr foo = cases(some_none).orElse(fn () panic("un-handled option case"));
+        const adr foo = cases(some_none).orElse(fn () { panic("un-handled option case"); return my.value; });
         return if my.hasValue foo(my.value, arg, arg2) else
         foo(arg, arg2);
     };

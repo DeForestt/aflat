@@ -95,7 +95,7 @@ static bool findBlockCommentStart(const std::string &line, size_t &index) {
 }
 
 // Definition
-bool Definition::compair(Definition def, std::string str) {
+bool Definition::compair(const Definition &def, const std::string &str) {
   return def.name == str;
 };
 
