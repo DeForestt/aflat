@@ -354,19 +354,19 @@ export int float_toString(const adr input, const adr obuff, const int signed){
 	Bit current = head;
 	int j = 0;
 	while(j < 23){
-		const Bit newBit= newBit(mantissa & 1);
-		//printInt(newBit.value);
-		current.next = newBit;
-		newBit.last = current;
-		current = newBit;
+		const Bit nextBit = newBit(mantissa & 1);
+		//printInt(nextBit.value);
+		nextBit.last = ?current;
+		current.next = nextBit;
+		current = current.next;
 		mantissa = mantissa >> 1;
 		j = j + 1;
 	};
 	
-	const Bit newBit = newBit(1);
-	current.next = newBit;
-	newBit.last = current;
-	current = newBit;
+	const Bit tailBit = newBit(1);
+	tailBit.last = ?current;
+	current.next = tailBit;
+	current = current.next;
 
 	//find last element in the list
 	current = head;

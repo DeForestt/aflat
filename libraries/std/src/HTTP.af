@@ -197,7 +197,7 @@ class HTTPHeader {
 };
 
 class HTTPMessage {
-    const private vector::<HTTPHeader> headers = new vector::<HTTPHeader>();
+    private vector::<HTTPHeader> headers = new vector::<HTTPHeader>();
     private bool switch = false;
     const public Map query = new Map();
     string origin = new string("");
@@ -421,33 +421,10 @@ class HTTPRequest {
     @with private adr endpoint = "/";
     @with private adr port = "";
 
-    const private vector::<HTTPHeader> headers = new vector::<HTTPHeader>();
+    private vector::<HTTPHeader> headers = new vector::<HTTPHeader>();
     private adr body = "\r\n";
 
     HTTPRequest init() {
-        return my;
-    };
-
-    fn __from__(const HTTPRequest other) -> Self {
-        my.method = other.method;
-
-        my.host = af_malloc(str.len(other.host) + 1);
-        af_memcpy(my.host, other.host, str.len(other.host) + 1);
-
-        my.endpoint = af_malloc(str.len(other.endpoint) + 1);
-        af_memcpy(my.endpoint, other.endpoint, str.len(other.endpoint) + 1);
-
-        my.port = af_malloc(str.len(other.port) + 1);
-        af_memcpy(my.port, other.port, str.len(other.port) + 1);
-
-        my.body = af_malloc(str.len(other.body) + 1);
-        af_memcpy(my.body, other.body, str.len(other.body) + 1);
-
-        for int i = 0; i < other.headers.count(); i = i + 1 {
-            const HTTPHeader header = other.headers.get(i).expect("Copy header failed");
-            my.addHeader(header.key, header.value);
-        };
-
         return my;
     };
 

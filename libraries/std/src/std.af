@@ -11,36 +11,39 @@ import { len, str_at, int_toString } from "strings" under strs;
 import Option from "Utils/Option";
 import { some, none } from "Utils/Option" under opt;
 
-Block head = NULL;
+mutable adr head = NULL;
 
 //helpers
 
-Block findFreeBlock(const Block __last, int size) {
-  Block current = head;
+adr findFreeBlock(const adr __last, int size) {
+  adr current = head;
   size = size - 1;
   while (current != NULL) {
-    if(current.free == 1){
-        if (current.size > size){return current};
+    const Block block = current;
+    if(block.free == 1){
+        if (block.size > size){return current};
     };
 
-    current = current.next;
+    current = block.next;
   };
   return NULL;
 };
 
-Block requestSpace(const Block last, const int size){
-    const Block block = brk(NULL);
+adr requestSpace(const adr last, const int size){
+    const adr block = brk(NULL);
     const int nsize = size + Block;
     const adr i = brk(block + nsize);
 
     if(i < NULL){return NULL};
 
     if (last != NULL){
-        last.next = block;
+        const Block lastBlock = last;
+        lastBlock.next = block;
     };
-    block.next = NULL;
-    block.size = size;
-    block.free = 0;
+    const Block blockObj = block;
+    blockObj.next = NULL;
+    blockObj.size = size;
+    blockObj.free = 0;
 
     return block;
 };
@@ -91,13 +94,14 @@ int defragment(const Block block){
 };
 
 int deFragAll(const Block head){
-    Block current = head;
+    adr current = head;
     while (current != NULL){
-        int check = defragment(current);
+        const Block block = current;
+        int check = defragment(block);
         while (check == 1){
-            check = defragment(current);
+            check = defragment(block);
         };
-        current = current.next;
+        current = block.next;
     };
     return 0;
 };
@@ -138,7 +142,7 @@ int blockSize(const adr ptr) {
 
 adr af_malloc(const int size){
 
-    Block block;
+    adr block;
 
     if(size < 0){return NULL};
 
@@ -146,15 +150,18 @@ adr af_malloc(const int size){
         block = requestSpace(NULL, size);
         head = block;
         block = block + #16;
-        const adr ret = block;
-        return ret;
+        return block;
     };
-    Block last;
+    adr last;
     last = head;
 
     // loop through the list to the last block
-    while(last.next != NULL){
-        last = last.next;
+    while(true){
+        const Block lastBlock = last;
+        if(lastBlock.next == NULL){
+            break;
+        };
+        last = lastBlock.next;
     };
 
     block = findFreeBlock(head, size);
@@ -162,11 +169,11 @@ adr af_malloc(const int size){
         block = requestSpace(last, size);
         if(block == NULL){return NULL};
     };
-    block.free = 0;
-    splitBlock(block, size);
+    const Block blockObj = block;
+    blockObj.free = 0;
+    splitBlock(blockObj, size);
     block = block + Block;
-    const adr ret = block;
-    return ret; // doing this cheats past the ownership system
+    return block; // doing this cheats past the ownership system
 };
 
 adr af_realloc(const adr ptr, const int size){
@@ -189,15 +196,16 @@ adr af_realloc(const adr ptr, const int size){
 };
 
 int inspectHeap() {
-    Block current = head;
+    adr current = head;
     io.print("Heap:\n");
     io.print("HEAD --> ");
     while (current != NULL){
+        const Block block = current;
         io.printHex(current); io.print(": status: ");
-        io.printInt(current.free); io.print(" size: ");
-        io.printInt(current.size); io.print(" overhead: ");
+        io.printInt(block.free); io.print(" size: ");
+        io.printInt(block.size); io.print(" overhead: ");
         io.printInt(16); io.print("\n");
-        current = current.next;
+        current = block.next;
         io.print("         ");
     };
     io.print("NULL\n");

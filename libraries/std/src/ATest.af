@@ -115,7 +115,7 @@ fn ensureRootContext() -> void {
 		rootContext = new DescribeContext();
 	};
 	if activeContext == NULL {
-		activeContext = rootContext;
+		activeContext = dupe::<DescribeContext>(rootContext);
 	};
 };
 
@@ -127,15 +127,16 @@ fn currentDescribeContext() -> DescribeContext {
 fn pushDescribeContext() -> void {
 	ensureRootContext();
 	const DescribeContext ctx = new DescribeContext();
-	ctx.parent = activeContext;
+	ctx.parent = dupe::<DescribeContext>(activeContext);
 	activeContext = ctx;
 };
 
 fn popDescribeContext() -> DescribeContext {
 	ensureRootContext();
 	const DescribeContext ctx = activeContext;
+	const DescribeContext parent = dupe(ctx.parent);
 	if ctx.parent != NULL {
-		activeContext = ctx.parent;
+		activeContext = parent;
 	} else {
 		activeContext = rootContext;
 	};

@@ -37,29 +37,45 @@ class MapNode {
         return my;
     };
 
+    private bool replaceData(const any data) {
+        my.data = data;
+        return true;
+    };
+
+    private bool insertRight(const adr key, const any data) {
+        const let newNode = new MapNode(key, data);
+        if my.right == NULL {
+            my.right = newNode;
+            return true;
+        } else {
+            return my.right.input(key, data);
+        };
+    };
+
+    private bool insertLeft(const adr key, const any data) {
+        const let newNode = new MapNode(key, data);
+        if my.left == NULL {
+            my.left = newNode;
+            return true;
+        } else {
+            return my.left.input(key, data);
+        };
+    };
+
+    private bool inputChild(const adr key, const any data) {
+        if my.hashVal < my.hash(key) {
+            return my.insertRight(key, data);
+        } else {
+            return my.insertLeft(key, data);
+        };
+    };
+
     public bool input(const adr key, const any data) {
         if st.str_comp(my.key, key) == 1 {
-            my.data = data;
-            return true;
+            return my.replaceData(data);
         };
-        
-        const let newNode = new MapNode(key, data);
 
-        if my.hashVal < newNode.hashVal {
-            if my.right == NULL {
-                my.right = newNode;
-                return true;
-            } else {
-                return my.right.input(key, data);
-            };
-        } else {
-            if my.left == NULL {
-                my.left = newNode;
-                return true;
-            } else {
-                return my.left.input(key, data);
-            };
-        };
+        return my.inputChild(key, data);
     };
 
     public int normalize() {
