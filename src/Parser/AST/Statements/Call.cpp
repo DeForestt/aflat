@@ -123,6 +123,14 @@ gen::GenerationResult Call::generateAttempt(
   auto shiftedFunction = ast::Function();
   auto publifyedFunction = ast::Function();
   bool immutableSymbol = false;
+  auto copyReturnMetadata = [](ast::Function &dst, const ast::Function &src) {
+    dst.type = src.type;
+    dst.useType = src.useType.typeName.empty() ? src.type : src.useType;
+    dst.optional = src.optional;
+    dst.error = src.error;
+    dst.returnImmutable = src.returnImmutable;
+    dst.returnLowOwnership = src.returnLowOwnership;
+  };
 
   auto file = asmc::File();
   std::string mod = "";
@@ -273,6 +281,7 @@ gen::GenerationResult Call::generateAttempt(
           func->flex = true;
           if (smbl->type.fPointerArgs.returnType != nullptr) {
             func->type = *smbl->type.fPointerArgs.returnType;
+            func->useType = func->type;
             func->argTypes = smbl->type.fPointerArgs.argTypes;
             func->req = smbl->type.fPointerArgs.requiredArgs;
             func->optConvertionIndices =
@@ -321,13 +330,11 @@ gen::GenerationResult Call::generateAttempt(
           currentOverloadIndex = -1;
           func = &callFunction;
           func->ident.ident = "pub_" + tname + "__call";
-          func->type = f->type;
+          copyReturnMetadata(*func, *f);
           func->req = f->req;
           func->optConvertionIndices = f->optConvertionIndices;
           func->argTypes = f->argTypes;
           func->readOnly = f->readOnly;
-          func->returnImmutable = f->returnImmutable;
-          func->returnLowOwnership = f->returnLowOwnership;
           auto var = new ast::Var();
           var->logicalLine = this->logicalLine;
           var->Ident = smbl->symbol;
@@ -418,6 +425,7 @@ gen::GenerationResult Call::generateAttempt(
 
             if (sym->type.fPointerArgs.returnType != nullptr) {
               func->type = *sym->type.fPointerArgs.returnType;
+              func->useType = func->type;
               func->argTypes = sym->type.fPointerArgs.argTypes;
               func->req = sym->type.fPointerArgs.requiredArgs;
               func->optConvertionIndices =
@@ -455,14 +463,12 @@ gen::GenerationResult Call::generateAttempt(
             currentOverloadIndex = -1;
             func = &shiftedFunction;
             func->ident = f->ident;
-            func->type = f->type;
+            copyReturnMetadata(*func, *f);
             func->req = f->req;
             func->argTypes = f->argTypes;
             func->optConvertionIndices = f->optConvertionIndices;
             func->safe = f->safe;
             func->readOnly = f->readOnly;
-            func->returnImmutable = f->returnImmutable;
-            func->returnLowOwnership = f->returnLowOwnership;
             pubname = sym->type.typeName;
             shift = false;
           }
@@ -553,9 +559,7 @@ gen::GenerationResult Call::generateAttempt(
           generator.alert("cannot find function: " + ident + " in class " +
                           this->publify);
         };
-        func->type = f->type;
-        func->returnImmutable = f->returnImmutable;
-        func->returnLowOwnership = f->returnLowOwnership;
+        copyReturnMetadata(*func, *f);
         func->scope = f->scope;
         func->scopeName = f->scopeName;
         ast::Type t;
@@ -587,8 +591,7 @@ gen::GenerationResult Call::generateAttempt(
       func->argTypes = f->argTypes;
       func->req = f->req;
       func->readOnly = f->readOnly;
-      func->returnImmutable = f->returnImmutable;
-      func->returnLowOwnership = f->returnLowOwnership;
+      copyReturnMetadata(*func, *f);
       if (immutableSymbol && !f->safe) {
         generator.alert("Immutable objects can only call safe functions: " +
                             func->ident.ident,

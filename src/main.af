@@ -1,41 +1,12 @@
 .needs <std>
 
-import string, {print} from "String" under str;
-import option from "Utils/option";
-import { Some, None } from "Utils/option" under opt;
-
-types(A)
-class TestClass {
-    private A value = value;
-
-    fn init(A value) -> Self {
-        return my;
-    };
-
-    fn returnValue() -> A {
-        return my.value;
-    };
-};
-
-types(T)
-fn print(immutable T value) {
-    str.print(`{value}\n`);
-    return;
-};
-
+import uni_string from "uni_string";
+import {print} from "uni_string" under uni;
+import {printInt} from "io" under io;
 fn main() {
-    let test = TestClass::<int>(12);
-    let test2 = new TestClass::<string>("Hello");
-    immutable let v = test.returnValue();
-    print(v);
-    print(test2.returnValue());
-    print("Can we do it twice? Yes, we can!");
+    const uni_string deepChain = new uni_string("Chaining")
+        .concat(new uni_string(" test"))
+        .concat(` test2\n`);
 
-    let someVal = opt.Some::<int>(99);
-    print(someVal.or(0));
-
-    mutable option::<string> maybeString;
-    maybeString = opt.Some(`Hello, World!`);
-    print(maybeString.or("Default String"));
+    uni.print(deepChain);
 };
-
