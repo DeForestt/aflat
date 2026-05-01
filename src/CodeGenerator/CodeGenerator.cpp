@@ -841,6 +841,17 @@ bool gen::CodeGenerator::whenSatisfied(const ast::When &when) {
       if (pred.negated && isPrim)
         return false;
       return true;
+    } else if (pred.op == ast::WhenOperator::IS && pred.ident == "unique") {
+      bool isUnique = false;
+      gen::Type **type = impl->typeList[pred.typeName];
+      if (type != nullptr) {
+        isUnique = (*type)->uniqueType;
+      }
+      if (!pred.negated && !isUnique)
+        return false;
+      if (pred.negated && isUnique)
+        return false;
+      return true;
     } else if (pred.op == ast::WhenOperator::IS) {
       auto equal = pred.typeName == pred.ident;
       if (!pred.negated && !equal)

@@ -2,6 +2,7 @@
 #include <unordered_map>
 
 #include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/MockCodeGenerator.hpp"
 #include "Parser/Parser.hpp"
 #include "Scanner.hpp"
 #include "catch.hpp"
@@ -70,6 +71,32 @@ TEST_CASE("when resolution checks primitive", "[when][resolution]") {
   pred2.negated = false;
   w.predicates[0].join = ast::WhenJoiner::OR;
   w.predicates.push_back(pred2);
+  CHECK(gen.whenSatisfied(w));
+}
+
+TEST_CASE("when resolution checks unique", "[when][resolution]") {
+  parse::Parser p;
+  test::mockGen::CodeGenerator gen("mod", p, "",
+                                   std::filesystem::current_path().string());
+
+  auto foo = new gen::Class();
+  foo->Ident = "Foo";
+  foo->uniqueType = true;
+  gen.addType(foo);
+
+  ast::When w;
+  ast::WhenPredicat pred;
+  pred.op = ast::WhenOperator::IS;
+  pred.typeName = "Foo";
+  pred.ident = "unique";
+  pred.negated = false;
+  w.predicates.push_back(pred);
+  CHECK(gen.whenSatisfied(w));
+
+  w.predicates[0].typeName = "int";
+  CHECK_FALSE(gen.whenSatisfied(w));
+
+  w.predicates[0].negated = true;
   CHECK(gen.whenSatisfied(w));
 }
 
