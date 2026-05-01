@@ -609,14 +609,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         exp = this->GenExpr(expr, file);
       }
 
-      if (exp.type == "string") {
+      if (exp.type == "string" || exp.type == "uni_string") {
         auto call = new ast::CallExpr();
         call->call = new ast::Call();
         call->call->ident = "cstr";
         call->call->logicalLine = logicalLine();
         call->logicalLine = logicalLine();
         call->call->Args << expr;
-        call->call->publify = "string";
+        call->call->publify = exp.type;
         expr = call;
         exp = this->GenExpr(expr, file);
       }
@@ -625,29 +625,30 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         strLit->val.replace(pos, 3, "%a");
       else if (exp.type == "int" || exp.type == "number")
         strLit->val.replace(pos, 3, "%d");
-      else if (exp.type == "string")
+      else if (exp.type == "string" || exp.type == "uni_string")
         strLit->val.replace(pos, 3, "%s");
       else if (exp.type == "bool")
         strLit->val.replace(pos, 3, "%b");
       else if (exp.type == "char")
         strLit->val.replace(pos, 3, "%c");
       else {
+        // Do not stringify the type name itself. Preserve the original value
+        // and format it as an address-like fallback instead.
         strLit->val.replace(pos, 3, "%a");
-        auto st = new ast::StringLiteral();
-        st->val = exp.type;
-        expr = st;
       }
 
       list->args << expr;
     };
 
     call->call->Args << list;
-    const bool wantsString = typeHint.find("string") != std::string::npos &&
+    const bool wantsString = !str.uniqueLiteral &&
+                             typeHint.find("string") != std::string::npos &&
                              typeHint.find("uni_string") == std::string::npos;
     if (wantsString) {
       output = this->GenExpr(call, OutputFile);
       output.type = "string";
-    } else if (this->getType("uni_string", OutputFile) != nullptr) {
+    } else if (str.uniqueLiteral ||
+               typeHint.find("uni_string") != std::string::npos) {
       ast::CallExpr *ownedCall = new ast::CallExpr();
       ownedCall->call = new ast::Call();
       ownedCall->call->ident = "_fUCstr";

@@ -62,7 +62,7 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
       if (destructor != nullptr) {
         ast::Call *call = new ast::Call();
         call->ident = this->ident;
-        call->modList = LinkedList<std::string>();
+        call->modList = this->modList;
         call->modList.push("del");
         call->Args = LinkedList<ast::Expr *>();
 

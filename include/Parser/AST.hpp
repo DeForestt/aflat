@@ -247,6 +247,7 @@ class FStringLiteral : public Expr {
 public:
   std::string original;
   std::string val;
+  bool uniqueLiteral = false;
   std::vector<Expr *> args;
 
   std::string toString() override { return "`" + original + "`"; }

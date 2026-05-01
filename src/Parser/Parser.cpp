@@ -1384,6 +1384,7 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
     fstringLiteral->logicalLine = fstringObj.lineCount;
     fstringLiteral->val = fstringObj.value;
     fstringLiteral->original = fstringObj.value;
+    fstringLiteral->uniqueLiteral = fstringObj.uniqueLiteral;
 
     std::size_t offset = 0;
     std::string original = fstringObj.value;

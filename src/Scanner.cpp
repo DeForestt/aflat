@@ -238,8 +238,14 @@ LinkedList<Token *> Lexer::Impl::Scan(string input, int startLine) {
       continue;
     }
 
-    if (input[i] == '`') {
+    if (input[i] == '`' ||
+        (input[i] == 'u' && i + 1 < input.length() && input[i + 1] == '`')) {
       auto *stringObj = new FStringObj();
+      if (input[i] == 'u') {
+        stringObj->uniqueLiteral = true;
+        ++i;
+        ++columnCount;
+      }
       ++i;
       ++columnCount;
       while (i < input.length() && input[i] != '`') {

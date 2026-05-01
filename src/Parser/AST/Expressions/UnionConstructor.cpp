@@ -7,6 +7,50 @@
 
 namespace ast {
 
+namespace {
+
+bool isUniqueCompositeType(gen::CodeGenerator &generator,
+                           const std::string &typeName, asmc::File &file) {
+  if (parse::PRIMITIVE_TYPES.find(typeName) != parse::PRIMITIVE_TYPES.end()) {
+    return false;
+  }
+
+  auto type = generator.getType(typeName, file);
+  if (type == nullptr) {
+    return false;
+  }
+
+  auto cl = dynamic_cast<gen::Class *>(*type);
+  return cl != nullptr && cl->uniqueType;
+}
+
+bool canInvalidateSourceExpr(ast::Expr *expr) {
+  return dynamic_cast<ast::Var *>(expr) != nullptr ||
+         dynamic_cast<ast::Reference *>(expr) != nullptr;
+}
+
+void emitInvalidateCall(gen::CodeGenerator &generator, asmc::File &file,
+                        ast::Expr *expr, int logicalLine) {
+  if (!canInvalidateSourceExpr(expr)) {
+    return;
+  }
+
+  auto invalidateCall = new ast::Call();
+  invalidateCall->logicalLine = logicalLine;
+  invalidateCall->ident = dynamic_cast<ast::Var *>(expr) != nullptr
+                              ? dynamic_cast<ast::Var *>(expr)->Ident
+                              : dynamic_cast<ast::Reference *>(expr)->Ident;
+  invalidateCall->modList = dynamic_cast<ast::Var *>(expr) != nullptr
+                                ? dynamic_cast<ast::Var *>(expr)->modList
+                                : dynamic_cast<ast::Reference *>(expr)->modList;
+  invalidateCall->modList.push("__invalidate__");
+  invalidateCall->Args = links::LinkedList<ast::Expr *>();
+
+  file << generator.GenSTMT(invalidateCall);
+}
+
+} // namespace
+
 gen::GenerationResult const
 UnionConstructor::getStaticExpr(gen::CodeGenerator &generator, asmc::Size size,
                                 std::string typeHint) {
@@ -138,6 +182,10 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
     file << generator.setOffset(mov->to, 0, fromExpr.access, fromExpr.size);
   } else {
     file << generator.memMove(fromExpr.access, mov->to, unionGen->largestSize);
+  }
+
+  if (isUniqueCompositeType(generator, fromExpr.type, file)) {
+    emitInvalidateCall(generator, file, useExpr, logicalLine);
   }
 
   // set the variant index in the union

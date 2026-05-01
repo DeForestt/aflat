@@ -2,6 +2,7 @@
 import Result from "Utils/Result";
 import string from "String";
 import Error from "Utils/Error";
+import view from "Memory";
 import option from "Utils/option";
 import Map from "Utils/Map";
 import Iterator from "Collections/Iterator";
@@ -42,8 +43,20 @@ class vector {
         return my;
     };
 
-    when (T is not primitive and T missing __from__)
+    when (T is not primitive and T is unique)
     fn push_back(const T &&value) -> Self {
+        if my.count == my.size {
+            my.size = my.size * 2;
+            my.head = af_realloc(my.head, T * my.size);
+        };
+
+        af_memcpy(my.head + (my.count * T), $value, T);
+        my.count = my.count + 1;
+        return my;
+    };
+
+    when (T is not primitive and T is not unique)
+    fn push_back(const T value) -> Self {
         if my.count == my.size {
             my.size = my.size * 2;
             my.head = af_realloc(my.head, T * my.size);
@@ -54,23 +67,19 @@ class vector {
         return my;
     };
 
-    when (T is not primitive and T has __from__)
-    fn push_back(const T value) -> Self {
-        if my.count == my.size {
-            my.size = my.size * 2;
-            my.head = af_realloc(my.head, T * my.size);
-        };
-        const generic obj = my.head + (my.count * T);
-        const T obj = obj;
-        obj.__from__(value);
-        my.count = my.count + 1;
-        return my;
-    };
-
     safe fn count() -> int {
         return my.count;
     };
 
+    when (T is unique and T missing __copy__)
+    fn front() -> option::<view::<T>> {
+        if my.count == 0 {
+            return opt.None::<view::<T>>();
+        };
+        return my.get(0);
+    };
+
+    when (T is not unique and T has __copy__)
     fn front() -> option::<T> {
         if my.count == 0 {
             return opt.None::<T>();
@@ -79,6 +88,33 @@ class vector {
         return my.get(0);
     };
 
+    when (T is not unique and T missing __copy__)
+    fn front() -> option::<T> {
+        if my.count == 0 {
+            return opt.None::<T>();
+        };
+        
+        return my.get(0);
+    };
+
+    when (T is unique and T missing __copy__)
+    fn back() -> option::<view::<T>> {
+        if my.count == 0 {
+            return opt.None::<view::<T>>();
+        };
+        return my.get(my.count - 1);
+    };
+
+    when (T is not unique and T has __copy__)
+    fn back() -> option::<T> {
+        if my.count == 0 {
+            return opt.None::<T>();
+        };
+
+        return my.get(my.count - 1);
+    };
+
+    when (T is not unique and T missing __copy__)
     fn back() -> option::<T> {
         if my.count == 0 {
             return opt.None::<T>();
@@ -99,7 +135,7 @@ class vector {
         return opt.Some::<T>(r);
     };
 
-    when (T is not primitive)
+    when (T is not primitive and T is not unique)
     fn pop_back() -> option::<T> {
         if my.count == 0 {
             return opt.None::<T>();
@@ -108,6 +144,17 @@ class vector {
         const generic val = my.head + (my.count * T);
         const T val = val;
         return opt.Some(val as T);
+    };
+
+    when (T is not primitive and T is unique)
+    fn pop_back() -> option::<T> {
+        if my.count == 0 {
+            return opt.None::<T>();
+        };
+        my.count = my.count - 1;
+        const generic val = my.head + (my.count * T);
+        const T val = val;
+        return opt.Some(val);
     };
 
     when (T is primitive)
@@ -129,7 +176,16 @@ class vector {
         return opt.Some(val.__copy__());
     };
 
-    when (T is not primitive and T missing __copy__)
+    when (T is unique and T missing __copy__)
+    fn get(const int index) -> option::<view::<T>> {
+        if index >= my.count | index < 0 {
+            return opt.None::<view::<T>>();
+        };
+        const generic val = my.head + (index * T);
+        return opt.Some(new view::<T>(val));
+    };
+
+    when (T is not unique and T missing __copy__)
     fn get(const int index) -> option::<T> {
         if index >= my.count | index < 0 {
             return opt.None::<T>();
@@ -139,10 +195,64 @@ class vector {
         return opt.Some(val);
     };
 
+    when (T is unique and T missing __copy__)
+    fn _call(const int index) -> option::<view::<T>> {
+        return my.get(index);
+    };
+
+    when (T is not unique and T has __copy__)
     fn _call(const int index) -> option::<T> {
         return my.get(index);
     };
 
+    when (T is not unique and T missing __copy__)
+    fn _call(const int index) -> option::<T> {
+        return my.get(index);
+    };
+
+    when (T is unique and T missing __copy__)
+    fn next() -> option::<view::<T>> {
+        const let val = my.get(my.iteratorIndex);
+        my.iteratorIndex = my.iteratorIndex + 1;
+        if my.iteratorIndex > my.count {
+            my.iteratorIndex = 0; // Reset iterator index if it exceeds the count
+        };
+        return val;
+    };
+
+    when (T is not unique and T has __copy__)
+    fn next() -> option::<T> {
+        const let val = my.get(my.iteratorIndex);
+        my.iteratorIndex = my.iteratorIndex + 1;
+        if my.iteratorIndex > my.count {
+            my.iteratorIndex = 0; // Reset iterator index if it exceeds the count
+        };
+        return val;
+    };
+
+    when (T is not unique and T missing __copy__)
+    fn next() -> option::<T> {
+        const let val = my.get(my.iteratorIndex);
+        my.iteratorIndex = my.iteratorIndex + 1;
+        if my.iteratorIndex > my.count {
+            my.iteratorIndex = 0; // Reset iterator index if it exceeds the count
+        };
+        return val;
+    };
+
+    when (T is unique and T missing __copy__)
+    fn findFirst(const adr predicate, * const adr args) -> option::<view::<T>> {
+        for int i = 0; i < my.count; i = i + 1 {
+            const let val = my.get(i).expect(`Failed to get value at index {i} from vector`);
+            const bool brk = predicate(val, args);
+            if brk == true {
+                return opt.Some(val);
+            };
+        };
+        return opt.None::<view::<T>>();
+    };
+
+    when (T is not unique and T has __copy__)
     fn findFirst(const adr predicate, * const adr args) -> option::<T> {
         for int i = 0; i < my.count; i = i + 1 {
             const any val = my.get(i).expect(`Failed to get value at index {i} from vector`);
@@ -154,7 +264,19 @@ class vector {
         return opt.None::<T>();
     };
 
-    when (T is not primitive or T is adr)
+    when (T is not unique and T missing __copy__)
+    fn findFirst(const adr predicate, * const adr args) -> option::<T> {
+        for int i = 0; i < my.count; i = i + 1 {
+            const any val = my.get(i).expect(`Failed to get value at index {i} from vector`);
+            const bool brk = predicate(val, args);
+            if brk == true {
+                return opt.Some::<T>(val);
+            };
+        };
+        return opt.None::<T>();
+    };
+
+    when (T is not primitive and T is not unique or T is adr)
     fn set(const int index, const any value) -> result::<bool> {
         if index >= my.count {
             return res.reject::<bool>(new Error("Index out of bounds"));
@@ -163,14 +285,15 @@ class vector {
         return res.accept(true);
     };
 
-    when (T is not primitive and T has __from__)
-    fn set(const int index, const T value) -> result::<bool> {
+    when (T is not primitive and T is unique)
+    fn set(const int index, const T &&value) -> result::<bool> {
         if index >= my.count {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
         const generic obj = my.head + (index * T);
         const T obj = obj;
-        obj.__from__(value);
+        obj.__invalidate__();
+        af_memcpy(my.head + (index * T), $value, T);
         return res.accept(true);
     };
 
@@ -181,15 +304,6 @@ class vector {
         };
         af_memcpy(my.head + (index * T), ?value, T);
         return res.accept(true);
-    };
-
-    fn next() -> option::<T> {
-        const let val = my.get(my.iteratorIndex);
-        my.iteratorIndex = my.iteratorIndex + 1;
-        if my.iteratorIndex > my.count {
-            my.iteratorIndex = 0; // Reset iterator index if it exceeds the count
-        };
-        return val;
     };
 
     fn stitch(immutable vector::<T> other) -> Self {

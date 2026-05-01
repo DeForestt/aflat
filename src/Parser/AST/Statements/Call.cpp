@@ -756,7 +756,7 @@ gen::GenerationResult Call::generateAttempt(
          (func != nullptr &&
           func->ident.ident.find("Some") != std::string::npos));
 
-    if (!isOptionSomeSink && checkArgs &&
+    if (!isOptionSomeSink && checkArgs && ident != "cstr" &&
         dynamic_cast<ast::CallExpr *>(arg) != nullptr &&
         !func->argTypes.at(i).isRvalue && exp.type != "void" &&
         parse::PRIMITIVE_TYPES.find(exp.type) == parse::PRIMITIVE_TYPES.end()) {

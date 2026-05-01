@@ -351,6 +351,7 @@ Statement *deepCopy(const Statement *stmt) {
     auto *copy = new FStringLiteral();
     copy->original = format->original;
     copy->val = format->val;
+    copy->uniqueLiteral = format->uniqueLiteral;
     for (auto &arg : format->args) {
       copy->args.push_back(static_cast<Expr *>(deepCopy(arg)));
     }
