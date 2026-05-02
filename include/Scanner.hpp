@@ -56,6 +56,7 @@ public:
 class FStringObj : public Token {
 public:
   string value;
+  bool uniqueLiteral = false;
   string toString() const override {
     return "FStringObj: " + value + " at line " + std::to_string(lineCount);
   }

@@ -13,6 +13,47 @@
 
 namespace ast {
 
+namespace {
+
+ast::Function *buildAutomaticInvalidateSignature(int logicalLine) {
+  auto *func = new ast::Function();
+  func->logicalLine = logicalLine;
+  func->ident.ident = "__invalidate__";
+  func->scope = ast::Public;
+  func->args = nullptr;
+  func->statement = nullptr;
+  func->type.typeName = "void";
+  func->type.size = asmc::QWord;
+  func->useType = func->type;
+  return func;
+}
+
+ast::Function *buildAutomaticTransferSignature(int logicalLine) {
+  auto *func = new ast::Function();
+  func->logicalLine = logicalLine;
+  func->ident.ident = "__transfer_to__";
+  func->scope = ast::Public;
+
+  auto *buffer = new ast::Declare();
+  buffer->logicalLine = logicalLine;
+  buffer->ident = "buffer";
+  buffer->type = ast::Type("adr", asmc::QWord);
+  buffer->mut = false;
+  buffer->readOnly = true;
+  func->args = buffer;
+  func->argTypes.push_back(buffer->type);
+  func->req = 1;
+  func->readOnly.push_back(true);
+  func->mutability.push_back(false);
+  func->statement = nullptr;
+  func->type.typeName = "void";
+  func->type.size = asmc::QWord;
+  func->useType = func->type;
+  return func;
+}
+
+} // namespace
+
 std::vector<ast::Union::Alias *>
 parseAliases(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   std::vector<ast::Union::Alias *> aliases;
@@ -178,6 +219,13 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
 
   if (this->includer && this->genericTypes.size() == 0) {
     gen::utils::shellStatement(this->statement);
+  }
+
+  if (type->uniqueType) {
+    OutputFile << generator.GenSTMT(
+        buildAutomaticInvalidateSignature(this->logicalLine));
+    OutputFile << generator.GenSTMT(
+        buildAutomaticTransferSignature(this->logicalLine));
   }
 
   asmc::File junkFile =

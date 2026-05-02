@@ -6,6 +6,240 @@
 #include "Parser/Parser.hpp"
 
 namespace ast {
+namespace {
+
+bool isPrimitiveType(const std::string &typeName) {
+  return parse::PRIMITIVE_TYPES.find(typeName) != parse::PRIMITIVE_TYPES.end();
+}
+
+bool isAdrType(const std::string &typeName) { return typeName == "adr"; }
+
+int classByteSize(const gen::Class *type) {
+  if (type == nullptr || type->SymbolTable.head == nullptr)
+    return 0;
+  return type->SymbolTable.head->data.byteMod;
+}
+
+ast::Statement *appendStatement(ast::Statement *head, ast::Statement *tail) {
+  if (head == nullptr)
+    return tail;
+
+  auto *sequence = new ast::Sequence();
+  sequence->Statement1 = head;
+  sequence->Statement2 = tail;
+  return sequence;
+}
+
+ast::Statement *buildAutomaticDestructorBody(const gen::Class *type,
+                                             int logicalLine) {
+  ast::Statement *body = nullptr;
+
+  for (const auto &field : type->SymbolTable) {
+    if (isPrimitiveType(field.type.typeName))
+      continue;
+
+    auto *condition = new ast::Compound();
+    condition->logicalLine = logicalLine;
+    condition->op = ast::NotEqu;
+
+    auto *fieldRef = new ast::Var();
+    fieldRef->logicalLine = logicalLine;
+    fieldRef->Ident = "my";
+    fieldRef->modList.push(field.symbol);
+    condition->expr1 = fieldRef;
+
+    auto *nullValue = new ast::Var();
+    nullValue->logicalLine = logicalLine;
+    nullValue->Ident = "NULL";
+    condition->expr2 = nullValue;
+
+    auto *deleteStmt = new ast::Delete();
+    deleteStmt->logicalLine = logicalLine;
+    deleteStmt->ident = "my";
+    deleteStmt->modList.push(field.symbol);
+
+    auto *ifStmt = new ast::If();
+    ifStmt->logicalLine = logicalLine;
+    ifStmt->expr = condition;
+    ifStmt->statement = deleteStmt;
+    ifStmt->elseStatement = nullptr;
+    ifStmt->elseIf = nullptr;
+
+    body = appendStatement(body, ifStmt);
+  }
+
+  return body;
+}
+
+ast::Statement *buildAutomaticInvalidateBody(gen::CodeGenerator &generator,
+                                             const gen::Class *type,
+                                             int logicalLine) {
+  ast::Statement *body = nullptr;
+
+  for (const auto &field : type->SymbolTable) {
+    if (isPrimitiveType(field.type.typeName) && !isAdrType(field.type.typeName))
+      continue;
+
+    auto *assign = new ast::Assign();
+    assign->logicalLine = logicalLine;
+    assign->Ident = "my";
+    assign->modList.push(field.symbol);
+    assign->override = true;
+
+    auto *nullValue = new ast::Var();
+    nullValue->logicalLine = logicalLine;
+    nullValue->Ident = "NULL";
+    assign->expr = nullValue;
+
+    body = appendStatement(body, assign);
+  }
+
+  if (body == nullptr)
+    body = new ast::Sequence();
+
+  return body;
+}
+
+ast::Function *buildAutomaticDestructor(const gen::Class *type,
+                                        int logicalLine) {
+  auto *body = buildAutomaticDestructorBody(type, logicalLine);
+  if (body == nullptr)
+    return nullptr;
+
+  auto *func = new ast::Function();
+  func->logicalLine = logicalLine;
+  func->ident.ident = "del";
+  func->scope = type->declarationOnly ? ast::Private : ast::Public;
+  func->hidden = type->declarationOnly;
+  func->args = nullptr;
+  func->statement = body;
+  func->type.typeName = "void";
+  func->type.size = asmc::QWord;
+  func->useType = func->type;
+  return func;
+}
+
+ast::Function *buildAutomaticInvalidate(gen::CodeGenerator &generator,
+                                        const gen::Class *type,
+                                        int logicalLine) {
+  auto *func = new ast::Function();
+  func->logicalLine = logicalLine;
+  func->ident.ident = "__invalidate__";
+  func->scope = type->declarationOnly ? ast::Private : ast::Public;
+  func->hidden = type->declarationOnly;
+  func->args = nullptr;
+  func->statement = buildAutomaticInvalidateBody(generator, type, logicalLine);
+  func->type.typeName = "void";
+  func->type.size = asmc::QWord;
+  func->useType = func->type;
+  return func;
+}
+
+ast::Function *buildAutomaticInvalidateSignature(int logicalLine) {
+  auto *func = new ast::Function();
+  func->logicalLine = logicalLine;
+  func->ident.ident = "__invalidate__";
+  func->scope = ast::Public;
+  func->args = nullptr;
+  func->statement = nullptr;
+  func->type.typeName = "void";
+  func->type.size = asmc::QWord;
+  func->useType = func->type;
+  return func;
+}
+
+ast::Function *buildAutomaticTransfer(gen::CodeGenerator &generator,
+                                      const gen::Class *type, int logicalLine) {
+  auto *func = new ast::Function();
+  func->logicalLine = logicalLine;
+  func->ident.ident = "__transfer_to__";
+  func->scope = type->declarationOnly ? ast::Private : ast::Public;
+  func->hidden = type->declarationOnly;
+
+  auto *buffer = new ast::Declare();
+  buffer->logicalLine = logicalLine;
+  buffer->ident = "buffer";
+  buffer->type = ast::Type("adr", asmc::QWord);
+  buffer->mut = false;
+  buffer->readOnly = true;
+  func->args = buffer;
+  func->argTypes.push_back(buffer->type);
+  func->req = 1;
+  func->readOnly.push_back(true);
+  func->mutability.push_back(false);
+
+  auto *body = new ast::Sequence();
+
+  const int bytes = classByteSize(type);
+  if (bytes > 0) {
+    auto *copy = new ast::Call();
+    copy->logicalLine = logicalLine;
+    copy->ident = "af_memcpy";
+    copy->Args = links::LinkedList<ast::Expr *>();
+
+    auto *dst = new ast::Var();
+    dst->logicalLine = logicalLine;
+    dst->Ident = "buffer";
+    copy->Args.push(dst);
+
+    auto *src = new ast::Reference();
+    src->logicalLine = logicalLine;
+    src->Ident = "my";
+    copy->Args.push(src);
+
+    auto *size = new ast::IntLiteral();
+    size->logicalLine = logicalLine;
+    size->val = bytes;
+    copy->Args.push(size);
+
+    body->Statement1 = copy;
+  }
+
+  auto *invalidate = new ast::Call();
+  invalidate->logicalLine = logicalLine;
+  invalidate->ident = "my";
+  invalidate->modList.push("__invalidate__");
+  invalidate->Args = links::LinkedList<ast::Expr *>();
+
+  if (body->Statement1 == nullptr) {
+    body->Statement1 = invalidate;
+  } else {
+    body->Statement2 = invalidate;
+  }
+
+  func->statement = body;
+  func->type.typeName = "void";
+  func->type.size = asmc::QWord;
+  func->useType = func->type;
+  return func;
+}
+
+ast::Function *buildAutomaticTransferSignature(int logicalLine) {
+  auto *func = new ast::Function();
+  func->logicalLine = logicalLine;
+  func->ident.ident = "__transfer_to__";
+  func->scope = ast::Public;
+
+  auto *buffer = new ast::Declare();
+  buffer->logicalLine = logicalLine;
+  buffer->ident = "buffer";
+  buffer->type = ast::Type("adr", asmc::QWord);
+  buffer->mut = false;
+  buffer->readOnly = true;
+  func->args = buffer;
+  func->argTypes.push_back(buffer->type);
+  func->req = 1;
+  func->readOnly.push_back(true);
+  func->mutability.push_back(false);
+  func->statement = nullptr;
+  func->type.typeName = "void";
+  func->type.size = asmc::QWord;
+  func->useType = func->type;
+  return func;
+}
+
+} // namespace
+
 Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
              bool safe, bool dynamic, bool pedantic, bool unique,
              std::vector<parse::Annotation> &annotations,
@@ -197,6 +431,13 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
     gen::utils::shellStatement(this->statement);
   }
 
+  if (type->uniqueType) {
+    OutputFile << generator.GenSTMT(
+        buildAutomaticInvalidateSignature(this->logicalLine));
+    OutputFile << generator.GenSTMT(
+        buildAutomaticTransferSignature(this->logicalLine));
+  }
+
   asmc::File file = generator.GenSTMT(this->statement);
 
   if (gen::utils::extract("init", this->statement) == nullptr &&
@@ -220,6 +461,33 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
     func->type = t;
     file << generator.GenSTMT(func);
   }
+
+  const bool hasExplicitDestructor =
+      gen::utils::extract("del", this->statement) != nullptr;
+  if (type->uniqueType && !type->declarationOnly && !hasExplicitDestructor) {
+    if (auto *destructor = buildAutomaticDestructor(type, this->logicalLine)) {
+      file << generator.GenSTMT(destructor);
+    }
+  }
+
+  const bool hasExplicitInvalidate =
+      gen::utils::extract("__invalidate__", this->statement) != nullptr;
+  if (type->uniqueType && !type->declarationOnly && !hasExplicitInvalidate) {
+    if (auto *invalidate =
+            buildAutomaticInvalidate(generator, type, this->logicalLine)) {
+      file << generator.GenSTMT(invalidate);
+    }
+  }
+
+  const bool hasExplicitTransfer =
+      gen::utils::extract("__transfer_to__", this->statement) != nullptr;
+  if (type->uniqueType && !type->declarationOnly && !hasExplicitTransfer) {
+    if (auto *transfer =
+            buildAutomaticTransfer(generator, type, this->logicalLine)) {
+      file << generator.GenSTMT(transfer);
+    }
+  }
+
   OutputFile << file;
   generator.globalScope() = saveScope;
   generator.scope() = nullptr;

@@ -450,60 +450,62 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     }
   } else if (dynamic_cast<ast::Buy *>(expr) != nullptr) {
     auto buy = dynamic_cast<ast::Buy *>(expr);
-    // for now, we will onlt support buying of a variable (lvalue)
     auto var = dynamic_cast<ast::Var *>(buy->expr);
-    if (var == nullptr) {
-      this->alert("buying of non-variable not supported", true, __FILE__,
-                  __LINE__);
-    }
+    if (var != nullptr) {
+      auto resolved =
+          this->resolveSymbol(var->Ident, var->modList, OutputFile,
+                              links::LinkedList<ast::Expr *>(), false);
 
-    auto resolved =
-        this->resolveSymbol(var->Ident, var->modList, OutputFile,
-                            links::LinkedList<ast::Expr *>(), false);
+      if (std::get<2>(resolved) == false) {
+        this->alert("attemptted to buy an undeclared variable: " + var->Ident,
+                    true, __FILE__, __LINE__);
+      }
 
-    if (std::get<2>(resolved) == false) {
-      this->alert("attemptted to buy an undeclared variable: " + var->Ident,
-                  true, __FILE__, __LINE__);
-    }
+      gen::Symbol *sym = &std::get<1>(resolved);
 
-    gen::Symbol *sym = &std::get<1>(resolved);
+      // find the _sell function if it exists
+      gen::Type **type = typeList()[sym->type.typeName];
+      if (type != nullptr) {
+        gen::Class *classType = dynamic_cast<gen::Class *>(*type);
+        if (classType != nullptr) {
+          // check if the class has a destructor
+          ast::Function *destructor = classType->nameTable["_sell"];
 
-    // find the _sell function if it exists
-    gen::Type **type = typeList()[sym->type.typeName];
-    if (type != nullptr) {
-      gen::Class *classType = dynamic_cast<gen::Class *>(*type);
-      if (classType != nullptr) {
-        // check if the class has a destructor
-        ast::Function *destructor = classType->nameTable["_sell"];
-
-        if (destructor != nullptr) {
-          ast::Call *call = new ast::Call();
-          call->ident = var->Ident;
-          call->modList = var->modList;
-          call->modList.push("_sell");
-          call->Args = LinkedList<ast::Expr *>();
-          ast::CallExpr *callExpr = new ast::CallExpr();
-          callExpr->call = call;
-          callExpr->logicalLine = logicalLine();
-          output = this->GenExpr(callExpr, OutputFile);
+          if (destructor != nullptr) {
+            ast::Call *call = new ast::Call();
+            call->ident = var->Ident;
+            call->modList = var->modList;
+            call->modList.push("_sell");
+            call->Args = LinkedList<ast::Expr *>();
+            ast::CallExpr *callExpr = new ast::CallExpr();
+            callExpr->call = call;
+            callExpr->logicalLine = logicalLine();
+            output = this->GenExpr(callExpr, OutputFile);
+          } else {
+            // just sell it normally
+            output = this->GenExpr(var, OutputFile);
+          }
         } else {
-          // just sell it normally
           output = this->GenExpr(var, OutputFile);
         }
       } else {
         output = this->GenExpr(var, OutputFile);
       }
-    } else {
-      output = this->GenExpr(var, OutputFile);
-    }
 
-    // Primitive values are copied by value, so selling them should not poison
-    // the original symbol. Only real heap-owning values participate in sold
-    // tracking.
-    if (parse::PRIMITIVE_TYPES.find(output.type) ==
-        parse::PRIMITIVE_TYPES.end()) {
-      output.owned = true;
-      std::get<4>(resolved)->sold = logicalLine();
+      // Primitive values are copied by value, so selling them should not poison
+      // the original symbol. Only real heap-owning values participate in sold
+      // tracking.
+      if (parse::PRIMITIVE_TYPES.find(output.type) ==
+          parse::PRIMITIVE_TYPES.end()) {
+        output.owned = true;
+        std::get<4>(resolved)->sold = logicalLine();
+      }
+    } else {
+      output = this->GenExpr(buy->expr, OutputFile);
+      if (parse::PRIMITIVE_TYPES.find(output.type) ==
+          parse::PRIMITIVE_TYPES.end()) {
+        output.owned = true;
+      }
     }
   } else if (dynamic_cast<ast::Reference *>(expr) != nullptr) {
     ast::Reference ref = *dynamic_cast<ast::Reference *>(expr);
@@ -609,14 +611,22 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         exp = this->GenExpr(expr, file);
       }
 
-      if (exp.type == "string") {
+      if (exp.type == "string" || exp.type == "uni_string") {
+        if (exp.owned && dynamic_cast<ast::CallExpr *>(expr) != nullptr) {
+          auto buy = new ast::Buy();
+          buy->expr = expr;
+          buy->logicalLine = logicalLine();
+          expr = buy;
+          exp = this->GenExpr(expr, file);
+        }
+
         auto call = new ast::CallExpr();
         call->call = new ast::Call();
         call->call->ident = "cstr";
         call->call->logicalLine = logicalLine();
         call->logicalLine = logicalLine();
         call->call->Args << expr;
-        call->call->publify = "string";
+        call->call->publify = exp.type;
         expr = call;
         exp = this->GenExpr(expr, file);
       }
@@ -625,29 +635,30 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         strLit->val.replace(pos, 3, "%a");
       else if (exp.type == "int" || exp.type == "number")
         strLit->val.replace(pos, 3, "%d");
-      else if (exp.type == "string")
+      else if (exp.type == "string" || exp.type == "uni_string")
         strLit->val.replace(pos, 3, "%s");
       else if (exp.type == "bool")
         strLit->val.replace(pos, 3, "%b");
       else if (exp.type == "char")
         strLit->val.replace(pos, 3, "%c");
       else {
+        // Do not stringify the type name itself. Preserve the original value
+        // and format it as an address-like fallback instead.
         strLit->val.replace(pos, 3, "%a");
-        auto st = new ast::StringLiteral();
-        st->val = exp.type;
-        expr = st;
       }
 
       list->args << expr;
     };
 
     call->call->Args << list;
-    const bool wantsString = typeHint.find("string") != std::string::npos &&
+    const bool wantsString = !str.uniqueLiteral &&
+                             typeHint.find("string") != std::string::npos &&
                              typeHint.find("uni_string") == std::string::npos;
     if (wantsString) {
       output = this->GenExpr(call, OutputFile);
       output.type = "string";
-    } else if (this->getType("uni_string", OutputFile) != nullptr) {
+    } else if (str.uniqueLiteral ||
+               typeHint.find("uni_string") != std::string::npos) {
       ast::CallExpr *ownedCall = new ast::CallExpr();
       ownedCall->call = new ast::Call();
       ownedCall->call->ident = "_fUCstr";

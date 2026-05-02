@@ -97,6 +97,30 @@ unique class owned {
 	};
 };
 
+
+types(T)
+unique class view {
+  // note that we do not own T; we only keep a raw reference to it.
+  private mutable any value = value;
+
+  fn init(const any value) {
+    return my;
+  };
+
+  fn view() -> loan T {
+    return my.value;
+  };
+
+  fn toString() -> string {
+    return `view({my.value})`;
+  };
+
+  // we overload del to be a noop so that this view doesnt do anything with the info it has...
+  fn del() {
+    return;
+  }
+}
+
 types(T)
 // Convenience helper to allocate a Box for a value.
 export fn wrap(const T value) -> Box::<T> {
@@ -108,3 +132,4 @@ types(T)
 export fn own(const T value) -> owned::<T> {
 	return new owned::<T>(value);
 };
+
