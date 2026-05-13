@@ -144,7 +144,10 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
           arg->ident, arg->type, false, arg->mut);
 
       auto sym = gen::scope::ScopeManager::getInstance()->get(arg->ident);
-      if (func.argTypes[index].isRvalue) {
+      const bool ownsByDefault =
+          parse::PRIMITIVE_TYPES.find(arg->type.typeName) ==
+          parse::PRIMITIVE_TYPES.end();
+      if (func.argTypes[index].isRvalue || ownsByDefault) {
         sym->owned = true;
       }
 

@@ -835,7 +835,7 @@ int main(int argc, char *argv[]) {
   if (value == "build") {
     cfg::Config config =
         cfg::loadConfig(cli.configFile, cli.updateDeps, cli.cleanDeps);
-    config.debug = cli.debug;
+    config.debug = config.debug || cli.debug;
     if (!cli.outputFile.empty())
       config.outPutFile = cli.outputFile;
     runConfig(config, libPathA, 'e');
@@ -844,7 +844,7 @@ int main(int argc, char *argv[]) {
   if (value == "run") {
     cfg::Config config =
         cfg::loadConfig(cli.configFile, cli.updateDeps, cli.cleanDeps);
-    config.debug = cli.debug;
+    config.debug = config.debug || cli.debug;
     if (!cli.outputFile.empty())
       config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 'e')) {
@@ -859,7 +859,7 @@ int main(int argc, char *argv[]) {
   if (value == "test") {
     cfg::Config config =
         cfg::loadConfig(cli.configFile, cli.updateDeps, cli.cleanDeps);
-    config.debug = cli.debug;
+    config.debug = config.debug || cli.debug;
     if (!cli.outputFile.empty())
       config.outPutFile = cli.outputFile;
     if (runConfig(config, libPathA, 't')) {
@@ -1534,7 +1534,7 @@ bool compileCFile(const std::string &path, bool debug) {
   std::string src = "./src/" + path + ".c";
   std::string obj = "./.cache/" + path + ".o";
 
-  if (gUseCache && fs::exists(obj) &&
+  if (!debug && gUseCache && fs::exists(obj) &&
       fs::last_write_time(obj) >= fs::last_write_time(src)) {
     if (!gQuiet) {
       if (gProgress)
@@ -1583,7 +1583,8 @@ ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
   std::string asmPath = "./.cache/" + mod + ".s";
   std::string objPath = "./.cache/" + mod + ".o";
 
-  bool useCached = gUseCache && objectUpToDate(src, objPath, libPath + "head/");
+  bool useCached = !config.debug && gUseCache &&
+                   objectUpToDate(src, objPath, libPath + "head/");
   auto objTime = fs::exists(objPath) ? fs::last_write_time(objPath)
                                      : fs::file_time_type::min();
   for (const auto &dep : config.modules) {
@@ -1603,7 +1604,8 @@ ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
   if (!useCached) {
     fs::create_directories(fs::path(asmPath).parent_path());
     if (build(src, asmPath, config.mutability, config.debug)) {
-      std::string cmd = "gcc -c " + asmPath + " -o " + objPath;
+      std::string cmd = config.debug ? "gcc -g -c " : "gcc -c ";
+      cmd += asmPath + " -o " + objPath;
       if (system(cmd.c_str()) != 0) {
         return {objPath, false};
       }
