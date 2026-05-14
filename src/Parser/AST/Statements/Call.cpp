@@ -1059,6 +1059,17 @@ gen::GenerationResult Call::generateAttempt(
   asmc::Call *calls = new asmc::Call;
   calls->logicalLine = this->logicalLine;
 
+  const bool saveCoroutineFrameBase =
+      generator.currentFunction() != nullptr &&
+      generator.currentFunction()->asyncFunction;
+  if (saveCoroutineFrameBase) {
+    asmc::Push *pushFrameBase = new asmc::Push();
+    pushFrameBase->logicalLine = this->logicalLine;
+    pushFrameBase->op = generator.registers()["%r10"]->get(asmc::QWord);
+    file.text << pushFrameBase;
+    stack << pushFrameBase->op;
+  }
+
   calls->function = asyncCall ? ("Runtime.spawn." + func->type.typeName)
                               : (mod + func->ident.ident);
   file.text << calls;

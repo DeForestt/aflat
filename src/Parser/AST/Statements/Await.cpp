@@ -108,17 +108,6 @@ Await::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
   waiterAssign->expr = waiterVar;
   file << waiterAssign->generate(generator).file;
 
-  auto frameAssign = new ast::Assign();
-  frameAssign->logicalLine = logicalLine;
-  frameAssign->Ident = generator.coroutineTaskIdent();
-  frameAssign->override = true;
-  frameAssign->modList.push("frame");
-  auto frameVar = new ast::Var();
-  frameVar->logicalLine = logicalLine;
-  frameVar->Ident = tempDeclare->ident;
-  frameAssign->expr = frameVar;
-  file << frameAssign->generate(generator).file;
-
   assignCoroutineField(generator, file, generator.coroutineTaskIdent(), "state",
                        awaitIndex + 1, logicalLine);
   assignCoroutineField(generator, file, generator.coroutineTaskIdent(),
@@ -137,17 +126,6 @@ Await::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
   label->logicalLine = logicalLine;
   label->label = resumeLabel;
   file.text << label;
-
-  auto restoreAssign = new ast::Assign();
-  restoreAssign->logicalLine = logicalLine;
-  restoreAssign->Ident = tempDeclare->ident;
-  restoreAssign->override = true;
-  auto restoreVar = new ast::Var();
-  restoreVar->logicalLine = logicalLine;
-  restoreVar->Ident = generator.coroutineTaskIdent();
-  restoreVar->modList.push("frame");
-  restoreAssign->expr = restoreVar;
-  file << restoreAssign->generate(generator).file;
 
   auto resultExpr = new ast::Var();
   resultExpr->Ident = tempDeclare->ident;

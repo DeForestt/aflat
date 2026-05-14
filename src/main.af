@@ -21,8 +21,9 @@ async fn sleep_async(task::<int> job, int sec, int nano) -> int {
 };
 
 async fn child(task::<int> job, int value) -> int {
-  uni.print("calling async sleep\n");
-  await sleep_async(5, 0);
+  uni.print(`calling async sleep starting value: {value}\n`);
+  await sleep_async(5, 500);
+  uni.print(`value is still: {value}\n`);
   return value;
 };
 
