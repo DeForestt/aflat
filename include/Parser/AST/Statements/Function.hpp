@@ -34,6 +34,7 @@ public:
   bool isLambda = false;
   bool flex = false;
   bool mask;
+  bool asyncFunction = false;
   bool has_return = false;
   bool optional = false;
   bool error = false; // if the function can return an error
@@ -47,10 +48,10 @@ public:
   Function(const string &ident, const ScopeMod &scope, const Type &type,
            const Op op, const std::string &scopeName,
            links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
-           bool optional, bool safe = false);
+           bool optional, bool safe = false, bool asyncFunction = false);
   Function(const ScopeMod &scope, links::LinkedList<lex::Token *> &tokens,
            std::vector<std::string> genericTypes, parse::Parser &parser,
-           bool safe = false);
+           bool safe = false, bool asyncFunction = false);
   Function(const Function &Other, bool locked)
       : scope(Other.scope), type(Other.type), op(Other.op),
         scopeName(Other.scopeName), ident(Other.ident), args(Other.args),
@@ -62,7 +63,8 @@ public:
         optional(Other.optional), useType(Other.useType),
         genericTypes(Other.genericTypes), autoType(Other.autoType),
         globalLocked(Other.globalLocked), safe(Other.safe),
-        readOnly(Other.readOnly), returnImmutable(Other.returnImmutable),
+        asyncFunction(Other.asyncFunction), readOnly(Other.readOnly),
+        returnImmutable(Other.returnImmutable),
         returnLowOwnership(Other.returnLowOwnership), error(Other.error) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;

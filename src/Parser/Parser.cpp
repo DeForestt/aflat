@@ -213,6 +213,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     auto dynamicType = false;
     auto pedantic = false;
     auto uniqueType = false;
+    auto asyncFunction = false;
     auto scope = ast::Public;
     std::vector<std::string> typeNames;
     tokens.pop();
@@ -226,7 +227,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
 
     // Use a set for efficient lookup instead of multiple 'or' checks
     static const std::unordered_set<std::string> modifiers = {
-        "safe", "dynamic", "pedantic", "types", "when", "unique"};
+        "safe", "dynamic", "pedantic", "types", "when", "unique", "async"};
 
     if (modifiers.count(obj.meta)) {
       while (modifiers.count(obj.meta)) {
@@ -275,6 +276,8 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
                                  std::to_string(obj.lineCount));
           }
           whenClause = this->parseWhenClause(tokens, obj.lineCount);
+        } else if (obj.meta == "async") {
+          asyncFunction = true;
         }
         if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
           obj = *dynamic_cast<lex::LObj *>(tokens.peek());
@@ -295,6 +298,10 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
             "on line " +
             std::to_string(obj.lineCount) + " got " + obj.meta);
       };
+      if (asyncFunction && obj.meta != "fn") {
+        throw err::Exception("async can only be used with functions on line " +
+                             std::to_string(obj.lineCount));
+      }
       static const std::unordered_set<std::string> uniqueTargets = {
           "class", "union", "struct"};
       if (uniqueType && uniqueTargets.count(obj.meta) == 0) {
@@ -642,8 +649,13 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
       ret->resolver = true;
       output = ret;
     } else if (obj.meta == "fn") {
-      output = new ast::Function(scope, tokens, typeNames, parser, safeType);
+      output = new ast::Function(scope, tokens, typeNames, parser, safeType,
+                                 asyncFunction);
       output->when = whenClause;
+    } else if (obj.meta == "pause") {
+      output = new ast::Pause(tokens, parser);
+    } else if (obj.meta == "await") {
+      output = new ast::Await(tokens, parser);
     } else if (obj.meta == "match") {
       output = new ast::Match(tokens, parser);
     } else if (obj.meta == "push") {
@@ -1678,6 +1690,8 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       } else
         lambda->function->statement = this->parseStmt(tokens, true);
       output = lambda;
+    } else if (obj.meta == "await") {
+      output = new ast::Await(tokens, parser);
     } else if (tokens.count > 0 &&
                dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
       auto asObject = *dynamic_cast<lex::LObj *>(tokens.peek());

@@ -30,7 +30,8 @@ gen::GenerationResult const Dec::generate(gen::CodeGenerator &generator) {
   asmc::Sub *sub = new asmc::Sub();
   sub->logicalLine = sub->logicalLine;
   sub->op1 = "$-1";
-  sub->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
+  sub->op2 =
+      "-" + std::to_string(sym->byteMod) + "(" + generator.frameBase() + ")";
   OutputFile.text << sub;
   gen::scope::ScopeManager::getInstance()->addAssign(this->ident);
   return {OutputFile, std::nullopt};

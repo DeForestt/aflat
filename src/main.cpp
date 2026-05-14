@@ -1702,6 +1702,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       "Utils_Object.s",
       "Utils_Error.s",
       "Error_Render.s",
+      "Runtime.s",
       "HTTP_Endpoint.s",
       "HTTP_Server.s",
       "HTTP_Endpoints.s",

@@ -152,7 +152,7 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
       }
 
       mov->size = size;
-      mov->to = "-" + std::to_string(mod) + +"(%rbp)";
+      mov->to = "-" + std::to_string(mod) + "(" + frameBase() + ")";
       OutputFile.text << mov;
       intArgsCounter()++;
 
@@ -234,7 +234,7 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
               mov->size = expr.size;
               mov->op = expr.op;
               mov->from = expr.access;
-              mov->to = "-" + std::to_string(mod) + "(%rbp)";
+              mov->to = "-" + std::to_string(mod) + "(" + frameBase() + ")";
               OutputFile.text << mov;
               scope::ScopeManager::getInstance()->popScope(this, OutputFile);
             }

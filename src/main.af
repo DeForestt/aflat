@@ -1,22 +1,34 @@
 .needs <std>
+.needs <runtime>
 
 import uni_string from "uni_string";
+import {print} from "uni_string" under uni;
+import task from "Utils/Task";
+import {spawn, block_on} from "Utils/Runtime" under runtime;
+import option from "Utils/option";
+import result from "Utils/result";
+import {Some, None, optionWrapper} from "Utils/option" under opt;
+import {accept, reject, resultWrapper} from "Utils/result" under res;
+import Box from "Memory";
+import {wrap} from "Memory" under box;
+import {print} from "uni_string" under uni;
+import {print, printHex} from "io" under io;
 
-unique class Probe {
-  mutable uni_string name = "";
+async fn sleep_async(task::<int> job, int sec, int nano) -> int {
+  uni.print(`sec {sec}: nano {nano}\n`);
+  pause sleep(sec, nano);
+  return 0;
+};
 
-  fn init(immutable adr name) -> Probe {
-    my.name.copy_from(name);
-    return my;
-  };
-
-  fn del() -> void {
-    let name = my.name;
-    delete name;
-  };
+async fn child(task::<int> job, int value) -> int {
+  uni.print(`calling async sleep starting value: {value}\n`);
+  await sleep_async(5, 500);
+  uni.print(`value is still: {value}\n`);
+  return value;
 };
 
 fn main() -> int {
-  let p = new Probe("John Doe");
+  let i = runtime.block_on::<int>(child(41));
+  uni.print(`final value: {i}\n`)
   return 0;
 };

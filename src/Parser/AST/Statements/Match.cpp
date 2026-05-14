@@ -234,7 +234,8 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
           mov2->logicalLine = expr->logicalLine;
           mov2->size = type->size;
           mov2->from = generator.registers()["%rax"]->get(type->size);
-          mov2->to = "-" + std::to_string(byteMod) + "(%rbp)";
+          mov2->to =
+              "-" + std::to_string(byteMod) + "(" + generator.frameBase() + ")";
           file.text << mov2;
         } else {
           // if it is a safe type we need to call get
@@ -262,14 +263,16 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
             mov->logicalLine = expr->logicalLine;
             mov->size = asmc::QWord;
             mov->from = newFrom.access;
-            mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
+            mov->to = "-" + std::to_string(byteMod) + "(" +
+                      generator.frameBase() + ")";
             file.text << mov;
           } else {
             auto mov = new asmc::Mov();
             mov->logicalLine = expr->logicalLine;
             mov->size = asmc::QWord;
             mov->from = generator.registers()["%rdx"]->get(asmc::QWord);
-            mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
+            mov->to = "-" + std::to_string(byteMod) + "(" +
+                      generator.frameBase() + ")";
             file.text << mov;
           }
         }

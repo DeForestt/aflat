@@ -39,6 +39,7 @@ struct gen::CodeGenerator::Impl {
     registers << asmc::Register("rbp", "ebp", "bp", "bpl");
     registers << asmc::Register("r8", "r8d", "r8w", "r8b");
     registers << asmc::Register("r9", "r9d", "r9w", "r9b");
+    registers << asmc::Register("r10", "r10d", "r10w", "r10b");
     registers << asmc::Register("r11", "r11d", "r11w", "r11b");
     registers << asmc::Register("r12", "r12d", "r12w", "r12b");
     registers << asmc::Register("r13", "r13d", "r13w", "r13b");
@@ -79,6 +80,11 @@ struct gen::CodeGenerator::Impl {
   bool inFunction = false;
   bool returnFlag = false;
   bool errorFlag = false;
+  bool coroutineActive = false;
+  std::string coroutineTaskIdent;
+  std::string coroutineEndLabel;
+  std::vector<std::string> coroutineResumeLabels;
+  int coroutineStateIndex = 0;
   HashMap<ast::Statement *> includedMemo;
   HashMap<ast::Statement *> includedClasses;
   HashMap<std::string> nameSpaceTable;
@@ -110,6 +116,13 @@ struct gen::CodeGenerator::Impl {
 };
 
 bool gen::CodeGenerator::traceAlert = false;
+
+std::string gen::CodeGenerator::frameBase() const {
+  if (currentFunction() != nullptr && currentFunction()->asyncFunction) {
+    return registers()["%r10"]->get(asmc::QWord);
+  }
+  return registers()["%rbp"]->get(asmc::QWord);
+}
 
 void gen::CodeGenerator::enableAlertTrace(bool enable) { traceAlert = enable; }
 
@@ -387,6 +400,44 @@ const bool &gen::CodeGenerator::returnFlag() const { return impl->returnFlag; }
 
 bool &gen::CodeGenerator::errorFlag() { return impl->errorFlag; }
 const bool &gen::CodeGenerator::errorFlag() const { return impl->errorFlag; }
+
+bool &gen::CodeGenerator::coroutineActive() { return impl->coroutineActive; }
+const bool &gen::CodeGenerator::coroutineActive() const {
+  return impl->coroutineActive;
+}
+
+std::string &gen::CodeGenerator::coroutineTaskIdent() {
+  return impl->coroutineTaskIdent;
+}
+
+const std::string &gen::CodeGenerator::coroutineTaskIdent() const {
+  return impl->coroutineTaskIdent;
+}
+
+std::string &gen::CodeGenerator::coroutineEndLabel() {
+  return impl->coroutineEndLabel;
+}
+
+const std::string &gen::CodeGenerator::coroutineEndLabel() const {
+  return impl->coroutineEndLabel;
+}
+
+std::vector<std::string> &gen::CodeGenerator::coroutineResumeLabels() {
+  return impl->coroutineResumeLabels;
+}
+
+const std::vector<std::string> &
+gen::CodeGenerator::coroutineResumeLabels() const {
+  return impl->coroutineResumeLabels;
+}
+
+int &gen::CodeGenerator::coroutineStateIndex() {
+  return impl->coroutineStateIndex;
+}
+
+const int &gen::CodeGenerator::coroutineStateIndex() const {
+  return impl->coroutineStateIndex;
+}
 
 HashMap<ast::Statement *> &gen::CodeGenerator::includedMemo() {
   return impl->includedMemo;

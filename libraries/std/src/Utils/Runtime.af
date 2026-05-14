@@ -1,0 +1,66 @@
+.needs <std>
+.needs <runtime>
+
+import vector from "Collections/Vector";
+import Error from "Utils/Error";
+import option from "Utils/option";
+import result from "Utils/result";
+import {Some, None, optionWrapper} from "Utils/option" under opt;
+import {accept, reject, resultWrapper} from "Utils/result" under res;
+import task, TaskStatus from "Utils/Task";
+import Box from "Memory";
+import {wrap} from "Memory" under box;
+import uni_string from "uni_string";
+import {print} from "uni_string" under uni;
+import {print, printHex} from "io" under io;
+
+mutable vector::<Box::<adr>> jobs = NULL;
+
+fn __runtimeGetJobs__() -> any {
+  if jobs == NULL
+    jobs = new vector::<Box::<adr>>();
+  return jobs;
+};
+
+fn __runtimeRunJobs__() -> void {
+  const vector::<Box::<task::<bool>>> work = __runtimeGetJobs__();
+  while true {
+    bool anyActive = false;
+    for int i = 0; i < work.count(); i = i + 1 {
+      const task::<bool> curr = work.get(i).expect("Missing Job").get();
+      if curr.status != TaskStatus.FINISHED {
+        anyActive = true;
+        curr.resume();
+      };
+    };
+    if anyActive == false {
+      break;
+    };
+  };
+};
+  
+types(T)
+export fn spawn(const adr imp_pointer, *const any v1, *const any v2, *const any v3, *const any v4) -> task::<T> {
+  const let job = new task::<T>(imp_pointer);
+  const vector::<Box::<task::<T>>> work = __runtimeGetJobs__();
+
+  work.push_back(box.wrap(job));
+  job.resume(v1, v2, v3, v4);
+  return job;
+};
+
+export fn run() -> void {
+  __runtimeRunJobs__();
+};
+
+types(T)
+export fn block_on(const task::<T> job) -> T {
+  const task::<T> current = job;
+  while current.status != TaskStatus.FINISHED {
+    current.resume();
+    if current.status != TaskStatus.FINISHED {
+      __runtimeRunJobs__();
+    };
+  };
+  return current.result;
+};

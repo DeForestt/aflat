@@ -1,0 +1,83 @@
+.needs <std>
+
+enum TaskStatus {
+  READY,
+  RUNNING,
+  BLOCKED,
+  FINISHED,
+  FAILED
+};
+
+types(T)
+class task {
+  adr frame;
+  int frame_size;
+  adr implementation_pointer;
+  adr waiter;
+  adr arg1;
+  adr arg2;
+  adr arg3;
+  adr arg4;
+  int state;
+  int status;
+  T result;
+
+  fn init(const adr implementation_pointer) -> Self {
+    my.implementation_pointer = implementation_pointer;
+    my.frame = NULL;
+    my.frame_size = 0;
+    my.waiter = NULL;
+    my.arg1 = NULL;
+    my.arg2 = NULL;
+    my.arg3 = NULL;
+    my.arg4 = NULL;
+    my.state = 0;
+    my.status = 0;
+    return my;
+  };
+
+  fn init(const adr implementation_pointer, const adr frame, const int frame_size) -> Self {
+    my.implementation_pointer = implementation_pointer;
+    my.frame = frame;
+    my.frame_size = frame_size;
+    my.waiter = NULL;
+    my.arg1 = NULL;
+    my.arg2 = NULL;
+    my.arg3 = NULL;
+    my.arg4 = NULL;
+    my.state = 0;
+    my.status = 0;
+    return my;
+  };
+
+  fn resume(*const any v1, * const any v2, *const any v3, *const any v4) -> T {
+    my.status = 1;
+    if my.state == 0 {
+      my.arg1 = v1;
+      my.arg2 = v2;
+      my.arg3 = v3;
+      my.arg4 = v4;
+    };
+    my.result = my.implementation_pointer(my.arg1, my.arg2, my.arg3, my.arg4);
+    if my.status != 2 {
+      my.status = 3;
+      if my.waiter != NULL {
+        const task::<T> waiter = my.waiter;
+        my.waiter = NULL;
+        waiter.resume();
+      };
+    };
+    return my.result;
+  };
+
+  fn value() -> T {
+    if my.status != 3 {
+      my.resume();
+    };
+    return my.result;
+  };
+
+  fn toString() -> string {
+    return "task";
+  };
+};

@@ -30,7 +30,8 @@ gen::GenerationResult const Inc::generate(gen::CodeGenerator &generator) {
   asmc::Add *add = new asmc::Add();
   add->logicalLine = this->logicalLine;
   add->op1 = "$1";
-  add->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
+  add->op2 =
+      "-" + std::to_string(sym->byteMod) + "(" + generator.frameBase() + ")";
   OutputFile.text << add;
   gen::scope::ScopeManager::getInstance()->addAssign(this->ident);
   return {OutputFile, std::nullopt};
