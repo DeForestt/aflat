@@ -1,0 +1,51 @@
+enum TaskStatus {
+  READY,
+  RUNNING,
+  BLOCKED,
+  FINISHED,
+  FAILED
+};
+
+types(T)
+class task {
+  adr frame;
+  int frame_size;
+  adr implementation_pointer;
+  int state;
+  int status;
+  T result;
+
+  fn init(const adr implementation_pointer) -> Self {
+    my.implementation_pointer = implementation_pointer;
+    my.frame = NULL;
+    my.frame_size = 0;
+    my.state = 0;
+    my.status = 0;
+    return my;
+  };
+
+  fn init(const adr implementation_pointer, const adr frame, const int frame_size) -> Self {
+    my.implementation_pointer = implementation_pointer;
+    my.frame = frame;
+    my.frame_size = frame_size;
+    my.state = 0;
+    my.status = 0;
+    return my;
+  };
+
+  fn resume() -> T {
+    my.status = 1;
+    my.result = my.implementation_pointer(my);
+    if my.status != 2 {
+      my.status = 3;
+    };
+    return my.result;
+  };
+
+  fn value() -> T {
+    if my.status != 3 {
+      my.resume();
+    };
+    return my.result;
+  };
+};

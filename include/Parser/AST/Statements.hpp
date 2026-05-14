@@ -7,6 +7,7 @@
 #pragma once
 #include "Parser/AST/Expressions/Bubble.hpp"
 #include "Parser/AST/Statements/Assign.hpp"
+#include "Parser/AST/Statements/Await.hpp"
 #include "Parser/AST/Statements/Break.hpp"
 #include "Parser/AST/Statements/Call.hpp"
 #include "Parser/AST/Statements/Class.hpp"
@@ -28,6 +29,7 @@
 #include "Parser/AST/Statements/Inc.hpp"
 #include "Parser/AST/Statements/Match.hpp"
 #include "Parser/AST/Statements/Note.hpp"
+#include "Parser/AST/Statements/Pause.hpp"
 #include "Parser/AST/Statements/Return.hpp"
 #include "Parser/AST/Statements/Sequence.hpp"
 #include "Parser/AST/Statements/Struct.hpp"

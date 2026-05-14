@@ -660,6 +660,11 @@ gen::GenerationResult Call::generateAttempt(
   if (argTypesString.size() > 1)
     argTypesString = argTypesString.substr(0, argTypesString.size() - 2);
 
+  // Untyped callable values (for example plain `adr` function pointers) do not
+  // carry argument metadata. Emit the call without validation in that case
+  // instead of indexing an empty argTypes vector.
+  const bool hasArgMetadata = checkArgs && !func->argTypes.empty();
+
   while (this->Args.trail() > 0) {
     args.push(this->Args.touch());
     ast::Expr *rem = this->Args.touch();
@@ -667,7 +672,7 @@ gen::GenerationResult Call::generateAttempt(
     // check if the argument is a reference
     std::string typeHint = "";
     bool rValue = false;
-    if (checkArgs) {
+    if (hasArgMetadata) {
       auto var = dynamic_cast<ast::Var *>(arg);
       if (var != nullptr) {
         auto sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
@@ -683,14 +688,6 @@ gen::GenerationResult Call::generateAttempt(
                     "` to mutable function argument: " + func->ident.ident);
           }
         }
-      }
-      if (i >= func->argTypes.size()) {
-        generator.logicalLine() = arg->logicalLine;
-        this->requestOverloadRetry(
-            generator, overloadTable, overloadIdent, currentOverloadIndex,
-            "Too many arguments for function: " + ident +
-                " expected: " + std::to_string(func->argTypes.size()) +
-                " got: " + std::to_string(i + 1));
       }
       if (func->argTypes.at(i).isReference) {
         auto toReg = new ast::Reference();
@@ -756,72 +753,74 @@ gen::GenerationResult Call::generateAttempt(
          (func != nullptr &&
           func->ident.ident.find("Some") != std::string::npos));
 
-    const auto &paramType = func->argTypes.at(i);
-    const bool paramConsumesOwnedValue =
-        !paramType.isRvalue &&
-        parse::PRIMITIVE_TYPES.find(paramType.typeName) ==
-            parse::PRIMITIVE_TYPES.end();
+    if (hasArgMetadata) {
+      const auto &paramType = func->argTypes.at(i);
+      const bool paramConsumesOwnedValue =
+          !paramType.isRvalue &&
+          parse::PRIMITIVE_TYPES.find(paramType.typeName) ==
+              parse::PRIMITIVE_TYPES.end();
 
-    if (!isOptionSomeSink && checkArgs &&
-        dynamic_cast<ast::CallExpr *>(arg) != nullptr &&
-        !paramConsumesOwnedValue && !paramType.isRvalue && exp.type != "void" &&
-        parse::PRIMITIVE_TYPES.find(exp.type) == parse::PRIMITIVE_TYPES.end()) {
-      auto t = generator.typeList()[exp.type];
-      if (t && (*t)->uniqueType) {
-        std::string discardWarning =
-            "Discarding non-primitive return value of type `" + exp.type +
-            "` that is passed to argument " + std::to_string(i + 1) +
-            " of function `" + ident +
-            "` without transferring ownership may leak";
-        bool hasAlternativeOverload = false;
-        if (!this->allowDiscardWarning && overloadTable != nullptr &&
-            currentOverloadIndex >= 0 && !overloadIdent.empty()) {
-          int nextIndex = currentOverloadIndex + 1;
-          if (nextIndex > 0) {
-            std::string nextCandidate = overloadIdent;
-            nextCandidate += "_ovl" + std::to_string(nextIndex);
-            hasAlternativeOverload = (*overloadTable)[nextCandidate] != nullptr;
+      if (!isOptionSomeSink && dynamic_cast<ast::CallExpr *>(arg) != nullptr &&
+          !paramConsumesOwnedValue && !paramType.isRvalue &&
+          exp.type != "void" &&
+          parse::PRIMITIVE_TYPES.find(exp.type) ==
+              parse::PRIMITIVE_TYPES.end()) {
+        auto t = generator.typeList()[exp.type];
+        if (t && (*t)->uniqueType) {
+          std::string discardWarning =
+              "Discarding non-primitive return value of type `" + exp.type +
+              "` that is passed to argument " + std::to_string(i + 1) +
+              " of function `" + ident +
+              "` without transferring ownership may leak";
+          bool hasAlternativeOverload = false;
+          if (!this->allowDiscardWarning && overloadTable != nullptr &&
+              currentOverloadIndex >= 0 && !overloadIdent.empty()) {
+            int nextIndex = currentOverloadIndex + 1;
+            if (nextIndex > 0) {
+              std::string nextCandidate = overloadIdent;
+              nextCandidate += "_ovl" + std::to_string(nextIndex);
+              hasAlternativeOverload =
+                  (*overloadTable)[nextCandidate] != nullptr;
+            }
+          }
+          if (hasAlternativeOverload) {
+            this->requestOverloadRetry(generator, overloadTable, overloadIdent,
+                                       currentOverloadIndex, discardWarning,
+                                       false, true, true);
+          } else {
+            generator.alert(discardWarning, false);
           }
         }
-        if (hasAlternativeOverload) {
-          this->requestOverloadRetry(generator, overloadTable, overloadIdent,
-                                     currentOverloadIndex, discardWarning,
-                                     false, true, true);
-        } else {
-          generator.alert(discardWarning, false);
+      }
+      if (!exp.owned && rValue) {
+        if (parse::PRIMITIVE_TYPES.find(exp.type) ==
+            parse::PRIMITIVE_TYPES.end()) {
+          this->requestOverloadRetry(
+              generator, overloadTable, overloadIdent, currentOverloadIndex,
+              "Attempted to pass an unowned rvalue of type `" + exp.type +
+                  "` to a function argument that expects to take ownership.  "
+                  "Consider using the sell operator `$` or ensure that the "
+                  "value is dynamically allocated (statically allocated "
+                  "references ar considered to be borrowed from the stack)");
         }
       }
-    }
-    if (!exp.owned && rValue) {
-      if (parse::PRIMITIVE_TYPES.find(exp.type) ==
-          parse::PRIMITIVE_TYPES.end()) {
-        this->requestOverloadRetry(
-            generator, overloadTable, overloadIdent, currentOverloadIndex,
-            "Attempted to pass an unowned rvalue of type `" + exp.type +
-                "` to a function argument that expects to take ownership.  "
-                "Consider using the sell operator `$` or ensure that the "
-                "value is dynamically allocated (statically allocated "
-                "references ar considered to be borrowed from the stack)");
+      if (exp.requiresImmutableBinding) {
+        bool paramImmutable = false;
+        if (i < func->readOnly.size()) {
+          paramImmutable = func->readOnly[i];
+        }
+        if (!paramImmutable) {
+          auto source = exp.immutableBindingSource.empty()
+                            ? std::string("this expression")
+                            : exp.immutableBindingSource;
+          this->requestOverloadRetry(
+              generator, overloadTable, overloadIdent, currentOverloadIndex,
+              "Argument " + std::to_string(i + 1) + " receives value from `" +
+                  source + "` which must be bound to an immutable parameter",
+              false);
+        }
       }
-    }
-    if (exp.requiresImmutableBinding) {
-      bool paramImmutable = false;
-      if (checkArgs && i < func->readOnly.size()) {
-        paramImmutable = func->readOnly[i];
-      }
-      if (!paramImmutable) {
-        auto source = exp.immutableBindingSource.empty()
-                          ? std::string("this expression")
-                          : exp.immutableBindingSource;
-        this->requestOverloadRetry(
-            generator, overloadTable, overloadIdent, currentOverloadIndex,
-            "Argument " + std::to_string(i + 1) + " receives value from `" +
-                source + "` which must be bound to an immutable parameter",
-            false);
-      }
-    }
 
-    if (checkArgs) {
       if (i >= func->argTypes.size()) {
         generator.logicalLine() = arg->logicalLine;
         this->requestOverloadRetry(
@@ -829,7 +828,8 @@ gen::GenerationResult Call::generateAttempt(
             "Too many arguments for function: " + ident +
                 " expected: " + std::to_string(func->argTypes.size()) +
                 " got: " + std::to_string(i + 1));
-      };
+      }
+
       bool canRetry = overloadTable != nullptr && currentOverloadIndex >= 0 &&
                       !overloadIdent.empty();
       auto ensureAssignable = [&](gen::Expr &value) {
@@ -864,7 +864,7 @@ gen::GenerationResult Call::generateAttempt(
           generator.canAssign(func->argTypes.at(i), exp.type, mismatchMessage);
         }
       }
-    };
+    }
     i++;
     if (exp.op == asmc::Float) {
       ast::Type fl = ast::Type();

@@ -121,6 +121,16 @@ public:
   const bool &returnFlag() const;
   bool &errorFlag();
   const bool &errorFlag() const;
+  bool &coroutineActive();
+  const bool &coroutineActive() const;
+  std::string &coroutineTaskIdent();
+  const std::string &coroutineTaskIdent() const;
+  std::string &coroutineEndLabel();
+  const std::string &coroutineEndLabel() const;
+  std::vector<std::string> &coroutineResumeLabels();
+  const std::vector<std::string> &coroutineResumeLabels() const;
+  int &coroutineStateIndex();
+  const int &coroutineStateIndex() const;
   HashMap<ast::Statement *> &includedMemo();
   HashMap<ast::Statement *> &includedClasses();
   HashMap<std::string> &nameSpaceTable();

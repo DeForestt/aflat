@@ -79,6 +79,11 @@ struct gen::CodeGenerator::Impl {
   bool inFunction = false;
   bool returnFlag = false;
   bool errorFlag = false;
+  bool coroutineActive = false;
+  std::string coroutineTaskIdent;
+  std::string coroutineEndLabel;
+  std::vector<std::string> coroutineResumeLabels;
+  int coroutineStateIndex = 0;
   HashMap<ast::Statement *> includedMemo;
   HashMap<ast::Statement *> includedClasses;
   HashMap<std::string> nameSpaceTable;
@@ -387,6 +392,44 @@ const bool &gen::CodeGenerator::returnFlag() const { return impl->returnFlag; }
 
 bool &gen::CodeGenerator::errorFlag() { return impl->errorFlag; }
 const bool &gen::CodeGenerator::errorFlag() const { return impl->errorFlag; }
+
+bool &gen::CodeGenerator::coroutineActive() { return impl->coroutineActive; }
+const bool &gen::CodeGenerator::coroutineActive() const {
+  return impl->coroutineActive;
+}
+
+std::string &gen::CodeGenerator::coroutineTaskIdent() {
+  return impl->coroutineTaskIdent;
+}
+
+const std::string &gen::CodeGenerator::coroutineTaskIdent() const {
+  return impl->coroutineTaskIdent;
+}
+
+std::string &gen::CodeGenerator::coroutineEndLabel() {
+  return impl->coroutineEndLabel;
+}
+
+const std::string &gen::CodeGenerator::coroutineEndLabel() const {
+  return impl->coroutineEndLabel;
+}
+
+std::vector<std::string> &gen::CodeGenerator::coroutineResumeLabels() {
+  return impl->coroutineResumeLabels;
+}
+
+const std::vector<std::string> &
+gen::CodeGenerator::coroutineResumeLabels() const {
+  return impl->coroutineResumeLabels;
+}
+
+int &gen::CodeGenerator::coroutineStateIndex() {
+  return impl->coroutineStateIndex;
+}
+
+const int &gen::CodeGenerator::coroutineStateIndex() const {
+  return impl->coroutineStateIndex;
+}
 
 HashMap<ast::Statement *> &gen::CodeGenerator::includedMemo() {
   return impl->includedMemo;

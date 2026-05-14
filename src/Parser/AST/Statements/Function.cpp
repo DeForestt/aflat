@@ -3,7 +3,44 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Parser/AST.hpp"
+#include "Parser/AST/Statements/Declare.hpp"
+#include "Parser/AST/Statements/Pause.hpp"
+#include "Parser/AST/Statements/Sequence.hpp"
 #include "Scanner.hpp"
+
+namespace {
+void collectPauses(ast::Statement *statement,
+                   std::vector<ast::Pause *> &pauses) {
+  if (statement == nullptr) {
+    return;
+  }
+  if (auto *sequence = dynamic_cast<ast::Sequence *>(statement)) {
+    collectPauses(sequence->Statement1, pauses);
+    collectPauses(sequence->Statement2, pauses);
+    return;
+  }
+  if (auto *pause = dynamic_cast<ast::Pause *>(statement)) {
+    pauses.push_back(pause);
+    collectPauses(pause->body, pauses);
+  }
+}
+
+ast::Declare *firstDeclare(ast::Statement *statement) {
+  if (statement == nullptr) {
+    return nullptr;
+  }
+  if (auto *declare = dynamic_cast<ast::Declare *>(statement)) {
+    return declare;
+  }
+  if (auto *sequence = dynamic_cast<ast::Sequence *>(statement)) {
+    if (auto *first = firstDeclare(sequence->Statement1)) {
+      return first;
+    }
+    return firstDeclare(sequence->Statement2);
+  }
+  return nullptr;
+}
+} // namespace
 
 namespace ast {
 void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
@@ -88,9 +125,10 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
 Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
                    const Op op, const std::string &scopeName,
                    links::LinkedList<lex::Token *> &tokens,
-                   parse::Parser &parser, bool optional, bool safe)
+                   parse::Parser &parser, bool optional, bool safe,
+                   bool asyncFunction)
     : scope(scope), type(type), op(op), scopeName(scopeName),
-      optional(optional), safe(safe) {
+      optional(optional), safe(safe), asyncFunction(asyncFunction) {
   this->ident.ident = ident;
   this->useType = type;
   this->args = parser.parseArgs(tokens, ',', ')', this->argTypes, this->req,
@@ -103,8 +141,9 @@ Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
 Function::Function(const ScopeMod &scope,
                    links::LinkedList<lex::Token *> &tokens,
                    std::vector<std::string> genericTypes, parse::Parser &parser,
-                   bool safe)
-    : scope(scope), genericTypes(genericTypes), safe(safe) {
+                   bool safe, bool asyncFunction)
+    : scope(scope), genericTypes(genericTypes), safe(safe),
+      asyncFunction(asyncFunction) {
   // updated function syntax
   // func <ident>(<args>) -> <type> { <body> }
   const auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
@@ -176,6 +215,20 @@ Function::Function(const ScopeMod &scope,
     this->autoType = true;
   }
   this->useType = this->type;
+
+  if (this->asyncFunction) {
+    if (this->argTypes.empty()) {
+      throw err::Exception("Line: " + std::to_string(this->logicalLine) +
+                           " async functions must take a task<T> job as the "
+                           "first argument");
+    }
+    const std::string expectedTaskType = "task<" + this->type.typeName + ">";
+    if (this->argTypes.front().typeName != expectedTaskType) {
+      throw err::Exception("Line: " + std::to_string(this->logicalLine) +
+                           " async functions must take " + expectedTaskType +
+                           " as the first argument");
+    }
+  }
 
   auto optional = dynamic_cast<lex::Ref *>(tokens.peek());
   if (optional != nullptr) {
@@ -359,6 +412,99 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       file.linker.push(link);
 
     file << argmute;
+
+    if (this->asyncFunction) {
+      std::vector<ast::Pause *> pauses;
+      collectPauses(this->statement, pauses);
+
+      const auto saveCoroutineActive = generator.coroutineActive();
+      const auto saveCoroutineTaskIdent = generator.coroutineTaskIdent();
+      const auto saveCoroutineEndLabel = generator.coroutineEndLabel();
+      const auto saveCoroutineResumeLabels = generator.coroutineResumeLabels();
+      const auto saveCoroutineStateIndex = generator.coroutineStateIndex();
+
+      generator.coroutineActive() = true;
+      generator.coroutineStateIndex() = 0;
+      generator.coroutineResumeLabels().clear();
+      generator.coroutineEndLabel() =
+          ".L" + generator.moduleId() + "_" + this->ident.ident + "_end";
+      auto *firstArg = firstDeclare(this->args);
+      generator.coroutineTaskIdent() =
+          firstArg != nullptr ? firstArg->ident : "job";
+
+      generator.coroutineResumeLabels().push_back(
+          ".L" + generator.moduleId() + "_" + this->ident.ident + "_state_0");
+      for (size_t i = 1; i <= pauses.size(); ++i) {
+        generator.coroutineResumeLabels().push_back(
+            ".L" + generator.moduleId() + "_" + this->ident.ident + "_state_" +
+            std::to_string(i));
+      }
+
+      if (this->ident.ident == "init" && generator.scope() != nullptr &&
+          !globalLocked) {
+        for (ast::DecAssign it : generator.scope()->defaultValues) {
+          ast::Assign assign = ast::Assign();
+          assign.Ident = ("my");
+          assign.override = true;
+          assign.expr = it.expr;
+          assign.modList = LinkedList<std::string>();
+          assign.modList.push(it.declare->ident);
+          file << generator.GenSTMT(&assign);
+        }
+      }
+
+      if (!pauses.empty()) {
+        asmc::File dispatcher;
+        ast::Var *stateVar = new ast::Var();
+        stateVar->Ident = generator.coroutineTaskIdent();
+        stateVar->modList.push("state");
+        stateVar->logicalLine = this->logicalLine;
+        gen::Expr stateExpr = generator.GenExpr(stateVar, dispatcher);
+
+        for (size_t i = 1; i < generator.coroutineResumeLabels().size(); ++i) {
+          auto cmp = new asmc::Cmp();
+          cmp->logicalLine = this->logicalLine;
+          cmp->from = "$" + std::to_string(i);
+          cmp->to = stateExpr.access;
+          cmp->size = stateExpr.size;
+          dispatcher.text << cmp;
+          auto je = new asmc::Je();
+          je->logicalLine = this->logicalLine;
+          je->to = generator.coroutineResumeLabels()[i];
+          dispatcher.text << je;
+        }
+        file << dispatcher;
+      }
+
+      asmc::Label *entryResume = new asmc::Label();
+      entryResume->logicalLine = this->logicalLine;
+      entryResume->label = generator.coroutineResumeLabels().front();
+      file.text << entryResume;
+
+      asmc::File statement = generator.GenSTMT(this->statement);
+
+      file << statement;
+
+      auto endLabel = new asmc::Label();
+      endLabel->logicalLine = this->logicalLine;
+      endLabel->label = generator.coroutineEndLabel();
+      file.text << endLabel;
+
+      generator.coroutineActive() = saveCoroutineActive;
+      generator.coroutineTaskIdent() = saveCoroutineTaskIdent;
+      generator.coroutineEndLabel() = saveCoroutineEndLabel;
+      generator.coroutineResumeLabels() = saveCoroutineResumeLabels;
+      generator.coroutineStateIndex() = saveCoroutineStateIndex;
+
+      generator.scope() = saveScope;
+      generator.globalScope() = saveGlobal;
+      generator.inFunction() = saveIn;
+      gen::scope::ScopeManager::getInstance()->popScope(&generator, file, true);
+
+      generator.intArgsCounter() = saveIntArgs;
+      generator.currentFunction() = saveFunc;
+      return {file, std::nullopt};
+    }
 
     // if the function is 'init' and scope is a class, add the default value
     if (this->ident.ident == "init" && generator.scope() != nullptr &&

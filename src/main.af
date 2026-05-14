@@ -1,6 +1,8 @@
 .needs <std>
 
 import uni_string from "uni_string";
+import {print} from "uni_string" under uni;
+import task from "Utils/Task";
 
 unique class Probe {
   mutable uni_string name = "";
@@ -16,7 +18,16 @@ unique class Probe {
   };
 };
 
+async fn worker(task::<int> job) -> int {
+  pause job.result = 41;
+  return 42;
+};
+
 fn main() -> int {
-  let p = new Probe("John Doe");
-  return 0;
+  const task::<int> job = new task::<int>(worker);
+  const int first = job.resume();
+  const int result = job.resume();
+  await job;
+  uni.print(`first: {first}; second: {result}\n`);
+  return result + first - 41;
 };
