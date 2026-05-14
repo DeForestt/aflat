@@ -26,8 +26,8 @@ gen::GenerationResult const Pause::generate(gen::CodeGenerator &generator) {
 
   if (!generator.coroutineActive() || generator.currentFunction() == nullptr ||
       !generator.currentFunction()->asyncFunction) {
-    file.text << new asmc::nop();
-    return {file, std::nullopt};
+    generator.alert("pause can only be used inside async functions", true,
+                    __FILE__, __LINE__);
   }
 
   const auto pauseIndex = generator.coroutineStateIndex();

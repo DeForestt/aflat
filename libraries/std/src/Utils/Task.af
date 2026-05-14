@@ -1,3 +1,5 @@
+.needs <std>
+
 enum TaskStatus {
   READY,
   RUNNING,
@@ -11,6 +13,7 @@ class task {
   adr frame;
   int frame_size;
   adr implementation_pointer;
+  adr waiter;
   int state;
   int status;
   T result;
@@ -19,6 +22,7 @@ class task {
     my.implementation_pointer = implementation_pointer;
     my.frame = NULL;
     my.frame_size = 0;
+    my.waiter = NULL;
     my.state = 0;
     my.status = 0;
     return my;
@@ -28,6 +32,7 @@ class task {
     my.implementation_pointer = implementation_pointer;
     my.frame = frame;
     my.frame_size = frame_size;
+    my.waiter = NULL;
     my.state = 0;
     my.status = 0;
     return my;
@@ -38,6 +43,11 @@ class task {
     my.result = my.implementation_pointer(my);
     if my.status != 2 {
       my.status = 3;
+      if my.waiter != NULL {
+        const task::<T> waiter = my.waiter;
+        my.waiter = NULL;
+        waiter.resume();
+      };
     };
     return my.result;
   };
@@ -47,5 +57,9 @@ class task {
       my.resume();
     };
     return my.result;
+  };
+
+  fn toString() -> string {
+    return "task";
   };
 };

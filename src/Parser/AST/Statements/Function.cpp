@@ -3,25 +3,139 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Parser/AST.hpp"
+#include "Parser/AST/Statements/Assign.hpp"
+#include "Parser/AST/Statements/Await.hpp"
+#include "Parser/AST/Statements/Dec.hpp"
+#include "Parser/AST/Statements/DecArr.hpp"
+#include "Parser/AST/Statements/DecAssign.hpp"
+#include "Parser/AST/Statements/DecAssignArr.hpp"
 #include "Parser/AST/Statements/Declare.hpp"
+#include "Parser/AST/Statements/Delete.hpp"
+#include "Parser/AST/Statements/For.hpp"
+#include "Parser/AST/Statements/ForEach.hpp"
+#include "Parser/AST/Statements/If.hpp"
+#include "Parser/AST/Statements/Match.hpp"
 #include "Parser/AST/Statements/Pause.hpp"
+#include "Parser/AST/Statements/Return.hpp"
 #include "Parser/AST/Statements/Sequence.hpp"
+#include "Parser/AST/Statements/While.hpp"
 #include "Scanner.hpp"
 
 namespace {
-void collectPauses(ast::Statement *statement,
-                   std::vector<ast::Pause *> &pauses) {
+void collectYieldPointsFromExpr(ast::Expr *expr,
+                                std::vector<ast::Statement *> &yieldPoints);
+
+void collectYieldPoints(ast::Statement *statement,
+                        std::vector<ast::Statement *> &yieldPoints) {
   if (statement == nullptr) {
     return;
   }
+  if (auto *expr = dynamic_cast<ast::Expr *>(statement)) {
+    collectYieldPointsFromExpr(expr, yieldPoints);
+  }
   if (auto *sequence = dynamic_cast<ast::Sequence *>(statement)) {
-    collectPauses(sequence->Statement1, pauses);
-    collectPauses(sequence->Statement2, pauses);
+    collectYieldPoints(sequence->Statement1, yieldPoints);
+    collectYieldPoints(sequence->Statement2, yieldPoints);
     return;
   }
-  if (auto *pause = dynamic_cast<ast::Pause *>(statement)) {
-    pauses.push_back(pause);
-    collectPauses(pause->body, pauses);
+  if (dynamic_cast<ast::Pause *>(statement) != nullptr) {
+    yieldPoints.push_back(statement);
+  }
+
+  if (auto *ret = dynamic_cast<ast::Return *>(statement)) {
+    collectYieldPointsFromExpr(ret->expr, yieldPoints);
+  } else if (auto *assign = dynamic_cast<ast::Assign *>(statement)) {
+    collectYieldPointsFromExpr(assign->expr, yieldPoints);
+  } else if (auto *decAssign = dynamic_cast<ast::DecAssign *>(statement)) {
+    collectYieldPointsFromExpr(decAssign->expr, yieldPoints);
+  } else if (auto *decAssignArr =
+                 dynamic_cast<ast::DecAssignArr *>(statement)) {
+    collectYieldPointsFromExpr(decAssignArr->expr, yieldPoints);
+  } else if (auto *push = dynamic_cast<ast::Push *>(statement)) {
+    collectYieldPointsFromExpr(push->expr, yieldPoints);
+  } else if (auto *pull = dynamic_cast<ast::Pull *>(statement)) {
+    collectYieldPointsFromExpr(pull->expr, yieldPoints);
+  } else if (auto *cwrite = dynamic_cast<ast::CWrite *>(statement)) {
+    collectYieldPointsFromExpr(cwrite->expr, yieldPoints);
+  } else if (auto *dec = dynamic_cast<ast::Dec *>(statement)) {
+    (void)dec;
+  } else if (auto *decArr = dynamic_cast<ast::DecArr *>(statement)) {
+    (void)decArr;
+  } else if (auto *deleter = dynamic_cast<ast::Delete *>(statement)) {
+    (void)deleter;
+  } else if (auto *ifStmt = dynamic_cast<ast::If *>(statement)) {
+    collectYieldPointsFromExpr(ifStmt->expr, yieldPoints);
+    collectYieldPoints(ifStmt->statement, yieldPoints);
+    collectYieldPoints(ifStmt->elseStatement, yieldPoints);
+  } else if (auto *whileStmt = dynamic_cast<ast::While *>(statement)) {
+    collectYieldPointsFromExpr(whileStmt->expr, yieldPoints);
+    collectYieldPoints(whileStmt->stmt, yieldPoints);
+  } else if (auto *forStmt = dynamic_cast<ast::For *>(statement)) {
+    collectYieldPoints(forStmt->declare, yieldPoints);
+    collectYieldPointsFromExpr(forStmt->expr, yieldPoints);
+    collectYieldPoints(forStmt->increment, yieldPoints);
+    collectYieldPoints(forStmt->Run, yieldPoints);
+  } else if (auto *forEachStmt = dynamic_cast<ast::ForEach *>(statement)) {
+    collectYieldPointsFromExpr(forEachStmt->iterator, yieldPoints);
+    collectYieldPoints(forEachStmt->implementation, yieldPoints);
+  } else if (auto *match = dynamic_cast<ast::Match *>(statement)) {
+    collectYieldPointsFromExpr(match->expr, yieldPoints);
+    for (const auto &matchCase : match->cases) {
+      collectYieldPoints(matchCase.statement, yieldPoints);
+    }
+  } else if (auto *pause = dynamic_cast<ast::Pause *>(statement)) {
+    collectYieldPoints(pause->body, yieldPoints);
+  }
+}
+
+void collectYieldPointsFromExpr(ast::Expr *expr,
+                                std::vector<ast::Statement *> &yieldPoints) {
+  if (expr == nullptr) {
+    return;
+  }
+  if (dynamic_cast<ast::Await *>(expr) != nullptr) {
+    yieldPoints.push_back(expr);
+    return;
+  }
+  if (auto *match = dynamic_cast<ast::Match *>(expr)) {
+    collectYieldPointsFromExpr(match->expr, yieldPoints);
+    for (const auto &matchCase : match->cases) {
+      collectYieldPoints(matchCase.statement, yieldPoints);
+    }
+    return;
+  }
+  if (auto *paren = dynamic_cast<ast::parenExpr *>(expr)) {
+    collectYieldPointsFromExpr(paren->expr, yieldPoints);
+  } else if (auto *buy = dynamic_cast<ast::Buy *>(expr)) {
+    collectYieldPointsFromExpr(buy->expr, yieldPoints);
+  } else if (auto *notExpr = dynamic_cast<ast::Not *>(expr)) {
+    collectYieldPointsFromExpr(notExpr->expr, yieldPoints);
+  } else if (auto *callExpr = dynamic_cast<ast::CallExpr *>(expr)) {
+    for (auto arg : callExpr->call->Args) {
+      collectYieldPointsFromExpr(arg, yieldPoints);
+    }
+  } else if (auto *compound = dynamic_cast<ast::Compound *>(expr)) {
+    collectYieldPointsFromExpr(compound->expr1, yieldPoints);
+    collectYieldPointsFromExpr(compound->expr2, yieldPoints);
+  } else if (auto *ifExpr = dynamic_cast<ast::IfExpr *>(expr)) {
+    collectYieldPointsFromExpr(ifExpr->expr, yieldPoints);
+    collectYieldPointsFromExpr(ifExpr->trueExpr, yieldPoints);
+    collectYieldPointsFromExpr(ifExpr->falseExpr, yieldPoints);
+  } else if (auto *newExpr = dynamic_cast<ast::NewExpr *>(expr)) {
+    for (auto arg : newExpr->args) {
+      collectYieldPointsFromExpr(arg, yieldPoints);
+    }
+  } else if (auto *structList = dynamic_cast<ast::StructList *>(expr)) {
+    for (auto arg : structList->args) {
+      collectYieldPointsFromExpr(arg, yieldPoints);
+    }
+  } else if (auto *fstring = dynamic_cast<ast::FStringLiteral *>(expr)) {
+    for (auto arg : fstring->args) {
+      collectYieldPointsFromExpr(arg, yieldPoints);
+    }
+  } else if (auto *unionConstructor =
+                 dynamic_cast<ast::UnionConstructor *>(expr)) {
+    collectYieldPointsFromExpr(unionConstructor->expr, yieldPoints);
   }
 }
 
@@ -414,8 +528,8 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     file << argmute;
 
     if (this->asyncFunction) {
-      std::vector<ast::Pause *> pauses;
-      collectPauses(this->statement, pauses);
+      std::vector<ast::Statement *> yieldPoints;
+      collectYieldPoints(this->statement, yieldPoints);
 
       const auto saveCoroutineActive = generator.coroutineActive();
       const auto saveCoroutineTaskIdent = generator.coroutineTaskIdent();
@@ -434,7 +548,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
 
       generator.coroutineResumeLabels().push_back(
           ".L" + generator.moduleId() + "_" + this->ident.ident + "_state_0");
-      for (size_t i = 1; i <= pauses.size(); ++i) {
+      for (size_t i = 1; i <= yieldPoints.size(); ++i) {
         generator.coroutineResumeLabels().push_back(
             ".L" + generator.moduleId() + "_" + this->ident.ident + "_state_" +
             std::to_string(i));
@@ -453,7 +567,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
         }
       }
 
-      if (!pauses.empty()) {
+      if (!yieldPoints.empty()) {
         asmc::File dispatcher;
         ast::Var *stateVar = new ast::Var();
         stateVar->Ident = generator.coroutineTaskIdent();

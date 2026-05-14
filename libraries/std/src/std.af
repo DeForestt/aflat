@@ -4,7 +4,9 @@
 import {print, printHex, printInt} from "io" under io;
 import string from "String";
 import Iterator from "Collections/Iterator";
+import vector from "Collections/Vector";
 import Result from "Utils/Result";
+import Error from "Utils/Error";
 import { accept, reject } from "Utils/Result" under res;
 import { fString } from "String" under st;
 import { len, str_at, int_toString } from "strings" under strs;

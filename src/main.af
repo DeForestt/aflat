@@ -1,19 +1,35 @@
 .needs <std>
+.needs <runtime>
 
 import uni_string from "uni_string";
 import {print} from "uni_string" under uni;
 import task from "Utils/Task";
+import {spawn, run} from "Utils/Runtime" under runtime;
+import option from "Utils/option";
+import result from "Utils/result";
+import {Some, None, optionWrapper} from "Utils/option" under opt;
+import {accept, reject, resultWrapper} from "Utils/result" under res;
+import Box from "Memory";
+import {wrap} from "Memory" under box;
+import {print} from "uni_string" under uni;
+import {print, printHex} from "io" under io;
 
-async fn worker(task::<int> job) -> int {
-  pause job.result = 41;
-  return 42;
+async fn baby(task::<int> job) -> int {
+  uni.print("spawning baby\n");
+  pause sleep(5);
+  uni.print("baby done\n");
+  return 5;
+};
+
+async fn child(task::<int> job) -> int {
+  pause uni.print("child step 1\n");
+  await runtime.spawn::<int>(baby);
+  pause uni.print("child step 3\n");
+  return 41;
 };
 
 fn main() -> int {
-  const task::<int> job = new task::<int>(worker);
-  const int first = job.resume();
-  const int result = job.resume();
-  await job;
-  uni.print(`first: {first}; second: {result}\n`);
-  return result + first - 41;
+  const task::<int> __job = runtime.spawn::<int>(child);
+  runtime.run();
+  return 0;
 };

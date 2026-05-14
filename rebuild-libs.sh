@@ -56,6 +56,7 @@ function compile_single {
         "CLArgs") aflat ./libraries/std/src/CLArgs.af -o ./libraries/std/CLArgs.s ;;
         "System") aflat ./libraries/std/src/System.af -o ./libraries/std/System.s ;;
         "Memory") aflat ./libraries/std/src/Memory.af -o ./libraries/std/Memory.s ;;
+        "Runtime") aflat ./libraries/std/src/Utils/Runtime.af -o ./libraries/std/Runtime.s ;;
         "Result") 
             aflat ./libraries/std/src/Utils/Result.af -o ./libraries/std/Result.s
             mv ./libraries/std/Result.s ./libraries/std/Utils_Result.s ;;
@@ -112,6 +113,7 @@ function compile_single {
             echo "Available libraries:"
             echo "  Collections, concurrency, DateTime, files, io, math, std-cmp, std"
             echo "  strings, String, uni_string, ATest, HTTP, CLArgs, System, Memory"
+            echo "  Runtime"
             echo "  Result, result, Functions, Observable, Map, Option, option"
             echo "  Properties, Object, Error, Defer, unordered_map, Error_Render"
             echo "  HTTP_Endpoint, HTTP_Middleware, HTTP_Server, HTTP_Endpoints"
@@ -148,6 +150,7 @@ aflat ./libraries/std/src/HTTP.af -o ./libraries/std/HTTP.s & core_pids+=($!)
 aflat ./libraries/std/src/CLArgs.af -o ./libraries/std/CLArgs.s & core_pids+=($!)
 aflat ./libraries/std/src/System.af -o ./libraries/std/System.s & core_pids+=($!)
 aflat ./libraries/std/src/Memory.af -o ./libraries/std/Memory.s & core_pids+=($!)
+aflat ./libraries/std/src/Utils/Runtime.af -o ./libraries/std/Runtime.s & core_pids+=($!)
 
 # Wait for the first batch to complete
 wait_for_jobs "${core_pids[@]}"

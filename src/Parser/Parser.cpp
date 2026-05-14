@@ -1690,6 +1690,8 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       } else
         lambda->function->statement = this->parseStmt(tokens, true);
       output = lambda;
+    } else if (obj.meta == "await") {
+      output = new ast::Await(tokens, parser);
     } else if (tokens.count > 0 &&
                dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
       auto asObject = *dynamic_cast<lex::LObj *>(tokens.peek());
