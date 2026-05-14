@@ -791,15 +791,15 @@ gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
                 : this->error  ? "result<" + tn + ">"
                                : tn;
   output.size = this->optional || this->error ? asmc::QWord : this->type.size;
+  output.owned = output.type != "void" && !this->returnLowOwnership;
+  output.requiresImmutableBinding = this->returnImmutable;
+  if (this->returnImmutable)
+    output.immutableBindingSource = this->ident.ident;
   output.access = generator.registers()["%rax"]->get(output.size);
   if (this->type.typeName == "float") {
     output.access = generator.registers()["%xmm0"]->get(output.size);
     output.op = asmc::Float;
   }
-  output.owned = output.type != "void" && !this->returnLowOwnership;
-  output.requiresImmutableBinding = this->returnImmutable;
-  if (this->returnImmutable)
-    output.immutableBindingSource = this->ident.ident;
   return output;
 };
 } // namespace ast

@@ -4,7 +4,7 @@
 import uni_string from "uni_string";
 import {print} from "uni_string" under uni;
 import task from "Utils/Task";
-import {spawn, run} from "Utils/Runtime" under runtime;
+import {spawn, block_on} from "Utils/Runtime" under runtime;
 import option from "Utils/option";
 import result from "Utils/result";
 import {Some, None, optionWrapper} from "Utils/option" under opt;
@@ -20,14 +20,14 @@ async fn sleep_async(task::<int> job, int sec, int nano) -> int {
   return 0;
 };
 
-async fn child(task::<int> job) -> int {
+async fn child(task::<int> job, int value) -> int {
   uni.print("calling async sleep\n");
-  await runtime.spawn::<int>(sleep_async, 5);
-  return 41;
+  await sleep_async(5, 0);
+  return value;
 };
 
 fn main() -> int {
-  const task::<int> __job = runtime.spawn::<int>(child);
-  runtime.run();
+  let i = runtime.block_on::<int>(child(41));
+  uni.print(`final value: {i}\n`)
   return 0;
 };

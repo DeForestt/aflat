@@ -130,6 +130,7 @@ gen::GenerationResult Call::generateAttempt(
     dst.error = src.error;
     dst.returnImmutable = src.returnImmutable;
     dst.returnLowOwnership = src.returnLowOwnership;
+    dst.asyncFunction = src.asyncFunction;
   };
 
   auto file = asmc::File();
@@ -631,6 +632,58 @@ gen::GenerationResult Call::generateAttempt(
                     __LINE__);
   }
 
+  const bool asyncCall = func->asyncFunction;
+  const int formalArgOffset = asyncCall ? 1 : 0;
+  const int userArgCount = this->Args.trail();
+  const int expectedUserArgs =
+      static_cast<int>(func->argTypes.size()) - formalArgOffset;
+  const int requiredUserArgs = func->req - formalArgOffset;
+
+  if (asyncCall) {
+    auto spawnTemplate = findFunctionByOverload(
+        generator.genericFunctions(), "Runtime.spawn", forcedOverloadIndex,
+        forcedTable, forcedIdent, overloadTable, overloadIdent,
+        currentOverloadIndex);
+    if (spawnTemplate != nullptr) {
+      auto spawnFunc = dynamic_cast<ast::Function *>(deepCopy(spawnTemplate));
+      if (spawnFunc == nullptr) {
+        generator.alert("failed to clone Runtime.spawn for async lowering",
+                        true, __FILE__, __LINE__);
+      }
+
+      std::unordered_map<std::string, std::string> genericMap;
+      if (!spawnFunc->genericTypes.empty()) {
+        genericMap[spawnFunc->genericTypes[0]] = func->type.typeName;
+      }
+
+      std::string newIdent = spawnFunc->ident.ident;
+      if (!func->type.typeName.empty()) {
+        newIdent += "." + func->type.typeName;
+      }
+
+      spawnFunc->replaceTypes(genericMap);
+      spawnFunc->ident.ident = newIdent;
+      spawnFunc->genericTypes.clear();
+      spawnFunc->scope = ast::ScopeMod::Private;
+      spawnFunc->globalLocked = true;
+      spawnFunc->wasGeneric = true;
+
+      if (generator.generatedFunctionNames().find(newIdent) ==
+          generator.generatedFunctionNames().end()) {
+        if (file.lambdas == nullptr) {
+          file.lambdas = new asmc::File();
+          file.hasLambda = true;
+        }
+        auto saveReturnType = generator.returnType();
+        gen::scope::ScopeManager::getInstance()->pushScope(true);
+        file.lambdas->operator<<(generator.GenSTMT(spawnFunc));
+        gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+        generator.generatedFunctionNames().insert(newIdent);
+        generator.returnType() = saveReturnType;
+      }
+    }
+  }
+
   if (func->scope == ast::Private && func->scopeName != "global") {
     if (generator.scope() == nullptr)
       generator.alert("attempt to this private function: " + allMods +
@@ -647,15 +700,18 @@ gen::GenerationResult Call::generateAttempt(
   links::LinkedList<ast::Expr *> args;
   std::vector<asmc::Instruction *> overflowArgs;
   int i = 0;
-  if (this->Args.trail() < func->req)
+  if (userArgCount < requiredUserArgs)
     this->requestOverloadRetry(
         generator, overloadTable, overloadIdent, currentOverloadIndex,
         "Too few arguments for function: " + ident +
-            " expected: " + std::to_string(func->argTypes.size()) + " got: 1");
+            " expected: " + std::to_string(expectedUserArgs) +
+            " got: " + std::to_string(userArgCount));
 
   // create a string of argTypes
   std::string argTypesString = "";
-  for (auto arg : func->argTypes) {
+  for (size_t argIndex = formalArgOffset; argIndex < func->argTypes.size();
+       ++argIndex) {
+    const auto &arg = func->argTypes[argIndex];
     argTypesString += arg.typeName + ", ";
   }
   if (argTypesString.size() > 1)
@@ -666,6 +722,18 @@ gen::GenerationResult Call::generateAttempt(
   // instead of indexing an empty argTypes vector.
   const bool hasArgMetadata = checkArgs && !func->argTypes.empty();
 
+  if (asyncCall) {
+    asmc::Mov *loadAsyncTarget = new asmc::Mov();
+    loadAsyncTarget->logicalLine = this->logicalLine;
+    loadAsyncTarget->size = asmc::QWord;
+    loadAsyncTarget->from = "$" + mod + func->ident.ident;
+    loadAsyncTarget->to = generator.registers()["%rdi"]->get(asmc::QWord);
+    file.text << loadAsyncTarget;
+  }
+
+  if (asyncCall)
+    argsCounter = 1;
+
   while (this->Args.trail() > 0) {
     args.push(this->Args.touch());
     ast::Expr *rem = this->Args.touch();
@@ -674,6 +742,7 @@ gen::GenerationResult Call::generateAttempt(
     std::string typeHint = "";
     bool rValue = false;
     if (hasArgMetadata) {
+      const size_t formalIndex = static_cast<size_t>(formalArgOffset + i);
       auto var = dynamic_cast<ast::Var *>(arg);
       if (var != nullptr) {
         auto sym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
@@ -682,7 +751,7 @@ gen::GenerationResult Call::generateAttempt(
               gen::utils::searchSymbol, var->Ident);
         }
         if (sym && func) {
-          if (sym->readOnly && !func->readOnly[i]) {
+          if (sym->readOnly && !func->readOnly[formalIndex]) {
             this->requestOverloadRetry(
                 generator, overloadTable, overloadIdent, currentOverloadIndex,
                 "Cannot pass immutable variable `" + var->Ident +
@@ -690,7 +759,7 @@ gen::GenerationResult Call::generateAttempt(
           }
         }
       }
-      if (func->argTypes.at(i).isReference) {
+      if (func->argTypes.at(formalIndex).isReference) {
         auto toReg = new ast::Reference();
         auto var = dynamic_cast<ast::Var *>(arg);
         if (var == nullptr) {
@@ -707,12 +776,12 @@ gen::GenerationResult Call::generateAttempt(
         if (!sym) {
           generator.alert("cannot find symbol: " + var->Ident);
         }
-        if (sym->mutable_ == false && func->mutability[i]) {
+        if (sym->mutable_ == false && func->mutability[formalArgOffset + i]) {
           this->requestOverloadRetry(
               generator, overloadTable, overloadIdent, currentOverloadIndex,
               "cannot pass a const reference to a mutable argument: " +
                   var->Ident);
-        } else if (func->mutability[i]) {
+        } else if (func->mutability[formalArgOffset + i]) {
           gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
         }
         if (!var) {
@@ -725,7 +794,7 @@ gen::GenerationResult Call::generateAttempt(
         toReg->logicalLine = var->logicalLine;
         arg = toReg;
       }
-      if (func->argTypes.at(i).isRvalue) {
+      if (func->argTypes.at(formalIndex).isRvalue) {
         rValue = true;
         // make sure that its not a var
         auto var = dynamic_cast<ast::Var *>(arg);
@@ -735,7 +804,7 @@ gen::GenerationResult Call::generateAttempt(
               "Attempted to pass an lvalue (" + var->Ident + ") to an rvalue");
         }
       }
-      typeHint = func->argTypes.at(i).typeName;
+      typeHint = func->argTypes.at(formalIndex).typeName;
     }
     if (arg == nullptr) {
       generator.alert("Argument " + std::to_string(i + 1) +
@@ -755,7 +824,8 @@ gen::GenerationResult Call::generateAttempt(
           func->ident.ident.find("Some") != std::string::npos));
 
     if (hasArgMetadata) {
-      const auto &paramType = func->argTypes.at(i);
+      const auto &paramType =
+          func->argTypes.at(static_cast<size_t>(formalArgOffset + i));
       const bool paramConsumesOwnedValue =
           !paramType.isRvalue &&
           parse::PRIMITIVE_TYPES.find(paramType.typeName) ==
@@ -807,8 +877,8 @@ gen::GenerationResult Call::generateAttempt(
       }
       if (exp.requiresImmutableBinding) {
         bool paramImmutable = false;
-        if (i < func->readOnly.size()) {
-          paramImmutable = func->readOnly[i];
+        if (static_cast<size_t>(formalArgOffset + i) < func->readOnly.size()) {
+          paramImmutable = func->readOnly[formalArgOffset + i];
         }
         if (!paramImmutable) {
           auto source = exp.immutableBindingSource.empty()
@@ -822,25 +892,29 @@ gen::GenerationResult Call::generateAttempt(
         }
       }
 
-      if (i >= func->argTypes.size()) {
+      if (static_cast<size_t>(formalArgOffset + i) >= func->argTypes.size()) {
         generator.logicalLine() = arg->logicalLine;
         this->requestOverloadRetry(
             generator, overloadTable, overloadIdent, currentOverloadIndex,
             "Too many arguments for function: " + ident +
-                " expected: " + std::to_string(func->argTypes.size()) +
+                " expected: " + std::to_string(expectedUserArgs) +
                 " got: " + std::to_string(i + 1));
       }
 
       bool canRetry = overloadTable != nullptr && currentOverloadIndex >= 0 &&
                       !overloadIdent.empty();
       auto ensureAssignable = [&](gen::Expr &value) {
-        if (generator.canAssign(func->argTypes.at(i), value.type, "", false,
-                                false)) {
+        if (generator.canAssign(
+                func->argTypes.at(static_cast<size_t>(formalArgOffset + i)),
+                value.type, "", false, false)) {
           return true;
         }
         try {
-          ast::Expr *init =
-              generator.imply(rem, func->argTypes.at(i).typeName, !canRetry);
+          ast::Expr *init = generator.imply(
+              rem,
+              func->argTypes.at(static_cast<size_t>(formalArgOffset + i))
+                  .typeName,
+              !canRetry);
           if (init == nullptr)
             return false;
           auto prev = value;
@@ -849,20 +923,26 @@ gen::GenerationResult Call::generateAttempt(
         } catch (const err::Exception &) {
           return false;
         }
-        return generator.canAssign(func->argTypes.at(i), value.type, "", false,
-                                   false);
+        return generator.canAssign(
+            func->argTypes.at(static_cast<size_t>(formalArgOffset + i)),
+            value.type, "", false, false);
       };
 
       if (!ensureAssignable(exp)) {
         std::string mismatchMessage = gen::utils::format(
             "function {} expected type `{}` but received type `{}` these "
             "types are irreconcilable the argument type(s) are ({})",
-            ident, func->argTypes.at(i).typeName, exp.type, argTypesString);
+            ident,
+            func->argTypes.at(static_cast<size_t>(formalArgOffset + i))
+                .typeName,
+            exp.type, argTypesString);
         if (canRetry) {
           this->requestOverloadRetry(generator, overloadTable, overloadIdent,
                                      currentOverloadIndex, mismatchMessage);
         } else {
-          generator.canAssign(func->argTypes.at(i), exp.type, mismatchMessage);
+          generator.canAssign(
+              func->argTypes.at(static_cast<size_t>(formalArgOffset + i)),
+              exp.type, mismatchMessage);
         }
       }
     }
@@ -947,7 +1027,7 @@ gen::GenerationResult Call::generateAttempt(
   if (this->publify != "")
     argsUsed--;
 
-  while (argsUsed < func->argTypes.size()) {
+  while (argsUsed < expectedUserArgs) {
     // if the argument is a float, we need to push a float
     asmc::Mov *move = new asmc::Mov();
     move->logicalLine = this->logicalLine;
@@ -979,7 +1059,8 @@ gen::GenerationResult Call::generateAttempt(
   asmc::Call *calls = new asmc::Call;
   calls->logicalLine = this->logicalLine;
 
-  calls->function = mod + func->ident.ident;
+  calls->function = asyncCall ? ("Runtime.spawn." + func->type.typeName)
+                              : (mod + func->ident.ident);
   file.text << calls;
   // push everything back on the stack
   while (stack.count > 0) {
@@ -989,7 +1070,13 @@ gen::GenerationResult Call::generateAttempt(
     file.text << pop;
   }
   generator.intArgsCounter() = 0;
-  return {file, std::optional<gen::Expr>(func->toExpr(generator))};
+  auto outExpr = func->toExpr(generator);
+  if (asyncCall) {
+    outExpr.type = "task<" + func->type.typeName + ">";
+    outExpr.size = asmc::QWord;
+    outExpr.owned = true;
+  }
+  return {file, std::optional<gen::Expr>(outExpr)};
 }
 
 ast::Function *Call::findFunctionByOverload(

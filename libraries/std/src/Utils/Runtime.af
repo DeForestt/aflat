@@ -21,18 +21,8 @@ fn __runtimeGetJobs__() -> any {
     jobs = new vector::<Box::<adr>>();
   return jobs;
 };
-  
-types(T)
-export fn spawn(const adr imp_pointer, *const any v1, *const any v2, *const any v3, *const any v4) -> task::<T> {
-  const let job = new task::<T>(imp_pointer);
-  const vector::<Box::<task::<T>>> work = __runtimeGetJobs__();
 
-  work.push_back(box.wrap(job));
-  job.resume(v1, v2, v3, v4);
-  return job;
-};
-
-export fn run() -> void {
+fn __runtimeRunJobs__() -> void {
   const vector::<Box::<task::<bool>>> work = __runtimeGetJobs__();
   while true {
     bool anyActive = false;
@@ -48,8 +38,29 @@ export fn run() -> void {
     };
   };
 };
+  
+types(T)
+export fn spawn(const adr imp_pointer, *const any v1, *const any v2, *const any v3, *const any v4) -> task::<T> {
+  const let job = new task::<T>(imp_pointer);
+  const vector::<Box::<task::<T>>> work = __runtimeGetJobs__();
+
+  work.push_back(box.wrap(job));
+  job.resume(v1, v2, v3, v4);
+  return job;
+};
+
+export fn run() -> void {
+  __runtimeRunJobs__();
+};
 
 types(T)
-export fn blockOn(const task::<T> job) -> T {
-  ...;
+export fn block_on(const task::<T> job) -> T {
+  const task::<T> current = job;
+  while current.status != TaskStatus.FINISHED {
+    current.resume();
+    if current.status != TaskStatus.FINISHED {
+      __runtimeRunJobs__();
+    };
+  };
+  return current.result;
 };
