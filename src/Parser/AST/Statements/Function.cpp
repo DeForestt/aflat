@@ -498,6 +498,104 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     link->command = "global";
     link->operand = label->label;
 
+    if (this->asyncFunction) {
+      auto *firstArg = firstDeclare(this->args);
+      generator.coroutineTaskIdent() =
+          firstArg != nullptr ? firstArg->ident : "job";
+    }
+
+    if (this->asyncFunction) {
+      auto moveTask = new asmc::Mov();
+      moveTask->logicalLine = this->logicalLine;
+      moveTask->size = asmc::QWord;
+      moveTask->from = "%rdi";
+      moveTask->to = "%rbx";
+      file.text.push(moveTask);
+
+      auto loadFrame = new asmc::Mov();
+      loadFrame->logicalLine = this->logicalLine;
+      loadFrame->size = asmc::QWord;
+      loadFrame->from = "0(%rbx)";
+      loadFrame->to = "%r10";
+      file.text.push(loadFrame);
+
+      auto checkFrame = new asmc::Cmp();
+      checkFrame->logicalLine = this->logicalLine;
+      checkFrame->size = asmc::QWord;
+      checkFrame->from = "$0";
+      checkFrame->to = "%r10";
+      file.text.push(checkFrame);
+
+      auto haveFrame = new asmc::Je();
+      haveFrame->logicalLine = this->logicalLine;
+      haveFrame->to = ".L" + generator.moduleId() + "_" + this->ident.ident +
+                      "_allocate_frame";
+      file.text.push(haveFrame);
+
+      auto existingFrame = new asmc::Lea();
+      existingFrame->logicalLine = this->logicalLine;
+      existingFrame->from = "65536(%r10)";
+      existingFrame->to = "%r10";
+      file.text.push(existingFrame);
+
+      auto readyJump = new asmc::Jmp();
+      readyJump->logicalLine = this->logicalLine;
+      readyJump->to = ".L" + generator.moduleId() + "_" + this->ident.ident +
+                      "_frame_ready";
+      file.text.push(readyJump);
+
+      auto allocateLabel = new asmc::Label();
+      allocateLabel->logicalLine = this->logicalLine;
+      allocateLabel->label = ".L" + generator.moduleId() + "_" +
+                             this->ident.ident + "_allocate_frame";
+      file.text.push(allocateLabel);
+
+      auto allocSize = new asmc::Mov();
+      allocSize->logicalLine = this->logicalLine;
+      allocSize->size = asmc::QWord;
+      allocSize->from = "$65536";
+      allocSize->to = "%rdi";
+      file.text.push(allocSize);
+
+      auto callMalloc = new asmc::Call();
+      callMalloc->logicalLine = this->logicalLine;
+      callMalloc->function = "af_malloc";
+      file.text.push(callMalloc);
+
+      auto storeFrame = new asmc::Mov();
+      storeFrame->logicalLine = this->logicalLine;
+      storeFrame->size = asmc::QWord;
+      storeFrame->from = "%rax";
+      storeFrame->to = "0(%rbx)";
+      file.text.push(storeFrame);
+
+      auto storeFrameSize = new asmc::Mov();
+      storeFrameSize->logicalLine = this->logicalLine;
+      storeFrameSize->size = asmc::QWord;
+      storeFrameSize->from = "$65536";
+      storeFrameSize->to = "8(%rbx)";
+      file.text.push(storeFrameSize);
+
+      auto moveFrame = new asmc::Lea();
+      moveFrame->logicalLine = this->logicalLine;
+      moveFrame->from = "65536(%rax)";
+      moveFrame->to = "%r10";
+      file.text.push(moveFrame);
+
+      auto frameReady = new asmc::Label();
+      frameReady->logicalLine = this->logicalLine;
+      frameReady->label = ".L" + generator.moduleId() + "_" +
+                          this->ident.ident + "_frame_ready";
+      file.text.push(frameReady);
+
+      auto restoreTaskArg = new asmc::Mov();
+      restoreTaskArg->logicalLine = this->logicalLine;
+      restoreTaskArg->size = asmc::QWord;
+      restoreTaskArg->from = "%rbx";
+      restoreTaskArg->to = "%rdi";
+      file.text.push(restoreTaskArg);
+    }
+
     if (generator.scope() != nullptr && !this->isLambda &&
         !this->globalLocked) {
       // add the opo to the arguments of the function
@@ -516,16 +614,16 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       my->owned = true;
 
       movy->size = asmc::QWord;
-      movy->to = "-" + std::to_string(byteMod) + +"(%rbp)";
+      movy->to =
+          "-" + std::to_string(byteMod) + "(" + generator.frameBase() + ")";
       file.text << movy;
       generator.intArgsCounter()++;
     };
-    int counter = 0;
-    auto argmute = generator.GenArgs(this->args, file, *this, counter);
     if (!isLambda && this->scope == ast::Public && !hidden)
       file.linker.push(link);
 
-    file << argmute;
+    int counter = 0;
+    auto argmute = generator.GenArgs(this->args, file, *this, counter);
 
     if (this->asyncFunction) {
       std::vector<ast::Statement *> yieldPoints;
@@ -542,9 +640,6 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       generator.coroutineResumeLabels().clear();
       generator.coroutineEndLabel() =
           ".L" + generator.moduleId() + "_" + this->ident.ident + "_end";
-      auto *firstArg = firstDeclare(this->args);
-      generator.coroutineTaskIdent() =
-          firstArg != nullptr ? firstArg->ident : "job";
 
       generator.coroutineResumeLabels().push_back(
           ".L" + generator.moduleId() + "_" + this->ident.ident + "_state_0");
@@ -594,6 +689,8 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       entryResume->logicalLine = this->logicalLine;
       entryResume->label = generator.coroutineResumeLabels().front();
       file.text << entryResume;
+
+      file << argmute;
 
       asmc::File statement = generator.GenSTMT(this->statement);
 

@@ -23,12 +23,12 @@ fn __runtimeGetJobs__() -> any {
 };
   
 types(T)
-export fn spawn(const adr imp_pointer) -> task::<T> {
+export fn spawn(const adr imp_pointer, *const any v1, *const any v2, *const any v3, *const any v4) -> task::<T> {
   const let job = new task::<T>(imp_pointer);
   const vector::<Box::<task::<T>>> work = __runtimeGetJobs__();
 
   work.push_back(box.wrap(job));
-  // job.resume();
+  job.resume(v1, v2, v3, v4);
   return job;
 };
 

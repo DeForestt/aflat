@@ -123,6 +123,7 @@ public:
   const bool &errorFlag() const;
   bool &coroutineActive();
   const bool &coroutineActive() const;
+  std::string frameBase() const;
   std::string &coroutineTaskIdent();
   const std::string &coroutineTaskIdent() const;
   std::string &coroutineEndLabel();

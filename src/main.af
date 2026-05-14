@@ -14,17 +14,15 @@ import {wrap} from "Memory" under box;
 import {print} from "uni_string" under uni;
 import {print, printHex} from "io" under io;
 
-async fn baby(task::<int> job) -> int {
-  uni.print("spawning baby\n");
-  pause sleep(5);
-  uni.print("baby done\n");
-  return 5;
+async fn sleep_async(task::<int> job, int sec, int nano) -> int {
+  uni.print(`sec {sec}: nano {nano}\n`);
+  pause sleep(sec, nano);
+  return 0;
 };
 
 async fn child(task::<int> job) -> int {
-  pause uni.print("child step 1\n");
-  await runtime.spawn::<int>(baby);
-  pause uni.print("child step 3\n");
+  uni.print("calling async sleep\n");
+  await runtime.spawn::<int>(sleep_async, 5);
   return 41;
 };
 

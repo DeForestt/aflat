@@ -54,7 +54,8 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
       def->logicalLine = this->logicalLine;
       def->name = this->ident;
       def->type = this->type.size;
-      def->value = "-" + std::to_string(mod) + "(%rbp)";
+      def->value =
+          "-" + std::to_string(mod) + "(" + generator.frameBase() + ")";
       file.text << def;
     } else {
       // add the symbol to the class symbol table

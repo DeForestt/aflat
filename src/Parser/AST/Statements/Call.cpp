@@ -618,7 +618,8 @@ gen::GenerationResult Call::generateAttempt(
     saveReceiver->logicalLine = this->logicalLine;
     saveReceiver->size = asmc::QWord;
     saveReceiver->from = generator.registers()["%rdi"]->get(asmc::QWord);
-    saveReceiver->to = "-" + std::to_string(hiddenReceiverSlot) + "(%rbp)";
+    saveReceiver->to = "-" + std::to_string(hiddenReceiverSlot) + "(" +
+                       generator.frameBase() + ")";
     file.text << saveReceiver;
   }
   if (hasHiddenReceiver) {
@@ -885,7 +886,8 @@ gen::GenerationResult Call::generateAttempt(
       mov2->logicalLine = this->logicalLine;
       mov2->size = exp.size;
       mov2->from = generator.registers()["%xmm0"]->get(exp.size);
-      mov2->to = "-" + std::to_string(bytemod) + "(%rbp)";
+      mov2->to =
+          "-" + std::to_string(bytemod) + "(" + generator.frameBase() + ")";
       file.text << mov2;
       // move to eax
 
@@ -899,7 +901,8 @@ gen::GenerationResult Call::generateAttempt(
       asmc::Mov *mov3 = new asmc::Mov();
       mov3->logicalLine = this->logicalLine;
       mov3->size = asmc::DWord;
-      mov3->from = "-" + std::to_string(bytemod) + "(%rbp)";
+      mov3->from =
+          "-" + std::to_string(bytemod) + "(" + generator.frameBase() + ")";
       mov3->to = generator.registers()["%eax"]->get(asmc::DWord);
       file.text << mov3;
 
@@ -965,7 +968,8 @@ gen::GenerationResult Call::generateAttempt(
     auto restoreReceiver = new asmc::Mov();
     restoreReceiver->logicalLine = this->logicalLine;
     restoreReceiver->size = asmc::QWord;
-    restoreReceiver->from = "-" + std::to_string(hiddenReceiverSlot) + "(%rbp)";
+    restoreReceiver->from = "-" + std::to_string(hiddenReceiverSlot) + "(" +
+                            generator.frameBase() + ")";
     restoreReceiver->to = generator.registers()["%rdi"]->get(asmc::QWord);
     file.text << restoreReceiver;
   }

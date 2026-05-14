@@ -14,6 +14,10 @@ class task {
   int frame_size;
   adr implementation_pointer;
   adr waiter;
+  adr arg1;
+  adr arg2;
+  adr arg3;
+  adr arg4;
   int state;
   int status;
   T result;
@@ -23,6 +27,10 @@ class task {
     my.frame = NULL;
     my.frame_size = 0;
     my.waiter = NULL;
+    my.arg1 = NULL;
+    my.arg2 = NULL;
+    my.arg3 = NULL;
+    my.arg4 = NULL;
     my.state = 0;
     my.status = 0;
     return my;
@@ -33,14 +41,24 @@ class task {
     my.frame = frame;
     my.frame_size = frame_size;
     my.waiter = NULL;
+    my.arg1 = NULL;
+    my.arg2 = NULL;
+    my.arg3 = NULL;
+    my.arg4 = NULL;
     my.state = 0;
     my.status = 0;
     return my;
   };
 
-  fn resume() -> T {
+  fn resume(*const any v1, * const any v2, *const any v3, *const any v4) -> T {
     my.status = 1;
-    my.result = my.implementation_pointer(my);
+    if my.state == 0 {
+      my.arg1 = v1;
+      my.arg2 = v2;
+      my.arg3 = v3;
+      my.arg4 = v4;
+    };
+    my.result = my.implementation_pointer(my.arg1, my.arg2, my.arg3, my.arg4);
     if my.status != 2 {
       my.status = 3;
       if my.waiter != NULL {

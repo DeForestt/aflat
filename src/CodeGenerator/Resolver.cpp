@@ -97,7 +97,7 @@ CodeGenerator::resolveSymbol(std::string ident,
   if (global)
     access = sym->symbol;
   else
-    access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
+    access = '-' + std::to_string(sym->byteMod) + "(" + frameBase() + ")";
   ast::Type last = sym->type;
   Symbol *modSym = sym;
   const int checkTo = (internal) ? 1 : 0;

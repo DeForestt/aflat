@@ -90,7 +90,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         //
         asmc::Lea *lea = new asmc::Lea();
         lea->to = registers()["%rax"]->get(asmc::QWord);
-        lea->from = '-' + std::to_string(bMod) + "(%rbp)";
+        lea->from = '-' + std::to_string(bMod) + "(" + frameBase() + ")";
         lea->logicalLine = logicalLine();
         // ASMC::Mov * mov = new ASMC::Mov();
         OutputFile.text << lea;
@@ -129,13 +129,15 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           savePointer->logicalLine = logicalLine();
           savePointer->size = asmc::QWord;
           savePointer->from = intArgs()[0].get(asmc::QWord);
-          savePointer->to = "-" + std::to_string(returnSlot) + "(%rbp)";
+          savePointer->to =
+              "-" + std::to_string(returnSlot) + "(" + frameBase() + ")";
           OutputFile.text << savePointer;
           this->GenExpr(callInit, OutputFile);
           auto restore = new asmc::Mov();
           restore->logicalLine = logicalLine();
           restore->size = asmc::QWord;
-          restore->from = "-" + std::to_string(returnSlot) + "(%rbp)";
+          restore->from =
+              "-" + std::to_string(returnSlot) + "(" + frameBase() + ")";
           restore->to = registers()["%rax"]->get(asmc::QWord);
           OutputFile.text << restore;
           output.access = pointer;
@@ -1421,7 +1423,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       asmc::Mov *mov2 = new asmc::Mov();
       mov2->logicalLine = logicalLine();
       mov2->from = registers()["%eax"]->get(genExpr.size);
-      mov2->to = "-" + std::to_string(bMod - offset) + "(%rbp)";
+      mov2->to = "-" + std::to_string(bMod - offset) + "(" + frameBase() + ")";
       mov2->size = genExpr.size;
       OutputFile.text << mov2;
       offset += gen::utils::sizeToInt(genExpr.size);
@@ -1430,7 +1432,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     // create a pointer to the struct
     asmc::Lea *lea = new asmc::Lea();
     lea->logicalLine = logicalLine();
-    lea->from = "-" + std::to_string(bMod) + "(%rbp)";
+    lea->from = "-" + std::to_string(bMod) + "(" + frameBase() + ")";
     lea->to = registers()["%rax"]->get(asmc::QWord);
     OutputFile.text << lea;
 
@@ -1537,7 +1539,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     auto mov2 = new asmc::Mov();
     mov2->logicalLine = logicalLine();
     mov2->from = output.access;
-    mov2->to = "-" + std::to_string(mod) + "(%rbp)";
+    mov2->to = "-" + std::to_string(mod) + "(" + frameBase() + ")";
     mov2->size = output.size;
     mov2->op = output.op;
     OutputFile.text << mov2;

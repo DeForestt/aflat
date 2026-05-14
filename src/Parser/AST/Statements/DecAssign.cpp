@@ -119,7 +119,8 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       mov2->op = expr.op;
       mov->size = dec->type.size;
       mov->from = generator.registers()["%rbx"]->get(dec->type.size);
-      mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
+      mov->to =
+          "-" + std::to_string(byteMod) + "(" + generator.frameBase() + ")";
 
       mov->from = mov2->to;
 

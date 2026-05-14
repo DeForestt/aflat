@@ -39,6 +39,7 @@ struct gen::CodeGenerator::Impl {
     registers << asmc::Register("rbp", "ebp", "bp", "bpl");
     registers << asmc::Register("r8", "r8d", "r8w", "r8b");
     registers << asmc::Register("r9", "r9d", "r9w", "r9b");
+    registers << asmc::Register("r10", "r10d", "r10w", "r10b");
     registers << asmc::Register("r11", "r11d", "r11w", "r11b");
     registers << asmc::Register("r12", "r12d", "r12w", "r12b");
     registers << asmc::Register("r13", "r13d", "r13w", "r13b");
@@ -115,6 +116,13 @@ struct gen::CodeGenerator::Impl {
 };
 
 bool gen::CodeGenerator::traceAlert = false;
+
+std::string gen::CodeGenerator::frameBase() const {
+  if (currentFunction() != nullptr && currentFunction()->asyncFunction) {
+    return registers()["%r10"]->get(asmc::QWord);
+  }
+  return registers()["%rbp"]->get(asmc::QWord);
+}
 
 void gen::CodeGenerator::enableAlertTrace(bool enable) { traceAlert = enable; }
 
