@@ -4,20 +4,6 @@ import uni_string from "uni_string";
 import {print} from "uni_string" under uni;
 import task from "Utils/Task";
 
-unique class Probe {
-  mutable uni_string name = "";
-
-  fn init(immutable adr name) -> Probe {
-    my.name.copy_from(name);
-    return my;
-  };
-
-  fn del() -> void {
-    let name = my.name;
-    delete name;
-  };
-};
-
 async fn worker(task::<int> job) -> int {
   pause job.result = 41;
   return 42;
