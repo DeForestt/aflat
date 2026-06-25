@@ -3,9 +3,6 @@ import string from "String";
 import Error from "Utils/Error";
 import uni_string from "uni_string";
 
-export fn abort(const adr msg) -> any {
-    return NULL;
-};
 
 types(T)
 /**
@@ -16,30 +13,38 @@ union result {
     Ok(T),
     Err(Error)
 
-    safe fn expect(const string msg) -> any {
+    safe fn expect(const string msg) -> T {
         match my {
             Ok(value) => return value,
-            Err(err) => return NULL
+            Err(err) => {
+              panic(msg.cstr());
+            }
         };
     };
 
-    safe fn unwrap() -> any {
+    safe fn unwrap() -> T {
         match my {
             Ok(value) => return value,
-            Err(err) => return NULL
+            Err(err) => {
+              panic("Failed to unwrap value");
+            }
         };
     };
 
-    safe fn expectErr(const string msg) -> any {
+    safe fn expectErr(const string msg) -> Error {
         match my {
-            Ok(_) => return NULL,
+            Ok(_) => {
+              panic(msg.cstr());
+            },
             Err(err) => return err
         };
     };
 
-    safe fn unwrapErr() -> any {
+    safe fn unwrapErr() -> Error {
         match my {
-            Ok(_) => return NULL,
+            Ok(_) => {
+              panic("Expected Err");
+            },
             Err(err) => return err
         };
     };
