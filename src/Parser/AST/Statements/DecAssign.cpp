@@ -107,12 +107,30 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
 
       auto mov2 = new asmc::Mov();
       mov2->logicalLine = this->logicalLine;
-      mov2->size = dec->type.size;
+      auto isConcreteSize = [](asmc::Size size) {
+        return size == asmc::Byte || size == asmc::Word ||
+               size == asmc::DWord || size == asmc::QWord;
+      };
+      auto isDWordRegisterOrImmediate = [](const std::string &access) {
+        return access.rfind("$", 0) == 0 || access.rfind("%e", 0) == 0 ||
+               (access.size() > 2 && access[0] == '%' && access.back() == 'd');
+      };
+      const bool widenInteger =
+          expr.op != asmc::Float && isConcreteSize(expr.size) &&
+          isConcreteSize(dec->type.size) && expr.size < dec->type.size;
+      asmc::Size loadSize =
+          isConcreteSize(expr.size) ? expr.size : dec->type.size;
+      if (widenInteger && loadSize < asmc::DWord &&
+          isDWordRegisterOrImmediate(expr.access)) {
+        loadSize = asmc::DWord;
+      }
+
+      mov2->size = loadSize;
       mov2->from = expr.access;
       if (expr.op == asmc::Float)
         mov2->to = generator.registers()["%xmm0"]->get(expr.size);
       else
-        mov2->to = generator.registers()["%rbx"]->get(dec->type.size);
+        mov2->to = generator.registers()["%rbx"]->get(loadSize);
 
       mov->op = expr.op;
 
@@ -121,8 +139,17 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       mov->from = generator.registers()["%rbx"]->get(dec->type.size);
       mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
 
-      mov->from = mov2->to;
+      if (!widenInteger) {
+        mov->from = mov2->to;
+      }
 
+      if (widenInteger) {
+        auto zero = new asmc::Xor();
+        zero->logicalLine = this->logicalLine;
+        zero->op1 = generator.registers()["%rbx"]->get(asmc::QWord);
+        zero->op2 = generator.registers()["%rbx"]->get(asmc::QWord);
+        file.text << zero;
+      }
       file.text << mov2;
       file.text << mov;
       s->owned = expr.owned;
