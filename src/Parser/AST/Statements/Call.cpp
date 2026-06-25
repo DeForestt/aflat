@@ -497,20 +497,19 @@ gen::GenerationResult Call::generateAttempt(
 
           gen::Expr exp;
           exp = generator.GenExpr(ref, file);
-          asmc::Mov *mov = new asmc::Mov();
+          asmc::Movq *mov = new asmc::Movq();
           mov->logicalLine = this->logicalLine;
           asmc::Mov *mov2 = new asmc::Mov();
           mov2->logicalLine = this->logicalLine;
           asmc::Push *push = new asmc::Push();
           push->logicalLine = this->logicalLine;
 
-          mov->size = exp.size;
-          mov2->size = exp.size;
+          mov2->size = asmc::QWord;
 
           mov->from = '(' + exp.access + ')';
-          mov->to = generator.registers()["%eax"]->get(exp.size);
-          mov2->from = generator.registers()["%eax"]->get(exp.size);
-          mov2->to = generator.intArgs()[argsCounter].get(exp.size);
+          mov->to = generator.registers()["%eax"]->get(asmc::QWord);
+          mov2->from = generator.registers()["%eax"]->get(asmc::QWord);
+          mov2->to = generator.intArgs()[argsCounter].get(asmc::QWord);
           push->op = generator.intArgs()[argsCounter].get(asmc::QWord);
           stack << generator.intArgs()[argsCounter].get(asmc::QWord);
           hasHiddenReceiver = true;
@@ -756,15 +755,15 @@ gen::GenerationResult Call::generateAttempt(
          (func != nullptr &&
           func->ident.ident.find("Some") != std::string::npos));
 
-    const auto &paramType = func->argTypes.at(i);
+    const bool hasParamType = checkArgs && i < func->argTypes.size();
+    const ast::Type *paramType = hasParamType ? &func->argTypes.at(i) : nullptr;
     const bool paramConsumesOwnedValue =
-        !paramType.isRvalue &&
-        parse::PRIMITIVE_TYPES.find(paramType.typeName) ==
-            parse::PRIMITIVE_TYPES.end();
+        paramType != nullptr && paramType->isRvalue;
 
     if (!isOptionSomeSink && checkArgs &&
-        dynamic_cast<ast::CallExpr *>(arg) != nullptr &&
-        !paramConsumesOwnedValue && !paramType.isRvalue && exp.type != "void" &&
+        dynamic_cast<ast::CallExpr *>(arg) != nullptr && paramType != nullptr &&
+        !paramConsumesOwnedValue && !paramType->isRvalue &&
+        exp.type != "void" &&
         parse::PRIMITIVE_TYPES.find(exp.type) == parse::PRIMITIVE_TYPES.end()) {
       auto t = generator.typeList()[exp.type];
       if (t && (*t)->uniqueType) {

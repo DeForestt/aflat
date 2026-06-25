@@ -90,12 +90,14 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   gen::Expr from = generator.GenExpr(this->expr, file, asmc::AUTO,
                                      generator.returnType().typeName);
 
-  gen::Symbol *retSym = nullptr;
+  std::string returnedSymbol;
   if (auto var = dynamic_cast<ast::Var *>(this->expr)) {
     if (var->modList.count == 0) {
-      retSym = gen::scope::ScopeManager::getInstance()->get(var->Ident);
+      gen::Symbol *retSym =
+          gen::scope::ScopeManager::getInstance()->get(var->Ident);
       if (retSym)
         retSym->returned = true;
+      returnedSymbol = var->Ident;
     }
   }
 
@@ -254,21 +256,6 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
                     from.type);
   };
 
-  if (from.op != asmc::Float) {
-    // move from.access to %rax
-    auto mov2 = new asmc::Mov();
-    mov2->logicalLine = this->logicalLine;
-    mov2->size = from.size;
-    mov2->from = from.access;
-    mov2->to = generator.registers()["%rax"]->get(from.size);
-    mov2->op = from.op;
-    file.text << mov2;
-    auto push = new asmc::Push();
-    push->logicalLine = this->logicalLine;
-    push->op = generator.registers()["%rax"]->get(asmc::QWord);
-    file.text << push;
-  };
-
   if (!generator.currentFunction()->optional &&
       !generator.currentFunction()->error &&
       !generator.canAssign(generator.returnType(), from.type,
@@ -290,26 +277,49 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     }
   }
 
-  if (from.op != asmc::Float) {
-    auto pop = new asmc::Pop();
-    pop->logicalLine = this->logicalLine;
-    pop->op = generator.registers()["%rax"]->get(asmc::QWord);
-    file.text << pop;
-  };
+  const bool hasReturnValue = from.type != "void";
+  int returnTemp = 0;
+  std::string returnReg;
+  if (hasReturnValue) {
+    ast::Type tempType(from.type, from.size);
+    returnTemp =
+        gen::scope::ScopeManager::getInstance()->assign("", tempType, false);
+    returnReg = (from.op == asmc::Float)
+                    ? generator.registers()["%xmm0"]->get(from.size)
+                    : generator.registers()["%rax"]->get(from.size);
 
-  std::string move2 = (from.op == asmc::Float)
-                          ? generator.registers()["%xmm0"]->get(from.size)
-                          : generator.registers()["%rax"]->get(from.size);
+    mov->from = from.access;
+    mov->to = returnReg;
+    mov->size = from.size;
+    mov->op = from.op;
+    file.text << mov;
 
-  mov->from = from.access;
-  mov->to = move2;
-  mov->size = from.size;
-  mov->op = from.op;
-  file.text << mov;
+    auto saveReturn = new asmc::Mov();
+    saveReturn->logicalLine = this->logicalLine;
+    saveReturn->from = returnReg;
+    saveReturn->to = "-" + std::to_string(returnTemp) + "(%rbp)";
+    saveReturn->size = from.size;
+    saveReturn->op = from.op;
+    file.text << saveReturn;
+  }
 
   gen::scope::ScopeManager::getInstance()->softPop(&generator, file);
-  if (retSym)
-    retSym->returned = false;
+  if (!returnedSymbol.empty()) {
+    gen::Symbol *retSym =
+        gen::scope::ScopeManager::getInstance()->get(returnedSymbol);
+    if (retSym)
+      retSym->returned = false;
+  }
+
+  if (hasReturnValue) {
+    auto restoreReturn = new asmc::Mov();
+    restoreReturn->logicalLine = this->logicalLine;
+    restoreReturn->from = "-" + std::to_string(returnTemp) + "(%rbp)";
+    restoreReturn->to = returnReg;
+    restoreReturn->size = from.size;
+    restoreReturn->op = from.op;
+    file.text << restoreReturn;
+  }
 
   auto re = new asmc::Return();
   re->logicalLine = this->logicalLine;
