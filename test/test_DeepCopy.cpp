@@ -24,3 +24,23 @@ TEST_CASE("deepCopy clones statements", "[deepcopy]") {
   copyInt->val = 2;
   CHECK(origInt->val == 1);
 }
+
+TEST_CASE("deepCopy clones foreach statements", "[deepcopy]") {
+  lex::Lexer l;
+  parse::Parser p;
+  auto tokens = l.Scan("foreach v in items { print(v); };");
+  tokens.invert();
+  ast::Statement *stmt = p.parseStmt(tokens, true);
+  auto *foreachStmt = dynamic_cast<ast::ForEach *>(stmt);
+  REQUIRE(foreachStmt != nullptr);
+
+  ast::Statement *copyStmt = ast::deepCopy(stmt);
+  auto *foreachCopy = dynamic_cast<ast::ForEach *>(copyStmt);
+  REQUIRE(foreachCopy != nullptr);
+  REQUIRE(foreachCopy != foreachStmt);
+  REQUIRE(foreachCopy->binding_identifier == foreachStmt->binding_identifier);
+  REQUIRE(foreachCopy->implementation != nullptr);
+  REQUIRE(foreachCopy->implementation != foreachStmt->implementation);
+  REQUIRE(foreachCopy->iterator != nullptr);
+  REQUIRE(foreachCopy->iterator != foreachStmt->iterator);
+}

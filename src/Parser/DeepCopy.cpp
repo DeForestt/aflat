@@ -103,6 +103,15 @@ Statement *deepCopy(const Statement *stmt) {
     copy->Run = deepCopy(fr->Run);
     return copy;
   }
+  if (auto foreach = dynamic_cast<const ForEach *>(stmt)) {
+    auto *copy = new ForEach();
+    copy->locked = foreach->locked;
+    copy->logicalLine = foreach->logicalLine;
+    copy->implementation = deepCopy(foreach->implementation);
+    copy->binding_identifier = foreach->binding_identifier;
+    copy->iterator = static_cast<Expr *>(deepCopy(foreach->iterator));
+    return copy;
+  }
   if (auto iff = dynamic_cast<const If *>(stmt)) {
     auto *copy = new If();
     copy->locked = iff->locked;
