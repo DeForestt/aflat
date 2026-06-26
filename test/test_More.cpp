@@ -32,3 +32,30 @@ TEST_CASE("sizeToInt returns expected values", "[codegen]") {
   REQUIRE(gen::utils::sizeToInt(asmc::Byte) == 1);
   REQUIRE(gen::utils::sizeToInt(asmc::DWord) == 4);
 }
+
+TEST_CASE("Parser keeps comparison outside chained call extension",
+          "[parser]") {
+  lex::Lexer lexer;
+  parse::Parser parser;
+  auto tokens = lexer.Scan("m.pop().unwrap() == 20");
+  tokens.invert();
+
+  ast::Expr *expr = parser.parseExpr(tokens);
+  auto *comparison = dynamic_cast<ast::Compound *>(expr);
+  REQUIRE(comparison != nullptr);
+  REQUIRE(comparison->op == ast::CompEqu);
+
+  auto *left = dynamic_cast<ast::CallExpr *>(comparison->expr1);
+  REQUIRE(left != nullptr);
+  REQUIRE(left->call->ident == "m");
+  REQUIRE(left->call->modList.count == 1);
+  REQUIRE(left->call->modList.get(0) == "pop");
+
+  auto *extension = dynamic_cast<ast::CallExpr *>(left->extention);
+  REQUIRE(extension != nullptr);
+  REQUIRE(extension->call->ident == "unwrap");
+
+  auto *right = dynamic_cast<ast::IntLiteral *>(comparison->expr2);
+  REQUIRE(right != nullptr);
+  REQUIRE(right->val == 20);
+}
