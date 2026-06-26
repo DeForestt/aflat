@@ -414,7 +414,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
       if (!templateTypes.empty()) {
         type.typeName += "<" + templateTypes[0];
         for (size_t i = 1; i < templateTypes.size(); ++i) {
-          type.typeName += ", " + templateTypes[i];
+          type.typeName += "," + templateTypes[i];
         }
         type.typeName += ">";
       }
@@ -1035,7 +1035,7 @@ ast::Statement *parse::Parser::Impl::parseArgs(
     if (!templateTypes.empty()) {
       dec->type.typeName += "<" + templateTypes[0];
       for (size_t i = 1; i < templateTypes.size(); ++i) {
-        dec->type.typeName += ", " + templateTypes[i];
+        dec->type.typeName += "," + templateTypes[i];
       }
       dec->type.typeName += ">";
     }
@@ -1213,7 +1213,7 @@ std::vector<std::string> parse::Parser::Impl::parseTemplateTypeList(
       if (!l.empty()) {
         tname += "<" + l[0];
         for (size_t i = 1; i < l.size(); ++i) {
-          tname += ", " + l[i];
+          tname += "," + l[i];
         }
         tname += ">";
       }
@@ -1586,7 +1586,7 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         if (!newExpr->templateTypes.empty()) {
           newExpr->type.typeName += "<" + newExpr->templateTypes[0];
           for (size_t i = 1; i < newExpr->templateTypes.size(); ++i) {
-            newExpr->type.typeName += ", " + newExpr->templateTypes[i];
+            newExpr->type.typeName += "," + newExpr->templateTypes[i];
           }
           newExpr->type.typeName += ">";
         }

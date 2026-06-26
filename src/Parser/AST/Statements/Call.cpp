@@ -913,6 +913,7 @@ gen::GenerationResult Call::generateAttempt(
       xory->logicalLine = this->logicalLine;
       xory->op1 = generator.registers()["%eax"]->get(asmc::QWord);
       xory->op2 = generator.registers()["%eax"]->get(asmc::QWord);
+      xory->size = asmc::QWord;
       file.text << xory;
 
       asmc::Mov *mov3 = new asmc::Mov();

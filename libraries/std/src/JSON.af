@@ -25,7 +25,7 @@ union JSON {
     Number(int),
     Boolean(bool),
     List(vector::<Box::<JSON>>),
-    Object(unordered_map::<Box::<JSON>>),
+    Object(unordered_map::<adr,Box::<JSON>>),
     Null
 
     fn get(const string key) -> JSON? {
@@ -78,7 +78,7 @@ union JSON {
         }
     }; 
 
-    fn asObject() -> unordered_map::<Box::<JSON>>! {
+    fn asObject() -> unordered_map::<adr,Box::<JSON>>! {
         match my {
             Object(map) => return map,
             _ => return new Error("JSON is not an Object")
@@ -191,7 +191,7 @@ union JSON {
 };
 
 // Wrap an unordered_map into a JSON Object variant.
-export fn Object(const unordered_map::<Box::<JSON>> map) -> JSON {
+export fn Object(const unordered_map::<adr,Box::<JSON>> map) -> JSON {
     return new JSON->Object(map);
 };
 
@@ -388,7 +388,7 @@ private fn parseArrayValue(const string value) -> JSON! {
 };
 
 private fn parseObjectValue(const string value) -> JSON! {
-    const let map = new unordered_map::<Box::<JSON>>();
+    const let map = new unordered_map::<adr,Box::<JSON>>();
     let v = value.peek();
     while true {
         if v.or('v') == '}' {

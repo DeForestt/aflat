@@ -185,7 +185,7 @@ Function::Function(const ScopeMod &scope,
       for (size_t i = 0; i < templateTypeList.size(); ++i) {
         typenameStr += templateTypeList[i];
         if (i != templateTypeList.size() - 1) {
-          typenameStr += ", ";
+          typenameStr += ",";
         }
       }
       typenameStr += ">";

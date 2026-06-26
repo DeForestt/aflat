@@ -86,12 +86,29 @@ union option {  Some(T),
     };
   };
 
+  when (T is primitive)
   safe fn toString() -> string {
     match my {
       Some(value) => return `Some({value})`,
       None() => return "None"
     }
-  }
+  };
+
+  when (T is not primitive and T has toString)
+  safe fn toString() -> string {
+    match my {
+      Some(value) => return `Some({value})`,
+      None() => return "None"
+    }
+  };
+
+  when (T is not primitive and T missing toString)
+  safe fn toString() -> string {
+    match my {
+      Some() => return "Some",
+      None() => return "None"
+    }
+  };
 };
 
 types(T)

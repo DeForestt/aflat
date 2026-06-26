@@ -1285,13 +1285,19 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     if (newExpr.type.typeName == "Map" &&
         typeHint.rfind("unordered_map", 0) == 0) {
-      std::istringstream iss(typeHint);
-      std::string typeName;
-      std::getline(iss, typeName, '.');
-      newExpr.type.typeName = typeName;
+      if (typeHint.find('<') != std::string::npos) {
+        auto parsedTemplate = gen::utils::parseGenericName(typeHint, *this);
+        newExpr.type.typeName = std::get<0>(parsedTemplate);
+        newExpr.templateTypes = std::get<1>(parsedTemplate);
+      } else {
+        std::istringstream iss(typeHint);
+        std::string typeName;
+        std::getline(iss, typeName, '.');
+        newExpr.type.typeName = typeName;
 
-      while (std::getline(iss, typeName, '.')) {
-        newExpr.templateTypes.push_back(typeName);
+        while (std::getline(iss, typeName, '.')) {
+          newExpr.templateTypes.push_back(typeName);
+        }
       }
     }
 
@@ -1379,7 +1385,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     asmc::Xor *xr = new asmc::Xor();
     xr->logicalLine = logicalLine();
     xr->op1 = "$1";
-    xr->op2 = registers()["%eax"]->get(asmc::DWord);
+    xr->op2 = registers()["%eax"]->get(asmc::Byte);
 
     ast::Type boolType = ast::Type();
 

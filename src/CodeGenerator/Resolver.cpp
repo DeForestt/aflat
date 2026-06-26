@@ -222,6 +222,7 @@ CodeGenerator::resolveSymbol(std::string ident,
       asmc::Xor *xr = new asmc::Xor();
       xr->op1 = registers()["%r13"]->get(asmc::QWord);
       xr->op2 = registers()["%r13"]->get(asmc::QWord);
+      xr->size = asmc::QWord;
       xr->logicalLine = logicalLine();
       OutputFile.text << xr;
 

@@ -57,7 +57,7 @@ class Argument {
 
 // Internal accumulator for parsed arguments before exposing them publicly.
 class CLAInternalArgs {
-	unordered_map::<Argument> arguments;
+	unordered_map::<adr,Argument> arguments;
 	string tag;
 };
 
@@ -72,7 +72,7 @@ class CommandLineArgs {
 
 	mutable vector::<Argument> arguments = NULL;
 	mutable vector::<CLAValue> untagedValues = [];
-	const unordered_map::<CLAValue> values = {};
+	const unordered_map::<adr,CLAValue> values = {};
 	
 	mutable bool built = false;
 

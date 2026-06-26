@@ -97,7 +97,7 @@ parseAliases(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
         if (!templateArgs.empty()) {
           type->typeName += "<" + templateArgs[0];
           for (size_t i = 1; i < templateArgs.size(); ++i) {
-            type->typeName += ", " + templateArgs[i];
+            type->typeName += "," + templateArgs[i];
           }
           type->typeName += ">";
         }

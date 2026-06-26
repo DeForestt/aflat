@@ -8,7 +8,7 @@ import option from "Utils/option";
 import {Some, None} from "Utils/option" under opt;
 
 class Middleware {
-    const unordered_map::<adr> implementations = implementations(server);
+    const unordered_map::<adr,adr> implementations = implementations(server);
     Middleware init(const any<Server> implementations, * const Server server) {
         if server != NULL
             server.addMiddleware(my);
