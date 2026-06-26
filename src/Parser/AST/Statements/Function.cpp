@@ -5,7 +5,33 @@
 #include "Parser/AST.hpp"
 #include "Scanner.hpp"
 
+#include <algorithm>
+#include <regex>
+
 namespace ast {
+namespace {
+
+int maxFrameOffset(const asmc::File &file) {
+  static const std::regex rbpOffsetPattern(R"(-([0-9]+)\(%rbp\))");
+  int maxOffset = 0;
+  for (auto *inst : file.text) {
+    if (inst == nullptr) {
+      continue;
+    }
+    const auto text = inst->toString();
+    for (auto it =
+             std::sregex_iterator(text.begin(), text.end(), rbpOffsetPattern);
+         it != std::sregex_iterator(); ++it) {
+      maxOffset = std::max(maxOffset, std::stoi((*it)[1].str()));
+    }
+  }
+  return maxOffset;
+}
+
+int alignFrameSize(int bytes) { return ((bytes + 15) / 16) * 16; }
+
+} // namespace
+
 void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
                                  parse::Parser &parser) {
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
@@ -407,9 +433,10 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
 
     auto sub = new asmc::Subq;
     sub->logicalLine = this->logicalLine;
-    sub->op1 =
-        "$" + std::to_string(
-                  gen::scope::ScopeManager::getInstance()->getStackAlignment());
+    const int trackedFrame =
+        gen::scope::ScopeManager::getInstance()->getStackAlignment();
+    const int emittedFrame = alignFrameSize(maxFrameOffset(file));
+    sub->op1 = "$" + std::to_string(std::max(trackedFrame, emittedFrame));
     sub->op2 = generator.registers()["%rsp"]->get(asmc::QWord);
     file.text.insert(sub, AlignmentLoc + 1);
 

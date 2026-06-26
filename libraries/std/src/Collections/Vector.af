@@ -26,8 +26,10 @@ class vector {
     fn init(*const int size) -> Self {
         if size == 0 {
             my.size = 1; 
-            my.head = af_malloc(T * my.size);
+        } else {
+            my.size = size;
         };
+        my.head = af_malloc(T * my.size);
         return my;
     };
 
