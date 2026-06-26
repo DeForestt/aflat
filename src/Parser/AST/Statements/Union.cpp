@@ -179,9 +179,12 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   // if the union is generic, do not generate code for it. It will be
   // generated when it is instantiated with specific types.
   if (this->genericTypes.size() > 0) {
-    generator.genericTypes().insert(
-        {this->ident.ident, dynamic_cast<ast::Union *>(ast::deepCopy(
-                                this))}); // add the union to the generic types
+    auto &templates = generator.genericTypes();
+    auto existing = templates.find(this->ident.ident);
+    if (existing == templates.end() || existing->second == nullptr ||
+        existing->second->templateModuleRoot == nullptr)
+      templates[this->ident.ident] = dynamic_cast<ast::Union *>(
+          ast::deepCopy(this)); // add the union to the generic types
     return {asmc::File(), std::nullopt};
   }
 

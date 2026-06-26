@@ -1299,6 +1299,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       alert("Please import std library in order to use new operator.\n\n -> "
             ".needs <std> \n\n",
             true, __FILE__, __LINE__);
+    if (!newExpr.templateTypes.empty() &&
+        newExpr.type.typeName.find('<') == std::string::npos) {
+      auto cls = genericTypes()[newExpr.type.typeName];
+      if (cls != nullptr) {
+        std::string newClassName;
+        this->instantiateGenericClass(cls, newExpr.templateTypes, newClassName,
+                                      OutputFile);
+        newExpr.type.typeName = newClassName;
+      }
+    }
     gen::Type **type = this->getType(newExpr.type.typeName, OutputFile);
     if (type == nullptr)
       alert("Type " + newExpr.type.typeName + " not found", true, __FILE__,

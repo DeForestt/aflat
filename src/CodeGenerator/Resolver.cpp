@@ -1,10 +1,43 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
+#include "Parser/AST/Statements/Class.hpp"
+#include "Parser/AST/Statements/Union.hpp"
 
 using namespace gen::utils;
 
 namespace gen {
+namespace {
+
+void registerModuleGenericTemplates(
+    ast::Statement *stmt, ast::Statement *moduleRoot, CodeGenerator &generator,
+    const std::string &moduleCwd,
+    const std::unordered_map<std::string, std::string> &moduleNamespaceMap,
+    asmc::File &output) {
+  if (stmt == nullptr)
+    return;
+  if (auto seq = dynamic_cast<ast::Sequence *>(stmt)) {
+    registerModuleGenericTemplates(seq->Statement1, moduleRoot, generator,
+                                   moduleCwd, moduleNamespaceMap, output);
+    registerModuleGenericTemplates(seq->Statement2, moduleRoot, generator,
+                                   moduleCwd, moduleNamespaceMap, output);
+    return;
+  }
+
+  auto cls = dynamic_cast<ast::Class *>(stmt);
+  if (cls == nullptr || cls->genericTypes.empty())
+    return;
+
+  auto *copy = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
+  if (copy == nullptr)
+    return;
+  copy->templateModuleRoot = moduleRoot;
+  copy->templateModuleCwd = moduleCwd;
+  copy->templateNamespaceMap = moduleNamespaceMap;
+  output << generator.GenSTMT(copy);
+}
+
+} // namespace
 
 Type **CodeGenerator::instantiateGenericClass(
     ast::Class *cls, const std::vector<std::string> &types,
@@ -37,8 +70,24 @@ Type **CodeGenerator::instantiateGenericClass(
     OutputFile.hasLambda = true;
     scope::ScopeManager::getInstance()->pushIsolated();
     this->pushEnv();
+    auto savedCwd = this->cwd();
+    auto savedNameSpaceTable = this->nameSpaceTable();
+    if (cls->templateModuleRoot != nullptr) {
+      if (!cls->templateModuleCwd.empty())
+        this->cwd() = cls->templateModuleCwd;
+      for (const auto &[alias, target] : cls->templateNamespaceMap)
+        this->nameSpaceTable().insert(alias, target);
+      OutputFile.lambdas->operator<<(
+          this->ImportsOnly(cls->templateModuleRoot, true));
+      registerModuleGenericTemplates(
+          cls->templateModuleRoot, cls->templateModuleRoot, *this,
+          cls->templateModuleCwd, cls->templateNamespaceMap,
+          *OutputFile.lambdas);
+    }
     OutputFile.lambdas->operator<<(this->GenSTMT(classStatement));
     result = typeList()[newName];
+    this->nameSpaceTable() = savedNameSpaceTable;
+    this->cwd() = savedCwd;
     this->popEnv();
     scope::ScopeManager::getInstance()->popIsolated();
   } else {

@@ -1,5 +1,6 @@
 #pragma once
 #include "Parser/AST.hpp"
+#include <unordered_map>
 
 namespace ast {
 /*
@@ -20,6 +21,9 @@ public:
   bool uniqueType = false;
   bool includer = false;
   bool hidden = false;
+  Statement *templateModuleRoot = nullptr;
+  std::string templateModuleCwd = "";
+  std::unordered_map<std::string, std::string> templateNamespaceMap;
   Class() = default;
   Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
         bool safeType, bool dynamic, bool pedantic, bool uniqueType,

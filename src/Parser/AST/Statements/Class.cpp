@@ -322,8 +322,11 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   // if the class is generic, do not generate code for it. It will be
   // generated when it is instantiated with specific types.
   if (this->genericTypes.size() > 0) {
-    generator.genericTypes().insert(
-        {this->ident.ident, this}); // add the class to the generic types
+    auto &templates = generator.genericTypes();
+    auto existing = templates.find(this->ident.ident);
+    if (existing == templates.end() || existing->second == nullptr ||
+        existing->second->templateModuleRoot == nullptr)
+      templates[this->ident.ident] = this; // add the class to the generic types
     return {asmc::File(), std::nullopt};
   }
 

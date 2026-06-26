@@ -5,6 +5,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
@@ -101,14 +102,27 @@ static void registerClassShells(ast::Statement *stmt,
                                 gen::CodeGenerator &generator) {
   if (stmt == nullptr)
     return;
-  if (auto seq = dynamic_cast<ast::Sequence *>(stmt)) {
-    registerClassShells(seq->Statement1, generator);
-    registerClassShells(seq->Statement2, generator);
-    return;
-  }
-  if (auto cls = dynamic_cast<ast::Class *>(stmt)) {
+  std::vector<ast::Statement *> stack{stmt};
+  while (!stack.empty()) {
+    ast::Statement *node = stack.back();
+    stack.pop_back();
+    if (node == nullptr)
+      continue;
+    if (auto seq = dynamic_cast<ast::Sequence *>(node)) {
+      stack.push_back(seq->Statement2);
+      stack.push_back(seq->Statement1);
+      continue;
+    }
+
+    auto cls = dynamic_cast<ast::Class *>(node);
+    if (cls == nullptr)
+      continue;
+
+    if (!cls->genericTypes.empty())
+      continue;
+
     if (generator.typeList()[cls->ident.ident] != nullptr)
-      return;
+      continue;
 
     auto *type = new gen::Class();
     type->Ident = cls->ident.ident;
@@ -354,6 +368,7 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     generator.ImportsOnly(added, true);
     std::unordered_map<std::string, std::string> nsMap;
     collectImportNamespaces(added, nsMap);
+    ast::Statement *templateRoot = ast::deepCopy(added);
     for (std::string ident : this->imports) {
       if (ident == "*") {
         auto seq = dynamic_cast<ast::Sequence *>(added);
@@ -369,15 +384,23 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
         }
         continue;
       }
-      if (generator.includedClasses().contains(id + "::" + ident))
-        continue;
-      generator.includedClasses().insert(id + "::" + ident, nullptr);
       auto allStmts = gen::utils::extractAll(ident, added, id);
       if (allStmts.size() <= 0) {
         generator.alert("Identifier " + ident + " not found to import");
       };
 
       for (auto stmt : allStmts) {
+        bool genericTemplate = false;
+        if (auto cls = dynamic_cast<ast::Class *>(stmt)) {
+          genericTemplate = !cls->genericTypes.empty();
+          cls->templateModuleRoot = templateRoot;
+          cls->templateModuleCwd = this->cwd;
+          cls->templateNamespaceMap = nsMap;
+        }
+        if (generator.includedClasses().contains(id + "::" + ident) &&
+            !genericTemplate)
+          continue;
+        generator.includedClasses().insert(id + "::" + ident, nullptr);
         stmt->namespaceSwap(nsMap);
         OutputFile << generator.GenSTMT(stmt);
       }
@@ -453,6 +476,7 @@ Import::generateClasses(gen::CodeGenerator &generator) {
 
   std::unordered_map<std::string, std::string> nsMap;
   collectImportNamespaces(added, nsMap);
+  ast::Statement *templateRoot = ast::deepCopy(added);
 
   for (std::string ident : this->imports) {
     ast::Statement *statement = gen::utils::extract(ident, added, id);
@@ -462,7 +486,15 @@ Import::generateClasses(gen::CodeGenerator &generator) {
         dynamic_cast<ast::Enum *>(statement) == nullptr &&
         dynamic_cast<ast::Transform *>(statement) == nullptr)
       continue;
-    if (generator.includedClasses().contains(id + "::" + ident))
+    bool genericTemplate = false;
+    if (auto cls = dynamic_cast<ast::Class *>(statement)) {
+      genericTemplate = !cls->genericTypes.empty();
+      cls->templateModuleRoot = templateRoot;
+      cls->templateModuleCwd = this->cwd;
+      cls->templateNamespaceMap = nsMap;
+    }
+    if (generator.includedClasses().contains(id + "::" + ident) &&
+        !genericTemplate)
       continue;
     generator.includedClasses().insert(id + "::" + ident, nullptr);
     statement->namespaceSwap(nsMap);

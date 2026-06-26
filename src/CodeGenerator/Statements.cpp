@@ -2,6 +2,7 @@
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <vector>
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/GenerationResult.hpp"
@@ -254,29 +255,37 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
 asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT,
                                            bool emitFunctions) {
   asmc::File OutputFile = asmc::File();
-  if (STMT->locked) {
-    auto *inst = new asmc::nop();
-    inst->logicalLine = STMT->logicalLine;
-    OutputFile.text.push(inst);
-  } else if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
-    this->ImportsOnly(dynamic_cast<ast::Sequence *>(STMT)->Statement1,
-                      emitFunctions);
-    this->ImportsOnly(dynamic_cast<ast::Sequence *>(STMT)->Statement2,
-                      emitFunctions);
-  } else if (dynamic_cast<ast::Import *>(STMT) != nullptr) {
-    auto imp = dynamic_cast<ast::Import *>(STMT);
-    if (!imp->hasClasses && !imp->hasFunctions)
-      return OutputFile;
+  std::vector<ast::Statement *> stack{STMT};
+  while (!stack.empty()) {
+    auto *node = stack.back();
+    stack.pop_back();
+    if (node == nullptr)
+      continue;
+    if (node->locked) {
+      auto *inst = new asmc::nop();
+      inst->logicalLine = node->logicalLine;
+      OutputFile.text.push(inst);
+      continue;
+    }
+    if (auto seq = dynamic_cast<ast::Sequence *>(node)) {
+      stack.push_back(seq->Statement2);
+      stack.push_back(seq->Statement1);
+      continue;
+    }
+    if (auto imp = dynamic_cast<ast::Import *>(node)) {
+      if (!imp->hasClasses && !imp->hasFunctions)
+        continue;
 
-    auto prev = cwd();
-    if (!imp->cwd.empty())
-      cwd() = imp->cwd;
+      auto prev = cwd();
+      if (!imp->cwd.empty())
+        cwd() = imp->cwd;
 
-    imp->generateClasses(*this);
-    if (emitFunctions && imp->hasFunctions)
-      imp->generate(*this);
+      imp->generateClasses(*this);
+      if (emitFunctions && imp->hasFunctions)
+        imp->generate(*this);
 
-    cwd() = prev;
+      cwd() = prev;
+    }
   }
   return OutputFile;
 }

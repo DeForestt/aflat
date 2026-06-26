@@ -6,10 +6,14 @@
 
 #include "CodeGenerator/MockCodeGenerator.hpp"
 #include "CodeGenerator/Utils.hpp"
+#include "Configs.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
 #include "catch.hpp"
+
+bool build(std::string path, std::string output, cfg::Mutability mutability,
+           bool debug);
 
 TEST_CASE("Parser handles mixed import of classes and functions", "[parser]") {
   lex::Lexer l;
@@ -58,6 +62,49 @@ TEST_CASE("ImportsOnly emits functions in mixed import", "[codegen]") {
   REQUIRE(gen.nameSpaceTable().contains("m"));
 
   std::remove("Temp.af");
+}
+
+TEST_CASE("Generic class instantiation sees private module imports",
+          "[imports][generics]") {
+  namespace fs = std::filesystem;
+  fs::create_directories("tmp/template_imports");
+
+  std::ofstream mod("tmp/template_imports/TemplateWrapper.af");
+  mod << ".needs <std>\n";
+  mod << "import vector from \"Collections/Vector\";\n";
+  mod << "types(T)\n";
+  mod << "class Helper {\n";
+  mod << "  T value = value;\n";
+  mod << "  fn init(T value) -> Self { return my; };\n";
+  mod << "  fn toString() -> string { return `Helper({my.value})`; };\n";
+  mod << "};\n";
+  mod << "types(T)\n";
+  mod << "class Wrapper {\n";
+  mod << "  vector::<Helper::<T>> values = new vector::<Helper::<T>>();\n";
+  mod << "  fn init() -> Self { return my; };\n";
+  mod << "  fn add(T value) -> Self {\n";
+  mod << "    my.values.push_back(new Helper::<T>(value));\n";
+  mod << "    return my;\n";
+  mod << "  };\n";
+  mod << "};\n";
+  mod.close();
+
+  std::ofstream use("tmp/template_imports/UseWrapper.af");
+  use << ".needs <std>\n";
+  use << "import Wrapper from \"./TemplateWrapper\";\n";
+  use << "fn main() -> int {\n";
+  use << "  const let wrapper = new Wrapper::<int>();\n";
+  use << "  wrapper.add(7);\n";
+  use << "  return 0;\n";
+  use << "};\n";
+  use.close();
+
+  const bool result = build("tmp/template_imports/UseWrapper.af",
+                            "tmp/template_imports/UseWrapper.s",
+                            cfg::Mutability::Strict, false);
+
+  fs::remove_all("tmp/template_imports");
+  REQUIRE(result);
 }
 
 TEST_CASE("Mixed imports preload class definitions", "[imports]") {

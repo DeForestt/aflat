@@ -92,6 +92,7 @@ void CodeGenerator::pushEnv() {
   state.GlobalSymbolTable = std::move(GlobalSymbolTable());
   state.includedMemo = std::move(includedMemo());
   state.includedClasses = std::move(includedClasses());
+  state.activeImports = std::move(activeImports());
   state.genericTypeConversions = std::move(genericTypeConversions());
   state.transforms = std::move(transforms());
   state.inFunction = inFunction();
@@ -109,6 +110,7 @@ void CodeGenerator::pushEnv() {
   GlobalSymbolTable() = links::LinkedList<Symbol>();
   includedMemo() = HashMap<ast::Statement *>();
   includedClasses() = HashMap<ast::Statement *>();
+  activeImports().clear();
   genericTypeConversions().clear();
   transforms().clear();
   currentFunction() = nullptr;
@@ -130,6 +132,7 @@ void CodeGenerator::popEnv() {
   GlobalSymbolTable() = std::move(state.GlobalSymbolTable);
   includedMemo() = std::move(state.includedMemo);
   includedClasses() = std::move(state.includedClasses);
+  activeImports() = std::move(state.activeImports);
   genericTypeConversions() = std::move(state.genericTypeConversions);
   transforms() = std::move(state.transforms);
   inFunction() = state.inFunction;
