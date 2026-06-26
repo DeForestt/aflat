@@ -12,8 +12,12 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
 
 TEST_CASE("build logs compile states", "[build]") {
   namespace fs = std::filesystem;
-  fs::create_directories("tmp");
-  std::ofstream ofs("tmp/simple.af");
+  const auto dir = fs::path("tmp/build_logging");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "simple.af";
+  const auto output = dir / "simple.s";
+  std::ofstream ofs(source);
   ofs << "int main(){return 0;};";
   ofs.close();
 
@@ -21,18 +25,15 @@ TEST_CASE("build logs compile states", "[build]") {
   auto *oldBuf = std::cout.rdbuf(buffer.rdbuf());
 
   bool result =
-      build("tmp/simple.af", "tmp/simple.s", cfg::Mutability::Strict, false);
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
   std::cout.flush();
   std::cout.rdbuf(oldBuf);
 
-  fs::remove("tmp/simple.af");
-  if (fs::exists("tmp/simple.s"))
-    fs::remove("tmp/simple.s");
-  fs::remove("tmp");
+  fs::remove_all(dir);
 
   REQUIRE(result);
   std::string out = buffer.str();
-  REQUIRE(out.find("[parsing] tmp/simple.af") != std::string::npos);
-  REQUIRE(out.find("[generating] tmp/simple.af") != std::string::npos);
-  REQUIRE(out.find("[done] tmp/simple.af") != std::string::npos);
+  REQUIRE(out.find("[parsing] " + source.string()) != std::string::npos);
+  REQUIRE(out.find("[generating] " + source.string()) != std::string::npos);
+  REQUIRE(out.find("[done] " + source.string()) != std::string::npos);
 }

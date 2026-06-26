@@ -9,8 +9,12 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
 
 TEST_CASE("generic union construction", "[union][generics]") {
   namespace fs = std::filesystem;
-  fs::create_directories("tmp");
-  std::ofstream ofs("tmp/union.af");
+  const auto dir = fs::path("tmp/union_template");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "union.af";
+  const auto output = dir / "union.s";
+  std::ofstream ofs(source);
   ofs << ".needs <std>\n";
   ofs << "types(T)\n";
   ofs << "union Choice { A(T), B(int) };\n";
@@ -23,12 +27,8 @@ TEST_CASE("generic union construction", "[union][generics]") {
   ofs.close();
 
   bool result =
-      build("tmp/union.af", "tmp/union.s", cfg::Mutability::Strict, false);
-  if (fs::exists("tmp/union.af"))
-    fs::remove("tmp/union.af");
-  if (fs::exists("tmp/union.s"))
-    fs::remove("tmp/union.s");
-  fs::remove("tmp");
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
 
   REQUIRE(result);
 }

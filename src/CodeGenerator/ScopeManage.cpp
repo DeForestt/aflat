@@ -14,10 +14,15 @@ ScopeManager::ScopeManager() {
 }
 
 void ScopeManager::reset() {
+  this->stack.clear();
+  this->globalStack.clear();
+  this->pleading.clear();
+  this->isolated.clear();
   this->stackPos = 0;
   this->maxStackPos = 0;
   this->scopeStack.clear();
   this->scopeStack.push_back(0);
+  this->SStackSize = 0;
 }
 
 int ScopeManager::assign(std::string symbol, ast::Type type, bool mask,

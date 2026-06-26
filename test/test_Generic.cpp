@@ -9,8 +9,12 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
 
 TEST_CASE("generic type variable declaration", "[generics]") {
   namespace fs = std::filesystem;
-  fs::create_directories("tmp");
-  std::ofstream ofs("tmp/generic.af");
+  const auto dir = fs::path("tmp/generic_type_variable");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "generic.af";
+  const auto output = dir / "generic.s";
+  std::ofstream ofs(source);
   ofs << "types(A)\n";
   ofs << "class Box {\n";
   ofs << "    A value = value;\n";
@@ -24,12 +28,8 @@ TEST_CASE("generic type variable declaration", "[generics]") {
   ofs.close();
 
   bool result =
-      build("tmp/generic.af", "tmp/generic.s", cfg::Mutability::Strict, false);
-  if (fs::exists("tmp/generic.af"))
-    fs::remove("tmp/generic.af");
-  if (fs::exists("tmp/generic.s"))
-    fs::remove("tmp/generic.s");
-  fs::remove("tmp");
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
 
   REQUIRE(result);
 }
@@ -37,8 +37,12 @@ TEST_CASE("generic type variable declaration", "[generics]") {
 TEST_CASE("nested generic member access resolves instantiated type",
           "[generics]") {
   namespace fs = std::filesystem;
-  fs::create_directories("tmp");
-  std::ofstream ofs("tmp/nested_generic_member.af");
+  const auto dir = fs::path("tmp/nested_generic_member");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "nested_generic_member.af";
+  const auto output = dir / "nested_generic_member.s";
+  std::ofstream ofs(source);
   ofs << ".needs <std>\n";
   ofs << "import vector from \"Collections/Vector\";\n";
   ofs << "import {Some, None, optionWrapper} from \"Utils/option\" under "
@@ -66,12 +70,8 @@ TEST_CASE("nested generic member access resolves instantiated type",
   ofs.close();
 
   bool result =
-      build("tmp/nested_generic_member.af", "tmp/nested_generic_member.s",
-            cfg::Mutability::Strict, false);
-  if (fs::exists("tmp/nested_generic_member.af"))
-    fs::remove("tmp/nested_generic_member.af");
-  if (fs::exists("tmp/nested_generic_member.s"))
-    fs::remove("tmp/nested_generic_member.s");
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
 
   REQUIRE(result);
 }

@@ -9,8 +9,12 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
 
 TEST_CASE("generic type in union alias", "[union][generics]") {
   namespace fs = std::filesystem;
-  fs::create_directories("tmp");
-  std::ofstream ofs("tmp/ualias.af");
+  const auto dir = fs::path("tmp/union_alias_generic");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "ualias.af";
+  const auto output = dir / "ualias.s";
+  std::ofstream ofs(source);
   ofs << ".needs <std>\n";
   ofs << "fn main() -> int {\n";
   ofs << "    return 0;\n";
@@ -18,12 +22,8 @@ TEST_CASE("generic type in union alias", "[union][generics]") {
   ofs.close();
 
   bool result =
-      build("tmp/ualias.af", "tmp/ualias.s", cfg::Mutability::Strict, false);
-  if (fs::exists("tmp/ualias.af"))
-    fs::remove("tmp/ualias.af");
-  if (fs::exists("tmp/ualias.s"))
-    fs::remove("tmp/ualias.s");
-  fs::remove("tmp");
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
 
   REQUIRE(result);
 }
