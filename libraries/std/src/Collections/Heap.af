@@ -1,0 +1,144 @@
+
+.needs <std>
+
+import {print} from "uni_string" under uni;
+import uni_string from "uni_string";
+
+import vector from "Collections/Vector";
+
+import option from "Utils/option";
+import {Some, None, optionWrapper} from "Utils/option" under opt;
+
+import result from "Utils/result";
+import {accept, reject} from "Utils/result" under res;
+
+types(T)
+class Heap {
+  private vector::<T> store = new vector::<T>();
+  mutable adr comp_func = comp_func;
+
+  private fn left_index(const int index) -> int {
+    return (2 * index) + 1;
+  };
+
+  private fn right_index(const int index) -> int {
+    return (2 * index) + 2;
+  };
+
+  private fn parent_index(const int index) -> int {
+    if index == 0 return -1;
+    return (index - 1) / 2;
+  };
+
+  fn init(* const adr comp_func) {
+    return my
+  };
+
+  safe fn order(const T v1, const T v2) -> bool {
+    const let comp_func = my.comp_func;
+    if comp_func == NULL return v1 > v2;
+    return comp_func(v1, v2);
+  };
+
+  private fn bubble_up(const int index) {
+    mutable int i = index;
+    mutable int p = my.parent_index(i);
+
+    while p >= 0 {
+      const let current = my.store.get(i).expect("bad heap current");
+      const let parent = my.store.get(p).expect("bad heap parent");
+
+      if my.order(parent, current) return;
+
+      my.store.set(i, parent);
+      my.store.set(p, current);
+
+      i = p;
+      p = my.parent_index(i);
+    };
+  };
+
+  private fn bubble_down(const int index) {
+    mutable int i = index;
+    const int count = my.store.count();
+
+    while true {
+      const int left = my.left_index(i);
+      const int right = my.right_index(i);
+      mutable int swap_index = i;
+
+      if left < count {
+        const let left_value = my.store.get(left).expect("bad left child");
+        const let current_swap_value = my.store.get(swap_index).expect("bad swap value");
+
+        if !my.order(current_swap_value, left_value) {
+          swap_index = left;
+        };
+      };
+
+      if right < count {
+        const let right_value = my.store.get(right).expect("bad right child");
+        const let current_swap_value = my.store.get(swap_index).expect("bad swap value");
+
+        if !my.order(current_swap_value, right_value) {
+          swap_index = right;
+        };
+      };
+
+      if swap_index == i return;
+
+      const let current = my.store.get(i).expect("bad current value");
+      const let swap_value = my.store.get(swap_index).expect("bad child value");
+
+      my.store.set(i, swap_value);
+      my.store.set(swap_index, current);
+
+      i = swap_index;
+    };
+  };
+
+
+  fn insert(const T value) {
+    my.store.push_back(value);
+    my.bubble_up(my.store.count() - 1)
+  };
+  
+
+  fn peek() -> T? {
+    if my.store.count() == 0 return opt.None::<T>();
+    return my.store.get(0).unwrap();
+  };
+
+  fn pop() -> T? {
+    const int count = my.store.count();
+    if count == 0 return opt.None::<T>();
+
+    const let val = my.store.get(0).unwrap();
+
+    if count == 1 {
+      my.store.pop_back();
+      return val;
+    };
+
+    const let last = my.store.get(count - 1).unwrap();
+    my.store.set(0, last);
+    my.store.pop_back();
+
+    my.bubble_down(0);
+
+    return val;
+  };
+
+  fn next() -> T? {
+    return my.pop();
+  };
+  
+
+  safe fn print() {
+    uni.print(`Heap: {my.store.count()}: [`);
+    foreach v in my.store {
+      uni.print(`{v}, `);
+    };
+    uni.print("]\n");
+  };
+};
