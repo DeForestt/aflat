@@ -2066,6 +2066,11 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       if (sym.Sym == '.') {
         tokens.pop();
         auto next = this->parseExpr(tokens);
+        if (auto compound = dynamic_cast<ast::Compound *>(next)) {
+          output->extention = compound->expr1;
+          compound->expr1 = output;
+          return prioritizeExpr(compound);
+        }
         output->extention = next;
       }
     }
