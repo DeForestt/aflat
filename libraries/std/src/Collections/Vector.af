@@ -71,6 +71,16 @@ class vector {
         return my.count;
     };
 
+    fn extend(const int capasity) -> result::<bool> {
+        if capasity <= my.size {
+            return res.reject::<bool>(new Error("New capacity must be greater than current capacity"));
+        };
+
+        my.size = capasity;
+        my.head = af_realloc(my.head, T * my.size);
+        return res.accept(true);
+    };
+
     when (T is unique and T missing __copy__)
     fn front() -> option::<view::<T>> {
         if my.count == 0 {
@@ -311,7 +321,7 @@ class vector {
         const let totalSize = totalCount * T;
         if totalSize > my.size {
             my.size = totalSize;
-            my.head = af_realloc(my.head, T * my.size);
+            my.head = af_realloc(my.head, my.size);
         };
         af_memcpy(my.head + (my.count * T), other.head, other.count() * T);
         my.count = totalCount;

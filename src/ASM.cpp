@@ -56,7 +56,28 @@ std::string asmc::Mov::toString() {
 }
 
 std::string asmc::Xor::toString() {
-  return "\txor\t" + this->op1 + ", " + this->op2 + "\n";
+  std::string size = "";
+  switch (this->size) {
+  case asmc::Byte:
+    size = "b";
+    break;
+  case asmc::Word:
+    size = "w";
+    break;
+  case asmc::DWord:
+    size = "l";
+    break;
+  case asmc::QWord:
+    size = "q";
+    break;
+  case asmc::AUTO:
+    size = "";
+    break;
+  default:
+    size = "";
+    break;
+  }
+  return "\txor" + size + "\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
 std::string asmc::Movzbl::toString() {

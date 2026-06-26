@@ -809,6 +809,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output = this->genArithmetic(orBit, comp, OutputFile);
         break;
       }
+      case ast::Carrot: {
+        asmc::Xor *xorBit = new asmc::Xor();
+        output = this->genArithmetic(xorBit, comp, OutputFile);
+        break;
+      }
       case ast::Less: {
         asmc::Sal *andBit = new asmc::Sal();
         gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
@@ -840,6 +845,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         andBit->size = expr1.size;
         andBit->logicalLine = logicalLine();
         OutputFile.text << andBit;
+        output.size = expr1.size;
+        output.type = expr1.type;
         output.access = registers()["%rdi"]->get(expr1.size);
 
         // move access to rax

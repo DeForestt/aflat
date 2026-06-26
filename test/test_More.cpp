@@ -59,3 +59,15 @@ TEST_CASE("Parser keeps comparison outside chained call extension",
   REQUIRE(right != nullptr);
   REQUIRE(right->val == 20);
 }
+
+TEST_CASE("Parser maps caret to bitwise xor operator", "[parser]") {
+  lex::Lexer lexer;
+  parse::Parser parser;
+  auto tokens = lexer.Scan("1 ^ 2");
+  tokens.invert();
+
+  ast::Expr *expr = parser.parseExpr(tokens);
+  auto *compound = dynamic_cast<ast::Compound *>(expr);
+  REQUIRE(compound != nullptr);
+  REQUIRE(compound->op == ast::Carrot);
+}

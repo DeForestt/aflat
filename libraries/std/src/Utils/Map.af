@@ -4,7 +4,7 @@ import string from "String";
 import {print} from "String" under str;
 import Option from "Utils/Option";
 import {none, some} from "Utils/Option" under may;
-import {str_at, len, str_comp} from "strings" under st;
+import {hash, len, str_comp} from "strings" under st;
 import option from "Utils/option";
 import {Some, None} from "Utils/option" under opt;
 import vector from "Collections/Vector";
@@ -16,21 +16,7 @@ class MapNode {
     mutable private any data = data;
     
     const private adr key = af_malloc(st.len(key) + 1);
-    const int hashVal = my.hash(key);
-
-    public int hash(const adr key) {
-        
-        const int prime = 31;          // small prime base
-        int hash = 0;
-        for int i = 0; i < st.len(key); i++ {
-            const int z = 0;
-            const adr zadr = ?z;
-            zadr =: st.str_at(key, i);
-            hash = (hash * prime + z) % 2147483647; // large prime modulus to avoid overflow
-        };
-        return hash;
-    };
-
+    const int hashVal = st.hash(key);
 
     public MapNode init(const adr key, const any data) {
         af_memcpy(my.key, key, st.len(key) + 1);
@@ -63,7 +49,7 @@ class MapNode {
     };
 
     private bool inputChild(const adr key, const any data) {
-        if my.hashVal < my.hash(key) {
+        if my.hashVal < st.hash(key) {
             return my.insertRight(key, data);
         } else {
             return my.insertLeft(key, data);
@@ -128,7 +114,7 @@ class MapNode {
             return my.data;
         };
 
-        const int keyHash = my.hash(key);
+        const int keyHash = st.hash(key);
 
         if my.hashVal < keyHash {
             if my.right != NULL {

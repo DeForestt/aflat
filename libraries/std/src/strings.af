@@ -479,6 +479,107 @@ export char str_at(adr str_, const int i){
 	return ch;
 };
 
+private fn u32(const int value) -> int {
+	return value;
+};
+
+private fn mul32(const int a, const int b) -> int {
+	return a * b;
+};
+
+private fn shl32(const int value, const int count) -> int {
+	return value << count;
+};
+
+private fn rotl32(const int value, const int count) -> int {
+	return (value << count) | (value >> (32 - count));
+};
+
+private fn byteAt(const adr key, const int index) -> int {
+	const int value = 0;
+	const adr valueAdr = ?value;
+	valueAdr =: str_at(key, index);
+	return value & 255;
+};
+
+private fn read32(const adr key, const int index) -> int {
+	return u32(
+		byteAt(key, index) +
+		shl32(byteAt(key, index + 1), 8) +
+		shl32(byteAt(key, index + 2), 16) +
+		shl32(byteAt(key, index + 3), 24)
+	);
+};
+
+private fn xxhashRound(const int acc, const int input) -> int {
+	mutable int value = u32(acc + mul32(input, -2048144777));
+	value = rotl32(value, 13);
+	value = mul32(value, -1640531535);
+	return value;
+};
+
+// Hash a null-terminated string using a 32-bit xxHash-style mix.
+export fn hash(const adr key) -> int {
+	const int PRIME32_1 = -1640531535;
+	const int PRIME32_2 = -2048144777;
+	const int PRIME32_3 = -1028477379;
+	const int PRIME32_4 = 668265263;
+	const int PRIME32_5 = 374761393;
+	const int seed = 0;
+	const int length = len(key);
+	mutable int index = 0;
+	mutable int hashValue = 0;
+
+	if length >= 16 {
+		mutable int v1 = u32(seed + PRIME32_1 + PRIME32_2);
+		mutable int v2 = u32(seed + PRIME32_2);
+		mutable int v3 = u32(seed);
+		mutable int v4 = u32(seed - PRIME32_1);
+
+		while index <= length - 16 {
+			v1 = xxhashRound(v1, read32(key, index));
+			index = index + 4;
+			v2 = xxhashRound(v2, read32(key, index));
+			index = index + 4;
+			v3 = xxhashRound(v3, read32(key, index));
+			index = index + 4;
+			v4 = xxhashRound(v4, read32(key, index));
+			index = index + 4;
+		};
+
+		hashValue = u32(
+			rotl32(v1, 1) +
+			rotl32(v2, 7) +
+			rotl32(v3, 12) +
+			rotl32(v4, 18)
+		);
+	} else {
+		hashValue = u32(seed + PRIME32_5);
+	};
+
+	hashValue = u32(hashValue + length);
+
+	while index <= length - 4 {
+		hashValue = u32(hashValue + mul32(read32(key, index), PRIME32_3));
+		hashValue = mul32(rotl32(hashValue, 17), PRIME32_4);
+		index = index + 4;
+	};
+
+	while index < length {
+		hashValue = u32(hashValue + mul32(byteAt(key, index), PRIME32_5));
+		hashValue = mul32(rotl32(hashValue, 11), PRIME32_1);
+		index = index + 1;
+	};
+
+	hashValue = hashValue ^ (hashValue >> 15);
+	hashValue = mul32(hashValue, PRIME32_2);
+	hashValue = hashValue ^ (hashValue >> 13);
+	hashValue = mul32(hashValue, PRIME32_3);
+	hashValue = hashValue ^ (hashValue >> 16);
+
+	return hashValue;
+};
+
 // Invoke callback for each character in the string, passing index/args.
 export int str_forEach(const adr s, const int<char, *int, any> foo, const adr args){
 	const int in = len(s);

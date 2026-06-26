@@ -109,7 +109,7 @@ CodeGenerator::resolveSymbol(std::string ident,
     while (modList.trail() > checkTo) {
       Type *type = *this->getType(last.typeName, OutputFile);
       std::string sto = modList.touch();
-      if (scope() == *typeList()[last.typeName]) {
+      if (scope() == type) {
         modSym = type->SymbolTable.search<std::string>(searchSymbol,
                                                        modList.shift());
       } else {

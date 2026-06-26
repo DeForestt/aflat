@@ -150,13 +150,6 @@ public:
   std::string toString();
 };
 
-class Xor : public Instruction {
-public:
-  std::string op1;
-  std::string op2;
-  std::string toString();
-};
-
 class Sete : public Instruction {
 public:
   std::string op;
@@ -266,6 +259,11 @@ public:
 };
 
 class Or : public ArithInst {
+public:
+  std::string toString();
+};
+
+class Xor : public ArithInst {
 public:
   std::string toString();
 };
