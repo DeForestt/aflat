@@ -393,6 +393,14 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
         bool genericTemplate = false;
         if (auto cls = dynamic_cast<ast::Class *>(stmt)) {
           genericTemplate = !cls->genericTypes.empty();
+          if (!genericTemplate) {
+            auto existing = generator.typeList()[cls->ident.ident];
+            auto existingClass = existing == nullptr
+                                     ? nullptr
+                                     : dynamic_cast<gen::Class *>(*existing);
+            if (existingClass != nullptr && !existingClass->declarationOnly)
+              continue;
+          }
           cls->templateModuleRoot = templateRoot;
           cls->templateModuleCwd = this->cwd;
           cls->templateNamespaceMap = nsMap;
@@ -489,6 +497,14 @@ Import::generateClasses(gen::CodeGenerator &generator) {
     bool genericTemplate = false;
     if (auto cls = dynamic_cast<ast::Class *>(statement)) {
       genericTemplate = !cls->genericTypes.empty();
+      if (!genericTemplate) {
+        auto existing = generator.typeList()[cls->ident.ident];
+        auto existingClass = existing == nullptr
+                                 ? nullptr
+                                 : dynamic_cast<gen::Class *>(*existing);
+        if (existingClass != nullptr && !existingClass->declarationOnly)
+          continue;
+      }
       cls->templateModuleRoot = templateRoot;
       cls->templateModuleCwd = this->cwd;
       cls->templateNamespaceMap = nsMap;

@@ -61,7 +61,7 @@ class u_map_bucket {
 		return false;
 	};
 
-	fn add(K key, const V value) -> bool {
+	fn add(const K key, const V value) -> bool {
 		for int i = 0; i < my.entries.count(); i++ {
 			const u_map_entry::<K, V> entry =
 				my.entries.get(i).expect("searched for non-existing unordered_map entry");
@@ -159,7 +159,7 @@ class unordered_map {
 		return h % my.capasity;
 	};
 
-	fn set(K key, const V value) -> Self {
+	fn set(const K key, const V value) -> Self {
 		const int index = my.index(key);
 		const u_map_bucket::<K, V> bucket =
 			my.buckets.get(index).expect("searched for non-existing unordered_map bucket");
