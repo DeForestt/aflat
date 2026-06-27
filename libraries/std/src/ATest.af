@@ -45,7 +45,7 @@ class FixtureStruct {
 	};
 };
 
-mutable unordered_map::<FixtureStruct> fixtures = NULL;
+mutable unordered_map::<adr,FixtureStruct> fixtures = NULL;
 mutable Map fixtureData = NULL;
 
 
@@ -154,9 +154,9 @@ fn markFailure(const uni_string message) -> void {
 };
 
 // Accessor for the global fixture registry.
-export fn getFixtures() -> unordered_map::<FixtureStruct> {
+export fn getFixtures() -> unordered_map::<adr,FixtureStruct> {
 	if fixtures == NULL {
-		fixtures = new unordered_map::<FixtureStruct>();
+		fixtures = new unordered_map::<adr,FixtureStruct>();
 	};
 	return fixtures;
 };

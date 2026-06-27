@@ -148,6 +148,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
         zero->logicalLine = this->logicalLine;
         zero->op1 = generator.registers()["%rbx"]->get(asmc::QWord);
         zero->op2 = generator.registers()["%rbx"]->get(asmc::QWord);
+        zero->size = asmc::QWord;
         file.text << zero;
       }
       file.text << mov2;

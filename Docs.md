@@ -430,6 +430,7 @@ if <expression> {
 - Logical operators are.  all logical operators are handled operators aflat does not have logical operators, the bitwise operators are used instead.
     - | or
     - & and
+    - ^ xor
 
 if statements can be used with else statements.  The syntax is:
 ```c

@@ -14,10 +14,15 @@ ScopeManager::ScopeManager() {
 }
 
 void ScopeManager::reset() {
+  this->stack.clear();
+  this->globalStack.clear();
+  this->pleading.clear();
+  this->isolated.clear();
   this->stackPos = 0;
   this->maxStackPos = 0;
   this->scopeStack.clear();
   this->scopeStack.push_back(0);
+  this->SStackSize = 0;
 }
 
 int ScopeManager::assign(std::string symbol, ast::Type type, bool mask,
@@ -89,6 +94,9 @@ void ScopeManager::popScope(CodeGenerator *callback, asmc::File &OutputFile,
     this->stackPos -= sizeToInt(this->stack.back().type.size) *
                       this->stack.back().type.arraySize;
     gen::Symbol sym = this->stack.back();
+    if (sym.byteMod > this->maxStackPos) {
+      this->maxStackPos = sym.byteMod;
+    }
     if (sym.symbol != "" && sym.symbol.find("lambda") == std::string::npos &&
         sym.symbol.find_first_not_of("0123456789") != std::string::npos) {
       // if the symbol has only numbers in it then it is a temp variable
@@ -158,6 +166,11 @@ int ScopeManager::getStackAlignment() {
   // align the stack
   if (this->maxStackPos < this->stackPos)
     this->maxStackPos = this->stackPos;
+  for (const auto &sym : this->stack) {
+    if (sym.byteMod > this->maxStackPos) {
+      this->maxStackPos = sym.byteMod;
+    }
+  }
   int align = 16;
   if (this->stack.size() > 0) {
     align = ((this->maxStackPos + 15) / 16) * 16;

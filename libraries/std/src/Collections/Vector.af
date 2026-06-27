@@ -26,8 +26,10 @@ class vector {
     fn init(*const int size) -> Self {
         if size == 0 {
             my.size = 1; 
-            my.head = af_malloc(T * my.size);
+        } else {
+            my.size = size;
         };
+        my.head = af_malloc(T * my.size);
         return my;
     };
 
@@ -69,6 +71,16 @@ class vector {
 
     safe fn count() -> int {
         return my.count;
+    };
+
+    fn extend(const int capasity) -> result::<bool> {
+        if capasity <= my.size {
+            return res.reject::<bool>(new Error("New capacity must be greater than current capacity"));
+        };
+
+        my.size = capasity;
+        my.head = af_realloc(my.head, T * my.size);
+        return res.accept(true);
     };
 
     when (T is unique and T missing __copy__)
@@ -311,7 +323,7 @@ class vector {
         const let totalSize = totalCount * T;
         if totalSize > my.size {
             my.size = totalSize;
-            my.head = af_realloc(my.head, T * my.size);
+            my.head = af_realloc(my.head, my.size);
         };
         af_memcpy(my.head + (my.count * T), other.head, other.count() * T);
         my.count = totalCount;

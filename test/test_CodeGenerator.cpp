@@ -1,7 +1,10 @@
 #include <filesystem>
 
 #include "CodeGenerator/MockCodeGenerator.hpp"
+#include "CodeGenerator/ScopeManager.hpp"
 #include "Parser/AST.hpp"
+#include "Parser/AST/Statements/Dec.hpp"
+#include "Parser/AST/Statements/Inc.hpp"
 #include "catch.hpp"
 
 #define MOCKGEN                                                                \
@@ -78,6 +81,34 @@ TEST_CASE("object accepts non-primitive values but rejects primitives",
   CHECK(mockGen.canAssign(objectTarget, "adr", "ERROR"));
   CHECK_THROWS(mockGen.canAssign(intSource, "object", "ERROR"));
   CHECK_THROWS(mockGen.canAssign(objectTarget, "int", "ERROR"));
+}
+
+TEST_CASE("increment and decrement use int-sized arithmetic", "[codegen]") {
+  auto parser = parse::Parser();
+  test::mockGen::CodeGenerator gen("mod", parser, "",
+                                   std::filesystem::current_path().string());
+  auto scope = gen::scope::ScopeManager::getInstance();
+  scope->reset();
+  scope->pushScope(true);
+  scope->assign("i", ast::Type("int", asmc::DWord), false);
+
+  ast::Inc inc;
+  inc.ident = "i";
+  auto incFile = inc.generate(gen).file;
+  auto *add = dynamic_cast<asmc::Add *>(incFile.text.peek());
+  REQUIRE(add != nullptr);
+  REQUIRE(add->size == asmc::DWord);
+  REQUIRE(add->op1 == "$1");
+
+  ast::Dec dec;
+  dec.ident = "i";
+  auto decFile = dec.generate(gen).file;
+  auto *sub = dynamic_cast<asmc::Sub *>(decFile.text.peek());
+  REQUIRE(sub != nullptr);
+  REQUIRE(sub->size == asmc::DWord);
+  REQUIRE(sub->op1 == "$1");
+
+  scope->reset();
 }
 
 TEST_CASE("memMove generates copy loop", "[memmove]") {

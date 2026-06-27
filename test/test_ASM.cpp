@@ -17,6 +17,14 @@ TEST_CASE("ASM Add int", "[asm]") {
   REQUIRE(a.toString() == "\taddl\t%rax, %rbx\n");
 }
 
+TEST_CASE("ASM Xor int uses sized mnemonic", "[asm]") {
+  asmc::Xor x;
+  x.op1 = "%eax";
+  x.op2 = "%edi";
+  x.size = asmc::DWord;
+  REQUIRE(x.toString() == "\txorl\t%eax, %edi\n");
+}
+
 TEST_CASE("Register get sizes", "[asm]") {
   asmc::Register r("rax", "eax", "ax", "al");
   REQUIRE(r.get(asmc::QWord) == "%rax");

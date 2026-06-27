@@ -31,6 +31,8 @@ gen::GenerationResult const Inc::generate(gen::CodeGenerator &generator) {
   add->logicalLine = this->logicalLine;
   add->op1 = "$1";
   add->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
+  add->size = sym->type.size;
+  add->opType = sym->type.opType;
   OutputFile.text << add;
   gen::scope::ScopeManager::getInstance()->addAssign(this->ident);
   return {OutputFile, std::nullopt};

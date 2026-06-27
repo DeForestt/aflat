@@ -88,7 +88,7 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
     for (size_t i = 0; i < templateTypes.size(); ++i) {
       unionType.typeName += templateTypes[i];
       if (i < templateTypes.size() - 1) {
-        unionType.typeName += ", ";
+        unionType.typeName += ",";
       }
     }
     unionType.typeName += ">";
@@ -137,10 +137,18 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
   auto mov = new asmc::Mov();
   mov->logicalLine = logicalLine;
   mov->from = internalAccess.expr->access;
-  mov->to = "-" + std::to_string(mod) + "(%rbp)";
+  mov->to = generator.registers()["%rax"]->get(asmc::QWord);
   mov->size = asmc::QWord;
 
   file.text << mov;
+
+  auto store = new asmc::Mov();
+  store->logicalLine = logicalLine;
+  store->from = generator.registers()["%rax"]->get(asmc::QWord);
+  store->to = "-" + std::to_string(mod) + "(%rbp)";
+  store->size = asmc::QWord;
+
+  file.text << store;
 
   auto useExpr = std::holds_alternative<ast::Type *>(alias.value)
                      ? expr
@@ -179,9 +187,10 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
 
   if (parse::PRIMITIVE_TYPES.find(fromExpr.type) !=
       parse::PRIMITIVE_TYPES.end()) {
-    file << generator.setOffset(mov->to, 0, fromExpr.access, fromExpr.size);
+    file << generator.setOffset(store->to, 0, fromExpr.access, fromExpr.size);
   } else {
-    file << generator.memMove(fromExpr.access, mov->to, unionGen->largestSize);
+    file << generator.memMove(fromExpr.access, store->to,
+                              unionGen->largestSize);
   }
 
   if (isUniqueCompositeType(generator, fromExpr.type, file)) {

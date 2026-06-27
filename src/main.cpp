@@ -1721,6 +1721,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       "unordered_map.s",
       "Tuple.s",
       "uni_string.s",
+      "Heap.s",
   };
 
   for (const auto &lib : libs) {

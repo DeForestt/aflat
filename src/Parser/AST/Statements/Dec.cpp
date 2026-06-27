@@ -28,9 +28,11 @@ gen::GenerationResult const Dec::generate(gen::CodeGenerator &generator) {
       "type {} does not support decrementing please us int instead");
 
   asmc::Sub *sub = new asmc::Sub();
-  sub->logicalLine = sub->logicalLine;
-  sub->op1 = "$-1";
+  sub->logicalLine = this->logicalLine;
+  sub->op1 = "$1";
   sub->op2 = "-" + std::to_string(sym->byteMod) + "(%rbp)";
+  sub->size = sym->type.size;
+  sub->opType = sym->type.opType;
   OutputFile.text << sub;
   gen::scope::ScopeManager::getInstance()->addAssign(this->ident);
   return {OutputFile, std::nullopt};

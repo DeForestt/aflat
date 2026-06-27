@@ -14,5 +14,6 @@ export int sPrintFloat(adr input);
 export int float_toString(adr input, adr obuff, int signed);
 export adr str_reverse(adr in, adr buff);
 export char str_at(adr str, int i);
+export int hash(adr key);
 export int str_forEach(adr s, adr foo, adr args);
 export bool char_isDigit(char c);

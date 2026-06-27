@@ -809,6 +809,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output = this->genArithmetic(orBit, comp, OutputFile);
         break;
       }
+      case ast::Carrot: {
+        asmc::Xor *xorBit = new asmc::Xor();
+        output = this->genArithmetic(xorBit, comp, OutputFile);
+        break;
+      }
       case ast::Less: {
         asmc::Sal *andBit = new asmc::Sal();
         gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
@@ -840,6 +845,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         andBit->size = expr1.size;
         andBit->logicalLine = logicalLine();
         OutputFile.text << andBit;
+        output.size = expr1.size;
+        output.type = expr1.type;
         output.access = registers()["%rdi"]->get(expr1.size);
 
         // move access to rax
@@ -1278,13 +1285,19 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     if (newExpr.type.typeName == "Map" &&
         typeHint.rfind("unordered_map", 0) == 0) {
-      std::istringstream iss(typeHint);
-      std::string typeName;
-      std::getline(iss, typeName, '.');
-      newExpr.type.typeName = typeName;
+      if (typeHint.find('<') != std::string::npos) {
+        auto parsedTemplate = gen::utils::parseGenericName(typeHint, *this);
+        newExpr.type.typeName = std::get<0>(parsedTemplate);
+        newExpr.templateTypes = std::get<1>(parsedTemplate);
+      } else {
+        std::istringstream iss(typeHint);
+        std::string typeName;
+        std::getline(iss, typeName, '.');
+        newExpr.type.typeName = typeName;
 
-      while (std::getline(iss, typeName, '.')) {
-        newExpr.templateTypes.push_back(typeName);
+        while (std::getline(iss, typeName, '.')) {
+          newExpr.templateTypes.push_back(typeName);
+        }
       }
     }
 
@@ -1292,6 +1305,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       alert("Please import std library in order to use new operator.\n\n -> "
             ".needs <std> \n\n",
             true, __FILE__, __LINE__);
+    if (!newExpr.templateTypes.empty() &&
+        newExpr.type.typeName.find('<') == std::string::npos) {
+      auto cls = genericTypes()[newExpr.type.typeName];
+      if (cls != nullptr) {
+        std::string newClassName;
+        this->instantiateGenericClass(cls, newExpr.templateTypes, newClassName,
+                                      OutputFile);
+        newExpr.type.typeName = newClassName;
+      }
+    }
     gen::Type **type = this->getType(newExpr.type.typeName, OutputFile);
     if (type == nullptr)
       alert("Type " + newExpr.type.typeName + " not found", true, __FILE__,
@@ -1362,7 +1385,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     asmc::Xor *xr = new asmc::Xor();
     xr->logicalLine = logicalLine();
     xr->op1 = "$1";
-    xr->op2 = registers()["%eax"]->get(asmc::DWord);
+    xr->op2 = registers()["%eax"]->get(asmc::Byte);
 
     ast::Type boolType = ast::Type();
 

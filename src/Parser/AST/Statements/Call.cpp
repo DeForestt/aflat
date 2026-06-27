@@ -644,6 +644,13 @@ gen::GenerationResult Call::generateAttempt(
 
   links::LinkedList<ast::Expr *> args;
   std::vector<asmc::Instruction *> overflowArgs;
+  struct SavedArg {
+    int index;
+    asmc::Size size;
+    asmc::OpType op;
+    std::string access;
+  };
+  std::vector<SavedArg> savedArgs;
   int i = 0;
   if (this->Args.trail() < func->req)
     this->requestOverloadRetry(
@@ -865,6 +872,19 @@ gen::GenerationResult Call::generateAttempt(
       }
     };
     i++;
+    ast::Type savedType(exp.type, exp.size);
+    savedType.opType = exp.op;
+    int savedArgSlot = gen::scope::ScopeManager::getInstance()->assign(
+        "", savedType, false, false);
+    auto saveArg = new asmc::Mov();
+    saveArg->logicalLine = this->logicalLine;
+    saveArg->size = exp.size;
+    saveArg->op = exp.op;
+    saveArg->from = exp.access;
+    saveArg->to = "-" + std::to_string(savedArgSlot) + "(%rbp)";
+    file.text << saveArg;
+    savedArgs.push_back({argsCounter, exp.size, exp.op,
+                         "-" + std::to_string(savedArgSlot) + "(%rbp)"});
     if (exp.op == asmc::Float) {
       ast::Type fl = ast::Type();
       fl.typeName = "float";
@@ -893,6 +913,7 @@ gen::GenerationResult Call::generateAttempt(
       xory->logicalLine = this->logicalLine;
       xory->op1 = generator.registers()["%eax"]->get(asmc::QWord);
       xory->op2 = generator.registers()["%eax"]->get(asmc::QWord);
+      xory->size = asmc::QWord;
       file.text << xory;
 
       asmc::Mov *mov3 = new asmc::Mov();
@@ -958,6 +979,21 @@ gen::GenerationResult Call::generateAttempt(
   // add the overflow arguments
   for (auto inst : overflowArgs) {
     file.text << inst;
+  }
+
+  for (const auto &savedArg : savedArgs) {
+    if (savedArg.index >= generator.intArgs().size()) {
+      continue;
+    }
+    auto reload = new asmc::Mov();
+    reload->logicalLine = this->logicalLine;
+    reload->size = savedArg.size;
+    reload->op = savedArg.op;
+    reload->from = savedArg.access;
+    reload->to = savedArg.op == asmc::Float
+                     ? generator.registers()["%xmm0"]->get(savedArg.size)
+                     : generator.intArgs()[savedArg.index].get(savedArg.size);
+    file.text << reload;
   }
 
   if (hasHiddenReceiver) {

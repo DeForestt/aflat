@@ -106,6 +106,7 @@ function compile_single {
         "Scroller") aflat ./libraries/std/src/Collections/Scroller.af -o ./libraries/std/Scroller.s ;;
         "Enumerator") aflat ./libraries/std/src/Collections/Enumerator.af -o ./libraries/std/Enumerator.s ;;
         "Vector") aflat ./libraries/std/src/Collections/Vector.af -o ./libraries/std/vector.s ;;
+        "Heap") aflat ./libraries/std/src/Collections/Heap.af -o ./libraries/std/Heap.s ;;
         "request") gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c ;;
         *)
             echo "Unknown library: $1"
@@ -116,7 +117,7 @@ function compile_single {
             echo "  Properties, Object, Error, Defer, unordered_map, Error_Render"
             echo "  HTTP_Endpoint, HTTP_Middleware, HTTP_Server, HTTP_Endpoints"
             echo "  Web_Content, Web_Content_Bind, JSON, JSON_Parse, JSON_Property"
-            echo "  Iterator, Scroller, Enumerator, Vector, request, Tuple"
+            echo "  Iterator, Scroller, Enumerator, Vector, request, Tuple, Heap"
             exit 1 ;;
     esac
     echo "Successfully compiled $1"
@@ -203,6 +204,7 @@ aflat ./libraries/std/src/Collections/Iterator.af -o ./libraries/std/Iterator.s 
 aflat ./libraries/std/src/Collections/Scroller.af -o ./libraries/std/Scroller.s & more_pids+=($!)
 aflat ./libraries/std/src/Collections/Enumerator.af -o ./libraries/std/Enumerator.s & more_pids+=($!)
 aflat ./libraries/std/src/Collections/Vector.af -o ./libraries/std/vector.s & more_pids+=($!)
+aflat ./libraries/std/src/Collections/Heap.af -o ./libraries/std/Heap.s & more_pids+=($!)
 aflat ./libraries/std/src/Collections/Tuple.af -o ./libraries/std/Tuple.s & more_pids+=($!)
 
 # Handle JSON/Parse separately since it needs renaming

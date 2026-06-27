@@ -322,8 +322,11 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   // if the class is generic, do not generate code for it. It will be
   // generated when it is instantiated with specific types.
   if (this->genericTypes.size() > 0) {
-    generator.genericTypes().insert(
-        {this->ident.ident, this}); // add the class to the generic types
+    auto &templates = generator.genericTypes();
+    auto existing = templates.find(this->ident.ident);
+    if (existing == templates.end() || existing->second == nullptr ||
+        existing->second->templateModuleRoot == nullptr)
+      templates[this->ident.ident] = this; // add the class to the generic types
     return {asmc::File(), std::nullopt};
   }
 
@@ -350,7 +353,8 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   gen::Class *type = new gen::Class();
   type->hidden = this->hidden;
   type->body = this->statement; // save the body in case of composition
-  bool saveScope = generator.globalScope();
+  bool saveGlobalScope = generator.globalScope();
+  auto saveScope = generator.scope();
   generator.globalScope() = false;
   type->Ident = this->ident.ident;
   type->nameTable.foo = gen::utils::compareFunc;
@@ -489,8 +493,8 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   }
 
   OutputFile << file;
-  generator.globalScope() = saveScope;
-  generator.scope() = nullptr;
+  generator.globalScope() = saveGlobalScope;
+  generator.scope() = saveScope;
 
   return {OutputFile, std::nullopt};
 }
