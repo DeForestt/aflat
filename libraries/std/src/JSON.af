@@ -1,5 +1,6 @@
 .needs <std>
 import string from "String";
+import uni_string from "uni_string";
 import result from "Utils/result";
 import option from "Utils/option";
 import vector from "Collections/Vector";
@@ -7,8 +8,10 @@ import unordered_map from "Collections/unordered_map";
 import {Some, None, optionWrapper} from "Utils/option" under opt;
 import {accept, reject, resultWrapper} from "Utils/result" under res;
 import {print} from "String" under str;
+import {itos} from "String" under str;
 import {char_isDigit, char_isWhiteSpace} from "strings" under st;
 import {hex_toInt} from "strings" under st;
+import {ascii} from "strings" under st;
 import {len} from "strings" under st;
 import {str_at} from "strings" under st;
 import {toChar, toInt} from "io" under io;
@@ -103,26 +106,25 @@ union JSON {
         };
     };
 
-    private fn wrap(const string s, const char c1, const char c2) -> string {
-        return `{c1}{s}{c2}`;
-    };
-
     // Replace literal newline-like characters in a JSON string with printable escape sequences.
-    private fn escapeStringNewlines(const adr value) -> string {
-        mutable string builder = "";
+    private fn escapeStringNewlines(const adr value) -> uni_string {
+        mutable uni_string builder = "";
         const int length = st.len(value);
         const char slash = '\\';
-        const char formFeed = io.toChar(12);
+        const char formFeed = st.ascii(12);
         for int i = 0; i < length; i++ {
             const char c = st.str_at(value, i);
             if c == '\n' {
-                builder = `{builder}{slash}n`;
+                builder.push_in_place(slash);
+                builder.push_in_place('n');
             } else if c == '\r' {
-                builder = `{builder}{slash}r`;
+                builder.push_in_place(slash);
+                builder.push_in_place('r');
             } else if c == formFeed {
-                builder = `{builder}{slash}f`;
+                builder.push_in_place(slash);
+                builder.push_in_place('f');
             } else {
-                builder = `{builder}{c}`;
+                builder.push_in_place(c);
             };
         };
         return builder;
@@ -131,35 +133,66 @@ union JSON {
     fn stringify(?const int indent_) -> string {
         const let indent = 1 * indent_.or(0); // If 0, there will never be any indentation
         const let nextIndent = if indent > 0 indent + 1 else 0;
-        const let nl = if indent > 0 "\n" else "";
-        mutable string indentStr = "";
+        const uni_string nl = if indent > 0 "\n" else "";
+        mutable uni_string indentStr = "";
         for int i = 0; i < indent; i++ {
-            indentStr = `{indentStr}  `;
+            indentStr.append_raw("  ");
         };
         
         match my {
             String(s) => {
                 const let escaped = my.escapeStringNewlines(s);
-                const let value = my.wrap(escaped, '"', '"');
-                return `{indentStr}{value}`;
+                mutable uni_string out = "";
+                out.append(indentStr);
+                out.push_in_place('"');
+                out.append(escaped);
+                out.push_in_place('"');
+                return out.to_string();
             },
-            Number(n) => return `{indentStr}{n}`,
-            Boolean(b) => return `{indentStr}{b}`,
+            Number(n) => {
+                const uni_string digits = str.itos(n).cstr();
+                mutable uni_string out = "";
+                out.append(indentStr);
+                out.append(digits);
+                return out.to_string();
+            },
+            Boolean(b) => {
+                const uni_string literal = if b "true" else "false";
+                mutable uni_string out = "";
+                out.append(indentStr);
+                out.append(literal);
+                return out.to_string();
+            },
             List(list) => {
                 const let v = match list.next() {
                     Some(value) => resolve value.get(), // unwrap the Box
                     None => return "[]"
                 };
-                mutable let builder = `[{nl}{indentStr}{v.stringify(nextIndent)}`;
+                mutable uni_string builder = "[";
+                builder.append(nl);
+                builder.append(indentStr);
+                string firstText = v.stringify(nextIndent);
+                firstText.seal();
+                builder.append_raw(firstText.cstr());
                 foreach item in list {
                     const let item = item.get(); // unwrap the Box
 
-                    builder =  `{builder},{nl}{indentStr}{item.stringify(nextIndent)}`;
+                    builder.append_raw(",");
+                    builder.append(nl);
+                    builder.append(indentStr);
+                    string itemText = item.stringify(nextIndent);
+                    itemText.seal();
+                    builder.append_raw(itemText.cstr());
                 };
-                return `{builder}{nl}{indentStr}]`;
+                builder.append(nl);
+                builder.append(indentStr);
+                builder.append_raw("]");
+                return builder.to_string();
             },
             Object(map) => {
-                mutable string builder = `{nl}{indentStr}`;
+                mutable uni_string builder = "";
+                builder.append(nl);
+                builder.append(indentStr);
                 let first = true;
                 
                 const let keys = map.keys();
@@ -167,23 +200,30 @@ union JSON {
                     const let value = map.get(key).expect(`Value {key} should be present`);
                     // value is a Box, so we need to unwrap it
                     const let value = value.get();
-                    const let wrapKey = my.wrap(key, '"', '"');
                     if first {
                         first = false;
                     } else {
-                        builder = `{builder},{nl}{indentStr}`;
+                        builder.append_raw(",");
+                        builder.append(nl);
+                        builder.append(indentStr);
                     };
-                    builder = `{builder}{wrapKey}:`;
-                    builder = builder + value.stringify(nextIndent);
+                    builder.push_in_place('"');
+                    builder.append_raw(key);
+                    builder.push_in_place('"');
+                    builder.append_raw(":");
+                    string renderedText = value.stringify(nextIndent);
+                    renderedText.seal();
+                    builder.append_raw(renderedText.cstr());
                 };
-                mutable string sub1Indent = "";
-                for int i = 0; i < indent - 1; i++ {
-                    sub1Indent = `{sub1Indent}  `;
-                };
-                builder = `{builder}{nl}{indentStr}`;
-                return my.wrap(builder, '{', '}');
+                builder.append(nl);
+                builder.append(indentStr);
+                mutable uni_string out = "";
+                out.push_in_place('{');
+                out.append(builder);
+                out.push_in_place('}');
+                return out.to_string();
             },
-            Null => return `null`
+            Null => return "null"
         };
 
 
@@ -278,7 +318,8 @@ private fn isHexDigit(const char c) -> bool {
 };
 
 private fn parseStringValue(const string value) -> JSON! {
-    string builder = "";
+    mutable uni_string builder = "";
+    mutable uni_string hexDigits = "";
     int lastPos = value.tell();
     while true {
         match value.next() {
@@ -289,32 +330,32 @@ private fn parseStringValue(const string value) -> JSON! {
                     match value.next() {
                         Some(escapeChar) => {
                             lastPos = value.tell();
-                            if escapeChar == '\"' {
-                                const char quote = '\"';
-                                builder = `{builder}{quote}`;
-                            } else if escapeChar == '\\' {
-                                const char backslash = '\\';
-                                builder = `{builder}{backslash}`;
-                            } else if escapeChar == '/' {
-                                const char slash = '/';
-                                builder = `{builder}{slash}`;
-                            } else if escapeChar == 'b' {
-                                const char backspace = io.toChar(8);
-                                builder = `{builder}{backspace}`;
-                            } else if escapeChar == 'f' {
-                                const char formFeed = io.toChar(12);
-                                builder = `{builder}{formFeed}`;
-                            } else if escapeChar == 'n' {
-                                const char newline = '\n';
-                                builder = `{builder}{newline}`;
-                            } else if escapeChar == 'r' {
-                                const char carriageReturn = '\r';
-                                builder = `{builder}{carriageReturn}`;
-                            } else if escapeChar == 't' {
-                                const char tab = '\t';
-                                builder = `{builder}{tab}`;
+	                            if escapeChar == '\"' {
+	                                const char quote = '\"';
+	                                builder.push_in_place(quote);
+	                            } else if escapeChar == '\\' {
+	                                const char backslash = '\\';
+	                                builder.push_in_place(backslash);
+	                            } else if escapeChar == '/' {
+	                                const char slash = '/';
+	                                builder.push_in_place(slash);
+	                            } else if escapeChar == 'b' {
+	                                const char backspace = st.ascii(8);
+	                                builder.push_in_place(backspace);
+	                            } else if escapeChar == 'f' {
+	                                const char formFeed = st.ascii(12);
+	                                builder.push_in_place(formFeed);
+	                            } else if escapeChar == 'n' {
+	                                const char newline = '\n';
+	                                builder.push_in_place(newline);
+	                            } else if escapeChar == 'r' {
+	                                const char carriageReturn = '\r';
+	                                builder.push_in_place(carriageReturn);
+	                            } else if escapeChar == 't' {
+	                                const char tab = '\t';
+	                                builder.push_in_place(tab);
                             } else if escapeChar == 'u' {
-                                string hexDigits = "";
+                                hexDigits.clear();
                                 for int i = 0; i < 4; i = i + 1 {
                                     match value.next() {
                                         Some(hexChar) => {
@@ -323,27 +364,27 @@ private fn parseStringValue(const string value) -> JSON! {
                                                 const int invalidPos = if value.tell() > 0 value.tell() - 1 else 0;
                                                 return parseError(value, "Invalid unicode escape sequence in string literal", invalidPos);
                                             };
-                                            hexDigits = `{hexDigits}{hexChar}`;
+	                                            hexDigits.push_in_place(hexChar);
                                         },
                                         None => return parseError(value, "Unterminated unicode escape sequence in string literal", value.len())
                                     };
                                 };
-                                const let unicodeValue = st.hex_toInt(hexDigits.cstr());
-                                const char unicodeChar = io.toChar(unicodeValue);
-                                builder = `{builder}{unicodeChar}`;
-                            } else {
-                                return parseError(value, `Invalid escape character '\\{escapeChar}' in string literal`, escapePos);
-                            };
+	                                const let unicodeValue = st.hex_toInt(hexDigits.to_string().cstr());
+                                const char unicodeChar = st.ascii(unicodeValue);
+		                                builder.push_in_place(unicodeChar);
+	                            } else {
+	                                return parseError(value, value, escapePos);
+	                            };
                         },
                         None => return parseError(value, "Unterminated escape sequence in string literal", escapePos)
                     };
                 } else if c == '\"' {
-                    return String(builder.cstr());
+                    return String(builder.to_string().cstr());
                 } else if c == '\n' | c == '\r' {
                     const int newlinePos = if value.tell() > 0 value.tell() - 1 else 0;
                     return parseError(value, "Unescaped newline in string literal", newlinePos);
                 } else {
-                    builder = `{builder}{c}`;
+	                    builder.push_in_place(c);
                 };
             },
             None => return parseError(value, "Unterminated string literal", lastPos)

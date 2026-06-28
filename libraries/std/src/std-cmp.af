@@ -4,6 +4,7 @@
 import {print, printHex, printInt} from "io" under io;
 import string from "String" under string;
 import { fString } from "String" under st;
+import { len } from "strings" under strs;
 
 Block __head = NULL;
 
@@ -105,9 +106,17 @@ int sleep(const int seconds, * const int nanoseconds){
 /*
  * _FCstr utility function to format a c string
  */
+string _fString(const adr fmt, * const adr args) {
+    return st.fString(new string(fmt), args);
+};
+
 adr _fCstr(const adr fmt, * const adr args) {
-    const let ret = st.fString(new string(fmt), args);
-    return ret.cstr();
+    const let ret = _fString(fmt, args);
+    const adr raw = ret.cstr();
+    const int size = strs.len(raw) + 1;
+    const adr out = af_malloc(size);
+    af_memcpy(out, raw, size);
+    return out;
 };
 
 adr create(const int size, * const any value) {

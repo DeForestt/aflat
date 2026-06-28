@@ -709,5 +709,6 @@ export int readInt(const string prompt,  ?const int tries) {
 export string itos(const int i) {
     const char[256] buff;
     str.int_toString(i, buff);
-    return `{buff}`;
+    const string out = new string(buff);
+    return out.copy();
 };

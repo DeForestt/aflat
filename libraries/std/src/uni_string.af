@@ -150,6 +150,15 @@ unique class uni_string {
     my.iter = 0;
   };
 
+  fn clear() -> void {
+    if my.buf != NULL {
+      af_free(my.buf);
+    };
+    my.buf = NULL;
+    my.size = 0;
+    my.iter = 0;
+  };
+
   safe fn in_bounds(immutable int index) -> bool {
     if (index < 0) {
       return false;
@@ -187,16 +196,75 @@ unique class uni_string {
   };
 
   fn concat(immutable uni_string other) -> uni_string {
-    const let new_len = my.size + other.len();
+    mutable adr left = my.buf;
+    immutable adr rawRight = other.get_buf();
+    mutable adr right = rawRight;
+    if left == NULL {
+      left = my.empty_buffer();
+    };
+    if right == NULL {
+      right = my.empty_buffer();
+    };
+    const let new_len = st.len(left) + st.len(right);
     const adr new_buf = af_malloc(new_len + 1);
-    st.str_concat(my.buf, other.buf, new_buf);
+    st.str_concat(left, right, new_buf);
     const uni_string s = new uni_string(new_buf);
     af_free(new_buf);
     return s;
   };
 
+  fn push(immutable char c) -> uni_string {
+    const int new_len = my.size + 1;
+    const adr new_buf = af_malloc(new_len + 1);
+    if my.size > 0 {
+      af_memcpy(new_buf, my.buf, my.size);
+    };
+    const adr cursor = new_buf + my.size;
+    cursor =: c;
+    const adr tail = new_buf + new_len;
+    tail =: '\0';
+    const uni_string s = new uni_string(new_buf);
+    af_free(new_buf);
+    return s;
+  };
+
+  fn append_raw(immutable adr raw) -> void {
+    if raw == NULL {
+      return;
+    };
+    mutable adr left = my.buf;
+    if left == NULL {
+      left = my.empty_buffer();
+    };
+    mutable adr right = raw;
+    const int left_len = st.len(left);
+    const int right_len = st.len(right);
+    const int new_len = left_len + right_len;
+    const adr new_buf = af_malloc(new_len + 1);
+    st.str_concat(left, right, new_buf);
+    if my.buf != NULL {
+      af_free(my.buf);
+    };
+    my.buf = new_buf;
+    my.size = new_len;
+    my.iter = 0;
+  };
+
+  fn append(immutable uni_string other) -> void {
+    immutable adr raw = other.get_buf();
+    my.append_raw(raw);
+  };
+
+  fn push_in_place(immutable char c) -> void {
+    const char[2] buff;
+    buff =: c;
+    const adr tail = buff + 1;
+    tail =: '\0';
+    my.append_raw(buff);
+  };
+
   bool compare<<==>>(immutable uni_string other) {
-    return st.str_comp(my.buf, other.buf) == 0;
+    return st.str_comp(my.buf, other.buf) == 1;
   };
 
   safe fn subString(immutable int start, immutable int end) -> uni_string {
@@ -412,9 +480,6 @@ unique class uni_string {
 
   uni_string cpy<<=>>(const uni_string other) {
     if other.buf == my.buf return my;
-    if my.buf != NULL {
-      af_free(my.buf);
-    };
     my.copy_from(other.buf);
     return my;
   };

@@ -260,10 +260,18 @@ int sleep(const int seconds, *const int nanoseconds){
 /*
  * _FCstr utility function to format a c string
  */
-adr _fCstr(const adr fmt, * const adr args) {
+string _fString(const adr fmt, * const adr args) {
     const let s = new string(fmt);
-    const let ret = st.fString(s, args);
-    return ret.cstr();
+    return st.fString(s, args);
+};
+
+adr _fCstr(const adr fmt, * const adr args) {
+    const let ret = _fString(fmt, args);
+    const adr raw = ret.cstr();
+    const int size = strs.len(raw) + 1;
+    const adr out = af_malloc(size);
+    af_memcpy(out, raw, size);
+    return out;
 };
 
 adr _fUCstr(const adr fmt, * adr args) {
