@@ -19,6 +19,20 @@ static bool canExplicitlyCastFrom(const std::string &typeName) {
          typeName == "object";
 }
 
+static bool isFormattedStringExpr(ast::Expr *expr) {
+  return dynamic_cast<ast::FStringLiteral *>(expr) != nullptr;
+}
+
+static std::string formattedStringHintForType(const std::string &typeName) {
+  if (typeName == "string" || typeName == "adr") {
+    return "string";
+  }
+  if (typeName == "uni_string") {
+    return "uni_string";
+  }
+  return "";
+}
+
 namespace gen {
 gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                                       asmc::Size size, std::string typeHint) {
@@ -654,11 +668,22 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     const bool wantsString = !str.uniqueLiteral &&
                              typeHint.find("string") != std::string::npos &&
                              typeHint.find("uni_string") == std::string::npos;
+    const bool wantsAdr = !str.uniqueLiteral && typeHint == "adr";
     if (wantsString) {
-      output = this->GenExpr(call, OutputFile);
+      ast::CallExpr *stringCall = new ast::CallExpr();
+      stringCall->call = new ast::Call();
+      stringCall->call->ident = "_fString";
+      stringCall->call->logicalLine = logicalLine();
+      stringCall->logicalLine = logicalLine();
+      stringCall->call->Args.push(strLit);
+      stringCall->call->Args.push(list);
+
+      output = this->GenExpr(stringCall, OutputFile);
       output.type = "string";
-    } else if (str.uniqueLiteral ||
-               typeHint.find("uni_string") != std::string::npos) {
+    } else if (wantsAdr) {
+      output = this->GenExpr(call, OutputFile);
+      output.type = "adr";
+    } else {
       ast::CallExpr *ownedCall = new ast::CallExpr();
       ownedCall->call = new ast::Call();
       ownedCall->call->ident = "_fUCstr";
@@ -673,9 +698,6 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       ownedStr->args.push(ownedCall);
       output = this->GenExpr(ownedStr, OutputFile);
       output.type = "uni_string";
-    } else {
-      output = this->GenExpr(call, OutputFile);
-      output.type = "string";
     }
   } else if (dynamic_cast<ast::FloatLiteral *>(expr) != nullptr) {
     ast::FloatLiteral *floatLit = dynamic_cast<ast::FloatLiteral *>(expr);
@@ -750,7 +772,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     std::string tname = "";
     // gen expr 1 and check if it is a class
     asmc::File dd = asmc::File();
-    std::string optn = this->GenExpr(comp.expr1, dd).type;
+    std::string expr1Hint = "";
+    if (isFormattedStringExpr(comp.expr1)) {
+      asmc::File rightProbe = asmc::File();
+      expr1Hint = formattedStringHintForType(
+          this->GenExpr(comp.expr2, rightProbe).type);
+    }
+    std::string optn =
+        this->GenExpr(comp.expr1, dd, asmc::AUTO, expr1Hint).type;
     gen::Type **type = typeList()[optn];
     if (type != nullptr) {
       gen::Class *cls = dynamic_cast<gen::Class *>(*type);

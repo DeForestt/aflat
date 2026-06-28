@@ -264,7 +264,7 @@ unique class uni_string {
   };
 
   bool compare<<==>>(immutable uni_string other) {
-    return st.str_comp(my.buf, other.buf) == 0;
+    return st.str_comp(my.buf, other.buf) == 1;
   };
 
   safe fn subString(immutable int start, immutable int end) -> uni_string {

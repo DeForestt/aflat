@@ -42,6 +42,7 @@ int panic(object msg);
 int assert(bool cond, * object message);
 int sleep(int seconds, * int nanoseconds);
 adr _fCstr(object fmt, * object args);
+adr _fString(object fmt, * object args);
 adr _fUCstr(object fmt, * object args);
 adr mmap(object addr, int len, int prot, int flags, int fd, int offset);
 adr create(const int size, ? const any value);
