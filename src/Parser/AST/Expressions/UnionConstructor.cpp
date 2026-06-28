@@ -197,12 +197,20 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
     emitInvalidateCall(generator, file, useExpr, logicalLine);
   }
 
-  // set the variant index in the union
-  file << generator.setOffset(mov->to, unionGen->largestSize,
+  // Payload generation may clobber %rax, so write the tag through the saved
+  // union storage pointer rather than the original allocation register.
+  file << generator.setOffset(store->to, unionGen->largestSize,
                               "$" + std::to_string(variantIndex), asmc::DWord);
 
+  auto restoreUnionPointer = new asmc::Mov();
+  restoreUnionPointer->logicalLine = logicalLine;
+  restoreUnionPointer->from = store->to;
+  restoreUnionPointer->to = generator.registers()["%rax"]->get(asmc::QWord);
+  restoreUnionPointer->size = asmc::QWord;
+  file.text << restoreUnionPointer;
+
   auto out = gen::Expr();
-  out.access = mov->to;
+  out.access = restoreUnionPointer->to;
   out.size = asmc::QWord;
   out.type = unionType.typeName;
   out.op = asmc::Hard;

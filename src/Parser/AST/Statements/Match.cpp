@@ -134,10 +134,10 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
   matchID.erase(std::remove(matchID.begin(), matchID.end(), '-'),
                 matchID.end());
 
-  std::vector<std::string> jmpLabels;
+  std::vector<std::string> nextCaseLabels;
   std::transform(unionType->aliases.begin(), unionType->aliases.end(),
-                 std::back_inserter(jmpLabels), [&](const auto &alias) {
-                   return ".match_arm_" + matchID + "_" + alias.name;
+                 std::back_inserter(nextCaseLabels), [&](const auto &alias) {
+                   return ".match_next_" + matchID + "_" + alias.name;
                  });
   std::string matchEndLabel = ".match_end_" + matchID;
 
@@ -180,7 +180,7 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
     }
   }
 
-  for (auto i = 0; i < jmpLabels.size(); i++) {
+  for (auto i = 0; i < nextCaseLabels.size(); i++) {
     auto &alias = unionType->aliases[i];
     // find the case
     auto caseIt =
@@ -197,7 +197,7 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
     cmp->from = "$" + std::to_string(i);
     file.text << cmp;
     auto jne = new asmc::Jne();
-    jne->to = jmpLabels[i];
+    jne->to = nextCaseLabels[i];
     jne->logicalLine = expr->logicalLine;
     file.text << jne;
 
@@ -297,7 +297,7 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
     gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
     auto lable = new asmc::Label();
     lable->logicalLine = expr->logicalLine;
-    lable->label = jmpLabels[i];
+    lable->label = nextCaseLabels[i];
     file.text << lable;
   }
 
