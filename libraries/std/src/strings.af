@@ -100,8 +100,8 @@ export int int_toString(int input, adr buffer){
 
         if (input == 0){
                 buffer =: '0';
-                buffer =: null;
                 buffer = buffer + #1;
+                buffer =: null;
                 return 0;
         };
 

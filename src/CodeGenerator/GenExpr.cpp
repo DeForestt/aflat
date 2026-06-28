@@ -1366,6 +1366,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     callMalloc->call->Args = links::LinkedList<ast::Expr *>();
     ast::IntLiteral *size = new ast::IntLiteral();
     size->val = cl->SymbolTable.head->data.byteMod;
+    if (auto unionType = dynamic_cast<gen::Union *>(cl))
+      size->val = unionType->largestSize + 4;
     callMalloc->call->Args.push(size);
     gen::Expr afterMalloc = this->GenExpr(callMalloc, OutputFile);
 

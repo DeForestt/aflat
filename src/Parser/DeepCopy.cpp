@@ -2,6 +2,7 @@
 #include <string>
 
 #include "Parser/AST.hpp"
+#include "Parser/AST/Expressions/List.hpp"
 #include "Parser/AST/Statements.hpp"
 #include "Parser/AST/Statements/Union.hpp"
 
@@ -242,6 +243,15 @@ Statement *deepCopy(const Statement *stmt) {
     auto *copy = new StructList();
     copy->args = copyExprList(structList->args);
     copyExprFields(copy, structList);
+    return copy;
+  }
+  if (auto list = dynamic_cast<const List *>(stmt)) {
+    auto *copy = new List();
+    copy->items.reserve(list->items.size());
+    for (auto *item : list->items) {
+      copy->items.push_back(static_cast<Expr *>(deepCopy(item)));
+    }
+    copyExprFields(copy, list);
     return copy;
   }
   if (auto comp = dynamic_cast<const Compound *>(stmt)) {

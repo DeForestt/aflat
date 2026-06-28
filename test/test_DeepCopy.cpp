@@ -1,4 +1,5 @@
 #include "Parser/AST.hpp"
+#include "Parser/AST/Expressions/List.hpp"
 #include "Parser/Parser.hpp"
 #include "Scanner.hpp"
 #include "catch.hpp"
@@ -43,4 +44,29 @@ TEST_CASE("deepCopy clones foreach statements", "[deepcopy]") {
   REQUIRE(foreachCopy->implementation != foreachStmt->implementation);
   REQUIRE(foreachCopy->iterator != nullptr);
   REQUIRE(foreachCopy->iterator != foreachStmt->iterator);
+}
+
+TEST_CASE("deepCopy clones list literals in call extensions", "[deepcopy]") {
+  lex::Lexer l;
+  parse::Parser p;
+  auto tokens = l.Scan("new Builder().with_items([1, 2]);");
+  tokens.invert();
+  ast::Expr *expr = p.parseExpr(tokens);
+  auto *newExpr = dynamic_cast<ast::NewExpr *>(expr);
+  REQUIRE(newExpr != nullptr);
+  auto *extension = dynamic_cast<ast::CallExpr *>(newExpr->extention);
+  REQUIRE(extension != nullptr);
+  REQUIRE(extension->call->Args.count == 1);
+
+  ast::Statement *copyStmt = ast::deepCopy(extension);
+  auto *copy = dynamic_cast<ast::CallExpr *>(copyStmt);
+  REQUIRE(copy != nullptr);
+  REQUIRE(copy != extension);
+  REQUIRE(copy->call != nullptr);
+  REQUIRE(copy->call != extension->call);
+  REQUIRE(copy->call->Args.count == 1);
+  auto *copiedList = dynamic_cast<ast::List *>(copy->call->Args.get(0));
+  REQUIRE(copiedList != nullptr);
+  REQUIRE(copiedList != extension->call->Args.get(0));
+  REQUIRE(copiedList->items.size() == 2);
 }
