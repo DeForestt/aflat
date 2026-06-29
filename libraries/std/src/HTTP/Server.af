@@ -103,7 +103,8 @@ class Server {
                 const HTTPResponse r = handler(self, data);
                 return r.toString().cstr();
             };
-            const HTTPResponse r = new HTTPResponse(`Endpoint: [{method}] {endpoint} not implemented`.cstr(), "501", "Not Implemented");
+            const string msg = `Endpoint: [{method}] {endpoint} not implemented`;
+            const HTTPResponse r = new HTTPResponse(msg.cstr(), "501", "Not Implemented");
             return r.toString().cstr();
         }, my);
     };
