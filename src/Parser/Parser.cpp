@@ -1651,8 +1651,19 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
           tokens, ',', ')', lambda->function->argTypes, lambda->function->req,
           lambda->function->mutability, lambda->function->optConvertionIndices,
           lambda->function->readOnly);
+      auto arrow = dynamic_cast<lex::Symbol *>(tokens.peek());
       auto dash = dynamic_cast<lex::OpSym *>(tokens.peek());
-      if (dash != nullptr && dash->Sym == '-') {
+      if (arrow != nullptr && arrow->meta == "->") {
+        tokens.pop();
+        auto typeName = dynamic_cast<lex::LObj *>(tokens.pop());
+        if (typeName == nullptr)
+          throw err::Exception("Expected type after -> on line " +
+                               std::to_string(obj.lineCount));
+        auto type = this->typeList[typeName->meta];
+        if (type == nullptr)
+          throw err::Exception("Unknown type " + typeName->meta);
+        lambda->function->type = *type;
+      } else if (dash != nullptr && dash->Sym == '-') {
         tokens.pop();
         auto greater = dynamic_cast<lex::Symbol *>(tokens.pop());
         if (greater == nullptr || greater->meta != ">")
