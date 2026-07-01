@@ -61,45 +61,64 @@ class Server {
             for int i = 0; i < self.endpoints.count(); i = i + 1 {
                 const Endpoint e = self.endpoints.get(i).expect("Endpoint count currupted");
 
-                const uni_string wildE = if e.path.find("/:*", 0) != -1
-                    e.path.subString(0, e.path.find("/:*", 0)).cstr()
-                else
-                    e.path.copy();
-                const uni_string subMsg = msg.endpoint.subString(0, wildE.len()).cstr();
+                const int wildcardIndex = e.path.find("/:*", 0);
+                const bool hasWildcard = wildcardIndex + 1 > 0;
+                mutable int matchLen = e.path.len();
+                if hasWildcard {
+                    matchLen = wildcardIndex;
+                };
 
                 const bool methodMatches = e.method == msg.method;
-                const bool endpointMatches = wildE == subMsg;
+                mutable bool endpointMatches = false;
 
+                if hasWildcard {
+                    if msg.endpoint.len() == matchLen {
+                        endpointMatches = true;
+                    } else if msg.endpoint.len() > matchLen {
+                        endpointMatches = msg.endpoint.at(matchLen) == '/';
+                    };
+                } else {
+                    endpointMatches = msg.endpoint.len() == matchLen;
+                };
+
+                if endpointMatches {
+                    for int c = 0; c < matchLen; c = c + 1 {
+                        if e.path.at(c) != msg.endpoint.at(c) {
+                            endpointMatches = false;
+                        };
+                    };
+                };
                 if methodMatches {
-                    if !endpointMatches continue;
-                    const let handler = e.imp;
-                    result::<HTTPResponse> response;
+                    if endpointMatches {
+                        const let handler = e.imp;
+                        result::<HTTPResponse> response;
 
-                    if wildE == msg.endpoint {
-                        response = handler(self, data, NULL);
-                    } else {
-                        const let path = msg.endpoint.subString(wildE.len() + 1, msg.endpoint.len());
-                        response = handler(self, data, path);
+                        if msg.endpoint.len() == matchLen {
+                            response = handler(self, data, NULL);
+                        } else {
+                            const let path = msg.endpoint.subString(matchLen + 1, msg.endpoint.len());
+                            response = handler(self, data, path);
+                        };
+
+                        HTTPResponse r;
+                        if response.isErr() {
+                            const Error err = response.unwrapErr();
+                            r = new HTTPResponse(err.render().cstr(), "500", "Internal Server Error");
+                        } else {
+                            r = response.expect("HTTP handler response was unexpectedly empty");
+                        };
+
+                        for int j = 0; j < self.middlewares.count(); j = j + 1 {
+                            const Middleware m = self.middlewares.get(j).expect("Middleware count currupted");
+                            const adr implementation = m.implementations.get("after").or(NULL);
+                            if implementation == NULL continue;
+                            r = implementation(self, data, r);
+                        };
+
+                        const string out = r.toString();
+                        out.seal();
+                        return out.cstr();
                     };
-
-                    HTTPResponse r;
-                    if response.isErr() {
-                        const Error err = response.unwrapErr();
-                        r = new HTTPResponse(err.render().cstr(), "500", "Internal Server Error");
-                    } else {
-                        r = response.expect("HTTP handler response was unexpectedly empty");
-                    };
-
-                    for int j = 0; j < self.middlewares.count(); j = j + 1 {
-                        const Middleware m = self.middlewares.get(j).expect("Middleware count currupted");
-                        const adr implementation = m.implementations.get("after").or(NULL);
-                        if implementation == NULL continue;
-                        r = implementation(self, data, r);
-                    };
-
-                    const string out = r.toString();
-                    out.seal();
-                    return out.cstr();
                 };
             };
             

@@ -239,16 +239,23 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                     true, __FILE__, __LINE__);
             }
           } else {
-            if (!type->SymbolTable.head) {
-              alert("Type " + type->Ident +
-                        " is incomplete Please consider boxing using "
-                        "Memory::Box to fix this issue",
-                    true, __FILE__, __LINE__);
+            if (ident.find("~") != std::string::npos &&
+                ident.find("<") == std::string::npos) {
+              output.access = "$8";
+              output.type = "int";
+              output.size = asmc::DWord;
+            } else {
+              if (!type->SymbolTable.head) {
+                alert("Type " + type->Ident +
+                          " is incomplete Please consider boxing using "
+                          "Memory::Box to fix this issue",
+                      true, __FILE__, __LINE__);
+              }
+              output.access =
+                  "$" + std::to_string(type->SymbolTable.head->data.byteMod);
+              output.type = "int";
+              output.size = asmc::DWord;
             }
-            output.access =
-                "$" + std::to_string(type->SymbolTable.head->data.byteMod);
-            output.type = "int";
-            output.size = asmc::DWord;
           }
         };
       } else if (ident == "int") {
@@ -355,10 +362,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         auto func = nameTable()[ident];
         auto typeName = func->type.typeName + "~";
         for (auto arg : func->argTypes) {
-          typeName += arg.typeName + ",";
+          typeName += arg.typeName + "__af_fp_arg__";
         }
         if (func->argTypes.size() > 0)
-          typeName.pop_back();
+          typeName.erase(typeName.size() - std::string("__af_fp_arg__").size());
         typeName += "~";
 
         auto newType = new ast::Type(typeName, asmc::QWord);
@@ -1283,11 +1290,13 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     auto typeName = lambdaReturns() + "~";
     for (auto arg : func->argTypes) {
       typeName += arg.typeName;
-      typeName += ",";
+      typeName += "__af_fp_arg__";
     }
-    // remove the last comma if it exists
-    if (typeName[typeName.size() - 1] == ',')
-      typeName.pop_back();
+    const std::string fpArgSeparator = "__af_fp_arg__";
+    if (typeName.size() >= fpArgSeparator.size() &&
+        typeName.substr(typeName.size() - fpArgSeparator.size()) ==
+            fpArgSeparator)
+      typeName.erase(typeName.size() - fpArgSeparator.size());
     typeName += "~";
     auto type = new ast::Type(typeName, asmc::QWord);
     type->fPointerArgs.argTypes = func->argTypes;

@@ -1144,10 +1144,27 @@ parse::Parser::Impl::parseFPointerType(links::LinkedList<lex::Token *> &tokens,
   std::string newTypeName = typeName + "~";
   int requiredCount = 0;
   std::vector<int> optConvertionIndices;
-  while (true) {
+  const auto consumeClose = [&tokens]() {
     const auto closeSym = dynamic_cast<lex::Symbol *>(tokens.peek());
     if (closeSym != nullptr && closeSym->meta == ">") {
       tokens.pop();
+      return true;
+    }
+
+    const auto closeOp = dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (closeOp != nullptr && closeOp->Sym == '>') {
+      tokens.pop();
+      auto newSym = new lex::Symbol();
+      newSym->meta = ">";
+      tokens << newSym;
+      return true;
+    }
+
+    return false;
+  };
+
+  while (true) {
+    if (consumeClose()) {
       break;
     }
     if (dynamic_cast<lex::Ref *>(tokens.peek()) == nullptr) {
@@ -1170,11 +1187,9 @@ parse::Parser::Impl::parseFPointerType(links::LinkedList<lex::Token *> &tokens,
     const auto comma = dynamic_cast<lex::OpSym *>(tokens.peek());
     if (comma != nullptr && comma->Sym == ',') {
       tokens.pop();
-      newTypeName += ",";
+      newTypeName += "__af_fp_arg__";
     } else {
-      const auto closeSym = dynamic_cast<lex::Symbol *>(tokens.peek());
-      if (closeSym != nullptr && closeSym->meta == ">") {
-        tokens.pop();
+      if (consumeClose()) {
         break;
       }
       throw err::Exception("Expected , or > on line " +
@@ -1208,14 +1223,20 @@ std::vector<std::string> parse::Parser::Impl::parseTemplateTypeList(
       if (this->typeList[typeName.meta] == nullptr)
         throw err::Exception("Unknown type " + typeName.meta);
       auto tname = typeName.meta;
-      // recursing into nested template types
-      auto l = this->parseTemplateTypeList(tokens, lineCount);
-      if (!l.empty()) {
-        tname += "<" + l[0];
-        for (size_t i = 1; i < l.size(); ++i) {
-          tname += "," + l[i];
+      const auto functionPointerSym =
+          dynamic_cast<lex::Symbol *>(tokens.peek());
+      if (functionPointerSym != nullptr && functionPointerSym->meta == "<") {
+        tname = this->parseFPointerType(tokens, typeName.meta).typeName;
+      } else {
+        // recursing into nested template types
+        auto l = this->parseTemplateTypeList(tokens, lineCount);
+        if (!l.empty()) {
+          tname += "<" + l[0];
+          for (size_t i = 1; i < l.size(); ++i) {
+            tname += "," + l[i];
+          }
+          tname += ">";
         }
-        tname += ">";
       }
       list.push_back(tname);
       auto k = tokens.peek();

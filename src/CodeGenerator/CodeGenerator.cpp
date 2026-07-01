@@ -23,6 +23,75 @@
 
 using namespace gen::utils;
 
+namespace {
+constexpr const char *F_POINTER_ARG_SEPARATOR = "__af_fp_arg__";
+
+bool isEncodedFunctionPointerTypeName(const std::string &typeName) {
+  return typeName.find('~') != std::string::npos &&
+         typeName.find('<') == std::string::npos;
+}
+
+std::vector<std::string> splitFunctionPointerArgs(const std::string &args) {
+  std::vector<std::string> result;
+  size_t start = 0;
+  const std::string separator = F_POINTER_ARG_SEPARATOR;
+
+  while (start <= args.size()) {
+    const size_t pos = args.find(separator, start);
+    const size_t end = pos == std::string::npos ? args.size() : pos;
+    if (end > start)
+      result.push_back(args.substr(start, end - start));
+    if (pos == std::string::npos)
+      break;
+    start = pos + separator.size();
+  }
+
+  return result;
+}
+
+ast::Type typeFromName(const std::string &typeName) {
+  const auto primitive = parse::PRIMITIVE_TYPES.find(typeName);
+  if (primitive != parse::PRIMITIVE_TYPES.end())
+    return ast::Type(typeName, gen::utils::toSize(primitive->second));
+  return ast::Type(typeName, asmc::QWord);
+}
+
+void ensureFunctionPointerTypeRegistered(gen::CodeGenerator &generator,
+                                         const std::string &typeName) {
+  if (!isEncodedFunctionPointerTypeName(typeName))
+    return;
+
+  if (generator.typeList()[typeName] == nullptr) {
+    auto concreteType = new gen::Type();
+    concreteType->Ident = typeName;
+    concreteType->size = 8;
+    concreteType->hidden = true;
+    generator.typeList().push(concreteType);
+  }
+
+  if (generator.TypeList()[typeName] != nullptr)
+    return;
+
+  const size_t first = typeName.find('~');
+  const size_t last = typeName.rfind('~');
+  if (first == std::string::npos || last == std::string::npos || first == last)
+    return;
+
+  auto functionPointerType = ast::Type(typeName, asmc::QWord);
+  functionPointerType.fPointerArgs.isFPointer = true;
+  functionPointerType.fPointerArgs.returnType =
+      new ast::Type(typeFromName(typeName.substr(0, first)));
+
+  const std::string args = typeName.substr(first + 1, last - first - 1);
+  for (const auto &arg : splitFunctionPointerArgs(args))
+    functionPointerType.fPointerArgs.argTypes.push_back(typeFromName(arg));
+
+  functionPointerType.fPointerArgs.requiredArgs =
+      functionPointerType.fPointerArgs.argTypes.size();
+  generator.TypeList().push(functionPointerType);
+}
+} // namespace
+
 struct gen::CodeGenerator::Impl {
   Impl(std::string moduleId, parse::Parser &parser, const std::string &source,
        const std::string &cwd)
@@ -170,7 +239,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     return true;
   if (type.fPointerArgs.returnType != nullptr && typeName == "adr")
     return true;
-  if (type.typeName == "adr" && typeName.find("~") != std::string::npos)
+  if (type.typeName == "adr" && isEncodedFunctionPointerTypeName(typeName))
     return true;
   if (typeName == "void" && type.typeName == "NULLTYPE")
     return true;
@@ -289,7 +358,7 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
 
   // compare two function pointers
   if (type.fPointerArgs.returnType != nullptr &&
-      typeName.find("~") != std::string::npos) {
+      isEncodedFunctionPointerTypeName(typeName)) {
     // we need to check return type and args
     auto type2 = impl->TypeList[typeName];
     if (type2 == nullptr)
@@ -597,6 +666,13 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
                                         asmc::File &OutputFile) {
   gen::Type **type = impl->typeList[typeName];
   if (type == nullptr) {
+    if (isEncodedFunctionPointerTypeName(typeName)) {
+      ensureFunctionPointerTypeRegistered(*this, typeName);
+      type = impl->typeList[typeName];
+      if (type != nullptr)
+        return type;
+    }
+
     // find . in the type name
     if (typeName.find('<') == std::string::npos)
       this->alert("Type " + typeName +
@@ -628,6 +704,10 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
     }
 
     for (auto &templateType : templates) {
+      if (isEncodedFunctionPointerTypeName(templateType)) {
+        ensureFunctionPointerTypeRegistered(*this, templateType);
+        continue;
+      }
       if (parse::PRIMITIVE_TYPES.find(templateType) ==
           parse::PRIMITIVE_TYPES.end()) {
         getType(templateType, OutputFile); // This ensures that the types are
