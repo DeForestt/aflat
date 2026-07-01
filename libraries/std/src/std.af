@@ -63,9 +63,10 @@ int splitBlock(const Block block, const int size){
     const int test = size + Block;
     int currSize = block.size;
     if (block.size > test){
-        Block nBlock = block;
-        nBlock = block + size;
-        nBlock = nBlock + #16;
+        mutable adr nBlockPtr = block;
+        nBlockPtr = nBlockPtr + size;
+        nBlockPtr = nBlockPtr + #16;
+        const Block nBlock = nBlockPtr;
         currSize = currSize - 16;
         nBlock.size = currSize - size;
         nBlock.free = 1;
@@ -106,6 +107,18 @@ int deFragAll(const Block head){
     return 0;
 };
 
+bool ownsBlock(const adr blockPtr) {
+    adr current = head;
+    while (current != NULL) {
+        if current == blockPtr {
+            return true;
+        };
+        const Block block = current;
+        current = block.next;
+    };
+    return false;
+};
+
 //Interface
 int af_memcpy (adr dst, immutable adr src, const int size){
     int i = 0;
@@ -126,6 +139,12 @@ int af_free(const adr &&ptr){
     };
     
     const Block block = getBlock(ptr);
+    if !ownsBlock(block) {
+        return 0;
+    };
+    if block.free == 1 {
+        return 0;
+    };
     block.free = 1;
     deFragAll(head);
     return 0;

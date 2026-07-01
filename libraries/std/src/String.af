@@ -229,81 +229,68 @@ safe dynamic class string {
     fn split(const char delim) -> vector::<string> {
         const vector::<string> vec = new vector::<string>();
         const int myLen = str.len(my.head);
-        io.print("[String.split] start\n");
-        io.print("[String.split] source: ");
-        io.print(my.head);
-        io.print("\n");
-        adr buff = af_malloc(1);
-        adr save = buff;
-        int buffSize = 1;
+        const adr base = af_malloc(myLen + 1);
+        mutable int buffIndex = 0;
 
         for int i = 0; i < myLen; i = i + 1 {
             const adr curr = my.head + i;
             const char c = curr as char;
+            const adr cursor = base + buffIndex;
             if (c == delim) {
-                io.print("[String.split] token: ");
-                io.print(save);
-                io.print("\n");
-                buff = buff + 1;
-                buff =: '\0';
-                vec.push_back(new string(save));
-                //af_free(save);
-                buffSize = 1;
+                cursor =: '\0';
+                vec.push_back(new string(base));
+                buffIndex = 0;
             } else {
-                buffSize = buffSize + 1;
-                save = af_realloc(save, buffSize);
-                buff = save;
-                buff = buff + buffSize - 2;
-                buff =: c;
+                cursor =: c;
+                buffIndex = buffIndex + 1;
             };
         };
-        buff = buff + 1;
-        buff =: '\0';
-        io.print("[String.split] final token: ");
-        io.print(save);
-        io.print("\n");
-        const let s = new string(save);
-        s.seal();
-        s.permanent = true;
-        vec.push_back(s.get());
-        af_free($save);
-        io.print("[String.split] done\n");
+        const adr endCursor = base + buffIndex;
+        endCursor =: '\0';
+        vec.push_back(new string(base));
+        af_free($base);
         return vec;
     };
 
     fn splitAtFirst(const char delim) -> vector::<string> {
         const vector::<string> vec = new vector::<string>();
         const int myLen = str.len(my.head);
-        adr buff = af_malloc(1);
-        adr save = buff;
-        int buffSize = 1;
+        const adr base = af_malloc(myLen + 1);
+        mutable int buffIndex = 0;
+        mutable int splitIndex = -1;
 
         for int i = 0; i < myLen; i = i + 1 {
             const adr curr = my.head + i;
             const char c = curr as char;
+            const adr cursor = base + buffIndex;
             if (c == delim) {
-                buff = buff + 1;
-                buff =: '\0';
-                const let s = new string(save);
-                vec.push_back($s);
-                //af_free(save);
-                buffSize = 1;
+                cursor =: '\0';
+                vec.push_back(new string(base));
+                buffIndex = 0;
+                splitIndex = i;
                 break;
             } else {
-                buffSize = buffSize + 1;
-                save = af_realloc(save, buffSize);
-                buff = save;
-                buff = buff + buffSize - 2;
-                buff =: c;
+                cursor =: c;
+                buffIndex = buffIndex + 1;
             };
         };
-        buff = buff + 1;
-        buff =: '\0';
-        const let s = new string(save);
-        s.seal();
-        s.permanent = true;
-        vec.push_back(s.get());
-        af_free($save);
+        if splitIndex == -1 {
+            const adr endCursor = base + buffIndex;
+            endCursor =: '\0';
+            vec.push_back(new string(base));
+        } else {
+            for int i = splitIndex + 1; i < myLen; i = i + 1 {
+                const adr curr = my.head + i;
+                const char c = curr as char;
+                const adr cursor = base + buffIndex;
+                cursor =: c;
+                buffIndex = buffIndex + 1;
+            };
+            const adr endCursor = base + buffIndex;
+            endCursor =: '\0';
+            vec.push_back(new string(base));
+        };
+        af_free($base);
         return vec;
     };
 

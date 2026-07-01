@@ -193,6 +193,12 @@ CodeGenerator::resolveSymbol(std::string ident,
   indicies.reset();
   modSym->type.indices.reset();
   Symbol retSym = *modSym;
+  if (auto resolvedType = typeList()[retSym.type.typeName]) {
+    if (dynamic_cast<Enum *>(*resolvedType) != nullptr) {
+      retSym.type.size = asmc::DWord;
+      retSym.type.opType = asmc::Hard;
+    }
+  }
   if (readOnly)
     retSym.mutable_ = false;
   retSym.readOnly = readOnly || modSym->readOnly;

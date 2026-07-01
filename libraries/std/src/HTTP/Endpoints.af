@@ -4,14 +4,16 @@ import Server from "HTTP/Server";
 import string from "String";
 import uni_string from "uni_string";
 import HTTPMethod, HTTPResponse, HTTPMessage from "HTTP";
+import result from "Utils/result";
 
 class GET signs Endpoint {
     GET init(const any<Server, HTTPMessage> imp, const Server context, const uni_string path) {
         my.method = HTTPMethod.GET;
         context.addEndpoint(my);
+        return my;
     };
 
-    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
+    result::<HTTPResponse> _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
@@ -21,9 +23,10 @@ class POST signs Endpoint {
     POST init(const any<Server, HTTPMessage> imp, const Server context, const uni_string path) {
         my.method = HTTPMethod.POST;
         context.addEndpoint(my);
+        return my;
     };
 
-    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
+    result::<HTTPResponse> _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
@@ -33,9 +36,10 @@ class PUT signs Endpoint {
     PUT init(const any<Server, HTTPMessage> imp, const Server context, const uni_string path) {
         my.method = HTTPMethod.PUT;
         context.addEndpoint(my);
+        return my;
     };
 
-    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
+    result::<HTTPResponse> _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
@@ -45,9 +49,10 @@ class DELETE signs Endpoint {
     DELETE init(const any<Server, HTTPMessage> imp, const Server context, const uni_string path) {
         my.method = HTTPMethod.DELETE;
         context.addEndpoint(my);
+        return my;
     };
 
-    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
+    result::<HTTPResponse> _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
@@ -57,9 +62,10 @@ class PATCH signs Endpoint {
     PATCH init(const any<Server, HTTPMessage> imp, const Server context, const uni_string path) {
         my.method = HTTPMethod.PATCH;
         context.addEndpoint(my);
+        return my;
     };
 
-    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
+    result::<HTTPResponse> _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
@@ -69,9 +75,10 @@ class OPTIONS signs Endpoint {
     OPTIONS init(const any<Server, HTTPMessage> imp, const Server context, const uni_string path) {
         my.method = HTTPMethod.OPTIONS;
         context.addEndpoint(my);
+        return my;
     };
 
-    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
+    result::<HTTPResponse> _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
@@ -81,9 +88,10 @@ class HEAD signs Endpoint {
     HEAD init(const any<Server, HTTPMessage> imp, const Server context, const uni_string path) {
         my.method = HTTPMethod.HEAD;
         context.addEndpoint(my);
+        return my;
     };
 
-    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
+    result::<HTTPResponse> _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };

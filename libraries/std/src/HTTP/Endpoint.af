@@ -4,6 +4,7 @@ import uni_string from "uni_string";
 import Server from "HTTP/Server";
 import Map from "Utils/Map";
 import HTTPMethod, HTTPResponse, HTTPMessage from "HTTP";
+import result from "Utils/result";
 import {methodToString} from "HTTP" under http;
 import {print} from "String" under str;
 import {printHex, printInt} from "io" under io;
@@ -18,6 +19,7 @@ class Endpoint {
     Endpoint init(const any<Server, HTTPMessage> imp, const Server context, const uni_string path, const HTTPMethod method) {
         my.method = method;
         context.addEndpoint(my);
+        return my;
     };
     
     string toString() {
@@ -28,7 +30,7 @@ class Endpoint {
         return ret;
     };
 
-    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
+    result::<HTTPResponse> _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
@@ -82,6 +84,7 @@ class Endpoints {
             const let connect = new Endpoint(endpoints.get("CONNECT").or(NULL), context, path, HTTPMethod.CONNECT);
             context.addEndpoint(connect);
         };
+        return my;
     };
 };
 
@@ -93,7 +96,7 @@ class NotFoundImpl {
         return my;
     };
 
-    HTTPResponse _call(const Server context, * const HTTPMessage msg) {
+    result::<HTTPResponse> _call(const Server context, * const HTTPMessage msg) {
         const let imp = my.imp;
         return imp(context, msg);
     };
