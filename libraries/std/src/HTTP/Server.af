@@ -61,14 +61,26 @@ class Server {
             for int i = 0; i < self.endpoints.count(); i = i + 1 {
                 const Endpoint e = self.endpoints.get(i).expect("Endpoint count currupted");
 
-                const uni_string wildE = if e.path.find("/:*", 0) != -1
+                const bool hasWildcard = e.path.find("/:*", 0) != -1;
+                const uni_string wildE = if hasWildcard
                     e.path.subString(0, e.path.find("/:*", 0)).cstr()
                 else
                     e.path.copy();
-                const uni_string subMsg = msg.endpoint.subString(0, wildE.len()).cstr();
 
                 const bool methodMatches = e.method == msg.method;
-                const bool endpointMatches = wildE == subMsg;
+                mutable bool endpointMatches = false;
+
+                if hasWildcard {
+                    if wildE == msg.endpoint {
+                        endpointMatches = true;
+                    } else if msg.endpoint.len() > wildE.len() {
+                        const uni_string subMsg = msg.endpoint.subString(0, wildE.len()).cstr();
+                        const string next = msg.endpoint.subString(wildE.len(), wildE.len() + 1);
+                        endpointMatches = wildE == subMsg & next == "/";
+                    };
+                } else {
+                    endpointMatches = wildE == msg.endpoint;
+                };
 
                 if methodMatches {
                     if !endpointMatches continue;

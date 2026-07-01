@@ -332,10 +332,14 @@ gen::utils::parseGenericName(const std::string &name,
 
   // Parse inner parameters respecting nesting
   int depth = 0;
+  bool inFunctionPointer = false;
   std::string current;
 
   for (char c : inner) {
-    if (c == '<') {
+    if (c == '~') {
+      inFunctionPointer = !inFunctionPointer;
+      current += c;
+    } else if (c == '<') {
       depth++;
       current += c;
     } else if (c == '>') {
@@ -345,7 +349,7 @@ gen::utils::parseGenericName(const std::string &name,
       }
       depth--;
       current += c;
-    } else if (c == ',' && depth == 0) {
+    } else if (c == ',' && depth == 0 && !inFunctionPointer) {
       // Split at top-level commas
       size_t start = current.find_first_not_of(" \t");
       size_t end = current.find_last_not_of(" \t");

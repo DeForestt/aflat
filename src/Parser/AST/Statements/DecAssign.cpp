@@ -79,7 +79,8 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
         dec->type.typeName = expr.type;
         dec->type.size = expr.size;
         dec->type.opType = expr.op;
-        if (expr.type.find("~") != std::string::npos) {
+        if (expr.type.find("~") != std::string::npos &&
+            expr.type.find("<") == std::string::npos) {
           // find the type in TypeList
           auto t = generator.TypeList()[expr.type];
           if (t == nullptr)

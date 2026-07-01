@@ -250,8 +250,11 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
       auto typePtr =
           new ast::Type(alias->getType().typeName, alias->getType().size);
 
-      if (parse::PRIMITIVE_TYPES.find(typePtr->typeName) !=
-          parse::PRIMITIVE_TYPES.end()) {
+      if (typePtr->typeName.find("~") != std::string::npos &&
+          typePtr->typeName.find("<") == std::string::npos) {
+        type->aliases.emplace_back(alias->name, typePtr, 8);
+      } else if (parse::PRIMITIVE_TYPES.find(typePtr->typeName) !=
+                 parse::PRIMITIVE_TYPES.end()) {
         type->aliases.emplace_back(alias->name, typePtr,
                                    parse::PRIMITIVE_TYPES[typePtr->typeName]);
       } else {

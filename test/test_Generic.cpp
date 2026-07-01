@@ -76,6 +76,35 @@ TEST_CASE("nested generic member access resolves instantiated type",
   REQUIRE(result);
 }
 
+TEST_CASE("function pointer type can be used as generic argument",
+          "[generics][function-pointer]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/generic_function_pointer_type");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "generic_function_pointer_type.af";
+  const auto output = dir / "generic_function_pointer_type.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "import unordered_map from \"Collections/unordered_map\";\n";
+  ofs << "fn add(int left, int right) -> int { return left + right; };\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    unordered_map::<adr, int<int, int>> callbacks = "
+         "new unordered_map::<adr, int<int, int>>();\n";
+  ofs << "    callbacks.set(\"add\", add);\n";
+  ofs << "    const int<int, int> callback = "
+         "callbacks.get(\"add\").expect(\"add\");\n";
+  ofs << "    return callback(20, 22);\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
 TEST_CASE(
     "vector insert drop and pop_front compile for primitive and unique types",
     "[generics][vector]") {
