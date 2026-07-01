@@ -41,6 +41,7 @@ class Content {
             buffer = buffer.replace(key, val);
             buffer.get();
         };
+        buffer.seal();
         return buffer.cstr();
     };
 };

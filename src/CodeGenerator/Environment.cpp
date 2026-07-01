@@ -24,6 +24,66 @@ asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
   if (type == nullptr)
     return nullptr;
 
+  auto methodLabel = [&](ast::Function *method) {
+    std::string scopeName =
+        method->scopeName != "global" ? method->scopeName : sym.type.typeName;
+    return "pub_" + scopeName + "_" + method->ident.ident;
+  };
+
+  auto emitObjectCleanup = [&](const std::string &function) {
+    auto file = new asmc::File();
+
+    auto pushRax = new asmc::Push();
+    pushRax->logicalLine = logicalLine();
+    pushRax->op = registers()["%rax"]->get(asmc::QWord);
+    file->text << pushRax;
+
+    auto pushRdi = new asmc::Push();
+    pushRdi->logicalLine = logicalLine();
+    pushRdi->op = registers()["%rdi"]->get(asmc::QWord);
+    file->text << pushRdi;
+
+    auto pushRdx = new asmc::Push();
+    pushRdx->logicalLine = logicalLine();
+    pushRdx->op = registers()["%rdx"]->get(asmc::QWord);
+    file->text << pushRdx;
+
+    auto lea = new asmc::Lea();
+    lea->logicalLine = logicalLine();
+    lea->from = "-" + std::to_string(sym.byteMod) + "(%rbp)";
+    lea->to = registers()["%rax"]->get(asmc::QWord);
+    file->text << lea;
+
+    auto load = new asmc::Mov();
+    load->logicalLine = logicalLine();
+    load->size = asmc::QWord;
+    load->from = "(" + registers()["%rax"]->get(asmc::QWord) + ")";
+    load->to = registers()["%rdi"]->get(asmc::QWord);
+    file->text << load;
+
+    auto call = new asmc::Call();
+    call->logicalLine = logicalLine();
+    call->function = function;
+    file->text << call;
+
+    auto popRdx = new asmc::Pop();
+    popRdx->logicalLine = logicalLine();
+    popRdx->op = registers()["%rdx"]->get(asmc::QWord);
+    file->text << popRdx;
+
+    auto popRdi = new asmc::Pop();
+    popRdi->logicalLine = logicalLine();
+    popRdi->op = registers()["%rdi"]->get(asmc::QWord);
+    file->text << popRdi;
+
+    auto popRax = new asmc::Pop();
+    popRax->logicalLine = logicalLine();
+    popRax->op = registers()["%rax"]->get(asmc::QWord);
+    file->text << popRax;
+
+    return file;
+  };
+
   if (!(*type)->uniqueType) {
     auto classType = dynamic_cast<Class *>(*type);
     if (classType == nullptr)
@@ -31,56 +91,20 @@ asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
     auto endScope = classType->nameTable["endScope"];
     if (endScope == nullptr)
       return nullptr;
-
-    auto file = new asmc::File();
-    auto push = new asmc::Push();
-    push->logicalLine = logicalLine();
-    push->op = registers()["%rax"]->get(asmc::QWord);
-    file->text << push;
-
-    auto callDel = new ast::Call();
-    callDel->logicalLine = logicalLine();
-    callDel->ident = sym.symbol;
-    callDel->Args = LinkedList<ast::Expr *>();
-    callDel->modList = links::LinkedList<std::string>();
-    callDel->modList.push("endScope");
-    *file << this->GenSTMT(callDel);
-
-    auto pop = new asmc::Pop();
-    pop->logicalLine = logicalLine();
-    pop->op = registers()["%rax"]->get(asmc::QWord);
-    file->text << pop;
-    return file;
+    return emitObjectCleanup(methodLabel(endScope));
   }
 
   auto file = new asmc::File();
 
   if (auto classType = dynamic_cast<Class *>(*type)) {
     if (auto destructor = classType->nameTable["del"]) {
-      auto callDel = new ast::Call();
-      callDel->logicalLine = logicalLine();
-      callDel->ident = sym.symbol;
-      callDel->Args = LinkedList<ast::Expr *>();
-      callDel->modList = links::LinkedList<std::string>();
-      callDel->modList.push("del");
-      *file << this->GenSTMT(callDel);
+      file = emitObjectCleanup(methodLabel(destructor));
     }
   }
 
   if (nameTable()["af_free"] != nullptr) {
-    auto var = new ast::Var();
-    var->logicalLine = logicalLine();
-    var->Ident = sym.symbol;
-    var->modList = LinkedList<std::string>();
-
-    auto freeCall = new ast::Call();
-    freeCall->logicalLine = logicalLine();
-    freeCall->ident = "af_free";
-    freeCall->Args = LinkedList<ast::Expr *>();
-    freeCall->Args.push(var);
-    freeCall->modList = LinkedList<std::string>();
-
-    *file << this->GenSTMT(freeCall);
+    auto freeFile = emitObjectCleanup("af_free");
+    *file << *freeFile;
   }
 
   return file;

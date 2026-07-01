@@ -12,7 +12,6 @@
 namespace ast {
 gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
   asmc::File file;
-  int offset = gen::utils::sizeToInt(this->type.size);
   links::LinkedList<gen::Symbol> *Table;
 
   if (this->requestType != "") {
@@ -43,6 +42,8 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
                       "be resolved");
     }
   }
+
+  int offset = gen::utils::sizeToInt(this->type.size);
 
   if (!generator.globalScope()) {
     // if the there  is no scope use the scope manager otherwise use the

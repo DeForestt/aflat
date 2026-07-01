@@ -32,8 +32,9 @@ Assign::Assign(const std::string &ident,
 
 gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   asmc::File file;
-  auto resolved =
-      generator.resolveSymbol(this->Ident, this->modList, file, this->indices);
+  asmc::File targetFile;
+  auto resolved = generator.resolveSymbol(this->Ident, this->modList,
+                                          targetFile, this->indices);
 
   if (!std::get<2>(resolved)) {
     generator.alert("undefined variable:" + this->Ident);
@@ -124,8 +125,10 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   if (!this->reference && !symbol->type.isReference &&
       parse::PRIMITIVE_TYPES.find(expr.type) == parse::PRIMITIVE_TYPES.end()) {
     if (auto *sourceVar = dynamic_cast<ast::Var *>(this->expr)) {
-      auto sourceResolved = generator.resolveSymbol(
-          sourceVar->Ident, sourceVar->modList, file, sourceVar->indices);
+      asmc::File sourceResolveFile;
+      auto sourceResolved =
+          generator.resolveSymbol(sourceVar->Ident, sourceVar->modList,
+                                  sourceResolveFile, sourceVar->indices);
       if (std::get<2>(sourceResolved)) {
         std::get<4>(sourceResolved)->sold = this->logicalLine;
       }
@@ -169,6 +172,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   asmc::Size size;
   std::string output = std::get<0>(resolved);
   asmc::Pop *pop = nullptr;
+  file << targetFile;
   if (this->reference == true) {
     //
     asmc::Mov *m1 = new asmc::Mov;

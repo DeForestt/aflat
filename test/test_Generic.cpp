@@ -75,3 +75,85 @@ TEST_CASE("nested generic member access resolves instantiated type",
 
   REQUIRE(result);
 }
+
+TEST_CASE(
+    "vector insert drop and pop_front compile for primitive and unique types",
+    "[generics][vector]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/vector_mutators");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "vector_mutators.af";
+  const auto output = dir / "vector_mutators.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "import vector from \"Collections/Vector\";\n";
+  ofs << "import option from \"Utils/option\";\n";
+  ofs << "import {Some, None, optionWrapper} from \"Utils/option\" under "
+         "opt;\n";
+  ofs << "import {accept, reject, resultWrapper} from \"Utils/result\" under "
+         "res;\n";
+  ofs << "unique class Probe {\n";
+  ofs << "    fn init() -> Self { return my; };\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    let values = new vector::<int>();\n";
+  ofs << "    values.push_back(1);\n";
+  ofs << "    values.push_back(3);\n";
+  ofs << "    values.insert(1, 2).expect(\"insert int\");\n";
+  ofs << "    values.drop(0).expect(\"drop int\");\n";
+  ofs << "    values.pop_front().expect(\"pop int\");\n";
+  ofs << "    delete values;\n";
+  ofs << "    let probes = new vector::<Probe>();\n";
+  ofs << "    let first = new Probe();\n";
+  ofs << "    let second = new Probe();\n";
+  ofs << "    probes.push_back($first);\n";
+  ofs << "    probes.insert(0, $second).expect(\"insert probe\");\n";
+  ofs << "    let popped = probes.pop_front().expect(\"pop probe\");\n";
+  ofs << "    delete popped;\n";
+  ofs << "    probes.drop(0).expect(\"drop probe\");\n";
+  ofs << "    delete probes;\n";
+  ofs << "    return 0;\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
+TEST_CASE("result unwrap compiles for object payloads", "[generics][result]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/result_object_payload");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "result_object_payload.af";
+  const auto output = dir / "result_object_payload.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "import result from \"Utils/result\";\n";
+  ofs << "import {accept, reject, resultWrapper} from \"Utils/result\" under "
+         "res;\n";
+  ofs << "class Box {\n";
+  ofs << "    mutable int value = 0;\n";
+  ofs << "    fn init(int value) -> Self { my.value = value; return my; };\n";
+  ofs << "    fn get() -> int { return my.value; };\n";
+  ofs << "    fn toString() -> string { return \"box\"; };\n";
+  ofs << "};\n";
+  ofs << "fn make() -> result::<Box> {\n";
+  ofs << "    return res.accept::<Box>(new Box(7));\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    const Box box = make().expect(\"box\");\n";
+  ofs << "    return box.get();\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}

@@ -1,8 +1,15 @@
 #include <filesystem>
+#include <string>
 
 #include "CodeGenerator/MockCodeGenerator.hpp"
 #include "Parser/AST.hpp"
 #include "catch.hpp"
+
+namespace {
+bool compareFunction(const ast::Function &function, const std::string &ident) {
+  return function.ident.ident == ident;
+}
+} // namespace
 
 TEST_CASE("deScope cleans owned non-primitives", "[deScope]") {
   auto parser = parse::Parser();
@@ -62,4 +69,39 @@ TEST_CASE("deScope skips primitives, sold, and returned symbols", "[deScope]") {
   returned.owned = true;
   returned.returned = true;
   REQUIRE(gen.deScope(returned) == nullptr);
+}
+
+TEST_CASE("deScope emits cleanup against the symbol slot", "[deScope]") {
+  auto parser = parse::Parser();
+  test::mockGen::CodeGenerator gen("mod", parser, "",
+                                   std::filesystem::current_path().string());
+
+  parser.addType("Foo", asmc::Hard, asmc::QWord, false, false);
+  auto stringType = new gen::Class();
+  stringType->Ident = "Foo";
+  stringType->uniqueType = false;
+  stringType->nameTable.foo = compareFunction;
+  ast::Function endScope;
+  endScope.ident.ident = "endScope";
+  endScope.scopeName = "Foo";
+  stringType->nameTable.push(endScope);
+  gen.addType(stringType);
+
+  gen::Symbol sym;
+  sym.symbol = "path";
+  sym.type = ast::Type("Foo", asmc::QWord);
+  sym.byteMod = 984;
+  sym.owned = true;
+
+  auto file = gen.deScope(sym);
+  REQUIRE(file != nullptr);
+
+  std::string emitted;
+  for (auto *inst : file->text) {
+    emitted += inst->toString();
+  }
+
+  REQUIRE(emitted.find("-984(%rbp)") != std::string::npos);
+  REQUIRE(emitted.find("pub_Foo_endScope") != std::string::npos);
+  REQUIRE(emitted.find("path") == std::string::npos);
 }

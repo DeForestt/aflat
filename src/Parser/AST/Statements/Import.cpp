@@ -184,6 +184,13 @@ static void registerClassShells(ast::Statement *stmt,
       if (table.search<std::string>(gen::utils::searchSymbol, ident) != nullptr)
         return;
 
+      if (auto typeEntry = generator.typeList()[typeInfo.typeName]) {
+        if (dynamic_cast<gen::Enum *>(*typeEntry) != nullptr) {
+          typeInfo.size = asmc::DWord;
+          typeInfo.opType = asmc::Hard;
+        }
+      }
+
       gen::Symbol symbol;
       symbol.symbol = ident;
       symbol.type = typeInfo;

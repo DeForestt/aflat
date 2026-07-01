@@ -1,9 +1,7 @@
 .needs <std>
 .needs <server>
 import Endpoint, NotFoundImpl from "HTTP/Endpoint";
-import List from "Collections";
 import HTTPMessage, HTTPMethod, HTTPResponse, NotFoundError, ForbiddenError, BadRequestError, InternalServerError, OtherHTTPError, NotImplementedError from "HTTP";
-import Result from "Utils/Result";
 import {methodToString} from "HTTP" under http;
 import string from "String";
 import {printHex} from "io" under io;
@@ -16,11 +14,12 @@ import result from "Utils/result";
 import uni_string from "uni_string";
 import {print} from "uni_string" under uni;
 import {print} from "io" under io;
+import vector from "Collections/Vector";
  
 class Server {
     contract {
-        const List endpoints = new List(Endpoint);
-        const List middlewares = new List(Middleware);
+        const vector::<Endpoint> endpoints = new vector::<Endpoint>();
+        const vector::<Middleware> middlewares = new vector::<Middleware>();
         mutable NotFoundImpl notFound = NULL;
         int port = 8080;
     };
@@ -31,8 +30,7 @@ class Server {
     };
 
     void addEndpoint(const Endpoint endpoint) {
-        my.endpoints.stringFunc = Endpoint.toString;
-        my.endpoints.pushBack(endpoint);
+        my.endpoints.push_back(endpoint);
     };
 
     void setNotFound(const NotFoundImpl notFound) {
@@ -40,8 +38,7 @@ class Server {
     };
 
     void addMiddleware(const Middleware middleware) {
-        my.middlewares.stringFunc = Middleware.toString;
-        my.middlewares.pushBack(middleware);
+        my.middlewares.push_back(middleware);
     };
 
     void listen() {
@@ -50,18 +47,18 @@ class Server {
         uni.print(`listening on port: {preamble}{slash}{slash}localhost:{my.port}\n`);
         serve_sync(my.port, fn (const adr _msg, const Server self) {
             const let msg = new HTTPMessage(_msg, true);
-            const uni_string method = http.methodToString(msg.method).cstr();
-            const uni_string endpoint = msg.endpoint.cstr();
+            const string method = http.methodToString(msg.method);
+            const string endpoint = msg.endpoint.copy();
             mutable HTTPMessage data = msg;
 
-            for int k = 0; k < self.middlewares.getCount(); k = k + 1 {
+            for int k = 0; k < self.middlewares.count(); k = k + 1 {
                 const Middleware m = self.middlewares.get(k).expect("Middleware count currupted");
                 const adr implementation = m.implementations.get("before").or(NULL);
                 if implementation == NULL continue;
                 data = implementation(self, data);
             };
 
-            for int i = 0; i < self.endpoints.getCount(); i = i + 1 {
+            for int i = 0; i < self.endpoints.count(); i = i + 1 {
                 const Endpoint e = self.endpoints.get(i).expect("Endpoint count currupted");
 
                 const uni_string wildE = if e.path.find("/:*", 0) != -1
@@ -70,7 +67,11 @@ class Server {
                     e.path.copy();
                 const uni_string subMsg = msg.endpoint.subString(0, wildE.len()).cstr();
 
-                if e.method == msg.method & wildE == subMsg {
+                const bool methodMatches = e.method == msg.method;
+                const bool endpointMatches = wildE == subMsg;
+
+                if methodMatches {
+                    if !endpointMatches continue;
                     const let handler = e.imp;
                     result::<HTTPResponse> response;
 
@@ -81,19 +82,24 @@ class Server {
                         response = handler(self, data, path);
                     };
 
-                    HTTPResponse r = match response {
-                        Ok(val) => val,
-                        Err(e) => resolve new HTTPResponse(e.render().cstr(), "500", "Internal Server Error")
+                    HTTPResponse r;
+                    if response.isErr() {
+                        const Error err = response.unwrapErr();
+                        r = new HTTPResponse(err.render().cstr(), "500", "Internal Server Error");
+                    } else {
+                        r = response.expect("HTTP handler response was unexpectedly empty");
                     };
 
-                    for int j = 0; j < self.middlewares.getCount(); j = j + 1 {
+                    for int j = 0; j < self.middlewares.count(); j = j + 1 {
                         const Middleware m = self.middlewares.get(j).expect("Middleware count currupted");
                         const adr implementation = m.implementations.get("after").or(NULL);
                         if implementation == NULL continue;
                         r = implementation(self, data, r);
                     };
 
-                    return r.toString().cstr();
+                    const string out = r.toString();
+                    out.seal();
+                    return out.cstr();
                 };
             };
             
@@ -101,11 +107,15 @@ class Server {
                 const let notFound = self.notFound;
                 const let handler = notFound.imp;
                 const HTTPResponse r = handler(self, data);
-                return r.toString().cstr();
+                const string out = r.toString();
+                out.seal();
+                return out.cstr();
             };
             const string msg = `Endpoint: [{method}] {endpoint} not implemented`;
             const HTTPResponse r = new HTTPResponse(msg.cstr(), "501", "Not Implemented");
-            return r.toString().cstr();
+            const string out = r.toString();
+            out.seal();
+            return out.cstr();
         }, my);
     };
 };
