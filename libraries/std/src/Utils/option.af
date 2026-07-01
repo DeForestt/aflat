@@ -135,6 +135,6 @@ export fn optionWrapper(immutable T value) -> option::<T> {
   if (checker == NULL) {
     return new option::<T>->None();
   } else {
-    return new option::<T>->Some($value);
+    return new option::<T>->Some(value);
   }
 };
