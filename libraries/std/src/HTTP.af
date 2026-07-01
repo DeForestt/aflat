@@ -319,29 +319,20 @@ class HTTPMessage {
     };
 
     private void parseReq() {
-        st.print("[HTTP.parseReq] request received\n");
-
         const let rsp = my.origin;
-        st.print("[HTTP.parseReq] request converted to string\n");
         const let lines = rsp.split('\r');
-        st.print("[HTTP.parseReq] split request into lines\n");
         const string firstLine = lines.get(0).expect("Invalid HTTP message").copy();
-        st.print("[HTTP.parseReq] extracted first line\n");
         // firstLine.trim();
         const let firstLineParts = firstLine.split(' ');
-        st.print("[HTTP.parseReq] split first line into parts\n");
 
         if firstLineParts.count() < 3 {            
-            st.print("[HTTP.parseReq] first line had fewer than 3 parts\n");
             return;
         };
 
         const string method = firstLineParts.get(0).expect("Invalid HTTP message").copy();
         my.endpoint = firstLineParts.get(1).expect("Invalid HTTP message").copy();
         my.version = firstLineParts.get(2).expect("Invalid HTTP message").copy();
-        st.print("[HTTP.parseReq] extracted method/endpoint/version\n");
         my.method = stringToMethod(method);
-        st.print("[HTTP.parseReq] parsed method enum\n");
 
         if my.endpoint.indexOf('?') != -1 {
             const string query = my.endpoint.subString(my.endpoint.indexOf('?') + 1, my.endpoint.len());

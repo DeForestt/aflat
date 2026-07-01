@@ -1,7 +1,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <netinet/in.h>
-#include <stdarg.h>
 #include <spawn.h>
 #include <sys/wait.h>
 #include <stdio.h>
@@ -12,16 +11,9 @@
 #include <unistd.h>
 
 extern char **environ;
-
-static void _aflat_http_log(const char *scope, const char *fmt, ...) {
-  va_list args;
-  fprintf(stderr, "[aflat:http:%s] ", scope);
-  va_start(args, fmt);
-  vfprintf(stderr, fmt, args);
-  va_end(args);
-  fprintf(stderr, "\n");
-  fflush(stderr);
-}
+void *af_malloc(int size);
+void *af_realloc(void *ptr, int size);
+int af_free(void *ptr);
 
 static int _parse_content_length(const char *buffer, size_t header_len,
                                  size_t *content_length) {
@@ -65,7 +57,7 @@ static ssize_t _aflat_read_request(int socket_fd, size_t initial_size,
   size_t capacity = initial_size > 0 ? initial_size : 4096;
   if (capacity < 1024) capacity = 1024;
 
-  char *buffer = malloc(capacity);
+  char *buffer = af_malloc((int)capacity);
   if (!buffer) return -1;
 
   size_t total = 0;
@@ -75,9 +67,9 @@ static ssize_t _aflat_read_request(int socket_fd, size_t initial_size,
   while (1) {
     if (total + 1 >= capacity) {
       size_t new_capacity = capacity * 2;
-      char *tmp = realloc(buffer, new_capacity);
+      char *tmp = af_realloc(buffer, (int)new_capacity);
       if (!tmp) {
-        free(buffer);
+        af_free(buffer);
         return -1;
       }
       buffer = tmp;
@@ -86,7 +78,7 @@ static ssize_t _aflat_read_request(int socket_fd, size_t initial_size,
 
     ssize_t bytes = read(socket_fd, buffer + total, capacity - total - 1);
     if (bytes < 0) {
-      free(buffer);
+      af_free(buffer);
       return -1;
     }
     if (bytes == 0) break;
@@ -110,9 +102,6 @@ static ssize_t _aflat_read_request(int socket_fd, size_t initial_size,
 
   buffer[total] = '\0';
   *out_request = buffer;
-  _aflat_http_log("_aflat_read_request", "read %zd bytes from fd=%d", total,
-                  socket_fd);
-  _aflat_http_log("_aflat_read_request", "request prefix: %.120s", buffer);
   return (ssize_t)total;
 }
 
@@ -372,8 +361,6 @@ int request(char *host, char *path, char *port, char *msg, char *response,
 
 int _aflat_server_spinUp(short port, int requestSize,
                          char *(*requestHandler)(char *, char **)) {
-  _aflat_http_log("_aflat_server_spinUp", "starting server on port %d with requestSize=%d",
-                  (int)port, requestSize);
   int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
   if (serverSocket < 0) {
     perror("socket");
@@ -398,34 +385,23 @@ int _aflat_server_spinUp(short port, int requestSize,
     close(serverSocket);
     return 1;
   }
-  _aflat_http_log("_aflat_server_spinUp", "listening on port %d", (int)port);
   int clientSocket;
 
   while (1) {
-    _aflat_http_log("_aflat_server_spinUp", "waiting for request");
     clientSocket = accept(serverSocket, NULL, NULL);
     if (clientSocket < 0) {
       perror("accept");
       continue;
     }
-    _aflat_http_log("_aflat_server_spinUp", "accepted socket fd=%d", clientSocket);
     char *request = NULL;
-    char **response = malloc(sizeof(*response));
+    char *response = NULL;
     if (_aflat_read_request(clientSocket, (size_t)requestSize, &request) < 0) {
-      _aflat_http_log("_aflat_server_spinUp", "failed to read request from fd=%d",
-                      clientSocket);
       close(clientSocket);
-      free(response);
       continue;
     }
-    _aflat_http_log("_aflat_server_spinUp", "dispatching handler for fd=%d", clientSocket);
-    requestHandler(request, response);
-    _aflat_http_log("_aflat_server_spinUp", "handler returned response; sending fd=%d",
-                    clientSocket);
-    send(clientSocket, *response, strlen(*response), 0);
-    _aflat_http_log("_aflat_server_spinUp", "response sent; closing fd=%d", clientSocket);
-    free(request);
-    free(response);
+    requestHandler(request, &response);
+    send(clientSocket, response, strlen(response), 0);
+    af_free(request);
   }
   return 0;
 }
@@ -437,7 +413,6 @@ int _aflat_server_spinUp(short port, int requestSize,
 #define PORT 8080
 
 int _serve(int port, char *(*handler)(char *, void *), void *data) {
-  _aflat_http_log("_serve", "starting one-shot server on port %d", port);
   int server_fd, new_socket;
   struct sockaddr_in address;
   int opt = 1;
@@ -463,8 +438,6 @@ int _serve(int port, char *(*handler)(char *, void *), void *data) {
     close(server_fd);
     return 1;
   }
-  _aflat_http_log("_serve", "listening on port %d", port);
-
   new_socket =
       accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
   if (new_socket < 0) {
@@ -474,23 +447,19 @@ int _serve(int port, char *(*handler)(char *, void *), void *data) {
 
   char *request = NULL;
   if (_aflat_read_request(new_socket, 4096, &request) < 0) {
-    _aflat_http_log("_serve", "failed to read request");
     close(new_socket);
     close(server_fd);
     return -1;
   }
-  _aflat_http_log("_serve", "calling handler");
   char *response = handler(request, data);
-  _aflat_http_log("_serve", "handler returned; sending response");
   send(new_socket, response, strlen(response), 0);
-  free(request);
+  af_free(request);
   close(new_socket);
   close(server_fd);
   return 0;
 }
 
 int serve(int port, char *(*handler)(char *, void *), void *data) {
-  _aflat_http_log("serve", "starting forked server on port %d", port);
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
   struct sockaddr_in address;
   int opt = 1;
@@ -505,13 +474,11 @@ int serve(int port, char *(*handler)(char *, void *), void *data) {
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = INADDR_ANY;
   address.sin_port = htons(port);
-  _aflat_http_log("serve", "binding socket");
   if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
     perror("bind");
     close(server_fd);
     return 1;
   }
-  _aflat_http_log("serve", "socket bound");
   if (listen(server_fd, 3) < 0) {
     perror("listen");
     close(server_fd);
@@ -519,7 +486,6 @@ int serve(int port, char *(*handler)(char *, void *), void *data) {
   }
 
   while (1) {
-    _aflat_http_log("serve", "waiting for request");
     int new_socket =
         accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
     if (new_socket < 0) {
@@ -537,17 +503,12 @@ int serve(int port, char *(*handler)(char *, void *), void *data) {
       close(server_fd);
       char *request = NULL;
       if (_aflat_read_request(new_socket, 4096, &request) < 0) {
-        _aflat_http_log("serve", "child failed to read request fd=%d",
-                        new_socket);
         close(new_socket);
         exit(EXIT_FAILURE);
       }
-      _aflat_http_log("serve", "child calling handler fd=%d", new_socket);
       char *response = handler(request, data);
-      _aflat_http_log("serve", "child handler returned; sending fd=%d",
-                      new_socket);
       send(new_socket, response, strlen(response), 0);
-      free(request);
+      af_free(request);
       close(new_socket);
       exit(0);  // End child process
     } else {
@@ -559,7 +520,6 @@ int serve(int port, char *(*handler)(char *, void *), void *data) {
 }
 
 int serve_sync(int port, char *(*handler)(char *, void *), void *data) {
-  _aflat_http_log("serve_sync", "starting synchronous server on port %d", port);
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
   struct sockaddr_in address;
   int opt = 1;
@@ -579,35 +539,28 @@ int serve_sync(int port, char *(*handler)(char *, void *), void *data) {
     close(server_fd);
     return 1;
   }
-  _aflat_http_log("serve_sync", "socket bound");
   if (listen(server_fd, 3) < 0) {
     perror("listen");
     close(server_fd);
     return 1;
   }
-  _aflat_http_log("serve_sync", "listening on port %d", port);
 
   while (1) {
-    _aflat_http_log("serve_sync", "waiting for request");
     int new_socket =
         accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
     if (new_socket < 0) {
       perror("accept");
       continue;
     }
-    _aflat_http_log("serve_sync", "accepted socket fd=%d", new_socket);
 
     char *request = NULL;
     if (_aflat_read_request(new_socket, 4096, &request) < 0) {
-      _aflat_http_log("serve_sync", "failed to read request fd=%d", new_socket);
       close(new_socket);
       continue;
     }
-    _aflat_http_log("serve_sync", "calling handler fd=%d", new_socket);
     char *response = handler(request, data);
-    _aflat_http_log("serve_sync", "handler returned; sending fd=%d", new_socket);
     send(new_socket, response, strlen(response), 0);
-    free(request);
+    af_free(request);
     close(new_socket);
   }
   close(server_fd);
