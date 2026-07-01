@@ -71,3 +71,17 @@ TEST_CASE("Parser maps caret to bitwise xor operator", "[parser]") {
   REQUIRE(compound != nullptr);
   REQUIRE(compound->op == ast::Carrot);
 }
+
+TEST_CASE("Parser accepts lambda return type hints", "[parser]") {
+  lex::Lexer lexer;
+  parse::Parser parser;
+  auto tokens = lexer.Scan("fn(int a, int b) -> int { return a + b; }");
+  tokens.invert();
+
+  ast::Expr *expr = parser.parseExpr(tokens);
+  auto *lambda = dynamic_cast<ast::Lambda *>(expr);
+  REQUIRE(lambda != nullptr);
+  REQUIRE(lambda->function != nullptr);
+  REQUIRE_FALSE(lambda->function->autoType);
+  REQUIRE(lambda->function->type.typeName == "int");
+}
