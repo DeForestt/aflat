@@ -16,6 +16,31 @@ void *af_malloc(int size);
 void *af_realloc(void *ptr, int size);
 int af_free(void *ptr);
 
+int spawn_shell(char *cmd) {
+  pid_t pid;
+  int status = 0;
+  char *argv[] = {"/bin/sh", "-c", cmd, NULL};
+
+  int spawn_status = posix_spawnp(&pid, "/bin/sh", NULL, NULL, argv, environ);
+  if (spawn_status != 0) {
+    return -spawn_status;
+  }
+
+  if (waitpid(pid, &status, 0) < 0) {
+    return -errno;
+  }
+
+  if (WIFEXITED(status)) {
+    return WEXITSTATUS(status);
+  }
+
+  if (WIFSIGNALED(status)) {
+    return 128 + WTERMSIG(status);
+  }
+
+  return status;
+}
+
 static int _parse_content_length(const char *buffer, size_t header_len,
                                  size_t *content_length) {
   const char *needle = "content-length:";
