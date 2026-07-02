@@ -3,6 +3,8 @@
 
 namespace compilerutils {
 
+std::string releaseCpuFlags();
+
 std::string buildCompileCmd(const std::string &srcPath,
                             const std::string &destPath, bool debug);
 

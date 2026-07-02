@@ -1557,7 +1557,8 @@ bool compileCFile(const std::string &path, bool debug) {
   if (debug)
     flags = "-g -c -no-pie -z noexecstack ";
   else
-    flags = "-O3 -march=native -c -no-pie -z noexecstack ";
+    flags = "-O3 " + compilerutils::releaseCpuFlags() +
+            " -c -no-pie -z noexecstack ";
   std::string cmd = "gcc " + flags + src + " -o " + obj;
 
   if (!gQuiet) {

@@ -39,6 +39,7 @@ COPY --from=builder ${AFLAT_ROOT}/bin ${AFLAT_ROOT}/bin
 COPY --from=builder ${AFLAT_ROOT}/libraries ${AFLAT_ROOT}/libraries
 
 ENV PATH=${AFLAT_ROOT}/bin:$PATH
+ENV AFLAT_PORTABLE_OUTPUT=1
 WORKDIR /workspace
 
 ENTRYPOINT ["/bin/sh"]
