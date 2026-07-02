@@ -186,6 +186,18 @@ export fn createFile(const adr fileName) -> File! {
         return file;
 };
 
+// Create a directory, returning true when created or already present.
+export fn createDirectory(const adr directoryName) -> bool! {
+        const int status = sys_mkdir(directoryName, 0o0777);
+        if status == 0 {
+                return res.accept(true);
+        };
+        if status == -17 { // EEXIST
+                return res.accept(true);
+        };
+        return res.reject::<bool>(new FileError(status));
+};
+
 // Open an existing file for read/write access, returning File! result.
 export fn openFile(const adr fileName) -> File! {
         const File file = af_malloc(File);

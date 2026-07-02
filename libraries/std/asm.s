@@ -1,6 +1,7 @@
 .global brk
 .global sys_write
 .global sys_create
+.global sys_mkdir
 .global sys_open
 .global sys_read
 .global sys_close
@@ -62,6 +63,16 @@ sys_create:
     pushq	%rbx
     subq	$16, %rsp
     movq    $85, %rax
+    syscall
+    leave
+    ret
+
+sys_mkdir:
+    pushq	%rbp
+    movq	%rsp, %rbp
+    pushq	%rbx
+    subq	$16, %rsp
+    movq    $83, %rax
     syscall
     leave
     ret
