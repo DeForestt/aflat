@@ -5,7 +5,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
-    git \
     libboost-all-dev \
     bash \
     curl \
@@ -13,11 +12,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 ENV AFLAT_ROOT=/opt/aflat
-
-# Shallow clone to reduce size/time
-RUN git clone --depth 1 https://github.com/DeForestt/aflat.git ${AFLAT_ROOT}
+COPY . ${AFLAT_ROOT}
 
 RUN cmake -S ${AFLAT_ROOT} -B ${AFLAT_ROOT}/build -DCMAKE_BUILD_TYPE=Release \
+        -DAFLAT_NATIVE_BUILD=OFF \
     && cmake --build ${AFLAT_ROOT}/build --target aflat \
     && cd ${AFLAT_ROOT} && bash rebuild-libs.sh
 
@@ -44,4 +42,4 @@ ENV PATH=${AFLAT_ROOT}/bin:$PATH
 WORKDIR /workspace
 
 ENTRYPOINT ["/bin/sh"]
-CMD ["-c", "aflat --help"]
+CMD ["-c", "aflat --help; code=$?; [ \"$code\" -eq 0 ] || [ \"$code\" -eq 1 ]"]

@@ -40,10 +40,14 @@ jobs:
           context: .
           file: Dockerfile.sandbox
           push: true
+          platforms: linux/amd64
           tags: |
             ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
             ${{ env.IMAGE_NAME }}:latest
           no-cache: true
+
+      - name: Smoke test sandbox image
+        run: docker run --rm "${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}" -c 'aflat --help >/dev/null 2>&1; code=$?; [ "$code" -eq 0 ] || [ "$code" -eq 1 ]'
 
       - name: Create GitHub release
         uses: actions/create-release@v1
