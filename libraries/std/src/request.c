@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <spawn.h>
+#include <signal.h>
 #include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -465,6 +466,8 @@ int serve(int port, char *(*handler)(char *, void *), void *data) {
   int opt = 1;
   int addrlen = sizeof(address);
 
+  signal(SIGCHLD, SIG_IGN);
+
   if (server_fd < 0) {
     perror("socket");
     return 1;
@@ -479,7 +482,7 @@ int serve(int port, char *(*handler)(char *, void *), void *data) {
     close(server_fd);
     return 1;
   }
-  if (listen(server_fd, 3) < 0) {
+  if (listen(server_fd, 128) < 0) {
     perror("listen");
     close(server_fd);
     return 1;
@@ -496,6 +499,7 @@ int serve(int port, char *(*handler)(char *, void *), void *data) {
     pid_t pid = fork();
     if (pid < 0) {
       perror("fork");
+      close(new_socket);
       continue;
     }
 
