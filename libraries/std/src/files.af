@@ -177,7 +177,7 @@ export fn createFile(const adr fileName) -> File! {
         file.file = sys_open(fileName, flag, 0o0777);
         file.it = true;
         const int test = file.file;
-        if(test < 1) {
+        if(test < 0) {
                 const let extra = file;
                 af_free($extra);
                 return res.reject::<File>(new FileError(test));
