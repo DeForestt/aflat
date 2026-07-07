@@ -16,6 +16,85 @@
 ast::Expr *prioritizeExpr(ast::Expr *expr);
 
 namespace parse {
+namespace {
+
+std::string escapeStringLiteral(const std::string &value) {
+  std::string result = "\"";
+  for (char c : value) {
+    if (c == '"' || c == '\\') {
+      result += '\\';
+    }
+    result += c;
+  }
+  result += '"';
+  return result;
+}
+
+std::string tokenToSource(const lex::Token *token) {
+  if (auto *ident = dynamic_cast<const lex::LObj *>(token))
+    return ident->meta;
+  if (auto *symbol = dynamic_cast<const lex::Symbol *>(token))
+    return symbol->meta;
+  if (auto *op = dynamic_cast<const lex::OpSym *>(token))
+    return std::string(1, op->Sym);
+  if (auto *integer = dynamic_cast<const lex::INT *>(token))
+    return integer->value;
+  if (auto *longLit = dynamic_cast<const lex::Long *>(token))
+    return longLit->value;
+  if (auto *floatLit = dynamic_cast<const lex::FloatLit *>(token))
+    return floatLit->value;
+  if (auto *stringLit = dynamic_cast<const lex::StringObj *>(token))
+    return escapeStringLiteral(stringLit->value);
+  if (auto *fstringLit = dynamic_cast<const lex::FStringObj *>(token))
+    return "f" + escapeStringLiteral(fstringLit->value);
+  if (auto *charLit = dynamic_cast<const lex::CharObj *>(token))
+    return "'" + std::string(1, charLit->value) + "'";
+  if (dynamic_cast<const lex::Ref *>(token))
+    return "$";
+  return "";
+}
+
+std::string parseAnnotationValue(links::LinkedList<lex::Token *> &tokens,
+                                 int lineCount) {
+  std::string value;
+  int nestedParens = 0;
+  int nestedBrackets = 0;
+  int nestedBraces = 0;
+
+  while (tokens.peek() != nullptr) {
+    auto *op = dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (op != nullptr) {
+      if (nestedParens == 0 && nestedBrackets == 0 && nestedBraces == 0 &&
+          (op->Sym == ',' || op->Sym == ')')) {
+        break;
+      }
+
+      if (op->Sym == '(')
+        ++nestedParens;
+      else if (op->Sym == ')' && nestedParens > 0)
+        --nestedParens;
+      else if (op->Sym == '[')
+        ++nestedBrackets;
+      else if (op->Sym == ']' && nestedBrackets > 0)
+        --nestedBrackets;
+      else if (op->Sym == '{')
+        ++nestedBraces;
+      else if (op->Sym == '}' && nestedBraces > 0)
+        --nestedBraces;
+    }
+
+    value += tokenToSource(tokens.pop());
+  }
+
+  if (value.empty()) {
+    throw err::Exception("Expected annotation argument value on line " +
+                         std::to_string(lineCount));
+  }
+
+  return value;
+}
+
+} // namespace
 
 struct Parser::Impl {
   Impl(Parser &parser, int mutability);
@@ -165,16 +244,33 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
       continue;
     }
     tokens.pop();
-    auto arg = dynamic_cast<lex::LObj *>(tokens.peek());
-    while (arg != nullptr) {
-      annotation.args.push_back(arg->meta);
-      tokens.pop();
+    while (tokens.peek() != nullptr) {
+      auto close = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (close && close->Sym == ')') {
+        break;
+      }
+
+      auto arg = dynamic_cast<lex::LObj *>(tokens.pop());
+      if (arg == nullptr) {
+        throw err::Exception("Expected annotation argument on line " +
+                             std::to_string(atSym->lineCount));
+      }
+
+      auto maybeEquals = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (maybeEquals && maybeEquals->Sym == '=') {
+        tokens.pop();
+        annotation.namedArgs[arg->meta] =
+            parseAnnotationValue(tokens, atSym->lineCount);
+      } else {
+        annotation.args.push_back(arg->meta);
+      }
+
       auto comma = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (comma && comma->Sym == ',') {
         tokens.pop();
-        arg = dynamic_cast<lex::LObj *>(tokens.peek());
-      } else
+      } else {
         break;
+      }
     }
     if (openParen) {
       auto closeParen = dynamic_cast<lex::OpSym *>(tokens.pop());

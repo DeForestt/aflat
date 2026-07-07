@@ -1,5 +1,6 @@
 #include "CodeGenerator/MockCodeGenerator.hpp"
 #include "CodeGenerator/Utils.hpp"
+#include "Parser/AST/Statements/DecAssign.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "catch.hpp"
@@ -84,4 +85,20 @@ TEST_CASE("Parser accepts lambda return type hints", "[parser]") {
   REQUIRE(lambda->function != nullptr);
   REQUIRE_FALSE(lambda->function->autoType);
   REQUIRE(lambda->function->type.typeName == "int");
+}
+
+TEST_CASE("Parser accepts named annotation arguments", "[parser]") {
+  lex::Lexer lexer;
+  parse::Parser parser;
+  auto tokens = lexer.Scan("@clamped(min=0, max=10) int score = 5;");
+  tokens.invert();
+
+  ast::Statement *stmt = parser.parseStmt(tokens, true);
+  auto *decAssign = dynamic_cast<ast::DecAssign *>(stmt);
+
+  REQUIRE(decAssign != nullptr);
+  REQUIRE(decAssign->annotations.size() == 1);
+  CHECK(decAssign->annotations[0].name == "clamped");
+  CHECK(decAssign->annotations[0].namedArgs["min"] == "0");
+  CHECK(decAssign->annotations[0].namedArgs["max"] == "10");
 }

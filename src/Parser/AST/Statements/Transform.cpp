@@ -1,5 +1,6 @@
 #include "Parser/AST/Statements/Transform.hpp"
 
+#include <cctype>
 #include <regex>
 
 #include "CodeGenerator/CodeGenerator.hpp"
@@ -9,6 +10,24 @@
 #include "Utils.hpp"
 
 namespace ast {
+namespace {
+
+std::string transformTypeIdent(const std::string &type) {
+  auto genericStart = type.find('<');
+  std::string ident =
+      genericStart == std::string::npos ? type : type.substr(0, genericStart);
+
+  std::string result;
+  for (char c : ident) {
+    if (std::isalnum(static_cast<unsigned char>(c)) || c == '_') {
+      result += c;
+    }
+  }
+  return result.empty() ? ident : result;
+}
+
+} // namespace
+
 Transform::Transform(links::LinkedList<lex::Token *> &tokens) {
   auto identToken = dynamic_cast<lex::LObj *>(tokens.pop());
   if (identToken == nullptr) {
@@ -43,6 +62,8 @@ Transform::parse(const std::string &ident, std::string &type, std::string &expr,
   // corresponding dvalues
 
   result = std::regex_replace(result, std::regex("\\$\\{ident\\}"), ident);
+  result = std::regex_replace(result, std::regex("\\$\\{type_ident\\}"),
+                              transformTypeIdent(type));
   result = std::regex_replace(result, std::regex("\\$\\{type\\}"), type);
   result = std::regex_replace(result, std::regex("\\$\\{expr\\}"), expr);
   result = std::regex_replace(result, std::regex("\\$\\{scope\\}"), scope);

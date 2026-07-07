@@ -178,6 +178,9 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
             std::getline(iss, value, '_');
             args[key] = value;
           }
+          for (auto &arg : annotation.namedArgs) {
+            args[arg.first] = arg.second;
+          }
 
           auto result = transform.parse(declare->ident, declare->type.typeName,
                                         expr_str, scope, mut, args, generator);
