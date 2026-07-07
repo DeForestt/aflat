@@ -21,6 +21,7 @@ static std::unordered_map<std::string, int> PRIMITIVE_TYPES = {
 struct Annotation {
   std::string name;
   std::vector<std::string> args;
+  std::unordered_map<std::string, std::string> namedArgs;
 };
 
 class Parser {
