@@ -1456,6 +1456,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     // calculate the size of the struct
     int size = 0;
     while (structList.args.trail() > 0) {
+      if (dynamic_cast<ast::Lambda *>(structList.args.touch()) != nullptr) {
+        size += gen::utils::sizeToInt(asmc::QWord);
+        structList.args.shift();
+        continue;
+      }
       asmc::File tempFile;
       gen::Expr expr = this->GenExpr(structList.args.shift(), tempFile);
       size += gen::utils::sizeToInt(expr.size);

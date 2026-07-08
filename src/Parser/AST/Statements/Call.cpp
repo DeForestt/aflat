@@ -1063,7 +1063,7 @@ void Call::requestOverloadRetry(
 
 std::string Call::toString() {
   std::string result = ident;
-  for (int i = 0; i < modList.count; i++) {
+  for (int i = modList.count - 1; i >= 0; i--) {
     result += "." + modList.get(i);
   }
   result += "(";

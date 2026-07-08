@@ -3,7 +3,8 @@ import Endpoint from "HTTP/Endpoint";
 import Server from "HTTP/Server";
 import string from "String";
 import uni_string from "uni_string";
-import HTTPMethod, HTTPResponse, HTTPMessage from "HTTP";
+import HTTPMethod from "HTTP";
+import HTTPHeader, HTTPResponse, HTTPMessage from "HTTP";
 import result from "Utils/result";
 
 class GET signs Endpoint {
