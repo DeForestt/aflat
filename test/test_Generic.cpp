@@ -70,6 +70,39 @@ TEST_CASE("transform can lower generic decorator fields", "[transform]") {
   REQUIRE(result);
 }
 
+TEST_CASE("transform preserves chained method call order", "[transform]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/transform_method_chain");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "transform_method_chain.af";
+  const auto output = dir / "transform_method_chain.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "import string from \"String\";\n";
+  ofs << "transform computed\n";
+  ofs << "~\n";
+  ofs << "fn ${ident}() -> ${type} { return ${expr}; };\n";
+  ofs << "~;\n";
+  ofs << "class Test {\n";
+  ofs << "    mutable string name = \"x\";\n";
+  ofs << "    @computed\n";
+  ofs << "    string key = my.name.copy();\n";
+  ofs << "    fn init() -> Self { return my; };\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    const Test t = new Test();\n";
+  ofs << "    return 0;\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
 TEST_CASE("generic type variable declaration", "[generics]") {
   namespace fs = std::filesystem;
   const auto dir = fs::path("tmp/generic_type_variable");

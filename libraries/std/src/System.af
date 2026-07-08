@@ -2,7 +2,7 @@
 .needs <std>
 
 import { worker } from "concurrency" under async;
-import Pipe, Thread, MProcess, AsyncResult from "concurrency";
+import AsyncResult from "concurrency";
 import string from "String";
 import { fString } from "String" under st;
 import {print} from "io" under io;

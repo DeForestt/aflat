@@ -28,7 +28,7 @@ safe dynamic class Property {
 
     fn get() -> T {
         const let getter = my.getter;
-        if (getter == NULL) return panic("Attempt to read from a property without a getter.");
+        if (getter == NULL) panic("Attempt to read from a property without a getter.");
         return getter(my.context);
     };
 
@@ -83,7 +83,6 @@ fn ${ident}() -> unordered_map::<adr, adr> : Property::<${type}> {{
     },
     "set": fn (const ${Self} my, const ${type} x) {
         panic("Cannot set computed property");
-        return;
     }
 }};
 ~;
