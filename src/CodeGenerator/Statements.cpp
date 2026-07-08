@@ -278,9 +278,10 @@ asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT,
       if (!imp->cwd.empty())
         cwd() = imp->cwd;
 
-      imp->generateClasses(*this);
+      auto classes = imp->generateClasses(*this);
+      OutputFile << classes.file;
       if (emitFunctions && imp->hasFunctions)
-        imp->generate(*this);
+        OutputFile << imp->generate(*this).file;
 
       cwd() = prev;
     }

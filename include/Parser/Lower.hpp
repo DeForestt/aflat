@@ -9,6 +9,7 @@ class Lowerer {
 public:
   Lowerer(ast::Statement *root, bool snippet);
   Lowerer(ast::Statement *root);
+  ast::Statement *result() const;
 
 private:
   ast::Statement *root;

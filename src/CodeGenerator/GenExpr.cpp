@@ -33,6 +33,13 @@ static std::string formattedStringHintForType(const std::string &typeName) {
   return "";
 }
 
+static int classInstanceByteSize(const gen::Class *cl) {
+  if (cl == nullptr || cl->SymbolTable.head == nullptr) {
+    return 1;
+  }
+  return cl->SymbolTable.head->data.byteMod;
+}
+
 namespace gen {
 gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                                       asmc::Size size, std::string typeHint) {
@@ -97,7 +104,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         ast::Type type = ast::Type();
         type.typeName = cl->Ident;
         type.size = asmc::Byte;
-        type.arraySize = cl->SymbolTable.head->data.byteMod;
+        type.arraySize = classInstanceByteSize(cl);
         int bMod =
             gen::scope::ScopeManager::getInstance()->assign("", type, false);
 
@@ -1374,7 +1381,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     callMalloc->call->ident = af_malloc->ident.ident;
     callMalloc->call->Args = links::LinkedList<ast::Expr *>();
     ast::IntLiteral *size = new ast::IntLiteral();
-    size->val = cl->SymbolTable.head->data.byteMod;
+    size->val = classInstanceByteSize(cl);
     if (auto unionType = dynamic_cast<gen::Union *>(cl))
       size->val = unionType->largestSize + 4;
     callMalloc->call->Args.push(size);

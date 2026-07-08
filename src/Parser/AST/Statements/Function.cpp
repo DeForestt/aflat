@@ -30,6 +30,18 @@ int maxFrameOffset(const asmc::File &file) {
 
 int alignFrameSize(int bytes) { return ((bytes + 15) / 16) * 16; }
 
+void appendTemplateTypes(std::string &typeName,
+                         const std::vector<std::string> &templateTypes) {
+  if (templateTypes.empty())
+    return;
+
+  typeName += "<" + templateTypes[0];
+  for (size_t i = 1; i < templateTypes.size(); ++i) {
+    typeName += "," + templateTypes[i];
+  }
+  typeName += ">";
+}
+
 } // namespace
 
 void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
@@ -47,11 +59,14 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
             "Line: " + std::to_string(tokens.peek()->lineCount) +
             "Expected Identifier after ':'");
       this->decorator = decor->meta;
+      appendTemplateTypes(this->decorator, parser.parseTemplateTypeList(
+                                               tokens, decor->lineCount));
 
-      if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)
+      auto nextSym = dynamic_cast<lex::OpSym *>(tokens.peek());
+      if (nextSym == nullptr)
         throw err::Exception("Line: " +
                              std::to_string(tokens.peek()->lineCount));
-      sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
+      sym = *nextSym;
       if (sym.Sym == '.') {
         tokens.pop();
         auto *lob = dynamic_cast<lex::LObj *>(tokens.pop());
@@ -61,6 +76,9 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
               "Expected Identifier after '.'");
         this->decNSP = this->decorator;
         this->decorator = lob->meta;
+        appendTemplateTypes(this->decorator, parser.parseTemplateTypeList(
+                                                 tokens, lob->lineCount));
+
         if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)
           throw err::Exception("Line: " +
                                std::to_string(tokens.peek()->lineCount));

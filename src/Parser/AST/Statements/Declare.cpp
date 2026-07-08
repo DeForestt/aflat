@@ -45,6 +45,14 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
 
   int offset = gen::utils::sizeToInt(this->type.size);
 
+  if (parse::PRIMITIVE_TYPES.find(this->type.typeName) ==
+          parse::PRIMITIVE_TYPES.end() &&
+      this->type.typeName != "any" && this->type.typeName != "let" &&
+      !(this->type.typeName.find("~") != std::string::npos &&
+        this->type.typeName.find("<") == std::string::npos)) {
+    generator.getType(this->type.typeName, file);
+  }
+
   if (!generator.globalScope()) {
     // if the there  is no scope use the scope manager otherwise use the
     // scope

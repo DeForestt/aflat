@@ -83,6 +83,9 @@ public:
   std::unordered_map<std::string, MethodSummary> methodSummaries;
   ast::Statement *contract;
   ast::Statement *body;
+  ast::Statement *templateModuleRoot = nullptr;
+  std::string templateModuleCwd = "";
+  std::unordered_map<std::string, std::string> templateNamespaceMap;
   std::vector<ast::DecAssign> defaultValues;
   static bool compare(Type *t, std::string ident);
   gen::Class *parent = nullptr;

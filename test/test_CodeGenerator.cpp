@@ -83,6 +83,14 @@ TEST_CASE("object accepts non-primitive values but rejects primitives",
   CHECK_THROWS(mockGen.canAssign(objectTarget, "int", "ERROR"));
 }
 
+TEST_CASE("adr accepts function pointers with generic argument types",
+          "[canAssign]") {
+  auto adrTarget = ast::Type("adr", asmc::QWord);
+  MOCKGEN
+
+  CHECK(mockGen.canAssign(adrTarget, "void~Property<int>~", "ERROR"));
+}
+
 TEST_CASE("increment and decrement use int-sized arithmetic", "[codegen]") {
   auto parser = parse::Parser();
   test::mockGen::CodeGenerator gen("mod", parser, "",

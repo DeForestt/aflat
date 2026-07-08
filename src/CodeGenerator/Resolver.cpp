@@ -69,7 +69,13 @@ Type **CodeGenerator::instantiateGenericClass(
       OutputFile.lambdas = new asmc::File;
     OutputFile.hasLambda = true;
     scope::ScopeManager::getInstance()->pushIsolated();
+    auto outerIncludedMemo = this->includedMemo();
+    auto outerIncludedClasses = this->includedClasses();
+    auto outerActiveImports = this->activeImports();
     this->pushEnv();
+    this->includedMemo() = outerIncludedMemo;
+    this->includedClasses() = outerIncludedClasses;
+    this->activeImports() = outerActiveImports;
     auto savedCwd = this->cwd();
     auto savedNameSpaceTable = this->nameSpaceTable();
     if (cls->templateModuleRoot != nullptr) {

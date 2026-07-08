@@ -5,53 +5,34 @@ import List from "Collections";
 import Iterator from "Collections/Iterator";
 import Scroller from "Collections/Scroller";
 import Function from "Utils/Functions";
+import unordered_map from "Collections/unordered_map";
 import Observable from "Utils/Observable";
-
-import {print, printHex} from "io" under io;
-
-/*
- * Decorate a class method to be treated as a read-only calculated property.
- */
-safe dynamic class Computed {
-    private const any<any> foo = foo;
-    private const any context = context;
-
-    fn init(const any<any> foo, const any context) -> Self {
-        const int __i = 0;
-        return my;
-    };
-
-    fn get() -> any {
-        const let foo = my.foo;
-        return foo(my.context);
-    };
-};
-
 
 /*
  * Decorate a class method to be treated as a read-write calculated property.
  * This property is observable.
  */
- @Apply(Observable)
+@Apply(Observable)
+types(T)
 safe dynamic class Property {
-    private mutable any<any> getter;
-    private mutable void<any, any> setter;
+    private mutable adr getter;
+    private mutable adr setter;
     private const any context = context;
 
-    Property init(const Map<> foo, const any context) {
-        const Map access = foo();
+    fn init(const adr accessors, const any context) -> Self {
+        const unordered_map::<adr, adr> access = accessors();
         my.getter = access.get("get").or(NULL);
         my.setter = access.get("set").or(NULL);
         return my;
     };
 
-    fn get() -> any {
+    fn get() -> T {
         const let getter = my.getter;
         if (getter == NULL) return panic("Attempt to read from a property without a getter.");
         return getter(my.context);
     };
 
-    fn _set(const any value) -> void {
+    fn _set(const T value) -> void {
         const let setter = my.setter;
         if (setter == NULL) panic("Attempt to write to a property without a setter.");
         setter(my.context, value);
@@ -67,7 +48,7 @@ safe dynamic class Property {
 transform observable 
 ~
 ${scope} ${mut} ${type} __${ident} = ${expr};
-fn ${ident}() -> Map : Property {{
+fn ${ident}() -> unordered_map::<adr, adr> : Property::<${type}> {{
 	"get": fn (const ${Self} this) {
 		return this.__${ident};
 	},
@@ -82,11 +63,11 @@ fn ${ident}() -> Map : Property {{
 transform readonly 
 ~
 private mutable ${type} __${ident} = ${expr};
-fn ${ident}() -> Map : Property {{
+fn ${ident}() -> unordered_map::<adr, adr> : Property::<${type}> {{
     "get": fn (const ${Self} this) {
         return this.__${ident};
     },
-    "set": fn () {
+    "set": fn (const ${Self} this, const ${type} x) {
         panic("Cannot set readonly property");
         return;
     }
@@ -96,11 +77,11 @@ fn ${ident}() -> Map : Property {{
 // Property wrapper that runs the supplied expression each time it is read.
 transform computed 
 ~
-fn ${ident}() -> adr : Property {{
+fn ${ident}() -> unordered_map::<adr, adr> : Property::<${type}> {{
     "get": fn (const ${Self} my) {
         return ${expr};
     },
-    "set": fn () {
+    "set": fn (const ${Self} my, const ${type} x) {
         panic("Cannot set computed property");
         return;
     }
@@ -110,15 +91,15 @@ fn ${ident}() -> adr : Property {{
 // Lazily initializes the property the first time it's accessed, caching the value.
 transform lazy 
 ~
-private mutable ${type} __${ident} = NULL;
-fn ${ident}() -> Map : Property {{
-    "get": fn (const ${Self} this) {
-        if (this.__${ident} == NULL) {
-            this.__${ident} = ${expr};
+private mutable ${type} __${ident};
+fn ${ident}() -> unordered_map::<adr, adr> : Property::<${type}> {{
+    "get": fn (const ${Self} my) {
+        if (my.__${ident} == NULL) {
+            my.__${ident} = ${expr};
         }
-        return this.__${ident};
+        return my.__${ident};
     },
-    "set": fn () {
+    "set": fn (const ${Self} my, const ${type} x) {
         panic("Cannot set lazy property");
         return;
     }
@@ -149,7 +130,7 @@ fn with_${ident}(const &&${type} x) -> ${Self} {
 transform clamped 
 ~
 ${scope} ${mut} ${type} __${ident} = ${expr}; // default value
-fn ${ident}() -> Map : Property {{
+fn ${ident}() -> unordered_map::<adr, adr> : Property::<${type}> {{
     "get": fn (const ${Self} this) {
         return this.__${ident};
     },

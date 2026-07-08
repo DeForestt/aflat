@@ -100,7 +100,7 @@ Transform::parse(const std::string &ident, std::string &type, std::string &expr,
   ast::Statement *statement = generator.parser().parseStmt(tokens);
   auto Lowerer = parse::lower::Lowerer(statement, true);
 
-  return statement;
+  return Lowerer.result();
 }
 std::string Compound::toString() {
   return expr1->toString() + " " + utils::op_to_string(op) + " " +

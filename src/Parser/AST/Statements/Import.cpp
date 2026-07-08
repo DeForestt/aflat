@@ -134,6 +134,9 @@ static void registerClassShells(ast::Statement *stmt,
     type->declarationOnly = true;
     type->contract = cls->contract;
     type->body = cls->statement;
+    type->templateModuleRoot = cls->templateModuleRoot;
+    type->templateModuleCwd = cls->templateModuleCwd;
+    type->templateNamespaceMap = cls->templateNamespaceMap;
 
     auto prevScope = generator.scope();
     auto prevGlobal = generator.globalScope();
@@ -367,12 +370,12 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     parse::Parser p = parse::Parser();
     ast::Statement *statement = p.parseStmt(tokens);
     auto Lowerer = parse::lower::Lowerer(statement);
-    added = statement;
+    added = Lowerer.result();
     generator.includedMemo().insert(this->path, added);
   }
   {
     NamespaceTableGuard namespaceGuard(generator);
-    generator.ImportsOnly(added, true);
+    OutputFile << generator.ImportsOnly(added, true);
     std::unordered_map<std::string, std::string> nsMap;
     collectImportNamespaces(added, nsMap);
     ast::Statement *templateRoot = ast::deepCopy(added);
@@ -484,9 +487,9 @@ Import::generateClasses(gen::CodeGenerator &generator) {
       p.setMutability(generator.mutability());
     ast::Statement *statement = p.parseStmt(tokens);
     auto Lowerer = parse::lower::Lowerer(statement);
-    added = statement;
+    added = Lowerer.result();
     generator.includedMemo().insert(this->path, added);
-    generator.ImportsOnly(added, false);
+    OutputFile << generator.ImportsOnly(added, false);
   }
 
   std::unordered_map<std::string, std::string> nsMap;

@@ -27,8 +27,13 @@ namespace {
 constexpr const char *F_POINTER_ARG_SEPARATOR = "__af_fp_arg__";
 
 bool isEncodedFunctionPointerTypeName(const std::string &typeName) {
-  return typeName.find('~') != std::string::npos &&
-         typeName.find('<') == std::string::npos;
+  const size_t first = typeName.find('~');
+  const size_t last = typeName.rfind('~');
+  if (first == std::string::npos || last == std::string::npos || first == last)
+    return false;
+
+  const size_t genericStart = typeName.find('<');
+  return genericStart == std::string::npos || first < genericStart;
 }
 
 std::vector<std::string> splitFunctionPointerArgs(const std::string &args) {
