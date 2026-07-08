@@ -1,7 +1,7 @@
 .needs <std>
 import Content from "Web/Content";
 import string from "String";
-import Computed from "Utils/Properties";
+import Property, computed from "Utils/Properties";
 import {print} from "String" under str;
 
 safe dynamic class Bind {
@@ -9,15 +9,7 @@ safe dynamic class Bind {
     private const adr preproces = preprocess;
     private mutable string name = name;
     private mutable string value = "None";
-
-    public string key() : Computed {
-        return my.name.copy();
-    };
-
-    public string val() : Computed {
-        return my.value.copy();
-    };
-
+    
     Bind init(const adr<Content, any> preprocess, const Content context, const adr name) {
         my.name = new string("{{") + my.name + new string("}}");
         my.context.bindings.pushBack(my);

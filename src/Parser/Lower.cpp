@@ -37,6 +37,8 @@ Lower::Lowerer(ast::Statement *root, bool snippet) {
   this->root = this->lower(root);
 }
 
+ast::Statement *Lower::result() const { return this->root; }
+
 ast::Statement *Lower::lower(ast::Statement *stmt) {
   if (dynamic_cast<ast::Sequence *>(stmt) != nullptr) {
     auto seq = dynamic_cast<ast::Sequence *>(stmt);

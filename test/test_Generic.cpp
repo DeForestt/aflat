@@ -7,6 +7,69 @@
 bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug);
 
+TEST_CASE("new allocates method-only classes", "[codegen][class]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/method_only_class");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "method_only.af";
+  const auto output = dir / "method_only.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "class Empty {\n";
+  ofs << "    fn init() -> Self { return my; };\n";
+  ofs << "    fn value() -> int { return 1; };\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    let e = new Empty();\n";
+  ofs << "    return e.value();\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
+TEST_CASE("transform can lower generic decorator fields", "[transform]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/generic_decorator_transform");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "generic_decorator_transform.af";
+  const auto output = dir / "generic_decorator_transform.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "types(T)\n";
+  ofs << "class Wrapper {\n";
+  ofs << "    adr getter = getter;\n";
+  ofs << "    any context = context;\n";
+  ofs << "    fn init(adr getter, any context) -> Self { return my; };\n";
+  ofs << "};\n";
+  ofs << "transform computed\n";
+  ofs << "~\n";
+  ofs << "fn ${ident}() -> int : Wrapper::<${type}> { return ${expr}; };\n";
+  ofs << "~;\n";
+  ofs << "class Test {\n";
+  ofs << "    @computed\n";
+  ofs << "    int i = 1 + 1;\n";
+  ofs << "    fn init() -> Self { return my; };\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    let t = new Test();\n";
+  ofs << "    return 0;\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
 TEST_CASE("generic type variable declaration", "[generics]") {
   namespace fs = std::filesystem;
   const auto dir = fs::path("tmp/generic_type_variable");

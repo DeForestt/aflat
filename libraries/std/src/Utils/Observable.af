@@ -3,23 +3,22 @@
 import List from "Collections";
 import Scroller from "Collections/Scroller";
 import Function from "Utils/Functions";
+import vector from "Collections/Vector";
 
 import {print, printHex} from "io" under io;
 
 class Observable {
-	List subscribers = new List(Function);
+  vector::<Function> subscribers = [];
 
 	fn subscribe(const Function f) -> void {
-		my.subscribers.pushBack(f);
+		my.subscribers.push_back(f);
 		return;
 	};
 
 	private fn notify(const any event) -> void {
-		for int i = 0; i < my.subscribers.getCount(); i++ {
-			const let r = my.subscribers.get(i);
-      const Function f = r.expect("Expected Funtion in Observable subscribers list");
-			f(event);
-		}
+    foreach r in my.subscribers {
+      r(event);
+    };
 		return;
 	};
 
