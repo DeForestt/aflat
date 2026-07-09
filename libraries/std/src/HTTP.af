@@ -96,7 +96,7 @@ class OtherHTTPError signs Error {
 };
 
 // Supported HTTP verbs.
-enum HTTPMethod {
+export enum HTTPMethod {
     GET,
     POST,
     PUT,

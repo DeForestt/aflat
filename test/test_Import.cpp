@@ -7,6 +7,7 @@
 #include "CodeGenerator/MockCodeGenerator.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Configs.hpp"
+#include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
@@ -438,6 +439,95 @@ TEST_CASE("ImportsOnly uses import working directory", "[imports]") {
 
   std::filesystem::remove_all("FlatLog");
   std::filesystem::remove("main.af");
+}
+
+TEST_CASE("Class imports preload nested imports from memoized modules",
+          "[imports]") {
+  std::filesystem::create_directories("MemoImport/Base");
+
+  std::ofstream base("MemoImport/Base/mod.af");
+  base << "export class Base {}\n";
+  base.close();
+
+  std::ofstream mod("MemoImport/mod.af");
+  mod << "import Base from \"./Base\";\n";
+  mod << "export class Child signs Base {}\n";
+  mod.close();
+
+  std::ifstream file("MemoImport/mod.af");
+  REQUIRE(file.is_open());
+  std::string text((std::istreambuf_iterator<char>(file)),
+                   std::istreambuf_iterator<char>());
+  file.close();
+
+  lex::Lexer moduleLexer;
+  PreProcessor modulePreProcessor;
+  auto moduleTokens = moduleLexer.Scan(modulePreProcessor.PreProcess(
+      text, "", std::filesystem::absolute("MemoImport").string()));
+  moduleTokens.invert();
+  parse::Parser moduleParser;
+  ast::Statement *moduleRoot = moduleParser.parseStmt(moduleTokens);
+  auto moduleLowerer = parse::lower::Lowerer(moduleRoot);
+  moduleRoot = moduleLowerer.result();
+
+  lex::Lexer l;
+  PreProcessor pp;
+  auto code = pp.PreProcess("import Child from \"./MemoImport\";", "", "");
+  auto tokens = l.Scan(code);
+  tokens.invert();
+  parse::Parser p;
+  ast::Statement *stmt = p.parseStmt(tokens);
+  auto *seq = dynamic_cast<ast::Sequence *>(stmt);
+  REQUIRE(seq != nullptr);
+  auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
+  REQUIRE(imp != nullptr);
+
+  test::mockGen::CodeGenerator gen("mod", p, "",
+                                   std::filesystem::current_path().string());
+  auto modulePath = std::filesystem::absolute("MemoImport/mod.af")
+                        .lexically_normal()
+                        .string();
+  gen.includedMemo().insert(modulePath, moduleRoot);
+
+  imp->generateClasses(gen);
+
+  REQUIRE_FALSE(gen.hasError());
+  REQUIRE(gen.includedMemo().contains(
+      std::filesystem::absolute("MemoImport/Base/mod.af")
+          .lexically_normal()
+          .string()));
+
+  std::filesystem::remove_all("MemoImport");
+}
+
+TEST_CASE("Function imports preload source module type shells", "[imports]") {
+  std::ofstream mod("FunctionTypeShells.af");
+  mod << "class Base {}\n";
+  mod << "export class Child signs Base {}\n";
+  mod << "export int helper() { return 0; };\n";
+  mod.close();
+
+  lex::Lexer l;
+  PreProcessor pp;
+  auto code = pp.PreProcess("import {helper} from \"./FunctionTypeShells\";\n"
+                            "import Child from \"./FunctionTypeShells\";",
+                            "", "");
+  auto tokens = l.Scan(code);
+  tokens.invert();
+  parse::Parser p;
+  ast::Statement *stmt = p.parseStmt(tokens);
+  auto *seq = dynamic_cast<ast::Sequence *>(stmt);
+  REQUIRE(seq != nullptr);
+
+  test::mockGen::CodeGenerator gen("mod", p, "",
+                                   std::filesystem::current_path().string());
+  gen.GenSTMT(stmt);
+
+  REQUIRE_FALSE(gen.hasError());
+  REQUIRE(gen.includedClasses().contains("FunctionTypeShells::Base"));
+  REQUIRE(gen.includedClasses().contains("FunctionTypeShells::Child"));
+
+  std::remove("FunctionTypeShells.af");
 }
 
 TEST_CASE("Cyclic imports do not recurse forever", "[imports]") {

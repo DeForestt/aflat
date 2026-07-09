@@ -221,6 +221,73 @@ void collectImportNamespaces(
     ast::Statement *stmt, std::unordered_map<std::string, std::string> &map) {
   collectImportNamespacesImpl(stmt, map);
 }
+
+static void collectTypeImportIdents(ast::Statement *stmt,
+                                    std::vector<std::string> &idents) {
+  if (stmt == nullptr)
+    return;
+  std::vector<ast::Statement *> stack{stmt};
+  while (!stack.empty()) {
+    ast::Statement *node = stack.back();
+    stack.pop_back();
+    if (node == nullptr)
+      continue;
+    if (auto seq = dynamic_cast<ast::Sequence *>(node)) {
+      stack.push_back(seq->Statement2);
+      stack.push_back(seq->Statement1);
+      continue;
+    }
+    if (auto cls = dynamic_cast<ast::Class *>(node)) {
+      idents.push_back(cls->ident.ident);
+    } else if (auto enm = dynamic_cast<ast::Enum *>(node)) {
+      idents.push_back(enm->Ident);
+    } else if (auto trans = dynamic_cast<ast::Transform *>(node)) {
+      idents.push_back(trans->ident);
+    }
+  }
+}
+
+static asmc::File
+emitTypeShells(ast::Statement *added, gen::CodeGenerator &generator,
+               const std::string &id, const std::string &cwd,
+               const std::unordered_map<std::string, std::string> &nsMap,
+               ast::Statement *templateRoot) {
+  asmc::File output;
+  std::vector<std::string> typeIdents;
+  collectTypeImportIdents(added, typeIdents);
+  for (const auto &ident : typeIdents) {
+    auto allStmts = gen::utils::extractAll(ident, added, id);
+    for (auto stmt : allStmts) {
+      if (dynamic_cast<ast::Class *>(stmt) == nullptr &&
+          dynamic_cast<ast::Enum *>(stmt) == nullptr &&
+          dynamic_cast<ast::Transform *>(stmt) == nullptr)
+        continue;
+
+      bool genericTemplate = false;
+      if (auto cls = dynamic_cast<ast::Class *>(stmt)) {
+        genericTemplate = !cls->genericTypes.empty();
+        if (!genericTemplate) {
+          auto existing = generator.typeList()[cls->ident.ident];
+          auto existingClass = existing == nullptr
+                                   ? nullptr
+                                   : dynamic_cast<gen::Class *>(*existing);
+          if (existingClass != nullptr && !existingClass->declarationOnly)
+            continue;
+        }
+        cls->templateModuleRoot = templateRoot;
+        cls->templateModuleCwd = cwd;
+        cls->templateNamespaceMap = nsMap;
+      }
+      if (generator.includedClasses().contains(id + "::" + ident) &&
+          !genericTemplate)
+        continue;
+      generator.includedClasses().insert(id + "::" + ident, nullptr);
+      stmt->namespaceSwap(nsMap);
+      output << generator.GenSTMT(stmt);
+    }
+  }
+  return output;
+}
 Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->logicalLine = tokens.peek()->lineCount;
   while (true) {
@@ -379,6 +446,9 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     std::unordered_map<std::string, std::string> nsMap;
     collectImportNamespaces(added, nsMap);
     ast::Statement *templateRoot = ast::deepCopy(added);
+    if (this->hasFunctions)
+      OutputFile << emitTypeShells(added, generator, id, this->cwd, nsMap,
+                                   templateRoot);
     for (std::string ident : this->imports) {
       if (ident == "*") {
         auto seq = dynamic_cast<ast::Sequence *>(added);
@@ -490,8 +560,8 @@ Import::generateClasses(gen::CodeGenerator &generator) {
     auto Lowerer = parse::lower::Lowerer(statement);
     added = Lowerer.result();
     generator.includedMemo().insert(this->path, added);
-    OutputFile << generator.ImportsOnly(added, false);
   }
+  OutputFile << generator.ImportsOnly(added, false);
 
   std::unordered_map<std::string, std::string> nsMap;
   collectImportNamespaces(added, nsMap);

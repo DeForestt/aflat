@@ -1,7 +1,8 @@
 .needs <std>
 .needs <server>
 import Endpoint, NotFoundImpl from "HTTP/Endpoint";
-import HTTPHeader, HTTPMethod, HTTPMessage, HTTPResponse, NotFoundError, ForbiddenError, BadRequestError, InternalServerError, OtherHTTPError, NotImplementedError from "HTTP";
+import HTTPMethod from "HTTP";
+import HTTPHeader, HTTPMessage, HTTPResponse, NotFoundError, ForbiddenError, BadRequestError, InternalServerError, OtherHTTPError, NotImplementedError from "HTTP";
 import {methodToString} from "HTTP" under http;
 import string from "String";
 import {printHex} from "io" under io;
@@ -15,12 +16,26 @@ import uni_string from "uni_string";
 import {print} from "uni_string" under uni;
 import {print} from "io" under io;
 import vector from "Collections/Vector";
-import Box from "Memory";
-import {wrap} from "Memory" under box;
+
+class EndpointRef {
+    const any value = value;
+
+    EndpointRef init(const Endpoint value) {
+        return my;
+    };
+
+    fn get() -> Endpoint {
+        return my.value;
+    };
+
+    fn toString() -> string {
+        return "EndpointRef";
+    };
+};
  
 class Server {
     contract {
-        const vector::<Box::<Endpoint>> endpoints = new vector::<Box::<Endpoint>>();
+        const vector::<EndpointRef> endpoints = new vector::<EndpointRef>();
         const vector::<Middleware> middlewares = new vector::<Middleware>();
         mutable NotFoundImpl notFound = NULL;
         int port = 8080;
@@ -32,7 +47,8 @@ class Server {
     };
 
     void addEndpoint(const Endpoint endpoint) {
-        my.endpoints.push_back(box.wrap(endpoint));
+        const let ref = new EndpointRef(endpoint);
+        my.endpoints.push_back($ref);
     };
 
     void setNotFound(const NotFoundImpl notFound) {
@@ -61,7 +77,8 @@ class Server {
             };
 
             for int i = 0; i < self.endpoints.count(); i = i + 1 {
-                const Endpoint e = self.endpoints.get(i).expect("Endpoint count currupted").get();
+                const EndpointRef ref = self.endpoints.get(i).expect("Endpoint count currupted");
+                const Endpoint e = ref.get();
 
                 const int wildcardIndex = e.path.find("/:*", 0);
                 const bool hasWildcard = wildcardIndex + 1 > 0;
