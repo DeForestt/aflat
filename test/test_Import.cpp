@@ -107,6 +107,46 @@ TEST_CASE("Generic class instantiation sees private module imports",
   REQUIRE(result);
 }
 
+TEST_CASE("Imported generic class keeps defining module namespace aliases",
+          "[imports][generics][namespaces]") {
+  namespace fs = std::filesystem;
+  fs::create_directories("tmp/template_namespace_imports");
+
+  std::ofstream helpers("tmp/template_namespace_imports/Helpers.af");
+  helpers << "export int bump(int value) { return value + 1; };\n";
+  helpers.close();
+
+  std::ofstream mod("tmp/template_namespace_imports/TemplateWrapper.af");
+  mod << ".needs <std>\n";
+  mod << "import {bump} from \"./Helpers\" under helper;\n";
+  mod << "types(T)\n";
+  mod << "class Wrapper {\n";
+  mod << "  T value = value;\n";
+  mod << "  fn init(T value) -> Self { return my; };\n";
+  mod << "  when (T is int)\n";
+  mod << "  fn bumped() -> int {\n";
+  mod << "    return helper.bump(my.value);\n";
+  mod << "  };\n";
+  mod << "};\n";
+  mod.close();
+
+  std::ofstream use("tmp/template_namespace_imports/UseWrapper.af");
+  use << ".needs <std>\n";
+  use << "import Wrapper from \"./TemplateWrapper\";\n";
+  use << "fn main() -> int {\n";
+  use << "  const let wrapper = new Wrapper::<int>(41);\n";
+  use << "  return wrapper.bumped();\n";
+  use << "};\n";
+  use.close();
+
+  const bool result = build("tmp/template_namespace_imports/UseWrapper.af",
+                            "tmp/template_namespace_imports/UseWrapper.s",
+                            cfg::Mutability::Strict, false);
+
+  fs::remove_all("tmp/template_namespace_imports");
+  REQUIRE(result);
+}
+
 TEST_CASE("Mixed imports preload class definitions", "[imports]") {
   std::ofstream base("MixedBase.af");
   base << "class Base {}\n";

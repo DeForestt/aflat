@@ -239,6 +239,8 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
             }
           }
         }
+      } else if (auto *expr = dynamic_cast<ast::Expr *>(STMT)) {
+        GenExpr(expr, OutputFile);
       } else {
         auto result = STMT->generate(*this);
         OutputFile << result.file;

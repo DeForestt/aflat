@@ -114,3 +114,4 @@ Code Generation	src/CodeGenerator/, include/CodeGenerator/
 ASM Formatting	src/ASM.cpp, include/ASM.hpp
 
 Any changes to the above affect compiler behavior. These are compiled into bin/aflat via make or CMake. Standard libraries are rebuilt separately.
+FOR BUG FIXES PLEASE KEEP IN MIND PREFER CHANGING COMPILER BHAVIOR WHEREVER THE SOURCE CODE SHOULD BE VALID AND THE COMPILER CANNOT HANDLE IT

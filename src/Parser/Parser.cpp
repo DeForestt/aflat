@@ -853,8 +853,28 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
         if (sym.Sym == '=') {
           output = new ast::Assign(obj.meta, indices, modList, tokens, parser);
         } else if (sym.Sym == '(') {
-          output = new ast::Call(obj.meta, this->parseCallArgsList(tokens),
-                                 modList, genericTypes);
+          auto call = new ast::Call(obj.meta, this->parseCallArgsList(tokens),
+                                    modList, genericTypes);
+          call->logicalLine = obj.lineCount;
+          if (auto dot = dynamic_cast<lex::OpSym *>(tokens.peek());
+              dot != nullptr && dot->Sym == '.') {
+            tokens.pop();
+            auto callExpr = new ast::CallExpr();
+            callExpr->templateTypes = genericTypes;
+            callExpr->call = call;
+            callExpr->logicalLine = obj.lineCount;
+            auto next = this->parseExpr(tokens);
+            if (auto compound = dynamic_cast<ast::Compound *>(next)) {
+              callExpr->extention = compound->expr1;
+              compound->expr1 = callExpr;
+              output = prioritizeExpr(compound);
+            } else {
+              callExpr->extention = next;
+              output = callExpr;
+            }
+          } else {
+            output = call;
+          }
           output->logicalLine = obj.lineCount;
         } else if (sym.Sym == '+') {
           output = new ast::Inc(obj.meta, tokens);
@@ -1294,7 +1314,9 @@ parse::Parser::Impl::parseFPointerType(links::LinkedList<lex::Token *> &tokens,
   }
 
   auto type = ast::Type(newTypeName + "~", asmc::QWord);
-  type.fPointerArgs.returnType = typeList[typeName];
+  type.fPointerArgs.returnType = typeList[typeName]
+                                     ? new ast::Type(*typeList[typeName])
+                                     : new ast::Type(typeName, asmc::QWord);
   type.fPointerArgs.argTypes = callTypeList;
   type.fPointerArgs.isFPointer = true;
   type.fPointerArgs.requiredArgs = requiredCount;

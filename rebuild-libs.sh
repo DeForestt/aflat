@@ -102,6 +102,7 @@ function compile_single {
             aflat ./libraries/std/src/JSON/Parse.af -o ./libraries/std/Parse.s
             mv ./libraries/std/Parse.s ./libraries/std/JSON_Parse.s ;;
         "JSON_Property") aflat ./libraries/std/src/JSON/Property.af -o ./libraries/std/JSON_Property.s ;;
+        "JSON_Property_Fields") aflat ./libraries/std/src/JSON/Property/Fields.af -o ./libraries/std/JSON_Property_Fields.s ;;
         "Iterator") aflat ./libraries/std/src/Collections/Iterator.af -o ./libraries/std/Iterator.s ;;
         "Scroller") aflat ./libraries/std/src/Collections/Scroller.af -o ./libraries/std/Scroller.s ;;
         "Enumerator") aflat ./libraries/std/src/Collections/Enumerator.af -o ./libraries/std/Enumerator.s ;;
@@ -117,6 +118,7 @@ function compile_single {
             echo "  Properties, Object, Error, Defer, unordered_map, Error_Render"
             echo "  HTTP_Endpoint, HTTP_Middleware, HTTP_Server, HTTP_Endpoints"
             echo "  Web_Content, Web_Content_Bind, JSON, JSON_Parse, JSON_Property"
+            echo "  JSON_Property_Fields"
             echo "  Iterator, Scroller, Enumerator, Vector, request, Tuple, Heap"
             exit 1 ;;
     esac
@@ -200,6 +202,7 @@ aflat ./libraries/std/src/Web/Content.af -o ./libraries/std/Web_Content.s & more
 aflat ./libraries/std/src/Web/Content/Bind.af -o ./libraries/std/Web_Content_Bind.s & more_pids+=($!)
 aflat ./libraries/std/src/JSON.af -o ./libraries/std/JSON.s & more_pids+=($!)
 aflat ./libraries/std/src/JSON/Property.af -o ./libraries/std/JSON_Property.s & more_pids+=($!)
+aflat ./libraries/std/src/JSON/Property/Fields.af -o ./libraries/std/JSON_Property_Fields.s & more_pids+=($!)
 aflat ./libraries/std/src/Collections/Iterator.af -o ./libraries/std/Iterator.s & more_pids+=($!)
 aflat ./libraries/std/src/Collections/Scroller.af -o ./libraries/std/Scroller.s & more_pids+=($!)
 aflat ./libraries/std/src/Collections/Enumerator.af -o ./libraries/std/Enumerator.s & more_pids+=($!)

@@ -70,6 +70,72 @@ TEST_CASE("transform can lower generic decorator fields", "[transform]") {
   REQUIRE(result);
 }
 
+TEST_CASE("any field can be narrowed into concrete local", "[codegen][any]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/any_field_narrow_local");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "any_field_narrow_local.af";
+  const auto output = dir / "any_field_narrow_local.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "class Holder {\n";
+  ofs << "    mutable any value;\n";
+  ofs << "    fn init(const int initial) -> Self {\n";
+  ofs << "        my.value = initial;\n";
+  ofs << "        return my;\n";
+  ofs << "    };\n";
+  ofs << "    fn get() -> int {\n";
+  ofs << "        const int v = my.value;\n";
+  ofs << "        return v;\n";
+  ofs << "    };\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    let h = new Holder(42);\n";
+  ofs << "    return h.get();\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
+TEST_CASE("chained call statement in foreach preserves following statements",
+          "[parser][foreach]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/foreach_chained_call_statement");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "foreach_chained_call_statement.af";
+  const auto output = dir / "foreach_chained_call_statement.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "import vector from \"Collections/Vector\";\n";
+  ofs << "fn sum() -> int {\n";
+  ofs << "    mutable int total = 0;\n";
+  ofs << "    let values = new vector::<int>();\n";
+  ofs << "    values.push_back(1);\n";
+  ofs << "    foreach value in values {\n";
+  ofs << "        values.get(0).expect(\"value\");\n";
+  ofs << "        total = total + value;\n";
+  ofs << "    };\n";
+  ofs << "    return total;\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    return sum();\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
 TEST_CASE("generic type variable declaration", "[generics]") {
   namespace fs = std::filesystem;
   const auto dir = fs::path("tmp/generic_type_variable");
@@ -158,6 +224,69 @@ TEST_CASE("function pointer type can be used as generic argument",
   ofs << "    const int<int, int> callback = "
          "callbacks.get(\"add\").expect(\"add\");\n";
   ofs << "    return callback(20, 22);\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
+TEST_CASE("generic class function pointer fields substitute template types",
+          "[generics][function-pointer]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/generic_function_pointer_field");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "generic_function_pointer_field.af";
+  const auto output = dir / "generic_function_pointer_field.s";
+  std::ofstream ofs(source);
+  ofs << "types(T)\n";
+  ofs << "class Mapper {\n";
+  ofs << "    T<T> map = map;\n";
+  ofs << "    fn init(T<T> map) -> Self { return my; };\n";
+  ofs << "    fn apply(T value) -> T {\n";
+  ofs << "        let mapper = my.map;\n";
+  ofs << "        return mapper(value);\n";
+  ofs << "    };\n";
+  ofs << "};\n";
+  ofs << "fn inc(int value) -> int { return value + 1; };\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    Mapper::<int> mapper = Mapper::<int>(inc);\n";
+  ofs << "    return mapper.apply(41);\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
+TEST_CASE("member function pointer call shifts receiver argument",
+          "[function-pointer][codegen]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/member_function_pointer_call");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "member_function_pointer_call.af";
+  const auto output = dir / "member_function_pointer_call.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "fn add(any context, int value) -> int { return value + 1; };\n";
+  ofs << "class Caller {\n";
+  ofs << "    int<any, int> callback = callback;\n";
+  ofs << "    fn init(int<any, int> callback) -> Self { return my; };\n";
+  ofs << "    fn call(int value) -> int {\n";
+  ofs << "        return my.callback(value);\n";
+  ofs << "    };\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    let caller = new Caller(add);\n";
+  ofs << "    return caller.call(41);\n";
   ofs << "};\n";
   ofs.close();
 
