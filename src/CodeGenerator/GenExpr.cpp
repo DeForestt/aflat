@@ -253,6 +253,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
               output.size = asmc::DWord;
             } else {
               if (!type->SymbolTable.head) {
+                if (cl != nullptr && !cl->declarationOnly) {
+                  output.access = "$1";
+                  output.type = "int";
+                  output.size = asmc::DWord;
+                  return output;
+                }
                 alert("Type " + type->Ident +
                           " is incomplete Please consider boxing using "
                           "Memory::Box to fix this issue",
@@ -376,7 +382,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         typeName += "~";
 
         auto newType = new ast::Type(typeName, asmc::QWord);
-        newType->fPointerArgs.returnType = &func->type;
+        newType->fPointerArgs.returnType = new ast::Type(func->type);
         newType->fPointerArgs.argTypes = func->argTypes;
         newType->fPointerArgs.isFPointer = true;
         newType->fPointerArgs.requiredArgs = func->req;

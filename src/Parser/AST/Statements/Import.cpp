@@ -489,7 +489,8 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
             !genericTemplate)
           continue;
         generator.includedClasses().insert(id + "::" + ident, nullptr);
-        stmt->namespaceSwap(nsMap);
+        if (!genericTemplate)
+          stmt->namespaceSwap(nsMap);
         OutputFile << generator.GenSTMT(stmt);
       }
     }
@@ -593,7 +594,8 @@ Import::generateClasses(gen::CodeGenerator &generator) {
         !genericTemplate)
       continue;
     generator.includedClasses().insert(id + "::" + ident, nullptr);
-    statement->namespaceSwap(nsMap);
+    if (!genericTemplate)
+      statement->namespaceSwap(nsMap);
     OutputFile << generator.GenSTMT(statement);
   }
 

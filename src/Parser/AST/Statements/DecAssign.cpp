@@ -141,7 +141,11 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       mov->to = "-" + std::to_string(byteMod) + "(%rbp)";
 
       if (!widenInteger) {
-        mov->from = mov2->to;
+        if (expr.op == asmc::Float) {
+          mov->from = mov2->to;
+        } else {
+          mov->from = generator.registers()["%rbx"]->get(dec->type.size);
+        }
       }
 
       if (widenInteger) {

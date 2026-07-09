@@ -632,6 +632,8 @@ static std::string generateReadmeContent(const std::string &projectName) {
          "(libraries/std/src/JSON/Parse.af).\n";
   out << "- `JSON/Property` - Reserved module for future JSON/property "
          "bindings (libraries/std/src/JSON/Property.af).\n\n";
+  out << "- `JSON/Property/Fields` - JSON property field decorators "
+         "(libraries/std/src/JSON/Property/Fields.af).\n\n";
   out << "#### HTTP & networking\n";
   out << "- `HTTP` - HTTP errors, verb enum, request parser, "
          "`HTTPMessage`/`HTTPResponse`, and `listen` helper "
@@ -1712,6 +1714,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       "JSON.s",
       "JSON_Parse.s",
       "JSON_Property.s",
+      "JSON_Property_Fields.s",
       "Iterator.s",
       "Enumerator.s",
       "Scroller.s",

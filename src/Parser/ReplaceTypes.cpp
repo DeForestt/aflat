@@ -13,6 +13,20 @@ static std::string
 replaceAllParts(const std::string &input,
                 const std::unordered_map<std::string, std::string> &typeMap);
 
+static std::string encodedFunctionPointerName(const Type &t) {
+  if (!t.fPointerArgs.returnType)
+    return t.typeName;
+
+  std::string name = t.fPointerArgs.returnType->typeName + "~";
+  for (size_t i = 0; i < t.fPointerArgs.argTypes.size(); ++i) {
+    if (i != 0)
+      name += "__af_fp_arg__";
+    name += t.fPointerArgs.argTypes[i].typeName;
+  }
+  name += "~";
+  return name;
+}
+
 static void applyType(Type &t,
                       const std::unordered_map<std::string, std::string> &map) {
   if (t.typeName.find('<') != std::string::npos) {
@@ -28,10 +42,14 @@ static void applyType(Type &t,
       t.size = asmc::QWord;
     }
   }
-  if (t.fPointerArgs.returnType)
+  if (t.fPointerArgs.returnType) {
+    t.fPointerArgs.returnType = new Type(*t.fPointerArgs.returnType);
     applyType(*t.fPointerArgs.returnType, map);
+  }
   for (auto &a : t.fPointerArgs.argTypes)
     applyType(a, map);
+  if (t.fPointerArgs.isFPointer)
+    t.typeName = encodedFunctionPointerName(t);
 }
 
 template <typename T>
@@ -239,9 +257,13 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
   }
   if (auto declare = dynamic_cast<Declare *>(this)) {
     applyType(declare->type, map);
-    auto it = map.find(declare->TypeName);
-    if (it != map.end())
-      declare->TypeName = it->second;
+    if (declare->type.fPointerArgs.isFPointer) {
+      declare->TypeName = declare->type.typeName;
+    } else {
+      auto it = map.find(declare->TypeName);
+      if (it != map.end())
+        declare->TypeName = it->second;
+    }
     if (!declare->requestType.empty()) {
       auto it2 = map.find(declare->requestType);
       if (it2 != map.end())

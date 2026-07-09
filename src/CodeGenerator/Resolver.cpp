@@ -57,6 +57,7 @@ Type **CodeGenerator::instantiateGenericClass(
     genericMap[classStatement->genericTypes[i]] = types[i];
   }
   newName += ">";
+  genericMap["Self"] = newName;
 
   classStatement->replaceTypes(genericMap);
   classStatement->ident.ident = newName;

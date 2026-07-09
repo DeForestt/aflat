@@ -201,6 +201,69 @@ TEST_CASE("function pointer type can be used as generic argument",
   REQUIRE(result);
 }
 
+TEST_CASE("generic class function pointer fields substitute template types",
+          "[generics][function-pointer]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/generic_function_pointer_field");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "generic_function_pointer_field.af";
+  const auto output = dir / "generic_function_pointer_field.s";
+  std::ofstream ofs(source);
+  ofs << "types(T)\n";
+  ofs << "class Mapper {\n";
+  ofs << "    T<T> map = map;\n";
+  ofs << "    fn init(T<T> map) -> Self { return my; };\n";
+  ofs << "    fn apply(T value) -> T {\n";
+  ofs << "        let mapper = my.map;\n";
+  ofs << "        return mapper(value);\n";
+  ofs << "    };\n";
+  ofs << "};\n";
+  ofs << "fn inc(int value) -> int { return value + 1; };\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    Mapper::<int> mapper = Mapper::<int>(inc);\n";
+  ofs << "    return mapper.apply(41);\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
+TEST_CASE("member function pointer call shifts receiver argument",
+          "[function-pointer][codegen]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/member_function_pointer_call");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "member_function_pointer_call.af";
+  const auto output = dir / "member_function_pointer_call.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "fn add(any context, int value) -> int { return value + 1; };\n";
+  ofs << "class Caller {\n";
+  ofs << "    int<any, int> callback = callback;\n";
+  ofs << "    fn init(int<any, int> callback) -> Self { return my; };\n";
+  ofs << "    fn call(int value) -> int {\n";
+  ofs << "        return my.callback(value);\n";
+  ofs << "    };\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    let caller = new Caller(add);\n";
+  ofs << "    return caller.call(41);\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
 TEST_CASE(
     "vector insert drop and pop_front compile for primitive and unique types",
     "[generics][vector]") {

@@ -140,6 +140,7 @@ gen::GenerationResult Call::generateAttempt(
   std::string overloadIdent;
   int currentOverloadIndex = -1;
   bool hasHiddenReceiver = false;
+  bool hiddenReceiverConsumesParameter = false;
   int hiddenReceiverSlot = -1;
   this->modList.invert();
   this->modList.reset();
@@ -387,6 +388,7 @@ gen::GenerationResult Call::generateAttempt(
             pubname = parent->Ident;
         }
         bool shift = true;
+        bool typedFunctionPointerField = false;
         if (func == nullptr) {
           std::string id = memberIdent;
           mods.push(id);
@@ -394,6 +396,7 @@ gen::GenerationResult Call::generateAttempt(
                                                     memberIdent);
           if (sym != nullptr && (sym->type.typeName == "adr" ||
                                  sym->type.fPointerArgs.isFPointer)) {
+            typedFunctionPointerField = sym->type.fPointerArgs.isFPointer;
             ast::Var *var = new ast::Var();
             var->logicalLine = this->logicalLine;
             var->Ident = ident;
@@ -513,6 +516,7 @@ gen::GenerationResult Call::generateAttempt(
           push->op = generator.intArgs()[argsCounter].get(asmc::QWord);
           stack << generator.intArgs()[argsCounter].get(asmc::QWord);
           hasHiddenReceiver = true;
+          hiddenReceiverConsumesParameter = typedFunctionPointerField;
 
           argsCounter++;
           file.text << push;
@@ -652,11 +656,13 @@ gen::GenerationResult Call::generateAttempt(
   };
   std::vector<SavedArg> savedArgs;
   int i = 0;
-  if (this->Args.trail() < func->req)
+  const int implicitArgOffset = hiddenReceiverConsumesParameter ? 1 : 0;
+  if (this->Args.trail() + implicitArgOffset < func->req)
     this->requestOverloadRetry(
         generator, overloadTable, overloadIdent, currentOverloadIndex,
         "Too few arguments for function: " + ident +
-            " expected: " + std::to_string(func->argTypes.size()) + " got: 1");
+            " expected: " + std::to_string(func->argTypes.size()) +
+            " got: " + std::to_string(this->Args.trail() + implicitArgOffset));
 
   // create a string of argTypes
   std::string argTypesString = "";
@@ -670,6 +676,7 @@ gen::GenerationResult Call::generateAttempt(
     args.push(this->Args.touch());
     ast::Expr *rem = this->Args.touch();
     ast::Expr *arg = this->Args.shift();
+    const int paramIndex = i + implicitArgOffset;
     // check if the argument is a reference
     std::string typeHint = "";
     bool rValue = false;
@@ -682,7 +689,8 @@ gen::GenerationResult Call::generateAttempt(
               gen::utils::searchSymbol, var->Ident);
         }
         if (sym && func) {
-          if (sym->readOnly && !func->readOnly[i]) {
+          if (paramIndex < func->readOnly.size() && sym->readOnly &&
+              !func->readOnly[paramIndex]) {
             this->requestOverloadRetry(
                 generator, overloadTable, overloadIdent, currentOverloadIndex,
                 "Cannot pass immutable variable `" + var->Ident +
@@ -690,15 +698,15 @@ gen::GenerationResult Call::generateAttempt(
           }
         }
       }
-      if (i >= func->argTypes.size()) {
+      if (paramIndex >= func->argTypes.size()) {
         generator.logicalLine() = arg->logicalLine;
         this->requestOverloadRetry(
             generator, overloadTable, overloadIdent, currentOverloadIndex,
             "Too many arguments for function: " + ident +
                 " expected: " + std::to_string(func->argTypes.size()) +
-                " got: " + std::to_string(i + 1));
+                " got: " + std::to_string(paramIndex + 1));
       }
-      if (func->argTypes.at(i).isReference) {
+      if (func->argTypes.at(paramIndex).isReference) {
         auto toReg = new ast::Reference();
         auto var = dynamic_cast<ast::Var *>(arg);
         if (var == nullptr) {
@@ -715,12 +723,12 @@ gen::GenerationResult Call::generateAttempt(
         if (!sym) {
           generator.alert("cannot find symbol: " + var->Ident);
         }
-        if (sym->mutable_ == false && func->mutability[i]) {
+        if (sym->mutable_ == false && func->mutability[paramIndex]) {
           this->requestOverloadRetry(
               generator, overloadTable, overloadIdent, currentOverloadIndex,
               "cannot pass a const reference to a mutable argument: " +
                   var->Ident);
-        } else if (func->mutability[i]) {
+        } else if (func->mutability[paramIndex]) {
           gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
         }
         if (!var) {
@@ -733,7 +741,7 @@ gen::GenerationResult Call::generateAttempt(
         toReg->logicalLine = var->logicalLine;
         arg = toReg;
       }
-      if (func->argTypes.at(i).isRvalue) {
+      if (func->argTypes.at(paramIndex).isRvalue) {
         rValue = true;
         // make sure that its not a var
         auto var = dynamic_cast<ast::Var *>(arg);
@@ -743,7 +751,7 @@ gen::GenerationResult Call::generateAttempt(
               "Attempted to pass an lvalue (" + var->Ident + ") to an rvalue");
         }
       }
-      typeHint = func->argTypes.at(i).typeName;
+      typeHint = func->argTypes.at(paramIndex).typeName;
     }
     if (arg == nullptr) {
       generator.alert("Argument " + std::to_string(i + 1) +
@@ -762,8 +770,9 @@ gen::GenerationResult Call::generateAttempt(
          (func != nullptr &&
           func->ident.ident.find("Some") != std::string::npos));
 
-    const bool hasParamType = checkArgs && i < func->argTypes.size();
-    const ast::Type *paramType = hasParamType ? &func->argTypes.at(i) : nullptr;
+    const bool hasParamType = checkArgs && paramIndex < func->argTypes.size();
+    const ast::Type *paramType =
+        hasParamType ? &func->argTypes.at(paramIndex) : nullptr;
     const bool paramConsumesOwnedValue =
         paramType != nullptr && paramType->isRvalue;
 
@@ -812,8 +821,8 @@ gen::GenerationResult Call::generateAttempt(
     }
     if (exp.requiresImmutableBinding) {
       bool paramImmutable = false;
-      if (checkArgs && i < func->readOnly.size()) {
-        paramImmutable = func->readOnly[i];
+      if (checkArgs && paramIndex < func->readOnly.size()) {
+        paramImmutable = func->readOnly[paramIndex];
       }
       if (!paramImmutable) {
         auto source = exp.immutableBindingSource.empty()
