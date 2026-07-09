@@ -1,7 +1,7 @@
 .needs <std>
 
 import Server from "HTTP/Server";
-import HTTPMessage from "HTTP";
+import HTTPHeader, HTTPMethod, HTTPMessage from "HTTP";
 import string from "String";
 import unordered_map from "Collections/unordered_map";
 import option from "Utils/option";

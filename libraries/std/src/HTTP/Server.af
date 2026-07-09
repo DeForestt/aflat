@@ -1,7 +1,7 @@
 .needs <std>
 .needs <server>
 import Endpoint, NotFoundImpl from "HTTP/Endpoint";
-import HTTPMessage, HTTPMethod, HTTPResponse, NotFoundError, ForbiddenError, BadRequestError, InternalServerError, OtherHTTPError, NotImplementedError from "HTTP";
+import HTTPHeader, HTTPMethod, HTTPMessage, HTTPResponse, NotFoundError, ForbiddenError, BadRequestError, InternalServerError, OtherHTTPError, NotImplementedError from "HTTP";
 import {methodToString} from "HTTP" under http;
 import string from "String";
 import {printHex} from "io" under io;
@@ -15,10 +15,12 @@ import uni_string from "uni_string";
 import {print} from "uni_string" under uni;
 import {print} from "io" under io;
 import vector from "Collections/Vector";
+import Box from "Memory";
+import {wrap} from "Memory" under box;
  
 class Server {
     contract {
-        const vector::<Endpoint> endpoints = new vector::<Endpoint>();
+        const vector::<Box::<Endpoint>> endpoints = new vector::<Box::<Endpoint>>();
         const vector::<Middleware> middlewares = new vector::<Middleware>();
         mutable NotFoundImpl notFound = NULL;
         int port = 8080;
@@ -30,7 +32,7 @@ class Server {
     };
 
     void addEndpoint(const Endpoint endpoint) {
-        my.endpoints.push_back(endpoint);
+        my.endpoints.push_back(box.wrap(endpoint));
     };
 
     void setNotFound(const NotFoundImpl notFound) {
@@ -59,7 +61,7 @@ class Server {
             };
 
             for int i = 0; i < self.endpoints.count(); i = i + 1 {
-                const Endpoint e = self.endpoints.get(i).expect("Endpoint count currupted");
+                const Endpoint e = self.endpoints.get(i).expect("Endpoint count currupted").get();
 
                 const int wildcardIndex = e.path.find("/:*", 0);
                 const bool hasWildcard = wildcardIndex + 1 > 0;

@@ -3,7 +3,7 @@ import string from "String";
 import uni_string from "uni_string";
 import Server from "HTTP/Server";
 import Map from "Utils/Map";
-import HTTPMethod, HTTPResponse, HTTPMessage from "HTTP";
+import HTTPHeader, HTTPMethod, HTTPMessage, HTTPResponse from "HTTP";
 import result from "Utils/result";
 import {methodToString} from "HTTP" under http;
 import {print} from "String" under str;
