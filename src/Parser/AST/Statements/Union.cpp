@@ -269,7 +269,13 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
             // always use 4 bytes for enums
             type->aliases.emplace_back(alias->name, typePtr, 4);
           } else {
-            auto size = typ->SymbolTable.head->data.byteMod;
+            auto *classType = dynamic_cast<gen::Class *>(typ);
+            auto size = 0;
+            if (typ->SymbolTable.head != nullptr) {
+              size = typ->SymbolTable.head->data.byteMod;
+            } else if (classType != nullptr && !classType->declarationOnly) {
+              size = 1;
+            }
             if (size <= 0) {
               generator.alert("Type " + typePtr->typeName + " has invalid size",
                               true, __FILE__, __LINE__);
