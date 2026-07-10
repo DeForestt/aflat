@@ -499,6 +499,22 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     }
 
     // Declare a variable
+    static const std::unordered_set<std::string> statementKeywords = {
+        "return",   "resolve", "fn",    "match",  "push",      "pull",
+        "note",     "if",      "while", "for",    "foreach",   "struct",
+        "class",    "union",   "enum",  "import", "transform", "delete",
+        "continue", "break",   "else"};
+
+    if (statementKeywords.count(obj.meta) == 0 &&
+        typeList[obj.meta] == nullptr &&
+        dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+      ast::Type placeholder;
+      placeholder.typeName = obj.meta;
+      placeholder.opType = asmc::Hard;
+      placeholder.size = asmc::QWord;
+      this->typeList << placeholder;
+    }
+
     if (typeList[obj.meta] != nullptr) {
       // check if we need to make a function pointer
       const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
@@ -1068,7 +1084,9 @@ links::LinkedList<ast::Expr *> parse::Parser::Impl::parseCallArgsList(
     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
       auto sym = dynamic_cast<lex::OpSym *>(tokens.pop());
       if (sym->Sym != ')')
-        throw err::Exception(&"Expected closed parenthesis got "[sym->Sym]);
+        throw err::Exception("Line: " + std::to_string(sym->lineCount) +
+                             " Expected closed parenthesis got '" + sym->Sym +
+                             "'");
     }
   }
   return args;

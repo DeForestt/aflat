@@ -9,6 +9,16 @@ using namespace gen::utils;
 namespace gen {
 namespace {
 
+std::string joinTypes(const std::vector<std::string> &types) {
+  std::string result;
+  for (size_t i = 0; i < types.size(); ++i) {
+    if (i > 0)
+      result += ", ";
+    result += types[i];
+  }
+  return result;
+}
+
 void registerModuleGenericTemplates(
     ast::Statement *stmt, ast::Statement *moduleRoot, CodeGenerator &generator,
     const std::string &moduleCwd,
@@ -59,8 +69,25 @@ Type **CodeGenerator::instantiateGenericClass(
   newName += ">";
   genericMap["Self"] = newName;
 
+  ast::SourceLocation location;
+  const std::string templateFile = cls->templateModuleFile.empty()
+                                       ? this->diagnosticFile()
+                                       : cls->templateModuleFile;
+  const std::string templateSource = cls->templateModuleSource.empty()
+                                         ? this->source()
+                                         : cls->templateModuleSource;
+  location.file = templateFile + " (generated template " + newName + ")";
+  location.source = templateSource;
+  location.generatedFromFile = this->diagnosticFile();
+  location.generatedFromSource = this->source();
+  location.generatedFromLine = this->logicalLine();
+  location.description = "template `" + cls->ident.ident + "`";
+  if (!types.empty())
+    location.description += " with types `" + joinTypes(types) + "`";
+
   classStatement->replaceTypes(genericMap);
   classStatement->ident.ident = newName;
+  classStatement->sourceLocation = location;
   classStatement->genericTypes.clear();
   classStatement->hidden =
       true; // we hid the class so all of its functions are private

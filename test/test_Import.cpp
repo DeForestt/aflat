@@ -217,6 +217,65 @@ TEST_CASE("Function imports are emitted after class preloading", "[imports]") {
   std::remove("ResultImport.af");
 }
 
+TEST_CASE("Imports can find transforms declared after classes", "[imports]") {
+  std::ofstream mod("TransformAfterClass.af");
+  mod << "class Wrapped {\n";
+  mod << "  int value = value;\n";
+  mod << "};\n";
+  mod << "transform wrap_field\n";
+  mod << "~\n";
+  mod << "${scope} fn ${ident}(${type} value) -> ${type} {\n";
+  mod << "  return value;\n";
+  mod << "};\n";
+  mod << "~;\n";
+  mod.close();
+
+  lex::Lexer l;
+  PreProcessor pp;
+  auto code = pp.PreProcess("import wrap_field from \"./TransformAfterClass\";",
+                            "", "");
+  auto tokens = l.Scan(code);
+  tokens.invert();
+  parse::Parser p;
+  ast::Statement *stmt = p.parseStmt(tokens);
+  auto *seq = dynamic_cast<ast::Sequence *>(stmt);
+  REQUIRE(seq != nullptr);
+  auto *imp = dynamic_cast<ast::Import *>(seq->Statement1);
+  REQUIRE(imp != nullptr);
+
+  test::mockGen::CodeGenerator gen("mod", p, "",
+                                   std::filesystem::current_path().string());
+  REQUIRE_NOTHROW(imp->generate(gen));
+  REQUIRE_FALSE(gen.hasError());
+  REQUIRE(gen.transforms().find("wrap_field") != gen.transforms().end());
+
+  std::remove("TransformAfterClass.af");
+}
+
+TEST_CASE("JSON field transform survives parsing std property fields",
+          "[imports][transforms]") {
+  const auto fieldsPath = std::filesystem::path(gen::utils::getLibPath("src")) /
+                          "JSON/Property/Fields.af";
+  std::ifstream file(fieldsPath);
+  REQUIRE(file.is_open());
+  const std::string text((std::istreambuf_iterator<char>(file)),
+                         std::istreambuf_iterator<char>());
+
+  lex::Lexer l;
+  PreProcessor pp;
+  auto tokens = l.Scan(pp.PreProcess(text, gen::utils::getLibPath("head"),
+                                     fieldsPath.parent_path().string()));
+  tokens.invert();
+  parse::Parser p;
+  ast::Statement *stmt = p.parseStmt(tokens);
+  auto Lowerer = parse::lower::Lowerer(stmt);
+
+  auto matches =
+      gen::utils::extractAll("json_field", Lowerer.result(), "Fields");
+  REQUIRE(matches.size() == 1);
+  REQUIRE(dynamic_cast<ast::Transform *>(matches[0]) != nullptr);
+}
+
 TEST_CASE("Imported error-returning functions keep expect available",
           "[imports]") {
   std::ofstream src("ErrSource.af");

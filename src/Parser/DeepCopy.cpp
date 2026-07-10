@@ -339,7 +339,14 @@ Statement *deepCopy(const Statement *stmt) {
     return new Enum(*en);
   }
   if (auto trans = dynamic_cast<const Transform *>(stmt)) {
-    return new Transform(trans->ident, trans->_template);
+    auto *copy = new Transform(trans->ident, trans->_template);
+    copy->locked = trans->locked;
+    copy->logicalLine = trans->logicalLine;
+    copy->when = trans->when;
+    copy->sourceLocation = trans->sourceLocation;
+    copy->definitionFile = trans->definitionFile;
+    copy->definitionSource = trans->definitionSource;
+    return copy;
   }
   if (auto push = dynamic_cast<const Push *>(stmt)) {
     auto *copy = new Push();

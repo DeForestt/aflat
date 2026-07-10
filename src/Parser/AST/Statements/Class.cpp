@@ -355,6 +355,8 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   type->body = this->statement; // save the body in case of composition
   type->templateModuleRoot = this->templateModuleRoot;
   type->templateModuleCwd = this->templateModuleCwd;
+  type->templateModuleFile = this->templateModuleFile;
+  type->templateModuleSource = this->templateModuleSource;
   type->templateNamespaceMap = this->templateNamespaceMap;
   bool saveGlobalScope = generator.globalScope();
   auto saveScope = generator.scope();

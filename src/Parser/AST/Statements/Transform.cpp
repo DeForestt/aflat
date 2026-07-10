@@ -5,6 +5,8 @@
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/Utils.hpp"
+#include "ErrorReporter.hpp"
+#include "Parser/AST/Statements/Sequence.hpp"
 #include "Parser/Lower.hpp"
 #include "PreProcessor.hpp"
 #include "Utils.hpp"
@@ -26,6 +28,17 @@ std::string transformTypeIdent(const std::string &type) {
   return result.empty() ? ident : result;
 }
 
+void attachSourceLocation(ast::Statement *statement,
+                          const ast::SourceLocation &location) {
+  if (statement == nullptr)
+    return;
+  statement->sourceLocation = location;
+  if (auto *sequence = dynamic_cast<ast::Sequence *>(statement)) {
+    attachSourceLocation(sequence->Statement1, location);
+    attachSourceLocation(sequence->Statement2, location);
+  }
+}
+
 } // namespace
 
 Transform::Transform(links::LinkedList<lex::Token *> &tokens) {
@@ -34,6 +47,7 @@ Transform::Transform(links::LinkedList<lex::Token *> &tokens) {
     throw err::Exception("Expected  identifier in transform statment");
   }
   ident = identToken->meta;
+  logicalLine = identToken->lineCount;
 
   lex::StringObj *templateToken = dynamic_cast<lex::StringObj *>(tokens.pop());
   if (templateToken == nullptr) {
@@ -90,17 +104,48 @@ Transform::parse(const std::string &ident, std::string &type, std::string &expr,
                     match.str());
   }
 
-  lex::Lexer lexer = lex::Lexer();
-  lex::Lexer l = lex::Lexer();
-  PreProcessor pp = PreProcessor();
+  ast::SourceLocation location;
+  const std::string originFile = this->definitionFile.empty()
+                                     ? generator.diagnosticFile()
+                                     : this->definitionFile;
+  const std::string originSource = this->definitionSource.empty()
+                                       ? generator.source()
+                                       : this->definitionSource;
+  location.file = originFile + " (generated transform " + this->ident + ")";
+  location.source = result;
+  location.generatedFromFile = originFile;
+  location.generatedFromSource = originSource;
+  location.generatedFromLine = this->logicalLine;
+  location.description = "transform `" + this->ident + "`";
+  if (!type.empty())
+    location.description += " for type `" + type + "`";
+  if (!expr.empty())
+    location.description += " from `" + expr + "`";
 
-  auto tokens = l.Scan(pp.PreProcess(result, gen::utils::getLibPath("head")));
-  tokens.invert();
-  // parse the file
-  ast::Statement *statement = generator.parser().parseStmt(tokens);
-  auto Lowerer = parse::lower::Lowerer(statement, true);
+  try {
+    lex::Lexer l = lex::Lexer();
+    PreProcessor pp = PreProcessor();
 
-  return Lowerer.result();
+    auto tokens = l.Scan(pp.PreProcess(result, gen::utils::getLibPath("head")));
+    tokens.invert();
+    // parse the file
+    ast::Statement *statement = generator.parser().parseStmt(tokens);
+    auto Lowerer = parse::lower::Lowerer(statement, true);
+
+    auto *lowered = Lowerer.result();
+    attachSourceLocation(lowered, location);
+    return lowered;
+  } catch (err::Exception &e) {
+    int line = error::extractLine(e.errorMsg);
+    error::report(location.file, line, e.errorMsg, location.source);
+    if (!location.generatedFromFile.empty() && location.generatedFromLine > 0) {
+      std::cout << "generated from " << location.description << ":\n";
+      error::report(location.generatedFromFile, location.generatedFromLine,
+                    "generation site", location.generatedFromSource);
+    }
+    throw err::Exception("Line: " + std::to_string(this->logicalLine) + " " +
+                         location.description + " failed: " + e.errorMsg);
+  }
 }
 std::string Compound::toString() {
   return expr1->toString() + " " + utils::op_to_string(op) + " " +

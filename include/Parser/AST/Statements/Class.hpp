@@ -23,6 +23,8 @@ public:
   bool hidden = false;
   Statement *templateModuleRoot = nullptr;
   std::string templateModuleCwd = "";
+  std::string templateModuleFile = "";
+  std::string templateModuleSource = "";
   std::unordered_map<std::string, std::string> templateNamespaceMap;
   Class() = default;
   Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
