@@ -56,6 +56,12 @@ safe class TypedJsonProperty signs JsonProperty {
     return json.Boolean(v);
   };
 
+  when (T is string)
+  fn serialize() -> JSON {
+    const string v = my.value;
+    return json.String(v.cstr());
+  };
+
   when  (T has serialize)
   fn serialize() -> JSON {
     const T v = my.value;

@@ -10,6 +10,7 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
+#include "ErrorReporter.hpp"
 #include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
@@ -136,6 +137,8 @@ static void registerClassShells(ast::Statement *stmt,
     type->body = cls->statement;
     type->templateModuleRoot = cls->templateModuleRoot;
     type->templateModuleCwd = cls->templateModuleCwd;
+    type->templateModuleFile = cls->templateModuleFile;
+    type->templateModuleSource = cls->templateModuleSource;
     type->templateNamespaceMap = cls->templateNamespaceMap;
 
     auto prevScope = generator.scope();
@@ -222,6 +225,23 @@ void collectImportNamespaces(
   collectImportNamespacesImpl(stmt, map);
 }
 
+static void stampImportedGeneratedSources(ast::Statement *stmt,
+                                          const std::string &file,
+                                          const std::string &source) {
+  if (stmt == nullptr)
+    return;
+  if (auto seq = dynamic_cast<ast::Sequence *>(stmt)) {
+    stampImportedGeneratedSources(seq->Statement1, file, source);
+    stampImportedGeneratedSources(seq->Statement2, file, source);
+  } else if (auto cls = dynamic_cast<ast::Class *>(stmt)) {
+    cls->templateModuleFile = file;
+    cls->templateModuleSource = source;
+  } else if (auto trans = dynamic_cast<ast::Transform *>(stmt)) {
+    trans->definitionFile = file;
+    trans->definitionSource = source;
+  }
+}
+
 static void collectTypeImportIdents(ast::Statement *stmt,
                                     std::vector<std::string> &idents) {
   if (stmt == nullptr)
@@ -251,7 +271,8 @@ static asmc::File
 emitTypeShells(ast::Statement *added, gen::CodeGenerator &generator,
                const std::string &id, const std::string &cwd,
                const std::unordered_map<std::string, std::string> &nsMap,
-               ast::Statement *templateRoot) {
+               ast::Statement *templateRoot, const std::string &sourceFile,
+               const std::string &sourceText) {
   asmc::File output;
   std::vector<std::string> typeIdents;
   collectTypeImportIdents(added, typeIdents);
@@ -276,6 +297,10 @@ emitTypeShells(ast::Statement *added, gen::CodeGenerator &generator,
         }
         cls->templateModuleRoot = templateRoot;
         cls->templateModuleCwd = cwd;
+        if (cls->templateModuleFile.empty())
+          cls->templateModuleFile = sourceFile;
+        if (cls->templateModuleSource.empty())
+          cls->templateModuleSource = sourceText;
         cls->templateNamespaceMap = nsMap;
       }
       if (generator.includedClasses().contains(id + "::" + ident) &&
@@ -421,9 +446,9 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   CwdGuard cwdGuard(generator);
   generator.cwd() = std::filesystem::path(this->path).parent_path();
 
-  if (generator.includedMemo().contains(this->path))
-    added = generator.includedMemo().get(this->path);
-  else {
+  if (generator.includedMemo().contains(this->path)) {
+    added = ast::deepCopy(generator.includedMemo().get(this->path));
+  } else {
 
     std::string text = std::string((std::istreambuf_iterator<char>(file)),
                                    std::istreambuf_iterator<char>());
@@ -435,9 +460,16 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     tokens.invert();
     // parse the file
     parse::Parser p = parse::Parser();
-    ast::Statement *statement = p.parseStmt(tokens);
-    auto Lowerer = parse::lower::Lowerer(statement);
-    added = Lowerer.result();
+    try {
+      ast::Statement *statement = p.parseStmt(tokens);
+      auto Lowerer = parse::lower::Lowerer(statement);
+      added = Lowerer.result();
+    } catch (err::Exception &e) {
+      int line = error::extractLine(e.errorMsg);
+      error::report(this->path, line, e.errorMsg, text);
+      throw e;
+    }
+    stampImportedGeneratedSources(added, this->path, text);
     generator.includedMemo().insert(this->path, added);
   }
   {
@@ -448,7 +480,7 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     ast::Statement *templateRoot = ast::deepCopy(added);
     if (this->hasFunctions)
       OutputFile << emitTypeShells(added, generator, id, this->cwd, nsMap,
-                                   templateRoot);
+                                   templateRoot, this->path, "");
     for (std::string ident : this->imports) {
       if (ident == "*") {
         auto seq = dynamic_cast<ast::Sequence *>(added);
@@ -483,6 +515,9 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
           }
           cls->templateModuleRoot = templateRoot;
           cls->templateModuleCwd = this->cwd;
+          cls->templateModuleFile = cls->templateModuleFile.empty()
+                                        ? this->path
+                                        : cls->templateModuleFile;
           cls->templateNamespaceMap = nsMap;
         }
         if (generator.includedClasses().contains(id + "::" + ident) &&
@@ -541,9 +576,9 @@ Import::generateClasses(gen::CodeGenerator &generator) {
   CwdGuard cwdGuard(generator);
   generator.cwd() = std::filesystem::path(this->path).parent_path();
 
-  if (generator.includedMemo().contains(this->path))
-    added = generator.includedMemo().get(this->path);
-  else {
+  if (generator.includedMemo().contains(this->path)) {
+    added = ast::deepCopy(generator.includedMemo().get(this->path));
+  } else {
 
     std::string text = std::string((std::istreambuf_iterator<char>(file)),
                                    std::istreambuf_iterator<char>());
@@ -556,9 +591,16 @@ Import::generateClasses(gen::CodeGenerator &generator) {
     parse::Parser p = parse::Parser();
     if (this->path.find("./") != std::string::npos)
       p.setMutability(generator.mutability());
-    ast::Statement *statement = p.parseStmt(tokens);
-    auto Lowerer = parse::lower::Lowerer(statement);
-    added = Lowerer.result();
+    try {
+      ast::Statement *statement = p.parseStmt(tokens);
+      auto Lowerer = parse::lower::Lowerer(statement);
+      added = Lowerer.result();
+    } catch (err::Exception &e) {
+      int line = error::extractLine(e.errorMsg);
+      error::report(this->path, line, e.errorMsg, text);
+      throw e;
+    }
+    stampImportedGeneratedSources(added, this->path, text);
     generator.includedMemo().insert(this->path, added);
   }
   OutputFile << generator.ImportsOnly(added, false);
@@ -588,6 +630,9 @@ Import::generateClasses(gen::CodeGenerator &generator) {
       }
       cls->templateModuleRoot = templateRoot;
       cls->templateModuleCwd = this->cwd;
+      cls->templateModuleFile = cls->templateModuleFile.empty()
+                                    ? this->path
+                                    : cls->templateModuleFile;
       cls->templateNamespaceMap = nsMap;
     }
     if (generator.includedClasses().contains(id + "::" + ident) &&

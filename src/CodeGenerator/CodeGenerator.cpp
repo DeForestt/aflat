@@ -9,6 +9,7 @@
 #include <chrono>
 #include <filesystem>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <utility>
 
@@ -99,8 +100,10 @@ void ensureFunctionPointerTypeRegistered(gen::CodeGenerator &generator,
 
 struct gen::CodeGenerator::Impl {
   Impl(std::string moduleId, parse::Parser &parser, const std::string &source,
-       const std::string &cwd)
+       const std::string &cwd, const std::string &diagnosticFile)
       : parser(parser), moduleId(std::move(moduleId)), source(source),
+        diagnosticFile(diagnosticFile.empty() ? this->moduleId
+                                              : diagnosticFile),
         cwd(cwd.empty() ? std::filesystem::current_path()
                         : std::filesystem::path(cwd)) {
     registers << asmc::Register("rax", "eax", "ax", "al");
@@ -178,6 +181,9 @@ struct gen::CodeGenerator::Impl {
   int tempCount = 0;
   std::string moduleId;
   std::string source;
+  std::string diagnosticFile;
+  std::optional<ast::SourceLocation> currentSourceLocation;
+  std::vector<std::optional<ast::SourceLocation>> sourceLocationStack;
   std::filesystem::path cwd;
   links::LinkedList<std::string> breakContext;
   links::LinkedList<std::string> continueContext;
@@ -205,8 +211,23 @@ void gen::CodeGenerator::alert(std::string message, bool error,
       context += "in class " + impl->scope->Ident + ": ";
     if (!impl->globalScope && impl->currentFunction != nullptr)
       context += "in function " + impl->currentFunction->ident.ident + ": ";
-    error::report(impl->moduleId, impl->logicalLine, context + message,
-                  impl->source);
+    const auto &location = impl->currentSourceLocation;
+    if (location.has_value()) {
+      error::report(location->file, impl->logicalLine, context + message,
+                    location->source);
+      if (!location->generatedFromFile.empty() &&
+          location->generatedFromLine > 0) {
+        std::cout << "generated from";
+        if (!location->description.empty())
+          std::cout << " " << location->description;
+        std::cout << ":\n";
+        error::report(location->generatedFromFile, location->generatedFromLine,
+                      "generation site", location->generatedFromSource);
+      }
+    } else {
+      error::report(impl->diagnosticFile, impl->logicalLine, context + message,
+                    impl->source);
+    }
     throw err::Exception("Line: " + std::to_string(impl->logicalLine) + " " +
                          context + message);
   } else {
@@ -215,15 +236,23 @@ void gen::CodeGenerator::alert(std::string message, bool error,
       context += "in class " + impl->scope->Ident + ": ";
     if (!impl->globalScope && impl->currentFunction != nullptr)
       context += "in function " + impl->currentFunction->ident.ident + ": ";
-    error::warn(impl->moduleId, impl->logicalLine, context + message,
-                impl->source);
+    const auto &location = impl->currentSourceLocation;
+    if (location.has_value()) {
+      error::warn(location->file, impl->logicalLine, context + message,
+                  location->source);
+    } else {
+      error::warn(impl->diagnosticFile, impl->logicalLine, context + message,
+                  impl->source);
+    }
   }
 };
 
 gen::CodeGenerator::CodeGenerator(std::string moduleId, parse::Parser &parser,
                                   const std::string &source,
-                                  const std::string &cwd)
-    : impl(std::make_unique<Impl>(std::move(moduleId), parser, source, cwd)) {}
+                                  const std::string &cwd,
+                                  const std::string &diagnosticFile)
+    : impl(std::make_unique<Impl>(std::move(moduleId), parser, source, cwd,
+                                  diagnosticFile)) {}
 
 gen::CodeGenerator::~CodeGenerator() = default;
 
@@ -633,8 +662,28 @@ const std::string &gen::CodeGenerator::moduleId() const {
   return impl->moduleId;
 }
 
+const std::string &gen::CodeGenerator::diagnosticFile() const {
+  return impl->diagnosticFile;
+}
+
 std::string &gen::CodeGenerator::source() { return impl->source; }
 const std::string &gen::CodeGenerator::source() const { return impl->source; }
+
+void gen::CodeGenerator::pushSourceLocation(
+    const std::optional<ast::SourceLocation> &location) {
+  impl->sourceLocationStack.push_back(impl->currentSourceLocation);
+  if (location.has_value())
+    impl->currentSourceLocation = location;
+}
+
+void gen::CodeGenerator::popSourceLocation() {
+  if (impl->sourceLocationStack.empty()) {
+    impl->currentSourceLocation.reset();
+    return;
+  }
+  impl->currentSourceLocation = impl->sourceLocationStack.back();
+  impl->sourceLocationStack.pop_back();
+}
 
 links::LinkedList<std::string> &gen::CodeGenerator::breakContext() {
   return impl->breakContext;

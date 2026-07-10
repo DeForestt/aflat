@@ -107,9 +107,9 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
     }
   } else if (dynamic_cast<ast::Transform *>(stmt)) {
     ast::Transform *trans = dynamic_cast<ast::Transform *>(stmt);
-    ast::Transform *t = new ast::Transform();
-    t->ident = trans->ident;
-    t->_template = trans->_template;
+    ast::Transform *t = dynamic_cast<ast::Transform *>(ast::deepCopy(trans));
+    if (t == nullptr)
+      return nullptr;
     t->locked = false;
     if (t->ident == ident) {
       return t;
@@ -176,9 +176,9 @@ std::vector<ast::Statement *> gen::utils::extractAll(std::string ident,
     }
   } else if (dynamic_cast<ast::Transform *>(stmt)) {
     ast::Transform *trans = dynamic_cast<ast::Transform *>(stmt);
-    ast::Transform *t = new ast::Transform();
-    t->ident = trans->ident;
-    t->_template = trans->_template;
+    ast::Transform *t = dynamic_cast<ast::Transform *>(ast::deepCopy(trans));
+    if (t == nullptr)
+      return results;
     t->locked = false;
     if (t->ident == ident) {
       results.push_back(t);

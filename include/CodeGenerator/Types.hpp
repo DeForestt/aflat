@@ -85,6 +85,8 @@ public:
   ast::Statement *body;
   ast::Statement *templateModuleRoot = nullptr;
   std::string templateModuleCwd = "";
+  std::string templateModuleFile = "";
+  std::string templateModuleSource = "";
   std::unordered_map<std::string, std::string> templateNamespaceMap;
   std::vector<ast::DecAssign> defaultValues;
   static bool compare(Type *t, std::string ident);

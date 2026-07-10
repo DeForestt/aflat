@@ -41,10 +41,29 @@ static int classInstanceByteSize(const gen::Class *cl) {
 }
 
 namespace gen {
+namespace {
+
+class SourceLocationScope {
+public:
+  SourceLocationScope(CodeGenerator &generator,
+                      const std::optional<ast::SourceLocation> &location)
+      : generator(generator) {
+    generator.pushSourceLocation(location);
+  }
+
+  ~SourceLocationScope() { generator.popSourceLocation(); }
+
+private:
+  CodeGenerator &generator;
+};
+
+} // namespace
+
 gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                                       asmc::Size size, std::string typeHint) {
   gen::Expr output;
   output.op = asmc::Hard;
+  SourceLocationScope sourceLocation(*this, expr->sourceLocation);
   logicalLine() = expr->logicalLine;
 
   if (dynamic_cast<ast::IntLiteral *>(expr) != nullptr) {

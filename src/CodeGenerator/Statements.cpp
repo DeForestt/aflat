@@ -15,6 +15,23 @@
 using namespace gen::utils;
 
 namespace gen {
+namespace {
+
+class SourceLocationScope {
+public:
+  SourceLocationScope(CodeGenerator &generator,
+                      const std::optional<ast::SourceLocation> &location)
+      : generator(generator) {
+    generator.pushSourceLocation(location);
+  }
+
+  ~SourceLocationScope() { generator.popSourceLocation(); }
+
+private:
+  CodeGenerator &generator;
+};
+
+} // namespace
 
 links::LinkedList<gen::Symbol>
 gen::CodeGenerator::GenTable(ast::Statement *STMT,
@@ -193,6 +210,7 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
 
 asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
   asmc::File OutputFile = asmc::File();
+  SourceLocationScope sourceLocation(*this, STMT->sourceLocation);
   logicalLine() = STMT->logicalLine;
 
   if (STMT->when && !this->whenSatisfied(*STMT->when)) {

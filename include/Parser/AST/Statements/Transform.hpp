@@ -8,6 +8,8 @@ class Transform : public Statement {
 public:
   std::string ident;
   std::string _template;
+  std::string definitionFile;
+  std::string definitionSource;
 
   Transform(links::LinkedList<lex::Token *> &tokens);
   Transform(const std::string &ident, const std::string &templateStr)

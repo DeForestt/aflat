@@ -22,6 +22,15 @@ class CodeGenerator;
 
 namespace ast {
 
+struct SourceLocation {
+  std::string file;
+  std::string source;
+  std::string generatedFromFile;
+  std::string generatedFromSource;
+  int generatedFromLine = 0;
+  std::string description;
+};
+
 class Call;
 class Declare;
 class Function;
@@ -64,6 +73,7 @@ public:
 class Statement {
 public:
   std::optional<When> when; // When clause for templates
+  std::optional<SourceLocation> sourceLocation;
   bool locked = false;
   int logicalLine = 0;
   virtual std::string toString() { return ""; };

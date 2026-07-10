@@ -48,7 +48,8 @@ public:
   };
 
   CodeGenerator(std::string moduleId, parse::Parser &parser,
-                const std::string &source = "", const std::string &cwd = "");
+                const std::string &source = "", const std::string &cwd = "",
+                const std::string &diagnosticFile = "");
   ~CodeGenerator();
   CodeGenerator(CodeGenerator &&) noexcept;
   CodeGenerator &operator=(CodeGenerator &&) noexcept;
@@ -166,8 +167,11 @@ public:
   const std::filesystem::path &cwd() const;
   std::string &moduleId();
   const std::string &moduleId() const;
+  const std::string &diagnosticFile() const;
   std::string &source();
   const std::string &source() const;
+  void pushSourceLocation(const std::optional<ast::SourceLocation> &location);
+  void popSourceLocation();
   links::LinkedList<std::string> &breakContext();
   const links::LinkedList<std::string> &breakContext() const;
   links::LinkedList<std::string> &continueContext();
