@@ -20,7 +20,8 @@ public:
             const std::vector<parse::Annotation> &annotations);
 
   DecAssign(const DecAssign &other)
-      : declare(other.declare), mute(other.mute), expr(other.expr) {
+      : annotations(other.annotations), declare(other.declare),
+        mute(other.mute), expr(other.expr) {
     this->logicalLine = other.logicalLine;
   }
   void debug();

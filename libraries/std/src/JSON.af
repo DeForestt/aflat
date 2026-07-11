@@ -236,7 +236,7 @@ export fn Object(const unordered_map::<adr,Box::<JSON>> map) -> JSON {
 };
 
 // Create a JSON String from an adr pointer.
-export fn String(const adr s) -> JSON {
+export fn String(immutable adr s) -> JSON {
     if s == NULL return new JSON->Null();
     const let v = af_malloc(st.len(s) + 1);
     af_memcpy(v, s, st.len(s) + 1);
@@ -244,12 +244,12 @@ export fn String(const adr s) -> JSON {
 };
 
 // Create a JSON Number from a scalar integer value.
-export fn Number(const int n) -> JSON {
+export fn Number(immutable int n) -> JSON {
     return new JSON->Number(n);
 };
 
 // Create a JSON Boolean from a bool.
-export fn Boolean(const bool b) -> JSON {
+export fn Boolean(immutable bool b) -> JSON {
     return new JSON->Boolean(b);
 };
 

@@ -81,8 +81,15 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
       Symbol.readOnly = this->readOnly;
       Table->push(Symbol);
       // if the symbol is public add it to the public symbol table
-      if (this->scope == ast::Public && generator.scope() != nullptr)
-        generator.scope()->publicSymbols.push(Symbol);
+      if (this->scope == ast::Public && generator.scope() != nullptr) {
+        if (auto existing =
+                generator.scope()->publicSymbols.search<std::string>(
+                    gen::utils::searchSymbol, this->ident)) {
+          *existing = Symbol;
+        } else {
+          generator.scope()->publicSymbols.push(Symbol);
+        }
+      }
     };
   } else {
     Table = &generator.GlobalSymbolTable();

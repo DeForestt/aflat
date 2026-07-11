@@ -319,13 +319,13 @@ export fn itSkip(const uni_string text, const uni_string reason) -> void {
 types(T)
 // Assert equality of two values using == semantics.
 export fn assertEqual(const T expected, const T actual) -> void {
-	if expected != actual {
+	if !(expected == actual) {
 		markFailure(`Expected {expected} but got {actual}`);
 	};
 };
 
 private fn assertEqualStrings(const uni_string expected, const uni_string actual) -> void {
-	if expected != actual {
+	if !(expected == actual) {
 		markFailure(`Expected {expected} but got {actual}`);
 	};
 };
