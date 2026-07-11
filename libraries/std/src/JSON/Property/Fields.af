@@ -47,26 +47,22 @@ safe class TypedJsonProperty signs JsonProperty {
 
   when (T is int)
   fn serialize() -> JSON {
-    const int v = my.value;
-    return json.Number(v);
+    return json.Number(my.value$bool);
   };
 
   when (T is bool)
   fn serialize() -> JSON {
-    const bool v = my.value;
-    return json.Boolean(v);
+    return json.Boolean(my.value$bool);
   };
 
   when (T is string)
   fn serialize() -> JSON {
-    const string v = my.value;
-    return json.String(v.cstr());
+    return json.String(my.value$string.cstr());
   };
 
   when (T is uni_string)
   fn serialize() -> JSON {
-    const uni_string v = my.value;
-    return json.String(v.get_buf());
+    return json.String(my.value$uni_string.get_buf());
   };
 
   when  (T has serialize)
@@ -83,8 +79,14 @@ safe class TypedJsonProperty signs JsonProperty {
     };
     context.registerField(my);
   };
-
+  
+  when (T is not unique)
   fn get() -> T {
+    return my.value;
+  };
+
+  when (T is unique)
+  fn get() -> loan T {
     return my.value;
   };
 
