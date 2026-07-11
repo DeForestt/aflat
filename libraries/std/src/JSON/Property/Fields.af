@@ -1,6 +1,7 @@
 .needs <std>
 
 import JSON from "JSON";
+import uni_string from "uni_string";
 import {Null, String, Number, Boolean} from "JSON" under json;
 import {wrap} from "Memory" under box;
 
@@ -62,6 +63,12 @@ safe class TypedJsonProperty signs JsonProperty {
     return json.String(v.cstr());
   };
 
+  when (T is uni_string)
+  fn serialize() -> JSON {
+    const uni_string v = my.value;
+    return json.String(v.get_buf());
+  };
+
   when  (T has serialize)
   fn serialize() -> JSON {
     const T v = my.value;
@@ -88,7 +95,7 @@ safe class TypedJsonProperty signs JsonProperty {
 
 transform json_field
 ~
-${scope} fn ${ident}(${type} value) -> ${type} : TypedJsonProperty::<${type}>("${ident}", ${expr}) {
+${scope} fn ${ident}(${type} &&value) -> ${type} : TypedJsonProperty::<${type}>("${ident}", ${expr}) {
   return value;
 };
 ~;
