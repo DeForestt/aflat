@@ -385,6 +385,20 @@ int request(char *host, char *path, char *port, char *msg, char *response,
 #define SIZE 1024
 #define BACKLOG 10  // Passed to listen()
 
+static int _aflat_send_all(int socket_fd, const char *buffer, size_t length) {
+  size_t sent = 0;
+  while (sent < length) {
+    ssize_t n = send(socket_fd, buffer + sent, length - sent, 0);
+    if (n < 0) {
+      if (errno == EINTR) continue;
+      return -1;
+    }
+    if (n == 0) return -1;
+    sent += (size_t)n;
+  }
+  return 0;
+}
+
 int _aflat_server_spinUp(short port, int requestSize,
                          char *(*requestHandler)(char *, char **)) {
   int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -392,6 +406,7 @@ int _aflat_server_spinUp(short port, int requestSize,
     perror("socket");
     return 1;
   }
+  signal(SIGPIPE, SIG_IGN);
 
   struct sockaddr_in serverAddress;
   serverAddress.sin_family = AF_INET;
@@ -421,13 +436,19 @@ int _aflat_server_spinUp(short port, int requestSize,
     }
     char *request = NULL;
     char *response = NULL;
-    if (_aflat_read_request(clientSocket, (size_t)requestSize, &request) < 0) {
+    ssize_t request_len =
+        _aflat_read_request(clientSocket, (size_t)requestSize, &request);
+    if (request_len <= 0) {
+      if (request != NULL) af_free(request);
       close(clientSocket);
       continue;
     }
     requestHandler(request, &response);
-    send(clientSocket, response, strlen(response), 0);
+    if (response != NULL) {
+      _aflat_send_all(clientSocket, response, strlen(response));
+    }
     af_free(request);
+    close(clientSocket);
   }
   return 0;
 }

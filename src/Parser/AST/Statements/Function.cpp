@@ -285,6 +285,20 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
   }
 
   if (this->statement != nullptr && !this->hidden) {
+    std::string emittedLabel;
+    if (generator.scope() == nullptr || this->isLambda || this->globalLocked)
+      emittedLabel = this->ident.ident;
+    else
+      emittedLabel =
+          "pub_" + generator.scope()->Ident + "_" + this->ident.ident;
+    if (this->scopeName != "global")
+      emittedLabel = "pub_" + this->scopeName + "_" + this->ident.ident;
+
+    if (!generator.generatedFunctionNames().insert(emittedLabel).second)
+      return {file, std::nullopt};
+  }
+
+  if (this->statement != nullptr && !this->hidden) {
     gen::scope::ScopeManager::getInstance()->pushScope(true);
     generator.currentFunction() = this;
     bool saveIn = generator.inFunction();

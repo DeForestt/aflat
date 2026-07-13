@@ -658,10 +658,10 @@ class HTTPResponse {
         ret = ret + " ";
         ret = ret + my.statusMessage;
         ret = ret + "\r\n";
+        ret = ret + "Connection: close\r\n";
         ret = ret + my.getHeaders();
         ret = ret + "\r\n";
         ret = ret + my.body;
-        ret = ret + "\r\n";
         return ret;
     };
 
