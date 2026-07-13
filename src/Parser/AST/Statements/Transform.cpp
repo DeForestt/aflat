@@ -39,6 +39,20 @@ void attachSourceLocation(ast::Statement *statement,
   }
 }
 
+void syncParserTypesForTransform(gen::CodeGenerator &generator) {
+  auto &parserTypes = generator.parser().getTypeList();
+
+  for (const auto &type : generator.typeList()) {
+    if (type != nullptr && parserTypes[type->Ident] == nullptr)
+      parserTypes << ast::Type(type->Ident, asmc::QWord);
+  }
+
+  for (const auto &[ident, _] : generator.genericTypes()) {
+    if (parserTypes[ident] == nullptr)
+      parserTypes << ast::Type(ident, asmc::QWord);
+  }
+}
+
 } // namespace
 
 Transform::Transform(links::LinkedList<lex::Token *> &tokens) {
@@ -129,6 +143,7 @@ Transform::parse(const std::string &ident, std::string &type, std::string &expr,
     auto tokens = l.Scan(pp.PreProcess(result, gen::utils::getLibPath("head")));
     tokens.invert();
     // parse the file
+    syncParserTypesForTransform(generator);
     ast::Statement *statement = generator.parser().parseStmt(tokens);
     auto Lowerer = parse::lower::Lowerer(statement, true);
 

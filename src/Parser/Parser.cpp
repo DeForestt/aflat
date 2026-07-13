@@ -515,7 +515,9 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
       this->typeList << placeholder;
     }
 
-    if (typeList[obj.meta] != nullptr) {
+    auto memberAccess = dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (typeList[obj.meta] != nullptr &&
+        !(memberAccess != nullptr && memberAccess->Sym == '.')) {
       // check if we need to make a function pointer
       const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
       auto type = (sym != nullptr && sym->meta == "<")

@@ -122,10 +122,17 @@ static void registerClassShells(ast::Statement *stmt,
     if (!cls->genericTypes.empty())
       continue;
 
-    if (generator.typeList()[cls->ident.ident] != nullptr)
-      continue;
-
-    auto *type = new gen::Class();
+    gen::Class *type = nullptr;
+    auto existing = generator.typeList()[cls->ident.ident];
+    if (existing != nullptr) {
+      auto *existingClass = dynamic_cast<gen::Class *>(*existing);
+      if (existingClass == nullptr || !existingClass->declarationOnly)
+        continue;
+      type = existingClass;
+    } else {
+      type = new gen::Class();
+      generator.typeList().push(type);
+    }
     type->Ident = cls->ident.ident;
     type->hidden = cls->hidden;
     type->safeType = cls->safeType;
@@ -145,7 +152,6 @@ static void registerClassShells(ast::Statement *stmt,
     auto prevGlobal = generator.globalScope();
     generator.scope() = type;
     generator.globalScope() = false;
-    generator.typeList().push(type);
 
     links::LinkedList<gen::Symbol> table;
     auto collect = [&](auto &&self, ast::Statement *node) -> void {
@@ -217,6 +223,55 @@ static void registerClassShells(ast::Statement *stmt,
 
     generator.scope() = prevScope;
     generator.globalScope() = prevGlobal;
+  }
+}
+
+static void predeclareImportTypes(ast::Statement *stmt,
+                                  gen::CodeGenerator &generator) {
+  if (stmt == nullptr)
+    return;
+  std::vector<ast::Statement *> stack{stmt};
+  while (!stack.empty()) {
+    ast::Statement *node = stack.back();
+    stack.pop_back();
+    if (node == nullptr)
+      continue;
+    if (auto seq = dynamic_cast<ast::Sequence *>(node)) {
+      stack.push_back(seq->Statement2);
+      stack.push_back(seq->Statement1);
+      continue;
+    }
+
+    if (auto cls = dynamic_cast<ast::Class *>(node)) {
+      if (!cls->genericTypes.empty() ||
+          generator.typeList()[cls->ident.ident] != nullptr)
+        continue;
+
+      auto *type = new gen::Class();
+      type->Ident = cls->ident.ident;
+      type->hidden = cls->hidden;
+      type->safeType = cls->safeType;
+      type->dynamic = cls->dynamic;
+      type->pedantic = cls->pedantic;
+      type->uniqueType = cls->uniqueType;
+      type->declarationOnly = true;
+      type->contract = cls->contract;
+      type->body = cls->statement;
+      type->templateModuleRoot = cls->templateModuleRoot;
+      type->templateModuleCwd = cls->templateModuleCwd;
+      type->templateModuleFile = cls->templateModuleFile;
+      type->templateModuleSource = cls->templateModuleSource;
+      type->templateNamespaceMap = cls->templateNamespaceMap;
+      generator.typeList().push(type);
+    } else if (auto enm = dynamic_cast<ast::Enum *>(node)) {
+      if (generator.typeList()[enm->Ident] != nullptr)
+        continue;
+      auto *type = new gen::Enum();
+      type->Ident = enm->Ident;
+      type->hidden = false;
+      type->size = 4;
+      generator.typeList().push(type);
+    }
   }
 }
 
@@ -474,6 +529,7 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
   }
   {
     NamespaceTableGuard namespaceGuard(generator);
+    predeclareImportTypes(added, generator);
     OutputFile << generator.ImportsOnly(added, true);
     std::unordered_map<std::string, std::string> nsMap;
     collectImportNamespaces(added, nsMap);
@@ -603,11 +659,14 @@ Import::generateClasses(gen::CodeGenerator &generator) {
     stampImportedGeneratedSources(added, this->path, text);
     generator.includedMemo().insert(this->path, added);
   }
+  predeclareImportTypes(added, generator);
   OutputFile << generator.ImportsOnly(added, false);
 
   std::unordered_map<std::string, std::string> nsMap;
   collectImportNamespaces(added, nsMap);
   ast::Statement *templateRoot = ast::deepCopy(added);
+  OutputFile << emitTypeShells(added, generator, id, this->cwd, nsMap,
+                               templateRoot, this->path, "");
 
   for (std::string ident : this->imports) {
     ast::Statement *statement = gen::utils::extract(ident, added, id);
