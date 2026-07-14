@@ -399,8 +399,9 @@ static int _aflat_send_all(int socket_fd, const char *buffer, size_t length) {
   return 0;
 }
 
-int _aflat_server_spinUp(short port, int requestSize,
-                         char *(*requestHandler)(char *, char **)) {
+__attribute__((force_align_arg_pointer)) int
+_aflat_server_spinUp(short port, int requestSize,
+                     char *(*requestHandler)(char *, char **)) {
   int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
   if (serverSocket < 0) {
     perror("socket");
@@ -459,7 +460,8 @@ int _aflat_server_spinUp(short port, int requestSize,
 #include <unistd.h>
 #define PORT 8080
 
-int _serve(int port, char *(*handler)(char *, void *), void *data) {
+__attribute__((force_align_arg_pointer)) int
+_serve(int port, char *(*handler)(char *, void *), void *data) {
   int server_fd, new_socket;
   struct sockaddr_in address;
   int opt = 1;
@@ -506,7 +508,8 @@ int _serve(int port, char *(*handler)(char *, void *), void *data) {
   return 0;
 }
 
-int serve(int port, char *(*handler)(char *, void *), void *data) {
+__attribute__((force_align_arg_pointer)) int
+serve(int port, char *(*handler)(char *, void *), void *data) {
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
   struct sockaddr_in address;
   int opt = 1;
@@ -569,7 +572,8 @@ int serve(int port, char *(*handler)(char *, void *), void *data) {
   return 0;
 }
 
-int serve_sync(int port, char *(*handler)(char *, void *), void *data) {
+__attribute__((force_align_arg_pointer)) int
+serve_sync(int port, char *(*handler)(char *, void *), void *data) {
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
   struct sockaddr_in address;
   int opt = 1;
