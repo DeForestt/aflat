@@ -728,6 +728,10 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
                                         asmc::File &OutputFile) {
   gen::Type **type = impl->typeList[typeName];
   if (type == nullptr) {
+    if (typeName == "any" || typeName == "generic" || typeName == "adr" ||
+        typeName == "object" || typeName == "NULLTYPE")
+      return nullptr;
+
     if (isEncodedFunctionPointerTypeName(typeName)) {
       ensureFunctionPointerTypeRegistered(*this, typeName);
       type = impl->typeList[typeName];

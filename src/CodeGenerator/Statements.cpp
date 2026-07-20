@@ -31,6 +31,22 @@ private:
   CodeGenerator &generator;
 };
 
+class LazyMethodEmissionSuppressionScope {
+public:
+  explicit LazyMethodEmissionSuppressionScope(CodeGenerator &generator)
+      : generator(generator), saved(generator.suppressLazyMethodEmission()) {
+    generator.suppressLazyMethodEmission() = true;
+  }
+
+  ~LazyMethodEmissionSuppressionScope() {
+    generator.suppressLazyMethodEmission() = saved;
+  }
+
+private:
+  CodeGenerator &generator;
+  bool saved;
+};
+
 } // namespace
 
 links::LinkedList<gen::Symbol>
@@ -300,8 +316,10 @@ asmc::File gen::CodeGenerator::ImportsOnly(ast::Statement *STMT,
 
       auto classes = imp->generateClasses(*this);
       OutputFile << classes.file;
-      if (emitFunctions && imp->hasFunctions)
+      if (emitFunctions && imp->hasFunctions) {
+        LazyMethodEmissionSuppressionScope suppress(*this);
         OutputFile << imp->generate(*this).file;
+      }
 
       cwd() = prev;
     }

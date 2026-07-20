@@ -57,28 +57,50 @@ private:
   CodeGenerator &generator;
 };
 
+class LazyMethodEmissionSuppressionScope {
+public:
+  explicit LazyMethodEmissionSuppressionScope(CodeGenerator &generator)
+      : generator(generator), saved(generator.suppressLazyMethodEmission()) {
+    generator.suppressLazyMethodEmission() = true;
+  }
+
+  ~LazyMethodEmissionSuppressionScope() {
+    generator.suppressLazyMethodEmission() = saved;
+  }
+
+private:
+  CodeGenerator &generator;
+  bool saved;
+};
+
 bool isConcreteGenericClassName(const std::string &typeName) {
   return typeName.find('<') != std::string::npos;
 }
 
 void ensureLazyConcreteGenericMethod(CodeGenerator &generator, Class *cls,
                                      ast::Function *func, asmc::File &file) {
-  if (cls == nullptr || func == nullptr || !func->hidden ||
+  if (cls == nullptr || func == nullptr ||
       !isConcreteGenericClassName(cls->Ident) || func->statement == nullptr)
     return;
   if (generator.suppressLazyMethodEmission())
     return;
+  if (file.lambdas == nullptr) {
+    file.lambdas = new asmc::File();
+    file.hasLambda = true;
+  }
+  const std::string emittedLabel =
+      "pub_" + cls->Ident + "_" + func->ident.ident;
+  if (file.lambdas->lazyMethodLabels.find(emittedLabel) !=
+      file.lambdas->lazyMethodLabels.end())
+    return;
+  generator.generatedFunctionNames().erase(emittedLabel);
 
   auto *body = new ast::Function(*func, false);
   body->hidden = false;
   body->locked = false;
   body->scopeName = cls->Ident;
   body->globalLocked = false;
-
-  if (file.lambdas == nullptr) {
-    file.lambdas = new asmc::File();
-    file.hasLambda = true;
-  }
+  body->wasGeneric = true;
 
   auto saveReturnType = generator.returnType();
   auto *saveScope = generator.scope();
@@ -93,7 +115,9 @@ void ensureLazyConcreteGenericMethod(CodeGenerator &generator, Class *cls,
     file.lambdas->operator<<(
         generator.ImportsOnly(cls->templateModuleRoot, true));
   }
-  file.lambdas->operator<<(generator.GenSTMT(body));
+  auto generated = generator.GenSTMT(body);
+  generated.lazyMethodLabels.insert(emittedLabel);
+  file.lambdas->operator<<(generated);
   generator.nameSpaceTable() = savedNameSpaceTable;
   generator.cwd() = savedCwd;
   generator.scope() = saveScope;
@@ -687,12 +711,17 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
       asmc::File file;
 
-      auto exp = this->GenExpr(expr, file);
+      gen::Expr exp;
+      {
+        LazyMethodEmissionSuppressionScope suppress(*this);
+        exp = this->GenExpr(expr, file);
+      }
 
       gen::Type **t = typeList()[exp.type];
       if (t) {
         gen::Class *cl = dynamic_cast<gen::Class *>(*t);
         if (cl && cl->Ident != "string") {
+          ast::Function *toString = cl->nameTable["toString"];
           if (cl->nameTable["toString"] == nullptr) {
             if (cl->parent != nullptr) {
               if (cl->parent->nameTable["toString"] == nullptr) {
@@ -701,6 +730,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                             true, __FILE__, __LINE__);
               } else {
                 cl = cl->parent;
+                toString = cl->nameTable["toString"];
               }
             } else {
               this->alert("class " + cl->Ident +
@@ -708,6 +738,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                           true, __FILE__, __LINE__);
             }
           }
+          ensureLazyConcreteGenericMethod(*this, cl, toString, OutputFile);
 
           ast::CallExpr *call = new ast::CallExpr();
           call->call = new ast::Call();
@@ -718,7 +749,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           call->call->publify = cl->Ident;
           expr = call;
         }
-        exp = this->GenExpr(expr, file);
+        {
+          LazyMethodEmissionSuppressionScope suppress(*this);
+          exp = this->GenExpr(expr, file);
+        }
       }
 
       if (exp.type == "string" || exp.type == "uni_string") {
@@ -1544,7 +1578,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         continue;
       }
       asmc::File tempFile;
-      gen::Expr expr = this->GenExpr(structList.args.shift(), tempFile);
+      gen::Expr expr;
+      {
+        LazyMethodEmissionSuppressionScope suppress(*this);
+        expr = this->GenExpr(structList.args.shift(), tempFile);
+      }
       size += gen::utils::sizeToInt(expr.size);
     };
     structList.args.reset();

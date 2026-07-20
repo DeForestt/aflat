@@ -38,22 +38,28 @@ bool isConcreteGenericClassName(const std::string &typeName) {
 void ensureLazyConcreteGenericMethod(gen::CodeGenerator &generator,
                                      gen::Class *cls, ast::Function *func,
                                      asmc::File &file) {
-  if (cls == nullptr || func == nullptr || !func->hidden ||
+  if (cls == nullptr || func == nullptr ||
       !isConcreteGenericClassName(cls->Ident) || func->statement == nullptr)
     return;
   if (generator.suppressLazyMethodEmission())
     return;
+  if (file.lambdas == nullptr) {
+    file.lambdas = new asmc::File();
+    file.hasLambda = true;
+  }
+  const std::string emittedLabel =
+      "pub_" + cls->Ident + "_" + func->ident.ident;
+  if (file.lambdas->lazyMethodLabels.find(emittedLabel) !=
+      file.lambdas->lazyMethodLabels.end())
+    return;
+  generator.generatedFunctionNames().erase(emittedLabel);
 
   auto *body = new ast::Function(*func, false);
   body->hidden = false;
   body->locked = false;
   body->scopeName = cls->Ident;
   body->globalLocked = false;
-
-  if (file.lambdas == nullptr) {
-    file.lambdas = new asmc::File();
-    file.hasLambda = true;
-  }
+  body->wasGeneric = true;
 
   auto saveReturnType = generator.returnType();
   auto *saveScope = generator.scope();
@@ -68,7 +74,9 @@ void ensureLazyConcreteGenericMethod(gen::CodeGenerator &generator,
     file.lambdas->operator<<(
         generator.ImportsOnly(cls->templateModuleRoot, true));
   }
-  file.lambdas->operator<<(generator.GenSTMT(body));
+  auto generated = generator.GenSTMT(body);
+  generated.lazyMethodLabels.insert(emittedLabel);
+  file.lambdas->operator<<(generated);
   generator.nameSpaceTable() = savedNameSpaceTable;
   generator.cwd() = savedCwd;
   generator.scope() = saveScope;
@@ -166,6 +174,8 @@ gen::GenerationResult Call::generateAttempt(
   auto callFunction = ast::Function();
   auto shiftedFunction = ast::Function();
   auto publifyedFunction = ast::Function();
+  gen::Class *pendingLazyClass = nullptr;
+  ast::Function *pendingLazyFunction = nullptr;
   bool immutableSymbol = false;
   auto copyReturnMetadata = [](ast::Function &dst, const ast::Function &src) {
     dst.type = src.type;
@@ -526,7 +536,8 @@ gen::GenerationResult Call::generateAttempt(
           }
         }
         if (func != nullptr) {
-          ensureLazyConcreteGenericMethod(generator, cl, func, file);
+          pendingLazyClass = cl;
+          pendingLazyFunction = func;
           this->modList.shift();
           this->modList.invert();
           this->modList.reset();
@@ -613,7 +624,8 @@ gen::GenerationResult Call::generateAttempt(
           generator.alert("cannot find function: " + ident + " in class " +
                           this->publify);
         };
-        ensureLazyConcreteGenericMethod(generator, cl, f, file);
+        pendingLazyClass = cl;
+        pendingLazyFunction = f;
         copyReturnMetadata(*func, *f);
         func->scope = f->scope;
         func->scopeName = f->scopeName;
@@ -643,7 +655,8 @@ gen::GenerationResult Call::generateAttempt(
           overloadTable, overloadIdent, currentOverloadIndex);
       if (f == nullptr)
         generator.alert("cannot find function: " + ident + " in " + cl->Ident);
-      ensureLazyConcreteGenericMethod(generator, cl, f, file);
+      pendingLazyClass = cl;
+      pendingLazyFunction = f;
       func->argTypes = f->argTypes;
       func->req = f->req;
       func->readOnly = f->readOnly;
@@ -1063,6 +1076,9 @@ gen::GenerationResult Call::generateAttempt(
     restoreReceiver->to = generator.registers()["%rdi"]->get(asmc::QWord);
     file.text << restoreReceiver;
   }
+
+  ensureLazyConcreteGenericMethod(generator, pendingLazyClass,
+                                  pendingLazyFunction, file);
 
   // this->Args = args;
   this->Args.invert();
