@@ -30,7 +30,7 @@ TEST_CASE("compileCFile cache reuse", "[cache]") {
   fs::remove_all(".cache/tmp");
 }
 
-TEST_CASE("module cache invalidates on header change", "[cache]") {
+TEST_CASE("module cache ignores non-template import changes", "[cache]") {
   namespace fs = std::filesystem;
   fs::create_directories("src/tmp");
   std::ofstream bar("src/tmp/bar.af");
@@ -38,7 +38,7 @@ TEST_CASE("module cache invalidates on header change", "[cache]") {
   bar.close();
   std::ofstream foo("src/tmp/foo.af");
   foo << "import {bar} from \"./bar\" under tmp;\n";
-  foo << "export int foo(){ return tmp.bar(); };";
+  foo << "int main(){ return tmp.bar(); };";
   foo.close();
   fs::remove_all(".cache/tmp");
 
@@ -46,7 +46,7 @@ TEST_CASE("module cache invalidates on header change", "[cache]") {
       "[build]\nmain = tmp/foo\n\n[dependencies]\nbar = \"./src/tmp/bar.af\"\n";
   cfg::Config cfg = cfg::getConfig(cfgText);
   cfg.outPutFile = "./bin/cache_test";
-  REQUIRE(runConfig(cfg, "../libraries/std/", 'e'));
+  REQUIRE(runConfig(cfg, "./libraries/std/", 'e'));
   fs::path obj(".cache/tmp/foo.o");
   REQUIRE(fs::exists(obj));
   auto t1 = fs::last_write_time(obj);
@@ -54,7 +54,52 @@ TEST_CASE("module cache invalidates on header change", "[cache]") {
   std::ofstream mod("src/tmp/bar.af", std::ios::app);
   mod << " \n";
   mod.close();
-  REQUIRE(runConfig(cfg, "../libraries/std/", 'e'));
+  cfg = cfg::getConfig(cfgText);
+  cfg.outPutFile = "./bin/cache_test";
+  REQUIRE(runConfig(cfg, "./libraries/std/", 'e'));
+  auto t2 = fs::last_write_time(obj);
+  REQUIRE(t2 == t1);
+
+  fs::remove_all("src/tmp");
+  fs::remove_all(".cache/tmp");
+  fs::remove("./bin/cache_test");
+}
+
+TEST_CASE("module cache invalidates on imported template change", "[cache]") {
+  namespace fs = std::filesystem;
+  fs::create_directories("src/tmp");
+  std::ofstream bar("src/tmp/bar.af");
+  bar << "types(T)\n";
+  bar << "class Box {\n";
+  bar << "  T value = value;\n";
+  bar << "  fn init(T value) -> Self { return my; };\n";
+  bar << "};\n";
+  bar.close();
+  std::ofstream foo("src/tmp/foo.af");
+  foo << ".needs <std>\n";
+  foo << "import Box from \"./bar\";\n";
+  foo << "fn main() -> int {\n";
+  foo << "  let b = new Box::<int>(1);\n";
+  foo << "  return 0;\n";
+  foo << "};\n";
+  foo.close();
+  fs::remove_all(".cache/tmp");
+
+  std::string cfgText =
+      "[build]\nmain = tmp/foo\n\n[dependencies]\nbar = \"./src/tmp/bar.af\"\n";
+  cfg::Config cfg = cfg::getConfig(cfgText);
+  cfg.outPutFile = "./bin/cache_test";
+  REQUIRE(runConfig(cfg, "./libraries/std/", 'e'));
+  fs::path obj(".cache/tmp/foo.o");
+  REQUIRE(fs::exists(obj));
+  auto t1 = fs::last_write_time(obj);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+  std::ofstream mod("src/tmp/bar.af", std::ios::app);
+  mod << " \n";
+  mod.close();
+  cfg = cfg::getConfig(cfgText);
+  cfg.outPutFile = "./bin/cache_test";
+  REQUIRE(runConfig(cfg, "./libraries/std/", 'e'));
   auto t2 = fs::last_write_time(obj);
   REQUIRE(t2 > t1);
 

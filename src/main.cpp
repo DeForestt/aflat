@@ -8,18 +8,25 @@
 #include <iostream>
 #include <map>
 #include <sstream>
+#include <unordered_map>
 #include <vector>
 
 #include "ASM.hpp"
 #include "CLI.hpp"
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Utils.hpp"
 #include "CompilerUtils.hpp"
 #include "Configs.hpp"
 #include "ErrorReporter.hpp"
 #include "Exceptions.hpp"
 #include "LSP.hpp"
 #include "LinkedList.hpp"
+#include "Parser/AST/Statements/Class.hpp"
+#include "Parser/AST/Statements/Function.hpp"
+#include "Parser/AST/Statements/Import.hpp"
+#include "Parser/AST/Statements/Sequence.hpp"
+#include "Parser/AST/Statements/Union.hpp"
 #include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
@@ -1511,6 +1518,131 @@ fn main() -> int {
   outfile.close();
 }
 
+static std::filesystem::path
+resolveImportPathForCache(const ast::Import &import,
+                          const std::filesystem::path &currentDir) {
+  std::filesystem::path importPath = import.path;
+  if (importPath.is_relative()) {
+    if (!import.path.empty() && import.path[0] == '.') {
+      importPath = currentDir / importPath;
+    } else {
+      importPath = gen::utils::getLibPath("src") / importPath;
+    }
+  }
+  if (importPath.extension() != ".af")
+    importPath += ".af";
+  importPath = std::filesystem::absolute(importPath).lexically_normal();
+  if (std::filesystem::exists(importPath))
+    return importPath;
+
+  auto modPath = importPath;
+  modPath.replace_filename(importPath.stem() / "mod.af");
+  return std::filesystem::absolute(modPath).lexically_normal();
+}
+
+static ast::Statement *
+parseCacheDependencyFile(const std::filesystem::path &src,
+                         const std::string &libPath) {
+  std::ifstream ifs(src);
+  if (!ifs.is_open())
+    return nullptr;
+
+  std::string content((std::istreambuf_iterator<char>(ifs)),
+                      std::istreambuf_iterator<char>());
+  PreProcessor pp;
+  lex::Lexer lexer;
+  auto tokens = lexer.Scan(pp.PreProcess(
+      content, libPath, std::filesystem::path(src).parent_path().string()));
+  tokens.invert();
+  parse::Parser parser;
+  ast::Statement *statement = parser.parseStmt(tokens);
+  auto lowerer = parse::lower::Lowerer(statement);
+  return lowerer.result();
+}
+
+static void collectImports(ast::Statement *stmt,
+                           std::vector<ast::Import *> &imports) {
+  if (stmt == nullptr)
+    return;
+  if (auto seq = dynamic_cast<ast::Sequence *>(stmt)) {
+    collectImports(seq->Statement1, imports);
+    collectImports(seq->Statement2, imports);
+    return;
+  }
+  if (auto import = dynamic_cast<ast::Import *>(stmt))
+    imports.push_back(import);
+}
+
+static bool statementIsTemplate(ast::Statement *stmt) {
+  if (auto cls = dynamic_cast<ast::Class *>(stmt))
+    return !cls->genericTypes.empty();
+  if (auto func = dynamic_cast<ast::Function *>(stmt))
+    return !func->genericTypes.empty();
+  return false;
+}
+
+static bool containsTemplate(ast::Statement *stmt) {
+  if (stmt == nullptr)
+    return false;
+  if (auto seq = dynamic_cast<ast::Sequence *>(stmt))
+    return containsTemplate(seq->Statement1) ||
+           containsTemplate(seq->Statement2);
+  return statementIsTemplate(stmt);
+}
+
+static bool containsImportedTemplate(ast::Statement *stmt,
+                                     const std::string &ident) {
+  if (stmt == nullptr)
+    return false;
+  if (auto seq = dynamic_cast<ast::Sequence *>(stmt)) {
+    return containsImportedTemplate(seq->Statement1, ident) ||
+           containsImportedTemplate(seq->Statement2, ident);
+  }
+  if (auto cls = dynamic_cast<ast::Class *>(stmt))
+    return cls->ident.ident == ident && !cls->genericTypes.empty();
+  if (auto func = dynamic_cast<ast::Function *>(stmt))
+    return func->ident.ident == ident && !func->genericTypes.empty();
+  return false;
+}
+
+static void collectTemplateImportDependencies(
+    const std::filesystem::path &src, const std::string &libPath,
+    std::vector<std::filesystem::path> &deps,
+    std::unordered_map<std::string, bool> &visited) {
+  auto sourceKey = std::filesystem::absolute(src).lexically_normal().string();
+  if (visited.find(sourceKey) != visited.end())
+    return;
+  visited[sourceKey] = true;
+
+  ast::Statement *root = parseCacheDependencyFile(src, libPath);
+  std::vector<ast::Import *> imports;
+  collectImports(root, imports);
+  for (auto import : imports) {
+    auto importPath = resolveImportPathForCache(
+        *import, std::filesystem::path(src).parent_path());
+    if (!std::filesystem::exists(importPath))
+      continue;
+
+    ast::Statement *importRoot = parseCacheDependencyFile(importPath, libPath);
+    bool templateImport = false;
+    for (const auto &ident : import->imports) {
+      if (ident == "*") {
+        templateImport = containsTemplate(importRoot);
+      } else {
+        templateImport = containsImportedTemplate(importRoot, ident);
+      }
+      if (templateImport)
+        break;
+    }
+
+    if (!templateImport)
+      continue;
+
+    deps.push_back(importPath);
+    collectTemplateImportDependencies(importPath, libPath, deps, visited);
+  }
+}
+
 bool objectUpToDate(const std::string &src, const std::string &obj,
                     const std::string &libPath) {
   namespace fs = std::filesystem;
@@ -1526,6 +1658,19 @@ bool objectUpToDate(const std::string &src, const std::string &obj,
   pp.PreProcess(content, libPath, fs::path(src).parent_path().string());
   for (const auto &inc : pp.getIncludes()) {
     if (fs::exists(inc) && objTime < fs::last_write_time(inc))
+      return false;
+  }
+  std::vector<fs::path> templateDeps;
+  std::unordered_map<std::string, bool> visited;
+  try {
+    collectTemplateImportDependencies(src, libPath, templateDeps, visited);
+  } catch (const err::Exception &) {
+    return false;
+  } catch (const std::exception &) {
+    return false;
+  }
+  for (const auto &dep : templateDeps) {
+    if (fs::exists(dep) && objTime < fs::last_write_time(dep))
       return false;
   }
   return true;
@@ -1588,15 +1733,6 @@ ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
 
   bool useCached = !config.debug && gUseCache &&
                    objectUpToDate(src, objPath, libPath + "head/");
-  auto objTime = fs::exists(objPath) ? fs::last_write_time(objPath)
-                                     : fs::file_time_type::min();
-  for (const auto &dep : config.modules) {
-    if (dep == mod)
-      continue;
-    std::string depSrc = "./src/" + dep + ".af";
-    if (fs::exists(depSrc) && fs::last_write_time(depSrc) > objTime)
-      useCached = false;
-  }
   if (useCached && !gQuiet) {
     if (gProgress)
       gProgress->update(src, "cached");

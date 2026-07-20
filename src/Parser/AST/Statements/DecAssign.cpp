@@ -53,6 +53,15 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
         }
       }
 
+      if (dec->type.typeName != "let" &&
+          parse::PRIMITIVE_TYPES.find(dec->type.typeName) ==
+              parse::PRIMITIVE_TYPES.end() &&
+          dec->type.typeName != "any" &&
+          !(dec->type.typeName.find("~") != std::string::npos &&
+            dec->type.typeName.find("<") == std::string::npos)) {
+        generator.getType(dec->type.typeName, file);
+      }
+
       auto mov = new asmc::Mov();
       mov->logicalLine = this->logicalLine;
       gen::Expr expr = generator.GenExpr(this->expr, file, dec->type.size,
