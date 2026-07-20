@@ -855,6 +855,19 @@ static bool gQuiet = false;
 static bool gUseCache = true;
 static bool gConcurrentBuild = false;
 
+class ProgressScope {
+public:
+  explicit ProgressScope(CompileProgress &progress) {
+    if (!gQuiet)
+      gProgress = &progress;
+  }
+
+  ~ProgressScope() { gProgress = nullptr; }
+
+  ProgressScope(const ProgressScope &) = delete;
+  ProgressScope &operator=(const ProgressScope &) = delete;
+};
+
 #ifndef AFLAT_TEST
 int main(int argc, char *argv[]) {
   CommandLineOptions cli;
@@ -1788,7 +1801,11 @@ static bool writeModuleCacheMetadata(const std::string &src,
           << "\n";
     }
     return out.good();
+  } catch (const err::Exception &) {
+    return false;
   } catch (const std::exception &) {
+    return false;
+  } catch (...) {
     return false;
   }
 }
@@ -1928,17 +1945,21 @@ reachableBuildModules(const cfg::Config &config, const std::string &entryPoint,
 bool objectUpToDate(const std::string &src, const std::string &obj,
                     const std::string &libPath) {
   namespace fs = std::filesystem;
-  if (!fs::exists(obj))
+  try {
+    if (!fs::exists(obj))
+      return false;
+    auto objTime = fs::last_write_time(obj);
+    if (objTime < fs::last_write_time(src))
+      return false;
+    ModuleCacheMetadata metadata;
+    if (!readModuleCacheMetadata(obj, metadata))
+      return false;
+    if (fs::absolute(src).lexically_normal() != metadata.source)
+      return false;
+    return metadataDependenciesUpToDate(metadata);
+  } catch (const std::exception &) {
     return false;
-  auto objTime = fs::last_write_time(obj);
-  if (objTime < fs::last_write_time(src))
-    return false;
-  ModuleCacheMetadata metadata;
-  if (!readModuleCacheMetadata(obj, metadata))
-    return false;
-  if (fs::absolute(src).lexically_normal() != metadata.source)
-    return false;
-  return metadataDependenciesUpToDate(metadata);
+  }
 }
 
 bool compileCFile(const std::string &path, bool debug) {
@@ -2002,27 +2023,39 @@ ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
   std::string asmPath = "./.cache/" + mod + ".s";
   std::string objPath = "./.cache/" + mod + ".o";
 
-  bool useCached = false;
-  if (!config.debug && gUseCache) {
-    ScopedTimer timer("cache-check", mod);
-    useCached = objectUpToDate(src, objPath, libPath + "head/");
-  }
-  if (useCached && !gQuiet) {
-    if (gProgress)
-      gProgress->update(src, "cached");
-    else
-      std::cout << "[cached] " << src << std::endl;
-  }
-
-  if (!useCached) {
-    fs::create_directories(fs::path(asmPath).parent_path());
-    if (build(src, asmPath, config.mutability, config.debug)) {
-      return {src, asmPath, objPath, true, true};
-    } else {
-      return {src, asmPath, objPath, false, false};
+  try {
+    bool useCached = false;
+    if (!config.debug && gUseCache) {
+      ScopedTimer timer("cache-check", mod);
+      useCached = objectUpToDate(src, objPath, libPath + "head/");
     }
+    if (useCached && !gQuiet) {
+      if (gProgress)
+        gProgress->update(src, "cached");
+      else
+        std::cout << "[cached] " << src << std::endl;
+    }
+
+    if (!useCached) {
+      fs::create_directories(fs::path(asmPath).parent_path());
+      if (build(src, asmPath, config.mutability, config.debug)) {
+        return {src, asmPath, objPath, true, true};
+      } else {
+        return {src, asmPath, objPath, false, false};
+      }
+    }
+    return {src, asmPath, objPath, false, true};
+  } catch (const err::Exception &e) {
+    std::cerr << "Failed to compile module " << mod << ": " << e.errorMsg
+              << std::endl;
+  } catch (const std::exception &e) {
+    std::cerr << "Failed to compile module " << mod << ": " << e.what()
+              << std::endl;
+  } catch (...) {
+    std::cerr << "Failed to compile module " << mod << ": unknown exception"
+              << std::endl;
   }
-  return {src, asmPath, objPath, false, true};
+  return {src, asmPath, objPath, false, false};
 }
 
 bool assembleModules(const std::vector<ModuleResult> &modules,
@@ -2094,8 +2127,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     sources.push_back("./src/" + file + ".c");
 
   CompileProgress progress(sources, gQuiet);
-  if (!gQuiet)
-    gProgress = &progress;
+  ProgressScope progressScope(progress);
 
   std::vector<ModuleResult> moduleResults;
   if (gConcurrentBuild) {
@@ -2137,7 +2169,6 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   }
 
   if (hasError) {
-    gProgress = nullptr;
     std::cout << std::endl;
     return false;
   }
@@ -2196,12 +2227,10 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
 
   if (hasError) {
     std::cout << "Errors detected. Skipping linking." << std::endl;
-    gProgress = nullptr;
     return false;
   }
 
   if (!config.link) {
-    gProgress = nullptr;
     std::cout << std::endl;
     return true;
   }
@@ -2221,7 +2250,6 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   {
     ScopedTimer timer("link", ofile);
     if (system(gcc.c_str()) != 0) {
-      gProgress = nullptr;
       std::cout << std::endl;
       return false;
     }
@@ -2235,7 +2263,6 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       std::filesystem::remove(s);
     }
   }
-  gProgress = nullptr;
   std::cout << std::endl;
   return true;
 }
