@@ -1126,9 +1126,9 @@ std::string Call::toString() {
     result += "." + modList.get(i);
   }
   result += "(";
-  for (int i = 0; i < Args.count; i++) {
+  for (int i = Args.count - 1; i >= 0; i--) {
     result += Args.get(i)->toString();
-    if (i != Args.count - 1) {
+    if (i != 0) {
       result += ", ";
     }
   }

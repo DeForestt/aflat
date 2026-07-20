@@ -233,6 +233,17 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       auto callGen = call->generate(*this);
       OutputFile << callGen.file;
       output = callGen.expr.value();
+      if (output.type == "--std--flex--function" && !typeHint.empty() &&
+          typeHint != "let") {
+        output.type = typeHint;
+        if (auto primitive = parse::PRIMITIVE_TYPES.find(typeHint);
+            primitive != parse::PRIMITIVE_TYPES.end()) {
+          output.size = gen::utils::toSize(primitive->second);
+        } else if (auto hintedType = getType(typeHint, OutputFile)) {
+          output.size = dynamic_cast<gen::Enum *>(*hintedType) ? asmc::DWord
+                                                               : asmc::QWord;
+        }
+      }
       if (size != asmc::AUTO &&
           (output.type == "any" || output.type == "object" ||
            output.type == "--std--flex--function"))
