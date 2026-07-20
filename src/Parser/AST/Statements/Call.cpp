@@ -30,6 +30,50 @@ struct OverloadRetry : public std::exception {
         allowDiscardWarningFallback(allowDiscardWarning) {}
   const char *what() const noexcept override { return message.c_str(); }
 };
+
+bool isConcreteGenericClassName(const std::string &typeName) {
+  return typeName.find('<') != std::string::npos;
+}
+
+void ensureLazyConcreteGenericMethod(gen::CodeGenerator &generator,
+                                     gen::Class *cls, ast::Function *func,
+                                     asmc::File &file) {
+  if (cls == nullptr || func == nullptr || !func->hidden ||
+      !isConcreteGenericClassName(cls->Ident) || func->statement == nullptr)
+    return;
+  if (generator.suppressLazyMethodEmission())
+    return;
+
+  auto *body = new ast::Function(*func, false);
+  body->hidden = false;
+  body->locked = false;
+  body->scopeName = cls->Ident;
+  body->globalLocked = false;
+
+  if (file.lambdas == nullptr) {
+    file.lambdas = new asmc::File();
+    file.hasLambda = true;
+  }
+
+  auto saveReturnType = generator.returnType();
+  auto *saveScope = generator.scope();
+  auto savedCwd = generator.cwd();
+  auto savedNameSpaceTable = generator.nameSpaceTable();
+  generator.scope() = cls;
+  if (cls->templateModuleRoot != nullptr) {
+    if (!cls->templateModuleCwd.empty())
+      generator.cwd() = cls->templateModuleCwd;
+    for (const auto &[alias, target] : cls->templateNamespaceMap)
+      generator.nameSpaceTable().insert(alias, target);
+    file.lambdas->operator<<(
+        generator.ImportsOnly(cls->templateModuleRoot, true));
+  }
+  file.lambdas->operator<<(generator.GenSTMT(body));
+  generator.nameSpaceTable() = savedNameSpaceTable;
+  generator.cwd() = savedCwd;
+  generator.scope() = saveScope;
+  generator.returnType() = saveReturnType;
+}
 } // namespace
 
 namespace ast {
@@ -191,8 +235,11 @@ gen::GenerationResult Call::generateAttempt(
           for (const auto &genericType : func->genericTypes) {
             if (type.typeName == genericType &&
                 genericMap.find(genericType) == genericMap.end()) {
+              auto saveSuppress = generator.suppressLazyMethodEmission();
+              generator.suppressLazyMethodEmission() = true;
               auto exprType =
                   generator.GenExpr(this->Args.get(i), junkFile).type;
+              generator.suppressLazyMethodEmission() = saveSuppress;
               genericMap[genericType] = exprType;
               new_ident += "." + exprType;
             }
@@ -479,6 +526,7 @@ gen::GenerationResult Call::generateAttempt(
           }
         }
         if (func != nullptr) {
+          ensureLazyConcreteGenericMethod(generator, cl, func, file);
           this->modList.shift();
           this->modList.invert();
           this->modList.reset();
@@ -565,6 +613,7 @@ gen::GenerationResult Call::generateAttempt(
           generator.alert("cannot find function: " + ident + " in class " +
                           this->publify);
         };
+        ensureLazyConcreteGenericMethod(generator, cl, f, file);
         copyReturnMetadata(*func, *f);
         func->scope = f->scope;
         func->scopeName = f->scopeName;
@@ -594,6 +643,7 @@ gen::GenerationResult Call::generateAttempt(
           overloadTable, overloadIdent, currentOverloadIndex);
       if (f == nullptr)
         generator.alert("cannot find function: " + ident + " in " + cl->Ident);
+      ensureLazyConcreteGenericMethod(generator, cl, f, file);
       func->argTypes = f->argTypes;
       func->req = f->req;
       func->readOnly = f->readOnly;

@@ -276,7 +276,12 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
         if (auto *firstInstance = table[this->ident.ident]) {
           bool forwardDeclaration = (firstInstance->statement == nullptr &&
                                      this->statement != nullptr);
-          if (!forwardDeclaration && !firstInstance->wasGeneric &&
+          const bool deferredHiddenBody =
+              firstInstance->hidden && !this->hidden &&
+              firstInstance->scopeName == this->scopeName &&
+              firstInstance->ident.ident == this->ident.ident;
+          if (!forwardDeclaration && !deferredHiddenBody &&
+              !firstInstance->wasGeneric &&
               (!requireGlobalScope || this->scopeName == "global")) {
             this->overloadIndex = firstInstance->overloadIndex + 1;
             this->ident.ident += "_ovl" + std::to_string(this->overloadIndex);
