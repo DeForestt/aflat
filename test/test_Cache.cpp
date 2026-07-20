@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <fstream>
 #include <thread>
+#include <vector>
 
 #include "Configs.hpp"
 #include "catch.hpp"
@@ -9,8 +10,20 @@
 bool compileCFile(const std::string &path, bool debug);
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 
+namespace {
+struct ScopedCleanup {
+  std::vector<std::filesystem::path> paths;
+
+  ~ScopedCleanup() {
+    for (const auto &path : paths)
+      std::filesystem::remove_all(path);
+  }
+};
+} // namespace
+
 TEST_CASE("compileCFile cache reuse", "[cache]") {
   namespace fs = std::filesystem;
+  ScopedCleanup cleanup{{"src/tmp", ".cache/tmp"}};
   fs::create_directories("src/tmp");
   std::ofstream ofs("src/tmp/foo.c");
   ofs << "int foo(){return 42;}";
@@ -25,13 +38,11 @@ TEST_CASE("compileCFile cache reuse", "[cache]") {
   REQUIRE(compileCFile("tmp/foo", false));
   auto t2 = fs::last_write_time(obj);
   REQUIRE(t1 == t2);
-
-  fs::remove_all("src/tmp");
-  fs::remove_all(".cache/tmp");
 }
 
 TEST_CASE("module cache ignores non-template import changes", "[cache]") {
   namespace fs = std::filesystem;
+  ScopedCleanup cleanup{{"src/tmp", ".cache/tmp", "./bin/cache_test"}};
   fs::create_directories("src/tmp");
   std::ofstream bar("src/tmp/bar.af");
   bar << "export int bar(){return 1;}";
@@ -46,6 +57,7 @@ TEST_CASE("module cache ignores non-template import changes", "[cache]") {
       "[build]\nmain = tmp/foo\n\n[dependencies]\nbar = \"./src/tmp/bar.af\"\n";
   cfg::Config cfg = cfg::getConfig(cfgText);
   cfg.outPutFile = "./bin/cache_test";
+  cfg.link = false;
   REQUIRE(runConfig(cfg, "./libraries/std/", 'e'));
   fs::path obj(".cache/tmp/foo.o");
   REQUIRE(fs::exists(obj));
@@ -56,17 +68,15 @@ TEST_CASE("module cache ignores non-template import changes", "[cache]") {
   mod.close();
   cfg = cfg::getConfig(cfgText);
   cfg.outPutFile = "./bin/cache_test";
+  cfg.link = false;
   REQUIRE(runConfig(cfg, "./libraries/std/", 'e'));
   auto t2 = fs::last_write_time(obj);
   REQUIRE(t2 == t1);
-
-  fs::remove_all("src/tmp");
-  fs::remove_all(".cache/tmp");
-  fs::remove("./bin/cache_test");
 }
 
 TEST_CASE("module cache invalidates on imported template change", "[cache]") {
   namespace fs = std::filesystem;
+  ScopedCleanup cleanup{{"src/tmp", ".cache/tmp", "./bin/cache_test"}};
   fs::create_directories("src/tmp");
   std::ofstream bar("src/tmp/bar.af");
   bar << "types(T)\n";
@@ -89,6 +99,7 @@ TEST_CASE("module cache invalidates on imported template change", "[cache]") {
       "[build]\nmain = tmp/foo\n\n[dependencies]\nbar = \"./src/tmp/bar.af\"\n";
   cfg::Config cfg = cfg::getConfig(cfgText);
   cfg.outPutFile = "./bin/cache_test";
+  cfg.link = false;
   REQUIRE(runConfig(cfg, "./libraries/std/", 'e'));
   fs::path obj(".cache/tmp/foo.o");
   REQUIRE(fs::exists(obj));
@@ -99,11 +110,8 @@ TEST_CASE("module cache invalidates on imported template change", "[cache]") {
   mod.close();
   cfg = cfg::getConfig(cfgText);
   cfg.outPutFile = "./bin/cache_test";
+  cfg.link = false;
   REQUIRE(runConfig(cfg, "./libraries/std/", 'e'));
   auto t2 = fs::last_write_time(obj);
   REQUIRE(t2 > t1);
-
-  fs::remove_all("src/tmp");
-  fs::remove_all(".cache/tmp");
-  fs::remove("./bin/cache_test");
 }

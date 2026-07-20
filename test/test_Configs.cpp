@@ -66,13 +66,21 @@ TEST_CASE("Ini Build", "[Configs]") {
   std::string content = "[build]\n"
                         "output = ./bin/main\n"
                         "debug = true\n"
+                        "link = false\n"
                         "main = src/main\n"
                         "test = src/test\n";
   cfg::Config config = cfg::getConfig(content);
   REQUIRE(config.outPutFile == "./bin/main");
   REQUIRE(config.debug == true);
+  REQUIRE(config.link == false);
   REQUIRE(config.entryPoint == "src/main");
   REQUIRE(config.testFile == "src/test");
+};
+
+TEST_CASE("Legacy config can disable linking", "[Configs]") {
+  std::string content = "set nolink\n";
+  cfg::Config config = cfg::getConfig(content);
+  REQUIRE(config.link == false);
 };
 
 TEST_CASE("Ini Dependencies", "[Configs]") {

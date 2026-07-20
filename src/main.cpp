@@ -2200,6 +2200,12 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     return false;
   }
 
+  if (!config.link) {
+    gProgress = nullptr;
+    std::cout << std::endl;
+    return true;
+  }
+
   // run gcc on the linkerList
   std::string linkerList = "";
 
@@ -2214,7 +2220,11 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       compilerutils::buildLinkCmd(ofile, linkerList, config.debug);
   {
     ScopedTimer timer("link", ofile);
-    [[maybe_unused]] int rc = system(gcc.c_str());
+    if (system(gcc.c_str()) != 0) {
+      gProgress = nullptr;
+      std::cout << std::endl;
+      return false;
+    }
   }
   linker.erase(linker.begin(), linker.begin() + libs.size());
 

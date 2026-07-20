@@ -64,6 +64,9 @@ cfg::Config cfg::getConfig(std::string content) {
         } else if (lowerKey == "asm") {
           std::transform(value.begin(), value.end(), value.begin(), ::tolower);
           config.asm_ = value == "true" || value == "1";
+        } else if (lowerKey == "link") {
+          std::transform(value.begin(), value.end(), value.begin(), ::tolower);
+          config.link = value == "true" || value == "1";
         } else if (lowerKey == "mutability") {
           std::transform(value.begin(), value.end(), value.begin(), ::tolower);
           if (value == "promiscuous")
@@ -126,6 +129,8 @@ cfg::Config cfg::getConfig(std::string content) {
           config.compatibility = true;
         } else if (setting == "asm") {
           config.asm_ = true;
+        } else if (setting == "nolink") {
+          config.link = false;
         } else if (setting.substr(0, 3) == "mut") {
           auto mut = setting.substr(4);
           if (mut == "promiscuous") {
