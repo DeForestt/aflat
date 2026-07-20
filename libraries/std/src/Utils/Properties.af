@@ -1,5 +1,4 @@
 .needs <std>
-import Map from "Utils/Map";
 import Option from "Utils/Option";
 import List from "Collections";
 import Iterator from "Collections/Iterator";
