@@ -236,7 +236,7 @@ unique class uni_string {
     if left == NULL {
       left = my.empty_buffer();
     };
-    mutable adr right = raw;
+    const adr right = raw;
     const int left_len = st.len(left);
     const int right_len = st.len(right);
     const int new_len = left_len + right_len;

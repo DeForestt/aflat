@@ -108,7 +108,7 @@ union JSON {
 
     // Replace literal newline-like characters in a JSON string with printable escape sequences.
     private fn escapeStringNewlines(const adr value) -> uni_string {
-        mutable uni_string builder = "";
+        const uni_string builder = "";
         const int length = st.len(value);
         const char slash = '\\';
         const char formFeed = st.ascii(12);
@@ -134,7 +134,7 @@ union JSON {
         const let indent = 1 * indent_.or(0); // If 0, there will never be any indentation
         const let nextIndent = if indent > 0 indent + 1 else 0;
         const uni_string nl = if indent > 0 "\n" else "";
-        mutable uni_string indentStr = "";
+        const uni_string indentStr = "";
         for int i = 0; i < indent; i++ {
             indentStr.append_raw("  ");
         };
@@ -142,7 +142,7 @@ union JSON {
         match my {
             String(s) => {
                 const let escaped = my.escapeStringNewlines(s);
-                mutable uni_string out = "";
+                const uni_string out = "";
                 out.append(indentStr);
                 out.push_in_place('"');
                 out.append(escaped);
@@ -151,14 +151,14 @@ union JSON {
             },
             Number(n) => {
                 const uni_string digits = str.itos(n).cstr();
-                mutable uni_string out = "";
+                const uni_string out = "";
                 out.append(indentStr);
                 out.append(digits);
                 return out.to_string();
             },
             Boolean(b) => {
                 const uni_string literal = if b "true" else "false";
-                mutable uni_string out = "";
+                const uni_string out = "";
                 out.append(indentStr);
                 out.append(literal);
                 return out.to_string();
@@ -168,10 +168,10 @@ union JSON {
                     Some(value) => resolve value.get(), // unwrap the Box
                     None => return "[]"
                 };
-                mutable uni_string builder = "[";
+                const uni_string builder = "[";
                 builder.append(nl);
                 builder.append(indentStr);
-                string firstText = v.stringify(nextIndent);
+                const string firstText = v.stringify(nextIndent);
                 firstText.seal();
                 builder.append_raw(firstText.cstr());
                 foreach item in list {
@@ -180,7 +180,7 @@ union JSON {
                     builder.append_raw(",");
                     builder.append(nl);
                     builder.append(indentStr);
-                    string itemText = item.stringify(nextIndent);
+                    const string itemText = item.stringify(nextIndent);
                     itemText.seal();
                     builder.append_raw(itemText.cstr());
                 };
@@ -190,7 +190,7 @@ union JSON {
                 return builder.to_string();
             },
             Object(map) => {
-                mutable uni_string builder = "";
+                const  uni_string builder = "";
                 builder.append(nl);
                 builder.append(indentStr);
                 let first = true;
@@ -211,13 +211,13 @@ union JSON {
                     builder.append_raw(key);
                     builder.push_in_place('"');
                     builder.append_raw(":");
-                    string renderedText = value.stringify(nextIndent);
+                    const string renderedText = value.stringify(nextIndent);
                     renderedText.seal();
                     builder.append_raw(renderedText.cstr());
                 };
                 builder.append(nl);
                 builder.append(indentStr);
-                mutable uni_string out = "";
+                const uni_string out = "";
                 out.push_in_place('{');
                 out.append(builder);
                 out.push_in_place('}');
@@ -318,8 +318,8 @@ private fn isHexDigit(const char c) -> bool {
 };
 
 private fn parseStringValue(const string value) -> JSON! {
-    mutable uni_string builder = "";
-    mutable uni_string hexDigits = "";
+    const uni_string builder = "";
+    const uni_string hexDigits = "";
     int lastPos = value.tell();
     while true {
         match value.next() {

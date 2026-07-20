@@ -549,7 +549,7 @@ class HTTPRequest {
         const adr headers = my.headersBuffer();
         const int total = method.len() + 1 + endpoint.len() + 9 + 8 + host.len() + 2 +
                           str.len(headers) + 2 + str.len(my.body) + 1;
-        adr out = af_malloc(total);
+        const adr out = af_malloc(total);
         adr write = out;
 
         af_memcpy(write, method.cstr(), method.len());
@@ -727,7 +727,6 @@ class HTTPServer {
 
     bool processRequests(const adr req, const adr rsp) {
         st.print("404 Not Found\n");
-        const let err = my.get404Error();
         rsp =: "HTTP/1.1 404 Not Found\r\n<html><body><h1>404 Not Found</h1></body></html>\r\n";
         return false;
     };
