@@ -2,11 +2,16 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <future>
+#include <iomanip>
 #include <iostream>
 #include <map>
+#include <mutex>
+#include <set>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
@@ -44,7 +49,10 @@ bool compileCFile(const std::string &path, bool debug);
 bool objectUpToDate(const std::string &src, const std::string &obj,
                     const std::string &libPath);
 struct ModuleResult {
+  std::string srcPath;
+  std::string asmPath;
   std::string objPath;
+  bool needsAssembly = false;
   bool success;
 };
 struct DocEntry {
@@ -77,6 +85,45 @@ ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
                            const std::string &libPath);
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 bool runConfig(cfg::Config &config, const std::string &libPath);
+
+namespace {
+
+bool timingEnabled() {
+  static bool enabled = std::getenv("AFLAT_TIMING") != nullptr;
+  return enabled;
+}
+
+std::mutex &timingMutex() {
+  static std::mutex mutex;
+  return mutex;
+}
+
+class ScopedTimer {
+public:
+  ScopedTimer(std::string label, std::string subject)
+      : label(std::move(label)), subject(std::move(subject)),
+        start(std::chrono::steady_clock::now()) {}
+
+  ~ScopedTimer() {
+    if (!timingEnabled())
+      return;
+    auto end = std::chrono::steady_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+                  .count();
+    std::lock_guard<std::mutex> lock(timingMutex());
+    std::cerr << "[timing] " << label;
+    if (!subject.empty())
+      std::cerr << " " << subject;
+    std::cerr << ": " << ms << "ms\n";
+  }
+
+private:
+  std::string label;
+  std::string subject;
+  std::chrono::steady_clock::time_point start;
+};
+
+} // namespace
 
 static std::string trim(const std::string &value) {
   size_t start = 0;
@@ -1121,6 +1168,7 @@ static std::string sanitizeGenerics(const std::string &input) {
 
 bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug) {
+  ScopedTimer buildTimer("build", path);
   bool success = true;
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;
@@ -1144,6 +1192,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
   gen::scope::ScopeManager::getInstance()->reset();
   try {
     try {
+      ScopedTimer timer("preprocess+scan", path);
       PreProcessor pp;
       tokens = scanner.Scan(
           pp.PreProcess(content, libPath,
@@ -1159,9 +1208,17 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     tokens.invert();
     parse::Parser parser(mutability);
 
-    auto Prog = parser.parseStmt(tokens);
+    ast::Statement *Prog = nullptr;
+    {
+      ScopedTimer timer("parse", path);
+      Prog = parser.parseStmt(tokens);
+    }
 
-    auto lower = parse::lower::Lowerer(Prog);
+    {
+      ScopedTimer timer("lower", path);
+      auto lower = parse::lower::Lowerer(Prog);
+      Prog = lower.result();
+    }
 
     auto outputID = output.substr(0, output.find_last_of("."));
     if (outputID.find("/") != std::string::npos) {
@@ -1178,14 +1235,21 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
                              std::filesystem::path(path).parent_path().string(),
                              path);
     genny.mutability() = mutability;
-    auto file = genny.GenSTMT(Prog);
+    asmc::File file;
+    {
+      ScopedTimer timer("codegen", path);
+      file = genny.GenSTMT(Prog);
+    }
     if (!gQuiet) {
       if (gProgress)
         gProgress->update(origPath, "generating");
       else
         std::cout << "[generating] " << origPath << std::endl;
     }
-    file.collect();
+    {
+      ScopedTimer timer("asm-collect", path);
+      file.collect();
+    }
     if (genny.hasError()) {
       success = false;
       if (std::filesystem::exists(output))
@@ -1211,61 +1275,64 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
       path = wd.string() + path;
     }
 
-    // assembly file output
-    ofs.open(output);
+    {
+      ScopedTimer timer("write-asm", output);
+      // assembly file output
+      ofs.open(output);
 
-    // output linker commands
-    while (file.linker.head != nullptr) {
-      ofs << sanitizeGenerics(file.linker.pop()->toString());
-    }
-    // text section output
-    ofs << "\n\n.text\n\n";
-    // write the .file directive if in debug mode
-    if (debug) {
-      ofs << ".file\t\"" << path << "\"\n";
-    }
-    int logicalLine = -1;
-
-    while (file.text.head != nullptr) {
-      auto inst = file.text.pop();
-      if (inst->logicalLine != logicalLine && debug &&
-          dynamic_cast<asmc::Label *>(inst) == nullptr &&
-          inst->logicalLine > 0) {
-        logicalLine = inst->logicalLine;
+      // output linker commands
+      while (file.linker.head != nullptr) {
+        ofs << sanitizeGenerics(file.linker.pop()->toString());
       }
-      if (debug)
-        if (inst->logicalLine > 0 &&
-            dynamic_cast<asmc::Define *>(inst) == nullptr)
-          ofs << ".line " << inst->logicalLine - 1 << "\n";
-        else if (logicalLine > 0 &&
-                 dynamic_cast<asmc::Define *>(inst) != nullptr)
-          ofs << ".line " << logicalLine - 1 << "\n";
-      auto str = sanitizeGenerics(inst->toString());
-      // replace '\n' with "\n .line " + line number
-      // while(str.find('\n') != std::string::npos){
-      //   auto index = str.find('\n');
-      //   str = str.substr(0, index) + "\n.line " +
-      //   std::to_string(inst->logicalLine) + "\n" + str.substr(index +
-      //   1);
-      // }
-      if (dynamic_cast<asmc::Define *>(inst) == nullptr)
-        ofs << str;
-      // if (debug && dynamic_cast<asmc::Define *>(inst) != nullptr) ofs <<
-      // inst->toString();
-    }
+      // text section output
+      ofs << "\n\n.text\n\n";
+      // write the .file directive if in debug mode
+      if (debug) {
+        ofs << ".file\t\"" << path << "\"\n";
+      }
+      int logicalLine = -1;
 
-    // data section output
-    ofs << "\n\n.data\n\n";
-    while (file.data.head != nullptr) {
-      ofs << sanitizeGenerics(file.data.pop()->toString());
-    }
+      while (file.text.head != nullptr) {
+        auto inst = file.text.pop();
+        if (inst->logicalLine != logicalLine && debug &&
+            dynamic_cast<asmc::Label *>(inst) == nullptr &&
+            inst->logicalLine > 0) {
+          logicalLine = inst->logicalLine;
+        }
+        if (debug)
+          if (inst->logicalLine > 0 &&
+              dynamic_cast<asmc::Define *>(inst) == nullptr)
+            ofs << ".line " << inst->logicalLine - 1 << "\n";
+          else if (logicalLine > 0 &&
+                   dynamic_cast<asmc::Define *>(inst) != nullptr)
+            ofs << ".line " << logicalLine - 1 << "\n";
+        auto str = sanitizeGenerics(inst->toString());
+        // replace '\n' with "\n .line " + line number
+        // while(str.find('\n') != std::string::npos){
+        //   auto index = str.find('\n');
+        //   str = str.substr(0, index) + "\n.line " +
+        //   std::to_string(inst->logicalLine) + "\n" + str.substr(index +
+        //   1);
+        // }
+        if (dynamic_cast<asmc::Define *>(inst) == nullptr)
+          ofs << str;
+        // if (debug && dynamic_cast<asmc::Define *>(inst) != nullptr) ofs <<
+        // inst->toString();
+      }
 
-    // bss section output
-    ofs << "\n\n.bss\n\n";
-    while (file.bss.head != nullptr) {
-      ofs << sanitizeGenerics(file.bss.pop()->toString());
+      // data section output
+      ofs << "\n\n.data\n\n";
+      while (file.data.head != nullptr) {
+        ofs << sanitizeGenerics(file.data.pop()->toString());
+      }
+
+      // bss section output
+      ofs << "\n\n.bss\n\n";
+      while (file.bss.head != nullptr) {
+        ofs << sanitizeGenerics(file.bss.pop()->toString());
+      }
+      ofs.close();
     }
-    ofs.close();
     if (!gQuiet) {
       if (gProgress)
         gProgress->update(origPath, "done");
@@ -1643,6 +1710,221 @@ static void collectTemplateImportDependencies(
   }
 }
 
+struct CacheDependency {
+  std::filesystem::path path;
+  long long stamp = 0;
+};
+
+struct ModuleCacheMetadata {
+  std::filesystem::path source;
+  long long sourceStamp = 0;
+  std::vector<CacheDependency> includes;
+  std::vector<CacheDependency> templateImports;
+};
+
+static long long fileStamp(const std::filesystem::path &path) {
+  namespace fs = std::filesystem;
+  if (!fs::exists(path))
+    return -1;
+  return fs::last_write_time(path).time_since_epoch().count();
+}
+
+static std::filesystem::path metadataPathForObject(const std::string &obj) {
+  return std::filesystem::path(obj).replace_extension(".meta");
+}
+
+static ModuleCacheMetadata
+computeModuleCacheMetadata(const std::string &src, const std::string &libPath) {
+  namespace fs = std::filesystem;
+  ModuleCacheMetadata metadata;
+  metadata.source = fs::absolute(src).lexically_normal();
+  metadata.sourceStamp = fileStamp(metadata.source);
+
+  std::ifstream ifs(src);
+  std::string content((std::istreambuf_iterator<char>(ifs)),
+                      std::istreambuf_iterator<char>());
+  PreProcessor pp;
+  pp.PreProcess(content, libPath, fs::path(src).parent_path().string());
+  for (const auto &inc : pp.getIncludes()) {
+    if (!fs::exists(inc))
+      continue;
+    fs::path includePath = fs::absolute(inc).lexically_normal();
+    metadata.includes.push_back({includePath, fileStamp(includePath)});
+  }
+
+  std::vector<fs::path> templateDeps;
+  std::unordered_map<std::string, bool> visited;
+  collectTemplateImportDependencies(src, libPath, templateDeps, visited);
+  std::set<std::string> seen;
+  for (const auto &dep : templateDeps) {
+    if (!fs::exists(dep))
+      continue;
+    fs::path depPath = fs::absolute(dep).lexically_normal();
+    if (!seen.insert(depPath.string()).second)
+      continue;
+    metadata.templateImports.push_back({depPath, fileStamp(depPath)});
+  }
+  return metadata;
+}
+
+static bool writeModuleCacheMetadata(const std::string &src,
+                                     const std::string &obj,
+                                     const std::string &libPath) {
+  namespace fs = std::filesystem;
+  try {
+    ModuleCacheMetadata metadata = computeModuleCacheMetadata(src, libPath);
+    fs::path metaPath = metadataPathForObject(obj);
+    fs::create_directories(metaPath.parent_path());
+    std::ofstream out(metaPath);
+    out << "aflat-cache-v1\n";
+    out << "source\t" << metadata.sourceStamp << "\t"
+        << std::quoted(metadata.source.string()) << "\n";
+    for (const auto &dep : metadata.includes) {
+      out << "include\t" << dep.stamp << "\t" << std::quoted(dep.path.string())
+          << "\n";
+    }
+    for (const auto &dep : metadata.templateImports) {
+      out << "template\t" << dep.stamp << "\t" << std::quoted(dep.path.string())
+          << "\n";
+    }
+    return out.good();
+  } catch (const std::exception &) {
+    return false;
+  }
+}
+
+static bool readModuleCacheMetadata(const std::string &obj,
+                                    ModuleCacheMetadata &metadata) {
+  std::ifstream in(metadataPathForObject(obj));
+  if (!in.is_open())
+    return false;
+
+  std::string version;
+  std::getline(in, version);
+  if (version != "aflat-cache-v1")
+    return false;
+
+  std::string kind;
+  while (in >> kind) {
+    CacheDependency dep;
+    std::string path;
+    if (!(in >> dep.stamp >> std::quoted(path)))
+      return false;
+    dep.path = path;
+    if (kind == "source") {
+      metadata.source = dep.path;
+      metadata.sourceStamp = dep.stamp;
+    } else if (kind == "include") {
+      metadata.includes.push_back(dep);
+    } else if (kind == "template") {
+      metadata.templateImports.push_back(dep);
+    } else {
+      return false;
+    }
+  }
+  return !metadata.source.empty();
+}
+
+static bool metadataDependenciesUpToDate(const ModuleCacheMetadata &metadata) {
+  if (fileStamp(metadata.source) != metadata.sourceStamp)
+    return false;
+  for (const auto &dep : metadata.includes) {
+    if (fileStamp(dep.path) != dep.stamp)
+      return false;
+  }
+  for (const auto &dep : metadata.templateImports) {
+    if (fileStamp(dep.path) != dep.stamp)
+      return false;
+  }
+  return true;
+}
+
+static std::string moduleNameFromSourcePath(const std::filesystem::path &path) {
+  namespace fs = std::filesystem;
+  fs::path abs = fs::absolute(path).lexically_normal();
+  fs::path srcRoot = fs::absolute("src").lexically_normal();
+  auto absIt = abs.begin();
+  auto rootIt = srcRoot.begin();
+  while (rootIt != srcRoot.end() && absIt != abs.end() && *rootIt == *absIt) {
+    ++rootIt;
+    ++absIt;
+  }
+  if (rootIt != srcRoot.end())
+    return "";
+
+  fs::path rel;
+  for (; absIt != abs.end(); ++absIt)
+    rel /= *absIt;
+  if (rel.extension() == ".af")
+    rel.replace_extension("");
+  return rel.generic_string();
+}
+
+static void collectReachableModulesFromSource(const std::filesystem::path &src,
+                                              const std::string &libPath,
+                                              std::set<std::string> &reachable,
+                                              std::set<std::string> &visited) {
+  namespace fs = std::filesystem;
+  fs::path sourcePath = fs::absolute(src).lexically_normal();
+  std::string sourceKey = sourcePath.string();
+  if (!visited.insert(sourceKey).second)
+    return;
+
+  std::string moduleName = moduleNameFromSourcePath(sourcePath);
+  if (!moduleName.empty())
+    reachable.insert(moduleName);
+
+  ast::Statement *root = parseCacheDependencyFile(sourcePath, libPath);
+  std::vector<ast::Import *> imports;
+  collectImports(root, imports);
+  for (auto import : imports) {
+    auto importPath =
+        resolveImportPathForCache(*import, sourcePath.parent_path());
+    if (!fs::exists(importPath))
+      continue;
+    if (moduleNameFromSourcePath(importPath).empty())
+      continue;
+    collectReachableModulesFromSource(importPath, libPath, reachable, visited);
+  }
+}
+
+static std::vector<std::string>
+reachableBuildModules(const cfg::Config &config, const std::string &entryPoint,
+                      const std::string &libPath) {
+  std::set<std::string> reachable;
+  std::set<std::string> visited;
+  try {
+    collectReachableModulesFromSource("./src/" + entryPoint + ".af",
+                                      libPath + "head/", reachable, visited);
+  } catch (const err::Exception &) {
+    auto fallback = config.modules;
+    fallback.push_back(entryPoint);
+    return fallback;
+  } catch (const std::exception &) {
+    auto fallback = config.modules;
+    fallback.push_back(entryPoint);
+    return fallback;
+  }
+
+  std::vector<std::string> modules;
+  std::set<std::string> added;
+  for (const auto &mod : config.modules) {
+    if (reachable.find(mod) == reachable.end())
+      continue;
+    modules.push_back(mod);
+    added.insert(mod);
+  }
+  for (const auto &mod : reachable) {
+    if (added.find(mod) != added.end())
+      continue;
+    modules.push_back(mod);
+    added.insert(mod);
+  }
+  if (added.find(entryPoint) == added.end())
+    modules.push_back(entryPoint);
+  return modules;
+}
+
 bool objectUpToDate(const std::string &src, const std::string &obj,
                     const std::string &libPath) {
   namespace fs = std::filesystem;
@@ -1651,32 +1933,16 @@ bool objectUpToDate(const std::string &src, const std::string &obj,
   auto objTime = fs::last_write_time(obj);
   if (objTime < fs::last_write_time(src))
     return false;
-  std::ifstream ifs(src);
-  std::string content((std::istreambuf_iterator<char>(ifs)),
-                      std::istreambuf_iterator<char>());
-  PreProcessor pp;
-  pp.PreProcess(content, libPath, fs::path(src).parent_path().string());
-  for (const auto &inc : pp.getIncludes()) {
-    if (fs::exists(inc) && objTime < fs::last_write_time(inc))
-      return false;
-  }
-  std::vector<fs::path> templateDeps;
-  std::unordered_map<std::string, bool> visited;
-  try {
-    collectTemplateImportDependencies(src, libPath, templateDeps, visited);
-  } catch (const err::Exception &) {
+  ModuleCacheMetadata metadata;
+  if (!readModuleCacheMetadata(obj, metadata))
     return false;
-  } catch (const std::exception &) {
+  if (fs::absolute(src).lexically_normal() != metadata.source)
     return false;
-  }
-  for (const auto &dep : templateDeps) {
-    if (fs::exists(dep) && objTime < fs::last_write_time(dep))
-      return false;
-  }
-  return true;
+  return metadataDependenciesUpToDate(metadata);
 }
 
 bool compileCFile(const std::string &path, bool debug) {
+  ScopedTimer compileTimer("compile-c", path);
   namespace fs = std::filesystem;
   std::string src = "./src/" + path + ".c";
   std::string obj = "./.cache/" + path + ".o";
@@ -1714,7 +1980,11 @@ bool compileCFile(const std::string &path, bool debug) {
     else
       std::cout << "[generating] " << src << std::endl;
   }
-  bool result = system(cmd.c_str()) == 0;
+  bool result = false;
+  {
+    ScopedTimer timer("gcc-c", src);
+    result = system(cmd.c_str()) == 0;
+  }
   if (!gQuiet) {
     if (gProgress)
       gProgress->update(src, "done");
@@ -1726,13 +1996,17 @@ bool compileCFile(const std::string &path, bool debug) {
 
 ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
                            const std::string &libPath) {
+  ScopedTimer moduleTimer("compile-module", mod);
   namespace fs = std::filesystem;
   std::string src = "./src/" + mod + ".af";
   std::string asmPath = "./.cache/" + mod + ".s";
   std::string objPath = "./.cache/" + mod + ".o";
 
-  bool useCached = !config.debug && gUseCache &&
-                   objectUpToDate(src, objPath, libPath + "head/");
+  bool useCached = false;
+  if (!config.debug && gUseCache) {
+    ScopedTimer timer("cache-check", mod);
+    useCached = objectUpToDate(src, objPath, libPath + "head/");
+  }
   if (useCached && !gQuiet) {
     if (gProgress)
       gProgress->update(src, "cached");
@@ -1743,18 +2017,52 @@ ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
   if (!useCached) {
     fs::create_directories(fs::path(asmPath).parent_path());
     if (build(src, asmPath, config.mutability, config.debug)) {
-      std::string cmd = config.debug ? "gcc -g -c " : "gcc -c ";
-      cmd += asmPath + " -o " + objPath;
-      if (system(cmd.c_str()) != 0) {
-        return {objPath, false};
-      }
-      if (!config.asm_)
-        fs::remove(asmPath);
+      return {src, asmPath, objPath, true, true};
     } else {
-      return {objPath, false};
+      return {src, asmPath, objPath, false, false};
     }
   }
-  return {objPath, true};
+  return {src, asmPath, objPath, false, true};
+}
+
+bool assembleModules(const std::vector<ModuleResult> &modules,
+                     const cfg::Config &config, const std::string &libPath) {
+  namespace fs = std::filesystem;
+  std::vector<ModuleResult> pending;
+  for (const auto &module : modules) {
+    if (module.success && module.needsAssembly)
+      pending.push_back(module);
+  }
+  if (pending.empty())
+    return true;
+
+  std::map<std::string, std::vector<ModuleResult>> byDirectory;
+  for (const auto &module : pending) {
+    fs::path asmPath(module.asmPath);
+    byDirectory[asmPath.parent_path().string()].push_back(module);
+  }
+
+  {
+    ScopedTimer timer("gcc-asm-batch",
+                      std::to_string(pending.size()) + " module(s)");
+    for (const auto &[directory, group] : byDirectory) {
+      std::string cmd = "cd " + directory + " && ";
+      cmd += config.debug ? "gcc -g -c " : "gcc -c ";
+      for (const auto &module : group)
+        cmd += fs::path(module.asmPath).filename().string() + " ";
+      if (system(cmd.c_str()) != 0)
+        return false;
+    }
+  }
+
+  for (const auto &module : pending) {
+    if (gUseCache)
+      writeModuleCacheMetadata(module.srcPath, module.objPath,
+                               libPath + "head/");
+    if (!config.asm_)
+      fs::remove(module.asmPath);
+  }
+  return true;
 }
 
 bool runConfig(cfg::Config &config, const std::string &libPath) {
@@ -1763,20 +2071,24 @@ bool runConfig(cfg::Config &config, const std::string &libPath) {
 
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   namespace fs = std::filesystem;
+  ast::resetSharedGenericFunctionEmissions();
   std::vector<std::string> linker;
   bool hasError = false;
 
   std::string ofile = config.outPutFile;
 
+  std::string entryModule;
   if (pmode == 'e') {
-    const auto entryPoint = config.entryPoint;
-    config.modules.push_back(entryPoint);
+    entryModule = config.entryPoint;
   } else if (pmode == 't') {
-    config.modules.push_back(config.testFile);
+    entryModule = config.testFile;
   }
+  std::vector<std::string> modules =
+      entryModule.empty() ? config.modules
+                          : reachableBuildModules(config, entryModule, libPath);
 
   std::vector<std::string> sources;
-  for (const auto &mod : config.modules)
+  for (const auto &mod : modules)
     sources.push_back("./src/" + mod + ".af");
   for (const auto &file : config.cFiles)
     sources.push_back("./src/" + file + ".c");
@@ -1785,9 +2097,10 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   if (!gQuiet)
     gProgress = &progress;
 
+  std::vector<ModuleResult> moduleResults;
   if (gConcurrentBuild) {
     std::vector<std::future<ModuleResult>> futures;
-    for (const auto &mod : config.modules) {
+    for (const auto &mod : modules) {
       futures.emplace_back(std::async(std::launch::async, compileModule, mod,
                                       std::cref(config), libPath));
     }
@@ -1795,17 +2108,24 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       ModuleResult r = f.get();
       if (!r.success)
         hasError = true;
-      linker.push_back(r.objPath);
+      moduleResults.push_back(r);
     }
   } else {
-    for (const auto &mod : config.modules) {
+    for (const auto &mod : modules) {
       ModuleResult r = compileModule(mod, config, libPath);
       if (!r.success) {
         hasError = true;
-        continue;
       }
-      linker.push_back(r.objPath);
+      moduleResults.push_back(r);
     }
+  }
+
+  if (!hasError && !assembleModules(moduleResults, config, libPath))
+    hasError = true;
+
+  for (const auto &r : moduleResults) {
+    if (r.success)
+      linker.push_back(r.objPath);
   }
 
   for (auto file : config.cFiles) {
@@ -1814,6 +2134,12 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     } else {
       hasError = true;
     }
+  }
+
+  if (hasError) {
+    gProgress = nullptr;
+    std::cout << std::endl;
+    return false;
   }
 
   std::vector<std::string> libs = {
@@ -1886,7 +2212,10 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
 
   std::string gcc =
       compilerutils::buildLinkCmd(ofile, linkerList, config.debug);
-  [[maybe_unused]] int rc = system(gcc.c_str());
+  {
+    ScopedTimer timer("link", ofile);
+    [[maybe_unused]] int rc = system(gcc.c_str());
+  }
   linker.erase(linker.begin(), linker.begin() + libs.size());
 
   if (!config.asm_) {

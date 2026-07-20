@@ -6,10 +6,24 @@
 #include "Scanner.hpp"
 
 #include <algorithm>
+#include <mutex>
 #include <regex>
+#include <set>
 
 namespace ast {
 namespace {
+
+std::set<std::string> sharedGenericFunctionEmissions;
+std::mutex sharedGenericFunctionEmissionMutex;
+
+bool isConcreteGenericScope(const std::string &scopeName) {
+  return scopeName.find('<') != std::string::npos;
+}
+
+bool registerSharedGenericFunctionEmission(const std::string &label) {
+  std::lock_guard<std::mutex> lock(sharedGenericFunctionEmissionMutex);
+  return sharedGenericFunctionEmissions.insert(label).second;
+}
 
 int maxFrameOffset(const asmc::File &file) {
   static const std::regex rbpOffsetPattern(R"(-([0-9]+)\(%rbp\))");
@@ -43,6 +57,11 @@ void appendTemplateTypes(std::string &typeName,
 }
 
 } // namespace
+
+void resetSharedGenericFunctionEmissions() {
+  std::lock_guard<std::mutex> lock(sharedGenericFunctionEmissionMutex);
+  sharedGenericFunctionEmissions.clear();
+}
 
 void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
                                  parse::Parser &parser) {
@@ -294,6 +313,10 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     if (this->scopeName != "global")
       emittedLabel = "pub_" + this->scopeName + "_" + this->ident.ident;
 
+    if (isConcreteGenericScope(this->scopeName) &&
+        !registerSharedGenericFunctionEmission(emittedLabel))
+      return {file, std::nullopt};
+
     if (!generator.generatedFunctionNames().insert(emittedLabel).second)
       return {file, std::nullopt};
   }
@@ -413,8 +436,12 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     };
     int counter = 0;
     auto argmute = generator.GenArgs(this->args, file, *this, counter);
-    if (!isLambda && this->scope == ast::Public && !hidden)
+    if (!isLambda && this->scope == ast::Public &&
+        (!hidden || isConcreteGenericScope(this->scopeName))) {
+      if (isConcreteGenericScope(this->scopeName))
+        link->command = "weak";
       file.linker.push(link);
+    }
 
     file << argmute;
 
