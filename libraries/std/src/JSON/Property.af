@@ -18,7 +18,7 @@ class JsonSerializable {
   };
 
   fn serialize() -> JSON {
-    let obj = json.Object(new unordered_map::<adr,Box::<JSON>>());
+    const let obj = json.Object(new unordered_map::<adr,Box::<JSON>>());
     foreach field in my.fields {
       const let current = field.get();
       obj.set(current.key, current.serialize()).expect("failed to set JSON field");

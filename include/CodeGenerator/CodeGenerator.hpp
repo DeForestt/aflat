@@ -122,6 +122,8 @@ public:
   const bool &returnFlag() const;
   bool &errorFlag();
   const bool &errorFlag() const;
+  bool &suppressLazyMethodEmission();
+  const bool &suppressLazyMethodEmission() const;
   HashMap<ast::Statement *> &includedMemo();
   HashMap<ast::Statement *> &includedClasses();
   HashMap<std::string> &nameSpaceTable();

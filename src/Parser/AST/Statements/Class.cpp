@@ -14,6 +14,10 @@ bool isPrimitiveType(const std::string &typeName) {
 
 bool isAdrType(const std::string &typeName) { return typeName == "adr"; }
 
+bool isConcreteGenericClassName(const std::string &typeName) {
+  return typeName.find('<') != std::string::npos;
+}
+
 int classByteSize(const gen::Class *type) {
   if (type == nullptr || type->SymbolTable.head == nullptr)
     return 0;
@@ -431,7 +435,13 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
     this->statement = seq2;
   };
 
-  auto hoist = gen::utils::copyAllFunctionShells(this->statement);
+  const bool lazyConcreteGenericMethods =
+      this->hidden && isConcreteGenericClassName(this->ident.ident) &&
+      this->genericTypes.empty();
+
+  auto hoist = lazyConcreteGenericMethods
+                   ? nullptr
+                   : gen::utils::copyAllFunctionShells(this->statement);
   if (hoist != nullptr) {
     OutputFile << generator.GenSTMT(hoist);
   }
@@ -439,6 +449,9 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   if (this->includer && this->genericTypes.size() == 0) {
     gen::utils::shellStatement(this->statement);
   }
+
+  if (lazyConcreteGenericMethods)
+    gen::utils::shellStatement(this->statement);
 
   if (type->uniqueType) {
     OutputFile << generator.GenSTMT(

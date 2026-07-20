@@ -76,4 +76,6 @@ private:
   void parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
                          parse::Parser &parser);
 };
+
+void resetSharedGenericFunctionEmissions();
 }; // namespace ast

@@ -57,6 +57,49 @@ private:
   CodeGenerator &generator;
 };
 
+bool isConcreteGenericClassName(const std::string &typeName) {
+  return typeName.find('<') != std::string::npos;
+}
+
+void ensureLazyConcreteGenericMethod(CodeGenerator &generator, Class *cls,
+                                     ast::Function *func, asmc::File &file) {
+  if (cls == nullptr || func == nullptr || !func->hidden ||
+      !isConcreteGenericClassName(cls->Ident) || func->statement == nullptr)
+    return;
+  if (generator.suppressLazyMethodEmission())
+    return;
+
+  auto *body = new ast::Function(*func, false);
+  body->hidden = false;
+  body->locked = false;
+  body->scopeName = cls->Ident;
+  body->globalLocked = false;
+
+  if (file.lambdas == nullptr) {
+    file.lambdas = new asmc::File();
+    file.hasLambda = true;
+  }
+
+  auto saveReturnType = generator.returnType();
+  auto *saveScope = generator.scope();
+  auto savedCwd = generator.cwd();
+  auto savedNameSpaceTable = generator.nameSpaceTable();
+  generator.scope() = cls;
+  if (cls->templateModuleRoot != nullptr) {
+    if (!cls->templateModuleCwd.empty())
+      generator.cwd() = cls->templateModuleCwd;
+    for (const auto &[alias, target] : cls->templateNamespaceMap)
+      generator.nameSpaceTable().insert(alias, target);
+    file.lambdas->operator<<(
+        generator.ImportsOnly(cls->templateModuleRoot, true));
+  }
+  file.lambdas->operator<<(generator.GenSTMT(body));
+  generator.nameSpaceTable() = savedNameSpaceTable;
+  generator.cwd() = savedCwd;
+  generator.scope() = saveScope;
+  generator.returnType() = saveReturnType;
+}
+
 } // namespace
 
 gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
@@ -257,6 +300,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
             std::string functionName = var.modList.shift();
             auto func = cl->nameTable[functionName];
             if (func) {
+              ensureLazyConcreteGenericMethod(*this, cl, func, OutputFile);
               output.access = "$pub_" + cl->Ident + "_" + func->ident.ident;
               output.type = "adr";
               output.size = asmc::QWord;
@@ -414,6 +458,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.access = '$' + nameTable()[ident]->ident.ident;
         output.type = typeName;
       } else if (scope() != nullptr && scope()->nameTable[ident] != nullptr) {
+        ensureLazyConcreteGenericMethod(*this, scope(),
+                                        scope()->nameTable[ident], OutputFile);
         output.size = asmc::QWord;
         output.access = "$pub_" + scope()->Ident + "_" + ident;
         output.type = "adr";

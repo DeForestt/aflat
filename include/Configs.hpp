@@ -19,6 +19,7 @@ struct Config {
   bool debug = false;
   bool compatibility = false;
   bool asm_ = false;
+  bool link = true;
 };
 
 Config getConfig(std::string content);

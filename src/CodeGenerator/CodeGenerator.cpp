@@ -156,6 +156,7 @@ struct gen::CodeGenerator::Impl {
   bool inFunction = false;
   bool returnFlag = false;
   bool errorFlag = false;
+  bool suppressLazyMethodEmission = false;
   HashMap<ast::Statement *> includedMemo;
   HashMap<ast::Statement *> includedClasses;
   HashMap<std::string> nameSpaceTable;
@@ -490,6 +491,13 @@ const bool &gen::CodeGenerator::returnFlag() const { return impl->returnFlag; }
 
 bool &gen::CodeGenerator::errorFlag() { return impl->errorFlag; }
 const bool &gen::CodeGenerator::errorFlag() const { return impl->errorFlag; }
+
+bool &gen::CodeGenerator::suppressLazyMethodEmission() {
+  return impl->suppressLazyMethodEmission;
+}
+const bool &gen::CodeGenerator::suppressLazyMethodEmission() const {
+  return impl->suppressLazyMethodEmission;
+}
 
 HashMap<ast::Statement *> &gen::CodeGenerator::includedMemo() {
   return impl->includedMemo;
