@@ -318,20 +318,37 @@ class HTTPMessage {
         };
     };
 
-    private void parseReq() {
-        const let rsp = my.origin;
-        const let lines = rsp.split('\r');
-        const string firstLine = lines.get(0).expect("Invalid HTTP message").copy();
-        // firstLine.trim();
-        const let firstLineParts = firstLine.split(' ');
+    private int findChar(const string value, const char target, const int start) {
+        for mutable int i = start; i < value.len(); i = i + 1 {
+            if value.at(i) == target {
+                return i;
+            };
+        };
+        return -1;
+    };
 
-        if firstLineParts.count() < 3 {            
+    private void parseReq() {
+        const string rsp = my.origin;
+        const int firstLineEnd = my.findChar(rsp, '\r', 0);
+        if firstLineEnd == -1 {
             return;
         };
 
-        const string method = firstLineParts.get(0).expect("Invalid HTTP message").copy();
-        my.endpoint = firstLineParts.get(1).expect("Invalid HTTP message").copy();
-        my.version = firstLineParts.get(2).expect("Invalid HTTP message").copy();
+        const string firstLine = rsp.subString(0, firstLineEnd);
+        const int methodEnd = my.findChar(firstLine, ' ', 0);
+        if methodEnd == -1 {
+            return;
+        };
+
+        const int endpointStart = methodEnd + 1;
+        const int endpointEnd = my.findChar(firstLine, ' ', endpointStart);
+        if endpointEnd == -1 {
+            return;
+        };
+
+        const string method = firstLine.subString(0, methodEnd);
+        my.endpoint = firstLine.subString(endpointStart, endpointEnd);
+        my.version = firstLine.subString(endpointEnd + 1, firstLine.len());
         my.method = stringToMethod(method);
 
         if my.endpoint.indexOf('?') != -1 {
@@ -342,40 +359,48 @@ class HTTPMessage {
 
         my.switch = false;
 
-        for int i = 1; i < lines.count(); i = i + 1 {
-            if i == 0 {
-                continue;
-            };
-            const string line = lines.get(i).expect("Invalid HTTP message").copy();
-            if line == "\n" {
-                my.switch = true;
-                continue;
+        mutable int lineStart = firstLineEnd + 1;
+        while lineStart < rsp.len() {
+            if rsp.at(lineStart) == '\n' {
+                lineStart = lineStart + 1;
             };
 
-            if my.switch {
-                my.body = my.body + line + "\r\n";
-                continue;
-            };
-
-            const let sections = line.split(':');
-            if sections.count() < 2 {
-                continue;
-            };
-
-            string key = sections.get(0).expect("Invalid HTTP message").copy();
-            string value = sections.get(1).expect("Invalid HTTP message").copy();
-
-            if sections.count() > 2 {
-                for int j = 2; j < sections.count(); j = j + 1 {
-                    value = value + ":";
-                    const string t = sections.get(j).expect("Invalid HTTP message").copy();
-                    value = value + t;
+            const int lineEnd = my.findChar(rsp, '\r', lineStart);
+            if lineEnd == -1 {
+                if lineStart < rsp.len() {
+                    my.body = rsp.subString(lineStart, rsp.len());
                 };
+                return;
             };
+
+            if lineEnd == lineStart {
+                my.switch = true;
+                lineStart = lineEnd + 1;
+                continue;
+            };
+
+            const string line = rsp.subString(lineStart, lineEnd);
+            if my.switch {
+                if line.len() > 0 {
+                    my.body = my.body + line + "\r\n";
+                };
+                lineStart = lineEnd + 1;
+                continue;
+            };
+
+            const int sep = my.findChar(line, ':', 0);
+            if sep == -1 {
+                lineStart = lineEnd + 1;
+                continue;
+            };
+
+            string key = line.subString(0, sep);
+            string value = line.subString(sep + 1, line.len());
             key = key.trim();
             value = value.trim();
             const HTTPHeader n = new HTTPHeader(key.cstr(), value.cstr());
             my.headers.push_back($n);
+            lineStart = lineEnd + 1;
         };
         return;
     };

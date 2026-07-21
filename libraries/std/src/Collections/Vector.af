@@ -241,6 +241,15 @@ class vector {
         const generic val = my.head + (index * T);
         return opt.Some(new view::<T>(val));
     };
+    
+    when (T is unique and T has __copy__)
+    fn get(const int index) -> option::<T> {
+        if index >= my.count | index < 0 {
+            return opt.None::<view::<T>>();
+        };
+        const generic val = my.head + (index * T);
+        return val.__copy__();
+    };
 
     when (T is not unique and T missing __copy__ and T is not primitive)
     fn get(const int index) -> option::<T> {
@@ -277,6 +286,16 @@ class vector {
         return val;
     };
 
+    when (T is unique and T has __copy__)
+    fn next() -> option::<T> {
+        const let val = my.get(my.iteratorIndex);
+        my.iteratorIndex = my.iteratorIndex + 1;
+        if my.iteratorIndex > my.count {
+            my.iteratorIndex = 0; // Reset iterator index if it exceeds the count
+        };
+        return val;
+    };
+
     when (T is not unique and T has __copy__)
     fn next() -> option::<T> {
         const let val = my.get(my.iteratorIndex);
@@ -296,6 +315,7 @@ class vector {
         };
         return val;
     };
+
 
     when (T is unique and T missing __copy__)
     fn findFirst(const adr predicate, * const adr args) -> option::<view::<T>> {
