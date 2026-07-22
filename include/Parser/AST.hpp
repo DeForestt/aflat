@@ -233,7 +233,7 @@ public:
 
   std::string toString() override {
     std::string result = Ident;
-    for (int i = 0; i < modList.count; i++) {
+    for (int i = modList.count - 1; i >= 0; i--) {
       result += "." + modList.get(i);
     }
     return result;
@@ -297,7 +297,7 @@ public:
 
   std::string toString() override {
     std::string result = "?" + Ident;
-    for (int i = 0; i < modList.count; i++) {
+    for (int i = modList.count - 1; i >= 0; i--) {
       result += "." + modList.get(i);
     }
     return result;
@@ -312,7 +312,7 @@ public:
 
   std::string toString() override {
     std::string result = Ident;
-    for (int i = 0; i < modList.count; i++) {
+    for (int i = modList.count - 1; i >= 0; i--) {
       result += "." + modList.get(i);
     }
 

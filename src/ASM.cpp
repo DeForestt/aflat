@@ -383,10 +383,51 @@ std::string asmc::Define::toString() {
 }
 
 void asmc::File::operator<<(asmc::File file) {
+  if (!file.lazyMethodLabels.empty()) {
+    bool hasDuplicate = false;
+    for (const auto &label : file.lazyMethodLabels) {
+      if (this->lazyMethodLabels.find(label) != this->lazyMethodLabels.end()) {
+        hasDuplicate = true;
+        break;
+      }
+    }
+    if (hasDuplicate) {
+      links::LinkedList<asmc::Instruction *> filteredText;
+      bool skippingDuplicateBody = false;
+      while (file.text.head != nullptr) {
+        auto *inst = file.text.pop();
+        if (auto *label = dynamic_cast<asmc::Label *>(inst)) {
+          if (file.lazyMethodLabels.find(label->label) !=
+              file.lazyMethodLabels.end()) {
+            skippingDuplicateBody = this->lazyMethodLabels.find(label->label) !=
+                                    this->lazyMethodLabels.end();
+          } else if (!label->label.empty() && label->label[0] != '.') {
+            skippingDuplicateBody = false;
+          }
+        }
+        if (!skippingDuplicateBody)
+          filteredText.append(inst);
+      }
+      file.text = filteredText;
+
+      links::LinkedList<asmc::Instruction *> filteredLinker;
+      while (file.linker.head != nullptr) {
+        auto *inst = file.linker.pop();
+        auto *link = dynamic_cast<asmc::LinkTask *>(inst);
+        if (link == nullptr || this->lazyMethodLabels.find(link->operand) ==
+                                   this->lazyMethodLabels.end()) {
+          filteredLinker.append(inst);
+        }
+      }
+      file.linker = filteredLinker;
+    }
+  }
   this->linker.stitch(file.linker);
   this->text.istitch(file.text);
   this->bss.stitch(file.bss);
   this->data.stitch(file.data);
+  this->lazyMethodLabels.insert(file.lazyMethodLabels.begin(),
+                                file.lazyMethodLabels.end());
   if (!this->hasLambda && file.hasLambda) {
     this->hasLambda = true;
     this->lambdas = new asmc::File;
@@ -402,6 +443,8 @@ void asmc::File::cstitch(asmc::File file) {
   this->text.istitch(file.text);
   this->bss.stitch(file.bss);
   this->data.stitch(file.data);
+  this->lazyMethodLabels.insert(file.lazyMethodLabels.begin(),
+                                file.lazyMethodLabels.end());
 }
 
 void asmc::File::operator>>(asmc::File file) {
@@ -409,6 +452,8 @@ void asmc::File::operator>>(asmc::File file) {
   this->text.stitch(file.text);
   this->bss.stitch(file.bss);
   this->data.stitch(file.data);
+  this->lazyMethodLabels.insert(file.lazyMethodLabels.begin(),
+                                file.lazyMethodLabels.end());
   if (!this->hasLambda && file.hasLambda) {
     this->hasLambda = true;
     this->lambdas = new asmc::File();
@@ -424,6 +469,25 @@ void asmc::File::collect() {
     this->lambdas->collect();
     this->cstitch(*this->lambdas);
     delete this->lambdas;
+  }
+  if (!this->lazyMethodLabels.empty()) {
+    std::set<std::string> seenLazyLabels;
+    links::LinkedList<asmc::Instruction *> filteredText;
+    bool skippingDuplicateBody = false;
+    while (this->text.head != nullptr) {
+      auto *inst = this->text.pop();
+      if (auto *label = dynamic_cast<asmc::Label *>(inst)) {
+        if (this->lazyMethodLabels.find(label->label) !=
+            this->lazyMethodLabels.end()) {
+          skippingDuplicateBody = !seenLazyLabels.insert(label->label).second;
+        } else if (!label->label.empty() && label->label[0] != '.') {
+          skippingDuplicateBody = false;
+        }
+      }
+      if (!skippingDuplicateBody)
+        filteredText.append(inst);
+    }
+    this->text = filteredText;
   }
   this->optimize();
 }

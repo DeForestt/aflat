@@ -102,3 +102,19 @@ TEST_CASE("Parser accepts named annotation arguments", "[parser]") {
   CHECK(decAssign->annotations[0].namedArgs["min"] == "0");
   CHECK(decAssign->annotations[0].namedArgs["max"] == "10");
 }
+
+TEST_CASE("Expression toString preserves member and argument order",
+          "[parser]") {
+  lex::Lexer lexer;
+  parse::Parser parser;
+
+  auto chainTokens = lexer.Scan("my.name.copy()");
+  chainTokens.invert();
+  ast::Expr *chain = parser.parseExpr(chainTokens);
+  REQUIRE(chain->toString() == "my.name.copy()");
+
+  auto callTokens = lexer.Scan("foo(first, second)");
+  callTokens.invert();
+  ast::Expr *call = parser.parseExpr(callTokens);
+  REQUIRE(call->toString() == "foo(first, second)");
+}

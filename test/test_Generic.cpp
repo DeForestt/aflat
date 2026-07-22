@@ -130,6 +130,50 @@ TEST_CASE("generic type variable declaration", "[generics]") {
   REQUIRE(result);
 }
 
+TEST_CASE("lazy generic methods emit nested lazy method calls", "[generics]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/lazy_generic_method_cascade");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "lazy_generic_method_cascade.af";
+  const auto output = dir / "lazy_generic_method_cascade.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "import string from \"String\";\n";
+  ofs << "types(T)\n";
+  ofs << "class Inner {\n";
+  ofs << "    T value = value;\n";
+  ofs << "    fn init(T value) -> Self { return my; };\n";
+  ofs << "    fn toString() -> string { return \"inner\"; };\n";
+  ofs << "};\n";
+  ofs << "types(T)\n";
+  ofs << "class Box {\n";
+  ofs << "    T value = value;\n";
+  ofs << "    fn init(T value) -> Self { return my; };\n";
+  ofs << "    when (T has toString)\n";
+  ofs << "    fn toString() -> string { return `Box({my.value})`; };\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    let b = new Box::<Inner::<int>>(new Inner::<int>(1));\n";
+  ofs << "    let s = b.toString();\n";
+  ofs << "    return 0;\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+
+  std::ifstream generated(output);
+  std::string asmText((std::istreambuf_iterator<char>(generated)),
+                      std::istreambuf_iterator<char>());
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+  REQUIRE(
+      asmText.find("pub_Inner__std__generic__start__int__std__generic__end___"
+                   "toString:") != std::string::npos);
+}
+
 TEST_CASE("nested generic member access resolves instantiated type",
           "[generics]") {
   namespace fs = std::filesystem;

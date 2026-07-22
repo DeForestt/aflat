@@ -1,6 +1,7 @@
 #if !defined(ASM)
 #define ASM
 
+#include <set>
 #include <string>
 
 #include "LinkedList.hpp"
@@ -284,6 +285,7 @@ public:
   links::LinkedList<Instruction *> bss = links::LinkedList<Instruction *>();
   links::LinkedList<Instruction *> data = links::LinkedList<Instruction *>();
   links::LinkedList<Instruction *> linker = links::LinkedList<Instruction *>();
+  std::set<std::string> lazyMethodLabels;
   bool hasLambda = false;
   File *lambdas;
   void operator<<(asmc::File file);

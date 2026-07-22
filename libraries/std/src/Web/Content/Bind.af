@@ -10,9 +10,7 @@ safe dynamic class Bind {
     private mutable string name = name;
     private mutable string value = "None";
 
-    @computed
-    string key = my.name.copy();
-    
+    @computed string key = my.name.copy();
     @computed string val = my.value.copy();
     
     Bind init(const adr<Content, any> preprocess, const Content context, const adr name) {
