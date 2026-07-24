@@ -163,6 +163,7 @@ struct gen::CodeGenerator::Impl {
   std::set<std::string> activeImports;
   std::unordered_map<std::string, std::string> genericTypeConversions;
   std::set<std::string> generatedFunctionNames;
+  std::set<std::string> generatedLazyConcreteMethodNames;
   std::set<std::string> generatedClassNames;
   ast::Function *currentFunction = nullptr;
   std::string lambdaReturns;
@@ -527,6 +528,15 @@ std::set<std::string> &gen::CodeGenerator::generatedFunctionNames() {
 const std::set<std::string> &
 gen::CodeGenerator::generatedFunctionNames() const {
   return impl->generatedFunctionNames;
+}
+
+std::set<std::string> &gen::CodeGenerator::generatedLazyConcreteMethodNames() {
+  return impl->generatedLazyConcreteMethodNames;
+}
+
+const std::set<std::string> &
+gen::CodeGenerator::generatedLazyConcreteMethodNames() const {
+  return impl->generatedLazyConcreteMethodNames;
 }
 
 std::set<std::string> &gen::CodeGenerator::generatedClassNames() {

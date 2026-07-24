@@ -35,11 +35,29 @@ bool isConcreteGenericClassName(const std::string &typeName) {
   return typeName.find('<') != std::string::npos;
 }
 
+ast::Function *findLazyConcreteGenericMethodBody(gen::Class *cls,
+                                                 ast::Function *func) {
+  if (cls == nullptr || func == nullptr ||
+      !isConcreteGenericClassName(cls->Ident))
+    return nullptr;
+
+  if (func->hidden && func->statement != nullptr)
+    return func;
+
+  for (auto &candidate : cls->nameTable) {
+    if (candidate.ident.ident == func->ident.ident && candidate.hidden &&
+        candidate.statement != nullptr)
+      return &candidate;
+  }
+
+  return nullptr;
+}
+
 void ensureLazyConcreteGenericMethod(gen::CodeGenerator &generator,
                                      gen::Class *cls, ast::Function *func,
                                      asmc::File &file) {
-  if (cls == nullptr || func == nullptr || !func->hidden ||
-      !isConcreteGenericClassName(cls->Ident) || func->statement == nullptr)
+  func = findLazyConcreteGenericMethodBody(cls, func);
+  if (func == nullptr)
     return;
   if (generator.suppressLazyMethodEmission())
     return;
@@ -49,6 +67,11 @@ void ensureLazyConcreteGenericMethod(gen::CodeGenerator &generator,
   body->locked = false;
   body->scopeName = cls->Ident;
   body->globalLocked = false;
+  const std::string emittedLabel =
+      "pub_" + cls->Ident + "_" + body->ident.ident;
+  if (generator.generatedLazyConcreteMethodNames().find(emittedLabel) !=
+      generator.generatedLazyConcreteMethodNames().end())
+    return;
 
   if (file.lambdas == nullptr) {
     file.lambdas = new asmc::File();
@@ -68,7 +91,11 @@ void ensureLazyConcreteGenericMethod(gen::CodeGenerator &generator,
     file.lambdas->operator<<(
         generator.ImportsOnly(cls->templateModuleRoot, true));
   }
-  file.lambdas->operator<<(generator.GenSTMT(body));
+  generator.generatedFunctionNames().erase(emittedLabel);
+  auto bodyFile = generator.GenSTMT(body);
+  if (bodyFile.text.count > 0 || bodyFile.hasLambda)
+    generator.generatedLazyConcreteMethodNames().insert(emittedLabel);
+  file.lambdas->operator<<(bodyFile);
   generator.nameSpaceTable() = savedNameSpaceTable;
   generator.cwd() = savedCwd;
   generator.scope() = saveScope;

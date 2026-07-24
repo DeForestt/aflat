@@ -1,5 +1,7 @@
 #include <filesystem>
 #include <fstream>
+#include <sstream>
+#include <string>
 
 #include "Configs.hpp"
 #include "catch.hpp"
@@ -344,4 +346,48 @@ TEST_CASE("result unwrap compiles for object payloads", "[generics][result]") {
   fs::remove_all(dir);
 
   REQUIRE(result);
+}
+
+TEST_CASE("lazy concrete generic methods are emitted from probes",
+          "[generics][codegen]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/lazy_generic_methods");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "lazy_generic_methods.af";
+  const auto output = dir / "lazy_generic_methods.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "import string from \"String\";\n";
+  ofs << "import vector from \"Collections/Vector\";\n";
+  ofs << "types(T)\n";
+  ofs << "class Box {\n";
+  ofs << "    T value = value;\n";
+  ofs << "    fn init(T value) -> Self { return my; };\n";
+  ofs << "    fn toString() -> string { return `Box({my.value})`; };\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    const let box = new Box::<int>(7);\n";
+  ofs << "    let __text = `{box}`;\n";
+  ofs << "    let words = new vector::<string>();\n";
+  ofs << "    words.push_back(new string(\"hi\"));\n";
+  ofs << "    if (words.count() > 0) { return 0; };\n";
+  ofs << "    return 1;\n";
+  ofs << "};\n";
+  ofs.close();
+
+  const bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  std::ifstream generated(output);
+  std::stringstream buffer;
+  buffer << generated.rdbuf();
+  const std::string asmText = buffer.str();
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+  REQUIRE(asmText.find("pub_Box__std__generic__start__int__std__generic__end___"
+                       "toString:") != std::string::npos);
+  REQUIRE(asmText.find(
+              "pub_vector__std__generic__start__string__std__generic__end___"
+              "count:") != std::string::npos);
 }
