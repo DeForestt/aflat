@@ -6,23 +6,13 @@
 #include "Scanner.hpp"
 
 #include <algorithm>
-#include <mutex>
 #include <regex>
-#include <set>
 
 namespace ast {
 namespace {
 
-std::set<std::string> sharedGenericFunctionEmissions;
-std::mutex sharedGenericFunctionEmissionMutex;
-
 bool isConcreteGenericScope(const std::string &scopeName) {
   return scopeName.find('<') != std::string::npos;
-}
-
-bool registerSharedGenericFunctionEmission(const std::string &label) {
-  std::lock_guard<std::mutex> lock(sharedGenericFunctionEmissionMutex);
-  return sharedGenericFunctionEmissions.insert(label).second;
 }
 
 int maxFrameOffset(const asmc::File &file) {
@@ -58,10 +48,7 @@ void appendTemplateTypes(std::string &typeName,
 
 } // namespace
 
-void resetSharedGenericFunctionEmissions() {
-  std::lock_guard<std::mutex> lock(sharedGenericFunctionEmissionMutex);
-  sharedGenericFunctionEmissions.clear();
-}
+void resetSharedGenericFunctionEmissions() {}
 
 void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
                                  parse::Parser &parser) {
@@ -273,6 +260,17 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
           bool requireGlobalScope) {
         if (this->isLambda)
           return;
+        const bool concreteGenericBody =
+            this->statement != nullptr && !this->hidden &&
+            isConcreteGenericScope(this->scopeName);
+        if (concreteGenericBody) {
+          for (const auto &candidate : table) {
+            if (candidate.ident.ident == this->ident.ident &&
+                candidate.scopeName == this->scopeName &&
+                (candidate.hidden || candidate.statement == nullptr))
+              return;
+          }
+        }
         if (auto *firstInstance = table[this->ident.ident]) {
           bool forwardDeclaration = (firstInstance->statement == nullptr &&
                                      this->statement != nullptr);
@@ -318,11 +316,9 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     if (this->scopeName != "global")
       emittedLabel = "pub_" + this->scopeName + "_" + this->ident.ident;
 
-    if (isConcreteGenericScope(this->scopeName) &&
-        !registerSharedGenericFunctionEmission(emittedLabel))
-      return {file, std::nullopt};
-
-    if (!generator.generatedFunctionNames().insert(emittedLabel).second)
+    const bool concreteGenericBody = isConcreteGenericScope(this->scopeName);
+    if (!generator.generatedFunctionNames().insert(emittedLabel).second &&
+        !concreteGenericBody)
       return {file, std::nullopt};
   }
 

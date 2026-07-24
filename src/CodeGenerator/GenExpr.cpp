@@ -61,10 +61,28 @@ bool isConcreteGenericClassName(const std::string &typeName) {
   return typeName.find('<') != std::string::npos;
 }
 
+ast::Function *findLazyConcreteGenericMethodBody(Class *cls,
+                                                 ast::Function *func) {
+  if (cls == nullptr || func == nullptr ||
+      !isConcreteGenericClassName(cls->Ident))
+    return nullptr;
+
+  if (func->hidden && func->statement != nullptr)
+    return func;
+
+  for (auto &candidate : cls->nameTable) {
+    if (candidate.ident.ident == func->ident.ident && candidate.hidden &&
+        candidate.statement != nullptr)
+      return &candidate;
+  }
+
+  return nullptr;
+}
+
 void ensureLazyConcreteGenericMethod(CodeGenerator &generator, Class *cls,
                                      ast::Function *func, asmc::File &file) {
-  if (cls == nullptr || func == nullptr || !func->hidden ||
-      !isConcreteGenericClassName(cls->Ident) || func->statement == nullptr)
+  func = findLazyConcreteGenericMethodBody(cls, func);
+  if (func == nullptr)
     return;
   if (generator.suppressLazyMethodEmission())
     return;
@@ -74,6 +92,11 @@ void ensureLazyConcreteGenericMethod(CodeGenerator &generator, Class *cls,
   body->locked = false;
   body->scopeName = cls->Ident;
   body->globalLocked = false;
+  const std::string emittedLabel =
+      "pub_" + cls->Ident + "_" + body->ident.ident;
+  if (generator.generatedLazyConcreteMethodNames().find(emittedLabel) !=
+      generator.generatedLazyConcreteMethodNames().end())
+    return;
 
   if (file.lambdas == nullptr) {
     file.lambdas = new asmc::File();
@@ -93,7 +116,11 @@ void ensureLazyConcreteGenericMethod(CodeGenerator &generator, Class *cls,
     file.lambdas->operator<<(
         generator.ImportsOnly(cls->templateModuleRoot, true));
   }
-  file.lambdas->operator<<(generator.GenSTMT(body));
+  generator.generatedFunctionNames().erase(emittedLabel);
+  auto bodyFile = generator.GenSTMT(body);
+  if (bodyFile.text.count > 0 || bodyFile.hasLambda)
+    generator.generatedLazyConcreteMethodNames().insert(emittedLabel);
+  file.lambdas->operator<<(bodyFile);
   generator.nameSpaceTable() = savedNameSpaceTable;
   generator.cwd() = savedCwd;
   generator.scope() = saveScope;
@@ -676,15 +703,20 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
       asmc::File file;
 
+      auto saveSuppress = suppressLazyMethodEmission();
+      suppressLazyMethodEmission() = true;
       auto exp = this->GenExpr(expr, file);
+      suppressLazyMethodEmission() = saveSuppress;
 
       gen::Type **t = typeList()[exp.type];
       if (t) {
         gen::Class *cl = dynamic_cast<gen::Class *>(*t);
         if (cl && cl->Ident != "string") {
-          if (cl->nameTable["toString"] == nullptr) {
+          ast::Function *toStringFunc = cl->nameTable["toString"];
+          if (toStringFunc == nullptr) {
             if (cl->parent != nullptr) {
-              if (cl->parent->nameTable["toString"] == nullptr) {
+              toStringFunc = cl->parent->nameTable["toString"];
+              if (toStringFunc == nullptr) {
                 this->alert("class " + cl->Ident +
                                 " does not contain a toString method",
                             true, __FILE__, __LINE__);
@@ -706,8 +738,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           call->call->Args << expr;
           call->call->publify = cl->Ident;
           expr = call;
+          exp.type = toStringFunc->useType.typeName.empty()
+                         ? toStringFunc->type.typeName
+                         : toStringFunc->useType.typeName;
+          exp.owned = false;
         }
-        exp = this->GenExpr(expr, file);
       }
 
       if (exp.type == "string" || exp.type == "uni_string") {
@@ -727,7 +762,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         call->call->Args << expr;
         call->call->publify = exp.type;
         expr = call;
-        exp = this->GenExpr(expr, file);
+        exp.type = "adr";
+        exp.owned = false;
       }
 
       if (exp.type == "adr")
@@ -855,16 +891,24 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     asmc::File Dummy = asmc::File();
     ast::Function *opor = nullptr;
     std::string tname = "";
+    auto probeExpr = [&](ast::Expr *probeExpr, asmc::File &probeFile,
+                         asmc::Size probeSize = asmc::AUTO,
+                         const std::string &probeHint = "") {
+      auto saveSuppress = suppressLazyMethodEmission();
+      suppressLazyMethodEmission() = true;
+      auto result = this->GenExpr(probeExpr, probeFile, probeSize, probeHint);
+      suppressLazyMethodEmission() = saveSuppress;
+      return result;
+    };
     // gen expr 1 and check if it is a class
     asmc::File dd = asmc::File();
     std::string expr1Hint = "";
     if (isFormattedStringExpr(comp.expr1)) {
       asmc::File rightProbe = asmc::File();
-      expr1Hint = formattedStringHintForType(
-          this->GenExpr(comp.expr2, rightProbe).type);
+      expr1Hint =
+          formattedStringHintForType(probeExpr(comp.expr2, rightProbe).type);
     }
-    std::string optn =
-        this->GenExpr(comp.expr1, dd, asmc::AUTO, expr1Hint).type;
+    std::string optn = probeExpr(comp.expr1, dd, asmc::AUTO, expr1Hint).type;
     gen::Type **type = typeList()[optn];
     if (type != nullptr) {
       gen::Class *cls = dynamic_cast<gen::Class *>(*type);
@@ -930,8 +974,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
       case ast::Less: {
         asmc::Sal *andBit = new asmc::Sal();
-        gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
-        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy);
+        gen::Expr expr1 = probeExpr(comp.expr1, Dummy);
+        gen::Expr expr2 = probeExpr(comp.expr2, Dummy);
 
         this->prepareCompound(comp, OutputFile);
 
@@ -976,8 +1020,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
       case ast::Great: {
         asmc::Sar *andBit = new asmc::Sar();
-        gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
-        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy);
+        gen::Expr expr1 = probeExpr(comp.expr1, Dummy);
+        gen::Expr expr2 = probeExpr(comp.expr2, Dummy);
 
         this->prepareCompound(comp, OutputFile);
 
@@ -1031,8 +1075,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         asmc::Div *div = new asmc::Div();
         div->logicalLine = logicalLine();
 
-        gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
-        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy, expr1.size);
+        gen::Expr expr1 = probeExpr(comp.expr1, Dummy);
+        gen::Expr expr2 = probeExpr(comp.expr2, Dummy, expr1.size);
 
         div->op1 = expr2.access;
         div->opType = expr1.op;
@@ -1085,9 +1129,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         div->logicalLine = logicalLine();
 
         selectReg() = 0;
-        gen::Expr expr1 = this->GenExpr(comp.expr1, Dummy);
+        gen::Expr expr1 = probeExpr(comp.expr1, Dummy);
         selectReg() = 1;
-        gen::Expr expr2 = this->GenExpr(comp.expr2, Dummy);
+        gen::Expr expr2 = probeExpr(comp.expr2, Dummy);
 
         div->op1 = expr2.access;
 
@@ -1533,7 +1577,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         continue;
       }
       asmc::File tempFile;
+      auto saveSuppress = suppressLazyMethodEmission();
+      suppressLazyMethodEmission() = true;
       gen::Expr expr = this->GenExpr(structList.args.shift(), tempFile);
+      suppressLazyMethodEmission() = saveSuppress;
       size += gen::utils::sizeToInt(expr.size);
     };
     structList.args.reset();

@@ -498,10 +498,30 @@ class vector {
         my.iteratorIndex = 0;
         return my;
     };
-
+      
+    when (T is not primitive and T missing toString)
     fn toString() -> string {
-        return `vector(size={my.size}, count={my.count})`;
-    }
+        return `{__typeName__}(size={my.size}, count={my.count})`;
+    };
+    
+
+    when (T is not primitive and T has toString)
+    fn toString() -> string {
+      string buf = `{__typeName__}: [`;
+      foreach v in my {
+        buf = `{buf}{v},`;
+      };
+      return `{buf}]`;
+    };
+
+    when (T is primitive)
+    fn toString() -> string {
+      string buf = `{__typeName__}: [`;
+      foreach v in my {
+        buf = `{buf}{v},`;
+      };
+      return `{buf}]`;
+    };
 
     when (T is not primitive and T is unique)
     fn del() {

@@ -33,6 +33,7 @@ public:
     std::set<std::string> activeImports;
     std::unordered_map<std::string, std::string> genericTypeConversions;
     std::set<std::string> generatedFunctionNames;
+    std::set<std::string> generatedLazyConcreteMethodNames;
     links::SLinkedList<gen::Type *, std::string> typeList;
     links::SLinkedList<ast::Type, std::string> TypeList;
     std::unordered_map<std::string, ast::Transform> transforms;
@@ -131,6 +132,8 @@ public:
   std::unordered_map<std::string, std::string> &genericTypeConversions();
   std::set<std::string> &generatedFunctionNames();
   const std::set<std::string> &generatedFunctionNames() const;
+  std::set<std::string> &generatedLazyConcreteMethodNames();
+  const std::set<std::string> &generatedLazyConcreteMethodNames() const;
   std::set<std::string> &generatedClassNames();
   ast::Function *&currentFunction();
   const ast::Function *currentFunction() const;
