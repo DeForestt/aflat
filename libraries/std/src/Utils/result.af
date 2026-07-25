@@ -1,5 +1,6 @@
 .needs <std>
 import string from "String";
+import option from "Utils/option";
 import Error from "Utils/Error";
 import uni_string from "uni_string";
 
@@ -68,7 +69,23 @@ union result {
             Ok(value) => return `Ok({value})`,
             Err(err) => return `Err({err})`
         }
-    }
+    };
+
+    when (T is primitive)
+    safe fn toOption() -> option::<T> {
+        match my {
+            Ok(value) => return new option::<T>->Some(value),
+            Err() => return new option::<T>->None()
+        }
+    };
+
+    when (T is not primitive)
+    safe fn toOption() -> option::<T> {
+        match my {
+            Ok(value) => return new option::<T>->Some(value),
+            Err() => return new option::<T>->None()
+        }
+    };
 };
 
 types(T)
