@@ -1252,6 +1252,7 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
     {
       ScopedTimer timer("codegen", path);
       file = genny.GenSTMT(Prog);
+      file << genny.deferredMethods();
     }
     if (!gQuiet) {
       if (gProgress)

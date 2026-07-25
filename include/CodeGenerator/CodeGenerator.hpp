@@ -125,6 +125,8 @@ public:
   const bool &errorFlag() const;
   bool &suppressLazyMethodEmission();
   const bool &suppressLazyMethodEmission() const;
+  bool &emittingLazyConcreteMethod();
+  const bool &emittingLazyConcreteMethod() const;
   HashMap<ast::Statement *> &includedMemo();
   HashMap<ast::Statement *> &includedClasses();
   HashMap<std::string> &nameSpaceTable();
@@ -134,6 +136,8 @@ public:
   const std::set<std::string> &generatedFunctionNames() const;
   std::set<std::string> &generatedLazyConcreteMethodNames();
   const std::set<std::string> &generatedLazyConcreteMethodNames() const;
+  asmc::File &deferredMethods();
+  const asmc::File &deferredMethods() const;
   std::set<std::string> &generatedClassNames();
   ast::Function *&currentFunction();
   const ast::Function *currentFunction() const;

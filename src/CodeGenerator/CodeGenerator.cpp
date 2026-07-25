@@ -157,6 +157,7 @@ struct gen::CodeGenerator::Impl {
   bool returnFlag = false;
   bool errorFlag = false;
   bool suppressLazyMethodEmission = false;
+  bool emittingLazyConcreteMethod = false;
   HashMap<ast::Statement *> includedMemo;
   HashMap<ast::Statement *> includedClasses;
   HashMap<std::string> nameSpaceTable;
@@ -164,6 +165,7 @@ struct gen::CodeGenerator::Impl {
   std::unordered_map<std::string, std::string> genericTypeConversions;
   std::set<std::string> generatedFunctionNames;
   std::set<std::string> generatedLazyConcreteMethodNames;
+  asmc::File deferredMethods;
   std::set<std::string> generatedClassNames;
   ast::Function *currentFunction = nullptr;
   std::string lambdaReturns;
@@ -500,6 +502,14 @@ const bool &gen::CodeGenerator::suppressLazyMethodEmission() const {
   return impl->suppressLazyMethodEmission;
 }
 
+bool &gen::CodeGenerator::emittingLazyConcreteMethod() {
+  return impl->emittingLazyConcreteMethod;
+}
+
+const bool &gen::CodeGenerator::emittingLazyConcreteMethod() const {
+  return impl->emittingLazyConcreteMethod;
+}
+
 HashMap<ast::Statement *> &gen::CodeGenerator::includedMemo() {
   return impl->includedMemo;
 }
@@ -537,6 +547,14 @@ std::set<std::string> &gen::CodeGenerator::generatedLazyConcreteMethodNames() {
 const std::set<std::string> &
 gen::CodeGenerator::generatedLazyConcreteMethodNames() const {
   return impl->generatedLazyConcreteMethodNames;
+}
+
+asmc::File &gen::CodeGenerator::deferredMethods() {
+  return impl->deferredMethods;
+}
+
+const asmc::File &gen::CodeGenerator::deferredMethods() const {
+  return impl->deferredMethods;
 }
 
 std::set<std::string> &gen::CodeGenerator::generatedClassNames() {

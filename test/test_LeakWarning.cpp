@@ -1,11 +1,16 @@
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 
 #include "CodeGenerator/MockCodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "Configs.hpp"
 #include "Parser/AST.hpp"
 #include "catch.hpp"
+
+bool build(std::string path, std::string output, cfg::Mutability mutability,
+           bool debug);
 
 TEST_CASE("unused non-primitive return value warns", "[leak-warning]") {
   auto parser = parse::Parser();
@@ -162,4 +167,43 @@ TEST_CASE("passing temporary to owned parameter does not warn",
   std::cout.rdbuf(old);
 
   REQUIRE(buffer.str().find("warning") == std::string::npos);
+}
+
+TEST_CASE("formatted unique toString result does not warn",
+          "[leak-warning][generics][vector]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/vector_unique_to_string");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "vector_unique_to_string.af";
+  const auto output = dir / "vector_unique_to_string.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "import vector from \"Collections/Vector\";\n";
+  ofs << "import uni_string from \"uni_string\";\n";
+  ofs << "class Item {\n";
+  ofs << "    fn init() -> Self { return my; };\n";
+  ofs << "    fn toString() -> uni_string { return `item`; };\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    let values = new vector::<Item>();\n";
+  ofs << "    let item = new Item();\n";
+  ofs << "    values.push_back(item);\n";
+  ofs << "    let rendered = values.toString();\n";
+  ofs << "    delete rendered;\n";
+  ofs << "    delete values;\n";
+  ofs << "    return 0;\n";
+  ofs << "};\n";
+  ofs.close();
+
+  std::ostringstream buffer;
+  auto *old = std::cout.rdbuf(buffer.rdbuf());
+  const bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  std::cout.rdbuf(old);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+  CHECK(buffer.str().find("without transferring ownership may leak") ==
+        std::string::npos);
 }

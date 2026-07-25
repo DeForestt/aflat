@@ -6,6 +6,7 @@
 #include "Scanner.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <regex>
 
 namespace ast {
@@ -13,6 +14,13 @@ namespace {
 
 bool isConcreteGenericScope(const std::string &scopeName) {
   return scopeName.find('<') != std::string::npos;
+}
+
+std::string functionEmissionKey(std::string label) {
+  label.erase(std::remove_if(label.begin(), label.end(),
+                             [](unsigned char c) { return std::isspace(c); }),
+              label.end());
+  return label;
 }
 
 int maxFrameOffset(const asmc::File &file) {
@@ -307,6 +315,10 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
   }
 
   if (this->statement != nullptr && !this->hidden) {
+    if (isConcreteGenericScope(this->scopeName) &&
+        !generator.emittingLazyConcreteMethod())
+      return {file, std::nullopt};
+
     std::string emittedLabel;
     if (generator.scope() == nullptr || this->isLambda || this->globalLocked)
       emittedLabel = this->ident.ident;
@@ -316,9 +328,13 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     if (this->scopeName != "global")
       emittedLabel = "pub_" + this->scopeName + "_" + this->ident.ident;
 
-    const bool concreteGenericBody = isConcreteGenericScope(this->scopeName);
-    if (!generator.generatedFunctionNames().insert(emittedLabel).second &&
-        !concreteGenericBody)
+    if (isConcreteGenericScope(this->scopeName) &&
+        generator.suppressLazyMethodEmission())
+      return {file, std::nullopt};
+
+    if (!generator.generatedFunctionNames()
+             .insert(functionEmissionKey(emittedLabel))
+             .second)
       return {file, std::nullopt};
   }
 
