@@ -1,4 +1,5 @@
 #include "Parser/AST.hpp"
+#include "Parser/AST/Expressions/Bubble.hpp"
 #include "Parser/AST/Expressions/List.hpp"
 #include "Parser/AST/Statements/Match.hpp"
 #include "Parser/Parser.hpp"
@@ -72,6 +73,28 @@ TEST_CASE("deepCopy clones list literals in call extensions", "[deepcopy]") {
   REQUIRE(copiedList->items.size() == 2);
 }
 
+TEST_CASE("deepCopy clones bubble expressions in call extensions",
+          "[deepcopy][bubble]") {
+  lex::Lexer l;
+  parse::Parser p;
+  auto tokens = l.Scan("value.get(\"name\").toResult(\"missing\")!");
+  tokens.invert();
+  auto *expr = p.parseExpr(tokens);
+  auto *current = expr;
+  while (current != nullptr && dynamic_cast<ast::Bubble *>(current) == nullptr)
+    current = current->extention;
+  auto *bubble = dynamic_cast<ast::Bubble *>(current);
+  REQUIRE(bubble != nullptr);
+
+  auto *copy = dynamic_cast<ast::Bubble *>(ast::deepCopy(bubble));
+  REQUIRE(copy != nullptr);
+  REQUIRE(copy != bubble);
+  REQUIRE(copy->expr != bubble->expr);
+  auto *toResult = dynamic_cast<ast::CallExpr *>(copy->expr);
+  REQUIRE(toResult != nullptr);
+  CHECK(toResult->call->ident == "toResult");
+}
+
 TEST_CASE("replaceTypes descends into match case bodies", "[generics][match]") {
   auto *constructor = new ast::UnionConstructor(
       ast::Type("result", asmc::QWord), "Ok", new ast::Var(), true, {"T"});
@@ -85,6 +108,18 @@ TEST_CASE("replaceTypes descends into match case bodies", "[generics][match]") {
   match.replaceTypes({{"T", "JSON"}});
 
   CHECK(match.returns.typeName == "result<JSON>");
+  REQUIRE(constructor->templateTypes.size() == 1);
+  CHECK(constructor->templateTypes[0] == "JSON");
+}
+
+TEST_CASE("replaceTypes descends into bubble expressions",
+          "[generics][bubble]") {
+  auto *constructor = new ast::UnionConstructor(
+      ast::Type("result", asmc::QWord), "Ok", new ast::Var(), true, {"T"});
+  ast::Bubble bubble(constructor);
+
+  bubble.replaceTypes({{"T", "JSON"}});
+
   REQUIRE(constructor->templateTypes.size() == 1);
   CHECK(constructor->templateTypes[0] == "JSON");
 }

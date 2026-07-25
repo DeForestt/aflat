@@ -1,6 +1,7 @@
 #include "Parser/AST/Statements/Call.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <exception>
 
 #include "CodeGenerator/CodeGenerator.hpp"
@@ -35,17 +36,24 @@ bool isConcreteGenericClassName(const std::string &typeName) {
   return typeName.find('<') != std::string::npos;
 }
 
+std::string lazyMethodEmissionKey(std::string label) {
+  label.erase(std::remove_if(label.begin(), label.end(),
+                             [](unsigned char c) { return std::isspace(c); }),
+              label.end());
+  return label;
+}
+
 ast::Function *findLazyConcreteGenericMethodBody(gen::Class *cls,
                                                  ast::Function *func) {
   if (cls == nullptr || func == nullptr ||
       !isConcreteGenericClassName(cls->Ident))
     return nullptr;
 
-  if (func->hidden && func->statement != nullptr)
+  if (func->statement != nullptr)
     return func;
 
   for (auto &candidate : cls->nameTable) {
-    if (candidate.ident.ident == func->ident.ident && candidate.hidden &&
+    if (candidate.ident.ident == func->ident.ident &&
         candidate.statement != nullptr)
       return &candidate;
   }
@@ -69,14 +77,11 @@ void ensureLazyConcreteGenericMethod(gen::CodeGenerator &generator,
   body->globalLocked = false;
   const std::string emittedLabel =
       "pub_" + cls->Ident + "_" + body->ident.ident;
-  if (generator.generatedLazyConcreteMethodNames().find(emittedLabel) !=
+  const auto emissionKey = lazyMethodEmissionKey(emittedLabel);
+  if (generator.generatedLazyConcreteMethodNames().find(emissionKey) !=
       generator.generatedLazyConcreteMethodNames().end())
     return;
-
-  if (file.lambdas == nullptr) {
-    file.lambdas = new asmc::File();
-    file.hasLambda = true;
-  }
+  generator.generatedLazyConcreteMethodNames().insert(emissionKey);
 
   auto saveReturnType = generator.returnType();
   auto *saveScope = generator.scope();
@@ -88,14 +93,17 @@ void ensureLazyConcreteGenericMethod(gen::CodeGenerator &generator,
       generator.cwd() = cls->templateModuleCwd;
     for (const auto &[alias, target] : cls->templateNamespaceMap)
       generator.nameSpaceTable().insert(alias, target);
-    file.lambdas->operator<<(
-        generator.ImportsOnly(cls->templateModuleRoot, true));
+    generator.deferredMethods()
+        << generator.ImportsOnly(cls->templateModuleRoot, true);
   }
-  generator.generatedFunctionNames().erase(emittedLabel);
+  generator.generatedFunctionNames().erase(emissionKey);
+  auto saveEmittingLazyMethod = generator.emittingLazyConcreteMethod();
+  generator.emittingLazyConcreteMethod() = true;
   auto bodyFile = generator.GenSTMT(body);
-  if (bodyFile.text.count > 0 || bodyFile.hasLambda)
-    generator.generatedLazyConcreteMethodNames().insert(emittedLabel);
-  file.lambdas->operator<<(bodyFile);
+  generator.emittingLazyConcreteMethod() = saveEmittingLazyMethod;
+  if (bodyFile.text.count == 0 && !bodyFile.hasLambda)
+    generator.generatedLazyConcreteMethodNames().erase(emissionKey);
+  generator.deferredMethods() << bodyFile;
   generator.nameSpaceTable() = savedNameSpaceTable;
   generator.cwd() = savedCwd;
   generator.scope() = saveScope;
@@ -213,6 +221,8 @@ gen::GenerationResult Call::generateAttempt(
   bool hasHiddenReceiver = false;
   bool hiddenReceiverConsumesParameter = false;
   int hiddenReceiverSlot = -1;
+  gen::Class *lazyConcreteClass = nullptr;
+  ast::Function *lazyConcreteFunction = nullptr;
   this->modList.invert();
   this->modList.reset();
   std::string ident = this->ident;
@@ -553,7 +563,8 @@ gen::GenerationResult Call::generateAttempt(
           }
         }
         if (func != nullptr) {
-          ensureLazyConcreteGenericMethod(generator, cl, func, file);
+          lazyConcreteClass = cl;
+          lazyConcreteFunction = func;
           this->modList.shift();
           this->modList.invert();
           this->modList.reset();
@@ -640,7 +651,8 @@ gen::GenerationResult Call::generateAttempt(
           generator.alert("cannot find function: " + ident + " in class " +
                           this->publify);
         };
-        ensureLazyConcreteGenericMethod(generator, cl, f, file);
+        lazyConcreteClass = cl;
+        lazyConcreteFunction = f;
         copyReturnMetadata(*func, *f);
         func->scope = f->scope;
         func->scopeName = f->scopeName;
@@ -670,7 +682,8 @@ gen::GenerationResult Call::generateAttempt(
           overloadTable, overloadIdent, currentOverloadIndex);
       if (f == nullptr)
         generator.alert("cannot find function: " + ident + " in " + cl->Ident);
-      ensureLazyConcreteGenericMethod(generator, cl, f, file);
+      lazyConcreteClass = cl;
+      lazyConcreteFunction = f;
       func->argTypes = f->argTypes;
       func->req = f->req;
       func->readOnly = f->readOnly;
@@ -1045,6 +1058,9 @@ gen::GenerationResult Call::generateAttempt(
     };
     argsCounter++;
   };
+
+  ensureLazyConcreteGenericMethod(generator, lazyConcreteClass,
+                                  lazyConcreteFunction, file);
 
   int argsUsed = argsCounter;
   if (this->publify != "")

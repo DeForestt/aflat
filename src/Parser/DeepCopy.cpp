@@ -394,6 +394,11 @@ Statement *deepCopy(const Statement *stmt) {
     copyExprFields(copy, unionConstructor);
     return copy;
   }
+  if (auto bubble = dynamic_cast<const Bubble *>(stmt)) {
+    auto *copy = new Bubble(static_cast<Expr *>(deepCopy(bubble->expr)));
+    copyExprFields(copy, bubble);
+    return copy;
+  }
   if (auto match = dynamic_cast<const Match *>(stmt)) {
     auto *copy = new Match();
     copy->expr = static_cast<Expr *>(deepCopy(match->expr));

@@ -1,5 +1,43 @@
 #include "ASM.hpp"
 
+#include <algorithm>
+#include <cctype>
+#include <unordered_set>
+
+namespace {
+
+bool isTopLevelLabel(const std::string &label) {
+  return !label.empty() && label[0] != '.' && label.rfind("L_", 0) != 0;
+}
+
+std::string canonicalLabel(std::string label) {
+  label.erase(std::remove_if(label.begin(), label.end(),
+                             [](unsigned char c) { return std::isspace(c); }),
+              label.end());
+  return label;
+}
+
+void deduplicateTopLevelFunctions(asmc::File &file) {
+  std::unordered_set<std::string> emittedLabels;
+  links::LinkedList<asmc::Instruction *> filtered;
+  bool skipFunction = false;
+
+  while (file.text.head != nullptr) {
+    auto *instruction = file.text.pop();
+    auto *label = dynamic_cast<asmc::Label *>(instruction);
+    if (label != nullptr && isTopLevelLabel(label->label)) {
+      const auto key = canonicalLabel(label->label);
+      skipFunction = !emittedLabels.insert(key).second;
+    }
+    if (!skipFunction)
+      filtered.append(instruction);
+  }
+
+  file.text = filtered;
+}
+
+} // namespace
+
 std::string asmc::Instruction::toString() { return (""); }
 
 std::string asmc::SysCall::toString() { return "\tsyscall\t\n"; }
@@ -425,6 +463,7 @@ void asmc::File::collect() {
     this->cstitch(*this->lambdas);
     delete this->lambdas;
   }
+  deduplicateTopLevelFunctions(*this);
   this->optimize();
 }
 

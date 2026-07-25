@@ -83,7 +83,8 @@ gen::GenerationResult const
 UnionConstructor::generateExpression(gen::CodeGenerator &generator,
                                      asmc::Size size, std::string typeHint) {
   asmc::File file;
-  if (templateTypes.size() > 0) {
+  if (!templateTypes.empty() &&
+      unionType.typeName.find('<') == std::string::npos) {
     unionType.typeName += "<";
     for (size_t i = 0; i < templateTypes.size(); ++i) {
       unionType.typeName += templateTypes[i];
@@ -93,6 +94,8 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
     }
     unionType.typeName += ">";
   }
+  if (unionType.typeName.find('<') != std::string::npos)
+    templateTypes.clear();
 
   auto type = generator.getType(unionType.typeName, file);
   if (type == nullptr) {

@@ -505,7 +505,17 @@ class vector {
     };
     
 
-    when (T is not primitive and T has toString)
+    when (T is not primitive and T has toString and T is not unique)
+    fn toString() -> string {
+      string buf = `{__typeName__}: [`;
+      foreach v in my {
+        buf = `{buf}{v},`;
+      };
+      return `{buf}]`;
+    };
+
+
+    when (T is not primitive and T has toString and T is unique)
     fn toString() -> string {
       string buf = `{__typeName__}: [`;
       foreach v in my {

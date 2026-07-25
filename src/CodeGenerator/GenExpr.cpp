@@ -1,6 +1,7 @@
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <cctype>
 #include <chrono>
 
 #include "CodeGenerator/CodeGenerator.hpp"
@@ -61,17 +62,24 @@ bool isConcreteGenericClassName(const std::string &typeName) {
   return typeName.find('<') != std::string::npos;
 }
 
+std::string lazyMethodEmissionKey(std::string label) {
+  label.erase(std::remove_if(label.begin(), label.end(),
+                             [](unsigned char c) { return std::isspace(c); }),
+              label.end());
+  return label;
+}
+
 ast::Function *findLazyConcreteGenericMethodBody(Class *cls,
                                                  ast::Function *func) {
   if (cls == nullptr || func == nullptr ||
       !isConcreteGenericClassName(cls->Ident))
     return nullptr;
 
-  if (func->hidden && func->statement != nullptr)
+  if (func->statement != nullptr)
     return func;
 
   for (auto &candidate : cls->nameTable) {
-    if (candidate.ident.ident == func->ident.ident && candidate.hidden &&
+    if (candidate.ident.ident == func->ident.ident &&
         candidate.statement != nullptr)
       return &candidate;
   }
@@ -94,14 +102,11 @@ void ensureLazyConcreteGenericMethod(CodeGenerator &generator, Class *cls,
   body->globalLocked = false;
   const std::string emittedLabel =
       "pub_" + cls->Ident + "_" + body->ident.ident;
-  if (generator.generatedLazyConcreteMethodNames().find(emittedLabel) !=
+  const auto emissionKey = lazyMethodEmissionKey(emittedLabel);
+  if (generator.generatedLazyConcreteMethodNames().find(emissionKey) !=
       generator.generatedLazyConcreteMethodNames().end())
     return;
-
-  if (file.lambdas == nullptr) {
-    file.lambdas = new asmc::File();
-    file.hasLambda = true;
-  }
+  generator.generatedLazyConcreteMethodNames().insert(emissionKey);
 
   auto saveReturnType = generator.returnType();
   auto *saveScope = generator.scope();
@@ -113,14 +118,17 @@ void ensureLazyConcreteGenericMethod(CodeGenerator &generator, Class *cls,
       generator.cwd() = cls->templateModuleCwd;
     for (const auto &[alias, target] : cls->templateNamespaceMap)
       generator.nameSpaceTable().insert(alias, target);
-    file.lambdas->operator<<(
-        generator.ImportsOnly(cls->templateModuleRoot, true));
+    generator.deferredMethods()
+        << generator.ImportsOnly(cls->templateModuleRoot, true);
   }
-  generator.generatedFunctionNames().erase(emittedLabel);
+  generator.generatedFunctionNames().erase(emissionKey);
+  auto saveEmittingLazyMethod = generator.emittingLazyConcreteMethod();
+  generator.emittingLazyConcreteMethod() = true;
   auto bodyFile = generator.GenSTMT(body);
-  if (bodyFile.text.count > 0 || bodyFile.hasLambda)
-    generator.generatedLazyConcreteMethodNames().insert(emittedLabel);
-  file.lambdas->operator<<(bodyFile);
+  generator.emittingLazyConcreteMethod() = saveEmittingLazyMethod;
+  if (bodyFile.text.count == 0 && !bodyFile.hasLambda)
+    generator.generatedLazyConcreteMethodNames().erase(emissionKey);
+  generator.deferredMethods() << bodyFile;
   generator.nameSpaceTable() = savedNameSpaceTable;
   generator.cwd() = savedCwd;
   generator.scope() = saveScope;
@@ -741,7 +749,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           exp.type = toStringFunc->useType.typeName.empty()
                          ? toStringFunc->type.typeName
                          : toStringFunc->useType.typeName;
-          exp.owned = false;
+          exp.owned = exp.type != "void" && !toStringFunc->returnLowOwnership;
         }
       }
 
@@ -1738,6 +1746,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     auto extension = static_cast<ast::Expr *>(ast::deepCopy(expr->extention));
     auto call = dynamic_cast<ast::CallExpr *>(extension);
     auto var = dynamic_cast<ast::Var *>(extension);
+    auto bubble = dynamic_cast<ast::Bubble *>(extension);
 
     if (call != nullptr) {
       call->call->modList.invert();
@@ -1749,6 +1758,23 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       var->modList.push(var->Ident);
       var->modList.invert();
       var->Ident = tempName;
+    } else if (bubble != nullptr) {
+      auto bubbleCall = dynamic_cast<ast::CallExpr *>(bubble->expr);
+      auto bubbleVar = dynamic_cast<ast::Var *>(bubble->expr);
+      if (bubbleCall != nullptr) {
+        bubbleCall->call->modList.invert();
+        bubbleCall->call->modList.push(bubbleCall->call->ident);
+        bubbleCall->call->modList.invert();
+        bubbleCall->call->ident = tempName;
+      } else if (bubbleVar != nullptr) {
+        bubbleVar->modList.invert();
+        bubbleVar->modList.push(bubbleVar->Ident);
+        bubbleVar->modList.invert();
+        bubbleVar->Ident = tempName;
+      } else {
+        this->alert("Cannot extend an expression of this type", true, __FILE__,
+                    __LINE__);
+      }
     } else {
       this->alert("Cannot extend an expression of this type", true, __FILE__,
                   __LINE__);
