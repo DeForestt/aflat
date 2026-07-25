@@ -83,7 +83,7 @@ union result {
     when(T is not primitive and T missing toString)
     safe fn toString() -> string {
         match my {
-            Ok(value) => return `Ok({__typename__})`,
+            Ok(value) => return `Ok({__typeName__})`,
             Err(err) => return `Err({err})`
         }
     };
