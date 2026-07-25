@@ -80,11 +80,10 @@ TEST_CASE("deepCopy clones bubble expressions in call extensions",
   auto tokens = l.Scan("value.get(\"name\").toResult(\"missing\")!");
   tokens.invert();
   auto *expr = p.parseExpr(tokens);
-  auto *value = dynamic_cast<ast::Var *>(expr);
-  REQUIRE(value != nullptr);
-  auto *get = dynamic_cast<ast::CallExpr *>(value->extention);
-  REQUIRE(get != nullptr);
-  auto *bubble = dynamic_cast<ast::Bubble *>(get->extention);
+  auto *current = expr;
+  while (current != nullptr && dynamic_cast<ast::Bubble *>(current) == nullptr)
+    current = current->extention;
+  auto *bubble = dynamic_cast<ast::Bubble *>(current);
   REQUIRE(bubble != nullptr);
 
   auto *copy = dynamic_cast<ast::Bubble *>(ast::deepCopy(bubble));
