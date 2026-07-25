@@ -1,5 +1,6 @@
 #include "Parser/AST.hpp"
 #include "Parser/AST/Expressions/List.hpp"
+#include "Parser/AST/Statements/Match.hpp"
 #include "Parser/Parser.hpp"
 #include "Scanner.hpp"
 #include "catch.hpp"
@@ -69,4 +70,21 @@ TEST_CASE("deepCopy clones list literals in call extensions", "[deepcopy]") {
   REQUIRE(copiedList != nullptr);
   REQUIRE(copiedList != extension->call->Args.get(0));
   REQUIRE(copiedList->items.size() == 2);
+}
+
+TEST_CASE("replaceTypes descends into match case bodies", "[generics][match]") {
+  auto *constructor = new ast::UnionConstructor(
+      ast::Type("result", asmc::QWord), "Ok", new ast::Var(), true, {"T"});
+  auto *returnStmt = new ast::Return();
+  returnStmt->expr = constructor;
+
+  ast::Match match;
+  match.returns = ast::Type("result<T>", asmc::QWord);
+  match.cases.emplace_back(ast::Match::Pattern("Some", "value"), returnStmt);
+
+  match.replaceTypes({{"T", "JSON"}});
+
+  CHECK(match.returns.typeName == "result<JSON>");
+  REQUIRE(constructor->templateTypes.size() == 1);
+  CHECK(constructor->templateTypes[0] == "JSON");
 }

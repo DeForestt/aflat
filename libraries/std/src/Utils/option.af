@@ -2,6 +2,8 @@
 import {print} from "String" under str;
 import string from "String" under str;
 import uni_string from "uni_string";
+import Error from "Utils/Error";
+import result from "Utils/result";
 
 
 export fn abort(const adr msg) -> any {
@@ -107,6 +109,24 @@ union option {  Some(T),
     match my {
       Some() => return "Some",
       None() => return "None"
+    }
+  };
+
+  when (T is primitive)
+  safe fn toResult(const Error err) -> result::<T> {
+    match my {
+      Some(value) => return new result::<T>->Ok(value),
+      None() => return new result::<T>->Err(err)
+    }
+  };
+
+  when (T is not primitive)
+  safe fn toResult(const Error err) -> result::<T> {
+    match my {
+      Some(value) => {
+        return new result::<T>->Ok(value);
+      },
+      None() => return new result::<T>->Err(err)
     }
   };
 };

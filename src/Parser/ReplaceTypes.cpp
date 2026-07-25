@@ -396,6 +396,16 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
       un->statement->replaceTypes(map);
     return;
   }
+  if (auto match = dynamic_cast<Match *>(this)) {
+    if (match->expr)
+      match->expr->replaceTypes(map);
+    applyType(match->returns, map);
+    for (auto &caseItem : match->cases) {
+      if (caseItem.statement)
+        caseItem.statement->replaceTypes(map);
+    }
+    return;
+  }
   if (auto unionConstructor = dynamic_cast<UnionConstructor *>(this)) {
     applyType(unionConstructor->unionType, map);
     if (unionConstructor->expr) {
