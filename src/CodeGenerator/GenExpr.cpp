@@ -1738,6 +1738,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     auto extension = static_cast<ast::Expr *>(ast::deepCopy(expr->extention));
     auto call = dynamic_cast<ast::CallExpr *>(extension);
     auto var = dynamic_cast<ast::Var *>(extension);
+    auto bubble = dynamic_cast<ast::Bubble *>(extension);
 
     if (call != nullptr) {
       call->call->modList.invert();
@@ -1749,6 +1750,23 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       var->modList.push(var->Ident);
       var->modList.invert();
       var->Ident = tempName;
+    } else if (bubble != nullptr) {
+      auto bubbleCall = dynamic_cast<ast::CallExpr *>(bubble->expr);
+      auto bubbleVar = dynamic_cast<ast::Var *>(bubble->expr);
+      if (bubbleCall != nullptr) {
+        bubbleCall->call->modList.invert();
+        bubbleCall->call->modList.push(bubbleCall->call->ident);
+        bubbleCall->call->modList.invert();
+        bubbleCall->call->ident = tempName;
+      } else if (bubbleVar != nullptr) {
+        bubbleVar->modList.invert();
+        bubbleVar->modList.push(bubbleVar->Ident);
+        bubbleVar->modList.invert();
+        bubbleVar->Ident = tempName;
+      } else {
+        this->alert("Cannot extend an expression of this type", true, __FILE__,
+                    __LINE__);
+      }
     } else {
       this->alert("Cannot extend an expression of this type", true, __FILE__,
                   __LINE__);

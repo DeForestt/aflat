@@ -159,6 +159,11 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
     if (expr->extention)
       expr->extention->replaceTypes(map);
   }
+  if (auto bubble = dynamic_cast<Bubble *>(this)) {
+    if (bubble->expr)
+      bubble->expr->replaceTypes(map);
+    return;
+  }
   if (auto arg = dynamic_cast<Argument *>(this)) {
     applyType(arg->type, map);
   }
