@@ -315,10 +315,6 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
   }
 
   if (this->statement != nullptr && !this->hidden) {
-    if (isConcreteGenericScope(this->scopeName) &&
-        !generator.emittingLazyConcreteMethod())
-      return {file, std::nullopt};
-
     std::string emittedLabel;
     if (generator.scope() == nullptr || this->isLambda || this->globalLocked)
       emittedLabel = this->ident.ident;
@@ -328,13 +324,17 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     if (this->scopeName != "global")
       emittedLabel = "pub_" + this->scopeName + "_" + this->ident.ident;
 
+    const auto emissionKey = functionEmissionKey(emittedLabel);
+    if (isConcreteGenericScope(this->scopeName) &&
+        generator.generatedLazyConcreteMethodNames().find(emissionKey) ==
+            generator.generatedLazyConcreteMethodNames().end())
+      return {file, std::nullopt};
+
     if (isConcreteGenericScope(this->scopeName) &&
         generator.suppressLazyMethodEmission())
       return {file, std::nullopt};
 
-    if (!generator.generatedFunctionNames()
-             .insert(functionEmissionKey(emittedLabel))
-             .second)
+    if (!generator.generatedFunctionNames().insert(emissionKey).second)
       return {file, std::nullopt};
   }
 

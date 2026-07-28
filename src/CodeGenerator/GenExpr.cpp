@@ -75,14 +75,14 @@ ast::Function *findLazyConcreteGenericMethodBody(Class *cls,
       !isConcreteGenericClassName(cls->Ident))
     return nullptr;
 
-  if (func->statement != nullptr)
-    return func;
-
   for (auto &candidate : cls->nameTable) {
-    if (candidate.ident.ident == func->ident.ident &&
+    if (candidate.ident.ident == func->ident.ident && candidate.hidden &&
         candidate.statement != nullptr)
       return &candidate;
   }
+
+  if (func->statement != nullptr)
+    return func;
 
   return nullptr;
 }

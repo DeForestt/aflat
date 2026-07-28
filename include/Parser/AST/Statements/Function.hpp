@@ -19,8 +19,8 @@ public:
   std::string decNSP = "";
   bool hidden = false;
   Ident ident;
-  Statement *args;
-  Statement *statement;
+  Statement *args = nullptr;
+  Statement *statement = nullptr;
   Op op;
   int req = 0;
   std::vector<int> optConvertionIndices; // indices of optional arguments that
