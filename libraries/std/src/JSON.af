@@ -413,19 +413,35 @@ private fn parseNullValue(const string value) -> JSON! {
 private fn parseArrayValue(const string value) -> JSON! {
     const let elements = new vector::<Box::<JSON>>();
     let v = value.peek();
+    while st.char_isWhiteSpace(v.or('n')) {
+        value.next();
+        v = value.peek();
+    };
+    if v.or('v') == ']' {
+        value.next();
+        return new JSON->List(elements);
+    };
+
     while true {
         const let parsed = parseInternal(value)!;
         const let boxed = box.wrap(parsed);
         elements.push_back($boxed);
+
+        while st.char_isWhiteSpace(value.peek().or('n')) v = value.next();
         v = value.peek();
-        if `{v.or('v')}` == "," {
+        if v.isNone() {
+            return parseError(value, "Expected ',' or ']' in JSON array but reached end of input", value.len());
+        };
+        const let nextChar = v.unwrap();
+        if nextChar == ',' {
             value.next();
-        } else if `{v.or('v')}` == "]" {
-            break;
+        } else if nextChar == ']' {
+            value.next();
+            return new JSON->List(elements);
+        } else {
+            return parseError(value, `Unexpected character '{nextChar}' in JSON array; expected ',' or ']'`, value.tell());
         };
     };
-    value.next();
-    return new JSON->List(elements);
 };
 
 private fn parseObjectValue(const string value) -> JSON! {
