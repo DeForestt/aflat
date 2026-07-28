@@ -184,6 +184,17 @@ fn main() -> int{
                     Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
                 };
             });
+
+            test.it("should parse an empty JSON list", fn () {
+                const string jsonString = "[]";
+                match json.parse(jsonString) {
+                    Ok(value) => match value.asList() {
+                        Ok(list) => test.assertEqual(list.count(), 0),
+                        Err(e) => test.assertEqual(`List`, `Error: {e}`)
+                    },
+                    Err(e) => test.assertEqual(`List`, `Error: {e}`)
+                };
+            });
             
             test.describe("JSON.parse", fn () {
                 test.it("should parse directly from a string", fn () {
