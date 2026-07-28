@@ -49,14 +49,14 @@ ast::Function *findLazyConcreteGenericMethodBody(gen::Class *cls,
       !isConcreteGenericClassName(cls->Ident))
     return nullptr;
 
-  if (func->statement != nullptr)
-    return func;
-
   for (auto &candidate : cls->nameTable) {
-    if (candidate.ident.ident == func->ident.ident &&
+    if (candidate.ident.ident == func->ident.ident && candidate.hidden &&
         candidate.statement != nullptr)
       return &candidate;
   }
+
+  if (func->statement != nullptr)
+    return func;
 
   return nullptr;
 }
@@ -389,6 +389,7 @@ gen::GenerationResult Call::generateAttempt(
           auto f = findFunctionByOverload(
               cl->nameTable, "_call", forcedOverloadIndex, forcedTable,
               forcedIdent, overloadTable, overloadIdent, currentOverloadIndex);
+          auto *resolvedCallClass = cl;
           auto tname = smbl->type.typeName;
           if (f == nullptr) {
             // check the parent
@@ -399,6 +400,7 @@ gen::GenerationResult Call::generateAttempt(
                                          forcedIdent, overloadTable,
                                          overloadIdent, currentOverloadIndex);
               tname = parent->Ident;
+              resolvedCallClass = parent;
               if (f == nullptr)
                 generator.alert("cannot preform this on type " +
                                 smbl->type.typeName +
@@ -411,6 +413,8 @@ gen::GenerationResult Call::generateAttempt(
                               "function");
             }
           }
+          lazyConcreteClass = resolvedCallClass;
+          lazyConcreteFunction = f;
 
           overloadTable = nullptr;
           overloadIdent.clear();
@@ -463,13 +467,18 @@ gen::GenerationResult Call::generateAttempt(
         func = findFunctionByOverload(
             cl->nameTable, memberIdent, forcedOverloadIndex, forcedTable,
             forcedIdent, overloadTable, overloadIdent, currentOverloadIndex);
+        gen::Class *resolvedMethodClass = cl;
+        ast::Function *resolvedMethodFunction = func;
         gen::Class *parent = cl->parent;
         if (func == nullptr && parent) {
           func = findFunctionByOverload(
               parent->nameTable, memberIdent, forcedOverloadIndex, forcedTable,
               forcedIdent, overloadTable, overloadIdent, currentOverloadIndex);
-          if (func != nullptr)
+          if (func != nullptr) {
             pubname = parent->Ident;
+            resolvedMethodClass = parent;
+            resolvedMethodFunction = func;
+          }
         }
         bool shift = true;
         bool typedFunctionPointerField = false;
@@ -559,12 +568,14 @@ gen::GenerationResult Call::generateAttempt(
             func->safe = f->safe;
             func->readOnly = f->readOnly;
             pubname = sym->type.typeName;
+            resolvedMethodClass = objectClass;
+            resolvedMethodFunction = f;
             shift = false;
           }
         }
         if (func != nullptr) {
-          lazyConcreteClass = cl;
-          lazyConcreteFunction = func;
+          lazyConcreteClass = resolvedMethodClass;
+          lazyConcreteFunction = resolvedMethodFunction;
           this->modList.shift();
           this->modList.invert();
           this->modList.reset();

@@ -391,3 +391,50 @@ TEST_CASE("lazy concrete generic methods are emitted from probes",
               "pub_vector__std__generic__start__string__std__generic__end___"
               "count:") != std::string::npos);
 }
+
+TEST_CASE("nested unordered_map methods keep their emitted bodies",
+          "[generics][codegen][unordered_map]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/lazy_unordered_map_methods");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "lazy_unordered_map_methods.af";
+  const auto output = dir / "lazy_unordered_map_methods.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "import unordered_map from \"Collections/unordered_map\";\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    const let values = new unordered_map::<adr, int>();\n";
+  ofs << "    values.set(\"one\", 1);\n";
+  ofs << "    if values.has(\"one\") & values(\"one\").or(0) == 1 "
+         "{ return 0; };\n";
+  ofs << "    return 1;\n";
+  ofs << "};\n";
+  ofs.close();
+
+  const bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  std::ifstream generated(output);
+  std::stringstream buffer;
+  buffer << generated.rdbuf();
+  const std::string asmText = buffer.str();
+  fs::remove_all(dir);
+
+  const std::string vectorGet =
+      "pub_vector__std__generic__start__u_map_bucket__std__generic__start__"
+      "adr__std__generic__separator__int__std__generic__end____std__generic__"
+      "end___get:";
+  const std::string optionNone =
+      "call\toption.None.u_map_bucket__std__generic__start__adr__std__generic__"
+      "separator__int__std__generic__end__";
+  const std::string mapCall =
+      "pub_unordered_map__std__generic__start__adr__std__generic__separator__"
+      "int__std__generic__end____call:";
+
+  REQUIRE(result);
+  const auto vectorGetPos = asmText.find(vectorGet);
+  REQUIRE(vectorGetPos != std::string::npos);
+  const auto nextFunction = asmText.find("\npub_", vectorGetPos + 1);
+  REQUIRE(asmText.find(optionNone, vectorGetPos) < nextFunction);
+  REQUIRE(asmText.find(mapCall) != std::string::npos);
+}
