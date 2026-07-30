@@ -17,6 +17,7 @@ public:
   std::string scopeName = "global";
   std::string decorator = "";
   std::string decNSP = "";
+  std::vector<std::string> decoratorTemplateTypes;
   bool hidden = false;
   Ident ident;
   Statement *args = nullptr;
@@ -55,6 +56,8 @@ public:
       : scope(Other.scope), type(Other.type), op(Other.op),
         scopeName(Other.scopeName), ident(Other.ident), args(Other.args),
         statement(Other.statement), decorator(Other.decorator),
+        decNSP(Other.decNSP),
+        decoratorTemplateTypes(Other.decoratorTemplateTypes),
         decoratorArgs(Other.decoratorArgs), argTypes(Other.argTypes),
         optConvertionIndices(Other.optConvertionIndices),
         mutability(Other.mutability), isLambda(Other.isLambda),

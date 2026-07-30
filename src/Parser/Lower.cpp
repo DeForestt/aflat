@@ -7,6 +7,21 @@
 
 typedef parse::lower::Lowerer Lower;
 
+namespace {
+
+std::string concreteTypeName(const std::string &typeName,
+                             const std::vector<std::string> &templateTypes) {
+  if (templateTypes.empty())
+    return typeName;
+
+  std::string result = typeName + "<" + templateTypes[0];
+  for (size_t i = 1; i < templateTypes.size(); ++i)
+    result += "," + templateTypes[i];
+  return result + ">";
+}
+
+} // namespace
+
 links::LinkedList<ast::Expr *> convertsArgs(ast::Statement *STMT) {
   links::LinkedList<ast::Expr *> args;
   if (dynamic_cast<ast::Sequence *>(STMT) != nullptr) {
@@ -76,6 +91,7 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
     newFunc->scope = func->scope;
     newFunc->scopeName = func->scopeName;
     newFunc->type = func->type;
+    newFunc->autoType = true;
     newFunc->mutability = func->mutability;
 
     func->ident.ident = ".temp__graft_" + func->ident.ident;
@@ -86,6 +102,7 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
     auto args = convertsArgs(func->args);
 
     auto call = new ast::CallExpr;
+    call->templateTypes = func->decoratorTemplateTypes;
     call->call = new ast::Call;
     call->call->Args = links::LinkedList<ast::Expr *>();
     call->call->Args.push(fpoint);
@@ -107,9 +124,10 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
         ast::Declare *declare = new ast::Declare;
         declare->ident = newFunc->ident.ident;
         declare->type.size = asmc::QWord;
-        declare->type.typeName = func->decorator;
+        declare->type.typeName =
+            concreteTypeName(func->decorator, func->decoratorTemplateTypes);
         declare->mut = false;
-        declare->TypeName = func->decorator;
+        declare->TypeName = declare->type.typeName;
         declare->scope = func->scope;
 
         ast::DecAssign *decAssign = new ast::DecAssign;

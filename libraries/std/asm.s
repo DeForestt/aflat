@@ -172,6 +172,7 @@ sys_wait:
     movq	%rsp, %rbp
     pushq	%rbx
     subq	$16, %rsp
+    movq    %rcx, %r10
     movq    $61, %rax
     syscall
     leave

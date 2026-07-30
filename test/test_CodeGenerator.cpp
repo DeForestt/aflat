@@ -91,6 +91,16 @@ TEST_CASE("adr accepts function pointers with generic argument types",
   CHECK(mockGen.canAssign(adrTarget, "void~Property<int>~", "ERROR"));
 }
 
+TEST_CASE("adr accepts function pointers with generic return types",
+          "[canAssign]") {
+  auto adrTarget = ast::Type("adr", asmc::QWord);
+  MOCKGEN
+
+  CHECK(mockGen.canAssign(adrTarget, "result<bool>~int~", "ERROR"));
+  CHECK_THROWS(mockGen.canAssign(
+      adrTarget, "unordered_map<adr,result<bool>~int~>", "ERROR"));
+}
+
 TEST_CASE("increment and decrement use int-sized arithmetic", "[codegen]") {
   auto parser = parse::Parser();
   test::mockGen::CodeGenerator gen("mod", parser, "",

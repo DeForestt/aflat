@@ -72,6 +72,52 @@ TEST_CASE("transform can lower generic decorator fields", "[transform]") {
   REQUIRE(result);
 }
 
+TEST_CASE("namespaced function decorators accept nested generic arguments",
+          "[generics][decorator]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/generic_function_decorator");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto module = dir / "Decorator.af";
+  const auto source = dir / "generic_function_decorator.af";
+  const auto output = dir / "generic_function_decorator.s";
+  std::ofstream moduleOfs(module);
+  moduleOfs << "types(T)\n";
+  moduleOfs << "class Decorated {\n";
+  moduleOfs << "    fn ready() -> int { return 7; };\n";
+  moduleOfs << "};\n";
+  moduleOfs << "types(T)\n";
+  moduleOfs
+      << "export fn wrap(const adr foo, const any arg) -> Decorated::<T> {\n";
+  moduleOfs << "    foo(arg);\n";
+  moduleOfs << "    return NULL;\n";
+  moduleOfs << "};\n";
+  moduleOfs.close();
+
+  std::ofstream ofs(source);
+  ofs << "import Decorated, {wrap} from \"./Decorator\" under dec;\n";
+  ofs << "types(T)\n";
+  ofs << "class Wrapper {\n";
+  ofs << "    T value = value;\n";
+  ofs << "    fn init(T value) -> Self { return my; };\n";
+  ofs << "};\n";
+  ofs << "fn decorated(int val) -> Wrapper::<bool> "
+         ": dec.wrap::<Wrapper::<bool>> {\n";
+  ofs << "    return NULL;\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    let value = decorated(1);\n";
+  ofs << "    return value.ready();\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
 TEST_CASE("transform preserves chained method call order", "[transform]") {
   namespace fs = std::filesystem;
   const auto dir = fs::path("tmp/transform_method_chain");
@@ -437,4 +483,41 @@ TEST_CASE("nested unordered_map methods keep their emitted bodies",
   const auto nextFunction = asmText.find("\npub_", vectorGetPos + 1);
   REQUIRE(asmText.find(optionNone, vectorGetPos) < nextFunction);
   REQUIRE(asmText.find(mapCall) != std::string::npos);
+}
+
+TEST_CASE("generic dynamic classes emit lifecycle cleanup methods",
+          "[generics][codegen][lifecycle]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/generic_lifecycle_methods");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "generic_lifecycle_methods.af";
+  const auto output = dir / "generic_lifecycle_methods.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "types(T)\n";
+  ofs << "dynamic class Managed {\n";
+  ofs << "    T value = value;\n";
+  ofs << "    fn init(T value) -> Self { return my; };\n";
+  ofs << "    fn get() -> Self { return my; };\n";
+  ofs << "    void endScope() { delete my; };\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    let value = new Managed::<int>(1);\n";
+  ofs << "    return 0;\n";
+  ofs << "};\n";
+  ofs.close();
+
+  const bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  std::ifstream generated(output);
+  std::stringstream buffer;
+  buffer << generated.rdbuf();
+  const std::string asmText = buffer.str();
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+  REQUIRE(
+      asmText.find("pub_Managed__std__generic__start__int__std__generic__end___"
+                   "endScope:") != std::string::npos);
 }

@@ -766,6 +766,6 @@ class HTTPServer {
  * Async worker entry point that services an HTTPRequest and writes the
  * response back to the requester.
  */
-export any requestWorker(const HTTPRequest _arg) : async.worker {
+export any requestWorker(const HTTPRequest _arg) : async.worker::<adr> {
     return _arg.send(10000000);
 };

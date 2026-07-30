@@ -4,6 +4,9 @@
 #include "Parser/AST/Statements/Class.hpp"
 #include "Parser/AST/Statements/Union.hpp"
 
+#include <algorithm>
+#include <cctype>
+
 using namespace gen::utils;
 
 namespace gen {
@@ -17,6 +20,45 @@ std::string joinTypes(const std::vector<std::string> &types) {
     result += types[i];
   }
   return result;
+}
+
+std::string lifecycleEmissionKey(std::string label) {
+  label.erase(std::remove_if(label.begin(), label.end(),
+                             [](unsigned char c) { return std::isspace(c); }),
+              label.end());
+  return label;
+}
+
+void emitGenericLifecycleMethod(CodeGenerator &generator, Class *cls,
+                                const std::string &methodName,
+                                asmc::File &output) {
+  if (cls == nullptr)
+    return;
+  auto *method = cls->nameTable[methodName];
+  if (method == nullptr || method->statement == nullptr)
+    return;
+
+  auto *body = new ast::Function(*method, false);
+  body->hidden = false;
+  body->locked = false;
+  body->scopeName = cls->Ident;
+  body->globalLocked = false;
+
+  const auto emissionKey =
+      lifecycleEmissionKey("pub_" + cls->Ident + "_" + methodName);
+  if (!generator.generatedLazyConcreteMethodNames()
+           .insert(emissionKey)
+           .second) {
+    delete body;
+    return;
+  }
+
+  auto *savedScope = generator.scope();
+  const auto savedReturnType = generator.returnType();
+  generator.scope() = cls;
+  output << generator.GenSTMT(body);
+  generator.returnType() = savedReturnType;
+  generator.scope() = savedScope;
 }
 
 void registerModuleGenericTemplates(
@@ -120,6 +162,13 @@ Type **CodeGenerator::instantiateGenericClass(
     }
     OutputFile.lambdas->operator<<(this->GenSTMT(classStatement));
     result = typeList()[newName];
+    auto *concreteClass =
+        result == nullptr ? nullptr : dynamic_cast<Class *>(*result);
+    if (concreteClass != nullptr) {
+      emitGenericLifecycleMethod(*this, concreteClass,
+                                 concreteClass->uniqueType ? "del" : "endScope",
+                                 *OutputFile.lambdas);
+    }
     this->nameSpaceTable() = savedNameSpaceTable;
     this->cwd() = savedCwd;
     this->popEnv();
