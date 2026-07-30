@@ -26,7 +26,7 @@ export int execve(const adr path, * const adr argv, * adr envp){
 };
 
 // Async worker trampoline for spawning execve via the concurrency API.
-export any execWorker(const adr _arg) : async.worker {
+export any execWorker(const adr _arg) : async.worker::<adr> {
     const adr[3] arg = _arg;
     execve(arg[0], arg[1], arg[2]);
     return "success";

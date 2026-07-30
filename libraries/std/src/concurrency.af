@@ -60,7 +60,7 @@ class MProcess signs Thread {
     private Pipe outbox;
 
     public MProcess init(adr foo);
-    int start(* adr args);
+    int start(* const any args);
     private Process copy<<=>>();
     public bool input(adr message);
     public adr output();
@@ -78,31 +78,61 @@ class FD {
  * Reference-counted handle used to await background processes or transform
  * their outputs.
  */
-safe dynamic pedantic class AsyncResult{
+ types(T)
+safe dynamic pedantic class AsyncResult {
     private MProcess p = p;
-    private int refcount = 1;
+    private int refcount = 0;
+    private bool reaped = false;
 
-    AsyncResult init(const MProcess p){
+    fn init(const MProcess p){
         return my;
     };
     
-    AsyncResult get() {
-		my.refcount = my.refcount + 1;
-		return my;
-	};
+    fn get() -> Self {
+	  	my.refcount = my.refcount + 1;
+		  return my;
+	  };
 
     void del() {
-        my.p.kill();
+        if my.reaped == false {
+            my.p.kill();
+            const int pid = my.p.getPid();
+            sys_wait(pid, NULL, 0, NULL);
+            my.reaped = true;
+        };
         const MProcess p = my.p;
         delete p;
     };
 
-    public adr await() {
-        return my.p.output();
+    public fn await() -> T {
+        const adr result = my.p.output();
+        if my.reaped == false {
+            const int pid = my.p.getPid();
+            sys_wait(pid, NULL, 0, NULL);
+            my.reaped = true;
+        };
+        return result;
+    };
+
+    public bool isRunning() {
+        if my.reaped {
+            return false;
+        };
+        const int pid = my.p.getPid();
+        if sys_wait(pid, NULL, 1, NULL) == 0 {
+            return true;
+        };
+        my.reaped = true;
+        return false;
     };
 
     public adr then(const adr func, * const any arg1, * const any arg2, * const any arg3, * const any arg4) {
         const adr res = my.p.output();
+        if my.reaped == false {
+            const int pid = my.p.getPid();
+            sys_wait(pid, NULL, 0, NULL);
+            my.reaped = true;
+        };
         return func(res, arg1, arg2, arg3, arg4);
     };
 
@@ -179,7 +209,7 @@ int start@Process(const adr args){
     return 0;
 };
 
-int start@MProcess(const adr args){
+int start@MProcess(const any args){
     my.pid = sys_fork();
     const adr bar = my.foo;
     if my.pid == 0 {
@@ -270,38 +300,44 @@ export int wait(const Thread p){
  * Spawn a managed process that executes `foo` with up to four arguments and
  * returns an AsyncResult handle.
  */
-export AsyncResult worker(const adr foo, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
+types(T)
+export fn worker(const adr foo, *const any arg1, *const any arg2, *const any arg3, *const any arg4) -> AsyncResult::<T> {
     const MProcess p = new MProcess(fn (const WorkArgs args, const Pipe __inbox, const Pipe outbox) {
         const adr res = args.run();
         const Message msg = new Message(res);
         msg.writePipe(outbox);
     });
-    const AsyncResult ret = new AsyncResult(p);
+    const AsyncResult::<T> ret = new AsyncResult::<T>(p);
     const WorkArgs pArgs = new WorkArgs(foo, arg1, arg2, arg3, arg4);
-    p.start(?pArgs);
+    p.start(pArgs);
     return ret; 
 };
 
 // Spawn and await a `Function` directly, returning its AsyncResult wrapper.
-export AsyncResult do(const Function foo) {
+types(T)
+export fn do(const Function foo) -> AsyncResult::<T> {
     const MProcess p = new MProcess(fn (const Function func, const Pipe __inbox, const Pipe outbox) {
         const adr res = func();
         const Message msg = new Message(res);
         msg.writePipe(outbox);
     });
-    const let ret = new AsyncResult(p);
-    p.start(?foo);
+    const let ret = new AsyncResult::<T>(p);
+    p.start(foo);
     return ret;
 };
 
 /**
- * Allocate a shared memory region of `size` bytes and optionally run a
- * constructor to initialize it, returning a generic pointer.
+ * create a new TYPED shared object
  */
-export generic makeShared(const int size, * const adr constructor, * const any arg1, * const any arg2, * const any arg3, * const any arg4) {
-    const adr val = mmap(NULL, size, 1 | 2, 1 | 32, -1, 0);
-    if constructor != NULL {
-        constructor(val, arg1, arg2, arg3, arg4);
+
+types(T)
+export fn makeShared(* const any arg1, * const any arg2, * const any arg3, * const any arg4, * const any arg5, const any arg6) -> T {
+    const T val = mmap(NULL, T, 1 | 2, 1 | 32, -1, 0);
+    when (T has init)
+    if true {
+      const adr constructor = T.init;
+      constructor(val, arg1, arg2, arg3, arg4);
     };
+
     return val;
 };

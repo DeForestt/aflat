@@ -344,6 +344,7 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
       func->args->replaceTypes(map);
     if (func->statement)
       func->statement->replaceTypes(map);
+    applyTemplateTypes(func->decoratorTemplateTypes, map);
     applyList(func->decoratorArgs, map);
     return;
   }
