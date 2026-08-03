@@ -65,26 +65,27 @@ export int str_concat(adr str1, adr str2, adr pointer){
 };
 
 // Convert a decimal string to an int, handling optional leading minus.
-export int str_toInt(adr input){
+export int str_toInt(immutable adr input){
+    mutable adr cursor = input;
     int mul = 1;
-    const char ch1 = input as char;
+    const char ch1 = cursor as char;
     if(ch1 == '-'){
         mul = -1;
-        input = input + #1;
+        cursor = cursor + #1;
     };
     
     int factor = 0;
-    const int size = len(input);
+    const int size = len(cursor);
     int result = 0;
     int i = size - 1;
     while(i > -1){
         factor = math.exp(10, i);
-        const char ch2 = input as char;
+        const char ch2 = cursor as char;
         const int num = io.toInt(ch2);
         factor = factor * num;
         result = result + factor;
         i = i - 1;
-        input = input + 1;
+        cursor = cursor + 1;
     };
     result = result * mul;
     return result;

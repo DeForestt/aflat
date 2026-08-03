@@ -1,7 +1,7 @@
 export int len(adr str);
 export int str_comp(adr str1, adr str2);
 export int str_concat(adr str1, adr str2, adr pointer);
-export int str_toInt(adr input);
+export int str_toInt(immutable adr input);
 export int str_split(adr str, char sep, adr buff1, adr buff2);
 export int str_find(adr in, char find);
 export int str_subString(int start, int end, adr str, adr buff);

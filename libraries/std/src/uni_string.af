@@ -1,9 +1,11 @@
+.needs <asm>
 .needs <std>
 
 import string from "String";
 import {accept, reject} from "Utils/result" under res;
+import Error from "Utils/Error";
 import {print, printInt, printHex} from "io" under io;
-import {len, str_at, str_comp, str_concat, str_subString, int_toString} from "strings" under st;
+import {len, str_at, str_comp, str_concat, str_subString, str_toInt, int_toString} from "strings" under st;
 import vector from "Collections/Vector";
 import option from "Utils/option";
 import {Some, None} from "Utils/option" under opt;
@@ -91,6 +93,29 @@ unique class uni_string {
 
   fn toString() -> string {
     return my.to_string();
+  };
+
+  safe fn to_int() -> int! {
+    if my.size == 0 {
+      return res.reject::<int>(new Error("String is not numeric"));
+    };
+
+    mutable int start = 0;
+    if my.at(0) == '-' {
+      if my.size == 1 {
+        return res.reject::<int>(new Error("String is not numeric"));
+      };
+      start = 1;
+    };
+
+    for int i = start; i < my.size; i = i + 1 {
+      const char c = my.at(i);
+      if c < '0' | c > '9' {
+        return res.reject::<int>(new Error("String is not numeric"));
+      };
+    };
+
+    return res.accept::<int>(st.str_toInt(my.buf));
   };
 
   safe fn len() -> int {
@@ -497,6 +522,50 @@ export fn print(immutable uni_string &&s) {
 export fn print(immutable uni_string s) {
   io.print(s.get_buf());
   return;
+};
+
+/**
+ * Optionally print a prompt, then read a line from stdin, excluding the
+ * trailing newline.
+ */
+private fn read_string_from_stdin(immutable adr prompt) -> uni_string {
+  if prompt != NULL {
+    io.print(prompt);
+  };
+
+  mutable int capacity = 16;
+  mutable int length = 0;
+  mutable adr buffer = af_malloc(capacity);
+  const char input = '\0';
+
+  while true {
+    const int count = sys_read(0, ?input, 1);
+    if count <= 0 | input == '\n' {
+      break;
+    };
+
+    if length + 1 >= capacity {
+      capacity = capacity * 2;
+      buffer = af_realloc(buffer, capacity);
+    };
+
+    const adr cursor = buffer + length;
+    cursor =: input;
+    length = length + 1;
+  };
+
+  const adr tail = buffer + length;
+  tail =: '\0';
+  const uni_string result = new uni_string(buffer);
+  af_free(buffer);
+  return result;
+};
+
+export fn read_string(?const uni_string prompt) -> uni_string {
+  if prompt.isSome() {
+    return read_string_from_stdin(prompt.expect("Prompt unexpectedly missing").get_buf());
+  };
+  return read_string_from_stdin(NULL);
 };
 
 private adr append_raw(immutable adr out, immutable adr raw) {
