@@ -1,3 +1,4 @@
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -907,8 +908,7 @@ int main(int argc, char *argv[]) {
     config.debug = config.debug || cli.debug;
     if (!cli.outputFile.empty())
       config.outPutFile = cli.outputFile;
-    runConfig(config, libPathA, 'e');
-    return 0;
+    return runConfig(config, libPathA, 'e') ? 0 : 1;
   }
   if (value == "run") {
     cfg::Config config =
@@ -916,14 +916,14 @@ int main(int argc, char *argv[]) {
     config.debug = config.debug || cli.debug;
     if (!cli.outputFile.empty())
       config.outPutFile = cli.outputFile;
-    if (runConfig(config, libPathA, 'e')) {
-      auto of = config.outPutFile;
-      if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
-        of = "./" + config.outPutFile;
-      }
-      [[maybe_unused]] int rc = system(of.c_str());
+    if (!runConfig(config, libPathA, 'e'))
+      return 1;
+    auto of = config.outPutFile;
+    if (config.outPutFile[0] != '.' && config.outPutFile[1] != '/') {
+      of = "./" + config.outPutFile;
     }
-    return 0;
+    int rc = system(of.c_str());
+    return rc != -1 && WIFEXITED(rc) ? WEXITSTATUS(rc) : 1;
   }
   if (value == "test") {
     cfg::Config config =
@@ -931,10 +931,10 @@ int main(int argc, char *argv[]) {
     config.debug = config.debug || cli.debug;
     if (!cli.outputFile.empty())
       config.outPutFile = cli.outputFile;
-    if (runConfig(config, libPathA, 't')) {
-      [[maybe_unused]] int rc = system("./bin/a.test");
-    }
-    return 0;
+    if (!runConfig(config, libPathA, 't'))
+      return 1;
+    int rc = system("./bin/a.test");
+    return rc != -1 && WIFEXITED(rc) ? WEXITSTATUS(rc) : 1;
   }
   if (value == "add" || value == "module" || value == "file") {
     if (cli.args.empty()) {
@@ -1128,7 +1128,9 @@ int main(int argc, char *argv[]) {
   if (outputFile.empty())
     outputFile = "out.s";
   if (std::filesystem::exists(value)) {
-    build(value, outputFile, cfg::Mutability::Promiscuous, cli.debug);
+    return build(value, outputFile, cfg::Mutability::Promiscuous, cli.debug)
+               ? 0
+               : 1;
   } else {
     std::cout << "File " << value << " does not exist\n";
     return 1;

@@ -613,12 +613,7 @@ export fn _fUCstr(const adr fmt, * adr args) -> uni_string {
       } else if (spec == 'd') {
         const char[16] buff;
         const int n = args as int;
-        if (n == 0) {
-          buff =: '0';
-          buff =: '\0';
-        } else {
-          st.int_toString(n, buff);
-        };
+        st.int_toString(n, buff);
         out = append_raw(out, buff);
         args = args + int;
       } else if (spec == 'b') {

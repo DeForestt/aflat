@@ -335,12 +335,7 @@ adr _fUCstr(const adr fmt, * adr args) {
             } else if (spec == 'd') {
                 const char[16] buff;
                 const int n = args as int;
-                if (n == 0) {
-                    buff =: '0';
-                    buff =: '\0';
-                } else {
-                    strs.int_toString(n, buff);
-                };
+                strs.int_toString(n, buff);
                 const int buffLen = strs.len(buff);
                 capacity = capacity + buffLen;
                 save = af_realloc(save, capacity);
