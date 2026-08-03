@@ -43,7 +43,7 @@ Concatenates two strings.
 ### `str_toInt`
 Converts a string to an integer.
 
-- **Signature**: `int str_toInt(adr input)`
+- **Signature**: `int str_toInt(immutable adr input)`
 - **Parameters**:
   - `input`: Address of the string.
 - **Returns**: The integer value.

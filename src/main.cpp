@@ -1391,10 +1391,13 @@ void buildTemplate(std::string value) {
   std::filesystem::create_directories(value + "/bin");
 
   std::ofstream outfile(value + "/src/main.af");
-  outfile << ".needs <std>\n";
-  outfile << "import {print} from \"io\" under io;\n\n";
-  outfile
-      << "int main(){\n\tio.print(\"Hello, World!\\n\");\n\treturn 0;\n};\n";
+  outfile << ".needs <std>\n\n";
+  outfile << "import uni_string from \"uni_string\";\n";
+  outfile << "import {print} from \"uni_string\" under uni;\n\n";
+  outfile << "fn main() -> int {\n"
+             "    uni.print(`Hello, World!\\n`);\n"
+             "    return 0;\n"
+             "};\n";
   outfile.close();
 
   outfile = std::ofstream(value + "/src/test/test.af");
