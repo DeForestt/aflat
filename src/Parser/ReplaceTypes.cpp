@@ -254,6 +254,21 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
       callExpr->call->replaceTypes(map);
     return;
   }
+  if (auto asyncExpr = dynamic_cast<AsyncExpression *>(this)) {
+    if (asyncExpr->expr)
+      asyncExpr->expr->replaceTypes(map);
+    return;
+  }
+  if (auto pause = dynamic_cast<Pause *>(this)) {
+    if (pause->expr)
+      pause->expr->replaceTypes(map);
+    return;
+  }
+  if (auto control = dynamic_cast<TaskControl *>(this)) {
+    if (control->expr)
+      control->expr->replaceTypes(map);
+    return;
+  }
   if (auto assign = dynamic_cast<Assign *>(this)) {
     if (assign->expr)
       assign->expr->replaceTypes(map);

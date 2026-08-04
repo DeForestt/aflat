@@ -131,6 +131,7 @@ struct Parser::Impl {
   ast::Statement Output;
   links::SLinkedList<ast::Type, std::string> typeList;
   int mutability;
+  std::vector<bool> asyncContexts;
   Parser &parser;
 };
 
@@ -309,6 +310,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     auto dynamicType = false;
     auto pedantic = false;
     auto uniqueType = false;
+    auto asyncFunction = false;
     auto scope = ast::Public;
     std::vector<std::string> typeNames;
     tokens.pop();
@@ -322,12 +324,14 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
 
     // Use a set for efficient lookup instead of multiple 'or' checks
     static const std::unordered_set<std::string> modifiers = {
-        "safe", "dynamic", "pedantic", "types", "when", "unique"};
+        "safe", "dynamic", "pedantic", "types", "when", "unique", "async"};
 
     if (modifiers.count(obj.meta)) {
       while (modifiers.count(obj.meta)) {
         if (obj.meta == "safe")
           safeType = true;
+        else if (obj.meta == "async")
+          asyncFunction = true;
         else if (obj.meta == "dynamic")
           dynamicType = true;
         else if (obj.meta == "pedantic")
@@ -400,6 +404,10 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
       }
       if (safeType && uniqueType) {
         throw err::Exception("safe and unique cannot be combined on line " +
+                             std::to_string(obj.lineCount));
+      }
+      if (asyncFunction && obj.meta != "fn") {
+        throw err::Exception("async can only be used with functions on line " +
                              std::to_string(obj.lineCount));
       }
     }
@@ -500,10 +508,11 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
 
     // Declare a variable
     static const std::unordered_set<std::string> statementKeywords = {
-        "return",   "resolve", "fn",    "match",  "push",      "pull",
-        "note",     "if",      "while", "for",    "foreach",   "struct",
-        "class",    "union",   "enum",  "import", "transform", "delete",
-        "continue", "break",   "else"};
+        "return",   "resolve", "fn",     "match",  "push",      "pull",
+        "note",     "if",      "while",  "for",    "foreach",   "struct",
+        "class",    "union",   "enum",   "import", "transform", "delete",
+        "continue", "break",   "else",   "pause",  "yield",     "await",
+        "spawn",    "run",     "cancel", "detach"};
 
     if (statementKeywords.count(obj.meta) == 0 &&
         typeList[obj.meta] == nullptr &&
@@ -756,8 +765,57 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
       ret->resolver = true;
       output = ret;
     } else if (obj.meta == "fn") {
-      output = new ast::Function(scope, tokens, typeNames, parser, safeType);
+      output = new ast::Function(scope, tokens, typeNames, parser, safeType,
+                                 asyncFunction);
       output->when = whenClause;
+    } else if (obj.meta == "pause") {
+      if (asyncContexts.empty() || !asyncContexts.back()) {
+        throw err::Exception(
+            "pause may only be used inside an async fn on line " +
+            std::to_string(obj.lineCount));
+      }
+      auto pause = new ast::Pause();
+      pause->logicalLine = obj.lineCount;
+      pause->expr = this->parseExpr(tokens);
+      if (pause->expr == nullptr)
+        throw err::Exception("pause requires an expression on line " +
+                             std::to_string(obj.lineCount));
+      output = pause;
+    } else if (obj.meta == "yield") {
+      if (asyncContexts.empty() || !asyncContexts.back()) {
+        throw err::Exception(
+            "yield may only be used inside an async fn on line " +
+            std::to_string(obj.lineCount));
+      }
+      auto yield = new ast::Yield();
+      yield->logicalLine = obj.lineCount;
+      output = yield;
+    } else if (obj.meta == "cancel" || obj.meta == "detach") {
+      auto *control = new ast::TaskControl();
+      control->logicalLine = obj.lineCount;
+      control->kind = obj.meta == "cancel" ? ast::TaskControlKind::Cancel
+                                           : ast::TaskControlKind::Detach;
+      control->expr = this->parseExpr(tokens);
+      output = control;
+    } else if (obj.meta == "await" || obj.meta == "spawn" ||
+               obj.meta == "run") {
+      if (obj.meta == "await" &&
+          (asyncContexts.empty() || !asyncContexts.back())) {
+        throw err::Exception(
+            "await may only be used inside an async fn on line " +
+            std::to_string(obj.lineCount));
+      }
+      if (obj.meta == "run" && !asyncContexts.empty() && asyncContexts.back()) {
+        throw err::Exception("run cannot be used inside an async fn; use await "
+                             "instead on line " +
+                             std::to_string(obj.lineCount));
+      }
+      auto *keyword = new lex::LObj();
+      keyword->meta = obj.meta;
+      keyword->lineCount = obj.lineCount;
+      keyword->column = obj.column;
+      tokens.push(keyword);
+      output = this->parseExpr(tokens);
     } else if (obj.meta == "match") {
       output = new ast::Match(tokens, parser);
     } else if (obj.meta == "push") {
@@ -1844,10 +1902,35 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       auto openCurl = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (openCurl != nullptr && openCurl->Sym == '{') {
         tokens.pop();
+        asyncContexts.push_back(false);
         lambda->function->statement = this->parseStmt(tokens, false);
-      } else
+        asyncContexts.pop_back();
+      } else {
+        asyncContexts.push_back(false);
         lambda->function->statement = this->parseStmt(tokens, true);
+        asyncContexts.pop_back();
+      }
       output = lambda;
+    } else if (obj.meta == "await" || obj.meta == "spawn" ||
+               obj.meta == "run") {
+      if (obj.meta == "await" &&
+          (asyncContexts.empty() || !asyncContexts.back())) {
+        throw err::Exception(
+            "await may only be used inside an async fn on line " +
+            std::to_string(obj.lineCount));
+      }
+      if (obj.meta == "run" && !asyncContexts.empty() && asyncContexts.back()) {
+        throw err::Exception("run cannot be used inside an async fn; use await "
+                             "instead on line " +
+                             std::to_string(obj.lineCount));
+      }
+      auto asyncExpr = new ast::AsyncExpression();
+      asyncExpr->logicalLine = obj.lineCount;
+      asyncExpr->kind = obj.meta == "await"   ? ast::AsyncExpressionKind::Await
+                        : obj.meta == "spawn" ? ast::AsyncExpressionKind::Spawn
+                                              : ast::AsyncExpressionKind::Run;
+      asyncExpr->expr = this->parseExpr(tokens);
+      output = asyncExpr;
     } else if (tokens.count > 0 &&
                dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
       auto asObject = *dynamic_cast<lex::LObj *>(tokens.peek());
@@ -2289,6 +2372,19 @@ parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
 
 ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
   return impl->parseExpr(tokens);
+}
+
+void parse::Parser::pushAsyncContext(bool isAsync) {
+  impl->asyncContexts.push_back(isAsync);
+}
+
+void parse::Parser::popAsyncContext() {
+  if (!impl->asyncContexts.empty())
+    impl->asyncContexts.pop_back();
+}
+
+bool parse::Parser::inAsyncContext() const {
+  return !impl->asyncContexts.empty() && impl->asyncContexts.back();
 }
 
 links::LinkedList<ast::Expr *>

@@ -86,6 +86,34 @@ Statement *deepCopy(const Statement *stmt) {
     copy->expr = static_cast<Expr *>(deepCopy(ret->expr));
     return copy;
   }
+  if (auto asyncExpr = dynamic_cast<const AsyncExpression *>(stmt)) {
+    auto *copy = new AsyncExpression();
+    copyExprFields(copy, asyncExpr);
+    copy->kind = asyncExpr->kind;
+    copy->expr = static_cast<Expr *>(deepCopy(asyncExpr->expr));
+    return copy;
+  }
+  if (auto pause = dynamic_cast<const Pause *>(stmt)) {
+    auto *copy = new Pause();
+    copy->locked = pause->locked;
+    copy->logicalLine = pause->logicalLine;
+    copy->expr = static_cast<Expr *>(deepCopy(pause->expr));
+    return copy;
+  }
+  if (auto yield = dynamic_cast<const Yield *>(stmt)) {
+    auto *copy = new Yield();
+    copy->locked = yield->locked;
+    copy->logicalLine = yield->logicalLine;
+    return copy;
+  }
+  if (auto control = dynamic_cast<const TaskControl *>(stmt)) {
+    auto *copy = new TaskControl();
+    copy->locked = control->locked;
+    copy->logicalLine = control->logicalLine;
+    copy->kind = control->kind;
+    copy->expr = static_cast<Expr *>(deepCopy(control->expr));
+    return copy;
+  }
   if (auto wh = dynamic_cast<const While *>(stmt)) {
     auto *copy = new While();
     copy->locked = wh->locked;
