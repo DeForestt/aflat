@@ -106,6 +106,14 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
     call->call = new ast::Call;
     call->call->Args = links::LinkedList<ast::Expr *>();
     call->call->Args.push(fpoint);
+    // A worker decorator without configuration uses a thread. Decorator
+    // arguments precede the decorated function arguments, so inject the
+    // default here while those two argument groups are still distinct.
+    if (func->decorator == "worker" && func->decoratorArgs.count == 0) {
+      auto *mode = new ast::Var;
+      mode->Ident = "NULL";
+      call->call->Args.push(mode);
+    }
     call->call->Args.istitch(func->decoratorArgs);
     call->call->Args.istitch(args);
 

@@ -118,6 +118,33 @@ TEST_CASE("namespaced function decorators accept nested generic arguments",
   REQUIRE(result);
 }
 
+TEST_CASE("worker decorators accept an explicit mode and default to threads",
+          "[generics][decorator][worker]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/configurable_worker_decorator");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "configurable_worker_decorator.af";
+  const auto output = dir / "configurable_worker_decorator.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << ".needs <asm>\n";
+  ofs << "import {worker} from \"concurrency\" under async;\n";
+  ofs << "import WorkerMode from \"concurrency\";\n";
+  ofs << "fn threaded(adr value) -> adr : async.worker::<adr> { "
+         "return value; };\n";
+  ofs << "fn processed(adr value) -> adr : "
+         "async.worker::<adr>(WorkerMode.PROCESS) { return value; };\n";
+  ofs << "fn main() -> int { threaded(NULL); processed(NULL); return 0; };\n";
+  ofs.close();
+
+  const bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
 TEST_CASE("transform preserves chained method call order", "[transform]") {
   namespace fs = std::filesystem;
   const auto dir = fs::path("tmp/transform_method_chain");

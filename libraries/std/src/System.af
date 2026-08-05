@@ -3,6 +3,7 @@
 
 import { worker } from "concurrency" under async;
 import AsyncResult from "concurrency";
+import WorkerMode from "concurrency";
 import string from "String";
 import { fString } from "String" under st;
 import {print} from "io" under io;
@@ -26,7 +27,7 @@ export int execve(const adr path, * const adr argv, * adr envp){
 };
 
 // Async worker trampoline for spawning execve via the concurrency API.
-export any execWorker(const adr _arg) : async.worker::<adr> {
+export any execWorker(const adr _arg) : async.worker::<adr>(WorkerMode.PROCESS) {
     const adr[3] arg = _arg;
     execve(arg[0], arg[1], arg[2]);
     return "success";

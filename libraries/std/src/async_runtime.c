@@ -16,6 +16,205 @@
 #include <time.h>
 #include <unistd.h>
 
+typedef struct af_worker_thread {
+  pthread_mutex_t mutex;
+  pthread_t thread;
+  void *(*function)(void *, void *, void *, void *);
+  void *arguments[4];
+  void *result;
+  int finished;
+  int joined;
+  int references;
+  int released;
+} af_worker_thread;
+
+typedef struct af_worker_timeout {
+  af_worker_thread *worker;
+  struct timespec duration;
+} af_worker_timeout;
+
+static void af_worker_thread_finished(void *opaque) {
+  af_worker_thread *worker = opaque;
+  pthread_mutex_lock(&worker->mutex);
+  worker->finished = 1;
+  pthread_mutex_unlock(&worker->mutex);
+}
+
+/* AFlat functions currently use the System V callee-saved registers as
+ * scratch registers. Preserve them around a callback into generated code so
+ * the surrounding C pthread trampoline remains ABI-correct. */
+__attribute__((naked, noinline)) static void *
+af_worker_thread_invoke(void *(*function)(void *, void *, void *, void *),
+                        void *arg1, void *arg2, void *arg3, void *arg4) {
+  __asm__("pushq %rbp\n\t"
+          "movq %rsp, %rbp\n\t"
+          "pushq %rbx\n\t"
+          "pushq %r12\n\t"
+          "pushq %r13\n\t"
+          "pushq %r14\n\t"
+          "pushq %r15\n\t"
+          "subq $8, %rsp\n\t"
+          "movq %rdi, %rax\n\t"
+          "movq %rsi, %rdi\n\t"
+          "movq %rdx, %rsi\n\t"
+          "movq %rcx, %rdx\n\t"
+          "movq %r8, %rcx\n\t"
+          "call *%rax\n\t"
+          "addq $8, %rsp\n\t"
+          "popq %r15\n\t"
+          "popq %r14\n\t"
+          "popq %r13\n\t"
+          "popq %r12\n\t"
+          "popq %rbx\n\t"
+          "leave\n\t"
+          "ret");
+}
+
+static void *af_worker_thread_run(void *opaque) {
+  af_worker_thread *worker = opaque;
+  void *result = NULL;
+  pthread_cleanup_push(af_worker_thread_finished, worker);
+  result = af_worker_thread_invoke(worker->function, worker->arguments[0],
+                                   worker->arguments[1], worker->arguments[2],
+                                   worker->arguments[3]);
+  pthread_cleanup_pop(0);
+
+  pthread_mutex_lock(&worker->mutex);
+  worker->result = result;
+  worker->finished = 1;
+  pthread_mutex_unlock(&worker->mutex);
+  return result;
+}
+
+static void af_worker_thread_free(af_worker_thread *worker) {
+  pthread_mutex_destroy(&worker->mutex);
+  munmap(worker, sizeof(*worker));
+}
+
+void *af_worker_thread_create(void *function, void *arg1, void *arg2,
+                              void *arg3, void *arg4) {
+  af_worker_thread *worker = mmap(NULL, sizeof(*worker), PROT_READ | PROT_WRITE,
+                                  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (worker == MAP_FAILED)
+    return NULL;
+
+  pthread_mutex_init(&worker->mutex, NULL);
+  worker->function = (void *(*)(void *, void *, void *, void *))function;
+  worker->arguments[0] = arg1;
+  worker->arguments[1] = arg2;
+  worker->arguments[2] = arg3;
+  worker->arguments[3] = arg4;
+  worker->references = 1;
+  if (pthread_create(&worker->thread, NULL, af_worker_thread_run, worker) !=
+      0) {
+    af_worker_thread_free(worker);
+    return NULL;
+  }
+  return worker;
+}
+
+void *af_worker_thread_await(void *opaque) {
+  af_worker_thread *worker = opaque;
+  if (worker == NULL)
+    return NULL;
+
+  pthread_mutex_lock(&worker->mutex);
+  const int should_join = !worker->joined;
+  worker->joined = 1;
+  pthread_mutex_unlock(&worker->mutex);
+  if (should_join)
+    pthread_join(worker->thread, NULL);
+
+  pthread_mutex_lock(&worker->mutex);
+  void *result = worker->result;
+  pthread_mutex_unlock(&worker->mutex);
+  return result;
+}
+
+int af_worker_thread_is_running(void *opaque) {
+  af_worker_thread *worker = opaque;
+  if (worker == NULL)
+    return 0;
+  pthread_mutex_lock(&worker->mutex);
+  const int running = !worker->finished;
+  pthread_mutex_unlock(&worker->mutex);
+  return running;
+}
+
+int af_worker_thread_cancel(void *opaque) {
+  af_worker_thread *worker = opaque;
+  if (worker == NULL)
+    return -1;
+  pthread_mutex_lock(&worker->mutex);
+  const int finished = worker->finished;
+  pthread_mutex_unlock(&worker->mutex);
+  return finished ? 0 : pthread_cancel(worker->thread);
+}
+
+static void *af_worker_thread_timeout_run(void *opaque) {
+  af_worker_timeout *timeout = opaque;
+  nanosleep(&timeout->duration, NULL);
+  af_worker_thread_cancel(timeout->worker);
+
+  pthread_mutex_lock(&timeout->worker->mutex);
+  timeout->worker->references--;
+  const int should_free =
+      timeout->worker->released && timeout->worker->references == 0;
+  pthread_mutex_unlock(&timeout->worker->mutex);
+  if (should_free)
+    af_worker_thread_free(timeout->worker);
+  munmap(timeout, sizeof(*timeout));
+  return NULL;
+}
+
+int af_worker_thread_timeout(void *opaque, int seconds, int nanoseconds) {
+  af_worker_thread *worker = opaque;
+  if (worker == NULL)
+    return -1;
+
+  af_worker_timeout *timeout =
+      mmap(NULL, sizeof(*timeout), PROT_READ | PROT_WRITE,
+           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (timeout == MAP_FAILED)
+    return -1;
+  timeout->worker = worker;
+  timeout->duration.tv_sec = seconds;
+  timeout->duration.tv_nsec = nanoseconds;
+
+  pthread_mutex_lock(&worker->mutex);
+  worker->references++;
+  pthread_mutex_unlock(&worker->mutex);
+
+  pthread_t timer;
+  const int status =
+      pthread_create(&timer, NULL, af_worker_thread_timeout_run, timeout);
+  if (status != 0) {
+    pthread_mutex_lock(&worker->mutex);
+    worker->references--;
+    pthread_mutex_unlock(&worker->mutex);
+    munmap(timeout, sizeof(*timeout));
+    return status;
+  }
+  pthread_detach(timer);
+  return 0;
+}
+
+void af_worker_thread_release(void *opaque) {
+  af_worker_thread *worker = opaque;
+  if (worker == NULL)
+    return;
+  af_worker_thread_cancel(worker);
+  af_worker_thread_await(worker);
+
+  pthread_mutex_lock(&worker->mutex);
+  worker->released = 1;
+  worker->references--;
+  const int should_free = worker->references == 0;
+  pthread_mutex_unlock(&worker->mutex);
+  if (should_free)
+    af_worker_thread_free(worker);
+}
+
 #if defined(__has_include)
 #if __has_include(<valgrind/memcheck.h>)
 #include <valgrind/memcheck.h>
@@ -212,8 +411,8 @@ static int af_io_ring_init(af_io_ring *ring, unsigned entries) {
   if (fd < 0)
     return -errno;
 
-  size_t sq_size = parameters.sq_off.array +
-                   parameters.sq_entries * sizeof(unsigned);
+  size_t sq_size =
+      parameters.sq_off.array + parameters.sq_entries * sizeof(unsigned);
   size_t cq_size = parameters.cq_off.cqes +
                    parameters.cq_entries * sizeof(struct io_uring_cqe);
   if (parameters.features & IORING_FEAT_SINGLE_MMAP) {
@@ -231,8 +430,7 @@ static int af_io_ring_init(af_io_ring *ring, unsigned entries) {
     ring->cq_mapping_size = mapping_size;
   } else {
     ring->sq_mapping = mmap(NULL, sq_size, PROT_READ | PROT_WRITE,
-                            MAP_SHARED | MAP_POPULATE, fd,
-                            IORING_OFF_SQ_RING);
+                            MAP_SHARED | MAP_POPULATE, fd, IORING_OFF_SQ_RING);
     if (ring->sq_mapping == MAP_FAILED) {
       int error = -errno;
       close(fd);
@@ -241,8 +439,7 @@ static int af_io_ring_init(af_io_ring *ring, unsigned entries) {
     }
     ring->sq_mapping_size = sq_size;
     ring->cq_mapping = mmap(NULL, cq_size, PROT_READ | PROT_WRITE,
-                            MAP_SHARED | MAP_POPULATE, fd,
-                            IORING_OFF_CQ_RING);
+                            MAP_SHARED | MAP_POPULATE, fd, IORING_OFF_CQ_RING);
     if (ring->cq_mapping == MAP_FAILED) {
       int error = -errno;
       munmap(ring->sq_mapping, ring->sq_mapping_size);
@@ -255,7 +452,7 @@ static int af_io_ring_init(af_io_ring *ring, unsigned entries) {
 
   ring->sqes_size = parameters.sq_entries * sizeof(struct io_uring_sqe);
   ring->sqes = mmap(NULL, ring->sqes_size, PROT_READ | PROT_WRITE,
-                     MAP_SHARED | MAP_POPULATE, fd, IORING_OFF_SQES);
+                    MAP_SHARED | MAP_POPULATE, fd, IORING_OFF_SQES);
   if (ring->sqes == MAP_FAILED) {
     int error = -errno;
     if (ring->cq_mapping != ring->sq_mapping)
@@ -305,8 +502,8 @@ static int af_io_submit(af_runtime *runtime, af_io_operation *operation,
 
   int submitted;
   do {
-    submitted = (int)syscall(__NR_io_uring_enter, ring->fd, 1u, 0u, 0u,
-                             NULL, 0u);
+    submitted =
+        (int)syscall(__NR_io_uring_enter, ring->fd, 1u, 0u, 0u, NULL, 0u);
   } while (submitted < 0 && errno == EINTR);
   if (submitted < 0) {
     __atomic_store_n(ring->sq_tail, tail, __ATOMIC_RELEASE);
@@ -342,8 +539,7 @@ static void af_io_drain_completions(af_runtime *runtime) {
   unsigned tail = __atomic_load_n(ring->cq_tail, __ATOMIC_ACQUIRE);
   while (head != tail) {
     struct io_uring_cqe *entry = &ring->cqes[head & *ring->cq_mask];
-    af_io_operation *operation =
-        (af_io_operation *)(uintptr_t)entry->user_data;
+    af_io_operation *operation = (af_io_operation *)(uintptr_t)entry->user_data;
     if (operation != NULL)
       af_io_complete(operation, entry->res);
     ++head;
@@ -423,14 +619,15 @@ static uint64_t af_invoke(af_task *task) {
     return ((uint64_t(*)(uint64_t, uint64_t, uint64_t, uint64_t))task->resume)(
         task->args[0], task->args[1], task->args[2], task->args[3]);
   case 5:
-    return ((uint64_t(*)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t))
-                task->resume)(task->args[0], task->args[1], task->args[2],
-                              task->args[3], task->args[4]);
+    return ((uint64_t(*)(uint64_t, uint64_t, uint64_t, uint64_t,
+                         uint64_t))task->resume)(task->args[0], task->args[1],
+                                                 task->args[2], task->args[3],
+                                                 task->args[4]);
   default:
     return ((uint64_t(*)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t,
-                         uint64_t))task->resume)(
-        task->args[0], task->args[1], task->args[2], task->args[3],
-        task->args[4], task->args[5]);
+                         uint64_t))task->resume)(task->args[0], task->args[1],
+                                                 task->args[2], task->args[3],
+                                                 task->args[4], task->args[5]);
   }
 }
 
@@ -485,10 +682,10 @@ static void *af_runtime_worker(void *unused) {
         break;
       }
       if (af_global_runtime.io.fd >= 0) {
-        int timeout = af_timeout_milliseconds(
-            af_global_runtime.timers == NULL
-                ? NULL
-                : &af_global_runtime.timers->deadline);
+        int timeout =
+            af_timeout_milliseconds(af_global_runtime.timers == NULL
+                                        ? NULL
+                                        : &af_global_runtime.timers->deadline);
         struct pollfd descriptors[2] = {
             {.fd = af_global_runtime.wake_fd, .events = POLLIN},
             {.fd = af_global_runtime.io.fd, .events = POLLIN},
@@ -548,15 +745,15 @@ static void af_runtime_init(void) {
   pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
   pthread_cond_init(&af_global_runtime.ready, &attr);
   pthread_condattr_destroy(&attr);
-  af_global_runtime.wake_fd =
-      eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+  af_global_runtime.wake_fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
   if (af_global_runtime.wake_fd < 0) {
-    fprintf(stderr, "AFlat async runtime: failed to create scheduler eventfd\n");
+    fprintf(stderr,
+            "AFlat async runtime: failed to create scheduler eventfd\n");
     abort();
   }
   af_io_ring_init(&af_global_runtime.io, 256);
-  if (pthread_create(&af_global_runtime.worker, NULL, af_runtime_worker, NULL) !=
-      0) {
+  if (pthread_create(&af_global_runtime.worker, NULL, af_runtime_worker,
+                     NULL) != 0) {
     fprintf(stderr, "AFlat async runtime: failed to start scheduler\n");
     abort();
   }
@@ -663,7 +860,8 @@ AF_ENTRY int af_task_restore_frame(void *frame_base, size_t frame_size) {
   pthread_mutex_lock(&task->mutex);
   int state = task->state;
   if (state != 0 && task->frame != NULL) {
-    size_t count = task->frame_size < frame_size ? task->frame_size : frame_size;
+    size_t count =
+        task->frame_size < frame_size ? task->frame_size : frame_size;
     memcpy((unsigned char *)frame_base - frame_size, task->frame, count);
   }
   pthread_mutex_unlock(&task->mutex);
@@ -688,8 +886,8 @@ AF_ENTRY void af_task_await_suspend(void *opaque, int state, void *frame_base,
   pthread_mutex_lock(&current->mutex);
   af_save_frame(current, state, frame_base, frame_size);
   current->awaited = awaited;
-  current->status = current->cancel_requested ? AF_TASK_CANCELLED
-                                              : AF_TASK_WAITING;
+  current->status =
+      current->cancel_requested ? AF_TASK_CANCELLED : AF_TASK_WAITING;
   int cancelled = current->status == AF_TASK_CANCELLED;
   pthread_mutex_unlock(&current->mutex);
   if (cancelled) {
@@ -902,7 +1100,8 @@ static int af_io_begin(int64_t descriptor, void *buffer, int64_t length,
 
 AF_ENTRY int af_io_read_begin(int64_t descriptor, void *buffer, int64_t length,
                               int64_t offset, void **output) {
-  return af_io_begin(descriptor, buffer, length, offset, output, IORING_OP_READ);
+  return af_io_begin(descriptor, buffer, length, offset, output,
+                     IORING_OP_READ);
 }
 
 AF_ENTRY int af_io_write_begin(int64_t descriptor, const void *buffer,

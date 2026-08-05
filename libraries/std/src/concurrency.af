@@ -5,6 +5,12 @@ import {len, int_toStringL0, str_toInt} from "strings" under str;
 import Function from "Utils/Functions";
 import {print} from "io" under io;
 
+// Selects the isolation model used by a worker.
+export enum WorkerMode {
+    THREAD,
+    PROCESS
+};
+
 // Represents the outcome from an asynchronous worker execution.
 class AsyncOutput {
     bool okay;
@@ -80,11 +86,16 @@ class FD {
  */
  types(T)
 safe dynamic pedantic class AsyncResult {
-    private MProcess p = p;
+    private MProcess p = NULL;
+    private WorkerMode mode = WorkerMode.PROCESS;
+    private adr thread = NULL;
     private int refcount = 0;
     private bool reaped = false;
 
-    fn init(const MProcess p){
+    fn init(const WorkerMode mode, * const MProcess p, * const adr thread){
+        my.mode = mode;
+        my.p = p;
+        my.thread = thread;
         return my;
     };
     
@@ -94,6 +105,10 @@ safe dynamic pedantic class AsyncResult {
 	  };
 
     void del() {
+        if my.mode == WorkerMode.THREAD {
+            af_worker_thread_release(my.thread);
+            return;
+        };
         if my.reaped == false {
             my.p.kill();
             const int pid = my.p.getPid();
@@ -105,7 +120,12 @@ safe dynamic pedantic class AsyncResult {
     };
 
     public fn await() -> T {
-        const adr result = my.p.output();
+        if my.mode == WorkerMode.THREAD {
+            my.reaped = true;
+            const generic result = af_worker_thread_await(my.thread);
+            return result;
+        };
+        const generic result = my.p.output();
         if my.reaped == false {
             const int pid = my.p.getPid();
             sys_wait(pid, NULL, 0, NULL);
@@ -115,6 +135,9 @@ safe dynamic pedantic class AsyncResult {
     };
 
     public bool isRunning() {
+        if my.mode == WorkerMode.THREAD {
+            return af_worker_thread_is_running(my.thread);
+        };
         if my.reaped {
             return false;
         };
@@ -127,6 +150,11 @@ safe dynamic pedantic class AsyncResult {
     };
 
     public adr then(const adr func, * const any arg1, * const any arg2, * const any arg3, * const any arg4) {
+        if my.mode == WorkerMode.THREAD {
+            const adr res = af_worker_thread_await(my.thread);
+            my.reaped = true;
+            return func(res, arg1, arg2, arg3, arg4);
+        };
         const adr res = my.p.output();
         if my.reaped == false {
             const int pid = my.p.getPid();
@@ -137,10 +165,16 @@ safe dynamic pedantic class AsyncResult {
     };
 
     public int kill() {
+        if my.mode == WorkerMode.THREAD {
+            return af_worker_thread_cancel(my.thread);
+        };
         return my.p.kill();
     };
 
     public int timeout(const int time, *const int nano) {
+        if my.mode == WorkerMode.THREAD {
+            return af_worker_thread_timeout(my.thread, time, nano);
+        };
         // create a new process that waits for time and then kills the process
 
         const Process timeout = Process(fn (const adr args) {
@@ -295,20 +329,23 @@ export int wait(const Thread p){
     return 0;
 };
 
-// Start a function as a concurrent process
 /**
- * Spawn a managed process that executes `foo` with up to four arguments and
- * returns an AsyncResult handle.
+ * Execute `foo` with up to four arguments using the requested worker mode.
  */
 types(T)
-export fn worker(const adr foo, *const any arg1, *const any arg2, *const any arg3, *const any arg4) -> AsyncResult::<T> {
+export fn worker(const adr foo, *const WorkerMode mode, *const any arg1, *const any arg2, *const any arg3, *const any arg4) -> AsyncResult::<T> {
+    if mode == WorkerMode.THREAD {
+        const adr thread = af_worker_thread_create(foo, arg1, arg2, arg3, arg4);
+        return new AsyncResult::<T>(mode, NULL, thread);
+    };
+
+    const WorkArgs pArgs = new WorkArgs(foo, arg1, arg2, arg3, arg4);
     const MProcess p = new MProcess(fn (const WorkArgs args, const Pipe __inbox, const Pipe outbox) {
         const adr res = args.run();
         const Message msg = new Message(res);
         msg.writePipe(outbox);
     });
-    const AsyncResult::<T> ret = new AsyncResult::<T>(p);
-    const WorkArgs pArgs = new WorkArgs(foo, arg1, arg2, arg3, arg4);
+    const AsyncResult::<T> ret = new AsyncResult::<T>(mode, p, NULL);
     p.start(pArgs);
     return ret; 
 };
@@ -316,14 +353,7 @@ export fn worker(const adr foo, *const any arg1, *const any arg2, *const any arg
 // Spawn and await a `Function` directly, returning its AsyncResult wrapper.
 types(T)
 export fn do(const Function foo) -> AsyncResult::<T> {
-    const MProcess p = new MProcess(fn (const Function func, const Pipe __inbox, const Pipe outbox) {
-        const adr res = func();
-        const Message msg = new Message(res);
-        msg.writePipe(outbox);
-    });
-    const let ret = new AsyncResult::<T>(p);
-    p.start(foo);
-    return ret;
+    return worker::<T>(foo, WorkerMode.THREAD);
 };
 
 /**
