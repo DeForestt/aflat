@@ -192,8 +192,9 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
       parse::PRIMITIVE_TYPES.end()) {
     file << generator.setOffset(store->to, 0, fromExpr.access, fromExpr.size);
   } else {
-    file << generator.memMove(fromExpr.access, store->to,
-                              unionGen->largestSize);
+    // The union reserves enough storage for its largest variant, but copying a
+    // smaller composite payload must not read beyond that payload's object.
+    file << generator.memMove(fromExpr.access, store->to, alias.byteSize);
   }
 
   if (isUniqueCompositeType(generator, fromExpr.type, file)) {

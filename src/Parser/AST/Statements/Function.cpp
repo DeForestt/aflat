@@ -6,6 +6,7 @@
 #include "Scanner.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <regex>
 
@@ -41,6 +42,153 @@ int maxFrameOffset(const asmc::File &file) {
 }
 
 int alignFrameSize(int bytes) { return ((bytes + 15) / 16) * 16; }
+
+asmc::Mov *movq(const std::string &from, const std::string &to, int line) {
+  auto *mov = new asmc::Mov();
+  mov->from = from;
+  mov->to = to;
+  mov->size = asmc::QWord;
+  mov->logicalLine = line;
+  return mov;
+}
+
+asmc::File asyncConstructor(const Function &function,
+                            const std::string &constructorLabel,
+                            const std::string &bodyLabel, int capturedArgs) {
+  asmc::File file;
+  const int argc = capturedArgs;
+  static const std::array<std::string, 6> regs = {"%rdi", "%rsi", "%rdx",
+                                                  "%rcx", "%r8",  "%r9"};
+
+  auto *global = new asmc::LinkTask();
+  global->command = "global";
+  global->operand = constructorLabel;
+  file.linker << global;
+  auto *label = new asmc::Label();
+  label->label = constructorLabel;
+  label->logicalLine = function.logicalLine;
+  file.text << label;
+  auto *push = new asmc::Push();
+  push->op = "%rbp";
+  push->logicalLine = function.logicalLine;
+  file.text << push;
+  file.text << movq("%rsp", "%rbp", function.logicalLine);
+  auto *sub = new asmc::Subq();
+  sub->op1 = "$64";
+  sub->op2 = "%rsp";
+  sub->logicalLine = function.logicalLine;
+  file.text << sub;
+
+  for (int i = 0; i < argc; ++i)
+    file.text << movq(regs[i], "-" + std::to_string((i + 1) * 8) + "(%rbp)",
+                      function.logicalLine);
+
+  auto *bodyAddress = new asmc::Lea();
+  bodyAddress->from = bodyLabel + "(%rip)";
+  bodyAddress->to = "%rdi";
+  bodyAddress->logicalLine = function.logicalLine;
+  file.text << bodyAddress;
+  for (int i = 0; i < std::min(argc, 5); ++i)
+    file.text << movq("-" + std::to_string((i + 1) * 8) + "(%rbp)", regs[i + 1],
+                      function.logicalLine);
+  if (argc == 6)
+    file.text << movq("-48(%rbp)", "(%rsp)", function.logicalLine);
+
+  auto *call = new asmc::Call();
+  call->function = "af_task_create" + std::to_string(argc);
+  call->logicalLine = function.logicalLine;
+  file.text << call;
+  auto *ret = new asmc::Return();
+  ret->logicalLine = function.logicalLine;
+  file.text << ret;
+  return file;
+}
+
+asmc::File asyncMainWrapper(const std::string &constructorLabel, int line) {
+  asmc::File file;
+  auto *global = new asmc::LinkTask();
+  global->command = "global";
+  global->operand = "main";
+  file.linker << global;
+  auto *label = new asmc::Label();
+  label->label = "main";
+  label->logicalLine = line;
+  file.text << label;
+  auto *push = new asmc::Push();
+  push->op = "%rbp";
+  file.text << push;
+  file.text << movq("%rsp", "%rbp", line);
+  auto *construct = new asmc::Call();
+  construct->function = constructorLabel;
+  file.text << construct;
+  file.text << movq("%rax", "%rdi", line);
+  auto *run = new asmc::Call();
+  run->function = "af_task_run";
+  file.text << run;
+  auto *ret = new asmc::Return();
+  file.text << ret;
+  return file;
+}
+
+void replaceAsyncFrameSize(asmc::File &file, int frameSize) {
+  const std::string placeholder = "$__AF_ASYNC_FRAME_SIZE__";
+  const std::string replacement = "$" + std::to_string(frameSize);
+  for (auto *instruction : file.text) {
+    if (auto *move = dynamic_cast<asmc::Mov *>(instruction)) {
+      if (move->from == placeholder)
+        move->from = replacement;
+      if (move->to == placeholder)
+        move->to = replacement;
+    }
+  }
+}
+
+std::vector<asmc::Instruction *> asyncDispatch(const Function &function,
+                                               int frameSize) {
+  std::vector<asmc::Instruction *> instructions;
+  instructions.push_back(movq("%rbp", "%rdi", function.logicalLine));
+  instructions.push_back(
+      movq("$" + std::to_string(frameSize), "%rsi", function.logicalLine));
+  auto *restore = new asmc::Call();
+  restore->function = "af_task_restore_frame";
+  restore->logicalLine = function.logicalLine;
+  instructions.push_back(restore);
+  for (int state = 1; state <= function.asyncStateCounter; ++state) {
+    auto *compare = new asmc::Cmp();
+    compare->from = "$" + std::to_string(state);
+    compare->to = "%eax";
+    compare->size = asmc::DWord;
+    compare->logicalLine = function.logicalLine;
+    instructions.push_back(compare);
+    auto *jump = new asmc::Je();
+    jump->to = function.asyncStateLabel(state);
+    jump->logicalLine = function.logicalLine;
+    instructions.push_back(jump);
+  }
+  auto *validStart = new asmc::Cmp();
+  validStart->from = "$0";
+  validStart->to = "%eax";
+  validStart->size = asmc::DWord;
+  validStart->logicalLine = function.logicalLine;
+  instructions.push_back(validStart);
+  auto *startJump = new asmc::Je();
+  startJump->to = function.asyncStartLabel();
+  startJump->logicalLine = function.logicalLine;
+  instructions.push_back(startJump);
+  instructions.push_back(movq("%rax", "%rdi", function.logicalLine));
+  auto *invalid = new asmc::Call();
+  invalid->function = "af_task_invalid_state";
+  invalid->logicalLine = function.logicalLine;
+  instructions.push_back(invalid);
+  auto *invalidReturn = new asmc::Return();
+  invalidReturn->logicalLine = function.logicalLine;
+  instructions.push_back(invalidReturn);
+  auto *start = new asmc::Label();
+  start->label = function.asyncStartLabel();
+  start->logicalLine = function.logicalLine;
+  instructions.push_back(start);
+  return instructions;
+}
 
 } // namespace
 
@@ -120,7 +268,9 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
 
     if (sym.Sym == '{') {
       tokens.pop();
+      parser.pushAsyncContext(this->isAsync);
       this->statement = parser.parseStmt(tokens);
+      parser.popAsyncContext();
       this->logicalLine = tokens.peek()->lineCount;
     } else {
       this->statement = nullptr;
@@ -149,8 +299,8 @@ Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
 Function::Function(const ScopeMod &scope,
                    links::LinkedList<lex::Token *> &tokens,
                    std::vector<std::string> genericTypes, parse::Parser &parser,
-                   bool safe)
-    : scope(scope), genericTypes(genericTypes), safe(safe) {
+                   bool safe, bool isAsync)
+    : scope(scope), genericTypes(genericTypes), safe(safe), isAsync(isAsync) {
   // updated function syntax
   // func <ident>(<args>) -> <type> { <body> }
   const auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
@@ -238,6 +388,71 @@ Function::Function(const ScopeMod &scope,
 }
 
 gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
+  if (this->isAsync && this->statement != nullptr) {
+    if (!this->genericTypes.empty()) {
+      generator.genericFunctions() << *this;
+      return {asmc::File(), std::nullopt};
+    }
+    const bool asyncMethod = generator.scope() != nullptr && !globalLocked;
+    const bool hiddenDefinition =
+        this->hidden ||
+        (generator.scope() != nullptr && generator.scope()->hidden);
+    if (hiddenDefinition) {
+      auto *bodyStatement = this->statement;
+      this->statement = nullptr;
+      auto registration = this->generate(generator);
+      this->statement = bodyStatement;
+      return registration;
+    }
+    const std::string declaredIdent = this->ident.ident;
+    const int capturedArgs =
+        static_cast<int>(this->argTypes.size()) + (asyncMethod ? 1 : 0);
+    if (capturedArgs > 6)
+      generator.alert("async functions support at most six arguments", true,
+                      __FILE__, __LINE__);
+    if (this->type.opType == asmc::Float)
+      generator.alert("async functions cannot return float yet", true, __FILE__,
+                      __LINE__);
+    for (const auto &arg : this->argTypes) {
+      if (arg.opType == asmc::Float)
+        generator.alert("async functions cannot capture float arguments yet",
+                        true, __FILE__, __LINE__);
+    }
+
+    auto *bodyStatement = this->statement;
+    this->statement = nullptr;
+    auto registration = this->generate(generator);
+    this->statement = bodyStatement;
+    if (asyncMethod)
+      this->ident.ident = declaredIdent;
+
+    Function body(*this, false);
+    body.ident.ident = "__af_async_body_" + this->ident.ident;
+    body.isAsync = false;
+    body.isAsyncBody = true;
+    body.globalLocked = !asyncMethod;
+    auto bodyFile = body.generate(generator).file;
+
+    const bool isMain = this->ident.ident == "main";
+    const std::string constructorLabel =
+        isMain        ? "__af_async_main"
+        : asyncMethod ? "pub_" + this->scopeName + "_" + this->ident.ident
+                      : this->ident.ident;
+    const std::string bodyLabel =
+        asyncMethod ? "pub_" + this->scopeName + "_" + body.ident.ident
+                    : body.ident.ident;
+    asmc::File file;
+    file << registration.file;
+    file << bodyFile;
+    file << asyncConstructor(*this, constructorLabel, bodyLabel, capturedArgs);
+    if (isMain) {
+      if (!this->argTypes.empty())
+        generator.alert("async main cannot take arguments", true, __FILE__,
+                        __LINE__);
+      file << asyncMainWrapper(constructorLabel, this->logicalLine);
+    }
+    return {file, std::nullopt};
+  }
   // if the function is generic, do not generate code for it. It will be
   // generated when it is called with specific types.
   if (this->genericTypes.size() > 0) {
@@ -449,6 +664,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     }
 
     file << argmute;
+    const int asyncDispatchLocation = file.text.count;
 
     // if the function is 'init' and scope is a class, add the default value
     if (this->ident.ident == "init" && generator.scope() != nullptr &&
@@ -500,9 +716,17 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     const int trackedFrame =
         gen::scope::ScopeManager::getInstance()->getStackAlignment();
     const int emittedFrame = alignFrameSize(maxFrameOffset(file));
-    sub->op1 = "$" + std::to_string(std::max(trackedFrame, emittedFrame));
+    const int frameSize = std::max(trackedFrame, emittedFrame);
+    sub->op1 = "$" + std::to_string(frameSize);
     sub->op2 = generator.registers()["%rsp"]->get(asmc::QWord);
     file.text.insert(sub, AlignmentLoc + 1);
+    if (this->isAsyncBody) {
+      replaceAsyncFrameSize(file, frameSize);
+      auto dispatch = asyncDispatch(*this, frameSize);
+      int location = asyncDispatchLocation + 2;
+      for (auto *instruction : dispatch)
+        file.text.insert(instruction, location++);
+    }
 
     generator.scope() = saveScope;
     generator.globalScope() = saveGlobal;
@@ -524,7 +748,11 @@ gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
   output.type = this->optional ? "option<" + tn + ">"
                 : this->error  ? "result<" + tn + ">"
                                : tn;
-  output.size = this->optional || this->error ? asmc::QWord : this->type.size;
+  if (this->isAsync)
+    output.type = "task<" + output.type + ">";
+  output.size = this->isAsync || this->optional || this->error
+                    ? asmc::QWord
+                    : this->type.size;
   output.access = generator.registers()["%rax"]->get(output.size);
   if (this->type.typeName == "float") {
     output.access = generator.registers()["%xmm0"]->get(output.size);

@@ -33,6 +33,19 @@ public:
   std::vector<bool> mutability;
   std::vector<bool> readOnly; // if the argument is read only
   bool isLambda = false;
+  bool isAsync = false;
+  bool isAsyncBody = false;
+  int asyncStateCounter = 0;
+  int nextAsyncState() { return ++asyncStateCounter; }
+  std::string asyncStateLabel(int state) const {
+    return "__af_async_state_" +
+           (scopeName == "global" ? "" : scopeName + "_") + ident.ident + "_" +
+           std::to_string(state);
+  }
+  std::string asyncStartLabel() const {
+    return "__af_async_start_" +
+           (scopeName == "global" ? "" : scopeName + "_") + ident.ident;
+  }
   bool flex = false;
   bool mask;
   bool has_return = false;
@@ -51,7 +64,7 @@ public:
            bool optional, bool safe = false);
   Function(const ScopeMod &scope, links::LinkedList<lex::Token *> &tokens,
            std::vector<std::string> genericTypes, parse::Parser &parser,
-           bool safe = false);
+           bool safe = false, bool isAsync = false);
   Function(const Function &Other, bool locked)
       : scope(Other.scope), type(Other.type), op(Other.op),
         scopeName(Other.scopeName), ident(Other.ident), args(Other.args),
@@ -65,7 +78,9 @@ public:
         optional(Other.optional), useType(Other.useType),
         genericTypes(Other.genericTypes), autoType(Other.autoType),
         globalLocked(Other.globalLocked), safe(Other.safe),
-        readOnly(Other.readOnly), returnImmutable(Other.returnImmutable),
+        isAsync(Other.isAsync), isAsyncBody(Other.isAsyncBody),
+        asyncStateCounter(Other.asyncStateCounter), readOnly(Other.readOnly),
+        returnImmutable(Other.returnImmutable),
         returnLowOwnership(Other.returnLowOwnership), error(Other.error) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;

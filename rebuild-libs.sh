@@ -109,6 +109,7 @@ function compile_single {
         "Vector") aflat ./libraries/std/src/Collections/Vector.af -o ./libraries/std/vector.s ;;
         "Heap") aflat ./libraries/std/src/Collections/Heap.af -o ./libraries/std/Heap.s ;;
         "request") gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c ;;
+        "Async") gcc -O2 -mstackrealign -S -o ./libraries/std/async.s ./libraries/std/src/async_runtime.c ;;
         *)
             echo "Unknown library: $1"
             echo "Available libraries:"
@@ -216,6 +217,7 @@ mv ./libraries/std/Parse.s ./libraries/std/JSON_Parse.s
 
 # Compile C file
 gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c & more_pids+=($!)
+gcc -O2 -mstackrealign -S -o ./libraries/std/async.s ./libraries/std/src/async_runtime.c & more_pids+=($!)
 
 # Wait for all background processes to complete
 wait_for_jobs "${more_pids[@]}"

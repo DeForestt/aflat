@@ -8,6 +8,7 @@
 #include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
+#include "Parser/AST/Statements/Function.hpp"
 
 using namespace gen::utils;
 
@@ -32,6 +33,14 @@ static std::string formattedStringHintForType(const std::string &typeName) {
     return "uni_string";
   }
   return "";
+}
+
+static std::optional<std::string> taskValueType(const std::string &typeName) {
+  static const std::string prefix = "task<";
+  if (typeName.size() <= prefix.size() || typeName.rfind(prefix, 0) != 0 ||
+      typeName.back() != '>')
+    return std::nullopt;
+  return typeName.substr(prefix.size(), typeName.size() - prefix.size() - 1);
 }
 
 static int classInstanceByteSize(const gen::Class *cl) {
@@ -163,6 +172,79 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.type = "char";
     output.access = '$' + std::to_string(intLit->value);
     output.size = asmc::Byte;
+  } else if (dynamic_cast<ast::AsyncExpression *>(expr) != nullptr) {
+    auto *asyncExpr = dynamic_cast<ast::AsyncExpression *>(expr);
+    auto task = GenExpr(asyncExpr->expr, OutputFile, asmc::QWord);
+    auto valueType = taskValueType(task.type);
+    if (!valueType.has_value()) {
+      const char *operation =
+          asyncExpr->kind == ast::AsyncExpressionKind::Await   ? "await"
+          : asyncExpr->kind == ast::AsyncExpressionKind::Spawn ? "spawn"
+                                                               : "run";
+      alert(std::string(operation) + " requires task<T>, got " + task.type,
+            true, __FILE__, __LINE__);
+    }
+    auto *moveTask = new asmc::Mov();
+    moveTask->logicalLine = asyncExpr->logicalLine;
+    moveTask->from = task.access;
+    moveTask->to = intArgs()[0].get(asmc::QWord);
+    moveTask->size = asmc::QWord;
+    OutputFile.text << moveTask;
+
+    auto *call = new asmc::Call();
+    call->logicalLine = asyncExpr->logicalLine;
+    if (asyncExpr->kind == ast::AsyncExpressionKind::Await) {
+      auto *function = currentFunction();
+      if (function == nullptr || !function->isAsyncBody)
+        alert("await requires generated async task context", true, __FILE__,
+              __LINE__);
+      const int state = function->nextAsyncState();
+      auto appendMove = [&](const std::string &from, const std::string &to,
+                            asmc::Size moveSize) {
+        auto *move = new asmc::Mov();
+        move->logicalLine = asyncExpr->logicalLine;
+        move->from = from;
+        move->to = to;
+        move->size = moveSize;
+        OutputFile.text << move;
+      };
+      appendMove("$" + std::to_string(state), "%esi", asmc::DWord);
+      appendMove("%rbp", "%rdx", asmc::QWord);
+      appendMove("$__AF_ASYNC_FRAME_SIZE__", "%rcx", asmc::QWord);
+      call->function = "af_task_await_suspend";
+      OutputFile.text << call;
+      auto *suspendReturn = new asmc::Return();
+      suspendReturn->logicalLine = asyncExpr->logicalLine;
+      OutputFile.text << suspendReturn;
+      auto *resume = new asmc::Label();
+      resume->label = function->asyncStateLabel(state);
+      resume->logicalLine = asyncExpr->logicalLine;
+      OutputFile.text << resume;
+      auto *resultCall = new asmc::Call();
+      resultCall->function = "af_task_await_result";
+      resultCall->logicalLine = asyncExpr->logicalLine;
+      OutputFile.text << resultCall;
+    } else {
+      call->function = asyncExpr->kind == ast::AsyncExpressionKind::Spawn
+                           ? "af_task_spawn"
+                           : "af_task_run";
+      OutputFile.text << call;
+    }
+
+    if (asyncExpr->kind == ast::AsyncExpressionKind::Spawn) {
+      output.type = task.type;
+      output.size = asmc::QWord;
+      output.access = registers()["%rax"]->get(asmc::QWord);
+      output.owned = true;
+    } else {
+      output.type = *valueType;
+      auto primitive = parse::PRIMITIVE_TYPES.find(output.type);
+      output.size = primitive == parse::PRIMITIVE_TYPES.end()
+                        ? asmc::QWord
+                        : gen::utils::toSize(primitive->second);
+      output.access = registers()["%rax"]->get(output.size);
+      output.owned = output.type != "void";
+    }
   } else if (dynamic_cast<ast::CallExpr *>(expr) != nullptr) {
     ast::CallExpr *exprCall = dynamic_cast<ast::CallExpr *>(expr);
     ast::Call *call = exprCall->call;

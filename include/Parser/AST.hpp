@@ -329,6 +329,39 @@ public:
   std::string toString() override;
 };
 
+enum class AsyncExpressionKind { Await, Spawn, Run };
+
+class AsyncExpression : public Expr {
+public:
+  AsyncExpressionKind kind = AsyncExpressionKind::Await;
+  Expr *expr = nullptr;
+
+  std::string toString() override;
+};
+
+class Pause : public Statement {
+public:
+  Expr *expr = nullptr;
+  std::string toString() override;
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
+};
+
+class Yield : public Statement {
+public:
+  std::string toString() override { return "yield;"; }
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
+};
+
+enum class TaskControlKind { Cancel, Detach };
+
+class TaskControl : public Statement {
+public:
+  TaskControlKind kind = TaskControlKind::Cancel;
+  Expr *expr = nullptr;
+  std::string toString() override;
+  gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
+};
+
 class parenExpr : public Expr {
 public:
   Expr *expr;

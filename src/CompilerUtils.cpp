@@ -28,7 +28,7 @@ std::string buildLinkCmd(const std::string &output,
     flags = "-O0 -g -no-pie -z noexecstack -o ";
   else
     flags = "-O3 " + releaseCpuFlags() + " -no-pie -z noexecstack -o ";
-  return "gcc " + flags + output + " " + linkerList;
+  return "gcc " + flags + output + " " + linkerList + " -pthread";
 }
 
 } // namespace compilerutils

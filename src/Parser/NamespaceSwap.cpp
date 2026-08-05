@@ -107,6 +107,21 @@ void Statement::namespaceSwap(
       callExpr->call->namespaceSwap(map);
     return;
   }
+  if (auto asyncExpr = dynamic_cast<AsyncExpression *>(this)) {
+    if (asyncExpr->expr)
+      asyncExpr->expr->namespaceSwap(map);
+    return;
+  }
+  if (auto pause = dynamic_cast<Pause *>(this)) {
+    if (pause->expr)
+      pause->expr->namespaceSwap(map);
+    return;
+  }
+  if (auto control = dynamic_cast<TaskControl *>(this)) {
+    if (control->expr)
+      control->expr->namespaceSwap(map);
+    return;
+  }
   if (auto assign = dynamic_cast<Assign *>(this)) {
     if (assign->expr)
       assign->expr->namespaceSwap(map);

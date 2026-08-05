@@ -70,6 +70,9 @@ public:
   const ast::Statement &getOutput() const;
   int getMutability() const;
   void setMutability(int value);
+  void pushAsyncContext(bool isAsync);
+  void popAsyncContext();
+  bool inAsyncContext() const;
 
 private:
   struct Impl;
