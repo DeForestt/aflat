@@ -1,5 +1,6 @@
 .needs <std.gs>
 .needs <asm.gs>
+.needs <Async.gs>
 
 import {len} from "strings" under str;
 import string from "String";
@@ -72,6 +73,80 @@ class File{
 
     fn writeBytes(const adr pointer, const int size) -> void {
         sys_write(my.file, pointer, size);
+    };
+
+    /**
+     * Read bytes without blocking the async scheduler. The buffer must be
+     * heap-backed and remain alive until the returned task completes.
+     */
+    async fn readBytesAtAsync(const adr pointer, const int size,
+                              const long offset) -> long {
+        mutable adr operation = NULL;
+        pause af_io_read_begin(my.file, pointer, size, offset, ?operation);
+        const long result = af_io_operation_result(operation);
+        af_io_operation_release(operation);
+        return result;
+    };
+
+    /**
+     * Write bytes without blocking the async scheduler. The source buffer must
+     * remain alive and unchanged until the returned task completes.
+     */
+    async fn writeBytesAtAsync(const adr pointer, const int size,
+                               const long offset) -> long {
+        mutable adr operation = NULL;
+        pause af_io_write_begin(my.file, pointer, size, offset, ?operation);
+        const long result = af_io_operation_result(operation);
+        af_io_operation_release(operation);
+        return result;
+    };
+
+    /**
+     * Read from the current file position to EOF without blocking the async
+     * scheduler. The returned task completes with the existing string result
+     * type, so ordinary file errors remain result errors rather than task
+     * failures.
+     */
+    async fn readToEndAsync() -> string! {
+        const int descriptor = my.file;
+        const long current = sys_lseek(descriptor, 0, 1); // SEEK_CUR
+        if current < 0 {
+            return res.reject::<string>(new ReadError(0 + current));
+        };
+        const long endPosition = sys_lseek(descriptor, 0, 2); // SEEK_END
+        if endPosition < 0 {
+            return res.reject::<string>(new ReadError(0 + endPosition));
+        };
+        const long reset = sys_lseek(descriptor, current, 0); // SEEK_SET
+        if reset < 0 {
+            return res.reject::<string>(new ReadError(0 + reset));
+        };
+
+        const long remaining = endPosition - current;
+        if remaining <= 0 {
+            return res.reject::<string>(new ReadError(1));
+        };
+
+        const int size = 0 + remaining;
+        const adr buffer = af_malloc(size + 1);
+        const long bytesRead = await my.readBytesAtAsync(buffer, size, current);
+        if bytesRead < 0 {
+            const let failedBuffer = buffer;
+            af_free($failedBuffer);
+            return res.reject::<string>(new ReadError(0 + bytesRead));
+        };
+        if bytesRead == 0 {
+            const let emptyBuffer = buffer;
+            af_free($emptyBuffer);
+            return res.reject::<string>(new ReadError(1));
+        };
+
+        const adr terminator = buffer + bytesRead;
+        terminator =: '\0';
+        sys_lseek(descriptor, current + bytesRead, 0);
+        const string text = new string(buffer);
+        af_free($buffer);
+        return res.accept(text);
     };
 
     fn read(adr pointer, const char delim) -> int {

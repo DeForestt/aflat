@@ -4,3 +4,7 @@ void af_task_cancel(adr task);
 void af_task_detach(adr task);
 adr af_task_current_waker();
 void af_task_wake(adr task);
+int af_io_read_begin(int descriptor, adr buffer, int length, long offset, adr output);
+int af_io_write_begin(int descriptor, adr buffer, int length, long offset, adr output);
+long af_io_operation_result(adr operation);
+void af_io_operation_release(adr operation);

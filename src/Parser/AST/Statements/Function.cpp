@@ -394,6 +394,16 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       return {asmc::File(), std::nullopt};
     }
     const bool asyncMethod = generator.scope() != nullptr && !globalLocked;
+    const bool hiddenDefinition =
+        this->hidden ||
+        (generator.scope() != nullptr && generator.scope()->hidden);
+    if (hiddenDefinition) {
+      auto *bodyStatement = this->statement;
+      this->statement = nullptr;
+      auto registration = this->generate(generator);
+      this->statement = bodyStatement;
+      return registration;
+    }
     const std::string declaredIdent = this->ident.ident;
     const int capturedArgs =
         static_cast<int>(this->argTypes.size()) + (asyncMethod ? 1 : 0);

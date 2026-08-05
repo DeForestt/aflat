@@ -1,11 +1,31 @@
+#define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200809L
 
+#include <errno.h>
+#include <linux/io_uring.h>
+#include <poll.h>
 #include <pthread.h>
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/eventfd.h>
+#include <sys/mman.h>
+#include <sys/syscall.h>
 #include <time.h>
+#include <unistd.h>
+
+#if defined(__has_include)
+#if __has_include(<valgrind/memcheck.h>)
+#include <valgrind/memcheck.h>
+#define AF_MARK_MEMORY_DEFINED(address, length)                                \
+  VALGRIND_MAKE_MEM_DEFINED((address), (length))
+#endif
+#endif
+#ifndef AF_MARK_MEMORY_DEFINED
+#define AF_MARK_MEMORY_DEFINED(address, length) ((void)0)
+#endif
 
 enum af_task_status {
   AF_TASK_CREATED,
@@ -21,6 +41,26 @@ enum af_task_status {
 typedef struct af_task af_task;
 typedef struct af_waiter af_waiter;
 typedef struct af_timer af_timer;
+typedef struct af_io_operation af_io_operation;
+
+typedef struct af_io_ring {
+  int fd;
+  void *sq_mapping;
+  size_t sq_mapping_size;
+  void *cq_mapping;
+  size_t cq_mapping_size;
+  struct io_uring_sqe *sqes;
+  size_t sqes_size;
+  unsigned *sq_head;
+  unsigned *sq_tail;
+  unsigned *sq_mask;
+  unsigned *sq_entries;
+  unsigned *sq_array;
+  unsigned *cq_head;
+  unsigned *cq_tail;
+  unsigned *cq_mask;
+  struct io_uring_cqe *cqes;
+} af_io_ring;
 
 struct af_waiter {
   af_task *task;
@@ -45,12 +85,23 @@ struct af_task {
   unsigned char detached;
   unsigned char observed;
   unsigned char wake_pending;
+  af_io_operation *pending_io;
+  int64_t io_begin_error;
 };
 
 struct af_timer {
   struct timespec deadline;
   af_task *task;
   af_timer *next;
+};
+
+struct af_io_operation {
+  af_task *task;
+  void *buffer;
+  unsigned char opcode;
+  _Atomic int completed;
+  _Atomic int abandoned;
+  _Atomic int64_t result;
 };
 
 typedef struct af_runtime {
@@ -60,12 +111,16 @@ typedef struct af_runtime {
   af_task *queue_head;
   af_task *queue_tail;
   af_timer *timers;
+  int wake_fd;
+  af_io_ring io;
 } af_runtime;
 
 static af_runtime af_global_runtime;
 static pthread_once_t af_runtime_once = PTHREAD_ONCE_INIT;
 static _Thread_local af_runtime *af_current_runtime;
 static _Thread_local af_task *af_current_task;
+
+static void af_task_wake_internal(af_task *task);
 
 #if defined(__x86_64__)
 #define AF_ENTRY __attribute__((force_align_arg_pointer))
@@ -87,6 +142,188 @@ static int af_timespec_compare(const struct timespec *a,
   return a->tv_nsec < b->tv_nsec ? -1 : 1;
 }
 
+static int af_timeout_milliseconds(const struct timespec *deadline) {
+  if (deadline == NULL)
+    return -1;
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  int64_t nanoseconds =
+      (int64_t)(deadline->tv_sec - now.tv_sec) * 1000000000LL +
+      (int64_t)deadline->tv_nsec - now.tv_nsec;
+  if (nanoseconds <= 0)
+    return 0;
+  int64_t milliseconds = (nanoseconds + 999999LL) / 1000000LL;
+  return milliseconds > INT32_MAX ? INT32_MAX : (int)milliseconds;
+}
+
+static void af_notify_scheduler(af_runtime *runtime) {
+  if (runtime->wake_fd < 0)
+    return;
+  uint64_t signal = 1;
+  ssize_t written = write(runtime->wake_fd, &signal, sizeof(signal));
+  (void)written;
+}
+
+static void af_drain_scheduler_notifications(af_runtime *runtime) {
+  if (runtime->wake_fd < 0)
+    return;
+  uint64_t value;
+  while (read(runtime->wake_fd, &value, sizeof(value)) == sizeof(value)) {
+  }
+}
+
+static void af_io_ring_reset(af_io_ring *ring) {
+  memset(ring, 0, sizeof(*ring));
+  ring->fd = -1;
+}
+
+static int af_io_ring_init(af_io_ring *ring, unsigned entries) {
+  af_io_ring_reset(ring);
+  struct io_uring_params parameters;
+  memset(&parameters, 0, sizeof(parameters));
+  int fd = (int)syscall(__NR_io_uring_setup, entries, &parameters);
+  if (fd < 0)
+    return -errno;
+
+  size_t sq_size = parameters.sq_off.array +
+                   parameters.sq_entries * sizeof(unsigned);
+  size_t cq_size = parameters.cq_off.cqes +
+                   parameters.cq_entries * sizeof(struct io_uring_cqe);
+  if (parameters.features & IORING_FEAT_SINGLE_MMAP) {
+    size_t mapping_size = sq_size > cq_size ? sq_size : cq_size;
+    void *mapping = mmap(NULL, mapping_size, PROT_READ | PROT_WRITE,
+                         MAP_SHARED | MAP_POPULATE, fd, IORING_OFF_SQ_RING);
+    if (mapping == MAP_FAILED) {
+      int error = -errno;
+      close(fd);
+      return error;
+    }
+    ring->sq_mapping = mapping;
+    ring->cq_mapping = mapping;
+    ring->sq_mapping_size = mapping_size;
+    ring->cq_mapping_size = mapping_size;
+  } else {
+    ring->sq_mapping = mmap(NULL, sq_size, PROT_READ | PROT_WRITE,
+                            MAP_SHARED | MAP_POPULATE, fd,
+                            IORING_OFF_SQ_RING);
+    if (ring->sq_mapping == MAP_FAILED) {
+      int error = -errno;
+      close(fd);
+      af_io_ring_reset(ring);
+      return error;
+    }
+    ring->sq_mapping_size = sq_size;
+    ring->cq_mapping = mmap(NULL, cq_size, PROT_READ | PROT_WRITE,
+                            MAP_SHARED | MAP_POPULATE, fd,
+                            IORING_OFF_CQ_RING);
+    if (ring->cq_mapping == MAP_FAILED) {
+      int error = -errno;
+      munmap(ring->sq_mapping, ring->sq_mapping_size);
+      close(fd);
+      af_io_ring_reset(ring);
+      return error;
+    }
+    ring->cq_mapping_size = cq_size;
+  }
+
+  ring->sqes_size = parameters.sq_entries * sizeof(struct io_uring_sqe);
+  ring->sqes = mmap(NULL, ring->sqes_size, PROT_READ | PROT_WRITE,
+                     MAP_SHARED | MAP_POPULATE, fd, IORING_OFF_SQES);
+  if (ring->sqes == MAP_FAILED) {
+    int error = -errno;
+    if (ring->cq_mapping != ring->sq_mapping)
+      munmap(ring->cq_mapping, ring->cq_mapping_size);
+    munmap(ring->sq_mapping, ring->sq_mapping_size);
+    close(fd);
+    af_io_ring_reset(ring);
+    return error;
+  }
+
+  unsigned char *sq = ring->sq_mapping;
+  unsigned char *cq = ring->cq_mapping;
+  ring->sq_head = (unsigned *)(sq + parameters.sq_off.head);
+  ring->sq_tail = (unsigned *)(sq + parameters.sq_off.tail);
+  ring->sq_mask = (unsigned *)(sq + parameters.sq_off.ring_mask);
+  ring->sq_entries = (unsigned *)(sq + parameters.sq_off.ring_entries);
+  ring->sq_array = (unsigned *)(sq + parameters.sq_off.array);
+  ring->cq_head = (unsigned *)(cq + parameters.cq_off.head);
+  ring->cq_tail = (unsigned *)(cq + parameters.cq_off.tail);
+  ring->cq_mask = (unsigned *)(cq + parameters.cq_off.ring_mask);
+  ring->cqes = (struct io_uring_cqe *)(cq + parameters.cq_off.cqes);
+  ring->fd = fd;
+  return 0;
+}
+
+static int af_io_submit(af_runtime *runtime, af_io_operation *operation,
+                        unsigned char opcode, int descriptor, void *buffer,
+                        size_t length, int64_t offset) {
+  af_io_ring *ring = &runtime->io;
+  if (ring->fd < 0)
+    return -ENOSYS;
+  unsigned head = __atomic_load_n(ring->sq_head, __ATOMIC_ACQUIRE);
+  unsigned tail = __atomic_load_n(ring->sq_tail, __ATOMIC_RELAXED);
+  if (tail - head >= *ring->sq_entries)
+    return -EAGAIN;
+  unsigned index = tail & *ring->sq_mask;
+  struct io_uring_sqe *entry = &ring->sqes[index];
+  memset(entry, 0, sizeof(*entry));
+  entry->opcode = opcode;
+  entry->fd = descriptor;
+  entry->off = (uint64_t)offset;
+  entry->addr = (uint64_t)(uintptr_t)buffer;
+  entry->len = length > UINT32_MAX ? UINT32_MAX : (uint32_t)length;
+  entry->user_data = (uint64_t)(uintptr_t)operation;
+  ring->sq_array[index] = index;
+  __atomic_store_n(ring->sq_tail, tail + 1, __ATOMIC_RELEASE);
+
+  int submitted;
+  do {
+    submitted = (int)syscall(__NR_io_uring_enter, ring->fd, 1u, 0u, 0u,
+                             NULL, 0u);
+  } while (submitted < 0 && errno == EINTR);
+  if (submitted < 0) {
+    __atomic_store_n(ring->sq_tail, tail, __ATOMIC_RELEASE);
+    return -errno;
+  }
+  return 0;
+}
+
+static void af_io_complete(af_io_operation *operation, int result) {
+  af_task *task = operation->task;
+  pthread_mutex_lock(&task->mutex);
+  if (operation->opcode == IORING_OP_READ && result > 0)
+    AF_MARK_MEMORY_DEFINED(operation->buffer, (size_t)result);
+  atomic_store_explicit(&operation->result, result, memory_order_relaxed);
+  atomic_store_explicit(&operation->completed, 1, memory_order_release);
+  int abandoned =
+      atomic_load_explicit(&operation->abandoned, memory_order_acquire);
+  if (abandoned && task->pending_io == operation)
+    task->pending_io = NULL;
+  pthread_mutex_unlock(&task->mutex);
+  if (abandoned) {
+    free(operation);
+    return;
+  }
+  af_task_wake_internal(task);
+}
+
+static void af_io_drain_completions(af_runtime *runtime) {
+  af_io_ring *ring = &runtime->io;
+  if (ring->fd < 0)
+    return;
+  unsigned head = __atomic_load_n(ring->cq_head, __ATOMIC_RELAXED);
+  unsigned tail = __atomic_load_n(ring->cq_tail, __ATOMIC_ACQUIRE);
+  while (head != tail) {
+    struct io_uring_cqe *entry = &ring->cqes[head & *ring->cq_mask];
+    af_io_operation *operation =
+        (af_io_operation *)(uintptr_t)entry->user_data;
+    if (operation != NULL)
+      af_io_complete(operation, entry->res);
+    ++head;
+  }
+  __atomic_store_n(ring->cq_head, head, __ATOMIC_RELEASE);
+}
+
 static void af_enqueue_locked(af_runtime *runtime, af_task *task) {
   task->queue_next = NULL;
   if (runtime->queue_tail == NULL)
@@ -96,14 +333,14 @@ static void af_enqueue_locked(af_runtime *runtime, af_task *task) {
     runtime->queue_tail = task;
   }
   pthread_cond_signal(&runtime->ready);
+  af_notify_scheduler(runtime);
 }
 
 static void af_schedule(af_task *task) {
   if (task == NULL)
     return;
   pthread_mutex_lock(&task->mutex);
-  if (af_terminal(task->status) || task->status == AF_TASK_SCHEDULED ||
-      task->status == AF_TASK_RUNNING) {
+  if (task->status != AF_TASK_CREATED && task->status != AF_TASK_WAITING) {
     pthread_mutex_unlock(&task->mutex);
     return;
   }
@@ -197,6 +434,9 @@ static void *af_runtime_worker(void *unused) {
     pthread_mutex_lock(&af_global_runtime.mutex);
     af_task *task = NULL;
     while (task == NULL) {
+      pthread_mutex_unlock(&af_global_runtime.mutex);
+      af_io_drain_completions(&af_global_runtime);
+      pthread_mutex_lock(&af_global_runtime.mutex);
       struct timespec now;
       clock_gettime(CLOCK_MONOTONIC, &now);
       if (af_global_runtime.timers != NULL &&
@@ -217,7 +457,26 @@ static void *af_runtime_worker(void *unused) {
         task->queue_next = NULL;
         break;
       }
-      if (af_global_runtime.timers != NULL)
+      if (af_global_runtime.io.fd >= 0) {
+        int timeout = af_timeout_milliseconds(
+            af_global_runtime.timers == NULL
+                ? NULL
+                : &af_global_runtime.timers->deadline);
+        struct pollfd descriptors[2] = {
+            {.fd = af_global_runtime.wake_fd, .events = POLLIN},
+            {.fd = af_global_runtime.io.fd, .events = POLLIN},
+        };
+        pthread_mutex_unlock(&af_global_runtime.mutex);
+        int ready;
+        do {
+          ready = poll(descriptors, 2, timeout);
+        } while (ready < 0 && errno == EINTR);
+        if (descriptors[0].revents & POLLIN)
+          af_drain_scheduler_notifications(&af_global_runtime);
+        if (descriptors[1].revents & POLLIN)
+          af_io_drain_completions(&af_global_runtime);
+        pthread_mutex_lock(&af_global_runtime.mutex);
+      } else if (af_global_runtime.timers != NULL)
         pthread_cond_timedwait(&af_global_runtime.ready,
                                &af_global_runtime.mutex,
                                &af_global_runtime.timers->deadline);
@@ -262,6 +521,13 @@ static void af_runtime_init(void) {
   pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
   pthread_cond_init(&af_global_runtime.ready, &attr);
   pthread_condattr_destroy(&attr);
+  af_global_runtime.wake_fd =
+      eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+  if (af_global_runtime.wake_fd < 0) {
+    fprintf(stderr, "AFlat async runtime: failed to create scheduler eventfd\n");
+    abort();
+  }
+  af_io_ring_init(&af_global_runtime.io, 256);
   if (pthread_create(&af_global_runtime.worker, NULL, af_runtime_worker, NULL) !=
       0) {
     fprintf(stderr, "AFlat async runtime: failed to start scheduler\n");
@@ -505,12 +771,22 @@ AF_ENTRY void af_task_cancel(void *opaque) {
     return;
   pthread_mutex_lock(&task->mutex);
   task->cancel_requested = 1;
+  af_io_operation *operation = task->pending_io;
+  if (operation != NULL)
+    atomic_store_explicit(&operation->abandoned, 1, memory_order_release);
+  int release_operation =
+      operation != NULL &&
+      atomic_load_explicit(&operation->completed, memory_order_acquire);
+  if (release_operation)
+    task->pending_io = NULL;
   int idle = task->status == AF_TASK_CREATED ||
              task->status == AF_TASK_WAITING ||
              task->status == AF_TASK_SUSPENDED;
   if (idle)
     task->status = AF_TASK_CANCELLED;
   pthread_mutex_unlock(&task->mutex);
+  if (release_operation)
+    free(operation);
   if (idle)
     af_wake_waiters(task);
 }
@@ -551,4 +827,88 @@ AF_ENTRY int beginTimer(int milliseconds) {
   pthread_cond_signal(&runtime->ready);
   pthread_mutex_unlock(&runtime->mutex);
   return 0;
+}
+
+static int af_io_begin(int64_t descriptor, void *buffer, int64_t length,
+                       int64_t offset, void **output, unsigned char opcode) {
+  af_task *task = af_current_task;
+  af_runtime *runtime = af_current_runtime;
+  if (output != NULL)
+    *output = NULL;
+  if (task == NULL || runtime == NULL || output == NULL)
+    return -EINVAL;
+
+  af_io_operation *operation = calloc(1, sizeof(*operation));
+  if (operation == NULL) {
+    pthread_mutex_lock(&task->mutex);
+    task->io_begin_error = -ENOMEM;
+    pthread_mutex_unlock(&task->mutex);
+    af_task_wake_internal(task);
+    return -ENOMEM;
+  }
+  operation->task = task;
+  operation->buffer = buffer;
+  operation->opcode = opcode;
+  *output = operation;
+
+  pthread_mutex_lock(&task->mutex);
+  if (task->pending_io != NULL) {
+    task->io_begin_error = -EBUSY;
+    pthread_mutex_unlock(&task->mutex);
+    free(operation);
+    *output = NULL;
+    af_task_wake_internal(task);
+    return -EBUSY;
+  }
+  task->io_begin_error = 0;
+  task->pending_io = operation;
+  pthread_mutex_unlock(&task->mutex);
+
+  int error = buffer == NULL || length < 0
+                  ? -EINVAL
+                  : af_io_submit(runtime, operation, opcode, (int)descriptor,
+                                 buffer, (size_t)length, offset);
+  if (error != 0)
+    af_io_complete(operation, error);
+  return error;
+}
+
+AF_ENTRY int af_io_read_begin(int64_t descriptor, void *buffer, int64_t length,
+                              int64_t offset, void **output) {
+  return af_io_begin(descriptor, buffer, length, offset, output, IORING_OP_READ);
+}
+
+AF_ENTRY int af_io_write_begin(int64_t descriptor, const void *buffer,
+                               int64_t length, int64_t offset, void **output) {
+  return af_io_begin(descriptor, (void *)buffer, length, offset, output,
+                     IORING_OP_WRITE);
+}
+
+AF_ENTRY int64_t af_io_operation_result(void *opaque) {
+  af_io_operation *operation = opaque;
+  if (operation == NULL) {
+    if (af_current_task != NULL) {
+      pthread_mutex_lock(&af_current_task->mutex);
+      int64_t error = af_current_task->io_begin_error;
+      pthread_mutex_unlock(&af_current_task->mutex);
+      if (error != 0)
+        return error;
+    }
+    return -EINVAL;
+  }
+  if (!atomic_load_explicit(&operation->completed, memory_order_acquire))
+    return -EINPROGRESS;
+  return atomic_load_explicit(&operation->result, memory_order_relaxed);
+}
+
+AF_ENTRY void af_io_operation_release(void *opaque) {
+  af_io_operation *operation = opaque;
+  if (operation == NULL)
+    return;
+  af_task *task = operation->task;
+  pthread_mutex_lock(&task->mutex);
+  if (task->pending_io == operation)
+    task->pending_io = NULL;
+  pthread_mutex_unlock(&task->mutex);
+  free(operation);
 }
