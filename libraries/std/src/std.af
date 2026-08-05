@@ -13,6 +13,9 @@ import { some, none } from "Utils/Option" under opt;
 
 mutable adr head = NULL;
 
+void af_allocator_lock();
+void af_allocator_unlock();
+
 //helpers
 
 adr findFreeBlock(const adr __last, int size) {
@@ -134,41 +137,56 @@ int af_memcpy (adr dst, immutable adr src, const int size){
 };
 
 int af_free(const adr &&ptr){
+    af_allocator_lock();
     if(ptr == NULL){
+        af_allocator_unlock();
         return 0;
     };
     
     const Block block = getBlock(ptr);
     if !ownsBlock(block) {
+        af_allocator_unlock();
         return 0;
     };
     if block.free == 1 {
+        af_allocator_unlock();
         return 0;
     };
     block.free = 1;
     deFragAll(head);
+    af_allocator_unlock();
     return 0;
 };
 
 int blockSize(const adr ptr) {
+    af_allocator_lock();
     if (ptr == NULL){
+        af_allocator_unlock();
         return 0;
     };
 
     const Block block = getBlock(ptr);
-    return block.size;
+    const int size = block.size;
+    af_allocator_unlock();
+    return size;
 };
 
 adr af_malloc(const int size){
 
+    af_allocator_lock();
+
     adr block;
 
-    if(size < 0){return NULL};
+    if(size < 0){
+        af_allocator_unlock();
+        return NULL;
+    };
 
     if(head == NULL){
         block = requestSpace(NULL, size);
         head = block;
         block = block + #16;
+        af_allocator_unlock();
         return block;
     };
     adr last;
@@ -186,35 +204,48 @@ adr af_malloc(const int size){
     block = findFreeBlock(head, size);
     if (block == NULL){
         block = requestSpace(last, size);
-        if(block == NULL){return NULL};
+        if(block == NULL){
+            af_allocator_unlock();
+            return NULL;
+        };
     };
     const Block blockObj = block;
     blockObj.free = 0;
     splitBlock(blockObj, size);
     block = block + Block;
+    af_allocator_unlock();
     return block; // doing this cheats past the ownership system
 };
 
 adr af_realloc(const adr ptr, const int size){
+    af_allocator_lock();
     if (ptr == NULL){
-        return af_malloc(size);
+        const adr allocated = af_malloc(size);
+        af_allocator_unlock();
+        return allocated;
     };
 
     const Block block = getBlock(ptr);
     const int nsize = size - 1;
     if(block.size > nsize){
+        af_allocator_unlock();
         return ptr;
     };
     
     const adr new_ptr = af_malloc(size);
-    if (new_ptr == NULL){return NULL;};
+    if (new_ptr == NULL){
+        af_allocator_unlock();
+        return NULL;
+    };
     const int bsize = block.size;
     af_memcpy(new_ptr, ptr, bsize);
     af_free($ptr);
+    af_allocator_unlock();
     return new_ptr;
 };
 
 int inspectHeap() {
+    af_allocator_lock();
     adr current = head;
     io.print("Heap:\n");
     io.print("HEAD --> ");
@@ -228,6 +259,7 @@ int inspectHeap() {
         io.print("         ");
     };
     io.print("NULL\n");
+    af_allocator_unlock();
     return 0;
 };
 
