@@ -27,6 +27,24 @@
 #define AF_MARK_MEMORY_DEFINED(address, length) ((void)0)
 #endif
 
+/*
+ * The default AFlat allocator is implemented in std.af as a process-wide
+ * linked-list arena.  Async tasks run on a worker thread, so allocator list
+ * traversal and mutation must be serialized with allocations on the caller
+ * thread.  The mutex is recursive because af_realloc delegates to af_malloc
+ * and af_free while holding the allocator lock.
+ */
+static pthread_once_t af_allocator_once = PTHREAD_ONCE_INIT;
+static pthread_mutex_t af_allocator_mutex;
+
+static void af_allocator_init(void) {
+  pthread_mutexattr_t attributes;
+  pthread_mutexattr_init(&attributes);
+  pthread_mutexattr_settype(&attributes, PTHREAD_MUTEX_RECURSIVE);
+  pthread_mutex_init(&af_allocator_mutex, &attributes);
+  pthread_mutexattr_destroy(&attributes);
+}
+
 enum af_task_status {
   AF_TASK_CREATED,
   AF_TASK_SCHEDULED,
@@ -127,6 +145,15 @@ static void af_task_wake_internal(af_task *task);
 #else
 #define AF_ENTRY
 #endif
+
+AF_ENTRY void af_allocator_lock(void) {
+  pthread_once(&af_allocator_once, af_allocator_init);
+  pthread_mutex_lock(&af_allocator_mutex);
+}
+
+AF_ENTRY void af_allocator_unlock(void) {
+  pthread_mutex_unlock(&af_allocator_mutex);
+}
 
 static int af_terminal(enum af_task_status status) {
   return status == AF_TASK_COMPLETED || status == AF_TASK_FAILED ||

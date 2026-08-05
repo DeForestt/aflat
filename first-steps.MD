@@ -1621,6 +1621,202 @@ Results allow errors to remain part of normal program flow. They make failure vi
 
 Use results when a function can fail in a meaningful way and the caller may need to know why.
 
+# Your First Async Program
+
+Some operations take time: reading a file, waiting for a timer, or coordinating
+several pieces of work. AFlat's native async functions let a task pause without
+blocking every other scheduled task.
+
+## Declaring an Async Function
+
+Add `async` before `fn`:
+
+```aflat
+async fn getAnswer() -> int {
+    return 42;
+};
+```
+
+Calling `getAnswer()` creates a task. It does not run the function body yet:
+
+```aflat
+const let answerTask = getAnswer();
+```
+
+This is the first important async rule: **creating a task and starting a task
+are separate operations**.
+
+## Running a Task from Main
+
+A synchronous `main` can use `run` to start a task and wait for its result:
+
+```aflat
+.needs <std>
+
+import uni_string from "uni_string";
+import {print} from "uni_string" under uni;
+
+async fn getAnswer() -> int {
+    return 42;
+};
+
+fn main() -> int {
+    const int answer = run getAnswer();
+    uni.print(`{answer}\n`);
+    return 0;
+};
+```
+
+`run` is a bridge from synchronous code into asynchronous code. It blocks the
+calling thread, so use it at an outer boundary such as `main`, not throughout
+an async call chain.
+
+You can also make `main` asynchronous:
+
+```aflat
+async fn main() -> int {
+    const int answer = await getAnswer();
+    return 0;
+};
+```
+
+The compiler generates a normal program entry point that runs async `main` to
+completion. Async `main` cannot take arguments.
+
+## Awaiting Another Task
+
+Inside an async function, use `await`:
+
+```aflat
+async fn getBase() -> int {
+    return 20;
+};
+
+async fn getAnswer() -> int {
+    const int base = await getBase();
+    return base + 22;
+};
+```
+
+While `getBase` is incomplete, `getAnswer` is suspended. Its local variables
+are saved and restored when it resumes.
+
+The compiler rejects `await` in a synchronous function. It also rejects `run`
+inside an async function; use `await` there.
+
+## Starting More Than One Task
+
+Use `spawn` to schedule work and keep its task handle:
+
+```aflat
+async fn left() -> int {
+    yield;
+    return 20;
+};
+
+async fn right() -> int {
+    yield;
+    return 22;
+};
+
+async fn total() -> int {
+    const let leftTask = spawn left();
+    const let rightTask = spawn right();
+
+    const int a = await leftTask;
+    const int b = await rightTask;
+    return a + b;
+};
+```
+
+`yield` voluntarily gives other scheduled tasks a chance to run. AFlat's
+native scheduler is cooperative, so long-running CPU loops should yield at
+sensible iteration or batch boundaries.
+
+## Fire-and-Forget Work
+
+Use `detach` when the result truly does not matter:
+
+```aflat
+async fn recordMetric() -> void {
+    yield;
+    return;
+};
+
+fn handleEvent() -> void {
+    detach recordMetric();
+    return;
+};
+```
+
+Detached tasks may outlive the scope that created them. Do not pass a pointer,
+buffer, or object that will be destroyed before the detached task finishes.
+When completion matters, keep the task and await it instead.
+
+## Async Errors
+
+Async does not replace AFlat's `result<T>` errors. The two layers compose:
+
+```aflat
+async fn loadName() -> string! {
+    // Return a normal result<string> from this async function.
+};
+
+async fn greet() -> string! {
+    // await removes task<...> and leaves result<string>.
+    const let loaded = await loadName();
+    const string name = loaded!;
+    return name;
+};
+```
+
+Conceptually, `loadName()` returns `task<result<string>>`. First `await` the
+task, then match or bubble the result exactly as you learned in the error
+handling chapter.
+
+## Waiting Without Blocking
+
+`pause` is the low-level primitive used by timers and native I/O:
+
+```aflat
+.needs <Async>
+
+async fn delay(const int milliseconds) -> void {
+    pause beginTimer(milliseconds);
+    return;
+};
+```
+
+Most programs should use a standard async function and await it. You only need
+`pause` when implementing a native operation that knows how to wake the task
+after an external event.
+
+The `files` module includes `readBytesAtAsync`, `writeBytesAtAsync`, and
+`readToEndAsync`. Buffers used by asynchronous file operations must stay alive
+until the task completes, and write buffers must not change while the write is
+in flight.
+
+## Async Checklist
+
+When writing async code, remember:
+
+* A bare async call creates a dormant task.
+* Use `await` inside async functions.
+* Use `run` at synchronous boundaries.
+* Use `spawn` when you need a task handle.
+* Use `detach` only for intentional fire-and-forget work.
+* Use `yield` to make long CPU work cooperative.
+* Keep captured objects and buffers alive until completion.
+* Blocking synchronous I/O still blocks the scheduler worker.
+* An async function currently supports six captured integer/address arguments;
+  a method receiver uses one of those slots.
+* Float arguments and float return values are not supported by async functions
+  yet.
+
+The complete guide covers cancellation, custom wakeups, module exports,
+thread-safety, diagnostics, and async file I/O in more depth. See
+[Asynchronous Programming in AFlat](Async.md).
+
 # AFlat Ownership Model
 
 AFlat uses an explicit ownership model to help manage dynamically allocated memory.
@@ -1973,9 +2169,12 @@ You now know enough AFlat to:
 * Store objects in vectors
 * Use encapsulation
 * Handle errors with results
+* Compose native tasks with async, await, spawn, and run
 * Work with basic ownership transfers
 * Build a small interactive application
 
-There is still much more to explore, including additional collections, generics, unions, pattern matching, memory management, transforms, concurrency, and other advanced language features.
+There is still much more to explore, including additional collections,
+generics, unions, pattern matching, memory management, transforms, low-level
+async I/O, process-oriented concurrency, and other advanced language features.
 
 More tutorials are coming.

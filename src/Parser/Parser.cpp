@@ -322,9 +322,14 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     else
       isMutable = false;
 
-    // Use a set for efficient lookup instead of multiple 'or' checks
+    // Declaration modifiers can be combined in either order (for example,
+    // `export async fn` and `async export fn`).  Consume them together so
+    // validation is performed against the declaration itself, rather than an
+    // access modifier that happens to follow a semantic modifier.
     static const std::unordered_set<std::string> modifiers = {
-        "safe", "dynamic", "pedantic", "types", "when", "unique", "async"};
+        "safe",   "dynamic", "pedantic", "types",   "when",
+        "unique", "async",   "const",    "mutable", "immutable",
+        "public", "private", "static",   "export"};
 
     if (modifiers.count(obj.meta)) {
       while (modifiers.count(obj.meta)) {
@@ -375,6 +380,21 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
                                  std::to_string(obj.lineCount));
           }
           whenClause = this->parseWhenClause(tokens, obj.lineCount);
+        } else if (obj.meta == "const") {
+          isMutable = false;
+        } else if (obj.meta == "mutable") {
+          isMutable = true;
+        } else if (obj.meta == "immutable") {
+          isMutable = false;
+          isImmutable = true;
+        } else if (obj.meta == "public") {
+          scope = ast::Public;
+        } else if (obj.meta == "private") {
+          scope = ast::Private;
+        } else if (obj.meta == "static") {
+          scope = ast::Static;
+        } else if (obj.meta == "export") {
+          scope = ast::Export;
         }
         if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
           obj = *dynamic_cast<lex::LObj *>(tokens.peek());
@@ -410,38 +430,6 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
         throw err::Exception("async can only be used with functions on line " +
                              std::to_string(obj.lineCount));
       }
-    }
-
-    static const std::unordered_set<std::string> accessModifiers = {
-        "const",   "mutable", "immutable", "public",
-        "private", "static",  "export"};
-
-    if (accessModifiers.count(obj.meta)) {
-      while (accessModifiers.count(obj.meta)) {
-        if (obj.meta == "const") {
-          isMutable = false;
-        } else if (obj.meta == "mutable") {
-          isMutable = true;
-        } else if (obj.meta == "immutable") {
-          isMutable = false;
-          isImmutable = true;
-        } else if (obj.meta == "public") {
-          scope = ast::Public;
-        } else if (obj.meta == "private") {
-          scope = ast::Private;
-        } else if (obj.meta == "static") {
-          scope = ast::Static;
-        } else if (obj.meta == "export") {
-          scope = ast::Export;
-        }
-        if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
-          obj = *dynamic_cast<lex::LObj *>(tokens.peek());
-          tokens.pop();
-        } else {
-          throw err::Exception("Expected type after memory modifier on line " +
-                               std::to_string(obj.lineCount));
-        }
-      };
     }
 
     if (obj.meta == "const") {

@@ -444,7 +444,25 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     asmc::File file;
     file << registration.file;
     file << bodyFile;
-    file << asyncConstructor(*this, constructorLabel, bodyLabel, capturedArgs);
+    auto constructorFile =
+        asyncConstructor(*this, constructorLabel, bodyLabel, capturedArgs);
+    if (this->scope == ast::Export) {
+      const std::string exportedLabel =
+          generator.moduleId() + '.' + constructorLabel;
+      auto *global = new asmc::LinkTask();
+      global->command = "global";
+      global->operand = exportedLabel;
+      global->logicalLine = this->logicalLine;
+      file.linker << global;
+      auto *label = new asmc::Label();
+      label->label = exportedLabel;
+      label->logicalLine = this->logicalLine;
+      // Generated instruction lists are reversed before assembly is written.
+      // Append the alias after the constructor label here so it appears
+      // immediately before that label in the emitted assembly.
+      constructorFile.text.append(label);
+    }
+    file << constructorFile;
     if (isMain) {
       if (!this->argTypes.empty())
         generator.alert("async main cannot take arguments", true, __FILE__,

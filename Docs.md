@@ -248,6 +248,173 @@ Functions at the global scope can have different access levels:
 - **Private** – Accessible only within the module.
 - **Export** – Explicitly imported for use in another module to avoid conflicts.
 
+### Async functions and tasks
+
+AFlat has native task-based asynchronous functions. Prefix `fn` with `async`:
+
+```aflat
+async fn compute() -> int {
+    yield;
+    return 42;
+};
+```
+
+Calling an async function creates a task instead of executing its body
+immediately. If `compute` returns `int`, `compute()` conceptually returns
+`task<int>`.
+
+There are four ways to start or consume a task:
+
+| Form | Where it is used | Result |
+| --- | --- | --- |
+| `await compute()` | Inside `async fn` | Suspends the current task and produces `int`. |
+| `spawn compute()` | Sync or async code | Schedules work and returns `task<int>`. |
+| `run compute()` | Synchronous code | Blocks the calling thread and produces `int`. |
+| `detach compute()` | Sync or async code | Schedules fire-and-forget work. |
+
+Creating a bare task is lazy:
+
+```aflat
+const let pending = compute(); // not running yet
+const int value = run pending; // schedules and waits
+```
+
+#### Await
+
+`await` is only valid inside an async function:
+
+```aflat
+async fn child() -> int {
+    return 21;
+};
+
+async fn parent() -> int {
+    const int value = await child();
+    return value * 2;
+};
+```
+
+The current task's locals are saved while the child runs and restored when it
+completes. Awaiting a previously spawned task is also valid:
+
+```aflat
+async fn parent() -> int {
+    const let childTask = spawn child();
+    yield;
+    return await childTask;
+};
+```
+
+#### Run and async main
+
+Use `run` to cross from synchronous code into async code:
+
+```aflat
+fn main() -> int {
+    const int value = run child();
+    return 0;
+};
+```
+
+`run` is rejected inside an async function because it blocks the calling
+thread. Use `await` there. A program may instead define an async entry point:
+
+```aflat
+async fn main() -> int {
+    const int value = await child();
+    return 0;
+};
+```
+
+Async `main` is automatically run to completion and cannot take arguments.
+
+#### Spawn, cancel, and detach
+
+`spawn` starts concurrent work while retaining a task handle:
+
+```aflat
+async fn coordinator() -> int {
+    const let first = spawn child();
+    const let second = spawn child();
+    return (await first) + (await second);
+};
+```
+
+Cancellation is requested with a statement:
+
+```aflat
+const let worker = spawn backgroundWork();
+cancel worker;
+```
+
+Cancellation is cooperative. A running task observes it at its next suspension
+point. It is a runtime terminal state, not a `result` error value.
+
+Use `detach` only when no result or completion signal is needed:
+
+```aflat
+detach writeAuditEntry();
+```
+
+Values and buffers captured by spawned or detached work must remain alive until
+the task finishes.
+
+#### Yield and pause
+
+`yield` voluntarily returns the current async task to the scheduler queue:
+
+```aflat
+async fn processItems(vector::<Item> items) -> void {
+    foreach item in items {
+        process(item);
+        yield;
+    };
+};
+```
+
+`pause` suspends for a native or external event that will wake the task. The
+built-in timer demonstrates the pattern:
+
+```aflat
+.needs <Async>
+
+async fn delay(const int milliseconds) -> void {
+    pause beginTimer(milliseconds);
+    return;
+};
+```
+
+Application code should normally await a standard async API rather than use
+`pause` directly.
+
+#### Async errors
+
+Async and result types compose. An `async fn load() -> string!` call produces a
+`task<result<string>>`. `await` removes the task layer; `!` or `match` then
+handles the result layer:
+
+```aflat
+async fn useValue() -> string! {
+    const let loaded = await load();
+    const string value = loaded!;
+    return value;
+};
+```
+
+#### Current restrictions
+
+- At most six integer/address arguments may be captured. A method receiver uses
+  one slot.
+- Float arguments and float return values are not supported yet.
+- `await`, `yield`, and `pause` require an async function.
+- `run` is not allowed inside an async function.
+- Scheduling is cooperative; blocking I/O or CPU loops without `yield` stop
+  other async tasks from progressing.
+
+See [Asynchronous Programming in AFlat](Async.md) for the complete guide,
+including async file I/O, ownership, custom wakeups, troubleshooting, and more
+examples.
+
 ### Function Decorators
 Functions can be decorated using decorators, which must take a single reference argument `_arg`. The decorator function must accept two arguments: `adr foo` (the function) and `adr _arg`.
 

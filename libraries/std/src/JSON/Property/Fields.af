@@ -47,7 +47,7 @@ safe class TypedJsonProperty signs JsonProperty {
 
   when (T is int)
   fn serialize() -> JSON {
-    return json.Number(my.value$bool);
+    return json.Number(my.value$int);
   };
 
   when (T is bool)
