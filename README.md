@@ -1,5 +1,5 @@
 # AFlat
-AFlat is a simple, low-level, programming language.  It is designed to give as much freedom as possible to the programmer, and yet at the same time be easy to read and understand. Please see the [documentation](Docs.md) for the full documentation.  Please see examples in the [examples](https://github.com/DeForestt/aflat-chess.git) Repository.
+AFlat is a simple, low-level, programming language.  It is designed to give as much freedom as possible to the programmer, and yet at the same time be easy to read and understand. Please see the [documentation](Docs.md) for the full language documentation, the [async/await guide](Async.md) for native tasks and nonblocking I/O, and the [comprehensive reference](Comprehensive.md) for the compiler and standard library. Please see examples in the [examples](https://github.com/DeForestt/aflat-chess.git) Repository.
 <br>
 
 ## Trust the programmer philosophy
@@ -123,6 +123,9 @@ modules below are the most commonly used building blocks:
 
 #### Runtime & strings
 - `std` - Arena allocator, `malloc`/`free`, `memcpy`, `panic`, `sleep`, and other intrinsics (libraries/std/src/std.af).
+- `Async` - Native `task<T>` scheduler support for `async fn`, `await`, `spawn`,
+  `run`, `yield`, `pause`, cancellation, detachment, timers, and async file I/O.
+  See the [async/await guide](Async.md).
 - `std-cmp` - Compatibility shim that swaps in libc memory helpers plus panic/assert when the arena can't be used (libraries/std/src/std-cmp.af).
 - `Memory` - RefCounted base class alongside the generic `Box`/`wrap` helpers for owning values (libraries/std/src/Memory.af).
 - `String` - Assembly-backed string primitive covering allocation, slicing, iteration, comparisons, casing, and conversions (libraries/std/src/String.af).
@@ -132,7 +135,7 @@ modules below are the most commonly used building blocks:
 #### Numerics & IO
 - `math` - Numeric helpers including `Random`, integer/float exponentiation, square roots, conversions, and absolute values (libraries/std/src/math.af).
 - `io` - Terminal IO functions for reading strings, printing chars/ints/hex, and emitting ANSI-colored output (libraries/std/src/io.af).
-- `files` - File descriptor wrapper with `FileError`/`ReadError`, buffered reads, iterators, and write helpers (libraries/std/src/files.af).
+- `files` - File descriptor wrapper with `FileError`/`ReadError`, buffered reads, iterators, synchronous write helpers, and native async read/write tasks (libraries/std/src/files.af).
 - `DateTime` - Epoch-based `DateTime` struct with parsing, getters, formatting, and day-of-week math (libraries/std/src/DateTime.af).
 
 #### Collections & iteration
@@ -175,7 +178,7 @@ modules below are the most commonly used building blocks:
 
 #### Tooling & frameworks
 - `ATest` - BDD-style testing DSL with fixtures, describe contexts, hooks, and reporting helpers (libraries/std/src/ATest.af).
-- `concurrency` - Process/thread abstractions (`Process`, `MProcess`), message pipes, and `AsyncResult` handles (libraries/std/src/concurrency.af).
+- `concurrency` - Legacy/process-oriented concurrency abstractions (`Process`, `MProcess`), message pipes, and `AsyncResult` handles. Native `async fn` uses the separate task runtime described in [Async.md](Async.md) (libraries/std/src/concurrency.af).
 - `CLArgs` - Command-line parser with long/short flags, typed values, validation, and help text (libraries/std/src/CLArgs.af).
 - `Web/Content` - File-backed templating utility that applies bindings before rendering (libraries/std/src/Web/Content.af).
 - `Web/Content/Bind` - Binding helper that registers template placeholders and preprocessors (libraries/std/src/Web/Content/Bind.af).

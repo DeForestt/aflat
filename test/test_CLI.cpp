@@ -1,6 +1,12 @@
 #include "CLI.hpp"
 #include "catch.hpp"
 
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+
+void buildTemplate(std::string value);
+
 TEST_CASE("CLI parses flags", "[cli]") {
   const char *argv[] = {"aflat", "-d", "-t", "-q", "-o", "foo.s", "build"};
   CommandLineOptions opts;
@@ -62,6 +68,25 @@ TEST_CASE("CLI concurrent build flag", "[cli]") {
   REQUIRE(parseCommandLine(3, (char **)argv, opts));
   REQUIRE(opts.concurrent == true);
   REQUIRE(opts.command == "build");
+}
+
+TEST_CASE("generated project README documents native async resources",
+          "[cli][readme][async]") {
+  namespace fs = std::filesystem;
+  const auto project = fs::path("tmp/generated_async_readme");
+  fs::remove_all(project);
+
+  buildTemplate(project.string());
+
+  std::ifstream input(project / "README.md");
+  REQUIRE(input.is_open());
+  const std::string readme((std::istreambuf_iterator<char>(input)),
+                           std::istreambuf_iterator<char>());
+  CHECK(readme.find("aflat docs Async") != std::string::npos);
+  CHECK(readme.find("async fn") != std::string::npos);
+  CHECK(readme.find("Async.md") != std::string::npos);
+
+  fs::remove_all(project);
 }
 
 TEST_CASE("CLI lsp command", "[cli]") {

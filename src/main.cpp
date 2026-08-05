@@ -610,7 +610,11 @@ static std::string generateReadmeContent(const std::string &projectName) {
   out << "- `aflat docs src/main.af` lists classes, unions, transforms, and "
          "functions in this project.\n";
   out << "- `aflat docs String` explores a standard "
-         "library module.\n\n";
+         "library module.\n";
+  out << "- `aflat docs Async` lists the native timer, task-control, wakeup, "
+         "and asynchronous I/O runtime surface.\n";
+  out << "- The complete async/await guide is available at "
+         "https://github.com/DeForestt/aflat/blob/main/Async.md.\n\n";
   out << "### Creating modules\n";
   out << "Use `aflat module <module name>` to scaffold `src/<module "
          "name>/mod.af` "
@@ -625,6 +629,10 @@ static std::string generateReadmeContent(const std::string &projectName) {
   out << "- `std` - Arena allocator, `af_malloc`/`af_free`, `af_memcpy`, "
          "`panic`, "
          "`sleep`, and other intrinsics (libraries/std/src/std.af).\n";
+  out << "- `Async` - Native `task<T>` scheduler support for `async fn`, "
+         "`await`, `spawn`, `run`, `yield`, `pause`, cancellation, "
+         "detachment, timers, and async file I/O "
+         "(libraries/std/head/Async.gs).\n";
   out << "- `std-cmp` - Compatibility shim that swaps in libc memory helpers "
          "plus panic/assert when the arena can't be used "
          "(libraries/std/src/std-cmp.af).\n";
@@ -650,7 +658,8 @@ static std::string generateReadmeContent(const std::string &projectName) {
          "and emitting ANSI-colored output (libraries/std/src/io.af).\n";
   out << "- `files` - File descriptor wrapper with `FileError`/`ReadError`, "
          "buffered reads, "
-         "iterators, and write helpers (libraries/std/src/files.af).\n";
+         "iterators, synchronous write helpers, and native async read/write "
+         "tasks (libraries/std/src/files.af).\n";
   out << "- `DateTime` - Epoch-based `DateTime` struct with parsing, getters, "
          "formatting, "
          "and day-of-week math (libraries/std/src/DateTime.af).\n\n";
@@ -750,8 +759,9 @@ static std::string generateReadmeContent(const std::string &projectName) {
   out << "- `ATest` - BDD-style testing DSL with fixtures, describe contexts, "
          "hooks, and reporting helpers "
          "(libraries/std/src/ATest.af).\n";
-  out << "- `concurrency` - Process/thread abstractions (`Process`, "
-         "`MProcess`), message pipes, and `AsyncResult` handles "
+  out << "- `concurrency` - Legacy/process-oriented concurrency abstractions "
+         "(`Process`, `MProcess`), message pipes, and `AsyncResult` handles; "
+         "native `async fn` uses the separate task runtime "
          "(libraries/std/src/concurrency.af).\n";
   out << "- `CLArgs` - Command-line parser with long/short flags, typed "
          "values, validation, and help text "
