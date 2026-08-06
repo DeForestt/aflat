@@ -11,6 +11,64 @@ export enum WorkerMode {
     PROCESS
 };
 
+/**
+ * Mutual-exclusion lock for state shared by worker threads.
+ *
+ * A lock must remain alive until every thread that uses it has completed.
+ */
+safe dynamic class Lock {
+    private adr handle = NULL;
+
+    fn init() -> Self {
+        my.handle = af_lock_create();
+        return my;
+    };
+
+    /** Block until this lock has been acquired. */
+    public safe fn lock() {
+        const adr handle = my.handle;
+        af_lock_acquire(handle);
+    };
+
+    /** Acquire this lock without blocking, or return false if it is held. */
+    public safe fn tryLock() -> bool {
+        const adr handle = my.handle;
+        return af_lock_try_acquire(handle);
+    };
+
+    /** Release this lock. */
+    public safe fn unlock() {
+        const adr handle = my.handle;
+        af_lock_release(handle);
+    };
+
+    /** Acquire this lock for the lifetime of the returned guard. */
+    public safe fn guard() -> LockGuard {
+        const adr handle = my.handle;
+        return new LockGuard(handle);
+    };
+
+    void del() {
+        af_lock_destroy(my.handle);
+        my.handle = NULL;
+    };
+};
+
+/** Scope guard returned by `Lock.guard()`. */
+unique class LockGuard {
+    private adr handle = NULL;
+
+    fn init(const adr handle) -> Self {
+        my.handle = handle;
+        af_lock_acquire(my.handle);
+        return my;
+    };
+
+    void del() {
+        af_lock_release(my.handle);
+    };
+};
+
 // Represents the outcome from an asynchronous worker execution.
 class AsyncOutput {
     bool okay;

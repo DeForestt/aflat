@@ -2,6 +2,7 @@
 
 import string from "String";
 import vector from "Collections/Vector";
+import Lock, LockGuard from "concurrency";
 
 import option from "Utils/option";
 import {Some, None} from "Utils/option" under opt;
@@ -130,9 +131,10 @@ class u_map_bucket {
 
 types(K, V)
 class unordered_map {
-	vector::<u_map_bucket::<K, V>> buckets = new vector::<u_map_bucket::<K, V>>(256);
-	int capasity = 256;
-	mutable int count = 0;
+	private vector::<u_map_bucket::<K, V>> buckets = new vector::<u_map_bucket::<K, V>>(256);
+	private int capasity = 256;
+	private mutable int count = 0;
+	private Lock mutex = new Lock();
 
 	fn init() -> Self {
 		for int i = 0; i < my.capasity; i++ {
@@ -159,7 +161,13 @@ class unordered_map {
 		return h % my.capasity;
 	};
 
+	safe fn count() -> int {
+		const LockGuard __guard = my.mutex.guard();
+		return my.count;
+	};
+
 	fn set(const K key, const V value) -> Self {
+		const LockGuard __guard = my.mutex.guard();
 		const int index = my.index(key);
 		const u_map_bucket::<K, V> bucket =
 			my.buckets.get(index).expect("searched for non-existing unordered_map bucket");
@@ -173,6 +181,7 @@ class unordered_map {
 
 	when (K is adr)
 	fn get(const adr key) -> option::<V> {
+		const LockGuard __guard = my.mutex.guard();
 		const int index = my.index(key);
 		const u_map_bucket::<K, V> bucket =
 			my.buckets.get(index).expect("searched for non-existing unordered_map bucket");
@@ -181,6 +190,7 @@ class unordered_map {
 
 	when (K is not adr)
 	fn get(const K key) -> option::<V> {
+		const LockGuard __guard = my.mutex.guard();
 		const int index = my.index(key);
 		const u_map_bucket::<K, V> bucket =
 			my.buckets.get(index).expect("searched for non-existing unordered_map bucket");
@@ -188,14 +198,17 @@ class unordered_map {
 	};
 
 	fn _call(const K key) -> option::<V> {
+		const LockGuard __guard = my.mutex.guard();
 		return my.get(key);
 	};
 
 	fn has(const K key) -> bool {
+		const LockGuard __guard = my.mutex.guard();
 		return my.get(key).isSome();
 	};
 
 	fn keys() -> vector::<K> {
+		const LockGuard __guard = my.mutex.guard();
 		const let keys = new vector::<K>();
 		for int i = 0; i < my.buckets.count(); i++ {
 			const u_map_bucket::<K, V> bucket =
@@ -206,6 +219,7 @@ class unordered_map {
 	};
 
 	fn values() -> vector::<V> {
+		const LockGuard __guard = my.mutex.guard();
 		const let values = new vector::<V>();
 		for int i = 0; i < my.buckets.count(); i++ {
 			const u_map_bucket::<K, V> bucket =
@@ -220,6 +234,7 @@ class unordered_map {
 	};
 
 	fn clear() -> void {
+		const LockGuard __guard = my.mutex.guard();
 		for int i = 0; i < my.buckets.count(); i++ {
 			const u_map_bucket::<K, V> bucket =
 				my.buckets.get(i).expect("searched for non-existing unordered_map bucket");
@@ -231,6 +246,7 @@ class unordered_map {
 	};
 
 	fn toString() -> string {
+		const LockGuard __guard = my.mutex.guard();
 		return `unordered_map(keys={my.keys()})`;
 	};
 };

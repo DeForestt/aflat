@@ -16,6 +16,63 @@
 #include <time.h>
 #include <unistd.h>
 
+typedef struct af_lock {
+  pthread_mutex_t mutex;
+} af_lock;
+
+void *af_lock_create(void) {
+  af_lock *lock = mmap(NULL, sizeof(*lock), PROT_READ | PROT_WRITE,
+                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (lock == MAP_FAILED)
+    return NULL;
+
+  pthread_mutexattr_t attributes;
+  int status = pthread_mutexattr_init(&attributes);
+  if (status != 0) {
+    munmap(lock, sizeof(*lock));
+    return NULL;
+  }
+
+  status = pthread_mutexattr_settype(&attributes, PTHREAD_MUTEX_RECURSIVE);
+  if (status == 0)
+    status = pthread_mutex_init(&lock->mutex, &attributes);
+  pthread_mutexattr_destroy(&attributes);
+  if (status != 0) {
+    munmap(lock, sizeof(*lock));
+    return NULL;
+  }
+  return lock;
+}
+
+int af_lock_acquire(void *opaque) {
+  if (opaque == NULL)
+    return EINVAL;
+  return pthread_mutex_lock(&((af_lock *)opaque)->mutex);
+}
+
+int af_lock_try_acquire(void *opaque) {
+  if (opaque == NULL)
+    return 0;
+  return pthread_mutex_trylock(&((af_lock *)opaque)->mutex) == 0;
+}
+
+int af_lock_release(void *opaque) {
+  if (opaque == NULL)
+    return EINVAL;
+  return pthread_mutex_unlock(&((af_lock *)opaque)->mutex);
+}
+
+int af_lock_destroy(void *opaque) {
+  if (opaque == NULL)
+    return 0;
+
+  af_lock *lock = opaque;
+  const int status = pthread_mutex_destroy(&lock->mutex);
+  if (status == 0)
+    munmap(lock, sizeof(*lock));
+  return status;
+}
+
 typedef struct af_worker_thread {
   pthread_mutex_t mutex;
   pthread_t thread;
