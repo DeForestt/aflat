@@ -179,7 +179,7 @@ class vector {
         my.count = my.count - 1;
         const generic val = my.head + (my.count * T);
         const T val = val;
-        return opt.Some(val as T);
+        return opt.Some(val);
     };
 
     when (T is not primitive and T is unique)
