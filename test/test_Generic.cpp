@@ -173,6 +173,32 @@ TEST_CASE("concurrency locks expose blocking and nonblocking acquisition",
   REQUIRE(result);
 }
 
+TEST_CASE("HTTP server worker pool size is configurable", "[http][server]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/http_server_workers");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "http_server_workers.af";
+  const auto output = dir / "http_server_workers.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "import Server from \"HTTP/Server\";\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    const Server server = new Server(9090, 3);\n";
+  ofs << "    if server.workers() != 3 { return 1; };\n";
+  ofs << "    server.setWorkerCount(5);\n";
+  ofs << "    if server.workers() != 5 { return 2; };\n";
+  ofs << "    return 0;\n";
+  ofs << "};\n";
+  ofs.close();
+
+  const bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
 TEST_CASE("transform preserves chained method call order", "[transform]") {
   namespace fs = std::filesystem;
   const auto dir = fs::path("tmp/transform_method_chain");

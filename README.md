@@ -156,7 +156,7 @@ modules below are the most commonly used building blocks:
 - `HTTP` - HTTP errors, verb enum, request parser, `HTTPMessage`/`HTTPResponse`, and `listen` helper (libraries/std/src/HTTP.af).
 - `HTTP/Endpoint` - Endpoint wrapper/registry plus pluggable NotFound handler (libraries/std/src/HTTP/Endpoint.af).
 - `HTTP/Endpoints` - Sugar classes for registering GET/POST/PUT/DELETE/etc. handlers (libraries/std/src/HTTP/Endpoints.af).
-- `HTTP/Server` - Middleware-aware server that dispatches endpoints, supports wildcards, and formats error responses (libraries/std/src/HTTP/Server.af).
+- `HTTP/Server` - Middleware-aware server with a configurable native thread pool that dispatches endpoints, supports wildcards, and formats error responses (libraries/std/src/HTTP/Server.af).
 - `HTTP/Middleware` - Before/after middleware registration helper applied per request (libraries/std/src/HTTP/Middleware.af).
 - `request.c` - C shim exposing `request`, `_aflat_server_spinUp`, and `serve` socket utilities (libraries/std/src/request.c).
 

@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #include <spawn.h>
 #include <signal.h>
 #include <sys/wait.h>
@@ -508,68 +509,204 @@ _serve(int port, char *(*handler)(char *, void *), void *data) {
   return 0;
 }
 
+typedef char *(*af_server_handler)(char *, void *);
+
+typedef struct af_server_pool {
+  pthread_mutex_t mutex;
+  pthread_cond_t available;
+  pthread_cond_t space;
+  pthread_t *threads;
+  int *queue;
+  size_t head;
+  size_t tail;
+  size_t count;
+  size_t capacity;
+  int stopping;
+  af_server_handler handler;
+  void *data;
+} af_server_pool;
+
+/* Generated AFlat callbacks use the System V callee-saved registers as
+ * scratch registers. Preserve them around callbacks made by pool threads. */
+#if defined(__x86_64__)
+__attribute__((naked, noinline)) static char *
+af_server_invoke(af_server_handler handler __attribute__((unused)),
+                 char *request __attribute__((unused)),
+                 void *data __attribute__((unused))) {
+  __asm__("pushq %rbp\n\t"
+          "movq %rsp, %rbp\n\t"
+          "pushq %rbx\n\t"
+          "pushq %r12\n\t"
+          "pushq %r13\n\t"
+          "pushq %r14\n\t"
+          "pushq %r15\n\t"
+          "subq $8, %rsp\n\t"
+          "movq %rdi, %rax\n\t"
+          "movq %rsi, %rdi\n\t"
+          "movq %rdx, %rsi\n\t"
+          "call *%rax\n\t"
+          "addq $8, %rsp\n\t"
+          "popq %r15\n\t"
+          "popq %r14\n\t"
+          "popq %r13\n\t"
+          "popq %r12\n\t"
+          "popq %rbx\n\t"
+          "leave\n\t"
+          "ret");
+}
+#else
+static char *af_server_invoke(af_server_handler handler, char *request,
+                              void *data) {
+  return handler(request, data);
+}
+#endif
+
+int af_server_default_worker_count(void) {
+  long processors = sysconf(_SC_NPROCESSORS_ONLN);
+  if (processors < 1) processors = 1;
+  long workers = processors * 2;
+  if (workers < 4) workers = 4;
+  if (workers > 32) workers = 32;
+  return (int)workers;
+}
+
+static void af_server_handle_connection(af_server_pool *pool, int socket_fd) {
+  char *request = NULL;
+  if (_aflat_read_request(socket_fd, 4096, &request) > 0) {
+    char *response = af_server_invoke(pool->handler, request, pool->data);
+    if (response != NULL) {
+      _aflat_send_all(socket_fd, response, strlen(response));
+      af_free(response);
+    }
+  }
+  if (request != NULL) af_free(request);
+  close(socket_fd);
+}
+
+static void *af_server_pool_worker(void *opaque) {
+  af_server_pool *pool = opaque;
+  for (;;) {
+    pthread_mutex_lock(&pool->mutex);
+    while (pool->count == 0 && !pool->stopping)
+      pthread_cond_wait(&pool->available, &pool->mutex);
+    if (pool->stopping && pool->count == 0) {
+      pthread_mutex_unlock(&pool->mutex);
+      return NULL;
+    }
+
+    int socket_fd = pool->queue[pool->head];
+    pool->head = (pool->head + 1) % pool->capacity;
+    pool->count--;
+    pthread_cond_signal(&pool->space);
+    pthread_mutex_unlock(&pool->mutex);
+
+    af_server_handle_connection(pool, socket_fd);
+  }
+}
+
+static void af_server_pool_stop(af_server_pool *pool, int started) {
+  pthread_mutex_lock(&pool->mutex);
+  pool->stopping = 1;
+  pthread_cond_broadcast(&pool->available);
+  pthread_mutex_unlock(&pool->mutex);
+  for (int i = 0; i < started; i++) pthread_join(pool->threads[i], NULL);
+  while (pool->count > 0) {
+    close(pool->queue[pool->head]);
+    pool->head = (pool->head + 1) % pool->capacity;
+    pool->count--;
+  }
+  pthread_cond_destroy(&pool->space);
+  pthread_cond_destroy(&pool->available);
+  pthread_mutex_destroy(&pool->mutex);
+  free(pool->queue);
+  free(pool->threads);
+}
+
 __attribute__((force_align_arg_pointer)) int
-serve(int port, char *(*handler)(char *, void *), void *data) {
+serve_pool(int port, af_server_handler handler, void *data, int worker_count) {
+  if (handler == NULL) return EINVAL;
+  if (worker_count <= 0) worker_count = af_server_default_worker_count();
+
+  af_server_pool pool;
+  memset(&pool, 0, sizeof(pool));
+  pool.handler = handler;
+  pool.data = data;
+  pool.capacity = (size_t)worker_count * 32;
+  if (pool.capacity < 128) pool.capacity = 128;
+  if (pool.capacity > 4096) pool.capacity = 4096;
+  pool.threads = calloc((size_t)worker_count, sizeof(*pool.threads));
+  pool.queue = calloc(pool.capacity, sizeof(*pool.queue));
+  if (pool.threads == NULL || pool.queue == NULL) {
+    free(pool.threads);
+    free(pool.queue);
+    return ENOMEM;
+  }
+
+  pthread_mutex_init(&pool.mutex, NULL);
+  pthread_cond_init(&pool.available, NULL);
+  pthread_cond_init(&pool.space, NULL);
+
+  int started = 0;
+  for (; started < worker_count; started++) {
+    int status = pthread_create(&pool.threads[started], NULL,
+                                af_server_pool_worker, &pool);
+    if (status != 0) {
+      af_server_pool_stop(&pool, started);
+      return status;
+    }
+  }
+
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-  struct sockaddr_in address;
-  int opt = 1;
-  int addrlen = sizeof(address);
-
-  signal(SIGCHLD, SIG_IGN);
-
   if (server_fd < 0) {
     perror("socket");
+    af_server_pool_stop(&pool, started);
     return 1;
   }
-  setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-             sizeof(opt));
+
+  int opt = 1;
+  setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+  setsockopt(server_fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+  struct sockaddr_in address;
+  memset(&address, 0, sizeof(address));
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = INADDR_ANY;
   address.sin_port = htons(port);
   if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
     perror("bind");
     close(server_fd);
+    af_server_pool_stop(&pool, started);
     return 1;
   }
   if (listen(server_fd, 128) < 0) {
     perror("listen");
     close(server_fd);
+    af_server_pool_stop(&pool, started);
     return 1;
   }
 
-  while (1) {
-    int new_socket =
-        accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-    if (new_socket < 0) {
+  signal(SIGPIPE, SIG_IGN);
+  for (;;) {
+    int socket_fd = accept(server_fd, NULL, NULL);
+    if (socket_fd < 0) {
+      if (errno == EINTR) continue;
       perror("accept");
       continue;
     }
 
-    pid_t pid = fork();
-    if (pid < 0) {
-      perror("fork");
-      close(new_socket);
-      continue;
-    }
-
-    if (pid == 0) {  // Child process
-      close(server_fd);
-      char *request = NULL;
-      if (_aflat_read_request(new_socket, 4096, &request) < 0) {
-        close(new_socket);
-        exit(EXIT_FAILURE);
-      }
-      char *response = handler(request, data);
-      send(new_socket, response, strlen(response), 0);
-      af_free(request);
-      close(new_socket);
-      exit(0);  // End child process
-    } else {
-      close(new_socket);  // Parent process closes the new socket
-    }
+    pthread_mutex_lock(&pool.mutex);
+    while (pool.count == pool.capacity)
+      pthread_cond_wait(&pool.space, &pool.mutex);
+    pool.queue[pool.tail] = socket_fd;
+    pool.tail = (pool.tail + 1) % pool.capacity;
+    pool.count++;
+    pthread_cond_signal(&pool.available);
+    pthread_mutex_unlock(&pool.mutex);
   }
-  close(server_fd);
-  return 0;
+}
+
+__attribute__((force_align_arg_pointer)) int
+serve(int port, char *(*handler)(char *, void *), void *data) {
+  return serve_pool(port, handler, data, 0);
 }
 
 __attribute__((force_align_arg_pointer)) int

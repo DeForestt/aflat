@@ -39,11 +39,21 @@ class Server {
         const vector::<Middleware> middlewares = new vector::<Middleware>();
         mutable NotFoundImpl notFound = NULL;
         int port = 8080;
+        mutable int workerCount = af_server_default_worker_count();
     };
 
-    Server init(* const int port) {
+    Server init(* const int port, * const int workerCount) {
         if port != 0 my.port = port;
+        if workerCount > 0 my.workerCount = workerCount;
         return my;
+    };
+
+    safe fn workers() -> int {
+        return my.workerCount;
+    };
+
+    void setWorkerCount(const int workerCount) {
+        if workerCount > 0 my.workerCount = workerCount;
     };
 
     void addEndpoint(const Endpoint endpoint) {
@@ -63,7 +73,7 @@ class Server {
         const let preamble = "http:";
         const let slash = '/';
         uni.print(`listening on port: {preamble}{slash}{slash}localhost:{my.port}\n`);
-        serve(my.port, fn (const adr _msg, const Server self) {
+        serve_pool(my.port, fn (const adr _msg, const Server self) {
             const let msg = new HTTPMessage(new string(_msg), true);
             const string method = http.methodToString(msg.method);
             const string endpoint = msg.endpoint.copy();
@@ -135,8 +145,9 @@ class Server {
                         };
 
                         const string out = r.toString();
-                        out.seal();
-                        return out.cstr();
+                        const adr response = af_malloc(out.len() + 1);
+                        af_memcpy(response, out.cstr(), out.len() + 1);
+                        return response;
                     };
                 };
             };
@@ -146,14 +157,16 @@ class Server {
                 const let handler = notFound.imp;
                 const HTTPResponse r = handler(self, data);
                 const string out = r.toString();
-                out.seal();
-                return out.cstr();
+                const adr response = af_malloc(out.len() + 1);
+                af_memcpy(response, out.cstr(), out.len() + 1);
+                return response;
             };
             const string msg = `Endpoint: [{method}] {endpoint} not implemented`;
             const HTTPResponse r = new HTTPResponse(msg.cstr(), "501", "Not Implemented");
             const string out = r.toString();
-            out.seal();
-            return out.cstr();
-        }, my);
+            const adr response = af_malloc(out.len() + 1);
+            af_memcpy(response, out.cstr(), out.len() + 1);
+            return response;
+        }, my, my.workerCount);
     };
 };
