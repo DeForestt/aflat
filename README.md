@@ -178,7 +178,7 @@ modules below are the most commonly used building blocks:
 
 #### Tooling & frameworks
 - `ATest` - BDD-style testing DSL with fixtures, describe contexts, hooks, and reporting helpers (libraries/std/src/ATest.af).
-- `concurrency` - Legacy/process-oriented concurrency abstractions (`Process`, `MProcess`), message pipes, and `AsyncResult` handles. Native `async fn` uses the separate task runtime described in [Async.md](Async.md) (libraries/std/src/concurrency.af).
+- `concurrency` - Thread/process workers, message pipes, `AsyncResult` handles, and `Lock`. `vector::<T>` and `unordered_map::<K, V>` synchronize their operations automatically. Native `async fn` uses the separate task runtime described in [Async.md](Async.md) (libraries/std/src/concurrency.af).
 - `CLArgs` - Command-line parser with long/short flags, typed values, validation, and help text (libraries/std/src/CLArgs.af).
 - `Web/Content` - File-backed templating utility that applies bindings before rendering (libraries/std/src/Web/Content.af).
 - `Web/Content/Bind` - Binding helper that registers template placeholders and preprocessors (libraries/std/src/Web/Content/Bind.af).

@@ -32,3 +32,8 @@ bool af_worker_thread_is_running(adr worker);
 int af_worker_thread_cancel(adr worker);
 int af_worker_thread_timeout(adr worker, int seconds, int nanoseconds);
 void af_worker_thread_release(adr worker);
+adr af_lock_create();
+int af_lock_acquire(const adr lock);
+bool af_lock_try_acquire(const adr lock);
+int af_lock_release(const adr lock);
+int af_lock_destroy(const adr lock);

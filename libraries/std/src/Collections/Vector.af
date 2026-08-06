@@ -15,13 +15,15 @@ import {make_tuple} from "Collections/Tuple";
 import {print} from "String" under str;
 import {printInt} from "io" under io;
 import Enumerator from "Collections/Enumerator";
+import Lock, LockGuard from "concurrency";
 
 types(T)
 class vector {
     private mutable adr head = NULL;
     private int size = 0;
     private int count = 0;
-    int iteratorIndex = 0;
+    private Lock mutex = new Lock();
+    private int iteratorIndex = 0;
 
     fn init(*const int size) -> Self {
         if size == 0 {
@@ -35,6 +37,7 @@ class vector {
 
     when (T is primitive)
     fn push_back(const T value) -> Self {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == my.size {
             my.size = my.size * 2;
             my.head = af_realloc(my.head, T * my.size);
@@ -47,6 +50,7 @@ class vector {
 
     when (T is not primitive and T is unique)
     fn push_back(const T &&value) -> Self {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == my.size {
             my.size = my.size * 2;
             my.head = af_realloc(my.head, T * my.size);
@@ -59,6 +63,7 @@ class vector {
 
     when (T is not primitive and T is not unique)
     fn push_back(const T value) -> Self {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == my.size {
             my.size = my.size * 2;
             my.head = af_realloc(my.head, T * my.size);
@@ -70,11 +75,14 @@ class vector {
     };
 
     safe fn count() -> int {
+        const LockGuard __guard = my.mutex.guard();
         return my.count;
     };
 
     fn extend(const int capasity) -> result::<bool> {
+        const LockGuard __guard = my.mutex.guard();
         if capasity <= my.size {
+            delete __guard;
             return res.reject::<bool>(new Error("New capacity must be greater than current capacity"));
         };
 
@@ -85,7 +93,9 @@ class vector {
 
     when (T is unique and T missing __copy__)
     fn front() -> option::<view::<T>> {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == 0 {
+            delete __guard;
             return opt.None::<view::<T>>();
         };
         return my.get(0);
@@ -93,7 +103,9 @@ class vector {
 
     when (T is not unique and T has __copy__)
     fn front() -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == 0 {
+            delete __guard;
             return opt.None::<T>();
         };
         
@@ -102,7 +114,9 @@ class vector {
 
     when (T is not unique and T missing __copy__)
     fn front() -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == 0 {
+            delete __guard;
             return opt.None::<T>();
         };
         
@@ -111,7 +125,9 @@ class vector {
 
     when (T is unique and T missing __copy__)
     fn back() -> option::<view::<T>> {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == 0 {
+            delete __guard;
             return opt.None::<view::<T>>();
         };
         return my.get(my.count - 1);
@@ -119,7 +135,9 @@ class vector {
 
     when (T is not unique and T has __copy__)
     fn back() -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == 0 {
+            delete __guard;
             return opt.None::<T>();
         };
 
@@ -128,7 +146,9 @@ class vector {
 
     when (T is not unique and T missing __copy__)
     fn back() -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == 0 {
+            delete __guard;
             return opt.None::<T>();
         };
 
@@ -137,7 +157,9 @@ class vector {
 
     when (T is primitive)
     fn pop_back() -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == 0 {
+            delete __guard;
             return opt.None::<T>();
         };
 
@@ -149,7 +171,9 @@ class vector {
 
     when (T is not primitive and T is not unique)
     fn pop_back() -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == 0 {
+            delete __guard;
             return opt.None::<T>();
         };
         my.count = my.count - 1;
@@ -160,7 +184,9 @@ class vector {
 
     when (T is not primitive and T is unique)
     fn pop_back() -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == 0 {
+            delete __guard;
             return opt.None::<T>();
         };
         my.count = my.count - 1;
@@ -171,7 +197,9 @@ class vector {
 
     when (T is primitive)
     fn pop_front() -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == 0 {
+            delete __guard;
             return opt.None::<T>();
         };
 
@@ -186,7 +214,9 @@ class vector {
 
     when (T is not primitive and T is not unique)
     fn pop_front() -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == 0 {
+            delete __guard;
             return opt.None::<T>();
         };
 
@@ -201,7 +231,9 @@ class vector {
 
     when (T is not primitive and T is unique)
     fn pop_front() -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if my.count == 0 {
+            delete __guard;
             return opt.None::<T>();
         };
 
@@ -216,7 +248,9 @@ class vector {
 
     when (T is primitive)
     fn get(const int index) -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if index >= my.count | index < 0 {
+            delete __guard;
             return opt.None::<T>();
         };
         const adr val = my.head + (index * T);
@@ -225,7 +259,9 @@ class vector {
 
     when (T is not primitive and T has __copy__)
     fn get(const int index) -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if index >= my.count | index < 0 {
+            delete __guard;
             return opt.None::<T>();
         };
         const generic val = my.head + (index * T);
@@ -235,7 +271,9 @@ class vector {
 
     when (T is unique and T missing __copy__)
     fn get(const int index) -> option::<view::<T>> {
+        const LockGuard __guard = my.mutex.guard();
         if index >= my.count | index < 0 {
+            delete __guard;
             return opt.None::<view::<T>>();
         };
         const generic val = my.head + (index * T);
@@ -244,7 +282,9 @@ class vector {
     
     when (T is unique and T has __copy__)
     fn get(const int index) -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if index >= my.count | index < 0 {
+            delete __guard;
             return opt.None::<view::<T>>();
         };
         const generic val = my.head + (index * T);
@@ -253,7 +293,9 @@ class vector {
 
     when (T is not unique and T missing __copy__ and T is not primitive)
     fn get(const int index) -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         if index >= my.count | index < 0 {
+            delete __guard;
             return opt.None::<T>();
         };
         const generic val = my.head + (index * T);
@@ -263,21 +305,25 @@ class vector {
 
     when (T is unique and T missing __copy__)
     fn _call(const int index) -> option::<view::<T>> {
+        const LockGuard __guard = my.mutex.guard();
         return my.get(index);
     };
 
     when (T is not unique and T has __copy__)
     fn _call(const int index) -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         return my.get(index);
     };
 
     when (T is not unique and T missing __copy__)
     fn _call(const int index) -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         return my.get(index);
     };
 
     when (T is unique and T missing __copy__)
     fn next() -> option::<view::<T>> {
+        const LockGuard __guard = my.mutex.guard();
         const let val = my.get(my.iteratorIndex);
         my.iteratorIndex = my.iteratorIndex + 1;
         if my.iteratorIndex > my.count {
@@ -288,6 +334,7 @@ class vector {
 
     when (T is unique and T has __copy__)
     fn next() -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         const let val = my.get(my.iteratorIndex);
         my.iteratorIndex = my.iteratorIndex + 1;
         if my.iteratorIndex > my.count {
@@ -298,6 +345,7 @@ class vector {
 
     when (T is not unique and T has __copy__)
     fn next() -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         const let val = my.get(my.iteratorIndex);
         my.iteratorIndex = my.iteratorIndex + 1;
         if my.iteratorIndex > my.count {
@@ -308,6 +356,7 @@ class vector {
 
     when (T is not unique and T missing __copy__)
     fn next() -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         const let val = my.get(my.iteratorIndex);
         my.iteratorIndex = my.iteratorIndex + 1;
         if my.iteratorIndex > my.count {
@@ -319,10 +368,12 @@ class vector {
 
     when (T is unique and T missing __copy__)
     fn findFirst(const adr predicate, * const adr args) -> option::<view::<T>> {
+        const LockGuard __guard = my.mutex.guard();
         for int i = 0; i < my.count; i = i + 1 {
             const let val = my.get(i).expect(`Failed to get value at index {i} from vector`);
             const bool brk = predicate(val, args);
             if brk == true {
+                delete __guard;
                 return opt.Some(val);
             };
         };
@@ -331,10 +382,12 @@ class vector {
 
     when (T is not unique and T has __copy__)
     fn findFirst(const adr predicate, * const adr args) -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         for int i = 0; i < my.count; i = i + 1 {
             const any val = my.get(i).expect(`Failed to get value at index {i} from vector`);
             const bool brk = predicate(val, args);
             if brk == true {
+                delete __guard;
                 return opt.Some::<T>(val);
             };
         };
@@ -343,10 +396,12 @@ class vector {
 
     when (T is not unique and T missing __copy__)
     fn findFirst(const adr predicate, * const adr args) -> option::<T> {
+        const LockGuard __guard = my.mutex.guard();
         for int i = 0; i < my.count; i = i + 1 {
             const any val = my.get(i).expect(`Failed to get value at index {i} from vector`);
             const bool brk = predicate(val, args);
             if brk == true {
+                delete __guard;
                 return opt.Some::<T>(val);
             };
         };
@@ -355,7 +410,9 @@ class vector {
 
     when (T is not primitive and T is not unique or T is adr)
     fn set(const int index, const any value) -> result::<bool> {
+        const LockGuard __guard = my.mutex.guard();
         if index >= my.count {
+            delete __guard;
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
         af_memcpy(my.head + (index * T), value, T);
@@ -364,7 +421,9 @@ class vector {
 
     when (T is not primitive and T is unique)
     fn set(const int index, const T &&value) -> result::<bool> {
+        const LockGuard __guard = my.mutex.guard();
         if index >= my.count {
+            delete __guard;
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
         const generic obj = my.head + (index * T);
@@ -376,7 +435,9 @@ class vector {
 
     when (T is primitive and T is not adr)
     fn set(const int index, const T value) -> result::<bool> {
+        const LockGuard __guard = my.mutex.guard();
         if index >= my.count {
+            delete __guard;
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
         af_memcpy(my.head + (index * T), ?value, T);
@@ -385,7 +446,9 @@ class vector {
 
     when (T is primitive)
     fn insert(const int index, const T value) -> result::<bool> {
+        const LockGuard __guard = my.mutex.guard();
         if index > my.count | index < 0 {
+            delete __guard;
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
 
@@ -404,7 +467,9 @@ class vector {
 
     when (T is not primitive and T is not unique)
     fn insert(const int index, const T value) -> result::<bool> {
+        const LockGuard __guard = my.mutex.guard();
         if index > my.count | index < 0 {
+            delete __guard;
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
 
@@ -423,7 +488,9 @@ class vector {
 
     when (T is not primitive and T is unique)
     fn insert(const int index, const T &&value) -> result::<bool> {
+        const LockGuard __guard = my.mutex.guard();
         if index > my.count | index < 0 {
+            delete __guard;
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
 
@@ -442,7 +509,9 @@ class vector {
 
     when (T is primitive)
     fn drop(const int index) -> result::<bool> {
+        const LockGuard __guard = my.mutex.guard();
         if index >= my.count | index < 0 {
+            delete __guard;
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
 
@@ -455,7 +524,9 @@ class vector {
 
     when (T is not primitive and T is not unique)
     fn drop(const int index) -> result::<bool> {
+        const LockGuard __guard = my.mutex.guard();
         if index >= my.count | index < 0 {
+            delete __guard;
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
 
@@ -468,7 +539,9 @@ class vector {
 
     when (T is not primitive and T is unique)
     fn drop(const int index) -> result::<bool> {
+        const LockGuard __guard = my.mutex.guard();
         if index >= my.count | index < 0 {
+            delete __guard;
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
 
@@ -483,30 +556,41 @@ class vector {
     };
 
     fn stitch(immutable vector::<T> other) -> Self {
-        const let totalCount = my.count() + other.count();
+        other.mutex.lock();
+        const int otherCount = other.count;
+        const adr otherValues = af_malloc(otherCount * T);
+        af_memcpy(otherValues, other.head, otherCount * T);
+        other.mutex.unlock();
+
+        const LockGuard __guard = my.mutex.guard();
+        const let totalCount = my.count + otherCount;
         const let totalSize = totalCount * T;
         if totalSize > my.size {
             my.size = totalSize;
             my.head = af_realloc(my.head, my.size);
         };
-        af_memcpy(my.head + (my.count * T), other.head, other.count() * T);
+        af_memcpy(my.head + (my.count * T), otherValues, otherCount * T);
+        af_free(otherValues);
         my.count = totalCount;
         return my;
     };
 
     fn reset() -> Self {
+        const LockGuard __guard = my.mutex.guard();
         my.iteratorIndex = 0;
         return my;
     };
       
     when (T is not primitive and T missing toString)
     fn toString() -> string {
+        const LockGuard __guard = my.mutex.guard();
         return `{__typeName__}(size={my.size}, count={my.count})`;
     };
     
 
     when (T is not primitive and T has toString and T is not unique)
     fn toString() -> string {
+      const LockGuard __guard = my.mutex.guard();
       string buf = `{__typeName__}: [`;
       foreach v in my {
         buf = `{buf}{v},`;
@@ -517,6 +601,7 @@ class vector {
 
     when (T is not primitive and T has toString and T is unique)
     fn toString() -> string {
+      const LockGuard __guard = my.mutex.guard();
       string buf = `{__typeName__}: [`;
       foreach v in my {
         buf = `{buf}{v},`;
@@ -526,6 +611,7 @@ class vector {
 
     when (T is primitive)
     fn toString() -> string {
+      const LockGuard __guard = my.mutex.guard();
       string buf = `{__typeName__}: [`;
       foreach v in my {
         buf = `{buf}{v},`;
@@ -550,7 +636,9 @@ class vector {
 
     when (T is not primitive or T is adr)
     fn sort(const adr comparator) -> void {
+        const LockGuard __guard = my.mutex.guard();
         if my.count < 2 {
+            delete __guard;
             return;
         };
         // Implement a simple bubble sort for demonstration purposes
@@ -572,7 +660,9 @@ class vector {
 
    when (T is primitive and T is not adr)
    fn sort(const adr comparator) -> void {
+       const LockGuard __guard = my.mutex.guard();
        if my.count < 2 {
+           delete __guard;
            return;
        };
        // Implement a simple bubble sort for demonstration purposes

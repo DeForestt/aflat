@@ -145,6 +145,34 @@ TEST_CASE("worker decorators accept an explicit mode and default to threads",
   REQUIRE(result);
 }
 
+TEST_CASE("concurrency locks expose blocking and nonblocking acquisition",
+          "[concurrency][lock]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/concurrency_lock");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "concurrency_lock.af";
+  const auto output = dir / "concurrency_lock.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << ".needs <asm>\n";
+  ofs << "import Lock from \"concurrency\";\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    const Lock lock = new Lock();\n";
+  ofs << "    lock.lock();\n";
+  ofs << "    lock.unlock();\n";
+  ofs << "    if lock.tryLock() { lock.unlock(); return 0; };\n";
+  ofs << "    return 1;\n";
+  ofs << "};\n";
+  ofs.close();
+
+  const bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
 TEST_CASE("transform preserves chained method call order", "[transform]") {
   namespace fs = std::filesystem;
   const auto dir = fs::path("tmp/transform_method_chain");
@@ -479,7 +507,8 @@ TEST_CASE("nested unordered_map methods keep their emitted bodies",
   ofs << "fn main() -> int {\n";
   ofs << "    const let values = new unordered_map::<adr, int>();\n";
   ofs << "    values.set(\"one\", 1);\n";
-  ofs << "    if values.has(\"one\") & values(\"one\").or(0) == 1 "
+  ofs << "    if values.count() == 1 & values.has(\"one\") & "
+         "values(\"one\").or(0) == 1 "
          "{ return 0; };\n";
   ofs << "    return 1;\n";
   ofs << "};\n";
