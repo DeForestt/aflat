@@ -181,6 +181,7 @@ public:
   const std::string &source() const;
   void pushSourceLocation(const std::optional<ast::SourceLocation> &location);
   void popSourceLocation();
+  bool hasGeneratedSourceLocation() const;
   links::LinkedList<std::string> &breakContext();
   const links::LinkedList<std::string> &breakContext() const;
   links::LinkedList<std::string> &continueContext();

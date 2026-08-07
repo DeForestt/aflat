@@ -33,6 +33,10 @@ void attachSourceLocation(ast::Statement *statement,
   if (statement == nullptr)
     return;
   statement->sourceLocation = location;
+  // Transform output is synthesized AST. Its line numbers belong to the
+  // transform template, not the module being instrumented.
+  statement->coveragePoint = false;
+  statement->coverageLine = 0;
   if (auto *sequence = dynamic_cast<ast::Sequence *>(statement)) {
     attachSourceLocation(sequence->Statement1, location);
     attachSourceLocation(sequence->Statement2, location);

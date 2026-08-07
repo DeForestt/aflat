@@ -67,9 +67,8 @@ public:
            bool safe = false, bool isAsync = false);
   Function(const Function &Other, bool locked)
       : scope(Other.scope), type(Other.type), op(Other.op),
-        scopeName(Other.scopeName), ident(Other.ident), args(Other.args),
-        statement(Other.statement), decorator(Other.decorator),
-        decNSP(Other.decNSP),
+        scopeName(Other.scopeName), ident(Other.ident), args(nullptr),
+        statement(nullptr), decorator(Other.decorator), decNSP(Other.decNSP),
         decoratorTemplateTypes(Other.decoratorTemplateTypes),
         decoratorArgs(Other.decoratorArgs), argTypes(Other.argTypes),
         optConvertionIndices(Other.optConvertionIndices),
@@ -86,6 +85,11 @@ public:
     this->locked = locked;
     this->hidden = Other.hidden;
     this->when = Other.when;
+    // Function copies are generated shells/specializations. Clone their AST
+    // so deepCopy resets parser-only coverage points instead of retaining a
+    // shallow pointer to the original source body.
+    this->args = deepCopy(Other.args);
+    this->statement = deepCopy(Other.statement);
   }
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   gen::Expr toExpr(gen::CodeGenerator &generator);

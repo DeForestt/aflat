@@ -726,6 +726,11 @@ void gen::CodeGenerator::popSourceLocation() {
   impl->sourceLocationStack.pop_back();
 }
 
+bool gen::CodeGenerator::hasGeneratedSourceLocation() const {
+  return impl->currentSourceLocation.has_value() &&
+         !impl->currentSourceLocation->generatedFromFile.empty();
+}
+
 links::LinkedList<std::string> &gen::CodeGenerator::breakContext() {
   return impl->breakContext;
 }

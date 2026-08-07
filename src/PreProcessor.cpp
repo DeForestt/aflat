@@ -220,10 +220,12 @@ std::string PreProcessor::Include(std::string line, std::string libPath) {
     if (std::find(this->includes.begin(), this->includes.end(), path) ==
         this->includes.end()) {
       this->includes.push_back(path);
-      if (this->debug)
-        return this->PreProcess(
+      if (this->debug) {
+        auto included = this->PreProcess(
             output, libPath,
             std::filesystem::path(path).parent_path().string());
+        return '\x1e' + included + '\x1f';
+      }
       output = this->PreProcess(
           output, libPath, std::filesystem::path(path).parent_path().string());
       output.reserve(output.size());
@@ -233,9 +235,10 @@ std::string PreProcessor::Include(std::string line, std::string libPath) {
                                      a += b;
                                    return a;
                                  });
-      return this->PreProcess(
-          cleanPut, libPath,
-          std::filesystem::path(path).parent_path().string());
+      auto included =
+          this->PreProcess(cleanPut, libPath,
+                           std::filesystem::path(path).parent_path().string());
+      return '\x1e' + included + '\x1f';
     }
     return "";
   } else {
