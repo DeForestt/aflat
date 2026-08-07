@@ -12,9 +12,12 @@ namespace lex {
 
 namespace {
 
+thread_local int generatedDepth = 0;
+
 template <typename T>
 T *stamp(T *token, int line, int column, size_t start, size_t end) {
   token->lineCount = line;
+  token->generated = generatedDepth > 0;
   token->column = column;
   token->length = static_cast<int>(end > start ? end - start : 1);
   return token;
@@ -31,8 +34,20 @@ LinkedList<Token *> Lexer::Impl::Scan(string input, int startLine) {
   size_t i = 0;
   int lineCount = startLine;
   int columnCount = 1;
+  generatedDepth = 0;
 
   while (i < input.length()) {
+    if (input[i] == '\x1e') {
+      ++generatedDepth;
+      ++i;
+      continue;
+    }
+    if (input[i] == '\x1f') {
+      if (generatedDepth > 0)
+        --generatedDepth;
+      ++i;
+      continue;
+    }
     if (input[i] == '\n') {
       ++lineCount;
       columnCount = 1;

@@ -688,6 +688,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
             decl->readOnly = isImmutable;
             output = new ast::DecAssign(decl, isMutable, tokens, parser,
                                         annotations);
+            output->logicalLine = obj.lineCount;
           }
         } else {
           auto decl = new ast::Declare(ident.meta, scope, obj.meta, isMutable,
@@ -806,6 +807,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
       output = this->parseExpr(tokens);
     } else if (obj.meta == "match") {
       output = new ast::Match(tokens, parser);
+      output->logicalLine = obj.lineCount;
     } else if (obj.meta == "push") {
       auto push = new ast::Push;
       push->expr = this->parseExpr(tokens);
@@ -855,8 +857,10 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
       output = new ast::Delete(tokens, parser);
     } else if (obj.meta == "continue") {
       output = new ast::Continue(tokens);
+      output->logicalLine = obj.lineCount;
     } else if (obj.meta == "break") {
       output = new ast::Break(tokens);
+      output->logicalLine = obj.lineCount;
     } else if (obj.meta == "else") {
       throw err::Exception(
           "Line: " + std::to_string(tokens.peek()->lineCount) +
@@ -979,6 +983,10 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
         output = ret;
       }
     }
+    // Preserve the statement keyword/type token independently from debug
+    // locations derived by individual AST constructors. In particular,
+    // foreach and continue otherwise inherit a match label or closing brace.
+    output->coverageLine = obj.lineCount;
     if (whenClause)
       output->when = whenClause;
   } else if (tokens.peek() && tokens.count > 0) {
@@ -1053,7 +1061,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     if (obj.Sym == ';') {
       auto s = new ast::Sequence;
       s->Statement1 = output;
-      s->Statement2 = this->parseStmt(tokens, false);
+      s->Statement2 = parser.parseStmt(tokens, false);
       this->Output = *s;
       if (whenClause)
         s->when = whenClause;
@@ -1829,6 +1837,7 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       }
     } else if (obj.meta == "match") {
       output = new ast::Match(tokens, parser);
+      output->logicalLine = obj.lineCount;
     } else if (obj.meta == "if") {
       auto ifExpr = new ast::IfExpr();
       ifExpr->logicalLine = obj.lineCount;
@@ -2352,10 +2361,55 @@ parse::Parser::Parser(Parser &&) noexcept = default;
 
 parse::Parser &parse::Parser::operator=(Parser &&) noexcept = default;
 
+namespace {
+
+bool isExecutableCoverageStatement(ast::Statement *statement) {
+  return statement != nullptr && typeid(*statement) != typeid(ast::Statement) &&
+         dynamic_cast<ast::Sequence *>(statement) == nullptr &&
+         dynamic_cast<ast::Function *>(statement) == nullptr &&
+         dynamic_cast<ast::Class *>(statement) == nullptr &&
+         dynamic_cast<ast::Struct *>(statement) == nullptr &&
+         dynamic_cast<ast::Enum *>(statement) == nullptr &&
+         dynamic_cast<ast::Import *>(statement) == nullptr &&
+         dynamic_cast<ast::Transform *>(statement) == nullptr &&
+         dynamic_cast<ast::Declare *>(statement) == nullptr &&
+         dynamic_cast<ast::DecArr *>(statement) == nullptr &&
+         dynamic_cast<ast::Ellipsis *>(statement) == nullptr &&
+         dynamic_cast<ast::Note *>(statement) == nullptr;
+}
+
+void markParsedCoverageStatement(ast::Statement *statement, int line,
+                                 bool generated) {
+  if (statement == nullptr)
+    return;
+  if (auto *sequence = dynamic_cast<ast::Sequence *>(statement)) {
+    // The parser builds the first statement before wrapping it in a sequence.
+    // The recursive parse of Statement2 has its own captured start line.
+    markParsedCoverageStatement(sequence->Statement1, line, generated);
+    return;
+  }
+  statement->coveragePoint =
+      !generated && isExecutableCoverageStatement(statement);
+  statement->coverageLine =
+      statement->coveragePoint
+          ? (statement->logicalLine > 0
+                 ? statement->logicalLine
+                 : (statement->coverageLine > 0 ? statement->coverageLine
+                                                : line))
+          : 0;
+}
+
+} // namespace
+
 ast::Statement *
 parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
                          bool singleStmt) {
-  return impl->parseStmt(tokens, singleStmt);
+  const int line = tokens.peek() != nullptr ? tokens.peek()->lineCount : 0;
+  const bool generated =
+      tokens.peek() != nullptr ? tokens.peek()->generated : false;
+  auto *statement = impl->parseStmt(tokens, singleStmt);
+  markParsedCoverageStatement(statement, line, generated);
+  return statement;
 }
 
 ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {

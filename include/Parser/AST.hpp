@@ -72,9 +72,17 @@ public:
 
 class Statement {
 public:
+  Statement() = default;
+  Statement(const Statement &other)
+      : when(other.when), sourceLocation(other.sourceLocation),
+        locked(other.locked), logicalLine(other.logicalLine) {}
   std::optional<When> when; // When clause for templates
   std::optional<SourceLocation> sourceLocation;
   bool locked = false;
+  // Set only by the parser. Synthesized and specialized AST nodes deliberately
+  // default to false so generated helpers cannot claim a user's source line.
+  bool coveragePoint = false;
+  int coverageLine = 0;
   int logicalLine = 0;
   virtual std::string toString() { return ""; };
   virtual void replaceTypes(std::unordered_map<std::string, std::string> map);

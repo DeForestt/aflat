@@ -288,7 +288,7 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
         file << decAssign->generate(generator).file;
       }
     }
-    file << _case.statement->generate(generator).file;
+    file << generator.GenSTMT(_case.statement);
     auto jmp = new asmc::Jmp();
     jmp->logicalLine = expr->logicalLine;
     jmp->to = matchEndLabel;
@@ -316,7 +316,7 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
                           _case.pattern.veriableName.value(),
                       true, __FILE__, __LINE__);
     }
-    file << _case.statement->generate(generator).file;
+    file << generator.GenSTMT(_case.statement);
     auto jmp = new asmc::Jmp();
     jmp->logicalLine = expr->logicalLine;
     jmp->to = matchEndLabel;

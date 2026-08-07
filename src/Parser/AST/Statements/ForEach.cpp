@@ -24,6 +24,7 @@ ForEach::ForEach(links::LinkedList<lex::Token *> &tokens,
   }
 
   this->binding_identifier = identifier->meta;
+  this->logicalLine = identifier->lineCount;
 
   auto in = dynamic_cast<lex::LObj *>(tokens.pop());
   if (in == nullptr || in->meta != "in") {

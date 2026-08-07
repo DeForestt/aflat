@@ -217,6 +217,15 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
     return OutputFile;
   }
 
+  // Only parser-originated executable statements inside function bodies get
+  // coverage points. Generated generic/helper AST defaults to false.
+  if (STMT->coveragePoint && !STMT->locked && inFunction() &&
+      !hasGeneratedSourceLocation() && STMT->coverageLine > 0) {
+    auto *point = new asmc::CoveragePoint();
+    point->logicalLine = STMT->coverageLine;
+    OutputFile.text.push(point);
+  }
+
   if (STMT->locked) {
     auto *inst = new asmc::nop();
     inst->logicalLine = logicalLine();

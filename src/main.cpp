@@ -899,31 +899,6 @@ static bool shouldInstrumentCoverage(const std::string &path) {
   return true;
 }
 
-static std::vector<bool> coverageCandidateLines(const std::string &source,
-                                                int lineCount) {
-  std::vector<bool> candidates(static_cast<size_t>(lineCount), false);
-  std::istringstream input(source);
-  std::string line;
-  size_t index = 0;
-  while (index < candidates.size() && std::getline(input, line)) {
-    const std::string text = trim(line);
-    const bool directive = !text.empty() && text.front() == '.';
-    const bool import = text.rfind("import ", 0) == 0;
-    const bool decorator = !text.empty() && text.front() == '@';
-    const bool comment = text.rfind("//", 0) == 0 || text.rfind("/*", 0) == 0 ||
-                         text.rfind("*", 0) == 0;
-    const bool classOrUnion =
-        text.rfind("class ", 0) == 0 || text.rfind("safe class ", 0) == 0 ||
-        text.rfind("unique class ", 0) == 0 || text.rfind("union ", 0) == 0;
-    const bool punctuationOnly =
-        !text.empty() && text.find_first_not_of("{}();,") == std::string::npos;
-    candidates[index] = !text.empty() && !directive && !import && !decorator &&
-                        !comment && !classOrUnion && !punctuationOnly;
-    ++index;
-  }
-  return candidates;
-}
-
 static std::string coverageSymbolForPath(const std::string &path) {
   const std::string normalized = normalizedSourcePath(path).string();
   uint64_t hash = 1469598103934665603ULL;
@@ -1422,8 +1397,6 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
   const bool instrumentCoverage = shouldInstrumentCoverage(origPath);
   const int sourceLineCount =
       1 + static_cast<int>(std::count(content.begin(), content.end(), '\n'));
-  const auto coverageCandidates =
-      coverageCandidateLines(content, sourceLineCount);
   const std::string coverageSymbol = coverageSymbolForPath(origPath);
   if (gCoverage && !instrumentCoverage)
     std::filesystem::remove(coverageMetadataPath(output));
@@ -1537,6 +1510,19 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
         auto inst = file.text.pop();
         if (dynamic_cast<asmc::Label *>(inst) != nullptr)
           lastCoverageLine = -1;
+        if (dynamic_cast<asmc::CoveragePoint *>(inst) != nullptr) {
+          if (instrumentCoverage && inst->logicalLine > 0 &&
+              inst->logicalLine <= sourceLineCount &&
+              inst->logicalLine != lastCoverageLine) {
+            coverageLines.insert(inst->logicalLine);
+            const size_t offset =
+                static_cast<size_t>(inst->logicalLine - 1) * sizeof(uint64_t);
+            ofs << "\tpushfq\n\tlock incq\t" << coverageSymbol << "+" << offset
+                << "(%rip)\n\tpopfq\n";
+            lastCoverageLine = inst->logicalLine;
+          }
+          continue;
+        }
         if (inst->logicalLine != logicalLine && debug &&
             dynamic_cast<asmc::Label *>(inst) == nullptr &&
             inst->logicalLine > 0) {
@@ -1550,20 +1536,6 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
                    dynamic_cast<asmc::Define *>(inst) != nullptr)
             ofs << ".line " << logicalLine - 1 << "\n";
         auto str = sanitizeGenerics(inst->toString());
-        const bool executableInstruction =
-            !str.empty() && dynamic_cast<asmc::Label *>(inst) == nullptr &&
-            dynamic_cast<asmc::Define *>(inst) == nullptr;
-        if (instrumentCoverage && executableInstruction &&
-            inst->logicalLine > 0 && inst->logicalLine <= sourceLineCount &&
-            coverageCandidates[static_cast<size_t>(inst->logicalLine - 1)] &&
-            inst->logicalLine != lastCoverageLine) {
-          coverageLines.insert(inst->logicalLine);
-          const size_t offset =
-              static_cast<size_t>(inst->logicalLine - 1) * sizeof(uint64_t);
-          ofs << "\tpushfq\n\tlock incq\t" << coverageSymbol << "+" << offset
-              << "(%rip)\n\tpopfq\n";
-          lastCoverageLine = inst->logicalLine;
-        }
         // replace '\n' with "\n .line " + line number
         // while(str.find('\n') != std::string::npos){
         //   auto index = str.find('\n');

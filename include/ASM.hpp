@@ -19,6 +19,13 @@ public:
   int logicalLine = 0;
 };
 
+// A zero-width marker emitted from executable AST statements. Coverage uses
+// this instead of inferring executability from instruction debug locations.
+class CoveragePoint : public Instruction {
+public:
+  std::string toString() override { return ""; }
+};
+
 class Label : public Instruction {
 public:
   std::string label;

@@ -14,6 +14,7 @@ namespace lex {
 class Token {
 public:
   int lineCount;
+  bool generated = false;
   int column = 1;
   int length = 1;
   virtual string toString() const {
