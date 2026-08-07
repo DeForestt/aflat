@@ -8,12 +8,12 @@ import unordered_map from "Collections/unordered_map";
 import {Some, None, optionWrapper} from "Utils/option" under opt;
 import {accept, reject, resultWrapper} from "Utils/result" under res;
 import {print} from "String" under str;
-import {itos} from "String" under str;
 import {char_isDigit, char_isWhiteSpace} from "strings" under st;
 import {hex_toInt} from "strings" under st;
 import {ascii} from "strings" under st;
 import {len} from "strings" under st;
 import {str_at} from "strings" under st;
+import {int_toString} from "strings" under st;
 import {toChar, toInt} from "io" under io;
 import Box from "Memory";
 import {wrap} from "Memory" under box;
@@ -106,15 +106,23 @@ union JSON {
         };
     };
 
-    // Replace literal newline-like characters in a JSON string with printable escape sequences.
-    private fn escapeStringNewlines(const adr value) -> uni_string {
-        const uni_string builder = "";
+    private fn escapeStringInto(const uni_string builder, const adr value) -> void {
         const int length = st.len(value);
         const char slash = '\\';
+        const char backspace = st.ascii(8);
         const char formFeed = st.ascii(12);
         for int i = 0; i < length; i++ {
             const char c = st.str_at(value, i);
-            if c == '\n' {
+            if c == '"' {
+                builder.push_in_place(slash);
+                builder.push_in_place('"');
+            } else if c == slash {
+                builder.push_in_place(slash);
+                builder.push_in_place(slash);
+            } else if c == backspace {
+                builder.push_in_place(slash);
+                builder.push_in_place('b');
+            } else if c == '\n' {
                 builder.push_in_place(slash);
                 builder.push_in_place('n');
             } else if c == '\r' {
@@ -123,110 +131,103 @@ union JSON {
             } else if c == formFeed {
                 builder.push_in_place(slash);
                 builder.push_in_place('f');
+            } else if c == '\t' {
+                builder.push_in_place(slash);
+                builder.push_in_place('t');
             } else {
                 builder.push_in_place(c);
             };
         };
-        return builder;
+        return;
     };
 
-    fn stringify(?const int indent_) -> string {
-        const let indent = 1 * indent_.or(0); // If 0, there will never be any indentation
-        const let nextIndent = if indent > 0 indent + 1 else 0;
-        const uni_string nl = if indent > 0 "\n" else "";
-        const uni_string indentStr = "";
+    private fn appendIndent(const uni_string builder, const int indent) -> void {
         for int i = 0; i < indent; i++ {
-            indentStr.append_raw("  ");
+            builder.append_raw("  ");
         };
-        
+        return;
+    };
+
+    private fn stringifyInto(const uni_string builder, const int indent) -> void {
+        const bool pretty = indent > 0;
+        const int nextIndent = if pretty indent + 1 else 0;
+
         match my {
             String(s) => {
-                const let escaped = my.escapeStringNewlines(s);
-                const uni_string out = "";
-                out.append(indentStr);
-                out.push_in_place('"');
-                out.append(escaped);
-                out.push_in_place('"');
-                return out.to_string();
+                builder.push_in_place('"');
+                my.escapeStringInto(builder, s);
+                builder.push_in_place('"');
             },
             Number(n) => {
-                const uni_string digits = str.itos(n).cstr();
-                const uni_string out = "";
-                out.append(indentStr);
-                out.append(digits);
-                return out.to_string();
+                const char[16] digits;
+                st.int_toString(n, digits);
+                builder.append_raw(digits);
             },
             Boolean(b) => {
-                const uni_string literal = if b "true" else "false";
-                const uni_string out = "";
-                out.append(indentStr);
-                out.append(literal);
-                return out.to_string();
+                builder.append_raw(if b "true" else "false");
             },
             List(list) => {
-                const let v = match list.next() {
-                    Some(value) => resolve value.get(), // unwrap the Box
-                    None => return "[]"
-                };
-                const uni_string builder = "[";
-                builder.append(nl);
-                builder.append(indentStr);
-                const string firstText = v.stringify(nextIndent);
-                firstText.seal();
-                builder.append_raw(firstText.cstr());
-                foreach item in list {
-                    const let item = item.get(); // unwrap the Box
-
-                    builder.append_raw(",");
-                    builder.append(nl);
-                    builder.append(indentStr);
-                    const string itemText = item.stringify(nextIndent);
-                    itemText.seal();
-                    builder.append_raw(itemText.cstr());
-                };
-                builder.append(nl);
-                builder.append(indentStr);
-                builder.append_raw("]");
-                return builder.to_string();
-            },
-            Object(map) => {
-                const  uni_string builder = "";
-                builder.append(nl);
-                builder.append(indentStr);
+                builder.push_in_place('[');
                 let first = true;
-                
-                const let keys = map.keys();
-                foreach key in keys {
-                    const let value = map.get(key).expect(`Value {key} should be present`);
-                    // value is a Box, so we need to unwrap it
-                    const let value = value.get();
+                foreach item in list {
                     if first {
                         first = false;
                     } else {
-                        builder.append_raw(",");
-                        builder.append(nl);
-                        builder.append(indentStr);
+                        builder.push_in_place(',');
+                    };
+                    if pretty {
+                        builder.push_in_place('\n');
+                        my.appendIndent(builder, indent);
+                    };
+                    item.get().stringifyInto(builder, nextIndent);
+                };
+                if pretty & !first {
+                    builder.push_in_place('\n');
+                    my.appendIndent(builder, indent - 1);
+                };
+                builder.push_in_place(']');
+            },
+            Object(map) => {
+                builder.push_in_place('{');
+                let first = true;
+                const let __iterationGuard = map.iterationGuard();
+                foreach entry in map {
+                    if first {
+                        first = false;
+                    } else {
+                        builder.push_in_place(',');
+                    };
+                    if pretty {
+                        builder.push_in_place('\n');
+                        my.appendIndent(builder, indent);
                     };
                     builder.push_in_place('"');
-                    builder.append_raw(key);
+                    my.escapeStringInto(builder, entry.key);
                     builder.push_in_place('"');
-                    builder.append_raw(":");
-                    const string renderedText = value.stringify(nextIndent);
-                    renderedText.seal();
-                    builder.append_raw(renderedText.cstr());
+                    builder.push_in_place(':');
+                    if pretty builder.push_in_place(' ');
+                    entry.value.get().stringifyInto(builder, nextIndent);
                 };
-                builder.append(nl);
-                builder.append(indentStr);
-                const uni_string out = "";
-                out.push_in_place('{');
-                out.append(builder);
-                out.push_in_place('}');
-                return out.to_string();
+                if pretty & !first {
+                    builder.push_in_place('\n');
+                    my.appendIndent(builder, indent - 1);
+                };
+                builder.push_in_place('}');
             },
-            Null => return "null"
+            Null => builder.append_raw("null")
         };
+        return;
+    };
 
+    fn stringify() -> string {
+        return my.stringify(0);
+    };
 
+    fn stringify(const int indent) -> string {
+        const uni_string builder = "";
+        const int initialIndent = if indent > 0 indent else 0;
+        my.stringifyInto(builder, initialIndent);
+        return builder.to_string();
     };
 };
 

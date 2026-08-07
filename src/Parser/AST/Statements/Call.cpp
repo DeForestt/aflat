@@ -877,7 +877,7 @@ gen::GenerationResult Call::generateAttempt(
     const bool paramConsumesOwnedValue =
         paramType != nullptr && paramType->isRvalue;
 
-    if (!isOptionSomeSink && checkArgs &&
+    if (!isOptionSomeSink && checkArgs && exp.owned &&
         dynamic_cast<ast::CallExpr *>(arg) != nullptr && paramType != nullptr &&
         !paramConsumesOwnedValue && !paramType->isRvalue &&
         exp.type != "void" &&
