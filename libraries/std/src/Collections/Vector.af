@@ -226,7 +226,7 @@ class vector {
             af_memcpy(my.head + ((i - 1) * T), my.head + (i * T), T);
         };
         my.count = my.count - 1;
-        return opt.Some(val as T);
+        return opt.Some(val);
     };
 
     when (T is not primitive and T is unique)
