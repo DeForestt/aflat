@@ -98,6 +98,18 @@ logger = "https://github.com/example/logger.git"
 ### Running the project
 Build and run the project with the `aflat run` command.
 
+### Testing and coverage
+Run the test target configured in `aflat.cfg` with `aflat test`. Add
+`--coverage` to instrument executable production lines and print per-file and
+aggregate coverage, including the uncovered line numbers:
+```bash
+aflat test --coverage
+```
+The configured test entry point, modules under `src/test`, and Git dependencies
+added with `aflat install` are excluded from the report. Unreached production
+lines produce a warning because they may be dead code or may simply need test
+coverage.
+
 ### Inspecting code and libraries
 Use the `aflat docs` command to list classes, functions, unions, and transforms
 defined in either your sources or the standard library:

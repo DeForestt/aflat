@@ -19,6 +19,7 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
                                  {"clean-cache", no_argument, nullptr, 'C'},
                                  {"no-cache", no_argument, nullptr, 'N'},
                                  {"lib", no_argument, nullptr, 'L'},
+                                 {"coverage", no_argument, nullptr, 1000},
                                  {nullptr, 0, nullptr, 0}};
 
   int opt;
@@ -60,6 +61,9 @@ bool parseCommandLine(int argc, char **argv, CommandLineOptions &opts) {
       break;
     case 'N':
       opts.noCache = true;
+      break;
+    case 1000:
+      opts.coverage = true;
       break;
     case 'h':
     case '?':
@@ -111,5 +115,6 @@ void printUsage(const char *prog) {
       << "  -N, --no-cache      Disable cache for this run\n"
       << "  -j, --jobs         Enable concurrent module builds\n"
       << "  -L, --lib           Create a library project with make\n"
+      << "      --coverage      Collect source line coverage when testing\n"
       << "  -h, --help          Display this help message\n";
 }

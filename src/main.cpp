@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -605,7 +606,12 @@ static std::string generateReadmeContent(const std::string &projectName) {
   out << "## Build & Run\n";
   out << "- `aflat build` - compile sources defined in `aflat.cfg`.\n";
   out << "- `aflat run` - build and execute the resulting binary.\n";
-  out << "- `aflat test` - build and run the configured test target.\n\n";
+  out << "- `aflat test` - build and run the configured test target.\n";
+  out << "- `aflat test --coverage` - report executable production lines "
+         "covered by tests.\n\n";
+  out << "Coverage excludes the test tree and dependencies added with "
+         "`aflat install`; unreached lines are flagged as possibly dead or "
+         "untested.\n\n";
   out << "## Inspecting Code\n";
   out << "- `aflat docs src/main.af` lists classes, unions, transforms, and "
          "functions in this project.\n";
@@ -865,6 +871,200 @@ static CompileProgress *gProgress = nullptr;
 static bool gQuiet = false;
 static bool gUseCache = true;
 static bool gConcurrentBuild = false;
+static bool gCoverage = false;
+static std::filesystem::path gCoverageExcludedSource;
+static std::vector<std::filesystem::path> gCoverageExcludedRoots;
+
+static std::filesystem::path normalizedSourcePath(const std::string &path) {
+  return std::filesystem::absolute(path).lexically_normal();
+}
+
+static bool shouldInstrumentCoverage(const std::string &path) {
+  const auto normalized = normalizedSourcePath(path);
+  if (!gCoverage || normalized == gCoverageExcludedSource)
+    return false;
+  const auto source = normalized.string();
+  auto testRoot = normalizedSourcePath("./src/test").string();
+  testRoot += std::filesystem::path::preferred_separator;
+  if (source.rfind(testRoot, 0) == 0)
+    return false;
+  for (const auto &root : gCoverageExcludedRoots) {
+    auto prefix = root.string();
+    if (normalized == root)
+      return false;
+    prefix += std::filesystem::path::preferred_separator;
+    if (source.rfind(prefix, 0) == 0)
+      return false;
+  }
+  return true;
+}
+
+static std::vector<bool> coverageCandidateLines(const std::string &source,
+                                                int lineCount) {
+  std::vector<bool> candidates(static_cast<size_t>(lineCount), false);
+  std::istringstream input(source);
+  std::string line;
+  size_t index = 0;
+  while (index < candidates.size() && std::getline(input, line)) {
+    const std::string text = trim(line);
+    const bool directive = !text.empty() && text.front() == '.';
+    const bool import = text.rfind("import ", 0) == 0;
+    const bool decorator = !text.empty() && text.front() == '@';
+    const bool comment = text.rfind("//", 0) == 0 || text.rfind("/*", 0) == 0 ||
+                         text.rfind("*", 0) == 0;
+    const bool classOrUnion =
+        text.rfind("class ", 0) == 0 || text.rfind("safe class ", 0) == 0 ||
+        text.rfind("unique class ", 0) == 0 || text.rfind("union ", 0) == 0;
+    const bool punctuationOnly =
+        !text.empty() && text.find_first_not_of("{}();,") == std::string::npos;
+    candidates[index] = !text.empty() && !directive && !import && !decorator &&
+                        !comment && !classOrUnion && !punctuationOnly;
+    ++index;
+  }
+  return candidates;
+}
+
+static std::string coverageSymbolForPath(const std::string &path) {
+  const std::string normalized = normalizedSourcePath(path).string();
+  uint64_t hash = 1469598103934665603ULL;
+  for (unsigned char c : normalized) {
+    hash ^= c;
+    hash *= 1099511628211ULL;
+  }
+  std::ostringstream out;
+  out << "__aflat_coverage_" << std::hex << hash;
+  return out.str();
+}
+
+static std::string coverageMetadataPath(const std::string &asmPath) {
+  return asmPath + ".coverage";
+}
+
+struct CoverageModuleInfo {
+  std::string symbol;
+  std::string source;
+  std::vector<int> lines;
+};
+
+static std::string escapeCString(const std::string &value) {
+  std::string escaped;
+  for (char c : value) {
+    if (c == '\\' || c == '"')
+      escaped += '\\';
+    if (c == '\n') {
+      escaped += "\\n";
+    } else if (c == '\r') {
+      escaped += "\\r";
+    } else {
+      escaped += c;
+    }
+  }
+  return escaped;
+}
+
+static bool readCoverageMetadata(const ModuleResult &module,
+                                 CoverageModuleInfo &info) {
+  std::ifstream input(coverageMetadataPath(module.asmPath));
+  if (!input.is_open())
+    return false;
+  if (!std::getline(input, info.symbol) || !std::getline(input, info.source))
+    return false;
+  int line = 0;
+  while (input >> line)
+    info.lines.push_back(line);
+  return !info.symbol.empty() && !info.lines.empty();
+}
+
+static bool buildCoverageReporter(const std::vector<ModuleResult> &modules,
+                                  std::string &objectPath) {
+  std::vector<CoverageModuleInfo> coveredModules;
+  for (const auto &module : modules) {
+    CoverageModuleInfo info;
+    if (module.success && readCoverageMetadata(module, info))
+      coveredModules.push_back(std::move(info));
+  }
+
+  const std::filesystem::path coverageDir = "./.cache/coverage";
+  std::filesystem::create_directories(coverageDir);
+  const std::string sourcePath = (coverageDir / "report.c").string();
+  objectPath = (coverageDir / "report.o").string();
+  std::ofstream out(sourcePath);
+  if (!out.is_open())
+    return false;
+
+  out << "#include <stdio.h>\n#include <stdlib.h>\n#include <stddef.h>\n\n";
+  for (size_t i = 0; i < coveredModules.size(); ++i) {
+    const auto &module = coveredModules[i];
+    out << "extern unsigned long " << module.symbol << "[];\n";
+    out << "static const unsigned int aflat_lines_" << i << "[] = {";
+    for (size_t j = 0; j < module.lines.size(); ++j) {
+      if (j != 0)
+        out << ",";
+      out << module.lines[j];
+    }
+    out << "};\n";
+  }
+  out << "\nstruct aflat_coverage_module { const char *source; unsigned long "
+         "*counters; const unsigned int *lines; size_t count; };\n";
+  if (!coveredModules.empty()) {
+    out << "static const struct aflat_coverage_module aflat_modules[] = {\n";
+    for (size_t i = 0; i < coveredModules.size(); ++i) {
+      const auto &module = coveredModules[i];
+      out << "  {\"" << escapeCString(module.source) << "\", " << module.symbol
+          << ", aflat_lines_" << i << ", " << module.lines.size() << "},\n";
+    }
+    out << "};\n";
+  }
+  out << "static void aflat_report_coverage(void) {\n"
+         "  size_t total = 0, covered = 0;\n"
+         "  puts(\"\\nCoverage:\");\n";
+  if (coveredModules.empty()) {
+    out << "  puts(\"  no executable production lines\");\n";
+  } else {
+    out << "  for (size_t m = 0; m < sizeof(aflat_modules) / "
+           "sizeof(aflat_modules[0]); ++m) {\n"
+           "    const struct aflat_coverage_module *module = "
+           "&aflat_modules[m];\n"
+           "    size_t module_covered = 0;\n"
+           "    for (size_t i = 0; i < module->count; ++i)\n"
+           "      if (module->counters[module->lines[i] - 1] != 0) "
+           "++module_covered;\n"
+           "    total += module->count; covered += module_covered;\n"
+           "    printf(\"  %s: %zu/%zu (%.1f%%)\", module->source, "
+           "module_covered, module->count, module->count == 0 ? 100.0 : "
+           "100.0 * (double)module_covered / (double)module->count);\n"
+           "    if (module_covered != module->count) {\n"
+           "      size_t shown = 0; fputs(\"  missing: \", stdout);\n"
+           "      for (size_t i = 0; i < module->count && shown < 20; ++i) "
+           "{\n"
+           "        if (module->counters[module->lines[i] - 1] == 0) {\n"
+           "          if (shown != 0) fputc(',', stdout);\n"
+           "          printf(\"%u\", module->lines[i]); ++shown;\n"
+           "        }\n"
+           "      }\n"
+           "      if (module->count - module_covered > shown) "
+           "printf(\",... (+%zu)\", module->count - module_covered - "
+           "shown);\n"
+           "      printf(\"\\nwarning: %zu executable line%s in %s %s "
+           "not reached; it may be dead code or missing test "
+           "coverage\", module->count - module_covered, module->count - "
+           "module_covered == 1 ? \"\" : \"s\", module->source, "
+           "module->count - module_covered == 1 ? \"was\" : \"were\");\n"
+           "    }\n"
+           "    fputc('\\n', stdout);\n"
+           "  }\n";
+  }
+  out << "  printf(\"Total: %zu/%zu executable lines (%.1f%%)\\n\", "
+         "covered, total, total == 0 ? 100.0 : 100.0 * (double)covered / "
+         "(double)total);\n"
+         "}\n"
+         "__attribute__((constructor)) static void aflat_coverage_init(void) "
+         "{ atexit(aflat_report_coverage); }\n";
+  out.close();
+
+  const std::string command = "gcc -O2 -c " + sourcePath + " -o " + objectPath;
+  return system(command.c_str()) == 0;
+}
 
 class ProgressScope {
 public:
@@ -886,7 +1086,12 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   gQuiet = cli.quiet;
-  gUseCache = !cli.noCache;
+  gCoverage = cli.coverage;
+  if (gCoverage && cli.command != "test") {
+    std::cerr << "--coverage is currently supported with `aflat test`\n";
+    return 1;
+  }
+  gUseCache = !cli.noCache && !gCoverage;
   gConcurrentBuild = cli.concurrent;
   if (cli.cleanCache)
     std::filesystem::remove_all(".cache");
@@ -1214,6 +1419,14 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
   std::string content((std::istreambuf_iterator<char>(ifs)),
                       (std::istreambuf_iterator<char>()));
   ifs.close();
+  const bool instrumentCoverage = shouldInstrumentCoverage(origPath);
+  const int sourceLineCount =
+      1 + static_cast<int>(std::count(content.begin(), content.end(), '\n'));
+  const auto coverageCandidates =
+      coverageCandidateLines(content, sourceLineCount);
+  const std::string coverageSymbol = coverageSymbolForPath(origPath);
+  if (gCoverage && !instrumentCoverage)
+    std::filesystem::remove(coverageMetadataPath(output));
   gen::scope::ScopeManager::getInstance()->reset();
   try {
     try {
@@ -1317,9 +1530,13 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
         ofs << ".file\t\"" << path << "\"\n";
       }
       int logicalLine = -1;
+      int lastCoverageLine = -1;
+      std::set<int> coverageLines;
 
       while (file.text.head != nullptr) {
         auto inst = file.text.pop();
+        if (dynamic_cast<asmc::Label *>(inst) != nullptr)
+          lastCoverageLine = -1;
         if (inst->logicalLine != logicalLine && debug &&
             dynamic_cast<asmc::Label *>(inst) == nullptr &&
             inst->logicalLine > 0) {
@@ -1333,6 +1550,20 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
                    dynamic_cast<asmc::Define *>(inst) != nullptr)
             ofs << ".line " << logicalLine - 1 << "\n";
         auto str = sanitizeGenerics(inst->toString());
+        const bool executableInstruction =
+            !str.empty() && dynamic_cast<asmc::Label *>(inst) == nullptr &&
+            dynamic_cast<asmc::Define *>(inst) == nullptr;
+        if (instrumentCoverage && executableInstruction &&
+            inst->logicalLine > 0 && inst->logicalLine <= sourceLineCount &&
+            coverageCandidates[static_cast<size_t>(inst->logicalLine - 1)] &&
+            inst->logicalLine != lastCoverageLine) {
+          coverageLines.insert(inst->logicalLine);
+          const size_t offset =
+              static_cast<size_t>(inst->logicalLine - 1) * sizeof(uint64_t);
+          ofs << "\tpushfq\n\tlock incq\t" << coverageSymbol << "+" << offset
+              << "(%rip)\n\tpopfq\n";
+          lastCoverageLine = inst->logicalLine;
+        }
         // replace '\n' with "\n .line " + line number
         // while(str.find('\n') != std::string::npos){
         //   auto index = str.find('\n');
@@ -1357,7 +1588,21 @@ bool build(std::string path, std::string output, cfg::Mutability mutability,
       while (file.bss.head != nullptr) {
         ofs << sanitizeGenerics(file.bss.pop()->toString());
       }
+      if (instrumentCoverage && !coverageLines.empty()) {
+        ofs << "\n.globl " << coverageSymbol << "\n.align 8\n"
+            << coverageSymbol << ":\n.zero "
+            << static_cast<size_t>(sourceLineCount) * sizeof(uint64_t) << "\n";
+      }
       ofs.close();
+
+      if (instrumentCoverage) {
+        std::ofstream metadata(coverageMetadataPath(output));
+        if (!coverageLines.empty()) {
+          metadata << coverageSymbol << "\n" << origPath << "\n";
+          for (int line : coverageLines)
+            metadata << line << "\n";
+        }
+      }
     }
     if (!gQuiet) {
       if (gProgress)
@@ -2036,8 +2281,9 @@ ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
   ScopedTimer moduleTimer("compile-module", mod);
   namespace fs = std::filesystem;
   std::string src = "./src/" + mod + ".af";
-  std::string asmPath = "./.cache/" + mod + ".s";
-  std::string objPath = "./.cache/" + mod + ".o";
+  const std::string cacheRoot = gCoverage ? "./.cache/coverage/" : "./.cache/";
+  std::string asmPath = cacheRoot + mod + ".s";
+  std::string objPath = cacheRoot + mod + ".o";
 
   try {
     bool useCached = false;
@@ -2132,6 +2378,18 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
   } else if (pmode == 't') {
     entryModule = config.testFile;
   }
+  if (gCoverage && pmode == 't')
+    gCoverageExcludedSource =
+        normalizedSourcePath("./src/" + entryModule + ".af");
+  if (gCoverage && pmode == 't') {
+    gCoverageExcludedRoots.clear();
+    for (const auto &[name, dependency] : config.dependencies) {
+      if (dependency.size() >= 4 &&
+          dependency.substr(dependency.size() - 4) == ".git") {
+        gCoverageExcludedRoots.push_back(normalizedSourcePath("./src/" + name));
+      }
+    }
+  }
   std::vector<std::string> modules =
       entryModule.empty() ? config.modules
                           : reachableBuildModules(config, entryModule, libPath);
@@ -2180,6 +2438,16 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     if (compileCFile(file, config.debug)) {
       linker.push_back("./.cache/" + file + ".o");
     } else {
+      hasError = true;
+    }
+  }
+
+  if (!hasError && gCoverage && pmode == 't') {
+    std::string coverageObject;
+    if (buildCoverageReporter(moduleResults, coverageObject)) {
+      linker.push_back(coverageObject);
+    } else {
+      std::cerr << "Unable to build coverage reporter\n";
       hasError = true;
     }
   }

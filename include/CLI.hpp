@@ -13,6 +13,7 @@ struct CommandLineOptions {
   bool cleanCache = false;
   bool noCache = false;
   bool concurrent = false;
+  bool coverage = false;
   std::string installName;
   std::string outputFile; // set via -o when compiling single files
   std::string configFile = "aflat.cfg";
