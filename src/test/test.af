@@ -15,7 +15,7 @@ import result from "Utils/result";
 import {describe, it, assertEqual, assertTrue, fix, getFixture, assertFalse, beforeEach, afterEach, beforeAll, afterAll, itSkip, summary} from "ATest" under test;
 import JSON from "JSON";
 import { parse } from "JSON/Parse" under parser;
-import {String, Number, Boolean, Object, Null, parse} from "JSON" under json;
+import {String, Number, Boolean, List, Object, Null, parse} from "JSON" under json;
 import Box from "Memory";
 import {wrap} from "Memory" under box;
 
@@ -61,6 +61,16 @@ fn main() -> int{
             const let r = s.push('d');
             // test.assertEqual(r.len(), 4);
             test.assertTrue(r == "abcd");
+        });
+
+        test.it("should grow uni_string appends", fn () {
+            const uni_string value = "";
+            for int i = 0; i < 10000; i++ {
+                value.push_in_place('x');
+            };
+            test.assertEqual(value.len(), 10000);
+            test.assertTrue(value.at(0) == 'x');
+            test.assertTrue(value.at(9999) == 'x');
         });
 
         test.it("should convert to upper and lower", fn () {
@@ -120,6 +130,44 @@ fn main() -> int{
             const JSON obj = test.getFixture("object");
             const let jsonString = obj.stringify();
             test.assertTrue(new string("{\"name\":\"John\",\"age\":30}") == jsonString);
+            test.assertTrue(jsonString == obj.stringify(0));
+        });
+
+        test.it("should escape JSON strings", fn () {
+            const char slash = '\\';
+            const uni_string raw = "quote: ";
+            raw.push_in_place('"');
+            raw.append_raw(" slash: ");
+            raw.push_in_place(slash);
+            raw.push_in_place('\t');
+            raw.push_in_place('\n');
+
+            const uni_string expected = "";
+            expected.push_in_place('"');
+            expected.append_raw("quote: ");
+            expected.push_in_place(slash);
+            expected.push_in_place('"');
+            expected.append_raw(" slash: ");
+            expected.push_in_place(slash);
+            expected.push_in_place(slash);
+            expected.push_in_place(slash);
+            expected.push_in_place('t');
+            expected.push_in_place(slash);
+            expected.push_in_place('n');
+            expected.push_in_place('"');
+
+            const JSON value = json.String(raw.cstr());
+            test.assertTrue(value.stringify() == expected.to_string());
+        });
+
+        test.it("should pretty print nested JSON", fn () {
+            const let inner = new vector::<Box::<JSON>>();
+            inner.push_back(box.wrap(json.Boolean(true)));
+            const let outer = new vector::<Box::<JSON>>();
+            outer.push_back(box.wrap(json.Number(1)));
+            outer.push_back(box.wrap(json.List(inner)));
+            const JSON value = json.List(outer);
+            test.assertTrue(value.stringify(1) == "[\n  1,\n  [\n    true\n  ]\n]");
         });
 
         test.it("should get a field from a JSON object", fn () {

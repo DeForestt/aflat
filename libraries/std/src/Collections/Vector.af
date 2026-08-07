@@ -303,6 +303,17 @@ class vector {
         return opt.Some(val);
     };
 
+    // Internal-style fast path for callers that provide their own synchronization.
+    when (T is not unique and T missing __copy__ and T is not primitive)
+    fn get_unlocked(const int index) -> option::<T> {
+        if index >= my.count | index < 0 {
+            return opt.None::<T>();
+        };
+        const generic val = my.head + (index * T);
+        const T val = val;
+        return opt.Some(val);
+    };
+
     when (T is unique and T missing __copy__)
     fn _call(const int index) -> option::<view::<T>> {
         const LockGuard __guard = my.mutex.guard();

@@ -119,6 +119,10 @@ class u_map_bucket {
 		return;
 	};
 
+	fn entryAt(const int index) -> option::<u_map_entry::<K, V>> {
+		return my.entries.get_unlocked(index);
+	};
+
 	fn clear() -> void {
 		my.entries = new vector::<u_map_entry::<K, V>>();
 		return;
@@ -131,9 +135,11 @@ class u_map_bucket {
 
 types(K, V)
 class unordered_map {
-	private vector::<u_map_bucket::<K, V>> buckets = new vector::<u_map_bucket::<K, V>>(256);
-	private int capasity = 256;
+	private vector::<u_map_bucket::<K, V>> buckets = new vector::<u_map_bucket::<K, V>>(8);
+	private int capasity = 8;
 	private mutable int count = 0;
+	private mutable int iteratorBucket = 0;
+	private mutable int iteratorEntry = 0;
 	private Lock mutex = new Lock();
 
 	fn init() -> Self {
@@ -229,6 +235,33 @@ class unordered_map {
 		return values;
 	};
 
+	fn next() -> option::<u_map_entry::<K, V>> {
+		while my.iteratorBucket < my.capasity {
+			const u_map_bucket::<K, V> bucket =
+				my.buckets.get_unlocked(my.iteratorBucket).expect("searched for non-existing unordered_map bucket");
+			match bucket.entryAt(my.iteratorEntry) {
+				Some(entry) => {
+					my.iteratorEntry = my.iteratorEntry + 1;
+					return opt.Some(entry);
+				},
+				None => {
+					my.iteratorBucket = my.iteratorBucket + 1;
+					my.iteratorEntry = 0;
+				}
+			};
+		};
+		my.iteratorBucket = 0;
+		my.iteratorEntry = 0;
+		return opt.None::<u_map_entry::<K, V>>();
+	};
+
+	fn iterationGuard() -> LockGuard {
+		const LockGuard guard = my.mutex.guard();
+		my.iteratorBucket = 0;
+		my.iteratorEntry = 0;
+		return guard;
+	};
+
 	fn normalize() -> void {
 		return;
 	};
@@ -242,6 +275,8 @@ class unordered_map {
 			my.buckets.set(i, bucket);
 		};
 		my.count = 0;
+		my.iteratorBucket = 0;
+		my.iteratorEntry = 0;
 		return;
 	};
 

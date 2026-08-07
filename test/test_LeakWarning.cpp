@@ -124,6 +124,50 @@ TEST_CASE("passing temporary to non-owned parameter warns", "[leak-warning]") {
   REQUIRE(buffer.str().find("warning") != std::string::npos);
 }
 
+TEST_CASE("passing loaned unique result to non-owned parameter does not warn",
+          "[leak-warning]") {
+  auto parser = parse::Parser();
+  test::mockGen::CodeGenerator gen("mod", parser, "",
+                                   std::filesystem::current_path().string());
+
+  parser.addType("Foo", asmc::Hard, asmc::QWord, false, true);
+  auto foo = new gen::Class();
+  foo->Ident = "Foo";
+  foo->uniqueType = true;
+  gen.addType(foo);
+
+  ast::Function borrow;
+  borrow.ident.ident = "borrow";
+  borrow.type = ast::Type("Foo", asmc::QWord);
+  borrow.returnLowOwnership = true;
+  gen.nameTable().push(borrow);
+
+  ast::Function inspect;
+  inspect.ident.ident = "inspect";
+  inspect.type = ast::Type("void", asmc::QWord);
+  inspect.argTypes.push_back(ast::Type("Foo", asmc::QWord));
+  inspect.mutability.push_back(false);
+  inspect.req = 1;
+  gen.nameTable().push(inspect);
+
+  auto inner = new ast::CallExpr();
+  inner->call = new ast::Call();
+  inner->call->ident = "borrow";
+  inner->call->Args = links::LinkedList<ast::Expr *>();
+
+  ast::Call outer;
+  outer.ident = "inspect";
+  outer.Args = links::LinkedList<ast::Expr *>();
+  outer.Args.push(inner);
+
+  std::ostringstream buffer;
+  auto *old = std::cout.rdbuf(buffer.rdbuf());
+  gen.GenSTMT(&outer);
+  std::cout.rdbuf(old);
+
+  REQUIRE(buffer.str().find("warning") == std::string::npos);
+}
+
 TEST_CASE("passing temporary to owned parameter does not warn",
           "[leak-warning]") {
   auto parser = parse::Parser();

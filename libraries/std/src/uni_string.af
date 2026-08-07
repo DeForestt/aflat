@@ -14,6 +14,7 @@ import owned from "Memory";
 unique class uni_string {
   private mutable adr buf = NULL;
   private mutable int size = 0;
+  private mutable int capacity = 0;
   private mutable int iter = 0;
 
   private fn empty_buffer() -> adr {
@@ -27,6 +28,7 @@ unique class uni_string {
   fn __from__string(immutable string s) {
     my.buf = NULL;
     my.size = 0;
+    my.capacity = 0;
     my.iter = 0;
     my.copy_from(s.cstr());
     return my;
@@ -35,6 +37,7 @@ unique class uni_string {
   fn __from__adr(immutable adr s) {
     my.buf = NULL;
     my.size = 0;
+    my.capacity = 0;
     my.iter = 0;
     my.copy_from(s);
     return my;
@@ -46,7 +49,29 @@ unique class uni_string {
       my.buf = NULL;
     };
     my.size = 0;
+    my.capacity = 0;
     my.iter = 0;
+  };
+
+  private fn ensure_capacity(const int required) -> void {
+    if required <= my.capacity {
+      return;
+    };
+
+    mutable int next_capacity = my.capacity;
+    if next_capacity < 16 {
+      next_capacity = 16;
+    };
+    while next_capacity < required {
+      next_capacity = next_capacity * 2;
+    };
+
+    if my.buf == NULL {
+      my.buf = af_malloc(next_capacity);
+    } else {
+      my.buf = af_realloc(my.buf, next_capacity);
+    };
+    my.capacity = next_capacity;
   };
 
   fn copy_from(immutable adr raw) {
@@ -59,8 +84,7 @@ unique class uni_string {
     };
 
     const int new_len = st.len(v);
-    if my.buf != NULL af_free(my.buf);
-    my.buf = af_malloc(new_len + 1);
+    my.ensure_capacity(new_len + 1);
     af_memcpy(my.buf, v, new_len + 1);
     my.size = new_len;
     my.iter = 0;
@@ -176,10 +200,10 @@ unique class uni_string {
   };
 
   fn clear() -> void {
-    if my.buf != NULL {
-      af_free(my.buf);
+    if my.buf == NULL {
+      my.ensure_capacity(1);
     };
-    my.buf = NULL;
+    my.buf =: '\0';
     my.size = 0;
     my.iter = 0;
   };
@@ -257,20 +281,16 @@ unique class uni_string {
     if raw == NULL {
       return;
     };
-    mutable adr left = my.buf;
-    if left == NULL {
-      left = my.empty_buffer();
+    const bool appending_self = raw == my.buf;
+    const int right_len = st.len(raw);
+    const int new_len = my.size + right_len;
+    my.ensure_capacity(new_len + 1);
+    const adr right = if appending_self my.buf else raw;
+    if right_len > 0 {
+      af_memcpy(my.buf + my.size, right, right_len);
     };
-    const adr right = raw;
-    const int left_len = st.len(left);
-    const int right_len = st.len(right);
-    const int new_len = left_len + right_len;
-    const adr new_buf = af_malloc(new_len + 1);
-    st.str_concat(left, right, new_buf);
-    if my.buf != NULL {
-      af_free(my.buf);
-    };
-    my.buf = new_buf;
+    const adr tail = my.buf + new_len;
+    tail =: '\0';
     my.size = new_len;
     my.iter = 0;
   };
@@ -281,11 +301,14 @@ unique class uni_string {
   };
 
   fn push_in_place(immutable char c) -> void {
-    const char[2] buff;
-    buff =: c;
-    const adr tail = buff + 1;
+    const int new_len = my.size + 1;
+    my.ensure_capacity(new_len + 1);
+    const adr cursor = my.buf + my.size;
+    cursor =: c;
+    const adr tail = my.buf + new_len;
     tail =: '\0';
-    my.append_raw(buff);
+    my.size = new_len;
+    my.iter = 0;
   };
 
   bool compare<<==>>(immutable uni_string other) {
