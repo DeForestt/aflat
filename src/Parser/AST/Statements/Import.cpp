@@ -579,6 +579,10 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
         generator.alert("Identifier " + ident + " not found to import");
       };
 
+      const std::string includedKey = id + "::" + ident;
+      const bool importSetAlreadyIncluded =
+          generator.includedClasses().contains(includedKey);
+      bool importedFunction = false;
       for (auto stmt : allStmts) {
         bool genericTemplate = false;
         if (auto cls = dynamic_cast<ast::Class *>(stmt)) {
@@ -598,14 +602,22 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
                                         : cls->templateModuleFile;
           cls->templateNamespaceMap = nsMap;
         }
-        if (generator.includedClasses().contains(id + "::" + ident) &&
-            !genericTemplate)
+        const bool functionImport =
+            dynamic_cast<ast::Function *>(stmt) != nullptr;
+        if (functionImport && importSetAlreadyIncluded)
           continue;
-        generator.includedClasses().insert(id + "::" + ident, nullptr);
+        if (!functionImport && importSetAlreadyIncluded && !genericTemplate)
+          continue;
+        if (functionImport)
+          importedFunction = true;
+        else
+          generator.includedClasses().insert(includedKey, nullptr);
         if (!genericTemplate)
           stmt->namespaceSwap(nsMap);
         OutputFile << generator.GenSTMT(stmt);
       }
+      if (importedFunction)
+        generator.includedClasses().insert(includedKey, nullptr);
     }
   }
   if (this->hasFunctions)

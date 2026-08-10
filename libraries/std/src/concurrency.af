@@ -477,6 +477,7 @@ private class AsyncThreadCall {
  * suspending only the current native task. Up to five arguments are forwarded.
  */
 types(T)
+when (T is primitive)
 export async fn async_thread(
         const T<*any, *any, *any, *any, *any> operation,
         * const any arg1, * const any arg2, * const any arg3,
@@ -484,17 +485,16 @@ export async fn async_thread(
     const AsyncThreadCall call = new AsyncThreadCall(
         operation, arg1, arg2, arg3, arg4);
     call.arg5 = arg5;
-    mutable adr nativeOperation = NULL;
+    const adr nativeOperation = NULL;
     pause af_cpu_operation_begin(AsyncThreadCall.invokePrimitive, af_free,
-        call, NULL,
-        NULL, ?nativeOperation);
+        call, NULL, NULL, ?nativeOperation);
     if nativeOperation == NULL {
         const adr fallback = call.invokePrimitive();
         const T fallbackValue = fallback as T;
         af_free(fallback);
         return fallbackValue;
     };
-    mutable adr outputValue = NULL;
+    const adr outputValue = NULL;
     af_cpu_operation_take_result(nativeOperation, ?outputValue);
     const T primitiveValue = outputValue as T;
     af_free(outputValue);
@@ -502,23 +502,24 @@ export async fn async_thread(
 };
 
 /**
- * Run a function pointer that returns an owned, non-primitive value. Use
- * `async_thread_disposable` when the task may be cancelled.
+ * Run a function pointer returning an owned, non-primitive value without
+ * cancellation cleanup. Use this overload when the result is guaranteed to be
+ * observed; otherwise use `async_thread_disposable`.
  */
 types(T)
 when (T is not primitive)
-export async fn async_thread_owned(
+export async fn async_thread(
         const T<*any, *any, *any, *any, *any> operation,
         * const any arg1, * const any arg2, * const any arg3,
         * const any arg4, * const any arg5) -> T {
     const AsyncThreadCall call = new AsyncThreadCall(
         operation, arg1, arg2, arg3, arg4);
     call.arg5 = arg5;
-    mutable adr nativeOperation = NULL;
+    const adr nativeOperation = NULL;
     pause af_cpu_operation_begin(AsyncThreadCall.invoke, NULL, call, NULL,
         NULL, ?nativeOperation);
     if nativeOperation == NULL return call.invoke();
-    mutable T outputValue = NULL;
+    const T outputValue = NULL;
     af_cpu_operation_take_result(nativeOperation, ?outputValue);
     return outputValue;
 };
@@ -535,11 +536,11 @@ export async fn async_thread_disposable(
         * const any arg3, * const any arg4) -> T {
     const AsyncThreadCall call = new AsyncThreadCall(
         operation, arg1, arg2, arg3, arg4);
-    mutable adr nativeOperation = NULL;
+    const adr nativeOperation = NULL;
     pause af_cpu_operation_begin(AsyncThreadCall.invoke, disposer, call, NULL,
         NULL, ?nativeOperation);
     if nativeOperation == NULL return call.invoke();
-    mutable T outputValue = NULL;
+    const T outputValue = NULL;
     af_cpu_operation_take_result(nativeOperation, ?outputValue);
     return outputValue;
 };

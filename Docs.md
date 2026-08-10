@@ -387,6 +387,58 @@ async fn delay(const int milliseconds) -> void {
 Application code should normally await a standard async API rather than use
 `pause` directly.
 
+#### Moving blocking work off the scheduler
+
+An `async fn` normally runs cooperatively on the task scheduler. Declaring a
+function `async` does not by itself move blocking or CPU-heavy work to another
+thread. Use the `concurrency` helpers when an ordinary function pointer must run
+on a native worker:
+
+```aflat
+import string from "String";
+import {async_thread, async_thread_disposable} from "concurrency" under task;
+
+fn calculate(const int value) -> int {
+    return value * 2;
+};
+
+fn encode(const int value) -> string {
+    return `value-{value}`;
+};
+
+fn disposeEncoded(const string value) -> int {
+    delete value;
+    return 0;
+};
+
+async fn performWork() -> int {
+    const int number = await task.async_thread::<int>(calculate, 21);
+
+    // Trusted owned result: no cancellation cleanup is installed.
+    const string trusted = await task.async_thread::<string>(encode, number);
+
+    // Cancellation-safe owned result: the disposer handles an orphaned value.
+    const string guarded = await task.async_thread_disposable::<string>(
+        encode, disposeEncoded, number);
+
+    delete trusted;
+    delete guarded;
+    return number;
+};
+```
+
+`async_thread::<T>` selects primitive and non-primitive implementations with
+`when` clauses. For a non-primitive result, use it only when the task is
+guaranteed to observe and own the returned value. Use
+`async_thread_disposable::<T>` when cancellation could leave the worker's
+result without a receiver. Its disposer runs only for such an orphaned result,
+not after a successful `await`.
+
+Cancellation does not forcibly terminate a callback already executing on a
+worker thread. Callback arguments must remain alive until it finishes, and
+shared application data must be synchronized. `async_thread` accepts up to five
+forwarded arguments; the disposable form accepts up to four.
+
 #### Async errors
 
 Async and result types compose. An `async fn load() -> string!` call produces a
@@ -409,7 +461,10 @@ async fn useValue() -> string! {
 - `await`, `yield`, and `pause` require an async function.
 - `run` is not allowed inside an async function.
 - Scheduling is cooperative; blocking I/O or CPU loops without `yield` stop
-  other async tasks from progressing.
+  other async tasks from progressing unless moved to
+  `concurrency.async_thread`.
+- `async_thread` forwards at most five callback arguments; its disposable form
+  forwards at most four.
 
 See [Asynchronous Programming in AFlat](Async.md) for the complete guide,
 including async file I/O, ownership, custom wakeups, troubleshooting, and more
