@@ -91,8 +91,10 @@ asmc::File asyncConstructor(const Function &function,
   for (int i = 0; i < std::min(argc, 5); ++i)
     file.text << movq("-" + std::to_string((i + 1) * 8) + "(%rbp)", regs[i + 1],
                       function.logicalLine);
-  if (argc == 6)
-    file.text << movq("-48(%rbp)", "(%rsp)", function.logicalLine);
+  if (argc == 6) {
+    file.text << movq("-48(%rbp)", "%rax", function.logicalLine);
+    file.text << movq("%rax", "(%rsp)", function.logicalLine);
+  }
 
   auto *call = new asmc::Call();
   call->function = "af_task_create" + std::to_string(argc);
