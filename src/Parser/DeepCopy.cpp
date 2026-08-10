@@ -431,10 +431,10 @@ Statement *deepCopy(const Statement *stmt) {
     copy->cases = std::vector<Match::Case>();
     copy->returns = match->returns;
     for (const auto &caseItem : match->cases) {
-      auto *caseCopy = new Match::Case();
-      caseCopy->pattern = Match::Pattern(caseItem.pattern);
-      caseCopy->statement = deepCopy(caseItem.statement);
-      copy->cases.push_back(*caseCopy);
+      Match::Case caseCopy;
+      caseCopy.pattern = Match::Pattern(caseItem.pattern);
+      caseCopy.statement = deepCopy(caseItem.statement);
+      copy->cases.push_back(caseCopy);
     }
     return copy;
   }

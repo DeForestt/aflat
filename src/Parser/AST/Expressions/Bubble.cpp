@@ -78,28 +78,28 @@ Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
   matchExpr->expr = matchValue;
   matchExpr->returns = bubbleReturnType;
 
-  auto caseOne = new ast::Match::Case();
-  caseOne->pattern.aliasName = "Ok";
-  caseOne->pattern.veriableName = "value";
+  ast::Match::Case caseOne;
+  caseOne.pattern.aliasName = "Ok";
+  caseOne.pattern.veriableName = "value";
   auto var = new ast::Var();
   var->Ident = "value";
   auto returnStmt = new ast::Return();
   returnStmt->expr = var;
   returnStmt->implicit = true;
   returnStmt->resolver = true;
-  caseOne->statement = returnStmt;
-  auto caseTwo = new ast::Match::Case();
-  caseTwo->pattern.aliasName = "Err";
-  caseTwo->pattern.veriableName = "err";
+  caseOne.statement = returnStmt;
+  ast::Match::Case caseTwo;
+  caseTwo.pattern.aliasName = "Err";
+  caseTwo.pattern.veriableName = "err";
   auto errVar = new ast::Var();
   errVar->Ident = "err";
   auto returnErr = new ast::Return();
   returnErr->expr = errVar;
   returnErr->implicit = false;
   returnErr->resolver = false;
-  caseTwo->statement = returnErr;
-  matchExpr->cases.push_back(*caseOne);
-  matchExpr->cases.push_back(*caseTwo);
+  caseTwo.statement = returnErr;
+  matchExpr->cases.push_back(caseOne);
+  matchExpr->cases.push_back(caseTwo);
 
   auto result = matchExpr->generateExpression(generator, size, typeHint);
   file << result.file;

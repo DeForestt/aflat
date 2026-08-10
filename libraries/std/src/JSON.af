@@ -46,6 +46,12 @@ union JSON {
     fn set(const string key, const JSON value) -> JSON! {
         match my {
             Object(map) => {
+                match map.get(key.cstr()) {
+                    Some(previous) => {
+                        my.deleteBox(previous);
+                    },
+                    None => {}
+                };
                 map.set(key.cstr(), new Box::<JSON>(value));
                 return my;
             },
@@ -93,6 +99,44 @@ union JSON {
             Null => return true,
             _ => return false
         }
+    };
+
+    private fn deleteBox(const Box::<JSON> value) -> int {
+        const JSON nested = value.get();
+        delete nested;
+        delete value;
+        return 0;
+    };
+
+    private fn deleteList(const vector::<Box::<JSON>> list) -> int {
+        for int i = 0; i < list.count(); i++ {
+            const Box::<JSON> value =
+                list.get(i).expect("missing boxed JSON list value during cleanup");
+            my.deleteBox(value);
+        };
+        delete list;
+        return 0;
+    };
+
+    private fn deleteObject(const unordered_map::<adr,Box::<JSON>> map) -> int {
+        const let values = map.values();
+        for int i = 0; i < values.count(); i++ {
+            const Box::<JSON> value =
+                values.get(i).expect("missing boxed JSON object value during cleanup");
+            my.deleteBox(value);
+        };
+        delete values;
+        delete map;
+        return 0;
+    };
+
+    fn del() -> int {
+        match my {
+            String(s) => return af_free(s),
+            List(list) => return my.deleteList(list),
+            Object(map) => return my.deleteObject(map),
+            _ => return 0
+        };
     };
 
     fn toString() -> string {

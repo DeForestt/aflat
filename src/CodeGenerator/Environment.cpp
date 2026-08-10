@@ -98,6 +98,7 @@ asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
 
   if (auto classType = dynamic_cast<Class *>(*type)) {
     if (auto destructor = classType->nameTable["del"]) {
+      delete file;
       file = emitObjectCleanup(methodLabel(destructor));
     }
   }
@@ -105,6 +106,7 @@ asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
   if (nameTable()["af_free"] != nullptr) {
     auto freeFile = emitObjectCleanup("af_free");
     *file << *freeFile;
+    delete freeFile;
   }
 
   return file;

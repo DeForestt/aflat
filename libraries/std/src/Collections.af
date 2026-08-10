@@ -39,6 +39,7 @@ class List {
     List init(const int typeSize, *const int size, *const adr delFunc, *const adr ini) {
         if size == 0 {
             my.size = 1;
+            af_free(my.head);
             my.head = af_malloc(typeSize);
         };
         return my;

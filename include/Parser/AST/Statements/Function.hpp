@@ -9,7 +9,7 @@ namespace ast {
  */
 class Function : public Member, public Statement {
 public:
-  ScopeMod scope;
+  ScopeMod scope = Public;
   bool safe = false; // is this a class method that does not mutate
                      // the class instance?
   Type type;
@@ -22,7 +22,7 @@ public:
   Ident ident;
   Statement *args = nullptr;
   Statement *statement = nullptr;
-  Op op;
+  Op op = None;
   int req = 0;
   std::vector<int> optConvertionIndices; // indices of optional arguments that
                                          // need to be converted
@@ -47,7 +47,7 @@ public:
            (scopeName == "global" ? "" : scopeName + "_") + ident.ident;
   }
   bool flex = false;
-  bool mask;
+  bool mask = false;
   bool has_return = false;
   bool optional = false;
   bool error = false; // if the function can return an error
@@ -65,7 +65,7 @@ public:
   Function(const ScopeMod &scope, links::LinkedList<lex::Token *> &tokens,
            std::vector<std::string> genericTypes, parse::Parser &parser,
            bool safe = false, bool isAsync = false);
-  Function(const Function &Other, bool locked)
+  Function(const Function &Other, bool locked, bool copyBody = true)
       : scope(Other.scope), type(Other.type), op(Other.op),
         scopeName(Other.scopeName), ident(Other.ident), args(nullptr),
         statement(nullptr), decorator(Other.decorator), decNSP(Other.decNSP),
@@ -85,11 +85,10 @@ public:
     this->locked = locked;
     this->hidden = Other.hidden;
     this->when = Other.when;
-    // Function copies are generated shells/specializations. Clone their AST
-    // so deepCopy resets parser-only coverage points instead of retaining a
-    // shallow pointer to the original source body.
+    // Specializations clone their AST so deepCopy resets parser-only coverage
+    // points. Declaration shells deliberately omit the implementation body.
     this->args = deepCopy(Other.args);
-    this->statement = deepCopy(Other.statement);
+    this->statement = copyBody ? deepCopy(Other.statement) : nullptr;
   }
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   gen::Expr toExpr(gen::CodeGenerator &generator);

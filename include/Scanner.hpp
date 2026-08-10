@@ -1,6 +1,8 @@
 #ifndef LEX
 #define LEX
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -11,8 +13,24 @@ using std::string;
 
 namespace lex {
 
+class TokenAllocationScope {
+public:
+  TokenAllocationScope();
+  ~TokenAllocationScope();
+  TokenAllocationScope(const TokenAllocationScope &) = delete;
+  TokenAllocationScope &operator=(const TokenAllocationScope &) = delete;
+
+private:
+  std::size_t checkpoint = 0;
+};
+
 class Token {
 public:
+  static constexpr std::uint32_t UntrackedAllocation =
+      static_cast<std::uint32_t>(-1);
+  Token();
+  Token(const Token &other);
+  Token &operator=(const Token &other);
   int lineCount;
   bool generated = false;
   int column = 1;
@@ -20,7 +38,11 @@ public:
   virtual string toString() const {
     return "Token at line " + std::to_string(lineCount);
   }
-  virtual ~Token() = default;
+  virtual ~Token();
+  static void *operator new(std::size_t size);
+  static void operator delete(void *ptr) noexcept;
+  static void operator delete(void *ptr, std::size_t) noexcept;
+  std::uint32_t allocationIndex = UntrackedAllocation;
 };
 
 class Symbol : public Token {

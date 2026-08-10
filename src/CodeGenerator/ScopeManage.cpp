@@ -120,6 +120,7 @@ void ScopeManager::popScope(CodeGenerator *callback, asmc::File &OutputFile,
         auto desc = callback->deScope(sym);
         if (desc) {
           OutputFile << *desc;
+          delete desc;
         }
       }
       // find any symbols that have the same name and remove an underscore
@@ -156,6 +157,7 @@ void ScopeManager::softPop(CodeGenerator *callback, asmc::File &OutputFile) {
       auto desc = callback->deScope(sym);
       if (desc) {
         OutputFile << *desc;
+        delete desc;
       }
     }
     pos--;

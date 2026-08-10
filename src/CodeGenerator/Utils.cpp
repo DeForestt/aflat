@@ -117,10 +117,9 @@ ast::Statement *gen::utils::extract(std::string ident, ast::Statement *stmt,
   } else if (dynamic_cast<ast::Function *>(stmt)) {
     ast::Function *func = dynamic_cast<ast::Function *>(stmt);
     if (func->ident.ident == ident || ident == "*") {
-      auto *copy = new ast::Function(*func, func->locked);
+      auto *copy =
+          new ast::Function(*func, func->locked, !func->genericTypes.empty());
       copy->ident.ident = id + '.' + copy->ident.ident;
-      if (copy->genericTypes.size() == 0)
-        copy->statement = nullptr;
       if (copy->scope != ast::Export)
         copy->locked = true;
       return copy;
@@ -149,10 +148,9 @@ std::vector<ast::Statement *> gen::utils::extractAll(std::string ident,
   } else if (dynamic_cast<ast::Function *>(stmt)) {
     ast::Function *func = dynamic_cast<ast::Function *>(stmt);
     if (func->ident.ident == ident) {
-      auto *copy = new ast::Function(*func, func->locked);
+      auto *copy =
+          new ast::Function(*func, func->locked, !func->genericTypes.empty());
       copy->ident.ident = id + '.' + copy->ident.ident;
-      if (copy->genericTypes.size() == 0)
-        copy->statement = nullptr;
       if (copy->scope != ast::Export)
         copy->locked = true;
       results.push_back(copy);
@@ -241,10 +239,9 @@ ast::Sequence *gen::utils::copyAllFunctionShells(ast::Statement *stmt) {
   } else if (dynamic_cast<ast::Function *>(stmt)) {
     ast::Function *func = dynamic_cast<ast::Function *>(stmt);
     auto sequence = new ast::Sequence();
-    auto f = new ast::Function(*func, false);
+    auto f = new ast::Function(*func, false, false);
     f->locked = false;
     f->useType = f->type;
-    f->statement = nullptr;
     sequence->Statement1 = f;
     sequence->Statement2 = nullptr;
     return sequence;
