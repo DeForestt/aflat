@@ -43,6 +43,18 @@ TEST_CASE("statement allocation scopes release compiler AST nodes",
   REQUIRE(destructions == 1);
 }
 
+TEST_CASE("statement assignment preserves scoped ownership",
+          "[codegen][memory]") {
+  int destructions = 0;
+  {
+    ast::StatementAllocationScope allocations;
+    auto *tracked = new TrackedStatement(destructions);
+    ast::Statement source;
+    tracked->ast::Statement::operator=(source);
+  }
+  REQUIRE(destructions == 1);
+}
+
 TEST_CASE("function shells do not copy implementation bodies",
           "[codegen][memory]") {
   ast::Return body;

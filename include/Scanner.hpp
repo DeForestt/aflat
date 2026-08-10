@@ -2,6 +2,7 @@
 #define LEX
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -25,8 +26,11 @@ private:
 
 class Token {
 public:
+  static constexpr std::uint32_t UntrackedAllocation =
+      static_cast<std::uint32_t>(-1);
   Token();
   Token(const Token &other);
+  Token &operator=(const Token &other);
   int lineCount;
   bool generated = false;
   int column = 1;
@@ -38,6 +42,7 @@ public:
   static void *operator new(std::size_t size);
   static void operator delete(void *ptr) noexcept;
   static void operator delete(void *ptr, std::size_t) noexcept;
+  std::uint32_t allocationIndex = UntrackedAllocation;
 };
 
 class Symbol : public Token {

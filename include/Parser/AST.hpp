@@ -2,6 +2,7 @@
 #define STRUCT
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -96,12 +97,16 @@ public:
 
 class Statement {
 public:
+  static constexpr std::uint32_t UntrackedAllocation =
+      static_cast<std::uint32_t>(-1);
   Statement();
   Statement(const Statement &other);
+  Statement &operator=(const Statement &other);
   virtual ~Statement();
   static void *operator new(std::size_t size);
   static void operator delete(void *ptr) noexcept;
   static void operator delete(void *ptr, std::size_t) noexcept;
+  std::uint32_t allocationIndex = UntrackedAllocation;
   std::optional<When> when; // When clause for templates
   std::optional<SourceLocation> sourceLocation;
   bool locked = false;

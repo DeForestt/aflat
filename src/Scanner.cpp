@@ -29,23 +29,20 @@ void trackToken(lex::Token *token) {
     return;
   const auto address = reinterpret_cast<std::uintptr_t>(token);
   const auto begin = reinterpret_cast<std::uintptr_t>(tokenAllocations.pending);
-  if (address >= begin && address < begin + tokenAllocations.pendingSize)
+  if (address >= begin && address < begin + tokenAllocations.pendingSize) {
+    token->allocationIndex =
+        static_cast<std::uint32_t>(tokenAllocations.objects.size());
     tokenAllocations.objects.push_back(token);
+  }
   tokenAllocations.pending = nullptr;
   tokenAllocations.pendingSize = 0;
 }
 
 void untrackToken(lex::Token *token) {
-  if (tokenAllocations.objects.empty())
+  if (token->allocationIndex == lex::Token::UntrackedAllocation)
     return;
-  if (tokenAllocations.objects.back() == token) {
-    tokenAllocations.objects.pop_back();
-    return;
-  }
-  auto found = std::find(tokenAllocations.objects.begin(),
-                         tokenAllocations.objects.end(), token);
-  if (found != tokenAllocations.objects.end())
-    tokenAllocations.objects.erase(found);
+  tokenAllocations.objects[token->allocationIndex] = nullptr;
+  token->allocationIndex = lex::Token::UntrackedAllocation;
 }
 
 thread_local int generatedDepth = 0;
@@ -67,8 +64,13 @@ TokenAllocationScope::TokenAllocationScope()
 }
 
 TokenAllocationScope::~TokenAllocationScope() {
-  while (tokenAllocations.objects.size() > checkpoint)
-    delete tokenAllocations.objects.back();
+  while (tokenAllocations.objects.size() > checkpoint) {
+    auto *token = tokenAllocations.objects.back();
+    if (token == nullptr)
+      tokenAllocations.objects.pop_back();
+    else
+      delete token;
+  }
   --tokenAllocations.activeScopes;
 }
 
@@ -93,6 +95,16 @@ Token::Token(const Token &other)
     : lineCount(other.lineCount), generated(other.generated),
       column(other.column), length(other.length) {
   trackToken(this);
+}
+
+Token &Token::operator=(const Token &other) {
+  if (this == &other)
+    return *this;
+  lineCount = other.lineCount;
+  generated = other.generated;
+  column = other.column;
+  length = other.length;
+  return *this;
 }
 
 Token::~Token() { untrackToken(this); }

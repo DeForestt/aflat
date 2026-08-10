@@ -33,23 +33,20 @@ void trackStatement(ast::Statement *statement) {
     return;
   const auto address = reinterpret_cast<std::uintptr_t>(statement);
   const auto begin = reinterpret_cast<std::uintptr_t>(allocations.pending);
-  if (address >= begin && address < begin + allocations.pendingSize)
+  if (address >= begin && address < begin + allocations.pendingSize) {
+    statement->allocationIndex =
+        static_cast<std::uint32_t>(allocations.objects.size());
     allocations.objects.push_back(statement);
+  }
   allocations.pending = nullptr;
   allocations.pendingSize = 0;
 }
 
 void untrackStatement(ast::Statement *statement) {
-  if (allocations.objects.empty())
+  if (statement->allocationIndex == ast::Statement::UntrackedAllocation)
     return;
-  if (allocations.objects.back() == statement) {
-    allocations.objects.pop_back();
-    return;
-  }
-  auto found = std::find(allocations.objects.begin(), allocations.objects.end(),
-                         statement);
-  if (found != allocations.objects.end())
-    allocations.objects.erase(found);
+  allocations.objects[statement->allocationIndex] = nullptr;
+  statement->allocationIndex = ast::Statement::UntrackedAllocation;
 }
 
 void untrackType(ast::Type *type) {
@@ -73,8 +70,13 @@ ast::StatementAllocationScope::StatementAllocationScope()
 }
 
 ast::StatementAllocationScope::~StatementAllocationScope() {
-  while (allocations.objects.size() > checkpoint)
-    delete allocations.objects.back();
+  while (allocations.objects.size() > checkpoint) {
+    auto *statement = allocations.objects.back();
+    if (statement == nullptr)
+      allocations.objects.pop_back();
+    else
+      delete statement;
+  }
   --allocations.activeScopes;
 }
 
@@ -103,6 +105,18 @@ ast::Statement::Statement(const Statement &other)
   trackStatement(this);
 }
 
+ast::Statement &ast::Statement::operator=(const Statement &other) {
+  if (this == &other)
+    return *this;
+  when = other.when;
+  sourceLocation = other.sourceLocation;
+  locked = other.locked;
+  coveragePoint = other.coveragePoint;
+  coverageLine = other.coverageLine;
+  logicalLine = other.logicalLine;
+  return *this;
+}
+
 ast::Statement::~Statement() { untrackStatement(this); }
 
 ast::TypeAllocationScope::TypeAllocationScope()
@@ -118,8 +132,9 @@ ast::TypeAllocationScope::~TypeAllocationScope() {
 
 void *ast::Type::operator new(std::size_t size) {
   void *allocation = ::operator new(size);
-  if (typeAllocations.activeScopes > 0)
+  if (typeAllocations.activeScopes > 0) {
     typeAllocations.objects.push_back(static_cast<ast::Type *>(allocation));
+  }
   return allocation;
 }
 
