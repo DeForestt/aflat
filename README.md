@@ -160,7 +160,7 @@ modules below are the most commonly used building blocks:
 - `Collections/Tuple` - Value-type tuples with ownership-safe destruction and `make_tuple` helper (libraries/std/src/Collections/Tuple.af).
 
 #### Data modeling & serialization
-- `JSON` - Tagged union covering JSON primitives, casting helpers, mutation, and pretty printing (libraries/std/src/JSON.af).
+- `JSON` - Tagged union covering JSON primitives, casting helpers, mutation, synchronous parsing/serialization, and background-thread `parseAsync`/`stringifyAsync` APIs (libraries/std/src/JSON.af).
 - `JSON/Parse` - Wrapper that routes to `JSON.parse` for turning strings into JSON values (libraries/std/src/JSON/Parse.af).
 - `JSON/Property` - Reserved module for future JSON/property bindings (libraries/std/src/JSON/Property.af).
 

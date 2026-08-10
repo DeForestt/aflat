@@ -18,6 +18,11 @@ import {toChar, toInt} from "io" under io;
 import Box from "Memory";
 import {wrap} from "Memory" under box;
 import Error from "Utils/Error";
+import {async_thread_disposable} from "concurrency" under task;
+
+private fn parseInBackground(const string jsonStr) -> JSON!;
+private fn stringifyInBackground(const JSON value, const int indent) -> string;
+private fn disposeStringInBackground(const string serialized) -> int;
 
 /**
  * Dynamically typed JSON value supporting rich constructors plus convenience
@@ -272,6 +277,18 @@ union JSON {
         const int initialIndent = if indent > 0 indent else 0;
         my.stringifyInto(builder, initialIndent);
         return builder.to_string();
+    };
+
+    /** Schedule compact serialization as a native task. */
+    async fn stringifyAsync() -> string {
+        return await task.async_thread_disposable::<string>(
+            stringifyInBackground, disposeStringInBackground, my, 0);
+    };
+
+    /** Schedule pretty serialization as a native task. */
+    async fn stringifyPrettyAsync(const int indent) -> string {
+        return await task.async_thread_disposable::<string>(
+            stringifyInBackground, disposeStringInBackground, my, indent);
     };
 };
 
@@ -557,7 +574,41 @@ private fn parseInternal(const string json_) -> JSON! {
     return parseError(json_, "Unexpected end of input", json_.len());
 };
 
+private fn parseInBackground(const string jsonStr) -> JSON! {
+    return parseInternal(jsonStr);
+};
+
+private fn stringifyInBackground(const JSON value, const int indent) -> string {
+    if indent > 0 return value.stringify(indent);
+    return value.stringify();
+};
+
+private fn disposeParsedInBackground(const result::<JSON> parsed) -> int {
+    match parsed {
+        Ok(value) => delete value,
+        Err(error) => delete error
+    };
+    return 0;
+};
+
+private fn disposeStringInBackground(const string serialized) -> int {
+    delete serialized;
+    return 0;
+};
+
 // Parse a string buffer into a JSON document, returning Result semantics.
 export fn parse(const string jsonStr) -> JSON! {
     return parseInternal(jsonStr);
+};
+
+// Schedule JSON parsing as a native task while preserving Result semantics.
+export async fn parseAsync(const string jsonStr) -> JSON! {
+    return await task.async_thread_disposable::<result::<JSON>>(
+        parseInBackground, disposeParsedInBackground, jsonStr);
+};
+
+// Schedule serialization without requiring method-call syntax.
+export async fn stringifyAsync(const JSON value, * const int indent) -> string {
+    return await task.async_thread_disposable::<string>(
+        stringifyInBackground, disposeStringInBackground, value, indent);
 };

@@ -429,3 +429,117 @@ export fn makeShared(* const any arg1, * const any arg2, * const any arg3, * con
 
     return val;
 };
+
+// Packages a function pointer and its arguments into the single pointer passed
+// through the native background-operation bridge.
+private class AsyncThreadCall {
+    public adr operation = operation;
+    public any arg1 = arg1;
+    public any arg2 = arg2;
+    public any arg3 = arg3;
+    public any arg4 = arg4;
+    public mutable any arg5 = NULL;
+
+    fn init(const adr operation, * const any arg1, * const any arg2,
+            * const any arg3, * const any arg4) -> Self {
+        return my;
+    };
+
+    fn invoke() -> generic {
+        const adr operation = my.operation;
+        const any arg1 = my.arg1;
+        const any arg2 = my.arg2;
+        const any arg3 = my.arg3;
+        const any arg4 = my.arg4;
+        const any arg5 = my.arg5;
+        delete my;
+        return operation(arg1, arg2, arg3, arg4, arg5);
+    };
+
+    fn invokePrimitive() -> adr {
+        const adr operation = my.operation;
+        const any arg1 = my.arg1;
+        const any arg2 = my.arg2;
+        const any arg3 = my.arg3;
+        const any arg4 = my.arg4;
+        const any arg5 = my.arg5;
+        const adr rawResult = operation(arg1, arg2, arg3, arg4, arg5);
+        delete my;
+        const adr boxedResult = af_malloc(8);
+        af_memcpy(boxedResult, ?rawResult, 8);
+        return boxedResult;
+    };
+
+};
+
+/**
+ * Run a function pointer with a primitive result on a background thread while
+ * suspending only the current native task. Up to five arguments are forwarded.
+ */
+types(T)
+export async fn async_thread(
+        const T<*any, *any, *any, *any, *any> operation,
+        * const any arg1, * const any arg2, * const any arg3,
+        * const any arg4, * const any arg5) -> T {
+    const AsyncThreadCall call = new AsyncThreadCall(
+        operation, arg1, arg2, arg3, arg4);
+    call.arg5 = arg5;
+    mutable adr nativeOperation = NULL;
+    pause af_cpu_operation_begin(AsyncThreadCall.invokePrimitive, af_free,
+        call, NULL,
+        NULL, ?nativeOperation);
+    if nativeOperation == NULL {
+        const adr fallback = call.invokePrimitive();
+        const T fallbackValue = fallback as T;
+        af_free(fallback);
+        return fallbackValue;
+    };
+    mutable adr outputValue = NULL;
+    af_cpu_operation_take_result(nativeOperation, ?outputValue);
+    const T primitiveValue = outputValue as T;
+    af_free(outputValue);
+    return primitiveValue;
+};
+
+/**
+ * Run a function pointer that returns an owned, non-primitive value. Use
+ * `async_thread_disposable` when the task may be cancelled.
+ */
+types(T)
+when (T is not primitive)
+export async fn async_thread_owned(
+        const T<*any, *any, *any, *any, *any> operation,
+        * const any arg1, * const any arg2, * const any arg3,
+        * const any arg4, * const any arg5) -> T {
+    const AsyncThreadCall call = new AsyncThreadCall(
+        operation, arg1, arg2, arg3, arg4);
+    call.arg5 = arg5;
+    mutable adr nativeOperation = NULL;
+    pause af_cpu_operation_begin(AsyncThreadCall.invoke, NULL, call, NULL,
+        NULL, ?nativeOperation);
+    if nativeOperation == NULL return call.invoke();
+    mutable T outputValue = NULL;
+    af_cpu_operation_take_result(nativeOperation, ?outputValue);
+    return outputValue;
+};
+
+/**
+ * Owned-result variant of `async_thread`. The disposer receives an
+ * unobserved result when the task is cancelled after the operation finishes.
+ */
+types(T)
+when (T is not primitive)
+export async fn async_thread_disposable(
+        const adr operation,
+        const adr disposer, * const any arg1, * const any arg2,
+        * const any arg3, * const any arg4) -> T {
+    const AsyncThreadCall call = new AsyncThreadCall(
+        operation, arg1, arg2, arg3, arg4);
+    mutable adr nativeOperation = NULL;
+    pause af_cpu_operation_begin(AsyncThreadCall.invoke, disposer, call, NULL,
+        NULL, ?nativeOperation);
+    if nativeOperation == NULL return call.invoke();
+    mutable T outputValue = NULL;
+    af_cpu_operation_take_result(nativeOperation, ?outputValue);
+    return outputValue;
+};

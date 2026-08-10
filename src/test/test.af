@@ -15,9 +15,43 @@ import result from "Utils/result";
 import {describe, it, assertEqual, assertTrue, fix, getFixture, assertFalse, beforeEach, afterEach, beforeAll, afterAll, itSkip, summary} from "ATest" under test;
 import JSON from "JSON";
 import { parse } from "JSON/Parse" under parser;
-import {String, Number, Boolean, List, Object, Null, parse} from "JSON" under json;
+import {String, Number, Boolean, List, Object, Null, parse, parseAsync, stringifyAsync} from "JSON" under json;
 import Box from "Memory";
 import {wrap} from "Memory" under box;
+import {async_thread, async_thread_owned} from "concurrency" under task;
+
+class AsyncSchedulerProbe {
+	mutable bool completed;
+
+	fn init() -> Self {
+		my.completed = false;
+		return my;
+	};
+};
+
+fn finishSchedulerProbe(const AsyncSchedulerProbe probe) -> int {
+	sleep(0, 100000000);
+	probe.completed = true;
+	return 1;
+};
+
+fn sumFive(const int a, const int b, const int c, const int d,
+		const int e) -> int {
+	return a + b + c + d + e;
+};
+
+fn stringifyFive(const int a, const int b, const int c, const int d,
+		const int e) -> string {
+	return `{a},{b},{c},{d},{e}`;
+};
+
+async fn runSchedulerProbe(const AsyncSchedulerProbe probe) -> int {
+	return await task.async_thread::<int>(finishSchedulerProbe, probe);
+};
+
+async fn schedulerMarker() -> int {
+	return 1;
+};
 
 class HookState {
 	mutable bool beforeAllRan;
@@ -248,6 +282,75 @@ fn main() -> int{
                     },
                     Err(e) => test.assertEqual(`List`, `Error: {e}`)
                 };
+            });
+
+            test.it("should parse JSON asynchronously", fn () {
+                const string jsonString = "{\"ready\":true}";
+                match run json.parseAsync(jsonString) {
+                    Ok(value) => match value.get("ready") {
+                        Some(ready) => match ready.asBoolean() {
+                            Ok(flag) => test.assertTrue(flag),
+                            Err(e) => test.assertEqual(`Boolean`, `Error: {e}`)
+                        },
+                        None => test.assertTrue(false)
+                    },
+                    Err(e) => test.assertEqual(`Object`, `Error: {e}`)
+                };
+            });
+
+            test.it("should keep the scheduler free during background CPU work", fn () {
+                const AsyncSchedulerProbe probe = new AsyncSchedulerProbe();
+                const let pending = runSchedulerProbe(probe);
+                detach pending;
+                sleep(0, 10000000);
+                const int marker = run schedulerMarker();
+                const bool schedulerProgressed = probe.completed == false;
+                sleep(0, 150000000);
+                test.assertTrue(schedulerProgressed);
+                test.assertTrue(probe.completed);
+                test.assertEqual(marker, 1);
+            });
+
+            test.it("should run generic background functions with five arguments", fn () {
+                const int total = run task.async_thread::<int>(
+                    sumFive, 1, 2, 3, 4, 5);
+                test.assertEqual(total, 15);
+
+                const string joined = run task.async_thread_owned::<string>(
+                    stringifyFive, 1, 2, 3, 4, 5);
+                test.assertTrue(joined == "1,2,3,4,5");
+            });
+
+            test.it("should safely cancel background CPU work", fn () {
+                const AsyncSchedulerProbe probe = new AsyncSchedulerProbe();
+                const let pending = runSchedulerProbe(probe);
+                spawn pending;
+                sleep(0, 10000000);
+                cancel pending;
+                sleep(0, 150000000);
+                test.assertTrue(probe.completed);
+            });
+
+            test.it("should preserve parse errors asynchronously", fn () {
+                const string jsonString = "{";
+                match run json.parseAsync(jsonString) {
+                    Ok(__value) => test.assertTrue(false),
+                    Err(__error) => test.assertTrue(true)
+                };
+            });
+
+            test.it("should serialize JSON asynchronously", fn () {
+                const JSON value = json.String("async");
+                const string compact = run value.stringifyAsync();
+                test.assertTrue(compact == "\"async\"");
+
+                const let values = new vector::<Box::<JSON>>();
+                values.push_back(box.wrap(json.Number(7)));
+                const JSON list = json.List(values);
+                const string pretty = run json.stringifyAsync(list, 1);
+                test.assertTrue(pretty == "[\n  7\n]");
+                const string memberPretty = run list.stringifyPrettyAsync(1);
+                test.assertTrue(memberPretty == pretty);
             });
             
             test.describe("JSON.parse", fn () {

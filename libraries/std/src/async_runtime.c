@@ -316,6 +316,7 @@ typedef struct af_task af_task;
 typedef struct af_waiter af_waiter;
 typedef struct af_timer af_timer;
 typedef struct af_io_operation af_io_operation;
+typedef struct af_cpu_operation af_cpu_operation;
 
 typedef struct af_io_ring {
   int fd;
@@ -362,6 +363,7 @@ struct af_task {
   unsigned char reclaim_claimed;
   unsigned char detach_in_progress;
   af_io_operation *pending_io;
+  af_cpu_operation *pending_cpu;
   af_timer *pending_timer;
   int64_t io_begin_error;
 };
@@ -381,6 +383,24 @@ struct af_io_operation {
   _Atomic int64_t result;
 };
 
+struct af_cpu_operation {
+  af_task *task;
+  void *(*function)(void *, void *, void *, void *);
+  void *(*disposer)(void *, void *, void *, void *);
+  void *arguments[4];
+  _Atomic int completed;
+  _Atomic uint64_t result;
+};
+
+static void af_cpu_operation_dispose_result(af_cpu_operation *operation) {
+  if (operation == NULL || operation->disposer == NULL)
+    return;
+  void *result = (void *)(uintptr_t)atomic_load_explicit(
+      &operation->result, memory_order_relaxed);
+  if (result != NULL)
+    af_worker_thread_invoke(operation->disposer, result, NULL, NULL, NULL);
+}
+
 typedef struct af_runtime {
   pthread_mutex_t mutex;
   pthread_cond_t ready;
@@ -399,6 +419,7 @@ static _Thread_local af_task *af_current_task;
 
 static void af_task_wake_internal(af_task *task);
 static void af_task_reclaim_detached(af_task *task);
+void af_task_detach(void *opaque);
 
 #if defined(__x86_64__)
 #define AF_ENTRY __attribute__((force_align_arg_pointer))
@@ -434,8 +455,9 @@ static int af_task_claim_reclaim(af_task *task, int detached_only) {
   pthread_mutex_lock(&task->mutex);
   int reclaimable =
       af_terminal(task->status) && task->pending_io == NULL &&
-      task->pending_timer == NULL && task->awaited == NULL &&
-      task->waiters == NULL && !task->detach_in_progress;
+      task->pending_cpu == NULL && task->pending_timer == NULL &&
+      task->awaited == NULL && task->waiters == NULL &&
+      !task->detach_in_progress;
   if (reclaimable && (!detached_only || task->detached) &&
       !task->reclaim_claimed) {
     task->reclaim_claimed = 1;
@@ -821,7 +843,16 @@ static void *af_runtime_worker(void *unused) {
     if (task->cancel_requested) {
       task->status = AF_TASK_CANCELLED;
       task->awaited = NULL;
+      af_cpu_operation *completed_cpu = task->pending_cpu;
+      if (completed_cpu != NULL &&
+          atomic_load_explicit(&completed_cpu->completed,
+                               memory_order_acquire))
+        task->pending_cpu = NULL;
+      else
+        completed_cpu = NULL;
       pthread_mutex_unlock(&task->mutex);
+      af_cpu_operation_dispose_result(completed_cpu);
+      free(completed_cpu);
       af_wake_waiters(task);
       af_task_reclaim_detached(task);
       continue;
@@ -840,7 +871,16 @@ static void *af_runtime_worker(void *unused) {
     pthread_mutex_lock(&task->mutex);
     enum af_task_status status = task->status;
     int cancelled = task->cancel_requested;
+    af_cpu_operation *cancelled_cpu = NULL;
+    if ((cancelled || af_terminal(status)) && task->pending_cpu != NULL &&
+        atomic_load_explicit(&task->pending_cpu->completed,
+                             memory_order_acquire)) {
+      cancelled_cpu = task->pending_cpu;
+      task->pending_cpu = NULL;
+    }
     pthread_mutex_unlock(&task->mutex);
+    af_cpu_operation_dispose_result(cancelled_cpu);
+    free(cancelled_cpu);
     if (status == AF_TASK_RUNNING)
       af_finish(task, cancelled ? AF_TASK_CANCELLED : AF_TASK_COMPLETED,
                 result);
@@ -1121,14 +1161,21 @@ AF_ENTRY void af_task_cancel(void *opaque) {
       atomic_load_explicit(&operation->completed, memory_order_acquire);
   if (release_operation)
     task->pending_io = NULL;
+  af_cpu_operation *cpu_operation = task->pending_cpu;
+  af_task *awaited = task->awaited;
   int idle = task->status == AF_TASK_CREATED ||
              task->status == AF_TASK_WAITING ||
-             task->status == AF_TASK_SUSPENDED;
+             (task->status == AF_TASK_SUSPENDED && cpu_operation == NULL);
   if (idle)
     task->status = AF_TASK_CANCELLED;
   pthread_mutex_unlock(&task->mutex);
   if (release_operation)
     free(operation);
+  /* Cancellation means this task will never observe its awaited child's
+   * result. Detach the child so it can reclaim itself after waking/removing
+   * this task's waiter. */
+  if (awaited != NULL)
+    af_task_detach(awaited);
   if (idle)
     af_wake_waiters(task);
   af_task_reclaim_detached(task);
@@ -1147,6 +1194,89 @@ AF_ENTRY void af_task_detach(void *opaque) {
   task->detach_in_progress = 0;
   pthread_mutex_unlock(&task->mutex);
   af_task_reclaim_detached(task);
+}
+
+static void *af_cpu_operation_run(void *opaque) {
+  af_cpu_operation *operation = opaque;
+  void *raw_result =
+      af_worker_thread_invoke(operation->function, operation->arguments[0],
+                              operation->arguments[1], operation->arguments[2],
+                              operation->arguments[3]);
+  af_task *task = operation->task;
+  pthread_mutex_lock(&task->mutex);
+  atomic_store_explicit(&operation->result, (uint64_t)(uintptr_t)raw_result,
+                        memory_order_relaxed);
+  atomic_store_explicit(&operation->completed, 1, memory_order_release);
+  pthread_mutex_unlock(&task->mutex);
+  af_task_wake_internal(task);
+  return NULL;
+}
+
+AF_ENTRY int af_cpu_operation_begin(void *function, void *disposer, void *arg1,
+                                    void *arg2, void *arg3, void **output) {
+  af_task *task = af_current_task;
+  if (output != NULL)
+    *output = NULL;
+  if (task == NULL || function == NULL || output == NULL)
+    return -EINVAL;
+
+  af_cpu_operation *operation = calloc(1, sizeof(*operation));
+  if (operation == NULL) {
+    af_task_wake_internal(task);
+    return -ENOMEM;
+  }
+  operation->task = task;
+  operation->function =
+      (void *(*)(void *, void *, void *, void *))function;
+  operation->disposer =
+      (void *(*)(void *, void *, void *, void *))disposer;
+  operation->arguments[0] = arg1;
+  operation->arguments[1] = arg2;
+  operation->arguments[2] = arg3;
+  operation->arguments[3] = NULL;
+
+  pthread_mutex_lock(&task->mutex);
+  if (task->pending_cpu != NULL) {
+    pthread_mutex_unlock(&task->mutex);
+    free(operation);
+    af_task_wake_internal(task);
+    return -EBUSY;
+  }
+  task->pending_cpu = operation;
+  pthread_mutex_unlock(&task->mutex);
+  *output = operation;
+
+  pthread_t worker;
+  int status = pthread_create(&worker, NULL, af_cpu_operation_run, operation);
+  if (status != 0) {
+    pthread_mutex_lock(&task->mutex);
+    if (task->pending_cpu == operation)
+      task->pending_cpu = NULL;
+    pthread_mutex_unlock(&task->mutex);
+    *output = NULL;
+    free(operation);
+    af_task_wake_internal(task);
+    return -status;
+  }
+  pthread_detach(worker);
+  return 0;
+}
+
+AF_ENTRY void af_cpu_operation_take_result(void *opaque, uint64_t *output) {
+  af_cpu_operation *operation = opaque;
+  if (operation == NULL)
+    return;
+  uint64_t result = 0;
+  if (atomic_load_explicit(&operation->completed, memory_order_acquire))
+    result = atomic_load_explicit(&operation->result, memory_order_relaxed);
+  af_task *task = operation->task;
+  pthread_mutex_lock(&task->mutex);
+  if (task->pending_cpu == operation)
+    task->pending_cpu = NULL;
+  pthread_mutex_unlock(&task->mutex);
+  if (output != NULL)
+    *output = result;
+  free(operation);
 }
 
 AF_ENTRY int beginTimer(int milliseconds) {
