@@ -4,7 +4,9 @@
 #include "CodeGenerator/ScopeManager.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/AST/Statements/Dec.hpp"
+#include "Parser/AST/Statements/Function.hpp"
 #include "Parser/AST/Statements/Inc.hpp"
+#include "Parser/AST/Statements/Return.hpp"
 #include "catch.hpp"
 
 #define MOCKGEN                                                                \
@@ -17,6 +19,51 @@ bool compareFunc(const ast::Function &F, const std::string &input) {
     return true;
   }
   return false;
+}
+
+namespace {
+class TrackedStatement : public ast::Statement {
+public:
+  explicit TrackedStatement(int &destructions) : destructions(destructions) {}
+  ~TrackedStatement() override { ++destructions; }
+
+private:
+  int &destructions;
+};
+} // namespace
+
+TEST_CASE("statement allocation scopes release compiler AST nodes",
+          "[codegen][memory]") {
+  int destructions = 0;
+  {
+    ast::StatementAllocationScope allocations;
+    new TrackedStatement(destructions);
+    REQUIRE(destructions == 0);
+  }
+  REQUIRE(destructions == 1);
+}
+
+TEST_CASE("function shells do not copy implementation bodies",
+          "[codegen][memory]") {
+  ast::Return body;
+  body.expr = nullptr;
+  ast::Function original;
+  original.statement = &body;
+
+  ast::Function fullCopy(original, false);
+  ast::Function shellCopy(original, false, false);
+
+  REQUIRE(fullCopy.statement != nullptr);
+  REQUIRE(fullCopy.statement != original.statement);
+  REQUIRE(shellCopy.statement == nullptr);
+}
+
+TEST_CASE("functions do not default to masked generation",
+          "[codegen][memory]") {
+  ast::Function function;
+  REQUIRE_FALSE(function.mask);
+  REQUIRE(function.scope == ast::Public);
+  REQUIRE(function.op == ast::None);
 }
 
 TEST_CASE("canAssign will not assign to types with different names",

@@ -322,6 +322,27 @@ static void collectTypeImportIdents(ast::Statement *stmt,
   }
 }
 
+static bool containsGenericClass(ast::Statement *stmt) {
+  if (stmt == nullptr)
+    return false;
+  std::vector<ast::Statement *> stack{stmt};
+  while (!stack.empty()) {
+    ast::Statement *node = stack.back();
+    stack.pop_back();
+    if (node == nullptr)
+      continue;
+    if (auto seq = dynamic_cast<ast::Sequence *>(node)) {
+      stack.push_back(seq->Statement2);
+      stack.push_back(seq->Statement1);
+      continue;
+    }
+    if (auto cls = dynamic_cast<ast::Class *>(node);
+        cls != nullptr && !cls->genericTypes.empty())
+      return true;
+  }
+  return false;
+}
+
 static asmc::File
 emitTypeShells(ast::Statement *added, gen::CodeGenerator &generator,
                const std::string &id, const std::string &cwd,
@@ -533,7 +554,8 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     OutputFile << generator.ImportsOnly(added, true);
     std::unordered_map<std::string, std::string> nsMap;
     collectImportNamespaces(added, nsMap);
-    ast::Statement *templateRoot = ast::deepCopy(added);
+    ast::Statement *templateRoot =
+        containsGenericClass(added) ? ast::deepCopy(added) : nullptr;
     if (this->hasFunctions)
       OutputFile << emitTypeShells(added, generator, id, this->cwd, nsMap,
                                    templateRoot, this->path, "");
@@ -664,7 +686,8 @@ Import::generateClasses(gen::CodeGenerator &generator) {
 
   std::unordered_map<std::string, std::string> nsMap;
   collectImportNamespaces(added, nsMap);
-  ast::Statement *templateRoot = ast::deepCopy(added);
+  ast::Statement *templateRoot =
+      containsGenericClass(added) ? ast::deepCopy(added) : nullptr;
   OutputFile << emitTypeShells(added, generator, id, this->cwd, nsMap,
                                templateRoot, this->path, "");
 

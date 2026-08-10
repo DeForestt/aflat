@@ -1378,6 +1378,11 @@ static std::string sanitizeGenerics(const std::string &input) {
 bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug) {
   ScopedTimer buildTimer("build", path);
+  ast::StatementAllocationScope statementAllocations;
+  ast::TypeAllocationScope astTypeAllocations;
+  lex::TokenAllocationScope tokenAllocations;
+  asmc::InstructionAllocationScope instructionAllocations;
+  gen::TypeAllocationScope typeAllocations;
   bool success = true;
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;

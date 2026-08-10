@@ -175,6 +175,11 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
   }
 };
 
+Union::~Union() {
+  for (auto *alias : aliases)
+    delete alias;
+}
+
 gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   // if the union is generic, do not generate code for it. It will be
   // generated when it is instantiated with specific types.

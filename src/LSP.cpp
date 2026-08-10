@@ -1728,6 +1728,9 @@ JsonValue buildSemanticTokens(const std::string &text,
 std::vector<JsonValue> analyzeDocument(const std::string &uri,
                                        const std::string &text,
                                        const std::string &libPath) {
+  ast::StatementAllocationScope statementAllocations;
+  ast::TypeAllocationScope typeAllocations;
+  lex::TokenAllocationScope tokenAllocations;
   std::vector<JsonValue> diagnostics;
   std::string path = pathFromUri(uri);
   std::string currentDir = std::filesystem::path(path).parent_path().string();

@@ -1,5 +1,84 @@
 #include "ASM.hpp"
 
+#include <algorithm>
+#include <cstdint>
+#include <vector>
+
+namespace {
+
+struct InstructionAllocations {
+  std::vector<asmc::Instruction *> objects;
+  void *pending = nullptr;
+  std::size_t pendingSize = 0;
+  unsigned int activeScopes = 0;
+};
+
+thread_local InstructionAllocations instructionAllocations;
+
+void trackInstruction(asmc::Instruction *instruction) {
+  if (instructionAllocations.pending == nullptr)
+    return;
+  const auto address = reinterpret_cast<std::uintptr_t>(instruction);
+  const auto begin =
+      reinterpret_cast<std::uintptr_t>(instructionAllocations.pending);
+  if (address >= begin && address < begin + instructionAllocations.pendingSize)
+    instructionAllocations.objects.push_back(instruction);
+  instructionAllocations.pending = nullptr;
+  instructionAllocations.pendingSize = 0;
+}
+
+void untrackInstruction(asmc::Instruction *instruction) {
+  if (instructionAllocations.objects.empty())
+    return;
+  if (instructionAllocations.objects.back() == instruction) {
+    instructionAllocations.objects.pop_back();
+    return;
+  }
+  auto found = std::find(instructionAllocations.objects.begin(),
+                         instructionAllocations.objects.end(), instruction);
+  if (found != instructionAllocations.objects.end())
+    instructionAllocations.objects.erase(found);
+}
+
+} // namespace
+
+asmc::InstructionAllocationScope::InstructionAllocationScope()
+    : checkpoint(instructionAllocations.objects.size()) {
+  ++instructionAllocations.activeScopes;
+}
+
+asmc::InstructionAllocationScope::~InstructionAllocationScope() {
+  while (instructionAllocations.objects.size() > checkpoint)
+    delete instructionAllocations.objects.back();
+  --instructionAllocations.activeScopes;
+}
+
+void *asmc::Instruction::operator new(std::size_t size) {
+  void *allocation = ::operator new(size);
+  if (instructionAllocations.activeScopes > 0) {
+    instructionAllocations.pending = allocation;
+    instructionAllocations.pendingSize = size;
+  }
+  return allocation;
+}
+
+void asmc::Instruction::operator delete(void *ptr) noexcept {
+  ::operator delete(ptr);
+}
+
+void asmc::Instruction::operator delete(void *ptr, std::size_t) noexcept {
+  ::operator delete(ptr);
+}
+
+asmc::Instruction::Instruction() { trackInstruction(this); }
+
+asmc::Instruction::Instruction(const Instruction &other)
+    : logicalLine(other.logicalLine) {
+  trackInstruction(this);
+}
+
+asmc::Instruction::~Instruction() { untrackInstruction(this); }
+
 std::string asmc::Instruction::toString() { return (""); }
 
 std::string asmc::SysCall::toString() { return "\tsyscall\t\n"; }

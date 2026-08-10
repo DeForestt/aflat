@@ -1,6 +1,7 @@
 #ifndef STRUCT
 #define STRUCT
 
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -21,6 +22,29 @@ class CodeGenerator;
 }; // namespace gen
 
 namespace ast {
+
+class StatementAllocationScope {
+public:
+  StatementAllocationScope();
+  ~StatementAllocationScope();
+  StatementAllocationScope(const StatementAllocationScope &) = delete;
+  StatementAllocationScope &
+  operator=(const StatementAllocationScope &) = delete;
+
+private:
+  std::size_t checkpoint = 0;
+};
+
+class TypeAllocationScope {
+public:
+  TypeAllocationScope();
+  ~TypeAllocationScope();
+  TypeAllocationScope(const TypeAllocationScope &) = delete;
+  TypeAllocationScope &operator=(const TypeAllocationScope &) = delete;
+
+private:
+  std::size_t checkpoint = 0;
+};
 
 struct SourceLocation {
   std::string file;
@@ -72,10 +96,12 @@ public:
 
 class Statement {
 public:
-  Statement() = default;
-  Statement(const Statement &other)
-      : when(other.when), sourceLocation(other.sourceLocation),
-        locked(other.locked), logicalLine(other.logicalLine) {}
+  Statement();
+  Statement(const Statement &other);
+  virtual ~Statement();
+  static void *operator new(std::size_t size);
+  static void operator delete(void *ptr) noexcept;
+  static void operator delete(void *ptr, std::size_t) noexcept;
   std::optional<When> when; // When clause for templates
   std::optional<SourceLocation> sourceLocation;
   bool locked = false;
@@ -149,7 +175,7 @@ public:
 class Type {
 public:
   std::string typeName;
-  asmc::Size size;
+  asmc::Size size = asmc::AUTO;
   asmc::OpType opType = asmc::Hard;
   int arraySize = 1;
   static bool compare(const Type &t, const std::string &name);
@@ -158,11 +184,11 @@ public:
   bool safeType = false;
   bool pedantic = false;
   bool uniqueType = false;
-  Type *typeHint;
+  Type *typeHint = nullptr;
   bool isReference = false;
   bool isRvalue = false;
   bool readOnly = false;
-  asmc::Size refSize;
+  asmc::Size refSize = asmc::AUTO;
 
   struct FPointerArgs {
     Type *returnType = nullptr;
@@ -170,7 +196,7 @@ public:
     std::vector<int> optConvertionIndices;
     std::vector<Type> argTypes;
     std::string id;
-    asmc::Size size;
+    asmc::Size size = asmc::AUTO;
     bool isFPointer = false;
     bool returnImmutable = false;
     bool returnLowOwnership = false;
@@ -178,9 +204,16 @@ public:
 
   FPointerArgs fPointerArgs;
 
-  Type() = default;
-  Type(const std::string &typeName, const asmc::Size &size)
-      : typeName(typeName), size(size){};
+  Type();
+  Type(const Type &other);
+  Type(Type &&other) noexcept;
+  Type &operator=(const Type &other) = default;
+  Type &operator=(Type &&other) noexcept = default;
+  ~Type();
+  static void *operator new(std::size_t size);
+  static void operator delete(void *ptr) noexcept;
+  static void operator delete(void *ptr, std::size_t) noexcept;
+  Type(const std::string &typeName, const asmc::Size &size);
 };
 
 class Arg {

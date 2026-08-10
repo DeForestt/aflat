@@ -1,16 +1,52 @@
 #include "Scanner.hpp"
 
+#include <algorithm>
 #include <cctype>
+#include <cstdint>
 
 #include <iostream>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "Exceptions.hpp"
 
 namespace lex {
 
 namespace {
+
+struct TokenAllocations {
+  std::vector<lex::Token *> objects;
+  void *pending = nullptr;
+  std::size_t pendingSize = 0;
+  unsigned int activeScopes = 0;
+};
+
+thread_local TokenAllocations tokenAllocations;
+
+void trackToken(lex::Token *token) {
+  if (tokenAllocations.pending == nullptr)
+    return;
+  const auto address = reinterpret_cast<std::uintptr_t>(token);
+  const auto begin = reinterpret_cast<std::uintptr_t>(tokenAllocations.pending);
+  if (address >= begin && address < begin + tokenAllocations.pendingSize)
+    tokenAllocations.objects.push_back(token);
+  tokenAllocations.pending = nullptr;
+  tokenAllocations.pendingSize = 0;
+}
+
+void untrackToken(lex::Token *token) {
+  if (tokenAllocations.objects.empty())
+    return;
+  if (tokenAllocations.objects.back() == token) {
+    tokenAllocations.objects.pop_back();
+    return;
+  }
+  auto found = std::find(tokenAllocations.objects.begin(),
+                         tokenAllocations.objects.end(), token);
+  if (found != tokenAllocations.objects.end())
+    tokenAllocations.objects.erase(found);
+}
 
 thread_local int generatedDepth = 0;
 
@@ -24,6 +60,42 @@ T *stamp(T *token, int line, int column, size_t start, size_t end) {
 }
 
 } // namespace
+
+TokenAllocationScope::TokenAllocationScope()
+    : checkpoint(tokenAllocations.objects.size()) {
+  ++tokenAllocations.activeScopes;
+}
+
+TokenAllocationScope::~TokenAllocationScope() {
+  while (tokenAllocations.objects.size() > checkpoint)
+    delete tokenAllocations.objects.back();
+  --tokenAllocations.activeScopes;
+}
+
+void *Token::operator new(std::size_t size) {
+  void *allocation = ::operator new(size);
+  if (tokenAllocations.activeScopes > 0) {
+    tokenAllocations.pending = allocation;
+    tokenAllocations.pendingSize = size;
+  }
+  return allocation;
+}
+
+void Token::operator delete(void *ptr) noexcept { ::operator delete(ptr); }
+
+void Token::operator delete(void *ptr, std::size_t) noexcept {
+  ::operator delete(ptr);
+}
+
+Token::Token() { trackToken(this); }
+
+Token::Token(const Token &other)
+    : lineCount(other.lineCount), generated(other.generated),
+      column(other.column), length(other.length) {
+  trackToken(this);
+}
+
+Token::~Token() { untrackToken(this); }
 
 struct Lexer::Impl {
   LinkedList<Token *> Scan(string input, int startLine);

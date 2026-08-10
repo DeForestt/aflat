@@ -2,6 +2,7 @@
 #define CODEGEN_TYPES_HPP
 
 #include <boost/integer/integer_log2.hpp>
+#include <cstddef>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -12,6 +13,17 @@
 #include "Parser/AST/Statements.hpp"
 
 namespace gen {
+
+class TypeAllocationScope {
+public:
+  TypeAllocationScope();
+  ~TypeAllocationScope();
+  TypeAllocationScope(const TypeAllocationScope &) = delete;
+  TypeAllocationScope &operator=(const TypeAllocationScope &) = delete;
+
+private:
+  std::size_t checkpoint = 0;
+};
 
 struct FieldState {
   enum class Status : uint8_t { Unknown, Uninit, Valid, Moved, Invalid };
@@ -61,6 +73,12 @@ struct MethodSummary {
 
 class Type {
 public:
+  Type();
+  Type(const Type &other);
+  virtual ~Type();
+  static void *operator new(std::size_t size);
+  static void operator delete(void *ptr) noexcept;
+  static void operator delete(void *ptr, std::size_t) noexcept;
   std::string Ident;
   bool hidden = false;
   links::LinkedList<Symbol> publicSymbols;

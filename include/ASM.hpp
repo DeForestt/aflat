@@ -1,11 +1,24 @@
 #if !defined(ASM)
 #define ASM
 
+#include <cstddef>
 #include <string>
 
 #include "LinkedList.hpp"
 
 namespace asmc {
+
+class InstructionAllocationScope {
+public:
+  InstructionAllocationScope();
+  ~InstructionAllocationScope();
+  InstructionAllocationScope(const InstructionAllocationScope &) = delete;
+  InstructionAllocationScope &
+  operator=(const InstructionAllocationScope &) = delete;
+
+private:
+  std::size_t checkpoint = 0;
+};
 
 enum OpType {
   Float,
@@ -15,6 +28,12 @@ enum Size { Byte, Word, DWord, QWord, AUTO };
 
 class Instruction {
 public:
+  Instruction();
+  Instruction(const Instruction &other);
+  virtual ~Instruction();
+  static void *operator new(std::size_t size);
+  static void operator delete(void *ptr) noexcept;
+  static void operator delete(void *ptr, std::size_t) noexcept;
   virtual std::string toString();
   int logicalLine = 0;
 };

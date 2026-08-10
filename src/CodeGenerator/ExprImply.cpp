@@ -16,7 +16,8 @@ ast::Expr *gen::CodeGenerator::imply(ast::Expr *expr, std::string typeName,
                                      bool panic) {
   // find the type
   // find the type of the expression
-  auto exprResult = this->GenExpr(expr, *(new asmc::File()), asmc::AUTO, "");
+  asmc::File file;
+  auto exprResult = this->GenExpr(expr, file, asmc::AUTO, "");
   std::string exprType = exprResult.type;
 
   auto type = typeList()[typeName];
