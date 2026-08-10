@@ -18,7 +18,7 @@ import { parse } from "JSON/Parse" under parser;
 import {String, Number, Boolean, List, Object, Null, parse, parseAsync, stringifyAsync} from "JSON" under json;
 import Box from "Memory";
 import {wrap} from "Memory" under box;
-import {async_thread, async_thread_owned} from "concurrency" under task;
+import {async_thread} from "concurrency" under task;
 
 class AsyncSchedulerProbe {
 	mutable bool completed;
@@ -316,7 +316,7 @@ fn main() -> int{
                     sumFive, 1, 2, 3, 4, 5);
                 test.assertEqual(total, 15);
 
-                const string joined = run task.async_thread_owned::<string>(
+                const string joined = run task.async_thread::<string>(
                     stringifyFive, 1, 2, 3, 4, 5);
                 test.assertTrue(joined == "1,2,3,4,5");
             });

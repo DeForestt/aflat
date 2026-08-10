@@ -213,7 +213,14 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
   SourceLocationScope sourceLocation(*this, STMT->sourceLocation);
   logicalLine() = STMT->logicalLine;
 
-  if (STMT->when && !this->whenSatisfied(*STMT->when)) {
+  /* A generic function's predicates refer to template names that are not
+   * concrete until the call site instantiates it. Keep the template in the
+   * generic function table now; replaceTypes() will specialize the predicate
+   * before this check runs again for the concrete function. */
+  auto *function = dynamic_cast<ast::Function *>(STMT);
+  const bool deferGenericWhen =
+      function != nullptr && !function->genericTypes.empty();
+  if (STMT->when && !deferGenericWhen && !this->whenSatisfied(*STMT->when)) {
     return OutputFile;
   }
 

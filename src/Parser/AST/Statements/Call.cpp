@@ -285,6 +285,12 @@ gen::GenerationResult Call::generateAttempt(
         this->Args.invert();
 
         func->replaceTypes(genericMap);
+        if (func->when.has_value() &&
+            !generator.whenSatisfied(func->when.value())) {
+          this->requestOverloadRetry(
+              generator, overloadTable, overloadIdent, currentOverloadIndex,
+              "Generic constraints are not satisfied for function: " + ident);
+        }
         func->ident.ident = new_ident;
         func->genericTypes.clear();
         func->scope = ast::ScopeMod::Private;

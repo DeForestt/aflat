@@ -390,9 +390,26 @@ Function::Function(const ScopeMod &scope,
 }
 
 gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
+  auto registerGenericFunction = [&]() {
+    auto &functions = generator.genericFunctions();
+    const std::string baseIdent = this->ident.ident;
+    int nextOverload = 0;
+    const std::string overloadPrefix = baseIdent + "_ovl";
+    for (const auto &candidate : functions) {
+      if (candidate.ident.ident == baseIdent ||
+          candidate.ident.ident.rfind(overloadPrefix, 0) == 0)
+        nextOverload = std::max(nextOverload, candidate.overloadIndex + 1);
+    }
+    if (nextOverload > 0) {
+      this->overloadIndex = nextOverload;
+      this->ident.ident += "_ovl" + std::to_string(nextOverload);
+    }
+    functions << *this;
+  };
+
   if (this->isAsync && this->statement != nullptr) {
     if (!this->genericTypes.empty()) {
-      generator.genericFunctions() << *this;
+      registerGenericFunction();
       return {asmc::File(), std::nullopt};
     }
     const bool asyncMethod = generator.scope() != nullptr && !globalLocked;
@@ -476,7 +493,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
   // if the function is generic, do not generate code for it. It will be
   // generated when it is called with specific types.
   if (this->genericTypes.size() > 0) {
-    generator.genericFunctions() << *this;
+    registerGenericFunction();
     return {asmc::File(), std::nullopt};
   }
 

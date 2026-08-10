@@ -477,6 +477,7 @@ private class AsyncThreadCall {
  * suspending only the current native task. Up to five arguments are forwarded.
  */
 types(T)
+when (T is primitive)
 export async fn async_thread(
         const T<*any, *any, *any, *any, *any> operation,
         * const any arg1, * const any arg2, * const any arg3,
@@ -486,8 +487,7 @@ export async fn async_thread(
     call.arg5 = arg5;
     const adr nativeOperation = NULL;
     pause af_cpu_operation_begin(AsyncThreadCall.invokePrimitive, af_free,
-        call, NULL,
-        NULL, ?nativeOperation);
+        call, NULL, NULL, ?nativeOperation);
     if nativeOperation == NULL {
         const adr fallback = call.invokePrimitive();
         const T fallbackValue = fallback as T;
@@ -502,12 +502,13 @@ export async fn async_thread(
 };
 
 /**
- * Run a function pointer that returns an owned, non-primitive value. Use
- * `async_thread_disposable` when the task may be cancelled.
+ * Run a function pointer returning an owned, non-primitive value without
+ * cancellation cleanup. Use this overload when the result is guaranteed to be
+ * observed; otherwise use `async_thread_disposable`.
  */
 types(T)
 when (T is not primitive)
-export async fn async_thread_owned(
+export async fn async_thread(
         const T<*any, *any, *any, *any, *any> operation,
         * const any arg1, * const any arg2, * const any arg3,
         * const any arg4, * const any arg5) -> T {
