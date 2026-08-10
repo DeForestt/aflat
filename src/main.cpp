@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cerrno>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
@@ -85,6 +86,9 @@ struct DocInfo {
 
 ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
                            const std::string &libPath);
+ModuleResult compileModuleIsolated(const std::string &mod,
+                                   const cfg::Config &config,
+                                   const std::string &libPath);
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
 bool runConfig(cfg::Config &config, const std::string &libPath);
 
@@ -2292,6 +2296,41 @@ ModuleResult compileModule(const std::string &mod, const cfg::Config &config,
   return {src, asmPath, objPath, false, false};
 }
 
+ModuleResult compileModuleIsolated(const std::string &mod,
+                                   const cfg::Config &config,
+                                   const std::string &libPath) {
+  namespace fs = std::filesystem;
+  const std::string src = "./src/" + mod + ".af";
+  const std::string cacheRoot = gCoverage ? "./.cache/coverage/" : "./.cache/";
+  const std::string asmPath = cacheRoot + mod + ".s";
+  const std::string objPath = cacheRoot + mod + ".o";
+
+  if (!config.debug && gUseCache &&
+      objectUpToDate(src, objPath, libPath + "head/")) {
+    return compileModule(mod, config, libPath);
+  }
+
+  fs::create_directories(fs::path(asmPath).parent_path());
+  const pid_t child = fork();
+  if (child == -1)
+    return compileModule(mod, config, libPath);
+
+  if (child == 0) {
+    const ModuleResult result = compileModule(mod, config, libPath);
+    std::cout.flush();
+    std::cerr.flush();
+    _exit(result.success ? 0 : 1);
+  }
+
+  int status = 0;
+  while (waitpid(child, &status, 0) == -1) {
+    if (errno != EINTR)
+      return {src, asmPath, objPath, false, false};
+  }
+  const bool success = WIFEXITED(status) && WEXITSTATUS(status) == 0;
+  return {src, asmPath, objPath, success, success};
+}
+
 bool assembleModules(const std::vector<ModuleResult> &modules,
                      const cfg::Config &config, const std::string &libPath) {
   namespace fs = std::filesystem;
@@ -2390,7 +2429,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
     }
   } else {
     for (const auto &mod : modules) {
-      ModuleResult r = compileModule(mod, config, libPath);
+      ModuleResult r = compileModuleIsolated(mod, config, libPath);
       if (!r.success) {
         hasError = true;
       }
