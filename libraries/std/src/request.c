@@ -448,6 +448,7 @@ _aflat_server_spinUp(short port, int requestSize,
     requestHandler(request, &response);
     if (response != NULL) {
       _aflat_send_all(clientSocket, response, strlen(response));
+      af_free(response);
     }
     af_free(request);
     close(clientSocket);
@@ -497,12 +498,16 @@ _serve(int port, char *(*handler)(char *, void *), void *data) {
 
   char *request = NULL;
   if (_aflat_read_request(new_socket, 4096, &request) < 0) {
+    if (request != NULL) af_free(request);
     close(new_socket);
     close(server_fd);
     return -1;
   }
   char *response = handler(request, data);
-  send(new_socket, response, strlen(response), 0);
+  if (response != NULL) {
+    send(new_socket, response, strlen(response), 0);
+    af_free(response);
+  }
   af_free(request);
   close(new_socket);
   close(server_fd);
@@ -750,7 +755,10 @@ serve_sync(int port, char *(*handler)(char *, void *), void *data) {
       continue;
     }
     char *response = handler(request, data);
-    send(new_socket, response, strlen(response), 0);
+    if (response != NULL) {
+      send(new_socket, response, strlen(response), 0);
+      af_free(response);
+    }
     af_free(request);
     close(new_socket);
   }

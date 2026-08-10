@@ -29,9 +29,8 @@ class MapNode {
     };
 
     private bool insertRight(const adr key, const any data) {
-        const let newNode = new MapNode(key, data);
         if my.right == NULL {
-            my.right = newNode;
+            my.right = new MapNode(key, data);
             return true;
         } else {
             return my.right.input(key, data);
@@ -39,9 +38,8 @@ class MapNode {
     };
 
     private bool insertLeft(const adr key, const any data) {
-        const let newNode = new MapNode(key, data);
         if my.left == NULL {
-            my.left = newNode;
+            my.left = new MapNode(key, data);
             return true;
         } else {
             return my.left.input(key, data);
@@ -67,22 +65,6 @@ class MapNode {
     public int normalize() {
         if my.left != NULL my.left.normalize();
         if my.right != NULL my.right.normalize();
-
-        if my.left != NULL {
-            if my.left.right != NULL {
-                const MapNode temp = my.left.right;
-                my.left.right = NULL;
-                my.left = temp;
-            };
-        };
-
-        if my.right != NULL {
-            if my.right.left != NULL {
-                const MapNode temp = my.right.left;
-                my.right.left = NULL;
-                my.right = temp;
-            };
-        };
 
         return 0;
     };
@@ -154,6 +136,20 @@ class MapNode {
             keys.stitch(my.right.typeSafeKeys());
         };
         return keys;
+    };
+
+    fn del() -> void {
+        if my.left != NULL {
+            const MapNode left = my.left;
+            my.left = NULL;
+            delete left;
+        };
+        if my.right != NULL {
+            const MapNode right = my.right;
+            my.right = NULL;
+            delete right;
+        };
+        af_free(my.key);
     };
 };
 
@@ -229,6 +225,14 @@ class Map {
     };
 
     void clear() {
-        my.root = NULL;
+        if my.root != NULL {
+            const MapNode root = my.root;
+            my.root = NULL;
+            delete root;
+        };
+    };
+
+    void del() {
+        my.clear();
     };
 };

@@ -472,7 +472,9 @@ safe dynamic class string {
         char[10] newHead = af_malloc(newLength + 1);
         af_memcpy(newHead, my.head + start, newLength);
         newHead[newLength] = '\0';
-        return new string(newHead);
+        const string newString = new string(newHead);
+        af_free($newHead);
+        return newString;
     };
 
     string trim(* char ch) {
@@ -503,7 +505,9 @@ safe dynamic class string {
         next =: ch;
         next = next + 1;
         next =: '\0';
-        return new string(newHead);
+        const string newString = new string(newHead);
+        af_free($newHead);
+        return newString;
     };
 
     string insert(const int i, const string n) {
@@ -514,7 +518,9 @@ safe dynamic class string {
         af_memcpy(newHead + i, n.head, nLength);
         af_memcpy(newHead + i + nLength, my.head + i, length - i);
         newHead[length + nLength] = '\0';
-        return new string(newHead);
+        const string newString = new string(newHead);
+        af_free($newHead);
+        return newString;
     };
 
     string sort() {

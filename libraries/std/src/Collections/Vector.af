@@ -638,11 +638,13 @@ class vector {
             delete val;
         };
         af_free(my.head);
+        delete my.mutex;
     };
 
     when (T is primitive or T is not unique)
     fn del() {
         af_free(my.head);
+        delete my.mutex;
     };
 
     when (T is not primitive or T is adr)

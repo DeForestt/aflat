@@ -26,6 +26,16 @@ class u_map_entry {
 		return my;
 	};
 
+	when (K is adr)
+	fn del() -> void {
+		af_free(my.key);
+	};
+
+	when (K is not adr)
+	fn del() -> void {
+		return;
+	};
+
 	fn toString() -> string {
 		return `u_map_entry({my.key}, {my.value})`;
 	};
@@ -124,8 +134,24 @@ class u_map_bucket {
 	};
 
 	fn clear() -> void {
+		for int i = 0; i < my.entries.count(); i++ {
+			const u_map_entry::<K, V> entry =
+				my.entries.get_unlocked(i).expect("searched for non-existing unordered_map entry");
+			delete entry;
+		};
+		const vector::<u_map_entry::<K, V>> previous = my.entries;
 		my.entries = new vector::<u_map_entry::<K, V>>();
+		delete previous;
 		return;
+	};
+
+	fn del() -> void {
+		for int i = 0; i < my.entries.count(); i++ {
+			const u_map_entry::<K, V> entry =
+				my.entries.get_unlocked(i).expect("searched for non-existing unordered_map entry");
+			delete entry;
+		};
+		delete my.entries;
 	};
 
 	fn toString() -> string {
@@ -278,6 +304,16 @@ class unordered_map {
 		my.iteratorBucket = 0;
 		my.iteratorEntry = 0;
 		return;
+	};
+
+	fn del() -> void {
+		for int i = 0; i < my.buckets.count(); i++ {
+			const u_map_bucket::<K, V> bucket =
+				my.buckets.get_unlocked(i).expect("searched for non-existing unordered_map bucket");
+			delete bucket;
+		};
+		delete my.buckets;
+		delete my.mutex;
 	};
 
 	fn toString() -> string {

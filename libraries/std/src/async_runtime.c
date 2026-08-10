@@ -359,7 +359,10 @@ struct af_task {
   unsigned char detached;
   unsigned char observed;
   unsigned char wake_pending;
+  unsigned char reclaim_claimed;
+  unsigned char detach_in_progress;
   af_io_operation *pending_io;
+  af_timer *pending_timer;
   int64_t io_begin_error;
 };
 
@@ -395,6 +398,7 @@ static _Thread_local af_runtime *af_current_runtime;
 static _Thread_local af_task *af_current_task;
 
 static void af_task_wake_internal(af_task *task);
+static void af_task_reclaim_detached(af_task *task);
 
 #if defined(__x86_64__)
 #define AF_ENTRY __attribute__((force_align_arg_pointer))
@@ -414,6 +418,36 @@ AF_ENTRY void af_allocator_unlock(void) {
 static int af_terminal(enum af_task_status status) {
   return status == AF_TASK_COMPLETED || status == AF_TASK_FAILED ||
          status == AF_TASK_CANCELLED;
+}
+
+static void af_task_destroy(af_task *task) {
+  if (task == NULL)
+    return;
+  free(task->frame);
+  pthread_cond_destroy(&task->changed);
+  pthread_mutex_destroy(&task->mutex);
+  free(task);
+}
+
+static int af_task_claim_reclaim(af_task *task, int detached_only) {
+  int claimed = 0;
+  pthread_mutex_lock(&task->mutex);
+  int reclaimable =
+      af_terminal(task->status) && task->pending_io == NULL &&
+      task->pending_timer == NULL && task->awaited == NULL &&
+      task->waiters == NULL && !task->detach_in_progress;
+  if (reclaimable && (!detached_only || task->detached) &&
+      !task->reclaim_claimed) {
+    task->reclaim_claimed = 1;
+    claimed = 1;
+  }
+  pthread_mutex_unlock(&task->mutex);
+  return claimed;
+}
+
+static void af_task_reclaim_detached(af_task *task) {
+  if (task != NULL && af_task_claim_reclaim(task, 1))
+    af_task_destroy(task);
 }
 
 static int af_timespec_compare(const struct timespec *a,
@@ -583,6 +617,7 @@ static void af_io_complete(af_io_operation *operation, int result) {
   pthread_mutex_unlock(&task->mutex);
   if (abandoned) {
     free(operation);
+    af_task_reclaim_detached(task);
     return;
   }
   af_task_wake_internal(task);
@@ -639,7 +674,17 @@ static void af_wake_waiters(af_task *task) {
   pthread_mutex_unlock(&task->mutex);
   while (waiters != NULL) {
     af_waiter *next = waiters->next;
-    af_schedule(waiters->task);
+    af_task *waiting = waiters->task;
+    pthread_mutex_lock(&waiting->mutex);
+    if (waiting->status == AF_TASK_CANCELLED)
+      waiting->awaited = NULL;
+    pthread_mutex_unlock(&waiting->mutex);
+    af_schedule(waiting);
+    pthread_mutex_lock(&waiting->mutex);
+    if (waiting->status == AF_TASK_CANCELLED)
+      waiting->awaited = NULL;
+    pthread_mutex_unlock(&waiting->mutex);
+    af_task_reclaim_detached(waiting);
     free(waiters);
     waiters = next;
   }
@@ -725,8 +770,14 @@ static void *af_runtime_worker(void *unused) {
         af_timer *timer = af_global_runtime.timers;
         af_global_runtime.timers = timer->next;
         pthread_mutex_unlock(&af_global_runtime.mutex);
-        af_task_wake_internal(timer->task);
+        af_task *timer_task = timer->task;
+        af_task_wake_internal(timer_task);
+        pthread_mutex_lock(&timer_task->mutex);
+        if (timer_task->pending_timer == timer)
+          timer_task->pending_timer = NULL;
+        pthread_mutex_unlock(&timer_task->mutex);
         free(timer);
+        af_task_reclaim_detached(timer_task);
         pthread_mutex_lock(&af_global_runtime.mutex);
         continue;
       }
@@ -769,8 +820,10 @@ static void *af_runtime_worker(void *unused) {
     pthread_mutex_lock(&task->mutex);
     if (task->cancel_requested) {
       task->status = AF_TASK_CANCELLED;
+      task->awaited = NULL;
       pthread_mutex_unlock(&task->mutex);
       af_wake_waiters(task);
+      af_task_reclaim_detached(task);
       continue;
     }
     if (task->status != AF_TASK_SCHEDULED) {
@@ -791,6 +844,7 @@ static void *af_runtime_worker(void *unused) {
     if (status == AF_TASK_RUNNING)
       af_finish(task, cancelled ? AF_TASK_CANCELLED : AF_TASK_COMPLETED,
                 result);
+    af_task_reclaim_detached(task);
   }
   return NULL;
 }
@@ -887,6 +941,8 @@ AF_ENTRY uint64_t af_task_run(void *opaque) {
   uint64_t result = task->result;
   enum af_task_status status = task->status;
   pthread_mutex_unlock(&task->mutex);
+  if (af_task_claim_reclaim(task, 0))
+    af_task_destroy(task);
   if (status != AF_TASK_COMPLETED) {
     fprintf(stderr, "AFlat async runtime: root task did not complete\n");
     abort();
@@ -981,6 +1037,9 @@ AF_ENTRY uint64_t af_task_await_result(void) {
   uint64_t result = awaited->result;
   awaited->observed = 1;
   pthread_mutex_unlock(&awaited->mutex);
+  current->awaited = NULL;
+  if (af_task_claim_reclaim(awaited, 0))
+    af_task_destroy(awaited);
   if (status != AF_TASK_COMPLETED) {
     fprintf(stderr, "AFlat async runtime: awaited task did not complete\n");
     abort();
@@ -1053,6 +1112,7 @@ AF_ENTRY void af_task_cancel(void *opaque) {
     return;
   pthread_mutex_lock(&task->mutex);
   task->cancel_requested = 1;
+  task->detached = 1;
   af_io_operation *operation = task->pending_io;
   if (operation != NULL)
     atomic_store_explicit(&operation->abandoned, 1, memory_order_release);
@@ -1071,6 +1131,7 @@ AF_ENTRY void af_task_cancel(void *opaque) {
     free(operation);
   if (idle)
     af_wake_waiters(task);
+  af_task_reclaim_detached(task);
 }
 
 AF_ENTRY void af_task_detach(void *opaque) {
@@ -1079,8 +1140,13 @@ AF_ENTRY void af_task_detach(void *opaque) {
     return;
   pthread_mutex_lock(&task->mutex);
   task->detached = 1;
+  task->detach_in_progress = 1;
   pthread_mutex_unlock(&task->mutex);
   af_task_spawn(task);
+  pthread_mutex_lock(&task->mutex);
+  task->detach_in_progress = 0;
+  pthread_mutex_unlock(&task->mutex);
+  af_task_reclaim_detached(task);
 }
 
 AF_ENTRY int beginTimer(int milliseconds) {
@@ -1099,6 +1165,14 @@ AF_ENTRY int beginTimer(int milliseconds) {
     timer->deadline.tv_nsec -= 1000000000L;
   }
   timer->task = task;
+  pthread_mutex_lock(&task->mutex);
+  if (task->pending_timer != NULL) {
+    pthread_mutex_unlock(&task->mutex);
+    free(timer);
+    return -EBUSY;
+  }
+  task->pending_timer = timer;
+  pthread_mutex_unlock(&task->mutex);
   pthread_mutex_lock(&runtime->mutex);
   af_timer **position = &runtime->timers;
   while (*position != NULL &&

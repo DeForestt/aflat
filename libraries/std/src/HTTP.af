@@ -506,6 +506,7 @@ class HTTPRequest {
     int setHost(const adr host) {
         const adr copy = af_malloc(str.len(host) + 1);
         af_memcpy(copy, host, str.len(host) + 1);
+        af_free(my.host);
         my.host = copy;
         return 0;
     };
@@ -517,6 +518,7 @@ class HTTPRequest {
     int setEndpoint(const adr endpoint) {
         const adr copy = af_malloc(str.len(endpoint) + 1);
         af_memcpy(copy, endpoint, str.len(endpoint) + 1);
+        af_free(my.endpoint);
         my.endpoint = copy;
         return 0;
     };
@@ -553,11 +555,13 @@ class HTTPRequest {
     void setBody(const adr body) {
         const adr copy = af_malloc(str.len(body) + 1);
         af_memcpy(copy, body, str.len(body) + 1);
+        af_free(my.body);
         my.body = copy;
         const adr contentLen = af_malloc(10);
         const int size = str.len(body);
         str.int_toString(size, contentLen);
         my.addHeader("Content-Length", contentLen);
+        af_free(contentLen);
     };
 
     public string getHeaders() {
@@ -617,13 +621,16 @@ class HTTPRequest {
         const bool okay = request(host, endpoint, port, msg, buffer, bufferSize);
         af_free(msg);
         if okay {
-            return res.accept::<HTTPMessage>(new HTTPMessage(buffer));
+            const HTTPMessage response = new HTTPMessage(buffer);
+            af_free(buffer);
+            return res.accept::<HTTPMessage>(response);
         };
 
         const string errorMessage = if str.len(buffer) > 0
             new string(buffer)
         else
             new string("HTTP request failed");
+        af_free(buffer);
         return res.reject::<HTTPMessage>(new Error(errorMessage));
       };
 };
