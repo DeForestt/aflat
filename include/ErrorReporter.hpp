@@ -1,6 +1,7 @@
 #ifndef ERROR_REPORTER_HPP
 #define ERROR_REPORTER_HPP
 
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <regex>
@@ -8,6 +9,27 @@
 #include <string>
 
 namespace error {
+
+using DiagnosticHandler = std::function<void(
+    const std::string &, int, const std::string &, const std::string &, bool)>;
+
+inline thread_local DiagnosticHandler diagnosticHandler;
+
+class DiagnosticCaptureScope {
+public:
+  explicit DiagnosticCaptureScope(DiagnosticHandler handler)
+      : previous(std::move(diagnosticHandler)) {
+    diagnosticHandler = std::move(handler);
+  }
+
+  ~DiagnosticCaptureScope() { diagnosticHandler = std::move(previous); }
+
+  DiagnosticCaptureScope(const DiagnosticCaptureScope &) = delete;
+  DiagnosticCaptureScope &operator=(const DiagnosticCaptureScope &) = delete;
+
+private:
+  DiagnosticHandler previous;
+};
 
 inline int extractLine(const std::string &msg) {
   std::regex re("(?:[Ll]ine:?\\s*)([0-9]+)");
@@ -30,6 +52,10 @@ inline std::string getLine(const std::string &source, int line) {
 
 inline void report(const std::string &file, int line, const std::string &msg,
                    const std::string &source = "") {
+  if (diagnosticHandler) {
+    diagnosticHandler(file, line, msg, source, false);
+    return;
+  }
   std::cout << "\033[1;31merror:\033[0m ";
   if (!file.empty()) {
     std::cout << file;
@@ -61,6 +87,10 @@ inline void report(const std::string &file, int line, const std::string &msg,
 
 inline void warn(const std::string &file, int line, const std::string &msg,
                  const std::string &source = "") {
+  if (diagnosticHandler) {
+    diagnosticHandler(file, line, msg, source, true);
+    return;
+  }
   std::cout << "\033[1;33mwarning:\033[0m ";
   if (!file.empty()) {
     std::cout << file;
