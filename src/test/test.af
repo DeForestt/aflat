@@ -53,6 +53,18 @@ async fn schedulerMarker() -> int {
 	return 1;
 };
 
+unique class AsyncRunValue {
+	int value = value;
+
+	fn init(const int value) -> Self {
+		return my;
+	};
+};
+
+async fn makeAsyncRunValue(const int value) -> AsyncRunValue! {
+	return new AsyncRunValue(value);
+};
+
 class HookState {
 	mutable bool beforeAllRan;
 	mutable int beforeEachCount;
@@ -296,6 +308,17 @@ fn main() -> int{
                     },
                     Err(e) => test.assertEqual(`Object`, `Error: {e}`)
                 };
+            });
+
+            test.it("should repeatedly run tasks returning unique results", fn () {
+                mutable bool valid = true;
+                for int index = 0; index < 100; index++ {
+                    let value = (run makeAsyncRunValue(index))!;
+                    if value.value != index {
+                        valid = false;
+                    };
+                };
+                test.assertTrue(valid);
             });
 
             test.it("should keep the scheduler free during background CPU work", fn () {

@@ -5,6 +5,7 @@
 #include <linux/io_uring.h>
 #include <poll.h>
 #include <pthread.h>
+#include <stddef.h>
 #include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -284,6 +285,67 @@ void af_worker_thread_release(void *opaque) {
 #endif
 
 /*
+ * std.af owns the process break, so the async runtime must not use libc's
+ * malloc family for its private bookkeeping.  A libc free may trim the break
+ * below live AFlat allocations.  Keep runtime allocations in mmap-backed
+ * regions instead.
+ */
+typedef union af_runtime_allocation_header {
+  struct {
+    size_t mapping_size;
+    size_t payload_size;
+  } values;
+  max_align_t alignment;
+} af_runtime_allocation_header;
+
+static void *af_runtime_allocate(size_t size) {
+  if (size > SIZE_MAX - sizeof(af_runtime_allocation_header))
+    return NULL;
+  size_t mapping_size = sizeof(af_runtime_allocation_header) + size;
+  af_runtime_allocation_header *header =
+      mmap(NULL, mapping_size, PROT_READ | PROT_WRITE,
+           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (header == MAP_FAILED)
+    return NULL;
+  header->values.mapping_size = mapping_size;
+  header->values.payload_size = size;
+  return header + 1;
+}
+
+static void *af_runtime_allocate_zeroed(size_t count, size_t size) {
+  if (count != 0 && size > SIZE_MAX / count)
+    return NULL;
+  return af_runtime_allocate(count * size);
+}
+
+static void af_runtime_deallocate(void *pointer) {
+  if (pointer == NULL)
+    return;
+  af_runtime_allocation_header *header =
+      (af_runtime_allocation_header *)pointer - 1;
+  munmap(header, header->values.mapping_size);
+}
+
+static void *af_runtime_reallocate(void *pointer, size_t size) {
+  if (pointer == NULL)
+    return af_runtime_allocate(size);
+  if (size == 0) {
+    af_runtime_deallocate(pointer);
+    return NULL;
+  }
+  af_runtime_allocation_header *header =
+      (af_runtime_allocation_header *)pointer - 1;
+  if (header->values.payload_size >= size)
+    return pointer;
+  void *replacement = af_runtime_allocate(size);
+  if (replacement == NULL)
+    return NULL;
+  memcpy(replacement, pointer, header->values.payload_size);
+  af_runtime_deallocate(pointer);
+  return replacement;
+}
+
+/*
  * The default AFlat allocator is implemented in std.af as a process-wide
  * linked-list arena.  Async tasks run on a worker thread, so allocator list
  * traversal and mutation must be serialized with allocations on the caller
@@ -362,6 +424,7 @@ struct af_task {
   unsigned char wake_pending;
   unsigned char reclaim_claimed;
   unsigned char detach_in_progress;
+  unsigned char completion_released;
   af_io_operation *pending_io;
   af_cpu_operation *pending_cpu;
   af_timer *pending_timer;
@@ -444,31 +507,48 @@ static int af_terminal(enum af_task_status status) {
 static void af_task_destroy(af_task *task) {
   if (task == NULL)
     return;
-  free(task->frame);
+  af_runtime_deallocate(task->frame);
   pthread_cond_destroy(&task->changed);
   pthread_mutex_destroy(&task->mutex);
-  free(task);
+  af_runtime_deallocate(task);
 }
 
-static int af_task_claim_reclaim(af_task *task, int detached_only) {
-  int claimed = 0;
-  pthread_mutex_lock(&task->mutex);
+static int af_task_claim_reclaim_locked(af_task *task, int detached_only) {
   int reclaimable =
       af_terminal(task->status) && task->pending_io == NULL &&
       task->pending_cpu == NULL && task->pending_timer == NULL &&
       task->awaited == NULL && task->waiters == NULL &&
-      !task->detach_in_progress;
-  if (reclaimable && (!detached_only || task->detached) &&
+      !task->detach_in_progress && task->completion_released;
+  if (reclaimable &&
+      (!detached_only || (task->detached && !task->observed)) &&
       !task->reclaim_claimed) {
     task->reclaim_claimed = 1;
-    claimed = 1;
+    return 1;
   }
+  return 0;
+}
+
+static int af_task_claim_reclaim(af_task *task, int detached_only) {
+  pthread_mutex_lock(&task->mutex);
+  int claimed = af_task_claim_reclaim_locked(task, detached_only);
   pthread_mutex_unlock(&task->mutex);
   return claimed;
 }
 
 static void af_task_reclaim_detached(af_task *task) {
   if (task != NULL && af_task_claim_reclaim(task, 1))
+    af_task_destroy(task);
+}
+
+/* Mark the worker's final access and atomically reserve detached reclamation.
+ * Synchronous observers wait for this transition before destroying a task. */
+static void af_task_release_completion(af_task *task) {
+  pthread_mutex_lock(&task->mutex);
+  task->completion_released = 1;
+  int reclaim = af_task_claim_reclaim_locked(task, 1);
+  pthread_cond_broadcast(&task->changed);
+  pthread_mutex_unlock(&task->mutex);
+  if (reclaim)
     af_task_destroy(task);
 }
 
@@ -638,7 +718,7 @@ static void af_io_complete(af_io_operation *operation, int result) {
     task->pending_io = NULL;
   pthread_mutex_unlock(&task->mutex);
   if (abandoned) {
-    free(operation);
+    af_runtime_deallocate(operation);
     af_task_reclaim_detached(task);
     return;
   }
@@ -707,7 +787,7 @@ static void af_wake_waiters(af_task *task) {
       waiting->awaited = NULL;
     pthread_mutex_unlock(&waiting->mutex);
     af_task_reclaim_detached(waiting);
-    free(waiters);
+    af_runtime_deallocate(waiters);
     waiters = next;
   }
 }
@@ -798,7 +878,7 @@ static void *af_runtime_worker(void *unused) {
         if (timer_task->pending_timer == timer)
           timer_task->pending_timer = NULL;
         pthread_mutex_unlock(&timer_task->mutex);
-        free(timer);
+        af_runtime_deallocate(timer);
         af_task_reclaim_detached(timer_task);
         pthread_mutex_lock(&af_global_runtime.mutex);
         continue;
@@ -852,9 +932,9 @@ static void *af_runtime_worker(void *unused) {
         completed_cpu = NULL;
       pthread_mutex_unlock(&task->mutex);
       af_cpu_operation_dispose_result(completed_cpu);
-      free(completed_cpu);
+      af_runtime_deallocate(completed_cpu);
       af_wake_waiters(task);
-      af_task_reclaim_detached(task);
+      af_task_release_completion(task);
       continue;
     }
     if (task->status != AF_TASK_SCHEDULED) {
@@ -880,11 +960,12 @@ static void *af_runtime_worker(void *unused) {
     }
     pthread_mutex_unlock(&task->mutex);
     af_cpu_operation_dispose_result(cancelled_cpu);
-    free(cancelled_cpu);
+    af_runtime_deallocate(cancelled_cpu);
     if (status == AF_TASK_RUNNING)
       af_finish(task, cancelled ? AF_TASK_CANCELLED : AF_TASK_COMPLETED,
                 result);
-    af_task_reclaim_detached(task);
+    if (status == AF_TASK_RUNNING || af_terminal(status))
+      af_task_release_completion(task);
   }
   return NULL;
 }
@@ -917,7 +998,7 @@ static af_runtime *af_runtime_get(void) {
 }
 
 static af_task *af_task_create(void *resume, int argc, const uint64_t *args) {
-  af_task *task = calloc(1, sizeof(*task));
+  af_task *task = af_runtime_allocate_zeroed(1, sizeof(*task));
   if (task == NULL)
     return NULL;
   pthread_mutex_init(&task->mutex, NULL);
@@ -976,7 +1057,7 @@ AF_ENTRY uint64_t af_task_run(void *opaque) {
     return 0;
   pthread_mutex_lock(&task->mutex);
   task->observed = 1;
-  while (!af_terminal(task->status))
+  while (!af_terminal(task->status) || !task->completion_released)
     pthread_cond_wait(&task->changed, &task->mutex);
   uint64_t result = task->result;
   enum af_task_status status = task->status;
@@ -993,7 +1074,8 @@ AF_ENTRY uint64_t af_task_run(void *opaque) {
 static void af_save_frame(af_task *task, int state, void *frame_base,
                           size_t frame_size) {
   if (task->frame_size != frame_size) {
-    unsigned char *replacement = realloc(task->frame, frame_size);
+    unsigned char *replacement =
+        af_runtime_reallocate(task->frame, frame_size);
     if (replacement == NULL && frame_size != 0) {
       fprintf(stderr, "AFlat async runtime: unable to allocate task frame\n");
       abort();
@@ -1048,7 +1130,7 @@ AF_ENTRY void af_task_await_suspend(void *opaque, int state, void *frame_base,
     return;
   }
 
-  af_waiter *waiter = malloc(sizeof(*waiter));
+  af_waiter *waiter = af_runtime_allocate(sizeof(*waiter));
   if (waiter == NULL) {
     af_finish(current, AF_TASK_FAILED, 0);
     return;
@@ -1057,7 +1139,7 @@ AF_ENTRY void af_task_await_suspend(void *opaque, int state, void *frame_base,
   pthread_mutex_lock(&awaited->mutex);
   if (af_terminal(awaited->status)) {
     pthread_mutex_unlock(&awaited->mutex);
-    free(waiter);
+    af_runtime_deallocate(waiter);
     af_schedule(current);
   } else {
     waiter->next = awaited->waiters;
@@ -1170,15 +1252,18 @@ AF_ENTRY void af_task_cancel(void *opaque) {
     task->status = AF_TASK_CANCELLED;
   pthread_mutex_unlock(&task->mutex);
   if (release_operation)
-    free(operation);
+    af_runtime_deallocate(operation);
   /* Cancellation means this task will never observe its awaited child's
    * result. Detach the child so it can reclaim itself after waking/removing
    * this task's waiter. */
   if (awaited != NULL)
     af_task_detach(awaited);
-  if (idle)
+  if (idle) {
     af_wake_waiters(task);
-  af_task_reclaim_detached(task);
+    af_task_release_completion(task);
+  } else {
+    af_task_reclaim_detached(task);
+  }
 }
 
 AF_ENTRY void af_task_detach(void *opaque) {
@@ -1220,7 +1305,8 @@ AF_ENTRY int af_cpu_operation_begin(void *function, void *disposer, void *arg1,
   if (task == NULL || function == NULL || output == NULL)
     return -EINVAL;
 
-  af_cpu_operation *operation = calloc(1, sizeof(*operation));
+  af_cpu_operation *operation =
+      af_runtime_allocate_zeroed(1, sizeof(*operation));
   if (operation == NULL) {
     af_task_wake_internal(task);
     return -ENOMEM;
@@ -1238,7 +1324,7 @@ AF_ENTRY int af_cpu_operation_begin(void *function, void *disposer, void *arg1,
   pthread_mutex_lock(&task->mutex);
   if (task->pending_cpu != NULL) {
     pthread_mutex_unlock(&task->mutex);
-    free(operation);
+    af_runtime_deallocate(operation);
     af_task_wake_internal(task);
     return -EBUSY;
   }
@@ -1254,7 +1340,7 @@ AF_ENTRY int af_cpu_operation_begin(void *function, void *disposer, void *arg1,
       task->pending_cpu = NULL;
     pthread_mutex_unlock(&task->mutex);
     *output = NULL;
-    free(operation);
+    af_runtime_deallocate(operation);
     af_task_wake_internal(task);
     return -status;
   }
@@ -1276,7 +1362,7 @@ AF_ENTRY void af_cpu_operation_take_result(void *opaque, uint64_t *output) {
   pthread_mutex_unlock(&task->mutex);
   if (output != NULL)
     *output = result;
-  free(operation);
+  af_runtime_deallocate(operation);
 }
 
 AF_ENTRY int beginTimer(int milliseconds) {
@@ -1284,7 +1370,7 @@ AF_ENTRY int beginTimer(int milliseconds) {
   af_runtime *runtime = af_current_runtime;
   if (task == NULL || runtime == NULL)
     return -1;
-  af_timer *timer = malloc(sizeof(*timer));
+  af_timer *timer = af_runtime_allocate(sizeof(*timer));
   if (timer == NULL)
     return -1;
   clock_gettime(CLOCK_MONOTONIC, &timer->deadline);
@@ -1298,7 +1384,7 @@ AF_ENTRY int beginTimer(int milliseconds) {
   pthread_mutex_lock(&task->mutex);
   if (task->pending_timer != NULL) {
     pthread_mutex_unlock(&task->mutex);
-    free(timer);
+    af_runtime_deallocate(timer);
     return -EBUSY;
   }
   task->pending_timer = timer;
@@ -1324,7 +1410,8 @@ static int af_io_begin(int64_t descriptor, void *buffer, int64_t length,
   if (task == NULL || runtime == NULL || output == NULL)
     return -EINVAL;
 
-  af_io_operation *operation = calloc(1, sizeof(*operation));
+  af_io_operation *operation =
+      af_runtime_allocate_zeroed(1, sizeof(*operation));
   if (operation == NULL) {
     pthread_mutex_lock(&task->mutex);
     task->io_begin_error = -ENOMEM;
@@ -1341,7 +1428,7 @@ static int af_io_begin(int64_t descriptor, void *buffer, int64_t length,
   if (task->pending_io != NULL) {
     task->io_begin_error = -EBUSY;
     pthread_mutex_unlock(&task->mutex);
-    free(operation);
+    af_runtime_deallocate(operation);
     *output = NULL;
     af_task_wake_internal(task);
     return -EBUSY;
@@ -1397,5 +1484,5 @@ AF_ENTRY void af_io_operation_release(void *opaque) {
   if (task->pending_io == operation)
     task->pending_io = NULL;
   pthread_mutex_unlock(&task->mutex);
-  free(operation);
+  af_runtime_deallocate(operation);
 }
