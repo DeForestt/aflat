@@ -191,6 +191,7 @@ struct gen::CodeGenerator::Impl {
   std::string moduleId;
   std::string source;
   std::string diagnosticFile;
+  InferredTypeCallback inferredTypeCallback;
   std::optional<ast::SourceLocation> currentSourceLocation;
   std::vector<std::optional<ast::SourceLocation>> sourceLocationStack;
   std::filesystem::path cwd;
@@ -452,6 +453,23 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
 }
 
 bool gen::CodeGenerator::hasError() const { return impl->errorFlag; }
+
+void gen::CodeGenerator::setInferredTypeCallback(
+    InferredTypeCallback callback) {
+  impl->inferredTypeCallback = std::move(callback);
+}
+
+void gen::CodeGenerator::reportInferredType(const std::string &identifier,
+                                            const ast::Type &type,
+                                            int line) const {
+  if (!impl->inferredTypeCallback)
+    return;
+  const auto &location = impl->currentSourceLocation;
+  const auto &file = location.has_value() && !location->file.empty()
+                         ? location->file
+                         : impl->diagnosticFile;
+  impl->inferredTypeCallback(file, identifier, type, line);
+}
 
 parse::Parser &gen::CodeGenerator::parser() { return impl->parser; }
 const parse::Parser &gen::CodeGenerator::parser() const { return impl->parser; }

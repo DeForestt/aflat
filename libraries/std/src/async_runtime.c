@@ -753,11 +753,14 @@ static void af_enqueue_locked(af_runtime *runtime, af_task *task) {
   af_notify_scheduler(runtime);
 }
 
-static void af_schedule(af_task *task) {
+static void af_schedule_from(af_task *task,
+                             enum af_task_status expected_status) {
   if (task == NULL)
     return;
+  /* Spawning may only start a created task.  A waiting task may only be
+   * resumed by the child whose waiter list it joined. */
   pthread_mutex_lock(&task->mutex);
-  if (task->status != AF_TASK_CREATED && task->status != AF_TASK_WAITING) {
+  if (task->status != expected_status) {
     pthread_mutex_unlock(&task->mutex);
     return;
   }
@@ -781,7 +784,7 @@ static void af_wake_waiters(af_task *task) {
     if (waiting->status == AF_TASK_CANCELLED)
       waiting->awaited = NULL;
     pthread_mutex_unlock(&waiting->mutex);
-    af_schedule(waiting);
+    af_schedule_from(waiting, AF_TASK_WAITING);
     pthread_mutex_lock(&waiting->mutex);
     if (waiting->status == AF_TASK_CANCELLED)
       waiting->awaited = NULL;
@@ -1047,7 +1050,7 @@ AF_ENTRY void *af_task_create6(void *resume, uint64_t a0, uint64_t a1,
 AF_ENTRY void *af_task_spawn(void *opaque) {
   af_runtime_get();
   af_task *task = opaque;
-  af_schedule(task);
+  af_schedule_from(task, AF_TASK_CREATED);
   return task;
 }
 
@@ -1140,7 +1143,7 @@ AF_ENTRY void af_task_await_suspend(void *opaque, int state, void *frame_base,
   if (af_terminal(awaited->status)) {
     pthread_mutex_unlock(&awaited->mutex);
     af_runtime_deallocate(waiter);
-    af_schedule(current);
+    af_schedule_from(current, AF_TASK_WAITING);
   } else {
     waiter->next = awaited->waiters;
     awaited->waiters = waiter;

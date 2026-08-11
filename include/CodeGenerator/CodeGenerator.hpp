@@ -3,6 +3,7 @@
 
 #include <array>
 #include <filesystem>
+#include <functional>
 #include <set>
 #include <tuple>
 #include <unordered_map>
@@ -21,6 +22,9 @@ namespace gen {
 
 class CodeGenerator {
 public:
+  using InferredTypeCallback = std::function<void(
+      const std::string &, const std::string &, const ast::Type &, int)>;
+
   struct EnvState {
     links::LinkedList<Symbol> SymbolTable;
     links::LinkedList<Symbol> GlobalSymbolTable;
@@ -96,6 +100,9 @@ public:
                                       asmc::File &OutputFile);
   asmc::File *deScope(gen::Symbol &sym);
   bool hasError() const;
+  void setInferredTypeCallback(InferredTypeCallback callback);
+  void reportInferredType(const std::string &identifier, const ast::Type &type,
+                          int line) const;
 
   parse::Parser &parser();
   const parse::Parser &parser() const;
