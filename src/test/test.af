@@ -334,6 +334,16 @@ fn main() -> int{
                 test.assertEqual(marker, 1);
             });
 
+            test.it("should await an already-spawned task without resuming it early", fn () {
+                const AsyncSchedulerProbe probe = new AsyncSchedulerProbe();
+                const let pending = runSchedulerProbe(probe);
+                spawn pending;
+                sleep(0, 10000000);
+                const int value = run pending;
+                test.assertTrue(probe.completed);
+                test.assertEqual(value, 1);
+            });
+
             test.it("should run generic background functions with five arguments", fn () {
                 const int total = run task.async_thread::<int>(
                     sumFive, 1, 2, 3, 4, 5);

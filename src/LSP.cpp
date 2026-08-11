@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <mutex>
 #include <optional>
@@ -27,6 +28,7 @@
 #include "Configs.hpp"
 #include "ErrorReporter.hpp"
 #include "Exceptions.hpp"
+#include "Parser/AST/Statements/Import.hpp"
 #include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
@@ -605,7 +607,10 @@ std::string stripGenerics(const std::string &name) {
   auto pos = name.find('<');
   if (pos == std::string::npos)
     return name;
-  return name.substr(0, pos);
+  auto base = name.substr(0, pos);
+  if (base.size() >= 2 && base.compare(base.size() - 2, 2, "::") == 0)
+    base.resize(base.size() - 2);
+  return base;
 }
 
 void collectStatementSymbols(ast::Statement *stmt, SemanticSymbolSets &symbols,
@@ -821,11 +826,22 @@ struct IndexedSymbol {
   std::string detail;
   std::string signature;
   bool isFunction = false;
+  std::string container;
+  bool isPublic = true;
+};
+
+struct IndexedInlayHint {
+  std::string name;
+  std::string uri;
+  int line = 0;
+  int character = 0;
+  std::string type;
 };
 
 struct DocumentIndex {
   std::vector<IndexedSymbol> symbols;
   std::vector<SignatureInfo> signatures;
+  std::vector<IndexedInlayHint> inlayHints;
 };
 
 constexpr int LSP_SYMBOL_CLASS = 5;
@@ -907,6 +923,70 @@ std::vector<JsonValue> completionItems(const std::vector<std::string> &items,
   return out;
 }
 
+struct MemberCompletionContext {
+  std::string receiver;
+  std::string prefix;
+};
+
+std::optional<MemberCompletionContext>
+memberCompletionContext(const std::string &text, int line, int character) {
+  auto current = lineText(text, line + 1);
+  const auto cursor =
+      std::min(current.size(), static_cast<size_t>(std::max(0, character)));
+  size_t prefixStart = cursor;
+  while (prefixStart > 0 &&
+         (std::isalnum(static_cast<unsigned char>(current[prefixStart - 1])) ||
+          current[prefixStart - 1] == '_'))
+    --prefixStart;
+  if (prefixStart == 0 || current[prefixStart - 1] != '.')
+    return std::nullopt;
+  size_t receiverEnd = prefixStart - 1;
+  size_t receiverStart = receiverEnd;
+  while (receiverStart > 0 && (std::isalnum(static_cast<unsigned char>(
+                                   current[receiverStart - 1])) ||
+                               current[receiverStart - 1] == '_'))
+    --receiverStart;
+  if (receiverStart == receiverEnd)
+    return std::nullopt;
+  return MemberCompletionContext{
+      current.substr(receiverStart, receiverEnd - receiverStart),
+      current.substr(prefixStart, cursor - prefixStart)};
+}
+
+JsonValue::Array memberCompletionItems(const DocumentIndex &index,
+                                       const MemberCompletionContext &context) {
+  std::string receiverType;
+  for (auto it = index.symbols.rbegin(); it != index.symbols.rend(); ++it) {
+    if (it->name == context.receiver && !it->detail.empty()) {
+      receiverType = stripGenerics(it->detail);
+      break;
+    }
+  }
+  if (receiverType.empty())
+    receiverType = stripGenerics(context.receiver);
+
+  JsonValue::Array items;
+  std::unordered_set<std::string> seen;
+  for (const auto &symbol : index.symbols) {
+    if (!symbol.isPublic || symbol.container.empty() ||
+        stripGenerics(symbol.container) != receiverType ||
+        (!context.prefix.empty() &&
+         symbol.name.rfind(context.prefix, 0) != 0) ||
+        !seen.insert(symbol.name + "\n" + symbol.signature).second)
+      continue;
+    JsonValue::Object item{
+        {"label", JsonValue(symbol.name)},
+        {"kind", JsonValue(symbol.isFunction ? 2 : 5)},
+    };
+    const auto detail =
+        symbol.signature.empty() ? symbol.detail : symbol.signature;
+    if (!detail.empty())
+      item.emplace("detail", JsonValue(detail));
+    items.emplace_back(std::move(item));
+  }
+  return items;
+}
+
 std::vector<lex::Token *>
 tokenVector(const links::LinkedList<lex::Token *> &tokens);
 
@@ -976,10 +1056,11 @@ std::string makeFunctionLabel(const ast::Function *func,
 void addSymbol(DocumentIndex &index, const std::string &name,
                const std::string &uri, const TokenSpan &span, int kind,
                const std::string &detail = "",
-               const std::string &signature = "", bool isFunction = false) {
+               const std::string &signature = "", bool isFunction = false,
+               const std::string &container = "", bool isPublic = true) {
   index.symbols.push_back(IndexedSymbol{name, uri, span.line, span.column,
                                         span.length, kind, detail, signature,
-                                        isFunction});
+                                        isFunction, container, isPublic});
 }
 
 void addSignature(DocumentIndex &index, const SignatureInfo &signature) {
@@ -1031,6 +1112,68 @@ void collectSignatureParameters(ast::Statement *stmt,
   }
 }
 
+std::string inferExpressionType(ast::Expr *expr, const DocumentIndex &index) {
+  if (expr == nullptr)
+    return {};
+  if (!expr->typeCast.empty())
+    return expr->typeCast;
+  if (auto *value = dynamic_cast<ast::NewExpr *>(expr)) {
+    std::string result = value->type.typeName;
+    if (!value->templateTypes.empty()) {
+      result += "::<";
+      for (size_t i = 0; i < value->templateTypes.size(); ++i) {
+        if (i != 0)
+          result += ", ";
+        result += value->templateTypes[i];
+      }
+      result += ">";
+    }
+    return result;
+  }
+  if (dynamic_cast<ast::StringLiteral *>(expr) != nullptr ||
+      dynamic_cast<ast::FStringLiteral *>(expr) != nullptr)
+    return "string";
+  if (dynamic_cast<ast::CharLiteral *>(expr) != nullptr)
+    return "char";
+  if (dynamic_cast<ast::FloatLiteral *>(expr) != nullptr)
+    return "float";
+  if (dynamic_cast<ast::LongLiteral *>(expr) != nullptr)
+    return "long";
+  if (dynamic_cast<ast::IntLiteral *>(expr) != nullptr)
+    return "int";
+  if (auto *paren = dynamic_cast<ast::ParenExpr *>(expr))
+    return inferExpressionType(paren->expr, index);
+  if (auto *paren = dynamic_cast<ast::parenExpr *>(expr))
+    return inferExpressionType(paren->expr, index);
+  if (auto *var = dynamic_cast<ast::Var *>(expr)) {
+    for (auto it = index.symbols.rbegin(); it != index.symbols.rend(); ++it) {
+      if (it->name == var->Ident && !it->detail.empty())
+        return it->detail;
+    }
+    if (var->Ident == "true" || var->Ident == "false")
+      return "bool";
+  }
+  if (auto *callExpr = dynamic_cast<ast::CallExpr *>(expr)) {
+    if (callExpr->call == nullptr)
+      return {};
+    std::string calledName = callExpr->call->ident;
+    if (callExpr->call->modList.count > 0)
+      calledName = callExpr->call->modList.get(0);
+    for (auto it = index.signatures.rbegin(); it != index.signatures.rend();
+         ++it) {
+      if (it->name == calledName) {
+        const auto marker = it->documentation.find('`');
+        const auto end = marker == std::string::npos
+                             ? std::string::npos
+                             : it->documentation.find('`', marker + 1);
+        if (marker != std::string::npos && end != std::string::npos)
+          return it->documentation.substr(marker + 1, end - marker - 1);
+      }
+    }
+  }
+  return {};
+}
+
 void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
                                DocumentIndex &index,
                                const std::string &container = "") {
@@ -1058,9 +1201,14 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
         index, func->ident.ident, uri,
         TokenSpan{std::max(0, func->logicalLine - 1), 0,
                   std::max(1, static_cast<int>(func->ident.ident.size()))},
-        LSP_SYMBOL_FUNCTION, signature.documentation, signature.label, true);
-    collectIndexFromStatement(func->args, uri, index, container);
-    collectIndexFromStatement(func->statement, uri, index, container);
+        LSP_SYMBOL_FUNCTION, signature.documentation, signature.label, true,
+        container,
+        container.empty() || func->scope == ast::Public ||
+            func->scope == ast::Export);
+    // Parameters and locals belong to the function's lexical scope, not to
+    // the surrounding class's public member surface.
+    collectIndexFromStatement(func->args, uri, index);
+    collectIndexFromStatement(func->statement, uri, index);
     return;
   }
 
@@ -1121,7 +1269,10 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
                 TokenSpan{std::max(0, decl->logicalLine - 1), 0,
                           std::max(1, static_cast<int>(decl->ident.size()))},
                 LSP_SYMBOL_VARIABLE,
-                decl->TypeName.empty() ? typeName(decl->type) : decl->TypeName);
+                decl->TypeName.empty() ? typeName(decl->type) : decl->TypeName,
+                "", false, container,
+                container.empty() || decl->scope == ast::Public ||
+                    decl->scope == ast::Export);
     }
     return;
   }
@@ -1158,11 +1309,26 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
 
   if (auto *decAssign = dynamic_cast<ast::DecAssign *>(stmt)) {
     if (decAssign->declare != nullptr && !decAssign->declare->ident.empty()) {
+      std::string detail = decAssign->declare->TypeName;
+      const bool inferred = detail.empty() || detail == "let";
+      if (inferred) {
+        const auto generatedType = typeName(decAssign->declare->type);
+        detail = generatedType.empty() || generatedType == "let"
+                     ? inferExpressionType(decAssign->expr, index)
+                     : generatedType;
+      }
       addSymbol(index, decAssign->declare->ident, uri,
                 TokenSpan{std::max(0, decAssign->logicalLine - 1), 0,
                           std::max(1, static_cast<int>(
                                           decAssign->declare->ident.size()))},
-                LSP_SYMBOL_VARIABLE, decAssign->declare->TypeName);
+                LSP_SYMBOL_VARIABLE, detail, "", false, container,
+                container.empty() || decAssign->declare->scope == ast::Public ||
+                    decAssign->declare->scope == ast::Export);
+      if (inferred && !detail.empty() && detail != "let") {
+        index.inlayHints.push_back(IndexedInlayHint{
+            decAssign->declare->ident, uri,
+            std::max(0, decAssign->logicalLine - 1), 0, detail});
+      }
     }
     collectIndexFromStatement(decAssign->expr, uri, index, container);
     return;
@@ -1293,6 +1459,65 @@ TokenSpan findTokenSpan(const std::vector<lex::Token *> &tokens, int line,
   return defaultSpanForName(name);
 }
 
+void resolveSourceSpans(DocumentIndex &index, const std::string &uri,
+                        const std::string &text) {
+  lex::Lexer sourceScanner;
+  auto sourceTokens = sourceScanner.Scan(text);
+  sourceTokens.invert();
+  auto sourceTokenList = tokenVector(sourceTokens);
+  for (auto &symbol : index.symbols) {
+    if (symbol.uri != uri)
+      continue;
+    auto span = findTokenSpan(sourceTokenList, symbol.line, symbol.name);
+    symbol.line = span.line;
+    symbol.column = span.column;
+    symbol.length = span.length;
+  }
+  for (auto &hint : index.inlayHints) {
+    if (hint.uri != uri)
+      continue;
+    auto span = findTokenSpan(sourceTokenList, hint.line, hint.name);
+    hint.line = span.line;
+    hint.character = span.column + span.length;
+  }
+  destroyTokens(sourceTokens);
+}
+
+void collectImports(ast::Statement *stmt, std::vector<ast::Import *> &imports) {
+  if (stmt == nullptr)
+    return;
+  if (auto *sequence = dynamic_cast<ast::Sequence *>(stmt)) {
+    collectImports(sequence->Statement1, imports);
+    collectImports(sequence->Statement2, imports);
+  } else if (auto *import = dynamic_cast<ast::Import *>(stmt)) {
+    imports.push_back(import);
+  }
+}
+
+std::optional<std::filesystem::path>
+resolveImportPath(const ast::Import &import, const std::string &currentDir,
+                  const std::string &libPath) {
+  std::filesystem::path path = import.path;
+  if (path.is_relative()) {
+    if (!import.path.empty() && import.path.front() == '.') {
+      path = std::filesystem::path(currentDir) / path;
+    } else {
+      path = std::filesystem::path(libPath).parent_path() / "src" / path;
+    }
+  }
+  if (path.extension() != ".af")
+    path += ".af";
+  path = std::filesystem::absolute(path).lexically_normal();
+  if (std::filesystem::is_regular_file(path))
+    return path;
+  auto modulePath = path;
+  modulePath.replace_extension();
+  modulePath /= "mod.af";
+  if (std::filesystem::is_regular_file(modulePath))
+    return modulePath;
+  return std::nullopt;
+}
+
 void indexFileRecursive(const std::string &uri, const std::string &text,
                         const std::string &libPath,
                         std::unordered_set<std::string> &visited,
@@ -1310,17 +1535,12 @@ void indexFileRecursive(const std::string &uri, const std::string &text,
     auto preprocessed = pp.PreProcess(text, libPath, currentDir);
     auto tokens = scanner.Scan(preprocessed);
     tokens.invert();
-    auto tokenList = tokenVector(tokens);
     parse::Parser parser;
     auto *stmt = parser.parseStmt(tokens);
+    std::vector<ast::Import *> imports;
+    collectImports(stmt, imports);
     collectIndexFromStatement(stmt, uri, index);
-    for (auto &symbol : index.symbols) {
-      if (symbol.uri == uri) {
-        auto span = findTokenSpan(tokenList, symbol.line, symbol.name);
-        symbol.column = span.column;
-        symbol.length = span.length;
-      }
-    }
+    resolveSourceSpans(index, uri, text);
     destroyTokens(tokens);
 
     for (const auto &include : pp.getIncludes()) {
@@ -1328,6 +1548,16 @@ void indexFileRecursive(const std::string &uri, const std::string &text,
       if (!includeText.empty()) {
         indexFileRecursive(encodeUriPath(include), includeText, libPath,
                            visited, index);
+      }
+    }
+    for (const auto *import : imports) {
+      auto importPath = resolveImportPath(*import, currentDir, libPath);
+      if (!importPath.has_value())
+        continue;
+      auto importText = readFile(*importPath);
+      if (!importText.empty()) {
+        indexFileRecursive(encodeUriPath(importPath->string()), importText,
+                           libPath, visited, index);
       }
     }
   } catch (...) {
@@ -1862,15 +2092,20 @@ JsonValue buildSemanticTokens(const std::string &text) {
   return JsonValue(JsonValue::Object{{"data", JsonValue(std::move(data))}});
 }
 
-std::vector<JsonValue> analyzeDocument(const std::string &uri,
-                                       const std::string &text,
-                                       const std::string &libPath) {
+struct DocumentAnalysis {
+  std::vector<JsonValue> diagnostics;
+  DocumentIndex typedIndex;
+};
+
+DocumentAnalysis analyzeDocument(const std::string &uri,
+                                 const std::string &text,
+                                 const std::string &libPath) {
   ast::StatementAllocationScope statementAllocations;
   ast::TypeAllocationScope astTypeAllocations;
   lex::TokenAllocationScope tokenAllocations;
   asmc::InstructionAllocationScope instructionAllocations;
   gen::TypeAllocationScope typeAllocations;
-  std::vector<JsonValue> diagnostics;
+  DocumentAnalysis analysis;
   std::string path = pathFromUri(uri);
   std::string currentDir = std::filesystem::path(path).parent_path().string();
   PreProcessor pp;
@@ -1882,9 +2117,9 @@ std::vector<JsonValue> analyzeDocument(const std::string &uri,
   error::DiagnosticCaptureScope diagnosticCapture(
       [&](const std::string &, int line, const std::string &message,
           const std::string &source, bool warning) {
-        diagnostics.push_back(makeDiagnostic(line > 0 ? line : 1, message,
-                                             source.empty() ? text : source,
-                                             warning ? 2 : 1));
+        analysis.diagnostics.push_back(
+            makeDiagnostic(line > 0 ? line : 1, message,
+                           source.empty() ? text : source, warning ? 2 : 1));
       });
 
   try {
@@ -1899,33 +2134,90 @@ std::vector<JsonValue> analyzeDocument(const std::string &uri,
     auto moduleId = std::filesystem::path(path).stem().string();
     gen::CodeGenerator generator(moduleId, parser, text, currentDir, path);
     generator.mutability() = cfg::Mutability::Strict;
+    generator.setInferredTypeCallback([&](const std::string &reportedFile,
+                                          const std::string &identifier,
+                                          const ast::Type &inferredType,
+                                          int line) {
+      if (!reportedFile.empty() && pathFromUri(reportedFile) != path)
+        return;
+      const auto inferredName = typeName(inferredType);
+      if (identifier.empty() || inferredName.empty() || inferredName == "let")
+        return;
+      const int sourceLine = std::max(0, line - 1);
+      if (lineText(text, sourceLine + 1).find(identifier) == std::string::npos)
+        return;
+      addSymbol(analysis.typedIndex, identifier, uri,
+                TokenSpan{sourceLine, 0,
+                          std::max(1, static_cast<int>(identifier.size()))},
+                LSP_SYMBOL_VARIABLE, inferredName);
+      analysis.typedIndex.inlayHints.push_back(
+          IndexedInlayHint{identifier, uri, sourceLine, 0, inferredName});
+    });
     auto discardedAssembly = generator.GenSTMT(stmt);
     discardedAssembly << generator.deferredMethods();
+    collectIndexFromStatement(stmt, uri, analysis.typedIndex);
+    resolveSourceSpans(analysis.typedIndex, uri, text);
     destroyTokens(tokens);
-    return diagnostics;
+    return analysis;
   } catch (int offset) {
     destroyTokens(tokens);
-    diagnostics.push_back(makeDiagnostic(lineFromOffset(text, offset),
-                                         "unparsable character", text));
+    analysis.diagnostics.push_back(makeDiagnostic(
+        lineFromOffset(text, offset), "unparsable character", text));
   } catch (const err::Exception &e) {
     destroyTokens(tokens);
-    if (diagnostics.empty()) {
+    if (analysis.diagnostics.empty()) {
       int line = error::extractLine(e.errorMsg);
       if (line < 0)
         line = 1;
-      diagnostics.push_back(makeDiagnostic(line, e.errorMsg, text));
+      analysis.diagnostics.push_back(makeDiagnostic(line, e.errorMsg, text));
     }
   } catch (const std::exception &e) {
     destroyTokens(tokens);
-    diagnostics.push_back(
+    analysis.diagnostics.push_back(
         makeDiagnostic(1, std::string("internal error: ") + e.what(), text));
   } catch (...) {
     destroyTokens(tokens);
-    diagnostics.push_back(
+    analysis.diagnostics.push_back(
         makeDiagnostic(1, "internal error: unknown exception", text));
   }
 
-  return diagnostics;
+  return analysis;
+}
+
+void mergeTypedIndex(DocumentIndex &index, const DocumentIndex &typed,
+                     const std::string &uri) {
+  for (const auto &typedSymbol : typed.symbols) {
+    auto existing = std::find_if(index.symbols.begin(), index.symbols.end(),
+                                 [&](const auto &symbol) {
+                                   return symbol.uri == typedSymbol.uri &&
+                                          symbol.name == typedSymbol.name &&
+                                          symbol.kind == typedSymbol.kind &&
+                                          symbol.line == typedSymbol.line;
+                                 });
+    if (existing == index.symbols.end())
+      index.symbols.push_back(typedSymbol);
+    else {
+      auto merged = typedSymbol;
+      if ((merged.detail.empty() || merged.detail == "let") &&
+          !existing->detail.empty() && existing->detail != "let")
+        merged.detail = existing->detail;
+      *existing = std::move(merged);
+    }
+  }
+
+  if (!typed.inlayHints.empty()) {
+    index.inlayHints.erase(
+        std::remove_if(index.inlayHints.begin(), index.inlayHints.end(),
+                       [&](const auto &hint) { return hint.uri == uri; }),
+        index.inlayHints.end());
+    std::unordered_set<std::string> seen;
+    for (const auto &hint : typed.inlayHints) {
+      const auto key = hint.uri + "\n" + hint.name + "\n" +
+                       std::to_string(hint.line) + "\n" + hint.type;
+      if (seen.insert(key).second)
+        index.inlayHints.push_back(hint);
+    }
+  }
 }
 
 class LanguageServer {
@@ -2097,11 +2389,13 @@ private:
         pendingDiagnostics.erase(job.uri);
       }
 
+      auto analysis = analyzeDocument(job.uri, job.text, libPath);
       JsonValue::Array diagnostics;
-      for (const auto &diag : analyzeDocument(job.uri, job.text, libPath)) {
+      for (const auto &diag : analysis.diagnostics) {
         diagnostics.push_back(diag);
       }
       auto index = buildDocumentIndex(job.uri, job.text, libPath);
+      mergeTypedIndex(index, analysis.typedIndex, job.uri);
 
       std::lock_guard<std::mutex> lock(diagnosticsMutex);
       auto currentRevision = diagnosticRevisions.find(job.uri);
@@ -2109,7 +2403,14 @@ private:
           currentRevision->second != job.revision) {
         continue;
       }
-      documentIndexes[job.uri] = std::move(index);
+      // Editing commonly leaves a document temporarily unparsable (typing a
+      // member-access dot is the most important example).  Keep the last
+      // useful type index instead of replacing it with an empty one, so
+      // completion can still resolve the receiver while the edit is partial.
+      if (!index.symbols.empty() ||
+          documentIndexes.find(job.uri) == documentIndexes.end()) {
+        documentIndexes[job.uri] = std::move(index);
+      }
       sendNotification("textDocument/publishDiagnostics",
                        JsonValue(JsonValue::Object{
                            {"uri", JsonValue(job.uri)},
@@ -2200,12 +2501,59 @@ private:
     std::string prefix = currentLinePrefix(text, line + 1, character);
     auto words = gatherCompletions(text);
     auto index = cachedDocumentIndex(*uriValue);
+    if (!index.has_value())
+      index = buildDocumentIndex(*uriValue, text, libPath);
+    if (auto member = memberCompletionContext(text, line, character)) {
+      sendResponse(
+          id, JsonValue(JsonValue::Object{
+                  {"isIncomplete", JsonValue(false)},
+                  {"items", JsonValue(memberCompletionItems(*index, *member))},
+              }));
+      return;
+    }
     auto items =
         completionItems(words, prefix, index.has_value() ? &*index : nullptr);
     sendResponse(id, JsonValue(JsonValue::Object{
                          {"isIncomplete", JsonValue(false)},
                          {"items", JsonValue(std::move(items))},
                      }));
+  }
+
+  void handleInlayHints(const JsonValue &id, const JsonValue &params) {
+    const auto *textDocument = findPath(params, {"textDocument"});
+    auto uriValue = textDocument == nullptr
+                        ? std::nullopt
+                        : asString(findMember(*textDocument, "uri"));
+    if (!uriValue) {
+      sendResponse(id, JsonValue(JsonValue::Array{}));
+      return;
+    }
+    auto index = cachedDocumentIndex(*uriValue);
+    if (!index.has_value())
+      index = buildDocumentIndex(*uriValue, documentText(*uriValue), libPath);
+
+    int startLine = 0;
+    int endLine = std::numeric_limits<int>::max();
+    if (const auto *range = findMember(params, "range")) {
+      if (const auto *start = findMember(*range, "start"))
+        startLine = asInt(findMember(*start, "line")).value_or(0);
+      if (const auto *end = findMember(*range, "end"))
+        endLine = asInt(findMember(*end, "line")).value_or(endLine);
+    }
+
+    JsonValue::Array hints;
+    for (const auto &hint : index->inlayHints) {
+      if (hint.uri != *uriValue || hint.line < startLine || hint.line > endLine)
+        continue;
+      hints.push_back(JsonValue(JsonValue::Object{
+          {"position", makePosition(hint.line, hint.character)},
+          {"label", JsonValue(": " + hint.type)},
+          {"kind", JsonValue(1)},
+          {"paddingLeft", JsonValue(false)},
+          {"paddingRight", JsonValue(false)},
+      }));
+    }
+    sendResponse(id, JsonValue(std::move(hints)));
   }
 
   void handleSemanticTokens(const JsonValue &id, const JsonValue &params) {
@@ -2503,6 +2851,7 @@ private:
           {"hoverProvider", JsonValue(true)},
           {"referencesProvider", JsonValue(true)},
           {"documentSymbolProvider", JsonValue(true)},
+          {"inlayHintProvider", JsonValue(true)},
           {"signatureHelpProvider",
            JsonValue(JsonValue::Object{
                {"triggerCharacters", JsonValue(JsonValue::Array{
@@ -2596,6 +2945,14 @@ private:
                               {"activeSignature", JsonValue(0)},
                               {"activeParameter", JsonValue(0)},
                           }));
+      return;
+    }
+
+    if (*methodValue == "textDocument/inlayHint") {
+      if (id != nullptr && params != nullptr)
+        handleInlayHints(*id, *params);
+      else if (id != nullptr)
+        sendResponse(*id, JsonValue(JsonValue::Array{}));
       return;
     }
 

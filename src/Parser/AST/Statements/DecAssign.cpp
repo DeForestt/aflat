@@ -64,6 +64,9 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
 
       auto mov = new asmc::Mov();
       mov->logicalLine = this->logicalLine;
+      const bool inferredDeclaration = dec->TypeName.empty() ||
+                                       dec->TypeName == "let" ||
+                                       dec->type.typeName == "let";
       gen::Expr expr = generator.GenExpr(this->expr, file, dec->type.size,
                                          dec->type.typeName);
 
@@ -98,6 +101,8 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
           dec->type = *t;
         }
       }
+      if (inferredDeclaration)
+        generator.reportInferredType(dec->ident, dec->type, this->logicalLine);
 
       if (expr.requiresImmutableBinding && !this->declare->readOnly) {
         auto source = expr.immutableBindingSource.empty()
