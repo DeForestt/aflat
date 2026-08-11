@@ -4,21 +4,30 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
+#include <condition_variable>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <mutex>
 #include <optional>
 #include <regex>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 #include <variant>
 #include <vector>
 
+#include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/ScopeManager.hpp"
+#include "Configs.hpp"
 #include "ErrorReporter.hpp"
 #include "Exceptions.hpp"
+#include "Parser/Lower.hpp"
 #include "Parser/Parser.hpp"
 #include "PreProcessor.hpp"
 #include "Scanner.hpp"
@@ -508,12 +517,12 @@ JsonValue makeRange(int line, int startCharacter, int endCharacter) {
 }
 
 JsonValue makeDiagnostic(int line, const std::string &message,
-                         const std::string &source) {
+                         const std::string &source, int severity = 1) {
   int zeroBasedLine = std::max(0, line - 1);
   int endCharacter = std::max(1, lineLength(source, line));
   return JsonValue(JsonValue::Object{
       {"range", makeRange(zeroBasedLine, 0, endCharacter)},
-      {"severity", JsonValue(1)},
+      {"severity", JsonValue(severity)},
       {"source", JsonValue("aflat")},
       {"message", JsonValue(message)},
   });
@@ -581,27 +590,6 @@ std::vector<std::string> gatherCompletions(const std::string &text) {
   return items;
 }
 
-std::vector<JsonValue> completionItems(const std::vector<std::string> &items,
-                                       const std::string &prefix) {
-  std::vector<JsonValue> out;
-  for (const auto &item : items) {
-    if (!prefix.empty() && item.rfind(prefix, 0) != 0)
-      continue;
-    JsonValue::Object value{
-        {"label", JsonValue(item)},
-    };
-    if (std::all_of(item.begin(), item.end(), [](unsigned char c) {
-          return std::islower(c) || c == '_';
-        })) {
-      value.emplace("kind", JsonValue(14));
-    } else {
-      value.emplace("kind", JsonValue(6));
-    }
-    out.emplace_back(std::move(value));
-  }
-  return out;
-}
-
 struct SemanticSymbolSets {
   std::unordered_set<std::string> types;
   std::unordered_set<std::string> classes;
@@ -639,6 +627,19 @@ void collectStatementSymbols(ast::Statement *stmt, SemanticSymbolSets &symbols,
     return;
   }
 
+  // Union derives from Class but owns a separate statement member. It must be
+  // handled before Class or the inherited, unused Class::statement is read.
+  if (auto *uni = dynamic_cast<ast::Union *>(stmt)) {
+    if (!uni->ident.ident.empty())
+      symbols.classes.insert(uni->ident.ident);
+    for (const auto *alias : uni->aliases) {
+      if (alias != nullptr && !alias->name.empty())
+        symbols.enumMembers.insert(alias->name);
+    }
+    collectStatementSymbols(uni->statement, symbols, inParams);
+    return;
+  }
+
   if (auto *cls = dynamic_cast<ast::Class *>(stmt)) {
     if (!cls->ident.ident.empty())
       symbols.classes.insert(cls->ident.ident);
@@ -651,17 +652,6 @@ void collectStatementSymbols(ast::Statement *stmt, SemanticSymbolSets &symbols,
     if (!strct->ident.ident.empty())
       symbols.structs.insert(strct->ident.ident);
     collectStatementSymbols(strct->statement, symbols, inParams);
-    return;
-  }
-
-  if (auto *uni = dynamic_cast<ast::Union *>(stmt)) {
-    if (!uni->ident.ident.empty())
-      symbols.classes.insert(uni->ident.ident);
-    for (const auto *alias : uni->aliases) {
-      if (alias != nullptr && !alias->name.empty())
-        symbols.enumMembers.insert(alias->name);
-    }
-    collectStatementSymbols(uni->statement, symbols, inParams);
     return;
   }
 
@@ -807,12 +797,14 @@ struct TokenSpan {
 
 struct SignatureParameter {
   std::string label;
+  std::string documentation;
 };
 
 struct SignatureInfo {
   std::string name;
   std::string label;
   std::string documentation;
+  std::string container;
   std::vector<SignatureParameter> parameters;
   int activeParameter = 0;
   std::string uri;
@@ -843,6 +835,78 @@ constexpr int LSP_SYMBOL_VARIABLE = 13;
 constexpr int LSP_SYMBOL_ENUM_MEMBER = 22;
 constexpr int LSP_SYMBOL_STRUCT = 23;
 
+int completionKind(int symbolKind) {
+  switch (symbolKind) {
+  case LSP_SYMBOL_FUNCTION:
+    return 3;
+  case LSP_SYMBOL_CLASS:
+    return 7;
+  case LSP_SYMBOL_ENUM:
+    return 13;
+  case LSP_SYMBOL_ENUM_MEMBER:
+    return 20;
+  case LSP_SYMBOL_STRUCT:
+    return 22;
+  default:
+    return 6;
+  }
+}
+
+std::vector<JsonValue> completionItems(const std::vector<std::string> &items,
+                                       const std::string &prefix,
+                                       const DocumentIndex *index = nullptr) {
+  std::vector<JsonValue> out;
+  std::unordered_set<std::string> indexedNames;
+
+  if (index != nullptr) {
+    std::unordered_set<std::string> seenSymbols;
+    for (const auto &symbol : index->symbols) {
+      if (!prefix.empty() && symbol.name.rfind(prefix, 0) != 0)
+        continue;
+      const auto key = symbol.name + "\n" + symbol.signature + "\n" +
+                       std::to_string(symbol.kind);
+      if (!seenSymbols.insert(key).second)
+        continue;
+      indexedNames.insert(symbol.name);
+      JsonValue::Object value{
+          {"label", JsonValue(symbol.name)},
+          {"kind", JsonValue(completionKind(symbol.kind))},
+      };
+      const auto detail =
+          symbol.signature.empty() ? symbol.detail : symbol.signature;
+      if (!detail.empty())
+        value.emplace("detail", JsonValue(detail));
+      if (!symbol.detail.empty() && symbol.detail != detail)
+        value.emplace("documentation", JsonValue(symbol.detail));
+      out.emplace_back(std::move(value));
+    }
+  }
+
+  for (const auto &item : items) {
+    if (!prefix.empty() && item.rfind(prefix, 0) != 0)
+      continue;
+    if (indexedNames.count(item) != 0)
+      continue;
+    JsonValue::Object value{{"label", JsonValue(item)}};
+    static const std::unordered_set<std::string> keywords = {
+        "fn",      "class",    "struct", "union",   "import",    "return",
+        "if",      "else",     "for",    "while",   "break",     "continue",
+        "match",   "when",     "let",    "mutable", "immutable", "public",
+        "private", "static",   "export", "const",   "types",     "safe",
+        "dynamic", "pedantic", "unique", "delete",  "true",      "false",
+        "new",     "as",       "under"};
+    if (keywords.count(item) != 0) {
+      value.emplace("kind", JsonValue(14));
+    } else if (parse::PRIMITIVE_TYPES.count(item) != 0) {
+      value.emplace("kind", JsonValue(25));
+    } else {
+      value.emplace("kind", JsonValue(6));
+    }
+    out.emplace_back(std::move(value));
+  }
+  return out;
+}
+
 std::vector<lex::Token *>
 tokenVector(const links::LinkedList<lex::Token *> &tokens);
 
@@ -867,20 +931,33 @@ std::string trimSignatureWhitespace(std::string value) {
 }
 
 void appendParamLabel(std::vector<SignatureParameter> &params,
-                      const std::string &label) {
+                      const std::string &label,
+                      const std::string &documentation) {
   if (!label.empty())
-    params.push_back(SignatureParameter{label});
+    params.push_back(SignatureParameter{label, documentation});
 }
 
 void collectSignatureParameters(ast::Statement *stmt,
                                 std::vector<SignatureParameter> &params);
 
 std::string makeFunctionLabel(const ast::Function *func,
+                              const std::string &container,
                               std::vector<SignatureParameter> &params) {
   collectSignatureParameters(func ? func->args : nullptr, params);
 
-  std::string label = "fn ";
+  std::string label = func != nullptr && func->isAsync ? "async fn " : "fn ";
+  if (!container.empty())
+    label += container + ".";
   label += func ? func->ident.ident : "";
+  if (func != nullptr && !func->genericTypes.empty()) {
+    label += "::<";
+    for (size_t i = 0; i < func->genericTypes.size(); ++i) {
+      if (i != 0)
+        label += ", ";
+      label += func->genericTypes[i];
+    }
+    label += ">";
+  }
   label += "(";
   for (size_t i = 0; i < params.size(); ++i) {
     if (i != 0)
@@ -889,7 +966,7 @@ std::string makeFunctionLabel(const ast::Function *func,
   }
   label += ")";
   auto ret = func ? typeName(func->type) : std::string();
-  if (!ret.empty() && ret != "void") {
+  if (!ret.empty()) {
     label += " -> ";
     label += ret;
   }
@@ -913,19 +990,13 @@ std::string statementLabel(ast::Statement *stmt) {
   if (stmt == nullptr)
     return {};
   if (auto *decl = dynamic_cast<ast::Declare *>(stmt)) {
-    std::string label = decl->ident;
     std::string typ =
         decl->TypeName.empty() ? typeName(decl->type) : decl->TypeName;
-    if (!typ.empty())
-      label += ": " + typ;
-    return label;
+    return (typ.empty() ? std::string("any") : typ) + " " + decl->ident;
   }
   if (auto *arg = dynamic_cast<ast::Argument *>(stmt)) {
-    std::string label = arg->Ident;
     std::string typ = typeName(arg->type);
-    if (!typ.empty())
-      label += ": " + typ;
-    return label;
+    return (typ.empty() ? std::string("any") : typ) + " " + arg->Ident;
   }
   if (auto *seq = dynamic_cast<ast::Sequence *>(stmt))
     return statementLabel(seq->Statement1) + ", " +
@@ -943,23 +1014,32 @@ void collectSignatureParameters(ast::Statement *stmt,
     return;
   }
   if (auto *decl = dynamic_cast<ast::Declare *>(stmt)) {
-    appendParamLabel(params, statementLabel(decl));
+    const auto type =
+        decl->TypeName.empty() ? typeName(decl->type) : decl->TypeName;
+    std::string documentation = "Type: `" + type + "`";
+    if (decl->readOnly)
+      documentation += "\n\nRead-only parameter";
+    else if (!decl->mut)
+      documentation += "\n\nImmutable parameter";
+    appendParamLabel(params, statementLabel(decl), documentation);
     return;
   }
   if (auto *arg = dynamic_cast<ast::Argument *>(stmt)) {
-    appendParamLabel(params, statementLabel(arg));
+    const auto type = typeName(arg->type);
+    appendParamLabel(params, statementLabel(arg), "Type: `" + type + "`");
     return;
   }
 }
 
 void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
-                               DocumentIndex &index) {
+                               DocumentIndex &index,
+                               const std::string &container = "") {
   if (stmt == nullptr)
     return;
 
   if (auto *seq = dynamic_cast<ast::Sequence *>(stmt)) {
-    collectIndexFromStatement(seq->Statement1, uri, index);
-    collectIndexFromStatement(seq->Statement2, uri, index);
+    collectIndexFromStatement(seq->Statement1, uri, index, container);
+    collectIndexFromStatement(seq->Statement2, uri, index, container);
     return;
   }
 
@@ -967,9 +1047,10 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
     std::vector<SignatureParameter> params;
     SignatureInfo signature;
     signature.name = func->ident.ident;
-    signature.label = makeFunctionLabel(func, params);
+    signature.label = makeFunctionLabel(func, container, params);
     signature.parameters = params;
-    signature.documentation = typeName(func->type);
+    signature.documentation = "Returns: `" + typeName(func->type) + "`";
+    signature.container = container;
     signature.uri = uri;
     signature.line = std::max(0, func->logicalLine - 1);
     addSignature(index, signature);
@@ -978,8 +1059,25 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
         TokenSpan{std::max(0, func->logicalLine - 1), 0,
                   std::max(1, static_cast<int>(func->ident.ident.size()))},
         LSP_SYMBOL_FUNCTION, signature.documentation, signature.label, true);
-    collectIndexFromStatement(func->args, uri, index);
-    collectIndexFromStatement(func->statement, uri, index);
+    collectIndexFromStatement(func->args, uri, index, container);
+    collectIndexFromStatement(func->statement, uri, index, container);
+    return;
+  }
+
+  if (auto *uni = dynamic_cast<ast::Union *>(stmt)) {
+    addSymbol(index, uni->ident.ident, uri,
+              TokenSpan{std::max(0, uni->logicalLine - 1), 0,
+                        std::max(1, static_cast<int>(uni->ident.ident.size()))},
+              LSP_SYMBOL_CLASS);
+    for (const auto *alias : uni->aliases) {
+      if (alias != nullptr && !alias->name.empty()) {
+        addSymbol(index, alias->name, uri,
+                  TokenSpan{std::max(0, uni->logicalLine - 1), 0,
+                            std::max(1, static_cast<int>(alias->name.size()))},
+                  LSP_SYMBOL_ENUM_MEMBER, alias->toString());
+      }
+    }
+    collectIndexFromStatement(uni->statement, uri, index, uni->ident.ident);
     return;
   }
 
@@ -988,8 +1086,8 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
               TokenSpan{std::max(0, cls->logicalLine - 1), 0,
                         std::max(1, static_cast<int>(cls->ident.ident.size()))},
               LSP_SYMBOL_CLASS);
-    collectIndexFromStatement(cls->contract, uri, index);
-    collectIndexFromStatement(cls->statement, uri, index);
+    collectIndexFromStatement(cls->contract, uri, index, cls->ident.ident);
+    collectIndexFromStatement(cls->statement, uri, index, cls->ident.ident);
     return;
   }
 
@@ -999,16 +1097,7 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
         TokenSpan{std::max(0, strct->logicalLine - 1), 0,
                   std::max(1, static_cast<int>(strct->ident.ident.size()))},
         LSP_SYMBOL_STRUCT);
-    collectIndexFromStatement(strct->statement, uri, index);
-    return;
-  }
-
-  if (auto *uni = dynamic_cast<ast::Union *>(stmt)) {
-    addSymbol(index, uni->ident.ident, uri,
-              TokenSpan{std::max(0, uni->logicalLine - 1), 0,
-                        std::max(1, static_cast<int>(uni->ident.ident.size()))},
-              LSP_SYMBOL_CLASS);
-    collectIndexFromStatement(uni->statement, uri, index);
+    collectIndexFromStatement(strct->statement, uri, index, strct->ident.ident);
     return;
   }
 
@@ -1075,7 +1164,7 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
                                           decAssign->declare->ident.size()))},
                 LSP_SYMBOL_VARIABLE, decAssign->declare->TypeName);
     }
-    collectIndexFromStatement(decAssign->expr, uri, index);
+    collectIndexFromStatement(decAssign->expr, uri, index, container);
     return;
   }
 
@@ -1089,7 +1178,7 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
                                     decAssignArr->declare->ident.size()))},
           LSP_SYMBOL_VARIABLE, typeName(decAssignArr->declare->type));
     }
-    collectIndexFromStatement(decAssignArr->expr, uri, index);
+    collectIndexFromStatement(decAssignArr->expr, uri, index, container);
     return;
   }
 
@@ -1100,7 +1189,7 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
                           std::max(1, static_cast<int>(name.size()))},
                 LSP_SYMBOL_VARIABLE);
     }
-    collectIndexFromStatement(destructure->expr, uri, index);
+    collectIndexFromStatement(destructure->expr, uri, index, container);
     return;
   }
 
@@ -1112,40 +1201,40 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
                                           fe->binding_identifier.size()))},
                 LSP_SYMBOL_VARIABLE);
     }
-    collectIndexFromStatement(fe->iterator, uri, index);
-    collectIndexFromStatement(fe->implementation, uri, index);
+    collectIndexFromStatement(fe->iterator, uri, index, container);
+    collectIndexFromStatement(fe->implementation, uri, index, container);
     return;
   }
 
   if (auto *f = dynamic_cast<ast::For *>(stmt)) {
-    collectIndexFromStatement(f->declare, uri, index);
-    collectIndexFromStatement(f->increment, uri, index);
-    collectIndexFromStatement(f->Run, uri, index);
+    collectIndexFromStatement(f->declare, uri, index, container);
+    collectIndexFromStatement(f->increment, uri, index, container);
+    collectIndexFromStatement(f->Run, uri, index, container);
     return;
   }
 
   if (auto *iff = dynamic_cast<ast::If *>(stmt)) {
-    collectIndexFromStatement(iff->expr, uri, index);
-    collectIndexFromStatement(iff->statement, uri, index);
-    collectIndexFromStatement(iff->elseStatement, uri, index);
-    collectIndexFromStatement(iff->elseIf, uri, index);
+    collectIndexFromStatement(iff->expr, uri, index, container);
+    collectIndexFromStatement(iff->statement, uri, index, container);
+    collectIndexFromStatement(iff->elseStatement, uri, index, container);
+    collectIndexFromStatement(iff->elseIf, uri, index, container);
     return;
   }
 
   if (auto *wh = dynamic_cast<ast::While *>(stmt)) {
-    collectIndexFromStatement(wh->expr, uri, index);
-    collectIndexFromStatement(wh->stmt, uri, index);
+    collectIndexFromStatement(wh->expr, uri, index, container);
+    collectIndexFromStatement(wh->stmt, uri, index, container);
     return;
   }
 
   if (auto *ret = dynamic_cast<ast::Return *>(stmt)) {
-    collectIndexFromStatement(ret->expr, uri, index);
+    collectIndexFromStatement(ret->expr, uri, index, container);
     return;
   }
 
   if (auto *call = dynamic_cast<ast::Call *>(stmt)) {
     for (auto *arg : call->Args) {
-      collectIndexFromStatement(arg, uri, index);
+      collectIndexFromStatement(arg, uri, index, container);
     }
     return;
   }
@@ -1162,7 +1251,7 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
   }
 
   if (auto *match = dynamic_cast<ast::Match *>(stmt)) {
-    collectIndexFromStatement(match->expr, uri, index);
+    collectIndexFromStatement(match->expr, uri, index, container);
     for (const auto &c : match->cases) {
       if (!c.pattern.aliasName.empty()) {
         addSymbol(index, c.pattern.aliasName, uri,
@@ -1178,7 +1267,7 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
                                             c.pattern.veriableName->size()))},
                   LSP_SYMBOL_VARIABLE);
       }
-      collectIndexFromStatement(c.statement, uri, index);
+      collectIndexFromStatement(c.statement, uri, index, container);
     }
     return;
   }
@@ -1249,6 +1338,9 @@ void indexFileRecursive(const std::string &uri, const std::string &text,
 DocumentIndex buildDocumentIndex(const std::string &uri,
                                  const std::string &text,
                                  const std::string &libPath) {
+  ast::StatementAllocationScope statementAllocations;
+  ast::TypeAllocationScope typeAllocations;
+  lex::TokenAllocationScope tokenAllocations;
   DocumentIndex index;
   std::unordered_set<std::string> visited;
   indexFileRecursive(uri, text, libPath, visited, index);
@@ -1318,23 +1410,59 @@ JsonValue makeSymbolInformation(const IndexedSymbol &symbol) {
   });
 }
 
+JsonValue markdownDocumentation(const std::string &value) {
+  return JsonValue(JsonValue::Object{{"kind", JsonValue("markdown")},
+                                     {"value", JsonValue(value)}});
+}
+
 JsonValue makeSignatureHelp(const DocumentIndex &index, const std::string &name,
-                            int activeParameter) {
+                            int activeParameter,
+                            const std::string &qualifier = "") {
   JsonValue::Array signatures;
+  int activeSignature = 0;
+  bool selectedSignature = false;
+  std::string receiverType;
+  if (!qualifier.empty()) {
+    if (auto receiver = findBestSymbol(index, qualifier))
+      receiverType = stripGenerics(receiver->detail);
+    if (receiverType.empty()) {
+      for (const auto &sig : index.signatures) {
+        if (sig.container == qualifier) {
+          receiverType = qualifier;
+          break;
+        }
+      }
+    }
+  }
+
   for (const auto &sig : index.signatures) {
     if (sig.name != name)
+      continue;
+    if (!receiverType.empty() && !sig.container.empty() &&
+        stripGenerics(sig.container) != receiverType)
       continue;
     JsonValue::Array params;
     for (const auto &param : sig.parameters) {
       params.push_back(JsonValue(JsonValue::Object{
           {"label", JsonValue(param.label)},
+          {"documentation", markdownDocumentation(param.documentation)},
       }));
+    }
+    const int signatureParameter =
+        sig.parameters.empty()
+            ? 0
+            : std::min(activeParameter,
+                       static_cast<int>(sig.parameters.size()) - 1);
+    if (!selectedSignature &&
+        activeParameter < static_cast<int>(sig.parameters.size())) {
+      activeSignature = static_cast<int>(signatures.size());
+      selectedSignature = true;
     }
     signatures.push_back(JsonValue(JsonValue::Object{
         {"label", JsonValue(sig.label)},
-        {"documentation", JsonValue(sig.documentation)},
+        {"documentation", markdownDocumentation(sig.documentation)},
         {"parameters", JsonValue(std::move(params))},
-        {"activeParameter", JsonValue(std::max(0, activeParameter))},
+        {"activeParameter", JsonValue(std::max(0, signatureParameter))},
     }));
   }
 
@@ -1348,7 +1476,7 @@ JsonValue makeSignatureHelp(const DocumentIndex &index, const std::string &name,
 
   return JsonValue(JsonValue::Object{
       {"signatures", JsonValue(std::move(signatures))},
-      {"activeSignature", JsonValue(0)},
+      {"activeSignature", JsonValue(activeSignature)},
       {"activeParameter", JsonValue(std::max(0, activeParameter))},
   });
 }
@@ -1386,42 +1514,44 @@ identifierAtPosition(const std::vector<lex::Token *> &tokens, int line,
 
 struct CallContext {
   std::string name;
+  std::string qualifier;
   int activeParameter = 0;
 };
 
 std::optional<CallContext>
 findCallContext(const std::vector<lex::Token *> &tokens, int line,
                 int character) {
-  auto cursorIndex = tokenIndexAtPosition(tokens, line, character);
-  if (!cursorIndex.has_value())
+  std::optional<size_t> cursorIndex;
+  for (size_t i = 0; i < tokens.size(); ++i) {
+    const auto *token = tokens[i];
+    const int tokenLine = token->lineCount - 1;
+    const int tokenStart = std::max(0, token->column - 1);
+    if (tokenLine < line || (tokenLine == line && tokenStart <= character))
+      cursorIndex = i;
+    else
+      break;
+  }
+  if (!cursorIndex)
     return std::nullopt;
 
   int depth = 0;
   std::optional<size_t> openParen;
-  for (size_t i = 0; i <= cursorIndex.value() && i < tokens.size(); ++i) {
+  for (size_t i = cursorIndex.value() + 1; i-- > 0;) {
     auto *token = tokens[i];
     auto *op = dynamic_cast<lex::OpSym *>(token);
     auto *sym = dynamic_cast<lex::Symbol *>(token);
-    if (op != nullptr) {
-      if (op->Sym == '(') {
+    const bool isOpen = (op != nullptr && op->Sym == '(') ||
+                        (sym != nullptr && sym->meta == "(");
+    const bool isClose = (op != nullptr && op->Sym == ')') ||
+                         (sym != nullptr && sym->meta == ")");
+    if (isClose) {
+      ++depth;
+    } else if (isOpen) {
+      if (depth == 0) {
         openParen = i;
-        ++depth;
-      } else if (op->Sym == ')') {
-        if (depth > 0)
-          --depth;
-        if (depth == 0)
-          openParen.reset();
+        break;
       }
-    } else if (sym != nullptr) {
-      if (sym->meta == "(") {
-        openParen = i;
-        ++depth;
-      } else if (sym->meta == ")") {
-        if (depth > 0)
-          --depth;
-        if (depth == 0)
-          openParen.reset();
-      }
+      --depth;
     }
   }
 
@@ -1447,6 +1577,20 @@ findCallContext(const std::vector<lex::Token *> &tokens, int line,
   if (nameToken == nullptr)
     return std::nullopt;
 
+  std::string qualifier;
+  if (nameIndex >= 2) {
+    auto *separator = dynamic_cast<lex::OpSym *>(tokens[nameIndex - 1]);
+    auto *symbolSeparator = dynamic_cast<lex::Symbol *>(tokens[nameIndex - 1]);
+    const bool memberSeparator =
+        (separator != nullptr &&
+         (separator->Sym == '.' || separator->Sym == ':')) ||
+        (symbolSeparator != nullptr && symbolSeparator->meta == "::");
+    if (memberSeparator) {
+      if (auto *receiver = dynamic_cast<lex::LObj *>(tokens[nameIndex - 2]))
+        qualifier = receiver->meta;
+    }
+  }
+
   int nested = 0;
   int activeParameter = 0;
   for (size_t i = openParen.value() + 1;
@@ -1471,7 +1615,7 @@ findCallContext(const std::vector<lex::Token *> &tokens, int line,
     }
   }
 
-  return CallContext{nameToken->meta, activeParameter};
+  return CallContext{nameToken->meta, qualifier, activeParameter};
 }
 
 enum SemanticTokenKind {
@@ -1607,57 +1751,51 @@ JsonValue makeSemanticPosition(int line, int character) {
   });
 }
 
-JsonValue buildSemanticTokens(const std::string &text,
-                              const std::string &libPath,
-                              const std::string &currentDir) {
+JsonValue buildSemanticTokens(const std::string &text) {
+  lex::TokenAllocationScope tokenAllocations;
   std::vector<SemanticToken> semanticTokens;
   SemanticSymbolSets symbols;
-  PreProcessor pp;
   lex::Lexer scanner;
-  links::LinkedList<lex::Token *> parseTokens;
   links::LinkedList<lex::Token *> highlightTokens;
 
   try {
     highlightTokens = scanner.Scan(text);
     highlightTokens.invert();
   } catch (const err::Exception &e) {
-    destroyTokens(parseTokens);
     destroyTokens(highlightTokens);
     return JsonValue(
         JsonValue::Object{{"data", JsonValue(JsonValue::Array{})}});
   } catch (const std::exception &e) {
-    destroyTokens(parseTokens);
     destroyTokens(highlightTokens);
     return JsonValue(
         JsonValue::Object{{"data", JsonValue(JsonValue::Array{})}});
   } catch (int offset) {
-    destroyTokens(parseTokens);
     destroyTokens(highlightTokens);
     return JsonValue(
         JsonValue::Object{{"data", JsonValue(JsonValue::Array{})}});
   } catch (...) {
-    destroyTokens(parseTokens);
     destroyTokens(highlightTokens);
     return JsonValue(
         JsonValue::Object{{"data", JsonValue(JsonValue::Array{})}});
-  }
-
-  try {
-    auto preprocessed = pp.PreProcess(text, libPath, currentDir);
-    parseTokens = scanner.Scan(preprocessed);
-    parseTokens.invert();
-
-    parse::Parser parser;
-    auto *stmt = parser.parseStmt(parseTokens);
-    collectTypeNames(parser, symbols);
-    collectStatementSymbols(stmt, symbols);
-  } catch (const err::Exception &e) {
-  } catch (const std::exception &e) {
-  } catch (int offset) {
-  } catch (...) {
   }
 
   auto tokenList = tokenVector(highlightTokens);
+  for (const auto &primitive : parse::PRIMITIVE_TYPES)
+    symbols.types.insert(primitive.first);
+  for (size_t i = 1; i < tokenList.size(); ++i) {
+    auto *word = dynamic_cast<lex::LObj *>(tokenList[i]);
+    auto *previous = dynamic_cast<lex::LObj *>(tokenList[i - 1]);
+    if (word == nullptr || previous == nullptr)
+      continue;
+    if (previous->meta == "fn")
+      symbols.functions.insert(word->meta);
+    else if (previous->meta == "class" || previous->meta == "union")
+      symbols.classes.insert(word->meta);
+    else if (previous->meta == "struct")
+      symbols.structs.insert(word->meta);
+    else if (previous->meta == "enum")
+      symbols.enums.insert(word->meta);
+  }
   semanticTokens.reserve(tokenList.size());
   for (size_t i = 0; i < tokenList.size(); ++i) {
     int kind = semanticKindForToken(tokenList, i, symbols);
@@ -1694,7 +1832,6 @@ JsonValue buildSemanticTokens(const std::string &text,
     semanticTokens.push_back({line, column, length, kind, 0});
   }
 
-  destroyTokens(parseTokens);
   destroyTokens(highlightTokens);
 
   std::sort(semanticTokens.begin(), semanticTokens.end(),
@@ -1729,8 +1866,10 @@ std::vector<JsonValue> analyzeDocument(const std::string &uri,
                                        const std::string &text,
                                        const std::string &libPath) {
   ast::StatementAllocationScope statementAllocations;
-  ast::TypeAllocationScope typeAllocations;
+  ast::TypeAllocationScope astTypeAllocations;
   lex::TokenAllocationScope tokenAllocations;
+  asmc::InstructionAllocationScope instructionAllocations;
+  gen::TypeAllocationScope typeAllocations;
   std::vector<JsonValue> diagnostics;
   std::string path = pathFromUri(uri);
   std::string currentDir = std::filesystem::path(path).parent_path().string();
@@ -1738,14 +1877,30 @@ std::vector<JsonValue> analyzeDocument(const std::string &uri,
   lex::Lexer scanner;
   links::LinkedList<lex::Token *> tokens;
   std::string preprocessed;
+  gen::scope::ScopeManager::getInstance()->reset();
+
+  error::DiagnosticCaptureScope diagnosticCapture(
+      [&](const std::string &, int line, const std::string &message,
+          const std::string &source, bool warning) {
+        diagnostics.push_back(makeDiagnostic(line > 0 ? line : 1, message,
+                                             source.empty() ? text : source,
+                                             warning ? 2 : 1));
+      });
 
   try {
     preprocessed = pp.PreProcess(text, libPath, currentDir);
     tokens = scanner.Scan(preprocessed);
     tokens.invert();
-    parse::Parser parser;
-    auto stmt = parser.parseStmt(tokens);
-    (void)stmt;
+    parse::Parser parser(cfg::Mutability::Strict);
+    auto *stmt = parser.parseStmt(tokens);
+    auto lower = parse::lower::Lowerer(stmt);
+    stmt = lower.result();
+
+    auto moduleId = std::filesystem::path(path).stem().string();
+    gen::CodeGenerator generator(moduleId, parser, text, currentDir, path);
+    generator.mutability() = cfg::Mutability::Strict;
+    auto discardedAssembly = generator.GenSTMT(stmt);
+    discardedAssembly << generator.deferredMethods();
     destroyTokens(tokens);
     return diagnostics;
   } catch (int offset) {
@@ -1754,10 +1909,12 @@ std::vector<JsonValue> analyzeDocument(const std::string &uri,
                                          "unparsable character", text));
   } catch (const err::Exception &e) {
     destroyTokens(tokens);
-    int line = error::extractLine(e.errorMsg);
-    if (line < 0)
-      line = 1;
-    diagnostics.push_back(makeDiagnostic(line, e.errorMsg, text));
+    if (diagnostics.empty()) {
+      int line = error::extractLine(e.errorMsg);
+      if (line < 0)
+        line = 1;
+      diagnostics.push_back(makeDiagnostic(line, e.errorMsg, text));
+    }
   } catch (const std::exception &e) {
     destroyTokens(tokens);
     diagnostics.push_back(
@@ -1773,6 +1930,18 @@ std::vector<JsonValue> analyzeDocument(const std::string &uri,
 
 class LanguageServer {
 public:
+  LanguageServer() : diagnosticsThread([this] { diagnosticsLoop(); }) {}
+
+  ~LanguageServer() {
+    {
+      std::lock_guard<std::mutex> lock(diagnosticsMutex);
+      diagnosticsStopping = true;
+    }
+    diagnosticsReady.notify_one();
+    if (diagnosticsThread.joinable())
+      diagnosticsThread.join();
+  }
+
   void run() {
     while (running) {
       auto message = readMessage();
@@ -1788,9 +1957,23 @@ private:
     std::unordered_map<std::string, std::string> headers;
   };
 
+  struct PendingDiagnostics {
+    std::string uri;
+    std::string text;
+    std::uint64_t revision = 0;
+  };
+
   bool running = true;
   std::unordered_map<std::string, std::string> documents;
   const std::string libPath = libraryHeadPath();
+  std::mutex outputMutex;
+  std::mutex diagnosticsMutex;
+  std::condition_variable diagnosticsReady;
+  std::unordered_map<std::string, PendingDiagnostics> pendingDiagnostics;
+  std::unordered_map<std::string, std::uint64_t> diagnosticRevisions;
+  std::unordered_map<std::string, DocumentIndex> documentIndexes;
+  bool diagnosticsStopping = false;
+  std::thread diagnosticsThread;
 
   std::optional<Request> readMessage() {
     std::string header;
@@ -1830,6 +2013,7 @@ private:
 
   void writeMessage(const JsonValue &payload) {
     std::string body = toJson(payload);
+    std::lock_guard<std::mutex> lock(outputMutex);
     std::cout << "Content-Length: " << body.size() << "\r\n\r\n" << body;
     std::cout.flush();
   }
@@ -1868,16 +2052,70 @@ private:
     return readFile(path);
   }
 
-  void publishDiagnostics(const std::string &uri, const std::string &text) {
-    JsonValue::Array diagnostics;
-    for (const auto &diag : analyzeDocument(uri, text, libPath)) {
-      diagnostics.push_back(diag);
+  void scheduleDiagnostics(const std::string &uri, const std::string &text) {
+    {
+      std::lock_guard<std::mutex> lock(diagnosticsMutex);
+      const auto revision = ++diagnosticRevisions[uri];
+      pendingDiagnostics[uri] = PendingDiagnostics{uri, text, revision};
     }
-    sendNotification("textDocument/publishDiagnostics",
-                     JsonValue(JsonValue::Object{
-                         {"uri", JsonValue(uri)},
-                         {"diagnostics", JsonValue(std::move(diagnostics))},
-                     }));
+    diagnosticsReady.notify_one();
+  }
+
+  std::optional<DocumentIndex> cachedDocumentIndex(const std::string &uri) {
+    std::lock_guard<std::mutex> lock(diagnosticsMutex);
+    auto found = documentIndexes.find(uri);
+    if (found == documentIndexes.end())
+      return std::nullopt;
+    return found->second;
+  }
+
+  void diagnosticsLoop() {
+    while (true) {
+      PendingDiagnostics job;
+      {
+        std::unique_lock<std::mutex> lock(diagnosticsMutex);
+        diagnosticsReady.wait(lock, [&] {
+          return diagnosticsStopping || !pendingDiagnostics.empty();
+        });
+        if (diagnosticsStopping && pendingDiagnostics.empty())
+          return;
+
+        auto pending = pendingDiagnostics.begin();
+        job = pending->second;
+        if (!diagnosticsStopping) {
+          diagnosticsReady.wait_for(lock, std::chrono::milliseconds(75), [&] {
+            auto current = pendingDiagnostics.find(job.uri);
+            return diagnosticsStopping || current == pendingDiagnostics.end() ||
+                   current->second.revision != job.revision;
+          });
+          auto current = pendingDiagnostics.find(job.uri);
+          if (current == pendingDiagnostics.end() ||
+              current->second.revision != job.revision) {
+            continue;
+          }
+        }
+        pendingDiagnostics.erase(job.uri);
+      }
+
+      JsonValue::Array diagnostics;
+      for (const auto &diag : analyzeDocument(job.uri, job.text, libPath)) {
+        diagnostics.push_back(diag);
+      }
+      auto index = buildDocumentIndex(job.uri, job.text, libPath);
+
+      std::lock_guard<std::mutex> lock(diagnosticsMutex);
+      auto currentRevision = diagnosticRevisions.find(job.uri);
+      if (currentRevision == diagnosticRevisions.end() ||
+          currentRevision->second != job.revision) {
+        continue;
+      }
+      documentIndexes[job.uri] = std::move(index);
+      sendNotification("textDocument/publishDiagnostics",
+                       JsonValue(JsonValue::Object{
+                           {"uri", JsonValue(job.uri)},
+                           {"diagnostics", JsonValue(std::move(diagnostics))},
+                       }));
+    }
   }
 
   void handleDidOpen(const JsonValue &params) {
@@ -1891,7 +2129,7 @@ private:
     if (!uriValue || !textValue)
       return;
     documents[*uriValue] = *textValue;
-    publishDiagnostics(*uriValue, *textValue);
+    scheduleDiagnostics(*uriValue, *textValue);
   }
 
   void handleDidChange(const JsonValue &params) {
@@ -1910,6 +2148,7 @@ private:
     if (!textValue)
       return;
     documents[*uriValue] = *textValue;
+    scheduleDiagnostics(*uriValue, *textValue);
   }
 
   void handleDidSave(const JsonValue &params) {
@@ -1919,7 +2158,7 @@ private:
     auto uriValue = asString(findMember(*textDocument, "uri"));
     if (!uriValue)
       return;
-    publishDiagnostics(*uriValue, documentText(*uriValue));
+    scheduleDiagnostics(*uriValue, documentText(*uriValue));
   }
 
   void handleDidClose(const JsonValue &params) {
@@ -1930,6 +2169,12 @@ private:
     if (!uriValue)
       return;
     documents.erase(*uriValue);
+    {
+      std::lock_guard<std::mutex> lock(diagnosticsMutex);
+      ++diagnosticRevisions[*uriValue];
+      pendingDiagnostics.erase(*uriValue);
+      documentIndexes.erase(*uriValue);
+    }
     sendNotification("textDocument/publishDiagnostics",
                      JsonValue(JsonValue::Object{
                          {"uri", JsonValue(*uriValue)},
@@ -1954,7 +2199,9 @@ private:
     std::string text = documentText(*uriValue);
     std::string prefix = currentLinePrefix(text, line + 1, character);
     auto words = gatherCompletions(text);
-    auto items = completionItems(words, prefix);
+    auto index = cachedDocumentIndex(*uriValue);
+    auto items =
+        completionItems(words, prefix, index.has_value() ? &*index : nullptr);
     sendResponse(id, JsonValue(JsonValue::Object{
                          {"isIncomplete", JsonValue(false)},
                          {"items", JsonValue(std::move(items))},
@@ -1978,10 +2225,7 @@ private:
       return;
     }
 
-    std::string path = pathFromUri(*uriValue);
-    std::string currentDir = std::filesystem::path(path).parent_path().string();
-    auto result =
-        buildSemanticTokens(documentText(*uriValue), libPath, currentDir);
+    auto result = buildSemanticTokens(documentText(*uriValue));
     sendResponse(id, result);
   }
 
@@ -2002,7 +2246,10 @@ private:
       auto tokens = scanner.Scan(text);
       tokens.invert();
       auto tokenList = tokenVector(tokens);
-      auto index = buildDocumentIndex(*uriValue, text, libPath);
+      auto cachedIndex = cachedDocumentIndex(*uriValue);
+      auto index = cachedIndex.has_value()
+                       ? std::move(*cachedIndex)
+                       : buildDocumentIndex(*uriValue, text, libPath);
 
       auto name = identifierAtPosition(tokenList, line, character);
       if (!name.has_value()) {
@@ -2119,7 +2366,10 @@ private:
       auto tokens = scanner.Scan(text);
       tokens.invert();
       auto tokenList = tokenVector(tokens);
-      auto index = buildDocumentIndex(*uriValue, text, libPath);
+      auto cachedIndex = cachedDocumentIndex(*uriValue);
+      auto index = cachedIndex.has_value()
+                       ? std::move(*cachedIndex)
+                       : buildDocumentIndex(*uriValue, text, libPath);
 
       auto context = findCallContext(tokenList, line, character);
       if (!context.has_value()) {
@@ -2134,7 +2384,8 @@ private:
 
       destroyTokens(tokens);
       sendResponse(id, makeSignatureHelp(index, context->name,
-                                         context->activeParameter));
+                                         context->activeParameter,
+                                         context->qualifier));
     } catch (...) {
       sendResponse(id, JsonValue(JsonValue::Object{
                            {"signatures", JsonValue(JsonValue::Array{})},
