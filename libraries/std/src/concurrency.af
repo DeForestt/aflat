@@ -1,5 +1,6 @@
 .needs <asm>
 .needs <std>
+.needs <Async.gs>
 
 import {len, int_toStringL0, str_toInt} from "strings" under str;
 import Function from "Utils/Functions";
@@ -45,7 +46,18 @@ safe dynamic class Lock {
     /** Acquire this lock for the lifetime of the returned guard. */
     public safe fn guard() -> LockGuard {
         const adr handle = my.handle;
-        return new LockGuard(handle);
+        return new LockGuard(handle, true);
+    };
+
+    /**
+     * Guard a lock that the caller has already acquired with tryLock().
+     *
+     * This does not acquire the lock again. The returned guard releases it
+     * when the guard leaves scope.
+     */
+    public safe fn adoptGuard() -> LockGuard {
+        const adr handle = my.handle;
+        return new LockGuard(handle, false);
     };
 
     void del() {
@@ -58,14 +70,37 @@ safe dynamic class Lock {
 unique class LockGuard {
     private adr handle = NULL;
 
-    fn init(const adr handle) -> Self {
+    fn init(const adr handle, const bool acquire) -> Self {
         my.handle = handle;
-        af_lock_acquire(my.handle);
+        if acquire {
+            af_lock_acquire(my.handle);
+        };
         return my;
     };
 
     void del() {
         af_lock_release(my.handle);
+    };
+};
+
+/**
+ * Task-friendly mutual exclusion.
+ *
+ * Waiting tasks yield cooperatively instead of blocking an executor thread.
+ * The returned guard releases the lock automatically when it leaves scope.
+ */
+safe dynamic class AsyncLock {
+    private Lock lock = new Lock();
+
+    fn init() -> Self {
+        return my;
+    };
+
+    public async fn guard() -> LockGuard {
+        while !my.lock.tryLock() {
+            yield;
+        };
+        return my.lock.adoptGuard();
     };
 };
 
