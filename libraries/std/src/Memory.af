@@ -134,3 +134,8 @@ export fn own(const T value) -> owned::<T> {
 	return new owned::<T>(value);
 };
 
+types(T)
+export fn loan(const T value) -> view::<T> {
+  return new view::<T>(value);
+}
+
