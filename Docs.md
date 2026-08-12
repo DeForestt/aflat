@@ -689,12 +689,20 @@ int main(){
 ```
 
 ### Foreach Loops
-`foreach` iterates over any object that implements a `next()` method returning
-`option`. The loop binds each yielded value to an identifier and executes the
-body until `None` is returned. The syntax is:
+`foreach` iterates over any object that implements `next()`. A synchronous
+`next()` returns `option`. An `async fn next()` returns `task<option>` and is
+automatically awaited when plain `foreach` appears inside an async function.
+Inside a synchronous function, consuming an async iterator requires explicit
+`async foreach`, which runs each item task to completion. Both forms bind each
+yielded value to an identifier and execute the body until `None` is returned.
+The syntax is:
 
 ```c
 foreach <ident> in <iterator> {
+    <body>
+};
+
+async foreach <ident> in <async iterator> {
     <body>
 };
 ```

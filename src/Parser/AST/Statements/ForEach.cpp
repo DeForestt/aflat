@@ -16,8 +16,22 @@
 #include "Scanner.hpp"
 
 namespace ast {
-ForEach::ForEach(links::LinkedList<lex::Token *> &tokens,
-                 parse::Parser &parser) {
+namespace {
+
+Function *findIteratorNext(gen::Class *iteratorClass) {
+  for (auto *current = iteratorClass; current != nullptr;
+       current = current->parent) {
+    if (auto *next = current->nameTable["next"])
+      return next;
+  }
+  return nullptr;
+}
+
+} // namespace
+
+ForEach::ForEach(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
+                 bool cooperative)
+    : cooperative(cooperative) {
   auto identifier = dynamic_cast<lex::LObj *>(tokens.pop());
   if (identifier == nullptr) {
     throw err::Exception("Expected an identifier for the forEach loop");
@@ -61,8 +75,58 @@ gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
 
   file << decl->generate(generator).file;
 
+  Function *nextMethod = nullptr;
+  std::string iteratorTypeName;
+  auto *iteratorSymbol =
+      gen::scope::ScopeManager::getInstance()->get(decl->declare->ident);
+  if (iteratorSymbol != nullptr) {
+    iteratorTypeName = iteratorSymbol->type.typeName;
+    auto **iteratorType = generator.getType(iteratorTypeName, file);
+    if (iteratorType != nullptr) {
+      if (auto *iteratorClass = dynamic_cast<gen::Class *>(*iteratorType)) {
+        nextMethod = findIteratorNext(iteratorClass);
+      }
+    }
+  }
+
+  const auto *currentFunction = generator.currentFunction();
+  const bool inAsyncContext =
+      currentFunction != nullptr &&
+      (currentFunction->isAsync || currentFunction->isAsyncBody);
+  const bool asyncIterator = nextMethod != nullptr && nextMethod->isAsync;
+  if (asyncIterator && !this->cooperative && !inAsyncContext) {
+    generator.alert("`foreach` cannot consume async iterator type `" +
+                        iteratorTypeName +
+                        "` from a synchronous function because its `next()` "
+                        "method starts a "
+                        "task. Write `async foreach " +
+                        this->binding_identifier +
+                        " in ...` to explicitly run each item task to "
+                        "completion, or move the "
+                        "loop into an async function where plain `foreach` "
+                        "awaits each item.",
+                    true, __FILE__, __LINE__);
+  }
+  if (this->cooperative && !asyncIterator) {
+    if (nextMethod == nullptr) {
+      generator.alert(
+          "`async foreach` requires an iterator with `async fn next()`, but "
+          "type `" +
+              iteratorTypeName +
+              "` does not define `next()`. Define `async fn next() -> "
+              "option<T>` or use an iterator type that does.",
+          true, __FILE__, __LINE__);
+    }
+    generator.alert("`async foreach` requires an async iterator, but type `" +
+                        iteratorTypeName +
+                        "` has a synchronous `next()` method. Remove `async` "
+                        "and write `foreach " +
+                        this->binding_identifier + " in ...` instead.",
+                    true, __FILE__, __LINE__);
+  }
+
   const std::string itemIdent = decl->declare->ident + "_item";
-  auto makeNextCall = [&]() {
+  auto makeNextCall = [&]() -> ast::Expr * {
     auto nextCall = new ast::Call();
     nextCall->logicalLine = this->logicalLine;
     nextCall->ident = decl->declare->ident;
@@ -70,7 +134,15 @@ gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
     auto nextCallExpr = new ast::CallExpr();
     nextCallExpr->logicalLine = this->logicalLine;
     nextCallExpr->call = nextCall;
-    return nextCallExpr;
+    if (!asyncIterator)
+      return nextCallExpr;
+
+    auto cooperativeNext = new ast::AsyncExpression();
+    cooperativeNext->logicalLine = this->logicalLine;
+    cooperativeNext->kind = inAsyncContext ? ast::AsyncExpressionKind::Await
+                                           : ast::AsyncExpressionKind::Run;
+    cooperativeNext->expr = nextCallExpr;
+    return cooperativeNext;
   };
 
   auto itemDecl = new ast::DecAssign();
