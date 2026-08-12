@@ -250,12 +250,14 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
              std::vector<std::string> &genericTypes) {
   this->genericTypes = genericTypes;
   this->annotations = annotations;
-  this->logicalLine = tokens.peek()->lineCount;
+  const int declarationLine =
+      tokens.peek() != nullptr ? tokens.peek()->lineCount : 1;
+  this->logicalLine = declarationLine;
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
     this->ident.ident = ident.meta;
   } else
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+    throw err::Exception("Line: " + std::to_string(declarationLine) +
                          " class needs Ident");
 
   // check for the word signs
@@ -265,14 +267,12 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
       auto *ident = dynamic_cast<lex::LObj *>(tokens.pop());
       if (ident != nullptr) {
         if (parser.getTypeList()[ident->meta] == nullptr)
-          throw err::Exception(
-              "Line: " + std::to_string(tokens.peek()->lineCount) + " Type " +
-              ident->meta + " not found");
+          throw err::Exception("Line: " + std::to_string(declarationLine) +
+                               " Type " + ident->meta + " not found");
         this->base = ident->meta;
       } else
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " signs needs Ident");
+        throw err::Exception("Line: " + std::to_string(declarationLine) +
+                             " signs needs Ident");
     }
   } else {
     this->base = "";
@@ -281,10 +281,10 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
     auto op = *dynamic_cast<lex::OpSym *>(tokens.pop());
     if (op.Sym != '{')
-      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+      throw err::Exception("Line: " + std::to_string(declarationLine) +
                            " Unopened UDeffType");
   } else
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+    throw err::Exception("Line: " + std::to_string(declarationLine) +
                          " Unopened UDeffType");
 
   auto t = ast::Type();
@@ -292,7 +292,7 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
   t.typeName = this->ident.ident;
   // Check if the class is in the typeList
   if (parser.getTypeList()[this->ident.ident] != nullptr)
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+    throw err::Exception("Line: " + std::to_string(declarationLine) +
                          " Class " + this->ident.ident + " already exists");
   t.uniqueType = unique;
   parser.getTypeList() << t;
@@ -303,13 +303,11 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
       tokens.pop();
       auto sy = dynamic_cast<lex::OpSym *>(tokens.pop());
       if (sy == nullptr)
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Unopened Contract");
+        throw err::Exception("Line: " + std::to_string(declarationLine) +
+                             " Unopened Contract");
       if (sy->Sym != '{')
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Unopened Contract");
+        throw err::Exception("Line: " + std::to_string(declarationLine) +
+                             " Unopened Contract");
       this->contract = parser.parseStmt(tokens);
     } else
       this->contract = nullptr;

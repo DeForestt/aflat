@@ -1581,6 +1581,10 @@ parse::Parser::Impl::parseCondition(links::LinkedList<lex::Token *> &tokens) {
 
 ast::Expr *
 parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
+  if (tokens.peek() == nullptr) {
+    throw err::Exception("Incomplete expression at end of input");
+  }
+
   auto output = new ast::Expr();
   if (dynamic_cast<lex::StringObj *>(tokens.peek()) != nullptr) {
     auto stringObj = *dynamic_cast<lex::StringObj *>(tokens.peek());
@@ -2052,14 +2056,13 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       paren->expr = this->parseExpr(tokens);
       paren->logicalLine = eq.lineCount;
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " Need an ) to end parenthesis not a symbol");
-      if ((dynamic_cast<lex::OpSym *>(tokens.pop())->Sym != ')'))
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            " GOT: " + dynamic_cast<lex::OpSym *>(tokens.pop())->Sym +
-            " Need an ) to end parenthesis");
+        throw err::Exception("Line: " + std::to_string(eq.lineCount) +
+                             " Need an ) to end parenthesis not a symbol");
+      auto *closeParen = dynamic_cast<lex::OpSym *>(tokens.pop());
+      if (closeParen->Sym != ')')
+        throw err::Exception("Line: " + std::to_string(eq.lineCount) +
+                             " GOT: " + closeParen->Sym +
+                             " Need an ) to end parenthesis");
       output = paren;
     } else if (eq.Sym == '!') {
       tokens.pop();
@@ -2172,6 +2175,9 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
       buy->expr->selling = true;
       buy->logicalLine = eq.lineCount;
       output = buy;
+    } else if (eq.Sym == ';') {
+      throw err::Exception("Line: " + std::to_string(eq.lineCount) +
+                           " Expected expression before '" + eq.Sym + "'");
     }
   } else
     throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
