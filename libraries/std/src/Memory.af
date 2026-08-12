@@ -102,7 +102,7 @@ unique class owned {
 types(T)
 unique class view {
   // note that we do not own T; we only keep a raw reference to it.
-  private mutable any value = value;
+  private mutable T value = value;
 
   fn init(const any value) {
     return my;
@@ -133,4 +133,9 @@ types(T)
 export fn own(const T value) -> owned::<T> {
 	return new owned::<T>(value);
 };
+
+types(T)
+export fn loan(const T value) -> view::<T> {
+  return new view::<T>(value);
+}
 
