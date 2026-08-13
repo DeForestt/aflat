@@ -198,6 +198,13 @@ void resetSharedGenericFunctionEmissions() {}
 
 void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
                                  parse::Parser &parser) {
+  const int declarationLine = this->logicalLine > 0 ? this->logicalLine : 1;
+  if (tokens.head == nullptr) {
+    throw err::Exception(
+        "Line: " + std::to_string(declarationLine) +
+        " Incomplete function declaration: expected `{` to begin the body "
+        "or `;` for a declaration");
+  }
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
     auto sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
 
@@ -207,33 +214,31 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
       tokens.pop();
       auto *decor = dynamic_cast<lex::LObj *>(tokens.pop());
       if (decor == nullptr)
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            "Expected Identifier after ':'");
+        throw err::Exception("Line: " + std::to_string(declarationLine) +
+                             " Expected Identifier after ':'");
       this->decorator = decor->meta;
       this->decoratorTemplateTypes =
           parser.parseTemplateTypeList(tokens, decor->lineCount);
 
       auto nextSym = dynamic_cast<lex::OpSym *>(tokens.peek());
       if (nextSym == nullptr)
-        throw err::Exception("Line: " +
-                             std::to_string(tokens.peek()->lineCount));
+        throw err::Exception("Line: " + std::to_string(declarationLine) +
+                             " Expected a function body after decorator");
       sym = *nextSym;
       if (sym.Sym == '.') {
         tokens.pop();
         auto *lob = dynamic_cast<lex::LObj *>(tokens.pop());
         if (lob == nullptr)
-          throw err::Exception(
-              "Line: " + std::to_string(tokens.peek()->lineCount) +
-              "Expected Identifier after '.'");
+          throw err::Exception("Line: " + std::to_string(declarationLine) +
+                               " Expected Identifier after '.'");
         this->decNSP = this->decorator;
         this->decorator = lob->meta;
         this->decoratorTemplateTypes =
             parser.parseTemplateTypeList(tokens, lob->lineCount);
 
         if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)
-          throw err::Exception("Line: " +
-                               std::to_string(tokens.peek()->lineCount));
+          throw err::Exception("Line: " + std::to_string(declarationLine) +
+                               " Expected a function body after decorator");
         sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
       };
       if (sym.Sym == '(') {
@@ -262,9 +267,8 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
         }
       };
       if (dynamic_cast<lex::OpSym *>(tokens.peek()) == nullptr)
-        throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
-            "Expected a symbol");
+        throw err::Exception("Line: " + std::to_string(declarationLine) +
+                             " Expected a function body");
       sym = *dynamic_cast<lex::OpSym *>(tokens.peek());
     }
 
@@ -273,14 +277,22 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
       parser.pushAsyncContext(this->isAsync);
       this->statement = parser.parseStmt(tokens);
       parser.popAsyncContext();
-      this->logicalLine = tokens.peek()->lineCount;
-    } else {
+      if (tokens.head != nullptr)
+        this->logicalLine = tokens.peek()->lineCount;
+    } else if (sym.Sym == ';') {
       this->statement = nullptr;
-      this->logicalLine = tokens.peek()->lineCount;
+      this->logicalLine = sym.lineCount;
+    } else {
+      throw err::Exception(
+          "Line: " + std::to_string(declarationLine) +
+          " Incomplete function declaration: expected `{` to begin the body "
+          "or `;` for a declaration");
     }
   } else
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Need terminating symbol or open symbol");
+    throw err::Exception(
+        "Line: " + std::to_string(declarationLine) +
+        " Incomplete function declaration: expected `{` to begin the body "
+        "or `;` for a declaration");
 }
 
 Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
@@ -305,28 +317,38 @@ Function::Function(const ScopeMod &scope,
     : scope(scope), genericTypes(genericTypes), safe(safe), isAsync(isAsync) {
   // updated function syntax
   // func <ident>(<args>) -> <type> { <body> }
-  const auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
+  const int declarationLine =
+      tokens.head != nullptr ? tokens.peek()->lineCount : 1;
+  const auto ident = tokens.head != nullptr
+                         ? dynamic_cast<lex::LObj *>(tokens.pop())
+                         : nullptr;
   if (ident == nullptr)
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
+    throw err::Exception("Line: " + std::to_string(declarationLine) +
                          " Expected Identifier in function declaration");
 
   this->ident.ident = ident->meta;
-  this->logicalLine = tokens.peek()->lineCount;
+  this->logicalLine = ident->lineCount;
 
-  auto openBracket = dynamic_cast<lex::OpSym *>(tokens.pop());
+  auto openBracket = tokens.head != nullptr
+                         ? dynamic_cast<lex::OpSym *>(tokens.pop())
+                         : nullptr;
   if (openBracket == nullptr || openBracket->Sym != '(')
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         "Expected '('");
+    throw err::Exception("Line: " + std::to_string(ident->lineCount) +
+                         " Expected '(' after function name");
   this->args = parser.parseArgs(tokens, ',', ')', this->argTypes, this->req,
                                 this->mutability, this->optConvertionIndices,
                                 this->readOnly);
 
-  auto arrow = dynamic_cast<lex::Symbol *>(tokens.peek());
+  auto arrow = tokens.head != nullptr
+                   ? dynamic_cast<lex::Symbol *>(tokens.peek())
+                   : nullptr;
   if (arrow && arrow->meta == "->") {
     tokens.pop();
 
     while (true) {
-      if (auto modifier = dynamic_cast<lex::LObj *>(tokens.peek())) {
+      if (auto modifier = tokens.head != nullptr
+                              ? dynamic_cast<lex::LObj *>(tokens.peek())
+                              : nullptr) {
         if (modifier->meta == "immutable") {
           this->returnImmutable = true;
           tokens.pop();
@@ -341,15 +363,17 @@ Function::Function(const ScopeMod &scope,
       break;
     }
 
-    auto typeName = dynamic_cast<lex::LObj *>(tokens.pop());
+    auto typeName = tokens.head != nullptr
+                        ? dynamic_cast<lex::LObj *>(tokens.pop())
+                        : nullptr;
     if (typeName == nullptr)
-      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           " Expected Identifier");
+      throw err::Exception("Line: " + std::to_string(ident->lineCount) +
+                           " Expected a return type after `->`");
     auto type = parser.getTypeList()[typeName->meta];
     if (type == nullptr)
       type = new Type(typeName->meta, asmc::QWord);
     auto templateTypeList =
-        parser.parseTemplateTypeList(tokens, tokens.peek()->lineCount);
+        parser.parseTemplateTypeList(tokens, typeName->lineCount);
 
     auto typenameStr = type->typeName;
     if (!templateTypeList.empty()) {
@@ -375,11 +399,15 @@ Function::Function(const ScopeMod &scope,
   }
   this->useType = this->type;
 
-  auto optional = dynamic_cast<lex::Ref *>(tokens.peek());
+  auto optional = tokens.head != nullptr
+                      ? dynamic_cast<lex::Ref *>(tokens.peek())
+                      : nullptr;
   if (optional != nullptr) {
     this->optional = true;
     tokens.pop();
-  } else if (auto opSym = dynamic_cast<lex::OpSym *>(tokens.peek())) {
+  } else if (auto opSym = tokens.head != nullptr
+                              ? dynamic_cast<lex::OpSym *>(tokens.peek())
+                              : nullptr) {
     if (opSym->Sym == '!') {
       this->error = true;
       tokens.pop();
