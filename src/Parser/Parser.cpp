@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <unordered_set>
 #include <utility>
 
@@ -304,7 +305,57 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     }
   }
 
-  if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+  // Pointer stores may target computed addresses. Parse parenthesized targets
+  // as expressions instead of sending them through implicit-return parsing.
+  auto pointerTargetStart = dynamic_cast<lex::OpSym *>(tokens.peek());
+  bool parenthesizedPointerStore = false;
+  if (pointerTargetStart != nullptr && pointerTargetStart->Sym == '(') {
+    int depth = 0;
+    for (int i = 0; i < tokens.size(); ++i) {
+      auto *op = dynamic_cast<lex::OpSym *>(tokens.get(i));
+      if (op == nullptr)
+        continue;
+      if (op->Sym == '(')
+        ++depth;
+      else if (op->Sym == ')' && --depth == 0) {
+        auto *equals = i + 1 < tokens.size()
+                           ? dynamic_cast<lex::OpSym *>(tokens.get(i + 1))
+                           : nullptr;
+        auto *colon = i + 2 < tokens.size()
+                          ? dynamic_cast<lex::OpSym *>(tokens.get(i + 2))
+                          : nullptr;
+        parenthesizedPointerStore = equals != nullptr && equals->Sym == '=' &&
+                                    colon != nullptr && colon->Sym == ':';
+        break;
+      }
+    }
+  }
+  if (parenthesizedPointerStore) {
+    auto *target = this->parseExpr(tokens);
+    auto *equals = dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (equals == nullptr || equals->Sym != '=') {
+      delete target;
+      throw err::Exception(
+          "Line: " + std::to_string(pointerTargetStart->lineCount) +
+          " expected =: after pointer store target");
+    }
+    tokens.pop();
+    auto *colon = dynamic_cast<lex::OpSym *>(tokens.peek());
+    if (colon == nullptr || colon->Sym != ':') {
+      delete target;
+      throw err::Exception("Line: " + std::to_string(equals->lineCount) +
+                           " expected ':' after '=' in pointer store");
+    }
+    tokens.pop();
+    auto *pointerAssign = new ast::PointerAssign();
+    pointerAssign->logicalLine = pointerTargetStart->lineCount;
+    pointerAssign->target = target;
+    pointerAssign->expr = this->parseExpr(tokens);
+    output = pointerAssign;
+  }
+
+  if (dynamic_cast<ast::PointerAssign *>(output) == nullptr &&
+      dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto obj = *dynamic_cast<lex::LObj *>(tokens.peek());
     auto safeType = false;
     auto dynamicType = false;
@@ -925,8 +976,25 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
           auto call = new ast::Call(obj.meta, this->parseCallArgsList(tokens),
                                     modList, genericTypes);
           call->logicalLine = obj.lineCount;
-          if (auto dot = dynamic_cast<lex::OpSym *>(tokens.peek());
-              dot != nullptr && dot->Sym == '.') {
+          if (auto equals = dynamic_cast<lex::OpSym *>(tokens.peek());
+              equals != nullptr && equals->Sym == '=') {
+            tokens.pop();
+            auto *colon = dynamic_cast<lex::OpSym *>(tokens.peek());
+            if (colon == nullptr || colon->Sym != ':')
+              throw err::Exception(
+                  "Line: " + std::to_string(equals->lineCount) +
+                  " expected ':' after '=' in pointer store");
+            tokens.pop();
+            auto *target = new ast::CallExpr();
+            target->logicalLine = obj.lineCount;
+            target->call = call;
+            auto *pointerAssign = new ast::PointerAssign();
+            pointerAssign->logicalLine = obj.lineCount;
+            pointerAssign->target = target;
+            pointerAssign->expr = this->parseExpr(tokens);
+            output = pointerAssign;
+          } else if (auto dot = dynamic_cast<lex::OpSym *>(tokens.peek());
+                     dot != nullptr && dot->Sym == '.') {
             tokens.pop();
             auto callExpr = new ast::CallExpr();
             callExpr->templateTypes = genericTypes;
@@ -990,7 +1058,8 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     output->coverageLine = obj.lineCount;
     if (whenClause)
       output->when = whenClause;
-  } else if (tokens.peek() && tokens.count > 0) {
+  } else if (dynamic_cast<ast::PointerAssign *>(output) == nullptr &&
+             tokens.peek() && tokens.count > 0) {
     auto close_curl = dynamic_cast<lex::OpSym *>(tokens.peek());
     if (!close_curl || (close_curl->Sym != '}' && close_curl->Sym != ';')) {
       auto ret = new ast::Return(tokens, parser);
@@ -1670,11 +1739,25 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
   } else if (dynamic_cast<lex::Long *>(tokens.peek()) != nullptr) {
     auto intObj = *dynamic_cast<lex::Long *>(tokens.pop());
     auto longLiteral = new ast::LongLiteral();
+    longLiteral->logicalLine = intObj.lineCount;
 
-    if (intObj.value[0] == '0' && intObj.value[1] == 'x') {
-      longLiteral->val = std::stoi(intObj.value, nullptr, 16);
-    } else {
-      longLiteral->val = std::stoi(intObj.value);
+    try {
+      std::size_t parsed = 0;
+      const std::size_t prefix =
+          !intObj.value.empty() && intObj.value.front() == '-' ? 1 : 0;
+      const int base = intObj.value.compare(prefix, 2, "0x") == 0 ? 16 : 10;
+      longLiteral->val = std::stoll(intObj.value, &parsed, base);
+      if (parsed != intObj.value.size())
+        throw std::invalid_argument("trailing characters");
+    } catch (const std::invalid_argument &) {
+      delete longLiteral;
+      throw err::Exception("Line: " + std::to_string(intObj.lineCount) +
+                           " invalid long literal `#" + intObj.value + "`");
+    } catch (const std::out_of_range &) {
+      delete longLiteral;
+      throw err::Exception("Line: " + std::to_string(intObj.lineCount) +
+                           " long literal `#" + intObj.value +
+                           "` is outside the signed 64-bit range");
     }
 
     output = longLiteral;

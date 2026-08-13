@@ -324,6 +324,8 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
                 ->byteSize;
 
   type->largestSize = maxSize;
+  type->instanceSize = maxSize + 4;
+  type->layoutFinalized = true;
   // now, before anything else, we need to add a symbol for the union portion...
   // all this does is alocate the memory in the object
 

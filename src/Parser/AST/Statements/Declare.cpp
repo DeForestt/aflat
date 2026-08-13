@@ -34,6 +34,9 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
         cl->publicSymbols.push(newSym);
       }
 
+      cl->instanceSize = std::max(1, byteMod);
+      cl->layoutFinalized = true;
+
       generator.typeList().push(cl);
       this->type = ast::Type(cl->Ident, asmc::QWord);
     } else {

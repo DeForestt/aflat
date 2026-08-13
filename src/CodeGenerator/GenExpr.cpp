@@ -43,11 +43,20 @@ static std::optional<std::string> taskValueType(const std::string &typeName) {
   return typeName.substr(prefix.size(), typeName.size() - prefix.size() - 1);
 }
 
-static int classInstanceByteSize(const gen::Class *cl) {
-  if (cl == nullptr || cl->SymbolTable.head == nullptr) {
-    return 1;
-  }
-  return cl->SymbolTable.head->data.byteMod;
+static int classInstanceByteSize(gen::CodeGenerator &generator,
+                                 const gen::Class *cl) {
+  if (cl == nullptr)
+    generator.alert("cannot determine allocation size for unknown class", true,
+                    __FILE__, __LINE__);
+  if (cl->SymbolTable.head != nullptr)
+    return cl->SymbolTable.head->data.byteMod;
+  if (!cl->layoutFinalized)
+    generator.alert("class layout is unavailable for " + cl->Ident, true,
+                    __FILE__, __LINE__);
+  if (cl->instanceSize <= 0)
+    generator.alert("class " + cl->Ident + " has an invalid allocation size",
+                    true, __FILE__, __LINE__);
+  return cl->instanceSize;
 }
 
 namespace gen {
@@ -283,7 +292,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         ast::Type type = ast::Type();
         type.typeName = cl->Ident;
         type.size = asmc::Byte;
-        type.arraySize = classInstanceByteSize(cl);
+        type.arraySize = classInstanceByteSize(*this, cl);
         int bMod =
             gen::scope::ScopeManager::getInstance()->assign("", type, false);
 
@@ -507,6 +516,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           cl->SymbolTable.push(newSym);
           cl->publicSymbols.push(newSym);
         }
+
+        cl->instanceSize = std::max(1, byteMod);
+        cl->layoutFinalized = true;
 
         typeList().push(cl);
         auto tempDecl = new ast::Declare();
@@ -941,7 +953,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     OutputFile.data << fltLit;
     output.access = registers()["%xmm0"]->get(asmc::DWord);
     output.size = asmc::DWord;
-    output.type = "int";
+    output.type = "float";
   } else if (dynamic_cast<ast::DeReference *>(expr)) {
     ast::DeReference deRef = *dynamic_cast<ast::DeReference *>(expr);
 
@@ -1586,7 +1598,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     callMalloc->call->ident = af_malloc->ident.ident;
     callMalloc->call->Args = links::LinkedList<ast::Expr *>();
     ast::IntLiteral *size = new ast::IntLiteral();
-    size->val = classInstanceByteSize(cl);
+    size->val = classInstanceByteSize(*this, cl);
     if (auto unionType = dynamic_cast<gen::Union *>(cl))
       size->val = unionType->largestSize + 4;
     callMalloc->call->Args.push(size);

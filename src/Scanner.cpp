@@ -277,11 +277,25 @@ LinkedList<Token *> Lexer::Impl::Scan(string input, int startLine) {
       auto *longLit = new lex::Long();
       ++i;
       ++columnCount;
-      while (i < input.length() &&
-             std::isdigit(static_cast<unsigned char>(input[i]))) {
-        longLit->value += input[i];
-        ++i;
+      if (i < input.length() && input[i] == '-') {
+        longLit->value += input[i++];
         ++columnCount;
+      }
+      if (i + 1 < input.length() && input[i] == '0' && input[i + 1] == 'x') {
+        longLit->value += "0x";
+        i += 2;
+        columnCount += 2;
+        while (i < input.length() &&
+               std::isxdigit(static_cast<unsigned char>(input[i]))) {
+          longLit->value += input[i++];
+          ++columnCount;
+        }
+      } else {
+        while (i < input.length() &&
+               std::isdigit(static_cast<unsigned char>(input[i]))) {
+          longLit->value += input[i++];
+          ++columnCount;
+        }
       }
       tokens.push(stamp(longLit, tokenLine, tokenColumn, tokenStart, i));
       continue;

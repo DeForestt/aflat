@@ -493,9 +493,8 @@ gen::GenerationResult Call::generateAttempt(
           mods.push(id);
           sym = cl->SymbolTable.search<std::string>(gen::utils::searchSymbol,
                                                     memberIdent);
-          if (sym != nullptr && (sym->type.typeName == "adr" ||
-                                 sym->type.fPointerArgs.isFPointer)) {
-            typedFunctionPointerField = sym->type.fPointerArgs.isFPointer;
+          if (sym != nullptr && sym->type.fPointerArgs.isFPointer) {
+            typedFunctionPointerField = true;
             ast::Var *var = new ast::Var();
             var->logicalLine = this->logicalLine;
             var->Ident = ident;
@@ -548,19 +547,28 @@ gen::GenerationResult Call::generateAttempt(
                             __FILE__, __LINE__);
           } else if (this->modList.pos->next == nullptr) {
             // find the type of the object
+            if (parse::PRIMITIVE_TYPES.find(sym->type.typeName) !=
+                parse::PRIMITIVE_TYPES.end())
+              generator.alert(cl->Ident + "." + memberIdent +
+                                  " is a field of type `" + sym->type.typeName +
+                                  "` and is not callable",
+                              true, __FILE__, __LINE__);
             auto objectType = *generator.getType(sym->type.typeName, file);
             auto objectClass = dynamic_cast<gen::Class *>(objectType);
             if (objectClass == nullptr)
-              generator.alert("type is not a class " + sym->type.typeName);
+              generator.alert(cl->Ident + "." + memberIdent +
+                                  " is a field of type `" + sym->type.typeName +
+                                  "` and is not callable",
+                              true, __FILE__, __LINE__);
             auto f = findFunctionByOverload(
                 objectClass->nameTable, "_call", forcedOverloadIndex,
                 forcedTable, forcedIdent, overloadTable, overloadIdent,
                 currentOverloadIndex);
             if (f == nullptr)
-              generator.alert("cannot preform this on type " +
-                              sym->type.typeName +
-                              " because it does not implement the _call "
-                              "function");
+              generator.alert(cl->Ident + "." + memberIdent +
+                                  " is a field of type `" + sym->type.typeName +
+                                  "` and is not callable",
+                              true, __FILE__, __LINE__);
 
             overloadTable = nullptr;
             overloadIdent.clear();

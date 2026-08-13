@@ -91,6 +91,8 @@ public:
 
 class Class : public Type {
 public:
+  int instanceSize = 0;
+  bool layoutFinalized = false;
   bool dynamic = false;
   bool safeType = false;
   bool pedantic = false;

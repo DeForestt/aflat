@@ -136,6 +136,9 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
             cl->publicSymbols.push(newSym);
           }
 
+          cl->instanceSize = std::max(1, byteMod);
+          cl->layoutFinalized = true;
+
           typeList().push(cl);
           arg->type = ast::Type(cl->Ident, asmc::QWord);
         } else {

@@ -323,7 +323,7 @@ public:
 
 class LongLiteral : public Expr {
 public:
-  int val;
+  std::int64_t val;
   std::string toString() override { return std::to_string(val); }
 };
 

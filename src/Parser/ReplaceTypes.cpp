@@ -394,7 +394,8 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
   if (auto un = dynamic_cast<Union *>(this)) {
     for (auto &alias : un->aliases) {
       if (alias->isType()) {
-        auto typeName = alias->getType().typeName;
+        auto replacedType = alias->getType();
+        auto typeName = replacedType.typeName;
         if (typeName.find('.') != std::string::npos) {
           typeName = replaceAllParts(typeName, map);
         } else {
@@ -405,10 +406,15 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
 
         auto primIt = parse::PRIMITIVE_TYPES.find(typeName);
         if (primIt != parse::PRIMITIVE_TYPES.end()) {
-          alias->value = Type(typeName, gen::utils::toSize(primIt->second));
+          replacedType.typeName = typeName;
+          replacedType.size = gen::utils::toSize(primIt->second);
+          replacedType.opType = typeName == "float" ? asmc::Float : asmc::Hard;
         } else {
-          alias->value = Type(typeName, asmc::QWord);
+          replacedType.typeName = typeName;
+          replacedType.size = asmc::QWord;
+          replacedType.opType = asmc::Hard;
         }
+        alias->value = replacedType;
       } else if (alias->isConstExpr()) {
         alias->getConstExpr()->replaceTypes(map);
       }

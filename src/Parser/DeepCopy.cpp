@@ -76,6 +76,14 @@ Statement *deepCopy(const Statement *stmt) {
     copy->indices = copyExprList(assign->indices);
     return copy;
   }
+  if (auto assign = dynamic_cast<const PointerAssign *>(stmt)) {
+    auto *copy = new PointerAssign();
+    copy->locked = assign->locked;
+    copy->logicalLine = assign->logicalLine;
+    copy->target = static_cast<Expr *>(deepCopy(assign->target));
+    copy->expr = static_cast<Expr *>(deepCopy(assign->expr));
+    return copy;
+  }
   if (auto ret = dynamic_cast<const Return *>(stmt)) {
     auto *copy = new Return();
     copy->locked = ret->locked;
@@ -180,10 +188,8 @@ Statement *deepCopy(const Statement *stmt) {
     copy->uniqueType = un->uniqueType;
     for (auto alias : un->aliases) {
       if (alias->isType()) {
-        // log type info
         copy->aliases.push_back(
-            new Union::Alias(alias->name, Type(alias->getType().typeName,
-                                               alias->getType().size)));
+            new Union::Alias(alias->name, alias->getType()));
       } else if (alias->isConstExpr()) {
         copy->aliases.push_back(new Union::Alias(
             alias->name, static_cast<Expr *>(deepCopy(alias->getConstExpr()))));

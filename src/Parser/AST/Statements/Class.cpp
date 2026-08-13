@@ -18,6 +18,40 @@ bool isConcreteGenericClassName(const std::string &typeName) {
   return typeName.find('<') != std::string::npos;
 }
 
+void accumulateClassLayout(ast::Statement *statement, int &size) {
+  if (statement == nullptr)
+    return;
+  if (auto *sequence = dynamic_cast<ast::Sequence *>(statement)) {
+    accumulateClassLayout(sequence->Statement1, size);
+    accumulateClassLayout(sequence->Statement2, size);
+    return;
+  }
+
+  const ast::Type *fieldType = nullptr;
+  int count = 1;
+  if (auto *declaration = dynamic_cast<ast::Declare *>(statement)) {
+    fieldType = &declaration->type;
+  } else if (auto *assignment = dynamic_cast<ast::DecAssign *>(statement)) {
+    if (assignment->declare != nullptr)
+      fieldType = &assignment->declare->type;
+  } else if (auto *array = dynamic_cast<ast::DecArr *>(statement)) {
+    fieldType = &array->type;
+    count = array->count;
+  } else if (auto *arrayAssignment =
+                 dynamic_cast<ast::DecAssignArr *>(statement)) {
+    if (arrayAssignment->declare != nullptr) {
+      fieldType = &arrayAssignment->declare->type;
+      count = arrayAssignment->declare->count;
+    }
+  }
+
+  if (fieldType == nullptr)
+    return;
+  const int fieldSize = gen::utils::sizeToInt(fieldType->size);
+  const int alignment = std::max(1, std::min(fieldSize, 8));
+  size = gen::utils::alignTo(size, alignment) + fieldSize * count;
+}
+
 int classByteSize(const gen::Class *type) {
   if (type == nullptr || type->SymbolTable.head == nullptr)
     return 0;
@@ -433,6 +467,13 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
     this->statement = seq2;
   };
 
+  int instanceSize = 0;
+  accumulateClassLayout(this->statement, instanceSize);
+  // This estimate supports layout queries while declarations are generated.
+  // It is not final: contracts and transforms may add fields to the realized
+  // symbol table.
+  type->instanceSize = std::max(1, instanceSize);
+
   const bool lazyConcreteGenericMethods =
       this->hidden && isConcreteGenericClassName(this->ident.ident) &&
       this->genericTypes.empty();
@@ -459,6 +500,12 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
   }
 
   asmc::File file = generator.GenSTMT(this->statement);
+
+  if (type->SymbolTable.head != nullptr)
+    type->instanceSize = type->SymbolTable.head->data.byteMod;
+  else
+    type->instanceSize = 1;
+  type->layoutFinalized = true;
 
   if (gen::utils::extract("init", this->statement) == nullptr &&
       generator.scope()->defaultValues.size() > 0) {
