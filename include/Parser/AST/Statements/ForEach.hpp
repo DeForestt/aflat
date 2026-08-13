@@ -13,8 +13,10 @@ public:
   Statement *implementation = nullptr;
   std::string binding_identifier;
   Expr *iterator;
+  bool cooperative = false;
   ForEach() = default;
-  ForEach(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
+  ForEach(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
+          bool cooperative = false);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
 };
 } // namespace ast

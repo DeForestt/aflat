@@ -46,6 +46,20 @@ TEST_CASE("deepCopy clones foreach statements", "[deepcopy]") {
   REQUIRE(foreachCopy->implementation != foreachStmt->implementation);
   REQUIRE(foreachCopy->iterator != nullptr);
   REQUIRE(foreachCopy->iterator != foreachStmt->iterator);
+  REQUIRE(foreachCopy->cooperative == foreachStmt->cooperative);
+}
+
+TEST_CASE("parser marks async foreach as cooperative", "[parser][foreach]") {
+  lex::Lexer lexer;
+  parse::Parser parser;
+  auto tokens = lexer.Scan("async foreach value in items { use(value); };");
+  tokens.invert();
+
+  auto *statement = parser.parseStmt(tokens, true);
+  auto *foreachStmt = dynamic_cast<ast::ForEach *>(statement);
+
+  REQUIRE(foreachStmt != nullptr);
+  REQUIRE(foreachStmt->cooperative);
 }
 
 TEST_CASE("deepCopy clones list literals in call extensions", "[deepcopy]") {

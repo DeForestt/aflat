@@ -426,9 +426,10 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
         throw err::Exception("safe and unique cannot be combined on line " +
                              std::to_string(obj.lineCount));
       }
-      if (asyncFunction && obj.meta != "fn") {
-        throw err::Exception("async can only be used with functions on line " +
-                             std::to_string(obj.lineCount));
+      if (asyncFunction && obj.meta != "fn" && obj.meta != "foreach") {
+        throw err::Exception(
+            "async can only be used with functions or foreach loops on line " +
+            std::to_string(obj.lineCount));
       }
     }
 
@@ -839,7 +840,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     } else if (obj.meta == "for") {
       output = new ast::For(tokens, parser);
     } else if (obj.meta == "foreach") {
-      output = new ast::ForEach(tokens, parser);
+      output = new ast::ForEach(tokens, parser, asyncFunction);
     } else if (obj.meta == "struct") {
       output = new ast::Struct(tokens, parser, uniqueType);
     } else if (obj.meta == "class") {

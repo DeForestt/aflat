@@ -137,6 +137,7 @@ Statement *deepCopy(const Statement *stmt) {
     copy->implementation = deepCopy(foreach->implementation);
     copy->binding_identifier = foreach->binding_identifier;
     copy->iterator = static_cast<Expr *>(deepCopy(foreach->iterator));
+    copy->cooperative = foreach->cooperative;
     return copy;
   }
   if (auto iff = dynamic_cast<const If *>(stmt)) {
