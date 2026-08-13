@@ -219,21 +219,30 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
 
         if (parse::PRIMITIVE_TYPES.find(type->typeName) !=
             parse::PRIMITIVE_TYPES.end()) {
-          auto s = parse::PRIMITIVE_TYPES[type->typeName];
           // primitives will need to be dereferenced
+          const auto isFloat = type->opType == asmc::Float;
+          const auto loadSize = isFloat ? type->size : asmc::QWord;
+          const auto loadRegister =
+              isFloat ? generator.registers()["%xmm0"]->get(type->size)
+                      : generator.registers()["%rax"]->get(asmc::QWord);
+          const auto valueRegister =
+              isFloat ? generator.registers()["%xmm0"]->get(type->size)
+                      : generator.registers()["%rax"]->get(type->size);
+
           auto mov = new asmc::Mov();
           mov->logicalLine = expr->logicalLine;
-          mov->size = asmc::QWord;
-          ;
+          mov->size = loadSize;
+          mov->op = type->opType;
           mov->from =
               "(" + generator.registers()["%rdx"]->get(asmc::QWord) + ")";
-          mov->to = generator.registers()["%rax"]->get(asmc::QWord);
+          mov->to = loadRegister;
           file.text << mov;
 
           auto mov2 = new asmc::Mov();
           mov2->logicalLine = expr->logicalLine;
           mov2->size = type->size;
-          mov2->from = generator.registers()["%rax"]->get(type->size);
+          mov2->op = type->opType;
+          mov2->from = valueRegister;
           mov2->to = "-" + std::to_string(byteMod) + "(%rbp)";
           file.text << mov2;
         } else {

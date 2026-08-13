@@ -190,7 +190,8 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
 
   if (parse::PRIMITIVE_TYPES.find(fromExpr.type) !=
       parse::PRIMITIVE_TYPES.end()) {
-    file << generator.setOffset(store->to, 0, fromExpr.access, fromExpr.size);
+    file << generator.setOffset(store->to, 0, fromExpr.access, fromExpr.size,
+                                fromExpr.op);
   } else {
     // The union reserves enough storage for its largest variant, but copying a
     // smaller composite payload must not read beyond that payload's object.

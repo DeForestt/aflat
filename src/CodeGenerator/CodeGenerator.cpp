@@ -969,7 +969,8 @@ asmc::File gen::CodeGenerator::memMove(std::string from, std::string to,
 }
 
 asmc::File gen::CodeGenerator::setOffset(std::string to, int offset,
-                                         std::string from, asmc::Size size) {
+                                         std::string from, asmc::Size size,
+                                         asmc::OpType op) {
   asmc::File file;
 
   asmc::Push *pushRdi = new asmc::Push();
@@ -1000,17 +1001,23 @@ asmc::File gen::CodeGenerator::setOffset(std::string to, int offset,
     file.text << addOffset;
   }
 
+  const auto valueRegister = op == asmc::Float
+                                 ? impl->registers["%xmm0"]->get(size)
+                                 : impl->registers["%rax"]->get(size);
+
   asmc::Mov *movVal = new asmc::Mov();
   movVal->from = from;
-  movVal->to = impl->registers["%rax"]->get(size);
+  movVal->to = valueRegister;
   movVal->size = size;
+  movVal->op = op;
   movVal->logicalLine = impl->logicalLine;
   file.text << movVal;
 
   asmc::Mov *store = new asmc::Mov();
-  store->from = impl->registers["%rax"]->get(size);
+  store->from = valueRegister;
   store->to = '(' + impl->registers["%rdi"]->get(asmc::QWord) + ')';
   store->size = size;
+  store->op = op;
   store->logicalLine = impl->logicalLine;
   file.text << store;
 
