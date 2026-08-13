@@ -296,3 +296,29 @@ TEST_CASE("setOffset stores value at pointer offset", "[setOffset]") {
   REQUIRE(popRdi);
   REQUIRE(popRax);
 }
+
+TEST_CASE("setOffset preserves floating-point moves", "[setOffset]") {
+  auto parser = parse::Parser();
+  gen::CodeGenerator gen("mod", parser, "",
+                         std::filesystem::current_path().string());
+
+  auto file = gen.setOffset("%rbx", 0, "%xmm0", asmc::DWord, asmc::Float);
+  bool moveVal = false;
+  bool storeVal = false;
+  bool hardMoveFromXmm0 = false;
+
+  for (int i = 0; i < file.text.size(); ++i) {
+    if (auto *mov = dynamic_cast<asmc::Mov *>(file.text.get(i))) {
+      if (mov->from == "%xmm0" && mov->to == "%xmm0" && mov->op == asmc::Float)
+        moveVal = true;
+      if (mov->from == "%xmm0" && mov->to == "(%rdi)" && mov->op == asmc::Float)
+        storeVal = true;
+      if (mov->from == "%xmm0" && mov->op == asmc::Hard)
+        hardMoveFromXmm0 = true;
+    }
+  }
+
+  REQUIRE(moveVal);
+  REQUIRE(storeVal);
+  REQUIRE_FALSE(hardMoveFromXmm0);
+}

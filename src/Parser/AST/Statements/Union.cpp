@@ -102,7 +102,7 @@ parseAliases(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
           type->typeName += ">";
         }
         // std::cout << "Parsed type: " << type->typeName << std::endl;
-        ast::Type aliasType(type->typeName, type->size);
+        ast::Type aliasType(*type);
 
         const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
         if (sym && sym->meta == "<")
@@ -252,8 +252,7 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
 
       type->aliases.emplace_back(alias->name, intLit, 4);
     } else if (alias->isType()) {
-      auto typePtr =
-          new ast::Type(alias->getType().typeName, alias->getType().size);
+      auto typePtr = new ast::Type(alias->getType());
 
       if (typePtr->typeName.find("~") != std::string::npos &&
           typePtr->typeName.find("<") == std::string::npos) {

@@ -61,6 +61,10 @@ unique class AsyncRunValue {
 	};
 };
 
+union Value {
+	Float(float)
+};
+
 async fn makeAsyncRunValue(const int value) -> AsyncRunValue! {
 	return new AsyncRunValue(value);
 };
@@ -85,6 +89,18 @@ class HookState {
 };
 
 fn main() -> int{
+	test.describe("Union", fn () {
+		test.it("should preserve float payloads", fn () {
+			let value = new Value->Float(3.5);
+
+			match value {
+				Float(actual) => {
+					test.assertTrue(actual == 3.5);
+				}
+			};
+		});
+	});
+
 	test.describe("String", fn () {
         test.it("should interpolate zero", fn () {
             uni_string value = `{0}`;
