@@ -1163,6 +1163,10 @@ ast::Statement *parse::Parser::Impl::parseArgs(
     std::vector<int> &optConvertionIndices, std::vector<bool> &readOnly,
     bool foreach) {
   auto output = new ast::Statement();
+  if (tokens.head == nullptr) {
+    throw err::Exception(
+        "Incomplete parameter list: expected `)` or a parameter declaration");
+  }
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym == nullptr) {
     // a question mark denotes an optional argument that is implicitly converted
@@ -1297,14 +1301,14 @@ ast::Statement *parse::Parser::Impl::parseArgs(
   }
 
   if (tokens.head == nullptr) {
-    std::cout << "no tokens in call too " << sym->Sym << std::endl;
-    throw err::Exception("Expected a symbol or a declaration");
+    throw err::Exception(
+        "Incomplete parameter list: expected `)` or a parameter declaration");
   }
 
   auto obj = dynamic_cast<lex::OpSym *>(tokens.peek());
   auto lobj = dynamic_cast<lex::LObj *>(tokens.peek());
 
-  if ((obj || (lobj && foreach)) && tokens.head->next != nullptr) {
+  if (obj || (lobj && foreach)) {
     auto obj = dynamic_cast<lex::OpSym *>(tokens.peek());
     auto lobj = dynamic_cast<lex::LObj *>(tokens.peek());
     tokens.pop();
@@ -1320,6 +1324,11 @@ ast::Statement *parse::Parser::Impl::parseArgs(
       return output;
     } else if (lobj && lobj->meta == "in") {
       return output;
+    } else if (obj) {
+      throw err::Exception(
+          "Incomplete parameter list: expected `)` or a parameter declaration "
+          "before `" +
+          std::string(1, obj->Sym) + "`");
     }
   } else {
     throw err::Exception("Expected a symbol or a declaration");
@@ -1402,6 +1411,8 @@ parse::Parser::Impl::parseFPointerType(links::LinkedList<lex::Token *> &tokens,
 std::vector<std::string> parse::Parser::Impl::parseTemplateTypeList(
     links::LinkedList<lex::Token *> &tokens, int lineCount) {
   std::vector<std::string> list;
+  if (tokens.head == nullptr)
+    return list;
   auto templateSym = dynamic_cast<lex::Symbol *>(tokens.peek());
   if (templateSym != nullptr && templateSym->meta == "::") {
     tokens.pop();
@@ -1582,7 +1593,7 @@ parse::Parser::Impl::parseCondition(links::LinkedList<lex::Token *> &tokens) {
 
 ast::Expr *
 parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
-  if (tokens.peek() == nullptr) {
+  if (tokens.head == nullptr) {
     throw err::Exception("Incomplete expression at end of input");
   }
 
