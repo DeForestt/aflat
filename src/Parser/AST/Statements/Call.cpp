@@ -493,7 +493,11 @@ gen::GenerationResult Call::generateAttempt(
           mods.push(id);
           sym = cl->SymbolTable.search<std::string>(gen::utils::searchSymbol,
                                                     memberIdent);
-          if (sym != nullptr && sym->type.fPointerArgs.isFPointer) {
+          // `adr` is AFlat's untyped function-pointer representation. Typed
+          // function pointers carry argument metadata, but both forms lower to
+          // an indirect call through the field value.
+          if (sym != nullptr && (sym->type.fPointerArgs.isFPointer ||
+                                 sym->type.typeName == "adr")) {
             typedFunctionPointerField = true;
             ast::Var *var = new ast::Var();
             var->logicalLine = this->logicalLine;
