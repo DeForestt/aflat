@@ -65,6 +65,14 @@ union Value {
 	Float(float)
 };
 
+fn echoFloat(const float value) -> float {
+	return value;
+};
+
+fn addFloats(const float left, const float right) -> float {
+	return left + right;
+};
+
 async fn makeAsyncRunValue(const int value) -> AsyncRunValue! {
 	return new AsyncRunValue(value);
 };
@@ -98,6 +106,13 @@ fn main() -> int{
 					test.assertTrue(actual == 3.5);
 				}
 			};
+		});
+	});
+
+	test.describe("Float calls", fn () {
+		test.it("should preserve arguments and return values", fn () {
+			const let actual = echoFloat(addFloats(1.25, 2.25));
+			test.assertTrue(actual == 3.5);
 		});
 	});
 
