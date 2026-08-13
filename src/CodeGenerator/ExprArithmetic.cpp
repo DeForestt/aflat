@@ -37,6 +37,14 @@ gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound,
     OutputFile.text << mov1;
 
   gen::Expr expr1 = this->GenExpr(compound.expr1, OutputFile);
+  // Immediate integer literals can be widened directly. In particular, a
+  // negative int compared with a long must be moved as a signed 64-bit
+  // immediate; writing it through %edx would zero-extend -1 to 0xffffffff.
+  if (expr1.op != asmc::Float && expr2.op != asmc::Float &&
+      expr2.access.rfind("$", 0) == 0 && expr2.size < expr1.size) {
+    mov1->size = expr1.size;
+    mov1->to = registers()[r1]->get(expr1.size);
+  }
   mov2->op = expr1.op;
   mov2->to = registers()[r2]->get(expr1.size);
   mov2->from = expr1.access;
