@@ -253,7 +253,6 @@ gen::GenerationResult Call::generateAttempt(
           generator.genericFunctions(), ident, forcedOverloadIndex, forcedTable,
           forcedIdent, overloadTable, overloadIdent, currentOverloadIndex);
       if (f != nullptr) {
-        auto junkFile = asmc::File();
         func = dynamic_cast<ast::Function *>(deepCopy(f));
         // get the argument types and create the map...
         std::unordered_map<std::string, std::string> genericMap;
@@ -272,11 +271,7 @@ gen::GenerationResult Call::generateAttempt(
           for (const auto &genericType : func->genericTypes) {
             if (type.typeName == genericType &&
                 genericMap.find(genericType) == genericMap.end()) {
-              auto saveSuppress = generator.suppressLazyMethodEmission();
-              generator.suppressLazyMethodEmission() = true;
-              auto exprType =
-                  generator.GenExpr(this->Args.get(i), junkFile).type;
-              generator.suppressLazyMethodEmission() = saveSuppress;
+              auto exprType = generator.InferExprType(this->Args.get(i));
               genericMap[genericType] = exprType;
               new_ident += "." + exprType;
             }

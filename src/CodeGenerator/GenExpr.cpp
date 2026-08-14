@@ -724,7 +724,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       // the original symbol. Only real heap-owning values participate in sold
       // tracking.
       if (parse::PRIMITIVE_TYPES.find(output.type) ==
-          parse::PRIMITIVE_TYPES.end()) {
+              parse::PRIMITIVE_TYPES.end() &&
+          !suppressOwnershipEffects()) {
         output.owned = true;
         std::get<4>(resolved)->sold = logicalLine();
       }

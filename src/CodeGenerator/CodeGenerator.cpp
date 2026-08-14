@@ -162,6 +162,7 @@ struct gen::CodeGenerator::Impl {
   bool returnFlag = false;
   bool errorFlag = false;
   bool suppressLazyMethodEmission = false;
+  bool suppressOwnershipEffects = false;
   bool emittingLazyConcreteMethod = false;
   HashMap<ast::Statement *> includedMemo;
   HashMap<ast::Statement *> includedClasses;
@@ -454,6 +455,25 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
 
 bool gen::CodeGenerator::hasError() const { return impl->errorFlag; }
 
+std::string gen::CodeGenerator::InferExprType(ast::Expr *expr) {
+  struct RestoreInferenceFlags {
+    CodeGenerator::Impl &impl;
+    bool suppressLazyMethodEmission;
+    bool suppressOwnershipEffects;
+
+    ~RestoreInferenceFlags() {
+      impl.suppressLazyMethodEmission = suppressLazyMethodEmission;
+      impl.suppressOwnershipEffects = suppressOwnershipEffects;
+    }
+  } restore{*impl, impl->suppressLazyMethodEmission,
+            impl->suppressOwnershipEffects};
+
+  impl->suppressLazyMethodEmission = true;
+  impl->suppressOwnershipEffects = true;
+  asmc::File ignoredOutput;
+  return GenExpr(expr, ignoredOutput).type;
+}
+
 void gen::CodeGenerator::setInferredTypeCallback(
     InferredTypeCallback callback) {
   impl->inferredTypeCallback = std::move(callback);
@@ -523,6 +543,13 @@ bool &gen::CodeGenerator::suppressLazyMethodEmission() {
 }
 const bool &gen::CodeGenerator::suppressLazyMethodEmission() const {
   return impl->suppressLazyMethodEmission;
+}
+
+bool &gen::CodeGenerator::suppressOwnershipEffects() {
+  return impl->suppressOwnershipEffects;
+}
+const bool &gen::CodeGenerator::suppressOwnershipEffects() const {
+  return impl->suppressOwnershipEffects;
 }
 
 bool &gen::CodeGenerator::emittingLazyConcreteMethod() {

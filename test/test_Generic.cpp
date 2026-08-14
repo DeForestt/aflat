@@ -577,3 +577,33 @@ TEST_CASE("generic dynamic classes emit lifecycle cleanup methods",
       asmText.find("pub_Managed__std__generic__start__int__std__generic__end___"
                    "endScope:") != std::string::npos);
 }
+
+TEST_CASE("generic argument inference does not consume an owned argument",
+          "[generics][ownership][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/generic_owned_argument_inference");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "generic_owned_argument_inference.af";
+  const auto output = dir / "generic_owned_argument_inference.s";
+  std::ofstream ofs(source);
+  ofs << ".needs <std>\n";
+  ofs << "import owned from \"Memory\";\n";
+  ofs << "import {own} from \"Memory\" under box;\n";
+  ofs << "unique class TableSchema {\n";
+  ofs << "    int columns = columns;\n";
+  ofs << "    fn init(int columns) -> Self { return my; };\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    let schema = new TableSchema(3);\n";
+  ofs << "    owned::<TableSchema> boxed = box.own($schema);\n";
+  ofs << "    return 0;\n";
+  ofs << "};\n";
+  ofs.close();
+
+  const bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
