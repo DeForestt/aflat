@@ -130,7 +130,7 @@ export fn wrap(const T value) -> Box::<T> {
 
 types(T)
 // Convenience helper to allocate an owned wrapper for a value.
-export fn own(const T value) -> owned::<T> {
+export fn own(const T &&value) -> owned::<T> {
 	return new owned::<T>(value);
 };
 
