@@ -19,6 +19,19 @@ bash rebuild-libs.sh
 
 For C++ code: changes must include unit tests. Use the Catch2 framework located in test/.
 
+Compiler changes:
+
+After changing the compiler implementation, rebuild every standard library with:
+
+```sh
+bash ./rebuild-libs.sh
+```
+
+A targeted library rebuild is useful during development, but it is not sufficient
+for final verification. Treat any standard-library compilation failure as a compiler
+regression, and do not consider the compiler change complete until every standard
+library compiles successfully.
+
 Quick rebuilds:
 
 Use make to rebuild the C++ binary and regenerate standard libraries:
