@@ -62,10 +62,10 @@ types(T)
  * Heap owner wrapper that takes exclusive ownership of a `T`.
  */
 unique class owned {
-	private mutable T value = value;
+	private mutable T value = $value;
   private mutable bool valid = true;
 
-	fn init(const T value) -> Self {
+	fn init(const T &&value) -> Self {
 		return my;
 	};
 
@@ -131,7 +131,7 @@ export fn wrap(const T value) -> Box::<T> {
 types(T)
 // Convenience helper to allocate an owned wrapper for a value.
 export fn own(const T &&value) -> owned::<T> {
-	return new owned::<T>(value);
+	return new owned::<T>($value);
 };
 
 types(T)

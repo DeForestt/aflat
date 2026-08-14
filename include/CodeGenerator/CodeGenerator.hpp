@@ -67,6 +67,7 @@ public:
   ast::Function GenCall(ast::Call *call, asmc::File &OutputFile);
   Expr GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                asmc::Size size = asmc::AUTO, std::string typeHint = "");
+  std::string InferExprType(ast::Expr *expr);
   gen::Expr prepareCompound(ast::Compound compound, asmc::File &OutputFile,
                             bool isDiv = false);
   gen::Expr genArithmetic(asmc::ArithInst *, ast::Compound compound,
@@ -132,6 +133,8 @@ public:
   const bool &errorFlag() const;
   bool &suppressLazyMethodEmission();
   const bool &suppressLazyMethodEmission() const;
+  bool &suppressOwnershipEffects();
+  const bool &suppressOwnershipEffects() const;
   bool &emittingLazyConcreteMethod();
   const bool &emittingLazyConcreteMethod() const;
   HashMap<ast::Statement *> &includedMemo();
