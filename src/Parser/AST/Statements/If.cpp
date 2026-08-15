@@ -20,13 +20,15 @@ If::If(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
       tokens.pop();
       this->statement = parser.parseStmt(tokens);
     } else
-      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           " Unopened If");
+      throw err::Exception(
+          "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+          " Unopened If");
   } else if (dynamic_cast<lex::LObj *>(tokens.peek())) {
     this->statement = parser.parseStmt(tokens, true);
   } else
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Unopened If");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " Unopened If");
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto elseObj = *dynamic_cast<lex::LObj *>(tokens.peek());
     if (elseObj.meta == "else") {
@@ -37,17 +39,18 @@ If::If(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
           this->elseStatement = parser.parseStmt(tokens);
         } else
           throw err::Exception(
-              "Line: " + std::to_string(tokens.peek()->lineCount) +
+              "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
               " Unopened Else");
       } else if (dynamic_cast<lex::LObj *>(tokens.peek())) {
         this->elseStatement = parser.parseStmt(tokens, true);
       } else
         throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
+            "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
             " Unopened Else");
     } else
-      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           " Unclosed if");
+      throw err::Exception(
+          "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+          " Unclosed if");
   }
 }
 

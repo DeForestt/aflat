@@ -247,8 +247,8 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
             dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ')') {
           auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
           if (symp->Sym != ')')
-            throw err::Exception(
-                &"Expected closed parenthesis got "[symp->Sym]);
+            throw err::Exception("Expected closed parenthesis got " +
+                                 std::string(1, symp->Sym));
         } else {
           bool pop = false;
           do {
@@ -261,8 +261,8 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
           if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
             auto symp = dynamic_cast<lex::OpSym *>(tokens.pop());
             if (symp->Sym != ')')
-              throw err::Exception(
-                  &"Expected closed parenthesis got "[symp->Sym]);
+              throw err::Exception("Expected closed parenthesis got " +
+                                   std::string(1, symp->Sym));
           }
         }
       };
@@ -278,7 +278,7 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
       this->statement = parser.parseStmt(tokens);
       parser.popAsyncContext();
       if (tokens.head != nullptr)
-        this->logicalLine = tokens.peek()->lineCount;
+        this->logicalLine = lex::tokenLine(tokens.peek());
     } else if (sym.Sym == ';') {
       this->statement = nullptr;
       this->logicalLine = sym.lineCount;
@@ -318,7 +318,7 @@ Function::Function(const ScopeMod &scope,
   // updated function syntax
   // func <ident>(<args>) -> <type> { <body> }
   const int declarationLine =
-      tokens.head != nullptr ? tokens.peek()->lineCount : 1;
+      tokens.head != nullptr ? lex::tokenLine(tokens.peek()) : 1;
   const auto ident = tokens.head != nullptr
                          ? dynamic_cast<lex::LObj *>(tokens.pop())
                          : nullptr;

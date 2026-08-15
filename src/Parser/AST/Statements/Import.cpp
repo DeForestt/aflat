@@ -390,7 +390,7 @@ emitTypeShells(ast::Statement *added, gen::CodeGenerator &generator,
   return output;
 }
 Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
-  this->logicalLine = tokens.peek()->lineCount;
+  this->logicalLine = lex::tokenLine(tokens.peek());
   while (true) {
     auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
     if (sym != nullptr && sym->Sym == '{') {
@@ -402,7 +402,7 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
           this->imports.push_back(importObj->meta);
         } else {
           throw err::Exception(
-              "Line: " + std::to_string(tokens.peek()->lineCount) +
+              "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
               " Expected Ident");
         }
       } while (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
@@ -412,7 +412,7 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
         tokens.pop();
       } else {
         throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
+            "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
             " Expected }");
       }
     } else if (sym != nullptr && sym->Sym == '*') {
@@ -446,8 +446,9 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   // check from from keyword
   lex::LObj *from = dynamic_cast<lex::LObj *>(tokens.pop());
   if (from == nullptr || from->meta != "from") {
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Expected from");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " Expected from");
   };
 
   ast::StringLiteral *str =
@@ -455,8 +456,9 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   if (str != nullptr) {
     this->path = str->val;
   } else {
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Expected StringLiteral");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " Expected StringLiteral");
   }
 
   // check for under keyword
@@ -470,7 +472,7 @@ Import::Import(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
         tokens.pop();
       } else {
         throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
+            "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
             " Expected Ident");
       }
     }

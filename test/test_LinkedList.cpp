@@ -11,6 +11,23 @@ TEST_CASE("LinkedList push and pop", "[linkedlist]") {
   REQUIRE(list.size() == 1);
 }
 
+TEST_CASE("LinkedList safely reads an empty list", "[linkedlist]") {
+  links::LinkedList<int *> list;
+
+  CHECK(list.peek() == nullptr);
+  CHECK(list.pop() == nullptr);
+  CHECK(list.size() == 0);
+  CHECK(list.count == 0);
+}
+
+TEST_CASE("LinkedList rejects an index at the end", "[linkedlist]") {
+  links::LinkedList<int> list;
+  list.push(1);
+
+  CHECK_THROWS_AS(list.get(1), err::Exception);
+  CHECK_THROWS_AS(list.get(-1), err::Exception);
+}
+
 TEST_CASE("LinkedList invert", "[linkedlist]") {
   links::LinkedList<int> list;
   list.push(1);

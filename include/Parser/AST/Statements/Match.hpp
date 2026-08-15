@@ -12,6 +12,8 @@ namespace ast {
  */
 class Match : public Expr {
 public:
+  bool expressionContext = false;
+
   struct Pattern {
     std::string aliasName;
     std::optional<std::string> veriableName;
@@ -38,7 +40,11 @@ public:
   gen::GenerationResult const
   generateExpression(gen::CodeGenerator &generator, asmc::Size size,
                      std::string typeHint = "") override {
-    return generate(generator);
+    const auto previousContext = expressionContext;
+    expressionContext = true;
+    auto result = generate(generator);
+    expressionContext = previousContext;
+    return result;
   }
   std::vector<Case> const parseCases(links::LinkedList<lex::Token *> &tokens,
                                      parse::Parser &parser);

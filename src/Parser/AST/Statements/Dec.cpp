@@ -13,9 +13,9 @@ Dec::Dec(const std::string &ident, links::LinkedList<lex::Token *> &tokens)
       dynamic_cast<lex::OpSym *>(tokens.peek())->Sym != '-') {
     throw err::Exception(
         "Expected another '-' in the increment statment on line " +
-        std::to_string(tokens.peek()->lineCount));
+        std::to_string(lex::tokenLine(tokens.peek())));
   }
-  this->logicalLine = tokens.pop()->lineCount;
+  this->logicalLine = lex::tokenLine(tokens.pop());
 }
 
 gen::GenerationResult const Dec::generate(gen::CodeGenerator &generator) {

@@ -89,6 +89,8 @@ Statement *deepCopy(const Statement *stmt) {
     copy->locked = ret->locked;
     copy->logicalLine = ret->logicalLine;
     copy->empty = ret->empty;
+    copy->implicit = ret->implicit;
+    copy->resolver = ret->resolver;
     copy->expr = static_cast<Expr *>(deepCopy(ret->expr));
     return copy;
   }

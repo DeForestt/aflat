@@ -15,34 +15,47 @@ namespace ast {
  * @param pa
  */
 Return::Return(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
+  const auto line = lex::tokenLine(tokens.peek());
   if (!(dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr &&
         dynamic_cast<lex::OpSym *>(tokens.peek())->Sym == ';')) {
     this->expr = parser.parseExpr(tokens);
-    this->logicalLine = this->expr->logicalLine;
-  } else {
-    auto nu = new ast::Var();
-    nu->Ident = "**void_type**";
-    nu->logicalLine = tokens.peek()->lineCount;
+    if (this->expr != nullptr) {
+      this->logicalLine = this->expr->logicalLine;
+      return;
+    }
+
+    // An incomplete `return` is common while editing. Keep the AST valid so
+    // diagnostics can report the missing expression instead of dereferencing
+    // a null expression.
     this->empty = true;
-    this->expr = nu;
-  };
+  } else {
+    this->empty = true;
+  }
+
+  auto nu = new ast::Var();
+  nu->Ident = "**void_type**";
+  nu->logicalLine = line;
+  this->expr = nu;
+  this->logicalLine = line;
 }
 
 gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   asmc::File file;
 
-  if (implicit && generator.matchScope()) {
-    resolver = true; // if this is an implicit return, and
+  if (implicit && generator.matchScope() &&
+      generator.matchScope()->expressionContext) {
+    resolver = true;
   }
 
   if (resolver) {
-    auto from = generator.GenExpr(this->expr, file, asmc::AUTO,
-                                  generator.matchScope()->returns.typeName);
     if (generator.matchScope() == nullptr) {
       generator.alert(
           "cannot use a resolver return outside of a match statement", true,
           __FILE__, __LINE__);
+      return {file, std::nullopt};
     }
+    auto from = generator.GenExpr(this->expr, file, asmc::AUTO,
+                                  generator.matchScope()->returns.typeName);
     if (generator.matchScope()->returns.typeName == "void") {
       auto it = parse::PRIMITIVE_TYPES.find(from.type);
       auto size = asmc::QWord;
@@ -79,6 +92,12 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       mov->op = from.op;
       file.text << mov;
     }
+    return {file, std::nullopt};
+  }
+
+  if (generator.currentFunction() == nullptr) {
+    generator.alert("cannot return outside of a function", true, __FILE__,
+                    __LINE__);
     return {file, std::nullopt};
   }
 

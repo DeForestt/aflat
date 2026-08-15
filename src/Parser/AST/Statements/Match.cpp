@@ -21,8 +21,9 @@ namespace ast {
 Match::Pattern::Pattern(links::LinkedList<lex::Token *> &tokens) {
   auto name = dynamic_cast<lex::LObj *>(tokens.pop());
   if (name == nullptr) {
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Match pattern must have an alias name.");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " Match pattern must have an alias name.");
   }
   aliasName = name->meta;
   veriableName = std::nullopt;
@@ -36,8 +37,9 @@ Match::Pattern::Pattern(links::LinkedList<lex::Token *> &tokens) {
     }
     auto closeParen = dynamic_cast<lex::OpSym *>(tokens.pop());
     if (closeParen == nullptr || closeParen->Sym != ')') {
-      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           " Match pattern must have a closing parenthesis.");
+      throw err::Exception(
+          "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+          " Match pattern must have a closing parenthesis.");
     }
   }
 }
@@ -96,14 +98,16 @@ Match::Match(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   expr = parser.parseExpr(tokens);
   auto openBrace = dynamic_cast<lex::OpSym *>(tokens.pop());
   if (openBrace == nullptr || openBrace->Sym != '{') {
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Match statement must start with an opening brace.");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " Match statement must start with an opening brace.");
   }
   cases = parseCases(tokens, parser);
   auto closeBrace = dynamic_cast<lex::OpSym *>(tokens.pop());
   if (closeBrace == nullptr || closeBrace->Sym != '}') {
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Match statement must end with a closing brace.");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " Match statement must end with a closing brace.");
   }
 }
 

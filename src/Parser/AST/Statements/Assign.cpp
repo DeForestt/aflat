@@ -9,7 +9,7 @@ Assign::Assign(const std::string &ident,
                const links::LinkedList<ast::Expr *> &indices,
                links::LinkedList<std::string> modList,
                links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
-  this->logicalLine = tokens.peek()->lineCount;
+  this->logicalLine = lex::tokenLine(tokens.peek());
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
     auto s2 = dynamic_cast<lex::OpSym *>(tokens.peek());
     if (s2->Sym == ':') {

@@ -7,7 +7,7 @@ namespace ast {
  * @brief Construct a new Continue object
  */
 Continue::Continue(links::LinkedList<lex::Token *> &tokens) {
-  this->logicalLine = tokens.peek()->lineCount;
+  this->logicalLine = lex::tokenLine(tokens.peek());
   if (dynamic_cast<lex::INT *>(tokens.peek()) != nullptr)
     this->level = std::stoi(dynamic_cast<lex::INT *>(tokens.pop())->value);
   else

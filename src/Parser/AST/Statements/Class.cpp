@@ -285,7 +285,7 @@ Class::Class(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
   this->genericTypes = genericTypes;
   this->annotations = annotations;
   const int declarationLine =
-      tokens.peek() != nullptr ? tokens.peek()->lineCount : 1;
+      tokens.peek() != nullptr ? lex::tokenLine(tokens.peek()) : 1;
   this->logicalLine = declarationLine;
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
