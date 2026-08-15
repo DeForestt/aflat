@@ -197,9 +197,8 @@ template <typename T> void links::LinkedList<T>::terminate(int n) {
 }
 
 template <typename T> T links::LinkedList<T>::get(int index) {
-  if (index < 0 || index > this->size()) {
+  if (index < 0 || index >= this->size()) {
     throw err::Exception("Index Out of Bounds");
-    ;
   }
   Node<T> *current = head;
   for (int i = 0; i < index; i++) {
@@ -401,6 +400,11 @@ template <typename T> void links::LinkedList<T>::invert() {
 }
 
 template <typename T> T links::LinkedList<T>::pop() {
+  if (this->head == nullptr) {
+    this->count = 0;
+    this->pos = nullptr;
+    return T{};
+  }
   this->count -= 1;
   T data = this->head->data;
   Node<T> *popper = this->head;
@@ -422,6 +426,8 @@ template <typename T> T links::LinkedList<T>::shift() {
 }
 
 template <typename T> T links::LinkedList<T>::peek() {
+  if (this->head == nullptr)
+    return T{};
   return this->head->data;
 }
 

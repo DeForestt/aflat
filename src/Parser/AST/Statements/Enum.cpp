@@ -10,18 +10,20 @@ namespace ast {
  * @param parser
  */
 Enum::Enum(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
-  this->logicalLine = tokens.peek()->lineCount;
+  this->logicalLine = lex::tokenLine(tokens.peek());
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
     this->Ident = ident.meta;
   } else
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " enum needs Ident");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " enum needs Ident");
 
   lex::OpSym *op = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (!op || op->Sym != '{')
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Unopened Enum");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " Unopened Enum");
 
   tokens.pop();
 
@@ -35,8 +37,9 @@ Enum::Enum(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 
   op = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (!op || op->Sym != '}')
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Unclosed Enum");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " Unclosed Enum");
   tokens.pop();
   parser.getTypeList() << ast::Type(this->Ident, asmc::DWord);
 }

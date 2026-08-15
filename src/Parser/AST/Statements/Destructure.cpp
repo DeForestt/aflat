@@ -16,7 +16,8 @@ Destructure::Destructure(const bool mute,
     : mute(mute) {
   auto identifier = dynamic_cast<lex::LObj *>(tokens.pop());
   if (!identifier)
-    throw err::Exception("On line " + std::to_string(tokens.peek()->lineCount) +
+    throw err::Exception("On line " +
+                         std::to_string(lex::tokenLine(tokens.peek())) +
                          " need at least one identifier for destructuring");
 
   while (identifier) {
@@ -24,24 +25,25 @@ Destructure::Destructure(const bool mute,
     auto symbol = dynamic_cast<lex::OpSym *>(tokens.pop());
     if (!symbol)
       throw err::Exception(
-          "On line " + std::to_string(tokens.peek()->lineCount) +
+          "On line " + std::to_string(lex::tokenLine(tokens.peek())) +
           " expected ',' or '}' after identifier in destructuring");
     if (symbol->Sym == '}')
       break;
     if (symbol->Sym != ',')
       throw err::Exception(
-          "On line " + std::to_string(tokens.peek()->lineCount) +
+          "On line " + std::to_string(lex::tokenLine(tokens.peek())) +
           " expected ',' or '}' after identifier in destructuring");
     identifier = dynamic_cast<lex::LObj *>(tokens.pop());
     if (!identifier)
       throw err::Exception("On line " +
-                           std::to_string(tokens.peek()->lineCount) +
+                           std::to_string(lex::tokenLine(tokens.peek())) +
                            " expected identifier after ',' in destructuring");
   }
 
   auto eq = dynamic_cast<lex::OpSym *>(tokens.pop());
   if (!eq || eq->Sym != '=')
-    throw err::Exception("On line " + std::to_string(tokens.peek()->lineCount) +
+    throw err::Exception("On line " +
+                         std::to_string(lex::tokenLine(tokens.peek())) +
                          " expected '=' after identifiers in destructuring");
 
   this->expr = parser.parseExpr(tokens);

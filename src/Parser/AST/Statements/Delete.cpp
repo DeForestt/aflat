@@ -7,11 +7,12 @@
 
 namespace ast {
 Delete::Delete(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
-  this->logicalLine = tokens.peek()->lineCount;
+  this->logicalLine = lex::tokenLine(tokens.peek());
   auto ident = dynamic_cast<lex::LObj *>(tokens.pop());
   if (ident == nullptr)
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Expected Ident");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " Expected Ident");
 
   this->ident = ident->meta;
   links::LinkedList<std::string> modList;

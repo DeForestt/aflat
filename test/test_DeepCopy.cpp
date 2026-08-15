@@ -28,6 +28,21 @@ TEST_CASE("deepCopy clones statements", "[deepcopy]") {
   CHECK(origInt->val == 1);
 }
 
+TEST_CASE("deepCopy preserves implicit match resolver returns", "[deepcopy]") {
+  ast::Return original;
+  auto *value = new ast::IntLiteral();
+  value->val = 1;
+  original.expr = value;
+  original.implicit = true;
+  original.resolver = true;
+
+  auto *copy = dynamic_cast<ast::Return *>(ast::deepCopy(&original));
+
+  REQUIRE(copy != nullptr);
+  CHECK(copy->implicit);
+  CHECK(copy->resolver);
+}
+
 TEST_CASE("deepCopy clones foreach statements", "[deepcopy]") {
   lex::Lexer l;
   parse::Parser p;

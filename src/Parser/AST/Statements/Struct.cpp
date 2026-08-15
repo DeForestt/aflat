@@ -6,21 +6,24 @@
 namespace ast {
 Struct::Struct(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
                bool uniqueType) {
-  this->logicalLine = tokens.peek()->lineCount;
+  this->logicalLine = lex::tokenLine(tokens.peek());
   if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
     auto ident = *dynamic_cast<lex::LObj *>(tokens.pop());
     this->ident.ident = ident.meta;
   } else
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " struct needs Ident");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " struct needs Ident");
   if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
     auto op = *dynamic_cast<lex::OpSym *>(tokens.pop());
     if (op.Sym != '{')
-      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           " Unopened UDeffType");
+      throw err::Exception(
+          "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+          " Unopened UDeffType");
   } else
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Unopened UDeffType");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " Unopened UDeffType");
   this->statement = parser.parseStmt(tokens);
   parser.addType(this->ident.ident, asmc::Hard, asmc::QWord, false, uniqueType);
   this->uniqueType = uniqueType;

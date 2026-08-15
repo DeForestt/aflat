@@ -45,6 +45,14 @@ public:
   std::uint32_t allocationIndex = UntrackedAllocation;
 };
 
+inline int tokenLine(const Token *token, int fallback = 1) {
+  return token != nullptr && token->lineCount > 0 ? token->lineCount : fallback;
+}
+
+inline std::string tokenText(const Token *token) {
+  return token != nullptr ? token->toString() : "end of input";
+}
+
 class Symbol : public Token {
 public:
   string meta;

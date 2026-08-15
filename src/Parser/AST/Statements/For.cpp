@@ -10,11 +10,13 @@ For::For(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   auto sym = dynamic_cast<lex::OpSym *>(tokens.peek());
 
   if (sym == nullptr)
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Unterminated for loop initializer");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " Unterminated for loop initializer");
   if (sym->Sym != ';')
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         "unterminated for loop initializer");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        "unterminated for loop initializer");
 
   tokens.pop();
 
@@ -22,11 +24,13 @@ For::For(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 
   sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym == nullptr)
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Unterminated for loop condition");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " Unterminated for loop condition");
   if (sym->Sym != ';')
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         "unterminated for loop condition");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        "unterminated for loop condition");
   tokens.pop();
 
   this->increment = parser.parseStmt(tokens, true);
@@ -43,7 +47,7 @@ For::For(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
         this->Run = parser.parseStmt(tokens);
       } else
         throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
+            "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
             " Unopened for loop body");
     }
   } else

@@ -69,8 +69,9 @@ parseAliases(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
     auto aliasIdent = dynamic_cast<lex::LObj *>(tokens.pop());
 
     if (aliasIdent == nullptr) {
-      throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                           " Union alias needs Ident");
+      throw err::Exception(
+          "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+          " Union alias needs Ident");
     }
 
     std::string name = aliasIdent->meta;
@@ -121,7 +122,7 @@ parseAliases(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
         auto expr = parser.parseExpr(tokens);
         if (expr == nullptr) {
           throw err::Exception(
-              "Line: " + std::to_string(tokens.peek()->lineCount) +
+              "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
               " Union alias needs Type or Expression");
         }
         value = expr;
@@ -129,7 +130,7 @@ parseAliases(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
       auto closeParen = dynamic_cast<lex::OpSym *>(tokens.pop());
       if (closeParen == nullptr || closeParen->Sym != ')') {
         throw err::Exception(
-            "Line: " + std::to_string(tokens.peek()->lineCount) +
+            "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
             " Union alias needs closing parenthesis");
       }
       comma = dynamic_cast<lex::OpSym *>(tokens.peek());
@@ -144,13 +145,14 @@ parseAliases(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
              bool uniqueType, std::vector<std::string> &genericTypes) {
   this->genericTypes = genericTypes;
-  this->logicalLine = tokens.peek()->lineCount;
+  this->logicalLine = lex::tokenLine(tokens.peek());
 
   if (auto ident = dynamic_cast<lex::LObj *>(tokens.pop())) {
     this->ident.ident = ident->meta;
   } else {
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " union needs Ident");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " union needs Ident");
   }
 
   auto type = ast::Type(this->ident.ident, asmc::QWord);
@@ -160,8 +162,9 @@ Union::Union(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
   auto op = dynamic_cast<lex::OpSym *>(tokens.pop());
 
   if (op == nullptr || op->Sym != '{') {
-    throw err::Exception("Line: " + std::to_string(tokens.peek()->lineCount) +
-                         " Unopened Union");
+    throw err::Exception(
+        "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+        " Unopened Union");
   }
 
   this->aliases = parseAliases(tokens, parser);

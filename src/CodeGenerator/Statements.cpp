@@ -213,6 +213,8 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
 
 asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
   asmc::File OutputFile = asmc::File();
+  if (STMT == nullptr)
+    return OutputFile;
   SourceLocationScope sourceLocation(*this, STMT->sourceLocation);
   logicalLine() = STMT->logicalLine;
 
