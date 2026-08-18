@@ -74,9 +74,12 @@ ast::Function *buildAutomaticTransfer(const gen::Union *type, int logicalLine) {
   dst->Ident = "buffer";
   copy->Args.push(dst);
 
-  auto *src = new ast::Reference();
+  // The receiver is already an address to the union storage. `?my` would
+  // address the local receiver slot and transfer stack bytes.
+  auto *src = new ast::Var();
   src->logicalLine = logicalLine;
   src->Ident = "my";
+  src->clean = true;
   copy->Args.push(src);
 
   auto *size = new ast::IntLiteral();

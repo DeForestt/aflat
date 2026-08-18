@@ -220,9 +220,13 @@ ast::Function *buildAutomaticTransfer(gen::CodeGenerator &generator,
     dst->Ident = "buffer";
     copy->Args.push(dst);
 
-    auto *src = new ast::Reference();
+    // `my` already evaluates to the receiver object pointer. Taking `?my`
+    // addresses the function's receiver slot instead, which copies stack
+    // state into the destination rather than the object bytes.
+    auto *src = new ast::Var();
     src->logicalLine = logicalLine;
     src->Ident = "my";
+    src->clean = true;
     copy->Args.push(src);
 
     auto *size = new ast::IntLiteral();
