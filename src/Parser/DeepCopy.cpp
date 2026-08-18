@@ -439,6 +439,7 @@ Statement *deepCopy(const Statement *stmt) {
     copy->expr = static_cast<Expr *>(deepCopy(match->expr));
     copy->cases = std::vector<Match::Case>();
     copy->returns = match->returns;
+    copy->loanBindings = match->loanBindings;
     for (const auto &caseItem : match->cases) {
       Match::Case caseCopy;
       caseCopy.pattern = Match::Pattern(caseItem.pattern);

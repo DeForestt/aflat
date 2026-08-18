@@ -222,7 +222,7 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
                                      _case.pattern.bindingLogicalLine);
         auto sym = gen::scope::ScopeManager::getInstance()->get(
             *_case.pattern.veriableName);
-        sym->owned = exprResult.owned;
+        sym->owned = exprResult.owned && !loanBindings;
 
         if (parse::PRIMITIVE_TYPES.find(type->typeName) !=
             parse::PRIMITIVE_TYPES.end()) {

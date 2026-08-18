@@ -9,30 +9,48 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/AST.hpp"
+#include "Parser/AST/Statements/Match.hpp"
 #include "Parser/Parser.hpp"
 
 namespace ast {
 
 namespace {
 
-ast::Function *buildAutomaticInvalidateSignature(int logicalLine) {
+ast::Assign *buildUnionInvalidateBody(int logicalLine) {
+  auto *assign = new ast::Assign();
+  assign->logicalLine = logicalLine;
+  assign->Ident = "my";
+  assign->modList.push("type");
+  assign->override = true;
+
+  auto *invalidTag = new ast::IntLiteral();
+  invalidTag->logicalLine = logicalLine;
+  invalidTag->val = -1;
+  assign->expr = invalidTag;
+  return assign;
+}
+
+ast::Function *buildAutomaticInvalidate(const gen::Union *type,
+                                        int logicalLine) {
   auto *func = new ast::Function();
   func->logicalLine = logicalLine;
   func->ident.ident = "__invalidate__";
   func->scope = ast::Public;
+  func->hidden = type->declarationOnly;
   func->args = nullptr;
-  func->statement = nullptr;
+  func->statement = buildUnionInvalidateBody(logicalLine);
   func->type.typeName = "void";
   func->type.size = asmc::QWord;
   func->useType = func->type;
   return func;
 }
 
-ast::Function *buildAutomaticTransferSignature(int logicalLine) {
+ast::Function *buildAutomaticTransfer(const gen::Union *type, int logicalLine) {
   auto *func = new ast::Function();
   func->logicalLine = logicalLine;
   func->ident.ident = "__transfer_to__";
   func->scope = ast::Public;
+  func->hidden = type->declarationOnly;
 
   auto *buffer = new ast::Declare();
   buffer->logicalLine = logicalLine;
@@ -45,7 +63,92 @@ ast::Function *buildAutomaticTransferSignature(int logicalLine) {
   func->req = 1;
   func->readOnly.push_back(true);
   func->mutability.push_back(false);
-  func->statement = nullptr;
+
+  auto *body = new ast::Sequence();
+  auto *copy = new ast::Call();
+  copy->logicalLine = logicalLine;
+  copy->ident = "af_memcpy";
+
+  auto *dst = new ast::Var();
+  dst->logicalLine = logicalLine;
+  dst->Ident = "buffer";
+  copy->Args.push(dst);
+
+  auto *src = new ast::Reference();
+  src->logicalLine = logicalLine;
+  src->Ident = "my";
+  copy->Args.push(src);
+
+  auto *size = new ast::IntLiteral();
+  size->logicalLine = logicalLine;
+  size->val = type->instanceSize;
+  copy->Args.push(size);
+  body->Statement1 = copy;
+
+  auto *invalidate = new ast::Call();
+  invalidate->logicalLine = logicalLine;
+  invalidate->ident = "my";
+  invalidate->modList.push("__invalidate__");
+  body->Statement2 = invalidate;
+
+  func->statement = body;
+  func->type.typeName = "void";
+  func->type.size = asmc::QWord;
+  func->useType = func->type;
+  return func;
+}
+
+ast::Function *buildAutomaticDestructor(gen::CodeGenerator &generator,
+                                        const gen::Union *type,
+                                        int logicalLine) {
+  auto *match = new ast::Match();
+  match->logicalLine = logicalLine;
+  match->loanBindings = true;
+  auto *subject = new ast::Var();
+  subject->logicalLine = logicalLine;
+  subject->Ident = "my";
+  match->expr = subject;
+
+  int payloadIndex = 0;
+  for (const auto &alias : type->aliases) {
+    if (!std::holds_alternative<ast::Type *>(alias.value))
+      continue;
+
+    auto *payloadType = std::get<ast::Type *>(alias.value);
+    auto **entry = generator.typeList()[payloadType->typeName];
+    auto *payloadClass =
+        entry == nullptr ? nullptr : dynamic_cast<gen::Class *>(*entry);
+    if (payloadClass == nullptr)
+      continue;
+
+    const char *methodName = payloadClass->uniqueType ? "del" : "endScope";
+    if (payloadClass->nameTable[methodName] == nullptr)
+      continue;
+
+    const std::string payloadName =
+        "__union_payload_" + std::to_string(payloadIndex++);
+    auto *cleanup = new ast::Call();
+    cleanup->logicalLine = logicalLine;
+    cleanup->ident = payloadName;
+    cleanup->modList.push(methodName);
+    match->cases.emplace_back(ast::Match::Pattern(alias.name, payloadName),
+                              cleanup);
+  }
+
+  match->cases.emplace_back(ast::Match::Pattern("_", std::nullopt),
+                            new ast::Sequence());
+
+  auto *body = new ast::Sequence();
+  body->Statement1 = match;
+  body->Statement2 = buildUnionInvalidateBody(logicalLine);
+
+  auto *func = new ast::Function();
+  func->logicalLine = logicalLine;
+  func->ident.ident = "del";
+  func->scope = ast::Public;
+  func->hidden = type->declarationOnly;
+  func->args = nullptr;
+  func->statement = body;
   func->type.typeName = "void";
   func->type.size = asmc::QWord;
   func->useType = func->type;
@@ -232,13 +335,6 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
     gen::utils::shellStatement(this->statement);
   }
 
-  if (type->uniqueType) {
-    OutputFile << generator.GenSTMT(
-        buildAutomaticInvalidateSignature(this->logicalLine));
-    OutputFile << generator.GenSTMT(
-        buildAutomaticTransferSignature(this->logicalLine));
-  }
-
   asmc::File junkFile =
       asmc::File(); // We can use this to get the types and size of aliases
 
@@ -345,6 +441,25 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   typeSymbol.byteMod =
       maxSize + 4; // This is the size of the union + 4 bytes for the type
   type->SymbolTable.push(typeSymbol);
+
+  if (type->uniqueType) {
+    // Concrete generic methods are normally emitted lazily on first call.
+    // Union lifecycle methods are compiler-required entry points used by
+    // scope cleanup, so their bodies must always be available.
+    for (const auto *method : {"del", "__invalidate__", "__transfer_to__"}) {
+      generator.generatedLazyConcreteMethodNames().insert("pub_" + type->Ident +
+                                                          "_" + method);
+    }
+    if (gen::utils::extract("del", this->statement) == nullptr)
+      OutputFile << generator.GenSTMT(
+          buildAutomaticDestructor(generator, type, this->logicalLine));
+    if (gen::utils::extract("__invalidate__", this->statement) == nullptr)
+      OutputFile << generator.GenSTMT(
+          buildAutomaticInvalidate(type, this->logicalLine));
+    if (gen::utils::extract("__transfer_to__", this->statement) == nullptr)
+      OutputFile << generator.GenSTMT(
+          buildAutomaticTransfer(type, this->logicalLine));
+  }
 
   if (this->statement != nullptr) {
     asmc::File file = generator.GenSTMT(this->statement);
