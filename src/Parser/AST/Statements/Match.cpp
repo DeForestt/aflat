@@ -34,6 +34,7 @@ Match::Pattern::Pattern(links::LinkedList<lex::Token *> &tokens) {
     if (veriableToken) {
       tokens.pop();
       veriableName = veriableToken->meta;
+      bindingLogicalLine = veriableToken->lineCount;
     }
     auto closeParen = dynamic_cast<lex::OpSym *>(tokens.pop());
     if (closeParen == nullptr || closeParen->Sym != ')') {
@@ -217,6 +218,8 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
 
         auto byteMod = gen::scope::ScopeManager::getInstance()->assign(
             *_case.pattern.veriableName, *type, false, false);
+        generator.reportInferredType(*_case.pattern.veriableName, *type,
+                                     _case.pattern.bindingLogicalLine);
         auto sym = gen::scope::ScopeManager::getInstance()->get(
             *_case.pattern.veriableName);
         sym->owned = exprResult.owned;
@@ -299,6 +302,9 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
         decAssign->mute = false;
         decAssign->expr = expr;
         file << decAssign->generate(generator).file;
+        generator.reportInferredType(*_case.pattern.veriableName,
+                                     decAssign->declare->type,
+                                     _case.pattern.bindingLogicalLine);
       }
     }
     file << generator.GenSTMT(_case.statement);

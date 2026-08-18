@@ -828,6 +828,7 @@ struct IndexedSymbol {
   bool isFunction = false;
   std::string container;
   bool isPublic = true;
+  std::string matchPayloadType;
 };
 
 struct IndexedInlayHint {
@@ -1222,7 +1223,10 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
         addSymbol(index, alias->name, uri,
                   TokenSpan{std::max(0, uni->logicalLine - 1), 0,
                             std::max(1, static_cast<int>(alias->name.size()))},
-                  LSP_SYMBOL_ENUM_MEMBER, alias->toString());
+                  LSP_SYMBOL_ENUM_MEMBER, alias->toString(), "", false,
+                  uni->ident.ident);
+        if (alias->isType())
+          index.symbols.back().matchPayloadType = alias->getType().typeName;
       }
     }
     collectIndexFromStatement(uni->statement, uri, index, uni->ident.ident);
@@ -1418,6 +1422,8 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
 
   if (auto *match = dynamic_cast<ast::Match *>(stmt)) {
     collectIndexFromStatement(match->expr, uri, index, container);
+    const auto matchedType =
+        stripGenerics(inferExpressionType(match->expr, index));
     for (const auto &c : match->cases) {
       if (!c.pattern.aliasName.empty()) {
         addSymbol(index, c.pattern.aliasName, uri,
@@ -1427,11 +1433,29 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
                   LSP_SYMBOL_VARIABLE);
       }
       if (c.pattern.veriableName && !c.pattern.veriableName->empty()) {
+        const auto bindingLine = c.pattern.bindingLogicalLine > 0
+                                     ? c.pattern.bindingLogicalLine
+                                     : match->logicalLine;
+        std::string bindingType;
+        for (auto symbol = index.symbols.rbegin();
+             !matchedType.empty() && symbol != index.symbols.rend(); ++symbol) {
+          if (symbol->name != c.pattern.aliasName ||
+              symbol->kind != LSP_SYMBOL_ENUM_MEMBER ||
+              stripGenerics(symbol->container) != matchedType)
+            continue;
+          bindingType = symbol->matchPayloadType;
+          break;
+        }
         addSymbol(index, *c.pattern.veriableName, uri,
-                  TokenSpan{std::max(0, match->logicalLine - 1), 0,
+                  TokenSpan{std::max(0, bindingLine - 1), 0,
                             std::max(1, static_cast<int>(
                                             c.pattern.veriableName->size()))},
-                  LSP_SYMBOL_VARIABLE);
+                  LSP_SYMBOL_VARIABLE, bindingType);
+        if (!bindingType.empty()) {
+          index.inlayHints.push_back(
+              IndexedInlayHint{*c.pattern.veriableName, uri,
+                               std::max(0, bindingLine - 1), 0, bindingType});
+        }
       }
       collectIndexFromStatement(c.statement, uri, index, container);
     }
@@ -2153,9 +2177,16 @@ DocumentAnalysis analyzeDocument(const std::string &uri,
       analysis.typedIndex.inlayHints.push_back(
           IndexedInlayHint{identifier, uri, sourceLine, 0, inferredName});
     });
+
+    // Build the structural index while the parsed AST still represents the
+    // source. Code generation enriches and lowers inferred declarations in
+    // place, so walking the tree afterwards can produce duplicate (and stale)
+    // hints, particularly for the declarations synthesized by foreach.
+    collectIndexFromStatement(stmt, uri, analysis.typedIndex);
+    analysis.typedIndex.inlayHints.clear();
+
     auto discardedAssembly = generator.GenSTMT(stmt);
     discardedAssembly << generator.deferredMethods();
-    collectIndexFromStatement(stmt, uri, analysis.typedIndex);
     resolveSourceSpans(analysis.typedIndex, uri, text);
     destroyTokens(tokens);
     return analysis;
@@ -2542,8 +2573,13 @@ private:
     }
 
     JsonValue::Array hints;
+    std::unordered_set<std::string> emittedPositions;
     for (const auto &hint : index->inlayHints) {
       if (hint.uri != *uriValue || hint.line < startLine || hint.line > endLine)
+        continue;
+      const auto positionKey =
+          std::to_string(hint.line) + ":" + std::to_string(hint.character);
+      if (!emittedPositions.insert(positionKey).second)
         continue;
       hints.push_back(JsonValue(JsonValue::Object{
           {"position", makePosition(hint.line, hint.character)},

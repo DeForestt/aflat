@@ -17,6 +17,7 @@ public:
   struct Pattern {
     std::string aliasName;
     std::optional<std::string> veriableName;
+    int bindingLogicalLine = 0;
     Pattern(links::LinkedList<lex::Token *> &tokens);
     Pattern() = default;
     Pattern(std::string aliasName, std::optional<std::string> veriableName)
