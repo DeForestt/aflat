@@ -192,6 +192,7 @@ public:
   Type *typeHint = nullptr;
   bool isReference = false;
   bool isRvalue = false;
+  bool isLoan = false;
   bool readOnly = false;
   asmc::Size refSize = asmc::AUTO;
 

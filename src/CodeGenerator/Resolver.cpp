@@ -232,6 +232,7 @@ CodeGenerator::resolveSymbol(std::string ident,
     access = '-' + std::to_string(sym->byteMod) + "(%rbp)";
   ast::Type last = sym->type;
   Symbol *modSym = sym;
+  bool accessedField = false;
   const int checkTo = (internal) ? 1 : 0;
   if (modList.trail() > checkTo) {
     asmc::Push *push = new asmc::Push;
@@ -239,6 +240,7 @@ CodeGenerator::resolveSymbol(std::string ident,
     push->op = registers()["%r14"]->get(asmc::QWord);
     OutputFile.text << push;
     while (modList.trail() > checkTo) {
+      accessedField = true;
       Type *type = *this->getType(last.typeName, OutputFile);
       std::string sto = modList.touch();
       if (scope() == type) {
@@ -362,7 +364,15 @@ CodeGenerator::resolveSymbol(std::string ident,
     access = '(' + registers()["%r12"]->get(asmc::QWord) + ')';
     retSym.type = *retSym.type.typeHint;
   };
-  retSym.owned = owned;
+  // An object owns its reference-valued fields, but observing a field does not
+  // transfer that ownership to the expression. Primitive fields remain value
+  // copies. Moving a field is handled explicitly by the buy (`$`) expression
+  // from within the owning class.
+  auto *resolvedFieldType = typeList()[retSym.type.typeName];
+  const bool referenceValuedField =
+      accessedField && resolvedFieldType != nullptr &&
+      dynamic_cast<Class *>(*resolvedFieldType) != nullptr;
+  retSym.owned = owned && !referenceValuedField;
   return std::make_tuple(access, retSym, true, pops, modSym);
 }
 

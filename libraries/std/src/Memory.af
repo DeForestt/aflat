@@ -47,7 +47,7 @@ class Box {
 	};
 
 	fn _set(const T &&value) -> Self {
-		my.value = value;
+		my.value = $value;
 		return my;
 	};
   
@@ -70,7 +70,7 @@ unique class owned {
 	};
 
 	fn _set(const T &&value) -> Self {
-		my.value = value;
+		my.value = $value;
 		return my;
 	};
 
@@ -90,7 +90,7 @@ unique class owned {
 
   fn release() -> T {
     my.valid = false;
-    return my.value;
+    return $my.value;
   };
 
 	fn toString() -> uni_string {
@@ -102,9 +102,9 @@ unique class owned {
 types(T)
 unique class view {
   // note that we do not own T; we only keep a raw reference to it.
-  private mutable T value = value;
+  private mutable loan T value = value;
 
-  fn init(const any value) {
+  fn init(const T value) {
     return my;
   };
 
@@ -138,4 +138,3 @@ types(T)
 export fn loan(const T value) -> view::<T> {
   return new view::<T>(value);
 }
-

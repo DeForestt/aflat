@@ -43,6 +43,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   auto symbol = &std::get<1>(resolved);
 
   auto fin = symbol;
+  auto *binding = std::get<4>(resolved);
   const auto var = dynamic_cast<ast::Var *>(this->expr);
 
   if (symbol->type.isReference && !this->override) {
@@ -122,18 +123,22 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   gen::Expr expr = generator.GenExpr(this->expr, file, symbol->type.size,
                                      symbol->type.typeName);
 
-  if (!this->reference && !symbol->type.isReference &&
-      parse::PRIMITIVE_TYPES.find(expr.type) == parse::PRIMITIVE_TYPES.end()) {
-    if (auto *sourceVar = dynamic_cast<ast::Var *>(this->expr)) {
-      asmc::File sourceResolveFile;
-      auto sourceResolved =
-          generator.resolveSymbol(sourceVar->Ident, sourceVar->modList,
-                                  sourceResolveFile, sourceVar->indices);
-      if (std::get<2>(sourceResolved)) {
-        std::get<4>(sourceResolved)->sold = this->logicalLine;
-      }
-    }
-  }
+  auto *fieldType = generator.typeList()[symbol->type.typeName];
+  const int fieldDepth =
+      this->modList.count -
+      (generator.nameSpaceTable().contains(this->Ident) ? 1 : 0);
+  const bool assignsOwnershipBearingField =
+      fieldDepth > 0 && !symbol->type.isReference && !symbol->type.isLoan &&
+      fieldType != nullptr && dynamic_cast<gen::Class *>(*fieldType) != nullptr;
+  const auto *sourceVar = dynamic_cast<ast::Var *>(this->expr);
+  const bool assignsNull = sourceVar != nullptr && sourceVar->Ident == "NULL" &&
+                           sourceVar->modList.count == 0;
+  auto *sourceType = generator.typeList()[expr.type];
+  const bool plainOwnershipBearingLvalue =
+      sourceVar != nullptr && !assignsNull && sourceType != nullptr &&
+      dynamic_cast<gen::Class *>(*sourceType) != nullptr;
+  if (plainOwnershipBearingLvalue)
+    expr.owned = false;
 
   if (!this->reference || symbol->type.isReference) {
     if (!generator.canAssign(
@@ -144,6 +149,13 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
           generator.imply(this->expr, symbol->type.typeName), file);
       expr.adoptImmutableRequirement(prev);
     }
+  }
+
+  if (assignsOwnershipBearingField && !expr.owned && !assignsNull) {
+    generator.alert("cannot bind unowned value of type `" + expr.type +
+                        "` to ownership-bearing field `" + this->Ident + "." +
+                        this->modList.peek() + "`",
+                    true, __FILE__, __LINE__);
   }
 
   if (expr.requiresImmutableBinding && !symbol->readOnly) {
@@ -218,7 +230,13 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   if (this->modList.count == 0 && this->reference) {
     gen::scope::ScopeManager::getInstance()->get(fin->symbol);
   }
-  fin->owned = expr.owned;
+  const bool targetOwnsValue = expr.owned && !symbol->type.isLoan;
+  fin->owned = targetOwnsValue;
+  fin->sold = -1;
+  if (binding != nullptr) {
+    binding->owned = targetOwnsValue;
+    binding->sold = -1;
+  }
 
   if (generator.TypeList()[fin->type.typeName] == nullptr) {
     auto t = new ast::Type();

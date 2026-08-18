@@ -1568,17 +1568,21 @@ This model **only applies to non-value types** \u2014 i.e., user-defined classes
 * Regular variables, references, and function parameters passed by value are non-owning by default.
 * You cannot `$` or return these without wrapping them or copying explicitly.
 
-### 8. Accessing a field of an owned object yields ownership of that field
+### 8. Field access never transfers ownership
 
-* If you own an object, you can legally move out of its fields.
-* This allows:
-
-  ```aflat
-  let obj = new Container();
-  let inner = $obj.field; // legal: obj is owned
-  ```
-
-> \u26a0\ufe0f This creates *double ownership* (parent and field both considered owners), and the compiler does **not** track invalidation. It's the programmer\u2019s responsibility to avoid use-after-move bugs.
+* Reading a non-value field produces a loan, even when the containing object is
+  owned. Primitive fields are still copied by value.
+* Callers cannot move a field directly with `$obj.field`. Ownership may leave
+  an object only through an explicit method. Inside that method, `$my.field`
+  performs the transfer; the method must also update or validate the object's
+  state so the moved field cannot be used as though it were still present.
+* An ownership-bearing field may only be assigned an owned value (or `NULL`
+  when invalidating it). Storing a loan in such a field is rejected because the
+  object cannot assume responsibility for a lifetime owned elsewhere.
+* A field may explicitly opt out with `loan T field`. Such a field stores an
+  unsafe borrowed reference, accepts unowned values, and is not destroyed with
+  its containing object. The programmer must ensure the referent outlives every
+  use of the field.
 
 ---
 
@@ -1592,8 +1596,9 @@ This model **only applies to non-value types** \u2014 i.e., user-defined classes
   takeIt(myFoo);       // \u274c Error \u2014 ownership not transferred
   ```
 
-* **Returning fields directly from a method** is currently treated as an ownership transfer.
-  Future plans include treating such field returns as **borrows** unless explicitly marked otherwise.
+* **Returning a field directly from a method** is a loan and cannot satisfy an
+  owning return type. Use a loan return type for accessors, or explicitly move
+  it with `$my.field` in a transfer method.
 
 ---
 
@@ -1604,8 +1609,8 @@ This model **only applies to non-value types** \u2014 i.e., user-defined classes
 | `new Foo()`                  | \u2705 Yes  | \u274c No          | Owned rvalue                           |
 | `let f = new Foo();`         | \u2705 Yes  | \u2705 Yes         | Named variable \u2014 must `$f` to move     |
 | `someFunc()` returning `T!`  | \u2705 Yes  | \u274c No          | Functions can transfer ownership       |
-| `field` from owned object    | \u2705 Yes  | \u2705 Yes         | You can move fields if parent is owned |
-| `field` from borrowed object | \u274c No   | \u274c Error       | Cannot move out                        |
+| `field` from owned object    | \u274c No   | \u274c Error       | Field reads are loans                  |
+| `field` from borrowed object | \u274c No   | \u274c Error       | Field reads are loans                  |
 | Stack or literal value       | \u274c No   | \u274c N/A         | Not tracked by ownership model         |
 | Function param (by value)    | \u274c No   | \u274c Error       | Must use `&&` to pass ownership        |
 | Function param (with `&&`)   | \u2705 Yes  | \u2705 Yes or \u274c No | `$var` or `new Foo()` is valid         |

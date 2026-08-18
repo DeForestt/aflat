@@ -185,9 +185,9 @@ safe dynamic pedantic class AsyncResult {
     private int refcount = 0;
     private bool reaped = false;
 
-    fn init(const WorkerMode mode, * const MProcess p, * const adr thread){
+    fn init(const WorkerMode mode, * const MProcess &&p, * const adr thread){
         my.mode = mode;
-        my.p = p;
+        my.p = $p;
         my.thread = thread;
         return my;
     };
@@ -438,8 +438,8 @@ export fn worker(const adr foo, *const WorkerMode mode, *const any arg1, *const 
         const Message msg = new Message(res);
         msg.writePipe(outbox);
     });
-    const AsyncResult::<T> ret = new AsyncResult::<T>(mode, p, NULL);
     p.start(pArgs);
+    const AsyncResult::<T> ret = new AsyncResult::<T>(mode, $p, NULL);
     return ret; 
 };
 

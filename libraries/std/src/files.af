@@ -81,7 +81,7 @@ class File{
      */
     async fn readBytesAtAsync(const adr pointer, const int size,
                               const long offset) -> long {
-        mutable adr operation = NULL;
+        adr operation = NULL;
         pause af_io_read_begin(my.file, pointer, size, offset, ?operation);
         const long result = af_io_operation_result(operation);
         af_io_operation_release(operation);
@@ -94,7 +94,7 @@ class File{
      */
     async fn writeBytesAtAsync(const adr pointer, const int size,
                                const long offset) -> long {
-        mutable adr operation = NULL;
+        adr operation = NULL;
         pause af_io_write_begin(my.file, pointer, size, offset, ?operation);
         const long result = af_io_operation_result(operation);
         af_io_operation_release(operation);
@@ -320,7 +320,7 @@ safe dynamic pedantic class FileManager {
         panic("Attempted to use an unusable file");  
     };
     my.refcount = my.refcount - 1;
-    return my.f;
+    return $my.f;
   };
 
   void endScope() {
@@ -341,7 +341,7 @@ safe dynamic pedantic class FileManager {
             my.f.close();
             delete my.f;
         };
-        my.f = other.f;
+        my.f = other();
         my.usable = other.usable;
         // invalidate the other
         other.usable = false;

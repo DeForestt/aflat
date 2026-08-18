@@ -198,16 +198,16 @@ class HTTPHeader {
 
 class HTTPMessage {
     private vector::<HTTPHeader> headers = new vector::<HTTPHeader>();
-    private bool switch = false;
+    mutable private bool switch = false;
     const public Map query = new Map();
-    string origin = new string("");
-    string body = new string("");
-    string version;
-    string statusCode;
-    string endpoint = "";
-    string statusMessage;
-    HTTPMethod method;
-    Map metadata = new Map();
+    mutable string origin = new string("");
+    mutable string body = new string("");
+    mutable string version;
+    mutable string statusCode;
+    mutable string endpoint = "";
+    mutable string statusMessage;
+    mutable HTTPMethod method;
+    mutable Map metadata = new Map();
 
     fn __from__(const HTTPMessage other) -> Self {
         my.switch = other.switch;
@@ -718,10 +718,10 @@ class HTTPResponse {
 
 class EndPointStruct {
     adr foo = foo;
-    string path = path;
+    string path = $path;
     HTTPMethod method = method;
 
-    EndPointStruct init(const adr foo, const string path, const HTTPMethod method) {
+    EndPointStruct init(const adr foo, const string &&path, const HTTPMethod method) {
         return my;
     };
 
@@ -742,7 +742,7 @@ class HTTPServer {
     };
 
     private string get404Error() {
-        string ret = new string("");
+        const string ret = new string("");
         ret = ret + "HTTP/1.1 404 Not Found\r\n";
         ret = ret + "Content-Type: text/html\r\n";
         ret = ret + "Content-Length: 0\r\n";
@@ -751,8 +751,8 @@ class HTTPServer {
         return ret;
     };
 
-    void registerEndpoint(const adr foo, const string path, const HTTPMethod method) {
-        const EndPointStruct eps = new EndPointStruct(foo, path, method);
+    void registerEndpoint(const adr foo, const string &&path, const HTTPMethod method) {
+        const EndPointStruct eps = new EndPointStruct(foo, $path, method);
         my.endpoints.push_back($eps);
         return;
     };

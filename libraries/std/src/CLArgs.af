@@ -99,7 +99,7 @@ class CommandLineArgs {
 		if my.built {
 			panic("CommandLineArgs has already been built. Cannot add more arguments.");
 		};
-		my.arguments = args;
+		my.arguments = $args;
 		return my;
 	};
 
