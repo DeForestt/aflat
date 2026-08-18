@@ -558,7 +558,26 @@ gen::GenerationResult const Import::generate(gen::CodeGenerator &generator) {
     collectImportNamespaces(added, nsMap);
     ast::Statement *templateRoot =
         containsGenericClass(added) ? ast::deepCopy(added) : nullptr;
-    if (this->hasFunctions)
+    bool importsClass = false;
+    for (const auto &ident : this->imports) {
+      for (auto *stmt : gen::utils::extractAll(ident, added, id)) {
+        if (dynamic_cast<ast::Class *>(stmt) != nullptr) {
+          importsClass = true;
+          break;
+        }
+      }
+      if (importsClass)
+        break;
+    }
+
+    // An imported class can expose module-local concrete classes through its
+    // contract or field layout.  Predeclaration is enough to parse those
+    // references, but generic instantiation (for example vector<Helper>)
+    // needs the complete element layout.  Materialize the module's type
+    // definitions before generating a requested class, just as function
+    // imports and the class-preload path already do.  Transform-only imports
+    // remain lazy so unrelated classes cannot make them fail.
+    if (this->hasFunctions || importsClass)
       OutputFile << emitTypeShells(added, generator, id, this->cwd, nsMap,
                                    templateRoot, this->path, "");
     for (std::string ident : this->imports) {

@@ -108,6 +108,44 @@ TEST_CASE("Generic class instantiation sees private module imports",
   REQUIRE(result);
 }
 
+TEST_CASE("Imported class materializes module-local layout dependencies",
+          "[imports][classes][generics]") {
+  namespace fs = std::filesystem;
+  fs::create_directories("tmp/import_layout_dependencies");
+
+  std::ofstream mod("tmp/import_layout_dependencies/Serializable.af");
+  mod << ".needs <std>\n";
+  mod << "import vector from \"Collections/Vector\";\n";
+  mod << "class PropertyRef {\n";
+  mod << "  int value = value;\n";
+  mod << "  fn init(int value) -> Self { return my; };\n";
+  mod << "};\n";
+  mod << "class Serializable {\n";
+  mod << "  contract { vector::<PropertyRef> fields = []; };\n";
+  mod << "  fn init() -> Self { return my; };\n";
+  mod << "};\n";
+  mod.close();
+
+  std::ofstream use("tmp/import_layout_dependencies/Use.af");
+  use << ".needs <std>\n";
+  use << "import Serializable from \"./Serializable\";\n";
+  use << "class Model signs Serializable {\n";
+  use << "  fn init() -> Self { return my; };\n";
+  use << "};\n";
+  use << "fn main() -> int {\n";
+  use << "  const let model = new Model();\n";
+  use << "  return 0;\n";
+  use << "};\n";
+  use.close();
+
+  const bool result = build("tmp/import_layout_dependencies/Use.af",
+                            "tmp/import_layout_dependencies/Use.s",
+                            cfg::Mutability::Strict, false);
+
+  fs::remove_all("tmp/import_layout_dependencies");
+  REQUIRE(result);
+}
+
 TEST_CASE("Imported generic class keeps defining module namespace aliases",
           "[imports][generics][namespaces]") {
   namespace fs = std::filesystem;
