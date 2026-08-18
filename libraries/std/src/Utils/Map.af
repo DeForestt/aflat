@@ -1,5 +1,4 @@
 .needs <std>
-import List from "Collections";
 import string from "String";
 import {print} from "String" under str;
 import Option from "Utils/Option";
@@ -111,19 +110,6 @@ class MapNode {
         return my.bruteGet(key);
     };
 
-    public List keys() {
-        const List keys = new List(string);
-        keys.pushBack(new string(my.key));
-        if my.left != NULL {
-            keys.stitch(my.left.keys());
-        };
-        if my.right != NULL {
-            keys.stitch(my.right.keys());
-        };
-        keys.stringFunc = fn (const adr val) return new string(val);
-        return keys;
-    };
-
     fn typeSafeKeys() -> vector::<adr> {
         const let keys = new vector::<adr>();
         const let key = af_malloc(st.len(my.key) + 1);
@@ -206,11 +192,11 @@ class Map {
         return my.get(key);
     };
 
-    List keys() {
+    vector::<adr> keys() {
         if my.root == NULL {
-            return new List(string);
+            return new vector::<adr>();
         } else {
-            return my.root.keys();
+            return my.root.typeSafeKeys();
         };
     };
 

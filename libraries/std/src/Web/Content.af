@@ -1,19 +1,18 @@
 .needs <std>
 import string from "String";
 import {print} from "String" under str;
-import List from "Collections";
+import vector from "Collections/Vector";
 import Bind from "Web/Content/Bind";
 import {openFile} from "files" under fs;
 import File from "files";
 import Error from "Utils/Error";
 import Result from "Utils/Result";
-import Scroller from "Collections/Scroller";
 
 class Content {
     contract {
         mutable string content = "";
         mutable string cleanContent = "";
-        const List bindings = new List(Bind);
+        const vector::<adr> bindings = new vector::<adr>();
     };
 
     void loadFile(const adr fileName) {
@@ -31,8 +30,9 @@ class Content {
         my.content = $my.cleanContent;
         mutable string buffer = my.content.copy();
 
-        for mutable int i = 0; i < my.bindings.getCount(); i = i + 1 {
-            const Bind binding = my.bindings.get(i).expect("Binding count corrupted");
+        for mutable int i = 0; i < my.bindings.count(); i = i + 1 {
+            const adr bindingAddress = my.bindings.get(i).expect("Binding count corrupted");
+            const Bind binding = bindingAddress;
             const string key = binding.key;
             const string val = binding.val;
             val.get();

@@ -1,7 +1,5 @@
 .needs <std>
 
-import List from "Collections";
-import Scroller from "Collections/Scroller";
 import Function from "Utils/Functions";
 import vector from "Collections/Vector";
 

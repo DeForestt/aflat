@@ -6,7 +6,6 @@ import { print } from "io" under io;
 import Error from "Utils/Error";
 import Option from "Utils/Option";
 import option from "Utils/option";
-import Scroller from "Collections/Scroller";
 import vector from "Collections/Vector";
 import {Some, None, optionWrapper} from "Utils/option" under opt;
 import result from "Utils/result";

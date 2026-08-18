@@ -1,8 +1,5 @@
 .needs <std>
 import Option from "Utils/Option";
-import List from "Collections";
-import Iterator from "Collections/Iterator";
-import Scroller from "Collections/Scroller";
 import Function from "Utils/Functions";
 import unordered_map from "Collections/unordered_map";
 import Observable from "Utils/Observable";

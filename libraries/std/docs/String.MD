@@ -46,7 +46,7 @@ The `string` class is a dynamic and safe class for handling strings in Aflat. It
 - `bool input(const adr prompt)`: Takes user input after displaying a prompt.
 - `int getRefcount()`: Returns the reference count of the string.
 - `string concat(const string other)`: Concatenates the current string with another string.
-- `List split(const char delim)`: Splits the string by the specified delimiter.
+- `vector::<string> split(const char delim)`: Splits the string by the specified delimiter.
 - `int forEach(const adr func, * const adr args)`: Applies a function to each character of the string.
 - `int len()`: Returns the length of the string.
 - `string copy()`: Creates a copy of the string.

@@ -2,7 +2,6 @@
 import uni_string from "uni_string";
 import {print} from "uni_string" under uni;
 import {print} from "io" under io;
-import List from "Collections";
 import Map from "Utils/Map";
 import unordered_map from "Collections/unordered_map";
 import vector from "Collections/Vector";
@@ -176,10 +175,6 @@ export fn getFixtureData() -> loan Map {
 		fixtureData = new Map();
 	};
 	return fixtureData;
-};
-
-fn builtList() -> List {
-	return getFixtureData().keys();
 };
 
 // Invoke tearDown hooks for all built fixtures.

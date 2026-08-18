@@ -40,7 +40,6 @@ function wait_for_jobs {
 function compile_single {
     case "$1" in
         "Tuple") aflat ./libraries/std/src/Collections/Tuple.af -o ./libraries/std/Tuple.s ;;
-        "Collections") aflat ./libraries/std/src/Collections.af -o ./libraries/std/Collections.s ;;
         "concurrency") aflat ./libraries/std/src/concurrency.af -o ./libraries/std/concurrency.s ;;
         "DateTime") aflat ./libraries/std/src/DateTime.af -o ./libraries/std/DateTime.s ;;
         "files") aflat ./libraries/std/src/files.af -o ./libraries/std/files.s ;;
@@ -103,9 +102,6 @@ function compile_single {
             mv ./libraries/std/Parse.s ./libraries/std/JSON_Parse.s ;;
         "JSON_Property") aflat ./libraries/std/src/JSON/Property.af -o ./libraries/std/JSON_Property.s ;;
         "JSON_Property_Fields") aflat ./libraries/std/src/JSON/Property/Fields.af -o ./libraries/std/JSON_Property_Fields.s ;;
-        "Iterator") aflat ./libraries/std/src/Collections/Iterator.af -o ./libraries/std/Iterator.s ;;
-        "Scroller") aflat ./libraries/std/src/Collections/Scroller.af -o ./libraries/std/Scroller.s ;;
-        "Enumerator") aflat ./libraries/std/src/Collections/Enumerator.af -o ./libraries/std/Enumerator.s ;;
         "Vector") aflat ./libraries/std/src/Collections/Vector.af -o ./libraries/std/vector.s ;;
         "Heap") aflat ./libraries/std/src/Collections/Heap.af -o ./libraries/std/Heap.s ;;
         "request") gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c ;;
@@ -113,14 +109,14 @@ function compile_single {
         *)
             echo "Unknown library: $1"
             echo "Available libraries:"
-            echo "  Collections, concurrency, DateTime, files, io, math, std-cmp, std"
+            echo "  concurrency, DateTime, files, io, math, std-cmp, std"
             echo "  strings, String, uni_string, ATest, HTTP, CLArgs, System, Memory"
             echo "  Result, result, Functions, Observable, Map, Option, option"
             echo "  Properties, Object, Error, Defer, unordered_map, Error_Render"
             echo "  HTTP_Endpoint, HTTP_Middleware, HTTP_Server, HTTP_Endpoints"
             echo "  Web_Content, Web_Content_Bind, JSON, JSON_Parse, JSON_Property"
             echo "  JSON_Property_Fields"
-            echo "  Iterator, Scroller, Enumerator, Vector, request, Tuple, Heap"
+            echo "  Vector, request, Tuple, Heap"
             exit 1 ;;
     esac
     echo "Successfully compiled $1"
@@ -136,7 +132,6 @@ fi
 
 # Compile core libraries in parallel
 core_pids=()
-aflat ./libraries/std/src/Collections.af -o ./libraries/std/Collections.s & core_pids+=($!)
 aflat ./libraries/std/src/concurrency.af -o ./libraries/std/concurrency.s & core_pids+=($!)
 aflat ./libraries/std/src/DateTime.af -o ./libraries/std/DateTime.s & core_pids+=($!)
 aflat ./libraries/std/src/files.af -o ./libraries/std/files.s & core_pids+=($!)
@@ -204,9 +199,6 @@ aflat ./libraries/std/src/Web/Content/Bind.af -o ./libraries/std/Web_Content_Bin
 aflat ./libraries/std/src/JSON.af -o ./libraries/std/JSON.s & more_pids+=($!)
 aflat ./libraries/std/src/JSON/Property.af -o ./libraries/std/JSON_Property.s & more_pids+=($!)
 aflat ./libraries/std/src/JSON/Property/Fields.af -o ./libraries/std/JSON_Property_Fields.s & more_pids+=($!)
-aflat ./libraries/std/src/Collections/Iterator.af -o ./libraries/std/Iterator.s & more_pids+=($!)
-aflat ./libraries/std/src/Collections/Scroller.af -o ./libraries/std/Scroller.s & more_pids+=($!)
-aflat ./libraries/std/src/Collections/Enumerator.af -o ./libraries/std/Enumerator.s & more_pids+=($!)
 aflat ./libraries/std/src/Collections/Vector.af -o ./libraries/std/vector.s & more_pids+=($!)
 aflat ./libraries/std/src/Collections/Heap.af -o ./libraries/std/Heap.s & more_pids+=($!)
 aflat ./libraries/std/src/Collections/Tuple.af -o ./libraries/std/Tuple.s & more_pids+=($!)
