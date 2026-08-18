@@ -56,7 +56,8 @@ If::If(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 
 gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
   asmc::File file;
-  gen::scope::ScopeManager::getInstance()->pushScope(false);
+  auto *scope = gen::scope::ScopeManager::getInstance();
+  scope->pushScope(false);
 
   asmc::Label *label1 = new asmc::Label();
   label1->logicalLine = this->logicalLine;
@@ -65,6 +66,7 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
   generator.labelCount()++;
 
   gen::Expr expr = generator.GenExpr(this->expr, file);
+  const auto incomingOwnership = scope->captureOwnershipState();
 
   ast::Type t = ast::Type();
   t.typeName = "bool";
@@ -105,16 +107,22 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
     asmc::Jmp *jmp = new asmc::Jmp();
     jmp->logicalLine = this->logicalLine;
     jmp->to = end->label;
-    gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+    scope->popScope(&generator, file);
+    const auto thenOwnership = scope->captureOwnershipState();
+    scope->restoreOwnershipState(incomingOwnership);
     file.text << jmp;
     file.text << label1;
 
-    gen::scope::ScopeManager::getInstance()->pushScope(true);
+    scope->pushScope(true);
     file << generator.GenSTMT(this->elseStatement);
-    gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+    scope->popScope(&generator, file);
+    const auto elseOwnership = scope->captureOwnershipState();
+    scope->mergeOwnershipStates(thenOwnership, elseOwnership);
     file.text << end;
   } else {
-    gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+    scope->popScope(&generator, file);
+    const auto thenOwnership = scope->captureOwnershipState();
+    scope->mergeOwnershipStates(thenOwnership, incomingOwnership);
     file.text << label1;
   };
   generator.currentFunction()->has_return = false;

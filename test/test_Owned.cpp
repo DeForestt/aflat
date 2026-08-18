@@ -1,9 +1,14 @@
 #include <filesystem>
+#include <fstream>
 
 #include "CodeGenerator/MockCodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "Configs.hpp"
 #include "Parser/AST.hpp"
 #include "catch.hpp"
+
+bool build(std::string path, std::string output, cfg::Mutability mutability,
+           bool debug);
 
 TEST_CASE("CallExpr ownership", "[owned]") {
   auto parser = parse::Parser();
@@ -348,4 +353,45 @@ TEST_CASE("owning methods can explicitly transfer their own fields",
   gen.currentFunction() = nullptr;
   gen.scope() = nullptr;
   scope->reset();
+}
+
+TEST_CASE("sell checking analyzes conditional branches independently",
+          "[owned][branch]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/branch_aware_sell");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+
+  const auto validSource = dir / "valid.af";
+  const auto invalidSource = dir / "invalid.af";
+  std::ofstream(validSource) << R"(.needs <std>
+unique class Value { fn init() -> Self { return my; }; };
+fn consume(const Value &&value) -> int { delete value; return 0; };
+fn choose(const bool first) -> int {
+  const Value value = new Value();
+  if first {
+    return consume($value);
+  } else {
+    return consume($value);
+  };
+};
+fn main() -> int { return choose(true); };
+)";
+  std::ofstream(invalidSource) << R"(.needs <std>
+unique class Value { fn init() -> Self { return my; }; };
+fn consume(const Value &&value) -> int { delete value; return 0; };
+fn choose(const bool first) -> int {
+  const Value value = new Value();
+  if first { consume($value); };
+  return consume($value);
+};
+fn main() -> int { return choose(true); };
+)";
+
+  CHECK(build(validSource.string(), (dir / "valid.s").string(),
+              cfg::Mutability::Strict, false));
+  CHECK_FALSE(build(invalidSource.string(), (dir / "invalid.s").string(),
+                    cfg::Mutability::Strict, false));
+
+  fs::remove_all(dir);
 }
