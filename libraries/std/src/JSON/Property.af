@@ -4,23 +4,34 @@ import {Object} from "JSON" under json;
 import vector from "Collections/Vector";
 import unordered_map from "Collections/unordered_map";
 import Box from "Memory";
-import {wrap} from "Memory" under box;
 import JsonProperty from "JSON/Property/Fields";
+
+class JsonPropertyRef {
+  private loan JsonProperty value = value;
+
+  fn init(const JsonProperty value) -> Self {
+    return my;
+  };
+
+  fn get() -> loan JsonProperty {
+    return my.value;
+  };
+};
 
 class JsonSerializable {
   contract {
-    vector::<Box::<JsonProperty>> fields = [];
+    vector::<JsonPropertyRef> fields = [];
   };
 
   fn registerField(const JsonProperty field) -> Self {
-    my.fields.push_back(box.wrap(field));
+    my.fields.push_back(new JsonPropertyRef(field));
     return my;
   };
 
   fn serialize() -> JSON {
     const let obj = json.Object(new unordered_map::<adr,Box::<JSON>>());
     foreach field in my.fields {
-      const let current = field.get();
+      const JsonProperty current = field.get();
       obj.set(current.key, current.serialize()).expect("failed to set JSON field");
     };
     return obj;

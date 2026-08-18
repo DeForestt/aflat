@@ -8,8 +8,8 @@ import { accept, reject } from "Utils/Result" under res;
 import EndOfRange from "Collections/Enumerator";
 
 class Scroller signs Iterator {
-    private int index = 0;
-    private List list = list;
+    mutable private int index = 0;
+    private loan List list = list;
 
     Result next() : Next {
         if my.index < my.list.getCount() {

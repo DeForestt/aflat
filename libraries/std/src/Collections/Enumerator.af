@@ -20,8 +20,8 @@ class EndOfRange signs Error {
 };
 
 class Enumerator signs Iterator {
-    private const Iterator iterator = iterator;
-    int index = 0;
+    private const loan Iterator iterator = iterator;
+    mutable int index = 0;
 
     Result next() : Next {
         const int i = my.index;
@@ -33,7 +33,7 @@ class Enumerator signs Iterator {
             "value": val,
             "index": i
         };
-        return res.accept(map);
+        return res.accept($map);
     };
 
     Enumerator init(const Iterator iterator) {
@@ -55,7 +55,7 @@ safe dynamic class Range signs Iterator {
         };
         const let val = my.index;
         my.index = my.index + my.step;
-        return res.accept(val);
+        return res.accept($val);
     };
 
     Range init(const int start, const int end, * const int step) {

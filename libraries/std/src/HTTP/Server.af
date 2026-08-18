@@ -37,7 +37,7 @@ class Server {
     contract {
         const vector::<EndpointRef> endpoints = new vector::<EndpointRef>();
         const vector::<Middleware> middlewares = new vector::<Middleware>();
-        mutable NotFoundImpl notFound = NULL;
+        mutable loan NotFoundImpl notFound = NULL;
         int port = 8080;
         mutable int workerCount = af_server_default_worker_count();
     };

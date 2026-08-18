@@ -4,10 +4,10 @@ import RefCounted from "Memory";
 
 @Apply(RefCounted)
 safe dynamic class Defer {
-    private const Function _func = func;
+    private const Function _func = $func;
     private mutable bool dismissed = false;
 
-    Defer init(const Function func) {
+    Defer init(const Function &&func) {
         return my;
     };
 

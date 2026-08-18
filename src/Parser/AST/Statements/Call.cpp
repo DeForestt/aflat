@@ -857,9 +857,15 @@ gen::GenerationResult Call::generateAttempt(
       }
       if (func->argTypes.at(paramIndex).isRvalue) {
         rValue = true;
+        auto **expectedType =
+            generator.typeList()[func->argTypes.at(paramIndex).typeName];
+        const bool expectsOwnedClass =
+            expectedType != nullptr &&
+            dynamic_cast<gen::Class *>(*expectedType) != nullptr;
         // make sure that its not a var
         auto var = dynamic_cast<ast::Var *>(arg);
-        if (var != nullptr && var->Ident != "NULL" && !var->selling) {
+        if (expectsOwnedClass && var != nullptr && var->Ident != "NULL" &&
+            !var->selling) {
           this->requestOverloadRetry(
               generator, overloadTable, overloadIdent, currentOverloadIndex,
               "Attempted to pass an lvalue (" + var->Ident + ") to an rvalue");
@@ -922,8 +928,9 @@ gen::GenerationResult Call::generateAttempt(
       }
     }
     if (!exp.owned && rValue) {
-      if (parse::PRIMITIVE_TYPES.find(exp.type) ==
-          parse::PRIMITIVE_TYPES.end()) {
+      auto **argumentType = generator.typeList()[exp.type];
+      if (argumentType != nullptr &&
+          dynamic_cast<gen::Class *>(*argumentType) != nullptr) {
         this->requestOverloadRetry(
             generator, overloadTable, overloadIdent, currentOverloadIndex,
             "Attempted to pass an unowned rvalue of type `" + exp.type +

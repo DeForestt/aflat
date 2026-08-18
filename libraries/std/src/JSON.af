@@ -48,7 +48,7 @@ union JSON {
         };
     };
 
-    fn set(const string key, const JSON value) -> JSON! {
+    fn set(const string key, const JSON &&value) -> JSON! {
         match my {
             Object(map) => {
                 match map.get(key.cstr()) {
@@ -57,7 +57,7 @@ union JSON {
                     },
                     None => {}
                 };
-                map.set(key.cstr(), new Box::<JSON>(value));
+                map.set(key.cstr(), new Box::<JSON>($value));
                 return my;
             },
             _ => return new Error("JSON is not an Object")
@@ -486,7 +486,7 @@ private fn parseArrayValue(const string value) -> JSON! {
 
     while true {
         const let parsed = parseInternal(value)!;
-        const let boxed = box.wrap(parsed);
+        const let boxed = box.wrap($parsed);
         elements.push_back($boxed);
 
         while st.char_isWhiteSpace(value.peek().or('n')) v = value.next();
@@ -529,7 +529,7 @@ private fn parseObjectValue(const string value) -> JSON! {
             return parseError(value, `Expected ':' after key in JSON object but found '{colon}'`, colonPos);
         };
         const let parsedVal = parseInternal(value)!;
-        map.set(key, box.wrap(parsedVal));
+        map.set(key, box.wrap($parsedVal));
         while st.char_isWhiteSpace(value.peek().or('n')) v = value.next();
         v = value.peek();
         if v.isNone() {

@@ -2,6 +2,25 @@
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "Parser/AST/Statements/Return.hpp"
+#include "Parser/AST/Statements/Sequence.hpp"
+
+namespace {
+bool definitelyReturns(const ast::Statement *statement) {
+  if (statement == nullptr)
+    return false;
+  if (dynamic_cast<const ast::Return *>(statement) != nullptr)
+    return true;
+  if (const auto *sequence = dynamic_cast<const ast::Sequence *>(statement))
+    return definitelyReturns(sequence->Statement1) ||
+           definitelyReturns(sequence->Statement2);
+  if (const auto *branch = dynamic_cast<const ast::If *>(statement))
+    return branch->elseStatement != nullptr &&
+           definitelyReturns(branch->statement) &&
+           definitelyReturns(branch->elseStatement);
+  return false;
+}
+} // namespace
 
 namespace ast {
 /*
@@ -117,12 +136,24 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
     file << generator.GenSTMT(this->elseStatement);
     scope->popScope(&generator, file);
     const auto elseOwnership = scope->captureOwnershipState();
-    scope->mergeOwnershipStates(thenOwnership, elseOwnership);
+    const bool thenReturns = definitelyReturns(this->statement);
+    const bool elseReturns = definitelyReturns(this->elseStatement);
+    if (thenReturns && elseReturns)
+      scope->restoreOwnershipState(incomingOwnership);
+    else if (thenReturns)
+      scope->restoreOwnershipState(elseOwnership);
+    else if (elseReturns)
+      scope->restoreOwnershipState(thenOwnership);
+    else
+      scope->mergeOwnershipStates(thenOwnership, elseOwnership);
     file.text << end;
   } else {
     scope->popScope(&generator, file);
     const auto thenOwnership = scope->captureOwnershipState();
-    scope->mergeOwnershipStates(thenOwnership, incomingOwnership);
+    if (definitelyReturns(this->statement))
+      scope->restoreOwnershipState(incomingOwnership);
+    else
+      scope->mergeOwnershipStates(thenOwnership, incomingOwnership);
     file.text << label1;
   };
   generator.currentFunction()->has_return = false;

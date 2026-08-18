@@ -369,13 +369,18 @@ unique class Value { fn init() -> Self { return my; }; };
 fn consume(const Value &&value) -> int { delete value; return 0; };
 fn choose(const bool first) -> int {
   const Value value = new Value();
+  if first { return consume($value); };
+  return consume($value);
+};
+fn chooseEither(const bool first) -> int {
+  const Value value = new Value();
   if first {
     return consume($value);
   } else {
     return consume($value);
   };
 };
-fn main() -> int { return choose(true); };
+fn main() -> int { return choose(true) + chooseEither(false); };
 )";
   std::ofstream(invalidSource) << R"(.needs <std>
 unique class Value { fn init() -> Self { return my; }; };
