@@ -13,7 +13,7 @@ You will be sacrificing type safety for error handling.
 dynamic safe pedantic class Result {
 	private mutable any value = value;
 	private mutable bool success = error == NULL;
-	private mutable Error error = error;
+	private mutable Error error = $error;
 	private mutable int refcount = 1;
 
 	safe fn trap(const adr msg) -> void {
@@ -25,7 +25,7 @@ dynamic safe pedantic class Result {
 		return my;
 	};
 
-	public Result init(const any value, *const Error error) {
+	public Result init(const any value, *const Error &&error) {
 		return my;
 	};
 
@@ -51,7 +51,7 @@ dynamic safe pedantic class Result {
 	};
 
 	public Error getError() {
-		return my.error;
+		return $my.error;
 	};
 
 	public bool hasError() {
@@ -83,10 +83,10 @@ dynamic safe pedantic class Result {
 	};
 };
 
-export Result accept(const any value) {
-	return new Result(value);
+export Result accept(const any &&value) {
+	return new Result($value);
 };
 
-export Result reject(const Error error) {
-	return new Result(NULL, error);
+export Result reject(const Error &&error) {
+	return new Result(NULL, $error);
 };

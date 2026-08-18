@@ -81,7 +81,7 @@ class File{
      */
     async fn readBytesAtAsync(const adr pointer, const int size,
                               const long offset) -> long {
-        adr operation = NULL;
+        const adr operation = NULL;
         pause af_io_read_begin(my.file, pointer, size, offset, ?operation);
         const long result = af_io_operation_result(operation);
         af_io_operation_release(operation);
@@ -94,7 +94,7 @@ class File{
      */
     async fn writeBytesAtAsync(const adr pointer, const int size,
                                const long offset) -> long {
-        adr operation = NULL;
+        const adr operation = NULL;
         pause af_io_write_begin(my.file, pointer, size, offset, ?operation);
         const long result = af_io_operation_result(operation);
         af_io_operation_release(operation);
