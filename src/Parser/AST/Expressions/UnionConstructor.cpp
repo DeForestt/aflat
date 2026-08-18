@@ -9,44 +9,45 @@ namespace ast {
 
 namespace {
 
-bool isUniqueCompositeType(gen::CodeGenerator &generator,
-                           const std::string &typeName, asmc::File &file) {
-  if (parse::PRIMITIVE_TYPES.find(typeName) != parse::PRIMITIVE_TYPES.end()) {
-    return false;
+void emitCallWithReceiver(gen::CodeGenerator &generator, asmc::File &file,
+                          const std::string &function,
+                          const std::string &receiver,
+                          const std::optional<std::string> &argument,
+                          int logicalLine) {
+  for (const auto *reg : {"%rdi", "%rsi", "%rdx"}) {
+    auto *push = new asmc::Push();
+    push->logicalLine = logicalLine;
+    push->op = generator.registers()[reg]->get(asmc::QWord);
+    file.text << push;
   }
 
-  auto type = generator.getType(typeName, file);
-  if (type == nullptr) {
-    return false;
+  auto *loadReceiver = new asmc::Mov();
+  loadReceiver->logicalLine = logicalLine;
+  loadReceiver->size = asmc::QWord;
+  loadReceiver->from = receiver;
+  loadReceiver->to = generator.registers()["%rdi"]->get(asmc::QWord);
+  file.text << loadReceiver;
+
+  if (argument.has_value()) {
+    auto *loadArgument = new asmc::Mov();
+    loadArgument->logicalLine = logicalLine;
+    loadArgument->size = asmc::QWord;
+    loadArgument->from = argument.value();
+    loadArgument->to = generator.registers()["%rsi"]->get(asmc::QWord);
+    file.text << loadArgument;
   }
 
-  auto cl = dynamic_cast<gen::Class *>(*type);
-  return cl != nullptr && cl->uniqueType;
-}
+  auto *call = new asmc::Call();
+  call->logicalLine = logicalLine;
+  call->function = function;
+  file.text << call;
 
-bool canInvalidateSourceExpr(ast::Expr *expr) {
-  return dynamic_cast<ast::Var *>(expr) != nullptr ||
-         dynamic_cast<ast::Reference *>(expr) != nullptr;
-}
-
-void emitInvalidateCall(gen::CodeGenerator &generator, asmc::File &file,
-                        ast::Expr *expr, int logicalLine) {
-  if (!canInvalidateSourceExpr(expr)) {
-    return;
+  for (const auto *reg : {"%rdx", "%rsi", "%rdi"}) {
+    auto *pop = new asmc::Pop();
+    pop->logicalLine = logicalLine;
+    pop->op = generator.registers()[reg]->get(asmc::QWord);
+    file.text << pop;
   }
-
-  auto invalidateCall = new ast::Call();
-  invalidateCall->logicalLine = logicalLine;
-  invalidateCall->ident = dynamic_cast<ast::Var *>(expr) != nullptr
-                              ? dynamic_cast<ast::Var *>(expr)->Ident
-                              : dynamic_cast<ast::Reference *>(expr)->Ident;
-  invalidateCall->modList = dynamic_cast<ast::Var *>(expr) != nullptr
-                                ? dynamic_cast<ast::Var *>(expr)->modList
-                                : dynamic_cast<ast::Reference *>(expr)->modList;
-  invalidateCall->modList.push("__invalidate__");
-  invalidateCall->Args = links::LinkedList<ast::Expr *>();
-
-  file << generator.GenSTMT(invalidateCall);
 }
 
 } // namespace
@@ -156,6 +157,12 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
   auto useExpr = std::holds_alternative<ast::Type *>(alias.value)
                      ? expr
                      : std::get<ast::Expr *>(alias.value);
+  const bool explicitlyTransferred =
+      dynamic_cast<ast::Buy *>(useExpr) != nullptr;
+  const bool addressableSource =
+      dynamic_cast<ast::Var *>(useExpr) != nullptr ||
+      dynamic_cast<ast::Reference *>(useExpr) != nullptr;
+  bool ownsPayloadWrapper = explicitlyTransferred || !addressableSource;
 
   auto fromExpr = generator.GenExpr(useExpr, file, asmc::QWord);
 
@@ -173,7 +180,8 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
       parse::PRIMITIVE_TYPES.end()) {
     auto tnt = generator.getType(fromExpr.type, file);
     auto cls = tnt ? dynamic_cast<gen::Class *>(*tnt) : nullptr;
-    if (cls != nullptr && cls->publicNameTable["__copy__"] != nullptr) {
+    if (!explicitlyTransferred && addressableSource && cls != nullptr &&
+        cls->publicNameTable["__copy__"] != nullptr) {
       auto call = new ast::CallExpr();
       call->call = new ast::Call();
       call->call->ident = "__copy__";
@@ -183,6 +191,7 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
       auto prev = fromExpr;
       fromExpr = generator.GenExpr(call, file, asmc::QWord);
       fromExpr.adoptImmutableRequirement(prev);
+      ownsPayloadWrapper = true;
     }
   }
 
@@ -193,13 +202,55 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
     file << generator.setOffset(store->to, 0, fromExpr.access, fromExpr.size,
                                 fromExpr.op);
   } else {
-    // The union reserves enough storage for its largest variant, but copying a
-    // smaller composite payload must not read beyond that payload's object.
-    file << generator.memMove(fromExpr.access, store->to, alias.byteSize);
-  }
+    if (ownsPayloadWrapper && !fromExpr.owned) {
+      generator.alert("cannot store unowned value of type `" + fromExpr.type +
+                          "` in ownership-bearing union variant `" +
+                          variantName + "`",
+                      true, __FILE__, __LINE__);
+    }
 
-  if (isUniqueCompositeType(generator, fromExpr.type, file)) {
-    emitInvalidateCall(generator, file, useExpr, logicalLine);
+    const auto payloadTempName =
+        "$" + std::to_string(generator.tempCount()++) + "_union_payload";
+    const auto payloadMod = gen::scope::ScopeManager::getInstance()->assign(
+        payloadTempName, ast::Type("adr", asmc::QWord), false);
+    const std::string payloadSlot = "-" + std::to_string(payloadMod) + "(%rbp)";
+
+    auto *savePayload = new asmc::Mov();
+    savePayload->logicalLine = logicalLine;
+    savePayload->size = asmc::QWord;
+    savePayload->from = fromExpr.access;
+    savePayload->to = payloadSlot;
+    file.text << savePayload;
+
+    auto *payloadEntry = generator.getType(fromExpr.type, file);
+    auto *payloadClass = payloadEntry == nullptr
+                             ? nullptr
+                             : dynamic_cast<gen::Class *>(*payloadEntry);
+    auto *transfer = payloadClass == nullptr
+                         ? nullptr
+                         : payloadClass->publicNameTable["__transfer_to__"];
+
+    if (ownsPayloadWrapper && payloadClass != nullptr &&
+        payloadClass->uniqueType && transfer != nullptr) {
+      const std::string scopeName = transfer->scopeName != "global"
+                                        ? transfer->scopeName
+                                        : payloadClass->Ident;
+      emitCallWithReceiver(generator, file,
+                           "pub_" + scopeName + "_" + transfer->ident.ident,
+                           payloadSlot, store->to, logicalLine);
+    } else {
+      // Non-unique composite values do not expose a transfer hook. Moving
+      // their inline state is still safe once the redundant source wrapper is
+      // released without running its lifecycle method.
+      file << generator.memMove(payloadSlot, store->to, alias.byteSize);
+    }
+
+    if (ownsPayloadWrapper) {
+      // The payload now lives inline in the union. Its former heap wrapper
+      // must be released without destroying the state that was transferred.
+      emitCallWithReceiver(generator, file, "af_free", payloadSlot,
+                           std::nullopt, logicalLine);
+    }
   }
 
   // Payload generation may clobber %rax, so write the tag through the saved

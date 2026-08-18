@@ -13,6 +13,7 @@ namespace ast {
 class Match : public Expr {
 public:
   bool expressionContext = false;
+  bool loanBindings = false;
 
   struct Pattern {
     std::string aliasName;
