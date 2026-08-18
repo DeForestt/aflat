@@ -4,7 +4,6 @@
 import {print} from "String" under str;
 import string from "String";
 import uni_string from "uni_string";
-import List from "Collections";
 import unordered_map from "Collections/unordered_map";
 import vector from "Collections/Vector";
 import option from "Utils/option";

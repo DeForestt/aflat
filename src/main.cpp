@@ -673,10 +673,7 @@ static std::string generateReadmeContent(const std::string &projectName) {
   out << "- `DateTime` - Epoch-based `DateTime` struct with parsing, getters, "
          "formatting, "
          "and day-of-week math (libraries/std/src/DateTime.af).\n\n";
-  out << "#### Collections & iteration\n";
-  out << "- `Collections` - Generic `List` implementation with push/pop/find "
-         "helpers and "
-         "bounds-checked access (libraries/std/src/Collections.af).\n";
+  out << "#### Collections\n";
   out << "- `Collections/Vector` - Type-parametric `vector` supporting "
          "copy/move semantics, "
          "iterators, sorting, and optional accessors "
@@ -685,15 +682,6 @@ static std::string generateReadmeContent(const std::string &projectName) {
          "container with `set`/`get`/`keys` "
          "and Option-aware lookups "
          "(libraries/std/src/Collections/unordered_map.af).\n";
-  out << "- `Collections/Iterator` - Base iterator abstraction plus "
-         "`Next`/`Peek` decorators to wire callbacks "
-         "(libraries/std/src/Collections/Iterator.af).\n";
-  out << "- `Collections/Enumerator` - Adds index-aware enumeration and "
-         "exposes the numeric `Range` iterator "
-         "(libraries/std/src/Collections/Enumerator.af).\n";
-  out << "- `Collections/Scroller` - List-backed iterator that yields "
-         "sequential elements with peek support "
-         "(libraries/std/src/Collections/Scroller.af).\n";
   out << "- `Collections/Tuple` - Value-type tuples with ownership-safe "
          "destruction and `make_tuple` helper "
          "(libraries/std/src/Collections/Tuple.af).\n\n";
@@ -2475,7 +2463,6 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
 
   std::vector<std::string> libs = {
       "io.s",
-      "Collections.s",
       "math.s",
       "strings.s",
       config.compatibility ? "std-cmp.s" : "std.s",
@@ -2509,9 +2496,6 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       "JSON_Parse.s",
       "JSON_Property.s",
       "JSON_Property_Fields.s",
-      "Iterator.s",
-      "Enumerator.s",
-      "Scroller.s",
       "vector.s",
       "Utils_Defer.s",
       "Memory.s",

@@ -36,14 +36,14 @@ types(T)
  * Heap box wrapper that owns a `T` and provides simple getters/setters.
  */
 class Box {
-	private mutable T value = value;
+	private mutable T value = $value;
 
-	fn init(const T value) -> Self {
+	fn init(const T &&value) -> Self {
 		return my;
 	};
 
 	fn get() -> T {
-		return my.value;
+		return $my.value;
 	};
 
 	fn _set(const T &&value) -> Self {
@@ -124,8 +124,8 @@ unique class view {
 
 types(T)
 // Convenience helper to allocate a Box for a value.
-export fn wrap(const T value) -> Box::<T> {
-	return new Box::<T>(value);
+export fn wrap(const T &&value) -> Box::<T> {
+	return new Box::<T>($value);
 };
 
 types(T)

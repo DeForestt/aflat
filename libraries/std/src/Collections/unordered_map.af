@@ -12,17 +12,17 @@ import {len, str_comp, hash} from "strings" under st;
 types(K, V)
 class u_map_entry {
 	mutable K key = key;
-	mutable V value = value;
+	mutable V value = $value;
 
 	when (K is adr)
-	fn init(const adr key, const V value) -> Self {
+	fn init(const adr key, const V &&value) -> Self {
 		my.key = af_malloc(st.len(key) + 1);
 		af_memcpy(my.key, key, st.len(key) + 1);
 		return my;
 	};
 
 	when (K is not adr)
-	fn init(K key, const V value) -> Self {
+	fn init(K key, const V &&value) -> Self {
 		return my;
 	};
 
@@ -64,24 +64,24 @@ class u_map_bucket {
 		return my;
 	};
 
-	fn replace(const int index, const V value) -> bool {
+	fn replace(const int index, const V &&value) -> bool {
 		const u_map_entry::<K, V> entry =
 			my.entries.get(index).expect("searched for non-existing unordered_map entry");
-		entry.value = value;
+		entry.value = $value;
 		my.entries.set(index, entry);
 		return false;
 	};
 
-	fn add(const K key, const V value) -> bool {
+	fn add(const K key, const V &&value) -> bool {
 		for int i = 0; i < my.entries.count(); i++ {
 			const u_map_entry::<K, V> entry =
 				my.entries.get(i).expect("searched for non-existing unordered_map entry");
 			if my.matches(entry.key, key) {
-				return my.replace(i, value);
+				return my.replace(i, $value);
 			};
 		};
 
-		my.entries.push_back(new u_map_entry::<K, V>(key, value));
+		my.entries.push_back(new u_map_entry::<K, V>(key, $value));
 		return true;
 	};
 
@@ -198,12 +198,12 @@ class unordered_map {
 		return my.count;
 	};
 
-	fn set(const K key, const V value) -> Self {
+	fn set(const K key, const V &&value) -> Self {
 		const LockGuard __guard = my.mutex.guard();
 		const int index = my.index(key);
 		const u_map_bucket::<K, V> bucket =
 			my.buckets.get(index).expect("searched for non-existing unordered_map bucket");
-		const bool added = bucket.add(key, value);
+		const bool added = bucket.add(key, $value);
 		my.buckets.set(index, bucket);
 		if added {
 			my.count = my.count + 1;

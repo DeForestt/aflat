@@ -150,13 +150,9 @@ modules below are the most commonly used building blocks:
 - `files` - File descriptor wrapper with `FileError`/`ReadError`, buffered reads, iterators, synchronous write helpers, and native async read/write tasks (libraries/std/src/files.af).
 - `DateTime` - Epoch-based `DateTime` struct with parsing, getters, formatting, and day-of-week math (libraries/std/src/DateTime.af).
 
-#### Collections & iteration
-- `Collections` - Generic `List` implementation with push/pop/find helpers and bounds-checked access (libraries/std/src/Collections.af).
+#### Collections
 - `Collections/Vector` - Type-parametric `vector` supporting copy/move semantics, iterators, sorting, and optional accessors (libraries/std/src/Collections/Vector.af).
 - `Collections/unordered_map` - Hash-tree-backed associative container with `set`/`get`/`keys` and Option-aware lookups (libraries/std/src/Collections/unordered_map.af).
-- `Collections/Iterator` - Base iterator abstraction plus `Next`/`Peek` decorators to wire callbacks (libraries/std/src/Collections/Iterator.af).
-- `Collections/Enumerator` - Adds index-aware enumeration and exposes the numeric `Range` iterator (libraries/std/src/Collections/Enumerator.af).
-- `Collections/Scroller` - List-backed iterator that yields sequential elements with peek support (libraries/std/src/Collections/Scroller.af).
 - `Collections/Tuple` - Value-type tuples with ownership-safe destruction and `make_tuple` helper (libraries/std/src/Collections/Tuple.af).
 
 #### Data modeling & serialization
@@ -208,25 +204,5 @@ modules below are the most commonly used building blocks:
 * Run `./bin/aflat run` to execute tests and ensure changes work as expected.
 * Regenerate README instructions with `aflat readme` so collaborators always
   see up-to-date workflow details.
-
-### Array Loop Example
-```js
-.needs <std>
-
-import {printInt, printChar} from "io" under io;
-import ICollection, Array from "Collections";
-
-int main(){
-    Array a = new Array(int, 10);
-    for int i = 0; i < 10; i = i + 1 {
-        adr pointer = a.at(i);              // adr - is the pointer 'address' key word
-        pointer =: i;                       // the =: operator is used to load a value to a pointer
-    };
-
-    a.forEach([adr value]=> io.printInt(value as int)); // the as operator is used to assume the type of a pointer
-	io.printChar('\n');
-    return 0;
-};
-```
 
 ## Have fun!

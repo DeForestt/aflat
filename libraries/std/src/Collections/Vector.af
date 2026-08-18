@@ -5,8 +5,6 @@ import Error from "Utils/Error";
 import view from "Memory";
 import option from "Utils/option";
 import Map from "Utils/Map";
-import Iterator from "Collections/Iterator";
-import Scroller from "Collections/Scroller";
 import {Some, None, optionWrapper} from "Utils/option" under opt;
 import result from "Utils/result";
 import {accept, reject, resultWrapper} from "Utils/result" under res;
@@ -14,7 +12,6 @@ import tuple from "Collections/Tuple";
 import {make_tuple} from "Collections/Tuple";
 import {print} from "String" under str;
 import {printInt} from "io" under io;
-import Enumerator from "Collections/Enumerator";
 import Lock, LockGuard from "concurrency";
 
 types(T)

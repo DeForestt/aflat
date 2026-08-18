@@ -51,6 +51,11 @@ private:
   // int scopeStackPos;
 
 public:
+  struct OwnershipState {
+    std::vector<int> stackSold;
+    std::vector<int> globalStackSold;
+  };
+
   // Singleton Access
   static ScopeManager *getInstance() {
     if (!ScopeManager::instance)
@@ -76,6 +81,11 @@ public:
 
   // Get all of the symbols in the current scope as a vector
   std::vector<gen::Symbol> getScope(const bool used);
+
+  OwnershipState captureOwnershipState() const;
+  void restoreOwnershipState(const OwnershipState &state);
+  void mergeOwnershipStates(const OwnershipState &left,
+                            const OwnershipState &right);
 
   // push a new scope
   void pushScope(bool func);

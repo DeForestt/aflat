@@ -2,6 +2,25 @@
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/ScopeManager.hpp"
+#include "Parser/AST/Statements/Return.hpp"
+#include "Parser/AST/Statements/Sequence.hpp"
+
+namespace {
+bool definitelyReturns(const ast::Statement *statement) {
+  if (statement == nullptr)
+    return false;
+  if (dynamic_cast<const ast::Return *>(statement) != nullptr)
+    return true;
+  if (const auto *sequence = dynamic_cast<const ast::Sequence *>(statement))
+    return definitelyReturns(sequence->Statement1) ||
+           definitelyReturns(sequence->Statement2);
+  if (const auto *branch = dynamic_cast<const ast::If *>(statement))
+    return branch->elseStatement != nullptr &&
+           definitelyReturns(branch->statement) &&
+           definitelyReturns(branch->elseStatement);
+  return false;
+}
+} // namespace
 
 namespace ast {
 /*
@@ -56,7 +75,8 @@ If::If(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
 
 gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
   asmc::File file;
-  gen::scope::ScopeManager::getInstance()->pushScope(false);
+  auto *scope = gen::scope::ScopeManager::getInstance();
+  scope->pushScope(false);
 
   asmc::Label *label1 = new asmc::Label();
   label1->logicalLine = this->logicalLine;
@@ -65,6 +85,7 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
   generator.labelCount()++;
 
   gen::Expr expr = generator.GenExpr(this->expr, file);
+  const auto incomingOwnership = scope->captureOwnershipState();
 
   ast::Type t = ast::Type();
   t.typeName = "bool";
@@ -105,16 +126,34 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
     asmc::Jmp *jmp = new asmc::Jmp();
     jmp->logicalLine = this->logicalLine;
     jmp->to = end->label;
-    gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+    scope->popScope(&generator, file);
+    const auto thenOwnership = scope->captureOwnershipState();
+    scope->restoreOwnershipState(incomingOwnership);
     file.text << jmp;
     file.text << label1;
 
-    gen::scope::ScopeManager::getInstance()->pushScope(true);
+    scope->pushScope(true);
     file << generator.GenSTMT(this->elseStatement);
-    gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+    scope->popScope(&generator, file);
+    const auto elseOwnership = scope->captureOwnershipState();
+    const bool thenReturns = definitelyReturns(this->statement);
+    const bool elseReturns = definitelyReturns(this->elseStatement);
+    if (thenReturns && elseReturns)
+      scope->restoreOwnershipState(incomingOwnership);
+    else if (thenReturns)
+      scope->restoreOwnershipState(elseOwnership);
+    else if (elseReturns)
+      scope->restoreOwnershipState(thenOwnership);
+    else
+      scope->mergeOwnershipStates(thenOwnership, elseOwnership);
     file.text << end;
   } else {
-    gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+    scope->popScope(&generator, file);
+    const auto thenOwnership = scope->captureOwnershipState();
+    if (definitelyReturns(this->statement))
+      scope->restoreOwnershipState(incomingOwnership);
+    else
+      scope->mergeOwnershipStates(thenOwnership, incomingOwnership);
     file.text << label1;
   };
   generator.currentFunction()->has_return = false;

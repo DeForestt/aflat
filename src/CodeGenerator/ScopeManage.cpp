@@ -1,4 +1,6 @@
 #include "CodeGenerator/ScopeManager.hpp"
+#include <algorithm>
+
 #include "CodeGenerator/Utils.hpp"
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
@@ -215,6 +217,47 @@ std::vector<gen::Symbol> ScopeManager::getScope(const bool used) {
   }
   return scope;
 };
+
+ScopeManager::OwnershipState ScopeManager::captureOwnershipState() const {
+  OwnershipState state;
+  state.stackSold.reserve(this->stack.size());
+  for (const auto &symbol : this->stack)
+    state.stackSold.push_back(symbol.sold);
+  state.globalStackSold.reserve(this->globalStack.size());
+  for (const auto &symbol : this->globalStack)
+    state.globalStackSold.push_back(symbol.sold);
+  return state;
+}
+
+void ScopeManager::restoreOwnershipState(const OwnershipState &state) {
+  const auto stackCount = std::min(this->stack.size(), state.stackSold.size());
+  for (std::size_t i = 0; i < stackCount; ++i)
+    this->stack[i].sold = state.stackSold[i];
+
+  const auto globalCount =
+      std::min(this->globalStack.size(), state.globalStackSold.size());
+  for (std::size_t i = 0; i < globalCount; ++i)
+    this->globalStack[i].sold = state.globalStackSold[i];
+}
+
+void ScopeManager::mergeOwnershipStates(const OwnershipState &left,
+                                        const OwnershipState &right) {
+  const auto stackCount = std::min(
+      {this->stack.size(), left.stackSold.size(), right.stackSold.size()});
+  for (std::size_t i = 0; i < stackCount; ++i) {
+    this->stack[i].sold =
+        left.stackSold[i] != -1 ? left.stackSold[i] : right.stackSold[i];
+  }
+
+  const auto globalCount =
+      std::min({this->globalStack.size(), left.globalStackSold.size(),
+                right.globalStackSold.size()});
+  for (std::size_t i = 0; i < globalCount; ++i) {
+    this->globalStack[i].sold = left.globalStackSold[i] != -1
+                                    ? left.globalStackSold[i]
+                                    : right.globalStackSold[i];
+  }
+}
 
 void ScopeManager::addAssign(std::string symbol, bool get) {
   for (int i = this->stack.size() - 1; i >= 0; i--) {

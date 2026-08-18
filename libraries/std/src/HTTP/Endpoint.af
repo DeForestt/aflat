@@ -14,22 +14,18 @@ import {printHex, printInt} from "io" under io;
 class Endpoint {
     contract {
         const adr imp = imp;
-        const uni_string path = path;
-        HTTPMethod method;
+        const uni_string path = $path;
+        mutable HTTPMethod method;
     };
     
-    Endpoint init(const any<Server, HTTPMessage> imp, const Server context, const uni_string path, const HTTPMethod method) {
+    Endpoint init(const any<Server, HTTPMessage> imp, const Server context, const uni_string &&path, const HTTPMethod method) {
         my.method = method;
         context.addEndpoint(my);
         return my;
     };
     
     fn toString() -> string {
-        string ret = new string("");
-        ret = ret + http.methodToString(my.method);
-        ret = ret + " ";
-        ret = ret + my.path.toString();
-        return ret;
+        return `{http.methodToString(my.method)} {my.path.toString()}`;
     };
 
     result::<HTTPResponse> _call(const Server context, * const HTTPMessage msg) {
@@ -43,47 +39,47 @@ class Endpoints {
     Endpoints init(const Map<Server> imp, const Server context, const uni_string path) {
         const let endpoints = imp(context);
         if endpoints.has("GET") {
-            const let get = new Endpoint(endpoints.get("GET").or(NULL), context, path, HTTPMethod.GET);
+            const let get = new Endpoint(endpoints.get("GET").or(NULL), context, path.copy(), HTTPMethod.GET);
             context.addEndpoint(get);
         };
 
         if endpoints.has("POST") {
-            const let post = new Endpoint(endpoints.get("POST").or(NULL), context, path, HTTPMethod.POST);
+            const let post = new Endpoint(endpoints.get("POST").or(NULL), context, path.copy(), HTTPMethod.POST);
             context.addEndpoint(post);
         };
 
         if endpoints.has("PUT") {
-            const let put = new Endpoint(endpoints.get("PUT").or(NULL), context, path, HTTPMethod.PUT);
+            const let put = new Endpoint(endpoints.get("PUT").or(NULL), context, path.copy(), HTTPMethod.PUT);
             context.addEndpoint(put);
         };
 
         if endpoints.has("DELETE") {
-            const let del = new Endpoint(endpoints.get("DELETE").or(NULL), context, path, HTTPMethod.DELETE);
+            const let del = new Endpoint(endpoints.get("DELETE").or(NULL), context, path.copy(), HTTPMethod.DELETE);
             context.addEndpoint(del);
         };
 
         if endpoints.has("PATCH") {
-            const let patch = new Endpoint(endpoints.get("PATCH").or(NULL), context, path, HTTPMethod.PATCH);
+            const let patch = new Endpoint(endpoints.get("PATCH").or(NULL), context, path.copy(), HTTPMethod.PATCH);
             context.addEndpoint(patch);
         };
 
         if endpoints.has("OPTIONS") {
-            const let options = new Endpoint(endpoints.get("OPTIONS").or(NULL), context, path, HTTPMethod.OPTIONS);
+            const let options = new Endpoint(endpoints.get("OPTIONS").or(NULL), context, path.copy(), HTTPMethod.OPTIONS);
             context.addEndpoint(options);
         };
 
         if endpoints.has("HEAD") {
-            const let head = new Endpoint(endpoints.get("HEAD").or(NULL), context, path, HTTPMethod.HEAD);
+            const let head = new Endpoint(endpoints.get("HEAD").or(NULL), context, path.copy(), HTTPMethod.HEAD);
             context.addEndpoint(head);
         };
 
         if endpoints.has("TRACE") {
-            const let trace = new Endpoint(endpoints.get("TRACE").or(NULL), context, path, HTTPMethod.TRACE);
+            const let trace = new Endpoint(endpoints.get("TRACE").or(NULL), context, path.copy(), HTTPMethod.TRACE);
             context.addEndpoint(trace);
         };
 
         if endpoints.has("CONNECT") {
-            const let connect = new Endpoint(endpoints.get("CONNECT").or(NULL), context, path, HTTPMethod.CONNECT);
+            const let connect = new Endpoint(endpoints.get("CONNECT").or(NULL), context, path.copy(), HTTPMethod.CONNECT);
             context.addEndpoint(connect);
         };
         return my;
