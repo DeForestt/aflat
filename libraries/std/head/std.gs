@@ -46,10 +46,6 @@ adr _fString(object fmt, * object args);
 adr _fUCstr(object fmt, * object args);
 adr mmap(object addr, int len, int prot, int flags, int fd, int offset);
 adr create(const int size, ? const any value);
-types(T)
-fn dupe(const T value) -> T {
-    return $value;
-};
 void _fEachOr(const object iterator, const adr callback, *const any args);
 adr _toOption(const any value);
 int af_cpu_operation_begin(adr function, adr disposer, any arg1, any arg2, any arg3, adr output);

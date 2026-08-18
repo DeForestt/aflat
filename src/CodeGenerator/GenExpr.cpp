@@ -690,9 +690,28 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       }
 
       gen::Symbol *sym = &std::get<1>(resolved);
+      gen::Type **type = typeList()[sym->type.typeName];
+      const bool ownershipBearing =
+          type != nullptr && dynamic_cast<gen::Class *>(*type) != nullptr;
+      const int fieldDepth =
+          var->modList.count - (nameSpaceTable().contains(var->Ident) ? 1 : 0);
+      const bool fieldAccess = fieldDepth > 0;
+      const bool internalFieldTransfer = fieldAccess && var->Ident == "my" &&
+                                         scope() != nullptr &&
+                                         currentFunction() != nullptr;
+
+      if (ownershipBearing && fieldAccess && !internalFieldTransfer) {
+        alert("cannot transfer ownership directly out of field `" +
+                  var->toString() +
+                  "`; use an explicit method on the owning object",
+              true, __FILE__, __LINE__);
+      }
+      if (ownershipBearing && !fieldAccess && !sym->owned) {
+        alert("cannot transfer ownership of unowned value `" + var->Ident + "`",
+              true, __FILE__, __LINE__);
+      }
 
       // find the _sell function if it exists
-      gen::Type **type = typeList()[sym->type.typeName];
       if (type != nullptr) {
         gen::Class *classType = dynamic_cast<gen::Class *>(*type);
         if (classType != nullptr) {
@@ -724,10 +743,13 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       // the original symbol. Only real heap-owning values participate in sold
       // tracking.
       if (parse::PRIMITIVE_TYPES.find(output.type) ==
-              parse::PRIMITIVE_TYPES.end() &&
-          !suppressOwnershipEffects()) {
+          parse::PRIMITIVE_TYPES.end()) {
         output.owned = true;
-        std::get<4>(resolved)->sold = logicalLine();
+        // A field symbol describes every instance of its class, so it cannot
+        // be globally marked sold. The explicit owning method is responsible
+        // for updating its instance's validity as part of the transfer.
+        if (!fieldAccess && !suppressOwnershipEffects())
+          std::get<4>(resolved)->sold = logicalLine();
       }
     } else {
       output = this->GenExpr(buy->expr, OutputFile);
@@ -1033,8 +1055,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       call->call->publify = tname;
 
       gen::Expr afterCall = this->GenExpr(call, OutputFile);
-      output.access = afterCall.access;
-      output.size = afterCall.size;
+      output = afterCall;
       output.type = opor->type.typeName;
     } else {
       // push rdi and rdx to stack

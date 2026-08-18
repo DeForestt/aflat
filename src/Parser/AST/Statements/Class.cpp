@@ -73,7 +73,7 @@ ast::Statement *buildAutomaticDestructorBody(const gen::Class *type,
   ast::Statement *body = nullptr;
 
   for (const auto &field : type->SymbolTable) {
-    if (isPrimitiveType(field.type.typeName))
+    if (isPrimitiveType(field.type.typeName) || field.type.isLoan)
       continue;
 
     auto *condition = new ast::Compound();

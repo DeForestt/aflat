@@ -362,6 +362,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     auto pedantic = false;
     auto uniqueType = false;
     auto asyncFunction = false;
+    auto isLoan = false;
     auto scope = ast::Public;
     std::vector<std::string> typeNames;
     tokens.pop();
@@ -378,9 +379,9 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     // validation is performed against the declaration itself, rather than an
     // access modifier that happens to follow a semantic modifier.
     static const std::unordered_set<std::string> modifiers = {
-        "safe",   "dynamic", "pedantic", "types",   "when",
-        "unique", "async",   "const",    "mutable", "immutable",
-        "public", "private", "static",   "export"};
+        "safe",      "dynamic", "pedantic", "types",  "when",
+        "unique",    "async",   "loan",     "const",  "mutable",
+        "immutable", "public",  "private",  "static", "export"};
 
     if (modifiers.count(obj.meta)) {
       while (modifiers.count(obj.meta)) {
@@ -394,6 +395,8 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
           pedantic = true;
         else if (obj.meta == "unique")
           uniqueType = true;
+        else if (obj.meta == "loan")
+          isLoan = true;
         else if (obj.meta == "types") {
           // types(type1, type2, ...)
           auto OpenParen = dynamic_cast<lex::OpSym *>(tokens.pop());
@@ -572,6 +575,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
       auto type = (sym != nullptr && sym->meta == "<")
                       ? this->parseFPointerType(tokens, obj.meta)
                       : *this->typeList[obj.meta];
+      type.isLoan = isLoan;
 
       auto templateTypes = this->parseTemplateTypeList(tokens, obj.lineCount);
       if (!templateTypes.empty()) {
