@@ -1,7 +1,7 @@
 #include "Parser/AST/Statements/Inc.hpp"
 
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 
 namespace ast {
 Inc::Inc(const std::string &ident, links::LinkedList<lex::Token *> &tokens)

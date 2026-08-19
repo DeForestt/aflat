@@ -18,7 +18,7 @@ export enum WorkerMode {
  * A lock must remain alive until every thread that uses it has completed.
  */
 safe dynamic class Lock {
-    private adr handle = NULL;
+    private mutable adr handle = NULL;
 
     fn init() -> Self {
         my.handle = af_lock_create();
@@ -106,8 +106,8 @@ safe dynamic class AsyncLock {
 
 // Represents the outcome from an asynchronous worker execution.
 class AsyncOutput {
-    bool okay;
-    any data;
+    mutable bool okay;
+    mutable any data;
 
     AsyncOutput init(const bool okay, const any data) {
         my.okay = okay;

@@ -325,7 +325,7 @@ export int float_toString(const adr input, const adr obuff, const int signed){
 
 	const int percision = 6;
 
-	adr mySign = "";
+	mutable adr mySign = "";
 	// as input into a newBitint
 	const int inputInt = input as int;
 	if (inputInt == 0){
@@ -339,26 +339,26 @@ export int float_toString(const adr input, const adr obuff, const int signed){
 	
 	//get the exponent of the float
 	
-	int exponent = inputInt >> 23;
+	mutable int exponent = inputInt >> 23;
 	exponent = exponent & 255;
 	exponent = exponent - 127;
 
 
 	//get the mantissa of the float
-	int mantissa = inputInt & 8388607;
+	mutable int mantissa = inputInt & 8388607;
 
 
 	//load the manissa bits into a linked list
 	const Bit head = newBit(0);
 
 	//printInt(head.value);
-	Bit current = head;
-	int j = 0;
+	mutable Bit current = head;
+	mutable int j = 0;
 	while(j < 23){
 		const Bit nextBit = newBit(mantissa & 1);
 		//printInt(nextBit.value);
 		nextBit.last = ?current;
-		current.next = nextBit;
+		current.next = $nextBit;
 		current = current.next;
 		mantissa = mantissa >> 1;
 		j = j + 1;
@@ -366,7 +366,7 @@ export int float_toString(const adr input, const adr obuff, const int signed){
 	
 	const Bit tailBit = newBit(1);
 	tailBit.last = ?current;
-	current.next = tailBit;
+	current.next = $tailBit;
 	current = current.next;
 
 	//find last element in the list
@@ -427,13 +427,13 @@ export int float_toString(const adr input, const adr obuff, const int signed){
 };
 
 // Copy a substring of length `length` starting at `start` into buff and return it.
-export adr str_subString(const int start, const int length, adr str_, const adr buff) {
-	adr cleanStart = NULL;
+export adr str_subString(const int start, const int length, mutable adr str_, const adr buff) {
+	mutable adr cleanStart = NULL;
 	cleanStart = ?start;
 	const int go = cleanStart as int;
 	str_ = str_ + go;
 
-	adr point;
+	mutable adr point;
 	point = buff;
 
 	int i = 0;
@@ -451,14 +451,14 @@ export adr str_subString(const int start, const int length, adr str_, const adr 
 };
 
 // Reverse a string into the destination buffer.
-export adr str_reverse(const adr in, adr buff){
+export adr str_reverse(const adr in, mutable adr buff){
 	const int length = len(in);
 	const adr buffPtr = buff;
 	
 	
-	for int i = length - 1; i > -1; i = i - 1 {
+	for mutable int i = length - 1; i > -1; i = i - 1 {
 		
-		adr pointer;
+		mutable adr pointer;
 		pointer = in + i;
 		
 		const char ch = pointer as char;
@@ -472,8 +472,8 @@ export adr str_reverse(const adr in, adr buff){
 };
 
 // Return the character at index i or '\0' when out of bounds.
-export char str_at(adr str_, const int i){
-	for int j = 0; j < i; j = j + 1; {
+export char str_at(mutable adr str_, const int i){
+	for mutable int j = 0; j < i; j = j + 1; {
 		str_ = str_ + #1;
 	};
 	const char ch = str_ as char;
@@ -584,8 +584,7 @@ export fn hash(const adr key) -> int {
 // Invoke callback for each character in the string, passing index/args.
 export int str_forEach(const adr s, const int<char, *int, any> foo, const adr args){
 	const int in = len(s);
-	int i;
-	for i = 0; i < in; i = i + 1; {
+	for mutable int i = 0; i < in; i = i + 1; {
 		const char c = str_at(s, i);
 		const int break = foo(c, i, args);
 		if (break == 1) {
@@ -607,9 +606,9 @@ export bool char_isWhiteSpace(const char c) {
 
 // Convert a hexadecimal string (with optional 0x) to an integer.
 export int hex_toInt(adr hex){
-	int result = 0;
-	int i = 0;
-	char ch = hex as char;
+	mutable int result = 0;
+	mutable int i = 0;
+	mutable char ch = hex as char;
 	while (ch != '\0'){
 		const int temp = io.toInt(ch);
 		const int adder = result * 16;

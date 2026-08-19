@@ -196,6 +196,7 @@ public:
   const links::LinkedList<std::string> &breakContext() const;
   links::LinkedList<std::string> &continueContext();
   const links::LinkedList<std::string> &continueContext() const;
+  bool validateLoanAssignment(gen::Expr expr, const gen::Symbol &sym);
 
 private:
   static bool traceAlert;

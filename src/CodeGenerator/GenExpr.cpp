@@ -6,7 +6,7 @@
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/GenerationResult.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/AST/Statements/Function.hpp"
 
@@ -624,6 +624,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.op = sym.type.opType;
         output.type = sym.type.typeName;
         output.owned = sym.owned;
+        output.loanScope = sym.declarationScope;
+        if (var.modList.count == 0)
+          output.loanProvenance = LoanProvenance::Lexical;
 
         // check if the symbol type is a class
         auto cont = true;

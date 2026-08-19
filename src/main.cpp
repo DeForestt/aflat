@@ -22,7 +22,7 @@
 #include "ASM.hpp"
 #include "CLI.hpp"
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "CompilerUtils.hpp"
 #include "Configs.hpp"

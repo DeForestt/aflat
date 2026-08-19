@@ -12,7 +12,7 @@
 
 #include "ASM.hpp"
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Types.hpp"
 #include "Parser/Parser.hpp"
 

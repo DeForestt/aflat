@@ -24,9 +24,9 @@ class Block{
 };
 
 class Bit{
-	int value;
-	adr last;
-	adr next;
+	mutable int value;
+	mutable adr last;
+	mutable adr next;
 };
 
 Bit newBit(int value);

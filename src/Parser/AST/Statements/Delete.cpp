@@ -1,7 +1,7 @@
 #include "Parser/AST/Statements/Delete.hpp"
 
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/Parser.hpp"
 

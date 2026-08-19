@@ -1,7 +1,7 @@
 #include "Parser/AST/Statements/For.hpp"
 
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 
 namespace ast {
 For::For(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {

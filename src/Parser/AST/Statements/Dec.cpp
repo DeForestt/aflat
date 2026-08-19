@@ -1,7 +1,7 @@
 #include "Parser/AST/Statements/Dec.hpp"
 
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 
 namespace ast {
 Dec::Dec(const std::string &ident, links::LinkedList<lex::Token *> &tokens)

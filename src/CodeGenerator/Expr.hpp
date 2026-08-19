@@ -2,8 +2,16 @@
 #include <string>
 
 #include "ASM.hpp"
+#include "CodeGenerator/Scope/ScopeTypes.hpp"
 
 namespace gen {
+
+enum class LoanProvenance {
+  None,
+  Lexical,
+  Unknown,
+};
+
 class Expr {
 public:
   asmc::OpType op = asmc::Hard;
@@ -12,6 +20,10 @@ public:
   asmc::Size size;
   bool passable = true;
   bool owned = false;
+
+  LoanProvenance loanProvenance = LoanProvenance::None;
+  scope::ScopeId loanScope = 0;
+
   bool requiresImmutableBinding = false;
   std::string immutableBindingSource;
   void adoptImmutableRequirement(const Expr &other) {

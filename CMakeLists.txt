@@ -27,7 +27,7 @@ add_executable(aflat ${aflat_SRC})
 target_link_libraries(aflat PRIVATE Threads::Threads)
 # target_link_options(aflat PRIVATE -flto)
 
-target_include_directories(aflat PRIVATE include/) 
+target_include_directories(aflat PRIVATE src/)
 
 # Testing -->
 file(GLOB_RECURSE testing_Modules
@@ -41,7 +41,7 @@ file(GLOB_RECURSE testing_Modules
 
 message (STATUS ${testing_Modules})
 add_executable(a.test ${testing_Modules})
-target_include_directories(a.test PRIVATE include/)
+target_include_directories(a.test PRIVATE src/)
 target_link_libraries(a.test PRIVATE Catch2::Catch2WithMain Threads::Threads)
 target_compile_definitions(a.test PRIVATE AFLAT_TEST)
 # target_link_options(test PRIVATE -flto)

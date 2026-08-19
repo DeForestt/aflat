@@ -6,7 +6,7 @@
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/GenerationResult.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Exceptions.hpp"
 #include "Parser/AST/Statements/Call.hpp"
