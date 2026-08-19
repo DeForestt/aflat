@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "CodeGenerator/Expr.hpp"
+#include "CodeGenerator/Scope/ScopeTypes.hpp"
 #include "LinkedList.hpp"
 #include "LinkedListS.hpp"
 #include "Parser/AST.hpp"
@@ -49,6 +51,8 @@ public:
   int refCount = 0;
   int assignCount = 0;
   bool owned = false;
+  scope::ScopeId declarationScope = 0;
+  LoanProvenance loanProvenance = LoanProvenance::Lexical;
 
   std::vector<FieldState> fieldStates;
   std::unordered_map<std::string, int> fieldIndex; // field->index mapping

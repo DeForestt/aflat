@@ -1,7 +1,8 @@
 #include "Parser/AST/Statements/Assign.hpp"
 
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Expr.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "Parser/Parser.hpp"
 
 namespace ast {
@@ -33,6 +34,7 @@ Assign::Assign(const std::string &ident,
 gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   asmc::File file;
   asmc::File targetFile;
+  auto checkLoans = this->modList.count > 0;
   auto resolved = generator.resolveSymbol(this->Ident, this->modList,
                                           targetFile, this->indices);
 
@@ -157,6 +159,9 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
                         this->modList.peek() + "`",
                     true, __FILE__, __LINE__);
   }
+
+  if (symbol->declarationScope >= 0)
+    generator.validateLoanAssignment(expr, *fin);
 
   if (expr.requiresImmutableBinding && !symbol->readOnly) {
     auto source = expr.immutableBindingSource.empty()

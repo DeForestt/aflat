@@ -6,7 +6,8 @@
 #include <boost/uuid/uuid_io.hpp>
 
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Expr.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 
 namespace ast {
@@ -82,6 +83,8 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
       Symbol.symbol = this->ident;
       Symbol.mutable_ = this->mut;
       Symbol.readOnly = this->readOnly;
+      Symbol.declarationScope = 0;
+      Symbol.loanProvenance = gen::LoanProvenance::Unknown;
       Table->push(Symbol);
       // if the symbol is public add it to the public symbol table
       if (this->scope == ast::Public && generator.scope() != nullptr) {

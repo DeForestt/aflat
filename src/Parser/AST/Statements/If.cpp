@@ -1,7 +1,7 @@
 #include "Parser/AST/Statements/If.hpp"
 
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "Parser/AST/Statements/Return.hpp"
 #include "Parser/AST/Statements/Sequence.hpp"
 

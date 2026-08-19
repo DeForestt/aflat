@@ -1,5 +1,5 @@
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/AST/Statements/Class.hpp"
 #include "Parser/AST/Statements/Union.hpp"

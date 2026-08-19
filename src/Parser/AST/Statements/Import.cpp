@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "ErrorReporter.hpp"
 #include "Parser/Lower.hpp"

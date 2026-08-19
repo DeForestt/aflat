@@ -1,7 +1,7 @@
 #include "Parser/AST/Statements/DecAssign.hpp"
 
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/Parser.hpp"
 
@@ -275,6 +275,9 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
     var->operand = exp.access.erase(0, 1);
     Symbol.type.opType = exp.op;
     Symbol.owned = exp.owned && !dec->type.isLoan;
+
+    generator.validateLoanAssignment(exp, Symbol);
+
     file.data << label;
     file.data << var;
     if (Table->search<std::string>(gen::utils::searchSymbol, dec->ident) !=

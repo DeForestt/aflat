@@ -24,7 +24,7 @@
 #include <vector>
 
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "Configs.hpp"
 #include "ErrorReporter.hpp"
 #include "Exceptions.hpp"

@@ -1,6 +1,7 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 
 #include <execinfo.h>
+#include <string>
 #include <unistd.h>
 
 #include <boost/uuid/random_generator.hpp>
@@ -13,13 +14,15 @@
 #include <sstream>
 #include <utility>
 
+#include "CodeGenerator/Expr.hpp"
 #include "CodeGenerator/GenerationResult.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Types.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "ErrorReporter.hpp"
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
+#include "Parser/Parser.hpp"
 #include "Scanner.hpp"
 
 using namespace gen::utils;
@@ -1122,3 +1125,23 @@ bool gen::CodeGenerator::whenSatisfied(const ast::When &when) {
   }
   return result;
 }
+
+bool gen::CodeGenerator::validateLoanAssignment(gen::Expr expr,
+                                                const gen::Symbol &sym) {
+  if (sym.loanProvenance != gen::LoanProvenance::Lexical ||
+      parse::PRIMITIVE_TYPES.count(expr.type) != 0 || expr.owned ||
+      expr.loanProvenance != gen::LoanProvenance::Lexical)
+    return true;
+
+  auto *scope = gen::scope::ScopeManager::getInstance();
+
+  if (!scope->contains(expr.loanScope, sym.declarationScope)) {
+    this->alert(
+        "Loan of type `" + expr.type +
+            "` cannot escape into the longer-lived variable `" + sym.symbol +
+            "` please consider selling or copying the refrence ScopeID: Symbol",
+        true, __FILE__, __LINE__);
+    return false;
+  };
+  return true;
+};

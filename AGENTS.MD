@@ -80,7 +80,7 @@ Code Generator
 
 CodeGenerator/CodeGenerator.cpp: Generates instructions.
 
-include/CodeGenerator/CodeGenerator.hpp: Interface.
+src/CodeGenerator/CodeGenerator.hpp: Interface.
 
 Also includes ScopeManager, Utils, etc.
 
@@ -88,8 +88,7 @@ Assembly Utilities
 
 ASM.cpp, ASM.hpp: Defines instructions and wraps them into an asmc::File.
 
-Headers: include/
-Mirrors src/ — each subsystem (e.g., Parser, PreProcessor, CodeGenerator) has a public interface here.
+Headers live beside their implementations under `src/`, grouped by subsystem.
 
 Standard Library: libraries/std/
 .af source files and .gs headers for built-in modules.
@@ -119,12 +118,12 @@ Covers components like the code generator, preprocessor, parser, and ASM.
 
 🧭 Where to Modify Logic
 Concern	Location
-Scanning / Lexing	src/Scanner.cpp, include/Scanner.hpp
-Preprocessing	src/PreProcessor.cpp, include/PreProcessor.hpp
-Parsing / AST	src/Parser/, include/Parser/
+Scanning / Lexing	src/Scanner.cpp, src/Scanner.hpp
+Preprocessing	src/PreProcessor.cpp, src/PreProcessor.hpp
+Parsing / AST	src/Parser/
 AST Lowering	src/Parser/Lower.cpp
-Code Generation	src/CodeGenerator/, include/CodeGenerator/
-ASM Formatting	src/ASM.cpp, include/ASM.hpp
+Code Generation	src/CodeGenerator/
+ASM Formatting	src/ASM.cpp, src/ASM.hpp
 
 Any changes to the above affect compiler behavior. These are compiled into bin/aflat via make or CMake. Standard libraries are rebuilt separately.
 FOR BUG FIXES PLEASE KEEP IN MIND PREFER CHANGING COMPILER BHAVIOR WHEREVER THE SOURCE CODE SHOULD BE VALID AND THE COMPILER CANNOT HANDLE IT

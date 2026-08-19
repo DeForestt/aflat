@@ -3,7 +3,7 @@ CXX_FLAGS := -std=c++17 -O3 -march=native -fpermissive -g
 
 BIN     := bin
 SRC     := src
-INCLUDE := include
+INCLUDE := src
 
 LIBRARIES   :=
 EXECUTABLE  := aflat
@@ -17,7 +17,7 @@ run: all
 	clear
 	./$(BIN)/$(EXECUTABLE)
 
-$(BIN)/$(EXECUTABLE): $(SRC)/*.cpp $(SRC)/CodeGenerator/*.cpp $(SRC)/Parser/*.cpp $(SRC)/Parser/AST/Statements/*.cpp
+$(BIN)/$(EXECUTABLE): $(shell find $(SRC) -name '*.cpp')
 	$(CXX) $(CXX_FLAGS) -I $(INCLUDE) $^ -o $@ $(LIBRARIES) -pthread;
 	bash ./rebuild-libs.sh
 	

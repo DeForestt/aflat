@@ -1,54 +1,27 @@
 #ifndef Scope
 #define Scope
 
+#include <memory>
+#include <string>
 #include <vector>
 
-#include "ASM.hpp"
-#include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/Scope/ScopeTypes.hpp"
+#include "CodeGenerator/Types.hpp"
 
 namespace gen {
+
+class CodeGenerator;
 
 namespace scope {
 
 class ScopeManager {
 private:
-  struct plead {
-    int SScopeSize;
-    bool pleading;
-  };
-  struct isoState {
-    std::vector<gen::Symbol> stack;
-    std::vector<gen::Symbol> globalStack;
-    std::vector<plead> pleading;
-    int stackPos;
-    int maxStackPos;
-    std::vector<int> scopeStack;
-    int SStackSize;
-  };
+  struct Impl;
+
   ScopeManager();
-  ~ScopeManager() = default;
+  ~ScopeManager();
   static thread_local ScopeManager *instance;
-
-  // Stack
-  std::vector<gen::Symbol> stack;
-
-  // Global Scope
-  std::vector<gen::Symbol> globalStack;
-
-  std::vector<plead> pleading;
-
-  // hold the current memory location relative to the rbp
-  int stackPos;
-
-  int maxStackPos;
-
-  // scopeStack holds the number of symbols in the current scope
-  std::vector<int> scopeStack;
-  int SStackSize = 0;
-
-  std::vector<isoState> isolated;
-
-  // int scopeStackPos;
+  std::unique_ptr<Impl> impl;
 
 public:
   struct OwnershipState {
@@ -99,8 +72,14 @@ public:
 
   void softPop(gen::CodeGenerator *callback, asmc::File &OutputFile);
 
+  void parentScope(ScopeId scope) const;
+
+  bool contains(ScopeId outer, ScopeId inner) const;
+
   // Get stack alignment value
   int getStackAlignment();
+
+  ScopeId currentScope() const;
 
   // reset everything
   void reset();

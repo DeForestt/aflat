@@ -1,8 +1,9 @@
 #include <filesystem>
 #include <fstream>
 
+#include "CodeGenerator/Expr.hpp"
 #include "CodeGenerator/MockCodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "Configs.hpp"
 #include "Parser/AST.hpp"
 #include "catch.hpp"
@@ -196,6 +197,7 @@ TEST_CASE("loan fields explicitly accept unowned class references",
   field.type.isLoan = true;
   field.byteMod = 8;
   field.mutable_ = true;
+  field.loanProvenance = gen::LoanProvenance::None;
   container->publicSymbols.push(field);
   gen.addType(container);
 

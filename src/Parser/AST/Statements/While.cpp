@@ -1,7 +1,7 @@
 #include "Parser/AST/Statements/While.hpp"
 
 #include "CodeGenerator/CodeGenerator.hpp"
-#include "CodeGenerator/ScopeManager.hpp"
+#include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "Parser/Parser.hpp"
 
 namespace ast {
