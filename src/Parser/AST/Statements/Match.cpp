@@ -15,10 +15,12 @@
 #include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Types.hpp"
 #include "Parser/Parser.hpp"
+#include "Scanner.hpp"
 
 namespace ast {
 
-Match::Pattern::Pattern(links::LinkedList<lex::Token *> &tokens) {
+Match::Pattern::Pattern(links::LinkedList<lex::Token *> &tokens,
+                        parse::Parser &parser) {
   auto name = dynamic_cast<lex::LObj *>(tokens.pop());
   if (name == nullptr) {
     throw err::Exception(
@@ -30,6 +32,8 @@ Match::Pattern::Pattern(links::LinkedList<lex::Token *> &tokens) {
   if (auto openParen = dynamic_cast<lex::OpSym *>(tokens.peek());
       openParen != nullptr && openParen->Sym == '(') {
     tokens.pop();
+    takesOwnership = parser.consumeDoubleAmpersandIfPresent(
+        tokens, "when binding an owned match payload");
     auto veriableToken = dynamic_cast<lex::LObj *>(tokens.peek());
     if (veriableToken) {
       tokens.pop();
@@ -47,7 +51,7 @@ Match::Pattern::Pattern(links::LinkedList<lex::Token *> &tokens) {
 
 Match::Case::Case(links::LinkedList<lex::Token *> &tokens,
                   parse::Parser &parser) {
-  pattern = Match::Pattern(tokens);
+  pattern = Match::Pattern(tokens, parser);
   auto token = tokens.pop();
   if (token == nullptr) {
     throw err::Exception("Unexpected end of tokens while parsing match case.");
@@ -222,7 +226,13 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
                                      _case.pattern.bindingLogicalLine);
         auto sym = gen::scope::ScopeManager::getInstance()->get(
             *_case.pattern.veriableName);
-        sym->owned = exprResult.owned && !loanBindings;
+
+        if (_case.pattern.takesOwnership && !exprResult.owned) {
+          generator.alert(
+              "Cannot take ownership of union payload from an unowned value",
+              true, __FILE__, __LINE__);
+        }
+        sym->owned = _case.pattern.takesOwnership && !loanBindings;
 
         if (parse::PRIMITIVE_TYPES.find(type->typeName) !=
             parse::PRIMITIVE_TYPES.end()) {

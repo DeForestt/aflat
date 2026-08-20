@@ -225,7 +225,7 @@ export fn fix(const adr name, const adr setUp, * const adr tearDown) -> void {
 };
 
 // Retrieve fixture data, invoking setUp lazily when necessary.
-export fn getFixture(const uni_string name) -> any {
+export fn getFixture(const uni_string name) -> loan any {
 	const let fd = getFixtureData();
 	const let fixtureNameString = name.toString();
 	const adr fixtureName = fixtureNameString.cstr();

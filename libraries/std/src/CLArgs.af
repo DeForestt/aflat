@@ -94,7 +94,7 @@ class CommandLineArgs {
 	
 	mutable bool built = false;
 
-	fn with_arguments(const vector::<Argument> &&args) -> CommandLineArgs {
+	fn with_arguments(const vector::<Argument> &&args) -> loan CommandLineArgs {
 		if my.built {
 			panic("CommandLineArgs has already been built. Cannot add more arguments.");
 		};

@@ -13,7 +13,7 @@ class Object {
         mutable private adr _validate = NULL;
     };
 
-    public string type() {
+    public fn type() -> loan string {
         return my._typeName;
     };
 
@@ -48,7 +48,7 @@ safe dynamic class Field {
     private const string name = $name;
 
     Field init(const adr foo, const Object context, const string &&name, * const any &&initial_value) {
-        my.context.set(name.cstr(), $initial_value);
+        my.context.set(my.name.cstr(), $initial_value);
         return my;
     };
 

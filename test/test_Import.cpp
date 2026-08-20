@@ -83,7 +83,7 @@ TEST_CASE("Generic class instantiation sees private module imports",
   mod << "class Wrapper {\n";
   mod << "  vector::<Helper::<T>> values = new vector::<Helper::<T>>();\n";
   mod << "  fn init() -> Self { return my; };\n";
-  mod << "  fn add(T value) -> Self {\n";
+  mod << "  fn add(T value) -> loan Self {\n";
   mod << "    my.values.push_back(new Helper::<T>(value));\n";
   mod << "    return my;\n";
   mod << "  };\n";

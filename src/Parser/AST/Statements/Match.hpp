@@ -19,7 +19,8 @@ public:
     std::string aliasName;
     std::optional<std::string> veriableName;
     int bindingLogicalLine = 0;
-    Pattern(links::LinkedList<lex::Token *> &tokens);
+    bool takesOwnership = false;
+    Pattern(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
     Pattern() = default;
     Pattern(std::string aliasName, std::optional<std::string> veriableName)
         : aliasName(std::move(aliasName)),

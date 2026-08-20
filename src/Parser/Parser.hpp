@@ -36,6 +36,10 @@ public:
   ast::Statement *parseStmt(links::LinkedList<lex::Token *> &tokens,
                             bool singleStmt = false);
   ast::Expr *parseExpr(links::LinkedList<lex::Token *> &tokens);
+  bool consumeDoubleAmpersandIfPresent(links::LinkedList<lex::Token *> &tokens,
+                                       const std::string &context = "");
+  void requireDoubleAmpersand(links::LinkedList<lex::Token *> &tokens,
+                              const std::string &context = "");
 
   ast::Statement *parseArgs(links::LinkedList<lex::Token *> &tokens,
                             char delimn, char close,

@@ -192,7 +192,7 @@ safe dynamic pedantic class AsyncResult {
         return my;
     };
     
-    fn get() -> Self {
+    fn get() -> loan Self {
 	  	my.refcount = my.refcount + 1;
 		  return my;
 	  };
@@ -439,8 +439,7 @@ export fn worker(const adr foo, *const WorkerMode mode, *const any arg1, *const 
         msg.writePipe(outbox);
     });
     p.start(pArgs);
-    const AsyncResult::<T> ret = new AsyncResult::<T>(mode, $p, NULL);
-    return ret; 
+    return new AsyncResult::<T>(mode, $p, NULL);
 };
 
 // Spawn and await a `Function` directly, returning its AsyncResult wrapper.
@@ -554,9 +553,9 @@ export async fn async_thread(
     pause af_cpu_operation_begin(AsyncThreadCall.invoke, NULL, call, NULL,
         NULL, ?nativeOperation);
     if nativeOperation == NULL return call.invoke();
-    const T outputValue = NULL;
-    af_cpu_operation_take_result(nativeOperation, ?outputValue);
-    return outputValue;
+    mutable T outputValue = NULL;
+    af_cpu_operation_take_result(nativeOperation, outputValue);
+    return $outputValue;
 };
 
 /**
@@ -575,7 +574,7 @@ export async fn async_thread_disposable(
     pause af_cpu_operation_begin(AsyncThreadCall.invoke, disposer, call, NULL,
         NULL, ?nativeOperation);
     if nativeOperation == NULL return call.invoke();
-    const T outputValue = NULL;
-    af_cpu_operation_take_result(nativeOperation, ?outputValue);
-    return outputValue;
+    mutable T outputValue = NULL;
+    af_cpu_operation_take_result(nativeOperation, outputValue);
+    return $outputValue;
 };

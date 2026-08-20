@@ -410,7 +410,7 @@ class HTTPMessage {
       if isReq my.parseReq() else my.parse();
     };
 
-    fn toString() -> string {
+    fn toString() -> loan string {
         return my.origin;
     };
 
@@ -479,26 +479,26 @@ class HTTPRequest {
         if host.indexOf('/') != -1 {
             host = host.subString(0, host.indexOf('/'));
         };
-        return host;
+        return host.copy();
     };
 
     private string normalizedEndpoint() {
         const string endpoint = new string(my.endpoint);
         if endpoint.len() >= 8 {
             if endpoint.subString(0, 8) == "https://" {
-                return endpoint;
+                return $endpoint;
             };
         };
         if endpoint.len() >= 7 {
             if endpoint.subString(0, 7) == "http://" {
-                return endpoint;
+                return $endpoint;
             };
         };
         if endpoint.len() == 0 {
             return new string("/");
         };
         if endpoint.subString(0, 1) == "/" {
-            return endpoint;
+            return $endpoint;
         };
         return `/{endpoint}`;
     };
@@ -568,7 +568,7 @@ class HTTPRequest {
         const adr raw = my.headersBuffer();
         const string ret = new string(raw);
         af_free(raw);
-        return ret;
+        return ret.copy();
     };
 
     private adr rawToString() {
@@ -609,7 +609,7 @@ class HTTPRequest {
         const adr out = my.rawToString();
         const string ret = new string(out);
         af_free(out);
-        return ret;
+        return ret.copy();
     };
 
     result::<HTTPMessage> send(const int bufferSize) {
@@ -680,7 +680,7 @@ class HTTPResponse {
             ret = ret + header.value;
             ret = ret + "\r\n";
         };
-        return ret;
+        return ret.copy();
     };
 
     string toString() {
@@ -694,25 +694,25 @@ class HTTPResponse {
         ret = ret + my.getHeaders();
         ret = ret + "\r\n";
         ret = ret + my.body;
-        return ret;
+        return ret.copy();
     };
 
     string getBody() {
         string ret = new string("");
         ret = ret + my.body;
-        return ret;
+        return ret.copy();
     };
 
     string getStatusCode() {
         string ret = new string("");
         ret = ret + my.statusCode;
-        return ret;
+        return ret.copy();
     };
 
     string getStatusMessage() {
         string ret = new string("");
         ret = ret + my.statusMessage;
-        return ret;
+        return ret.copy();
     };
 };
 
@@ -748,7 +748,7 @@ class HTTPServer {
         ret = ret + "Content-Length: 0\r\n";
         ret = ret + "\r\n";
         ret = ret + "<html><body><h1>404 Not Found</h1></body></html>\r\n";
-        return ret;
+        return ret.copy();
     };
 
     void registerEndpoint(const adr foo, const string &&path, const HTTPMethod method) {

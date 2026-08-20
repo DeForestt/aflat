@@ -35,7 +35,7 @@ safe dynamic class Property {
         my.notify(my);
     };
 
-    fn ref() -> Self {
+    fn ref() -> loan Self {
         return my;
     };
 };
@@ -105,7 +105,7 @@ fn ${ident}() -> unordered_map::<adr, adr> : Property::<${type}> {{
 transform with 
 ~
 ${scope} mutable ${type} ${ident} = ${expr}; // default value
-fn with_${ident}(const ${type} x) -> ${Self} {
+fn with_${ident}(const ${type} x) -> loan ${Self} {
     my.${ident} = x;
     return my;
 };
@@ -115,7 +115,7 @@ fn with_${ident}(const ${type} x) -> ${Self} {
 transform with_owned 
 ~
 ${scope} ${mut} ${type} ${ident} = ${expr}; // default value
-fn with_${ident}(const &&${type} x) -> ${Self} {
+fn with_${ident}(const &&${type} x) -> loan ${Self} {
     my.${ident} = $x;
     return my;
 };

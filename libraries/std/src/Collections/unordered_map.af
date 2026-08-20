@@ -198,7 +198,20 @@ class unordered_map {
 		return my.count;
 	};
 
-	fn set(const K key, const V &&value) -> Self {
+	fn set(const K key, const V &&value) -> loan Self {
+		const LockGuard __guard = my.mutex.guard();
+		const int index = my.index(key);
+		const u_map_bucket::<K, V> bucket =
+			my.buckets.get(index).expect("searched for non-existing unordered_map bucket");
+		const bool added = bucket.add(key, $value);
+		my.buckets.set(index, bucket);
+		if added {
+			my.count = my.count + 1;
+		};
+		return my;
+	};
+
+	sink fn set(const K key, const V &&value) -> Self {
 		const LockGuard __guard = my.mutex.guard();
 		const int index = my.index(key);
 		const u_map_bucket::<K, V> bucket =

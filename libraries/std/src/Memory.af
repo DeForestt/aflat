@@ -9,10 +9,16 @@ class RefCounted {
 	private mutable int refCount = 0;
 	private mutable bool locked = false;
 
-	fn get() -> Self {
+	fn get() -> loan Self {
+		my.refCount = my.refCount + 1;
+		return my;
+	};
+
+  sink fn get() -> Self {
 		my.refCount = my.refCount + 1;
 		return my;
 	};  
+
 
 	fn endScope() {
 		if my.locked return;
@@ -27,7 +33,8 @@ class RefCounted {
 	};
 
 	fn unlock() {
-		my.locked = false;
+		my.
+    locked = false;
 	};
 };
 
@@ -42,15 +49,19 @@ class Box {
 		return my;
 	};
 
-	fn get() -> T {
+	fn get() -> loan T {
+		return my.value;
+	};
+
+	sink fn get() -> T {
 		return $my.value;
 	};
 
-	fn _set(const T &&value) -> Self {
+	fn _set(const T &&value) -> loan Self {
 		my.value = $value;
 		return my;
 	};
-  
+
   when (T has toString or T is primitive)
 	fn toString() -> string {
 		return `Box({my.value})`;
@@ -69,7 +80,7 @@ unique class owned {
 		return my;
 	};
 
-	fn _set(const T &&value) -> Self {
+	fn _set(const T &&value) -> loan Self {
 		my.value = $value;
 		return my;
 	};
@@ -88,10 +99,16 @@ unique class owned {
 		delete my.value;
 	};
 
+  sink fn release() -> T {
+    my.valid = false;
+    return $my.value;
+  };
+
   fn release() -> T {
     my.valid = false;
     return $my.value;
   };
+
 
 	fn toString() -> uni_string {
 		return `owned({my.value})`;

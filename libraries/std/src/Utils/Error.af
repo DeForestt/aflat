@@ -43,7 +43,7 @@ pedantic class Error {
         return my.render();
     };
     
-    public string kind() {
+    public fn kind() -> loan string {
         return my._typeName;
     };
 

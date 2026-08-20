@@ -20,6 +20,10 @@ public:
   asmc::Size size;
   bool passable = true;
   bool owned = false;
+  // True when this expression is an owned value that may be transferred.
+  // Owned variables remain lvalues until they are explicitly sold.
+  bool transferable = false;
+  bool transferExplicit = false;
 
   LoanProvenance loanProvenance = LoanProvenance::None;
   scope::ScopeId loanScope = 0;

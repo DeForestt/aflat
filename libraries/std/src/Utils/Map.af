@@ -68,7 +68,7 @@ class MapNode {
         return 0;
     };
 
-    private any bruteGet(const adr key) {
+    private fn bruteGet(const adr key) -> loan any {
         if st.str_comp(my.key, key) ==1 {
             return my.data;
         };
@@ -90,7 +90,7 @@ class MapNode {
         return NULL;
     };
 
-    public any get(const adr key) {
+    public fn get(const adr key) -> loan any {
         if st.str_comp(my.key, key) == 1 {
             return my.data;
         };
@@ -166,7 +166,7 @@ class Map {
         return my;
     };
 
-    Map set(const adr key, const any data) {
+    loan Map set(const adr key, const any data) {
         if my.root == NULL {
             my.root = new MapNode(key, data);
         } else {

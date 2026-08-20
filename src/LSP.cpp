@@ -562,12 +562,12 @@ std::string currentLinePrefix(const std::string &text, int line,
 
 std::vector<std::string> gatherCompletions(const std::string &text) {
   static const std::unordered_set<std::string> keywords = {
-      "fn",      "class",    "struct", "union",   "import",    "return",
-      "if",      "else",     "for",    "while",   "break",     "continue",
-      "match",   "when",     "let",    "mutable", "immutable", "public",
-      "private", "static",   "export", "const",   "types",     "safe",
-      "dynamic", "pedantic", "unique", "delete",  "true",      "false",
-      "None",    "Some",     "new",    "as",      "under"};
+      "fn",      "class",   "struct",   "union",   "import",    "return",
+      "if",      "else",    "for",      "while",   "break",     "continue",
+      "match",   "when",    "let",      "mutable", "immutable", "public",
+      "private", "static",  "export",   "const",   "types",     "safe",
+      "sink",    "dynamic", "pedantic", "unique",  "delete",    "true",
+      "false",   "None",    "Some",     "new",     "as",        "under"};
 
   std::unordered_set<std::string> seen;
   std::vector<std::string> items;
@@ -906,12 +906,12 @@ std::vector<JsonValue> completionItems(const std::vector<std::string> &items,
       continue;
     JsonValue::Object value{{"label", JsonValue(item)}};
     static const std::unordered_set<std::string> keywords = {
-        "fn",      "class",    "struct", "union",   "import",    "return",
-        "if",      "else",     "for",    "while",   "break",     "continue",
-        "match",   "when",     "let",    "mutable", "immutable", "public",
-        "private", "static",   "export", "const",   "types",     "safe",
-        "dynamic", "pedantic", "unique", "delete",  "true",      "false",
-        "new",     "as",       "under"};
+        "fn",      "class",   "struct",   "union",   "import",    "return",
+        "if",      "else",    "for",      "while",   "break",     "continue",
+        "match",   "when",    "let",      "mutable", "immutable", "public",
+        "private", "static",  "export",   "const",   "types",     "safe",
+        "sink",    "dynamic", "pedantic", "unique",  "delete",    "true",
+        "false",   "new",     "as",       "under"};
     if (keywords.count(item) != 0) {
       value.emplace("kind", JsonValue(14));
     } else if (parse::PRIMITIVE_TYPES.count(item) != 0) {
@@ -1908,12 +1908,12 @@ tokenVector(const links::LinkedList<lex::Token *> &tokens) {
 
 bool isKeyword(const std::string &word) {
   static const std::unordered_set<std::string> keywords = {
-      "fn",      "class",    "struct", "union",   "import",    "return",
-      "if",      "else",     "for",    "while",   "break",     "continue",
-      "match",   "when",     "let",    "mutable", "immutable", "public",
-      "private", "static",   "export", "const",   "types",     "safe",
-      "dynamic", "pedantic", "unique", "delete",  "new",       "as",
-      "under"};
+      "fn",      "class",   "struct",   "union",   "import",    "return",
+      "if",      "else",    "for",      "while",   "break",     "continue",
+      "match",   "when",    "let",      "mutable", "immutable", "public",
+      "private", "static",  "export",   "const",   "types",     "safe",
+      "sink",    "dynamic", "pedantic", "unique",  "delete",    "new",
+      "as",      "under"};
   return keywords.count(word) != 0;
 }
 

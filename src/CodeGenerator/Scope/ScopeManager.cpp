@@ -223,7 +223,7 @@ void ScopeManager::softPop(CodeGenerator *callback, asmc::File &OutputFile) {
 
   for (int i = 0; i < size; i++) {
     gen::Symbol sym = impl->stack.at(pos);
-    if (sym.symbol != "" && sym.symbol != "my") {
+    if (sym.symbol != "") {
       auto desc = callback->deScope(sym);
       if (desc) {
         OutputFile << *desc;

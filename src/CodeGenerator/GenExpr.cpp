@@ -25,6 +25,21 @@ static bool isFormattedStringExpr(ast::Expr *expr) {
   return dynamic_cast<ast::FStringLiteral *>(expr) != nullptr;
 }
 
+static void markTransferredReceiver(ast::Expr *expr) {
+  if (auto *compound = dynamic_cast<ast::Compound *>(expr)) {
+    markTransferredReceiver(compound->expr1);
+  } else if (auto *paren = dynamic_cast<ast::ParenExpr *>(expr)) {
+    markTransferredReceiver(paren->expr);
+  } else if (auto *bubble = dynamic_cast<ast::Bubble *>(expr)) {
+    markTransferredReceiver(bubble->expr);
+  } else if (auto *call = dynamic_cast<ast::CallExpr *>(expr)) {
+    call->call->receiverTransfer = true;
+    call->call->receiverTransferExplicit = true;
+  } else if (expr != nullptr) {
+    expr->selling = true;
+  }
+}
+
 static std::string formattedStringHintForType(const std::string &typeName) {
   if (typeName == "string" || typeName == "adr") {
     return "string";
@@ -257,6 +272,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
   } else if (dynamic_cast<ast::CallExpr *>(expr) != nullptr) {
     ast::CallExpr *exprCall = dynamic_cast<ast::CallExpr *>(expr);
     ast::Call *call = exprCall->call;
+    call->receiverTransfer = call->receiverTransfer || exprCall->selling;
+    call->receiverTransferExplicit =
+        call->receiverTransferExplicit || exprCall->selling;
 
     // check if the call ident is a class name
     Type **t = typeList()[call->ident];
@@ -624,6 +642,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.op = sym.type.opType;
         output.type = sym.type.typeName;
         output.owned = sym.owned;
+        output.transferable = var.selling && sym.owned;
+        output.transferExplicit = output.transferable;
         output.loanScope = sym.declarationScope;
         if (var.modList.count == 0)
           output.loanProvenance = LoanProvenance::Lexical;
@@ -681,6 +701,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     }
   } else if (dynamic_cast<ast::Buy *>(expr) != nullptr) {
     auto buy = dynamic_cast<ast::Buy *>(expr);
+    markTransferredReceiver(buy->expr);
     auto var = dynamic_cast<ast::Var *>(buy->expr);
     if (var != nullptr) {
       auto resolved =
@@ -748,17 +769,25 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       if (parse::PRIMITIVE_TYPES.find(output.type) ==
           parse::PRIMITIVE_TYPES.end()) {
         output.owned = true;
+        output.transferable = true;
+        output.transferExplicit = true;
         // A field symbol describes every instance of its class, so it cannot
         // be globally marked sold. The explicit owning method is responsible
         // for updating its instance's validity as part of the transfer.
-        if (!fieldAccess && !suppressOwnershipEffects())
-          std::get<4>(resolved)->sold = logicalLine();
+        if (!fieldAccess && !suppressOwnershipEffects()) {
+          auto *soldSymbol =
+              gen::scope::ScopeManager::getInstance()->get(var->Ident);
+          if (soldSymbol != nullptr)
+            soldSymbol->sold = logicalLine();
+        }
       }
     } else {
       output = this->GenExpr(buy->expr, OutputFile);
       if (parse::PRIMITIVE_TYPES.find(output.type) ==
           parse::PRIMITIVE_TYPES.end()) {
         output.owned = true;
+        output.transferable = true;
+        output.transferExplicit = true;
       }
     }
   } else if (dynamic_cast<ast::Reference *>(expr) != nullptr) {
@@ -1022,10 +1051,26 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     auto probeExpr = [&](ast::Expr *probeExpr, asmc::File &probeFile,
                          asmc::Size probeSize = asmc::AUTO,
                          const std::string &probeHint = "") {
-      auto saveSuppress = suppressLazyMethodEmission();
+      auto saveSuppressLazy = suppressLazyMethodEmission();
+      auto saveSuppressOwnership = suppressOwnershipEffects();
+      const auto ownershipBeforeProbe =
+          gen::scope::ScopeManager::getInstance()->captureOwnershipState();
       suppressLazyMethodEmission() = true;
-      auto result = this->GenExpr(probeExpr, probeFile, probeSize, probeHint);
-      suppressLazyMethodEmission() = saveSuppress;
+      suppressOwnershipEffects() = true;
+      gen::Expr result;
+      try {
+        result = this->GenExpr(probeExpr, probeFile, probeSize, probeHint);
+      } catch (...) {
+        gen::scope::ScopeManager::getInstance()->restoreOwnershipState(
+            ownershipBeforeProbe);
+        suppressOwnershipEffects() = saveSuppressOwnership;
+        suppressLazyMethodEmission() = saveSuppressLazy;
+        throw;
+      }
+      gen::scope::ScopeManager::getInstance()->restoreOwnershipState(
+          ownershipBeforeProbe);
+      suppressOwnershipEffects() = saveSuppressOwnership;
+      suppressLazyMethodEmission() = saveSuppressLazy;
       return result;
     };
     // gen expr 1 and check if it is a class
@@ -1566,6 +1611,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.size = asmc::QWord;
     output.type = typeName;
     output.owned = true;
+    output.transferable = true;
   } else if (dynamic_cast<ast::NewExpr *>(expr) != nullptr) {
     ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);
     ast::Function *af_malloc = nameTable()["af_malloc"];
@@ -1659,6 +1705,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       output.type = newExpr.type.typeName;
     };
     output.owned = true;
+    output.transferable = true;
   } else if (dynamic_cast<ast::ParenExpr *>(expr) != nullptr) {
     ast::ParenExpr parenExpr = *dynamic_cast<ast::ParenExpr *>(expr);
     output = this->GenExpr(parenExpr.expr, OutputFile);
@@ -1854,6 +1901,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     auto mod =
         gen::scope::ScopeManager::getInstance()->assign(tempName, type, false);
+    auto *tempSymbol = gen::scope::ScopeManager::getInstance()->get(tempName);
+    if (tempSymbol != nullptr)
+      tempSymbol->owned = output.owned;
     auto mov2 = new asmc::Mov();
     mov2->logicalLine = logicalLine();
     mov2->from = output.access;
@@ -1868,6 +1918,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     auto bubble = dynamic_cast<ast::Bubble *>(extension);
 
     if (call != nullptr) {
+      call->call->receiverTransfer = output.transferable;
+      call->call->receiverTransferExplicit = output.transferExplicit;
       call->call->modList.invert();
       call->call->modList.push(call->call->ident);
       call->call->modList.invert();

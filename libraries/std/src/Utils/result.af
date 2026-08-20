@@ -14,7 +14,7 @@ union result {
     Ok(T),
     Err(Error)
 
-    safe fn expect(const string msg) -> T {
+    safe fn expect(const string msg) -> loan T {
         match my {
             Ok(value) => return value,
             Err(err) => {
@@ -23,7 +23,16 @@ union result {
         };
     };
 
-    safe fn unwrap() -> T {
+    safe sink fn expect(const string msg) -> T {
+        match my {
+            Ok(&&value) => return $value,
+            Err(err) => {
+              panic(msg.cstr());
+            }
+        };
+    };
+
+    safe fn unwrap() -> loan T {
         match my {
             Ok(value) => return value,
             Err(err) => {
@@ -32,7 +41,16 @@ union result {
         };
     };
 
-    safe fn expectErr(const string msg) -> Error {
+    safe sink fn unwrap() -> T {
+        match my {
+            Ok(&&value) => return $value,
+            Err(err) => {
+              panic("Failed to unwrap value");
+            }
+        };
+    };
+
+    safe fn expectErr(const string msg) -> loan Error {
         match my {
             Ok(_) => {
               panic(msg.cstr());
@@ -41,12 +59,30 @@ union result {
         };
     };
 
-    safe fn unwrapErr() -> Error {
+    safe sink fn expectErr(const string msg) -> Error {
+        match my {
+            Ok(_) => {
+              panic(msg.cstr());
+            },
+            Err(&&err) => return $err
+        };
+    };
+
+    safe fn unwrapErr() -> loan Error {
         match my {
             Ok(_) => {
               panic("Expected Err");
             },
             Err(err) => return err
+        };
+    };
+
+    safe sink fn unwrapErr() -> Error {
+        match my {
+            Ok(_) => {
+              panic("Expected Err");
+            },
+            Err(&&err) => return $err
         };
     };
 

@@ -24,7 +24,7 @@ class EndpointRef {
         return my;
     };
 
-    fn get() -> Endpoint {
+    fn get() -> loan Endpoint {
         return my.value;
     };
 
@@ -131,10 +131,10 @@ class Server {
 
                         HTTPResponse r;
                         if response.isErr() {
-                            const Error err = response.unwrapErr();
+                            const Error err = $response.unwrapErr();
                             r = new HTTPResponse(err.render().cstr(), "500", "Internal Server Error");
                         } else {
-                            r = response.expect("HTTP handler response was unexpectedly empty");
+                            r = $response.expect("HTTP handler response was unexpectedly empty");
                         };
 
                         for int j = 0; j < self.middlewares.count(); j = j + 1 {

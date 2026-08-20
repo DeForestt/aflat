@@ -227,6 +227,10 @@ Statement *deepCopy(const Statement *stmt) {
     copy->Args = copyExprList(call->Args);
     copy->modList = copyStringList(call->modList);
     copy->publify = call->publify;
+    copy->slick = call->slick;
+    copy->genericTypes = call->genericTypes;
+    copy->receiverTransfer = call->receiverTransfer;
+    copy->receiverTransferExplicit = call->receiverTransferExplicit;
     return copy;
   }
   if (auto var = dynamic_cast<const Var *>(stmt)) {

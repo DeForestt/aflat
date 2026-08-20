@@ -25,7 +25,8 @@ class Endpoint {
     };
     
     fn toString() -> string {
-        return `{http.methodToString(my.method)} {my.path.toString()}`;
+        const string path = my.path.toString();
+        return `{http.methodToString(my.method)} {path}`;
     };
 
     result::<HTTPResponse> _call(const Server context, * const HTTPMessage msg) {
