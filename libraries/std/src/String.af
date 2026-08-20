@@ -63,11 +63,11 @@ private bool reg(const char c, const char p) {
  * provides slicing/iteration helpers, and exposes ergonomic utilities.
  */
 safe dynamic class string {
-    private adr head;
-    private int refcount = 1;
-    private bool permanent = false;
-    public bool debug = false;
-    private int itter = 0;
+    mutable private adr head;
+    mutable private int refcount = 1;
+    mutable private bool permanent = false;
+    mutable public bool debug = false;
+    mutable private int itter = 0;
 
     string init(const adr head) {
         my.head = af_malloc(str.len(head) + 1);
@@ -77,7 +77,7 @@ safe dynamic class string {
         return my;
     };
 
-    string seal() {
+    fn seal() -> loan string {
         my.permanent = true;
         return my;
     };
@@ -101,7 +101,7 @@ safe dynamic class string {
         return str.str_comp(my.head, other.head) == 1;
     };
 
-    string get(){
+    sink fn get() -> string {
         if my.head != NULL {
             if !my.permanent {
                 my.refcount = my.refcount + 1;
@@ -111,7 +111,18 @@ safe dynamic class string {
         return my;
     };
 
-    string cpy<<=>>(const string other) {
+    fn get() -> loan string {
+        if my.head != NULL {
+            if !my.permanent {
+                my.refcount = my.refcount + 1;
+            };
+            my.debugRefCount();
+        };
+        return my;
+    };
+
+
+    loan string cpy<<=>>(const string other) {
         if other.head == my.head return my; // self assignment
         if my.head != NULL {
             af_free(my.head);
@@ -125,7 +136,7 @@ safe dynamic class string {
 
     fn __copy__() -> string {
         const let n = new string(my.head);
-        return n;
+        return $n;
     };
 
     fn __from__(const string other) -> Self {
@@ -307,7 +318,7 @@ safe dynamic class string {
         af_memcpy(newHead + myLen, other.head, otherLen + 1);
         const string newString = new string(newHead);
         af_free($newHead);
-        return newString;
+        return $newString;
     };
 
 
@@ -345,7 +356,7 @@ safe dynamic class string {
         newhead =: '\0';
         const string newString = save;
         af_free($save);
-        return newString;
+        return $newString;
     };
 
     string toLower() {
@@ -363,7 +374,7 @@ safe dynamic class string {
         newhead =: '\0';
         const string newString = save;
         af_free($save);
-        return newString;
+        return $newString;
     };
 
     string title() {
@@ -388,7 +399,7 @@ safe dynamic class string {
         newhead =: '\0';
         const string newString = save;
         af_free($save);
-        return newString;
+        return $newString;
     };
 
     string replaceChar(const char old, const char n) {
@@ -401,7 +412,7 @@ safe dynamic class string {
         };
         const string newString = newHead;
         af_free($newHead);
-        return newString;
+        return $newString;
     };
 
     int find(const string sub, const int start) {
@@ -462,7 +473,7 @@ safe dynamic class string {
         write =: '\0';
         const string newString = new string(head);
         af_free($head);
-        return newString;
+        return $newString;
     };
 
     string subString(const int start, const int end) {
@@ -474,7 +485,7 @@ safe dynamic class string {
         newHead[newLength] = '\0';
         const string newString = new string(newHead);
         af_free($newHead);
-        return newString;
+        return $newString;
     };
 
     string trim(* char ch) {
@@ -507,7 +518,7 @@ safe dynamic class string {
         next =: '\0';
         const string newString = new string(newHead);
         af_free($newHead);
-        return newString;
+        return $newString;
     };
 
     string insert(const int i, const string n) {
@@ -520,7 +531,7 @@ safe dynamic class string {
         newHead[length + nLength] = '\0';
         const string newString = new string(newHead);
         af_free($newHead);
-        return newString;
+        return $newString;
     };
 
     string sort() {
@@ -544,7 +555,7 @@ safe dynamic class string {
                 };
             };
         };
-        return newString;
+        return newString.copy();
     };
 
     int endScope() {
@@ -636,7 +647,7 @@ export string floatToString(const float f) {
 		output = output + "-";
 	};
     output = `{output}{whole}.{fracPart}`;
-	return output;
+	return output.copy();
 };
 
 export string fString(const string fmt, * adr args) {

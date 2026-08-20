@@ -362,6 +362,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     auto pedantic = false;
     auto uniqueType = false;
     auto asyncFunction = false;
+    auto sinkFunction = false;
     auto isLoan = false;
     auto scope = ast::Public;
     std::vector<std::string> typeNames;
@@ -379,9 +380,9 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     // validation is performed against the declaration itself, rather than an
     // access modifier that happens to follow a semantic modifier.
     static const std::unordered_set<std::string> modifiers = {
-        "safe",      "dynamic", "pedantic", "types",  "when",
-        "unique",    "async",   "loan",     "const",  "mutable",
-        "immutable", "public",  "private",  "static", "export"};
+        "safe",   "dynamic", "pedantic", "types", "when",    "unique",
+        "async",  "sink",    "loan",     "const", "mutable", "immutable",
+        "public", "private", "static",   "export"};
 
     if (modifiers.count(obj.meta)) {
       while (modifiers.count(obj.meta)) {
@@ -389,6 +390,8 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
           safeType = true;
         else if (obj.meta == "async")
           asyncFunction = true;
+        else if (obj.meta == "sink")
+          sinkFunction = true;
         else if (obj.meta == "dynamic")
           dynamicType = true;
         else if (obj.meta == "pedantic")
@@ -484,6 +487,10 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
         throw err::Exception(
             "async can only be used with functions or foreach loops on line " +
             std::to_string(obj.lineCount));
+      }
+      if (sinkFunction && obj.meta != "fn") {
+        throw err::Exception("sink can only be used with functions on line " +
+                             std::to_string(obj.lineCount));
       }
     }
 
@@ -732,9 +739,9 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
           // Checking for Parenthesis to see if it is a function
           if (sym.Sym == '(') {
             tokens.pop();
-            output =
-                new ast::Function(ident.meta, scope, type, overload, scopeName,
-                                  tokens, parser, optional, safeType);
+            output = new ast::Function(ident.meta, scope, type, overload,
+                                       scopeName, tokens, parser, optional,
+                                       safeType, sinkFunction);
             output->logicalLine = obj.lineCount;
             output->when = whenClause;
           } else if (sym.Sym == '=') {
@@ -811,7 +818,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
       output = ret;
     } else if (obj.meta == "fn") {
       output = new ast::Function(scope, tokens, typeNames, parser, safeType,
-                                 asyncFunction);
+                                 asyncFunction, sinkFunction);
       output->when = whenClause;
     } else if (obj.meta == "pause") {
       if (asyncContexts.empty() || !asyncContexts.back()) {
@@ -2531,6 +2538,53 @@ parse::Parser::parseStmt(links::LinkedList<lex::Token *> &tokens,
 
 ast::Expr *parse::Parser::parseExpr(links::LinkedList<lex::Token *> &tokens) {
   return impl->parseExpr(tokens);
+}
+
+bool parse::Parser::consumeDoubleAmpersandIfPresent(
+    links::LinkedList<lex::Token *> &tokens, const std::string &context) {
+  auto *firstToken = tokens.peek();
+  auto *first = dynamic_cast<lex::OpSym *>(firstToken);
+  const bool hasFirst = first != nullptr && first->Sym == '&';
+  if (!hasFirst)
+    return false;
+
+  lex::Token *secondToken = nullptr;
+  if (tokens.head != nullptr && tokens.head->next != nullptr)
+    secondToken = tokens.head->next->data;
+  auto *second = dynamic_cast<lex::OpSym *>(secondToken);
+  const bool hasSecond = second != nullptr && second->Sym == '&';
+
+  if (!hasSecond) {
+    auto *unexpected = secondToken;
+    const int fallbackLine = lex::tokenLine(firstToken);
+    const int line = lex::tokenLine(unexpected, fallbackLine);
+    const std::string suffix = context.empty() ? "" : " " + context;
+    const std::string found = unexpected == nullptr
+                                  ? "end of input"
+                                  : "`" + tokenToSource(unexpected) + "`";
+    throw err::Exception("Line: " + std::to_string(line) +
+                         " Expected a second `&` to complete `&&`" + suffix +
+                         "; got " + found);
+  }
+
+  tokens.pop();
+  tokens.pop();
+  return true;
+}
+
+void parse::Parser::requireDoubleAmpersand(
+    links::LinkedList<lex::Token *> &tokens, const std::string &context) {
+  auto *firstToken = tokens.peek();
+  if (consumeDoubleAmpersandIfPresent(tokens, context))
+    return;
+
+  const int line = lex::tokenLine(firstToken);
+  const std::string suffix = context.empty() ? "" : " " + context;
+  const std::string found = firstToken == nullptr
+                                ? "end of input"
+                                : "`" + tokenToSource(firstToken) + "`";
+  throw err::Exception("Line: " + std::to_string(line) + " Expected `&&`" +
+                       suffix + "; got " + found);
 }
 
 void parse::Parser::pushAsyncContext(bool isAsync) {

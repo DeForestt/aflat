@@ -106,8 +106,28 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
 
   auto trashFile = asmc::File();
 
-  gen::Expr from = generator.GenExpr(this->expr, file, asmc::AUTO,
-                                     generator.returnType().typeName);
+  const auto ownershipBeforeProbe =
+      gen::scope::ScopeManager::getInstance()->captureOwnershipState();
+  const bool savedSuppressLazy = generator.suppressLazyMethodEmission();
+  const bool savedSuppressOwnership = generator.suppressOwnershipEffects();
+  generator.suppressLazyMethodEmission() = true;
+  generator.suppressOwnershipEffects() = true;
+  gen::Expr from;
+  try {
+    from = generator.GenExpr(this->expr, trashFile, asmc::AUTO,
+                             generator.returnType().typeName);
+  } catch (...) {
+    gen::scope::ScopeManager::getInstance()->restoreOwnershipState(
+        ownershipBeforeProbe);
+    generator.suppressOwnershipEffects() = savedSuppressOwnership;
+    generator.suppressLazyMethodEmission() = savedSuppressLazy;
+    throw;
+  }
+  gen::scope::ScopeManager::getInstance()->restoreOwnershipState(
+      ownershipBeforeProbe);
+  generator.suppressOwnershipEffects() = savedSuppressOwnership;
+  generator.suppressLazyMethodEmission() = savedSuppressLazy;
+  bool expressionGenerated = false;
 
   std::string returnedSymbol;
   if (auto var = dynamic_cast<ast::Var *>(this->expr)) {
@@ -146,6 +166,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       auto prev = from;
       from = generator.GenExpr(call, file);
       from.adoptImmutableRequirement(prev);
+      expressionGenerated = true;
     }
   } else if (generator.currentFunction()->error) {
     // if fromtype is not result.typeName, we need to convert it to
@@ -182,6 +203,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
         auto prev = from;
         from = generator.GenExpr(call, file);
         from.adoptImmutableRequirement(prev);
+        expressionGenerated = true;
       } else {
         if (!this->empty &&
             !generator.canAssign(
@@ -207,6 +229,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
         auto prev = from;
         from = generator.GenExpr(call, file);
         from.adoptImmutableRequirement(prev);
+        expressionGenerated = true;
       }
     }
   }
@@ -284,7 +307,15 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     auto prev = from;
     from = generator.GenExpr(imp, file);
     from.adoptImmutableRequirement(prev);
+    expressionGenerated = true;
   };
+
+  if (!expressionGenerated) {
+    auto prev = from;
+    from = generator.GenExpr(this->expr, file, asmc::AUTO,
+                             generator.returnType().typeName);
+    from.adoptImmutableRequirement(prev);
+  }
 
   if (parse::PRIMITIVE_TYPES.find(from.type) == parse::PRIMITIVE_TYPES.end()) {
     if (!from.owned && from.type != "void" &&

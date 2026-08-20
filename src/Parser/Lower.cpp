@@ -93,6 +93,7 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
     newFunc->type = func->type;
     newFunc->autoType = true;
     newFunc->mutability = func->mutability;
+    newFunc->sinksReceiver = func->sinksReceiver;
 
     func->ident.ident = ".temp__graft_" + func->ident.ident;
 

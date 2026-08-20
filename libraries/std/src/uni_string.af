@@ -341,7 +341,7 @@ unique class uni_string {
     tail =: '\0';
     const uni_string result = new uni_string(out);
     af_free(out);
-    return result;
+    return $result;
   };
 
   safe fn trim(* char ch) -> uni_string {
@@ -523,10 +523,10 @@ unique class uni_string {
 
     const uni_string result = new uni_string(out);
     af_free(out);
-    return result;
+    return $result;
   };
 
-  uni_string cpy<<=>>(const uni_string other) {
+  loan uni_string cpy<<=>>(const uni_string other) {
     if other.buf == my.buf return my;
     my.copy_from(other.buf);
     return my;
@@ -581,7 +581,7 @@ private fn read_string_from_stdin(immutable adr prompt) -> uni_string {
   tail =: '\0';
   const uni_string result = new uni_string(buffer);
   af_free(buffer);
-  return result;
+  return $result;
 };
 
 export fn read_string(?const uni_string prompt) -> uni_string {
@@ -658,5 +658,5 @@ export fn _fUCstr(const adr fmt, * adr args) -> uni_string {
 
   const uni_string result = new uni_string(out);
   af_free(out);
-  return result;
+  return $result;
 };

@@ -517,7 +517,10 @@ private fn parseObjectValue(const string value) -> JSON! {
 
         const let key = match parseInternal(value)!.asString() {
             Ok(s) => s,
-            Err(e) => return parseError(value, `Expected string key in JSON object: {e.toString()}`, value.tell())
+            Err(e) => {
+                const string error = e.toString();
+                return parseError(value, `Expected string key in JSON object: {error}`, value.tell());
+            }
         };
         const int colonPos = value.tell();
         const let colonOption = value.next();

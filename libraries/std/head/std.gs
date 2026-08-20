@@ -49,4 +49,4 @@ adr create(const int size, ? const any value);
 void _fEachOr(const object iterator, const adr callback, *const any args);
 adr _toOption(const any value);
 int af_cpu_operation_begin(adr function, adr disposer, any arg1, any arg2, any arg3, adr output);
-void af_cpu_operation_take_result(adr operation, adr output);
+void af_cpu_operation_take_result(adr operation, adr &output);

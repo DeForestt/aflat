@@ -298,11 +298,13 @@ void Function::parseFunctionBody(links::LinkedList<lex::Token *> &tokens,
 Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
                    const Op op, const std::string &scopeName,
                    links::LinkedList<lex::Token *> &tokens,
-                   parse::Parser &parser, bool optional, bool safe)
+                   parse::Parser &parser, bool optional, bool safe,
+                   bool sinksReceiver)
     : scope(scope), type(type), op(op), scopeName(scopeName),
-      optional(optional), safe(safe) {
+      optional(optional), safe(safe), sinksReceiver(sinksReceiver) {
   this->ident.ident = ident;
   this->useType = type;
+  this->returnLowOwnership = type.isLoan;
   this->args = parser.parseArgs(tokens, ',', ')', this->argTypes, this->req,
                                 this->mutability, this->optConvertionIndices,
                                 this->readOnly);
@@ -313,8 +315,9 @@ Function::Function(const string &ident, const ScopeMod &scope, const Type &type,
 Function::Function(const ScopeMod &scope,
                    links::LinkedList<lex::Token *> &tokens,
                    std::vector<std::string> genericTypes, parse::Parser &parser,
-                   bool safe, bool isAsync)
-    : scope(scope), genericTypes(genericTypes), safe(safe), isAsync(isAsync) {
+                   bool safe, bool isAsync, bool sinksReceiver)
+    : scope(scope), genericTypes(genericTypes), safe(safe), isAsync(isAsync),
+      sinksReceiver(sinksReceiver) {
   // updated function syntax
   // func <ident>(<args>) -> <type> { <body> }
   const int declarationLine =
@@ -418,6 +421,12 @@ Function::Function(const ScopeMod &scope,
 }
 
 gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
+  if (this->sinksReceiver &&
+      (generator.scope() == nullptr || this->isLambda || this->globalLocked)) {
+    generator.alert("sink can only be used on class methods", true, __FILE__,
+                    __LINE__);
+  }
+
   auto registerGenericFunction = [&]() {
     auto &functions = generator.genericFunctions();
     const std::string baseIdent = this->ident.ident;
@@ -708,11 +717,15 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       auto ty = ast::Type();
       ty.typeName = generator.scope()->Ident;
       ty.size = asmc::QWord;
+      const bool ownsReceiver = this->sinksReceiver ||
+                                this->ident.ident == "init" ||
+                                this->ident.ident.rfind("__from__", 0) == 0;
+      ty.isLoan = !ownsReceiver;
 
       int byteMod = gen::scope::ScopeManager::getInstance()->assign(
           "my", ty, false, false, this->safe);
       auto my = gen::scope::ScopeManager::getInstance()->get("my");
-      my->owned = true;
+      my->owned = ownsReceiver;
 
       movy->size = asmc::QWord;
       movy->to = "-" + std::to_string(byteMod) + +"(%rbp)";
@@ -760,12 +773,19 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
           returnStmt->expr = var;
           statement << generator.GenSTMT(returnStmt);
         } else {
+          if (this->sinksReceiver) {
+            gen::scope::ScopeManager::getInstance()->softPop(&generator,
+                                                             statement);
+          }
           asmc::Return *ret = new asmc::Return();
           ret->logicalLine = this->logicalLine;
           statement.text.push(ret);
         };
       }
     } else {
+      if (this->sinksReceiver) {
+        gen::scope::ScopeManager::getInstance()->softPop(&generator, statement);
+      }
       auto pop = new asmc::Pop();
       pop->logicalLine = this->logicalLine;
       pop->op = "%rbx";
@@ -807,8 +827,11 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
 gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
   gen::Expr output;
   auto tn = useType.typeName != "" ? useType.typeName : type.typeName;
-  if (generator.scope() != nullptr && tn == "Self") {
-    tn = generator.scope()->Ident;
+  if (tn == "Self") {
+    if (scopeName != "global")
+      tn = scopeName;
+    else if (generator.scope() != nullptr)
+      tn = generator.scope()->Ident;
   }
   output.type = this->optional ? "option<" + tn + ">"
                 : this->error  ? "result<" + tn + ">"
@@ -824,6 +847,7 @@ gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
     output.op = asmc::Float;
   }
   output.owned = output.type != "void" && !this->returnLowOwnership;
+  output.transferable = output.owned;
   output.requiresImmutableBinding = this->returnImmutable;
   if (this->returnImmutable)
     output.immutableBindingSource = this->ident.ident;

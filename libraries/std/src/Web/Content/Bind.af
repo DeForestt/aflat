@@ -20,7 +20,7 @@ safe dynamic class Bind {
         my.context.bindings.push_back(my as adr);
     };
 
-    string get() {
+    fn get() -> loan string {
         return my.value;
     };
 

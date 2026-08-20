@@ -35,6 +35,7 @@ public:
   bool isLambda = false;
   bool isAsync = false;
   bool isAsyncBody = false;
+  bool sinksReceiver = false;
   int asyncStateCounter = 0;
   int nextAsyncState() { return ++asyncStateCounter; }
   std::string asyncStateLabel(int state) const {
@@ -61,10 +62,10 @@ public:
   Function(const string &ident, const ScopeMod &scope, const Type &type,
            const Op op, const std::string &scopeName,
            links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
-           bool optional, bool safe = false);
+           bool optional, bool safe = false, bool sinksReceiver = false);
   Function(const ScopeMod &scope, links::LinkedList<lex::Token *> &tokens,
            std::vector<std::string> genericTypes, parse::Parser &parser,
-           bool safe = false, bool isAsync = false);
+           bool safe = false, bool isAsync = false, bool sinksReceiver = false);
   Function(const Function &Other, bool locked, bool copyBody = true)
       : scope(Other.scope), type(Other.type), op(Other.op),
         scopeName(Other.scopeName), ident(Other.ident), args(nullptr),
@@ -78,6 +79,7 @@ public:
         genericTypes(Other.genericTypes), autoType(Other.autoType),
         globalLocked(Other.globalLocked), safe(Other.safe),
         isAsync(Other.isAsync), isAsyncBody(Other.isAsyncBody),
+        sinksReceiver(Other.sinksReceiver),
         asyncStateCounter(Other.asyncStateCounter), readOnly(Other.readOnly),
         returnImmutable(Other.returnImmutable),
         returnLowOwnership(Other.returnLowOwnership), error(Other.error) {

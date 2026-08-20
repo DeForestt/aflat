@@ -19,16 +19,19 @@ struct OverloadRetry : public std::exception {
   bool fatal;
   std::optional<int> fallbackIndex;
   bool allowDiscardWarningFallback;
+  bool allowBorrowingReceiverFallback;
   OverloadRetry(int idx,
                 links::SLinkedList<ast::Function, std::string> *sourceTable,
                 std::string functionIdent, std::string reason,
                 bool fatalError = true,
                 std::optional<int> fallback = std::nullopt,
-                bool allowDiscardWarning = false)
+                bool allowDiscardWarning = false,
+                bool allowBorrowingReceiver = false)
       : nextIndex(idx), table(sourceTable), ident(std::move(functionIdent)),
         message(std::move(reason)), fatal(fatalError),
         fallbackIndex(std::move(fallback)),
-        allowDiscardWarningFallback(allowDiscardWarning) {}
+        allowDiscardWarningFallback(allowDiscardWarning),
+        allowBorrowingReceiverFallback(allowBorrowingReceiver) {}
   const char *what() const noexcept override { return message.c_str(); }
 };
 
@@ -128,10 +131,12 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     links::SLinkedList<ast::Function, std::string> *table;
     std::string ident;
     bool allowDiscardWarning;
+    bool allowBorrowingReceiver;
     size_t retryLogIndex;
   };
   std::optional<PendingFallback> discardWarningFallback;
   bool allowDiscardWarningForNextAttempt = false;
+  bool allowBorrowingReceiverForNextAttempt = false;
   std::optional<size_t> nextOverloadReasonIndex;
 
   while (true) {
@@ -147,6 +152,8 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
           forcedIdent = discardWarningFallback->ident;
           allowDiscardWarningForNextAttempt =
               discardWarningFallback->allowDiscardWarning;
+          allowBorrowingReceiverForNextAttempt =
+              discardWarningFallback->allowBorrowingReceiver;
           if (discardWarningFallback->retryLogIndex < pendingRetryLogs.size()) {
             pendingRetryLogs[discardWarningFallback->retryLogIndex]
                 .clearOnSuccess = false;
@@ -163,9 +170,15 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
     }
 
     bool currentAllowDiscardWarning = allowDiscardWarningForNextAttempt;
+    bool currentAllowBorrowingReceiver = allowBorrowingReceiverForNextAttempt;
     Call attempt(*this);
     attempt.allowDiscardWarning = currentAllowDiscardWarning;
+    attempt.allowBorrowingReceiverFallback = currentAllowBorrowingReceiver;
     allowDiscardWarningForNextAttempt = false;
+    allowBorrowingReceiverForNextAttempt = false;
+
+    const auto ownershipBeforeAttempt =
+        gen::scope::ScopeManager::getInstance()->captureOwnershipState();
     try {
       auto result = attempt.generateAttempt(generator, forcedOverloadIndex,
                                             forcedTable, forcedIdent);
@@ -173,13 +186,19 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
       nextOverloadReasonIndex.reset();
       return result;
     } catch (const OverloadRetry &retry) {
+      gen::scope::ScopeManager::getInstance()->restoreOwnershipState(
+          ownershipBeforeAttempt);
       pendingRetryLogs.push_back(PendingRetryLog{retry.message, true});
       size_t retryLogIndex = pendingRetryLogs.size() - 1;
       if (!retry.fatal && retry.fallbackIndex.has_value() &&
           !discardWarningFallback.has_value()) {
-        discardWarningFallback = PendingFallback{
-            retry.fallbackIndex.value(), retry.table, retry.ident,
-            retry.allowDiscardWarningFallback, retryLogIndex};
+        discardWarningFallback =
+            PendingFallback{retry.fallbackIndex.value(),
+                            retry.table,
+                            retry.ident,
+                            retry.allowDiscardWarningFallback,
+                            retry.allowBorrowingReceiverFallback,
+                            retryLogIndex};
       } else if (retry.fatal) {
         lastError = retry.message;
       }
@@ -188,6 +207,7 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
       forcedTable = retry.table;
       forcedIdent = retry.ident;
       allowDiscardWarningForNextAttempt = false;
+      allowBorrowingReceiverForNextAttempt = false;
       continue;
     }
   }
@@ -221,6 +241,9 @@ gen::GenerationResult Call::generateAttempt(
   bool hasHiddenReceiver = false;
   bool hiddenReceiverConsumesParameter = false;
   int hiddenReceiverSlot = -1;
+  std::string sinkReceiverIdent;
+  bool sinkReceiverOwned = false;
+  bool sinkReceiverIsField = false;
   gen::Class *lazyConcreteClass = nullptr;
   ast::Function *lazyConcreteFunction = nullptr;
   this->modList.invert();
@@ -449,6 +472,11 @@ gen::GenerationResult Call::generateAttempt(
     if (sym == nullptr) {
       generator.alert("cannot find object: " + ident);
     } else {
+      if (sym->sold != -1) {
+        generator.alert("variable " + ident + " was sold on line " +
+                            std::to_string(sym->sold) + " and cannot be used",
+                        true, __FILE__, __LINE__);
+      }
       immutableSymbol = immutableSymbol || sym->readOnly;
       allMods += sym->symbol + ".";
     }
@@ -587,6 +615,36 @@ gen::GenerationResult Call::generateAttempt(
           }
         }
         if (func != nullptr) {
+          if (func->sinksReceiver && !this->receiverTransfer) {
+            const std::string receiverError =
+                sym->owned
+                    ? "sink overload `" + memberIdent +
+                          "` requires ownership transfer; explicitly sell the "
+                          "receiver with `$`"
+                    : "sink overload `" + memberIdent +
+                          "` requires an owned receiver, but the receiver is a "
+                          "loan";
+            this->requestOverloadRetry(generator, overloadTable, overloadIdent,
+                                       currentOverloadIndex, receiverError);
+          }
+          if (!func->sinksReceiver && this->receiverTransfer &&
+              !this->allowBorrowingReceiverFallback) {
+            const bool explicitTransfer = this->receiverTransferExplicit;
+            this->requestOverloadRetry(
+                generator, overloadTable, overloadIdent, currentOverloadIndex,
+                explicitTransfer
+                    ? "explicitly transferred receiver requires a compatible "
+                      "sink overload `" +
+                          memberIdent + "`"
+                    : "owned receiver prefers sink overload `" + memberIdent +
+                          "`",
+                explicitTransfer, !explicitTransfer, false, !explicitTransfer);
+          }
+          if (func->sinksReceiver) {
+            sinkReceiverIdent = my;
+            sinkReceiverOwned = sym->owned;
+            sinkReceiverIsField = modCount != 0;
+          }
           lazyConcreteClass = resolvedMethodClass;
           lazyConcreteFunction = resolvedMethodFunction;
           this->modList.shift();
@@ -844,6 +902,17 @@ gen::GenerationResult Call::generateAttempt(
                   var->Ident);
         } else if (func->mutability[paramIndex]) {
           gen::scope::ScopeManager::getInstance()->addAssign(sym->symbol);
+          // A mutable raw-address reference can populate a class-valued output
+          // slot (for example, a C API returning an owned object through T**).
+          // Once the call writes that slot, the caller owns the resulting
+          // class value and may explicitly transfer it with `$`.
+          if (func->argTypes.at(paramIndex).typeName == "adr") {
+            auto **symbolType = generator.typeList()[sym->type.typeName];
+            if (symbolType != nullptr &&
+                dynamic_cast<gen::Class *>(*symbolType) != nullptr) {
+              sym->owned = true;
+            }
+          }
         }
         if (!var) {
           this->requestOverloadRetry(generator, overloadTable, overloadIdent,
@@ -1153,7 +1222,39 @@ gen::GenerationResult Call::generateAttempt(
     file.text << pop;
   }
   generator.intArgsCounter() = 0;
-  return {file, std::optional<gen::Expr>(func->toExpr(generator))};
+  auto result = func->toExpr(generator);
+
+  if (func->sinksReceiver) {
+    if (sinkReceiverIdent.empty()) {
+      generator.alert("cannot resolve sink method receiver `" +
+                          sinkReceiverIdent + "`",
+                      true, __FILE__, __LINE__);
+    }
+    if (!sinkReceiverOwned) {
+      generator.alert("sink method `" + func->ident.ident +
+                          "` requires an owned receiver, but `" +
+                          sinkReceiverIdent + "` is a loan",
+                      true, __FILE__, __LINE__);
+    }
+    if (!this->receiverTransfer) {
+      generator.alert("sink method `" + func->ident.ident +
+                          "` requires ownership transfer; explicitly sell `" +
+                          sinkReceiverIdent + "` with `$`",
+                      true, __FILE__, __LINE__);
+    }
+    if (sinkReceiverIsField) {
+      generator.alert("cannot transfer ownership directly out of field on `" +
+                          sinkReceiverIdent +
+                          "`; use an explicit method on the owning object",
+                      true, __FILE__, __LINE__);
+    }
+    auto *receiver =
+        gen::scope::ScopeManager::getInstance()->get(sinkReceiverIdent);
+    if (receiver != nullptr && !generator.suppressOwnershipEffects())
+      receiver->sold = this->logicalLine;
+  }
+
+  return {file, std::optional<gen::Expr>(result)};
 }
 
 ast::Function *Call::findFunctionByOverload(
@@ -1181,8 +1282,8 @@ void Call::requestOverloadRetry(
     gen::CodeGenerator &generator,
     links::SLinkedList<ast::Function, std::string> *table,
     const std::string &ident, int currentIndex, const std::string &message,
-    bool fatal, bool allowFallbackToCurrent,
-    bool allowDiscardWarningOnFallback) {
+    bool fatal, bool allowFallbackToCurrent, bool allowDiscardWarningOnFallback,
+    bool allowBorrowingReceiverOnFallback) {
   if (table == nullptr || currentIndex < 0) {
     generator.alert(message, true, __FILE__, __LINE__);
   }
@@ -1191,7 +1292,8 @@ void Call::requestOverloadRetry(
     fallbackIndex = currentIndex;
   }
   throw OverloadRetry(currentIndex + 1, table, ident, message, fatal,
-                      fallbackIndex, allowDiscardWarningOnFallback);
+                      fallbackIndex, allowDiscardWarningOnFallback,
+                      allowBorrowingReceiverOnFallback);
 }
 
 std::string Call::toString() {

@@ -43,9 +43,19 @@ union option {  Some(T),
   };
 
   when (T is not primitive)
+  safe sink fn expect(const string msg) -> T {
+    match my {
+      Some(&&value) => return $value,
+      None() => {
+        panic(msg.cstr());
+      }
+    };
+  };
+
+  when (T is not primitive)
   safe fn expect(const string msg) -> loan T {
     match my {
-      Some(value) => return $value,
+      Some(value) => return value,
       None() => {
         panic(msg.cstr());
       }
@@ -63,9 +73,19 @@ union option {  Some(T),
   };
 
   when (T is not primitive)
+  safe sink fn unwrap() -> T {
+    match my {
+      Some(&&value) => return $value,
+      None() => {
+        panic("unwrapped bad value");
+      }
+    };
+  };
+
+  when (T is not primitive)
   safe fn unwrap() -> loan T {
     match my {
-      Some(value) => return $value,
+      Some(value) => return value,
       None() => {
         panic("unwrapped bad value");
       }

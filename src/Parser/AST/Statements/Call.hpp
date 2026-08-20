@@ -19,6 +19,8 @@ public:
   std::vector<std::string> genericTypes;
   std::string publify = "";
   bool slick = false;
+  bool receiverTransfer = false;
+  bool receiverTransferExplicit = false;
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   Call() = default;
   Call(const std::string &ident, const links::LinkedList<Expr *> &args,
@@ -35,11 +37,15 @@ public:
       : Statement(other), ident(other.ident), Args(other.Args),
         modList(other.modList), genericTypes(other.genericTypes),
         publify(other.publify), slick(other.slick),
-        allowDiscardWarning(other.allowDiscardWarning) {}
+        receiverTransfer(other.receiverTransfer),
+        receiverTransferExplicit(other.receiverTransferExplicit),
+        allowDiscardWarning(other.allowDiscardWarning),
+        allowBorrowingReceiverFallback(other.allowBorrowingReceiverFallback) {}
   std::string toString() override;
 
 private:
   bool allowDiscardWarning = false;
+  bool allowBorrowingReceiverFallback = false;
   gen::GenerationResult
   generateAttempt(gen::CodeGenerator &generator,
                   std::optional<int> forcedOverloadIndex,
@@ -58,7 +64,8 @@ private:
                        const std::string &ident, int currentIndex,
                        const std::string &message, bool fatal = true,
                        bool allowFallbackToCurrent = false,
-                       bool allowDiscardWarningOnFallback = false);
+                       bool allowDiscardWarningOnFallback = false,
+                       bool allowBorrowingReceiverOnFallback = false);
 };
 
 } // namespace ast

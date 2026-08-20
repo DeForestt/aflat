@@ -13,7 +13,7 @@ dynamic safe pedantic class Option {
         panic(msg);
     };
 
-    Option get() {
+    loan Option get() {
         my.refcount = my.refcount + 1;
         return my;
     };
@@ -32,7 +32,7 @@ dynamic safe pedantic class Option {
     };
 
     // returns a value if it exists, otherwise preforms a function
-    public any orElse(const Function onNone, * const any arg) {
+    public fn orElse(const Function onNone, * const any arg) -> loan any {
         if my.hasValue
             return my.value
         else
@@ -40,15 +40,15 @@ dynamic safe pedantic class Option {
     };
 
     // match function is the new canonical way to work with an Option it will use a named match rather than 2 anonymous functions
-    public any match(const Map cases, *const any arg, *const any arg2) {
+    public fn match(const Map cases, *const any arg, *const any arg2) -> loan any {
         const let some_none = if my.hasValue "some" else "none";
-        const adr foo = cases(some_none).orElse(fn () { panic("un-handled option case"); return my.value; });
+        const adr foo = cases(some_none).orElse(fn () { panic("un-handled option case"); return NULL; });
         return if my.hasValue foo(my.value, arg, arg2) else
         foo(arg, arg2);
     };
 
     // returns a value if it exists, otherwise returns a default value
-    public any or(const any &&defaultValue) {
+    public fn or(const any &&defaultValue) -> loan any {
         if my.hasValue
             return my.value
         else

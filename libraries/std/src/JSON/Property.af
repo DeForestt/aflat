@@ -23,7 +23,7 @@ class JsonSerializable {
     vector::<JsonPropertyRef> fields = [];
   };
 
-  fn registerField(const JsonProperty field) -> Self {
+  fn registerField(const JsonProperty field) -> loan Self {
     my.fields.push_back(new JsonPropertyRef(field));
     return my;
   };
