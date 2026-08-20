@@ -108,6 +108,8 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
 
   const auto ownershipBeforeProbe =
       gen::scope::ScopeManager::getInstance()->captureOwnershipState();
+  const int asyncStateBeforeProbe =
+      generator.currentFunction()->asyncStateCounter;
   const bool savedSuppressLazy = generator.suppressLazyMethodEmission();
   const bool savedSuppressOwnership = generator.suppressOwnershipEffects();
   generator.suppressLazyMethodEmission() = true;
@@ -119,12 +121,14 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   } catch (...) {
     gen::scope::ScopeManager::getInstance()->restoreOwnershipState(
         ownershipBeforeProbe);
+    generator.currentFunction()->asyncStateCounter = asyncStateBeforeProbe;
     generator.suppressOwnershipEffects() = savedSuppressOwnership;
     generator.suppressLazyMethodEmission() = savedSuppressLazy;
     throw;
   }
   gen::scope::ScopeManager::getInstance()->restoreOwnershipState(
       ownershipBeforeProbe);
+  generator.currentFunction()->asyncStateCounter = asyncStateBeforeProbe;
   generator.suppressOwnershipEffects() = savedSuppressOwnership;
   generator.suppressLazyMethodEmission() = savedSuppressLazy;
   bool expressionGenerated = false;

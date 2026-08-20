@@ -541,3 +541,68 @@ fn main() -> int {
   CHECK(assembled == 0);
   CHECK(text.find("movb\t%al,(%r11)") != std::string::npos);
 }
+
+TEST_CASE("return await does not consume a continuation state while probing",
+          "[async][return][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_return_await_state_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  const auto object = dir / "main.o";
+
+  std::ofstream(source) << R"(.needs <std>
+.needs <Async.gs>
+async fn value() -> int { return 7; };
+async fn forward() -> int { return await value(); };
+fn main() -> int { return 0; };
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  const int assembled = built ? std::system(("gcc -c " + assembly.string() +
+                                             " -o " + object.string())
+                                                .c_str())
+                              : -1;
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  CHECK(assembled == 0);
+  CHECK(text.find("__af_async_state___af_async_body_forward_1:") !=
+        std::string::npos);
+  CHECK(text.find("__af_async_state___af_async_body_forward_2") ==
+        std::string::npos);
+}
+
+TEST_CASE("return probing does not discard generic function specializations",
+          "[generics][return][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_return_generic_probe_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  const auto object = dir / "main.o";
+
+  std::ofstream(source) << R"(.needs <std>
+import {Some, optionWrapper} from "Utils/option" under opt;
+unique class Value { fn init() -> Self { return my; }; };
+fn wrap(Value &&value) -> Value? { return opt.Some($value); };
+fn main() -> int { return 0; };
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  const int assembled = built ? std::system(("gcc -c " + assembly.string() +
+                                             " -o " + object.string())
+                                                .c_str())
+                              : -1;
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  CHECK(assembled == 0);
+  CHECK(text.find("option.Some.Value:") != std::string::npos);
+}
