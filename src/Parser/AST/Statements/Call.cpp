@@ -315,42 +315,44 @@ gen::GenerationResult Call::generateAttempt(
         func->globalLocked = true;
         func->wasGeneric = true;
 
-        bool generated = false;
-
-        if (file.lambdas == nullptr) {
-          file.lambdas = new asmc::File();
-          file.hasLambda = true;
-        }
-        auto saveReturnType = generator.returnType();
-        if (generator.generatedFunctionNames().find(new_ident) ==
-            generator.generatedFunctionNames().end()) {
-          gen::scope::ScopeManager::getInstance()->pushScope(true);
-          file.lambdas->operator<<(generator.GenSTMT(func));
-          gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
-          generator.generatedFunctionNames().insert(new_ident);
-          generated = true;
-        } else {
-          gen::scope::ScopeManager::getInstance()->pushScope(true);
-          generator.GenSTMT(func);
-          gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
-          generator.generatedFunctionNames().insert(new_ident);
-          generated = true;
-        }
-        generator.returnType() = saveReturnType;
-
         this->ident = func->ident.ident;
-        // get func from the name table so that it can be used with generated
-        // return type
-        func = findFunctionByOverload(generator.nameTable(), func->ident.ident,
-                                      forcedOverloadIndex, forcedTable,
-                                      forcedIdent, overloadTable, overloadIdent,
-                                      currentOverloadIndex);
-        if (func == nullptr) {
-          generator.alert(
-              "cannot find function after generic generation (this is a bug "
-              "please report it): `" +
-                  this->ident + "`" + (generated ? " (generated)" : ""),
-              true, __FILE__, __LINE__);
+        if (!generator.suppressLazyMethodEmission()) {
+          bool generated = false;
+
+          if (file.lambdas == nullptr) {
+            file.lambdas = new asmc::File();
+            file.hasLambda = true;
+          }
+          auto saveReturnType = generator.returnType();
+          if (generator.generatedFunctionNames().find(new_ident) ==
+              generator.generatedFunctionNames().end()) {
+            gen::scope::ScopeManager::getInstance()->pushScope(true);
+            file.lambdas->operator<<(generator.GenSTMT(func));
+            gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+            generator.generatedFunctionNames().insert(new_ident);
+            generated = true;
+          } else {
+            gen::scope::ScopeManager::getInstance()->pushScope(true);
+            generator.GenSTMT(func);
+            gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+            generator.generatedFunctionNames().insert(new_ident);
+            generated = true;
+          }
+          generator.returnType() = saveReturnType;
+
+          // Get func from the name table so that it can be used with the
+          // generated return type.
+          func = findFunctionByOverload(generator.nameTable(),
+                                        func->ident.ident, forcedOverloadIndex,
+                                        forcedTable, forcedIdent, overloadTable,
+                                        overloadIdent, currentOverloadIndex);
+          if (func == nullptr) {
+            generator.alert(
+                "cannot find function after generic generation (this is a "
+                "bug please report it): `" +
+                    this->ident + "`" + (generated ? " (generated)" : ""),
+                true, __FILE__, __LINE__);
+          }
         }
         ident = this->ident;
       }

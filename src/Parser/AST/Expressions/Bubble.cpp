@@ -81,6 +81,7 @@ Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
   ast::Match::Case caseOne;
   caseOne.pattern.aliasName = "Ok";
   caseOne.pattern.veriableName = "value";
+  caseOne.pattern.takesOwnership = exprResult.owned;
   auto var = new ast::Var();
   var->Ident = "value";
   auto returnStmt = new ast::Return();
@@ -91,6 +92,7 @@ Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
   ast::Match::Case caseTwo;
   caseTwo.pattern.aliasName = "Err";
   caseTwo.pattern.veriableName = "err";
+  caseTwo.pattern.takesOwnership = exprResult.owned;
   auto errVar = new ast::Var();
   errVar->Ident = "err";
   auto returnErr = new ast::Return();
