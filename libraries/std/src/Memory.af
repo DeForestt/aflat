@@ -132,12 +132,7 @@ unique class view {
   fn toString() -> string {
     return `view({my.value})`;
   };
-
-  // we overload del to be a noop so that this view doesnt do anything with the info it has...
-  fn del() {
-    return;
-  }
-}
+};
 
 types(T)
 // Convenience helper to allocate a Box for a value.

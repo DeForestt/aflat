@@ -156,6 +156,8 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
     }
   }
   if (auto expr = dynamic_cast<Expr *>(this)) {
+    if (!expr->typeCast.empty())
+      expr->typeCast = replaceTypeString(expr->typeCast, map);
     if (expr->extention)
       expr->extention->replaceTypes(map);
   }

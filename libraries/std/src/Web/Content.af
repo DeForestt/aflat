@@ -7,6 +7,7 @@ import {openFile} from "files" under fs;
 import File from "files";
 import Error from "Utils/Error";
 import Result from "Utils/Result";
+import uni_string from "uni_string";
 
 class Content {
     contract {
@@ -26,7 +27,7 @@ class Content {
         return my;
     };
 
-    adr render() {
+    fn render() -> uni_string {
         my.content = $my.cleanContent;
         mutable string buffer = my.content.copy();
 
@@ -41,6 +42,6 @@ class Content {
             buffer.get();
         };
         buffer.seal();
-        return buffer.cstr();
+        return new uni_string(buffer.cstr());
     };
 };
