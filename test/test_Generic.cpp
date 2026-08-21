@@ -233,6 +233,34 @@ TEST_CASE("generic type variable declaration", "[generics]") {
   REQUIRE(result);
 }
 
+TEST_CASE("generic explicit casts specialize their target type", "[generics]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/generic_explicit_cast");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "generic_explicit_cast.af";
+  const auto output = dir / "generic_explicit_cast.s";
+  std::ofstream ofs(source);
+  ofs << "types(T)\n";
+  ofs << "class Box {\n";
+  ofs << "    any value = value;\n";
+  ofs << "    fn init(any value) -> Self { return my; };\n";
+  ofs << "    when (T is not unique)\n";
+  ofs << "    fn get() -> T { return my.value$T; };\n";
+  ofs << "};\n";
+  ofs << "fn main() -> int {\n";
+  ofs << "    Box::<int> b = Box::<int>(5);\n";
+  ofs << "    return b.get();\n";
+  ofs << "};\n";
+  ofs.close();
+
+  bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
 TEST_CASE("nested generic member access resolves instantiated type",
           "[generics]") {
   namespace fs = std::filesystem;

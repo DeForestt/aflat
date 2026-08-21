@@ -82,7 +82,7 @@ safe class TypedJsonProperty signs JsonProperty {
   
   when (T is not unique)
   fn get() -> T {
-    return my.value;
+    return my.value$T;
   };
 
   when (T is unique)
