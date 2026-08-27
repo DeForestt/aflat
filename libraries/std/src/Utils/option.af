@@ -15,7 +15,8 @@ types(T)
  * Optional value container inspired by Rust's Option. Wraps a `Some(T)` or
  * sentinel `None` and provides ergonomic helpers for safe unwrapping.
  */
-unique union option {  Some(T),
+unique union option {
+  Some(T),
   None
 
   safe fn isSome() -> bool {

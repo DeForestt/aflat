@@ -210,6 +210,87 @@ fn make() -> Value! {
   CHECK(result.success);
 }
 
+TEST_CASE("primitive result extraction borrows and rejects receiver sales",
+          "[owned][sink][receiver][result][primitive]") {
+  const auto borrowed = buildSinkProgram("result_primitive_borrow", R"(
+.needs <std>
+import result from "Utils/result";
+import {accept} from "Utils/result" under res;
+
+fn main() -> int {
+  let outcome = res.accept::<int>(7);
+  const int first = outcome.unwrap();
+  const int second = outcome.expect("expected result");
+  return outcome.expect("expected result"$adr) - first + second - 7;
+};
+)");
+  const auto soldUnwrap = buildSinkProgram("result_primitive_sold_unwrap", R"(
+.needs <std>
+import result from "Utils/result";
+import {accept} from "Utils/result" under res;
+
+fn main() -> int {
+  let outcome = res.accept::<int>(7);
+  return $outcome.unwrap();
+};
+)");
+  const auto soldStringExpect =
+      buildSinkProgram("result_primitive_sold_string_expect", R"(
+.needs <std>
+import result from "Utils/result";
+import {accept} from "Utils/result" under res;
+
+fn main() -> int {
+  let outcome = res.accept::<int>(7);
+  return $outcome.expect("expected result");
+};
+)");
+  const auto soldExpect = buildSinkProgram("result_primitive_sold_expect", R"(
+.needs <std>
+import result from "Utils/result";
+import {accept} from "Utils/result" under res;
+
+fn main() -> int {
+  let outcome = res.accept::<int>(7);
+  return $outcome.expect("expected result"$adr);
+};
+)");
+
+  INFO(diagnosticsText(borrowed));
+  CHECK(borrowed.success);
+  CHECK_FALSE(soldUnwrap.success);
+  CHECK(hasDiagnostic(soldUnwrap, "requires a compatible sink overload"));
+  CHECK_FALSE(soldStringExpect.success);
+  CHECK(hasDiagnostic(soldStringExpect, "requires a compatible sink overload"));
+  CHECK_FALSE(soldExpect.success);
+  CHECK(hasDiagnostic(soldExpect, "requires a compatible sink overload"));
+}
+
+TEST_CASE("non-primitive result extraction retains its sink overload",
+          "[owned][sink][receiver][result][nonprimitive]") {
+  const auto sold = buildSinkProgram("result_nonprimitive_sold_unwrap", R"(
+.needs <std>
+import result from "Utils/result";
+import {accept} from "Utils/result" under res;
+
+unique class Value {
+  int number = number;
+  fn init(int number) -> Self { return my; };
+  safe fn read() -> int { return my.number; };
+};
+
+fn main() -> int {
+  let value = new Value(7);
+  let outcome = res.accept::<Value>($value);
+  let extracted = $outcome.unwrap();
+  return extracted.read() - 7;
+};
+)");
+
+  INFO(diagnosticsText(sold));
+  CHECK(sold.success);
+}
+
 TEST_CASE("bubble owns variants extracted from an owned result",
           "[owned][bubble][result]") {
   const auto result = buildSinkProgram("bubble_owned_result_variants", R"(

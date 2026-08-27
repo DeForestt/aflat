@@ -649,3 +649,70 @@ fn main() -> int {
   CHECK(text.find("pub_Choice_del:") != std::string::npos);
   CHECK(text.find("call\tpub_SharedResource_endScope") != std::string::npos);
 }
+
+TEST_CASE("union lifecycle dispatch covers scope delete and nested payloads",
+          "[union][ownership][lifecycle][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_union_lifecycle_dispatch_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  const auto object = dir / "main.o";
+
+  std::ofstream(source) << R"(.needs <std>
+class Payload {
+  fn init() -> Self { return my; };
+  fn del() -> void { return; };
+};
+
+union Inner {
+  Resource(Payload),
+  Primitive(int)
+};
+
+union Outer {
+  Nested(Inner),
+  Primitive(int)
+};
+
+fn scoped() -> void {
+  const Outer value = new Outer->Nested(
+    new Inner->Resource(new Payload()));
+  return;
+};
+
+fn main() -> int {
+  scoped();
+  const Outer value = new Outer->Primitive(7);
+  delete value;
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  const int assembled = built ? std::system(("gcc -c " + assembly.string() +
+                                             " -o " + object.string())
+                                                .c_str())
+                              : -1;
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  CHECK(assembled == 0);
+  const auto countCalls = [&](const std::string &needle) {
+    std::size_t count = 0;
+    for (std::size_t pos = 0;
+         (pos = text.find(needle, pos)) != std::string::npos;
+         pos += needle.size())
+      ++count;
+    return count;
+  };
+  CHECK(text.find("pub_Inner_del:") != std::string::npos);
+  CHECK(text.find("pub_Outer_del:") != std::string::npos);
+  CHECK(text.find("call\tpub_Payload_del") != std::string::npos);
+  CHECK(text.find("call\tpub_Inner_del") != std::string::npos);
+  CHECK(countCalls("call\tpub_Outer_del") == 2);
+  CHECK(text.find("call\taf_free") != std::string::npos);
+}
