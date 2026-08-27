@@ -12,7 +12,7 @@ import result from "Utils/result";
 import {accept, reject} from "Utils/result" under res;
 import {Some, None} from "Utils/option" under opt;
 
-class FixtureStruct {
+shared class FixtureStruct {
 	any<> setUp = setUp;
 	any<any> tearDown = tearDown;
 	fn init(const adr setUp, const adr tearDown) -> Self {
@@ -49,7 +49,7 @@ mutable vector::<FixtureStruct> fixtureDefinitions = NULL;
 mutable Map fixtureData = NULL;
 
 
-class DescribeContext {
+shared class DescribeContext {
 	mutable DescribeContext parent = NULL;
 	mutable vector::<adr> beforeEachHooks;
 	mutable vector::<adr> afterEachHooks;

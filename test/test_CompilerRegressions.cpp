@@ -189,7 +189,7 @@ TEST_CASE("owning union falls back to byte transfer without a transfer hook",
   const auto assembly = dir / "main.s";
 
   std::ofstream(source) << R"(.needs <std>
-class Payload {
+shared class Payload {
   int value = value;
   fn init(int value) -> Self { return my; };
   fn endScope() -> void { return; };
@@ -590,7 +590,11 @@ TEST_CASE("return probing does not discard generic function specializations",
 import {Some, optionWrapper} from "Utils/option" under opt;
 unique class Value { fn init() -> Self { return my; }; };
 fn wrap(Value &&value) -> Value? { return opt.Some($value); };
-fn main() -> int { return 0; };
+fn main() -> int {
+  const Value value = new Value();
+  const let wrapped = wrap($value);
+  return 0;
+};
 )";
 
   const bool built =
@@ -605,4 +609,43 @@ fn main() -> int { return 0; };
   REQUIRE(built);
   CHECK(assembled == 0);
   CHECK(text.find("option.Some.Value:") != std::string::npos);
+  CHECK(
+      text.find(
+          "pub_option__std__generic__start__Value__std__generic__end___del:") !=
+      std::string::npos);
+}
+
+TEST_CASE("classes and unions own by default with an explicit shared opt-out",
+          "[ownership][defaults][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_ownership_defaults_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+class Resource { fn init() -> Self { return my; }; fn del() -> void { return; }; };
+union Choice { Item(Resource), Empty };
+shared class SharedResource {
+  fn init() -> Self { return my; };
+  fn endScope() -> void { return; };
+};
+fn main() -> int {
+  const Resource resource = new Resource();
+  const Choice choice = new Choice->Empty();
+  const SharedResource shared = new SharedResource();
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  CHECK(text.find("call\tpub_Resource_del") != std::string::npos);
+  CHECK(text.find("pub_Choice_del:") != std::string::npos);
+  CHECK(text.find("call\tpub_SharedResource_endScope") != std::string::npos);
 }

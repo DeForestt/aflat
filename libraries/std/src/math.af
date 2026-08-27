@@ -10,7 +10,7 @@ export int exp(int base, int pow);
 /**
  * Simple linear congruential generator seeded from DateTime.
  */
-class Random {
+shared class Random {
 	private int seed;
 
 	int nextInt(const int n){

@@ -226,6 +226,7 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
     auto *payloadClass = payloadEntry == nullptr
                              ? nullptr
                              : dynamic_cast<gen::Class *>(*payloadEntry);
+    generator.ensureGenericMethod(payloadClass, "__transfer_to__", file);
     auto *transfer = payloadClass == nullptr
                          ? nullptr
                          : payloadClass->publicNameTable["__transfer_to__"];

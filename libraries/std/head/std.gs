@@ -1,14 +1,14 @@
 
-class Time {
+shared class Time {
     public adr amount;
 };
 
-class TimeSpec{
+shared class TimeSpec{
     long tv_sec;
     long tv_nsec;
 };
 
-class Times{
+shared class Times{
     public int tms_utime;
     public int tms_stime;
     public int tms_cutime;
@@ -17,13 +17,13 @@ class Times{
 
 Times newTimes();
 
-class Block{
+shared class Block{
     public int size; 
     public int free;
     public adr next;
 };
 
-class Bit{
+shared class Bit{
 	mutable int value;
 	mutable adr last;
 	mutable adr next;

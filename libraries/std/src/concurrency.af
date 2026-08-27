@@ -17,7 +17,7 @@ export enum WorkerMode {
  *
  * A lock must remain alive until every thread that uses it has completed.
  */
-safe dynamic class Lock {
+shared safe dynamic class Lock {
     private mutable adr handle = NULL;
 
     fn init() -> Self {
@@ -89,7 +89,7 @@ unique class LockGuard {
  * Waiting tasks yield cooperatively instead of blocking an executor thread.
  * The returned guard releases the lock automatically when it leaves scope.
  */
-safe dynamic class AsyncLock {
+shared safe dynamic class AsyncLock {
     private Lock lock = new Lock();
 
     fn init() -> Self {
@@ -105,7 +105,7 @@ safe dynamic class AsyncLock {
 };
 
 // Represents the outcome from an asynchronous worker execution.
-class AsyncOutput {
+shared class AsyncOutput {
     mutable bool okay;
     mutable any data;
 
@@ -117,7 +117,7 @@ class AsyncOutput {
 };
 
 // Base thread abstraction exposing the PID getter.
-class Thread {
+shared class Thread {
     contract {
         private int pid;
     };
@@ -125,7 +125,7 @@ class Thread {
 };
 
 // Simple fork/exec process wrapper.
-class Process signs Thread {
+shared class Process signs Thread {
     private adr foo;
 
     Process init(adr foo);
@@ -134,7 +134,7 @@ class Process signs Thread {
 };
 
 // Bidirectional pipe wrapper exposing read/write operations.
-class Pipe {
+shared class Pipe {
     int in;
     int out;
     int write(adr buf, int len);
@@ -143,7 +143,7 @@ class Pipe {
 };
 
 // Serialized message with helpers to write/read via Pipe.
-class Message{
+shared class Message{
     int len;
     adr body;
 
@@ -153,7 +153,7 @@ class Message{
 };
 
 // Managed process with inbox/outbox pipes for message passing.
-class MProcess signs Thread {
+shared class MProcess signs Thread {
     private adr foo;
     private Pipe inbox;
     private Pipe outbox;
@@ -168,7 +168,7 @@ class MProcess signs Thread {
     };
 };
 
-class FD {
+shared class FD {
   public int out;
   public int in;
 };
@@ -178,7 +178,7 @@ class FD {
  * their outputs.
  */
  types(T)
-safe dynamic pedantic class AsyncResult {
+shared safe dynamic pedantic class AsyncResult {
     private MProcess p = NULL;
     private WorkerMode mode = WorkerMode.PROCESS;
     private adr thread = NULL;
@@ -292,7 +292,7 @@ safe dynamic pedantic class AsyncResult {
 };
 
 // Helper struct bundling a function pointer and up to four arguments.
-class WorkArgs {
+shared class WorkArgs {
     public adr func = bar;
     public adr arg1 = arg1;
     public adr arg2 = arg2;
@@ -466,7 +466,7 @@ export fn makeShared(* const any arg1, * const any arg2, * const any arg3, * con
 
 // Packages a function pointer and its arguments into the single pointer passed
 // through the native background-operation bridge.
-private class AsyncThreadCall {
+shared private class AsyncThreadCall {
     public adr operation = operation;
     public any arg1 = arg1;
     public any arg2 = arg2;

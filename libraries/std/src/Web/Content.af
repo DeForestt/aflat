@@ -9,7 +9,7 @@ import Error from "Utils/Error";
 import Result from "Utils/Result";
 import uni_string from "uni_string";
 
-class Content {
+shared class Content {
     contract {
         mutable string content = "";
         mutable string cleanContent = "";

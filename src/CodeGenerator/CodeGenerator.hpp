@@ -99,6 +99,9 @@ public:
                                       const std::vector<std::string> &types,
                                       std::string &newName,
                                       asmc::File &OutputFile);
+  void ensureGenericLifecycleMethod(gen::Class *cls, asmc::File &OutputFile);
+  void ensureGenericMethod(gen::Class *cls, const std::string &methodName,
+                           asmc::File &OutputFile);
   asmc::File *deScope(gen::Symbol &sym);
   bool hasError() const;
   void setInferredTypeCallback(InferredTypeCallback callback);

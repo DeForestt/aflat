@@ -10,7 +10,7 @@ import {Some, None} from "Utils/option" under opt;
 import {len, str_comp, hash} from "strings" under st;
 
 types(K, V)
-class u_map_entry {
+shared class u_map_entry {
 	mutable K key = key;
 	mutable V value = $value;
 
@@ -42,7 +42,7 @@ class u_map_entry {
 };
 
 types(K, V)
-class u_map_bucket {
+shared class u_map_bucket {
 	vector::<u_map_entry::<K, V>> entries = new vector::<u_map_entry::<K, V>>();
 
 	when (K is adr)
@@ -66,7 +66,7 @@ class u_map_bucket {
 
 	fn replace(const int index, const V &&value) -> bool {
 		const u_map_entry::<K, V> entry =
-			my.entries.get(index).expect("searched for non-existing unordered_map entry");
+			my.entries.get(index).expect("searched for non-existing unordered_map entry"$adr);
 		entry.value = $value;
 		my.entries.set(index, entry);
 		return false;
@@ -75,7 +75,7 @@ class u_map_bucket {
 	fn add(const K key, const V &&value) -> bool {
 		for int i = 0; i < my.entries.count(); i++ {
 			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry");
+				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
 			if my.matches(entry.key, key) {
 				return my.replace(i, $value);
 			};
@@ -89,7 +89,7 @@ class u_map_bucket {
 	fn get(const adr key) -> option::<V> {
 		for int i = 0; i < my.entries.count(); i++ {
 			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry");
+				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
 			if my.matches(entry.key, key) {
 				return opt.Some::<V>(entry.value);
 			};
@@ -102,7 +102,7 @@ class u_map_bucket {
 	fn get(const K key) -> option::<V> {
 		for int i = 0; i < my.entries.count(); i++ {
 			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry");
+				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
 			if my.matches(entry.key, key) {
 				return opt.Some::<V>(entry.value);
 			};
@@ -114,7 +114,7 @@ class u_map_bucket {
 	fn keysInto(const vector::<K> keys) -> void {
 		for int i = 0; i < my.entries.count(); i++ {
 			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry");
+				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
 			keys.push_back(entry.key);
 		};
 		return;
@@ -123,7 +123,7 @@ class u_map_bucket {
 	fn valuesInto(const vector::<V> values) -> void {
 		for int i = 0; i < my.entries.count(); i++ {
 			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry");
+				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
 			values.push_back(entry.value);
 		};
 		return;
@@ -136,7 +136,7 @@ class u_map_bucket {
 	fn clear() -> void {
 		for int i = 0; i < my.entries.count(); i++ {
 			const u_map_entry::<K, V> entry =
-				my.entries.get_unlocked(i).expect("searched for non-existing unordered_map entry");
+				my.entries.get_unlocked(i).expect("searched for non-existing unordered_map entry"$adr);
 			delete entry;
 		};
 		const vector::<u_map_entry::<K, V>> previous = my.entries;
@@ -148,7 +148,7 @@ class u_map_bucket {
 	fn del() -> void {
 		for int i = 0; i < my.entries.count(); i++ {
 			const u_map_entry::<K, V> entry =
-				my.entries.get_unlocked(i).expect("searched for non-existing unordered_map entry");
+				my.entries.get_unlocked(i).expect("searched for non-existing unordered_map entry"$adr);
 			delete entry;
 		};
 		delete my.entries;
@@ -160,7 +160,7 @@ class u_map_bucket {
 };
 
 types(K, V)
-class unordered_map {
+unique class unordered_map {
 	private vector::<u_map_bucket::<K, V>> buckets = new vector::<u_map_bucket::<K, V>>(8);
 	private int capasity = 8;
 	private mutable int count = 0;
@@ -202,7 +202,7 @@ class unordered_map {
 		const LockGuard __guard = my.mutex.guard();
 		const int index = my.index(key);
 		const u_map_bucket::<K, V> bucket =
-			my.buckets.get(index).expect("searched for non-existing unordered_map bucket");
+			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
 		const bool added = bucket.add(key, $value);
 		my.buckets.set(index, bucket);
 		if added {
@@ -215,7 +215,7 @@ class unordered_map {
 		const LockGuard __guard = my.mutex.guard();
 		const int index = my.index(key);
 		const u_map_bucket::<K, V> bucket =
-			my.buckets.get(index).expect("searched for non-existing unordered_map bucket");
+			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
 		const bool added = bucket.add(key, $value);
 		my.buckets.set(index, bucket);
 		if added {
@@ -229,7 +229,7 @@ class unordered_map {
 		const LockGuard __guard = my.mutex.guard();
 		const int index = my.index(key);
 		const u_map_bucket::<K, V> bucket =
-			my.buckets.get(index).expect("searched for non-existing unordered_map bucket");
+			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
 		return bucket.get(key);
 	};
 
@@ -238,7 +238,7 @@ class unordered_map {
 		const LockGuard __guard = my.mutex.guard();
 		const int index = my.index(key);
 		const u_map_bucket::<K, V> bucket =
-			my.buckets.get(index).expect("searched for non-existing unordered_map bucket");
+			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
 		return bucket.get(key);
 	};
 
@@ -257,7 +257,7 @@ class unordered_map {
 		const let keys = new vector::<K>();
 		for int i = 0; i < my.buckets.count(); i++ {
 			const u_map_bucket::<K, V> bucket =
-				my.buckets.get(i).expect("searched for non-existing unordered_map bucket");
+				my.buckets.get(i).expect("searched for non-existing unordered_map bucket"$adr);
 			bucket.keysInto(keys);
 		};
 		return keys;
@@ -268,7 +268,7 @@ class unordered_map {
 		const let values = new vector::<V>();
 		for int i = 0; i < my.buckets.count(); i++ {
 			const u_map_bucket::<K, V> bucket =
-				my.buckets.get(i).expect("searched for non-existing unordered_map bucket");
+				my.buckets.get(i).expect("searched for non-existing unordered_map bucket"$adr);
 			bucket.valuesInto(values);
 		};
 		return values;
@@ -277,7 +277,7 @@ class unordered_map {
 	fn next() -> option::<u_map_entry::<K, V>> {
 		while my.iteratorBucket < my.capasity {
 			const u_map_bucket::<K, V> bucket =
-				my.buckets.get_unlocked(my.iteratorBucket).expect("searched for non-existing unordered_map bucket");
+				my.buckets.get_unlocked(my.iteratorBucket).expect("searched for non-existing unordered_map bucket"$adr);
 			match bucket.entryAt(my.iteratorEntry) {
 				Some(entry) => {
 					my.iteratorEntry = my.iteratorEntry + 1;
@@ -309,7 +309,7 @@ class unordered_map {
 		const LockGuard __guard = my.mutex.guard();
 		for int i = 0; i < my.buckets.count(); i++ {
 			const u_map_bucket::<K, V> bucket =
-				my.buckets.get(i).expect("searched for non-existing unordered_map bucket");
+				my.buckets.get(i).expect("searched for non-existing unordered_map bucket"$adr);
 			bucket.clear();
 			my.buckets.set(i, bucket);
 		};
@@ -322,7 +322,7 @@ class unordered_map {
 	fn del() -> void {
 		for int i = 0; i < my.buckets.count(); i++ {
 			const u_map_bucket::<K, V> bucket =
-				my.buckets.get_unlocked(i).expect("searched for non-existing unordered_map bucket");
+				my.buckets.get_unlocked(i).expect("searched for non-existing unordered_map bucket"$adr);
 			delete bucket;
 		};
 		delete my.buckets;

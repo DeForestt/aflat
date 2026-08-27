@@ -10,7 +10,7 @@ types(T)
  * Result type that carries either `Ok(T)` success values or `Err(Error)`
  * failures, closely mirroring Rust's Result ergonomics.
  */
-union result {
+unique union result {
     Ok(T),
     Err(Error)
 
@@ -28,6 +28,24 @@ union result {
             Ok(&&value) => return $value,
             Err(err) => {
               panic(msg.cstr());
+            }
+        };
+    };
+
+    safe fn expect(const adr msg) -> loan T {
+        match my {
+            Ok(value) => return value,
+            Err(err) => {
+              panic(msg);
+            }
+        };
+    };
+
+    safe sink fn expect(const adr msg) -> T {
+        match my {
+            Ok(&&value) => return $value,
+            Err(err) => {
+              panic(msg);
             }
         };
     };
@@ -158,6 +176,19 @@ types(T)
  * Wraps a move-only value when interfacing with APIs that expect `result<T>`
  * responses, defaulting to `Ok` semantics.
  */
+when (T is not unique)
 export fn resultWrapper(const T value) -> result::<T> {
     return new result::<T>->Ok(value);
+};
+
+types(T)
+when (T is unique)
+export fn resultWrapper(const T value) -> result::<T> {
+    return new result::<T>->Ok(value);
+};
+
+types(T)
+when (T is unique)
+export fn resultWrapper(const T &&value) -> result::<T> {
+    return new result::<T>->Ok($value);
 };

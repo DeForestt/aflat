@@ -2,7 +2,7 @@
 import string from "String";
 import Error from "Utils/Error";
 
-safe dynamic class Render {
+shared safe dynamic class Render {
     int i = 0;
     
     Render init(const adr render, const Error context) {

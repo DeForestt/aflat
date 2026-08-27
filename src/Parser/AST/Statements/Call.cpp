@@ -1224,6 +1224,7 @@ gen::GenerationResult Call::generateAttempt(
     file.text << pop;
   }
   generator.intArgsCounter() = 0;
+
   auto result = func->toExpr(generator);
 
   if (func->sinksReceiver) {

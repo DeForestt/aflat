@@ -6,7 +6,7 @@ import unordered_map from "Collections/unordered_map";
 import Box from "Memory";
 import JsonProperty from "JSON/Property/Fields";
 
-class JsonPropertyRef {
+shared class JsonPropertyRef {
   private loan JsonProperty value = value;
 
   fn init(const JsonProperty value) -> Self {
@@ -18,7 +18,7 @@ class JsonPropertyRef {
   };
 };
 
-class JsonSerializable {
+shared class JsonSerializable {
   contract {
     vector::<JsonPropertyRef> fields = [];
   };

@@ -13,7 +13,7 @@ import result from "Utils/result";
 import {accept, reject} from "Utils/result" under res;
 
 types(T)
-class Heap {
+shared class Heap {
   private vector::<T> store = new vector::<T>();
   mutable adr comp_func = comp_func;
 

@@ -133,6 +133,19 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   generator.suppressLazyMethodEmission() = savedSuppressLazy;
   bool expressionGenerated = false;
 
+  auto transferOwnedWrapperPayload = [&]() -> ast::Expr * {
+    if (!from.owned || this->empty || from.type == "void" ||
+        parse::PRIMITIVE_TYPES.find(from.type) != parse::PRIMITIVE_TYPES.end())
+      return this->expr;
+    auto *type = generator.getType(from.type, file);
+    if (type == nullptr || !(*type)->uniqueType)
+      return this->expr;
+    auto *transfer = new ast::Buy();
+    transfer->expr = this->expr;
+    transfer->logicalLine = this->logicalLine;
+    return transfer;
+  };
+
   std::string returnedSymbol;
   if (auto var = dynamic_cast<ast::Var *>(this->expr)) {
     if (var->modList.count == 0) {
@@ -163,7 +176,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       }
       auto optionConvertion = new ast::Call();
       optionConvertion->ident = "option.optionWrapper";
-      optionConvertion->Args.push(this->expr);
+      optionConvertion->Args.push(transferOwnedWrapperPayload());
       auto call = new ast::CallExpr();
       call->call = optionConvertion;
       call->logicalLine = this->logicalLine;
@@ -226,7 +239,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
         }
         auto resultConvertion = new ast::Call();
         resultConvertion->ident = "result.resultWrapper";
-        resultConvertion->Args.push(this->expr);
+        resultConvertion->Args.push(transferOwnedWrapperPayload());
         auto call = new ast::CallExpr();
         call->call = resultConvertion;
         call->logicalLine = this->logicalLine;

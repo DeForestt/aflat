@@ -18,7 +18,7 @@ import vector from "Collections/Vector";
 fn strerror(int code) -> adr;
 
 // Error wrapper for failures encountered when opening files.
-class FileError signs Error {
+shared class FileError signs Error {
         int code = code * -1;
 
         private string renderMessage() : Render {
@@ -32,7 +32,7 @@ class FileError signs Error {
 };
 
 // Error wrapper for read failures (including EOF conditions).
-class ReadError signs Error {
+shared class ReadError signs Error {
         private int code = code * -1;
         private string renderMessage() : Render {
                 if(my.code == -1) {
@@ -60,7 +60,7 @@ private int clearChar(adr pointer, const int size){
  * File descriptor wrapper with convenience helpers for reading, iterating,
  * and writing text/bytes.
  */
-class File{
+shared class File{
     adr fileName;
     int file;
     bool it;
@@ -290,7 +290,7 @@ export fn openFile(const adr fileName) -> File! {
 };
 
 
-safe dynamic pedantic class FileManager {
+shared safe dynamic pedantic class FileManager {
   private mutable int refcount = 1;
   private mutable bool usable = true;
 

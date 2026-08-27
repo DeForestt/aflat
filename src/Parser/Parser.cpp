@@ -361,6 +361,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     auto dynamicType = false;
     auto pedantic = false;
     auto uniqueType = false;
+    auto ownershipModifier = std::string();
     auto asyncFunction = false;
     auto sinkFunction = false;
     auto isLoan = false;
@@ -380,9 +381,9 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     // validation is performed against the declaration itself, rather than an
     // access modifier that happens to follow a semantic modifier.
     static const std::unordered_set<std::string> modifiers = {
-        "safe",   "dynamic", "pedantic", "types", "when",    "unique",
-        "async",  "sink",    "loan",     "const", "mutable", "immutable",
-        "public", "private", "static",   "export"};
+        "safe",      "dynamic", "pedantic", "types",  "when",  "unique",
+        "shared",    "async",   "sink",     "loan",   "const", "mutable",
+        "immutable", "public",  "private",  "static", "export"};
 
     if (modifiers.count(obj.meta)) {
       while (modifiers.count(obj.meta)) {
@@ -396,9 +397,21 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
           dynamicType = true;
         else if (obj.meta == "pedantic")
           pedantic = true;
-        else if (obj.meta == "unique")
+        else if (obj.meta == "unique") {
+          if (ownershipModifier == "shared")
+            throw err::Exception(
+                "Type cannot be both shared and unique on line " +
+                std::to_string(obj.lineCount));
           uniqueType = true;
-        else if (obj.meta == "loan")
+          ownershipModifier = "unique";
+        } else if (obj.meta == "shared") {
+          if (ownershipModifier == "unique")
+            throw err::Exception(
+                "Type cannot be both unique and shared on line " +
+                std::to_string(obj.lineCount));
+          uniqueType = false;
+          ownershipModifier = "shared";
+        } else if (obj.meta == "loan")
           isLoan = true;
         else if (obj.meta == "types") {
           // types(type1, type2, ...)
@@ -472,17 +485,6 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
             "on line " +
             std::to_string(obj.lineCount) + " got " + obj.meta);
       };
-      static const std::unordered_set<std::string> uniqueTargets = {
-          "class", "union", "struct"};
-      if (uniqueType && uniqueTargets.count(obj.meta) == 0) {
-        throw err::Exception("unique can only be used with classes, unions or "
-                             "structs on line " +
-                             std::to_string(obj.lineCount));
-      }
-      if (safeType && uniqueType) {
-        throw err::Exception("safe and unique cannot be combined on line " +
-                             std::to_string(obj.lineCount));
-      }
       if (asyncFunction && obj.meta != "fn" && obj.meta != "foreach") {
         throw err::Exception(
             "async can only be used with functions or foreach loops on line " +
@@ -493,6 +495,18 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
                              std::to_string(obj.lineCount));
       }
     }
+
+    static const std::unordered_set<std::string> ownershipTargets = {
+        "class", "union", "struct"};
+    if (!ownershipModifier.empty() && ownershipTargets.count(obj.meta) == 0) {
+      throw err::Exception("unique/shared can only be used with classes, "
+                           "unions or structs on line " +
+                           std::to_string(obj.lineCount));
+    }
+    // Owning is the safe default. Types that intentionally use aliasing or
+    // reference counting must opt out with `shared`.
+    if (ownershipModifier.empty() && ownershipTargets.count(obj.meta) != 0)
+      uniqueType = true;
 
     if (obj.meta == "const") {
       isMutable = false;

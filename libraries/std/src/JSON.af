@@ -28,21 +28,30 @@ private fn disposeStringInBackground(const string serialized) -> int;
  * Dynamically typed JSON value supporting rich constructors plus convenience
  * methods to cast to native aflat types.
  */
-union JSON {
+unique union JSON {
     String(adr),
     Number(int),
     Boolean(bool),
     List(vector::<Box::<JSON>>),
     Object(unordered_map::<adr,Box::<JSON>>),
+    Borrowed(adr),
     Null
 
     fn get(const string key) -> JSON? {
         match my {
             Object(map) => {
                 match map.get(key.cstr()) {
-                    Some(value) => return value.get(), // unwrap the Box
-                    None => return NULL // null will become None
+                    Some(value) => {
+                        const any borrowed = value.get();
+                        const JSON proxy = new JSON->Borrowed(borrowed$adr);
+                        return opt.Some($proxy);
+                    },
+                    None => return NULL
                 }
+            },
+            Borrowed(raw) => {
+                const loan JSON borrowed = raw$JSON;
+                return borrowed.get(key);
             },
             _ => return NULL,
         };
@@ -67,6 +76,10 @@ union JSON {
     fn asString() -> adr! {
         match my {
             String(s) => return s,
+            Borrowed(raw) => {
+                const loan JSON borrowed = raw$JSON;
+                return borrowed.asString();
+            },
             _ => return new Error("JSON is not a String")           
         }
     };
@@ -74,6 +87,10 @@ union JSON {
     fn asNumber() -> int! {
         match my {
             Number(n) => return n,
+            Borrowed(raw) => {
+                const loan JSON borrowed = raw$JSON;
+                return borrowed.asNumber();
+            },
             _ => return new Error("JSON is not a Number")
         }
     };
@@ -81,20 +98,32 @@ union JSON {
     fn asBoolean() -> bool! {
         match my {
             Boolean(b) => return b,
+            Borrowed(raw) => {
+                const loan JSON borrowed = raw$JSON;
+                return borrowed.asBoolean();
+            },
             _ => return new Error("JSON is not a Boolean")
         }
     };
 
-    fn asList() -> vector::<Box::<JSON>>! {
+    fn asList() -> loan vector::<Box::<JSON>>! {
         match my {
             List(list) => return list,
+            Borrowed(raw) => {
+                const loan JSON borrowed = raw$JSON;
+                return borrowed.asList();
+            },
             _ => return new Error("JSON is not a List"),
         }
     }; 
 
-    fn asObject() -> unordered_map::<adr,Box::<JSON>>! {
+    fn asObject() -> loan unordered_map::<adr,Box::<JSON>>! {
         match my {
             Object(map) => return map,
+            Borrowed(raw) => {
+                const loan JSON borrowed = raw$JSON;
+                return borrowed.asObject();
+            },
             _ => return new Error("JSON is not an Object")
         }
     };
@@ -102,6 +131,10 @@ union JSON {
     fn isNull() -> bool {
         match my {
             Null => return true,
+            Borrowed(raw) => {
+                const loan JSON borrowed = raw$JSON;
+                return borrowed.isNull();
+            },
             _ => return false
         }
     };
@@ -116,7 +149,7 @@ union JSON {
     private fn deleteList(const vector::<Box::<JSON>> list) -> int {
         for int i = 0; i < list.count(); i++ {
             const Box::<JSON> value =
-                list.get(i).expect("missing boxed JSON list value during cleanup");
+                list.get(i).expect("missing boxed JSON list value during cleanup"$adr);
             my.deleteBox(value);
         };
         delete list;
@@ -127,7 +160,7 @@ union JSON {
         const let values = map.values();
         for int i = 0; i < values.count(); i++ {
             const Box::<JSON> value =
-                values.get(i).expect("missing boxed JSON object value during cleanup");
+                values.get(i).expect("missing boxed JSON object value during cleanup"$adr);
             my.deleteBox(value);
         };
         delete values;
@@ -151,6 +184,10 @@ union JSON {
             Boolean(b) => return `Boolean({b})`,
             List(list) => return `List({list})`,
             Object(map) => return `Object({map})`,
+            Borrowed(raw) => {
+                const loan JSON borrowed = raw$JSON;
+                return borrowed.toString();
+            },
             Null => return "Null"
         };
     };
@@ -263,6 +300,10 @@ union JSON {
                 };
                 builder.push_in_place('}');
             },
+            Borrowed(raw) => {
+                const loan JSON borrowed = raw$JSON;
+                borrowed.stringifyInto(builder, indent);
+            },
             Null => builder.append_raw("null")
         };
         return;
@@ -293,8 +334,8 @@ union JSON {
 };
 
 // Wrap an unordered_map into a JSON Object variant.
-export fn Object(const unordered_map::<adr,Box::<JSON>> map) -> JSON {
-    return new JSON->Object(map);
+export fn Object(const unordered_map::<adr,Box::<JSON>> &&map) -> JSON {
+    return new JSON->Object($map);
 };
 
 // Create a JSON String from an adr pointer.
@@ -316,8 +357,8 @@ export fn Boolean(immutable bool b) -> JSON {
 };
 
 // Wrap an array of JSON boxes into the JSON List variant.
-export fn List(const vector::<Box::<JSON>> list) -> JSON {
-    return new JSON->List(list);
+export fn List(const vector::<Box::<JSON>> &&list) -> JSON {
+    return new JSON->List($list);
 };
 
 // Convenience creator for the JSON Null sentinel.
@@ -441,7 +482,8 @@ private fn parseStringValue(const string value) -> JSON! {
                         None => return parseError(value, "Unterminated escape sequence in string literal", escapePos)
                     };
                 } else if c == '\"' {
-                    return String(builder.to_string().cstr());
+                    const JSON parsed = String(builder.to_string().cstr());
+                    return $parsed;
                 } else if c == '\n' | c == '\r' {
                     const int newlinePos = if value.tell() > 0 value.tell() - 1 else 0;
                     return parseError(value, "Unescaped newline in string literal", newlinePos);
@@ -457,9 +499,11 @@ private fn parseStringValue(const string value) -> JSON! {
 private fn parseBooleanValue(const string value) -> JSON! {
     const int startPos = if value.tell() > 0 value.tell() - 1 else 0;
     if value.consume("rue") {
-        return Boolean(true);
+        const JSON parsed = Boolean(true);
+        return $parsed;
     } else if value.consume("alse") {
-        return Boolean(false);
+        const JSON parsed = Boolean(false);
+        return $parsed;
     };
     return parseError(value, "Invalid boolean literal (expected 'true' or 'false')", startPos);
 };
@@ -467,7 +511,8 @@ private fn parseBooleanValue(const string value) -> JSON! {
 private fn parseNullValue(const string value) -> JSON! {
     const int startPos = if value.tell() > 0 value.tell() - 1 else 0;
     if value.consume("ull") {
-        return Null();
+        const JSON parsed = Null();
+        return $parsed;
     };
     return parseError(value, "Invalid null literal (expected 'null')", startPos);
 };
@@ -481,7 +526,7 @@ private fn parseArrayValue(const string value) -> JSON! {
     };
     if v.or('v') == ']' {
         value.next();
-        return new JSON->List(elements);
+        return new JSON->List($elements);
     };
 
     while true {
@@ -499,7 +544,7 @@ private fn parseArrayValue(const string value) -> JSON! {
             value.next();
         } else if nextChar == ']' {
             value.next();
-            return new JSON->List(elements);
+            return new JSON->List($elements);
         } else {
             return parseError(value, `Unexpected character '{nextChar}' in JSON array; expected ',' or ']'`, value.tell());
         };
@@ -512,7 +557,7 @@ private fn parseObjectValue(const string value) -> JSON! {
     while true {
         if v.or('v') == '}' {
             value.next();
-            return new JSON->Object(map);
+            return new JSON->Object($map);
         };
 
         const let key = match parseInternal(value)!.asString() {
@@ -545,7 +590,7 @@ private fn parseObjectValue(const string value) -> JSON! {
             v = value.peek();
         } else if nextChar == '}' {
             value.next();
-            return new JSON->Object(map);
+            return new JSON->Object($map);
         } else {
             return parseError(value, `Unexpected character '{nextChar}' in JSON object; expected ',' or '}'`, value.tell());
         };
@@ -564,7 +609,8 @@ private fn parseInternal(const string json_) -> JSON! {
                     None => break
                 };
             };
-            return Number(num);
+            const JSON parsed = Number(num);
+            return $parsed;
         };
         if c == 't' | c == 'f' return parseBooleanValue(json_);
         if c == 'n' return parseNullValue(json_);

@@ -4,7 +4,7 @@ import string from "String";
 import Property, computed from "Utils/Properties";
 import {print} from "String" under str;
 
-safe dynamic class Bind {
+shared safe dynamic class Bind {
     private const loan Content context = context;
     private const adr preproces = preprocess;
     private mutable string name = name;

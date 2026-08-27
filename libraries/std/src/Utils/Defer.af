@@ -3,7 +3,7 @@ import Function from "Utils/Functions";
 import RefCounted from "Memory";
 
 @Apply(RefCounted)
-safe dynamic class Defer {
+shared safe dynamic class Defer {
     private const Function _func = $func;
     private mutable bool dismissed = false;
 

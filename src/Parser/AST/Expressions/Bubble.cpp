@@ -105,6 +105,11 @@ Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
 
   auto result = matchExpr->generateExpression(generator, size, typeHint);
   file << result.file;
+  // An owned union temporary is consumed by the generated `Ok(&&value)` /
+  // `Err(&&err)` bindings. Leaving the temporary live would run its destructor
+  // at the surrounding scope exit and destroy the payload a second time.
+  if (exprResult.owned)
+    symbol->sold = logicalLine;
   return {.file = file, .expr = result.expr};
 }
 

@@ -36,7 +36,7 @@ ast::Function *buildAutomaticInvalidate(const gen::Union *type,
   func->logicalLine = logicalLine;
   func->ident.ident = "__invalidate__";
   func->scope = ast::Public;
-  func->hidden = type->declarationOnly;
+  func->hidden = type->declarationOnly || type->hidden;
   func->args = nullptr;
   func->statement = buildUnionInvalidateBody(logicalLine);
   func->type.typeName = "void";
@@ -50,7 +50,7 @@ ast::Function *buildAutomaticTransfer(const gen::Union *type, int logicalLine) {
   func->logicalLine = logicalLine;
   func->ident.ident = "__transfer_to__";
   func->scope = ast::Public;
-  func->hidden = type->declarationOnly;
+  func->hidden = type->declarationOnly || type->hidden;
 
   auto *buffer = new ast::Declare();
   buffer->logicalLine = logicalLine;
@@ -149,7 +149,7 @@ ast::Function *buildAutomaticDestructor(gen::CodeGenerator &generator,
   func->logicalLine = logicalLine;
   func->ident.ident = "del";
   func->scope = ast::Public;
-  func->hidden = type->declarationOnly;
+  func->hidden = type->declarationOnly || type->hidden;
   func->args = nullptr;
   func->statement = body;
   func->type.typeName = "void";
@@ -446,13 +446,6 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
   type->SymbolTable.push(typeSymbol);
 
   if (type->uniqueType) {
-    // Concrete generic methods are normally emitted lazily on first call.
-    // Union lifecycle methods are compiler-required entry points used by
-    // scope cleanup, so their bodies must always be available.
-    for (const auto *method : {"del", "__invalidate__", "__transfer_to__"}) {
-      generator.generatedLazyConcreteMethodNames().insert("pub_" + type->Ident +
-                                                          "_" + method);
-    }
     if (gen::utils::extract("del", this->statement) == nullptr)
       OutputFile << generator.GenSTMT(
           buildAutomaticDestructor(generator, type, this->logicalLine));

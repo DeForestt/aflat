@@ -32,10 +32,23 @@ std::string lifecycleEmissionKey(std::string label) {
 void emitGenericLifecycleMethod(CodeGenerator &generator, Class *cls,
                                 const std::string &methodName,
                                 asmc::File &output) {
+  (void)output;
   if (cls == nullptr)
     return;
-  auto *method = cls->nameTable[methodName];
-  if (method == nullptr || method->statement == nullptr)
+  // Type/overload probes intentionally suppress concrete method bodies. Do
+  // not memoize a lifecycle method from such a pass: no label was emitted and
+  // a later real call must still be able to generate it.
+  if (generator.suppressLazyMethodEmission())
+    return;
+  ast::Function *method = nullptr;
+  for (auto &candidate : cls->nameTable) {
+    if (candidate.ident.ident == methodName && candidate.statement != nullptr) {
+      method = &candidate;
+      if (candidate.hidden)
+        break;
+    }
+  }
+  if (method == nullptr)
     return;
 
   auto *body = new ast::Function(*method, false);
@@ -55,8 +68,27 @@ void emitGenericLifecycleMethod(CodeGenerator &generator, Class *cls,
 
   auto *savedScope = generator.scope();
   const auto savedReturnType = generator.returnType();
+  const auto savedCwd = generator.cwd();
+  const auto savedNameSpaceTable = generator.nameSpaceTable();
   generator.scope() = cls;
-  output << generator.GenSTMT(body);
+  if (cls->templateModuleRoot != nullptr) {
+    if (!cls->templateModuleCwd.empty())
+      generator.cwd() = cls->templateModuleCwd;
+    for (const auto &[alias, target] : cls->templateNamespaceMap)
+      generator.nameSpaceTable().insert(alias, target);
+    generator.deferredMethods()
+        << generator.ImportsOnly(cls->templateModuleRoot, true);
+  }
+  generator.generatedFunctionNames().erase(emissionKey);
+  const auto savedEmittingLazy = generator.emittingLazyConcreteMethod();
+  generator.emittingLazyConcreteMethod() = true;
+  auto bodyFile = generator.GenSTMT(body);
+  generator.emittingLazyConcreteMethod() = savedEmittingLazy;
+  if (bodyFile.text.count == 0 && !bodyFile.hasLambda)
+    generator.generatedLazyConcreteMethodNames().erase(emissionKey);
+  generator.deferredMethods() << bodyFile;
+  generator.nameSpaceTable() = savedNameSpaceTable;
+  generator.cwd() = savedCwd;
   generator.returnType() = savedReturnType;
   generator.scope() = savedScope;
 }
@@ -90,6 +122,21 @@ void registerModuleGenericTemplates(
 }
 
 } // namespace
+
+void CodeGenerator::ensureGenericLifecycleMethod(Class *cls,
+                                                 asmc::File &output) {
+  if (cls == nullptr || cls->Ident.find('<') == std::string::npos)
+    return;
+  ensureGenericMethod(cls, cls->uniqueType ? "del" : "endScope", output);
+}
+
+void CodeGenerator::ensureGenericMethod(Class *cls,
+                                        const std::string &methodName,
+                                        asmc::File &output) {
+  if (cls == nullptr || cls->Ident.find('<') == std::string::npos)
+    return;
+  emitGenericLifecycleMethod(*this, cls, methodName, output);
+}
 
 Type **CodeGenerator::instantiateGenericClass(
     ast::Class *cls, const std::vector<std::string> &types,
@@ -165,9 +212,7 @@ Type **CodeGenerator::instantiateGenericClass(
     auto *concreteClass =
         result == nullptr ? nullptr : dynamic_cast<Class *>(*result);
     if (concreteClass != nullptr) {
-      emitGenericLifecycleMethod(*this, concreteClass,
-                                 concreteClass->uniqueType ? "del" : "endScope",
-                                 *OutputFile.lambdas);
+      ensureGenericLifecycleMethod(concreteClass, *OutputFile.lambdas);
     }
     this->nameSpaceTable() = savedNameSpaceTable;
     this->cwd() = savedCwd;
@@ -175,6 +220,11 @@ Type **CodeGenerator::instantiateGenericClass(
     scope::ScopeManager::getInstance()->popIsolated();
   } else {
     result = typeList()[newName];
+    auto *concreteClass =
+        result == nullptr ? nullptr : dynamic_cast<Class *>(*result);
+    if (concreteClass != nullptr) {
+      ensureGenericLifecycleMethod(concreteClass, OutputFile);
+    }
   }
   return result;
 }

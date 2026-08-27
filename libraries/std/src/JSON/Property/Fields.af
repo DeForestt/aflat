@@ -5,7 +5,7 @@ import uni_string from "uni_string";
 import {Null, String, Number, Boolean} from "JSON" under json;
 import {wrap} from "Memory" under box;
 
-class JsonProperty {
+shared class JsonProperty {
   contract {
     JSON<any> _serialize = fn (const any __this) -> JSON json.Null();
     int<any, any> __set = fn (const any __this, const any __value) -> int 0;
@@ -32,7 +32,7 @@ class JsonProperty {
 };
 
 types(T)
-safe class TypedJsonProperty signs JsonProperty {
+shared safe class TypedJsonProperty signs JsonProperty {
   T<T> foo = foo;
 
   fn sanitize(const T val) -> T {

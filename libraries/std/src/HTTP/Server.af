@@ -17,7 +17,7 @@ import {print} from "uni_string" under uni;
 import {print} from "io" under io;
 import vector from "Collections/Vector";
 
-class EndpointRef {
+shared class EndpointRef {
     const any value = value;
 
     EndpointRef init(const Endpoint value) {
@@ -33,7 +33,7 @@ class EndpointRef {
     };
 };
  
-class Server {
+shared class Server {
     contract {
         const vector::<EndpointRef> endpoints = new vector::<EndpointRef>();
         const vector::<Middleware> middlewares = new vector::<Middleware>();

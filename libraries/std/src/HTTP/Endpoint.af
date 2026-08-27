@@ -11,7 +11,7 @@ import {methodToString} from "HTTP" under http;
 import {print} from "String" under str;
 import {printHex, printInt} from "io" under io;
 
-class Endpoint {
+shared class Endpoint {
     contract {
         const adr imp = imp;
         const uni_string path = $path;
@@ -35,7 +35,7 @@ class Endpoint {
     };
 };
 
-class Endpoints {
+shared class Endpoints {
     int id = 0;
     Endpoints init(const Map<Server> imp, const Server context, const uni_string path) {
         const let endpoints = imp(context);
@@ -88,7 +88,7 @@ class Endpoints {
 };
 
 // class for When Endpoint is not found
-class NotFoundImpl {
+shared class NotFoundImpl {
     const adr imp = imp;
     NotFoundImpl init(const adr imp, const Server context) {
         context.setNotFound(my);

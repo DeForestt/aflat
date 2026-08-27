@@ -152,7 +152,10 @@ int af_free(const adr &&ptr){
         return 0;
     };
     block.free = 1;
-    deFragAll(head);
+    // Coalescing the entire heap on every free makes a cleanup O(number of
+    // allocations), serializes all threads behind the allocator lock, and can
+    // mutate the list repeatedly while destructors are active. Freed blocks
+    // remain available to findFreeBlock() and can be split on reuse.
     af_allocator_unlock();
     return 0;
 };
