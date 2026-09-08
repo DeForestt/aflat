@@ -16,7 +16,7 @@ import {fString, print} from "String" under st;
 import vector from "Collections/Vector";
 import with from "Utils/Properties";
 
-class NotFoundError signs Error {
+shared class NotFoundError signs Error {
     // 404 Not Found
     const string message = message.copy();
 
@@ -29,7 +29,7 @@ class NotFoundError signs Error {
     };
 };
 
-class ForbiddenError signs Error {
+shared class ForbiddenError signs Error {
     // 403 Forbidden
     const string message = message.copy();
 
@@ -42,7 +42,7 @@ class ForbiddenError signs Error {
     };
 };
 
-class BadRequestError signs Error {
+shared class BadRequestError signs Error {
     // 400 Bad Request
     const string message = message.copy();
 
@@ -55,7 +55,7 @@ class BadRequestError signs Error {
     };
 };
 
-class NotImplementedError signs Error {
+shared class NotImplementedError signs Error {
     // 501 Not Implemented
     const string message = message.copy();
 
@@ -68,7 +68,7 @@ class NotImplementedError signs Error {
     };
 };
 
-class InternalServerError signs Error {
+shared class InternalServerError signs Error {
     // 500 Internal Server Error
     const string message = message.copy();
 
@@ -81,7 +81,7 @@ class InternalServerError signs Error {
     };
 };
 
-class OtherHTTPError signs Error {
+shared class OtherHTTPError signs Error {
     // Other HTTP Error
     const adr message = message.copy().cstr();
     const adr code = code.copy().cstr();
@@ -159,7 +159,7 @@ export HTTPMethod stringToMethod(const string method) {
         return HTTPMethod.GET;
 };
 
-class HTTPHeader {
+shared class HTTPHeader {
     adr key = "";
     adr value = "";
 
@@ -196,7 +196,7 @@ class HTTPHeader {
     };
 };
 
-class HTTPMessage {
+shared class HTTPMessage {
     private vector::<HTTPHeader> headers = new vector::<HTTPHeader>();
     mutable private bool switch = false;
     const public Map query = new Map();
@@ -431,7 +431,7 @@ class HTTPMessage {
     };
 };
 
-class HTTPRequest {
+shared class HTTPRequest {
     @with private HTTPMethod method = HTTPMethod.GET;
     @with private adr host = "";
     @with private adr endpoint = "/";
@@ -635,7 +635,7 @@ class HTTPRequest {
       };
 };
 
-class HTTPResponse {
+shared class HTTPResponse {
     const private vector::<HTTPHeader> headers = new vector::<HTTPHeader>();
     private string statusMessage = "";
     private string statusCode = "";
@@ -716,7 +716,7 @@ class HTTPResponse {
     };
 };
 
-class EndPointStruct {
+shared class EndPointStruct {
     adr foo = foo;
     string path = $path;
     HTTPMethod method = method;
@@ -734,7 +734,7 @@ class EndPointStruct {
     };
 };
 
-class HTTPServer {
+shared class HTTPServer {
     private vector::<EndPointStruct> endpoints = new vector::<EndPointStruct>();
 
     HTTPServer init() {

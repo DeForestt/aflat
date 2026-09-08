@@ -5,7 +5,7 @@ import vector from "Collections/Vector";
 
 import {print, printHex} from "io" under io;
 
-class Observable {
+shared class Observable {
   vector::<Function> subscribers = [];
 
 	fn subscribe(const Function f) -> void {

@@ -11,6 +11,9 @@ import Option from "Utils/Option";
 import { some, none } from "Utils/Option" under opt;
 
 mutable adr head = NULL;
+mutable int liveBlocks = 0;
+mutable long liveBytes = #0;
+mutable long totalAllocations = #0;
 
 void af_allocator_lock();
 void af_allocator_unlock();
@@ -135,7 +138,7 @@ int af_memcpy (adr dst, immutable adr src, const int size){
     return 0;
 };
 
-int af_free(const adr &&ptr){
+int arena_free(const adr &&ptr){
     af_allocator_lock();
     if(ptr == NULL){
         af_allocator_unlock();
@@ -152,12 +155,38 @@ int af_free(const adr &&ptr){
         return 0;
     };
     block.free = 1;
-    deFragAll(head);
+    liveBlocks = liveBlocks - 1;
+    liveBytes = liveBytes - block.size;
+    // Coalescing the entire heap on every free makes a cleanup O(number of
+    // allocations), serializes all threads behind the allocator lock, and can
+    // mutate the list repeatedly while destructors are active. Freed blocks
+    // remain available to findFreeBlock() and can be split on reuse.
     af_allocator_unlock();
     return 0;
 };
 
-int blockSize(const adr ptr) {
+int arena_live_blocks() {
+    af_allocator_lock();
+    const int count = liveBlocks;
+    af_allocator_unlock();
+    return count;
+};
+
+long arena_live_bytes() {
+    af_allocator_lock();
+    const long count = liveBytes;
+    af_allocator_unlock();
+    return count;
+};
+
+long arena_total_allocations() {
+    af_allocator_lock();
+    const long count = totalAllocations;
+    af_allocator_unlock();
+    return count;
+};
+
+int arena_blockSize(const adr ptr) {
     af_allocator_lock();
     if (ptr == NULL){
         af_allocator_unlock();
@@ -170,7 +199,7 @@ int blockSize(const adr ptr) {
     return size;
 };
 
-adr af_malloc(const int size){
+adr arena_malloc(const int size){
 
     af_allocator_lock();
 
@@ -184,6 +213,9 @@ adr af_malloc(const int size){
     if(head == NULL){
         block = requestSpace(NULL, size);
         head = block;
+        liveBlocks = liveBlocks + 1;
+        liveBytes = liveBytes + size;
+        totalAllocations = totalAllocations + #1;
         block = block + #16;
         af_allocator_unlock();
         return block;
@@ -211,15 +243,18 @@ adr af_malloc(const int size){
     const Block blockObj = block;
     blockObj.free = 0;
     splitBlock(blockObj, size);
+    liveBlocks = liveBlocks + 1;
+    liveBytes = liveBytes + blockObj.size;
+    totalAllocations = totalAllocations + #1;
     block = block + Block;
     af_allocator_unlock();
     return block; // doing this cheats past the ownership system
 };
 
-adr af_realloc(const adr ptr, const int size){
+adr arena_realloc(const adr ptr, const int size){
     af_allocator_lock();
     if (ptr == NULL){
-        const adr allocated = af_malloc(size);
+        const adr allocated = arena_malloc(size);
         af_allocator_unlock();
         return allocated;
     };
@@ -231,19 +266,19 @@ adr af_realloc(const adr ptr, const int size){
         return ptr;
     };
     
-    const adr new_ptr = af_malloc(size);
+    const adr new_ptr = arena_malloc(size);
     if (new_ptr == NULL){
         af_allocator_unlock();
         return NULL;
     };
     const int bsize = block.size;
     af_memcpy(new_ptr, ptr, bsize);
-    af_free($ptr);
+    arena_free($ptr);
     af_allocator_unlock();
     return new_ptr;
 };
 
-int inspectHeap() {
+int arena_inspectHeap() {
     af_allocator_lock();
     adr current = head;
     io.print("Heap:\n");

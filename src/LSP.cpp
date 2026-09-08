@@ -566,8 +566,9 @@ std::vector<std::string> gatherCompletions(const std::string &text) {
       "if",      "else",    "for",      "while",   "break",     "continue",
       "match",   "when",    "let",      "mutable", "immutable", "public",
       "private", "static",  "export",   "const",   "types",     "safe",
-      "sink",    "dynamic", "pedantic", "unique",  "delete",    "true",
-      "false",   "None",    "Some",     "new",     "as",        "under"};
+      "sink",    "dynamic", "pedantic", "unique",  "shared",    "delete",
+      "true",    "false",   "None",     "Some",    "new",       "as",
+      "under"};
 
   std::unordered_set<std::string> seen;
   std::vector<std::string> items;
@@ -910,8 +911,8 @@ std::vector<JsonValue> completionItems(const std::vector<std::string> &items,
         "if",      "else",    "for",      "while",   "break",     "continue",
         "match",   "when",    "let",      "mutable", "immutable", "public",
         "private", "static",  "export",   "const",   "types",     "safe",
-        "sink",    "dynamic", "pedantic", "unique",  "delete",    "true",
-        "false",   "new",     "as",       "under"};
+        "sink",    "dynamic", "pedantic", "unique",  "shared",    "delete",
+        "true",    "false",   "new",      "as",      "under"};
     if (keywords.count(item) != 0) {
       value.emplace("kind", JsonValue(14));
     } else if (parse::PRIMITIVE_TYPES.count(item) != 0) {
@@ -1912,8 +1913,8 @@ bool isKeyword(const std::string &word) {
       "if",      "else",    "for",      "while",   "break",     "continue",
       "match",   "when",    "let",      "mutable", "immutable", "public",
       "private", "static",  "export",   "const",   "types",     "safe",
-      "sink",    "dynamic", "pedantic", "unique",  "delete",    "new",
-      "as",      "under"};
+      "sink",    "dynamic", "pedantic", "unique",  "shared",    "delete",
+      "new",     "as",      "under"};
   return keywords.count(word) != 0;
 }
 

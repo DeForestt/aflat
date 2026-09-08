@@ -1,14 +1,14 @@
 
-class Time {
+shared class Time {
     public adr amount;
 };
 
-class TimeSpec{
+shared class TimeSpec{
     long tv_sec;
     long tv_nsec;
 };
 
-class Times{
+shared class Times{
     public int tms_utime;
     public int tms_stime;
     public int tms_cutime;
@@ -17,13 +17,13 @@ class Times{
 
 Times newTimes();
 
-class Block{
+shared class Block{
     public int size; 
     public int free;
     public adr next;
 };
 
-class Bit{
+shared class Bit{
 	mutable int value;
 	mutable adr last;
 	mutable adr next;
@@ -32,6 +32,9 @@ class Bit{
 Bit newBit(int value);
 
 int af_free(object ptr);
+int af_live_blocks();
+long af_live_bytes();
+long af_total_allocations();
 int blockSize(object ptr);
 Time newTime(object size);
 adr af_malloc(int size);

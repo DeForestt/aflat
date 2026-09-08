@@ -42,7 +42,10 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
   if (!std::get<2>(resolved))
     generator.alert("Identifier " + this->ident + " not found to delete");
 
-  gen::Symbol *sym = &std::get<1>(resolved);
+  gen::Symbol *resolvedSym = &std::get<1>(resolved);
+  gen::Symbol *sym = std::get<4>(resolved);
+  if (sym == nullptr)
+    sym = resolvedSym;
   if (sym->sold != -1)
     generator.alert("Variable " + this->ident + " was sold on line " +
                     std::to_string(sym->sold) + " and cannot be deleted");
@@ -71,20 +74,29 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
       };
     }
   };
-  // call af_free
-  ast::Var *var = new ast::Var();
-  var->logicalLine = this->logicalLine;
-  var->Ident = this->ident;
-  var->modList = LinkedList<std::string>();
+  // A loan may refer to inline storage (for example, an element inside a
+  // vector buffer). Destroy its fields, but only release the allocation when
+  // this symbol actually owns it.
+  if (sym->owned && !sym->type.isLoan) {
+    ast::Var *var = new ast::Var();
+    var->logicalLine = this->logicalLine;
+    var->Ident = this->ident;
+    // Preserve field access when deleting `owner.field`. Dropping the path
+    // here frees the owning object itself instead of the field allocation.
+    var->modList = this->modList;
 
-  ast::Call *freeCall = new ast::Call();
-  freeCall->logicalLine = this->logicalLine;
-  freeCall->ident = "af_free";
-  freeCall->modList = LinkedList<std::string>();
-  freeCall->Args = LinkedList<ast::Expr *>();
-  freeCall->Args.push(var);
-  OutputFile << generator.GenSTMT(freeCall);
+    ast::Call *freeCall = new ast::Call();
+    freeCall->logicalLine = this->logicalLine;
+    freeCall->ident = "af_free";
+    freeCall->modList = LinkedList<std::string>();
+    freeCall->Args = LinkedList<ast::Expr *>();
+    freeCall->Args.push(var);
+    OutputFile << generator.GenSTMT(freeCall);
+  }
   OutputFile << std::get<3>(resolved);
+  // Explicit deletion consumes the owner. Prevent scope cleanup from freeing
+  // it again and reject any later use through the normal sold-value checks.
+  sym->sold = this->logicalLine;
   return {OutputFile, std::nullopt};
 }
 

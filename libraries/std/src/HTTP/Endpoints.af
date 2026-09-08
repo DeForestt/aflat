@@ -7,7 +7,7 @@ import HTTPMethod from "HTTP";
 import HTTPHeader, HTTPResponse, HTTPMessage from "HTTP";
 import result from "Utils/result";
 
-class GET signs Endpoint {
+shared class GET signs Endpoint {
     GET init(const any<Server, HTTPMessage> imp, const Server context, const uni_string &&path) {
         my.method = HTTPMethod.GET;
         context.addEndpoint(my);
@@ -20,7 +20,7 @@ class GET signs Endpoint {
     };
 };
 
-class POST signs Endpoint {
+shared class POST signs Endpoint {
     POST init(const any<Server, HTTPMessage> imp, const Server context, const uni_string &&path) {
         my.method = HTTPMethod.POST;
         context.addEndpoint(my);
@@ -33,7 +33,7 @@ class POST signs Endpoint {
     };
 };
 
-class PUT signs Endpoint {
+shared class PUT signs Endpoint {
     PUT init(const any<Server, HTTPMessage> imp, const Server context, const uni_string &&path) {
         my.method = HTTPMethod.PUT;
         context.addEndpoint(my);
@@ -46,7 +46,7 @@ class PUT signs Endpoint {
     };
 };
 
-class DELETE signs Endpoint {
+shared class DELETE signs Endpoint {
     DELETE init(const any<Server, HTTPMessage> imp, const Server context, const uni_string &&path) {
         my.method = HTTPMethod.DELETE;
         context.addEndpoint(my);
@@ -59,7 +59,7 @@ class DELETE signs Endpoint {
     };
 };
 
-class PATCH signs Endpoint {
+shared class PATCH signs Endpoint {
     PATCH init(const any<Server, HTTPMessage> imp, const Server context, const uni_string &&path) {
         my.method = HTTPMethod.PATCH;
         context.addEndpoint(my);
@@ -72,7 +72,7 @@ class PATCH signs Endpoint {
     };
 };
 
-class OPTIONS signs Endpoint {
+shared class OPTIONS signs Endpoint {
     OPTIONS init(const any<Server, HTTPMessage> imp, const Server context, const uni_string &&path) {
         my.method = HTTPMethod.OPTIONS;
         context.addEndpoint(my);
@@ -85,7 +85,7 @@ class OPTIONS signs Endpoint {
     };
 };
 
-class HEAD signs Endpoint {
+shared class HEAD signs Endpoint {
     HEAD init(const any<Server, HTTPMessage> imp, const Server context, const uni_string &&path) {
         my.method = HTTPMethod.HEAD;
         context.addEndpoint(my);

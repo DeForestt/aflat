@@ -62,7 +62,7 @@ private bool reg(const char c, const char p) {
  * High level reference-counted string wrapper that manages allocation,
  * provides slicing/iteration helpers, and exposes ergonomic utilities.
  */
-safe dynamic class string {
+unique safe dynamic class string {
     mutable private adr head;
     mutable private int refcount = 1;
     mutable private bool permanent = false;

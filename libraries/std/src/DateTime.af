@@ -13,7 +13,7 @@ import { accept, reject, resultWrapper } from "Utils/result" under res;
 import { optionWrapper, Some, None } from "Utils/option" under opt;
 
 // Generic failure wrapper for DateTime parsing/formatting operations.
-class DateTimeError signs Error {
+shared class DateTimeError signs Error {
     const string message = message.copy();
 
     string stdErrorMessage() : Render {
@@ -28,7 +28,7 @@ class DateTimeError signs Error {
 /**
  * Basic epoch-based DateTime struct with helper getters and formatting.
  */
-class DateTime{
+shared class DateTime{
     private int seconds;
     private int day;
     private int month;

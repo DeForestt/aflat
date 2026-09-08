@@ -10,7 +10,7 @@ import Observable from "Utils/Observable";
  */
 @Apply(Observable)
 types(T)
-safe dynamic class Property {
+shared safe dynamic class Property {
     private mutable adr getter;
     private mutable adr setter;
     private const any context = context;

@@ -15,6 +15,7 @@ namespace {
 struct BuildResult {
   bool success = false;
   std::vector<std::string> diagnostics;
+  std::string assembly;
 };
 
 BuildResult buildSinkProgram(const std::string &name,
@@ -35,6 +36,11 @@ BuildResult buildSinkProgram(const std::string &name,
             bool) { result.diagnostics.push_back(message); });
     result.success =
         build(input.string(), output.string(), cfg::Mutability::Strict, false);
+  }
+  if (result.success) {
+    std::ifstream generated(output);
+    result.assembly.assign(std::istreambuf_iterator<char>(generated),
+                           std::istreambuf_iterator<char>());
   }
 
   fs::remove_all(dir);
@@ -210,6 +216,166 @@ fn make() -> Value! {
   CHECK(result.success);
 }
 
+TEST_CASE("primitive result extraction borrows and rejects receiver sales",
+          "[owned][sink][receiver][result][primitive]") {
+  const auto borrowed = buildSinkProgram("result_primitive_borrow", R"(
+.needs <std>
+import result from "Utils/result";
+import {accept} from "Utils/result" under res;
+
+fn main() -> int {
+  let outcome = res.accept::<int>(7);
+  const int first = outcome.unwrap();
+  const int second = outcome.expect("expected result");
+  return outcome.expect("expected result"$adr) - first + second - 7;
+};
+)");
+  const auto soldUnwrap = buildSinkProgram("result_primitive_sold_unwrap", R"(
+.needs <std>
+import result from "Utils/result";
+import {accept} from "Utils/result" under res;
+
+fn main() -> int {
+  let outcome = res.accept::<int>(7);
+  return $outcome.unwrap();
+};
+)");
+  const auto soldStringExpect =
+      buildSinkProgram("result_primitive_sold_string_expect", R"(
+.needs <std>
+import result from "Utils/result";
+import {accept} from "Utils/result" under res;
+
+fn main() -> int {
+  let outcome = res.accept::<int>(7);
+  return $outcome.expect("expected result");
+};
+)");
+  const auto soldExpect = buildSinkProgram("result_primitive_sold_expect", R"(
+.needs <std>
+import result from "Utils/result";
+import {accept} from "Utils/result" under res;
+
+fn main() -> int {
+  let outcome = res.accept::<int>(7);
+  return $outcome.expect("expected result"$adr);
+};
+)");
+
+  INFO(diagnosticsText(borrowed));
+  CHECK(borrowed.success);
+  CHECK_FALSE(soldUnwrap.success);
+  CHECK(hasDiagnostic(soldUnwrap, "requires a compatible sink overload"));
+  CHECK_FALSE(soldStringExpect.success);
+  CHECK(hasDiagnostic(soldStringExpect, "requires a compatible sink overload"));
+  CHECK_FALSE(soldExpect.success);
+  CHECK(hasDiagnostic(soldExpect, "requires a compatible sink overload"));
+}
+
+TEST_CASE("non-primitive result extraction retains its sink overload",
+          "[owned][sink][receiver][result][nonprimitive]") {
+  const auto sold = buildSinkProgram("result_nonprimitive_sold_unwrap", R"(
+.needs <std>
+import result from "Utils/result";
+import {accept} from "Utils/result" under res;
+
+unique class Value {
+  int number = number;
+  fn init(int number) -> Self { return my; };
+  safe fn read() -> int { return my.number; };
+};
+
+fn main() -> int {
+  let value = new Value(7);
+  let outcome = res.accept::<Value>($value);
+  let extracted = $outcome.unwrap();
+  return extracted.read() - 7;
+};
+)");
+
+  INFO(diagnosticsText(sold));
+  CHECK(sold.success);
+}
+
+TEST_CASE("consuming mixed unions copy primitives and move owned payloads",
+          "[owned][sink][receiver][union][mixed]") {
+  const auto valid = buildSinkProgram("mixed_union_consuming_match", R"(
+.needs <std>
+
+unique class Payload {
+  int number = number;
+  fn init(int number) -> Self { return my; };
+  safe fn read() -> int { return my.number; };
+};
+
+unique union Mixed {
+  Number(int),
+  Item(Payload)
+
+  sink fn consume() -> int {
+    mutable int answer = 0;
+    match my {
+      Number(value) => answer = value,
+      Item(&&value) => answer = value.read()
+    };
+    return answer;
+  };
+};
+
+fn main() -> int {
+  let value = new Mixed->Number(7);
+  return $value.consume() - 7;
+};
+)");
+  const auto primitiveMove = buildSinkProgram("mixed_union_primitive_move", R"(
+.needs <std>
+
+unique class Payload { fn init() -> Self { return my; }; };
+unique union Mixed {
+  Number(int),
+  Item(Payload)
+
+  sink fn consume() -> int {
+    match my {
+      Number(&&value) => return value,
+      Item() => return 0
+    };
+  };
+};
+)");
+  const auto soldPrimitiveUnion =
+      buildSinkProgram("sold_all_primitive_union_match", R"(
+.needs <std>
+
+unique union PrimitiveChoice {
+  Number(int),
+  Flag(bool)
+
+  sink fn consume() -> int {
+    match $my {
+      Number(value) => return value,
+      Flag(value) => {
+        if value { return 1; };
+        return 0;
+      }
+    };
+  };
+};
+
+fn main() -> int {
+  let value = new PrimitiveChoice->Number(7);
+  return $value.consume() - 7;
+};
+)");
+
+  INFO(diagnosticsText(valid));
+  CHECK(valid.success);
+  INFO(diagnosticsText(soldPrimitiveUnion));
+  CHECK(soldPrimitiveUnion.success);
+  CHECK_FALSE(primitiveMove.success);
+  CHECK(hasDiagnostic(primitiveMove, "cannot carry ownership"));
+}
+
 TEST_CASE("bubble owns variants extracted from an owned result",
           "[owned][bubble][result]") {
   const auto result = buildSinkProgram("bubble_owned_result_variants", R"(
@@ -231,7 +397,37 @@ fn propagate() -> Value! {
 )");
 
   INFO(diagnosticsText(result));
-  CHECK(result.success);
+  REQUIRE(result.success);
+  const auto propagate = result.assembly.find("propagate:");
+  REQUIRE(propagate != std::string::npos);
+  const auto nextArm = result.assembly.find(".match_next_", propagate);
+  REQUIRE(nextArm != std::string::npos);
+  CHECK(result.assembly.substr(propagate, nextArm - propagate)
+            .find("call\taf_free") == std::string::npos);
+}
+
+TEST_CASE("bubbling a named owned result consumes the source variable",
+          "[owned][bubble][result][descope]") {
+  const auto result = buildSinkProgram("bubble_named_result_consumed", R"(
+.needs <std>
+import {reject, resultWrapper} from "Utils/result" under result;
+
+fn make() -> int! {
+  return 7;
+};
+
+fn propagate() -> int! {
+  let outcome = make();
+  let value = outcome!;
+  let reused = outcome.isOk();
+  if reused { return value; };
+  return 0;
+};
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK_FALSE(result.success);
+  CHECK(hasDiagnostic(result, "variable outcome was sold"));
 }
 
 TEST_CASE("loaned results cannot chain into sink methods",

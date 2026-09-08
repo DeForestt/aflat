@@ -6,7 +6,7 @@ import Option from "Utils/Option";
 import { accept, reject } from "Utils/Result" under res;
 import Error from "Utils/Error";
 
-class Object {
+shared class Object {
     contract {
         private string _typeName = __typeName__;
         private Map _fields = new Map();
@@ -42,7 +42,7 @@ class Object {
     };
 };
 
-safe dynamic class Field {
+shared safe dynamic class Field {
     private const Map accessors = foo();
     private const loan Object context = context;
     private const string name = $name;

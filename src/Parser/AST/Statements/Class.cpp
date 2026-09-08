@@ -148,9 +148,22 @@ ast::Function *buildAutomaticDestructor(const gen::Class *type,
   func->logicalLine = logicalLine;
   func->ident.ident = "del";
   func->scope = type->declarationOnly ? ast::Private : ast::Public;
-  func->hidden = type->declarationOnly;
+  func->hidden = type->declarationOnly || type->hidden;
   func->args = nullptr;
   func->statement = body;
+  func->type.typeName = "void";
+  func->type.size = asmc::QWord;
+  func->useType = func->type;
+  return func;
+}
+
+ast::Function *buildAutomaticDestructorSignature(int logicalLine) {
+  auto *func = new ast::Function();
+  func->logicalLine = logicalLine;
+  func->ident.ident = "del";
+  func->scope = ast::Public;
+  func->args = nullptr;
+  func->statement = nullptr;
   func->type.typeName = "void";
   func->type.size = asmc::QWord;
   func->useType = func->type;
@@ -164,7 +177,7 @@ ast::Function *buildAutomaticInvalidate(gen::CodeGenerator &generator,
   func->logicalLine = logicalLine;
   func->ident.ident = "__invalidate__";
   func->scope = type->declarationOnly ? ast::Private : ast::Public;
-  func->hidden = type->declarationOnly;
+  func->hidden = type->declarationOnly || type->hidden;
   func->args = nullptr;
   func->statement = buildAutomaticInvalidateBody(generator, type, logicalLine);
   func->type.typeName = "void";
@@ -192,7 +205,7 @@ ast::Function *buildAutomaticTransfer(gen::CodeGenerator &generator,
   func->logicalLine = logicalLine;
   func->ident.ident = "__transfer_to__";
   func->scope = type->declarationOnly ? ast::Private : ast::Public;
-  func->hidden = type->declarationOnly;
+  func->hidden = type->declarationOnly || type->hidden;
 
   auto *buffer = new ast::Declare();
   buffer->logicalLine = logicalLine;
@@ -505,6 +518,20 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
 
   asmc::File file = generator.GenSTMT(this->statement);
 
+  // Imported non-generic unique classes generate their automatic destructor
+  // in the defining module. Register only its public signature here so generic
+  // callers (such as vector<T>::del) can resolve that existing symbol without
+  // trying to emit a body against an incomplete imported layout.
+  if (type->uniqueType && type->declarationOnly && this->genericTypes.empty() &&
+      !isConcreteGenericClassName(this->ident.ident) &&
+      gen::utils::extract("del", this->statement) == nullptr &&
+      type->nameTable["del"] == nullptr) {
+    auto *destructor = buildAutomaticDestructorSignature(this->logicalLine);
+    destructor->scopeName = type->Ident;
+    type->nameTable << *destructor;
+    type->publicNameTable << *destructor;
+  }
+
   if (type->SymbolTable.head != nullptr)
     type->instanceSize = type->SymbolTable.head->data.byteMod;
   else
@@ -535,7 +562,9 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
 
   const bool hasExplicitDestructor =
       gen::utils::extract("del", this->statement) != nullptr;
-  if (type->uniqueType && !type->declarationOnly && !hasExplicitDestructor) {
+  if (type->uniqueType &&
+      (!type->declarationOnly || lazyConcreteGenericMethods) &&
+      !hasExplicitDestructor) {
     if (auto *destructor = buildAutomaticDestructor(type, this->logicalLine)) {
       file << generator.GenSTMT(destructor);
     }
@@ -543,7 +572,9 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
 
   const bool hasExplicitInvalidate =
       gen::utils::extract("__invalidate__", this->statement) != nullptr;
-  if (type->uniqueType && !type->declarationOnly && !hasExplicitInvalidate) {
+  if (type->uniqueType &&
+      (!type->declarationOnly || lazyConcreteGenericMethods) &&
+      !hasExplicitInvalidate) {
     if (auto *invalidate =
             buildAutomaticInvalidate(generator, type, this->logicalLine)) {
       file << generator.GenSTMT(invalidate);
@@ -552,7 +583,9 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
 
   const bool hasExplicitTransfer =
       gen::utils::extract("__transfer_to__", this->statement) != nullptr;
-  if (type->uniqueType && !type->declarationOnly && !hasExplicitTransfer) {
+  if (type->uniqueType &&
+      (!type->declarationOnly || lazyConcreteGenericMethods) &&
+      !hasExplicitTransfer) {
     if (auto *transfer =
             buildAutomaticTransfer(generator, type, this->logicalLine)) {
       file << generator.GenSTMT(transfer);

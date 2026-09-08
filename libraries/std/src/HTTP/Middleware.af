@@ -7,7 +7,7 @@ import unordered_map from "Collections/unordered_map";
 import option from "Utils/option";
 import {Some, None} from "Utils/option" under opt;
 
-class Middleware {
+shared class Middleware {
     const unordered_map::<adr,adr> implementations = implementations(server);
     Middleware init(const any<Server> implementations, * const Server server) {
         if server != NULL

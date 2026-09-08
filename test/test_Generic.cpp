@@ -580,7 +580,7 @@ TEST_CASE("generic dynamic classes emit lifecycle cleanup methods",
   std::ofstream ofs(source);
   ofs << ".needs <std>\n";
   ofs << "types(T)\n";
-  ofs << "dynamic class Managed {\n";
+  ofs << "shared dynamic class Managed {\n";
   ofs << "    T value = value;\n";
   ofs << "    fn init(T value) -> Self { return my; };\n";
   ofs << "    fn get() -> Self { return my; };\n";

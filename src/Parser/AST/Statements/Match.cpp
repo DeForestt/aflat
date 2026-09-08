@@ -19,6 +19,38 @@
 
 namespace ast {
 
+namespace {
+
+ast::Var *matchedOwner(ast::Expr *expr) {
+  if (auto *buy = dynamic_cast<ast::Buy *>(expr))
+    return matchedOwner(buy->expr);
+  if (auto *paren = dynamic_cast<ast::ParenExpr *>(expr))
+    return matchedOwner(paren->expr);
+  return dynamic_cast<ast::Var *>(expr);
+}
+
+void invalidateMatchedUnion(gen::CodeGenerator &generator, asmc::File &file,
+                            const gen::Symbol &owner,
+                            const gen::Union &unionType, int logicalLine) {
+  const auto pointer = generator.registers()["%rax"]->get(asmc::QWord);
+
+  auto *load = new asmc::Mov();
+  load->logicalLine = logicalLine;
+  load->size = asmc::QWord;
+  load->from = "-" + std::to_string(owner.byteMod) + "(%rbp)";
+  load->to = pointer;
+  file.text << load;
+
+  auto *invalidate = new asmc::Mov();
+  invalidate->logicalLine = logicalLine;
+  invalidate->size = asmc::DWord;
+  invalidate->from = "$-1";
+  invalidate->to = std::to_string(unionType.largestSize) + "(" + pointer + ")";
+  file.text << invalidate;
+}
+
+} // namespace
+
 Match::Pattern::Pattern(links::LinkedList<lex::Token *> &tokens,
                         parse::Parser &parser) {
   auto name = dynamic_cast<lex::LObj *>(tokens.pop());
@@ -136,6 +168,27 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
     return {.file = file, .expr = std::nullopt};
   }
 
+  const bool consumesUnion =
+      exprResult.transferExplicit ||
+      std::any_of(cases.begin(), cases.end(), [](const Match::Case &matchCase) {
+        return matchCase.pattern.takesOwnership;
+      });
+  auto *ownerVar = matchedOwner(expr);
+  const std::string ownerName = ownerVar == nullptr ? "" : ownerVar->Ident;
+  auto getOwner = [&]() -> gen::Symbol * {
+    return ownerName.empty()
+               ? nullptr
+               : gen::scope::ScopeManager::getInstance()->get(ownerName);
+  };
+  auto *ownerSymbol = getOwner();
+  if (consumesUnion && ownerSymbol == nullptr) {
+    generator.alert(
+        "A consuming match requires an addressable owned union receiver", true,
+        __FILE__, __LINE__);
+  }
+  const int ownerSoldBeforeMatch =
+      ownerSymbol == nullptr ? -1 : ownerSymbol->sold;
+
   auto saveMatchScope = generator.matchScope();
   generator.matchScope() = this;
 
@@ -232,6 +285,13 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
               "Cannot take ownership of union payload from an unowned value",
               true, __FILE__, __LINE__);
         }
+        if (_case.pattern.takesOwnership &&
+            parse::PRIMITIVE_TYPES.find(type->typeName) !=
+                parse::PRIMITIVE_TYPES.end()) {
+          generator.alert("Primitive union payload `" + type->typeName +
+                              "` cannot carry ownership; bind it by value",
+                          true, __FILE__, __LINE__);
+        }
         sym->owned = _case.pattern.takesOwnership && !loanBindings;
 
         if (parse::PRIMITIVE_TYPES.find(type->typeName) !=
@@ -317,13 +377,39 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
                                      _case.pattern.bindingLogicalLine);
       }
     }
+
+    ownerSymbol = getOwner();
+    if (consumesUnion && ownerSymbol != nullptr) {
+      if (_case.pattern.takesOwnership) {
+        invalidateMatchedUnion(generator, file, *ownerSymbol, *unionType,
+                               expr->logicalLine);
+        ownerSymbol->sold = expr->logicalLine;
+      } else {
+        // A non-moving arm still consumes the wrapper. Keep it live while the
+        // arm executes so borrowed payloads remain valid and returns can use
+        // the ordinary function-scope cleanup path.
+        ownerSymbol->sold = -1;
+      }
+    }
     file << generator.GenSTMT(_case.statement);
+    // pop the scope for the cases
+    gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+    ownerSymbol = getOwner();
+    if (consumesUnion && ownerSymbol != nullptr &&
+        !_case.pattern.takesOwnership) {
+      if (auto *cleanup = generator.deScope(*ownerSymbol)) {
+        file << *cleanup;
+        delete cleanup;
+      }
+      ownerSymbol->sold = expr->logicalLine;
+    }
     auto jmp = new asmc::Jmp();
     jmp->logicalLine = expr->logicalLine;
     jmp->to = matchEndLabel;
     file.text << jmp;
-    // pop the scope for the cases
-    gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+    ownerSymbol = getOwner();
+    if (ownerSymbol != nullptr)
+      ownerSymbol->sold = ownerSoldBeforeMatch;
     auto lable = new asmc::Label();
     lable->logicalLine = expr->logicalLine;
     lable->label = nextCaseLabels[i];
@@ -345,13 +431,27 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
                           _case.pattern.veriableName.value(),
                       true, __FILE__, __LINE__);
     }
+    ownerSymbol = getOwner();
+    if (consumesUnion && ownerSymbol != nullptr)
+      ownerSymbol->sold = -1;
     file << generator.GenSTMT(_case.statement);
+    // pop the scope for the default case
+    gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+    ownerSymbol = getOwner();
+    if (consumesUnion && ownerSymbol != nullptr) {
+      if (auto *cleanup = generator.deScope(*ownerSymbol)) {
+        file << *cleanup;
+        delete cleanup;
+      }
+      ownerSymbol->sold = expr->logicalLine;
+    }
     auto jmp = new asmc::Jmp();
     jmp->logicalLine = expr->logicalLine;
     jmp->to = matchEndLabel;
     file.text << jmp;
-    // pop the scope for the default case
-    gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
+    ownerSymbol = getOwner();
+    if (ownerSymbol != nullptr)
+      ownerSymbol->sold = ownerSoldBeforeMatch;
     auto lable = new asmc::Label();
     lable->logicalLine = expr->logicalLine;
     lable->label = ".match_arm_" + matchID + "_default";
@@ -377,6 +477,10 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
   popRdx->size = asmc::QWord;
   popRdx->op = generator.registers()["%rdx"]->get(asmc::QWord);
   file.text << popRdx;
+
+  ownerSymbol = getOwner();
+  if (consumesUnion && ownerSymbol != nullptr)
+    ownerSymbol->sold = expr->logicalLine;
 
   gen::Expr result = {
       .access = generator.registers()["%rax"]->get(returns.size),

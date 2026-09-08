@@ -1,6 +1,6 @@
 .needs <std>
 
-class Function {
+shared class Function {
 	const private adr foo = foo;
 	const private adr captures = captures;
 

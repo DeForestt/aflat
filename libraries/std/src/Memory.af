@@ -5,7 +5,7 @@ import uni_string from "uni_string";
 /**
  * Base helper that tracks reference counts with optional locking semantics.
  */
-class RefCounted {
+shared class RefCounted {
 	private mutable int refCount = 0;
 	private mutable bool locked = false;
 
@@ -42,7 +42,7 @@ types(T)
 /**
  * Heap box wrapper that owns a `T` and provides simple getters/setters.
  */
-class Box {
+shared class Box {
 	private mutable T value = $value;
 
 	fn init(const T &&value) -> Self {

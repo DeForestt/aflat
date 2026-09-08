@@ -189,7 +189,7 @@ TEST_CASE("owning union falls back to byte transfer without a transfer hook",
   const auto assembly = dir / "main.s";
 
   std::ofstream(source) << R"(.needs <std>
-class Payload {
+shared class Payload {
   int value = value;
   fn init(int value) -> Self { return my; };
   fn endScope() -> void { return; };
@@ -590,7 +590,11 @@ TEST_CASE("return probing does not discard generic function specializations",
 import {Some, optionWrapper} from "Utils/option" under opt;
 unique class Value { fn init() -> Self { return my; }; };
 fn wrap(Value &&value) -> Value? { return opt.Some($value); };
-fn main() -> int { return 0; };
+fn main() -> int {
+  const Value value = new Value();
+  const let wrapped = wrap($value);
+  return 0;
+};
 )";
 
   const bool built =
@@ -605,4 +609,232 @@ fn main() -> int { return 0; };
   REQUIRE(built);
   CHECK(assembled == 0);
   CHECK(text.find("option.Some.Value:") != std::string::npos);
+  CHECK(
+      text.find(
+          "pub_option__std__generic__start__Value__std__generic__end___del:") !=
+      std::string::npos);
+}
+
+TEST_CASE("classes and unions own by default with an explicit shared opt-out",
+          "[ownership][defaults][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_ownership_defaults_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+class Resource { fn init() -> Self { return my; }; fn del() -> void { return; }; };
+union Choice { Item(Resource), Empty };
+shared class SharedResource {
+  fn init() -> Self { return my; };
+  fn endScope() -> void { return; };
+};
+fn main() -> int {
+  const Resource resource = new Resource();
+  const Choice choice = new Choice->Empty();
+  const SharedResource shared = new SharedResource();
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  CHECK(text.find("call\tpub_Resource_del") != std::string::npos);
+  CHECK(text.find("pub_Choice_del:") != std::string::npos);
+  CHECK(text.find("call\tpub_SharedResource_endScope") != std::string::npos);
+}
+
+TEST_CASE("union lifecycle dispatch covers scope delete and nested payloads",
+          "[union][ownership][lifecycle][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_union_lifecycle_dispatch_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  const auto object = dir / "main.o";
+
+  std::ofstream(source) << R"(.needs <std>
+class Payload {
+  fn init() -> Self { return my; };
+  fn del() -> void { return; };
+};
+
+union Inner {
+  Resource(Payload),
+  Primitive(int)
+};
+
+union Outer {
+  Nested(Inner),
+  Primitive(int)
+};
+
+fn scoped() -> void {
+  const Outer value = new Outer->Nested(
+    new Inner->Resource(new Payload()));
+  return;
+};
+
+fn main() -> int {
+  scoped();
+  const Outer value = new Outer->Primitive(7);
+  delete value;
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  const int assembled = built ? std::system(("gcc -c " + assembly.string() +
+                                             " -o " + object.string())
+                                                .c_str())
+                              : -1;
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  CHECK(assembled == 0);
+  const auto countCalls = [&](const std::string &needle) {
+    std::size_t count = 0;
+    for (std::size_t pos = 0;
+         (pos = text.find(needle, pos)) != std::string::npos;
+         pos += needle.size())
+      ++count;
+    return count;
+  };
+  CHECK(text.find("pub_Inner_del:") != std::string::npos);
+  CHECK(text.find("pub_Outer_del:") != std::string::npos);
+  CHECK(text.find("call\tpub_Payload_del") != std::string::npos);
+  CHECK(text.find("call\tpub_Inner_del") != std::string::npos);
+  CHECK(countCalls("call\tpub_Outer_del") == 2);
+  CHECK(text.find("call\taf_free") != std::string::npos);
+}
+
+TEST_CASE("owned chained union receivers are cleaned after primitive results",
+          "[union][ownership][temporary][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_union_chain_cleanup_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+unique class Payload {
+  fn init() -> Self { return my; };
+};
+
+unique union Mixed {
+  Number(int),
+  Item(Payload)
+
+  safe fn read() -> int {
+    match my {
+      Number(value) => return value,
+      Item() => return 0
+    };
+  };
+};
+
+fn main() -> int {
+  return new Mixed->Number(7).read() - 7;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  const auto mainStart = text.find("main:");
+  REQUIRE(mainStart != std::string::npos);
+  const auto readCall = text.find("call\tpub_Mixed_read", mainStart);
+  REQUIRE(readCall != std::string::npos);
+  const auto delCall = text.find("call\tpub_Mixed_del", readCall);
+  REQUIRE(delCall != std::string::npos);
+  const auto freeCall = text.find("call\taf_free", delCall);
+  CHECK(freeCall != std::string::npos);
+}
+
+TEST_CASE("inline vector moves release source shells and destroy owned fields",
+          "[vector][ownership][transfer][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_vector_inline_move_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+import vector from "Collections/Vector";
+
+unique class Child {
+  int value = value;
+  fn init(int value) -> Self { return my; };
+};
+
+unique class Item {
+  Child child = $child;
+  fn init(Child &&child) -> Self { return my; };
+};
+
+fn main() -> int {
+  let items = new vector::<Item>();
+  items.push_back(new Item(new Child(7)));
+  items.set(0, new Item(new Child(8)));
+  items.insert(0, new Item(new Child(9)));
+  delete items;
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  const auto itemDel = text.find("pub_Item_del:");
+  const auto itemInvalidate = text.find("pub_Item___invalidate__:", itemDel);
+  REQUIRE(itemDel != std::string::npos);
+  REQUIRE(itemInvalidate != std::string::npos);
+  const auto itemDelBody = text.substr(itemDel, itemInvalidate - itemDel);
+  const auto firstFieldLoad = itemDelBody.find("movq\t0(%r14),%r15");
+  REQUIRE(firstFieldLoad != std::string::npos);
+  CHECK(itemDelBody.find("movq\t0(%r14),%r15", firstFieldLoad + 1) !=
+        std::string::npos);
+  CHECK(itemDelBody.find("call\taf_free") != std::string::npos);
+
+  const auto push = text.find(
+      "pub_vector__std__generic__start__Item__std__generic__end___push_back:");
+  REQUIRE(push != std::string::npos);
+  const auto transfer = text.find("call\tpub_Item___transfer_to__", push);
+  REQUIRE(transfer != std::string::npos);
+  const auto releaseShell = text.find("call\taf_free", transfer);
+  CHECK(releaseShell != std::string::npos);
+  const auto set = text.find(
+      "pub_vector__std__generic__start__Item__std__generic__end___set:");
+  REQUIRE(set != std::string::npos);
+  const auto setTransfer = text.find("call\tpub_Item___transfer_to__", set);
+  REQUIRE(setTransfer != std::string::npos);
+  CHECK(text.find("call\taf_free", setTransfer) != std::string::npos);
+  const auto insert = text.find(
+      "pub_vector__std__generic__start__Item__std__generic__end___insert:");
+  REQUIRE(insert != std::string::npos);
+  const auto insertTransfer =
+      text.find("call\tpub_Item___transfer_to__", insert);
+  REQUIRE(insertTransfer != std::string::npos);
+  CHECK(text.find("call\taf_free", insertTransfer) != std::string::npos);
+  const auto vectorDel = text.find(
+      "pub_vector__std__generic__start__Item__std__generic__end___del:");
+  REQUIRE(vectorDel != std::string::npos);
+  CHECK(text.find("call\tpub_Item_del", vectorDel) != std::string::npos);
 }

@@ -23,7 +23,7 @@ private bool argEquals(const string expected, const adr actual) {
 };
 
 // Tagged union representing the canonical value types a CLI argument can hold.
-union CLAValue {
+shared union CLAValue {
 	String(adr),
 	Number(int),
 	Boolean(bool),
@@ -49,7 +49,7 @@ union CLAValue {
 };
 
 // User-provided argument descriptor consumed while building the parser state.
-class Argument {
+shared class Argument {
 	const string longName = longName;
 	const string shortName = shortName;
 	const string description = description;
@@ -74,7 +74,7 @@ class Argument {
 };
 
 // Internal accumulator for parsed arguments before exposing them publicly.
-class CLAInternalArgs {
+shared class CLAInternalArgs {
 	string tag;
 	CLAValue value;
 };
@@ -83,7 +83,7 @@ class CLAInternalArgs {
  * Front-end helper for defining, parsing, and querying command line arguments
  * with both long and short option support.
  */
-class CommandLineArgs {
+shared class CommandLineArgs {
 	const int argc = argc;
 	const adr argv = argv;
 	mutable adr programName = NULL;

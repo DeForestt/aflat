@@ -91,12 +91,18 @@ asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
     auto endScope = classType->nameTable["endScope"];
     if (endScope == nullptr)
       return nullptr;
-    return emitObjectCleanup(methodLabel(endScope));
+    auto file = new asmc::File();
+    ensureGenericLifecycleMethod(classType, *file);
+    auto cleanup = emitObjectCleanup(methodLabel(endScope));
+    *file << *cleanup;
+    delete cleanup;
+    return file;
   }
 
   auto file = new asmc::File();
 
   if (auto classType = dynamic_cast<Class *>(*type)) {
+    ensureGenericLifecycleMethod(classType, *file);
     if (auto destructor = classType->nameTable["del"]) {
       delete file;
       file = emitObjectCleanup(methodLabel(destructor));

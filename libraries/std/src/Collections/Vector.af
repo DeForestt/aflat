@@ -15,7 +15,7 @@ import {printInt} from "io" under io;
 import Lock, LockGuard from "concurrency";
 
 types(T)
-class vector {
+unique class vector {
     private mutable adr head = NULL;
     private int size = 0;
     private int count = 0;
@@ -66,7 +66,9 @@ class vector {
             my.head = af_realloc(my.head, T * my.size);
         };
 
-        af_memcpy(my.head + (my.count * T), $value, T);
+        const adr destination = my.head + (my.count * T);
+        value.__transfer_to__(destination);
+        af_free($value);
         my.count = my.count + 1;
         return my;
     };
@@ -79,7 +81,9 @@ class vector {
             my.head = af_realloc(my.head, T * my.size);
         };
 
-        af_memcpy(my.head + (my.count * T), $value, T);
+        const adr destination = my.head + (my.count * T);
+        value.__transfer_to__(destination);
+        af_free($value);
         my.count = my.count + 1;
         return my;
     };
@@ -474,9 +478,11 @@ class vector {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
         const generic obj = my.head + (index * T);
-        const T obj = obj;
-        obj.__invalidate__();
-        af_memcpy(my.head + (index * T), $value, T);
+        const loan T previous = obj;
+        delete previous;
+        const adr destination = my.head + (index * T);
+        value.__transfer_to__(destination);
+        af_free($value);
         return res.accept(true);
     };
 
@@ -549,7 +555,9 @@ class vector {
         for int i = my.count; i > index; i = i - 1 {
             af_memcpy(my.head + (i * T), my.head + ((i - 1) * T), T);
         };
-        af_memcpy(my.head + (index * T), $value, T);
+        const adr destination = my.head + (index * T);
+        value.__transfer_to__(destination);
+        af_free($value);
         my.count = my.count + 1;
         return res.accept(true);
     };
@@ -593,8 +601,8 @@ class vector {
         };
 
         const generic val = my.head + (index * T);
-        const T val = val;
-        delete val;
+        const loan T element = val;
+        delete element;
         for int i = index + 1; i < my.count; i = i + 1 {
             af_memcpy(my.head + ((i - 1) * T), my.head + (i * T), T);
         };
@@ -670,8 +678,10 @@ class vector {
     fn del() {
         for int i = 0; i < my.count; i = i + 1 {
             const generic val = my.head + (i * T);
-            const T val = val;
-            delete val;
+            // Elements live inline in the vector buffer. Run their destructor
+            // without freeing the slot address as a standalone allocation.
+            const loan T element = val;
+            delete element;
         };
         af_free(my.head);
         delete my.mutex;

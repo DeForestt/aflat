@@ -5,7 +5,7 @@ import Render from "Utils/Error/Render";
 import Option from "Utils/Option";
 import Map from "Utils/Map";
 
-pedantic class Error {
+shared pedantic class Error {
 	contract {
 		private const string _typeName = new string(__typeName__);
 		private mutable adr _render = NULL;
