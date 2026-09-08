@@ -47,6 +47,7 @@ function compile_single {
         "math") aflat ./libraries/std/src/math.af -o ./libraries/std/math.s ;;
         "std-cmp") aflat ./libraries/std/src/std-cmp.af -o ./libraries/std/std-cmp.s ;;
         "std") aflat ./libraries/std/src/std.af -o ./libraries/std/std.s ;;
+        "Allocator") gcc -O2 -mstackrealign -mincoming-stack-boundary=3 -S -o ./libraries/std/allocator.s ./libraries/std/src/allocator_runtime.c ;;
         "strings") aflat ./libraries/std/src/strings.af -o ./libraries/std/strings.s ;;
         "String") aflat ./libraries/std/src/String.af -o ./libraries/std/String.s ;;
         "uni_string") aflat ./libraries/std/src/uni_string.af -o ./libraries/std/uni_string.s ;;
@@ -109,7 +110,7 @@ function compile_single {
         *)
             echo "Unknown library: $1"
             echo "Available libraries:"
-            echo "  concurrency, DateTime, files, io, math, std-cmp, std"
+            echo "  concurrency, DateTime, files, io, math, std-cmp, std, Allocator"
             echo "  strings, String, uni_string, ATest, HTTP, CLArgs, System, Memory"
             echo "  Result, result, Functions, Observable, Map, Option, option"
             echo "  Properties, Object, Error, Defer, unordered_map, Error_Render"
@@ -210,6 +211,7 @@ mv ./libraries/std/Parse.s ./libraries/std/JSON_Parse.s
 # Compile C file
 gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c & more_pids+=($!)
 gcc -O2 -mstackrealign -mincoming-stack-boundary=3 -S -o ./libraries/std/async.s ./libraries/std/src/async_runtime.c & more_pids+=($!)
+gcc -O2 -mstackrealign -mincoming-stack-boundary=3 -S -o ./libraries/std/allocator.s ./libraries/std/src/allocator_runtime.c & more_pids+=($!)
 
 # Wait for all background processes to complete
 wait_for_jobs "${more_pids[@]}"

@@ -66,7 +66,9 @@ unique class vector {
             my.head = af_realloc(my.head, T * my.size);
         };
 
-        af_memcpy(my.head + (my.count * T), $value, T);
+        const adr destination = my.head + (my.count * T);
+        value.__transfer_to__(destination);
+        af_free($value);
         my.count = my.count + 1;
         return my;
     };
@@ -79,7 +81,9 @@ unique class vector {
             my.head = af_realloc(my.head, T * my.size);
         };
 
-        af_memcpy(my.head + (my.count * T), $value, T);
+        const adr destination = my.head + (my.count * T);
+        value.__transfer_to__(destination);
+        af_free($value);
         my.count = my.count + 1;
         return my;
     };
@@ -476,7 +480,9 @@ unique class vector {
         const generic obj = my.head + (index * T);
         const loan T previous = obj;
         delete previous;
-        af_memcpy(my.head + (index * T), $value, T);
+        const adr destination = my.head + (index * T);
+        value.__transfer_to__(destination);
+        af_free($value);
         return res.accept(true);
     };
 
@@ -549,7 +555,9 @@ unique class vector {
         for int i = my.count; i > index; i = i - 1 {
             af_memcpy(my.head + (i * T), my.head + ((i - 1) * T), T);
         };
-        af_memcpy(my.head + (index * T), $value, T);
+        const adr destination = my.head + (index * T);
+        value.__transfer_to__(destination);
+        af_free($value);
         my.count = my.count + 1;
         return res.accept(true);
     };

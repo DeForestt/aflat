@@ -560,7 +560,10 @@ private fn parseObjectValue(const string value) -> JSON! {
             return new JSON->Object($map);
         };
 
-        const let key = match parseInternal(value)!.asString() {
+        // `asString()` returns an address borrowed from the parsed JSON
+        // string. Keep that owner alive until the map has copied the key.
+        const JSON parsedKey = parseInternal(value)!;
+        const let key = match parsedKey.asString() {
             Ok(s) => s,
             Err(e) => {
                 const string error = e.toString();
@@ -578,6 +581,7 @@ private fn parseObjectValue(const string value) -> JSON! {
         };
         const let parsedVal = parseInternal(value)!;
         map.set(key, box.wrap($parsedVal));
+        delete parsedKey;
         while st.char_isWhiteSpace(value.peek().or('n')) v = value.next();
         v = value.peek();
         if v.isNone() {

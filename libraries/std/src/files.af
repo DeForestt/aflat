@@ -305,22 +305,35 @@ shared safe dynamic pedantic class FileManager {
     };
     return my;
   };
-  
-  int del() {
+
+  loan FileManager cpy<<=>>(const FileManager other) {
         if (my.usable) {
-                my.f.close();
-                delete my.f;
+            my.f.close();
+            delete my.f;
         };
-        return 0;
+        my.f = other();
+        my.usable = other.usable;
+        // invalidate the other
+        other.usable = false;
+        other.f = NULL;
+        return my;
   };
-  
-  File _call() {
+
+  fn _call() -> File {
     if !my.usable {
         // undefined behavior
         panic("Attempted to use an unusable file");  
     };
     my.refcount = my.refcount - 1;
     return $my.f;
+  };
+
+  int del() {
+        if (my.usable) {
+                my.f.close();
+                delete my.f;
+        };
+        return 0;
   };
 
   void endScope() {
@@ -336,17 +349,5 @@ shared safe dynamic pedantic class FileManager {
     return my;
   };
 
-  loan FileManager cpy<<=>>(const FileManager other) {
-        if (my.usable) {
-            my.f.close();
-            delete my.f;
-        };
-        my.f = other();
-        my.usable = other.usable;
-        // invalidate the other
-        other.usable = false;
-        other.f = NULL;
-        return my;
-  };
 
 };

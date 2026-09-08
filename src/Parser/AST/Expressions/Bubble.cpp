@@ -24,6 +24,11 @@ gen::GenerationResult const
 Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
                            std::string typeHint) {
   asmc::File file;
+  std::string sourceOwnerName;
+  if (auto *sourceVar = dynamic_cast<ast::Var *>(expr);
+      sourceVar != nullptr && sourceVar->modList.count == 0) {
+    sourceOwnerName = sourceVar->Ident;
+  }
   auto exprResult = generator.GenExpr(expr, file);
   auto t = generator.getType(exprResult.type, file);
   if (!t) {
@@ -40,13 +45,19 @@ Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
   }
 
   ast::Type bubbleReturnType;
+  ast::Type bubbleErrorType;
   bool foundOk = false;
+  bool foundErr = false;
   for (const auto &alias : unionType->aliases) {
-    if (alias.name != "Ok" || !std::holds_alternative<ast::Type *>(alias.value))
+    if (!std::holds_alternative<ast::Type *>(alias.value))
       continue;
-    bubbleReturnType = *std::get<ast::Type *>(alias.value);
-    foundOk = true;
-    break;
+    if (alias.name == "Ok") {
+      bubbleReturnType = *std::get<ast::Type *>(alias.value);
+      foundOk = true;
+    } else if (alias.name == "Err") {
+      bubbleErrorType = *std::get<ast::Type *>(alias.value);
+      foundErr = true;
+    }
   }
   if (!foundOk) {
     generator.alert("Bubble expression type has no Ok payload: " +
@@ -81,18 +92,31 @@ Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
   ast::Match::Case caseOne;
   caseOne.pattern.aliasName = "Ok";
   caseOne.pattern.veriableName = "value";
-  caseOne.pattern.takesOwnership = exprResult.owned;
+  caseOne.pattern.takesOwnership =
+      exprResult.owned &&
+      parse::PRIMITIVE_TYPES.find(bubbleReturnType.typeName) ==
+          parse::PRIMITIVE_TYPES.end();
   auto var = new ast::Var();
   var->Ident = "value";
   auto returnStmt = new ast::Return();
-  returnStmt->expr = var;
+  if (caseOne.pattern.takesOwnership) {
+    auto transfer = new ast::Buy();
+    transfer->expr = var;
+    transfer->logicalLine = logicalLine;
+    returnStmt->expr = transfer;
+  } else {
+    returnStmt->expr = var;
+  }
   returnStmt->implicit = true;
   returnStmt->resolver = true;
   caseOne.statement = returnStmt;
   ast::Match::Case caseTwo;
   caseTwo.pattern.aliasName = "Err";
   caseTwo.pattern.veriableName = "err";
-  caseTwo.pattern.takesOwnership = exprResult.owned;
+  caseTwo.pattern.takesOwnership =
+      exprResult.owned && foundErr &&
+      parse::PRIMITIVE_TYPES.find(bubbleErrorType.typeName) ==
+          parse::PRIMITIVE_TYPES.end();
   auto errVar = new ast::Var();
   errVar->Ident = "err";
   auto returnErr = new ast::Return();
@@ -105,11 +129,25 @@ Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
 
   auto result = matchExpr->generateExpression(generator, size, typeHint);
   file << result.file;
-  // An owned union temporary is consumed by the generated `Ok(&&value)` /
-  // `Err(&&err)` bindings. Leaving the temporary live would run its destructor
-  // at the surrounding scope exit and destroy the payload a second time.
-  if (exprResult.owned)
-    symbol->sold = logicalLine;
+  // The generated match consumes the owned wrapper. Primitive payload arms
+  // copy their value and clean the wrapper; object payload arms transfer the
+  // allocation. Either way the hidden symbol must not be cleaned again.
+  if (exprResult.owned) {
+    symbol = gen::scope::ScopeManager::getInstance()->get(tempName);
+    if (symbol != nullptr)
+      symbol->sold = logicalLine;
+
+    // A direct owned variable and the hidden match receiver refer to the same
+    // union allocation. The match consumes that allocation, so ownership must
+    // also be removed from the source variable or function deScope will delete
+    // the stale pointer a second time.
+    if (!sourceOwnerName.empty()) {
+      auto *sourceOwner =
+          gen::scope::ScopeManager::getInstance()->get(sourceOwnerName);
+      if (sourceOwner != nullptr)
+        sourceOwner->sold = logicalLine;
+    }
+  }
   return {.file = file, .expr = result.expr};
 }
 

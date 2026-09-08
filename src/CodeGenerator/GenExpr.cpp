@@ -1952,6 +1952,74 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     }
 
     output = this->GenExpr(extension, OutputFile, size);
+
+    // Recursive extension generation can assign more scope symbols and grow
+    // ScopeManager's symbol vector, invalidating the pointer captured above.
+    // Resolve the hidden receiver again before reading or updating its
+    // lifecycle state.
+    tempSymbol = gen::scope::ScopeManager::getInstance()->get(tempName);
+
+    // An owned value used only as a borrowed receiver still owns its backing
+    // allocation. Once the complete chain has produced a value independent of
+    // that receiver, preserve the result and release the hidden receiver now;
+    // waiting for lexical scope exit lets loop iterations overwrite this slot.
+    const bool primitiveResult = parse::PRIMITIVE_TYPES.find(output.type) !=
+                                 parse::PRIMITIVE_TYPES.end();
+    const bool resultOutlivesReceiver =
+        primitiveResult || output.type == "void" || output.owned;
+    if (tempSymbol != nullptr && tempSymbol->owned && tempSymbol->sold == -1 &&
+        resultOutlivesReceiver) {
+      std::string savedResult;
+      std::string resultRegister;
+      if (output.type != "void") {
+        ast::Type resultType(output.type, output.size);
+        resultType.opType = output.op;
+        const int resultMod = gen::scope::ScopeManager::getInstance()->assign(
+            "", resultType, false);
+        savedResult = "-" + std::to_string(resultMod) + "(%rbp)";
+
+        resultRegister = output.op == asmc::Float
+                             ? registers()["%xmm0"]->get(output.size)
+                             : registers()["%rax"]->get(output.size);
+
+        auto *stage = new asmc::Mov();
+        stage->logicalLine = logicalLine();
+        stage->from = output.access;
+        stage->to = resultRegister;
+        stage->size = output.size;
+        stage->op = output.op;
+        OutputFile.text << stage;
+
+        auto *save = new asmc::Mov();
+        save->logicalLine = logicalLine();
+        save->from = resultRegister;
+        save->to = savedResult;
+        save->size = output.size;
+        save->op = output.op;
+        OutputFile.text << save;
+      }
+
+      // assign() may grow the scope symbol vector, so resolve the hidden
+      // receiver again instead of retaining a pointer across that operation.
+      tempSymbol = gen::scope::ScopeManager::getInstance()->get(tempName);
+      if (tempSymbol != nullptr) {
+        if (auto *cleanup = deScope(*tempSymbol)) {
+          OutputFile << *cleanup;
+          delete cleanup;
+        }
+        tempSymbol->sold = logicalLine();
+      }
+      if (!savedResult.empty()) {
+        auto *restore = new asmc::Mov();
+        restore->logicalLine = logicalLine();
+        restore->from = savedResult;
+        restore->to = resultRegister;
+        restore->size = output.size;
+        restore->op = output.op;
+        OutputFile.text << restore;
+        output.access = resultRegister;
+      }
+    }
   }
 
   return output;

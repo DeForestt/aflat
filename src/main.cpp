@@ -2466,6 +2466,7 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       "math.s",
       "strings.s",
       config.compatibility ? "std-cmp.s" : "std.s",
+      "allocator.s",
       "concurrency.s",
       "async.s",
       "files.s",

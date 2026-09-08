@@ -81,7 +81,9 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
     ast::Var *var = new ast::Var();
     var->logicalLine = this->logicalLine;
     var->Ident = this->ident;
-    var->modList = LinkedList<std::string>();
+    // Preserve field access when deleting `owner.field`. Dropping the path
+    // here frees the owning object itself instead of the field allocation.
+    var->modList = this->modList;
 
     ast::Call *freeCall = new ast::Call();
     freeCall->logicalLine = this->logicalLine;

@@ -32,6 +32,9 @@ shared class Bit{
 Bit newBit(int value);
 
 int af_free(object ptr);
+int af_live_blocks();
+long af_live_bytes();
+long af_total_allocations();
 int blockSize(object ptr);
 Time newTime(object size);
 adr af_malloc(int size);
