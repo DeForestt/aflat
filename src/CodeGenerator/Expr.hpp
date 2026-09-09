@@ -9,6 +9,7 @@ namespace gen {
 enum class LoanProvenance {
   None,
   Lexical,
+  FunctionInput,
   Unknown,
 };
 

@@ -12,7 +12,8 @@
 bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug);
 
-TEST_CASE("unused non-primitive return value warns", "[leak-warning]") {
+TEST_CASE("unused owned return value is cleaned without a leak warning",
+          "[leak-warning]") {
   auto parser = parse::Parser();
   test::mockGen::CodeGenerator gen("mod", parser, "",
                                    std::filesystem::current_path().string());
@@ -37,7 +38,7 @@ TEST_CASE("unused non-primitive return value warns", "[leak-warning]") {
   gen.GenSTMT(&call);
   std::cout.rdbuf(old);
 
-  REQUIRE(buffer.str().find("warning") != std::string::npos);
+  REQUIRE(buffer.str().find("may leak") == std::string::npos);
 }
 
 TEST_CASE("returning non-primitive value does not warn", "[leak-warning]") {
@@ -82,7 +83,8 @@ TEST_CASE("returning non-primitive value does not warn", "[leak-warning]") {
   REQUIRE(buffer.str().find("warning") == std::string::npos);
 }
 
-TEST_CASE("passing temporary to non-owned parameter warns", "[leak-warning]") {
+TEST_CASE("passing owned temporary to non-consuming parameter is rejected",
+          "[leak-warning]") {
   auto parser = parse::Parser();
   test::mockGen::CodeGenerator gen("mod", parser, "",
                                    std::filesystem::current_path().string());
@@ -121,7 +123,9 @@ TEST_CASE("passing temporary to non-owned parameter warns", "[leak-warning]") {
   gen.GenSTMT(&outer);
   std::cout.rdbuf(old);
 
-  REQUIRE(buffer.str().find("warning") != std::string::npos);
+  REQUIRE(gen.hasError());
+  REQUIRE(buffer.str().find("owned temporary of type `Foo` cannot be passed") !=
+          std::string::npos);
 }
 
 TEST_CASE("passing loaned unique result to non-owned parameter does not warn",
@@ -249,6 +253,5 @@ TEST_CASE("formatted unique toString result does not warn",
 
   INFO(buffer.str());
   REQUIRE(result);
-  CHECK(buffer.str().find("without transferring ownership may leak") ==
-        std::string::npos);
+  CHECK(buffer.str().find("owned temporary") == std::string::npos);
 }

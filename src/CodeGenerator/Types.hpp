@@ -53,6 +53,7 @@ public:
   bool owned = false;
   scope::ScopeId declarationScope = 0;
   LoanProvenance loanProvenance = LoanProvenance::Lexical;
+  scope::ScopeId loanScope = 0;
 
   std::vector<FieldState> fieldStates;
   std::unordered_map<std::string, int> fieldIndex; // field->index mapping

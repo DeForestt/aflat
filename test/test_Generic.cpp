@@ -303,6 +303,37 @@ TEST_CASE("nested generic member access resolves instantiated type",
   REQUIRE(result);
 }
 
+TEST_CASE("imported generic types parse inside concrete generic arguments",
+          "[generics][parser][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/nested_imported_generic_type");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto output = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+import vector from "Collections/Vector";
+import view from "Memory";
+
+fn borrow(const vector::<int> values) -> view::<vector::<int>> {
+  return new view::<vector::<int>>(values);
+};
+
+fn main() -> int {
+  const vector::<int> values = new vector::<int>();
+  const view::<vector::<int>> borrowed = borrow(values);
+  return borrowed.view().count();
+};
+)";
+
+  const bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+}
+
 TEST_CASE("function pointer type can be used as generic argument",
           "[generics][function-pointer]") {
   namespace fs = std::filesystem;
@@ -535,7 +566,10 @@ TEST_CASE("nested unordered_map methods keep their emitted bodies",
   ofs << "fn main() -> int {\n";
   ofs << "    const let values = new unordered_map::<adr, int>();\n";
   ofs << "    values.set(\"one\", 1);\n";
-  ofs << "    if values.count() == 1 & values.has(\"one\") & "
+  ofs << "    mutable int seen = 0;\n";
+  ofs << "    const let guard = values.iterationGuard();\n";
+  ofs << "    foreach entry in values { seen = seen + entry.value; };\n";
+  ofs << "    if seen == 1 & values.count() == 1 & values.has(\"one\") & "
          "values(\"one\").or(0) == 1 "
          "{ return 0; };\n";
   ofs << "    return 1;\n";
@@ -554,19 +588,174 @@ TEST_CASE("nested unordered_map methods keep their emitted bodies",
       "pub_vector__std__generic__start__u_map_bucket__std__generic__start__"
       "adr__std__generic__separator__int__std__generic__end____std__generic__"
       "end___get:";
-  const std::string optionNone =
-      "call\toption.None.u_map_bucket__std__generic__start__adr__std__generic__"
-      "separator__int__std__generic__end__";
+  const std::string optionNone = "call\toption.None.__std__loan__u_map_bucket";
+  const std::string optionSome = "call\toption.Some.__std__loan__u_map_bucket";
   const std::string mapCall =
       "pub_unordered_map__std__generic__start__adr__std__generic__separator__"
       "int__std__generic__end____call:";
+  const std::string entryVectorGet =
+      "pub_vector__std__generic__start__u_map_entry__std__generic__start__"
+      "adr__std__generic__separator__int__std__generic__end____std__generic__"
+      "end___get_unlocked:";
+  const std::string entryOptionSome =
+      "call\toption.Some.__std__loan__u_map_entry";
 
   REQUIRE(result);
   const auto vectorGetPos = asmText.find(vectorGet);
   REQUIRE(vectorGetPos != std::string::npos);
   const auto nextFunction = asmText.find("\npub_", vectorGetPos + 1);
   REQUIRE(asmText.find(optionNone, vectorGetPos) < nextFunction);
+  REQUIRE(asmText.find(optionSome, vectorGetPos) < nextFunction);
+  const auto entryVectorGetPos = asmText.find(entryVectorGet);
+  REQUIRE(entryVectorGetPos != std::string::npos);
+  const auto afterEntryVectorGet =
+      asmText.find("\npub_", entryVectorGetPos + 1);
+  REQUIRE(asmText.find(entryOptionSome, entryVectorGetPos) <
+          afterEntryVectorGet);
   REQUIRE(asmText.find(mapCall) != std::string::npos);
+}
+
+TEST_CASE("map iteration preserves explicit loan generic after overload retry",
+          "[generics][codegen][unordered_map][loan]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/map_iteration_loan_retry");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto output = dir / "main.s";
+  std::ofstream ofs(source);
+  ofs << R"(.needs <std>
+import unordered_map from "Collections/unordered_map";
+
+unique class Payload {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+  fn read() -> int { return my.value; };
+};
+
+fn main() -> int {
+  const let values = new unordered_map::<adr, Payload>();
+  values.set("one", new Payload(1));
+  const let guard = values.iterationGuard();
+  foreach entry in values { return entry.value.read() - 1; };
+  return 1;
+};
+)";
+  ofs.close();
+
+  const bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  std::ifstream generated(output);
+  std::stringstream buffer;
+  buffer << generated.rdbuf();
+  const std::string asmText = buffer.str();
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+  const std::string entryVectorGet =
+      "pub_vector__std__generic__start__u_map_entry__std__generic__start__"
+      "adr__std__generic__separator__Payload__std__generic__end____std__"
+      "generic__"
+      "end___get_unlocked:";
+  const auto entryVectorGetPos = asmText.find(entryVectorGet);
+  REQUIRE(entryVectorGetPos != std::string::npos);
+  const auto afterEntryVectorGet =
+      asmText.find("\npub_", entryVectorGetPos + 1);
+  REQUIRE(asmText.find("call\toption.Some.__std__loan__u_map_entry",
+                       entryVectorGetPos) < afterEntryVectorGet);
+}
+
+TEST_CASE("map iteration preserves entry address for boxed union values",
+          "[generics][codegen][unordered_map][loan][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/map_iteration_boxed_union_loan");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto output = dir / "main.s";
+  std::ofstream ofs(source);
+  ofs << R"(.needs <std>
+import unordered_map from "Collections/unordered_map";
+import Box from "Memory";
+import JSON from "JSON";
+import {Null, Object} from "JSON" under json;
+
+fn main() -> int {
+  let values = new unordered_map::<adr, Box::<JSON>>();
+  values.set("one", new Box::<JSON>(json.Null()));
+  const string encoded = json.Object($values).stringify();
+  return 0;
+};
+)";
+  ofs.close();
+
+  const bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  std::ifstream generated(output);
+  std::stringstream buffer;
+  buffer << generated.rdbuf();
+  const std::string asmText = buffer.str();
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+  const std::string entryVectorGet =
+      "pub_vector__std__generic__start__u_map_entry__std__generic__start__"
+      "adr__std__generic__separator__Box__std__generic__start__JSON__std__"
+      "generic__"
+      "end____std__generic__end____std__generic__end___get_unlocked:";
+  const auto entryVectorGetPos = asmText.find(entryVectorGet);
+  REQUIRE(entryVectorGetPos != std::string::npos);
+  const auto afterEntryVectorGet =
+      asmText.find("\npub_", entryVectorGetPos + 1);
+  REQUIRE(asmText.find("call\toption.Some.__std__loan__u_map_entry",
+                       entryVectorGetPos) < afterEntryVectorGet);
+  REQUIRE(asmText.find(
+              "call\toption.Some.u_map_entry__std__generic__start__adr__std__"
+              "generic__separator__Box__std__generic__start__JSON") ==
+          std::string::npos);
+}
+
+TEST_CASE("primitive vector accessors return copied values",
+          "[generics][codegen][vector][primitive]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/primitive_vector_accessors");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto output = dir / "main.s";
+  std::ofstream(source) << R"(.needs <std>
+import vector from "Collections/Vector";
+
+fn isSecond(const adr value, * const adr args) -> bool {
+  return value == "second";
+};
+
+fn main() -> int {
+  const vector::<adr> values = [];
+  values.push_back("first");
+  values.push_back("second");
+  const adr front = values.front().expect("missing front");
+  const adr back = values.back().expect("missing back");
+  const adr indexed = values(0).expect("missing index");
+  const adr next = values.next().expect("missing next");
+  const adr found = values.findFirst(isSecond).expect("missing match");
+  if front == "first" & back == "second" & indexed == "first" &
+      next == "first" & found == "second" { return 0; };
+  return 1;
+};
+)";
+
+  const bool result =
+      build(source.string(), output.string(), cfg::Mutability::Strict, false);
+  std::ifstream generated(output);
+  std::stringstream buffer;
+  buffer << generated.rdbuf();
+  const std::string asmText = buffer.str();
+  fs::remove_all(dir);
+
+  REQUIRE(result);
+  CHECK(asmText.find("option.Some.adr") != std::string::npos);
+  CHECK(asmText.find("option.Some.__std__loan__adr") == std::string::npos);
 }
 
 TEST_CASE("generic dynamic classes emit lifecycle cleanup methods",

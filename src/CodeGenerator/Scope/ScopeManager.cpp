@@ -97,6 +97,7 @@ int ScopeManager::assign(std::string symbol, ast::Type type, bool mask,
   sym.readOnly = readOnly;
   sym.refCount = 0;
   sym.declarationScope = currentScope();
+  sym.loanScope = sym.declarationScope;
   impl->stack.push_back(sym);
   impl->SStackSize++;
 

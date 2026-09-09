@@ -46,9 +46,12 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
   gen::Symbol *sym = std::get<4>(resolved);
   if (sym == nullptr)
     sym = resolvedSym;
-  if (sym->sold != -1)
+  const gen::Symbol symbolSnapshot = *sym;
+  const ast::Type resolvedType = resolvedSym->type;
+  if (symbolSnapshot.sold != -1)
     generator.alert("Variable " + this->ident + " was sold on line " +
-                    std::to_string(sym->sold) + " and cannot be deleted");
+                    std::to_string(symbolSnapshot.sold) +
+                    " and cannot be deleted");
 
   ast::Function *af_free = generator.nameTable()["af_free"];
   if (af_free == nullptr)
@@ -56,10 +59,12 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
         "Please import std library in order to use delete operator.\n\n -> "
         ".needs <std> \n\n");
 
-  gen::Type **type = generator.typeList()[sym->type.typeName];
+  gen::Type **type = generator.typeList()[symbolSnapshot.type.typeName];
+  bool deletesClassAllocation = false;
   if (type != nullptr) {
     gen::Class *classType = dynamic_cast<gen::Class *>(*type);
     if (classType != nullptr) {
+      deletesClassAllocation = true;
       // check if the class has a destructor
       ast::Function *destructor = classType->nameTable["del"];
 
@@ -77,13 +82,21 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
   // A loan may refer to inline storage (for example, an element inside a
   // vector buffer). Destroy its fields, but only release the allocation when
   // this symbol actually owns it.
-  if (sym->owned && !sym->type.isLoan) {
+  const int fieldDepth =
+      this->modList.count -
+      (generator.nameSpaceTable().contains(this->ident) ? 1 : 0);
+  const bool deletesOwnedClassField = fieldDepth > 0 && deletesClassAllocation;
+  if ((symbolSnapshot.owned || deletesOwnedClassField) &&
+      !resolvedType.isLoan) {
     ast::Var *var = new ast::Var();
     var->logicalLine = this->logicalLine;
     var->Ident = this->ident;
     // Preserve field access when deleting `owner.field`. Dropping the path
     // here frees the owning object itself instead of the field allocation.
     var->modList = this->modList;
+    // `delete` is itself the ownership-consuming operation. Generate the raw
+    // stored pointer for the final free, including for safe class fields.
+    var->selling = true;
 
     ast::Call *freeCall = new ast::Call();
     freeCall->logicalLine = this->logicalLine;
@@ -94,9 +107,19 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
     OutputFile << generator.GenSTMT(freeCall);
   }
   OutputFile << std::get<3>(resolved);
-  // Explicit deletion consumes the owner. Prevent scope cleanup from freeing
-  // it again and reject any later use through the normal sold-value checks.
-  sym->sold = this->logicalLine;
+  // Only root bindings carry per-value ownership state. A resolved field
+  // symbol belongs to the class definition and is shared by every method and
+  // instance; marking it sold would poison all subsequent field accesses.
+  gen::Symbol *liveSymbol = nullptr;
+  if (fieldDepth == 0) {
+    liveSymbol = gen::scope::ScopeManager::getInstance()->get(this->ident);
+    if (liveSymbol == nullptr) {
+      liveSymbol = generator.GlobalSymbolTable().search<std::string>(
+          gen::utils::searchSymbol, this->ident);
+    }
+  }
+  if (liveSymbol != nullptr)
+    liveSymbol->sold = this->logicalLine;
   return {OutputFile, std::nullopt};
 }
 

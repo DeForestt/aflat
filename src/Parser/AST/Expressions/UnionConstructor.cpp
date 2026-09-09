@@ -157,12 +157,25 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
   auto useExpr = std::holds_alternative<ast::Type *>(alias.value)
                      ? expr
                      : std::get<ast::Expr *>(alias.value);
+  const auto *aliasPayloadType =
+      std::holds_alternative<ast::Type *>(alias.value)
+          ? std::get<ast::Type *>(alias.value)
+          : nullptr;
+  const bool loanPayload =
+      aliasPayloadType != nullptr && aliasPayloadType->isLoan;
   const bool explicitlyTransferred =
       dynamic_cast<ast::Buy *>(useExpr) != nullptr;
   const bool addressableSource =
       dynamic_cast<ast::Var *>(useExpr) != nullptr ||
       dynamic_cast<ast::Reference *>(useExpr) != nullptr;
   bool ownsPayloadWrapper = explicitlyTransferred || !addressableSource;
+  bool ownershipBearingPayload = false;
+
+  if (loanPayload && explicitlyTransferred) {
+    generator.alert("cannot transfer ownership into loaned union variant `" +
+                        variantName + "`",
+                    true, __FILE__, __LINE__);
+  }
 
   auto fromExpr = generator.GenExpr(useExpr, file, asmc::QWord);
 
@@ -176,10 +189,12 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
       fromExpr.adoptImmutableRequirement(prev);
     }
   }
-  if (parse::PRIMITIVE_TYPES.find(fromExpr.type) ==
-      parse::PRIMITIVE_TYPES.end()) {
+  if (!loanPayload && parse::PRIMITIVE_TYPES.find(fromExpr.type) ==
+                          parse::PRIMITIVE_TYPES.end()) {
     auto tnt = generator.getType(fromExpr.type, file);
     auto cls = tnt ? dynamic_cast<gen::Class *>(*tnt) : nullptr;
+    auto nestedUnion = tnt ? dynamic_cast<gen::Union *>(*tnt) : nullptr;
+    ownershipBearingPayload = cls != nullptr || nestedUnion != nullptr;
     if (!explicitlyTransferred && addressableSource && cls != nullptr &&
         cls->publicNameTable["__copy__"] != nullptr) {
       auto call = new ast::CallExpr();
@@ -193,12 +208,29 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
       fromExpr.adoptImmutableRequirement(prev);
       ownsPayloadWrapper = true;
     }
+
+    if (ownershipBearingPayload && !ownsPayloadWrapper) {
+      generator.alert(
+          "cannot store unsold nonprimitive value of type `" + fromExpr.type +
+              "` in ownership-bearing union variant `" + variantName +
+              "`; explicitly transfer it with `$` or provide "
+              "`__copy__`",
+          true, __FILE__, __LINE__);
+    }
   }
 
   // check if the expression is a primitive type
 
-  if (parse::PRIMITIVE_TYPES.find(fromExpr.type) !=
-      parse::PRIMITIVE_TYPES.end()) {
+  if (loanPayload) {
+    if (!addressableSource && fromExpr.owned) {
+      generator.alert("cannot borrow a temporary value into union variant `" +
+                          variantName + "`",
+                      true, __FILE__, __LINE__);
+    }
+    file << generator.setOffset(store->to, 0, fromExpr.access, asmc::QWord,
+                                asmc::Hard);
+  } else if (parse::PRIMITIVE_TYPES.find(fromExpr.type) !=
+             parse::PRIMITIVE_TYPES.end()) {
     file << generator.setOffset(store->to, 0, fromExpr.access, fromExpr.size,
                                 fromExpr.op);
   } else {
@@ -272,6 +304,10 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
   out.type = unionType.typeName;
   out.op = asmc::Hard;
   out.owned = internalAccess.expr->owned;
+  if (loanPayload) {
+    out.loanProvenance = fromExpr.loanProvenance;
+    out.loanScope = fromExpr.loanScope;
+  }
 
   return {file, out};
 }

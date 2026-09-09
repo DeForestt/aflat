@@ -168,6 +168,8 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
       auto sym = gen::scope::ScopeManager::getInstance()->get(arg->ident);
       if (func.argTypes[index].isRvalue) {
         sym->owned = true;
+      } else {
+        sym->loanProvenance = gen::LoanProvenance::FunctionInput;
       }
 
       mov->size = size;
@@ -253,9 +255,10 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
                                          parse::PRIMITIVE_TYPES.end()) {
             auto t = typeList()[expr.type];
             if (t && (*t)->uniqueType) {
-              this->alert("Discarding non-primitive return value of type `" +
-                              expr.type + "` may leak",
-                          false);
+              // A discarded owning result is still a value with a lifetime:
+              // materialize it as an anonymous local and immediately run the
+              // normal scope cleanup. Loaned results need no cleanup. Neither
+              // case is a leak, so do not diagnose it as one.
               scope::ScopeManager::getInstance()->pushScope(false);
               const auto tempName =
                   "$" + std::to_string(tempCount()++) + "_unused";

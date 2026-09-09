@@ -173,6 +173,10 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       file.text << mov2;
       file.text << mov;
       s->owned = expr.owned && !dec->type.isLoan;
+      if (expr.loanProvenance != gen::LoanProvenance::None) {
+        s->loanProvenance = expr.loanProvenance;
+        s->loanScope = expr.loanScope;
+      }
       s->usable = true;
     } else {
       if (this->annotations.size() > 0) {

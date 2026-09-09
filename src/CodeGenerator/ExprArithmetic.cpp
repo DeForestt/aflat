@@ -98,6 +98,8 @@ gen::Expr gen::CodeGenerator::genArithmetic(asmc::ArithInst *inst,
   OutputFile.text << mov;
   output.size = expr.size;
   output.type = expr.type;
+  output.loanProvenance = expr.loanProvenance;
+  output.loanScope = expr.loanScope;
   return output;
 }
 } // namespace gen

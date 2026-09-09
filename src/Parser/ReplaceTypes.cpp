@@ -33,8 +33,13 @@ static void applyType(Type &t,
     t.typeName = replaceAllParts(t.typeName, map);
   } else {
     auto it = map.find(t.typeName);
-    if (it != map.end())
+    if (it != map.end()) {
       t.typeName = it->second;
+      if (!t.typeName.empty() && t.typeName.front() == '&') {
+        t.isLoan = true;
+        t.typeName.erase(0, 1);
+      }
+    }
     if (parse::PRIMITIVE_TYPES.find(t.typeName) !=
         parse::PRIMITIVE_TYPES.end()) {
       t.size = gen::utils::toSize(parse::PRIMITIVE_TYPES.at(t.typeName));
@@ -404,6 +409,11 @@ void Statement::replaceTypes(std::unordered_map<std::string, std::string> map) {
           auto it = map.find(typeName);
           if (it != map.end())
             typeName = it->second;
+        }
+
+        if (!typeName.empty() && typeName.front() == '&') {
+          replacedType.isLoan = true;
+          typeName.erase(0, 1);
         }
 
         auto primIt = parse::PRIMITIVE_TYPES.find(typeName);

@@ -1351,6 +1351,8 @@ static std::string sanitizeGenerics(const std::string &input) {
         genericDepth--;
       } else if (c == ',' && genericDepth > 0) {
         result += "__std__generic__separator__";
+      } else if (c == '&') {
+        result += "__std__loan__";
       } else if (c != ' ') {
         result += c;
       }

@@ -238,7 +238,10 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   const bool targetOwnsValue = expr.owned && !symbol->type.isLoan;
   fin->owned = targetOwnsValue;
   fin->sold = -1;
-  if (binding != nullptr) {
+  // Field symbols are shared class-layout metadata, not per-instance runtime
+  // bindings. Do not leak assignment ownership state into other methods or
+  // instances of the class.
+  if (binding != nullptr && fieldDepth == 0) {
     binding->owned = targetOwnsValue;
     binding->sold = -1;
   }

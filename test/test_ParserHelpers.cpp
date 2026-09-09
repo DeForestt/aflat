@@ -125,3 +125,15 @@ TEST_CASE("parser helper diagnoses end of input",
   CHECK(error.find("Expected `&&`") != std::string::npos);
   CHECK(error.find("got end of input") != std::string::npos);
 }
+
+TEST_CASE("template arguments preserve first-class loan identity",
+          "[parser][generics][loan]") {
+  auto tokens = scanForParser("::<&T>");
+  parse::Parser parser;
+  parser.addType("T", asmc::Hard, asmc::QWord, true, true);
+
+  const auto types = parser.parseTemplateTypeList(tokens, 1);
+
+  REQUIRE(types.size() == 1);
+  CHECK(types[0] == "&T");
+}

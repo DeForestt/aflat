@@ -56,6 +56,8 @@ public:
   bool globalLocked = false;    // if the function is locked to the global scope
   bool returnImmutable = false; // if callers must bind return to immutable sym
   bool returnLowOwnership = false; // if the return value does not yield owner
+  // `-> &T?` / `-> &T!`: the wrapper is owned, but its T payload is a loan.
+  bool returnPayloadLoan = false;
   int overloadIndex = 0;
 
   Function() = default;
@@ -82,7 +84,8 @@ public:
         sinksReceiver(Other.sinksReceiver),
         asyncStateCounter(Other.asyncStateCounter), readOnly(Other.readOnly),
         returnImmutable(Other.returnImmutable),
-        returnLowOwnership(Other.returnLowOwnership), error(Other.error) {
+        returnLowOwnership(Other.returnLowOwnership),
+        returnPayloadLoan(Other.returnPayloadLoan), error(Other.error) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;
     this->hidden = Other.hidden;

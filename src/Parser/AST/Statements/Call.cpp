@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <exception>
+#include <unordered_set>
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/Scope/ScopeManager.hpp"
@@ -37,6 +38,40 @@ struct OverloadRetry : public std::exception {
 
 bool isConcreteGenericClassName(const std::string &typeName) {
   return typeName.find('<') != std::string::npos;
+}
+
+bool containsLoanedUnionPayload(gen::CodeGenerator &generator,
+                                const std::string &typeName,
+                                std::unordered_set<std::string> &seen) {
+  if (!seen.insert(typeName).second)
+    return false;
+  static const std::string taskPrefix = "task<";
+  if (typeName.rfind(taskPrefix, 0) == 0 && typeName.back() == '>') {
+    const auto inner = typeName.substr(taskPrefix.size(),
+                                       typeName.size() - taskPrefix.size() - 1);
+    return containsLoanedUnionPayload(generator, inner, seen);
+  }
+  auto **entry = generator.typeList()[typeName];
+  auto *unionType =
+      entry == nullptr ? nullptr : dynamic_cast<gen::Union *>(*entry);
+  if (unionType == nullptr)
+    return false;
+  for (const auto &alias : unionType->aliases) {
+    if (!std::holds_alternative<ast::Type *>(alias.value))
+      continue;
+    const auto *payload = std::get<ast::Type *>(alias.value);
+    if (payload->isLoan)
+      return true;
+    if (containsLoanedUnionPayload(generator, payload->typeName, seen))
+      return true;
+  }
+  return false;
+}
+
+bool containsLoanedUnionPayload(gen::CodeGenerator &generator,
+                                const std::string &typeName) {
+  std::unordered_set<std::string> seen;
+  return containsLoanedUnionPayload(generator, typeName, seen);
 }
 
 std::string lazyMethodEmissionKey(std::string label) {
@@ -229,6 +264,7 @@ gen::GenerationResult Call::generateAttempt(
     dst.error = src.error;
     dst.returnImmutable = src.returnImmutable;
     dst.returnLowOwnership = src.returnLowOwnership;
+    dst.returnPayloadLoan = src.returnPayloadLoan;
   };
 
   auto file = asmc::File();
@@ -244,6 +280,17 @@ gen::GenerationResult Call::generateAttempt(
   std::string sinkReceiverIdent;
   bool sinkReceiverOwned = false;
   bool sinkReceiverIsField = false;
+  gen::LoanProvenance returnedLoanProvenance = gen::LoanProvenance::None;
+  gen::scope::ScopeId returnedLoanScope = 0;
+  auto includeLoanSource = [&](const gen::Expr &source) {
+    if (source.loanProvenance == gen::LoanProvenance::None)
+      return;
+    if (returnedLoanProvenance == gen::LoanProvenance::None ||
+        source.loanProvenance == gen::LoanProvenance::Lexical) {
+      returnedLoanProvenance = source.loanProvenance;
+      returnedLoanScope = source.loanScope;
+    }
+  };
   gen::Class *lazyConcreteClass = nullptr;
   ast::Function *lazyConcreteFunction = nullptr;
   this->modList.invert();
@@ -670,6 +717,14 @@ gen::GenerationResult Call::generateAttempt(
 
           gen::Expr exp;
           exp = generator.GenExpr(ref, file);
+          auto *receiverSource =
+              gen::scope::ScopeManager::getInstance()->get(my);
+          if (receiverSource == nullptr)
+            receiverSource = sym;
+          gen::Expr receiverLoan;
+          receiverLoan.loanProvenance = receiverSource->loanProvenance;
+          receiverLoan.loanScope = receiverSource->loanScope;
+          includeLoanSource(receiverLoan);
           asmc::Movq *mov = new asmc::Movq();
           mov->logicalLine = this->logicalLine;
           asmc::Mov *mov2 = new asmc::Mov();
@@ -964,6 +1019,10 @@ gen::GenerationResult Call::generateAttempt(
     const bool hasParamType = checkArgs && paramIndex < func->argTypes.size();
     const ast::Type *paramType =
         hasParamType ? &func->argTypes.at(paramIndex) : nullptr;
+    if (paramType != nullptr &&
+        (paramType->isLoan ||
+         (func->returnPayloadLoan && !paramType->isRvalue)))
+      includeLoanSource(exp);
     const bool paramConsumesOwnedValue =
         paramType != nullptr && paramType->isRvalue;
 
@@ -974,11 +1033,12 @@ gen::GenerationResult Call::generateAttempt(
         parse::PRIMITIVE_TYPES.find(exp.type) == parse::PRIMITIVE_TYPES.end()) {
       auto t = generator.typeList()[exp.type];
       if (t && (*t)->uniqueType) {
-        std::string discardWarning =
-            "Discarding non-primitive return value of type `" + exp.type +
-            "` that is passed to argument " + std::to_string(i + 1) +
-            " of function `" + ident +
-            "` without transferring ownership may leak";
+        std::string ownershipDiagnostic =
+            "owned temporary of type `" + exp.type +
+            "` cannot be passed to non-consuming argument " +
+            std::to_string(i + 1) + " of function `" + ident +
+            "`; bind it to a symbol with a lifetime or use an "
+            "ownership-consuming parameter";
         bool hasAlternativeOverload = false;
         if (!this->allowDiscardWarning && overloadTable != nullptr &&
             currentOverloadIndex >= 0 && !overloadIdent.empty()) {
@@ -991,10 +1051,10 @@ gen::GenerationResult Call::generateAttempt(
         }
         if (hasAlternativeOverload) {
           this->requestOverloadRetry(generator, overloadTable, overloadIdent,
-                                     currentOverloadIndex, discardWarning,
+                                     currentOverloadIndex, ownershipDiagnostic,
                                      false, true, true);
         } else {
-          generator.alert(discardWarning, false);
+          generator.alert(ownershipDiagnostic, true, __FILE__, __LINE__);
         }
       }
     }
@@ -1226,6 +1286,12 @@ gen::GenerationResult Call::generateAttempt(
   generator.intArgsCounter() = 0;
 
   auto result = func->toExpr(generator);
+  if ((func->returnLowOwnership || func->returnPayloadLoan ||
+       containsLoanedUnionPayload(generator, result.type)) &&
+      returnedLoanProvenance != gen::LoanProvenance::None) {
+    result.loanProvenance = returnedLoanProvenance;
+    result.loanScope = returnedLoanScope;
+  }
 
   if (func->sinksReceiver) {
     if (sinkReceiverIdent.empty()) {

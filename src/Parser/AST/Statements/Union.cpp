@@ -118,6 +118,8 @@ ast::Function *buildAutomaticDestructor(gen::CodeGenerator &generator,
       continue;
 
     auto *payloadType = std::get<ast::Type *>(alias.value);
+    if (payloadType->isLoan)
+      continue;
     auto **entry = generator.typeList()[payloadType->typeName];
     auto *payloadClass =
         entry == nullptr ? nullptr : dynamic_cast<gen::Class *>(*entry);
@@ -356,8 +358,10 @@ gen::GenerationResult const Union::generate(gen::CodeGenerator &generator) {
     } else if (alias->isType()) {
       auto typePtr = new ast::Type(alias->getType());
 
-      if (typePtr->typeName.find("~") != std::string::npos &&
-          typePtr->typeName.find("<") == std::string::npos) {
+      if (typePtr->isLoan) {
+        type->aliases.emplace_back(alias->name, typePtr, 8);
+      } else if (typePtr->typeName.find("~") != std::string::npos &&
+                 typePtr->typeName.find("<") == std::string::npos) {
         type->aliases.emplace_back(alias->name, typePtr, 8);
       } else if (parse::PRIMITIVE_TYPES.find(typePtr->typeName) !=
                  parse::PRIMITIVE_TYPES.end()) {

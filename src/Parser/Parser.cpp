@@ -1520,9 +1520,22 @@ std::vector<std::string> parse::Parser::Impl::parseTemplateTypeList(
                            std::to_string(lineCount));
     }
     tokens.pop();
-    while (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+    while (tokens.peek() != nullptr) {
+      bool loanType = false;
+      if (auto *loanMarker = dynamic_cast<lex::OpSym *>(tokens.peek());
+          loanMarker != nullptr && loanMarker->Sym == '&') {
+        loanType = true;
+        tokens.pop();
+      }
+      if (dynamic_cast<lex::LObj *>(tokens.peek()) == nullptr)
+        throw err::Exception("Expected type in template list on line " +
+                             std::to_string(lineCount));
       auto typeName = *dynamic_cast<lex::LObj *>(tokens.pop());
-      if (this->typeList[typeName.meta] == nullptr)
+      const auto nestedTemplate = dynamic_cast<lex::Symbol *>(tokens.peek());
+      const bool hasNestedTemplate =
+          nestedTemplate != nullptr &&
+          (nestedTemplate->meta == "::" || nestedTemplate->meta == "<");
+      if (this->typeList[typeName.meta] == nullptr && !hasNestedTemplate)
         throw err::Exception("Unknown type " + typeName.meta);
       auto tname = typeName.meta;
       const auto functionPointerSym =
@@ -1540,6 +1553,8 @@ std::vector<std::string> parse::Parser::Impl::parseTemplateTypeList(
           tname += ">";
         }
       }
+      if (loanType)
+        tname = "&" + tname;
       list.push_back(tname);
       auto k = tokens.peek();
       if (dynamic_cast<lex::OpSym *>(k) != nullptr &&

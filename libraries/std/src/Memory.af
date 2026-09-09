@@ -80,17 +80,31 @@ unique class owned {
 		return my;
 	};
 
-	fn _set(const T &&value) -> loan Self {
-		my.value = $value;
-		return my;
-	};
-
 
 	safe fn view() -> loan immutable T {
 		return my.value;
 	};
 
-	fn del() {
+  sink fn release() -> T {
+    my.valid = false;
+    return $my.value;
+  };
+
+  sink fn release() -> T {
+    my.valid = false;
+    return $my.value;
+  };
+
+	fn _set(const T &&value) -> loan Self {
+		my.value = $value;
+		return my;
+	};
+
+	fn toString() -> uni_string {
+		return `owned({my.value})`;
+	};
+	
+  fn del() {
     if my.valid == false return;
 		when(T is adr)
 		af_free(my.value);
@@ -99,20 +113,6 @@ unique class owned {
 		delete my.value;
 	};
 
-  sink fn release() -> T {
-    my.valid = false;
-    return $my.value;
-  };
-
-  fn release() -> T {
-    my.valid = false;
-    return $my.value;
-  };
-
-
-	fn toString() -> uni_string {
-		return `owned({my.value})`;
-	};
 };
 
 

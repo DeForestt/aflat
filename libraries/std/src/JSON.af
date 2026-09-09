@@ -57,7 +57,7 @@ unique union JSON {
         };
     };
 
-    fn set(const string key, const JSON &&value) -> JSON! {
+    fn set(const string key, const JSON &&value) -> bool! {
         match my {
             Object(map) => {
                 match map.get(key.cstr()) {
@@ -67,7 +67,7 @@ unique union JSON {
                     None => {}
                 };
                 map.set(key.cstr(), new Box::<JSON>($value));
-                return my;
+                return true;
             },
             _ => return new Error("JSON is not an Object")
         }
@@ -106,25 +106,25 @@ unique union JSON {
         }
     };
 
-    fn asList() -> loan vector::<Box::<JSON>>! {
+    fn asList() -> result::<&vector::<Box::<JSON>>> {
         match my {
-            List(list) => return list,
+            List(list) => return res.accept::<&vector::<Box::<JSON>>>(list),
             Borrowed(raw) => {
                 const loan JSON borrowed = raw$JSON;
                 return borrowed.asList();
             },
-            _ => return new Error("JSON is not a List"),
+            _ => return res.reject::<&vector::<Box::<JSON>>>(new Error("JSON is not a List")),
         }
     }; 
 
-    fn asObject() -> loan unordered_map::<adr,Box::<JSON>>! {
+    fn asObject() -> result::<&unordered_map::<adr,Box::<JSON>>> {
         match my {
-            Object(map) => return map,
+            Object(map) => return res.accept::<&unordered_map::<adr,Box::<JSON>>>(map),
             Borrowed(raw) => {
                 const loan JSON borrowed = raw$JSON;
                 return borrowed.asObject();
             },
-            _ => return new Error("JSON is not an Object")
+            _ => return res.reject::<&unordered_map::<adr,Box::<JSON>>>(new Error("JSON is not an Object"))
         }
     };
 
