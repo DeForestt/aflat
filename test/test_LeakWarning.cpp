@@ -232,7 +232,7 @@ TEST_CASE("formatted unique toString result does not warn",
   ofs << "fn main() -> int {\n";
   ofs << "    let values = new vector::<Item>();\n";
   ofs << "    let item = new Item();\n";
-  ofs << "    values.push_back(item);\n";
+  ofs << "    values.push_back($item);\n";
   ofs << "    let rendered = values.toString();\n";
   ofs << "    delete rendered;\n";
   ofs << "    delete values;\n";
@@ -247,6 +247,7 @@ TEST_CASE("formatted unique toString result does not warn",
   std::cout.rdbuf(old);
   fs::remove_all(dir);
 
+  INFO(buffer.str());
   REQUIRE(result);
   CHECK(buffer.str().find("without transferring ownership may leak") ==
         std::string::npos);

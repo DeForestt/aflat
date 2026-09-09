@@ -17,7 +17,7 @@ TEST_CASE("match expressions resolve semicolon-free arms independently",
   const auto source = dir / "main.af";
   const auto assembly = dir / "main.s";
 
-  std::ofstream(source) << R"(union Choice {
+  std::ofstream(source) << R"(shared union Choice {
   Number(int),
   Empty
 };

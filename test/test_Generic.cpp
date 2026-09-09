@@ -242,7 +242,7 @@ TEST_CASE("generic explicit casts specialize their target type", "[generics]") {
   const auto output = dir / "generic_explicit_cast.s";
   std::ofstream ofs(source);
   ofs << "types(T)\n";
-  ofs << "class Box {\n";
+  ofs << "shared class Box {\n";
   ofs << "    any value = value;\n";
   ofs << "    fn init(any value) -> Self { return my; };\n";
   ofs << "    when (T is not unique)\n";
@@ -342,7 +342,7 @@ TEST_CASE("generic class function pointer fields substitute template types",
   const auto output = dir / "generic_function_pointer_field.s";
   std::ofstream ofs(source);
   ofs << "types(T)\n";
-  ofs << "class Mapper {\n";
+  ofs << "shared class Mapper {\n";
   ofs << "    T<T> map = map;\n";
   ofs << "    fn init(T<T> map) -> Self { return my; };\n";
   ofs << "    fn apply(T value) -> T {\n";

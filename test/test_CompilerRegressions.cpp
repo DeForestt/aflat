@@ -479,6 +479,14 @@ static unsigned char storage[64];
 static int memberResult;
 static int standaloneResult;
 void *af_malloc(int size) { (void)size; return storage; }
+int af_free(void *pointer) { (void)pointer; return 0; }
+int af_memcpy(void *destination, const void *source, int size) {
+  unsigned char *out = destination;
+  const unsigned char *in = source;
+  for (int index = 0; index < size; ++index)
+    out[index] = in[index];
+  return 0;
+}
 void *memberCallback(struct Callable *receiver, int value) {
   memberResult = receiver->bias + value;
   return &memberResult;
@@ -608,7 +616,7 @@ fn main() -> int {
 
   REQUIRE(built);
   CHECK(assembled == 0);
-  CHECK(text.find("option.Some.Value:") != std::string::npos);
+  CHECK(text.find("option.Some_ovl1.Value:") != std::string::npos);
   CHECK(
       text.find(
           "pub_option__std__generic__start__Value__std__generic__end___del:") !=

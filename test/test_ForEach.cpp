@@ -16,7 +16,7 @@ std::string asyncIteratorProgram(bool asyncMain) {
   return R"(.needs <std>
 import option from "Utils/option";
 
-class AsyncIterator {
+shared class AsyncIterator {
     private mutable int index = 0;
 
     async fn next() -> option::<int> {

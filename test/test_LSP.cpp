@@ -47,7 +47,7 @@ TEST_CASE("LSP semantic tokens support unions", "[lsp][union]") {
   const auto open =
       R"({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":")" +
       uri +
-      R"(","languageId":"aflat","version":1,"text":"union Choice { A(int), B };"}}})";
+      R"(","languageId":"aflat","version":1,"text":"shared union Choice { A(int), B };"}}})";
   const auto semantic =
       R"({"jsonrpc":"2.0","id":2,"method":"textDocument/semanticTokens/full","params":{"textDocument":{"uri":")" +
       uri + R"("}}})";
