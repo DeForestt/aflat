@@ -1,11 +1,24 @@
 # AFlat
-AFlat is a simple, low-level, programming language.  It is designed to give as much freedom as possible to the programmer, and yet at the same time be easy to read and understand. Please see the [documentation](Docs.md) for the full language documentation, the [async/await guide](Async.md) for native tasks and nonblocking I/O, and the [comprehensive reference](Comprehensive.md) for the compiler and standard library. Please see examples in the [examples](https://github.com/DeForestt/aflat-chess.git) Repository.
-<br>
 
-## Trust the programmer philosophy
-AFlat aims to trust that developers know what they are doing.  It allows and encurages things that many other modern languages do not such as pointer arythmatic, memory managment, and so on.
+AFlat is a low-level programming language for building small, explicit, and
+performant programs. It exposes the machine when that is useful—including raw
+addresses, manual allocation, system calls, unsafe casts, and C interop—while
+also providing language and library features for making ownership and mutation
+visible in the program.
 
-<br>
+AFlat is not memory-safe by default. Its safety features are practical tools,
+not a guarantee that arbitrary pointer or foreign-function code is safe. Code
+can opt into stricter mutability checks and use ownership-aware types and APIs:
+owned values can be moved explicitly, borrowed values can be represented as
+loans, and unique types cannot be copied freely. This makes the intended
+lifetime of a value easier to check and review without hiding the cost or
+control of low-level code.
+
+See the [language documentation](Docs.md) for syntax and semantics, the
+[async/await guide](Async.md) for tasks, nonblocking I/O, and cancellation, and
+the [comprehensive reference](Comprehensive.md) for the compiler and standard
+library. Examples are available in the
+[AFlat chess repository](https://github.com/DeForestt/aflat-chess.git).
 
 ## Getting started
 

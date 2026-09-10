@@ -1,6 +1,14 @@
 # Documentation For AFlat Programming Language
-## Trust the programmer philosophy
-AFlat aims to trust that developers know what they are doing.  It allows and encourages things that many other modern languages do not, such as pointer asthmatic, memory management, and so on. While aflat does allow some developers to do some dangerous things, it also provides optional safety features that can be used to prevent some of the more dangerous things.  AFlat is not a language for everyone, but it is a language for careful developers who want to have more control over their code and their programs.
+## Design and safety model
+AFlat is a low-level language that keeps manual control visible. It supports
+pointer arithmetic, manual memory management, raw system calls, unsafe casts,
+and C interop. These capabilities are not memory-safe by default.
+
+The language also provides enforceable tools for reducing common ownership and
+mutation errors. Ownership transfers are explicit, borrowed values can be
+marked as loans, unique types cannot be copied freely, and mutability can be
+configured per project. These checks improve the guarantees of code that uses
+them, but they do not make arbitrary pointer or foreign-function code safe.
 <br>
 
 ### Development Best Practices
@@ -1506,7 +1514,10 @@ new module is compiled. For a single `.af` file without a folder, use
 
 # \ud83d\udcd8 AFlat Ownership Model
 
-AFlat uses an explicit ownership model for managing memory and ensuring correctness in dynamic allocations. It is designed to strike a balance between **performance**, **safety**, and **control**, while still adhering to AFlat\u2019s philosophy of trusting the programmer.
+AFlat uses an explicit ownership model for managing dynamically allocated
+values. It balances performance, useful compiler checks, and low-level control.
+Ownership rules do not make raw addresses, unsafe casts, or foreign-function
+calls memory-safe.
 
 This model **only applies to non-value types** \u2014 i.e., user-defined classes and heap-allocated objects. Value types like `int`, `float`, etc., are always passed and copied by value and are excluded from ownership checks.
 
@@ -1622,7 +1633,8 @@ This model **only applies to non-value types** \u2014 i.e., user-defined classes
 
 * \u2705 **Clear semantics**: Ownership rules are easy to reason about.
 * \u2705 **No runtime overhead**: All checks are compile-time.
-* \u2705 **Opt-in safety**: Works well with AFlat's philosophy of \u201ctrust the programmer.\u201d
+* \u2705 **Configurable checks**: Projects can choose the mutability and ownership
+  discipline that fits their code while retaining access to low-level APIs.
 * \u2705 **Extendable**: Lays groundwork for future borrow tracking and lifetimes.
 
 ---
