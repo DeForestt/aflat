@@ -1,6 +1,14 @@
 # Documentation For AFlat Programming Language
-## Trust the programmer philosophy
-AFlat aims to trust that developers know what they are doing.  It allows and encourages things that many other modern languages do not, such as pointer asthmatic, memory management, and so on. While aflat does allow some developers to do some dangerous things, it also provides optional safety features that can be used to prevent some of the more dangerous things.  AFlat is not a language for everyone, but it is a language for careful developers who want to have more control over their code and their programs.
+## Design and safety model
+AFlat is a low-level language that keeps manual control visible. It supports
+pointer arithmetic, manual memory management, raw system calls, unsafe casts,
+and C interop. These capabilities are not memory-safe by default.
+
+The language also provides enforceable tools for reducing common ownership and
+mutation errors. Ownership transfers are explicit, borrowed values can be
+marked as loans, unique types cannot be copied freely, and mutability can be
+configured per project. These checks improve the guarantees of code that uses
+them, but they do not make arbitrary pointer or foreign-function code safe.
 <br>
 
 ## Types
@@ -735,4 +743,138 @@ The package manager is used to create a module.  The syntax is:
 ```bash
 aflat module <module name>
 ```
+<<<<<<< Updated upstream
 This will create a source file in the src directory.  It will also create and entry in the aflat.cfg file telling the compiler to compile the new source file.
+=======
+This creates a directory under `src/` matching the module name and places
+`mod.af` inside. An entry is added under `[dependencies]` in `aflat.cfg` so the
+new module is compiled. For a single `.af` file without a folder, use
+`aflat file <name>` instead.
+
+# \ud83d\udcd8 AFlat Ownership Model
+
+AFlat uses an explicit ownership model for managing dynamically allocated
+values. It balances performance, useful compiler checks, and low-level control.
+Ownership rules do not make raw addresses, unsafe casts, or foreign-function
+calls memory-safe.
+
+This model **only applies to non-value types** \u2014 i.e., user-defined classes and heap-allocated objects. Value types like `int`, `float`, etc., are always passed and copied by value and are excluded from ownership checks.
+
+---
+
+## \ud83d\udd11 Core Principles
+
+1. **Ownership implies responsibility**
+   If you own a value, you are responsible for its lifetime (e.g., freeing it or transferring it).
+
+2. **You cannot move or return what you don\u2019t own**
+   The compiler enforces that only owned values may be moved (sold) or returned.
+
+3. **Ownership only applies to heap-allocated memory**
+   Stack variables, literals, and internal references cannot be owned.
+
+---
+
+## \ud83d\udcdc Ownership Rules
+
+### 1. You can only sell things you own
+
+* The `$` operator transfers ownership.
+* Attempting to `$` a non-owned variable is a compile-time error.
+
+### 2. You can only own heap-allocated values
+
+* Only objects allocated with `new`, returned from functions that yield ownership, or passed via `&&` are considered "owned."
+* Stack values and function-local variables are not ownable.
+
+### 3. You can only return things you own
+
+* Returning a non-owned reference violates ownership.
+* Functions must return owned values or wrap borrows in safe containers (e.g., `option`, `result`, etc.).
+
+### 4. The return value of a `CallExpr` is owned
+
+* When calling a function that returns an owned object, the return value is treated as a fresh owned value (e.g., `fn makeFoo() -> Foo!`).
+
+### 5. Anything created with `new` is owned
+
+* `new` always produces a heap-allocated, owned object.
+* You do **not** need to use `$` when passing `new Foo()` to a `&&` parameter, since it is an rvalue.
+
+### 6. Arguments marked with `&&` take ownership
+
+* Functions expecting a `&&` parameter require the caller to transfer ownership.
+* Example:
+
+  ```aflat
+  fn takeIt(Foo &&f) { ... }
+
+  let f = new Foo();
+  takeIt($f); // legal
+  ```
+
+### 7. Anything else is not owned
+
+* Regular variables, references, and function parameters passed by value are non-owning by default.
+* You cannot `$` or return these without wrapping them or copying explicitly.
+
+### 8. Field access never transfers ownership
+
+* Reading a non-value field produces a loan, even when the containing object is
+  owned. Primitive fields are still copied by value.
+* Callers cannot move a field directly with `$obj.field`. Ownership may leave
+  an object only through an explicit method. Inside that method, `$my.field`
+  performs the transfer; the method must also update or validate the object's
+  state so the moved field cannot be used as though it were still present.
+* An ownership-bearing field may only be assigned an owned value (or `NULL`
+  when invalidating it). Storing a loan in such a field is rejected because the
+  object cannot assume responsibility for a lifetime owned elsewhere.
+* A field may explicitly opt out with `loan T field`. Such a field stores an
+  unsafe borrowed reference, accepts unowned values, and is not destroyed with
+  its containing object. The programmer must ensure the referent outlives every
+  use of the field.
+
+---
+
+## \ud83e\uddea Special Cases and Clarifications
+
+* **Selling (`$`) is only required on variables**, not rvalues:
+
+  ```aflat
+  takeIt(new Foo());   // OK \u2014 rvalue is owned
+  takeIt($myFoo);      // OK \u2014 transfer ownership
+  takeIt(myFoo);       // \u274c Error \u2014 ownership not transferred
+  ```
+
+* **Returning a field directly from a method** is a loan and cannot satisfy an
+  owning return type. Use a loan return type for accessors, or explicitly move
+  it with `$my.field` in a transfer method.
+
+---
+
+## \u2705 Ownership Summary Table
+
+| Expression                   | Owned? | Requires `$`? | Notes                                  |
+| ---------------------------- | ------ | ------------- | -------------------------------------- |
+| `new Foo()`                  | \u2705 Yes  | \u274c No          | Owned rvalue                           |
+| `let f = new Foo();`         | \u2705 Yes  | \u2705 Yes         | Named variable \u2014 must `$f` to move     |
+| `someFunc()` returning `T!`  | \u2705 Yes  | \u274c No          | Functions can transfer ownership       |
+| `field` from owned object    | \u274c No   | \u274c Error       | Field reads are loans                  |
+| `field` from borrowed object | \u274c No   | \u274c Error       | Field reads are loans                  |
+| Stack or literal value       | \u274c No   | \u274c N/A         | Not tracked by ownership model         |
+| Function param (by value)    | \u274c No   | \u274c Error       | Must use `&&` to pass ownership        |
+| Function param (with `&&`)   | \u2705 Yes  | \u2705 Yes or \u274c No | `$var` or `new Foo()` is valid         |
+| Return `t` (not owned)       | \u274c No   | \u274c Error       | Must return only owned values          |
+
+---
+
+## \ud83e\udd14 Design Benefits
+
+* \u2705 **Clear semantics**: Ownership rules are easy to reason about.
+* \u2705 **No runtime overhead**: All checks are compile-time.
+* \u2705 **Configurable checks**: Projects can choose the mutability and ownership
+  discipline that fits their code while retaining access to low-level APIs.
+* \u2705 **Extendable**: Lays groundwork for future borrow tracking and lifetimes.
+
+---
+>>>>>>> Stashed changes
