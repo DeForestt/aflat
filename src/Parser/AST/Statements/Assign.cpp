@@ -3,6 +3,7 @@
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/Expr.hpp"
 #include "CodeGenerator/Scope/ScopeManager.hpp"
+#include "CodeGenerator/Utils.hpp"
 #include "Parser/Parser.hpp"
 
 namespace ast {
@@ -46,6 +47,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
 
   auto fin = symbol;
   auto *binding = std::get<4>(resolved);
+  const std::string bindingIdent = binding == nullptr ? "" : binding->symbol;
   const auto var = dynamic_cast<ast::Var *>(this->expr);
 
   if (symbol->type.isReference && !this->override) {
@@ -100,6 +102,15 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
         // check if the class has an overloaded operator =
         ast::Function *func = cl->overloadTable[ast::Equ];
         if (func != nullptr) {
+          // Operator lookup is keyed only by the operator kind and may return
+          // any member of the overload family. Start calls at the unsuffixed
+          // function so ordinary overload retry can consider every variant.
+          const auto overloadSuffix = func->ident.ident.rfind("_ovl");
+          if (overloadSuffix != std::string::npos) {
+            const auto baseIdent = func->ident.ident.substr(0, overloadSuffix);
+            if (auto *base = cl->nameTable[baseIdent])
+              func = base;
+          }
           // call the overloaded operator =
           ast::Var *v = new ast::Var();
           v->Ident = this->Ident;
@@ -238,9 +249,23 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   const bool targetOwnsValue = expr.owned && !symbol->type.isLoan;
   fin->owned = targetOwnsValue;
   fin->sold = -1;
-  if (binding != nullptr) {
-    binding->owned = targetOwnsValue;
-    binding->sold = -1;
+  // Field symbols are shared class-layout metadata, not per-instance runtime
+  // bindings. Do not leak assignment ownership state into other methods or
+  // instances of the class.
+  if (!bindingIdent.empty() && fieldDepth == 0) {
+    // Generating the right-hand side may append hidden temporaries to the
+    // scope's symbol vector and invalidate the pointer returned by the first
+    // resolveSymbol call. Re-resolve the root binding before mutating it.
+    auto *liveBinding =
+        gen::scope::ScopeManager::getInstance()->get(bindingIdent);
+    if (liveBinding == nullptr) {
+      liveBinding = generator.GlobalSymbolTable().search<std::string>(
+          gen::utils::searchSymbol, bindingIdent);
+    }
+    if (liveBinding != nullptr) {
+      liveBinding->owned = targetOwnsValue;
+      liveBinding->sold = -1;
+    }
   }
 
   if (generator.TypeList()[fin->type.typeName] == nullptr) {

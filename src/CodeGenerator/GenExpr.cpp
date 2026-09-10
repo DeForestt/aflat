@@ -260,6 +260,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       output.size = asmc::QWord;
       output.access = registers()["%rax"]->get(asmc::QWord);
       output.owned = true;
+      output.transferable = true;
     } else {
       output.type = *valueType;
       auto primitive = parse::PRIMITIVE_TYPES.find(output.type);
@@ -267,7 +268,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                         ? asmc::QWord
                         : gen::utils::toSize(primitive->second);
       output.access = registers()["%rax"]->get(output.size);
-      output.owned = output.type != "void";
+      // An async function's task expression carries the ownership and loan
+      // state of its eventual result. Awaiting or synchronously running that
+      // task must preserve those semantics instead of turning every non-void
+      // result into an owned lvalue.
+      output.owned = output.type != "void" && task.owned;
+      output.transferable = output.owned;
+      output.loanProvenance = task.loanProvenance;
+      output.loanScope = task.loanScope;
     }
   } else if (dynamic_cast<ast::CallExpr *>(expr) != nullptr) {
     ast::CallExpr *exprCall = dynamic_cast<ast::CallExpr *>(expr);
@@ -644,9 +652,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.owned = sym.owned;
         output.transferable = var.selling && sym.owned;
         output.transferExplicit = output.transferable;
-        output.loanScope = sym.declarationScope;
-        if (var.modList.count == 0)
-          output.loanProvenance = LoanProvenance::Lexical;
+        output.loanScope = sym.loanScope;
+        if (var.modList.count == 0) {
+          output.loanProvenance = sym.loanProvenance;
+        } else if (auto *base = gen::scope::ScopeManager::getInstance()->get(
+                       var.Ident)) {
+          output.loanProvenance = base->loanProvenance;
+          output.loanScope = base->loanScope;
+        }
 
         // check if the symbol type is a class
         auto cont = true;
@@ -868,7 +881,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       gen::Type **t = typeList()[exp.type];
       if (t) {
         gen::Class *cl = dynamic_cast<gen::Class *>(*t);
-        if (cl && cl->Ident != "string") {
+        if (cl && cl->Ident != "string" && cl->Ident != "uni_string") {
           ast::Function *toStringFunc = cl->nameTable["toString"];
           if (toStringFunc == nullptr) {
             if (cl->parent != nullptr) {
@@ -1088,6 +1101,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       if (cls != nullptr) {
         tname = optn;
         opor = cls->overloadTable[comp.op];
+        if (opor != nullptr) {
+          const auto overloadSuffix = opor->ident.ident.rfind("_ovl");
+          if (overloadSuffix != std::string::npos) {
+            const auto baseIdent = opor->ident.ident.substr(0, overloadSuffix);
+            if (auto *base = cls->nameTable[baseIdent])
+              opor = base;
+          }
+        }
       }
     }
 
@@ -1902,8 +1923,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     auto mod =
         gen::scope::ScopeManager::getInstance()->assign(tempName, type, false);
     auto *tempSymbol = gen::scope::ScopeManager::getInstance()->get(tempName);
-    if (tempSymbol != nullptr)
+    if (tempSymbol != nullptr) {
       tempSymbol->owned = output.owned;
+      tempSymbol->loanProvenance = output.loanProvenance;
+      tempSymbol->loanScope = output.loanScope;
+    }
     auto mov2 = new asmc::Mov();
     mov2->logicalLine = logicalLine();
     mov2->from = output.access;

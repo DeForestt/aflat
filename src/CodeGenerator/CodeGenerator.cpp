@@ -852,15 +852,19 @@ gen::Type **gen::CodeGenerator::getType(std::string typeName,
     }
 
     for (auto &templateType : templates) {
-      if (isEncodedFunctionPointerTypeName(templateType)) {
-        ensureFunctionPointerTypeRegistered(*this, templateType);
+      const bool loanType =
+          !templateType.empty() && templateType.front() == '&';
+      const std::string valueType =
+          loanType ? templateType.substr(1) : templateType;
+      if (isEncodedFunctionPointerTypeName(valueType)) {
+        ensureFunctionPointerTypeRegistered(*this, valueType);
         continue;
       }
-      if (parse::PRIMITIVE_TYPES.find(templateType) ==
+      if (parse::PRIMITIVE_TYPES.find(valueType) ==
           parse::PRIMITIVE_TYPES.end()) {
-        getType(templateType, OutputFile); // This ensures that the types are
-                                           // valid and registered in the type
-                                           // list if they are also generic
+        getType(valueType, OutputFile); // This ensures that the types are
+                                        // valid and registered in the type
+                                        // list if they are also generic
       }
     }
 
@@ -1069,8 +1073,10 @@ asmc::File gen::CodeGenerator::setOffset(std::string to, int offset,
 bool gen::CodeGenerator::whenSatisfied(const ast::When &when) {
   auto evalPred = [this](const ast::WhenPredicat &pred) -> bool {
     if (pred.op == ast::WhenOperator::IS && pred.ident == "primitive") {
-      bool isPrim = parse::PRIMITIVE_TYPES.find(pred.typeName) !=
-                    parse::PRIMITIVE_TYPES.end();
+      bool isPrim = (!pred.typeName.empty() && pred.typeName.front() == '&') ||
+                    parse::PRIMITIVE_TYPES.find(pred.typeName) !=
+                        parse::PRIMITIVE_TYPES.end() ||
+                    isEncodedFunctionPointerTypeName(pred.typeName);
       if (!pred.negated && !isPrim)
         return false;
       if (pred.negated && isPrim)

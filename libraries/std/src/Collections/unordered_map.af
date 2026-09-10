@@ -81,11 +81,16 @@ shared class u_map_bucket {
 			};
 		};
 
-		my.entries.push_back(new u_map_entry::<K, V>(key, $value));
+		const u_map_entry::<K, V> entry =
+			new u_map_entry::<K, V>(key, $value);
+		my.entries.push_back(entry);
+		// The entry's fields now live inline in the vector buffer. Release
+		// only the temporary heap shell; the bucket owns the copied fields.
+		af_free(entry);
 		return true;
 	};
 
-	when (K is adr)
+	when (K is adr and V is primitive)
 	fn get(const adr key) -> option::<V> {
 		for int i = 0; i < my.entries.count(); i++ {
 			const u_map_entry::<K, V> entry =
@@ -98,7 +103,33 @@ shared class u_map_bucket {
 		return opt.None::<V>();
 	};
 
-	when (K is not adr)
+	when (K is adr and V is not primitive and V has __copy__)
+	fn get(const adr key) -> option::<V> {
+		for int i = 0; i < my.entries.count(); i++ {
+			const u_map_entry::<K, V> entry =
+				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
+			if my.matches(entry.key, key) {
+				return opt.Some::<V>(entry.value);
+			};
+		};
+
+		return opt.None::<V>();
+	};
+
+	when (K is adr and V is not primitive and V missing __copy__)
+	fn get(const adr key) -> option::<&V> {
+		for int i = 0; i < my.entries.count(); i++ {
+			const u_map_entry::<K, V> entry =
+				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
+			if my.matches(entry.key, key) {
+				return opt.Some::<&V>(entry.value);
+			};
+		};
+
+		return opt.None::<&V>();
+	};
+
+	when (K is not adr and V is primitive)
 	fn get(const K key) -> option::<V> {
 		for int i = 0; i < my.entries.count(); i++ {
 			const u_map_entry::<K, V> entry =
@@ -109,6 +140,32 @@ shared class u_map_bucket {
 		};
 
 		return opt.None::<V>();
+	};
+
+	when (K is not adr and V is not primitive and V has __copy__)
+	fn get(const K key) -> option::<V> {
+		for int i = 0; i < my.entries.count(); i++ {
+			const u_map_entry::<K, V> entry =
+				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
+			if my.matches(entry.key, key) {
+				return opt.Some::<V>(entry.value);
+			};
+		};
+
+		return opt.None::<V>();
+	};
+
+	when (K is not adr and V is not primitive and V missing __copy__)
+	fn get(const K key) -> option::<&V> {
+		for int i = 0; i < my.entries.count(); i++ {
+			const u_map_entry::<K, V> entry =
+				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
+			if my.matches(entry.key, key) {
+				return opt.Some::<&V>(entry.value);
+			};
+		};
+
+		return opt.None::<&V>();
 	};
 
 	fn keysInto(const vector::<K> keys) -> void {
@@ -129,7 +186,7 @@ shared class u_map_bucket {
 		return;
 	};
 
-	fn entryAt(const int index) -> option::<u_map_entry::<K, V>> {
+	fn entryAt(const int index) -> option::<&u_map_entry::<K, V>> {
 		return my.entries.get_unlocked(index);
 	};
 
@@ -170,7 +227,12 @@ unique class unordered_map {
 
 	fn init() -> Self {
 		for int i = 0; i < my.capasity; i++ {
-			my.buckets.push_back(new u_map_bucket::<K, V>());
+			const u_map_bucket::<K, V> bucket =
+				new u_map_bucket::<K, V>();
+			my.buckets.push_back(bucket);
+			// The bucket's fields now live inline in the vector buffer. Release
+			// only the temporary heap shell; the map owns the copied fields.
+			af_free(bucket);
 		};
 		return my;
 	};
@@ -224,7 +286,7 @@ unique class unordered_map {
 		return my;
 	};
 
-	when (K is adr)
+	when (K is adr and V is primitive)
 	fn get(const adr key) -> option::<V> {
 		const LockGuard __guard = my.mutex.guard();
 		const int index = my.index(key);
@@ -233,7 +295,25 @@ unique class unordered_map {
 		return bucket.get(key);
 	};
 
-	when (K is not adr)
+	when (K is adr and V is not primitive and V has __copy__)
+	fn get(const adr key) -> option::<V> {
+		const LockGuard __guard = my.mutex.guard();
+		const int index = my.index(key);
+		const u_map_bucket::<K, V> bucket =
+			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
+		return bucket.get(key);
+	};
+
+	when (K is adr and V is not primitive and V missing __copy__)
+	fn get(const adr key) -> option::<&V> {
+		const LockGuard __guard = my.mutex.guard();
+		const int index = my.index(key);
+		const u_map_bucket::<K, V> bucket =
+			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
+		return bucket.get(key);
+	};
+
+	when (K is not adr and V is primitive)
 	fn get(const K key) -> option::<V> {
 		const LockGuard __guard = my.mutex.guard();
 		const int index = my.index(key);
@@ -242,7 +322,38 @@ unique class unordered_map {
 		return bucket.get(key);
 	};
 
+	when (K is not adr and V is not primitive and V has __copy__)
+	fn get(const K key) -> option::<V> {
+		const LockGuard __guard = my.mutex.guard();
+		const int index = my.index(key);
+		const u_map_bucket::<K, V> bucket =
+			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
+		return bucket.get(key);
+	};
+
+	when (K is not adr and V is not primitive and V missing __copy__)
+	fn get(const K key) -> option::<&V> {
+		const LockGuard __guard = my.mutex.guard();
+		const int index = my.index(key);
+		const u_map_bucket::<K, V> bucket =
+			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
+		return bucket.get(key);
+	};
+
+	when (V is primitive)
 	fn _call(const K key) -> option::<V> {
+		const LockGuard __guard = my.mutex.guard();
+		return my.get(key);
+	};
+
+	when (V is not primitive and V has __copy__)
+	fn _call(const K key) -> option::<V> {
+		const LockGuard __guard = my.mutex.guard();
+		return my.get(key);
+	};
+
+	when (V is not primitive and V missing __copy__)
+	fn _call(const K key) -> option::<&V> {
 		const LockGuard __guard = my.mutex.guard();
 		return my.get(key);
 	};
@@ -274,14 +385,15 @@ unique class unordered_map {
 		return values;
 	};
 
-	fn next() -> option::<u_map_entry::<K, V>> {
+	fn next() -> option::<&u_map_entry::<K, V>> {
 		while my.iteratorBucket < my.capasity {
 			const u_map_bucket::<K, V> bucket =
 				my.buckets.get_unlocked(my.iteratorBucket).expect("searched for non-existing unordered_map bucket"$adr);
-			match bucket.entryAt(my.iteratorEntry) {
+			const let candidate = bucket.entryAt(my.iteratorEntry);
+			match candidate {
 				Some(entry) => {
 					my.iteratorEntry = my.iteratorEntry + 1;
-					return opt.Some(entry);
+					return opt.Some::<&u_map_entry::<K, V>>(entry);
 				},
 				None => {
 					my.iteratorBucket = my.iteratorBucket + 1;
@@ -291,7 +403,7 @@ unique class unordered_map {
 		};
 		my.iteratorBucket = 0;
 		my.iteratorEntry = 0;
-		return opt.None::<u_map_entry::<K, V>>();
+		return opt.None::<&u_map_entry::<K, V>>();
 	};
 
 	fn iterationGuard() -> LockGuard {

@@ -119,6 +119,218 @@ fn main() -> int {
   CHECK(hasDiagnostic(result, "requires a compatible sink overload"));
 }
 
+TEST_CASE("owning unions require explicit nonprimitive payload transfer",
+          "[union][ownership][transfer]") {
+  const auto borrowed = buildSinkProgram("union_unsold_payload", R"(
+.needs <std>
+unique class Payload {
+  fn init() -> Self { return my; };
+};
+unique union Choice { Item(Payload) };
+fn wrap(const Payload value) -> Choice {
+  return new Choice->Item(value);
+};
+)");
+
+  CHECK_FALSE(borrowed.success);
+  CHECK(hasDiagnostic(borrowed, "cannot store unsold nonprimitive value"));
+
+  const auto copied = buildSinkProgram("union_copied_payload", R"(
+.needs <std>
+unique class Payload {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+  fn __copy__() -> Payload { return new Payload(my.value); };
+};
+unique union Choice { Item(Payload) };
+fn wrap(const Payload value) -> Choice {
+  return new Choice->Item(value);
+};
+fn main() -> int {
+  const Payload value = new Payload(7);
+  const Choice wrapped = wrap(value);
+  return 0;
+};
+)");
+
+  INFO(diagnosticsText(copied));
+  CHECK(copied.success);
+
+  const auto transferred = buildSinkProgram("union_sold_payload", R"(
+.needs <std>
+unique class Payload {
+  fn init() -> Self { return my; };
+};
+unique union Choice { Item(Payload) };
+fn wrap(const Payload &&value) -> Choice {
+  return new Choice->Item($value);
+};
+fn main() -> int {
+  const Choice direct = new Choice->Item(new Payload());
+  const Choice wrapped = wrap(new Payload());
+  return 0;
+};
+)");
+
+  INFO(diagnosticsText(transferred));
+  CHECK(transferred.success);
+}
+
+TEST_CASE("loaned generic union payloads store non-owning references",
+          "[union][ownership][loan][generics]") {
+  const auto borrowed = buildSinkProgram("union_loan_payload", R"(
+.needs <std>
+import {Some, None} from "Utils/option" under opt;
+import option from "Utils/option";
+
+unique class Payload {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+  fn read() -> int { return my.value; };
+};
+
+fn inspect(const Payload value) -> int {
+  const option::<&Payload> wrapped = opt.Some::<&Payload>(value);
+  match wrapped {
+    Some(item) => return item.read(),
+    None => return 0
+  };
+};
+
+fn rewrap(const Payload value) -> option::<&Payload> {
+  const option::<&Payload> wrapped = opt.Some::<&Payload>(value);
+  return wrapped;
+};
+
+fn main() -> int {
+  const Payload value = new Payload(7);
+  return inspect(value) - 7;
+};
+)");
+
+  INFO(diagnosticsText(borrowed));
+  CHECK(borrowed.success);
+  CHECK(borrowed.assembly.find("option.Some.__std__loan__Payload") !=
+        std::string::npos);
+}
+
+TEST_CASE("loaned generic union payloads cannot outlive local referents",
+          "[union][ownership][loan][generics]") {
+  const auto escaped = buildSinkProgram("union_loan_payload_escape", R"(
+.needs <std>
+import {Some} from "Utils/option" under opt;
+import option from "Utils/option";
+
+unique class Payload {
+  fn init() -> Self { return my; };
+};
+
+fn escape() -> option::<&Payload> {
+  const Payload local = new Payload();
+  const option::<&Payload> wrapped = opt.Some::<&Payload>(local);
+  return wrapped;
+};
+
+fn main() -> int { return 0; };
+)");
+
+  INFO(diagnosticsText(escaped));
+  CHECK_FALSE(escaped.success);
+  CHECK(hasDiagnostic(escaped, "cannot return a loan whose referent"));
+}
+
+TEST_CASE("question and bang return shorthand support loaned payloads",
+          "[parser][return][union][loan]") {
+  const auto result = buildSinkProgram("loan_payload_return_shorthand", R"(
+.needs <std>
+import option from "Utils/option";
+import {optionWrapper} from "Utils/option" under option;
+import result from "Utils/result";
+import {resultWrapper, reject} from "Utils/result" under result;
+import Error from "Utils/Error";
+
+unique class Value {
+  int number = number;
+  fn init(const int number) -> Self { return my; };
+};
+
+fn find(const Value value, bool found) -> &Value? {
+  if found { return value; };
+  return;
+};
+
+fn load(const Value value, bool loaded) -> &Value! {
+  if loaded { return value; };
+  return new Error("not loaded");
+};
+
+fn main() -> int {
+  const Value value = new Value(7);
+  const option::<&Value> found = find(value, true);
+  const result::<&Value> loaded = load(value, true);
+  return 0;
+};
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+  CHECK(result.assembly.find("option.optionWrapper.__std__loan__Value") !=
+        std::string::npos);
+  CHECK(result.assembly.find("result.resultWrapper.__std__loan__Value") !=
+        std::string::npos);
+}
+
+TEST_CASE("loan payload return shorthand rejects local referent escape",
+          "[parser][return][union][loan]") {
+  const auto result = buildSinkProgram("loan_payload_shorthand_escape", R"(
+.needs <std>
+import option from "Utils/option";
+import {optionWrapper} from "Utils/option" under option;
+
+unique class Value {
+  fn init() -> Self { return my; };
+};
+
+fn escape() -> &Value? {
+  const Value local = new Value();
+  return local;
+};
+
+fn main() -> int { return 0; };
+)");
+
+  CHECK_FALSE(result.success);
+  CHECK(hasDiagnostic(result, "cannot return a loan whose referent"));
+}
+
+TEST_CASE("async loan payload shorthand preserves referent provenance",
+          "[async][parser][return][union][loan]") {
+  const auto result = buildSinkProgram("async_loan_payload_escape", R"(
+.needs <std>
+.needs <Async.gs>
+import option from "Utils/option";
+import {optionWrapper} from "Utils/option" under option;
+
+unique class Value {
+  fn init() -> Self { return my; };
+};
+
+async fn borrow(const Value value) -> &Value? {
+  return value;
+};
+
+async fn escape() -> &Value? {
+  const Value local = new Value();
+  return await borrow(local);
+};
+
+fn main() -> int { return 0; };
+)");
+
+  CHECK_FALSE(result.success);
+  CHECK(hasDiagnostic(result, "cannot return a loan whose referent"));
+}
+
 TEST_CASE("sink methods require an explicit receiver sale",
           "[owned][sink][receiver]") {
   const auto missingSale =
@@ -189,6 +401,250 @@ fn main() -> int {
   CHECK(temporary.success);
   INFO(diagnosticsText(returned));
   CHECK(returned.success);
+}
+
+TEST_CASE("awaited owned results can chain into sink methods",
+          "[async][owned][sink][receiver]") {
+  const auto result = buildSinkProgram("sink_awaited_owned_result", R"(
+.needs <std>
+.needs <Async.gs>
+import {resultWrapper} from "Utils/result" under result;
+
+unique class Value {
+  int number = number;
+
+  fn init(int number) -> Self { return my; };
+  safe fn read() -> int { return my.number; };
+};
+
+async fn make() -> Value! {
+  return new Value(7);
+};
+
+async fn consume() -> int {
+  let value = (await make()).expect("make failed");
+  return value.read() - 7;
+};
+
+fn main() -> int { return 0; };
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+}
+
+TEST_CASE("await preserves a loaned async return",
+          "[async][loan][sink][receiver]") {
+  const auto result = buildSinkProgram("sink_awaited_loan", R"(
+.needs <std>
+.needs <Async.gs>
+
+unique class Value {
+  fn init() -> Self { return my; };
+  sink fn finish() -> int { return 7; };
+};
+
+async fn borrow(const Value value) -> loan Value {
+  return value;
+};
+
+async fn consume(const Value value) -> int {
+  return (await borrow(value)).finish();
+};
+
+fn main() -> int { return 0; };
+)");
+
+  CHECK_FALSE(result.success);
+  CHECK(hasDiagnostic(result, "requires an owned receiver"));
+}
+
+TEST_CASE("consuming match materializes an awaited owned union",
+          "[async][owned][match][regression]") {
+  const auto result = buildSinkProgram("match_awaited_owned_result", R"(
+.needs <std>
+.needs <Async.gs>
+import {resultWrapper} from "Utils/result" under result;
+
+unique class Value {
+  int number = number;
+  fn init(const int number) -> Self { return my; };
+  safe fn read() -> int { return my.number; };
+};
+
+async fn make() -> Value! {
+  return new Value(7);
+};
+
+async fn consume() -> int {
+  let value = match $(await make()) {
+    Ok(&&payload) => payload,
+    Err => return 1
+  };
+  return value.read() - 7;
+};
+
+fn main() -> int { return 0; };
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+}
+
+TEST_CASE("borrowed call arguments materialize and clean owned temporaries",
+          "[owned][call][temporary][regression]") {
+  const auto result = buildSinkProgram("borrowed_call_temporary", R"(
+.needs <std>
+
+unique class Value {
+  fn init() -> Self { return my; };
+};
+
+fn make() -> Value { return new Value(); };
+fn inspect(const Value value) -> int { return 7; };
+
+fn main() -> int {
+  return inspect(make()) - 7;
+};
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+  const auto inspectCall = result.assembly.find("call\tinspect");
+  REQUIRE(inspectCall != std::string::npos);
+  CHECK(result.assembly.find("call\taf_free", inspectCall) !=
+        std::string::npos);
+}
+
+TEST_CASE("assignment refreshes root binding after RHS adds temporaries",
+          "[owned][assignment][temporary][regression]") {
+  const auto result = buildSinkProgram("assignment_binding_refresh", R"(
+.needs <std>
+
+unique class Value {
+  fn init(const int number) -> Self { return my; };
+};
+
+fn identity(const int value) -> int { return value; };
+fn make(const int value) -> Value { return new Value(value); };
+
+fn main() -> int {
+  mutable Value target = NULL;
+  target = make(
+      identity(
+          identity(
+              identity(
+                  identity(
+                      identity(
+                          identity(
+                              identity(
+                                  identity(7)))))))));
+  delete target;
+  return 0;
+};
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+  CHECK(result.assembly.find("call\taf_free") != std::string::npos);
+}
+
+TEST_CASE("assignment operators resolve borrowed and consuming overloads",
+          "[owned][operator][overload][regression]") {
+  const auto result = buildSinkProgram("assignment_operator_overloads", R"(
+.needs <std>
+
+unique class Box {
+  mutable int value = value;
+  fn init(const int value) -> Self { return my; };
+
+  loan Box cpy<<=>>(const Box other) {
+    my.value = other.value;
+    return my;
+  };
+
+  loan Box cpy<<=>>(const Box &&other) {
+    my.value = other.value;
+    delete other;
+    return my;
+  };
+
+  bool compare<<==>>(const Box other) {
+    return my.value == other.value;
+  };
+
+  bool compare<<==>>(const Box &&other) {
+    const bool same = my.value == other.value;
+    delete other;
+    return same;
+  };
+};
+
+fn main() -> int {
+  mutable Box target = new Box(0);
+  const Box source = new Box(1);
+  target = source;
+  target = new Box(2);
+  const bool borrowedEqual = target == source;
+  const bool consumedEqual = target == new Box(2);
+  return if borrowedEqual & consumedEqual 0 else 1;
+};
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+  CHECK(result.assembly.find("call\tpub_Box_cpy") != std::string::npos);
+  CHECK(result.assembly.find("call\tpub_Box_cpy_ovl1") != std::string::npos);
+  CHECK(result.assembly.find("call\tpub_Box_compare") != std::string::npos);
+  CHECK(result.assembly.find("call\tpub_Box_compare_ovl1") !=
+        std::string::npos);
+}
+
+TEST_CASE("explicit transfer retries specialized generic overload families",
+          "[owned][generic][overload][regression]") {
+  const auto result = buildSinkProgram("generic_sink_overload_retry", R"(
+.needs <std>
+import string from "String";
+
+fn make() -> string! {
+  const string value = new string("ready");
+  return $value;
+};
+
+fn main() -> int { return 0; };
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+  CHECK(result.assembly.find("call\tresult.resultWrapper_ovl2.string") !=
+        std::string::npos);
+}
+
+TEST_CASE("overloaded constructors retain owned receivers",
+          "[owned][constructor][overload][regression]") {
+  const auto result = buildSinkProgram("constructor_receiver_ownership", R"(
+.needs <std>
+import string from "String";
+
+unique class Value {
+  fn init(const int value) -> Self { return my; };
+
+  fn init(const string &&value) -> Self {
+    delete value;
+    return my;
+  };
+};
+
+fn main() -> int {
+  const Value value = new Value(new string("ready"));
+  delete value;
+  return 0;
+};
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+  CHECK(result.assembly.find("pub_Value_init_ovl1:") != std::string::npos);
 }
 
 TEST_CASE("return conversion evaluates a sold sink receiver once",
@@ -406,6 +862,39 @@ fn propagate() -> Value! {
             .find("call\taf_free") == std::string::npos);
 }
 
+TEST_CASE("bubble borrows loaned payloads from owned results",
+          "[owned][bubble][result][loan]") {
+  const auto result = buildSinkProgram("bubble_loaned_result_payload", R"(
+.needs <std>
+import {resultWrapper, reject} from "Utils/result" under result;
+import Error from "Utils/Error";
+
+unique class Value {
+  int number = number;
+  fn init(const int number) -> Self { return my; };
+  safe fn read() -> int { return my.number; };
+};
+
+fn borrow(const Value value) -> &Value! {
+  return value;
+};
+
+fn forward(const Value value) -> &Value! {
+  return borrow(value)!;
+};
+
+fn inspect(const Value value) -> int! {
+  let borrowed = borrow(value)!;
+  return borrowed.read();
+};
+
+fn main() -> int { return 0; };
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+}
+
 TEST_CASE("bubbling a named owned result consumes the source variable",
           "[owned][bubble][result][descope]") {
   const auto result = buildSinkProgram("bubble_named_result_consumed", R"(
@@ -519,6 +1008,36 @@ fn main() -> int {
   CHECK(result.success);
 }
 
+TEST_CASE(
+    "explicit object transfer to an address does not create a hidden owner",
+    "[owned][sink][address][regression]") {
+  const auto result = buildSinkProgram("sold_address_no_hidden_owner", R"(
+.needs <std>
+unique class Payload {
+  fn init() -> Self { return my; };
+};
+fn consume(const Payload &&value) -> int {
+  af_free($value);
+  return 0;
+};
+fn main() -> int {
+  return consume(new Payload());
+};
+)");
+
+  INFO(diagnosticsText(result));
+  REQUIRE(result.success);
+  const auto consumeStart = result.assembly.find("consume:");
+  const auto consumeEnd = result.assembly.find("\nmain:", consumeStart);
+  REQUIRE(consumeStart != std::string::npos);
+  REQUIRE(consumeEnd != std::string::npos);
+  const auto consumeBody =
+      result.assembly.substr(consumeStart, consumeEnd - consumeStart);
+  const auto firstFree = consumeBody.find("call\taf_free");
+  REQUIRE(firstFree != std::string::npos);
+  CHECK(consumeBody.find("call\taf_free", firstFree + 1) == std::string::npos);
+}
+
 TEST_CASE("ordinary methods cannot return their borrowed receiver",
           "[owned][sink][receiver]") {
   const auto result = buildSinkProgram("borrowed_receiver_return",
@@ -537,6 +1056,49 @@ fn main() -> int {
 
   CHECK_FALSE(result.success);
   CHECK(hasDiagnostic(result, "cannot return a non-owned reference"));
+}
+
+TEST_CASE("field ownership state does not leak between generic class methods",
+          "[owned][fields][generics][regression]") {
+  const auto result = buildSinkProgram("generic_field_ownership_isolation", R"(
+.needs <std>
+import owned from "Memory";
+
+unique class Payload {
+  int number = number;
+  fn init(const int number) -> Self { return my; };
+  safe fn read() -> int { return my.number; };
+};
+
+types(T)
+unique class ReassigningOwner {
+  private mutable T value = $value;
+
+  fn init(const T &&value) -> Self { return my; };
+
+  fn replace(const T &&next) -> loan T {
+    my.value = $next;
+    return my.value;
+  };
+
+  safe fn view() -> loan T { return my.value; };
+
+  fn del() { delete my.value; };
+};
+
+fn main() -> int {
+  let standardOwner = new owned::<Payload>(new Payload(7));
+  let first = standardOwner.view().read();
+
+  let reassigned = new ReassigningOwner::<Payload>(new Payload(1));
+  let replacement = reassigned.replace(new Payload(8)).read();
+  let observed = reassigned.view().read();
+  return first + replacement + observed - 23;
+};
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
 }
 
 TEST_CASE("sink is rejected on free functions", "[owned][sink][receiver]") {

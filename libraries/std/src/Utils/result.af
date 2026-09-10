@@ -197,14 +197,27 @@ unique union result {
 
 types(T)
 // Convenience constructor for building an `Ok` from a value.
+when (T is primitive)
 export fn accept(const T value) -> result::<T> {
     return new result::<T>->Ok(value);
 };
 
 types(T)
+when (T is not primitive and T has __copy__)
+export fn accept(const T value) -> result::<T> {
+    return new result::<T>->Ok(value);
+};
+
+types(T)
+when (T is not primitive)
+export fn accept(const T &&value) -> result::<T> {
+    return new result::<T>->Ok($value);
+};
+
+types(T)
 // Convenience constructor for building an `Err` from an Error.
-export fn reject(const Error err) -> result::<T> {
-    return new result::<T>->Err(err);
+export fn reject(const Error &&err) -> result::<T> {
+    return new result::<T>->Err($err);
 };
 
 types(T)
@@ -212,19 +225,19 @@ types(T)
  * Wraps a move-only value when interfacing with APIs that expect `result<T>`
  * responses, defaulting to `Ok` semantics.
  */
-when (T is not unique)
+when (T is primitive)
 export fn resultWrapper(const T value) -> result::<T> {
     return new result::<T>->Ok(value);
 };
 
 types(T)
-when (T is unique)
+when (T is not primitive and T has __copy__)
 export fn resultWrapper(const T value) -> result::<T> {
     return new result::<T>->Ok(value);
 };
 
 types(T)
-when (T is unique)
+when (T is not primitive)
 export fn resultWrapper(const T &&value) -> result::<T> {
     return new result::<T>->Ok($value);
 };

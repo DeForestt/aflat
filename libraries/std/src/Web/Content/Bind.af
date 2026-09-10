@@ -16,7 +16,10 @@ shared safe dynamic class Bind {
     @computed string val = my.value.copy();
     
     Bind init(const adr<Content, any> preprocess, const Content context, const adr name) {
-        my.name = new string("{{") + my.name + new string("}}");
+        const string prefix = new string("{{");
+        const string suffix = new string("}}");
+        const string prefixedName = prefix + my.name;
+        my.name = prefixedName + suffix;
         my.context.bindings.push_back(my as adr);
     };
 

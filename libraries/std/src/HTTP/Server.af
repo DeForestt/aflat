@@ -74,7 +74,8 @@ shared class Server {
         const let slash = '/';
         uni.print(`listening on port: {preamble}{slash}{slash}localhost:{my.port}\n`);
         serve_pool(my.port, fn (const adr _msg, const Server self) {
-            const let msg = new HTTPMessage(new string(_msg), true);
+            const let msg_str = new string(_msg);
+            const let msg = new HTTPMessage(msg_str, true);
             const string method = http.methodToString(msg.method);
             const string endpoint = msg.endpoint.copy();
             mutable HTTPMessage data = msg;

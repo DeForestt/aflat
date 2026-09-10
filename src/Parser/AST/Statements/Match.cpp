@@ -174,13 +174,36 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
         return matchCase.pattern.takesOwnership;
       });
   auto *ownerVar = matchedOwner(expr);
-  const std::string ownerName = ownerVar == nullptr ? "" : ownerVar->Ident;
+  std::string ownerName = ownerVar == nullptr ? "" : ownerVar->Ident;
   auto getOwner = [&]() -> gen::Symbol * {
     return ownerName.empty()
                ? nullptr
                : gen::scope::ScopeManager::getInstance()->get(ownerName);
   };
   auto *ownerSymbol = getOwner();
+  if (consumesUnion && ownerSymbol == nullptr && exprResult.owned) {
+    // Consuming matches need a symbol whose sold state can select exactly one
+    // cleanup path. Give an owned temporary (including `await` results) the
+    // same addressable lifetime as an explicitly named receiver.
+    ownerName = "$" + std::to_string(generator.tempCount()++) + "_match_owner";
+    ast::Type ownerType(exprResult.type, exprResult.size);
+    ownerType.opType = exprResult.op;
+    const int ownerSlot = gen::scope::ScopeManager::getInstance()->assign(
+        ownerName, ownerType, false, false);
+    ownerSymbol = getOwner();
+    ownerSymbol->owned = true;
+    ownerSymbol->loanProvenance = exprResult.loanProvenance;
+    ownerSymbol->loanScope = exprResult.loanScope;
+
+    auto *storeOwner = new asmc::Mov();
+    storeOwner->logicalLine = expr->logicalLine;
+    storeOwner->size = exprResult.size;
+    storeOwner->op = exprResult.op;
+    storeOwner->from = exprResult.access;
+    storeOwner->to = "-" + std::to_string(ownerSlot) + "(%rbp)";
+    file.text << storeOwner;
+    exprResult.access = storeOwner->to;
+  }
   if (consumesUnion && ownerSymbol == nullptr) {
     generator.alert(
         "A consuming match requires an addressable owned union receiver", true,
@@ -285,6 +308,11 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
               "Cannot take ownership of union payload from an unowned value",
               true, __FILE__, __LINE__);
         }
+        if (_case.pattern.takesOwnership && type->isLoan) {
+          generator.alert("Cannot take ownership of loaned union payload `" +
+                              type->typeName + "`",
+                          true, __FILE__, __LINE__);
+        }
         if (_case.pattern.takesOwnership &&
             parse::PRIMITIVE_TYPES.find(type->typeName) !=
                 parse::PRIMITIVE_TYPES.end()) {
@@ -292,10 +320,31 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
                               "` cannot carry ownership; bind it by value",
                           true, __FILE__, __LINE__);
         }
-        sym->owned = _case.pattern.takesOwnership && !loanBindings;
+        sym->owned =
+            _case.pattern.takesOwnership && !loanBindings && !type->isLoan;
+        if ((!_case.pattern.takesOwnership || type->isLoan) &&
+            exprResult.loanProvenance != gen::LoanProvenance::None) {
+          sym->loanProvenance = exprResult.loanProvenance;
+          sym->loanScope = exprResult.loanScope;
+        }
 
-        if (parse::PRIMITIVE_TYPES.find(type->typeName) !=
-            parse::PRIMITIVE_TYPES.end()) {
+        if (type->isLoan) {
+          auto loadLoan = new asmc::Mov();
+          loadLoan->logicalLine = expr->logicalLine;
+          loadLoan->size = asmc::QWord;
+          loadLoan->from =
+              "(" + generator.registers()["%rdx"]->get(asmc::QWord) + ")";
+          loadLoan->to = generator.registers()["%rax"]->get(asmc::QWord);
+          file.text << loadLoan;
+
+          auto storeLoan = new asmc::Mov();
+          storeLoan->logicalLine = expr->logicalLine;
+          storeLoan->size = asmc::QWord;
+          storeLoan->from = loadLoan->to;
+          storeLoan->to = "-" + std::to_string(byteMod) + "(%rbp)";
+          file.text << storeLoan;
+        } else if (parse::PRIMITIVE_TYPES.find(type->typeName) !=
+                   parse::PRIMITIVE_TYPES.end()) {
           // primitives will need to be dereferenced
           const auto isFloat = type->opType == asmc::Float;
           const auto loadSize = isFloat ? type->size : asmc::QWord;
@@ -487,8 +536,12 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
       .type = returns.typeName,
       .size = returns.size,
       .passable = true,
-      .owned = exprResult.owned,
+      .owned = exprResult.owned && !returns.isLoan,
   };
+  if (returns.isLoan) {
+    result.loanProvenance = exprResult.loanProvenance;
+    result.loanScope = exprResult.loanScope;
+  }
   generator.matchScope() = saveMatchScope;
   return {file, result};
 }

@@ -345,6 +345,7 @@ Function::Function(const ScopeMod &scope,
   auto arrow = tokens.head != nullptr
                    ? dynamic_cast<lex::Symbol *>(tokens.peek())
                    : nullptr;
+  bool ampersandReturn = false;
   if (arrow && arrow->meta == "->") {
     tokens.pop();
 
@@ -364,6 +365,18 @@ Function::Function(const ScopeMod &scope,
         }
       }
       break;
+    }
+
+    if (auto loanMarker = tokens.head != nullptr
+                              ? dynamic_cast<lex::OpSym *>(tokens.peek())
+                              : nullptr;
+        loanMarker != nullptr && loanMarker->Sym == '&') {
+      if (this->returnLowOwnership)
+        throw err::Exception("Cannot combine `loan` and `&` return syntax on "
+                             "line " +
+                             std::to_string(ident->lineCount));
+      ampersandReturn = true;
+      tokens.pop();
     }
 
     auto typeName = tokens.head != nullptr
@@ -414,6 +427,17 @@ Function::Function(const ScopeMod &scope,
     if (opSym->Sym == '!') {
       this->error = true;
       tokens.pop();
+    }
+  }
+
+  if (ampersandReturn) {
+    if (this->optional || this->error) {
+      this->returnPayloadLoan = true;
+    } else {
+      // `-> &T` is the direct spelling of the existing `-> loan T` form.
+      this->returnLowOwnership = true;
+      this->type.isLoan = true;
+      this->useType.isLoan = true;
     }
   }
 
@@ -717,8 +741,9 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       auto ty = ast::Type();
       ty.typeName = generator.scope()->Ident;
       ty.size = asmc::QWord;
-      const bool ownsReceiver = this->sinksReceiver ||
-                                this->ident.ident == "init" ||
+      const bool isConstructor = this->ident.ident == "init" ||
+                                 this->ident.ident.rfind("init_ovl", 0) == 0;
+      const bool ownsReceiver = this->sinksReceiver || isConstructor ||
                                 this->ident.ident.rfind("__from__", 0) == 0;
       ty.isLoan = !ownsReceiver;
 
@@ -726,6 +751,8 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
           "my", ty, false, false, this->safe);
       auto my = gen::scope::ScopeManager::getInstance()->get("my");
       my->owned = ownsReceiver;
+      if (!ownsReceiver)
+        my->loanProvenance = gen::LoanProvenance::FunctionInput;
 
       movy->size = asmc::QWord;
       movy->to = "-" + std::to_string(byteMod) + +"(%rbp)";
@@ -745,8 +772,9 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     const int asyncDispatchLocation = file.text.count;
 
     // if the function is 'init' and scope is a class, add the default value
-    if (this->ident.ident == "init" && generator.scope() != nullptr &&
-        !globalLocked) {
+    const bool isConstructor = this->ident.ident == "init" ||
+                               this->ident.ident.rfind("init_ovl", 0) == 0;
+    if (isConstructor && generator.scope() != nullptr && !globalLocked) {
       // add all of the default values from the scopes list
       for (ast::DecAssign it : generator.scope()->defaultValues) {
         ast::Assign assign = ast::Assign();
@@ -765,7 +793,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       if (!generator.currentFunction()->has_return) {
         // if the function name is init then we need to alert to return
         // 'my'
-        if (this->ident.ident == "init") {
+        if (isConstructor) {
           auto returnStmt = new ast::Return();
           returnStmt->logicalLine = this->logicalLine;
           auto var = new ast::Var();
@@ -833,6 +861,8 @@ gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
     else if (generator.scope() != nullptr)
       tn = generator.scope()->Ident;
   }
+  if (this->returnPayloadLoan)
+    tn = "&" + tn;
   output.type = this->optional ? "option<" + tn + ">"
                 : this->error  ? "result<" + tn + ">"
                                : tn;

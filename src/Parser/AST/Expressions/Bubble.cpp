@@ -73,6 +73,8 @@ Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
       gen::scope::ScopeManager::getInstance()->assign(tempName, type, false);
   auto symbol = gen::scope::ScopeManager::getInstance()->get(tempName);
   symbol->owned = exprResult.owned;
+  symbol->loanProvenance = exprResult.loanProvenance;
+  symbol->loanScope = exprResult.loanScope;
 
   auto saveResult = new asmc::Mov();
   saveResult->logicalLine = logicalLine;
@@ -93,7 +95,7 @@ Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
   caseOne.pattern.aliasName = "Ok";
   caseOne.pattern.veriableName = "value";
   caseOne.pattern.takesOwnership =
-      exprResult.owned &&
+      exprResult.owned && !bubbleReturnType.isLoan &&
       parse::PRIMITIVE_TYPES.find(bubbleReturnType.typeName) ==
           parse::PRIMITIVE_TYPES.end();
   auto var = new ast::Var();

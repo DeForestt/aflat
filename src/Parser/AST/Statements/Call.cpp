@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <exception>
+#include <unordered_set>
 
 #include "CodeGenerator/CodeGenerator.hpp"
 #include "CodeGenerator/Scope/ScopeManager.hpp"
@@ -37,6 +38,40 @@ struct OverloadRetry : public std::exception {
 
 bool isConcreteGenericClassName(const std::string &typeName) {
   return typeName.find('<') != std::string::npos;
+}
+
+bool containsLoanedUnionPayload(gen::CodeGenerator &generator,
+                                const std::string &typeName,
+                                std::unordered_set<std::string> &seen) {
+  if (!seen.insert(typeName).second)
+    return false;
+  static const std::string taskPrefix = "task<";
+  if (typeName.rfind(taskPrefix, 0) == 0 && typeName.back() == '>') {
+    const auto inner = typeName.substr(taskPrefix.size(),
+                                       typeName.size() - taskPrefix.size() - 1);
+    return containsLoanedUnionPayload(generator, inner, seen);
+  }
+  auto **entry = generator.typeList()[typeName];
+  auto *unionType =
+      entry == nullptr ? nullptr : dynamic_cast<gen::Union *>(*entry);
+  if (unionType == nullptr)
+    return false;
+  for (const auto &alias : unionType->aliases) {
+    if (!std::holds_alternative<ast::Type *>(alias.value))
+      continue;
+    const auto *payload = std::get<ast::Type *>(alias.value);
+    if (payload->isLoan)
+      return true;
+    if (containsLoanedUnionPayload(generator, payload->typeName, seen))
+      return true;
+  }
+  return false;
+}
+
+bool containsLoanedUnionPayload(gen::CodeGenerator &generator,
+                                const std::string &typeName) {
+  std::unordered_set<std::string> seen;
+  return containsLoanedUnionPayload(generator, typeName, seen);
 }
 
 std::string lazyMethodEmissionKey(std::string label) {
@@ -229,9 +264,11 @@ gen::GenerationResult Call::generateAttempt(
     dst.error = src.error;
     dst.returnImmutable = src.returnImmutable;
     dst.returnLowOwnership = src.returnLowOwnership;
+    dst.returnPayloadLoan = src.returnPayloadLoan;
   };
 
   auto file = asmc::File();
+  std::vector<std::string> borrowedTemporaryOwners;
   std::string mod = "";
   ast::Function *func;
   bool checkArgs = true;
@@ -244,6 +281,17 @@ gen::GenerationResult Call::generateAttempt(
   std::string sinkReceiverIdent;
   bool sinkReceiverOwned = false;
   bool sinkReceiverIsField = false;
+  gen::LoanProvenance returnedLoanProvenance = gen::LoanProvenance::None;
+  gen::scope::ScopeId returnedLoanScope = 0;
+  auto includeLoanSource = [&](const gen::Expr &source) {
+    if (source.loanProvenance == gen::LoanProvenance::None)
+      return;
+    if (returnedLoanProvenance == gen::LoanProvenance::None ||
+        source.loanProvenance == gen::LoanProvenance::Lexical) {
+      returnedLoanProvenance = source.loanProvenance;
+      returnedLoanScope = source.loanScope;
+    }
+  };
   gen::Class *lazyConcreteClass = nullptr;
   ast::Function *lazyConcreteFunction = nullptr;
   this->modList.invert();
@@ -341,11 +389,17 @@ gen::GenerationResult Call::generateAttempt(
           generator.returnType() = saveReturnType;
 
           // Get func from the name table so that it can be used with the
-          // generated return type.
+          // generated return type. Keep the original generic overload family
+          // active so a later argument check can retry the next generic
+          // overload instead of appending `_ovlN` to this concrete name.
+          links::SLinkedList<ast::Function, std::string> *concreteTable =
+              nullptr;
+          std::string concreteIdent;
+          int concreteIndex = -1;
           func = findFunctionByOverload(generator.nameTable(),
                                         func->ident.ident, forcedOverloadIndex,
-                                        forcedTable, forcedIdent, overloadTable,
-                                        overloadIdent, currentOverloadIndex);
+                                        forcedTable, forcedIdent, concreteTable,
+                                        concreteIdent, concreteIndex);
           if (func == nullptr) {
             generator.alert(
                 "cannot find function after generic generation (this is a "
@@ -670,6 +724,14 @@ gen::GenerationResult Call::generateAttempt(
 
           gen::Expr exp;
           exp = generator.GenExpr(ref, file);
+          auto *receiverSource =
+              gen::scope::ScopeManager::getInstance()->get(my);
+          if (receiverSource == nullptr)
+            receiverSource = sym;
+          gen::Expr receiverLoan;
+          receiverLoan.loanProvenance = receiverSource->loanProvenance;
+          receiverLoan.loanScope = receiverSource->loanScope;
+          includeLoanSource(receiverLoan);
           asmc::Movq *mov = new asmc::Movq();
           mov->logicalLine = this->logicalLine;
           asmc::Mov *mov2 = new asmc::Mov();
@@ -737,6 +799,7 @@ gen::GenerationResult Call::generateAttempt(
         };
         lazyConcreteClass = cl;
         lazyConcreteFunction = f;
+        func->ident.ident = "pub_" + this->publify + "_" + f->ident.ident;
         copyReturnMetadata(*func, *f);
         func->scope = f->scope;
         func->scopeName = f->scopeName;
@@ -744,9 +807,10 @@ gen::GenerationResult Call::generateAttempt(
         t.typeName = cl->Ident;
         t.size = asmc::QWord;
         func->argTypes = f->argTypes;
-        func->argTypes.push_back(t);
+        func->argTypes.insert(func->argTypes.begin(), t);
         func->readOnly = f->readOnly;
-        func->readOnly.push_back(true);
+        func->readOnly.insert(func->readOnly.begin(), true);
+        func->req = f->req + 1;
         if (immutableSymbol && !f->safe) {
           generator.alert("Immutable objects can only call safe functions: " +
                               func->ident.ident,
@@ -768,6 +832,7 @@ gen::GenerationResult Call::generateAttempt(
         generator.alert("cannot find function: " + ident + " in " + cl->Ident);
       lazyConcreteClass = cl;
       lazyConcreteFunction = f;
+      func->ident.ident = "pub_" + this->publify + "_" + f->ident.ident;
       func->argTypes = f->argTypes;
       func->req = f->req;
       func->readOnly = f->readOnly;
@@ -854,6 +919,7 @@ gen::GenerationResult Call::generateAttempt(
     // check if the argument is a reference
     std::string typeHint = "";
     bool rValue = false;
+    bool materializeBorrowedTemporary = false;
     if (checkArgs) {
       auto var = dynamic_cast<ast::Var *>(arg);
       if (var != nullptr) {
@@ -964,21 +1030,31 @@ gen::GenerationResult Call::generateAttempt(
     const bool hasParamType = checkArgs && paramIndex < func->argTypes.size();
     const ast::Type *paramType =
         hasParamType ? &func->argTypes.at(paramIndex) : nullptr;
+    if (paramType != nullptr &&
+        (paramType->isLoan ||
+         (func->returnPayloadLoan && !paramType->isRvalue)))
+      includeLoanSource(exp);
     const bool paramConsumesOwnedValue =
         paramType != nullptr && paramType->isRvalue;
+    // af_free is the ownership endpoint for a raw object allocation. A `$`
+    // passed to it is intentionally no longer owned by the caller, so do not
+    // create the hidden owner used to keep ordinary borrowed temporaries alive.
+    const bool explicitDeallocationTransfer =
+        ident == "af_free" && exp.transferExplicit;
 
     if (!isOptionSomeSink && checkArgs && exp.owned &&
-        dynamic_cast<ast::CallExpr *>(arg) != nullptr && paramType != nullptr &&
-        !paramConsumesOwnedValue && !paramType->isRvalue &&
-        exp.type != "void" &&
+        dynamic_cast<ast::Var *>(arg) == nullptr && paramType != nullptr &&
+        !paramConsumesOwnedValue && !explicitDeallocationTransfer &&
+        !paramType->isRvalue && exp.type != "void" &&
         parse::PRIMITIVE_TYPES.find(exp.type) == parse::PRIMITIVE_TYPES.end()) {
       auto t = generator.typeList()[exp.type];
       if (t && (*t)->uniqueType) {
-        std::string discardWarning =
-            "Discarding non-primitive return value of type `" + exp.type +
-            "` that is passed to argument " + std::to_string(i + 1) +
-            " of function `" + ident +
-            "` without transferring ownership may leak";
+        std::string ownershipDiagnostic =
+            "owned temporary of type `" + exp.type +
+            "` cannot be passed to non-consuming argument " +
+            std::to_string(i + 1) + " of function `" + ident +
+            "`; bind it to a symbol with a lifetime or use an "
+            "ownership-consuming parameter";
         bool hasAlternativeOverload = false;
         if (!this->allowDiscardWarning && overloadTable != nullptr &&
             currentOverloadIndex >= 0 && !overloadIdent.empty()) {
@@ -991,10 +1067,16 @@ gen::GenerationResult Call::generateAttempt(
         }
         if (hasAlternativeOverload) {
           this->requestOverloadRetry(generator, overloadTable, overloadIdent,
-                                     currentOverloadIndex, discardWarning,
+                                     currentOverloadIndex, ownershipDiagnostic,
                                      false, true, true);
         } else {
-          generator.alert(discardWarning, false);
+          const bool scalarReturn =
+              parse::PRIMITIVE_TYPES.find(func->type.typeName) !=
+                  parse::PRIMITIVE_TYPES.end() &&
+              func->type.typeName != "adr" && func->type.typeName != "generic";
+          if (func->type.typeName != "void" && !scalarReturn)
+            generator.alert(ownershipDiagnostic, true, __FILE__, __LINE__);
+          materializeBorrowedTemporary = true;
         }
       }
     }
@@ -1072,6 +1154,26 @@ gen::GenerationResult Call::generateAttempt(
         }
       }
     };
+    if (materializeBorrowedTemporary) {
+      const auto ownerName =
+          "$" + std::to_string(generator.tempCount()++) + "_call_owner";
+      ast::Type ownerType(exp.type, exp.size);
+      ownerType.opType = exp.op;
+      const int ownerSlot = gen::scope::ScopeManager::getInstance()->assign(
+          ownerName, ownerType, false, false);
+      auto *owner = gen::scope::ScopeManager::getInstance()->get(ownerName);
+      owner->owned = true;
+
+      auto *storeOwner = new asmc::Mov();
+      storeOwner->logicalLine = this->logicalLine;
+      storeOwner->size = exp.size;
+      storeOwner->op = exp.op;
+      storeOwner->from = exp.access;
+      storeOwner->to = "-" + std::to_string(ownerSlot) + "(%rbp)";
+      file.text << storeOwner;
+      borrowedTemporaryOwners.push_back(ownerName);
+    }
+
     i++;
     ast::Type savedType(exp.type, exp.size);
     savedType.opType = exp.op;
@@ -1226,6 +1328,12 @@ gen::GenerationResult Call::generateAttempt(
   generator.intArgsCounter() = 0;
 
   auto result = func->toExpr(generator);
+  if ((func->returnLowOwnership || func->returnPayloadLoan ||
+       containsLoanedUnionPayload(generator, result.type)) &&
+      returnedLoanProvenance != gen::LoanProvenance::None) {
+    result.loanProvenance = returnedLoanProvenance;
+    result.loanScope = returnedLoanScope;
+  }
 
   if (func->sinksReceiver) {
     if (sinkReceiverIdent.empty()) {
@@ -1255,6 +1363,37 @@ gen::GenerationResult Call::generateAttempt(
         gen::scope::ScopeManager::getInstance()->get(sinkReceiverIdent);
     if (receiver != nullptr && !generator.suppressOwnershipEffects())
       receiver->sold = this->logicalLine;
+  }
+
+  if (!borrowedTemporaryOwners.empty()) {
+    // Cleanup calls may overwrite the return register, so preserve the outer
+    // call's scalar result before destroying its borrowed temporaries.
+    if (result.type != "void") {
+      ast::Type resultType(result.type, result.size);
+      resultType.opType = result.op;
+      const int resultSlot = gen::scope::ScopeManager::getInstance()->assign(
+          "", resultType, false, false);
+      auto *saveResult = new asmc::Mov();
+      saveResult->logicalLine = this->logicalLine;
+      saveResult->size = result.size;
+      saveResult->op = result.op;
+      saveResult->from = result.access;
+      saveResult->to = "-" + std::to_string(resultSlot) + "(%rbp)";
+      file.text << saveResult;
+      result.access = saveResult->to;
+    }
+
+    for (auto ownerIt = borrowedTemporaryOwners.rbegin();
+         ownerIt != borrowedTemporaryOwners.rend(); ++ownerIt) {
+      auto *owner = gen::scope::ScopeManager::getInstance()->get(*ownerIt);
+      if (owner == nullptr)
+        continue;
+      if (auto *cleanup = generator.deScope(*owner)) {
+        file << *cleanup;
+        delete cleanup;
+      }
+      owner->sold = this->logicalLine;
+    }
   }
 
   return {file, std::optional<gen::Expr>(result)};

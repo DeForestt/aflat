@@ -173,47 +173,47 @@ unique union option {
   };
 
   when (T is primitive)
-  safe fn toResult(const Error err) -> result::<T> {
+  safe fn toResult(const Error &&err) -> result::<T> {
     match my {
       Some(value) => return new result::<T>->Ok(value),
-      None() => return new result::<T>->Err(err)
+      None() => return new result::<T>->Err($err)
     }
   };
 
   when (T is not primitive)
-  safe fn toResult(const Error err) -> result::<T> {
+  safe fn toResult(const Error &&err) -> result::<T> {
     match my {
       Some(value) => {
         return new result::<T>->Ok(value);
       },
-      None() => return new result::<T>->Err(err)
+      None() => return new result::<T>->Err($err)
     }
   };
 
   when (T is not primitive)
-  safe sink fn toResult(const Error err) -> result::<T> {
+  safe sink fn toResult(const Error &&err) -> result::<T> {
     match my {
       Some(&&value) => return new result::<T>->Ok($value),
-      None() => return new result::<T>->Err(err)
+      None() => return new result::<T>->Err($err)
     }
   };
 };
 
 types(T)
 // Wrap a value in the `Some` variant for ergonomic construction.
-when (T is not unique)
+when (T is primitive)
 export fn Some(const T val) -> option::<T> {
   return new option::<T>->Some(val);
 };
 
 types(T)
-when (T is unique)
+when (T is not primitive and T has __copy__)
 export fn Some(const T val) -> option::<T> {
   return new option::<T>->Some(val);
 };
 
 types(T)
-when (T is unique)
+when (T is not primitive)
 export fn Some(const T &&val) -> option::<T> {
   return new option::<T>->Some($val);
 };
@@ -229,7 +229,7 @@ types(T)
  * Wrap an arbitrary value by probing whether it represents NULL when cast to
  * an adr, mirroring aflat's implicit optional semantics.
  */
-when (T is not unique)
+when (T is primitive)
 export fn optionWrapper(immutable T value) -> option::<T> {
   const adr checker = NULL;
   const adr cpoint = ?checker;
@@ -242,7 +242,7 @@ export fn optionWrapper(immutable T value) -> option::<T> {
 };
 
 types(T)
-when (T is unique)
+when (T is not primitive and T has __copy__)
 export fn optionWrapper(immutable T value) -> option::<T> {
   const adr checker = NULL;
   const adr cpoint = ?checker;
@@ -255,7 +255,7 @@ export fn optionWrapper(immutable T value) -> option::<T> {
 };
 
 types(T)
-when (T is unique)
+when (T is not primitive)
 export fn optionWrapper(immutable T &&value) -> option::<T> {
   const adr checker = NULL;
   const adr cpoint = ?checker;

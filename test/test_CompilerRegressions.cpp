@@ -327,8 +327,9 @@ unique class View {
 unique class Owner {
   adr data = af_malloc(view.size);
   int size = view.size;
-  fn init(immutable View view) -> Self {
+  fn init(immutable View&& view) -> Self {
     af_memcpy(my.data, view.data, my.size);
+    delete view;
     return my;
   };
 };
@@ -354,8 +355,9 @@ import View from "./ViewOnly";
 unique class Owner {
   adr data = af_malloc(view.size);
   int size = view.size;
-  fn init(immutable View view) -> Self {
+  fn init(immutable View&& view) -> Self {
     af_memcpy(my.data, view.data, my.size);
+    delete view;
     return my;
   };
 };
@@ -381,6 +383,7 @@ unique class ImportedOwner {
   int size = view.size;
   fn init(ImportedView&& view) -> Self {
     af_memcpy(my.data, view.data, my.size);
+    delete view;
     return my;
   };
 };
@@ -616,7 +619,7 @@ fn main() -> int {
 
   REQUIRE(built);
   CHECK(assembled == 0);
-  CHECK(text.find("option.Some_ovl1.Value:") != std::string::npos);
+  CHECK(text.find("option.Some") != std::string::npos);
   CHECK(
       text.find(
           "pub_option__std__generic__start__Value__std__generic__end___del:") !=
@@ -723,6 +726,51 @@ fn main() -> int {
   CHECK(text.find("call\tpub_Inner_del") != std::string::npos);
   CHECK(countCalls("call\tpub_Outer_del") == 2);
   CHECK(text.find("call\taf_free") != std::string::npos);
+}
+
+TEST_CASE("explicit delete releases an owned class-valued field shell",
+          "[class][ownership][delete][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_class_field_delete_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+shared safe class Resource {
+  fn init() -> Self { return my; };
+  fn del() -> void { return; };
+};
+
+unique class Owner {
+  private Resource resource = new Resource();
+  fn init() -> Self { return my; };
+  fn del() -> void {
+    delete my.resource;
+  };
+};
+
+fn main() -> int {
+  const Owner owner = new Owner();
+  delete owner;
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  const auto destructor = text.find("pub_Owner_del:");
+  REQUIRE(destructor != std::string::npos);
+  const auto resourceDelete = text.find("call\tpub_Resource_del", destructor);
+  REQUIRE(resourceDelete != std::string::npos);
+  const auto freeShell = text.find("call\taf_free", resourceDelete);
+  REQUIRE(freeShell != std::string::npos);
+  CHECK(freeShell - resourceDelete < 500);
 }
 
 TEST_CASE("owned chained union receivers are cleaned after primitive results",

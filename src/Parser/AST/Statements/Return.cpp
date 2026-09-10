@@ -8,7 +8,44 @@
 #include "Parser/AST/Statements/Call.hpp"
 #include "Parser/Parser.hpp"
 
+#include <unordered_set>
+
 namespace ast {
+namespace {
+
+bool containsLoanedUnionPayload(gen::CodeGenerator &generator,
+                                const std::string &typeName,
+                                std::unordered_set<std::string> &seen) {
+  if (!seen.insert(typeName).second)
+    return false;
+
+  auto **entry = generator.typeList()[typeName];
+  if (entry == nullptr)
+    return false;
+
+  auto *unionType = dynamic_cast<gen::Union *>(*entry);
+  if (unionType == nullptr)
+    return false;
+
+  for (const auto &alias : unionType->aliases) {
+    if (!std::holds_alternative<ast::Type *>(alias.value))
+      continue;
+    const auto *payload = std::get<ast::Type *>(alias.value);
+    if (payload->isLoan)
+      return true;
+    if (containsLoanedUnionPayload(generator, payload->typeName, seen))
+      return true;
+  }
+  return false;
+}
+
+bool containsLoanedUnionPayload(gen::CodeGenerator &generator,
+                                const std::string &typeName) {
+  std::unordered_set<std::string> seen;
+  return containsLoanedUnionPayload(generator, typeName, seen);
+}
+
+} // namespace
 /*
  * @brief This will parse a return statement
  * @param tokens The tokens to parse
@@ -132,13 +169,19 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   generator.suppressOwnershipEffects() = savedSuppressOwnership;
   generator.suppressLazyMethodEmission() = savedSuppressLazy;
   bool expressionGenerated = false;
+  const std::string wrapperPayloadType =
+      generator.currentFunction()->returnPayloadLoan
+          ? "&" + generator.returnType().typeName
+          : generator.returnType().typeName;
 
-  auto transferOwnedWrapperPayload = [&]() -> ast::Expr * {
-    if (!from.owned || this->empty || from.type == "void" ||
+  auto transferOwnedWrapperPayload = [&](bool successPayload) -> ast::Expr * {
+    if ((successPayload && generator.currentFunction()->returnPayloadLoan) ||
+        !from.owned || this->empty || from.type == "void" ||
         parse::PRIMITIVE_TYPES.find(from.type) != parse::PRIMITIVE_TYPES.end())
       return this->expr;
     auto *type = generator.getType(from.type, file);
-    if (type == nullptr || !(*type)->uniqueType)
+    if (type == nullptr || (dynamic_cast<gen::Class *>(*type) == nullptr &&
+                            dynamic_cast<gen::Union *>(*type) == nullptr))
       return this->expr;
     auto *transfer = new ast::Buy();
     transfer->expr = this->expr;
@@ -160,7 +203,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   if (generator.currentFunction()->optional) {
     // if fromtype is not option.typeName, we need to convert it to
     // option.typeName
-    if (from.type != "option<" + generator.returnType().typeName + ">") {
+    if (from.type != "option<" + wrapperPayloadType + ">") {
       if (!this->empty &&
           !generator.canAssign(generator.returnType(), from.type,
                                "the return type of this function is {} but the "
@@ -176,7 +219,9 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       }
       auto optionConvertion = new ast::Call();
       optionConvertion->ident = "option.optionWrapper";
-      optionConvertion->Args.push(transferOwnedWrapperPayload());
+      optionConvertion->Args.push(transferOwnedWrapperPayload(true));
+      if (generator.currentFunction()->returnPayloadLoan)
+        optionConvertion->genericTypes.push_back(wrapperPayloadType);
       auto call = new ast::CallExpr();
       call->call = optionConvertion;
       call->logicalLine = this->logicalLine;
@@ -188,7 +233,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   } else if (generator.currentFunction()->error) {
     // if fromtype is not result.typeName, we need to convert it to
     // result.typeName
-    if (from.type != "result<" + generator.returnType().typeName + ">") {
+    if (from.type != "result<" + wrapperPayloadType + ">") {
       bool isError = false;
       if (parse::PRIMITIVE_TYPES.find(from.type) ==
           parse::PRIMITIVE_TYPES.end()) {
@@ -211,8 +256,8 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       if (isError) {
         auto reject = new ast::Call();
         reject->ident = "result.reject";
-        reject->Args.push(this->expr);
-        reject->genericTypes.push_back(generator.returnType().typeName);
+        reject->Args.push(transferOwnedWrapperPayload(false));
+        reject->genericTypes.push_back(wrapperPayloadType);
         auto call = new ast::CallExpr();
         call->call = reject;
         call->logicalLine = this->logicalLine;
@@ -239,7 +284,9 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
         }
         auto resultConvertion = new ast::Call();
         resultConvertion->ident = "result.resultWrapper";
-        resultConvertion->Args.push(transferOwnedWrapperPayload());
+        resultConvertion->Args.push(transferOwnedWrapperPayload(true));
+        if (generator.currentFunction()->returnPayloadLoan)
+          resultConvertion->genericTypes.push_back(wrapperPayloadType);
         auto call = new ast::CallExpr();
         call->call = resultConvertion;
         call->logicalLine = this->logicalLine;
@@ -332,6 +379,13 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     from = generator.GenExpr(this->expr, file, asmc::AUTO,
                              generator.returnType().typeName);
     from.adoptImmutableRequirement(prev);
+  }
+
+  if (from.loanProvenance == gen::LoanProvenance::Lexical &&
+      containsLoanedUnionPayload(generator, from.type)) {
+    generator.alert("cannot return a loan whose referent is local to the "
+                    "current function",
+                    true, __FILE__, __LINE__);
   }
 
   if (parse::PRIMITIVE_TYPES.find(from.type) == parse::PRIMITIVE_TYPES.end()) {

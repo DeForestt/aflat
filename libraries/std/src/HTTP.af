@@ -259,7 +259,8 @@ shared class HTTPMessage {
                 continue;
 
             if my.switch {
-                my.body = my.body + line + "\r\n";
+                const string bodyLine = my.body + line;
+                my.body = bodyLine + "\r\n";
                 continue;
             };
 
@@ -382,7 +383,8 @@ shared class HTTPMessage {
             const string line = rsp.subString(lineStart, lineEnd);
             if my.switch {
                 if line.len() > 0 {
-                    my.body = my.body + line + "\r\n";
+                    const string bodyLine = my.body + line;
+                    my.body = bodyLine + "\r\n";
                 };
                 lineStart = lineEnd + 1;
                 continue;
@@ -623,7 +625,7 @@ shared class HTTPRequest {
         if okay {
             const HTTPMessage response = new HTTPMessage(buffer);
             af_free(buffer);
-            return res.accept::<HTTPMessage>(response);
+            return res.accept::<HTTPMessage>($response);
         };
 
         const string errorMessage = if str.len(buffer) > 0
@@ -691,7 +693,8 @@ shared class HTTPResponse {
         ret = ret + my.statusMessage;
         ret = ret + "\r\n";
         ret = ret + "Connection: close\r\n";
-        ret = ret + my.getHeaders();
+        const string renderedHeaders = my.getHeaders();
+        ret = ret + renderedHeaders;
         ret = ret + "\r\n";
         ret = ret + my.body;
         return ret.copy();
@@ -730,7 +733,8 @@ shared class EndPointStruct {
     };
 
     fn toString() -> string {
-        return `EndPointStruct(path: {my.path}, method: {methodToString(my.method)}, foo: {my.foo != NULL})`;
+        const string method = methodToString(my.method);
+        return `EndPointStruct(path: {my.path}, method: {method}, foo: {my.foo != NULL})`;
     };
 };
 
