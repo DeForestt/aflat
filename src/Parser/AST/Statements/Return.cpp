@@ -174,8 +174,9 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
           ? "&" + generator.returnType().typeName
           : generator.returnType().typeName;
 
-  auto transferOwnedWrapperPayload = [&]() -> ast::Expr * {
-    if (!from.owned || this->empty || from.type == "void" ||
+  auto transferOwnedWrapperPayload = [&](bool successPayload) -> ast::Expr * {
+    if ((successPayload && generator.currentFunction()->returnPayloadLoan) ||
+        !from.owned || this->empty || from.type == "void" ||
         parse::PRIMITIVE_TYPES.find(from.type) != parse::PRIMITIVE_TYPES.end())
       return this->expr;
     auto *type = generator.getType(from.type, file);
@@ -218,7 +219,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       }
       auto optionConvertion = new ast::Call();
       optionConvertion->ident = "option.optionWrapper";
-      optionConvertion->Args.push(transferOwnedWrapperPayload());
+      optionConvertion->Args.push(transferOwnedWrapperPayload(true));
       if (generator.currentFunction()->returnPayloadLoan)
         optionConvertion->genericTypes.push_back(wrapperPayloadType);
       auto call = new ast::CallExpr();
@@ -255,7 +256,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       if (isError) {
         auto reject = new ast::Call();
         reject->ident = "result.reject";
-        reject->Args.push(transferOwnedWrapperPayload());
+        reject->Args.push(transferOwnedWrapperPayload(false));
         reject->genericTypes.push_back(wrapperPayloadType);
         auto call = new ast::CallExpr();
         call->call = reject;
@@ -283,7 +284,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
         }
         auto resultConvertion = new ast::Call();
         resultConvertion->ident = "result.resultWrapper";
-        resultConvertion->Args.push(transferOwnedWrapperPayload());
+        resultConvertion->Args.push(transferOwnedWrapperPayload(true));
         if (generator.currentFunction()->returnPayloadLoan)
           resultConvertion->genericTypes.push_back(wrapperPayloadType);
         auto call = new ast::CallExpr();

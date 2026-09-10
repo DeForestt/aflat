@@ -83,7 +83,7 @@ TEST_CASE("returning non-primitive value does not warn", "[leak-warning]") {
   REQUIRE(buffer.str().find("warning") == std::string::npos);
 }
 
-TEST_CASE("passing owned temporary to non-consuming parameter is rejected",
+TEST_CASE("passing owned temporary to call-scoped parameter is materialized",
           "[leak-warning]") {
   auto parser = parse::Parser();
   test::mockGen::CodeGenerator gen("mod", parser, "",
@@ -115,6 +115,57 @@ TEST_CASE("passing owned temporary to non-consuming parameter is rejected",
 
   ast::Call outer;
   outer.ident = "consume";
+  outer.Args = links::LinkedList<ast::Expr *>();
+  outer.Args.push(inner);
+
+  std::ostringstream buffer;
+  auto *old = std::cout.rdbuf(buffer.rdbuf());
+  gen.GenSTMT(&outer);
+  std::cout.rdbuf(old);
+
+  REQUIRE_FALSE(gen.hasError());
+  REQUIRE(buffer.str().find("owned temporary of type `Foo` cannot be passed") ==
+          std::string::npos);
+}
+
+TEST_CASE("owned temporary is rejected when a returned object may retain it",
+          "[leak-warning][loan]") {
+  auto parser = parse::Parser();
+  test::mockGen::CodeGenerator gen("mod", parser, "",
+                                   std::filesystem::current_path().string());
+
+  parser.addType("Foo", asmc::Hard, asmc::QWord, false, true);
+  auto foo = new gen::Class();
+  foo->Ident = "Foo";
+  foo->uniqueType = true;
+  gen.addType(foo);
+
+  parser.addType("Container", asmc::Hard, asmc::QWord, false, true);
+  auto container = new gen::Class();
+  container->Ident = "Container";
+  container->uniqueType = true;
+  gen.addType(container);
+
+  ast::Function produce;
+  produce.ident.ident = "produce";
+  produce.type = ast::Type("Foo", asmc::QWord);
+  gen.nameTable().push(produce);
+
+  ast::Function retain;
+  retain.ident.ident = "retain";
+  retain.type = ast::Type("Container", asmc::QWord);
+  retain.argTypes.push_back(ast::Type("Foo", asmc::QWord));
+  retain.mutability.push_back(false);
+  retain.req = 1;
+  gen.nameTable().push(retain);
+
+  auto inner = new ast::CallExpr();
+  inner->call = new ast::Call();
+  inner->call->ident = "produce";
+  inner->call->Args = links::LinkedList<ast::Expr *>();
+
+  ast::Call outer;
+  outer.ident = "retain";
   outer.Args = links::LinkedList<ast::Expr *>();
   outer.Args.push(inner);
 

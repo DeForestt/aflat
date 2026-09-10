@@ -23,7 +23,7 @@ private bool argEquals(const string expected, const adr actual) {
 };
 
 // Tagged union representing the canonical value types a CLI argument can hold.
-shared union CLAValue {
+unique union CLAValue {
 	String(adr),
 	Number(int),
 	Boolean(bool),
@@ -31,7 +31,10 @@ shared union CLAValue {
 
 	fn getString() -> string! {
 		match my {
-			String(s) => return new string(s),
+			String(s) => {
+				const string value = new string(s);
+				return $value;
+			},
 			Number(n) => return res.reject::<string>(new Error("Expected String, got Number")),
 			Boolean(b) => return res.reject::<string>(new Error("Expected String, got Boolean")),
 			None => return res.reject::<string>(new Error("No value present"))
@@ -156,7 +159,9 @@ shared class CommandLineArgs {
 		str.print(`Usage: {my.programName} [options]\n`);
 		my.arguments.reset();
 		foreach arg in my.arguments {
-			str.print(`\t{arg}\n`);
+			const string renderedArg = arg.toString();
+			const string helpLine = `\t{renderedArg}\n`;
+			str.print(helpLine);
 		};
 		my.arguments.reset();
 	};

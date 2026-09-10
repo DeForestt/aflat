@@ -268,6 +268,7 @@ gen::GenerationResult Call::generateAttempt(
   };
 
   auto file = asmc::File();
+  std::vector<std::string> borrowedTemporaryOwners;
   std::string mod = "";
   ast::Function *func;
   bool checkArgs = true;
@@ -388,11 +389,17 @@ gen::GenerationResult Call::generateAttempt(
           generator.returnType() = saveReturnType;
 
           // Get func from the name table so that it can be used with the
-          // generated return type.
+          // generated return type. Keep the original generic overload family
+          // active so a later argument check can retry the next generic
+          // overload instead of appending `_ovlN` to this concrete name.
+          links::SLinkedList<ast::Function, std::string> *concreteTable =
+              nullptr;
+          std::string concreteIdent;
+          int concreteIndex = -1;
           func = findFunctionByOverload(generator.nameTable(),
                                         func->ident.ident, forcedOverloadIndex,
-                                        forcedTable, forcedIdent, overloadTable,
-                                        overloadIdent, currentOverloadIndex);
+                                        forcedTable, forcedIdent, concreteTable,
+                                        concreteIdent, concreteIndex);
           if (func == nullptr) {
             generator.alert(
                 "cannot find function after generic generation (this is a "
@@ -792,6 +799,7 @@ gen::GenerationResult Call::generateAttempt(
         };
         lazyConcreteClass = cl;
         lazyConcreteFunction = f;
+        func->ident.ident = "pub_" + this->publify + "_" + f->ident.ident;
         copyReturnMetadata(*func, *f);
         func->scope = f->scope;
         func->scopeName = f->scopeName;
@@ -799,9 +807,10 @@ gen::GenerationResult Call::generateAttempt(
         t.typeName = cl->Ident;
         t.size = asmc::QWord;
         func->argTypes = f->argTypes;
-        func->argTypes.push_back(t);
+        func->argTypes.insert(func->argTypes.begin(), t);
         func->readOnly = f->readOnly;
-        func->readOnly.push_back(true);
+        func->readOnly.insert(func->readOnly.begin(), true);
+        func->req = f->req + 1;
         if (immutableSymbol && !f->safe) {
           generator.alert("Immutable objects can only call safe functions: " +
                               func->ident.ident,
@@ -823,6 +832,7 @@ gen::GenerationResult Call::generateAttempt(
         generator.alert("cannot find function: " + ident + " in " + cl->Ident);
       lazyConcreteClass = cl;
       lazyConcreteFunction = f;
+      func->ident.ident = "pub_" + this->publify + "_" + f->ident.ident;
       func->argTypes = f->argTypes;
       func->req = f->req;
       func->readOnly = f->readOnly;
@@ -909,6 +919,7 @@ gen::GenerationResult Call::generateAttempt(
     // check if the argument is a reference
     std::string typeHint = "";
     bool rValue = false;
+    bool materializeBorrowedTemporary = false;
     if (checkArgs) {
       auto var = dynamic_cast<ast::Var *>(arg);
       if (var != nullptr) {
@@ -1025,11 +1036,16 @@ gen::GenerationResult Call::generateAttempt(
       includeLoanSource(exp);
     const bool paramConsumesOwnedValue =
         paramType != nullptr && paramType->isRvalue;
+    // af_free is the ownership endpoint for a raw object allocation. A `$`
+    // passed to it is intentionally no longer owned by the caller, so do not
+    // create the hidden owner used to keep ordinary borrowed temporaries alive.
+    const bool explicitDeallocationTransfer =
+        ident == "af_free" && exp.transferExplicit;
 
     if (!isOptionSomeSink && checkArgs && exp.owned &&
-        dynamic_cast<ast::CallExpr *>(arg) != nullptr && paramType != nullptr &&
-        !paramConsumesOwnedValue && !paramType->isRvalue &&
-        exp.type != "void" &&
+        dynamic_cast<ast::Var *>(arg) == nullptr && paramType != nullptr &&
+        !paramConsumesOwnedValue && !explicitDeallocationTransfer &&
+        !paramType->isRvalue && exp.type != "void" &&
         parse::PRIMITIVE_TYPES.find(exp.type) == parse::PRIMITIVE_TYPES.end()) {
       auto t = generator.typeList()[exp.type];
       if (t && (*t)->uniqueType) {
@@ -1054,7 +1070,13 @@ gen::GenerationResult Call::generateAttempt(
                                      currentOverloadIndex, ownershipDiagnostic,
                                      false, true, true);
         } else {
-          generator.alert(ownershipDiagnostic, true, __FILE__, __LINE__);
+          const bool scalarReturn =
+              parse::PRIMITIVE_TYPES.find(func->type.typeName) !=
+                  parse::PRIMITIVE_TYPES.end() &&
+              func->type.typeName != "adr" && func->type.typeName != "generic";
+          if (func->type.typeName != "void" && !scalarReturn)
+            generator.alert(ownershipDiagnostic, true, __FILE__, __LINE__);
+          materializeBorrowedTemporary = true;
         }
       }
     }
@@ -1132,6 +1154,26 @@ gen::GenerationResult Call::generateAttempt(
         }
       }
     };
+    if (materializeBorrowedTemporary) {
+      const auto ownerName =
+          "$" + std::to_string(generator.tempCount()++) + "_call_owner";
+      ast::Type ownerType(exp.type, exp.size);
+      ownerType.opType = exp.op;
+      const int ownerSlot = gen::scope::ScopeManager::getInstance()->assign(
+          ownerName, ownerType, false, false);
+      auto *owner = gen::scope::ScopeManager::getInstance()->get(ownerName);
+      owner->owned = true;
+
+      auto *storeOwner = new asmc::Mov();
+      storeOwner->logicalLine = this->logicalLine;
+      storeOwner->size = exp.size;
+      storeOwner->op = exp.op;
+      storeOwner->from = exp.access;
+      storeOwner->to = "-" + std::to_string(ownerSlot) + "(%rbp)";
+      file.text << storeOwner;
+      borrowedTemporaryOwners.push_back(ownerName);
+    }
+
     i++;
     ast::Type savedType(exp.type, exp.size);
     savedType.opType = exp.op;
@@ -1321,6 +1363,37 @@ gen::GenerationResult Call::generateAttempt(
         gen::scope::ScopeManager::getInstance()->get(sinkReceiverIdent);
     if (receiver != nullptr && !generator.suppressOwnershipEffects())
       receiver->sold = this->logicalLine;
+  }
+
+  if (!borrowedTemporaryOwners.empty()) {
+    // Cleanup calls may overwrite the return register, so preserve the outer
+    // call's scalar result before destroying its borrowed temporaries.
+    if (result.type != "void") {
+      ast::Type resultType(result.type, result.size);
+      resultType.opType = result.op;
+      const int resultSlot = gen::scope::ScopeManager::getInstance()->assign(
+          "", resultType, false, false);
+      auto *saveResult = new asmc::Mov();
+      saveResult->logicalLine = this->logicalLine;
+      saveResult->size = result.size;
+      saveResult->op = result.op;
+      saveResult->from = result.access;
+      saveResult->to = "-" + std::to_string(resultSlot) + "(%rbp)";
+      file.text << saveResult;
+      result.access = saveResult->to;
+    }
+
+    for (auto ownerIt = borrowedTemporaryOwners.rbegin();
+         ownerIt != borrowedTemporaryOwners.rend(); ++ownerIt) {
+      auto *owner = gen::scope::ScopeManager::getInstance()->get(*ownerIt);
+      if (owner == nullptr)
+        continue;
+      if (auto *cleanup = generator.deScope(*owner)) {
+        file << *cleanup;
+        delete cleanup;
+      }
+      owner->sold = this->logicalLine;
+    }
   }
 
   return {file, std::optional<gen::Expr>(result)};

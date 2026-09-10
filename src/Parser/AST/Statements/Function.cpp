@@ -741,8 +741,9 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       auto ty = ast::Type();
       ty.typeName = generator.scope()->Ident;
       ty.size = asmc::QWord;
-      const bool ownsReceiver = this->sinksReceiver ||
-                                this->ident.ident == "init" ||
+      const bool isConstructor = this->ident.ident == "init" ||
+                                 this->ident.ident.rfind("init_ovl", 0) == 0;
+      const bool ownsReceiver = this->sinksReceiver || isConstructor ||
                                 this->ident.ident.rfind("__from__", 0) == 0;
       ty.isLoan = !ownsReceiver;
 
@@ -771,8 +772,9 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     const int asyncDispatchLocation = file.text.count;
 
     // if the function is 'init' and scope is a class, add the default value
-    if (this->ident.ident == "init" && generator.scope() != nullptr &&
-        !globalLocked) {
+    const bool isConstructor = this->ident.ident == "init" ||
+                               this->ident.ident.rfind("init_ovl", 0) == 0;
+    if (isConstructor && generator.scope() != nullptr && !globalLocked) {
       // add all of the default values from the scopes list
       for (ast::DecAssign it : generator.scope()->defaultValues) {
         ast::Assign assign = ast::Assign();
@@ -791,7 +793,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       if (!generator.currentFunction()->has_return) {
         // if the function name is init then we need to alert to return
         // 'my'
-        if (this->ident.ident == "init") {
+        if (isConstructor) {
           auto returnStmt = new ast::Return();
           returnStmt->logicalLine = this->logicalLine;
           auto var = new ast::Var();

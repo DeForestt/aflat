@@ -29,6 +29,11 @@ shared pedantic class Error {
         return my;
     };
 
+    Error init(const string &&message) {
+        delete message;
+        return my;
+    };
+
     public string render() {
         if my._render == NULL
             return `Error: {my._typeName}`;

@@ -881,7 +881,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       gen::Type **t = typeList()[exp.type];
       if (t) {
         gen::Class *cl = dynamic_cast<gen::Class *>(*t);
-        if (cl && cl->Ident != "string") {
+        if (cl && cl->Ident != "string" && cl->Ident != "uni_string") {
           ast::Function *toStringFunc = cl->nameTable["toString"];
           if (toStringFunc == nullptr) {
             if (cl->parent != nullptr) {
@@ -1101,6 +1101,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       if (cls != nullptr) {
         tname = optn;
         opor = cls->overloadTable[comp.op];
+        if (opor != nullptr) {
+          const auto overloadSuffix = opor->ident.ident.rfind("_ovl");
+          if (overloadSuffix != std::string::npos) {
+            const auto baseIdent = opor->ident.ident.substr(0, overloadSuffix);
+            if (auto *base = cls->nameTable[baseIdent])
+              opor = base;
+          }
+        }
       }
     }
 

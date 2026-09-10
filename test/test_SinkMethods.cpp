@@ -491,6 +491,162 @@ fn main() -> int { return 0; };
   CHECK(result.success);
 }
 
+TEST_CASE("borrowed call arguments materialize and clean owned temporaries",
+          "[owned][call][temporary][regression]") {
+  const auto result = buildSinkProgram("borrowed_call_temporary", R"(
+.needs <std>
+
+unique class Value {
+  fn init() -> Self { return my; };
+};
+
+fn make() -> Value { return new Value(); };
+fn inspect(const Value value) -> int { return 7; };
+
+fn main() -> int {
+  return inspect(make()) - 7;
+};
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+  const auto inspectCall = result.assembly.find("call\tinspect");
+  REQUIRE(inspectCall != std::string::npos);
+  CHECK(result.assembly.find("call\taf_free", inspectCall) !=
+        std::string::npos);
+}
+
+TEST_CASE("assignment refreshes root binding after RHS adds temporaries",
+          "[owned][assignment][temporary][regression]") {
+  const auto result = buildSinkProgram("assignment_binding_refresh", R"(
+.needs <std>
+
+unique class Value {
+  fn init(const int number) -> Self { return my; };
+};
+
+fn identity(const int value) -> int { return value; };
+fn make(const int value) -> Value { return new Value(value); };
+
+fn main() -> int {
+  mutable Value target = NULL;
+  target = make(
+      identity(
+          identity(
+              identity(
+                  identity(
+                      identity(
+                          identity(
+                              identity(
+                                  identity(7)))))))));
+  delete target;
+  return 0;
+};
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+  CHECK(result.assembly.find("call\taf_free") != std::string::npos);
+}
+
+TEST_CASE("assignment operators resolve borrowed and consuming overloads",
+          "[owned][operator][overload][regression]") {
+  const auto result = buildSinkProgram("assignment_operator_overloads", R"(
+.needs <std>
+
+unique class Box {
+  mutable int value = value;
+  fn init(const int value) -> Self { return my; };
+
+  loan Box cpy<<=>>(const Box other) {
+    my.value = other.value;
+    return my;
+  };
+
+  loan Box cpy<<=>>(const Box &&other) {
+    my.value = other.value;
+    delete other;
+    return my;
+  };
+
+  bool compare<<==>>(const Box other) {
+    return my.value == other.value;
+  };
+
+  bool compare<<==>>(const Box &&other) {
+    const bool same = my.value == other.value;
+    delete other;
+    return same;
+  };
+};
+
+fn main() -> int {
+  mutable Box target = new Box(0);
+  const Box source = new Box(1);
+  target = source;
+  target = new Box(2);
+  const bool borrowedEqual = target == source;
+  const bool consumedEqual = target == new Box(2);
+  return if borrowedEqual & consumedEqual 0 else 1;
+};
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+  CHECK(result.assembly.find("call\tpub_Box_cpy") != std::string::npos);
+  CHECK(result.assembly.find("call\tpub_Box_cpy_ovl1") != std::string::npos);
+  CHECK(result.assembly.find("call\tpub_Box_compare") != std::string::npos);
+  CHECK(result.assembly.find("call\tpub_Box_compare_ovl1") !=
+        std::string::npos);
+}
+
+TEST_CASE("explicit transfer retries specialized generic overload families",
+          "[owned][generic][overload][regression]") {
+  const auto result = buildSinkProgram("generic_sink_overload_retry", R"(
+.needs <std>
+import string from "String";
+
+fn make() -> string! {
+  const string value = new string("ready");
+  return $value;
+};
+
+fn main() -> int { return 0; };
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+  CHECK(result.assembly.find("call\tresult.resultWrapper_ovl2.string") !=
+        std::string::npos);
+}
+
+TEST_CASE("overloaded constructors retain owned receivers",
+          "[owned][constructor][overload][regression]") {
+  const auto result = buildSinkProgram("constructor_receiver_ownership", R"(
+.needs <std>
+import string from "String";
+
+unique class Value {
+  fn init(const int value) -> Self { return my; };
+
+  fn init(const string &&value) -> Self {
+    delete value;
+    return my;
+  };
+};
+
+fn main() -> int {
+  const Value value = new Value(new string("ready"));
+  delete value;
+  return 0;
+};
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+  CHECK(result.assembly.find("pub_Value_init_ovl1:") != std::string::npos);
+}
+
 TEST_CASE("return conversion evaluates a sold sink receiver once",
           "[owned][sink][receiver][return]") {
   const auto result = buildSinkProgram("sink_return_result_conversion", R"(
@@ -850,6 +1006,36 @@ fn main() -> int {
 
   INFO(diagnosticsText(result));
   CHECK(result.success);
+}
+
+TEST_CASE(
+    "explicit object transfer to an address does not create a hidden owner",
+    "[owned][sink][address][regression]") {
+  const auto result = buildSinkProgram("sold_address_no_hidden_owner", R"(
+.needs <std>
+unique class Payload {
+  fn init() -> Self { return my; };
+};
+fn consume(const Payload &&value) -> int {
+  af_free($value);
+  return 0;
+};
+fn main() -> int {
+  return consume(new Payload());
+};
+)");
+
+  INFO(diagnosticsText(result));
+  REQUIRE(result.success);
+  const auto consumeStart = result.assembly.find("consume:");
+  const auto consumeEnd = result.assembly.find("\nmain:", consumeStart);
+  REQUIRE(consumeStart != std::string::npos);
+  REQUIRE(consumeEnd != std::string::npos);
+  const auto consumeBody =
+      result.assembly.substr(consumeStart, consumeEnd - consumeStart);
+  const auto firstFree = consumeBody.find("call\taf_free");
+  REQUIRE(firstFree != std::string::npos);
+  CHECK(consumeBody.find("call\taf_free", firstFree + 1) == std::string::npos);
 }
 
 TEST_CASE("ordinary methods cannot return their borrowed receiver",

@@ -327,8 +327,9 @@ unique class View {
 unique class Owner {
   adr data = af_malloc(view.size);
   int size = view.size;
-  fn init(immutable View view) -> Self {
+  fn init(immutable View&& view) -> Self {
     af_memcpy(my.data, view.data, my.size);
+    delete view;
     return my;
   };
 };
@@ -354,8 +355,9 @@ import View from "./ViewOnly";
 unique class Owner {
   adr data = af_malloc(view.size);
   int size = view.size;
-  fn init(immutable View view) -> Self {
+  fn init(immutable View&& view) -> Self {
     af_memcpy(my.data, view.data, my.size);
+    delete view;
     return my;
   };
 };
@@ -381,6 +383,7 @@ unique class ImportedOwner {
   int size = view.size;
   fn init(ImportedView&& view) -> Self {
     af_memcpy(my.data, view.data, my.size);
+    delete view;
     return my;
   };
 };

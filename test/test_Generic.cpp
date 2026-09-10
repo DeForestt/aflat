@@ -528,7 +528,8 @@ TEST_CASE("lazy concrete generic methods are emitted from probes",
   ofs << "};\n";
   ofs << "fn main() -> int {\n";
   ofs << "    const let box = new Box::<int>(7);\n";
-  ofs << "    let __text = `{box}`;\n";
+  ofs << "    const string renderedBox = box.toString();\n";
+  ofs << "    let __text = `{renderedBox}`;\n";
   ofs << "    let words = new vector::<string>();\n";
   ofs << "    words.push_back(new string(\"hi\"));\n";
   ofs << "    if (words.count() > 0) { return 0; };\n";

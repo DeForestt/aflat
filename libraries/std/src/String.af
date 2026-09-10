@@ -134,6 +134,19 @@ unique safe dynamic class string {
         return my;
     };
 
+    loan string cpy<<=>>(const string &&other) {
+        if other.head == my.head return my; // self assignment
+        if my.head != NULL {
+            af_free(my.head);
+        };
+        my.head = af_malloc(str.len(other.head) + 1);
+        af_memcpy(my.head, other.head, str.len(other.head) + 1);
+        my.refcount = 1;
+        my.permanent = false;
+        delete other;
+        return my;
+    };
+
     fn __copy__() -> string {
         const let n = new string(my.head);
         return $n;
@@ -534,9 +547,9 @@ unique safe dynamic class string {
         return $newString;
     };
 
-    string sort() {
+      fn sort() -> string {
         string newString = new string("");
-        for int i = 0; i < my.len(); i = i + 1 {
+        for mutable int i = 0; i < my.len(); i = i + 1 {
             const char c = my.at(i);
             int j = 0;
             bool brk = false;
@@ -547,7 +560,8 @@ unique safe dynamic class string {
                 } else {
                     const char c2 = newString.at(j);
                     if (c < c2) {
-                        newString = newString.insert(j, `{c}`);
+                        const string insertion = `{c}`;
+                        newString = newString.insert(j, insertion);
                         brk = true;
                     } else {
                         j = j + 1;
@@ -656,7 +670,8 @@ export string fString(const string fmt, * adr args) {
         if fmt.at(i) == '%' {
             i++;
             if fmt.at(i) == 'a' {
-                newString = newString + new string(args as adr);
+                const string part = new string(args as adr);
+                newString = newString + part;
                 args = args + adr;
             } else if fmt.at(i) == 'c' {
                 newString = newString.push(args as char);
@@ -669,7 +684,8 @@ export string fString(const string fmt, * adr args) {
                 } else {
                     str.int_toString(n, buff);
                     const adr buffAdr = buff;
-                    newString = newString + new string(buffAdr);
+                    const string part = new string(buffAdr);
+                    newString = newString + part;
                 };
                 args = args + int;
             } else if fmt.at(i) == 's' {
@@ -705,7 +721,10 @@ export int readInt(const string prompt,  ?const int tries) {
         Err(err) => {
             count = count - 1;
             if count <= 0 return 0;
-            return readInt(`{err} please try again ({count} tries left): `, count);
+            const string errorText = err.toString();
+            const string retryPrompt = fString(
+                "%s please try again (%d tries left): ", {errorText, count});
+            return readInt(retryPrompt, count);
         }
     };
 };

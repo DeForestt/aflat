@@ -711,14 +711,39 @@ unique class vector {
 
         const LockGuard __guard = my.mutex.guard();
         const let totalCount = my.count + otherCount;
-        const let totalSize = totalCount * T;
-        if totalSize > my.size {
-            my.size = totalSize;
-            my.head = af_realloc(my.head, my.size);
+        if totalCount > my.size {
+            my.size = totalCount;
+            my.head = af_realloc(my.head, my.size * T);
         };
         af_memcpy(my.head + (my.count * T), otherValues, otherCount * T);
         af_free(otherValues);
         my.count = totalCount;
+        return my;
+    };
+
+
+    fn stitch(const vector::<T> &&other) -> loan Self {
+        other.mutex.lock();
+        const int otherCount = other.count;
+        const adr otherHead = other.head;
+        const adr otherValues = af_malloc(otherCount * T);
+        af_memcpy(otherValues, otherHead, otherCount * T);
+        other.mutex.unlock();
+
+        const LockGuard __guard = my.mutex.guard();
+        const let totalCount = my.count + otherCount;
+        if totalCount > my.size {
+            my.size = totalCount;
+            my.head = af_realloc(my.head, my.size * T);
+        };
+        af_memcpy(my.head + (my.count * T), otherValues, otherCount * T);
+        af_free(otherValues);
+        my.count = totalCount;
+        // The elements were relocated into my, so release the old buffer and
+        // shell without running the relocated elements' destructors.
+        af_free(otherHead);
+        delete other.mutex;
+        af_free($other);
         return my;
     };
 
@@ -740,9 +765,11 @@ unique class vector {
       const LockGuard __guard = my.mutex.guard();
       string buf = `{__typeName__}: [`;
       foreach v in my {
-        buf = `{buf}{v},`;
+        const let renderedValue = v.toString();
+        const string renderedSuffix = `{renderedValue},`;
+        buf = buf + renderedSuffix;
       };
-      return `{buf}]`;
+      return buf + "]";
     };
 
 
@@ -751,9 +778,11 @@ unique class vector {
       const LockGuard __guard = my.mutex.guard();
       string buf = `{__typeName__}: [`;
       foreach v in my {
-        buf = `{buf}{v},`;
+        const let renderedValue = v.toString();
+        const string renderedSuffix = `{renderedValue},`;
+        buf = buf + renderedSuffix;
       };
-      return `{buf}]`;
+      return buf + "]";
     };
 
     when (T is primitive)

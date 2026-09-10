@@ -536,8 +536,12 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
       .type = returns.typeName,
       .size = returns.size,
       .passable = true,
-      .owned = exprResult.owned,
+      .owned = exprResult.owned && !returns.isLoan,
   };
+  if (returns.isLoan) {
+    result.loanProvenance = exprResult.loanProvenance;
+    result.loanScope = exprResult.loanScope;
+  }
   generator.matchScope() = saveMatchScope;
   return {file, result};
 }
