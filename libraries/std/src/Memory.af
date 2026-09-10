@@ -62,9 +62,15 @@ shared class Box {
 		return my;
 	};
 
-  when (T has toString or T is primitive)
+	when (T is primitive)
 	fn toString() -> string {
 		return `Box({my.value})`;
+	};
+
+	when (T is not primitive and T has toString)
+	fn toString() -> string {
+		const let renderedValue = my.value.toString();
+		return `Box({renderedValue})`;
 	};
 };
 

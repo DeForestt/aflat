@@ -182,8 +182,14 @@ unique union JSON {
             String(s) => return `String({s})`,
             Number(n) => return `Number({n})`,
             Boolean(b) => return `Boolean({b})`,
-            List(list) => return `List({list})`,
-            Object(map) => return `Object({map})`,
+            List(list) => {
+                const string renderedList = list.toString();
+                return `List({renderedList})`;
+            },
+            Object(map) => {
+                const string renderedObject = map.toString();
+                return `Object({renderedObject})`;
+            },
             Borrowed(raw) => {
                 const loan JSON borrowed = raw$JSON;
                 return borrowed.toString();
@@ -369,6 +375,7 @@ export fn Null() -> JSON {
 private fn parseInternal(const string json_) -> JSON!;
 private fn formatParseContext(const string source, const int position) -> string;
 private fn parseError(const string source, const string reason, const int position) -> Error;
+private fn parseError(const string source, const string &&reason, const int position) -> Error;
 
 private fn formatParseContext(const string source, const int position) -> string {
     const int length = source.len();
@@ -411,6 +418,10 @@ private fn formatParseContext(const string source, const int position) -> string
 private fn parseError(const string source, const string reason, const int position) -> Error {
     const let context = formatParseContext(source, position);
     return new Error(`JSON parse error: {reason}\n{context}`);
+};
+
+private fn parseError(const string source, const string &&reason, const int position) -> Error {
+    return parseError(source, reason, position);
 };
 
 private fn isHexDigit(const char c) -> bool {
