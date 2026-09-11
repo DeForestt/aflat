@@ -965,7 +965,8 @@ Generic worker working...
 - Keep in mind that when calling function pointer that are a part of a class, the first parameter is the pointer to the object. The function can be created with a variable named my or self.
 
 ### Class Modifiers
-There are two class modifiers currently implemented: `safe` and `dynamic`
+The currently implemented class modifiers include `safe`, `dynamic`,
+`pedantic`, `unique`, and `shared`.
 
 #### safe
 A safe class cannot be passed as an argument to a function or returned from a function as an l value.  This is useful for keeping track of object ownership.  The syntax is:
@@ -988,6 +989,18 @@ dynamic class <class name> signs <parent class>{
     <class functions>
 };
 ```
+
+#### unique, shared, and pedantic
+
+`unique class` values are move-only and cannot be copied freely. `shared class`
+is intended for reference-counted/shared objects; it does not make mutable
+state thread-safe. `pedantic class` enables stricter semantic checking.
+
+#### sink methods
+
+Prefix a class method with `sink` to consume its receiver. A sink method must
+be called with an owned receiver and invalidates that receiver after the call.
+This is useful for APIs such as `release` and move-based container operations.
 
 ### The object life cycle
 When an object is created, the following steps are taken:
