@@ -265,6 +265,7 @@ gen::GenerationResult Call::generateAttempt(
     dst.returnImmutable = src.returnImmutable;
     dst.returnLowOwnership = src.returnLowOwnership;
     dst.returnPayloadLoan = src.returnPayloadLoan;
+    dst.sinksReceiver = src.sinksReceiver;
   };
 
   auto file = asmc::File();
