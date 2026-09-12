@@ -4,8 +4,6 @@
 
 import {len} from "strings" under str;
 import string from "String";
-import {print} from "String" under st;
-import {printLong, printHex, printInt, print} from "io" under io;
 import result from "Utils/result";
 import Error from "Utils/Error";
 import Render from "Utils/Error/Render";
@@ -351,3 +349,65 @@ shared safe dynamic pedantic class FileManager {
 
 
 };
+
+class FileHandle {
+  private const uni_string file_name = $file_name;
+  private mutable option::<File> file = opt.None::<File>();
+
+  fn init(const uni_string &&file_name) -> FileHandle {
+    return my;
+  };
+
+  sink fn open() -> FileHandle! {
+    match my.file {
+      Some => return res.reject::<FileHandle>("Attempted to open from a file handle that has already has an open file"),
+      None => {
+        const let old_option = my.file;
+        const let new_file = openFile(my.file_name.get_buf())!;
+        my.file = opt.Some($new_file);
+        delete old_option;
+        return $my;
+      }
+    };
+  };
+
+  sink fn create() -> FileHandle! {
+    match my.file {
+      Some => return res.reject::<FileHandle>("Attempted to create from a file handle that has already has an open file"),
+      None => {
+        const let old_option = my.file;
+        const let new_file = createFile(my.file_name.get_buf())!;
+        my.file = opt.Some($new_file);
+        delete old_option;
+        return $my;
+      }
+    };
+  };
+
+  fn get() -> &File! {
+    match my.file {
+      Some(file) => return file,
+      None => return res.reject::<&File>("Attempted to read from an uninitialized file"),
+    };
+  }
+
+  sink fn close() -> int {
+    return 0;
+  };
+
+  fn del() -> void {
+    match my.file {
+      Some(file) => {
+        file.close();
+        delete my.file;
+        delete my.file_name;
+        return;
+      },
+      None => {
+        delete my.file;
+        delete my.file_name;
+        return;
+      },
+    };
+  }
+}
