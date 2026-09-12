@@ -246,7 +246,7 @@ shared class File{
 };
 
 // Create or truncate a file for read/write access, returning File! result.
-export fn createFile(const adr fileName) -> File! {
+export fn createFile(immutable adr fileName) -> File! {
         const File file = af_malloc(File);
         const long flag = #2 | #512 | #64; // O_RDWR | O_CREAT | O_TRUNC
         file.file = sys_open(fileName, flag, 0o0777);
@@ -262,7 +262,7 @@ export fn createFile(const adr fileName) -> File! {
 };
 
 // Create a directory, returning true when created or already present.
-export fn createDirectory(const adr directoryName) -> bool! {
+export fn createDirectory(immutable adr directoryName) -> bool! {
         const int status = sys_mkdir(directoryName, 0o0777);
         if status == 0 {
                 return res.accept(true);
@@ -274,7 +274,7 @@ export fn createDirectory(const adr directoryName) -> bool! {
 };
 
 // Open an existing file for read/write access, returning File! result.
-export fn openFile(const adr fileName) -> File! {
+export fn openFile(immutable adr fileName) -> File! {
         const File file = af_malloc(File);
         const long flag = #2;
         file.file = sys_open(fileName, flag, 0o0777);
