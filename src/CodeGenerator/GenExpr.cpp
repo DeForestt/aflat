@@ -820,11 +820,6 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       alert("variable not found " + ref.Ident, true, __FILE__, __LINE__);
 
     const std::string resolvedAccess = std::get<0>(resolved);
-    // A reference expression produces the value stored by the symbol.  For
-    // an ordinary class variable that value is the object pointer, so load it
-    // from its stack slot.  Inline-field resolution is different: it already
-    // returns the embedded object's address in a register, and loading that
-    // register preserves the address without adding another dereference.
     auto *address = new asmc::Mov();
     address->from = resolvedAccess;
     address->to = registers()["%rax"]->get(asmc::QWord);
