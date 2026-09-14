@@ -16,6 +16,7 @@ public:
   bool mask = false;
   bool mut = true;
   bool readOnly = false;
+  bool local = false;
   bool trust = false;
   Type type;
   Declare() = default;
@@ -29,7 +30,8 @@ public:
   Declare(const Declare &other)
       : ident(other.ident), scope(other.scope), TypeName(other.TypeName),
         mut(other.mut), readOnly(other.readOnly), type(other.type),
-        requestType(other.requestType), modList(other.modList) {
+        requestType(other.requestType), modList(other.modList),
+        local(other.local) {
     this->logicalLine = other.logicalLine;
   }
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;

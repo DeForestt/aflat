@@ -86,7 +86,8 @@ gen::GenerationResult const Delete::generate(gen::CodeGenerator &generator) {
       this->modList.count -
       (generator.nameSpaceTable().contains(this->ident) ? 1 : 0);
   const bool deletesOwnedClassField = fieldDepth > 0 && deletesClassAllocation;
-  if ((symbolSnapshot.owned || deletesOwnedClassField) &&
+  if (!symbolSnapshot.local &&
+      (symbolSnapshot.owned || deletesOwnedClassField) &&
       !resolvedType.isLoan) {
     ast::Var *var = new ast::Var();
     var->logicalLine = this->logicalLine;

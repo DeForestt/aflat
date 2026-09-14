@@ -51,6 +51,7 @@ public:
   int refCount = 0;
   int assignCount = 0;
   bool owned = false;
+  bool local = false;
   scope::ScopeId declarationScope = 0;
   LoanProvenance loanProvenance = LoanProvenance::Lexical;
   scope::ScopeId loanScope = 0;

@@ -737,6 +737,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                                          scope() != nullptr &&
                                          currentFunction() != nullptr;
 
+      if (fieldAccess && sym->local)
+        alert("cannot move local field `" + var->toString() +
+                  "`; move the "
+                  "containing object instead",
+              true, __FILE__, __LINE__);
+
       if (ownershipBearing && fieldAccess && !internalFieldTransfer) {
         alert("cannot transfer ownership directly out of field `" +
                   var->toString() +

@@ -306,14 +306,28 @@ CodeGenerator::resolveSymbol(std::string ident,
       last = modSym->type;
       readOnly = readOnly || modSym->readOnly;
       int tbyte = modSym->byteMod;
+      const int fieldSize =
+          modSym->local ? (dynamic_cast<Class *>(
+                               *this->getType(last.typeName, OutputFile))
+                               ->instanceSize)
+                        : (sizeToInt(last.size) * last.arraySize);
+      const std::string offset = std::to_string(tbyte - fieldSize) + "(%r14)";
       asmc::Mov *mov = new asmc::Mov();
       mov->size = asmc::QWord;
       mov->to = registers()["%r14"]->get(asmc::QWord);
       mov->from = access;
       mov->logicalLine = logicalLine();
       OutputFile.text << mov;
-      access = std::to_string(tbyte - (sizeToInt(last.size) * last.arraySize)) +
-               '(' + mov->to + ')';
+      if (modSym->local) {
+        auto *lea = new asmc::Lea();
+        lea->from = offset;
+        lea->to = registers()["%r14"]->get(asmc::QWord);
+        lea->logicalLine = logicalLine();
+        OutputFile.text << lea;
+        access = lea->to;
+      } else {
+        access = offset;
+      }
     }
 
     asmc::Pop *pop = new asmc::Pop;
