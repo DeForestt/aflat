@@ -16,6 +16,7 @@
 bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug);
 bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
+std::string getExePath();
 
 namespace {
 std::string readFile(const std::filesystem::path &path) {
@@ -39,6 +40,13 @@ std::int64_t parseLongLiteral(const std::string &source) {
 TEST_CASE("rebuilt string libraries preserve addresses and inline receivers",
           "[codegen][runtime][reference][local]") {
   namespace fs = std::filesystem;
+  // CI starts a.test from bin/. Match the compiler's executable-relative
+  // library lookup, and restore the caller's working directory on any exit.
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
   const auto dir = fs::path("tmp/compiler_rebuilt_strings_regression");
   fs::remove_all(dir);
   fs::create_directories(dir / "std");
