@@ -741,8 +741,11 @@ gen::GenerationResult Call::generateAttempt(
 
           mov2->size = asmc::QWord;
 
-          mov->from = (sym != nullptr && sym->local && !exp.access.empty() &&
-                       exp.access.front() == '%')
+          // GenExpr has already materialized register-backed receivers.  A
+          // register access is the object pointer itself; dereferencing it
+          // here would treat the first object field as another pointer and
+          // can crash before the method is entered.
+          mov->from = (!exp.access.empty() && exp.access.front() == '%')
                           ? exp.access
                           : '(' + exp.access + ')';
           mov->to = generator.registers()["%eax"]->get(asmc::QWord);
