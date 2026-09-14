@@ -2166,6 +2166,7 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
   } else if (dynamic_cast<lex::Ref *>(tokens.peek()) != nullptr) {
     tokens.pop();
     auto ref = new ast::Reference();
+    ref->addressOf = true;
     if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
       auto identObject = *dynamic_cast<lex::LObj *>(tokens.pop());
       ref->Ident = identObject.meta;

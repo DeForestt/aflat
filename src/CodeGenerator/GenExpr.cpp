@@ -821,7 +821,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     const std::string resolvedAccess = std::get<0>(resolved);
     asmc::Instruction *address = nullptr;
-    if (ref.internal &&
+    if (ref.addressOf &&
         (resolvedAccess.empty() || resolvedAccess.front() != '%')) {
       auto *lea = new asmc::Lea();
       lea->from = resolvedAccess;

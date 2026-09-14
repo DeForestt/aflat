@@ -707,6 +707,9 @@ gen::GenerationResult Call::generateAttempt(
           this->modList.invert();
           this->modList.reset();
           ast::Reference *ref = new ast::Reference();
+          // Method receivers need the stored object pointer. Inline fields
+          // already resolve to their embedded address in a register.
+          ref->addressOf = false;
           ref->logicalLine = this->logicalLine;
           ref->Ident = my;
           ref->modList = this->modList;
