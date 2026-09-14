@@ -15,6 +15,8 @@
 
 bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug);
+bool runConfig(cfg::Config &config, const std::string &libPath, char pmode);
+std::string getExePath();
 
 namespace {
 std::string readFile(const std::filesystem::path &path) {
@@ -34,6 +36,88 @@ std::int64_t parseLongLiteral(const std::string &source) {
   return literal->val;
 }
 } // namespace
+
+TEST_CASE("rebuilt string libraries preserve addresses and inline receivers",
+          "[codegen][runtime][reference][local]") {
+  namespace fs = std::filesystem;
+  // CI starts a.test from bin/. Match the compiler's executable-relative
+  // library lookup, and restore the caller's working directory on any exit.
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
+  const auto dir = fs::path("tmp/compiler_rebuilt_strings_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir / "std");
+  // Use freshly compiled implementations of the complete formatting path.
+  // Existing library assembly alone can hide address-generation regressions.
+  for (const auto &entry : fs::directory_iterator("libraries/std")) {
+    if (entry.is_regular_file() && entry.path().extension() == ".s")
+      fs::copy_file(entry.path(), dir / "std" / entry.path().filename());
+  }
+  for (const std::string module : {"strings", "String", "std"}) {
+    INFO("rebuilding " << module);
+    REQUIRE(build("libraries/std/src/" + module + ".af",
+                  (dir / "std" / (module + ".s")).string(),
+                  cfg::Mutability::Promiscuous, false));
+  }
+  std::ofstream(dir / "main.af") << R"(.needs <std>
+import {print} from "String" under uni;
+import {ascii, int_toString, str_comp} from "strings" under str;
+unique class Point {
+  mutable int x = 0;
+  mutable int y = 0;
+  fn init() -> Self { return my; };
+  fn sum() -> int { return my.x + my.y; };
+};
+unique class Rectangle {
+  local Point topLeft;
+  local Point bottomRight;
+  fn init() -> Self {
+    my.topLeft.x = 10;
+    my.topLeft.y = 20;
+    my.bottomRight.x = 110;
+    my.bottomRight.y = 220;
+    return my;
+  };
+  fn width() -> int { return my.bottomRight.x - my.topLeft.x; };
+  fn height() -> int { return my.bottomRight.y - my.topLeft.y; };
+};
+fn readReference(const int& value) -> int { return value; };
+fn main() -> int {
+  const int value = 65;
+  const adr address = ?value;
+  if (address as int) != 65 { return 1; };
+  const int& alias = value;
+  if alias != 65 { return 6; };
+  if readReference(value) != 65 { return 7; };
+  if str.ascii(65) != 'A' { return 2; };
+  const char[32] buffer;
+  str.int_toString(123, buffer);
+  if str.str_comp(buffer, "123") != 1 { return 3; };
+  let rectangle = new Rectangle();
+  if rectangle.width() != 100 { return 4; };
+  if rectangle.height() != 200 { return 5; };
+  if rectangle.bottomRight.sum() != 330 { return 8; };
+  const adr embedded = ?rectangle.bottomRight;
+  if (embedded as int) != 110 { return 9; };
+  uni.print(`plain template\n`);
+  uni.print(`dimensions {rectangle.width()} : {rectangle.height()}\n`);
+  return 0;
+};
+)";
+  cfg::Config config;
+  config.entryPoint = "../" + (dir / "main").string();
+  config.outPutFile = (dir / "main").string();
+  REQUIRE(runConfig(config, (dir / "std").string() + "/", 'e'));
+  const int ran = std::system(
+      (config.outPutFile + " > " + (dir / "stdout.txt").string()).c_str());
+  const auto output = readFile(dir / "stdout.txt");
+  CHECK(ran == 0);
+  CHECK(output == "plain template\ndimensions 100 : 200\n");
+  fs::remove_all(dir);
+}
 
 TEST_CASE("long literals cover the signed 64-bit range", "[parser][long]") {
   CHECK(parseLongLiteral("#9000000000") == INT64_C(9000000000));

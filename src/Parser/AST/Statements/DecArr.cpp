@@ -40,6 +40,7 @@ gen::GenerationResult const DecArr::generate(gen::CodeGenerator &generator) {
     adr.indices = typeHolder;
     ast::Reference *ref = new ast::Reference();
     ref->Ident = "." + this->ident;
+    ref->addressOf = true;
 
     ast::DecAssign *assign = new ast::DecAssign();
     auto _dec = ast::Declare();
@@ -80,6 +81,7 @@ gen::GenerationResult const DecArr::generate(gen::CodeGenerator &generator) {
     ast::Reference *ref = new ast::Reference();
     ref->Ident = "my";
     ref->modList.push("." + this->ident);
+    ref->addressOf = true;
 
     ast::DecAssign *assign = new ast::DecAssign();
     auto __dec = ast::Declare();

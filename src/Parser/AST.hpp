@@ -340,6 +340,9 @@ class Reference : public Expr {
 public:
   std::string Ident;
   links::LinkedList<std::string> modList;
+  // References take the address of storage by default, including references
+  // synthesized for arrays, reference parameters, and field transfers.
+  bool addressOf = true;
   bool internal = false;
 
   std::string toString() override {

@@ -820,10 +820,20 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       alert("variable not found " + ref.Ident, true, __FILE__, __LINE__);
 
     const std::string resolvedAccess = std::get<0>(resolved);
-    auto *address = new asmc::Mov();
-    address->from = resolvedAccess;
-    address->to = registers()["%rax"]->get(asmc::QWord);
-    address->size = asmc::QWord;
+    asmc::Instruction *address = nullptr;
+    if (ref.addressOf &&
+        (resolvedAccess.empty() || resolvedAccess.front() != '%')) {
+      auto *lea = new asmc::Lea();
+      lea->from = resolvedAccess;
+      lea->to = registers()["%rax"]->get(asmc::QWord);
+      address = lea;
+    } else {
+      auto *mov = new asmc::Mov();
+      mov->from = resolvedAccess;
+      mov->to = registers()["%rax"]->get(asmc::QWord);
+      mov->size = asmc::QWord;
+      address = mov;
+    }
     address->logicalLine = logicalLine();
 
     output.access = registers()["%rax"]->get(asmc::QWord);
