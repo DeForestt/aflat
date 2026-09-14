@@ -50,6 +50,102 @@ TEST_CASE("long literals cover the signed 64-bit range", "[parser][long]") {
   }
 }
 
+TEST_CASE("local class fields use embedded storage",
+          "[codegen][class][local]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_local_field_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+class Child { int value; };
+unique class Parent {
+  local Child child;
+  fn get() -> int { return my.child.value; };
+};
+fn main() -> int {
+  let parent = new Parent();
+  return parent.get();
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+
+  fs::remove_all(dir);
+  REQUIRE(built);
+  CHECK(text.find("lea") != std::string::npos);
+}
+
+TEST_CASE("unique local fields transfer through nested lifecycle hooks",
+          "[codegen][class][local][ownership][transfer]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_local_field_transfer_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+fn record_del() -> void;
+unique class Child {
+  int value = 7;
+  fn init() -> Self { return my; };
+  fn del() -> void { record_del(); return; };
+};
+unique class Parent {
+  local Child child;
+  fn init() -> Self { my.child.init(); return my; };
+  fn get() -> int { return my.child.value; };
+};
+fn make() -> Parent {
+  let parent = new Parent();
+  return parent;
+};
+fn main() -> int {
+  let moved = make();
+  return moved.get();
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  CHECK(text.find("pub_Parent___transfer_to__:") != std::string::npos);
+  CHECK(text.find("call\tpub_Child___transfer_to__") != std::string::npos);
+  CHECK(text.find("call\tpub_Child_del") != std::string::npos);
+}
+
+TEST_CASE("local fields cannot escape through owning returns",
+          "[codegen][class][local][ownership]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_local_field_return_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+class Child {};
+unique class Parent {
+  local Child child;
+  fn leak() -> Child { return my.child; };
+};
+fn main() -> int { return 0; };
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+  CHECK_FALSE(built);
+}
+
 TEST_CASE("float literals remain SSE values in every expression context",
           "[codegen][float][regression]") {
   namespace fs = std::filesystem;

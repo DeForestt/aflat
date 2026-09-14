@@ -57,6 +57,16 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
     generator.getType(this->type.typeName, file);
   }
 
+  if (this->local) {
+    auto typeEntry = generator.typeList()[this->type.typeName];
+    auto nested =
+        typeEntry == nullptr ? nullptr : dynamic_cast<gen::Class *>(*typeEntry);
+    if (nested == nullptr)
+      generator.alert("local fields must contain a class type");
+    offset = nested->instanceSize;
+    this->type.size = asmc::QWord;
+  }
+
   if (!generator.globalScope()) {
     // if the there  is no scope use the scope manager otherwise use the
     // scope
@@ -83,6 +93,7 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
       Symbol.symbol = this->ident;
       Symbol.mutable_ = this->mut;
       Symbol.readOnly = this->readOnly;
+      Symbol.local = this->local;
       Symbol.declarationScope = 0;
       Symbol.loanProvenance = gen::LoanProvenance::Unknown;
       Table->push(Symbol);

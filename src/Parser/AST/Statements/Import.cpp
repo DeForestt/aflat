@@ -166,12 +166,14 @@ static void registerClassShells(ast::Statement *stmt,
       std::string ident;
       ast::Type typeInfo;
       int count = 1;
+      bool local = false;
       bool shouldCollect = false;
 
       if (auto dec = dynamic_cast<ast::Declare *>(node)) {
         ident = dec->ident;
         typeInfo = dec->type;
         count = 1;
+        local = dec->local;
         shouldCollect = true;
       } else if (auto decArr = dynamic_cast<ast::DecArr *>(node)) {
         ident = decArr->ident;
@@ -182,6 +184,7 @@ static void registerClassShells(ast::Statement *stmt,
         ident = decAssign->declare->ident;
         typeInfo = decAssign->declare->type;
         count = 1;
+        local = decAssign->declare->local;
         shouldCollect = true;
       } else if (auto decAssignArr = dynamic_cast<ast::DecAssignArr *>(node)) {
         ident = decAssignArr->declare->ident;
@@ -206,12 +209,22 @@ static void registerClassShells(ast::Statement *stmt,
       gen::Symbol symbol;
       symbol.symbol = ident;
       symbol.type = typeInfo;
+      symbol.local = local;
       symbol.mutable_ = true;
       symbol.readOnly = false;
-      const int bytes = gen::utils::sizeToInt(typeInfo.size) *
-                        std::max(1, count) * std::max(1, typeInfo.arraySize);
-      int alignment =
-          std::max(1, std::min(gen::utils::sizeToInt(typeInfo.size), 8));
+      int fieldSize = gen::utils::sizeToInt(typeInfo.size);
+      if (local) {
+        auto nestedEntry = generator.typeList()[typeInfo.typeName];
+        auto nested = nestedEntry == nullptr
+                          ? nullptr
+                          : dynamic_cast<gen::Class *>(*nestedEntry);
+        if (nested == nullptr)
+          generator.alert("local fields must contain a class type");
+        fieldSize = nested->instanceSize;
+      }
+      const int bytes =
+          fieldSize * std::max(1, count) * std::max(1, typeInfo.arraySize);
+      int alignment = std::max(1, std::min(fieldSize, 8));
       int current = table.head == nullptr ? 0 : table.peek().byteMod;
       symbol.byteMod = gen::utils::alignTo(current, alignment) + bytes;
       table.push(symbol);

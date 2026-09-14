@@ -737,6 +737,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                                          scope() != nullptr &&
                                          currentFunction() != nullptr;
 
+      if (fieldAccess && sym->local)
+        alert("cannot move local field `" + var->toString() +
+                  "`; move the "
+                  "containing object instead",
+              true, __FILE__, __LINE__);
+
       if (ownershipBearing && fieldAccess && !internalFieldTransfer) {
         alert("cannot transfer ownership directly out of field `" +
                   var->toString() +
@@ -810,21 +816,31 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         this->resolveSymbol(ref.Ident, ref.modList, OutputFile,
                             links::LinkedList<ast::Expr *>(), ref.internal);
 
-    asmc::Lea *lea = new asmc::Lea();
-    lea->logicalLine = logicalLine();
-
-    if (std::get<2>(resolved)) {
-      lea->from = std::get<0>(resolved);
-    } else
+    if (!std::get<2>(resolved))
       alert("variable not found " + ref.Ident, true, __FILE__, __LINE__);
-    lea->to = registers()["%rax"]->get(asmc::QWord);
+
+    const std::string resolvedAccess = std::get<0>(resolved);
+    asmc::Instruction *address = nullptr;
+    if (!resolvedAccess.empty() && resolvedAccess.front() == '%') {
+      auto *mov = new asmc::Mov();
+      mov->from = resolvedAccess;
+      mov->to = registers()["%rax"]->get(asmc::QWord);
+      mov->size = asmc::QWord;
+      address = mov;
+    } else {
+      auto *lea = new asmc::Lea();
+      lea->from = resolvedAccess;
+      lea->to = registers()["%rax"]->get(asmc::QWord);
+      address = lea;
+    }
+    address->logicalLine = logicalLine();
 
     output.access = registers()["%rax"]->get(asmc::QWord);
     output.access = registers()["%rax"]->get(asmc::QWord);
     output.size = asmc::QWord;
     output.op = asmc::OpType::Hard;
     output.type = "adr";
-    OutputFile.text << lea;
+    OutputFile.text << address;
     OutputFile << std::get<3>(resolved);
   } else if (dynamic_cast<ast::StringLiteral *>(expr) != nullptr) {
     ast::StringLiteral str = *dynamic_cast<ast::StringLiteral *>(expr);

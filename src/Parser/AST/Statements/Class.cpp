@@ -76,6 +76,19 @@ ast::Statement *buildAutomaticDestructorBody(const gen::Class *type,
     if (isPrimitiveType(field.type.typeName) || field.type.isLoan)
       continue;
 
+    auto *deleteStmt = new ast::Delete();
+    deleteStmt->logicalLine = logicalLine;
+    deleteStmt->ident = "my";
+    deleteStmt->modList.push(field.symbol);
+
+    // Inline fields always exist at a valid address. Invoke their delete hook
+    // directly; comparing the first bytes of an embedded object with NULL
+    // would incorrectly treat object data as a pointer.
+    if (field.local) {
+      body = appendStatement(body, deleteStmt);
+      continue;
+    }
+
     auto *condition = new ast::Compound();
     condition->logicalLine = logicalLine;
     condition->op = ast::NotEqu;
@@ -90,11 +103,6 @@ ast::Statement *buildAutomaticDestructorBody(const gen::Class *type,
     nullValue->logicalLine = logicalLine;
     nullValue->Ident = "NULL";
     condition->expr2 = nullValue;
-
-    auto *deleteStmt = new ast::Delete();
-    deleteStmt->logicalLine = logicalLine;
-    deleteStmt->ident = "my";
-    deleteStmt->modList.push(field.symbol);
 
     auto *ifStmt = new ast::If();
     ifStmt->logicalLine = logicalLine;
@@ -116,6 +124,9 @@ ast::Statement *buildAutomaticInvalidateBody(gen::CodeGenerator &generator,
 
   for (const auto &field : type->SymbolTable) {
     if (isPrimitiveType(field.type.typeName) && !isAdrType(field.type.typeName))
+      continue;
+
+    if (field.local)
       continue;
 
     auto *assign = new ast::Assign();
@@ -219,48 +230,98 @@ ast::Function *buildAutomaticTransfer(gen::CodeGenerator &generator,
   func->readOnly.push_back(true);
   func->mutability.push_back(false);
 
-  auto *body = new ast::Sequence();
+  ast::Statement *body = nullptr;
+  bool hasLocalField = false;
+  for (const auto &field : type->SymbolTable)
+    hasLocalField = hasLocalField || field.local;
 
-  const int bytes = classByteSize(type);
-  if (bytes > 0) {
-    auto *copy = new ast::Call();
-    copy->logicalLine = logicalLine;
-    copy->ident = "af_memcpy";
-    copy->Args = links::LinkedList<ast::Expr *>();
+  if (!hasLocalField) {
+    const int bytes = classByteSize(type);
+    if (bytes > 0) {
+      auto *copy = new ast::Call();
+      copy->logicalLine = logicalLine;
+      copy->ident = "af_memcpy";
+      auto *dst = new ast::Var();
+      dst->logicalLine = logicalLine;
+      dst->Ident = "buffer";
+      copy->Args.push(dst);
+      auto *src = new ast::Var();
+      src->logicalLine = logicalLine;
+      src->Ident = "my";
+      src->clean = true;
+      copy->Args.push(src);
+      auto *size = new ast::IntLiteral();
+      size->logicalLine = logicalLine;
+      size->val = bytes;
+      copy->Args.push(size);
+      body = copy;
+    }
+  } else {
+    for (const auto &field : type->SymbolTable) {
+      int fieldSize = gen::utils::sizeToInt(field.type.size) *
+                      std::max(1, field.type.arraySize);
+      if (field.local) {
+        auto *nestedEntry = generator.typeList()[field.type.typeName];
+        auto *nested = nestedEntry == nullptr
+                           ? nullptr
+                           : dynamic_cast<gen::Class *>(*nestedEntry);
+        if (nested == nullptr)
+          generator.alert("local fields must contain a class type");
+        fieldSize = nested->instanceSize;
+      }
+      const int fieldStart = field.byteMod - fieldSize;
 
-    auto *dst = new ast::Var();
-    dst->logicalLine = logicalLine;
-    dst->Ident = "buffer";
-    copy->Args.push(dst);
+      auto *destination = new ast::Compound();
+      destination->logicalLine = logicalLine;
+      destination->op = ast::Plus;
+      auto *bufferValue = new ast::Var();
+      bufferValue->logicalLine = logicalLine;
+      bufferValue->Ident = "buffer";
+      destination->expr1 = bufferValue;
+      auto *destinationOffset = new ast::IntLiteral();
+      destinationOffset->logicalLine = logicalLine;
+      destinationOffset->val = fieldStart;
+      destination->expr2 = destinationOffset;
 
-    // `my` already evaluates to the receiver object pointer. Taking `?my`
-    // addresses the function's receiver slot instead, which copies stack
-    // state into the destination rather than the object bytes.
-    auto *src = new ast::Var();
-    src->logicalLine = logicalLine;
-    src->Ident = "my";
-    src->clean = true;
-    copy->Args.push(src);
+      if (field.local) {
+        auto *transfer = new ast::Call();
+        transfer->logicalLine = logicalLine;
+        transfer->ident = "my";
+        transfer->modList.push(field.symbol);
+        transfer->modList.push("__transfer_to__");
+        transfer->Args.push(destination);
+        body = appendStatement(body, transfer);
+      } else {
+        auto *copy = new ast::Call();
+        copy->logicalLine = logicalLine;
+        copy->ident = "af_memcpy";
+        copy->Args.push(destination);
 
-    auto *size = new ast::IntLiteral();
-    size->logicalLine = logicalLine;
-    size->val = bytes;
-    copy->Args.push(size);
+        auto *source = new ast::Reference();
+        source->logicalLine = logicalLine;
+        source->Ident = "my";
+        source->modList.push(field.symbol);
+        copy->Args.push(source);
 
-    body->Statement1 = copy;
+        auto *size = new ast::IntLiteral();
+        size->logicalLine = logicalLine;
+        size->val = fieldSize;
+        copy->Args.push(size);
+        body = appendStatement(body, copy);
+      }
+    }
   }
+
+  // Keep the generated transfer valid for classes with no fields.
+  if (body == nullptr)
+    body = new ast::Sequence();
 
   auto *invalidate = new ast::Call();
   invalidate->logicalLine = logicalLine;
   invalidate->ident = "my";
   invalidate->modList.push("__invalidate__");
   invalidate->Args = links::LinkedList<ast::Expr *>();
-
-  if (body->Statement1 == nullptr) {
-    body->Statement1 = invalidate;
-  } else {
-    body->Statement2 = invalidate;
-  }
+  body = appendStatement(body, invalidate);
 
   func->statement = body;
   func->type.typeName = "void";

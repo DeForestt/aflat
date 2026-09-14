@@ -381,9 +381,11 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
     // validation is performed against the declaration itself, rather than an
     // access modifier that happens to follow a semantic modifier.
     static const std::unordered_set<std::string> modifiers = {
-        "safe",      "dynamic", "pedantic", "types",  "when",  "unique",
-        "shared",    "async",   "sink",     "loan",   "const", "mutable",
-        "immutable", "public",  "private",  "static", "export"};
+        "safe",      "dynamic", "pedantic", "types",   "when",   "unique",
+        "shared",    "async",   "sink",     "loan",    "const",  "mutable",
+        "immutable", "local",   "public",   "private", "static", "export"};
+
+    bool localField = false;
 
     if (modifiers.count(obj.meta)) {
       while (modifiers.count(obj.meta)) {
@@ -457,6 +459,8 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
         } else if (obj.meta == "immutable") {
           isMutable = false;
           isImmutable = true;
+        } else if (obj.meta == "local") {
+          localField = true;
         } else if (obj.meta == "public") {
           scope = ast::Public;
         } else if (obj.meta == "private") {
@@ -763,6 +767,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
             auto decl = new ast::Declare(ident.meta, scope, obj.meta, isMutable,
                                          type, requestType, modList);
             decl->readOnly = isImmutable;
+            decl->local = localField;
             output = new ast::DecAssign(decl, isMutable, tokens, parser,
                                         annotations);
             output->logicalLine = obj.lineCount;
@@ -771,6 +776,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
           auto decl = new ast::Declare(ident.meta, scope, obj.meta, isMutable,
                                        type, requestType, modList);
           decl->readOnly = isImmutable;
+          decl->local = localField;
           output = decl;
         }
       } else if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
