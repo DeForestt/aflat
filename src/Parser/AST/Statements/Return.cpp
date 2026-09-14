@@ -168,6 +168,19 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   generator.currentFunction()->asyncStateCounter = asyncStateBeforeProbe;
   generator.suppressOwnershipEffects() = savedSuppressOwnership;
   generator.suppressLazyMethodEmission() = savedSuppressLazy;
+
+  if (auto *var = dynamic_cast<ast::Var *>(this->expr);
+      var != nullptr && var->modList.count > 0 &&
+      !generator.returnType().isLoan && !generator.returnType().isReference) {
+    auto resolved = generator.resolveSymbol(var->Ident, var->modList, trashFile,
+                                            links::LinkedList<ast::Expr *>());
+    auto *field = std::get<4>(resolved);
+    if (field != nullptr && field->local)
+      generator.alert("cannot return ownership of local field `" +
+                      var->toString() +
+                      "`; copy it into a separate object or return a loan");
+  }
+
   bool expressionGenerated = false;
   const std::string wrapperPayloadType =
       generator.currentFunction()->returnPayloadLoan

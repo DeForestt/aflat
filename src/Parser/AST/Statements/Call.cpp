@@ -741,7 +741,9 @@ gen::GenerationResult Call::generateAttempt(
 
           mov2->size = asmc::QWord;
 
-          mov->from = '(' + exp.access + ')';
+          mov->from = (!exp.access.empty() && exp.access.front() == '%')
+                          ? exp.access
+                          : '(' + exp.access + ')';
           mov->to = generator.registers()["%eax"]->get(asmc::QWord);
           mov2->from = generator.registers()["%eax"]->get(asmc::QWord);
           mov2->to = generator.intArgs()[argsCounter].get(asmc::QWord);
