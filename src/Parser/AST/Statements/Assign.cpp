@@ -48,7 +48,134 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   auto fin = symbol;
   auto *binding = std::get<4>(resolved);
   const std::string bindingIdent = binding == nullptr ? "" : binding->symbol;
-  const auto var = dynamic_cast<ast::Var *>(this->expr);
+  auto var = dynamic_cast<ast::Var *>(this->expr);
+
+  // A local field is embedded object storage rather than a pointer-sized
+  // field. Moving a class value into it must let the source lay out its full
+  // state (and invalidate itself), not overwrite the first word of storage.
+  if (symbol->local) {
+    if (!symbol->mutable_ && !this->override)
+      generator.alert("cannot assign to immutable " + symbol->symbol);
+    if (this->reference || this->to)
+      generator.alert("cannot assign a reference to local field `" +
+                      this->Ident + "." + this->modList.peek() + "`");
+    if (var == nullptr) {
+      // Calls and other owned rvalues need a binding before they can become a
+      // transfer receiver. The binding is released below just like an
+      // explicitly named source variable.
+      auto *temporary = new ast::DecAssign();
+      temporary->logicalLine = this->logicalLine;
+      temporary->declare = new ast::Declare();
+      temporary->declare->logicalLine = this->logicalLine;
+      temporary->declare->ident =
+          "$" + std::to_string(generator.tempCount()++) + "_local_transfer";
+      temporary->declare->type = ast::Type("let", asmc::AUTO);
+      temporary->declare->mut = false;
+      temporary->expr = this->expr;
+      temporary->mute = false;
+      file << generator.GenSTMT(temporary);
+
+      // Constructor results are heap wrappers even for non-unique classes.
+      // This internal binding owns the wrapper until the transfer releases it.
+      if (auto *temporarySymbol = gen::scope::ScopeManager::getInstance()->get(
+              temporary->declare->ident))
+        temporarySymbol->owned = true;
+
+      auto *temporaryVar = new ast::Var();
+      temporaryVar->logicalLine = this->logicalLine;
+      temporaryVar->Ident = temporary->declare->ident;
+
+      ast::Assign transferAssignment;
+      transferAssignment.logicalLine = this->logicalLine;
+      transferAssignment.Ident = this->Ident;
+      transferAssignment.modList = this->modList;
+      transferAssignment.indices = this->indices;
+      transferAssignment.expr = temporaryVar;
+      transferAssignment.override = this->override;
+      file << generator.GenSTMT(&transferAssignment);
+      return {file, std::nullopt};
+    }
+
+    auto *fieldEntry = generator.typeList()[symbol->type.typeName];
+    auto *fieldClass = fieldEntry == nullptr
+                           ? nullptr
+                           : dynamic_cast<gen::Class *>(*fieldEntry);
+    if (fieldClass == nullptr)
+      generator.alert("assignment to local field `" + this->Ident + "." +
+                      this->modList.peek() +
+                      "` requires a class with `__transfer_to__`");
+
+    auto sourceResolved = generator.resolveSymbol(
+        var->Ident, var->modList, file, links::LinkedList<ast::Expr *>());
+    if (!std::get<2>(sourceResolved))
+      generator.alert("undefined variable:" + var->Ident);
+    auto *source = &std::get<1>(sourceResolved);
+    if (source->type.typeName != symbol->type.typeName)
+      generator.canAssign(symbol->type, source->type.typeName,
+                          "symbol of type {} cannot be assigned to type {}");
+    const bool releaseSource = var->modList.count == 0 && source->owned &&
+                               !generator.suppressOwnershipEffects();
+    if (fieldClass->uniqueType && var->modList.count == 0 && !source->owned)
+      generator.alert("cannot transfer ownership of unowned value `" +
+                      var->Ident + "`");
+
+    auto *destination = new ast::Reference();
+    destination->logicalLine = this->logicalLine;
+    destination->Ident = this->Ident;
+    destination->modList = this->modList;
+    // The resolver already materializes an inline field as its address.
+    destination->addressOf = false;
+
+    if (fieldClass->uniqueType) {
+      auto *transfer = new ast::Call();
+      transfer->logicalLine = this->logicalLine;
+      transfer->ident = var->Ident;
+      transfer->modList = var->modList;
+      transfer->modList.push("__transfer_to__");
+      transfer->Args.push(destination);
+      file << generator.GenSTMT(transfer);
+    } else {
+      auto *sourceAddress = new ast::Reference();
+      sourceAddress->logicalLine = this->logicalLine;
+      sourceAddress->Ident = var->Ident;
+      sourceAddress->modList = var->modList;
+      sourceAddress->addressOf = false;
+
+      auto *size = new ast::IntLiteral();
+      size->logicalLine = this->logicalLine;
+      size->val = fieldClass->instanceSize;
+
+      auto *copy = new ast::Call();
+      copy->logicalLine = this->logicalLine;
+      copy->ident = "af_memcpy";
+      copy->Args.push(destination);
+      copy->Args.push(sourceAddress);
+      copy->Args.push(size);
+      file << generator.GenSTMT(copy);
+    }
+
+    // A direct source owns a separate heap wrapper. The transfer hook has
+    // moved its state, so release that wrapper without invoking `del`.
+    if (releaseSource) {
+      auto *released = new ast::Var();
+      released->logicalLine = this->logicalLine;
+      released->Ident = var->Ident;
+      released->selling = true;
+      auto *freeCall = new ast::Call();
+      freeCall->logicalLine = this->logicalLine;
+      freeCall->ident = "af_free";
+      freeCall->Args.push(released);
+      file << generator.GenSTMT(freeCall);
+
+      // Field metadata is shared across instances, so only root bindings can
+      // carry the per-value sold state.
+      auto *liveSource =
+          gen::scope::ScopeManager::getInstance()->get(var->Ident);
+      if (liveSource != nullptr)
+        liveSource->sold = this->logicalLine;
+    }
+    return {file, std::nullopt};
+  }
 
   if (symbol->type.isReference && !this->override) {
     if (this->to) {
