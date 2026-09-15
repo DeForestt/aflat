@@ -206,6 +206,112 @@ fn main() -> int {
   CHECK(text.find("call\tpub_Child_del") != std::string::npos);
 }
 
+TEST_CASE("assignment into unique local fields transfers the source object",
+          "[codegen][class][local][ownership][assignment]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_local_field_assignment_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+unique class Child {
+  mutable int value = 7;
+  fn init() -> Self { return my; };
+};
+unique class Parent {
+  mutable local Child child;
+};
+fn main() -> int {
+  let parent = new Parent();
+  let source = new Child();
+  parent.child = source;
+  return parent.child.value;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  const auto firstTransfer = text.find("call\tpub_Child___transfer_to__");
+  REQUIRE(firstTransfer != std::string::npos);
+  CHECK(text.find("call\tpub_Child___transfer_to__", firstTransfer + 1) !=
+        std::string::npos);
+}
+
+TEST_CASE("local fields can be initialized from class constructor calls",
+          "[codegen][class][local][initializer]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_local_field_initializer_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+class Child {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+};
+class Parent {
+  local Child child = Child(42);
+  fn init() -> Self { return my; };
+};
+fn main() -> int {
+  let parent = new Parent();
+  return parent.child.value;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  CHECK(text.find("call\tpub_Child___transfer_to__") != std::string::npos);
+  CHECK(text.find("call\taf_free") != std::string::npos);
+}
+
+TEST_CASE("local fields can transfer from other local fields",
+          "[codegen][class][local][assignment]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_local_field_to_field_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+unique class Child {
+  mutable int value = value;
+  fn init(const int value) -> Self { return my; };
+};
+unique class Parent {
+  mutable local Child source = Child(42);
+  mutable local Child destination;
+  fn init() -> Self {
+    my.destination = my.source;
+    return my;
+  };
+};
+fn main() -> int {
+  let parent = new Parent();
+  return parent.destination.value;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+}
+
 TEST_CASE("local fields cannot escape through owning returns",
           "[codegen][class][local][ownership]") {
   namespace fs = std::filesystem;
