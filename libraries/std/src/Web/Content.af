@@ -13,7 +13,7 @@ shared class Content {
     contract {
         mutable string content = "";
         mutable string cleanContent = "";
-        const vector::<adr> bindings = new vector::<adr>();
+        const vector::<Bind> bindings = new vector::<Bind>();
     };
 
     void loadFile(const adr fileName) {
@@ -32,8 +32,7 @@ shared class Content {
         mutable string buffer = my.content.copy();
 
         for mutable int i = 0; i < my.bindings.count(); i = i + 1 {
-            const adr bindingAddress = my.bindings.get(i).expect("Binding count corrupted");
-            const Bind binding = bindingAddress;
+            const Bind binding = my.bindings.get(i).expect("Binding count corrupted");
             const string key = binding.key;
             const string val = binding.val;
             val.get();

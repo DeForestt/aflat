@@ -4,7 +4,7 @@ import string from "String";
 import Property, computed from "Utils/Properties";
 import {print} from "String" under str;
 
-shared safe dynamic class Bind {
+shared dynamic class Bind {
     private const loan Content context = context;
     private const adr preproces = preprocess;
     private mutable string name = name;
@@ -20,7 +20,7 @@ shared safe dynamic class Bind {
         const string suffix = new string("}}");
         const string prefixedName = prefix + my.name;
         my.name = prefixedName + suffix;
-        my.context.bindings.push_back(my as adr);
+        my.context.bindings.push_back(my);
     };
 
     fn get() -> loan string {
