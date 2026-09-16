@@ -464,7 +464,11 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
 bool gen::CodeGenerator::hasError() const { return impl->errorFlag; }
 
 void gen::CodeGenerator::beginStackCleanupFrame() {
-  impl->stackCleanupFrames.push_back({});
+  Impl::StackCleanupFrame frame;
+  ast::Type headType("adr", asmc::QWord);
+  frame.headOffset =
+      gen::scope::ScopeManager::getInstance()->assign("", headType, false);
+  impl->stackCleanupFrames.push_back(std::move(frame));
 }
 
 std::vector<gen::CodeGenerator::StackCleanup>
@@ -481,11 +485,6 @@ gen::CodeGenerator::registerStackCleanup(int objectOffset) {
   if (impl->stackCleanupFrames.empty())
     return {};
   auto &frame = impl->stackCleanupFrames.back();
-  if (frame.headOffset == 0) {
-    ast::Type headType("adr", asmc::QWord);
-    frame.headOffset =
-        gen::scope::ScopeManager::getInstance()->assign("", headType, false);
-  }
   ast::Type nodeType;
   nodeType.typeName = "byte";
   nodeType.size = asmc::Byte;
@@ -542,6 +541,20 @@ gen::CodeGenerator::emitStackCleanupRegistration(const StackCleanup &cleanup,
   // expression value is the object address in %rax. Restore it before the
   // caller binds or passes the constructed object.
   emitLea("-" + std::to_string(cleanup.objectOffset) + "(%rbp)", rax);
+  return file;
+}
+
+asmc::File gen::CodeGenerator::emitStackCleanupHeadReset() {
+  asmc::File file;
+  if (impl->stackCleanupFrames.empty())
+    return file;
+  auto *clear = new asmc::Mov();
+  clear->logicalLine = logicalLine();
+  clear->from = "$0";
+  clear->to = "-" + std::to_string(impl->stackCleanupFrames.back().headOffset) +
+              "(%rbp)";
+  clear->size = asmc::QWord;
+  file.text << clear;
   return file;
 }
 

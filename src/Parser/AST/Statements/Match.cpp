@@ -288,6 +288,8 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
 
     // push the scope for the case
     gen::scope::ScopeManager::getInstance()->pushScope(true);
+    generator.beginStackCleanupFrame();
+    file << generator.emitStackCleanupHeadReset();
     auto &_case = *caseIt;
     if (_case.pattern.veriableName.has_value()) {
       if (std::holds_alternative<ast::Type *>(alias.value)) {
@@ -442,6 +444,8 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
     }
     file << generator.GenSTMT(_case.statement);
     // pop the scope for the cases
+    file << generator.emitStackCleanups();
+    generator.endStackCleanupFrame();
     gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
     ownerSymbol = getOwner();
     if (consumesUnion && ownerSymbol != nullptr &&
@@ -473,6 +477,8 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
   if (defaultCaseIt != cases.end()) {
     // push the scope for the default case
     gen::scope::ScopeManager::getInstance()->pushScope(true);
+    generator.beginStackCleanupFrame();
+    file << generator.emitStackCleanupHeadReset();
     auto &_case = *defaultCaseIt;
 
     if (_case.pattern.veriableName.has_value()) {
@@ -485,6 +491,8 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
       ownerSymbol->sold = -1;
     file << generator.GenSTMT(_case.statement);
     // pop the scope for the default case
+    file << generator.emitStackCleanups();
+    generator.endStackCleanupFrame();
     gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
     ownerSymbol = getOwner();
     if (consumesUnion && ownerSymbol != nullptr) {

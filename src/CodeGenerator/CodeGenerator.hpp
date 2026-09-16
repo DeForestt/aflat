@@ -209,6 +209,7 @@ public:
   StackCleanup registerStackCleanup(int objectOffset);
   asmc::File emitStackCleanupRegistration(const StackCleanup &cleanup,
                                           const std::string &typeName);
+  asmc::File emitStackCleanupHeadReset();
   int stackCleanupHeadOffset() const;
   asmc::File emitStackCleanups();
 

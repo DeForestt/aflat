@@ -321,7 +321,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         type.arraySize = classInstanceByteSize(*this, cl);
         int bMod =
             gen::scope::ScopeManager::getInstance()->assign("", type, false);
-        const auto cleanup = registerStackCleanup(bMod);
+        StackCleanup cleanup{};
+        if (cl->nameTable["del"] != nullptr)
+          cleanup = registerStackCleanup(bMod);
 
         //
         asmc::Lea *lea = new asmc::Lea();
@@ -368,6 +370,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           savePointer->to = "-" + std::to_string(returnSlot) + "(%rbp)";
           OutputFile.text << savePointer;
           this->GenExpr(callInit, OutputFile);
+          auto restoreArgument = new asmc::Pop();
+          restoreArgument->logicalLine = logicalLine();
+          restoreArgument->op = intArgs()[0].get(asmc::QWord);
+          OutputFile.text << restoreArgument;
           auto restore = new asmc::Mov();
           restore->logicalLine = logicalLine();
           restore->size = asmc::QWord;
@@ -1825,6 +1831,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       mov->from = registers()["%eax"]->get(asmc::QWord);
       OutputFile.text << mov;
       gen::Expr afterInit = this->GenExpr(callInit, OutputFile);
+      auto restoreArgument = new asmc::Pop();
+      restoreArgument->logicalLine = logicalLine();
+      restoreArgument->op = registers()["%rdi"]->get(asmc::QWord);
+      OutputFile.text << restoreArgument;
       output.access = afterInit.access;
       output.size = asmc::QWord;
       output.type = newExpr.type.typeName;
