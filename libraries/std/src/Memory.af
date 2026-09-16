@@ -158,6 +158,21 @@ class byte_buffer {
     return true;
   };
 
+  // Zero-fill existing buffer space without allocating. On failure the cursor
+  // and buffer contents are unchanged.
+  fn zfill(const int bytes) -> bool {
+    if bytes < 0 return false;
+    if my.cursor + bytes > my.end return false;
+    mutable adr write = my.cursor;
+    const adr stop = write + bytes;
+    while write < stop {
+      write =: '\0';
+      write = write + 1;
+    };
+    my.cursor = stop;
+    return true;
+  };
+
   fn get() -> loan adr {
     return my.buffer;
   };
