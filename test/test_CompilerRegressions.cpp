@@ -347,12 +347,14 @@ TEST_CASE("float literals remain SSE values in every expression context",
   const auto object = dir / "main.o";
 
   std::ofstream(source) << R"(.needs <std>
+import uni_string from "uni_string";
 union Value { Float(float) };
 fn echo(float value) -> float { return value; };
 fn literal() -> float { return 1.25; };
 fn main() -> int {
   mutable float assigned = 0.0;
   assigned = 3.14;
+  let formatted = `value = {assigned}`;
   let arithmetic = assigned + echo(literal());
   if arithmetic > 4.0 { return 1; };
   let wrapped = new Value->Float(3.14);
@@ -381,6 +383,106 @@ fn main() -> int {
   fs::remove_all(dir);
   REQUIRE(built);
   CHECK_FALSE(integerMoveTouchesXmm);
+  CHECK(text.find(".asciz\t\"value = %f\"") != std::string::npos);
+  CHECK(assembled == 0);
+}
+
+TEST_CASE("classes with no owning fields emit a no-op destructor",
+          "[class][ownership][destructor][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_noop_destructor_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  const auto object = dir / "main.o";
+
+  std::ofstream(source) << R"(.needs <std>
+class Vec3 {};
+fn main() -> int {
+  const Vec3 value = new Vec3();
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  const int assembled = built ? std::system(("gcc -c " + assembly.string() +
+                                             " -o " + object.string())
+                                                .c_str())
+                              : -1;
+
+  fs::remove_all(dir);
+  REQUIRE(built);
+  CHECK(text.find("pub_Vec3_del:") != std::string::npos);
+  CHECK(text.find("call\tpub_Vec3_del") != std::string::npos);
+  CHECK(assembled == 0);
+}
+
+TEST_CASE("imported constructors retain their required argument count",
+          "[imports][class][constructor][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_imported_constructor_args");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(dir / "Vec3.af") << R"(class Vec3 {
+  fn init(float x, float y, float z) -> Self { return my; };
+};
+)";
+  std::ofstream(source) << R"(.needs <std>
+import Vec3 from "./Vec3";
+fn main() -> int {
+  const Vec3 value = new Vec3();
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  CHECK_FALSE(built);
+}
+
+TEST_CASE("f-strings keep owned toString results alive while formatting",
+          "[codegen][fstring][ownership][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_fstring_owned_tostring");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  const auto object = dir / "main.o";
+
+  std::ofstream(source) << R"(.needs <std>
+import uni_string from "uni_string";
+class Vec3 {
+  fn init() -> Self { return my; };
+  fn toString() -> uni_string { return `Vec3`; };
+};
+fn main() -> int {
+  const Vec3 value = new Vec3();
+  const uni_string rendered = `{value}`;
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  const int assembled = built ? std::system(("gcc -c " + assembly.string() +
+                                             " -o " + object.string())
+                                                .c_str())
+                              : -1;
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  CHECK(text.find("call\tpub_Vec3_toString") != std::string::npos);
+  CHECK(text.find("call\tpub_uni_string_cstr") != std::string::npos);
   CHECK(assembled == 0);
 }
 

@@ -934,11 +934,35 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
       if (exp.type == "string" || exp.type == "uni_string") {
         if (exp.owned && dynamic_cast<ast::CallExpr *>(expr) != nullptr) {
-          auto buy = new ast::Buy();
-          buy->expr = expr;
-          buy->logicalLine = logicalLine();
-          expr = buy;
-          exp = this->GenExpr(expr, file);
+          // `cstr` borrows its receiver. Keep an owned toString() result in a
+          // scoped slot before passing it to cstr, so the borrowed pointer
+          // remains valid until the enclosing format call has copied it.
+          // Wrapping the result in Buy used to leave it as an owned temporary,
+          // which correctly triggered Call's non-consuming-argument error.
+          exp = this->GenExpr(expr, OutputFile);
+          const auto tempName =
+              "$" + std::to_string(tempCount()++) + "_format_string";
+          ast::Type tempType(exp.type, exp.size);
+          tempType.opType = exp.op;
+          const int byteMod = gen::scope::ScopeManager::getInstance()->assign(
+              tempName, tempType, false, false);
+          auto *tempSymbol =
+              gen::scope::ScopeManager::getInstance()->get(tempName);
+          tempSymbol->owned = true;
+
+          auto *store = new asmc::Mov();
+          store->logicalLine = logicalLine();
+          store->from = exp.access;
+          store->to = "-" + std::to_string(byteMod) + "(%rbp)";
+          store->size = exp.size;
+          store->op = exp.op;
+          OutputFile.text << store;
+
+          auto *temporary = new ast::Var();
+          temporary->Ident = tempName;
+          temporary->logicalLine = logicalLine();
+          expr = temporary;
+          exp.owned = true;
         }
 
         auto call = new ast::CallExpr();
@@ -955,6 +979,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
       if (exp.type == "adr")
         strLit->val.replace(pos, 3, "%a");
+      else if (exp.type == "float")
+        strLit->val.replace(pos, 3, "%f");
       else if (exp.type == "int" || exp.type == "number")
         strLit->val.replace(pos, 3, "%d");
       else if (exp.type == "string" || exp.type == "uni_string")
@@ -1820,14 +1846,21 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       asmc::Mov *mov = new asmc::Mov();
       mov->logicalLine = logicalLine();
       mov->from = genExpr.access;
-      mov->to = registers()["%eax"]->get(genExpr.size);
+      // Floating-point values live in SSE registers and must remain there
+      // while being copied into the aggregate.  A general-purpose movl from
+      // %xmm0 to %eax is invalid x86 assembly.
+      mov->to = genExpr.op == asmc::Float
+                    ? registers()["%xmm1"]->get(genExpr.size)
+                    : registers()["%eax"]->get(genExpr.size);
       mov->size = genExpr.size;
+      mov->op = genExpr.op;
       OutputFile.text << mov;
       asmc::Mov *mov2 = new asmc::Mov();
       mov2->logicalLine = logicalLine();
-      mov2->from = registers()["%eax"]->get(genExpr.size);
+      mov2->from = mov->to;
       mov2->to = "-" + std::to_string(bMod - offset) + "(%rbp)";
       mov2->size = genExpr.size;
+      mov2->op = genExpr.op;
       OutputFile.text << mov2;
       offset += gen::utils::sizeToInt(genExpr.size);
     };

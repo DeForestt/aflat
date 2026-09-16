@@ -53,3 +53,34 @@ fn main() -> int {
   REQUIRE(linked == 0);
   REQUIRE(ran == 0);
 }
+
+TEST_CASE("chained float arithmetic preserves every intermediate result",
+          "[codegen][float]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/chained_float_arithmetic");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  const auto executable = dir / "main";
+
+  std::ofstream(source) << R"(fn main() -> int {
+  const float dot = (1.5 * 4.0) + (-2.0 * 0.5) + (3.0 * -2.0);
+  if dot == -1.0 return 0;
+  return 1;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const int linked = built ? std::system(("gcc -no-pie " + assembly.string() +
+                                          " -o " + executable.string())
+                                             .c_str())
+                           : -1;
+  const int ran = linked == 0 ? std::system(executable.string().c_str()) : -1;
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  REQUIRE(linked == 0);
+  CHECK(ran == 0);
+}

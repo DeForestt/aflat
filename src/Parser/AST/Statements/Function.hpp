@@ -74,7 +74,7 @@ public:
         statement(nullptr), decorator(Other.decorator), decNSP(Other.decNSP),
         decoratorTemplateTypes(Other.decoratorTemplateTypes),
         decoratorArgs(Other.decoratorArgs), argTypes(Other.argTypes),
-        optConvertionIndices(Other.optConvertionIndices),
+        req(Other.req), optConvertionIndices(Other.optConvertionIndices),
         mutability(Other.mutability), isLambda(Other.isLambda),
         mask(Other.mask), has_return(Other.has_return),
         optional(Other.optional), useType(Other.useType),
