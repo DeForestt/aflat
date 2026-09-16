@@ -321,6 +321,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         type.arraySize = classInstanceByteSize(*this, cl);
         int bMod =
             gen::scope::ScopeManager::getInstance()->assign("", type, false);
+        const auto cleanup = registerStackCleanup(bMod);
 
         //
         asmc::Lea *lea = new asmc::Lea();
@@ -377,7 +378,19 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.size = asmc::QWord;
           output.type = cl->Ident;
           output.owned = false;
+          output.needsDrop = true;
+          output.storageOrigin = StorageOrigin::Stack;
+          output.storageScope =
+              gen::scope::ScopeManager::getInstance()->currentScope();
         }
+        // Direct class construction uses storage in this function's frame.
+        // It must run the class destructor at scope exit but must never free
+        // the address of that storage.
+        output.needsDrop = true;
+        output.storageOrigin = StorageOrigin::Stack;
+        output.storageScope =
+            gen::scope::ScopeManager::getInstance()->currentScope();
+        OutputFile << emitStackCleanupRegistration(cleanup, cl->Ident);
       } else {
         alert("Class " + call->ident + " not found", true, __FILE__, __LINE__);
       }
@@ -650,6 +663,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.op = sym.type.opType;
         output.type = sym.type.typeName;
         output.owned = sym.owned;
+        output.needsDrop = sym.needsDrop;
+        output.storageOrigin = sym.storageOrigin;
+        output.storageScope = sym.storageScope;
+        // A normal read of a stack-backed local is a borrow. Its original
+        // binding remains responsible for running del at scope exit; copying
+        // that drop obligation into another local would double-destroy it.
+        if (output.storageOrigin == StorageOrigin::Stack && !var.selling)
+          output.needsDrop = false;
         output.transferable = var.selling && sym.owned;
         output.transferExplicit = output.transferable;
         output.loanScope = sym.loanScope;
@@ -1675,6 +1696,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.size = asmc::QWord;
     output.type = typeName;
     output.owned = true;
+    output.needsDrop = true;
+    output.storageOrigin = StorageOrigin::Heap;
+    output.storageScope =
+        gen::scope::ScopeManager::getInstance()->currentScope();
     output.transferable = true;
   } else if (dynamic_cast<ast::NewExpr *>(expr) != nullptr) {
     ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);

@@ -724,6 +724,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     }
 
     generator.returnType() = this->useType;
+    generator.beginStackCleanupFrame();
 
     auto link = new asmc::LinkTask();
     link->logicalLine = this->logicalLine;
@@ -805,6 +806,7 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
             gen::scope::ScopeManager::getInstance()->softPop(&generator,
                                                              statement);
           }
+          statement << generator.emitStackCleanups();
           asmc::Return *ret = new asmc::Return();
           ret->logicalLine = this->logicalLine;
           statement.text.push(ret);
@@ -818,11 +820,15 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
       pop->logicalLine = this->logicalLine;
       pop->op = "%rbx";
       statement.text.push(pop);
+      statement << generator.emitStackCleanups();
       auto ret = new asmc::Return();
       ret->logicalLine = this->logicalLine;
       statement.text.push(ret);
     }
     file << statement;
+
+    const int stackCleanupHead = generator.stackCleanupHeadOffset();
+    generator.endStackCleanupFrame();
 
     auto sub = new asmc::Subq;
     sub->logicalLine = this->logicalLine;
@@ -833,6 +839,16 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     sub->op1 = "$" + std::to_string(frameSize);
     sub->op2 = generator.registers()["%rsp"]->get(asmc::QWord);
     file.text.insert(sub, AlignmentLoc + 1);
+    if (stackCleanupHead != 0) {
+      auto *clearCleanupHead = new asmc::Mov();
+      clearCleanupHead->logicalLine = this->logicalLine;
+      clearCleanupHead->from = "$0";
+      clearCleanupHead->to = "-" + std::to_string(stackCleanupHead) + "(%rbp)";
+      clearCleanupHead->size = asmc::QWord;
+      // The head lives in this function's frame, so establish the frame
+      // before writing its null sentinel.
+      file.text.insert(clearCleanupHead, AlignmentLoc + 2);
+    }
     if (this->isAsyncBody) {
       replaceAsyncFrameSize(file, frameSize);
       auto dispatch = asyncDispatch(*this, frameSize);

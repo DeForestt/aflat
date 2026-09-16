@@ -22,6 +22,10 @@ namespace gen {
 
 class CodeGenerator {
 public:
+  struct StackCleanup {
+    int objectOffset = 0;
+    int nodeOffset = 0;
+  };
   using InferredTypeCallback = std::function<void(
       const std::string &, const std::string &, const ast::Type &, int)>;
 
@@ -200,6 +204,13 @@ public:
   links::LinkedList<std::string> &continueContext();
   const links::LinkedList<std::string> &continueContext() const;
   bool validateLoanAssignment(gen::Expr expr, const gen::Symbol &sym);
+  void beginStackCleanupFrame();
+  std::vector<StackCleanup> endStackCleanupFrame();
+  StackCleanup registerStackCleanup(int objectOffset);
+  asmc::File emitStackCleanupRegistration(const StackCleanup &cleanup,
+                                          const std::string &typeName);
+  int stackCleanupHeadOffset() const;
+  asmc::File emitStackCleanups();
 
 private:
   static bool traceAlert;

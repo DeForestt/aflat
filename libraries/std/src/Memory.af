@@ -1,6 +1,8 @@
 .needs <std> 
 import string from "String";
 import uni_string from "uni_string";
+import result from "Utils/result";
+import {accept, reject} from "Utils/result" under res;
 
 /**
  * Base helper that tracks reference counts with optional locking semantics.
@@ -119,6 +121,42 @@ unique class owned {
 		delete my.value;
 	};
 
+};
+
+class byte_buffer {
+  private mutable adr buffer = af_malloc(size);
+  private mutable adr cursor = my.buffer;
+  private adr end = my.buffer + size;
+
+  fn init(int size) {
+    return my;
+  };
+
+  fn peek() -> adr! {
+    return my.cursor;
+  };
+
+  fn next(int bytes) -> adr! {
+    let last = my.cursor;
+    my.cursor = my.cursor + bytes; 
+    return last;
+  };
+
+  fn get() -> loan adr {
+    return my.buffer;
+  };
+
+  sink fn release() -> adr {
+    let buff = my.buffer;
+    my.buffer = NULL;
+    return buff;
+  };
+
+  fn del() {
+    if my.buffer != NULL {
+      af_free(my.buffer);
+    }
+  }
 };
 
 

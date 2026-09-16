@@ -134,6 +134,100 @@ TEST_CASE("long literals cover the signed 64-bit range", "[parser][long]") {
   }
 }
 
+TEST_CASE("stack-constructed unique classes run del without freeing the stack",
+          "[codegen][ownership][stack]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_stack_drop_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+class StackBuffer {
+  int size = size;
+  fn init(const int size) -> Self { return my; };
+  fn del() -> void { return; };
+};
+fn main() -> int {
+  let buffer = StackBuffer(256);
+  let alias = buffer;
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  REQUIRE(text.find("lea\tpub_StackBuffer_del(%rip)") != std::string::npos);
+  REQUIRE(text.find("call\t*16(%rax)") != std::string::npos);
+  CHECK(text.find("call\taf_free") == std::string::npos);
+}
+
+TEST_CASE("heap-constructed unique classes still run del and af_free",
+          "[codegen][ownership][heap]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_heap_drop_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+class HeapBuffer {
+  fn del() -> void { return; };
+};
+fn main() -> int {
+  let buffer = new HeapBuffer();
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  CHECK(text.find("call\tpub_HeapBuffer_del") != std::string::npos);
+  CHECK(text.find("call\taf_free") != std::string::npos);
+}
+
+TEST_CASE("stack-constructed values are cleaned at function exit",
+          "[codegen][ownership][stack]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_stack_escape_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+class StackBuffer { fn del() -> void { return; }; };
+fn main() -> int {
+  mutable StackBuffer alias;
+  const bool condition = true;
+  if condition {
+    let buffer = StackBuffer();
+    alias = buffer;
+  };
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  CHECK(text.find("lea\tpub_StackBuffer_del(%rip)") != std::string::npos);
+  CHECK(text.find("call\t*16(%rax)") != std::string::npos);
+}
+
 TEST_CASE("local class fields use embedded storage",
           "[codegen][class][local]") {
   namespace fs = std::filesystem;

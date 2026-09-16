@@ -51,6 +51,9 @@ public:
   int refCount = 0;
   int assignCount = 0;
   bool owned = false;
+  bool needsDrop = false;
+  StorageOrigin storageOrigin = StorageOrigin::Unknown;
+  scope::ScopeId storageScope = 0;
   bool local = false;
   scope::ScopeId declarationScope = 0;
   LoanProvenance loanProvenance = LoanProvenance::Lexical;
