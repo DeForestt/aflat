@@ -153,9 +153,10 @@ class byte_buffer {
 
   fn write_bytes(immutable adr source, const int bytes) -> bool {
     if bytes < 0 return false;
-    if my.cursor + bytes > my.end return false;
+    const adr next_cursor = my.cursor + bytes;
+    if next_cursor > my.end return false;
     af_memcpy(my.cursor, source, bytes);
-    my.cursor = my.cursor + bytes;
+    my.cursor = next_cursor;
     return true;
   };
 

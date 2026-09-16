@@ -212,6 +212,32 @@ public:
   std::string toString();
 };
 
+// ucomiss sets the unsigned condition flags. These instructions are used for
+// ordered floating-point relational comparisons.
+class Setb : public Instruction {
+public:
+  std::string op;
+  std::string toString();
+};
+
+class Setbe : public Instruction {
+public:
+  std::string op;
+  std::string toString();
+};
+
+class Seta : public Instruction {
+public:
+  std::string op;
+  std::string toString();
+};
+
+class Setae : public Instruction {
+public:
+  std::string op;
+  std::string toString();
+};
+
 class Push : public Instruction {
 public:
   std::string op;

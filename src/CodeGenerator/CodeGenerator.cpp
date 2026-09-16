@@ -538,6 +538,10 @@ gen::CodeGenerator::emitStackCleanupRegistration(const StackCleanup &cleanup,
   emitLea("pub_" + scopeName + "_" + destructor->ident.ident + "(%rip)", rcx);
   emitMov(rcx, "16(" + rax + ")");
   emitMov(rax, "-" + std::to_string(headOffset) + "(%rbp)");
+  // Registration needs %rax for the cleanup node, but a direct constructor's
+  // expression value is the object address in %rax. Restore it before the
+  // caller binds or passes the constructed object.
+  emitLea("-" + std::to_string(cleanup.objectOffset) + "(%rbp)", rax);
   return file;
 }
 

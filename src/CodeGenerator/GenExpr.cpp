@@ -1480,9 +1480,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           cmp->op = asmc::Float;
         }
 
-        asmc::Setl *setl = new asmc::Setl();
-        setl->logicalLine = logicalLine();
-        setl->op = registers()["%rax"]->get(asmc::Byte);
+        asmc::Instruction *setl;
+        if (expr1.op == asmc::Float) {
+          auto *instruction = new asmc::Setb();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setl = instruction;
+        } else {
+          auto *instruction = new asmc::Setl();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setl = instruction;
+        }
 
         OutputFile.text << cmp;
         OutputFile.text << setl;
@@ -1507,9 +1516,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           cmp->op = asmc::Float;
         }
 
-        asmc::Setg *setg = new asmc::Setg();
-        setg->logicalLine = logicalLine();
-        setg->op = registers()["%rax"]->get(asmc::Byte);
+        asmc::Instruction *setg;
+        if (expr1.op == asmc::Float) {
+          auto *instruction = new asmc::Seta();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setg = instruction;
+        } else {
+          auto *instruction = new asmc::Setg();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setg = instruction;
+        }
 
         OutputFile.text << cmp;
         OutputFile.text << setg;
@@ -1534,9 +1552,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           cmp->op = asmc::Float;
         }
 
-        asmc::Setle *setle = new asmc::Setle();
-        setle->logicalLine = logicalLine();
-        setle->op = registers()["%rax"]->get(asmc::Byte);
+        asmc::Instruction *setle;
+        if (expr1.op == asmc::Float) {
+          auto *instruction = new asmc::Setbe();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setle = instruction;
+        } else {
+          auto *instruction = new asmc::Setle();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setle = instruction;
+        }
 
         OutputFile.text << cmp;
         OutputFile.text << setle;
@@ -1561,9 +1588,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           cmp->op = asmc::Float;
         }
 
-        asmc::Setge *setge = new asmc::Setge();
-        setge->logicalLine = logicalLine();
-        setge->op = registers()["%rax"]->get(asmc::Byte);
+        asmc::Instruction *setge;
+        if (expr1.op == asmc::Float) {
+          auto *instruction = new asmc::Setae();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setge = instruction;
+        } else {
+          auto *instruction = new asmc::Setge();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setge = instruction;
+        }
 
         OutputFile.text << cmp;
         OutputFile.text << setge;
