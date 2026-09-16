@@ -127,6 +127,7 @@ class byte_buffer {
   private mutable adr buffer = af_malloc(size);
   private mutable adr cursor = my.buffer;
   private adr end = my.buffer + size;
+  int size = size;
 
   fn init(const int size) {
     return my;
