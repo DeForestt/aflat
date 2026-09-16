@@ -152,8 +152,11 @@ ast::Statement *buildAutomaticInvalidateBody(gen::CodeGenerator &generator,
 ast::Function *buildAutomaticDestructor(const gen::Class *type,
                                         int logicalLine) {
   auto *body = buildAutomaticDestructorBody(type, logicalLine);
+  // Cleanup always calls a class's destructor before releasing its allocation.
+  // Classes with only primitive or borrowed fields still need that public
+  // symbol, even though their destructor has no work to perform.
   if (body == nullptr)
-    return nullptr;
+    body = new ast::Sequence();
 
   auto *func = new ast::Function();
   func->logicalLine = logicalLine;

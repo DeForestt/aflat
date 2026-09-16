@@ -9,7 +9,7 @@ import { exp } from "math" under math;
 import Error from "Utils/Error";
 import vector from "Collections/Vector";
 
-import {int_toString, len, str_comp, str_at, str_toInt} from "strings" under str;
+import {int_toString, int_toStringL0, len, str_comp, str_at, str_toInt} from "strings" under str;
 import {print, printInt, printHex} from "io" under io;
 
 // Convert an uppercase ASCII character to lowercase; leaves others untouched.
@@ -616,52 +616,94 @@ export string readString(*const string prompt) {
 };
 
 export string floatToString(const float f) {
-  string output = ``;
-	// use bit manipulation to convert float to int
-	int i = f;
-	// get sign
-	const int sign = i >> 31;
-	// get exponent
-	i = f;
-	int exponent = (i >> 23) & 255;
+    // AFlat float-to-int assignment is a bit reinterpretation. Decode the
+    // IEEE-754 single-precision representation so formatting does not depend
+    // on a native runtime helper.
+    const int bits = f;
+    const bool negative = bits < 0;
+    const int exponentBits = (bits >> 23) & 255;
+    const int fractionBits = bits & 8388607;
 
-	// get mantissa
-	int mantissa = i & 8388607;
+    if exponentBits == 255 {
+        if fractionBits != 0 return new string("nan");
+        if negative return new string("-inf");
+        return new string("inf");
+    };
 
-	// denormalize
-	if exponent == 0 {
-		exponent = 1;
-		const int man = mantissa << 1;
-		mantissa = man;
-	} else {
-		exponent = exponent - 127;
-		mantissa = mantissa | 8388608;
-	};
+    if exponentBits == 0 {
+        if negative return new string("-0");
+        return new string("0");
+    };
 
-	// calculate float
-	const int whole = mantissa >> (23 - exponent);
-	// get fractional part
-	int frac = mantissa & (8388607 >> exponent);
-	// calculate fractional part
-	int fracPart = 0;
-	int mul = 5 * math.exp(10, 6);
-	int fracCount = 0;
-	// ffffffff = 4294967295
-	while (frac != 0) & (frac <= 429496729) {
-		const int nfrac = frac << 1;
-		const int bit = nfrac >> 23;
-		frac = nfrac;
-		fracPart = fracPart + (bit * mul);
-		frac = frac & 8388607;
-		mul = mul / 2;
-		fracCount = fracCount + 1;
-	};
+    const int exponent = exponentBits - 127;
+    // Six decimal places cannot represent values below this threshold.
+    if exponent < -4 {
+        if negative return new string("-0");
+        return new string("0");
+    };
 
-	if sign == -1 {
-		output = output + "-";
-	};
-    output = `{output}{whole}.{fracPart}`;
-	return output.copy();
+    const int mantissa = fractionBits | 8388608;
+    int whole = 0;
+    int fraction = 0;
+
+    if exponent >= 23 {
+        // Values that fit AFlat's int can be shifted directly. Larger values
+        // fall back to their integral prefix rather than overflowing while
+        // producing fractional digits.
+        if exponent <= 30 {
+            whole = mantissa << (exponent - 23);
+        } else {
+            if negative return new string("-inf");
+            return new string("inf");
+        };
+    } else {
+        const int shift = 23 - exponent;
+        if exponent >= 0 whole = mantissa >> shift;
+
+        int denominator = 1;
+        for int i = 0; i < shift; i++ {
+            denominator = denominator * 2;
+        };
+
+        int remainder = mantissa;
+        if exponent >= 0 {
+            const int mask = denominator - 1;
+            remainder = mantissa & mask;
+        };
+        for int i = 0; i < 6; i++ {
+            remainder = remainder * 10;
+            const int digit = remainder / denominator;
+            fraction = (fraction * 10) + digit;
+            remainder = remainder - (digit * denominator);
+        };
+        // Round once after deriving the decimal expansion, rather than
+        // truncating individual binary contributions.
+        remainder = remainder * 10;
+        if (remainder / denominator) >= 5 {
+            fraction = fraction + 1;
+            if fraction == 1000000 {
+                whole = whole + 1;
+                fraction = 0;
+            };
+        };
+    };
+
+    const char[32] wholeBuffer;
+    const char[7] fractionBuffer;
+    str.int_toString(whole, wholeBuffer);
+    str.int_toStringL0(fraction, fractionBuffer, 6);
+
+    string output = new string(wholeBuffer);
+    if negative {
+        const string minus = new string("-");
+        output = minus + output;
+    };
+    if fraction == 0 return output.copy();
+
+    const string decimalPoint = new string(".");
+    const string tail = new string(fractionBuffer);
+    const string withPoint = output + decimalPoint;
+    return withPoint + tail;
 };
 
 export string fString(const string fmt, * adr args) {
@@ -688,6 +730,11 @@ export string fString(const string fmt, * adr args) {
                     newString = newString + part;
                 };
                 args = args + int;
+            } else if fmt.at(i) == 'f' {
+                const float f = args as float;
+                const string part = floatToString(f);
+                newString = newString + part;
+                args = args + float;
             } else if fmt.at(i) == 's' {
                 newString = newString + args as string;
                 args = args + adr;

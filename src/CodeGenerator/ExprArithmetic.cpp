@@ -33,8 +33,27 @@ gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound,
   mov1->from = expr2.access;
   mov1->size = expr2.size;
   mov1->logicalLine = logicalLine();
-  if (!isDiv)
+
+  // Generating the left side of a compound float expression reuses xmm0-xmm2.
+  // Do not leave the already-generated right side in xmm1: nested operations
+  // on the left would overwrite it.  Spill it to an aligned stack slot and
+  // restore it only after the left side has finished generating.
+  const bool spillFloatRight = !isDiv && expr2.op == asmc::Float;
+  if (spillFloatRight) {
+    auto *pushRax = new asmc::Push();
+    pushRax->logicalLine = logicalLine();
+    pushRax->op = registers()["%rax"]->get(asmc::QWord);
+    OutputFile.text << pushRax;
+    auto *pushRcx = new asmc::Push();
+    pushRcx->logicalLine = logicalLine();
+    pushRcx->op = registers()["%rcx"]->get(asmc::QWord);
+    OutputFile.text << pushRcx;
+
+    mov1->to = "(%rsp)";
     OutputFile.text << mov1;
+  } else if (!isDiv) {
+    OutputFile.text << mov1;
+  }
 
   gen::Expr expr1 = this->GenExpr(compound.expr1, OutputFile);
   // Immediate integer literals can be widened directly. In particular, a
@@ -51,6 +70,25 @@ gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound,
   mov2->size = expr1.size;
   mov2->logicalLine = logicalLine();
   OutputFile.text << mov2;
+
+  if (spillFloatRight) {
+    auto *restore = new asmc::Mov();
+    restore->logicalLine = logicalLine();
+    restore->from = "(%rsp)";
+    restore->to = registers()["%xmm1"]->get(expr2.size);
+    restore->size = expr2.size;
+    restore->op = asmc::Float;
+    OutputFile.text << restore;
+
+    auto *popRcx = new asmc::Pop();
+    popRcx->logicalLine = logicalLine();
+    popRcx->op = registers()["%rcx"]->get(asmc::QWord);
+    OutputFile.text << popRcx;
+    auto *popRax = new asmc::Pop();
+    popRax->logicalLine = logicalLine();
+    popRax->op = registers()["%rax"]->get(asmc::QWord);
+    OutputFile.text << popRax;
+  }
 
   return expr1;
 }
