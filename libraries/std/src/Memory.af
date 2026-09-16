@@ -133,6 +133,8 @@ class byte_buffer {
   };
 
   fn peek(const int bytes) -> adr! {
+    if bytes < 0
+      return res.reject::<adr>("Negative byte count");
     if my.cursor + bytes > my.end
       return res.reject::<adr>("End of Buffer");
     return my.cursor;
@@ -140,10 +142,20 @@ class byte_buffer {
 
   fn next(const int bytes) -> adr! {
     const let last = my.cursor;
+    if bytes < 0
+      return res.reject::<adr>("Negative byte count");
     if last + bytes > my.end
       return res.reject::<adr>("End of Buffer");
     my.cursor = my.cursor + bytes; 
     return last;
+  };
+
+  fn write_bytes(immutable adr source, const int bytes) -> bool {
+    if bytes < 0 return false;
+    if my.cursor + bytes > my.end return false;
+    af_memcpy(my.cursor, source, bytes);
+    my.cursor = my.cursor + bytes;
+    return true;
   };
 
   fn get() -> loan adr {
