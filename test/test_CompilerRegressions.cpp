@@ -730,8 +730,16 @@ fn main() -> int {
   REQUIRE(copyCall != std::string::npos);
   const auto transferPrefix =
       text.substr(transferStart, copyCall - transferStart);
-  CHECK(transferPrefix.find("movq\t-8(%rbp),%r15") != std::string::npos);
-  CHECK(transferPrefix.find("lea\t-8(%rbp),%rax") == std::string::npos);
+  const auto receiverLoad = transferPrefix.find("movq\t-");
+  REQUIRE(receiverLoad != std::string::npos);
+  const auto receiverEnd = transferPrefix.find(",%r15", receiverLoad);
+  REQUIRE(receiverEnd != std::string::npos);
+  const auto receiverSlot = transferPrefix.substr(
+      receiverLoad + std::string("movq\t").size(),
+      receiverEnd - (receiverLoad + std::string("movq\t").size()));
+  CHECK(receiverSlot.find("(%rbp)") != std::string::npos);
+  CHECK(transferPrefix.find("lea\t" + receiverSlot + ",%rax") ==
+        std::string::npos);
 }
 
 TEST_CASE("integer immediates use the width of long comparisons",
