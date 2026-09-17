@@ -180,6 +180,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       s->storageOrigin = expr.storageOrigin;
       s->storageScope = expr.storageScope;
       s->stackObjectOffset = expr.stackObjectOffset;
+      s->stackCleanupNodeOffset = expr.stackCleanupNodeOffset;
       if (expr.loanProvenance != gen::LoanProvenance::None) {
         s->loanProvenance = expr.loanProvenance;
         s->loanScope = expr.loanScope;

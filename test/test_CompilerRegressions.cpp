@@ -180,6 +180,10 @@ TEST_CASE("local class returns use a caller-owned stack destination",
 class Thing {
   mutable int value = value;
   fn init(const int value) -> Self { my.value = value; return my; };
+  safe fn add(immutable Thing other) -> local Thing {
+    let result = Thing(my.value + other.value);
+    return result;
+  };
   fn del() -> void { return; };
 };
 class Factory {
@@ -197,6 +201,9 @@ fn main() -> int {
   if give().value != 42 { return 1; };
   let factory = Factory();
   if factory.give().value != 77 { return 2; };
+  let left = Thing(1);
+  let right = Thing(2);
+  left.add(right);
   return 0;
 };
 )";
@@ -222,6 +229,18 @@ fn main() -> int {
   const auto methodBody = text.substr(methodReturn, methodEnd - methodReturn);
   CHECK(methodBody.find("movq\t%rdi,-") != std::string::npos);
   CHECK(methodBody.find("movq\t%rsi,-") != std::string::npos);
+
+  const auto addCall = text.rfind("call\tpub_Thing_add");
+  REQUIRE(addCall != std::string::npos);
+  const auto addSetup = text.substr(addCall - 800, 800);
+  const auto explicitArg = addSetup.rfind(",%rdx");
+  const auto receiver = addSetup.rfind(",%rsi");
+  const auto destination = addSetup.rfind(",%rdi");
+  REQUIRE(explicitArg != std::string::npos);
+  REQUIRE(receiver != std::string::npos);
+  REQUIRE(destination != std::string::npos);
+  CHECK(explicitArg < receiver);
+  CHECK(receiver < destination);
 }
 
 TEST_CASE("local union and struct returns execute from caller stack storage",
@@ -242,6 +261,7 @@ TEST_CASE("local union and struct returns execute from caller stack storage",
   }
 
   std::ofstream(dir / "main.af") << R"(.needs <std>
+import {print} from "uni_string" under uni;
 struct Pair { int first; int second; };
 union Value { Number(int) };
 fn givePair() -> local Pair {
@@ -254,6 +274,8 @@ fn giveValue() -> local Value {
 };
 fn main() -> int {
   givePair();
+  const float progress = 1.0;
+  uni.print(`{progress} `);
   match giveValue() {
     Number(value) => { if value == 42 { return 0; }; }
   };

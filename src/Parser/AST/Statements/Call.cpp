@@ -856,7 +856,14 @@ gen::GenerationResult Call::generateAttempt(
     mod = "";
   }
 
-  const bool returnsLocal = func != nullptr && func->returnsLocal;
+  // Constructors receive their allocated instance in %rdi and do not use the
+  // caller-owned local-return ABI, even when their implicit Self return has
+  // local-return metadata.  Treating an initializer as a local return shifts
+  // its first explicit argument from %rsi to %rdx and corrupts the call.
+  const bool isConstructor = this->publify != "" && hasHiddenReceiver;
+  const bool returnsLocal =
+      func != nullptr && func->returnsLocal && !isConstructor;
+  const bool hasCallableReceiver = hasHiddenReceiver && !isConstructor;
 
   asmc::Push *push = new asmc::Push();
   push->logicalLine = this->logicalLine;
@@ -867,7 +874,7 @@ gen::GenerationResult Call::generateAttempt(
   if (returnsLocal)
     argsCounter = 1;
 
-  if (hasHiddenReceiver) {
+  if (hasCallableReceiver) {
     ast::Type receiverType("adr", asmc::QWord);
     hiddenReceiverSlot = gen::scope::ScopeManager::getInstance()->assign(
         "", receiverType, false, false);
@@ -878,7 +885,17 @@ gen::GenerationResult Call::generateAttempt(
     saveReceiver->to = "-" + std::to_string(hiddenReceiverSlot) + "(%rbp)";
     file.text << saveReceiver;
   }
-  if (hasHiddenReceiver && !returnsLocal)
+  // Ordinary method calls have already reserved the receiver slot while
+  // resolving the member expression.  Only a local-return method needs one
+  // additional slot: %rdi becomes the return destination and the receiver
+  // moves to %rsi.
+  if (hasCallableReceiver && returnsLocal)
+    argsCounter++;
+
+  // The preallocated instance is the sole implicit constructor argument.
+  // Nested expressions may use the regular local-return ABI, but must not
+  // change the initializer's explicit-argument register base.
+  if (isConstructor)
     argsCounter = 1;
 
   if (func == nullptr) {
@@ -904,7 +921,8 @@ gen::GenerationResult Call::generateAttempt(
     storageType.arraySize = bytes;
     localReturnStorageOffset = gen::scope::ScopeManager::getInstance()->assign(
         "", storageType, false, false);
-    if (classType != nullptr && classType->nameTable["del"] != nullptr)
+    if (classType != nullptr && classType->hasExplicitDestructor &&
+        classType->nameTable["del"] != nullptr)
       localReturnCleanup =
           generator.registerStackCleanup(localReturnStorageOffset);
     localReturnDestinationSlot =
@@ -1414,7 +1432,7 @@ gen::GenerationResult Call::generateAttempt(
     file.text << reload;
   }
 
-  if (hasHiddenReceiver) {
+  if (hasCallableReceiver) {
     auto restoreReceiver = new asmc::Mov();
     restoreReceiver->logicalLine = this->logicalLine;
     restoreReceiver->size = asmc::QWord;
@@ -1473,6 +1491,7 @@ gen::GenerationResult Call::generateAttempt(
     result.storageScope =
         gen::scope::ScopeManager::getInstance()->currentScope();
     result.stackObjectOffset = localReturnStorageOffset;
+    result.stackCleanupNodeOffset = localReturnCleanup.nodeOffset;
   }
   if ((func->returnLowOwnership || func->returnPayloadLoan ||
        containsLoanedUnionPayload(generator, result.type)) &&

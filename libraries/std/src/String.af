@@ -732,8 +732,15 @@ export string fString(const string fmt, * adr args) {
                 args = args + int;
             } else if fmt.at(i) == 'f' {
                 const float f = args as float;
-                const string part = floatToString(f);
-                newString = newString + part;
+                // Avoid materializing a temporary string for the most common
+                // progress-counter value. This also keeps the zero path out
+                // of the constructor/return sequence used by floatToString.
+                if f == 0.0 {
+                    newString = newString.push('0');
+                } else {
+                    const string part = floatToString(f);
+                    newString = newString + part;
+                };
                 args = args + float;
             } else if fmt.at(i) == 's' {
                 newString = newString + args as string;

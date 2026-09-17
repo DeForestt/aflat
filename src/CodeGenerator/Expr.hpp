@@ -31,6 +31,7 @@ public:
   StorageOrigin storageOrigin = StorageOrigin::Unknown;
   scope::ScopeId storageScope = 0;
   int stackObjectOffset = 0;
+  int stackCleanupNodeOffset = 0;
   // True when this expression is an owned value that may be transferred.
   // Owned variables remain lvalues until they are explicitly sold.
   bool transferable = false;
