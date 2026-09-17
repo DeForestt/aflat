@@ -108,6 +108,7 @@ public:
   bool safeType = false;
   bool pedantic = false;
   bool declarationOnly = false;
+  bool hasExplicitDestructor = false;
   links::SLinkedList<ast::Function, std::string> publicNameTable;
   links::SLinkedList<ast::Function, ast::Op> overloadTable;
   links::SLinkedList<ast::Function, std::string> nameTable;

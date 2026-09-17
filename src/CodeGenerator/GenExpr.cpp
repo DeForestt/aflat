@@ -322,7 +322,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         int bMod =
             gen::scope::ScopeManager::getInstance()->assign("", type, false);
         StackCleanup cleanup{};
-        if (cl->nameTable["del"] != nullptr)
+        if (cl->hasExplicitDestructor && cl->nameTable["del"] != nullptr)
           cleanup = registerStackCleanup(bMod);
 
         //

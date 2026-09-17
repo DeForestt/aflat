@@ -626,6 +626,7 @@ gen::GenerationResult const Class::generate(gen::CodeGenerator &generator) {
 
   const bool hasExplicitDestructor =
       gen::utils::extract("del", this->statement) != nullptr;
+  type->hasExplicitDestructor = hasExplicitDestructor;
   if (type->uniqueType &&
       (!type->declarationOnly || lazyConcreteGenericMethods) &&
       !hasExplicitDestructor) {

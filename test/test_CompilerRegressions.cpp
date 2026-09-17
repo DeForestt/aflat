@@ -261,6 +261,7 @@ TEST_CASE("local union and struct returns execute from caller stack storage",
   }
 
   std::ofstream(dir / "main.af") << R"(.needs <std>
+import {print} from "uni_string" under uni;
 struct Pair { int first; int second; };
 union Value { Number(int) };
 fn givePair() -> local Pair {
@@ -273,6 +274,8 @@ fn giveValue() -> local Value {
 };
 fn main() -> int {
   givePair();
+  const float progress = 1.0;
+  uni.print(`{progress} `);
   match giveValue() {
     Number(value) => { if value == 42 { return 0; }; }
   };

@@ -904,7 +904,8 @@ gen::GenerationResult Call::generateAttempt(
     storageType.arraySize = bytes;
     localReturnStorageOffset = gen::scope::ScopeManager::getInstance()->assign(
         "", storageType, false, false);
-    if (classType != nullptr && classType->nameTable["del"] != nullptr)
+    if (classType != nullptr && classType->hasExplicitDestructor &&
+        classType->nameTable["del"] != nullptr)
       localReturnCleanup =
           generator.registerStackCleanup(localReturnStorageOffset);
     localReturnDestinationSlot =
