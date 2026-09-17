@@ -207,6 +207,7 @@ public:
   void beginStackCleanupFrame();
   std::vector<StackCleanup> endStackCleanupFrame();
   StackCleanup registerStackCleanup(int objectOffset);
+  void suppressStackCleanup(int objectOffset);
   asmc::File emitStackCleanupRegistration(const StackCleanup &cleanup,
                                           const std::string &typeName);
   asmc::File emitStackCleanupHeadReset();

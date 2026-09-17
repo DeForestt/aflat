@@ -56,6 +56,10 @@ public:
   bool globalLocked = false;    // if the function is locked to the global scope
   bool returnImmutable = false; // if callers must bind return to immutable sym
   bool returnLowOwnership = false; // if the return value does not yield owner
+  // `-> local T` uses caller-provided stack storage instead of the normal
+  // pointer return ABI.
+  bool returnsLocal = false;
+  int localReturnDestinationOffset = 0;
   // `-> &T?` / `-> &T!`: the wrapper is owned, but its T payload is a loan.
   bool returnPayloadLoan = false;
   int overloadIndex = 0;
@@ -85,6 +89,8 @@ public:
         asyncStateCounter(Other.asyncStateCounter), readOnly(Other.readOnly),
         returnImmutable(Other.returnImmutable),
         returnLowOwnership(Other.returnLowOwnership),
+        returnsLocal(Other.returnsLocal),
+        localReturnDestinationOffset(Other.localReturnDestinationOffset),
         returnPayloadLoan(Other.returnPayloadLoan), error(Other.error) {
     this->logicalLine = Other.logicalLine;
     this->locked = locked;

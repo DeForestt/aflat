@@ -71,8 +71,29 @@ gen::GenerationResult const Declare::generate(gen::CodeGenerator &generator) {
     // if the there  is no scope use the scope manager otherwise use the
     // scope
     if (generator.scope() == nullptr || generator.inFunction()) {
+      ast::Type storageType = this->type;
+      bool directStackAggregate = false;
+      if (auto **entry = generator.typeList()[this->type.typeName]) {
+        auto *objectType = *entry;
+        directStackAggregate =
+            dynamic_cast<gen::Class *>(objectType) == nullptr &&
+            objectType->size > 0;
+        if (directStackAggregate) {
+          storageType.size = asmc::Byte;
+          storageType.arraySize = objectType->size;
+        }
+      }
       auto mod = gen::scope::ScopeManager::getInstance()->assign(
-          this->ident, this->type, false, this->mut, this->readOnly);
+          this->ident, storageType, false, this->mut, this->readOnly);
+      if (directStackAggregate) {
+        auto *symbol =
+            gen::scope::ScopeManager::getInstance()->get(this->ident);
+        symbol->type = this->type;
+        symbol->storageOrigin = gen::StorageOrigin::Stack;
+        symbol->storageScope =
+            gen::scope::ScopeManager::getInstance()->currentScope();
+        symbol->stackObjectOffset = mod;
+      }
       auto def = new asmc::Define();
       def->logicalLine = this->logicalLine;
       def->name = this->ident;

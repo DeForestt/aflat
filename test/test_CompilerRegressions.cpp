@@ -167,6 +167,111 @@ fn main() -> int {
   CHECK(text.find("call\taf_free") == std::string::npos);
 }
 
+TEST_CASE("local class returns use a caller-owned stack destination",
+          "[codegen][return][stack]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_local_return_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+class Thing {
+  mutable int value = value;
+  fn init(const int value) -> Self { my.value = value; return my; };
+  fn del() -> void { return; };
+};
+class Factory {
+  fn init() -> Self { return my; };
+  fn give() -> local Thing {
+    let value = Thing(77);
+    return value;
+  };
+};
+fn give() -> local Thing {
+  let value = Thing(42);
+  return value;
+};
+fn main() -> int {
+  if give().value != 42 { return 1; };
+  let factory = Factory();
+  if factory.give().value != 77 { return 2; };
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  const auto freeReturn = text.find("give:");
+  const auto main = text.find("main:", freeReturn);
+  REQUIRE(freeReturn != std::string::npos);
+  REQUIRE(main != std::string::npos);
+  const auto freeBody = text.substr(freeReturn, main - freeReturn);
+  CHECK(freeBody.find("movq\t%rdi,-") != std::string::npos);
+  CHECK(freeBody.find("movq\t-16(%rbp),%rdi") != std::string::npos);
+  CHECK(freeBody.find(".stack_cleanup_") == std::string::npos);
+
+  const auto methodReturn = text.find("pub_Factory_give:");
+  REQUIRE(methodReturn != std::string::npos);
+  const auto methodEnd = text.find("\tleave", methodReturn);
+  const auto methodBody = text.substr(methodReturn, methodEnd - methodReturn);
+  CHECK(methodBody.find("movq\t%rdi,-") != std::string::npos);
+  CHECK(methodBody.find("movq\t%rsi,-") != std::string::npos);
+}
+
+TEST_CASE("local union and struct returns execute from caller stack storage",
+          "[codegen][runtime][return][stack]") {
+  namespace fs = std::filesystem;
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
+
+  const auto dir = fs::path("tmp/compiler_local_aggregate_return_runtime");
+  fs::remove_all(dir);
+  fs::create_directories(dir / "std");
+  for (const auto &entry : fs::directory_iterator("libraries/std")) {
+    if (entry.is_regular_file() && entry.path().extension() == ".s")
+      fs::copy_file(entry.path(), dir / "std" / entry.path().filename());
+  }
+
+  std::ofstream(dir / "main.af") << R"(.needs <std>
+struct Pair { int first; int second; };
+union Value { Number(int) };
+fn givePair() -> local Pair {
+  Pair value;
+  return value;
+};
+fn giveValue() -> local Value {
+  let value = Value->Number(42);
+  return value;
+};
+fn main() -> int {
+  givePair();
+  match giveValue() {
+    Number(value) => { if value == 42 { return 0; }; }
+  };
+  return 1;
+};
+)";
+
+  cfg::Config config;
+  config.entryPoint = "../" + (dir / "main").string();
+  config.outPutFile = (dir / "main").string();
+  const bool built = runConfig(config, (dir / "std").string() + "/", 'e');
+  const int ran = built ? std::system(config.outPutFile.c_str()) : -1;
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  CHECK(ran == 0);
+}
+
 TEST_CASE("heap-constructed unique classes still run del and af_free",
           "[codegen][ownership][heap]") {
   namespace fs = std::filesystem;

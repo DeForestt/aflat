@@ -35,6 +35,9 @@ gen::GenerationResult const Struct::generate(gen::CodeGenerator &generator) {
   generator.globalScope() = false;
   type->Ident = this->ident.ident;
   type->SymbolTable = generator.GenTable(this->statement, type->SymbolTable);
+  type->size = type->SymbolTable.head == nullptr
+                   ? 1
+                   : type->SymbolTable.head->data.byteMod;
   type->uniqueType = this->uniqueType;
   generator.typeList().push(type);
   generator.globalScope() = saveScope;

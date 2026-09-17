@@ -304,6 +304,10 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
   out.type = unionType.typeName;
   out.op = asmc::Hard;
   out.owned = internalAccess.expr->owned;
+  out.needsDrop = internalAccess.expr->needsDrop;
+  out.storageOrigin = internalAccess.expr->storageOrigin;
+  out.storageScope = internalAccess.expr->storageScope;
+  out.stackObjectOffset = internalAccess.expr->stackObjectOffset;
   if (loanPayload) {
     out.loanProvenance = fromExpr.loanProvenance;
     out.loanScope = fromExpr.loanScope;

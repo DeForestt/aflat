@@ -98,11 +98,7 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
         **also needs to be added to symbol table**
     */
     ast::Declare *arg = dynamic_cast<ast::Declare *>(STMT);
-    if (intArgsCounter() > 6) {
-      alert("AFlat compiler cannot handle more than 6 int / pointer "
-            "arguments.",
-            true, __FILE__, __LINE__);
-    } else {
+    {
       asmc::Size size;
       gen::Symbol symbol;
       asmc::Mov *mov = new asmc::Mov();
@@ -160,7 +156,25 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
 
       size = arg->type.size;
       arg->type.arraySize = 1;
-      mov->from = intArgs()[intArgsCounter()].get(arg->type.size);
+      // System V integer/pointer arguments after the first six are stored in
+      // eight-byte slots above the caller's return address.  After the usual
+      // `push %rbp; mov %rsp, %rbp` prologue, argument six begins at 16(%rbp).
+      if (intArgsCounter() < static_cast<int>(intArgs().size())) {
+        mov->from = intArgs()[intArgsCounter()].get(arg->type.size);
+      } else {
+        const int stackOffset =
+            16 + (intArgsCounter() - static_cast<int>(intArgs().size())) * 8;
+        // The parameter's eventual destination is also memory, so route the
+        // incoming stack slot through a scratch register; x86 does not allow
+        // a memory-to-memory mov.
+        auto *load = new asmc::Mov();
+        load->logicalLine = logicalLine();
+        load->size = arg->type.size;
+        load->from = std::to_string(stackOffset) + "(%rbp)";
+        load->to = registers()["%rax"]->get(arg->type.size);
+        OutputFile.text << load;
+        mov->from = registers()["%rax"]->get(arg->type.size);
+      }
 
       int mod = gen::scope::ScopeManager::getInstance()->assign(
           arg->ident, arg->type, false, arg->mut);

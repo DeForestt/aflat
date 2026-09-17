@@ -102,7 +102,8 @@ fn <function name>(<arguments>) -> <return type>? {
   caller to omit the argument entirely, in which case `None()` is passed.
 - The returned `option` is created automatically: returning a value yields `Some(value)` while `return;` (or falling off the end) yields `None()`.
 - If a function does not return a value with the `return` keyword, a return statement with no value is implied. In the case of `option`, `return;` will return `None()`.
-- Functions are still limited to six arguments due to register-based argument passing.
+- Functions pass their first six integer/pointer arguments in registers and
+  additional arguments in eight-byte stack slots.
 - **The old syntax is still supported for backwards compatibility.**
 
 #### Example:

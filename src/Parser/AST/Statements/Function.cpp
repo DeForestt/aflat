@@ -363,6 +363,11 @@ Function::Function(const ScopeMod &scope,
           tokens.pop();
           continue;
         }
+        if (modifier->meta == "local") {
+          this->returnsLocal = true;
+          tokens.pop();
+          continue;
+        }
       }
       break;
     }
@@ -725,6 +730,29 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
 
     generator.returnType() = this->useType;
     generator.beginStackCleanupFrame();
+
+    if (this->returnsLocal) {
+      if (parse::PRIMITIVE_TYPES.find(this->useType.typeName) !=
+              parse::PRIMITIVE_TYPES.end() ||
+          this->useType.typeName == "void") {
+        generator.alert("local returns require a union, struct, class, or "
+                        "object type",
+                        true, __FILE__, __LINE__);
+      }
+      ast::Type destinationType("adr", asmc::QWord);
+      const int destinationOffset =
+          gen::scope::ScopeManager::getInstance()->assign(
+              "__local_return_destination", destinationType, false, false);
+      this->localReturnDestinationOffset = destinationOffset;
+      auto *saveDestination = new asmc::Mov();
+      saveDestination->logicalLine = this->logicalLine;
+      saveDestination->size = asmc::QWord;
+      saveDestination->from =
+          generator.intArgs()[generator.intArgsCounter()].get(asmc::QWord);
+      saveDestination->to = "-" + std::to_string(destinationOffset) + "(%rbp)";
+      file.text << saveDestination;
+      generator.intArgsCounter()++;
+    }
 
     auto link = new asmc::LinkTask();
     link->logicalLine = this->logicalLine;

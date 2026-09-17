@@ -54,6 +54,50 @@ fn main() -> int {
   REQUIRE(ran == 0);
 }
 
+TEST_CASE("calls pass arguments beyond six through stack slots",
+          "[call][stack-arguments]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/stack_arguments");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "stack_arguments.af";
+  const auto assembly = dir / "stack_arguments.s";
+  const auto executable = dir / "stack_arguments";
+
+  std::ofstream(source)
+      << R"(fn sum(const int one, const int two, const int three, const int four, const int five, const int six, const int seven, const int eight, const int nine) -> int {
+  return one + two + three + four + five + six + seven + eight + nine;
+};
+
+fn main() -> int {
+  if sum(1, 2, 3, 4, 5, 6, 7, 8, 9) == 45 {
+    return 0;
+  };
+  return 1;
+};
+ )";
+
+  const bool built = build(source.string(), assembly.string(),
+                           cfg::Mutability::Promiscuous, false);
+  const auto text = built ? [&] {
+    std::ifstream input(assembly);
+    return std::string(std::istreambuf_iterator<char>(input),
+                       std::istreambuf_iterator<char>());
+  }() : std::string();
+  const int linked = built ? std::system(("gcc -no-pie " + assembly.string() +
+                                          " -o " + executable.string())
+                                             .c_str())
+                           : -1;
+  const int ran = linked == 0 ? std::system(executable.string().c_str()) : -1;
+
+  fs::remove_all(dir);
+  REQUIRE(built);
+  REQUIRE(text.find("16(%rbp)") != std::string::npos);
+  REQUIRE(text.find("24(%rbp)") != std::string::npos);
+  REQUIRE(linked == 0);
+  REQUIRE(ran == 0);
+}
+
 TEST_CASE("chained float arithmetic preserves every intermediate result",
           "[codegen][float]") {
   namespace fs = std::filesystem;
