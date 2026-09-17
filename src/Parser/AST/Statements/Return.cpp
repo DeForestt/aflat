@@ -437,6 +437,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     file.text << saveReturn;
   }
 
+  file << generator.emitStackCleanups();
   gen::scope::ScopeManager::getInstance()->softPop(&generator, file);
   if (!returnedSymbol.empty()) {
     gen::Symbol *retSym =

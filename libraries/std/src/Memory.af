@@ -1,6 +1,8 @@
 .needs <std> 
 import string from "String";
 import uni_string from "uni_string";
+import result from "Utils/result";
+import {accept, reject} from "Utils/result" under res;
 
 /**
  * Base helper that tracks reference counts with optional locking semantics.
@@ -119,6 +121,75 @@ unique class owned {
 		delete my.value;
 	};
 
+};
+
+class byte_buffer {
+  private mutable adr buffer = af_malloc(size);
+  private mutable adr cursor = my.buffer;
+  private adr end = my.buffer + size;
+  int size = size;
+
+  fn init(const int size) {
+    return my;
+  };
+
+  fn peek(const int bytes) -> adr! {
+    if bytes < 0
+      return res.reject::<adr>("Negative byte count");
+    if my.cursor + bytes > my.end
+      return res.reject::<adr>("End of Buffer");
+    return my.cursor;
+  };
+
+  fn next(const int bytes) -> adr! {
+    const let last = my.cursor;
+    if bytes < 0
+      return res.reject::<adr>("Negative byte count");
+    if last + bytes > my.end
+      return res.reject::<adr>("End of Buffer");
+    my.cursor = my.cursor + bytes; 
+    return last;
+  };
+
+  fn write_bytes(immutable adr source, const int bytes) -> bool {
+    if bytes < 0 return false;
+    const adr next_cursor = my.cursor + bytes;
+    if next_cursor > my.end return false;
+    af_memcpy(my.cursor, source, bytes);
+    my.cursor = next_cursor;
+    return true;
+  };
+
+  // Zero-fill existing buffer space without allocating. On failure the cursor
+  // and buffer contents are unchanged.
+  fn zfill(const int bytes) -> bool {
+    if bytes < 0 return false;
+    if my.cursor + bytes > my.end return false;
+    mutable adr write = my.cursor;
+    const adr stop = write + bytes;
+    while write < stop {
+      write =: '\0';
+      write = write + 1;
+    };
+    my.cursor = stop;
+    return true;
+  };
+
+  fn get() -> loan adr {
+    return my.buffer;
+  };
+
+  sink fn release() -> adr {
+    const let buff = my.buffer;
+    my.buffer = NULL;
+    return buff;
+  };
+
+  fn del() {
+    if my.buffer != NULL {
+      af_free(my.buffer);
+    }
+  }
 };
 
 

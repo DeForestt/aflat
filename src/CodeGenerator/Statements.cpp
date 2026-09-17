@@ -269,6 +269,9 @@ asmc::File gen::CodeGenerator::GenSTMT(ast::Statement *STMT) {
               if (auto *sym =
                       scope::ScopeManager::getInstance()->get(tempName)) {
                 sym->owned = expr.owned;
+                sym->needsDrop = expr.needsDrop;
+                sym->storageOrigin = expr.storageOrigin;
+                sym->storageScope = expr.storageScope;
               }
               auto *mov = new asmc::Mov();
               mov->logicalLine = logicalLine();

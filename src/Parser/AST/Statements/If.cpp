@@ -77,6 +77,8 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
   asmc::File file;
   auto *scope = gen::scope::ScopeManager::getInstance();
   scope->pushScope(false);
+  generator.beginStackCleanupFrame();
+  file << generator.emitStackCleanupHeadReset();
 
   asmc::Label *label1 = new asmc::Label();
   label1->logicalLine = this->logicalLine;
@@ -126,6 +128,8 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
     asmc::Jmp *jmp = new asmc::Jmp();
     jmp->logicalLine = this->logicalLine;
     jmp->to = end->label;
+    file << generator.emitStackCleanups();
+    generator.endStackCleanupFrame();
     scope->popScope(&generator, file);
     const auto thenOwnership = scope->captureOwnershipState();
     scope->restoreOwnershipState(incomingOwnership);
@@ -133,7 +137,11 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
     file.text << label1;
 
     scope->pushScope(true);
+    generator.beginStackCleanupFrame();
+    file << generator.emitStackCleanupHeadReset();
     file << generator.GenSTMT(this->elseStatement);
+    file << generator.emitStackCleanups();
+    generator.endStackCleanupFrame();
     scope->popScope(&generator, file);
     const auto elseOwnership = scope->captureOwnershipState();
     const bool thenReturns = definitelyReturns(this->statement);
@@ -148,6 +156,8 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
       scope->mergeOwnershipStates(thenOwnership, elseOwnership);
     file.text << end;
   } else {
+    file << generator.emitStackCleanups();
+    generator.endStackCleanupFrame();
     scope->popScope(&generator, file);
     const auto thenOwnership = scope->captureOwnershipState();
     if (definitelyReturns(this->statement))

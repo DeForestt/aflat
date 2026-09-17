@@ -321,6 +321,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         type.arraySize = classInstanceByteSize(*this, cl);
         int bMod =
             gen::scope::ScopeManager::getInstance()->assign("", type, false);
+        StackCleanup cleanup{};
+        if (cl->nameTable["del"] != nullptr)
+          cleanup = registerStackCleanup(bMod);
 
         //
         asmc::Lea *lea = new asmc::Lea();
@@ -367,6 +370,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           savePointer->to = "-" + std::to_string(returnSlot) + "(%rbp)";
           OutputFile.text << savePointer;
           this->GenExpr(callInit, OutputFile);
+          auto restoreArgument = new asmc::Pop();
+          restoreArgument->logicalLine = logicalLine();
+          restoreArgument->op = intArgs()[0].get(asmc::QWord);
+          OutputFile.text << restoreArgument;
           auto restore = new asmc::Mov();
           restore->logicalLine = logicalLine();
           restore->size = asmc::QWord;
@@ -377,7 +384,19 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           output.size = asmc::QWord;
           output.type = cl->Ident;
           output.owned = false;
+          output.needsDrop = true;
+          output.storageOrigin = StorageOrigin::Stack;
+          output.storageScope =
+              gen::scope::ScopeManager::getInstance()->currentScope();
         }
+        // Direct class construction uses storage in this function's frame.
+        // It must run the class destructor at scope exit but must never free
+        // the address of that storage.
+        output.needsDrop = true;
+        output.storageOrigin = StorageOrigin::Stack;
+        output.storageScope =
+            gen::scope::ScopeManager::getInstance()->currentScope();
+        OutputFile << emitStackCleanupRegistration(cleanup, cl->Ident);
       } else {
         alert("Class " + call->ident + " not found", true, __FILE__, __LINE__);
       }
@@ -650,6 +669,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.op = sym.type.opType;
         output.type = sym.type.typeName;
         output.owned = sym.owned;
+        output.needsDrop = sym.needsDrop;
+        output.storageOrigin = sym.storageOrigin;
+        output.storageScope = sym.storageScope;
+        // A normal read of a stack-backed local is a borrow. Its original
+        // binding remains responsible for running del at scope exit; copying
+        // that drop obligation into another local would double-destroy it.
+        if (output.storageOrigin == StorageOrigin::Stack && !var.selling)
+          output.needsDrop = false;
         output.transferable = var.selling && sym.owned;
         output.transferExplicit = output.transferable;
         output.loanScope = sym.loanScope;
@@ -1459,9 +1486,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           cmp->op = asmc::Float;
         }
 
-        asmc::Setl *setl = new asmc::Setl();
-        setl->logicalLine = logicalLine();
-        setl->op = registers()["%rax"]->get(asmc::Byte);
+        asmc::Instruction *setl;
+        if (expr1.op == asmc::Float) {
+          auto *instruction = new asmc::Setb();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setl = instruction;
+        } else {
+          auto *instruction = new asmc::Setl();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setl = instruction;
+        }
 
         OutputFile.text << cmp;
         OutputFile.text << setl;
@@ -1486,9 +1522,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           cmp->op = asmc::Float;
         }
 
-        asmc::Setg *setg = new asmc::Setg();
-        setg->logicalLine = logicalLine();
-        setg->op = registers()["%rax"]->get(asmc::Byte);
+        asmc::Instruction *setg;
+        if (expr1.op == asmc::Float) {
+          auto *instruction = new asmc::Seta();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setg = instruction;
+        } else {
+          auto *instruction = new asmc::Setg();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setg = instruction;
+        }
 
         OutputFile.text << cmp;
         OutputFile.text << setg;
@@ -1513,9 +1558,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           cmp->op = asmc::Float;
         }
 
-        asmc::Setle *setle = new asmc::Setle();
-        setle->logicalLine = logicalLine();
-        setle->op = registers()["%rax"]->get(asmc::Byte);
+        asmc::Instruction *setle;
+        if (expr1.op == asmc::Float) {
+          auto *instruction = new asmc::Setbe();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setle = instruction;
+        } else {
+          auto *instruction = new asmc::Setle();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setle = instruction;
+        }
 
         OutputFile.text << cmp;
         OutputFile.text << setle;
@@ -1540,9 +1594,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           cmp->op = asmc::Float;
         }
 
-        asmc::Setge *setge = new asmc::Setge();
-        setge->logicalLine = logicalLine();
-        setge->op = registers()["%rax"]->get(asmc::Byte);
+        asmc::Instruction *setge;
+        if (expr1.op == asmc::Float) {
+          auto *instruction = new asmc::Setae();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setge = instruction;
+        } else {
+          auto *instruction = new asmc::Setge();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setge = instruction;
+        }
 
         OutputFile.text << cmp;
         OutputFile.text << setge;
@@ -1675,6 +1738,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.size = asmc::QWord;
     output.type = typeName;
     output.owned = true;
+    output.needsDrop = true;
+    output.storageOrigin = StorageOrigin::Heap;
+    output.storageScope =
+        gen::scope::ScopeManager::getInstance()->currentScope();
     output.transferable = true;
   } else if (dynamic_cast<ast::NewExpr *>(expr) != nullptr) {
     ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);
@@ -1764,6 +1831,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       mov->from = registers()["%eax"]->get(asmc::QWord);
       OutputFile.text << mov;
       gen::Expr afterInit = this->GenExpr(callInit, OutputFile);
+      auto restoreArgument = new asmc::Pop();
+      restoreArgument->logicalLine = logicalLine();
+      restoreArgument->op = registers()["%rdi"]->get(asmc::QWord);
+      OutputFile.text << restoreArgument;
       output.access = afterInit.access;
       output.size = asmc::QWord;
       output.type = newExpr.type.typeName;

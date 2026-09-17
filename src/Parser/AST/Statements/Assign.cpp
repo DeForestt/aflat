@@ -375,6 +375,9 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   }
   const bool targetOwnsValue = expr.owned && !symbol->type.isLoan;
   fin->owned = targetOwnsValue;
+  fin->needsDrop = expr.needsDrop && !symbol->type.isLoan;
+  fin->storageOrigin = expr.storageOrigin;
+  fin->storageScope = expr.storageScope;
   fin->sold = -1;
   // Field symbols are shared class-layout metadata, not per-instance runtime
   // bindings. Do not leak assignment ownership state into other methods or
@@ -391,6 +394,9 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
     }
     if (liveBinding != nullptr) {
       liveBinding->owned = targetOwnsValue;
+      liveBinding->needsDrop = expr.needsDrop && !symbol->type.isLoan;
+      liveBinding->storageOrigin = expr.storageOrigin;
+      liveBinding->storageScope = expr.storageScope;
       liveBinding->sold = -1;
     }
   }

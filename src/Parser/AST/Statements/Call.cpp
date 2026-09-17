@@ -1239,6 +1239,7 @@ gen::GenerationResult Call::generateAttempt(
       pushArg->logicalLine = this->logicalLine;
 
       pushArg->op = generator.intArgs()[argsCounter].get(asmc::QWord);
+      stack << pushArg->op;
 
       file.text << pushArg;
 

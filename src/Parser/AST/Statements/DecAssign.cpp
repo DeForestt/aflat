@@ -173,6 +173,9 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       file.text << mov2;
       file.text << mov;
       s->owned = expr.owned && !dec->type.isLoan;
+      s->needsDrop = expr.needsDrop && !dec->type.isLoan;
+      s->storageOrigin = expr.storageOrigin;
+      s->storageScope = expr.storageScope;
       if (expr.loanProvenance != gen::LoanProvenance::None) {
         s->loanProvenance = expr.loanProvenance;
         s->loanScope = expr.loanScope;

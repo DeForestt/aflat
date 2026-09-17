@@ -201,6 +201,11 @@ struct gen::CodeGenerator::Impl {
   std::filesystem::path cwd;
   links::LinkedList<std::string> breakContext;
   links::LinkedList<std::string> continueContext;
+  struct StackCleanupFrame {
+    int headOffset = 0;
+    std::vector<StackCleanup> cleanups;
+  };
+  std::vector<StackCleanupFrame> stackCleanupFrames;
 };
 
 bool gen::CodeGenerator::traceAlert = false;
@@ -457,6 +462,164 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
 }
 
 bool gen::CodeGenerator::hasError() const { return impl->errorFlag; }
+
+void gen::CodeGenerator::beginStackCleanupFrame() {
+  Impl::StackCleanupFrame frame;
+  ast::Type headType("adr", asmc::QWord);
+  frame.headOffset =
+      gen::scope::ScopeManager::getInstance()->assign("", headType, false);
+  impl->stackCleanupFrames.push_back(std::move(frame));
+}
+
+std::vector<gen::CodeGenerator::StackCleanup>
+gen::CodeGenerator::endStackCleanupFrame() {
+  if (impl->stackCleanupFrames.empty())
+    return {};
+  auto cleanups = std::move(impl->stackCleanupFrames.back().cleanups);
+  impl->stackCleanupFrames.pop_back();
+  return cleanups;
+}
+
+gen::CodeGenerator::StackCleanup
+gen::CodeGenerator::registerStackCleanup(int objectOffset) {
+  if (impl->stackCleanupFrames.empty())
+    return {};
+  auto &frame = impl->stackCleanupFrames.back();
+  ast::Type nodeType;
+  nodeType.typeName = "byte";
+  nodeType.size = asmc::Byte;
+  nodeType.arraySize = 24; // next entry, object address, destructor address
+  const int nodeOffset =
+      gen::scope::ScopeManager::getInstance()->assign("", nodeType, false);
+  StackCleanup cleanup{objectOffset, nodeOffset};
+  frame.cleanups.push_back(cleanup);
+  return cleanup;
+}
+
+asmc::File
+gen::CodeGenerator::emitStackCleanupRegistration(const StackCleanup &cleanup,
+                                                 const std::string &typeName) {
+  asmc::File file;
+  if (cleanup.nodeOffset == 0 || impl->stackCleanupFrames.empty())
+    return file;
+  auto **entry = impl->typeList[typeName];
+  auto *cls = entry == nullptr ? nullptr : dynamic_cast<gen::Class *>(*entry);
+  if (cls == nullptr || cls->nameTable["del"] == nullptr)
+    return file;
+  auto *destructor = cls->nameTable["del"];
+  const std::string scopeName =
+      destructor->scopeName != "global" ? destructor->scopeName : typeName;
+  const int headOffset = impl->stackCleanupFrames.back().headOffset;
+  const std::string rax = registers()["%rax"]->get(asmc::QWord);
+  const std::string rcx = registers()["%rcx"]->get(asmc::QWord);
+
+  auto emitLea = [&](const std::string &from, const std::string &to) {
+    auto *instruction = new asmc::Lea();
+    instruction->logicalLine = logicalLine();
+    instruction->from = from;
+    instruction->to = to;
+    file.text << instruction;
+  };
+  auto emitMov = [&](const std::string &from, const std::string &to) {
+    auto *instruction = new asmc::Mov();
+    instruction->logicalLine = logicalLine();
+    instruction->from = from;
+    instruction->to = to;
+    instruction->size = asmc::QWord;
+    file.text << instruction;
+  };
+
+  emitLea("-" + std::to_string(cleanup.nodeOffset) + "(%rbp)", rax);
+  emitMov("-" + std::to_string(headOffset) + "(%rbp)", rcx);
+  emitMov(rcx, "(" + rax + ")");
+  emitLea("-" + std::to_string(cleanup.objectOffset) + "(%rbp)", rcx);
+  emitMov(rcx, "8(" + rax + ")");
+  emitLea("pub_" + scopeName + "_" + destructor->ident.ident + "(%rip)", rcx);
+  emitMov(rcx, "16(" + rax + ")");
+  emitMov(rax, "-" + std::to_string(headOffset) + "(%rbp)");
+  // Registration needs %rax for the cleanup node, but a direct constructor's
+  // expression value is the object address in %rax. Restore it before the
+  // caller binds or passes the constructed object.
+  emitLea("-" + std::to_string(cleanup.objectOffset) + "(%rbp)", rax);
+  return file;
+}
+
+asmc::File gen::CodeGenerator::emitStackCleanupHeadReset() {
+  asmc::File file;
+  if (impl->stackCleanupFrames.empty())
+    return file;
+  auto *clear = new asmc::Mov();
+  clear->logicalLine = logicalLine();
+  clear->from = "$0";
+  clear->to = "-" + std::to_string(impl->stackCleanupFrames.back().headOffset) +
+              "(%rbp)";
+  clear->size = asmc::QWord;
+  file.text << clear;
+  return file;
+}
+
+int gen::CodeGenerator::stackCleanupHeadOffset() const {
+  return impl->stackCleanupFrames.empty()
+             ? 0
+             : impl->stackCleanupFrames.back().headOffset;
+}
+
+asmc::File gen::CodeGenerator::emitStackCleanups() {
+  asmc::File file;
+  if (impl->stackCleanupFrames.empty() ||
+      impl->stackCleanupFrames.back().cleanups.empty())
+    return file;
+  const int headOffset = impl->stackCleanupFrames.back().headOffset;
+  const std::string loop = ".stack_cleanup_" + std::to_string(labelCount()++);
+  const std::string done = ".stack_cleanup_" + std::to_string(labelCount()++);
+  const std::string rax = registers()["%rax"]->get(asmc::QWord);
+  const std::string rcx = registers()["%rcx"]->get(asmc::QWord);
+  const std::string rdi = registers()["%rdi"]->get(asmc::QWord);
+  auto *start = new asmc::Label();
+  start->logicalLine = logicalLine();
+  start->label = loop;
+  file.text << start;
+  auto *loadHead = new asmc::Mov();
+  loadHead->logicalLine = logicalLine();
+  loadHead->from = "-" + std::to_string(headOffset) + "(%rbp)";
+  loadHead->to = rax;
+  loadHead->size = asmc::QWord;
+  file.text << loadHead;
+  auto *cmp = new asmc::Cmp();
+  cmp->logicalLine = logicalLine();
+  cmp->from = "$0";
+  cmp->to = rax;
+  cmp->size = asmc::QWord;
+  file.text << cmp;
+  auto *exit = new asmc::Je();
+  exit->logicalLine = logicalLine();
+  exit->to = done;
+  file.text << exit;
+  auto emitMov = [&](const std::string &from, const std::string &to) {
+    auto *instruction = new asmc::Mov();
+    instruction->logicalLine = logicalLine();
+    instruction->from = from;
+    instruction->to = to;
+    instruction->size = asmc::QWord;
+    file.text << instruction;
+  };
+  emitMov("(" + rax + ")", rcx);
+  emitMov(rcx, "-" + std::to_string(headOffset) + "(%rbp)");
+  emitMov("8(" + rax + ")", rdi);
+  auto *call = new asmc::Call();
+  call->logicalLine = logicalLine();
+  call->function = "*16(" + rax + ")";
+  file.text << call;
+  auto *jump = new asmc::Jmp();
+  jump->logicalLine = logicalLine();
+  jump->to = loop;
+  file.text << jump;
+  auto *finish = new asmc::Label();
+  finish->logicalLine = logicalLine();
+  finish->label = done;
+  file.text << finish;
+  return file;
+}
 
 std::string gen::CodeGenerator::InferExprType(ast::Expr *expr) {
   struct RestoreInferenceFlags {
@@ -1134,6 +1297,11 @@ bool gen::CodeGenerator::whenSatisfied(const ast::When &when) {
 
 bool gen::CodeGenerator::validateLoanAssignment(gen::Expr expr,
                                                 const gen::Symbol &sym) {
+  // Direct stack construction is retained by the enclosing function's typed
+  // cleanup registry, so references to those frame slots may cross lexical
+  // block boundaries within that function.
+  if (expr.storageOrigin == StorageOrigin::Stack)
+    return true;
   if (sym.loanProvenance != gen::LoanProvenance::Lexical ||
       parse::PRIMITIVE_TYPES.count(expr.type) != 0 || expr.owned ||
       expr.loanProvenance != gen::LoanProvenance::Lexical)

@@ -11,8 +11,9 @@ asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
   if (sym.sold != -1 || sym.returned)
     return nullptr;
 
-  // only owned symbols require clean up
-  if (!sym.owned)
+  // Heap values require ownership to be released. Stack-constructed values
+  // still require their destructor, but never an af_free of stack storage.
+  if (!sym.owned && !sym.needsDrop)
     return nullptr;
 
   // primitives do not need to be cleaned up
@@ -84,6 +85,12 @@ asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
     return file;
   };
 
+  const bool stackObject = sym.storageOrigin == StorageOrigin::Stack;
+  // Direct constructors register their stack slots with the enclosing
+  // function. That registry owns the one eventual del call.
+  if (stackObject)
+    return nullptr;
+
   if (!(*type)->uniqueType) {
     auto classType = dynamic_cast<Class *>(*type);
     if (classType == nullptr)
@@ -109,7 +116,7 @@ asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
     }
   }
 
-  if (nameTable()["af_free"] != nullptr) {
+  if (!stackObject && nameTable()["af_free"] != nullptr) {
     auto freeFile = emitObjectCleanup("af_free");
     *file << *freeFile;
     delete freeFile;

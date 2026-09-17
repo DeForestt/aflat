@@ -97,6 +97,14 @@ std::string asmc::Setl::toString() { return "\tsetl\t" + this->op + "\n"; }
 
 std::string asmc::Setle::toString() { return "\tsetle\t" + this->op + "\n"; }
 
+std::string asmc::Setb::toString() { return "\tsetb\t" + this->op + "\n"; }
+
+std::string asmc::Setbe::toString() { return "\tsetbe\t" + this->op + "\n"; }
+
+std::string asmc::Seta::toString() { return "\tseta\t" + this->op + "\n"; }
+
+std::string asmc::Setae::toString() { return "\tsetae\t" + this->op + "\n"; }
+
 std::string asmc::LinkTask::toString() {
   return "." + this->command + "\t" + this->operand + "\n";
 }

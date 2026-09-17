@@ -61,6 +61,8 @@ ForEach::ForEach(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser,
 gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
   asmc::File file;
   gen::scope::ScopeManager::getInstance()->pushScope(true);
+  generator.beginStackCleanupFrame();
+  file << generator.emitStackCleanupHeadReset();
   generator.logicalLine() = this->logicalLine;
 
   auto decl = new ast::DecAssign();
@@ -200,6 +202,8 @@ gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
   forLoop->Run = someBody;
   file << forLoop->generate(generator).file;
 
+  file << generator.emitStackCleanups();
+  generator.endStackCleanupFrame();
   gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
 
   return {

@@ -13,6 +13,12 @@ enum class LoanProvenance {
   Unknown,
 };
 
+// Ownership answers who may transfer or free a value. Storage origin answers
+// whether the value's object allocation itself may be freed. Stack-constructed
+// values still need their destructor, but their backing storage belongs to the
+// current stack frame.
+enum class StorageOrigin { Unknown, Heap, Stack };
+
 class Expr {
 public:
   asmc::OpType op = asmc::Hard;
@@ -21,6 +27,9 @@ public:
   asmc::Size size;
   bool passable = true;
   bool owned = false;
+  bool needsDrop = false;
+  StorageOrigin storageOrigin = StorageOrigin::Unknown;
+  scope::ScopeId storageScope = 0;
   // True when this expression is an owned value that may be transferred.
   // Owned variables remain lvalues until they are explicitly sold.
   bool transferable = false;
