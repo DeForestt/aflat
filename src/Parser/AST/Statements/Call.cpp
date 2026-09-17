@@ -878,8 +878,8 @@ gen::GenerationResult Call::generateAttempt(
     saveReceiver->to = "-" + std::to_string(hiddenReceiverSlot) + "(%rbp)";
     file.text << saveReceiver;
   }
-  if (hasHiddenReceiver && !returnsLocal)
-    argsCounter = 1;
+  if (hasHiddenReceiver)
+    argsCounter++;
 
   if (func == nullptr) {
     generator.alert("Cannot Find Function: " + ident + allMods, true, __FILE__,
