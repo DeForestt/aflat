@@ -55,6 +55,7 @@ public:
   StorageOrigin storageOrigin = StorageOrigin::Unknown;
   scope::ScopeId storageScope = 0;
   int stackObjectOffset = 0;
+  int stackCleanupNodeOffset = 0;
   bool local = false;
   scope::ScopeId declarationScope = 0;
   LoanProvenance loanProvenance = LoanProvenance::Lexical;

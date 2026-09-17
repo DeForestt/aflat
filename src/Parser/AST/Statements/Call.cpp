@@ -1473,6 +1473,7 @@ gen::GenerationResult Call::generateAttempt(
     result.storageScope =
         gen::scope::ScopeManager::getInstance()->currentScope();
     result.stackObjectOffset = localReturnStorageOffset;
+    result.stackCleanupNodeOffset = localReturnCleanup.nodeOffset;
   }
   if ((func->returnLowOwnership || func->returnPayloadLoan ||
        containsLoanedUnionPayload(generator, result.type)) &&

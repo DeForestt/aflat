@@ -463,6 +463,26 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
         bytes);
 
     generator.suppressStackCleanup(from.stackObjectOffset);
+    // A direct stack construction registered its cleanup eagerly in the
+    // frame's runtime linked list. Removing it from the compile-time list is
+    // not enough: when this value is moved into the caller's destination,
+    // unlink its (latest) node so later frame cleanup cannot destroy memory
+    // that has escaped to the caller.
+    if (from.stackCleanupNodeOffset != 0) {
+      auto *next = new asmc::Mov();
+      next->logicalLine = this->logicalLine;
+      next->size = asmc::QWord;
+      next->from = "-" + std::to_string(from.stackCleanupNodeOffset) + "(%rbp)";
+      next->to = generator.registers()["%rax"]->get(asmc::QWord);
+      file.text << next;
+      auto *unlink = new asmc::Mov();
+      unlink->logicalLine = this->logicalLine;
+      unlink->size = asmc::QWord;
+      unlink->from = generator.registers()["%rax"]->get(asmc::QWord);
+      unlink->to =
+          "-" + std::to_string(generator.stackCleanupHeadOffset()) + "(%rbp)";
+      file.text << unlink;
+    }
     file << generator.emitStackCleanups();
     gen::scope::ScopeManager::getInstance()->softPop(&generator, file);
     auto *returnDestination = new asmc::Mov();
