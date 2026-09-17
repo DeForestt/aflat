@@ -265,6 +265,7 @@ gen::GenerationResult Call::generateAttempt(
     dst.returnImmutable = src.returnImmutable;
     dst.returnLowOwnership = src.returnLowOwnership;
     dst.returnPayloadLoan = src.returnPayloadLoan;
+    dst.returnsLocal = src.returnsLocal;
   };
 
   auto file = asmc::File();
@@ -855,11 +856,16 @@ gen::GenerationResult Call::generateAttempt(
     mod = "";
   }
 
+  const bool returnsLocal = func != nullptr && func->returnsLocal;
+
   asmc::Push *push = new asmc::Push();
   push->logicalLine = this->logicalLine;
   push->op = generator.registers()["%rdx"]->get(asmc::QWord);
   file.text << push;
   stack << push->op;
+
+  if (returnsLocal)
+    argsCounter = 1;
 
   if (hasHiddenReceiver) {
     ast::Type receiverType("adr", asmc::QWord);
@@ -872,13 +878,51 @@ gen::GenerationResult Call::generateAttempt(
     saveReceiver->to = "-" + std::to_string(hiddenReceiverSlot) + "(%rbp)";
     file.text << saveReceiver;
   }
-  if (hasHiddenReceiver) {
+  if (hasHiddenReceiver && !returnsLocal)
     argsCounter = 1;
-  }
 
   if (func == nullptr) {
     generator.alert("Cannot Find Function: " + ident + allMods, true, __FILE__,
                     __LINE__);
+  }
+
+  int localReturnDestinationSlot = -1;
+  int localReturnStorageOffset = -1;
+  gen::CodeGenerator::StackCleanup localReturnCleanup{};
+  if (returnsLocal) {
+    auto **entry = generator.typeList()[func->type.typeName];
+    auto *objectType = entry == nullptr ? nullptr : *entry;
+    auto *classType = dynamic_cast<gen::Class *>(objectType);
+    int bytes = classType != nullptr
+                    ? classType->instanceSize
+                    : (objectType == nullptr ? 0 : objectType->size);
+    if (bytes <= 0)
+      generator.alert("cannot determine local return storage size for " +
+                          func->type.typeName,
+                      true, __FILE__, __LINE__);
+    ast::Type storageType(func->type.typeName, asmc::Byte);
+    storageType.arraySize = bytes;
+    localReturnStorageOffset = gen::scope::ScopeManager::getInstance()->assign(
+        "", storageType, false, false);
+    if (classType != nullptr && classType->nameTable["del"] != nullptr)
+      localReturnCleanup =
+          generator.registerStackCleanup(localReturnStorageOffset);
+    localReturnDestinationSlot =
+        gen::scope::ScopeManager::getInstance()->assign(
+            "", ast::Type("adr", asmc::QWord), false, false);
+    auto *destination = new asmc::Lea();
+    destination->logicalLine = this->logicalLine;
+    destination->from =
+        "-" + std::to_string(localReturnStorageOffset) + "(%rbp)";
+    destination->to = generator.registers()["%rax"]->get(asmc::QWord);
+    file.text << destination;
+    auto *saveDestination = new asmc::Mov();
+    saveDestination->logicalLine = this->logicalLine;
+    saveDestination->size = asmc::QWord;
+    saveDestination->from = generator.registers()["%rax"]->get(asmc::QWord);
+    saveDestination->to =
+        "-" + std::to_string(localReturnDestinationSlot) + "(%rbp)";
+    file.text << saveDestination;
   }
 
   if (func->scope == ast::Private && func->scopeName != "global") {
@@ -895,7 +939,6 @@ gen::GenerationResult Call::generateAttempt(
   this->Args.reset();
 
   links::LinkedList<ast::Expr *> args;
-  std::vector<asmc::Instruction *> overflowArgs;
   struct SavedArg {
     int index;
     asmc::Size size;
@@ -903,6 +946,7 @@ gen::GenerationResult Call::generateAttempt(
     std::string access;
   };
   std::vector<SavedArg> savedArgs;
+  int defaultStackArguments = 0;
   int i = 0;
   const int implicitArgOffset = hiddenReceiverConsumesParameter ? 1 : 0;
   if (this->Args.trail() + implicitArgOffset < func->req)
@@ -1102,7 +1146,13 @@ gen::GenerationResult Call::generateAttempt(
                 "references ar considered to be borrowed from the stack)");
       }
     }
-    if (exp.requiresImmutableBinding) {
+    // Scalars are passed by value, so an immutable result can safely be
+    // copied into an ordinary scalar parameter.  The immutable-binding rule
+    // protects object/reference lifetimes; applying it to primitives makes a
+    // nested call such as echo(add(1.25, 2.25)) spuriously retry overloads.
+    const bool passesPrimitiveByValue =
+        parse::PRIMITIVE_TYPES.find(exp.type) != parse::PRIMITIVE_TYPES.end();
+    if (exp.requiresImmutableBinding && !passesPrimitiveByValue) {
       bool paramImmutable = false;
       if (checkArgs && paramIndex < func->readOnly.size()) {
         paramImmutable = func->readOnly[paramIndex];
@@ -1197,7 +1247,12 @@ gen::GenerationResult Call::generateAttempt(
     file.text << saveArg;
     savedArgs.push_back({argsCounter, exp.size, exp.op,
                          "-" + std::to_string(savedArgSlot) + "(%rbp)"});
-    if (exp.op == asmc::Float) {
+    // The argument value is saved above before any register is reused.  Only
+    // the first six arguments have a destination register; overflow values
+    // are marshalled onto the outgoing stack after every expression has been
+    // evaluated.
+    if (argsCounter < static_cast<int>(generator.intArgs().size()) &&
+        exp.op == asmc::Float) {
       ast::Type fl = ast::Type();
       fl.typeName = "float";
       fl.size = asmc::DWord;
@@ -1249,7 +1304,7 @@ gen::GenerationResult Call::generateAttempt(
       mov4->from = generator.registers()["%eax"]->get(asmc::DWord);
       mov4->to = generator.intArgs()[argsCounter].get(asmc::DWord);
       file.text << mov4;
-    } else {
+    } else if (argsCounter < static_cast<int>(generator.intArgs().size())) {
       asmc::Mov *mov = new asmc::Mov();
       mov->logicalLine = this->logicalLine;
       asmc::Mov *mov2 = new asmc::Mov();
@@ -1281,20 +1336,67 @@ gen::GenerationResult Call::generateAttempt(
     argsUsed--;
 
   while (argsUsed < func->argTypes.size()) {
-    // if the argument is a float, we need to push a float
-    asmc::Mov *move = new asmc::Mov();
-    move->logicalLine = this->logicalLine;
-    move->size = asmc::QWord;
-    move->from = "$0";
-    move->to = generator.intArgs()[argsCounter].get(asmc::QWord);
+    if (argsCounter < static_cast<int>(generator.intArgs().size())) {
+      auto *move = new asmc::Mov();
+      move->logicalLine = this->logicalLine;
+      move->size = asmc::QWord;
+      move->from = "$0";
+      move->to = generator.intArgs()[argsCounter].get(asmc::QWord);
+      file.text << move;
+    } else {
+      ++defaultStackArguments;
+    }
     argsCounter++;
     argsUsed++;
-    file.text << move;
   }
 
-  // add the overflow arguments
-  for (auto inst : overflowArgs) {
-    file.text << inst;
+  const int outgoingStackArguments =
+      std::max(0, argsCounter - static_cast<int>(generator.intArgs().size()));
+  const int preservedStackSlots = stack.count;
+  // Generated function frames leave %rsp 8 bytes off a 16-byte boundary.
+  // Account for both the pre-existing preservation pushes and the outgoing
+  // arguments so %rsp is 16-byte aligned immediately before `call`.
+  // Preserve the established register-only call sequence. Stack-argument
+  // calls need an explicit alignment calculation because their new outgoing
+  // area changes %rsp immediately before the call.
+  const bool needsAlignmentPadding =
+      outgoingStackArguments != 0 &&
+      (preservedStackSlots + outgoingStackArguments) % 2 == 0;
+  if (needsAlignmentPadding) {
+    auto *pad = new asmc::Subq();
+    pad->logicalLine = this->logicalLine;
+    pad->op1 = "$8";
+    pad->op2 = "%rsp";
+    file.text << pad;
+  }
+
+  // Defaults are the highest-numbered arguments, so they must be pushed
+  // first.  This leaves argument six at the top of the outgoing area, where
+  // the callee reads it from 16(%rbp).
+  for (int index = 0; index < defaultStackArguments; ++index) {
+    auto *push = new asmc::Push();
+    push->logicalLine = this->logicalLine;
+    push->op = "$0";
+    file.text << push;
+  }
+  for (auto savedArg = savedArgs.rbegin(); savedArg != savedArgs.rend();
+       ++savedArg) {
+    if (savedArg->index < static_cast<int>(generator.intArgs().size()))
+      continue;
+    auto *load = new asmc::Mov();
+    load->logicalLine = this->logicalLine;
+    load->size = savedArg->size;
+    // Floating values use the compiler's existing integer bit-pattern ABI at
+    // function boundaries; load their bits through %rax before pushing.
+    load->op = asmc::Hard;
+    load->from = savedArg->access;
+    load->to = generator.registers()["%rax"]->get(savedArg->size);
+    file.text << load;
+
+    auto *push = new asmc::Push();
+    push->logicalLine = this->logicalLine;
+    push->op = generator.registers()["%rax"]->get(asmc::QWord);
+    file.text << push;
   }
 
   for (const auto &savedArg : savedArgs) {
@@ -1317,8 +1419,22 @@ gen::GenerationResult Call::generateAttempt(
     restoreReceiver->logicalLine = this->logicalLine;
     restoreReceiver->size = asmc::QWord;
     restoreReceiver->from = "-" + std::to_string(hiddenReceiverSlot) + "(%rbp)";
-    restoreReceiver->to = generator.registers()["%rdi"]->get(asmc::QWord);
+    restoreReceiver->to =
+        generator.intArgs()[returnsLocal ? 1 : 0].get(asmc::QWord);
     file.text << restoreReceiver;
+  }
+
+  if (returnsLocal) {
+    auto *restoreDestination = new asmc::Mov();
+    restoreDestination->logicalLine = this->logicalLine;
+    restoreDestination->size = asmc::QWord;
+    restoreDestination->from =
+        "-" + std::to_string(localReturnDestinationSlot) + "(%rbp)";
+    restoreDestination->to = generator.registers()["%rdi"]->get(asmc::QWord);
+    file.text << restoreDestination;
+    if (localReturnCleanup.objectOffset != 0)
+      file << generator.emitStackCleanupRegistration(localReturnCleanup,
+                                                     func->type.typeName);
   }
 
   // this->Args = args;
@@ -1328,6 +1444,16 @@ gen::GenerationResult Call::generateAttempt(
 
   calls->function = mod + func->ident.ident;
   file.text << calls;
+  const int outgoingStackBytes =
+      outgoingStackArguments * 8 + (needsAlignmentPadding ? 8 : 0);
+  if (outgoingStackBytes != 0) {
+    auto *cleanup = new asmc::Add();
+    cleanup->logicalLine = this->logicalLine;
+    cleanup->op1 = "$" + std::to_string(outgoingStackBytes);
+    cleanup->op2 = "%rsp";
+    cleanup->size = asmc::QWord;
+    file.text << cleanup;
+  }
   // push everything back on the stack
   while (stack.count > 0) {
     asmc::Pop *pop = new asmc::Pop();
@@ -1338,6 +1464,16 @@ gen::GenerationResult Call::generateAttempt(
   generator.intArgsCounter() = 0;
 
   auto result = func->toExpr(generator);
+  if (returnsLocal) {
+    result.access = generator.registers()["%rax"]->get(asmc::QWord);
+    result.size = asmc::QWord;
+    result.owned = false;
+    result.needsDrop = localReturnCleanup.objectOffset != 0;
+    result.storageOrigin = gen::StorageOrigin::Stack;
+    result.storageScope =
+        gen::scope::ScopeManager::getInstance()->currentScope();
+    result.stackObjectOffset = localReturnStorageOffset;
+  }
   if ((func->returnLowOwnership || func->returnPayloadLoan ||
        containsLoanedUnionPayload(generator, result.type)) &&
       returnedLoanProvenance != gen::LoanProvenance::None) {

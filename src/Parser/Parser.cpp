@@ -760,6 +760,7 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
             output = new ast::Function(ident.meta, scope, type, overload,
                                        scopeName, tokens, parser, optional,
                                        safeType, sinkFunction);
+            dynamic_cast<ast::Function *>(output)->returnsLocal = localField;
             output->logicalLine = obj.lineCount;
             output->when = whenClause;
           } else if (sym.Sym == '=') {

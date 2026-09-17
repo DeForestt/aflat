@@ -104,7 +104,10 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       if (inferredDeclaration)
         generator.reportInferredType(dec->ident, dec->type, this->logicalLine);
 
-      if (expr.requiresImmutableBinding && !this->declare->readOnly) {
+      const bool inferredPrimitive = parse::PRIMITIVE_TYPES.find(expr.type) !=
+                                     parse::PRIMITIVE_TYPES.end();
+      if (expr.requiresImmutableBinding && !inferredPrimitive &&
+          !this->declare->readOnly) {
         auto source = expr.immutableBindingSource.empty()
                           ? std::string("this expression")
                           : expr.immutableBindingSource;
@@ -176,6 +179,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       s->needsDrop = expr.needsDrop && !dec->type.isLoan;
       s->storageOrigin = expr.storageOrigin;
       s->storageScope = expr.storageScope;
+      s->stackObjectOffset = expr.stackObjectOffset;
       if (expr.loanProvenance != gen::LoanProvenance::None) {
         s->loanProvenance = expr.loanProvenance;
         s->loanScope = expr.loanScope;
@@ -271,7 +275,10 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
                               file);
       exp.adoptImmutableRequirement(prev);
     };
-    if (exp.requiresImmutableBinding && !this->declare->readOnly) {
+    const bool inferredPrimitive =
+        parse::PRIMITIVE_TYPES.find(exp.type) != parse::PRIMITIVE_TYPES.end();
+    if (exp.requiresImmutableBinding && !inferredPrimitive &&
+        !this->declare->readOnly) {
       auto source = exp.immutableBindingSource.empty()
                         ? std::string("this expression")
                         : exp.immutableBindingSource;

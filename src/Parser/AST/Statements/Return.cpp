@@ -404,11 +404,81 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   if (parse::PRIMITIVE_TYPES.find(from.type) == parse::PRIMITIVE_TYPES.end()) {
     if (!from.owned && from.type != "void" &&
         from.type != "--std--flex--function" &&
+        !generator.currentFunction()->returnsLocal &&
         !generator.currentFunction()->returnLowOwnership) {
       generator.alert("cannot return a non-owned reference to a type " +
                           from.type,
                       true, __FILE__, __LINE__);
     }
+  }
+
+  if (generator.currentFunction()->returnsLocal) {
+    auto *returnedVar = dynamic_cast<ast::Var *>(this->expr);
+    if (returnedVar == nullptr || returnedVar->modList.count != 0) {
+      generator.alert("a local return must return a stack-local value", true,
+                      __FILE__, __LINE__);
+    }
+    auto *returned =
+        returnedVar == nullptr
+            ? nullptr
+            : gen::scope::ScopeManager::getInstance()->get(returnedVar->Ident);
+    if (returned == nullptr ||
+        returned->storageOrigin != gen::StorageOrigin::Stack) {
+      generator.alert("a local return must return a stack allocation", true,
+                      __FILE__, __LINE__);
+    }
+
+    auto **entry = generator.typeList()[from.type];
+    auto *objectType = entry == nullptr ? nullptr : *entry;
+    auto *classType = dynamic_cast<gen::Class *>(objectType);
+    auto *unionType = dynamic_cast<gen::Union *>(objectType);
+    int bytes = objectType == nullptr ? 0 : objectType->size;
+    if (classType != nullptr)
+      bytes = classType->instanceSize;
+    if (bytes <= 0)
+      generator.alert(
+          "cannot determine the storage size of local return type " + from.type,
+          true, __FILE__, __LINE__);
+
+    if (classType != nullptr || unionType != nullptr) {
+      auto *source = new asmc::Mov();
+      source->logicalLine = this->logicalLine;
+      source->size = asmc::QWord;
+      source->from = "-" + std::to_string(returned->byteMod) + "(%rbp)";
+      source->to = generator.registers()["%rax"]->get(asmc::QWord);
+      file.text << source;
+    } else {
+      auto *source = new asmc::Lea();
+      source->logicalLine = this->logicalLine;
+      source->from = "-" + std::to_string(returned->byteMod) + "(%rbp)";
+      source->to = generator.registers()["%rax"]->get(asmc::QWord);
+      file.text << source;
+    }
+    file << generator.memMove(
+        generator.registers()["%rax"]->get(asmc::QWord),
+        "-" +
+            std::to_string(
+                generator.currentFunction()->localReturnDestinationOffset) +
+            "(%rbp)",
+        bytes);
+
+    generator.suppressStackCleanup(from.stackObjectOffset);
+    file << generator.emitStackCleanups();
+    gen::scope::ScopeManager::getInstance()->softPop(&generator, file);
+    auto *returnDestination = new asmc::Mov();
+    returnDestination->logicalLine = this->logicalLine;
+    returnDestination->size = asmc::QWord;
+    returnDestination->from =
+        "-" +
+        std::to_string(
+            generator.currentFunction()->localReturnDestinationOffset) +
+        "(%rbp)";
+    returnDestination->to = generator.registers()["%rax"]->get(asmc::QWord);
+    file.text << returnDestination;
+    auto *ret = new asmc::Return();
+    ret->logicalLine = this->logicalLine;
+    file.text << ret;
+    return {file, std::nullopt};
   }
 
   const bool hasReturnValue = from.type != "void";

@@ -396,6 +396,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.storageOrigin = StorageOrigin::Stack;
         output.storageScope =
             gen::scope::ScopeManager::getInstance()->currentScope();
+        output.stackObjectOffset = bMod;
         OutputFile << emitStackCleanupRegistration(cleanup, cl->Ident);
       } else {
         alert("Class " + call->ident + " not found", true, __FILE__, __LINE__);
@@ -672,6 +673,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.needsDrop = sym.needsDrop;
         output.storageOrigin = sym.storageOrigin;
         output.storageScope = sym.storageScope;
+        output.stackObjectOffset = sym.stackObjectOffset;
         // A normal read of a stack-backed local is a borrow. Its original
         // binding remains responsible for running del at scope exit; copying
         // that drop obligation into another local would double-destroy it.

@@ -496,6 +496,18 @@ gen::CodeGenerator::registerStackCleanup(int objectOffset) {
   return cleanup;
 }
 
+void gen::CodeGenerator::suppressStackCleanup(int objectOffset) {
+  for (auto frame = impl->stackCleanupFrames.rbegin();
+       frame != impl->stackCleanupFrames.rend(); ++frame) {
+    auto &cleanups = frame->cleanups;
+    cleanups.erase(std::remove_if(cleanups.begin(), cleanups.end(),
+                                  [objectOffset](const StackCleanup &cleanup) {
+                                    return cleanup.objectOffset == objectOffset;
+                                  }),
+                   cleanups.end());
+  }
+}
+
 asmc::File
 gen::CodeGenerator::emitStackCleanupRegistration(const StackCleanup &cleanup,
                                                  const std::string &typeName) {
