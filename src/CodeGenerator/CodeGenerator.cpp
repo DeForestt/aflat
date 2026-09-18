@@ -202,6 +202,7 @@ struct gen::CodeGenerator::Impl {
   links::LinkedList<std::string> breakContext;
   links::LinkedList<std::string> continueContext;
   struct StackCleanupFrame {
+    bool functionRoot = false;
     int headOffset = 0;
     std::vector<StackCleanup> cleanups;
   };
@@ -463,8 +464,9 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
 
 bool gen::CodeGenerator::hasError() const { return impl->errorFlag; }
 
-void gen::CodeGenerator::beginStackCleanupFrame() {
+void gen::CodeGenerator::beginStackCleanupFrame(bool functionRoot) {
   Impl::StackCleanupFrame frame;
+  frame.functionRoot = functionRoot;
   ast::Type headType("adr", asmc::QWord);
   frame.headOffset =
       gen::scope::ScopeManager::getInstance()->assign("", headType, false);
@@ -508,6 +510,20 @@ void gen::CodeGenerator::suppressStackCleanup(int objectOffset) {
   }
 }
 
+asmc::File gen::CodeGenerator::emitStackCleanupTransfer(const Expr &expr) {
+  asmc::File file;
+  if (expr.stackCleanupNodeOffset != 0) {
+    auto *disable = new asmc::Mov();
+    disable->logicalLine = logicalLine();
+    disable->size = asmc::QWord;
+    disable->from = "$0";
+    disable->to =
+        "-" + std::to_string(expr.stackCleanupNodeOffset - 16) + "(%rbp)";
+    file.text << disable;
+  }
+  return file;
+}
+
 asmc::File
 gen::CodeGenerator::emitStackCleanupRegistration(const StackCleanup &cleanup,
                                                  const std::string &typeName) {
@@ -518,6 +534,7 @@ gen::CodeGenerator::emitStackCleanupRegistration(const StackCleanup &cleanup,
   auto *cls = entry == nullptr ? nullptr : dynamic_cast<gen::Class *>(*entry);
   if (cls == nullptr || cls->nameTable["del"] == nullptr)
     return file;
+  ensureGenericLifecycleMethod(cls, file);
   auto *destructor = cls->nameTable["del"];
   const std::string scopeName =
       destructor->scopeName != "global" ? destructor->scopeName : typeName;
@@ -576,12 +593,20 @@ int gen::CodeGenerator::stackCleanupHeadOffset() const {
              : impl->stackCleanupFrames.back().headOffset;
 }
 
-asmc::File gen::CodeGenerator::emitStackCleanups() {
+asmc::File gen::CodeGenerator::emitStackCleanups(bool allFunctionScopes) {
   asmc::File file;
-  if (impl->stackCleanupFrames.empty() ||
-      impl->stackCleanupFrames.back().cleanups.empty())
-    return file;
-  const int headOffset = impl->stackCleanupFrames.back().headOffset;
+  for (auto frame = impl->stackCleanupFrames.rbegin();
+       frame != impl->stackCleanupFrames.rend(); ++frame) {
+    if (!frame->cleanups.empty())
+      file << emitStackCleanupsAt(frame->headOffset);
+    if (!allFunctionScopes || frame->functionRoot)
+      break;
+  }
+  return file;
+}
+
+asmc::File gen::CodeGenerator::emitStackCleanupsAt(int headOffset) {
+  asmc::File file;
   const std::string loop = ".stack_cleanup_" + std::to_string(labelCount()++);
   const std::string done = ".stack_cleanup_" + std::to_string(labelCount()++);
   const std::string rax = registers()["%rax"]->get(asmc::QWord);
@@ -617,6 +642,16 @@ asmc::File gen::CodeGenerator::emitStackCleanups() {
   };
   emitMov("(" + rax + ")", rcx);
   emitMov(rcx, "-" + std::to_string(headOffset) + "(%rbp)");
+  auto *checkDestructor = new asmc::Cmp();
+  checkDestructor->logicalLine = logicalLine();
+  checkDestructor->from = "$0";
+  checkDestructor->to = "16(" + rax + ")";
+  checkDestructor->size = asmc::QWord;
+  file.text << checkDestructor;
+  auto *skipTransferred = new asmc::Je();
+  skipTransferred->logicalLine = logicalLine();
+  skipTransferred->to = loop;
+  file.text << skipTransferred;
   emitMov("8(" + rax + ")", rdi);
   auto *call = new asmc::Call();
   call->logicalLine = logicalLine();

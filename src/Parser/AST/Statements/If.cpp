@@ -87,6 +87,27 @@ gen::GenerationResult const If::generate(gen::CodeGenerator &generator) {
   generator.labelCount()++;
 
   gen::Expr expr = generator.GenExpr(this->expr, file);
+  // Condition temporaries are no longer needed once the boolean is known,
+  // regardless of which branch executes.
+  auto conditionCleanup = generator.emitStackCleanups();
+  if (conditionCleanup.text.count != 0) {
+    const int conditionSlot =
+        scope->assign("", ast::Type("bool", asmc::Byte), false, false);
+    auto *load = new asmc::Mov();
+    load->logicalLine = this->logicalLine;
+    load->size = asmc::Byte;
+    load->from = expr.access;
+    load->to = "%al";
+    file.text << load;
+    auto *save = new asmc::Mov();
+    save->logicalLine = this->logicalLine;
+    save->size = asmc::Byte;
+    save->from = "%al";
+    save->to = "-" + std::to_string(conditionSlot) + "(%rbp)";
+    file.text << save;
+    file << conditionCleanup;
+    expr.access = save->to;
+  }
   const auto incomingOwnership = scope->captureOwnershipState();
 
   ast::Type t = ast::Type();

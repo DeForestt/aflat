@@ -88,8 +88,22 @@ asmc::File *CodeGenerator::deScope(gen::Symbol &sym) {
   const bool stackObject = sym.storageOrigin == StorageOrigin::Stack;
   // Direct constructors register their stack slots with the enclosing
   // function. That registry owns the one eventual del call.
-  if (stackObject)
+  if (stackObject && !sym.type.isLocal)
     return nullptr;
+
+  if (stackObject) {
+    auto *classType = dynamic_cast<Class *>(*type);
+    if (classType == nullptr || !sym.owned)
+      return nullptr;
+    auto *file = new asmc::File();
+    ensureGenericLifecycleMethod(classType, *file);
+    if (auto *destructor = classType->nameTable["del"]) {
+      auto *cleanup = emitObjectCleanup(methodLabel(destructor));
+      *file << *cleanup;
+      delete cleanup;
+    }
+    return file;
+  }
 
   if (!(*type)->uniqueType) {
     auto classType = dynamic_cast<Class *>(*type);

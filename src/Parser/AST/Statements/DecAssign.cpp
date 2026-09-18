@@ -68,7 +68,10 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
                                        dec->TypeName == "let" ||
                                        dec->type.typeName == "let";
       gen::Expr expr = generator.GenExpr(this->expr, file, dec->type.size,
-                                         dec->type.typeName);
+                                         dec->type.typeName, dec->local);
+      if (dec->local && expr.storageOrigin != gen::StorageOrigin::Stack)
+        generator.alert("a local binding requires a stack-local value", true,
+                        __FILE__, __LINE__);
 
       const auto testType =
           allowAdr ? ast::Type("adr", asmc::QWord) : dec->type;
@@ -176,6 +179,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       file.text << mov2;
       file.text << mov;
       s->owned = expr.owned && !dec->type.isLoan;
+      s->type.isLocal = dec->local;
       s->needsDrop = expr.needsDrop && !dec->type.isLoan;
       s->storageOrigin = expr.storageOrigin;
       s->storageScope = expr.storageScope;

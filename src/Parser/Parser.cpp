@@ -760,7 +760,9 @@ parse::Parser::Impl::parseStmt(links::LinkedList<lex::Token *> &tokens,
             output = new ast::Function(ident.meta, scope, type, overload,
                                        scopeName, tokens, parser, optional,
                                        safeType, sinkFunction);
-            dynamic_cast<ast::Function *>(output)->returnsLocal = localField;
+            dynamic_cast<ast::Function *>(output)->returnsLocal =
+                dynamic_cast<ast::Function *>(output)->returnsLocal ||
+                localField;
             output->logicalLine = obj.lineCount;
             output->when = whenClause;
           } else if (sym.Sym == '=') {
@@ -1322,7 +1324,16 @@ ast::Statement *parse::Parser::Impl::parseArgs(
       tokens.pop();
     };
 
+    bool isLocal = false;
+    if (obj.meta == "local") {
+      isLocal = true;
+      auto *typeName = dynamic_cast<lex::LObj *>(tokens.pop());
+      if (typeName == nullptr)
+        throw err::Exception("Expected a type after local in parameter list");
+      obj = *typeName;
+    }
     auto dec = new ast::Declare();
+    dec->local = isLocal;
     const auto sym = dynamic_cast<lex::Symbol *>(tokens.peek());
     if (sym != nullptr && sym->meta == "<") {
       dec->type = this->parseFPointerType(tokens, obj.meta);
@@ -1340,6 +1351,7 @@ ast::Statement *parse::Parser::Impl::parseArgs(
       dec->type.typeName += ">";
     }
 
+    dec->type.isLocal = isLocal;
     std::string requestType = "";
     links::LinkedList<std::string> modList;
     // Handle typeOf

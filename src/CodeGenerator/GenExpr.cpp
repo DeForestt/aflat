@@ -171,7 +171,8 @@ void ensureLazyConcreteGenericMethod(CodeGenerator &generator, Class *cls,
 } // namespace
 
 gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
-                                      asmc::Size size, std::string typeHint) {
+                                      asmc::Size size, std::string typeHint,
+                                      bool preferLocalReturn) {
   gen::Expr output;
   output.op = asmc::Hard;
   SourceLocationScope sourceLocation(*this, expr->sourceLocation);
@@ -279,7 +280,10 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     }
   } else if (dynamic_cast<ast::CallExpr *>(expr) != nullptr) {
     ast::CallExpr *exprCall = dynamic_cast<ast::CallExpr *>(expr);
-    ast::Call *call = exprCall->call;
+    ast::Call contextualCall(*exprCall->call);
+    ast::Call *call = &contextualCall;
+    call->preferLocalReturn = call->preferLocalReturn ||
+                              (preferLocalReturn && expr->extention == nullptr);
     call->receiverTransfer = call->receiverTransfer || exprCall->selling;
     call->receiverTransferExplicit =
         call->receiverTransferExplicit || exprCall->selling;
@@ -322,7 +326,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         int bMod =
             gen::scope::ScopeManager::getInstance()->assign("", type, false);
         StackCleanup cleanup{};
-        if (cl->hasExplicitDestructor && cl->nameTable["del"] != nullptr)
+        if (cl->nameTable["del"] != nullptr)
           cleanup = registerStackCleanup(bMod);
 
         //
@@ -780,7 +784,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                   "`; use an explicit method on the owning object",
               true, __FILE__, __LINE__);
       }
-      if (ownershipBearing && !fieldAccess && !sym->owned) {
+      if (ownershipBearing && !fieldAccess && !sym->owned &&
+          !(sym->storageOrigin == StorageOrigin::Stack && sym->needsDrop)) {
         alert("cannot transfer ownership of unowned value `" + var->Ident + "`",
               true, __FILE__, __LINE__);
       }
@@ -832,7 +837,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         }
       }
     } else {
-      output = this->GenExpr(buy->expr, OutputFile);
+      output = this->GenExpr(buy->expr, OutputFile, size, typeHint,
+                             preferLocalReturn);
       if (parse::PRIMITIVE_TYPES.find(output.type) ==
           parse::PRIMITIVE_TYPES.end()) {
         output.owned = true;
@@ -1847,7 +1853,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.transferable = true;
   } else if (dynamic_cast<ast::ParenExpr *>(expr) != nullptr) {
     ast::ParenExpr parenExpr = *dynamic_cast<ast::ParenExpr *>(expr);
-    output = this->GenExpr(parenExpr.expr, OutputFile);
+    output = this->GenExpr(parenExpr.expr, OutputFile, size, typeHint,
+                           preferLocalReturn);
   } else if (dynamic_cast<ast::Not *>(expr) != nullptr) {
     ast::Not no = *dynamic_cast<ast::Not *>(expr);
     gen::Expr expr = this->GenExpr(no.expr, OutputFile);
@@ -2050,6 +2057,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     auto *tempSymbol = gen::scope::ScopeManager::getInstance()->get(tempName);
     if (tempSymbol != nullptr) {
       tempSymbol->owned = output.owned;
+      tempSymbol->storageOrigin = output.storageOrigin;
+      tempSymbol->stackObjectOffset = output.stackObjectOffset;
+      tempSymbol->stackCleanupNodeOffset = output.stackCleanupNodeOffset;
       tempSymbol->loanProvenance = output.loanProvenance;
       tempSymbol->loanScope = output.loanScope;
     }
@@ -2100,7 +2110,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
                   __LINE__);
     }
 
-    output = this->GenExpr(extension, OutputFile, size);
+    output =
+        this->GenExpr(extension, OutputFile, size, typeHint, preferLocalReturn);
 
     // Recursive extension generation can assign more scope symbols and grow
     // ScopeManager's symbol vector, invalidating the pointer captured above.

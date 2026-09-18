@@ -180,6 +180,8 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
           arg->ident, arg->type, false, arg->mut);
 
       auto sym = gen::scope::ScopeManager::getInstance()->get(arg->ident);
+      if (arg->type.isLocal)
+        sym->storageOrigin = StorageOrigin::Stack;
       if (func.argTypes[index].isRvalue) {
         sym->owned = true;
       } else {
@@ -204,7 +206,14 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
         call->call = new ast::Call();
         call->call->logicalLine = arg->logicalLine;
         call->call->ident = "option.optionWrapper";
-        call->call->Args.push(var);
+        if (arg->type.isRvalue) {
+          auto *transfer = new ast::Buy();
+          transfer->logicalLine = arg->logicalLine;
+          transfer->expr = var;
+          call->call->Args.push(transfer);
+        } else {
+          call->call->Args.push(var);
+        }
 
         auto decAssign = new ast::DecAssign();
         decAssign->logicalLine = arg->logicalLine;
@@ -218,6 +227,7 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
         decAssign->mute = arg->mut;
         decAssign->expr = call;
         decAssign->declare->trust = true;
+        decAssign->declare->local = arg->local;
 
         output << decAssign->generate(*this).file;
       }

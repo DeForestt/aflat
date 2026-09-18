@@ -221,7 +221,7 @@ fn main() -> int {
   const auto freeBody = text.substr(freeReturn, main - freeReturn);
   CHECK(freeBody.find("movq\t%rdi,-") != std::string::npos);
   CHECK(freeBody.find("movq\t-16(%rbp),%rdi") != std::string::npos);
-  CHECK(freeBody.find(".stack_cleanup_") == std::string::npos);
+  CHECK(freeBody.find("movq\t$0,-") != std::string::npos);
 
   const auto methodReturn = text.find("pub_Factory_give:");
   REQUIRE(methodReturn != std::string::npos);
@@ -531,6 +531,259 @@ fn main() -> int {
   fs::remove_all(dir);
 
   REQUIRE(built);
+}
+
+TEST_CASE("local returns can forward stack union expressions",
+          "[codegen][local][return][union]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_local_return_expr_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+unique union Box {
+  Value(int)
+};
+fn makeBox() -> local Box {
+  return Box->Value(7);
+};
+fn forwardBox() -> local Box {
+  return makeBox();
+};
+fn main() -> int {
+  const local Box box = forwardBox();
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+}
+
+TEST_CASE("local helper overloads preserve values without wrapper allocations",
+          "[codegen][runtime][local][overload]") {
+  namespace fs = std::filesystem;
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
+  const auto dir = fs::path("tmp/compiler_local_helpers_runtime");
+  fs::remove_all(dir);
+  fs::create_directories(dir / "std");
+  for (const auto &entry : fs::directory_iterator("libraries/std")) {
+    if (entry.is_regular_file() && entry.path().extension() == ".s")
+      fs::copy_file(entry.path(), dir / "std" / entry.path().filename());
+  }
+  std::ofstream(dir / "main.af") << R"(.needs <std>
+import option from "Utils/option";
+import result from "Utils/result";
+import {Some, None, optionWrapper} from "Utils/option" under opt;
+import {accept, reject, resultWrapper} from "Utils/result" under res;
+import {optionWrapper} from "Utils/option" under option;
+import {resultWrapper, reject} from "Utils/result" under result;
+import Error from "Utils/Error";
+long af_total_allocations();
+mutable int drops = 0;
+class Item {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+  fn del() -> void { drops = drops + 1; return; };
+};
+class CopyItem {
+  int value = value;
+  fn init(immutable int value) -> Self { return my; };
+  safe fn __copy__() -> local CopyItem { return CopyItem(my.value); };
+  safe fn __copy__() -> CopyItem { return new CopyItem(my.value); };
+  fn del() -> void { drops = drops + 1; return; };
+};
+class Maker {
+  int seed = seed;
+  fn init(const int seed) -> Self { return my; };
+  safe fn get() -> local Item { return Item(110); };
+  safe fn get() -> Item { return new Item(210); };
+};
+class LateItem {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+};
+fn makeItem(const int value) -> local Item { return Item(value); };
+fn forwardItem(const int value) -> local Item { return makeItem(value); };
+fn guardedItem() -> local Item {
+  const let value = Item(80);
+  const let __guard = Item(81);
+  return value;
+};
+fn branchItem(const bool first) -> local Item {
+  const let __guard = Item(82);
+  if first { return makeItem(83); };
+  return makeItem(84);
+};
+fn choose(const int a, const int b) -> local Item { return Item(a + b); };
+fn choose(const int value) -> local Item { return Item(value + 100); };
+fn choose(const int value) -> Item { return new Item(value + 200); };
+fn sum(const int a, const int b, const int c, const int d, const int e,
+       const int f, const int g) -> local Item {
+  return Item(a + b + c + d + e + f + g);
+};
+fn maybe(const int value) -> local int? { return value; };
+fn nothing() -> local int? { return; };
+fn success(const int value) -> local int! { return value; };
+fn failure(const Error &&err) -> local int! { return $err; };
+fn localSome() -> local option::<int> { return (opt.Some::<int>(42)); };
+fn localNone() -> local option::<int> { return opt.None::<int>(); };
+fn itemSome() -> local option::<Item> { return opt.Some(makeItem(73)); };
+fn itemSugar() -> local Item? { return makeItem(74); };
+fn itemResultSugar() -> local Item! { return makeItem(75); };
+fn forwardSome() -> local option::<Item> { return itemSome(); };
+fn readOption(immutable local option::<int> value) -> int {
+  match value { Some(n) => return n, None() => return -1 };
+};
+fn readResult(immutable local result::<int> value) -> int {
+  match value { Ok(n) => return n, Err() => return -1 };
+};
+fn optionalArg(?immutable local int value) -> int {
+  match value { Some(n) => return n, None() => return -1 };
+};
+fn optionalItem(?immutable local Item &&value) -> int {
+  match value { Some(v) => return v.value, None() => return -1 };
+};
+fn consume(const local Item &&value) -> int { return value.value; };
+fn exercise() -> int {
+  const local let a = localSome();
+  const local let b = localNone();
+  const local let c = opt.optionWrapper::<int>(43);
+  const local let d = res.accept::<int>(44);
+  const local let e = res.resultWrapper::<int>(45);
+  if readOption(a) != 42 { return 1; };
+  if readOption(b) != -1 { return 2; };
+  if readOption(c) != 43 { return 3; };
+  if readResult(d) != 44 { return 4; };
+  if readResult(e) != 45 { return 5; };
+  if readOption(opt.Some::<int>(46)) != 46 { return 6; };
+  if readResult(res.accept::<int>(47)) != 47 { return 7; };
+  if readOption(maybe(48)) != 48 { return 8; };
+  if readOption(nothing()) != -1 { return 9; };
+  if readResult(success(49)) != 49 { return 10; };
+  if optionalArg(50) != 50 { return 11; };
+  if optionalArg(0) != -1 { return 12; };
+  if optionalItem(makeItem(53)) != 53 { return 45; };
+  if forwardItem(51).value != 51 { return 13; };
+  if consume(makeItem(52)) != 52 { return 14; };
+  const local let nested = forwardSome();
+  match nested { Some(value) => { if value.value != 73 { return 15; }; }, None() => return 16 };
+  const local let sugar = itemSugar();
+  match sugar { Some(value) => { if value.value != 74 { return 17; }; }, None() => return 18 };
+  const local let resultSugar = itemResultSugar();
+  match resultSugar { Ok(value) => { if value.value != 75 { return 19; }; }, Err() => return 20 };
+  if guardedItem().value != 80 { return 28; };
+  if branchItem(true).value != 83 { return 41; };
+  if branchItem(false).value != 84 { return 42; };
+  const local let selected = choose(2);
+  if selected.value != 102 { return 29; };
+  const local let nestedSelected = opt.Some(choose(5));
+  match nestedSelected { Some(v) => { if v.value != 105 { return 43; }; }, None() => return 44 };
+  const local let chain = Maker(0).get();
+  if chain.value != 110 { return 46; };
+  mutable local option::<int> reassigned = opt.None::<int>();
+  reassigned = opt.Some::<int>(91);
+  if readOption(reassigned) != 91 { return 47; };
+  if sum(1, 2, 3, 4, 5, 6, 7).value != 28 { return 30; };
+  const let copySource = CopyItem(90);
+  const local let copiedSome = opt.Some(copySource);
+  const local let copiedOption = opt.optionWrapper(copySource);
+  const local let copiedAccept = res.accept(copySource);
+  const local let copiedResult = res.resultWrapper(copySource);
+  match copiedSome { Some(v) => { if v.value != 90 { return 31; }; }, None() => return 32 };
+  match copiedOption { Some(v) => { if v.value != 90 { return 33; }; }, None() => return 34 };
+  match copiedAccept { Ok(v) => { if v.value != 90 { return 35; }; }, Err() => return 36 };
+  match copiedResult { Ok(v) => { if v.value != 90 { return 37; }; }, Err() => return 38 };
+  return 0;
+};
+fn main() -> int {
+  const long before = af_total_allocations();
+  const int status = exercise();
+  if status != 0 { return status; };
+  if af_total_allocations() != before { return 21; };
+  if drops != 21 { return 22; };
+  const long beforeHeap = af_total_allocations();
+  const let heap = opt.Some(61);
+  if af_total_allocations() != beforeHeap + #1 { return 23; };
+  match heap { Some(n) => { if n != 61 { return 24; }; }, None() => return 25 };
+  const let regular = choose(3);
+  if regular.value != 203 { return 39; };
+  const let errorSource = new Error("bad");
+  const long beforeReject = af_total_allocations();
+  const local let err = res.reject::<int>($errorSource);
+  if af_total_allocations() != beforeReject { return 40; };
+  if readResult(err) != -1 { return 26; };
+  if readResult(failure(new Error("bad"))) != -1 { return 27; };
+  const local let heapPayload = opt.Some(new LateItem(120));
+  const local let stackPayload = opt.Some(LateItem(121));
+  match heapPayload { Some(v) => { if v.value != 120 { return 48; }; }, None() => return 49 };
+  match stackPayload { Some(v) => { if v.value != 121 { return 50; }; }, None() => return 51 };
+  return 0;
+};
+)";
+  cfg::Config config;
+  config.entryPoint = "../" + (dir / "main").string();
+  config.outPutFile = (dir / "main").string();
+  const bool built = runConfig(config, (dir / "std").string() + "/", 'e');
+  const int ran = built ? std::system(config.outPutFile.c_str()) : -1;
+  REQUIRE(built);
+  REQUIRE(ran == 0);
+  fs::remove_all(dir);
+}
+
+TEST_CASE("local overloads reject incompatible storage and ownership",
+          "[codegen][local][overload][ownership]") {
+  namespace fs = std::filesystem;
+  std::string body;
+  SECTION("local binding cannot own a heap allocation") {
+    body =
+        "fn main() -> int { const local let value = new Item(); return 0; };";
+  }
+  SECTION("a local overload cannot fall back to a heap overload") {
+    body = R"(
+fn value(const int a, const int b) -> local Item { return Item(); };
+fn value(const int a) -> Item { return new Item(); };
+fn main() -> int { const local let item = value(1); return 0; };
+)";
+  }
+  SECTION("heap consuming parameters reject stack values") {
+    body = R"(
+fn consume(const Item &&value) -> int { return 0; };
+fn main() -> int { return consume(Item()); };
+)";
+  }
+  SECTION("borrowed local parameters cannot be moved out") {
+    body = R"(
+fn escape(const local Item value) -> local Item { return value; };
+fn main() -> int { return 0; };
+)";
+  }
+  SECTION("local consuming parameters cannot escape as heap pointers") {
+    body = R"(
+fn escape(const local Item &&value) -> Item { return $value; };
+fn main() -> int { return 0; };
+)";
+  }
+  const auto dir = fs::path("tmp/compiler_local_overload_negative");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  std::ofstream(source) << ".needs <std>\nclass Item { int value = 1; "
+                           "fn init() -> Self { return my; }; };\n"
+                        << body;
+  CHECK_FALSE(build(source.string(), assembly.string(), cfg::Mutability::Strict,
+                    false));
+  fs::remove_all(dir);
 }
 
 TEST_CASE("local fields cannot escape through owning returns",
