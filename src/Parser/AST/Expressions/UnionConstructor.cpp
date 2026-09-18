@@ -201,6 +201,7 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
       call->call = new ast::Call();
       call->call->ident = "__copy__";
       call->call->publify = fromExpr.type;
+      call->call->preferLocalReturn = !dynamic;
       call->call->Args.push(useExpr);
       call->logicalLine = logicalLine;
       auto prev = fromExpr;
@@ -234,7 +235,8 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
     file << generator.setOffset(store->to, 0, fromExpr.access, fromExpr.size,
                                 fromExpr.op);
   } else {
-    if (ownsPayloadWrapper && !fromExpr.owned) {
+    if (ownsPayloadWrapper && !fromExpr.owned &&
+        fromExpr.storageOrigin != gen::StorageOrigin::Stack) {
       generator.alert("cannot store unowned value of type `" + fromExpr.type +
                           "` in ownership-bearing union variant `" +
                           variantName + "`",
@@ -278,7 +280,10 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
       file << generator.memMove(payloadSlot, store->to, alias.byteSize);
     }
 
-    if (ownsPayloadWrapper) {
+    if (ownsPayloadWrapper &&
+        fromExpr.storageOrigin == gen::StorageOrigin::Stack) {
+      file << generator.emitStackCleanupTransfer(fromExpr);
+    } else if (ownsPayloadWrapper) {
       // The payload now lives inline in the union. Its former heap wrapper
       // must be released without destroying the state that was transferred.
       emitCallWithReceiver(generator, file, "af_free", payloadSlot,
@@ -305,9 +310,13 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
   out.op = asmc::Hard;
   out.owned = internalAccess.expr->owned;
   out.needsDrop = internalAccess.expr->needsDrop;
-  out.storageOrigin = internalAccess.expr->storageOrigin;
+  out.storageOrigin =
+      dynamic ? internalAccess.expr->storageOrigin : gen::StorageOrigin::Stack;
   out.storageScope = internalAccess.expr->storageScope;
-  out.stackObjectOffset = internalAccess.expr->stackObjectOffset;
+  out.stackObjectOffset = internalAccess.expr->stackObjectOffset != 0
+                              ? internalAccess.expr->stackObjectOffset
+                              : mod;
+  out.stackCleanupNodeOffset = internalAccess.expr->stackCleanupNodeOffset;
   if (loanPayload) {
     out.loanProvenance = fromExpr.loanProvenance;
     out.loanScope = fromExpr.loanScope;

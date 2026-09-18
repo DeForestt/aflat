@@ -143,6 +143,8 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
 
   auto trashFile = asmc::File();
 
+  const bool localReturn = generator.currentFunction()->returnsLocal;
+
   const auto ownershipBeforeProbe =
       gen::scope::ScopeManager::getInstance()->captureOwnershipState();
   const int asyncStateBeforeProbe =
@@ -154,7 +156,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   gen::Expr from;
   try {
     from = generator.GenExpr(this->expr, trashFile, asmc::AUTO,
-                             generator.returnType().typeName);
+                             generator.returnType().typeName, localReturn);
   } catch (...) {
     gen::scope::ScopeManager::getInstance()->restoreOwnershipState(
         ownershipBeforeProbe);
@@ -232,14 +234,22 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       }
       auto optionConvertion = new ast::Call();
       optionConvertion->ident = "option.optionWrapper";
+      optionConvertion->preferLocalReturn = localReturn;
       optionConvertion->Args.push(transferOwnedWrapperPayload(true));
-      if (generator.currentFunction()->returnPayloadLoan)
-        optionConvertion->genericTypes.push_back(wrapperPayloadType);
+      optionConvertion->genericTypes.push_back(wrapperPayloadType);
       auto call = new ast::CallExpr();
       call->call = optionConvertion;
       call->logicalLine = this->logicalLine;
       auto prev = from;
-      from = generator.GenExpr(call, file);
+      if (this->empty) {
+        auto *none = new ast::UnionConstructor(
+            ast::Type("option<" + wrapperPayloadType + ">", asmc::QWord),
+            "None", nullptr, !localReturn, {});
+        none->logicalLine = this->logicalLine;
+        from = generator.GenExpr(none, file);
+      } else {
+        from = generator.GenExpr(call, file);
+      }
       from.adoptImmutableRequirement(prev);
       expressionGenerated = true;
     }
@@ -269,6 +279,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       if (isError) {
         auto reject = new ast::Call();
         reject->ident = "result.reject";
+        reject->preferLocalReturn = localReturn;
         reject->Args.push(transferOwnedWrapperPayload(false));
         reject->genericTypes.push_back(wrapperPayloadType);
         auto call = new ast::CallExpr();
@@ -297,9 +308,9 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
         }
         auto resultConvertion = new ast::Call();
         resultConvertion->ident = "result.resultWrapper";
+        resultConvertion->preferLocalReturn = localReturn;
         resultConvertion->Args.push(transferOwnedWrapperPayload(true));
-        if (generator.currentFunction()->returnPayloadLoan)
-          resultConvertion->genericTypes.push_back(wrapperPayloadType);
+        resultConvertion->genericTypes.push_back(wrapperPayloadType);
         auto call = new ast::CallExpr();
         call->call = resultConvertion;
         call->logicalLine = this->logicalLine;
@@ -390,7 +401,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   if (!expressionGenerated) {
     auto prev = from;
     from = generator.GenExpr(this->expr, file, asmc::AUTO,
-                             generator.returnType().typeName);
+                             generator.returnType().typeName, localReturn);
     from.adoptImmutableRequirement(prev);
   }
 
@@ -402,6 +413,11 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   }
 
   if (parse::PRIMITIVE_TYPES.find(from.type) == parse::PRIMITIVE_TYPES.end()) {
+    if (from.storageOrigin == gen::StorageOrigin::Stack && !localReturn &&
+        !generator.currentFunction()->returnLowOwnership)
+      generator.alert("cannot return stack storage as an owned pointer; use "
+                      "a local return",
+                      true, __FILE__, __LINE__);
     if (!from.owned && from.type != "void" &&
         from.type != "--std--flex--function" &&
         !generator.currentFunction()->returnsLocal &&
@@ -413,27 +429,40 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   }
 
   if (generator.currentFunction()->returnsLocal) {
+    if (from.loanProvenance == gen::LoanProvenance::FunctionInput &&
+        !from.owned)
+      generator.alert("cannot move a borrowed parameter into a local return",
+                      true, __FILE__, __LINE__);
     auto *returnedVar = dynamic_cast<ast::Var *>(this->expr);
-    if (returnedVar == nullptr || returnedVar->modList.count != 0) {
+    gen::Symbol *returned = nullptr;
+    if (returnedVar != nullptr && returnedVar->modList.count == 0) {
+      returned =
+          gen::scope::ScopeManager::getInstance()->get(returnedVar->Ident);
+    }
+
+    const bool expressionIsStackLocal =
+        from.storageOrigin == gen::StorageOrigin::Stack &&
+        from.stackObjectOffset != 0;
+    if ((returnedVar == nullptr || returnedVar->modList.count != 0) &&
+        !expressionIsStackLocal) {
       generator.alert("a local return must return a stack-local value", true,
                       __FILE__, __LINE__);
     }
-    auto *returned =
-        returnedVar == nullptr
-            ? nullptr
-            : gen::scope::ScopeManager::getInstance()->get(returnedVar->Ident);
-    if (returned == nullptr ||
-        returned->storageOrigin != gen::StorageOrigin::Stack) {
+    if (!expressionIsStackLocal &&
+        (returned == nullptr ||
+         returned->storageOrigin != gen::StorageOrigin::Stack)) {
       generator.alert("a local return must return a stack allocation", true,
                       __FILE__, __LINE__);
     }
 
     auto **entry = generator.typeList()[from.type];
     auto *objectType = entry == nullptr ? nullptr : *entry;
-    auto *classType = dynamic_cast<gen::Class *>(objectType);
     auto *unionType = dynamic_cast<gen::Union *>(objectType);
+    auto *classType = dynamic_cast<gen::Class *>(objectType);
     int bytes = objectType == nullptr ? 0 : objectType->size;
-    if (classType != nullptr)
+    if (unionType != nullptr)
+      bytes = unionType->largestSize + 4;
+    else if (classType != nullptr)
       bytes = classType->instanceSize;
     if (bytes <= 0)
       generator.alert(
@@ -441,16 +470,28 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
           true, __FILE__, __LINE__);
 
     if (classType != nullptr || unionType != nullptr) {
-      auto *source = new asmc::Mov();
-      source->logicalLine = this->logicalLine;
-      source->size = asmc::QWord;
-      source->from = "-" + std::to_string(returned->byteMod) + "(%rbp)";
-      source->to = generator.registers()["%rax"]->get(asmc::QWord);
-      file.text << source;
+      if (expressionIsStackLocal &&
+          from.access != generator.registers()["%rax"]->get(asmc::QWord)) {
+        auto *source = new asmc::Mov();
+        source->logicalLine = this->logicalLine;
+        source->size = asmc::QWord;
+        source->from = from.access;
+        source->to = generator.registers()["%rax"]->get(asmc::QWord);
+        file.text << source;
+      } else if (!expressionIsStackLocal) {
+        auto *source = new asmc::Mov();
+        source->logicalLine = this->logicalLine;
+        source->size = asmc::QWord;
+        source->from = "-" + std::to_string(returned->byteMod) + "(%rbp)";
+        source->to = generator.registers()["%rax"]->get(asmc::QWord);
+        file.text << source;
+      }
     } else {
       auto *source = new asmc::Lea();
       source->logicalLine = this->logicalLine;
-      source->from = "-" + std::to_string(returned->byteMod) + "(%rbp)";
+      const int stackObjectOffset =
+          expressionIsStackLocal ? from.stackObjectOffset : returned->byteMod;
+      source->from = "-" + std::to_string(stackObjectOffset) + "(%rbp)";
       source->to = generator.registers()["%rax"]->get(asmc::QWord);
       file.text << source;
     }
@@ -462,28 +503,8 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
             "(%rbp)",
         bytes);
 
-    generator.suppressStackCleanup(from.stackObjectOffset);
-    // A direct stack construction registered its cleanup eagerly in the
-    // frame's runtime linked list. Removing it from the compile-time list is
-    // not enough: when this value is moved into the caller's destination,
-    // unlink its (latest) node so later frame cleanup cannot destroy memory
-    // that has escaped to the caller.
-    if (from.stackCleanupNodeOffset != 0) {
-      auto *next = new asmc::Mov();
-      next->logicalLine = this->logicalLine;
-      next->size = asmc::QWord;
-      next->from = "-" + std::to_string(from.stackCleanupNodeOffset) + "(%rbp)";
-      next->to = generator.registers()["%rax"]->get(asmc::QWord);
-      file.text << next;
-      auto *unlink = new asmc::Mov();
-      unlink->logicalLine = this->logicalLine;
-      unlink->size = asmc::QWord;
-      unlink->from = generator.registers()["%rax"]->get(asmc::QWord);
-      unlink->to =
-          "-" + std::to_string(generator.stackCleanupHeadOffset()) + "(%rbp)";
-      file.text << unlink;
-    }
-    file << generator.emitStackCleanups();
+    file << generator.emitStackCleanupTransfer(from);
+    file << generator.emitStackCleanups(true);
     gen::scope::ScopeManager::getInstance()->softPop(&generator, file);
     auto *returnDestination = new asmc::Mov();
     returnDestination->logicalLine = this->logicalLine;
@@ -527,7 +548,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     file.text << saveReturn;
   }
 
-  file << generator.emitStackCleanups();
+  file << generator.emitStackCleanups(true);
   gen::scope::ScopeManager::getInstance()->softPop(&generator, file);
   if (!returnedSymbol.empty()) {
     gen::Symbol *retSym =

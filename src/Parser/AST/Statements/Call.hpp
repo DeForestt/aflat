@@ -21,6 +21,7 @@ public:
   bool slick = false;
   bool receiverTransfer = false;
   bool receiverTransferExplicit = false;
+  bool preferLocalReturn = false;
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
   Call() = default;
   Call(const std::string &ident, const links::LinkedList<Expr *> &args,
@@ -39,6 +40,7 @@ public:
         publify(other.publify), slick(other.slick),
         receiverTransfer(other.receiverTransfer),
         receiverTransferExplicit(other.receiverTransferExplicit),
+        preferLocalReturn(other.preferLocalReturn),
         allowDiscardWarning(other.allowDiscardWarning),
         allowBorrowingReceiverFallback(other.allowBorrowingReceiverFallback) {}
   std::string toString() override;

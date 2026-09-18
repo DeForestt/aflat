@@ -12,6 +12,26 @@
 #include "Parser/Parser.hpp"
 
 namespace {
+int selectReturnStorageOverload(
+    links::SLinkedList<ast::Function, std::string> &table,
+    const std::string &ident, int firstIndex, bool preferLocal) {
+  bool hasPreferred = false;
+  for (int index = 0;; ++index) {
+    auto *candidate =
+        table[ident + (index == 0 ? "" : "_ovl" + std::to_string(index))];
+    if (candidate == nullptr)
+      break;
+    hasPreferred |= candidate->returnsLocal == preferLocal;
+  }
+  for (int index = firstIndex;; ++index) {
+    auto *candidate =
+        table[ident + (index == 0 ? "" : "_ovl" + std::to_string(index))];
+    if (candidate == nullptr || !hasPreferred ||
+        candidate->returnsLocal == preferLocal)
+      return index;
+  }
+}
+
 struct OverloadRetry : public std::exception {
   int nextIndex;
   links::SLinkedList<ast::Function, std::string> *table;
@@ -176,6 +196,8 @@ gen::GenerationResult const Call::generate(gen::CodeGenerator &generator) {
 
   while (true) {
     if (forcedTable != nullptr && forcedOverloadIndex.has_value()) {
+      forcedOverloadIndex = selectReturnStorageOverload(
+          *forcedTable, forcedIdent, *forcedOverloadIndex, preferLocalReturn);
       std::string candidate = forcedIdent;
       if (forcedOverloadIndex.value() > 0) {
         candidate += "_ovl" + std::to_string(forcedOverloadIndex.value());
@@ -368,15 +390,13 @@ gen::GenerationResult Call::generateAttempt(
         if (!generator.suppressLazyMethodEmission()) {
           bool generated = false;
 
-          if (file.lambdas == nullptr) {
-            file.lambdas = new asmc::File();
-            file.hasLambda = true;
-          }
           auto saveReturnType = generator.returnType();
           if (generator.generatedFunctionNames().find(new_ident) ==
               generator.generatedFunctionNames().end()) {
             gen::scope::ScopeManager::getInstance()->pushScope(true);
-            file.lambdas->operator<<(generator.GenSTMT(func));
+            // A later argument check can reject this candidate. Keep its
+            // definition with the module, since it is now cached as emitted.
+            generator.deferredMethods() << generator.GenSTMT(func);
             gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
             generator.generatedFunctionNames().insert(new_ident);
             generated = true;
@@ -906,23 +926,28 @@ gen::GenerationResult Call::generateAttempt(
   int localReturnDestinationSlot = -1;
   int localReturnStorageOffset = -1;
   gen::CodeGenerator::StackCleanup localReturnCleanup{};
+  std::string localReturnTypeName;
   if (returnsLocal) {
-    auto **entry = generator.typeList()[func->type.typeName];
+    localReturnTypeName = func->toExpr(generator).type;
+    generator.getType(localReturnTypeName, file);
+    auto **entry = generator.typeList()[localReturnTypeName];
     auto *objectType = entry == nullptr ? nullptr : *entry;
+    auto *unionType = dynamic_cast<gen::Union *>(objectType);
     auto *classType = dynamic_cast<gen::Class *>(objectType);
-    int bytes = classType != nullptr
-                    ? classType->instanceSize
-                    : (objectType == nullptr ? 0 : objectType->size);
+    int bytes = unionType != nullptr
+                    ? unionType->largestSize + 4
+                    : (classType != nullptr
+                           ? classType->instanceSize
+                           : (objectType == nullptr ? 0 : objectType->size));
     if (bytes <= 0)
       generator.alert("cannot determine local return storage size for " +
-                          func->type.typeName,
+                          localReturnTypeName,
                       true, __FILE__, __LINE__);
-    ast::Type storageType(func->type.typeName, asmc::Byte);
+    ast::Type storageType(localReturnTypeName, asmc::Byte);
     storageType.arraySize = bytes;
     localReturnStorageOffset = gen::scope::ScopeManager::getInstance()->assign(
         "", storageType, false, false);
-    if (classType != nullptr && classType->hasExplicitDestructor &&
-        classType->nameTable["del"] != nullptr)
+    if (classType != nullptr && classType->nameTable["del"] != nullptr)
       localReturnCleanup =
           generator.registerStackCleanup(localReturnStorageOffset);
     localReturnDestinationSlot =
@@ -941,6 +966,9 @@ gen::GenerationResult Call::generateAttempt(
     saveDestination->to =
         "-" + std::to_string(localReturnDestinationSlot) + "(%rbp)";
     file.text << saveDestination;
+    if (localReturnCleanup.objectOffset != 0)
+      file << generator.emitStackCleanupRegistration(localReturnCleanup,
+                                                     localReturnTypeName);
   }
 
   if (func->scope == ast::Private && func->scopeName != "global") {
@@ -1085,7 +1113,22 @@ gen::GenerationResult Call::generateAttempt(
       generator.alert("Argument " + std::to_string(i + 1) +
                       " is null in function call: " + ident);
     }
-    gen::Expr exp = generator.GenExpr(arg, file, asmc::AUTO, typeHint);
+    const bool localArgument =
+        checkArgs && func->argTypes.at(paramIndex).isLocal;
+    gen::Expr exp =
+        generator.GenExpr(arg, file, asmc::AUTO, typeHint, localArgument);
+    const bool stackArgument = exp.storageOrigin == gen::StorageOrigin::Stack;
+    if (localArgument && !stackArgument &&
+        parse::PRIMITIVE_TYPES.count(exp.type) == 0)
+      this->requestOverloadRetry(
+          generator, overloadTable, overloadIdent, currentOverloadIndex,
+          "A local argument requires a stack-local value");
+    if (rValue && stackArgument && !localArgument)
+      this->requestOverloadRetry(
+          generator, overloadTable, overloadIdent, currentOverloadIndex,
+          "A stack-local value requires a local consuming parameter");
+    if (rValue && stackArgument)
+      file << generator.emitStackCleanupTransfer(exp);
     if (!exp.passable)
       this->requestOverloadRetry(
           generator, overloadTable, overloadIdent, currentOverloadIndex,
@@ -1154,7 +1197,8 @@ gen::GenerationResult Call::generateAttempt(
     if (!exp.owned && rValue) {
       auto **argumentType = generator.typeList()[exp.type];
       if (argumentType != nullptr &&
-          dynamic_cast<gen::Class *>(*argumentType) != nullptr) {
+          dynamic_cast<gen::Class *>(*argumentType) != nullptr &&
+          exp.storageOrigin != gen::StorageOrigin::Stack) {
         this->requestOverloadRetry(
             generator, overloadTable, overloadIdent, currentOverloadIndex,
             "Attempted to pass an unowned rvalue of type `" + exp.type +
@@ -1450,9 +1494,6 @@ gen::GenerationResult Call::generateAttempt(
         "-" + std::to_string(localReturnDestinationSlot) + "(%rbp)";
     restoreDestination->to = generator.registers()["%rdi"]->get(asmc::QWord);
     file.text << restoreDestination;
-    if (localReturnCleanup.objectOffset != 0)
-      file << generator.emitStackCleanupRegistration(localReturnCleanup,
-                                                     func->type.typeName);
   }
 
   // this->Args = args;
@@ -1571,11 +1612,15 @@ ast::Function *Call::findFunctionByOverload(
     const std::string &forcedIdent,
     links::SLinkedList<ast::Function, std::string> *&activeTable,
     std::string &activeIdent, int &activeIndex) {
-  std::string lookupIdent = ident;
+  int index = 0;
   if (forcedTable == &table && forcedOverloadIndex.has_value() &&
-      forcedIdent == ident && forcedOverloadIndex.value() > 0) {
-    lookupIdent += "_ovl" + std::to_string(forcedOverloadIndex.value());
+      forcedIdent == ident) {
+    index = *forcedOverloadIndex;
   }
+  index = selectReturnStorageOverload(table, ident, index, preferLocalReturn);
+  std::string lookupIdent = ident;
+  if (index > 0)
+    lookupIdent += "_ovl" + std::to_string(index);
   ast::Function *resolved = table[lookupIdent];
   if (resolved != nullptr) {
     activeTable = &table;

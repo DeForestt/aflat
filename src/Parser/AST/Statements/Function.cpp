@@ -595,7 +595,16 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
           if (!forwardDeclaration && !deferredHiddenBody &&
               !firstInstance->wasGeneric &&
               (!requireGlobalScope || this->scopeName == "global")) {
-            this->overloadIndex = firstInstance->overloadIndex + 1;
+            this->overloadIndex = 1;
+            while (auto *candidate =
+                       table[this->ident.ident + "_ovl" +
+                             std::to_string(this->overloadIndex)]) {
+              // Class declaration passes already reserve overload slots.
+              // Their bodies must reuse those labels for the existing ABI.
+              if (candidate->hidden || candidate->statement == nullptr)
+                break;
+              ++this->overloadIndex;
+            }
             this->ident.ident += "_ovl" + std::to_string(this->overloadIndex);
           }
         }
@@ -729,12 +738,13 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     }
 
     generator.returnType() = this->useType;
-    generator.beginStackCleanupFrame();
+    generator.beginStackCleanupFrame(true);
 
     if (this->returnsLocal) {
-      if (parse::PRIMITIVE_TYPES.find(this->useType.typeName) !=
-              parse::PRIMITIVE_TYPES.end() ||
-          this->useType.typeName == "void") {
+      if (!this->optional && !this->error &&
+          (parse::PRIMITIVE_TYPES.find(this->useType.typeName) !=
+               parse::PRIMITIVE_TYPES.end() ||
+           this->useType.typeName == "void")) {
         generator.alert("local returns require a union, struct, class, or "
                         "object type",
                         true, __FILE__, __LINE__);

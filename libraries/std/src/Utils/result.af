@@ -215,8 +215,53 @@ export fn accept(const T &&value) -> result::<T> {
 };
 
 types(T)
+when (T is primitive)
+export fn accept(const T value) -> local result::<T> {
+    return result::<T>->Ok(value);
+};
+
+types(T)
+when (T is not primitive and T has __copy__)
+export fn accept(const T value) -> local result::<T> {
+    return result::<T>->Ok(value);
+};
+
+types(T)
+when (T is not primitive)
+export fn accept(const local T &&value) -> local result::<T> {
+    return result::<T>->Ok($value);
+};
+
+types(T)
+when (T is not primitive)
+export fn accept(const T &&value) -> local result::<T> {
+    return result::<T>->Ok($value);
+};
+
+types(T)
+when (T is not primitive)
+export fn accept(const local T &&value) -> result::<T> {
+    return new result::<T>->Ok($value);
+};
+
+types(T)
 // Convenience constructor for building an `Err` from an Error.
 export fn reject(const Error &&err) -> result::<T> {
+    return new result::<T>->Err($err);
+};
+
+types(T)
+export fn reject(const local Error &&err) -> local result::<T> {
+    return result::<T>->Err($err);
+};
+
+types(T)
+export fn reject(const Error &&err) -> local result::<T> {
+    return result::<T>->Err($err);
+};
+
+types(T)
+export fn reject(const local Error &&err) -> result::<T> {
     return new result::<T>->Err($err);
 };
 
@@ -239,5 +284,35 @@ export fn resultWrapper(const T value) -> result::<T> {
 types(T)
 when (T is not primitive)
 export fn resultWrapper(const T &&value) -> result::<T> {
+    return new result::<T>->Ok($value);
+};
+
+types(T)
+when (T is primitive)
+export fn resultWrapper(const T value) -> local result::<T> {
+    return result::<T>->Ok(value);
+};
+
+types(T)
+when (T is not primitive and T has __copy__)
+export fn resultWrapper(const T value) -> local result::<T> {
+    return result::<T>->Ok(value);
+};
+
+types(T)
+when (T is not primitive)
+export fn resultWrapper(const local T &&value) -> local result::<T> {
+    return result::<T>->Ok($value);
+};
+
+types(T)
+when (T is not primitive)
+export fn resultWrapper(const T &&value) -> local result::<T> {
+    return result::<T>->Ok($value);
+};
+
+types(T)
+when (T is not primitive)
+export fn resultWrapper(const local T &&value) -> result::<T> {
     return new result::<T>->Ok($value);
 };

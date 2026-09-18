@@ -70,7 +70,8 @@ public:
                      const ast::Function &func, int &index);
   ast::Function GenCall(ast::Call *call, asmc::File &OutputFile);
   Expr GenExpr(ast::Expr *expr, asmc::File &OutputFile,
-               asmc::Size size = asmc::AUTO, std::string typeHint = "");
+               asmc::Size size = asmc::AUTO, std::string typeHint = "",
+               bool preferLocalReturn = false);
   std::string InferExprType(ast::Expr *expr);
   gen::Expr prepareCompound(ast::Compound compound, asmc::File &OutputFile,
                             bool isDiv = false);
@@ -204,17 +205,19 @@ public:
   links::LinkedList<std::string> &continueContext();
   const links::LinkedList<std::string> &continueContext() const;
   bool validateLoanAssignment(gen::Expr expr, const gen::Symbol &sym);
-  void beginStackCleanupFrame();
+  void beginStackCleanupFrame(bool functionRoot = false);
   std::vector<StackCleanup> endStackCleanupFrame();
   StackCleanup registerStackCleanup(int objectOffset);
   void suppressStackCleanup(int objectOffset);
+  asmc::File emitStackCleanupTransfer(const Expr &expr);
   asmc::File emitStackCleanupRegistration(const StackCleanup &cleanup,
                                           const std::string &typeName);
   asmc::File emitStackCleanupHeadReset();
   int stackCleanupHeadOffset() const;
-  asmc::File emitStackCleanups();
+  asmc::File emitStackCleanups(bool allFunctionScopes = false);
 
 private:
+  asmc::File emitStackCleanupsAt(int headOffset);
   static bool traceAlert;
   struct Impl;
   std::unique_ptr<Impl> impl;

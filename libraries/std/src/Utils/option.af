@@ -219,9 +219,44 @@ export fn Some(const T &&val) -> option::<T> {
 };
 
 types(T)
+when (T is primitive)
+export fn Some(const T val) -> local option::<T> {
+  return option::<T>->Some(val);
+};
+
+types(T)
+when (T is not primitive and T has __copy__)
+export fn Some(const T val) -> local option::<T> {
+  return option::<T>->Some(val);
+};
+
+types(T)
+when (T is not primitive)
+export fn Some(const local T &&val) -> local option::<T> {
+  return option::<T>->Some($val);
+};
+
+types(T)
+when (T is not primitive)
+export fn Some(const T &&val) -> local option::<T> {
+  return option::<T>->Some($val);
+};
+
+types(T)
+when (T is not primitive)
+export fn Some(const local T &&val) -> option::<T> {
+  return new option::<T>->Some($val);
+};
+
+types(T)
 // Obtain a typed `None` value for the requested generic parameter.
 export fn None() -> option::<T> {
   return new option::<T>->None();
+};
+
+types(T)
+export fn None() -> local option::<T> {
+  return option::<T>->None();
 };
 
 types(T)
@@ -257,6 +292,71 @@ export fn optionWrapper(immutable T value) -> option::<T> {
 types(T)
 when (T is not primitive)
 export fn optionWrapper(immutable T &&value) -> option::<T> {
+  const adr checker = NULL;
+  const adr cpoint = ?checker;
+  cpoint =: value;
+  if (checker == NULL) {
+    return new option::<T>->None();
+  } else {
+    return new option::<T>->Some($value);
+  }
+};
+
+types(T)
+when (T is primitive)
+export fn optionWrapper(immutable T value) -> local option::<T> {
+  const adr checker = NULL;
+  const adr cpoint = ?checker;
+  cpoint =: value;
+  if (checker == NULL) {
+    return option::<T>->None();
+  } else {
+    return option::<T>->Some(value);
+  }
+};
+
+types(T)
+when (T is not primitive and T has __copy__)
+export fn optionWrapper(immutable T value) -> local option::<T> {
+  const adr checker = NULL;
+  const adr cpoint = ?checker;
+  cpoint =: value;
+  if (checker == NULL) {
+    return option::<T>->None();
+  } else {
+    return option::<T>->Some(value);
+  }
+};
+
+types(T)
+when (T is not primitive)
+export fn optionWrapper(immutable local T &&value) -> local option::<T> {
+  const adr checker = NULL;
+  const adr cpoint = ?checker;
+  cpoint =: value;
+  if (checker == NULL) {
+    return option::<T>->None();
+  } else {
+    return option::<T>->Some($value);
+  }
+};
+
+types(T)
+when (T is not primitive)
+export fn optionWrapper(immutable T &&value) -> local option::<T> {
+  const adr checker = NULL;
+  const adr cpoint = ?checker;
+  cpoint =: value;
+  if (checker == NULL) {
+    return option::<T>->None();
+  } else {
+    return option::<T>->Some($value);
+  }
+};
+
+types(T)
+when (T is not primitive)
+export fn optionWrapper(immutable local T &&value) -> option::<T> {
   const adr checker = NULL;
   const adr cpoint = ?checker;
   cpoint =: value;

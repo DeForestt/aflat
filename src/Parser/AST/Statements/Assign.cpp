@@ -260,8 +260,12 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   mov->logicalLine = this->logicalLine;
   asmc::Mov *mov2 = new asmc::Mov();
   mov2->logicalLine = this->logicalLine;
-  gen::Expr expr = generator.GenExpr(this->expr, file, symbol->type.size,
-                                     symbol->type.typeName);
+  gen::Expr expr =
+      generator.GenExpr(this->expr, file, symbol->type.size,
+                        symbol->type.typeName, symbol->type.isLocal);
+  if (symbol->type.isLocal && expr.storageOrigin != gen::StorageOrigin::Stack)
+    generator.alert("a local binding requires a stack-local value", true,
+                    __FILE__, __LINE__);
 
   auto *fieldType = generator.typeList()[symbol->type.typeName];
   const int fieldDepth =
@@ -397,6 +401,8 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
       liveBinding->needsDrop = expr.needsDrop && !symbol->type.isLoan;
       liveBinding->storageOrigin = expr.storageOrigin;
       liveBinding->storageScope = expr.storageScope;
+      liveBinding->stackObjectOffset = expr.stackObjectOffset;
+      liveBinding->stackCleanupNodeOffset = expr.stackCleanupNodeOffset;
       liveBinding->sold = -1;
     }
   }
