@@ -926,7 +926,9 @@ gen::Expr Function::toExpr(gen::CodeGenerator &generator) {
                     ? asmc::QWord
                     : this->type.size;
   output.access = generator.registers()["%rax"]->get(output.size);
-  if (this->type.typeName == "float") {
+  // Classify the completed return type, not a wrapper's payload. Options,
+  // results, and tasks are returned as pointers even when they contain floats.
+  if (output.type == "float") {
     output.access = generator.registers()["%xmm0"]->get(output.size);
     output.op = asmc::Float;
   }

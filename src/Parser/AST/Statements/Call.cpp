@@ -1526,6 +1526,7 @@ gen::GenerationResult Call::generateAttempt(
   if (returnsLocal) {
     result.access = generator.registers()["%rax"]->get(asmc::QWord);
     result.size = asmc::QWord;
+    result.op = asmc::Hard;
     result.owned = false;
     result.needsDrop = localReturnCleanup.objectOffset != 0;
     result.storageOrigin = gen::StorageOrigin::Stack;
