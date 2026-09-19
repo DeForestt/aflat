@@ -2030,3 +2030,68 @@ fn main() -> int {
   CHECK(std::system(config.outPutFile.c_str()) == 0);
   fs::remove_all(dir);
 }
+
+TEST_CASE("implicit returns release heap buffers and consumed arguments",
+          "[codegen][runtime][ownership][implicit-return]") {
+  namespace fs = std::filesystem;
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
+  const auto dir = fs::path("tmp/compiler_implicit_return_cleanup");
+  fs::create_directories(dir);
+  std::ofstream(dir / "main.af") << R"(.needs <std>
+import byte_buffer from "Memory";
+int af_live_blocks();
+long af_live_bytes();
+mutable int drops = 0;
+unique class Owner {
+  int value = 42;
+  fn init() -> Self { return my; };
+  fn del() -> void { drops = drops + 1; };
+  fn render(const bool early) -> void {
+    const let buffer = new byte_buffer(1080015);
+    const let __heap = new Owner();
+    const let __stack = Owner();
+    buffer.write_bytes("pixel", 5);
+    if early { return; };
+    for int i = 0; i < 2; i++ {
+      const let row = new byte_buffer(32);
+      row.write_bytes("row", 3);
+    };
+  };
+};
+fn render(const Owner owner, const bool early) -> void {
+  const let buffer = new byte_buffer(1080015);
+  buffer.write_bytes("pixel", 5);
+  owner.render(early);
+};
+fn consume(const Owner &&owner) -> void {};
+fn borrow(const Owner owner) -> void {};
+fn main() -> int {
+  const int blocks = af_live_blocks();
+  const long bytes = af_live_bytes();
+  const let owner = new Owner();
+  for int i = 0; i < 20; i++ {
+    render(owner, i % 2 == 0);
+    if drops != (i + 1) * 2 { return 1; };
+    if af_live_blocks() != blocks + 1 { return 2; };
+  };
+  borrow(owner);
+  if drops != 40 { return 3; };
+  if owner.value != 42 { return 4; };
+  consume($owner);
+  if drops != 41 { return 5; };
+  if af_live_blocks() != blocks { return 6; };
+  if af_live_bytes() != bytes { return 7; };
+  return 0;
+};
+)";
+  cfg::Config config;
+  config.entryPoint = "../" + (dir / "main").string();
+  config.outPutFile = (dir / "main").string();
+  REQUIRE(runConfig(config, "libraries/std/", 'e'));
+  CHECK(std::system(config.outPutFile.c_str()) == 0);
+  fs::remove_all(dir);
+}
