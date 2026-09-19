@@ -215,6 +215,10 @@ public:
   asmc::File emitStackCleanupHeadReset();
   int stackCleanupHeadOffset() const;
   asmc::File emitStackCleanups(bool allFunctionScopes = false);
+  void beginLoopCleanup();
+  void endLoopCleanup();
+  asmc::File emitLoopExitCleanups(int level);
+  asmc::File emitFunctionExitCleanups();
 
 private:
   asmc::File emitStackCleanupsAt(int headOffset);

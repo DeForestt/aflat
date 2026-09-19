@@ -521,7 +521,7 @@ gen::GenerationResult Call::generateAttempt(
           overloadIdent.clear();
           currentOverloadIndex = -1;
           func = &callFunction;
-          func->ident.ident = "pub_" + tname + "__call";
+          func->ident.ident = "pub_" + tname + "_" + f->ident.ident;
           copyReturnMetadata(*func, *f);
           func->req = f->req;
           func->optConvertionIndices = f->optConvertionIndices;
@@ -539,6 +539,8 @@ gen::GenerationResult Call::generateAttempt(
           mov->from = exp1.access;
           mov->to = generator.intArgs()[argsCounter].get(exp1.size);
           file.text << mov;
+          hasHiddenReceiver = true;
+          includeLoanSource(exp1);
           argsCounter++;
         }
       };

@@ -764,6 +764,22 @@ vector::<string> words = [];
 The literal expands to creating a `vector` instance and pushing each element in
 order.
 
+Vector lookup, iteration, search, and pop methods return `local option` values.
+The option wrapper and the operation's lock guard use stack storage. Primitive
+and borrowed-element lookups do not allocate; copying an owned payload and
+expanding the vector's buffer may still allocate. Functions that forward these
+options must also declare a local return:
+
+```c
+fn first(const vector::<int> values) -> local option::<int> {
+    return values.front();
+};
+```
+
+New Vector operations should keep temporary wrappers and guards local and avoid
+allocating inside element-processing loops. Object sorting reuses one scratch
+buffer across all swaps.
+
 ## Classes
 Classes in aflat are effectively structs that can implement functions and support encapsulation and rudimentary inheritance.  The syntax is:
 ```js

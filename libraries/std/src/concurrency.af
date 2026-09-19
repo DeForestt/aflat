@@ -49,6 +49,11 @@ shared safe dynamic class Lock {
         return new LockGuard(handle, true);
     };
 
+    public safe fn guard() -> local LockGuard {
+        const adr handle = my.handle;
+        return LockGuard(handle, true);
+    };
+
     /**
      * Guard a lock that the caller has already acquired with tryLock().
      *

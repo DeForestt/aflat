@@ -589,8 +589,10 @@ TEST_CASE("nested unordered_map methods keep their emitted bodies",
       "pub_vector__std__generic__start__u_map_bucket__std__generic__start__"
       "adr__std__generic__separator__int__std__generic__end____std__generic__"
       "end___get:";
-  const std::string optionNone = "call\toption.None.__std__loan__u_map_bucket";
-  const std::string optionSome = "call\toption.Some.__std__loan__u_map_bucket";
+  const std::string optionNone =
+      "call\toption.None_ovl1.__std__loan__u_map_bucket";
+  const std::string optionSome =
+      "call\toption.Some_ovl3.__std__loan__u_map_bucket";
   const std::string mapCall =
       "pub_unordered_map__std__generic__start__adr__std__generic__separator__"
       "int__std__generic__end____call:";
@@ -599,7 +601,7 @@ TEST_CASE("nested unordered_map methods keep their emitted bodies",
       "adr__std__generic__separator__int__std__generic__end____std__generic__"
       "end___get_unlocked:";
   const std::string entryOptionSome =
-      "call\toption.Some.__std__loan__u_map_entry";
+      "call\toption.Some_ovl3.__std__loan__u_map_entry";
 
   REQUIRE(result);
   const auto vectorGetPos = asmText.find(vectorGet);
@@ -662,7 +664,7 @@ fn main() -> int {
   REQUIRE(entryVectorGetPos != std::string::npos);
   const auto afterEntryVectorGet =
       asmText.find("\npub_", entryVectorGetPos + 1);
-  REQUIRE(asmText.find("call\toption.Some.__std__loan__u_map_entry",
+  REQUIRE(asmText.find("call\toption.Some_ovl3.__std__loan__u_map_entry",
                        entryVectorGetPos) < afterEntryVectorGet);
 }
 
@@ -708,7 +710,7 @@ fn main() -> int {
   REQUIRE(entryVectorGetPos != std::string::npos);
   const auto afterEntryVectorGet =
       asmText.find("\npub_", entryVectorGetPos + 1);
-  REQUIRE(asmText.find("call\toption.Some.__std__loan__u_map_entry",
+  REQUIRE(asmText.find("call\toption.Some_ovl3.__std__loan__u_map_entry",
                        entryVectorGetPos) < afterEntryVectorGet);
   REQUIRE(asmText.find(
               "call\toption.Some.u_map_entry__std__generic__start__adr__std__"
@@ -755,8 +757,8 @@ fn main() -> int {
   fs::remove_all(dir);
 
   REQUIRE(result);
-  CHECK(asmText.find("option.Some.adr") != std::string::npos);
-  CHECK(asmText.find("option.Some.__std__loan__adr") == std::string::npos);
+  CHECK(asmText.find("option.Some_ovl3.adr") != std::string::npos);
+  CHECK(asmText.find("option.Some_ovl3.__std__loan__adr") == std::string::npos);
 }
 
 TEST_CASE("generic dynamic classes emit lifecycle cleanup methods",

@@ -186,7 +186,7 @@ shared class u_map_bucket {
 		return;
 	};
 
-	fn entryAt(const int index) -> option::<&u_map_entry::<K, V>> {
+	fn entryAt(const int index) -> local option::<&u_map_entry::<K, V>> {
 		return my.entries.get_unlocked(index);
 	};
 

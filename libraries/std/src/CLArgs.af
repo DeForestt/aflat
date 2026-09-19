@@ -166,7 +166,7 @@ shared class CommandLineArgs {
 		my.arguments.reset();
 	};
 
-	fn popCommand() -> CLAValue? {
+	fn popCommand() -> local CLAValue? {
 		return my.untagedValues.pop_back();
 	};
 

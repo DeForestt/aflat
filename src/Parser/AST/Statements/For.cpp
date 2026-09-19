@@ -83,18 +83,6 @@ gen::GenerationResult const For::generate(gen::CodeGenerator &generator) {
   continueLabel->label = ".L" + generator.nameTable().head->data.ident.ident +
                          std::to_string(generator.labelCount());
   generator.labelCount()++;
-  asmc::Label *breakCleanupLabel = new asmc::Label();
-  breakCleanupLabel->logicalLine = this->logicalLine;
-  breakCleanupLabel->label = ".L" +
-                             generator.nameTable().head->data.ident.ident +
-                             std::to_string(generator.labelCount());
-  generator.labelCount()++;
-  asmc::Label *continueCleanupLabel = new asmc::Label();
-  continueCleanupLabel->logicalLine = this->logicalLine;
-  continueCleanupLabel->label = ".L" +
-                                generator.nameTable().head->data.ident.ident +
-                                std::to_string(generator.labelCount());
-  generator.labelCount()++;
   OutputFile << generator.GenSTMT(this->declare);
   asmc::Jmp *jmp = new asmc::Jmp();
   jmp->to = label2->label;
@@ -102,26 +90,16 @@ gen::GenerationResult const For::generate(gen::CodeGenerator &generator) {
 
   OutputFile.text << label1;
 
-  generator.breakContext().push(breakCleanupLabel->label);
-  generator.continueContext().push(continueCleanupLabel->label);
+  generator.breakContext().push(breakLabel->label);
+  generator.continueContext().push(continueLabel->label);
 
   gen::scope::ScopeManager::getInstance()->pushScope(true);
   generator.beginStackCleanupFrame();
   OutputFile << generator.emitStackCleanupHeadReset();
+  generator.beginLoopCleanup();
   OutputFile << generator.GenSTMT(this->Run);
+  generator.endLoopCleanup();
   OutputFile << generator.emitStackCleanups();
-  OutputFile.text << continueCleanupLabel;
-  OutputFile << generator.emitStackCleanups();
-  auto *continueJump = new asmc::Jmp();
-  continueJump->logicalLine = this->logicalLine;
-  continueJump->to = continueLabel->label;
-  OutputFile.text << continueJump;
-  OutputFile.text << breakCleanupLabel;
-  OutputFile << generator.emitStackCleanups();
-  auto *breakJump = new asmc::Jmp();
-  breakJump->logicalLine = this->logicalLine;
-  breakJump->to = breakLabel->label;
-  OutputFile.text << breakJump;
   generator.endStackCleanupFrame();
   gen::scope::ScopeManager::getInstance()->popScope(&generator, OutputFile);
   OutputFile.text << continueLabel;
