@@ -1833,3 +1833,58 @@ async fn main() -> int {
   CHECK(ran == 0);
   fs::remove_all(dir);
 }
+
+TEST_CASE("vector lookups borrow existing async worker handles",
+          "[async][vector][loan][runtime][regression]") {
+  namespace fs = std::filesystem;
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
+  const auto dir = fs::path("tmp/compiler_async_vector_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  std::ofstream(dir / "main.af") << R"(.needs <std>
+.needs <asm>
+import {worker} from "concurrency" under async;
+fn frameWorker(const adr value) -> adr : async.worker::<adr> {
+  return value;
+};
+fn main() -> int {
+  const int marker = 42;
+  const let workers = [frameWorker(?marker)];
+  mutable int seen = 0;
+  foreach worker in workers {
+    if worker.await() != ?marker { return 1; };
+    seen = seen + 1;
+  };
+  if seen != 1 { return 2; };
+  const let worker = workers.get(0).expect("missing worker");
+  if worker.await() != ?marker { return 3; };
+  if workers.get(-1).isSome() { return 4; };
+  if workers.get(1).isSome() { return 5; };
+  return 0;
+};
+)";
+  cfg::Config config;
+  config.asm_ = true;
+  config.entryPoint = "../" + (dir / "main").string();
+  config.outPutFile = (dir / "main").string();
+  REQUIRE(runConfig(config, "libraries/std/", 'e'));
+  const auto assembly = readFile(dir / "main.s");
+  const std::string handle =
+      "AsyncResult__std__generic__start__adr__std__generic__end__";
+  const auto getStart = assembly.find("pub_vector__std__generic__start__" +
+                                      handle + "__std__generic__end___get:");
+  REQUIRE(getStart != std::string::npos);
+  const auto getEnd = assembly.find("\npub_", getStart + 1);
+  REQUIRE(getEnd != std::string::npos);
+  const auto getAssembly = assembly.substr(getStart, getEnd - getStart);
+  CHECK(getAssembly.find("call\toption.Some.__std__loan__" + handle) !=
+        std::string::npos);
+  CHECK(getAssembly.find("call\tpub_" + handle + "_init") == std::string::npos);
+  const int ran = std::system(("timeout 10s " + config.outPutFile).c_str());
+  CHECK(ran == 0);
+  fs::remove_all(dir);
+}
