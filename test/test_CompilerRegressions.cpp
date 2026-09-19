@@ -1764,3 +1764,72 @@ fn main() -> int {
   REQUIRE(vectorDel != std::string::npos);
   CHECK(text.find("call\tpub_Item_del", vectorDel) != std::string::npos);
 }
+
+TEST_CASE("async arguments survive dispatch and suspension",
+          "[async][codegen][runtime][regression]") {
+  namespace fs = std::filesystem;
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
+  const auto dir = fs::path("tmp/compiler_async_arguments_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  std::ofstream(dir / "main.af") << R"(.needs <std>
+.needs <Async>
+class Probe {
+  int value = 37;
+  fn init() -> Self { return my; };
+  fn read() -> int { return my.value; };
+};
+async fn zero() -> int { yield; return 11; };
+async fn one(const int value) -> int {
+  if value != 19 { return 1; };
+  yield;
+  return value;
+};
+async fn two(const int value, Probe probe) -> int {
+  if value != 23 { return 1; };
+  if probe.read() != 37 { return 2; };
+  yield;
+  return value + probe.read();
+};
+async fn six(const int a, const int b, const int c,
+             const int d, const int e, const int f) -> int {
+  if a != 2 { return 1; };
+  if b != 3 { return 2; };
+  if c != 5 { return 3; };
+  if d != 7 { return 4; };
+  if e != 11 { return 5; };
+  if f != 13 { return 6; };
+  yield;
+  if a != 2 { return 7; };
+  if b != 3 { return 8; };
+  if c != 5 { return 9; };
+  if d != 7 { return 10; };
+  if e != 11 { return 11; };
+  if f != 13 { return 12; };
+  return 41;
+};
+async fn main() -> int {
+  const int noArgs = await zero();
+  if noArgs != 11 { return 1; };
+  const int oneArg = await one(19);
+  if oneArg != 19 { return 2; };
+  const Probe probe = new Probe();
+  const int twoArgs = await two(23, probe);
+  if twoArgs != 60 { return 3; };
+  const int sixArgs = await six(2, 3, 5, 7, 11, 13);
+  if sixArgs != 41 { return 4; };
+  return 0;
+};
+)";
+  cfg::Config config;
+  config.entryPoint = "../" + (dir / "main").string();
+  config.outPutFile = (dir / "main").string();
+  REQUIRE(runConfig(config, "libraries/std/", 'e'));
+  const int ran = std::system(("timeout 10s " + config.outPutFile).c_str());
+  CHECK(ran == 0);
+  fs::remove_all(dir);
+}

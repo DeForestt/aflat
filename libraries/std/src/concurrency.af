@@ -529,7 +529,7 @@ export async fn async_thread(
         return fallbackValue;
     };
     const adr outputValue = NULL;
-    af_cpu_operation_take_result(nativeOperation, ?outputValue);
+    af_cpu_operation_take_result(nativeOperation, outputValue);
     const T primitiveValue = outputValue as T;
     af_free(outputValue);
     return primitiveValue;
