@@ -890,7 +890,11 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
     if (this->isAsyncBody) {
       replaceAsyncFrameSize(file, frameSize);
       auto dispatch = asyncDispatch(*this, frameSize);
-      int location = asyncDispatchLocation + 2;
+      // insert() uses a one-based position. Account for both prologue
+      // insertions so dispatch runs after every incoming argument is saved:
+      // af_task_restore_frame may clobber the argument registers.
+      int location =
+          asyncDispatchLocation + 2 + (stackCleanupHead != 0 ? 1 : 0);
       for (auto *instruction : dispatch)
         file.text.insert(instruction, location++);
     }
