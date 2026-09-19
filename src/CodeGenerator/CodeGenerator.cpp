@@ -345,6 +345,12 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     cl = dynamic_cast<gen::Class *>(*expected);
   }
 
+  // A generic address bound to an explicit class loan already points to the
+  // borrowed object (for example, a vector element passed to Some::<&T>).
+  // Pedantic constructor conversion would create a different object instead.
+  if (type.isLoan && type.size == asmc::QWord && typeName == "generic" && cl)
+    return true;
+
   auto hasAdrInitializer = [](gen::Class *cls) {
     if (cls == nullptr || cls->nameTable.count == 0) {
       return false;

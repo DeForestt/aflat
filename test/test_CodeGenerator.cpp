@@ -142,6 +142,27 @@ TEST_CASE("object accepts non-primitive values but rejects primitives",
   CHECK_THROWS(mockGen.canAssign(objectTarget, "int", "ERROR"));
 }
 
+TEST_CASE("explicit loans accept generic addresses of pedantic classes",
+          "[canAssign][loan][regression]") {
+  auto parser = parse::Parser();
+  auto mockGen = gen::CodeGenerator("mod", parser, "",
+                                    std::filesystem::current_path().string());
+  auto *cls = new gen::Class();
+  cls->Ident = "Handle";
+  cls->pedantic = true;
+  cls->dynamic = true;
+  mockGen.typeList().push(cls);
+
+  auto target = ast::Type("Handle", asmc::QWord);
+  target.isLoan = true;
+  CHECK(mockGen.canAssign(target, "generic", "", false, false));
+  CHECK_FALSE(mockGen.canAssign(target, "adr", "", false, false));
+  CHECK_FALSE(mockGen.canAssign(target, "int", "", false, false));
+  CHECK_FALSE(mockGen.canAssign(target, "Unrelated", "", false, false));
+  target.isLoan = false;
+  CHECK_FALSE(mockGen.canAssign(target, "generic", "", false, false));
+}
+
 TEST_CASE("adr accepts function pointers with generic argument types",
           "[canAssign]") {
   auto adrTarget = ast::Type("adr", asmc::QWord);
