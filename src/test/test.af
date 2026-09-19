@@ -95,7 +95,124 @@ class HookState {
 	};
 };
 
+shared class VectorAllocationShape {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+};
+mutable int vectorPayloadDrops = 0;
+unique class VectorOwnedPayload {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+  fn del() -> void { vectorPayloadDrops = vectorPayloadDrops + 1; };
+};
+unique class VectorCopiedPayload {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+  fn __copy__() -> Self { return new VectorCopiedPayload(my.value); };
+  fn del() -> void { vectorPayloadDrops = vectorPayloadDrops + 1; };
+};
+fn vectorCopiedMatches(const VectorCopiedPayload value, const adr args) -> bool {
+  return value.value == 40;
+};
+fn vectorOwnedMatches(const VectorOwnedPayload value, const adr args) -> bool {
+  return value.value == 20;
+};
+fn checkVectorOwnedPayload() -> int {
+  const let values = new vector::<VectorOwnedPayload>(3);
+  values.push_back(new VectorOwnedPayload(10));
+  values.push_back(new VectorOwnedPayload(20));
+  values.push_back(new VectorOwnedPayload(30));
+  const long before = af_total_allocations();
+  if values.get(0).unwrap().value != 10 { return 21; };
+  if values.findFirst(vectorOwnedMatches).unwrap().value != 20 { return 29; };
+  if af_total_allocations() != before { return 22; };
+  const local let last = values.pop_back();
+  const local let first = values.pop_front();
+  if first.unwrap().value != 10 { return 23; };
+  if last.unwrap().value != 30 { return 24; };
+  if values.front().unwrap().value != 20 { return 25; };
+  const let copies = new vector::<VectorCopiedPayload>(1);
+  copies.push_back(new VectorCopiedPayload(40));
+  const local let copied = copies.get(0);
+  if copied.unwrap().value != 40 { return 26; };
+  const long beforeFind = af_total_allocations();
+  const local let found = copies.findFirst(vectorCopiedMatches);
+  if found.unwrap().value != 40 { return 30; };
+  if af_total_allocations() != beforeFind + #1 { return 31; };
+  return 0;
+};
+fn vectorShapeGreater(const VectorAllocationShape left, const VectorAllocationShape right) -> bool {
+  return left.value > right.value;
+};
+fn checkVectorSortAllocations() -> int {
+  const let shapes = new vector::<VectorAllocationShape>(3);
+  const let first = VectorAllocationShape(3);
+  const let second = VectorAllocationShape(2);
+  const let third = VectorAllocationShape(1);
+  shapes.push_back(first); shapes.push_back(second); shapes.push_back(third);
+  const long before = af_total_allocations();
+  shapes.sort(vectorShapeGreater);
+  if af_total_allocations() != before + #1 { return 1; };
+  if shapes.front().unwrap().value != 1 { return 2; };
+  if shapes.back().unwrap().value != 3 { return 3; };
+  return 0;
+};
+fn vectorAllocationMatches(const int value, const adr args) -> bool { return value == 3; };
+fn checkVectorAllocations() -> int {
+  const let values = new vector::<int>(4);
+  values.push_back(1); values.push_back(2); values.push_back(3);
+  const let shapes = new vector::<VectorAllocationShape>(2);
+  const let shape = VectorAllocationShape(42);
+  shapes.push_back(shape);
+  const long before = af_total_allocations();
+  for mutable int i = 0; i < 20; i = i + 1 {
+    const local let got = values.get(1);
+    if got.unwrap() != 2 { return 1; };
+    if values.front().unwrap() != 1 { return 2; };
+    if values.back().unwrap() != 3 { return 3; };
+    if values(2).unwrap() != 3 { return 4; };
+    if values.get(-1).isSome() { return 5; };
+    if values.get(3).isSome() { return 6; };
+    if values.findFirst(vectorAllocationMatches).unwrap() != 3 { return 7; };
+    const local let borrowed = shapes.get(0);
+    if borrowed.unwrap().value != 42 { return 8; };
+    if shapes.get_unlocked(0).unwrap().value != 42 { return 9; };
+    mutable int total = 0;
+    foreach value in values { total = total + value; };
+    if total != 6 { return 10; };
+  };
+  if values.pop_front().unwrap() != 1 { return 11; };
+  if values.pop_back().unwrap() != 3 { return 12; };
+  if values.pop_back().unwrap() != 2 { return 13; };
+  if values.pop_back().isSome() { return 14; };
+  if values.front().isSome() { return 15; };
+  if values.back().isSome() { return 16; };
+  if af_total_allocations() != before { return 17; };
+  return 0;
+};
+
 fn main() -> int{
+    test.describe("Vector allocations", fn () {
+        test.it("keeps lookup, iteration, search, and pop options local", fn () {
+            const int before = af_live_blocks();
+            const int status = checkVectorAllocations();
+            const int after = af_live_blocks();
+            test.assertEqual(0, status);
+            test.assertEqual(before, after);
+        });
+        test.it("cleans owned and copied payloads in local options", fn () {
+            const int before = af_live_blocks();
+            vectorPayloadDrops = 0;
+            const int status = checkVectorOwnedPayload();
+            const int after = af_live_blocks();
+            test.assertEqual(0, status);
+            test.assertEqual(6, vectorPayloadDrops);
+            test.assertEqual(before, after);
+        });
+        test.it("reuses a single scratch allocation while sorting objects", fn () {
+            test.assertEqual(0, checkVectorSortAllocations());
+        });
+    });
 	test.describe("Union", fn () {
 		test.it("should preserve float payloads", fn () {
 			let value = new Value->Float(3.5);

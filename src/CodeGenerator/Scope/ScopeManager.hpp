@@ -72,6 +72,9 @@ public:
 
   void softPop(gen::CodeGenerator *callback, asmc::File &OutputFile);
 
+  void emitScopeCleanup(gen::CodeGenerator *callback, asmc::File &output,
+                        ScopeId scope);
+
   void parentScope(ScopeId scope) const;
 
   bool contains(ScopeId outer, ScopeId inner) const;

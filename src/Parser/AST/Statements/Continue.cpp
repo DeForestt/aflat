@@ -23,6 +23,7 @@ gen::GenerationResult const Continue::generate(gen::CodeGenerator &generator) {
 
   // we need to pop the scope before continuing to avoid memory leaks
 
+  OutputFile << generator.emitLoopExitCleanups(this->level);
   int index = this->level - 1;
   asmc::Jmp *jmp = new asmc::Jmp();
   jmp->logicalLine = this->logicalLine;

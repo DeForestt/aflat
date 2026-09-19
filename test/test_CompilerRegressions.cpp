@@ -1881,10 +1881,152 @@ fn main() -> int {
   const auto getEnd = assembly.find("\npub_", getStart + 1);
   REQUIRE(getEnd != std::string::npos);
   const auto getAssembly = assembly.substr(getStart, getEnd - getStart);
-  CHECK(getAssembly.find("call\toption.Some.__std__loan__" + handle) !=
-        std::string::npos);
+  CHECK(getAssembly.find("call\toption.Some_ovl") != std::string::npos);
+  CHECK(getAssembly.find("__std__loan__" + handle) != std::string::npos);
+  CHECK(getAssembly.find("call\taf_malloc") == std::string::npos);
   CHECK(getAssembly.find("call\tpub_" + handle + "_init") == std::string::npos);
   const int ran = std::system(("timeout 10s " + config.outPutFile).c_str());
   CHECK(ran == 0);
+  fs::remove_all(dir);
+}
+
+TEST_CASE("loop exits clean borrowed heap receivers and local match values",
+          "[codegen][runtime][ownership][loop-cleanup]") {
+  namespace fs = std::filesystem;
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
+  const auto dir = fs::path("tmp/compiler_loop_cleanup_runtime");
+  fs::create_directories(dir);
+  const std::string preamble = R"(.needs <std>
+import option from "Utils/option";
+int af_live_blocks();
+long af_live_bytes();
+mutable int drops = 0;
+unique class Owner {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+  fn borrow() -> loan Self { return my; };
+  fn hit() -> local option::<int> {
+    if my.value % 2 == 0 { return option::<int>->Some(my.value); };
+    return option::<int>->None();
+  };
+  fn del() -> void { drops = drops + 1; };
+};
+fn lookup(const int value) -> Owner { return new Owner(value); };
+fn exercise(const int mode) -> int {
+)";
+  for (const bool whileLoop : {false, true}) {
+    INFO("while loop: " << whileLoop);
+    std::ofstream source(dir / "main.af");
+    source << preamble;
+    source << (whileLoop ? "mutable int i = 0; while i < 20 { i = i + 1;\n"
+                         : "for mutable int i = 1; i <= 20; i = i + 1 {\n");
+    source << R"(
+    const let owner = lookup(i).borrow();
+    const let hit = owner.hit();
+    match hit {
+      Some(value) => {
+        const let nested = lookup(value).borrow();
+        if nested.value != value { return 100; };
+        if mode == 1 { continue; };
+        if mode == 2 { break; };
+        if mode == 3 { return 7; };
+      },
+      None() => {
+        const let nested = lookup(i).borrow();
+        if nested.value != i { return 101; };
+      }
+    };
+  };
+  return 7;
+};
+fn main() -> int {
+  const int blocks = af_live_blocks();
+  const long bytes = af_live_bytes();
+  for mutable int mode = 0; mode < 4; mode = mode + 1 {
+    drops = 0;
+    if exercise(mode) != 7 { return 1; };
+    if af_live_blocks() != blocks { return 2; };
+    if af_live_bytes() != bytes { return 3; };
+    if mode < 2 { if drops != 40 { return 4; }; }
+    else { if drops != 4 { return 5; }; };
+  };
+  return 0;
+};
+)";
+    source.close();
+    cfg::Config config;
+    config.entryPoint = "../" + (dir / "main").string();
+    config.outPutFile = (dir / "main").string();
+    REQUIRE(runConfig(config, "libraries/std/", 'e'));
+    CHECK(std::system(config.outPutFile.c_str()) == 0);
+  }
+  fs::remove_all(dir);
+}
+
+TEST_CASE(
+    "local callable returns preserve receivers and borrowed option payloads",
+    "[codegen][runtime][local][callable][loan]") {
+  namespace fs = std::filesystem;
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
+  const auto dir = fs::path("tmp/compiler_local_callable_runtime");
+  fs::create_directories(dir);
+  std::ofstream(dir / "main.af") << R"(.needs <std>
+import option from "Utils/option";
+import {Some} from "Utils/option" under opt;
+unique class Item {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+  fn _call(const int extra) -> local option::<int> {
+    return opt.Some(my.value + extra);
+  };
+};
+unique class Iterator {
+  mutable int index = 0;
+  fn init() -> Self { return my; };
+  fn next() -> local option::<int> {
+    my.index = my.index + 1;
+    if my.index > 5 { return option::<int>->None(); };
+    return option::<int>->Some(my.index);
+  };
+};
+fn borrowed(const Item value) -> local option::<&Item> {
+  const local let wrapper = opt.Some::<&Item>(value);
+  return wrapper;
+};
+fn main() -> int {
+  const let item = new Item(40);
+  const long before = af_total_allocations();
+  const local let value = item(2);
+  if value.unwrap() != 42 { return 1; };
+  const local let loan = borrowed(item);
+  if loan.unwrap().value != 40 { return 2; };
+  const let iterator = Iterator();
+  mutable int total = 0;
+  foreach element in iterator {
+    if element == 2 { continue; };
+    total = total + element;
+  };
+  if total != 13 { return 4; };
+  const let early = Iterator();
+  foreach element in early {
+    if element == 3 { break; };
+  };
+  if af_total_allocations() != before { return 3; };
+  return 0;
+};
+)";
+  cfg::Config config;
+  config.entryPoint = "../" + (dir / "main").string();
+  config.outPutFile = (dir / "main").string();
+  REQUIRE(runConfig(config, "libraries/std/", 'e'));
+  CHECK(std::system(config.outPutFile.c_str()) == 0);
   fs::remove_all(dir);
 }

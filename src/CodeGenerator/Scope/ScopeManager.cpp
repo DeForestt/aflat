@@ -235,6 +235,20 @@ void ScopeManager::softPop(CodeGenerator *callback, asmc::File &OutputFile) {
   }
 }
 
+void ScopeManager::emitScopeCleanup(CodeGenerator *callback, asmc::File &output,
+                                    ScopeId scope) {
+  // Keep the compile-time scope intact: other control-flow paths still use it.
+  for (auto i = impl->stack.size(); i > 0; --i) {
+    auto sym = impl->stack[i - 1];
+    if (sym.declarationScope != scope || sym.symbol.empty())
+      continue;
+    if (auto *cleanup = callback->deScope(sym)) {
+      output << *cleanup;
+      delete cleanup;
+    }
+  }
+}
+
 gen::scope::ScopeId ScopeManager::currentScope() const {
   return impl->activeScopes.empty() ? GLOBAL_SCOPE : impl->activeScopes.back();
 }

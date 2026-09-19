@@ -9,10 +9,11 @@
 #include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
-#include "Parser/AST/Statements/Assign.hpp"
+#include "Parser/AST/Statements/Break.hpp"
 #include "Parser/AST/Statements/DecAssign.hpp"
-#include "Parser/AST/Statements/For.hpp"
+#include "Parser/AST/Statements/If.hpp"
 #include "Parser/AST/Statements/Sequence.hpp"
+#include "Parser/AST/Statements/While.hpp"
 #include "Scanner.hpp"
 
 namespace ast {
@@ -74,6 +75,10 @@ gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
   decl->mute = false;
   decl->declare->mut = false;
   decl->expr = this->iterator;
+  // Iterating a named container borrows it; only temporary or explicitly
+  // transferred iterators belong to this hidden binding.
+  if (auto *iteratorVar = dynamic_cast<ast::Var *>(this->iterator))
+    decl->declare->type.isLoan = !iteratorVar->selling;
 
   file << decl->generate(generator).file;
 
@@ -153,13 +158,9 @@ gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
   itemDecl->declare->logicalLine = this->logicalLine;
   itemDecl->declare->ident = itemIdent;
   itemDecl->declare->type.typeName = "let";
-  itemDecl->declare->mut = true;
-  itemDecl->mute = true;
+  itemDecl->declare->mut = false;
+  itemDecl->mute = false;
   itemDecl->expr = makeNextCall();
-
-  auto forLoop = new ast::For();
-  forLoop->logicalLine = this->logicalLine;
-  forLoop->declare = itemDecl;
 
   auto isSomeCall = new ast::CallExpr();
   isSomeCall->logicalLine = this->logicalLine;
@@ -167,13 +168,6 @@ gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
   isSomeCall->call->logicalLine = this->logicalLine;
   isSomeCall->call->ident = itemIdent;
   isSomeCall->call->modList << "isSome";
-  forLoop->expr = isSomeCall;
-
-  auto updateNext = new ast::Assign();
-  updateNext->logicalLine = this->logicalLine;
-  updateNext->Ident = itemIdent;
-  updateNext->expr = makeNextCall();
-  forLoop->increment = updateNext;
 
   auto someBinding = new ast::DecAssign();
   someBinding->logicalLine = this->logicalLine;
@@ -189,8 +183,9 @@ gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
   expectCall->call->logicalLine = this->logicalLine;
   expectCall->call->ident = itemIdent;
   expectCall->call->modList << "expect";
-  auto expectMsg = new ast::StringLiteral();
+  auto *expectMsg = new ast::StringLiteral();
   expectMsg->val = "Failed to get next value in foreach";
+  expectMsg->typeCast = "adr";
   expectCall->call->Args.push(expectMsg);
   someBinding->expr = expectCall;
 
@@ -199,8 +194,28 @@ gen::GenerationResult const ForEach::generate(gen::CodeGenerator &generator) {
   someBody->Statement1 = someBinding;
   someBody->Statement2 = this->implementation;
 
-  forLoop->Run = someBody;
-  file << forLoop->generate(generator).file;
+  // Each next() result belongs to one iteration. Keeping it in a for-loop
+  // initializer and reassigning it in the increment registers the same local
+  // cleanup node repeatedly, and retains earlier heap-backed results.
+  auto *stop = new ast::Break();
+  stop->logicalLine = this->logicalLine;
+  auto *branch = new ast::If();
+  branch->logicalLine = this->logicalLine;
+  branch->expr = isSomeCall;
+  branch->statement = someBody;
+  branch->elseStatement = stop;
+  auto *body = new ast::Sequence();
+  body->logicalLine = this->logicalLine;
+  body->Statement1 = itemDecl;
+  body->Statement2 = branch;
+  auto *condition = new ast::Var();
+  condition->logicalLine = this->logicalLine;
+  condition->Ident = "true";
+  auto *loop = new ast::While();
+  loop->logicalLine = this->logicalLine;
+  loop->expr = condition;
+  loop->stmt = body;
+  file << loop->generate(generator).file;
 
   file << generator.emitStackCleanups();
   generator.endStackCleanupFrame();

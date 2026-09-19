@@ -203,10 +203,12 @@ struct gen::CodeGenerator::Impl {
   links::LinkedList<std::string> continueContext;
   struct StackCleanupFrame {
     bool functionRoot = false;
+    scope::ScopeId scopeId = 0;
     int headOffset = 0;
     std::vector<StackCleanup> cleanups;
   };
   std::vector<StackCleanupFrame> stackCleanupFrames;
+  std::vector<std::size_t> loopCleanupFrames;
 };
 
 bool gen::CodeGenerator::traceAlert = false;
@@ -473,6 +475,7 @@ bool gen::CodeGenerator::hasError() const { return impl->errorFlag; }
 void gen::CodeGenerator::beginStackCleanupFrame(bool functionRoot) {
   Impl::StackCleanupFrame frame;
   frame.functionRoot = functionRoot;
+  frame.scopeId = scope::ScopeManager::getInstance()->currentScope();
   ast::Type headType("adr", asmc::QWord);
   frame.headOffset =
       gen::scope::ScopeManager::getInstance()->assign("", headType, false);
@@ -606,6 +609,45 @@ asmc::File gen::CodeGenerator::emitStackCleanups(bool allFunctionScopes) {
     if (!frame->cleanups.empty())
       file << emitStackCleanupsAt(frame->headOffset);
     if (!allFunctionScopes || frame->functionRoot)
+      break;
+  }
+  return file;
+}
+
+void gen::CodeGenerator::beginLoopCleanup() {
+  impl->loopCleanupFrames.push_back(impl->stackCleanupFrames.size() - 1);
+}
+
+void gen::CodeGenerator::endLoopCleanup() {
+  impl->loopCleanupFrames.pop_back();
+}
+
+asmc::File gen::CodeGenerator::emitLoopExitCleanups(int level) {
+  asmc::File file;
+  const auto target =
+      impl->loopCleanupFrames.at(impl->loopCleanupFrames.size() - level);
+  for (auto i = impl->stackCleanupFrames.size(); i > target; --i) {
+    const auto &frame = impl->stackCleanupFrames[i - 1];
+    if (!frame.cleanups.empty())
+      file << emitStackCleanupsAt(frame.headOffset);
+    scope::ScopeManager::getInstance()->emitScopeCleanup(this, file,
+                                                         frame.scopeId);
+  }
+  return file;
+}
+
+asmc::File gen::CodeGenerator::emitFunctionExitCleanups() {
+  asmc::File file;
+  for (auto i = impl->stackCleanupFrames.size(); i > 0; --i) {
+    const auto &frame = impl->stackCleanupFrames[i - 1];
+    const bool functionRoot = frame.functionRoot;
+    if (!frame.cleanups.empty())
+      file << emitStackCleanupsAt(frame.headOffset);
+    // Destructors may instantiate methods and temporarily grow the frame
+    // vector. Do not keep iterators or references across that generation.
+    scope::ScopeManager::getInstance()->emitScopeCleanup(this, file,
+                                                         frame.scopeId);
+    if (functionRoot)
       break;
   }
   return file;

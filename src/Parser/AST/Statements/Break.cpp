@@ -21,6 +21,7 @@ gen::GenerationResult const Break::generate(gen::CodeGenerator &generator) {
   if (generator.breakContext().size() < this->level)
     generator.alert("Attempted to break deeper than the current loop");
 
+  OutputFile << generator.emitLoopExitCleanups(this->level);
   int index = this->level - 1;
   asmc::Jmp *jmp = new asmc::Jmp();
   jmp->logicalLine = this->logicalLine;

@@ -429,8 +429,10 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   }
 
   if (generator.currentFunction()->returnsLocal) {
+    // A local wrapper can own its storage while carrying a borrowed payload.
+    // Only reject moving the borrowed object itself into the return slot.
     if (from.loanProvenance == gen::LoanProvenance::FunctionInput &&
-        !from.owned)
+        !from.owned && from.stackObjectOffset == 0)
       generator.alert("cannot move a borrowed parameter into a local return",
                       true, __FILE__, __LINE__);
     auto *returnedVar = dynamic_cast<ast::Var *>(this->expr);
@@ -504,8 +506,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
         bytes);
 
     file << generator.emitStackCleanupTransfer(from);
-    file << generator.emitStackCleanups(true);
-    gen::scope::ScopeManager::getInstance()->softPop(&generator, file);
+    file << generator.emitFunctionExitCleanups();
     auto *returnDestination = new asmc::Mov();
     returnDestination->logicalLine = this->logicalLine;
     returnDestination->size = asmc::QWord;
@@ -548,8 +549,7 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     file.text << saveReturn;
   }
 
-  file << generator.emitStackCleanups(true);
-  gen::scope::ScopeManager::getInstance()->softPop(&generator, file);
+  file << generator.emitFunctionExitCleanups();
   if (!returnedSymbol.empty()) {
     gen::Symbol *retSym =
         gen::scope::ScopeManager::getInstance()->get(returnedSymbol);

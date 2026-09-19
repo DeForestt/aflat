@@ -48,19 +48,6 @@ gen::GenerationResult const While::generate(gen::CodeGenerator &generator) {
   breakLabel->label = ".L" + generator.nameTable().head->data.ident.ident +
                       std::to_string(generator.labelCount());
   generator.labelCount()++;
-  asmc::Label *breakCleanupLabel = new asmc::Label();
-  breakCleanupLabel->logicalLine = this->logicalLine;
-  breakCleanupLabel->label = ".L" +
-                             generator.nameTable().head->data.ident.ident +
-                             std::to_string(generator.labelCount());
-  generator.labelCount()++;
-  asmc::Label *continueCleanupLabel = new asmc::Label();
-  continueCleanupLabel->logicalLine = this->logicalLine;
-  continueCleanupLabel->label = ".L" +
-                                generator.nameTable().head->data.ident.ident +
-                                std::to_string(generator.labelCount());
-  generator.labelCount()++;
-
   asmc::Jmp *jmp = new asmc::Jmp();
   jmp->logicalLine = this->logicalLine;
   jmp->to = label2->label;
@@ -68,27 +55,17 @@ gen::GenerationResult const While::generate(gen::CodeGenerator &generator) {
 
   file.text << label1;
   file << generator.emitStackCleanupHeadReset();
-  generator.breakContext().push(breakCleanupLabel->label);
-  generator.continueContext().push(continueCleanupLabel->label);
+  generator.breakContext().push(breakLabel->label);
+  generator.continueContext().push(label2->label);
+  generator.beginLoopCleanup();
   file << generator.GenSTMT(this->stmt);
-  generator.breakContext().pop();
-  generator.continueContext().pop();
+  generator.endLoopCleanup();
   file << generator.emitStackCleanups();
-  file.text << continueCleanupLabel;
-  file << generator.emitStackCleanups();
-  auto *continueJump = new asmc::Jmp();
-  continueJump->logicalLine = this->logicalLine;
-  continueJump->to = label2->label;
-  file.text << continueJump;
-  file.text << breakCleanupLabel;
-  file << generator.emitStackCleanups();
-  auto *breakJump = new asmc::Jmp();
-  breakJump->logicalLine = this->logicalLine;
-  breakJump->to = breakLabel->label;
-  file.text << breakJump;
   generator.endStackCleanupFrame();
   gen::scope::ScopeManager::getInstance()->popScope(&generator, file);
 
+  generator.breakContext().pop();
+  generator.continueContext().pop();
   file.text << label2;
 
   gen::Expr expr = generator.GenExpr(this->expr, file);
