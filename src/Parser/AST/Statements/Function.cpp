@@ -840,25 +840,20 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
           returnStmt->expr = var;
           statement << generator.GenSTMT(returnStmt);
         } else {
-          if (this->sinksReceiver) {
-            gen::scope::ScopeManager::getInstance()->softPop(&generator,
-                                                             statement);
-          }
-          statement << generator.emitStackCleanups();
+          // Falling off the body must release the same owners as an explicit
+          // return, including heap locals and consumed arguments.
+          statement << generator.emitFunctionExitCleanups();
           asmc::Return *ret = new asmc::Return();
           ret->logicalLine = this->logicalLine;
           statement.text.push(ret);
         };
       }
     } else {
-      if (this->sinksReceiver) {
-        gen::scope::ScopeManager::getInstance()->softPop(&generator, statement);
-      }
+      statement << generator.emitFunctionExitCleanups();
       auto pop = new asmc::Pop();
       pop->logicalLine = this->logicalLine;
       pop->op = "%rbx";
       statement.text.push(pop);
-      statement << generator.emitStackCleanups();
       auto ret = new asmc::Return();
       ret->logicalLine = this->logicalLine;
       statement.text.push(ret);
