@@ -1,94 +1,82 @@
-# CLArgs.af Documentation
+# CLArgs
 
-## Overview
-`CLArgs.af` provides utilities for building command line interfaces. It defines a simple argument parser and a value wrapper so AFlat programs can accept options and subcommands.
+`CLArgs.af` provides argument descriptors, command-line parsing, and typed
+values. Import `CLAValue`, `Argument`, and `CommandLineArgs` from `CLArgs`.
 
-## Union `CLAValue`
-Represents a parsed argument value.
+## Value and descriptor types
 
-- `String(string)` – Stores a string argument.
-- `Number(int)` – Stores an integer argument.
-- `Boolean(bool)` – Represents a flag.
-- `None` – Indicates no value present.
+`CLAValue` is a union with `String(string)`, `Number(int)`, `Boolean(bool)`, and
+`None` variants. `getString() -> string!` produces an owned string or an Error;
+`toString() -> string` formats any variant.
 
-### Methods
-- `getString() -> string!` – Returns the contained string or an error if the value is not a string.
-- `toString() -> string` – Converts the contained value to a printable string.
+`Argument` describes an option with const `longName`, `shortName`,
+`description`, and `defaultValue` string fields. Its constructor is:
 
-## Class `Argument`
-Describes a single accepted option.
+```aflat
+fn init(const adr longName, const adr shortName, const adr description,
+        ?const adr defaultValue) -> Self;
+```
 
-Fields are immutable once constructed:
-- `longName` – Long form, e.g. `--help`.
-- `shortName` – Short form, e.g. `-h`.
-- `description` – Help text shown in `printHelp()`.
-- `defaultValue` – Optional default when the option is not provided.
+The optional raw default is wrapped locally inside the constructor and
+extracted to initialize a string. Omitting it uses the text `"false"`.
+`__copy__()` returns an independent descriptor.
 
-### Methods
-- `init(longName, shortName, description, ?defaultValue)` – Constructor.
-- `toString() -> string` – Formats the argument for help output.
+## CommandLineArgs
 
-## Class `CommandLineArgs`
-Handles parsing of the program arguments.
+Construct with `new CommandLineArgs(argc, argv)`. `with_arguments` consumes a
+`vector::<Argument>` and returns a loan of the parser. Keep a named parser
+owner instead of keeping only a loan returned from a temporary receiver.
 
-### Construction
-`CommandLineArgs(argc, argv)` builds the object. Use `with_arguments([...])` to register a list of `Argument`s before calling `parse()`.
+| Method | Return and meaning |
+| --- | --- |
+| `with_arguments(const vector::<Argument> &&args)` | `loan CommandLineArgs`; register descriptors. |
+| `parse()` | `bool!`; validate and collect arguments. |
+| `printHelp()` | `void`; print registered options. |
+| `popCommand()` | `local CLAValue?`; remove a positional value into a local option. |
+| `popCommandString()` | `string!`; remove a positional string. |
+| `popCommandRaw()` | `adr!`; remove a positional raw argv address. |
+| `hasTag(const string tag)` | `bool`; whether the tag was supplied. |
+| `getTag(const string tag)` | `CLAValue`; absence is its `None` variant, not an outer option. |
+| `getTagString(const string tag)` | `string!`; retrieve a required string value. |
+| `getTagInt(const string tag)` | `int!`; retrieve an integer value. |
 
-### Methods
-- `parse() -> bool!` – Parses the provided `argv` array. Returns an error when an unknown tag is encountered.
-- `printHelp()` – Prints usage information with all registered arguments.
-- `popCommand() -> CLAValue?` – Removes and returns the next positional argument.
-- `hasTag(tag) -> bool` – Checks if an option was supplied.
-- `getTag(tag) -> CLAValue?` – Retrieves the value for a given tag.
-
-### Fields
-- `programName` – The name of the executable after `parse()`.
+`programName` is set by `parse()`. Raw argv pointers must remain valid while
+used. A helper forwarding `popCommand()` must also declare a local return.
 
 ## Example
-```js
+
+```aflat
 .needs <std>
 import string from "String";
-import { print } from "String" under str;
-import {Some, None, optionWrapper} from "Utils/option" under opt;
-import {accept, reject, resultWrapper} from "Utils/result" under res;
+import {print} from "String" under str;
 import CLAValue, Argument, CommandLineArgs from "CLArgs";
 
 fn main(int argc, adr argv) -> int {
-    let args = new CommandLineArgs(argc, argv).with_arguments([
-        new Argument("help", "h", "Display this help message"),
-        new Argument("version", "v", "Display the version of the program"),
-        new Argument("config", "c", "Path to the configuration file", "default.conf"),
-        new Argument("verbose", "V", "Enable verbose output")
+    const let args = new CommandLineArgs(argc, argv);
+    args.with_arguments([
+        new Argument("help", "h", "Display help"),
+        new Argument("config", "c", "Configuration file")
     ]);
-
     match args.parse() {
-        Ok => {},
-        Err(e) => {
-            str.print(`Error parsing command line arguments: {e}\n`);
-            args.printHelp();
+        Ok(_) => {},
+        Err(error) => {
+            str.print(`Invalid arguments: {error}\n`);
             return 1;
         }
     };
-
-    str.print(`Program Name: {args.programName}\n`);
     if args.hasTag("help") {
         args.printHelp();
         return 0;
     };
-
-    let command = match args.popCommand() {
-        Some(cmd) => resolve cmd.getString().expect(`Command is not string`),
-        None => resolve "[NULL COMMAND]"
+    match args.getTag("config") {
+        String(path) => str.print(`Config: {path}\n`),
+        Number(_) => {},
+        Boolean(_) => str.print("Config requires a path\n"),
+        None() => str.print("Using default.conf\n")
     };
-
-    let config = match args.getTag("config") {
-        Some(configPath) => resolve configPath.getString().expect(`Failed to get config path`),
-        None => resolve "default.conf",
-    };
-
-    str.print(`running {command} with config {config}\n`);
-
     return 0;
 };
 ```
-This example shows how to define options, parse them, and access both tagged and positional arguments.
+
+See [the source](../src/CLArgs.af) and
+[the ownership guide](../../../Ownership.md).

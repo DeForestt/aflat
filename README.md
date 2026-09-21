@@ -15,6 +15,7 @@ lifetime of a value easier to check and review without hiding the cost or
 control of low-level code.
 
 See the [language documentation](Docs.md) for syntax and semantics, the
+[ownership guide](Ownership.md) for moves, loans, cleanup, and local storage, the
 [async/await guide](Async.md) for tasks, nonblocking I/O, and cancellation, and
 the [comprehensive reference](Comprehensive.md) for the compiler and standard
 library. Examples are available in the
@@ -38,18 +39,17 @@ git clone https://github.com/DeForestt/aflat
 The compiler uses **CMake** as its primary build system. Create a build directory and compile with CMake:
 ```bash
 cd aflat
-mkdir build && cd build
-cmake ..
-make
+cmake -S . -B build
+cmake --build build -j2
 ```
-For quick rebuilds you can simply run `make` again from the build directory.
-After building, generate the standard library objects:
+Run these commands from the repository root. After changing the compiler or
+standard library sources, regenerate all standard library assembly:
 ```bash
-../rebuild-libs.sh
+bash ./rebuild-libs.sh
 ```
 Create an alias to the compiled binary so `aflat` is easy to run:
 ```bash
-alias aflat="<path to build>/bin/aflat"
+alias aflat="<path to repository>/bin/aflat"
 ```
 Alternatively add the `bin` directory to your `PATH`.
 
@@ -147,13 +147,13 @@ AFlat ships a batteries-included standard library under `libraries/std`. The
 modules below are the most commonly used building blocks:
 
 #### Runtime & strings
-- `std` - Arena allocator, `malloc`/`free`, `memcpy`, `panic`, `sleep`, and other intrinsics (libraries/std/src/std.af).
+- `std` - Allocation helpers backed by the tracked libc allocator, `af_malloc`/`af_free`, `af_memcpy`, `panic`, `sleep`, and other intrinsics (libraries/std/src/std.af).
 - `Async` - Native `task<T>` scheduler support for `async fn`, `await`, `spawn`,
   `run`, `yield`, `pause`, cancellation, detachment, timers, and async file I/O.
   See the [async/await guide](Async.md).
 - `std-cmp` - Compatibility shim that swaps in libc memory helpers plus panic/assert when the arena can't be used (libraries/std/src/std-cmp.af).
 - `Memory` - RefCounted base class alongside the generic `Box`/`wrap` helpers for owning values (libraries/std/src/Memory.af).
-- `String` - Assembly-backed string primitive covering allocation, slicing, iteration, comparisons, casing, and conversions (libraries/std/src/String.af).
+- `String` - The `unique safe dynamic` class `string`, covering allocation, copying, slicing, iteration, comparisons, casing, and conversions (libraries/std/src/String.af).
 - `strings` - Standalone utilities such as `len`, concat, ASCII helpers, and int/float parsing/formatting (libraries/std/src/strings.af).
 - `System` - Thin syscall wrappers for `execve`, `exec`, shell execution, and environment-variable helpers (libraries/std/src/System.af).
 
@@ -171,7 +171,7 @@ modules below are the most commonly used building blocks:
 #### Data modeling & serialization
 - `JSON` - Tagged union covering JSON primitives, casting helpers, mutation, synchronous parsing/serialization, and background-thread `parseAsync`/`stringifyAsync` APIs (libraries/std/src/JSON.af).
 - `JSON/Parse` - Wrapper that routes to `JSON.parse` for turning strings into JSON values (libraries/std/src/JSON/Parse.af).
-- `JSON/Property` - Reserved module for future JSON/property bindings (libraries/std/src/JSON/Property.af).
+- `JSON/Property` - `JsonSerializable` base and typed field registration for JSON serialization (libraries/std/src/JSON/Property.af).
 
 #### HTTP & networking
 - `HTTP` - HTTP errors, verb enum, request parser, `HTTPMessage`/`HTTPResponse`, and `listen` helper (libraries/std/src/HTTP.af).
@@ -183,9 +183,9 @@ modules below are the most commonly used building blocks:
 
 #### Utility types & error handling
 - `Utils/Option` - Ref-counted Option class with `resolve`, `match`, and defaulting helpers (libraries/std/src/Utils/Option.af).
-- `Utils/option` - Lightweight union mirroring Rust's Option with `Some`/`None` constructors (libraries/std/src/Utils/option.af).
+- `Utils/option` - Unique typed union with `Some`/`None`, borrowed `&T` payloads, and heap/local constructor overloads (libraries/std/src/Utils/option.af).
 - `Utils/Result` - Class-based result value for bridging APIs that expect dynamic success/error payloads (libraries/std/src/Utils/Result.af).
-- `Utils/result` - Rust-style `result<T>` union with ergonomic constructors and unwrap helpers (libraries/std/src/Utils/result.af).
+- `Utils/result` - Unique `result<T>` union with owned errors, borrowed `&T` success payloads, and heap/local constructors (libraries/std/src/Utils/result.af).
 - `Utils/Error` - Base `Error` class with type metadata, render hooks, and pattern matching (libraries/std/src/Utils/Error.af).
 - `Utils/Error/Render` - Decorator that lets errors plug in a render callback (libraries/std/src/Utils/Error/Render.af).
 
@@ -209,12 +209,24 @@ modules below are the most commonly used building blocks:
 - `Web/Content` - File-backed templating utility that applies bindings before rendering (libraries/std/src/Web/Content.af).
 - `Web/Content/Bind` - Binding helper that registers template placeholders and preprocessors (libraries/std/src/Web/Content/Bind.af).
 
+### Ownership at a glance
+
+Classes and unions own by default; `shared` opts into a custom lifecycle.
+`new T()` creates a heap owner, while `T()` creates a stack object with cleanup.
+Use `&&` and `$value` to transfer ownership, `loan T` and generic `&T` payloads
+to borrow, and `-> local T` to return through caller-provided stack storage.
+Optional `?T` parameters always get a local wrapper; ordinary `T?` returns
+still use heap wrappers. See [Ownership.md](Ownership.md) for examples and limits.
+
 ### Best Practices
 * Format C++ code with clang-format using
   `find . \( -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) -exec clang-format -i {} +`.
 * Use CMake for the compiler build and `make` for quick rebuilds.
-* After editing files in `libraries/std/src`, run `./rebuild-libs.sh`.
-* Run `./bin/aflat run` to execute tests and ensure changes work as expected.
+* After compiler or standard library changes, run `bash ./rebuild-libs.sh`.
+* Run `./bin/a.test` for compiler tests and `./bin/aflat test` for the configured
+  AFlat tests. `./bin/aflat run` executes the configured application.
+* Compiler tests use the bundled Catch2 v2 header and `test/test.cpp`; do not
+  link a second Catch2 implementation.
 * Regenerate README instructions with `aflat readme` so collaborators always
   see up-to-date workflow details.
 

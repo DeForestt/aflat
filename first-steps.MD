@@ -18,11 +18,13 @@ You should see the update output.
 When building the compiler from source, use CMake:
 
 ```bash
-mkdir build && cd build
-cmake .. && make
+cmake -S . -B build
+cmake --build build -j2
 ```
-Format any C++ changes with clang-format and run `./rebuild-libs.sh` after editing `libraries/std/src`.
-Run `./bin/aflat run` to verify everything still works.
+From the repository root, rebuild all libraries with `bash ./rebuild-libs.sh`
+after compiler or standard library changes. Run `./bin/a.test` for compiler
+tests. In your AFlat project, `aflat run` runs the application and `aflat test`
+runs its configured tests.
 
 ## First Project
 
@@ -105,7 +107,7 @@ fn main() -> int {
 
 Let's take a look at the new lines.
 - The first new line is the `import uni_string from "uni_string";` command. This tells AFlat to import the `uni_string` data type from the `uni_string` library.
-- The second new line is the `import {print, read_string} from "uni_string" under uni;` command. This tells AFlat to import the `print` and `read_string` functions from the `uni_string` library under the `uni` namespace. Calls to these functions must start with `uni.`, as in `uni.print` and `uni.read_string`. Importing functions by name is recommended because wildcard imports can sometimes lead to undefined behavior (this is a bug that is being addressed).
+- The second new line is the `import {print, read_string} from "uni_string" under uni;` command. This tells AFlat to import the `print` and `read_string` functions from the `uni_string` library under the `uni` namespace. Calls to these functions must start with `uni.`, as in `uni.print` and `uni.read_string`. Importing functions by name makes the dependencies of this example explicit.
 - The third new line is the `let name = uni.read_string("What is your name? ");` command. This tells AFlat to create a variable named `name` and assign it the value returned by `uni.read_string`. The `let` keyword allows AFlat to infer the variable's type. The function accepts an optional `uni_string` prompt and returns a `uni_string`.
 - The last new line is the ``uni.print(`Hello, {name}.\nFrom the AFlat Team.\n`);`` command. This tells AFlat to call the `uni.print` function. The function takes a `uni_string` argument and prints it to standard output. The `{name}` is a placeholder for the value of the `name` variable, and `\n` is a newline character.
 - Run the program with `aflat run` and see what happens.
@@ -322,7 +324,9 @@ Now we have imported the `Random` class from the math library. Its `nextInt(int 
 
 A **class** is a blueprint for creating objects. It describes what data an object stores and what functions (called **methods**) belong to it.
 
-Classes are declared with the `class` keyword followed by the class name and a block of code enclosed in curly braces.
+Classes are declared with the `class` keyword followed by a name and a block.
+They use unique ownership by default. `Student(...)` constructs on the stack;
+`new Student(...)` constructs on the heap. Both participate in cleanup.
 
 ```js
 class <ClassName> {
@@ -347,6 +351,8 @@ class Student {
     mutable int id;
     mutable uni_string name = "";
     mutable int average;
+
+    fn init() -> Self { return my; };
 };
 ```
 
@@ -362,6 +368,8 @@ class Student {
     mutable int id;
     mutable uni_string name = "";
     mutable int average;
+
+    fn init() -> Self { return my; };
 };
 
 fn main() -> int {
@@ -634,7 +642,8 @@ Student: Jane Doe id: 2 average: 80
 
 Notice that we no longer need separate variables like `johnDoe` and `janeDoe`. Instead, all of our students live in a single collection.
 
-The `foreach` loop automatically visits every student in the vector and stores the current element in the `student` variable. As the collection grows, the loop does not need to change.
+The `foreach` loop borrows each existing student because this Student class
+has no `__copy__` method. The vector remains the owner. As the collection grows, the loop does not need to change.
 
 Try adding a few more students to the vector. You'll notice that the `foreach` loop automatically prints every student without any additional code.
 
@@ -743,6 +752,26 @@ Your class should also include a constructor that accepts both values and stores
 When you're finished, try creating a few `Assignment` objects from `main.af` just like you did with the `Student` class.
 
 > **Hint:** Your constructor should look very similar to the one you wrote for `Student`. Only the class name and field names need to change.
+
+One implementation for `src/Assignment/mod.af` is:
+
+```aflat
+.needs <std>
+import uni_string from "uni_string";
+
+class Assignment {
+    uni_string name = $name;
+    int grade = grade;
+
+    fn init(const uni_string &&name, const int grade) -> Self {
+        return my;
+    };
+};
+```
+
+The initializer moves the incoming name into the field. Reading `grade` copies
+an integer, so it needs no ownership transfer.
+
 
 
 # Building Relationships Between Classes
@@ -1153,9 +1182,7 @@ fn addGrade(vector::<Student> roster) -> bool {
 
             student.addAssignment($assignment);
 
-            // Replace the existing student in the roster
-            // with the updated Student object.
-            roster.set(student.id - 1, $student);
+            // student borrows the existing roster entry; it is already updated.
 
             return true;
         },
@@ -1172,6 +1199,10 @@ fn addGrade(vector::<Student> roster) -> bool {
 ```
 
 The function returns `true` when the assignment is added successfully and `false` if something goes wrong.
+
+`findFirst` returns a local option carrying a borrowed Student. The match does
+not copy or remove that student. Calling `addAssignment` updates the entry in
+place; keep the roster alive and avoid resizing it while using this borrow.
 
 There are several newer concepts in this function, including references, anonymous functions, options, and ownership transfers. You do not need to understand every detail yet. For now, focus on the overall flow:
 
@@ -1283,7 +1314,7 @@ fn addGrade(vector::<Student> roster) -> bool {
 
             student.addAssignment($assignment);
 
-            roster.set(student.id - 1, $student);
+            // The borrowed roster entry was updated in place.
 
             return true;
         },
@@ -1525,9 +1556,7 @@ fn addGrade(vector::<Student> roster) -> bool! {
 
     student.addAssignment($assignment);
 
-    // In this tutorial, student IDs correspond to their
-    // positions in the vector.
-    roster.set(student.id - 1, $student);
+    // student is a borrow of the existing entry, so no replacement is needed.
 
     // Because this function returns `bool!`, the plain bool
     // is automatically wrapped in `Ok`.
@@ -1819,343 +1848,114 @@ thread-safety, diagnostics, and async file I/O in more depth. See
 
 # AFlat Ownership Model
 
-AFlat uses an explicit ownership model to help manage dynamically allocated memory.
+Ownership is responsibility for cleanup. It applies to both heap and stack
+objects. Classes and unions are unique by default; primitive values such as
+`int` copy by value. See [Ownership.md](Ownership.md) for the complete guide.
 
-The goal is to balance:
-
-* Performance
-* Safety
-* Control
-* AFlat’s philosophy of trusting the programmer
-
-Ownership determines which part of a program is responsible for the lifetime of an object and when that responsibility is transferred elsewhere.
-
-> **Important**
->
-> This section is only an introduction to AFlat ownership. It explains enough to understand the examples used throughout this tutorial, but it does not cover every ownership rule, borrowing behavior, invalidation case, or memory-management concern.
->
-> For the complete and most current behavior, refer to the AFlat language documentation.
-
-## Which Types Use Ownership?
-
-AFlat’s ownership model applies to non-value types, including user-defined classes and dynamically allocated objects.
-
-Primitive value types are copied normally and are not tracked by the ownership system.
-
-Examples of value types include:
+## Creating and cleaning up objects
 
 ```aflat
-int
-short
-long
-float
-bool
+const let heapStudent = new Student(1, "John Doe", 90);
+const local let stackStudent = Student(2, "Jane Doe", 95);
 ```
 
-For example:
+Both students own their fields. At scope exit, the compiler destroys owned
+unique objects and their owned fields. Only the heap student's outer storage
+is freed; stack cleanup never frees the stack address. The stack student's
+name can still allocate: local outer storage does not make every field local.
+
+A `local` binding requires stack storage. `-> local Student` returns into the
+caller's stack destination; `-> Student` returns an owned heap object. You
+cannot return a stack student as an owned heap pointer.
+
+## Transferring ownership
+
+An `&&` parameter consumes an owner. Transfer a named object with `$value`, or
+pass an owned temporary directly:
 
 ```aflat
-int first = 10;
-int second = first;
-```
-
-Both variables contain their own copy of the integer.
-
-Classes and other dynamically allocated objects behave differently because they refer to memory that must eventually be released.
-
-## Core Ownership Ideas
-
-There are three important ideas to understand:
-
-1. An owned object has a responsible owner.
-2. Ownership can be transferred from one part of the program to another.
-3. Only owned values can be transferred or returned as owned values.
-
-AFlat performs many of these checks at compile time, but the programmer is still responsible for using ownership correctly.
-
-## Creating an Owned Object
-
-The `new` keyword dynamically allocates an object and returns an owned value.
-
-```aflat
-let student = new Student(1, "John Doe", 90);
-```
-
-Because `new Student(...)` creates a new object, the result is owned.
-
-The variable `student` is now responsible for that object until ownership is transferred or the object is otherwise released.
-
-## Transferring Ownership with `$`
-
-The `$` operator transfers ownership of a named variable.
-
-```aflat
-let student = new Student(1, "John Doe", 90);
-
+const let student = new Student(1, "John Doe", 0);
 roster.push_back($student);
+roster.push_back(new Student(2, "Jane Doe", 0));
 ```
 
-After `$student` is passed to `push_back`, ownership of the object is transferred to the vector.
+The vector becomes responsible for both students. The sold `student` binding
+cannot be used afterward. To consume stack storage, a parameter must instead
+say `local T &&`; `$` does not turn a stack object into a heap object.
 
-This operation is sometimes described as **moving** or **selling** the value.
-
-The original variable should no longer be treated as the owner of the object.
+The same rule explains assignment insertion:
 
 ```aflat
-let assignment = new Assignment("Homework", 95);
-
+const let assignment = new Assignment($assignmentName, grade);
 student.addAssignment($assignment);
 ```
 
-Here, ownership of `assignment` is transferred to the `Student` object.
+Here `student` refers to a live student from a different binding. The assignment
+moves into that student's assignments vector. The student itself does not move.
 
-## Ownership Parameters with `&&`
+## Borrowing objects
 
-A parameter marked with `&&` accepts ownership of its argument.
+A regular object parameter borrows:
 
 ```aflat
-fn addAssignment(Assignment &&assignment) -> void {
-    my.assignments.push_back($assignment);
+fn printStudent(const Student student) -> void {
+    student.printInfo();
 };
 ```
 
-The `addAssignment` method takes ownership of the `Assignment` passed into it.
-
-When passing a named owned variable, use `$`:
-
-```aflat
-let assignment = new Assignment("Homework", 95);
-
-student.addAssignment($assignment);
-```
-
-When passing a newly created object directly, `$` is not required:
-
-```aflat
-student.addAssignment(
-    new Assignment("Homework", 95)
-);
-```
-
-The result of `new Assignment(...)` is already an owned temporary value, so it can be passed directly into an ownership-taking parameter.
-
-## Owned Values and Rvalues
-
-The `$` operator is generally required when transferring ownership from a named variable.
-
-```aflat
-let assignment = new Assignment("Homework", 95);
-
-student.addAssignment($assignment);
-```
-
-It is not required for a newly created temporary value:
-
-```aflat
-student.addAssignment(
-    new Assignment("Homework", 95)
-);
-```
-
-Compare the following calls:
-
-```aflat
-takeIt(new Foo()); // valid: new Foo() is an owned temporary
-takeIt($foo);      // valid: ownership of foo is transferred
-takeIt(foo);       // error: ownership was not transferred
-```
-
-## Only Owned Values Can Be Transferred
-
-AFlat does not allow `$` to be used on a value that is not owned.
-
-```aflat
-fn inspect(Foo value) -> void {
-    consume($value); // error: value is not owned
-};
-```
-
-A regular parameter does not transfer ownership into the function. It is treated as a non-owning value.
-
-To accept ownership, the parameter must use `&&`:
-
-```aflat
-fn consume(Foo &&value) -> void {
-    // This function owns value.
-};
-```
-
-## Only Owned Values Can Be Returned as Owned Values
-
-A function cannot safely return ownership of an object it does not own.
-
-For example, returning a regular borrowed parameter as though it were owned would create multiple parts of the program that believe they own the same object.
-
-```aflat
-fn invalid(Foo value) -> Foo {
-    return value; // error: value is not owned
-};
-```
-
-A function may return an object it creates:
-
-```aflat
-fn createFoo() -> Foo {
-    return new Foo();
-};
-```
-
-The newly created object is owned, so ownership can be transferred to the caller.
-
-The return value of a function that produces an owned object is also treated as an owned temporary:
-
-```aflat
-let foo = createFoo();
-```
-
-## Ownership and `uni_string`
-
-Earlier examples used syntax like this:
-
-```aflat
-fn init(uni_string &&name) -> Student {
-    my.name = $name;
-    return my;
-};
-```
-
-The constructor takes ownership of `name`, and then transfers that ownership into the `name` field.
-
-That is why calls such as this are valid:
-
-```aflat
-let student =
-    new Student(1, "John Doe", 90);
-```
-
-The string passed into the constructor becomes owned by the new `Student`.
-
-Ownership is also why struct literals were discouraged earlier. Struct literals bypass constructors and do not correctly participate in the normal ownership-transfer process.
-
-## Moving Fields
-
-If you own an object, AFlat currently allows you to transfer ownership out of one of its fields.
-
-```aflat
-let container = new Container();
-
-let value = $container.item;
-```
-
-Because `container` is owned, its field may also be treated as movable.
-
-However, this behavior must be used carefully.
-
-> **Warning**
->
-> AFlat does not currently perform complete move invalidation tracking. After moving a field, the parent object may still appear to contain that field even though ownership has been transferred.
->
-> This can produce double ownership, use-after-move bugs, or multiple attempts to release the same resource.
-
-The programmer is responsible for ensuring that moved values are not used again incorrectly.
-
-This is one of the areas where the current ownership system provides control without attempting to prevent every possible mistake.
-
-## Ownership Summary
-
-| Expression                           |            Owned? | Requires `$` to transfer? | Notes                                      |
-| ------------------------------------ | ----------------: | ------------------------: | ------------------------------------------ |
-| `new Foo()`                          |               Yes |                        No | A newly allocated owned temporary          |
-| `let foo = new Foo();`               |               Yes |                       Yes | A named owned variable                     |
-| A function returning an owned object |               Yes |                        No | The returned temporary is owned            |
-| A regular function parameter         |                No |               Not allowed | Does not transfer ownership                |
-| A parameter marked `&&`              |               Yes |                   Depends | Use `$variable` or pass an owned temporary |
-| A primitive value                    |       Not tracked |                        No | Primitive values are copied                |
-| A field of an owned object           | Currently movable |                       Yes | Must be used carefully                     |
-| A field of a borrowed object         |                No |               Not allowed | Cannot move from a borrowed object         |
-| A non-owned return value             |                No |               Not allowed | Cannot return ownership you do not have    |
-
-## Ownership in the Student Roster
-
-The roster program contains several examples of ownership transfers.
-
-### Creating and storing a student
-
-```aflat
-roster.push_back(
-    new Student(id, $name, 0)
-);
-```
-
-In this expression:
-
-1. Ownership of `name` is transferred into the `Student`.
-2. `new Student(...)` creates an owned student.
-3. The new student is passed directly into the vector.
-4. The vector becomes responsible for the student.
-
-### Creating and storing an assignment
-
-```aflat
-let assignment =
-    new Assignment($assignmentName, grade);
-
-student.addAssignment($assignment);
-```
-
-In this expression:
-
-1. Ownership of `assignmentName` is transferred into the assignment.
-2. The local variable `assignment` owns the new object.
-3. `$assignment` transfers ownership into the student.
-4. The student's assignment vector becomes responsible for the assignment.
-
-### Replacing an object in the roster
-
-```aflat
-roster.set(student.id - 1, $student);
-```
-
-The updated student is transferred back into the roster vector.
-
-These ownership transfers may look unusual at first, but they make responsibility explicit. The code shows exactly where an object changes owners.
-
-## Benefits of Explicit Ownership
-
-AFlat’s ownership model provides several benefits:
-
-* Ownership transfers are visible in the source code.
-* Many invalid transfers are caught at compile time.
-* Ownership checking has no runtime tracing overhead.
-* Heap allocation and movement remain under programmer control.
-* The model can be extended with stronger borrowing and invalidation checks in the future.
-
-At the same time, ownership does not make unsafe memory behavior impossible. AFlat intentionally gives the programmer substantial control, and some mistakes remain the programmer’s responsibility.
-
-## Where to Learn More
-
-This tutorial has only introduced the ownership syntax needed for the examples:
-
-```aflat
-new Foo()
-Foo &&value
-$value
-```
-
-The full ownership model also interacts with:
-
-* Object lifetimes
-* Destructors
-* Borrowed references
-* Immutable values
-* Moving fields
-* Returning objects
-* Containers
-* Optional and result values
-* Safe and unique classes
-* Manual memory management
-
-Refer to the official AFlat documentation for the complete and current ownership rules.
+The function may use the student but cannot sell it or return it as an owned
+object. `const` restricts rebinding; it still permits ordinary methods.
+`immutable` additionally restricts access to safe methods.
+
+A `loan T` return borrows T. An `option::<&T>` or `result::<&T>` stores a
+borrowed payload. Owning the wrapper does not mean owning its referent, and
+neither wrapper extends that referent's lifetime.
+
+## Borrowing a student from the roster
+
+Our Student class has no `__copy__`, so `roster.findFirst(...)` returns
+`local option::<&Student>`. Matching `Some(student)` gives a view into the
+existing vector element. `student.addAssignment(...)` updates it in place.
+
+There is no `roster.set(..., $student)` step: the borrowed student is not an
+independent owner and cannot be sold back to the vector. Keep the vector alive
+and do not resize or remove its elements while using the borrow. If an element
+type implements `__copy__`, lookup can instead return an independent owned
+copy; that is a different update workflow.
+
+## Fields and methods
+
+Reading `container.item` borrows the field. A caller cannot move it using
+`$container.item`. An explicit method on the containing class may transfer
+`$my.item`, but it must maintain the instance's validity after the transfer.
+Embedded `local` fields move with their containing object.
+
+An ordinary method borrows its receiver. A `sink fn` consumes it; calling a
+sink method on a named owner requires `$owner.method()`. For an owning option,
+`wrapped.unwrap()` borrows its object payload and `$wrapped.unwrap()` takes it.
+
+## Optional values and results
+
+`?T` parameters accept a raw value or an omitted argument. The compiler creates
+a local option wrapper inside the callee. Zero/NULL becomes `None`; an explicit
+`Some(0)` is required to distinguish a present zero from absence.
+
+Ordinary `T?` and `T!` returns use heap option/result wrappers. Add `local`
+(`-> local T?` or `-> local T!`) to select stack storage. `!` denotes a result,
+not ownership. Local wrappers still clean up owned payloads, which may allocate
+independently.
+
+A plain match borrows an object payload from a named wrapper. Taking ownership
+requires a consuming match with `&&` payload binding, or a sink extraction
+method. The bubble operator handles the transfer when propagating an error.
+
+## What the compiler checks
+
+The compiler rejects invalid sales, owning returns of borrowed objects,
+heap escapes of stack storage, and tracked loans to function-local referents.
+Raw addresses, unsafe casts, foreign calls, loan fields, and concurrent
+mutation still require programmer care. See [the ownership guide](Ownership.md)
+for the exact distinctions and more examples.
 
 ## Done So Soon?
 

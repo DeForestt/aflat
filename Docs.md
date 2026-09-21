@@ -12,10 +12,13 @@ them, but they do not make arbitrary pointer or foreign-function code safe.
 <br>
 
 ### Development Best Practices
-* Build the compiler with CMake (`mkdir build && cd build && cmake .. && make`).
-* Rebuild the standard library with `./rebuild-libs.sh` after editing `libraries/std/src`.
+* From the repository root, build with `cmake -S . -B build` and
+  `cmake --build build -j2`.
+* Rebuild every standard library with `bash ./rebuild-libs.sh` after compiler
+  or standard library changes.
 * Format C++ code using clang-format.
-* Run `./bin/aflat run` to execute tests whenever you change the source.
+* Run `./bin/a.test` for compiler tests and `./bin/aflat test` for configured
+  AFlat tests; `./bin/aflat run` runs the application.
 
 ## Types
 ### int
@@ -44,7 +47,7 @@ A 1 byte bool
 bool b = false;
 ```
 ### adr
-An 8 bit memory address.  In aflat, pointers point to any type so you can have a pointer to an int, a pointer to a float, and so on.  This is different from C where pointers point to a specific type.  This is done to allow for more flexibility in the language. Because of this, pointers in aflat are a bit dangerous. It is suggested to use boxing instead of pointers wherever possible.
+An 8-byte untyped memory address on the supported x86-64 target.  In aflat, pointers point to any type so you can have a pointer to an int, a pointer to a float, and so on.  This is different from C where pointers point to a specific type.  This is done to allow for more flexibility in the language. Because of this, pointers in aflat are a bit dangerous. It is suggested to use boxing instead of pointers wherever possible.
 ```js
 adr a = NULL;
 ```
@@ -61,14 +64,19 @@ object o = NULL;
 ```
 
 ### type inference
-Aflat supports type inference at declaration with the `let` keyword. This should not be used when declaring a numeric type such as short, int, or long.  Because aflat returns type `number` from an int literal.  The number type is a union of all numeric types and will break your code if it is tied to a variable.  You should also take note that implicit casting will not happen when using type inference.
+Use `let` to infer an initializer's type. When numeric width matters, declare
+`int`, `short`, or `long` explicitly; an unsuffixed integer literal has the
+compiler's numeric-literal type until a context selects its representation.
+Inference also does not request a conversion to some other object type.
 
 ```js
 let i = "hello"; // this will assign an adr to i
 ```
 
 ## User Defined Types...
-Any Type Defined by a user will be an 8 bit memory reference to the given type
+Class and union values are addressed through an 8-byte reference on x86-64.
+Their object storage may be on the heap or stack; `unique` controls ownership,
+not pointer width. See [local storage](Ownership.md#heap-and-stack-construction).
 ```js
 Type a = new Type();
 ```
@@ -85,7 +93,7 @@ You will see more about this in the class section.
 Functions in AFlat are now defined with the following syntax:
 
 ```c
-fn <function name>(<arguments>) -> <return type>? {
+fn <function name>(<arguments>) -> <return type> {
     <function body>
 };
 ```
@@ -98,9 +106,13 @@ fn <function name>(<arguments>) -> <return type>? {
   an immutable symbol by the caller, or with `loan` to signal that ownership is
   not transferred by the return value. The modifiers may be combined when both
   constraints apply.
-- Prefixing an argument with `?` likewise treats it as `option<T>` and allows the
-  caller to omit the argument entirely, in which case `None()` is passed.
-- The returned `option` is created automatically: returning a value yields `Some(value)` while `return;` (or falling off the end) yields `None()`.
+- Prefixing a parameter with `?` accepts a raw value or an omitted zero/NULL
+  argument. The callee wraps it in a local `option::<T>` at entry.
+- Bare `T?` return values use the null-probing wrapper: zero/NULL becomes `None`,
+  other values become `Some`. `return;` yields `None`. Return an explicit
+  `Some(0)` when zero must remain a present value.
+- `-> local T`, `-> local T?`, and `-> local T!` return through caller-provided
+  stack storage. Ordinary `T?` and `T!` return heap wrappers.
 - If a function does not return a value with the `return` keyword, a return statement with no value is implied. In the case of `option`, `return;` will return `None()`.
 - Functions pass their first six integer/pointer arguments in registers and
   additional arguments in eight-byte stack slots.
@@ -114,10 +126,15 @@ fn add(int a, int b) -> int {
 ```
 
 #### Optional Arguments
-- **`*` (Nullable Argument):** An argument prefixed with `*` is considered nullable and defaults to `NULL` or a type-specific default.
- - **`?` (Optional Argument):** An argument prefixed with `?` is considered optional and is automatically wrapped in `option`.
- -   When calling such a function you may omit the argument to pass `None()`. Inside
-    the function the parameter type is `option<T>`.
+- **`*` (Defaulted argument):** Omitted input is zero/NULL; no option is created.
+- **`?` (Optional argument):** The caller supplies raw `T` or omits a trailing
+  argument. The function binds it as a local `option::<T>`; zero/NULL means
+  `None`. This wrapper does not allocate even without an explicit `local`.
+- Payload storage and ownership still follow the parameter declaration:
+  `?const T &&value` consumes a heap payload, `?const local T &&value` consumes
+  a stack payload. Neither choice makes the wrapper a heap allocation.
+- Return that wrapper through a compatible local return, or construct a separate
+  heap option. Returning it directly as a heap-owned option is rejected.
 
 Example:
 ```js
@@ -128,7 +145,7 @@ fn add(int a, *int b) -> int {
 fn maybeDivide(int a, ?int b) -> int? {
     match b {
         Some(x) => return a / x,
-        None() => return;
+        None() => return
     };
 };
 ```
@@ -145,6 +162,9 @@ member APIs can expose type-specialised implementations without manual
 dispatchers.
 
 ```aflat
+import string from "String";
+import {print} from "String" under str;
+
 fn log(int value) -> void {
     str.print(`int: {value}\n`);
 };
@@ -176,6 +196,11 @@ fn demo() {
 > ℹ️ When an overload requires an implicit conversion (e.g., via a
 > `__from__Type` helper), that conversion is attempted before the compiler
 > considers the next overload.
+
+Overloads can also differ in return storage: `-> T` versus `-> local T`.
+A local binding, local-return context, or local parameter selects the local
+version. Ordinary contexts prefer the regular version when both exist.
+See [the ownership guide](Ownership.md#options-results-and-borrowed-payloads).
 
 ### The `main` Function
 The `main` function is the entry point for AFlat programs. It can optionally take `argc` and `argv` for command-line arguments.
@@ -480,34 +505,40 @@ including async file I/O, ownership, custom wakeups, troubleshooting, and more
 examples.
 
 ### Function Decorators
-Functions can be decorated using decorators, which must take a single reference argument `_arg`. The decorator function must accept two arguments: `adr foo` (the function) and `adr _arg`.
 
-Example:
-```js
-adr decorator(adr foo, adr _arg) {
-    io.print("Hello from Decorator");
-    return foo(_arg);
+A function decorator receives a function pointer followed by the decorated
+function's argument. The call uses the wrapper's return value. Define custom
+wrappers in a module and import them under a namespace.
+
+For example, put this in `Decorators.af` beside `main.af`:
+
+```aflat
+export fn twice(const adr callback, const any argument) -> int {
+    const int value = callback(argument);
+    return value * 2;
 };
+```
 
-fn decorated(adr _arg) : decorator {
-    io.print("Hello from Decorated");
-    return 0;
+Then use it in `main.af`:
+
+```aflat
+.needs <std>
+import {twice} from "./Decorators" under wrap;
+
+fn answer(const int value) -> int : wrap.twice {
+    return value + 1;
 };
 
 fn main() -> int {
-    decorated();
-    return 0;
+    return answer(20) - 42;
 };
 ```
 
-**Output:**
-```
-Hello from Decorator
-Hello from Decorated
-```
-
-Class decorators are also supported and are documented in the class section.
-
+Add `Decorators.af` to the project's dependency modules when linking. The
+same-module, unqualified decorator path currently stalls compilation for this
+example; the namespaced form above avoids that unresolved compiler limitation.
+Class decorators capture a method receiver as well; see
+[Class Decorators](#class-decorators).
 
 ## Statements
 
@@ -687,12 +718,14 @@ for <initializer> <boolean expr> <iterator>{
 ```
 
 example:
-```c
-.needs <io>
+```aflat
+.needs <std>
+import {printInt} from "io" under io;
 
-int main(){
-    for int i = 0; i < 10 i = i + 1
-        printInt(i);
+fn main() -> int {
+    for int i = 0; i < 10; i = i + 1 {
+        io.printInt(i);
+    };
     return 0;
 };
 ```
@@ -858,37 +891,43 @@ The access modifier is used to determine the visibility of the field.  The follo
     - `private` : the field is visible only to the class that defines it.
 
 ### Class Decorators
-Class decorators are used to turn a function into an instance of a class.  It is syntactic sugar for passing a function pointer to the constructor.  The syntax is:
-```js
-class Decorator {
-    const adr foo = foo;
-    Decorator init(adr foo){
-        return my;
-    };
 
-    int runFoo(){
-        adr foo = my.foo;
-        return foo();
+A class decorator stores a function pointer and, for a decorated method, its
+receiver capture. Keep the receiver alive while invoking the stored callback.
+The compiler supplies both constructor arguments for a method decorator:
+
+```aflat
+.needs <std>
+import {print} from "io" under io;
+
+class Decorator {
+    adr callback = callback;
+    adr receiver = receiver;
+
+    fn init(const adr callback, *const any receiver) -> Self { return my; };
+    fn runFoo() -> int {
+        const adr callback = my.callback;
+        return callback(my.receiver);
     };
 };
 
 class HasDecoratedFunction {
-    
-    int decorated() : Decorator {
-        io.print("decorated");
+    fn decorated() -> int : Decorator {
+        io.print("decorated\n");
+        return 0;
     };
-
-    HasDecoratedFunction init(){
-        return my;
-    };
+    fn init() -> Self { return my; };
 };
 
-int main(){
-    HasDecoratedFunction hdf = new HasDecoratedFunction();
-    hdf.decorated.runFoo(); // decorated is not a function, it is an instance of the Decorator class.
-    return 0;
-}
+fn main() -> int {
+    const let object = new HasDecoratedFunction();
+    return object.decorated.runFoo();
+};
 ```
+
+`decorated` is a Decorator field containing a callback, so invocation goes
+through `runFoo`, not `object.decorated()`.
+
 ## Contracts
 Contracts are used to create OO interfaces. The allows classes that sign them to behave as the parent class.  The syntax is:
 ```js
@@ -913,17 +952,23 @@ import {print} from "io" under io;
 
 class IWorker{
     contract {
-        adr work = [] => io.print("Generic worker working...\n");
+        mutable adr work = fn () -> int {
+            io.print("Generic worker working...\n");
+            return 0;
+        };
     };
+    fn init() -> Self { return my; };
 };
 
 class Plumber signs IWorker{
     // the init function should be the first function called to bootstrap the class
-    int init(){
-        my.work = []=>{ // this is the implementation of the work function as defined in the contract.  It can also be done using
+    fn init() -> Self {
+        my.work = fn () -> int { // this is the implementation of the work function as defined in the contract.  It can also be done using
                         // function pointer
             io.print("Plumber: I am tightening the pipes\n");
+            return 0;
         };
+        return my;
     };
 
     int getClients(){
@@ -933,11 +978,13 @@ class Plumber signs IWorker{
 
 class Carpenter signs IWorker{
     // the init function should be the first function called to bootstrap the class
-    int init(){
-        my.work = []=>{ // this is the implementation of the work function as defined in the contract.  It can also be done using
+    fn init() -> Self {
+        my.work = fn () -> int { // this is the implementation of the work function as defined in the contract.  It can also be done using
                         // function pointer
             io.print("Carpenter: I am building a house\n");
+            return 0;
         };
+        return my;
     };
 
     int buyTools(){
@@ -1009,14 +1056,17 @@ dynamic class <class name> signs <parent class>{
 
 #### unique, shared, and pedantic
 
-`unique class` values are move-only and cannot be copied freely. `shared class`
-is intended for reference-counted/shared objects; it does not make mutable
-state thread-safe. `pedantic class` enables stricter semantic checking.
+Classes and unions are unique by default. `unique class` explicitly states
+that default; an explicit `__copy__` can produce an independent owner.
+`shared class` opts into the custom `endScope` lifecycle. It does not supply
+reference counting or make mutable state thread-safe. `pedantic class` enables stricter semantic checking.
 
 #### sink methods
 
 Prefix a class method with `sink` to consume its receiver. A sink method must
 be called with an owned receiver and invalidates that receiver after the call.
+Sell a named receiver explicitly: `$owner.release()`. Owned temporaries can
+select sink overloads directly; ordinary methods borrow their receiver.
 This is useful for APIs such as `release` and move-based container operations.
 
 ### The object life cycle
@@ -1024,12 +1074,14 @@ When an object is created, the following steps are taken:
 1. The object is allocated on the heap or the stack depending on if new was used.
 2. The init function is called if present. (All initial value assignments are prepended onto the init function)
 
-When an object goes out of scope, the following steps are taken:
-1. The endScope function is called if present.
+An owned unique class or union runs `del` at scope exit, including generated
+cleanup of owned fields or the active payload. Heap objects are then freed;
+stack objects run cleanup without freeing their stack address. Transferred or
+returned objects are excluded from the old owner's cleanup.
 
-When an object is deleted, the following steps are taken:
-1. The destructor function is called if present.
-2. The memory for the function is freed.
+Shared classes use their `endScope` hook when present. `delete value;` requests
+early destruction. Borrowed references do not become owners just because they
+are assigned to a local variable. See [Ownership.md](Ownership.md).
 
 ## Templates
 Templates allow classes and functions to operate on any number of types.
@@ -1041,56 +1093,69 @@ explicitly with `::<Type>`.
 
 Example:
 ```aflat
-types(T)
-fn echo(T value) {
-    str.print(`{value}\n`);
-};
+.needs <std>
 
-fn main() {
-    echo(5);        // T inferred as int
-    echo("hi");     // T inferred as string
-    echo::<bool>(true); // explicit when needed
+types(T)
+fn identity(const T value) -> T { return value; };
+
+fn main() -> int {
+    const int input = 5;
+    const int same = identity(input); // T inferred as int
+    const bool flag = identity::<bool>(true);
+    return if flag same - 5 else 1;
 };
 ```
 
-You may list multiple template types:
+This identity example is for primitive values. A generic object accessor must
+return a loan or explicitly take ownership; a borrowed parameter cannot become
+an owned return just because its type is generic.
+
+You may list multiple template types. This Pair consumes its arguments and owns
+its fields:
 
 ```aflat
+.needs <std>
+import string from "String";
+
 types(Key, Value)
 class Pair {
-    Key key = key;
-    Value value = value;
+    Key key = $key;
+    Value value = $value;
+
+    fn init(const Key &&key, const Value &&value) -> Self { return my; };
 };
 
-fn main() {
-    let p = Pair::<int, string>(1, "one");
+fn main() -> int {
+    const local let pair = Pair::<int, string>(1, new string("one"));
+    return pair.key - 1;
 };
 ```
 
 ### Template Classes
-A class can also be templated. Provide the `types` line before the class and
-specify the concrete type when constructing. Unlike template functions, class
-templates do **not** support type inference, so you must always supply the
-concrete type using `::<Type>` when creating an instance.
+
+Put `types(...)` before a class and supply its concrete arguments with
+`::<...>` when constructing it. The outer Box below is local; its string
+payload is heap-owned. `get` borrows that payload instead of returning it as a
+second owner.
 
 ```aflat
+.needs <std>
+import string from "String";
+import {print} from "String" under str;
+
 types(A)
 class Box {
-    mutable A value = value;
+    A value = $value;
 
-    fn init(A value) -> Self {
-        return my;
-    };
-
-    fn get() -> A {
-        return my.value;
-    };
+    fn init(const A &&value) -> Self { return my; };
+    fn get() -> loan A { return my.value; };
 };
 
-fn main() {
-    let b = Box::<int>(5);
-    let s = Box::<string>("hi");
-    str.print(`{b.get()} {s.get()}\n`);
+fn main() -> int {
+    const local let number = Box::<int>(5);
+    const local let text = Box::<string>(new string("hi"));
+    str.print(`{number.get()} {text.get()}\n`);
+    return 0;
 };
 ```
 
@@ -1165,8 +1230,10 @@ indicating which alias is active. After the alias list you may define methods
 just like a class body.
 
 ### Constructing a Union
-Create a value with `new <Union>-><Alias>(args)` or by calling helper functions
-if the module provides them.
+Create a heap value with `new <Union>-><Alias>(args)` or a stack value with
+`<Union>-><Alias>(args)`. Modules may also provide helper overloads. Non-primitive
+owning payloads require an owned temporary, explicit `$value`, or `__copy__`.
+Use `&T` payloads to store a borrow without taking ownership.
 
 ```c
 Value v1 = new Value->Int(42);
@@ -1201,6 +1268,8 @@ Modules from the aflat standard library are included with the following syntax:
 All other modules must be included with the following syntax:
 ```c
 .needs "path/to/module/header.gs"
+```
+
 A root directory for header files can be specified with the following syntax:
 ```c
 .root "path/to/root/directory"
@@ -1300,46 +1369,36 @@ The list of standard modules is as follows:
   - `beforeEach` registers a callback to run before each `it` block
   - Use `describe` to group tests and `it` for individual cases
   - Fixtures can be defined with `fix` and accessed via `getFixture`
-  - `getFixture` returns an untyped `any` and its result must be stored in a
+  - `getFixture` returns `loan any` and its result must be stored in a
     variable with an explicit type
   - Fixtures are torn down at the end of every `it` block so teardown functions
     can manage resources
   - Assertion helpers include `assertEqual`, `assertNotEqual`, `assertTrue`,
-    `assertFalse`, `assertNull`, `assertNotNull`, `assertError`, and
-    `assertSuccess`
+    `assertFalse`, `assertNull`, `assertNotNull`, `assertSome`, `assertNone`,
+    `assertOk`, and `assertErr`; see the [ATest page](libraries/std/docs/ATest.MD)
+    for current generic-helper limitations
 - Utils/result
   - A templated result type used for error handling
 - CLArgs
   - Parser for command line options and flags
 
 Example:
-```js
+```aflat
 .needs <std>
-import {describe, it, beforeEach, fix, getFixture,
-        assertEqual, assertTrue, assertNotNull} from "ATest" under test;
+import {describe, it, assertTrue, summary} from "ATest" under test;
 
 fn main() -> int {
-    test.fix("counter", fn () -> int { return 5; }, fn (int v) {
-        print(`clean {v}`);
-    });
-
-    test.beforeEach(fn () { print("setup"); });
-
-    test.describe("Numbers", fn () -> bool {
-        test.it("fixture works", fn () {
-            const int c = test.getFixture("counter");
-            test.assertNotNull(c);
-            test.assertEqual(c, 5);
-        });
+    test.describe("Numbers", fn () {
         test.it("math works", fn () {
             test.assertTrue(1 + 1 == 2);
         });
-        return true;
     });
+    test.summary();
     return 0;
 };
-
 ```
+
+For fixtures and typed result helpers, see [ATest](libraries/std/docs/ATest.MD).
 
 ### Utils/result.af
 The `result` module defines a templated `result` union used for error handling.
@@ -1350,15 +1409,17 @@ result to access the value or handle the error.
 `any` and relied on reference counting, which introduced extra allocations and
 loss of type information. The new union keeps the success value typed via
 `Ok(T)` and errors via `Err(Error)`. This allows compile‑time checks and avoids
-the overhead of dynamic dispatch. The trade‑off is that you must pattern match
-on the value and manage ownership yourself rather than relying on the class to
-clean up automatically.
+the overhead of dynamic dispatch. The union owns its active payload and participates in automatic cleanup.
+Use `&T` for a borrowed success payload; matching does not automatically
+transfer ownership of a named payload. Local-return overloads can avoid a
+heap allocation for the wrapper.
 
 #### `!` return shorthand
 
 Functions that return a `result` can use `T!` as a shorthand for
-`result::<T>`. Returning a bare value implicitly wraps it in `accept`, while
-errors are returned with `reject`.
+`result::<T>`. Returning a bare success value uses `resultWrapper`; an `Error` becomes `Err`.
+You may also return `accept`/`reject` results explicitly. Add `local` before
+`T!` to use a stack wrapper. The `!` suffix is not an ownership modifier.
 
 Example:
 
@@ -1367,9 +1428,11 @@ Example:
 import {print} from "String" under str;
 import string from "String";
 import Error from "Utils/Error";
-import {Some, None} from "Utils/option";
+import option from "Utils/option";
+import {Some, None, optionWrapper} from "Utils/option" under option;
 import result from "Utils/result";
 import {accept, reject} from "Utils/result" under res;
+import {resultWrapper} from "Utils/result" under result;
 
 fn divide(int a, ?int b) -> int! {
     match b {
@@ -1407,23 +1470,10 @@ fn divideString(string a, string b) -> int! {
 };
 ```
 
-This is equivalent to:
-
-```js
-fn divideString(string a, string b) -> int! {
-    let aIntRes = a.toInt();
-    match aIntRes {
-        Ok(val) => aIntRes = val,
-        Err(e) => return e,
-    };
-    let bIntRes = b.toInt();
-    match bIntRes {
-        Ok(val) => bIntRes = val,
-        Err(e) => return e,
-    };
-    return divide(aIntRes, bIntRes);
-};
-```
+The compiler performs a consuming match: success supplies the value, while an
+error is transferred into the caller's result. A hand-written match must also
+transfer an owned Error rather than return a borrowed payload. Do not assign
+an unwrapped integer back into a variable whose type is `result::<int>`.
 
 Using `!` keeps code concise and clearly signals that any encountered error will
 immediately return from the surrounding function. However, it should not be
@@ -1451,25 +1501,22 @@ Common methods are:
 - `or(default)` – return the value or a default
 - `toString()` – for debugging
 
-Example usage:
+The helpers have heap- and local-return overloads:
 
-```c
-fn index(int[] arr, int idx) -> int? {
-    if (idx >= arr.length) {
-        return;       // yields None()
-    }
-    return arr[idx]; // yields Some(value)
-};
+```aflat
+import option from "Utils/option";
+import {Some, None} from "Utils/option" under opt;
 
-let res = index(nums, 2);
-match res {
-    Some(v) => printInt(v),
-    None() => print("out of range")
+fn nonnegative(const int value) -> local option::<int> {
+    if value < 0 { return opt.None::<int>(); };
+    return opt.Some::<int>(value); // preserves Some(0)
 };
 ```
 
-Pattern matching with `match` is the most convenient way to operate on an
-`option` value.
+For an owned object payload, borrow with `wrapped.unwrap()` or explicitly
+consume with `$wrapped.unwrap()`. `option::<&T>` borrows T even when the
+wrapper itself is owned. See [Ownership.md](Ownership.md) for matching,
+local overload selection, and the zero/NULL behavior of `?` sugar.
 
 ## Package Manager
 
@@ -1508,22 +1555,24 @@ logger = "https://github.com/example/logger.git" ; git repo
 ```
 
 Use `aflat install <repo>` to add a git dependency and update `aflat.cfg`
-automatically. Run `aflat -U` to refresh all dependencies or `aflat -K` to
-remove them.
+automatically. Use `aflat --update-deps build` to refresh dependencies or
+`aflat --clean-deps build` to clear them as part of a build.
 
 ## Building a Project
 The project can be built with the following syntax:
 ```bash
 aflat build
 ```
-This will compile all of the source files in the src directory and call gcc to link them into an executable.  The executable will be placed in the bin directory.
+This compiles the configured entry point and dependency modules, then links
+them into the configured output (normally `bin/a.out`).
 
 ## Running a Project
 The project can be run with the following syntax:
 ```bash
 aflat run
 ```
-This will compile all of the source files in the src directory and call gcc to link them into an executable.  The executable will be placed in the bin directory.  The executable will then be run.
+This compiles the configured entry point and dependency modules, then links
+them into the configured output (normally `bin/a.out`).  The executable will then be run.
 
 ## Bootstrapping a src/header pair (just don't use this)
 The package manager is used to create a src/header pair.  The syntax is:
@@ -1542,129 +1591,31 @@ This creates a directory under `src/` matching the module name and places
 new module is compiled. For a single `.af` file without a folder, use
 `aflat file <name>` instead.
 
-# \ud83d\udcd8 AFlat Ownership Model
+# AFlat Ownership Model
 
-AFlat uses an explicit ownership model for managing dynamically allocated
-values. It balances performance, useful compiler checks, and low-level control.
-Ownership rules do not make raw addresses, unsafe casts, or foreign-function
-calls memory-safe.
+See [Ownership, borrowing, and local storage](Ownership.md) for the full guide,
+including runnable examples and the rules for fields, containers, and returns.
 
-This model **only applies to non-value types** \u2014 i.e., user-defined classes and heap-allocated objects. Value types like `int`, `float`, etc., are always passed and copied by value and are excluded from ownership checks.
+| Concept | Current behavior |
+| --- | --- |
+| Default class/union | Unique ownership; `shared` explicitly opts out. |
+| `new T(...)` | Heap-owned object. |
+| `T(...)` | Stack object with cleanup; ownership is not limited to the heap. |
+| `const T value` parameter | Borrowed object; primitives copy by value. |
+| `T &&value` parameter | Consume a heap owner; pass `$named` or an owned temporary. |
+| `local T &&value` parameter | Consume a stack value's cleanup responsibility. |
+| `-> T` | Owned heap return for an owning object type. |
+| `-> local T` | Return an object into caller-provided stack storage. |
+| `-> loan T` | Borrowed return; the referent must remain alive. |
+| `option::<&T>` / `result::<&T>` | A wrapper carrying a non-owning success payload. |
+| `?T` parameter | Raw input is wrapped locally at function entry. |
+| `-> T?` / `-> T!` | Heap option/result return; add `local` for stack storage. |
 
----
+Owned unique values are cleaned up at scope exit. Stack cleanup runs the
+object's destructor without freeing stack memory. A plain field read is a loan;
+`$object.field` is rejected outside the object's implementation. Moving a named
+receiver into a sink method uses `$receiver.method()`.
 
-## \ud83d\udd11 Core Principles
-
-1. **Ownership implies responsibility**
-   If you own a value, you are responsible for its lifetime (e.g., freeing it or transferring it).
-
-2. **You cannot move or return what you don\u2019t own**
-   The compiler enforces that only owned values may be moved (sold) or returned.
-
-3. **Ownership only applies to heap-allocated memory**
-   Stack variables, literals, and internal references cannot be owned.
-
----
-
-## \ud83d\udcdc Ownership Rules
-
-### 1. You can only sell things you own
-
-* The `$` operator transfers ownership.
-* Attempting to `$` a non-owned variable is a compile-time error.
-
-### 2. You can only own heap-allocated values
-
-* Only objects allocated with `new`, returned from functions that yield ownership, or passed via `&&` are considered "owned."
-* Stack values and function-local variables are not ownable.
-
-### 3. You can only return things you own
-
-* Returning a non-owned reference violates ownership.
-* Functions must return owned values or wrap borrows in safe containers (e.g., `option`, `result`, etc.).
-
-### 4. The return value of a `CallExpr` is owned
-
-* When calling a function that returns an owned object, the return value is treated as a fresh owned value (e.g., `fn makeFoo() -> Foo!`).
-
-### 5. Anything created with `new` is owned
-
-* `new` always produces a heap-allocated, owned object.
-* You do **not** need to use `$` when passing `new Foo()` to a `&&` parameter, since it is an rvalue.
-
-### 6. Arguments marked with `&&` take ownership
-
-* Functions expecting a `&&` parameter require the caller to transfer ownership.
-* Example:
-
-  ```aflat
-  fn takeIt(Foo &&f) { ... }
-
-  let f = new Foo();
-  takeIt($f); // legal
-  ```
-
-### 7. Anything else is not owned
-
-* Regular variables, references, and function parameters passed by value are non-owning by default.
-* You cannot `$` or return these without wrapping them or copying explicitly.
-
-### 8. Field access never transfers ownership
-
-* Reading a non-value field produces a loan, even when the containing object is
-  owned. Primitive fields are still copied by value.
-* Callers cannot move a field directly with `$obj.field`. Ownership may leave
-  an object only through an explicit method. Inside that method, `$my.field`
-  performs the transfer; the method must also update or validate the object's
-  state so the moved field cannot be used as though it were still present.
-* An ownership-bearing field may only be assigned an owned value (or `NULL`
-  when invalidating it). Storing a loan in such a field is rejected because the
-  object cannot assume responsibility for a lifetime owned elsewhere.
-* A field may explicitly opt out with `loan T field`. Such a field stores an
-  unsafe borrowed reference, accepts unowned values, and is not destroyed with
-  its containing object. The programmer must ensure the referent outlives every
-  use of the field.
-
----
-
-## \ud83e\uddea Special Cases and Clarifications
-
-* **Selling (`$`) is only required on variables**, not rvalues:
-
-  ```aflat
-  takeIt(new Foo());   // OK \u2014 rvalue is owned
-  takeIt($myFoo);      // OK \u2014 transfer ownership
-  takeIt(myFoo);       // \u274c Error \u2014 ownership not transferred
-  ```
-
-* **Returning a field directly from a method** is a loan and cannot satisfy an
-  owning return type. Use a loan return type for accessors, or explicitly move
-  it with `$my.field` in a transfer method.
-
----
-
-## \u2705 Ownership Summary Table
-
-| Expression                   | Owned? | Requires `$`? | Notes                                  |
-| ---------------------------- | ------ | ------------- | -------------------------------------- |
-| `new Foo()`                  | \u2705 Yes  | \u274c No          | Owned rvalue                           |
-| `let f = new Foo();`         | \u2705 Yes  | \u2705 Yes         | Named variable \u2014 must `$f` to move     |
-| `someFunc()` returning `T!`  | \u2705 Yes  | \u274c No          | Functions can transfer ownership       |
-| `field` from owned object    | \u274c No   | \u274c Error       | Field reads are loans                  |
-| `field` from borrowed object | \u274c No   | \u274c Error       | Field reads are loans                  |
-| Stack or literal value       | \u274c No   | \u274c N/A         | Not tracked by ownership model         |
-| Function param (by value)    | \u274c No   | \u274c Error       | Must use `&&` to pass ownership        |
-| Function param (with `&&`)   | \u2705 Yes  | \u2705 Yes or \u274c No | `$var` or `new Foo()` is valid         |
-| Return `t` (not owned)       | \u274c No   | \u274c Error       | Must return only owned values          |
-
----
-
-## \ud83e\udd14 Design Benefits
-
-* \u2705 **Clear semantics**: Ownership rules are easy to reason about.
-* \u2705 **No runtime overhead**: All checks are compile-time.
-* \u2705 **Configurable checks**: Projects can choose the mutability and ownership
-  discipline that fits their code while retaining access to low-level APIs.
-* \u2705 **Extendable**: Lays groundwork for future borrow tracking and lifetimes.
-
----
+Loans and raw addresses do not extend a referent's lifetime. The compiler checks
+tracked local escapes and invalid transfers, but does not guarantee memory
+safety for casts, foreign calls, unsafe loan fields, or concurrent mutation.

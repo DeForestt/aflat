@@ -6,22 +6,24 @@
 ## Functions
 
 ### `execve`
-Executes a program specified by the given path.
+Replaces the current process image with the specified program. On success it
+does not return; on failure it returns the underlying syscall result.
 
 - **Signature**: `int execve(const adr path, * const adr argv, * adr envp)`
 - **Parameters**:
   - `path`: Address of the program to execute.
   - `argv`: Pointer to an array of argument strings.
   - `envp`: Pointer to an array of environment variables.
-- **Returns**: The return status of the executed program.
+- **Returns**: A syscall error on failure; no return on successful replacement.
 
 ### `execWorker`
 Executes a worker process.
 
-- **Signature**: `adr execWorker(const adr _arg) : async.worker`
+- **Signature**: `any execWorker(const adr _arg) : async.worker::<adr>(WorkerMode.PROCESS)`
 - **Parameters**:
   - `_arg`: Address of the argument array.
-- **Returns**: NULL after execution.
+- **Behavior**: Process-worker trampoline for the legacy concurrency API,
+  distinct from a native `task<T>`.
 
 ### `exec`
 Executes a program and waits for its completion.
@@ -31,7 +33,7 @@ Executes a program and waits for its completion.
   - `path`: Address of the program to execute.
   - `argv`: Pointer to an array of argument strings.
   - `envp`: Pointer to an array of environment variables.
-- **Returns**: The exit status of the executed program.
+- **Returns**: The raw wait status written by `sys_wait`, not a decoded exit code.
 
 ### `system`
 Executes a shell command.
@@ -39,7 +41,7 @@ Executes a shell command.
 - **Signature**: `int system(const adr cmd)`
 - **Parameters**:
   - `cmd`: Address of the command string to execute.
-- **Returns**: The exit status of the shell command.
+- **Returns**: The raw wait status from `exec`.
 
 ### `envVar`
 Retrieves the value of an environment variable.
@@ -47,7 +49,8 @@ Retrieves the value of an environment variable.
 - **Signature**: `adr envVar(const adr name)`
 - **Parameters**:
   - `name`: Address of the name of the environment variable.
-- **Returns**: Address of the value of the environment variable.
+- **Returns**: A borrowed environment address, or NULL if missing. Do not free
+  it or assume a copy of the bytes was allocated.
 
 ### `isSet`
 Checks if an environment variable is set.

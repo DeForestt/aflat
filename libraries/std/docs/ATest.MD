@@ -1,66 +1,61 @@
-# ATest.af Documentation
+# ATest
 
-## Overview
-`ATest.af` provides a lightweight testing framework for AFlat programs. It allows grouping tests, managing fixtures, running setup code before each test, and asserting conditions.
+`ATest.af` is the AFlat test library. Compiler C++ tests instead use the bundled
+Catch2 v2 header in `test/catch.hpp`; do not link a second Catch2 implementation.
 
-## Test Structure
-Functions in `ATest` are all untyped `any` function pointers unless otherwise noted.
-- **`describe(text: string, fn: any<> )`** – Groups a set of tests under a common description.
-- **`it(text: string, fn: any<> )`** – Defines a single test case. After the test, all fixtures are torn down.
-- **`beforeEach(fn: any<> )`** – Registers a callback that runs before every `it` block.
-- **`fix(name: adr, setUpFn: any<>, tearDownFn?: any<any>)`** – Defines a named fixture. `setUpFn` returns the fixture data. `tearDownFn`, if provided, receives that data when the fixture is destroyed. This teardown mechanism should be used to release resources.
-- **`getFixture(name: string)`** – Retrieves or lazily builds fixture data by name. It returns an untyped `any`, so the result must be assigned to a variable with an explicit type and cannot be used directly in template strings.
-- **`tearDownFixtures()`** – Runs teardown callbacks for any built fixtures and clears cached data. This is automatically called at the end of each `it`.
+## Structure and fixtures
 
-## Assertion Helpers
-- **`assertEqual(expected, actual)`** – Fails if the values differ.
-- **`assertNotEqual(expected, actual)`** – Fails if the values are equal.
-- **`assertTrue(condition)`** – Fails if the condition is false.
-- **`assertFalse(condition)`** – Fails if the condition is true.
-- **`assertNull(value)`** – Fails if the value is not `NULL`.
-- **`assertNotNull(value)`** – Fails if the value is `NULL`.
-- **`assertError(result)`** – Expects a `Result` with an error.
-- **`assertSuccess(result)`** – Expects a successful `Result`.
+- `describe(const adr text, const adr implementation)` groups test callbacks.
+- `it(const adr text, const adr implementation)` runs a case and tears down its fixtures.
+- `itSkip(const uni_string text, const uni_string reason)` reports a skipped case.
+- `beforeEach`, `afterEach`, `beforeAll`, and `afterAll` register callbacks.
+- `fix(const adr name, const adr setUp, *const adr tearDown)` registers a lazy fixture.
+- `getFixture(const uni_string name) -> loan any` borrows fixture data. Assign it
+  an explicit type and keep its use within the fixture's lifetime; it is not a
+  new owner to sell or delete.
+- `tearDownFixtures()` runs fixture teardown; `it` calls it automatically.
+- `summary()` prints accumulated pass/fail/skip counts.
+
+Callbacks are passed as `adr` values. Set up and tear down resource ownership
+explicitly; an untyped fixture handle does not infer how to free its resource.
+
+## Assertions
+
+`assertEqual` and `assertNotEqual` compare values. `assertTrue`, `assertFalse`,
+`assertNull`, and `assertNotNull` check booleans or pointers. For typed wrappers,
+use `assertSome`, `assertNone`, `assertSomeValue`, `assertOk`, `assertErr`, and
+`assertOkValue`. The old `assertSuccess`/`assertError` names are not exported.
+`fail(message)` records an explicit failure.
 
 ## Example
-```js
-.needs <std>
-import {describe, it, beforeEach, fix, getFixture,
-        assertEqual, assertNotNull, assertTrue, assertSuccess} from "ATest" under test;
-import Result from "Utils/Result";
 
-fn alwaysOk() -> Result {
-    return Result.accept(42);
-};
+```aflat
+.needs <std>
+import {describe, it, assertTrue, assertFalse, summary} from "ATest" under test;
 
 fn main() -> int {
-    // Define a fixture and tear it down after each test
-    test.fix("temp", fn () -> string {
-        return "foo";
-    }, fn (string value) {
-        // teardown used for resource management
-        print(`cleaning {value}`);
-    });
-
-    test.beforeEach(fn () {
-        print("setup before case");
-    });
-
-    test.describe("Example Suite", fn () -> bool {
-        test.it("uses fixture", fn () {
-            // getFixture returns `any` so we must specify the type
-            const string tmp = test.getFixture("temp");
-            test.assertNotNull(tmp);
-            test.assertEqual(tmp, "foo");
+    test.describe("Arithmetic", fn () {
+        test.it("adds integers", fn () {
+            test.assertTrue(2 + 2 == 4);
+            test.assertFalse(2 + 2 == 5);
         });
-
-        test.it("checks success", fn () {
-            const Result res = alwaysOk();
-            test.assertSuccess(res);
-            test.assertTrue(res.get() == 42);
-        });
-        return true;
     });
+    test.summary();
     return 0;
 };
 ```
+
+Put tests at the `[build] test` path in `aflat.cfg` and run `aflat test`.
+`aflat test --coverage` also reports production-line coverage. Inspect the
+printed ATest summary: returning zero from `main` is not itself proof that its
+recorded assertions passed.
+
+## Current generic-helper limitation
+
+The generic assertion helpers are present in the module, but standalone
+imports of `assertEqual`, `assertOk`, and `assertOkValue` currently expose
+compiler errors resolving their internal `markFailure` call. Result helpers
+can additionally report a borrowed-receiver error for `unwrapErr`. The example
+above uses the working non-generic boolean assertions. A comparison or explicit
+result match followed by `assertTrue` is an alternative while those generic
+imports are unresolved.
