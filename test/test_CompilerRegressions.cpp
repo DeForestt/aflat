@@ -632,6 +632,7 @@ fn sum(const int a, const int b, const int c, const int d, const int e,
   return Item(a + b + c + d + e + f + g);
 };
 fn maybe(const int value) -> local int? { return value; };
+fn heapMaybe(const int value) -> int? { return value; };
 fn nothing() -> local int? { return; };
 fn success(const int value) -> local int! { return value; };
 fn failure(const Error &&err) -> local int! { return $err; };
@@ -647,10 +648,13 @@ fn readOption(immutable local option::<int> value) -> int {
 fn readResult(immutable local result::<int> value) -> int {
   match value { Ok(n) => return n, Err() => return -1 };
 };
-fn optionalArg(?immutable local int value) -> int {
+fn optionalArg(?immutable int value) -> int {
   match value { Some(n) => return n, None() => return -1 };
 };
 fn optionalItem(?immutable local Item &&value) -> int {
+  match value { Some(v) => return v.value, None() => return -1 };
+};
+fn optionalHeapItem(?const Item &&value) -> int {
   match value { Some(v) => return v.value, None() => return -1 };
 };
 fn consume(const local Item &&value) -> int { return value.value; };
@@ -672,6 +676,7 @@ fn exercise() -> int {
   if readResult(success(49)) != 49 { return 10; };
   if optionalArg(50) != 50 { return 11; };
   if optionalArg(0) != -1 { return 12; };
+  if optionalArg() != -1 { return 52; };
   if optionalItem(makeItem(53)) != 53 { return 45; };
   if forwardItem(51).value != 51 { return 13; };
   if consume(makeItem(52)) != 52 { return 14; };
@@ -727,6 +732,16 @@ fn main() -> int {
   const local let stackPayload = opt.Some(LateItem(121));
   match heapPayload { Some(v) => { if v.value != 120 { return 48; }; }, None() => return 49 };
   match stackPayload { Some(v) => { if v.value != 121 { return 50; }; }, None() => return 51 };
+  const let optionalPayload = new Item(122);
+  const long beforeOptional = af_total_allocations();
+  const int dropsBeforeOptional = drops;
+  if optionalHeapItem($optionalPayload) != 122 { return 53; };
+  if af_total_allocations() != beforeOptional { return 54; };
+  if drops != dropsBeforeOptional + 1 { return 55; };
+  const long beforeHeapMaybe = af_total_allocations();
+  const let heapOption = heapMaybe(123);
+  if af_total_allocations() != beforeHeapMaybe + #1 { return 56; };
+  match heapOption { Some(n) => { if n != 123 { return 57; }; }, None() => return 58 };
   return 0;
 };
 )";
@@ -770,6 +785,22 @@ fn main() -> int { return 0; };
   SECTION("local consuming parameters cannot escape as heap pointers") {
     body = R"(
 fn escape(const local Item &&value) -> Item { return $value; };
+fn main() -> int { return 0; };
+)";
+  }
+  SECTION("implicit optional parameters cannot escape as owned options") {
+    body = R"(
+import option from "Utils/option";
+import {optionWrapper} from "Utils/option" under option;
+fn escape(?const int value) -> option::<int> { return value; };
+fn main() -> int { return 0; };
+)";
+  }
+  SECTION("implicit optional parameters cannot escape through return sugar") {
+    body = R"(
+import option from "Utils/option";
+import {optionWrapper} from "Utils/option" under option;
+fn escape(?const int value) -> int? { return value; };
 fn main() -> int { return 0; };
 )";
   }
