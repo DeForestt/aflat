@@ -1570,12 +1570,16 @@ TEST_CASE("union lifecycle dispatch covers scope delete and nested payloads",
   fs::create_directories(dir);
   const auto source = dir / "main.af";
   const auto assembly = dir / "main.s";
-  const auto object = dir / "main.o";
+  const auto runtime = dir / "runtime.c";
+  const auto executable = dir / "main";
 
   std::ofstream(source) << R"(.needs <std>
+fn recordPayloadDrop() -> void;
+fn checkCleanup() -> int;
+
 class Payload {
   fn init() -> Self { return my; };
-  fn del() -> void { return; };
+  fn del() -> void { recordPayloadDrop(); return; };
 };
 
 union Inner {
@@ -1598,34 +1602,66 @@ fn main() -> int {
   scoped();
   const Outer value = new Outer->Primitive(7);
   delete value;
-  return 0;
+  return checkCleanup();
 };
+)";
+  std::ofstream(runtime) << R"(#include <stdlib.h>
+#include <string.h>
+static void *live[4];
+static int allocations;
+static int frees;
+static int payloadDrops;
+void *af_malloc(int size) {
+  if (allocations == 4) abort();
+  void *pointer = calloc(1, size > 0 ? (size_t)size : 1);
+  if (!pointer) abort();
+  live[allocations++] = pointer;
+  return pointer;
+}
+int af_free(void *pointer) {
+  for (int i = 0; i < allocations; ++i) {
+    if (live[i] && live[i] == pointer) {
+      live[i] = NULL;
+      ++frees;
+      free(pointer);
+      return 0;
+    }
+  }
+  abort();
+}
+int af_memcpy(void *destination, const void *source, int size) {
+  memcpy(destination, source, (size_t)size);
+  return 0;
+}
+void recordPayloadDrop(void) { ++payloadDrops; }
+int checkCleanup(void) {
+  return allocations == 4 && frees == 4 && payloadDrops == 1 ? 0 : 1;
+}
 )";
 
   const bool built =
       build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
   const auto text = built ? readFile(assembly) : std::string();
-  const int assembled = built ? std::system(("gcc -c " + assembly.string() +
-                                             " -o " + object.string())
-                                                .c_str())
-                              : -1;
+  const int linked =
+      built ? std::system(
+                  ("gcc -no-pie -mstackrealign -mincoming-stack-boundary=3 " +
+                   assembly.string() + " " + runtime.string() + " -o " +
+                   executable.string())
+                      .c_str())
+            : -1;
+  const int ran = linked == 0 ? std::system(executable.string().c_str()) : -1;
   fs::remove_all(dir);
 
   REQUIRE(built);
-  CHECK(assembled == 0);
-  const auto countCalls = [&](const std::string &needle) {
-    std::size_t count = 0;
-    for (std::size_t pos = 0;
-         (pos = text.find(needle, pos)) != std::string::npos;
-         pos += needle.size())
-      ++count;
-    return count;
-  };
+  REQUIRE(linked == 0);
+  CHECK(ran == 0);
   CHECK(text.find("pub_Inner_del:") != std::string::npos);
   CHECK(text.find("pub_Outer_del:") != std::string::npos);
   CHECK(text.find("call\tpub_Payload_del") != std::string::npos);
   CHECK(text.find("call\tpub_Inner_del") != std::string::npos);
-  CHECK(countCalls("call\tpub_Outer_del") == 2);
+  // An explicit return and the fallthrough epilogue can each contain cleanup
+  // instructions. The runtime checks above verify only one path executes.
+  CHECK(text.find("call\tpub_Outer_del") != std::string::npos);
   CHECK(text.find("call\taf_free") != std::string::npos);
 }
 

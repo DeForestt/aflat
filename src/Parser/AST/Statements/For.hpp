@@ -10,10 +10,10 @@ namespace ast {
  */
 class For : public Statement {
 public:
-  Statement *declare;
-  Expr *expr;
-  Statement *increment;
-  Statement *Run;
+  Statement *declare = nullptr;
+  Expr *expr = nullptr;
+  Statement *increment = nullptr;
+  Statement *Run = nullptr;
   For() = default;
   For(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser);
   gen::GenerationResult const generate(gen::CodeGenerator &generator) override;
