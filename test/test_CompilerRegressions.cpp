@@ -632,6 +632,7 @@ fn sum(const int a, const int b, const int c, const int d, const int e,
   return Item(a + b + c + d + e + f + g);
 };
 fn maybe(const int value) -> local int? { return value; };
+fn heapMaybe(const int value) -> int? { return value; };
 fn nothing() -> local int? { return; };
 fn success(const int value) -> local int! { return value; };
 fn failure(const Error &&err) -> local int! { return $err; };
@@ -647,10 +648,13 @@ fn readOption(immutable local option::<int> value) -> int {
 fn readResult(immutable local result::<int> value) -> int {
   match value { Ok(n) => return n, Err() => return -1 };
 };
-fn optionalArg(?immutable local int value) -> int {
+fn optionalArg(?immutable int value) -> int {
   match value { Some(n) => return n, None() => return -1 };
 };
 fn optionalItem(?immutable local Item &&value) -> int {
+  match value { Some(v) => return v.value, None() => return -1 };
+};
+fn optionalHeapItem(?const Item &&value) -> int {
   match value { Some(v) => return v.value, None() => return -1 };
 };
 fn consume(const local Item &&value) -> int { return value.value; };
@@ -672,6 +676,7 @@ fn exercise() -> int {
   if readResult(success(49)) != 49 { return 10; };
   if optionalArg(50) != 50 { return 11; };
   if optionalArg(0) != -1 { return 12; };
+  if optionalArg() != -1 { return 52; };
   if optionalItem(makeItem(53)) != 53 { return 45; };
   if forwardItem(51).value != 51 { return 13; };
   if consume(makeItem(52)) != 52 { return 14; };
@@ -727,6 +732,16 @@ fn main() -> int {
   const local let stackPayload = opt.Some(LateItem(121));
   match heapPayload { Some(v) => { if v.value != 120 { return 48; }; }, None() => return 49 };
   match stackPayload { Some(v) => { if v.value != 121 { return 50; }; }, None() => return 51 };
+  const let optionalPayload = new Item(122);
+  const long beforeOptional = af_total_allocations();
+  const int dropsBeforeOptional = drops;
+  if optionalHeapItem($optionalPayload) != 122 { return 53; };
+  if af_total_allocations() != beforeOptional { return 54; };
+  if drops != dropsBeforeOptional + 1 { return 55; };
+  const long beforeHeapMaybe = af_total_allocations();
+  const let heapOption = heapMaybe(123);
+  if af_total_allocations() != beforeHeapMaybe + #1 { return 56; };
+  match heapOption { Some(n) => { if n != 123 { return 57; }; }, None() => return 58 };
   return 0;
 };
 )";
@@ -770,6 +785,22 @@ fn main() -> int { return 0; };
   SECTION("local consuming parameters cannot escape as heap pointers") {
     body = R"(
 fn escape(const local Item &&value) -> Item { return $value; };
+fn main() -> int { return 0; };
+)";
+  }
+  SECTION("implicit optional parameters cannot escape as owned options") {
+    body = R"(
+import option from "Utils/option";
+import {optionWrapper} from "Utils/option" under option;
+fn escape(?const int value) -> option::<int> { return value; };
+fn main() -> int { return 0; };
+)";
+  }
+  SECTION("implicit optional parameters cannot escape through return sugar") {
+    body = R"(
+import option from "Utils/option";
+import {optionWrapper} from "Utils/option" under option;
+fn escape(?const int value) -> int? { return value; };
 fn main() -> int { return 0; };
 )";
   }
@@ -1539,12 +1570,16 @@ TEST_CASE("union lifecycle dispatch covers scope delete and nested payloads",
   fs::create_directories(dir);
   const auto source = dir / "main.af";
   const auto assembly = dir / "main.s";
-  const auto object = dir / "main.o";
+  const auto runtime = dir / "runtime.c";
+  const auto executable = dir / "main";
 
   std::ofstream(source) << R"(.needs <std>
+fn recordPayloadDrop() -> void;
+fn checkCleanup() -> int;
+
 class Payload {
   fn init() -> Self { return my; };
-  fn del() -> void { return; };
+  fn del() -> void { recordPayloadDrop(); return; };
 };
 
 union Inner {
@@ -1567,34 +1602,66 @@ fn main() -> int {
   scoped();
   const Outer value = new Outer->Primitive(7);
   delete value;
-  return 0;
+  return checkCleanup();
 };
+)";
+  std::ofstream(runtime) << R"(#include <stdlib.h>
+#include <string.h>
+static void *live[4];
+static int allocations;
+static int frees;
+static int payloadDrops;
+void *af_malloc(int size) {
+  if (allocations == 4) abort();
+  void *pointer = calloc(1, size > 0 ? (size_t)size : 1);
+  if (!pointer) abort();
+  live[allocations++] = pointer;
+  return pointer;
+}
+int af_free(void *pointer) {
+  for (int i = 0; i < allocations; ++i) {
+    if (live[i] && live[i] == pointer) {
+      live[i] = NULL;
+      ++frees;
+      free(pointer);
+      return 0;
+    }
+  }
+  abort();
+}
+int af_memcpy(void *destination, const void *source, int size) {
+  memcpy(destination, source, (size_t)size);
+  return 0;
+}
+void recordPayloadDrop(void) { ++payloadDrops; }
+int checkCleanup(void) {
+  return allocations == 4 && frees == 4 && payloadDrops == 1 ? 0 : 1;
+}
 )";
 
   const bool built =
       build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
   const auto text = built ? readFile(assembly) : std::string();
-  const int assembled = built ? std::system(("gcc -c " + assembly.string() +
-                                             " -o " + object.string())
-                                                .c_str())
-                              : -1;
+  const int linked =
+      built ? std::system(
+                  ("gcc -no-pie -mstackrealign -mincoming-stack-boundary=3 " +
+                   assembly.string() + " " + runtime.string() + " -o " +
+                   executable.string())
+                      .c_str())
+            : -1;
+  const int ran = linked == 0 ? std::system(executable.string().c_str()) : -1;
   fs::remove_all(dir);
 
   REQUIRE(built);
-  CHECK(assembled == 0);
-  const auto countCalls = [&](const std::string &needle) {
-    std::size_t count = 0;
-    for (std::size_t pos = 0;
-         (pos = text.find(needle, pos)) != std::string::npos;
-         pos += needle.size())
-      ++count;
-    return count;
-  };
+  REQUIRE(linked == 0);
+  CHECK(ran == 0);
   CHECK(text.find("pub_Inner_del:") != std::string::npos);
   CHECK(text.find("pub_Outer_del:") != std::string::npos);
   CHECK(text.find("call\tpub_Payload_del") != std::string::npos);
   CHECK(text.find("call\tpub_Inner_del") != std::string::npos);
-  CHECK(countCalls("call\tpub_Outer_del") == 2);
+  // An explicit return and the fallthrough epilogue can each contain cleanup
+  // instructions. The runtime checks above verify only one path executes.
+  CHECK(text.find("call\tpub_Outer_del") != std::string::npos);
   CHECK(text.find("call\taf_free") != std::string::npos);
 }
 

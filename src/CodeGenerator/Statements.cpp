@@ -227,7 +227,9 @@ asmc::File gen::CodeGenerator::GenArgs(ast::Statement *STMT,
         decAssign->mute = arg->mut;
         decAssign->expr = call;
         decAssign->declare->trust = true;
-        decAssign->declare->local = arg->local;
+        // The implicit option belongs to this call's frame, independently of
+        // the incoming payload's storage. Select the local wrapper overload.
+        decAssign->declare->local = true;
 
         output << decAssign->generate(*this).file;
       }

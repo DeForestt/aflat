@@ -3,6 +3,12 @@
 ## Overview
 `strings.af` is a part of the Aflat standard library, providing a collection of functions for string manipulation and character handling.
 
+The `adr` arguments and buffer results are raw addresses. These functions do
+not acquire ownership of input buffers. For output buffers, the caller must
+provide sufficient writable capacity, including the terminating null byte,
+and keep that storage alive. Use `uni_string` or `String.string` when an owned
+string object is needed.
+
 ## Functions
 
 ### `ascii`

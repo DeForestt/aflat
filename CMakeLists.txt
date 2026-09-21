@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.12)
-add_subdirectory(Lib/Catch2)
 
 set (CMAKE_CXX_STANDARD 17)
 option(AFLAT_NATIVE_BUILD "Build with -march=native for the current host CPU" ON)
@@ -42,6 +41,8 @@ file(GLOB_RECURSE testing_Modules
 message (STATUS ${testing_Modules})
 add_executable(a.test ${testing_Modules})
 target_include_directories(a.test PRIVATE src/)
-target_link_libraries(a.test PRIVATE Catch2::Catch2WithMain Threads::Threads)
+# test/catch.hpp supplies Catch2 v2; test/test.cpp supplies its implementation
+# and main. Linking a separate Catch2 library mixes incompatible versions.
+target_link_libraries(a.test PRIVATE Threads::Threads)
 target_compile_definitions(a.test PRIVATE AFLAT_TEST)
 # target_link_options(test PRIVATE -flto)

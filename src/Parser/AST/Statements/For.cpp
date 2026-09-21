@@ -36,22 +36,24 @@ For::For(links::LinkedList<lex::Token *> &tokens, parse::Parser &parser) {
   this->increment = parser.parseStmt(tokens, true);
 
   sym = dynamic_cast<lex::OpSym *>(tokens.peek());
+  if (sym != nullptr && sym->Sym == ';')
+    tokens.pop();
+
+  if (tokens.peek() == nullptr)
+    throw err::Exception("Line: " + std::to_string(this->logicalLine) +
+                         " Missing for loop body");
+
+  sym = dynamic_cast<lex::OpSym *>(tokens.peek());
   if (sym != nullptr) {
-    if (sym->Sym == ';') {
-      tokens.pop();
-    };
-    sym = dynamic_cast<lex::OpSym *>(tokens.peek());
-    if (sym != nullptr) {
-      if (sym->Sym == '{') {
-        tokens.pop();
-        this->Run = parser.parseStmt(tokens);
-      } else
-        throw err::Exception(
-            "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
-            " Unopened for loop body");
-    }
-  } else
+    if (sym->Sym != '{')
+      throw err::Exception(
+          "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+          " Unopened for loop body");
+    tokens.pop();
+    this->Run = parser.parseStmt(tokens);
+  } else {
     this->Run = parser.parseStmt(tokens, true);
+  }
 }
 
 gen::GenerationResult const For::generate(gen::CodeGenerator &generator) {

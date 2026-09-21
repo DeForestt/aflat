@@ -3,7 +3,9 @@
 #include <string>
 #include <vector>
 
+#include "Exceptions.hpp"
 #include "LSP.hpp"
+#include "Parser/AST/Statements/For.hpp"
 #include "catch.hpp"
 
 namespace {
@@ -60,6 +62,43 @@ std::string jsonEscape(const std::string &text) {
 
 } // namespace
 
+TEST_CASE("for loops reject missing bodies", "[parser][incomplete]") {
+  for (const std::string source :
+       {"for let i = 0; i < 10;", "for let i = 0; i < 10; i++",
+        "for let i = 0; i < 10; i++;"}) {
+    CAPTURE(source);
+    ast::StatementAllocationScope statements;
+    ast::TypeAllocationScope types;
+    lex::TokenAllocationScope tokenAllocations;
+    lex::Lexer lexer;
+    auto tokens = lexer.Scan(source, 1);
+    tokens.invert();
+    parse::Parser parser;
+    CHECK_THROWS_AS(parser.parseStmt(tokens, true), err::Exception);
+  }
+}
+
+TEST_CASE("for loops preserve braced and single statement bodies",
+          "[parser][for]") {
+  for (const std::string body :
+       {"{ return 0; }", "; { return 0; }", "return 0;", "; return 0;"}) {
+    CAPTURE(body);
+    ast::StatementAllocationScope statements;
+    ast::TypeAllocationScope types;
+    lex::TokenAllocationScope tokenAllocations;
+    lex::Lexer lexer;
+    auto tokens = lexer.Scan("for let i = 0; i < 10; i++ " + body, 1);
+    tokens.invert();
+    parse::Parser parser;
+    const auto *loop = dynamic_cast<ast::For *>(parser.parseStmt(tokens, true));
+    REQUIRE(loop != nullptr);
+    auto *statement = loop->Run;
+    if (const auto *sequence = dynamic_cast<ast::Sequence *>(statement))
+      statement = sequence->Statement1;
+    CHECK(dynamic_cast<ast::Return *>(statement) != nullptr);
+  }
+}
+
 TEST_CASE("LSP survives deterministic incomplete parser constructs",
           "[lsp][parser][incomplete]") {
   const std::vector<std::string> incompleteSources = {
@@ -67,6 +106,8 @@ TEST_CASE("LSP survives deterministic incomplete parser constructs",
       "fn main() -> int { if true { return 0; } else {",
       "fn main() -> int { while true {",
       "fn main() -> int { for let i = 0; i < 10;",
+      "fn main() -> int { for let i = 0; i < 10; i++",
+      "fn main() -> int { for let i = 0; i < 10; i++;",
       "fn main() -> int { foreach item in",
       "fn main() -> int { match value {",
       "fn main() -> int { match value { Some(item) => {",
