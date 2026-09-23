@@ -1,15 +1,11 @@
 #include <ctype.h>
 #include <errno.h>
-#include <netinet/in.h>
-#include <pthread.h>
 #include <spawn.h>
-#include <signal.h>
-#include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 extern char **environ;
@@ -42,96 +38,6 @@ int spawn_shell(char *cmd) {
   return status;
 }
 
-static int _parse_content_length(const char *buffer, size_t header_len,
-                                 size_t *content_length) {
-  const char *needle = "content-length:";
-  size_t needle_len = strlen(needle);
-
-  for (size_t i = 0; i + needle_len <= header_len; ++i) {
-    size_t j = 0;
-    for (; j < needle_len; ++j) {
-      unsigned char current = buffer[i + j];
-      if (isupper(current)) current = (unsigned char)tolower(current);
-      if (current != (unsigned char)needle[j]) break;
-    }
-    if (j == needle_len) {
-      size_t pos = i + needle_len;
-      while (pos < header_len &&
-             (buffer[pos] == ' ' || buffer[pos] == '\t'))  // skip ws
-        pos++;
-
-      size_t value = 0;
-      int found_digit = 0;
-      while (pos < header_len && buffer[pos] >= '0' && buffer[pos] <= '9') {
-        found_digit = 1;
-        value = value * 10 + (size_t)(buffer[pos] - '0');
-        pos++;
-      }
-      if (found_digit) {
-        *content_length = value;
-        return 1;
-      }
-      break;
-    }
-  }
-
-  *content_length = 0;
-  return 0;
-}
-
-static ssize_t _aflat_read_request(int socket_fd, size_t initial_size,
-                                   char **out_request) {
-  size_t capacity = initial_size > 0 ? initial_size : 4096;
-  if (capacity < 1024) capacity = 1024;
-
-  char *buffer = af_malloc((int)capacity);
-  if (!buffer) return -1;
-
-  size_t total = 0;
-  ssize_t header_end = -1;
-  size_t content_length = 0;
-
-  while (1) {
-    if (total + 1 >= capacity) {
-      size_t new_capacity = capacity * 2;
-      char *tmp = af_realloc(buffer, (int)new_capacity);
-      if (!tmp) {
-        af_free(buffer);
-        return -1;
-      }
-      buffer = tmp;
-      capacity = new_capacity;
-    }
-
-    ssize_t bytes = read(socket_fd, buffer + total, capacity - total - 1);
-    if (bytes < 0) {
-      af_free(buffer);
-      return -1;
-    }
-    if (bytes == 0) break;
-
-    total += (size_t)bytes;
-    buffer[total] = '\0';
-
-    if (header_end == -1) {
-      char *header_boundary = strstr(buffer, "\r\n\r\n");
-      if (header_boundary != NULL) {
-        header_end = (ssize_t)(header_boundary - buffer + 4);
-        _parse_content_length(buffer, (size_t)header_end, &content_length);
-      }
-    }
-
-    if (header_end != -1) {
-      size_t required_total = (size_t)header_end + content_length;
-      if (total >= required_total) break;
-    }
-  }
-
-  buffer[total] = '\0';
-  *out_request = buffer;
-  return (ssize_t)total;
-}
-
 void error(const char *msg) {
   perror(msg);
   exit(0);
@@ -142,28 +48,32 @@ static int _header_is(const char *header, const char *name) {
   for (size_t i = 0; i < name_len; ++i) {
     unsigned char a = (unsigned char)header[i];
     unsigned char b = (unsigned char)name[i];
-    if (tolower(a) != tolower(b)) return 0;
+    if (tolower(a) != tolower(b))
+      return 0;
   }
   return header[name_len] == ':';
 }
 
 static char *_dup_range(const char *start, size_t len) {
   char *out = malloc(len + 1);
-  if (!out) return NULL;
+  if (!out)
+    return NULL;
   memcpy(out, start, len);
   out[len] = '\0';
   return out;
 }
 
 static char *_dup_trimmed_line(const char *start, size_t len) {
-  while (len > 0 && (start[len - 1] == '\r' || start[len - 1] == '\n')) len--;
+  while (len > 0 && (start[len - 1] == '\r' || start[len - 1] == '\n'))
+    len--;
   return _dup_range(start, len);
 }
 
 static char *_build_url(const char *host, const char *port, const char *path) {
   const char *safe_path = path ? path : "/";
   const char *safe_port = port ? port : "";
-  if (safe_path[0] == '\0') safe_path = "/";
+  if (safe_path[0] == '\0')
+    safe_path = "/";
   if (strncmp(safe_path, "http://", 7) == 0 ||
       strncmp(safe_path, "https://", 8) == 0) {
     return _dup_range(safe_path, strlen(safe_path));
@@ -173,7 +83,8 @@ static char *_build_url(const char *host, const char *port, const char *path) {
   if (strncmp(host, "http://", 7) == 0 || strncmp(host, "https://", 8) == 0) {
     size_t len = strlen(host) + need_slash + strlen(safe_path) + 1;
     char *url = malloc(len);
-    if (!url) return NULL;
+    if (!url)
+      return NULL;
     char *write = url;
     size_t host_len = strlen(host);
     memcpy(write, host, host_len);
@@ -189,8 +100,7 @@ static char *_build_url(const char *host, const char *port, const char *path) {
   }
 
   const char *scheme =
-      (safe_port[0] != '\0' && strcmp(safe_port, "80") == 0) ? "http"
-                                                              : "https";
+      (safe_port[0] != '\0' && strcmp(safe_port, "80") == 0) ? "http" : "https";
   int include_port =
       safe_port[0] != '\0' &&
       !((strcmp(scheme, "http") == 0 && strcmp(safe_port, "80") == 0) ||
@@ -199,7 +109,8 @@ static char *_build_url(const char *host, const char *port, const char *path) {
                (include_port ? 1 + strlen(safe_port) : 0) + need_slash +
                strlen(safe_path) + 1;
   char *url = malloc(len);
-  if (!url) return NULL;
+  if (!url)
+    return NULL;
   char *write = url;
   size_t scheme_len = strlen(scheme);
   size_t host_len = strlen(host);
@@ -287,10 +198,13 @@ int request(char *host, char *path, char *port, char *msg, char *response,
   line_start = line_end + 2;
   while (header_end && line_start < header_end && header_count < 127) {
     line_end = strstr(line_start, "\r\n");
-    if (!line_end || line_end == line_start) break;
+    if (!line_end || line_end == line_start)
+      break;
 
-    char *header = _dup_trimmed_line(line_start, (size_t)(line_end - line_start));
-    if (!header) break;
+    char *header =
+        _dup_trimmed_line(line_start, (size_t)(line_end - line_start));
+    if (!header)
+      break;
     if (!_header_is(header, "Host") && !_header_is(header, "Content-Length")) {
       headers[header_count++] = header;
     } else {
@@ -325,7 +239,8 @@ int request(char *host, char *path, char *port, char *msg, char *response,
     perror("pipe");
     free(url);
     free(msg_copy);
-    for (int i = 0; i < header_count; ++i) free(headers[i]);
+    for (int i = 0; i < header_count; ++i)
+      free(headers[i]);
     return 0;
   }
 
@@ -336,7 +251,8 @@ int request(char *host, char *path, char *port, char *msg, char *response,
     close(pipefd[1]);
     free(url);
     free(msg_copy);
-    for (int i = 0; i < header_count; ++i) free(headers[i]);
+    for (int i = 0; i < header_count; ++i)
+      free(headers[i]);
     return 0;
   }
 
@@ -354,21 +270,25 @@ int request(char *host, char *path, char *port, char *msg, char *response,
     close(pipefd[1]);
     free(url);
     free(msg_copy);
-    for (int i = 0; i < header_count; ++i) free(headers[i]);
+    for (int i = 0; i < header_count; ++i)
+      free(headers[i]);
     return 0;
   }
 
   close(pipefd[1]);
   while (total + 1 < (size_t)response_size) {
-    bytes = read(pipefd[0], response + total, (size_t)response_size - total - 1);
+    bytes =
+        read(pipefd[0], response + total, (size_t)response_size - total - 1);
     if (bytes < 0) {
       close(pipefd[0]);
       free(url);
       free(msg_copy);
-      for (int i = 0; i < header_count; ++i) free(headers[i]);
+      for (int i = 0; i < header_count; ++i)
+        free(headers[i]);
       return 0;
     }
-    if (bytes == 0) break;
+    if (bytes == 0)
+      break;
     total += (size_t)bytes;
   }
   response[total] = '\0';
@@ -378,390 +298,8 @@ int request(char *host, char *path, char *port, char *msg, char *response,
 
   free(url);
   free(msg_copy);
-  for (int i = 0; i < header_count; ++i) free(headers[i]);
+  for (int i = 0; i < header_count; ++i)
+    free(headers[i]);
 
   return WIFEXITED(status) && WEXITSTATUS(status) == 0;
-}
-
-#define SIZE 1024
-#define BACKLOG 10  // Passed to listen()
-
-static int _aflat_send_all(int socket_fd, const char *buffer, size_t length) {
-  size_t sent = 0;
-  while (sent < length) {
-    ssize_t n = send(socket_fd, buffer + sent, length - sent, 0);
-    if (n < 0) {
-      if (errno == EINTR) continue;
-      return -1;
-    }
-    if (n == 0) return -1;
-    sent += (size_t)n;
-  }
-  return 0;
-}
-
-__attribute__((force_align_arg_pointer)) int
-_aflat_server_spinUp(short port, int requestSize,
-                     char *(*requestHandler)(char *, char **)) {
-  int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-  if (serverSocket < 0) {
-    perror("socket");
-    return 1;
-  }
-  signal(SIGPIPE, SIG_IGN);
-
-  struct sockaddr_in serverAddress;
-  serverAddress.sin_family = AF_INET;
-  serverAddress.sin_port = htons(port);
-  serverAddress.sin_addr.s_addr =
-      htonl(INADDR_LOOPBACK);  // inet_addr("127.0.0.1");
-  if (bind(serverSocket, (struct sockaddr *)&serverAddress,
-           sizeof(serverAddress)) < 0) {
-    perror("bind");
-    close(serverSocket);
-    return 1;
-  }
-
-  int listening = listen(serverSocket, BACKLOG);
-  if (listening < 0) {
-    perror("listen");
-    close(serverSocket);
-    return 1;
-  }
-  int clientSocket;
-
-  while (1) {
-    clientSocket = accept(serverSocket, NULL, NULL);
-    if (clientSocket < 0) {
-      perror("accept");
-      continue;
-    }
-    char *request = NULL;
-    char *response = NULL;
-    ssize_t request_len =
-        _aflat_read_request(clientSocket, (size_t)requestSize, &request);
-    if (request_len <= 0) {
-      if (request != NULL) af_free(request);
-      close(clientSocket);
-      continue;
-    }
-    requestHandler(request, &response);
-    if (response != NULL) {
-      _aflat_send_all(clientSocket, response, strlen(response));
-      af_free(response);
-    }
-    af_free(request);
-    close(clientSocket);
-  }
-  return 0;
-}
-
-// Server side C/C++ program to demonstrate Socket
-// programming
-
-#include <unistd.h>
-#define PORT 8080
-
-__attribute__((force_align_arg_pointer)) int
-_serve(int port, char *(*handler)(char *, void *), void *data) {
-  int server_fd, new_socket;
-  struct sockaddr_in address;
-  int opt = 1;
-  int addrlen = sizeof(address);
-
-  server_fd = socket(AF_INET, SOCK_STREAM, 0);
-  if (server_fd < 0) {
-    perror("socket");
-    return 1;
-  }
-  setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-             sizeof(opt));
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(port);
-  if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    perror("bind");
-    close(server_fd);
-    return 1;
-  }
-  if (listen(server_fd, 3) < 0) {
-    perror("listen");
-    close(server_fd);
-    return 1;
-  }
-  new_socket =
-      accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-  if (new_socket < 0) {
-    perror("accept");
-    exit(EXIT_FAILURE);
-  }
-
-  char *request = NULL;
-  if (_aflat_read_request(new_socket, 4096, &request) < 0) {
-    if (request != NULL) af_free(request);
-    close(new_socket);
-    close(server_fd);
-    return -1;
-  }
-  char *response = handler(request, data);
-  if (response != NULL) {
-    send(new_socket, response, strlen(response), 0);
-    af_free(response);
-  }
-  af_free(request);
-  close(new_socket);
-  close(server_fd);
-  return 0;
-}
-
-typedef char *(*af_server_handler)(char *, void *);
-
-typedef struct af_server_pool {
-  pthread_mutex_t mutex;
-  pthread_cond_t available;
-  pthread_cond_t space;
-  pthread_t *threads;
-  int *queue;
-  size_t head;
-  size_t tail;
-  size_t count;
-  size_t capacity;
-  int stopping;
-  af_server_handler handler;
-  void *data;
-} af_server_pool;
-
-/* Generated AFlat callbacks use the System V callee-saved registers as
- * scratch registers. Preserve them around callbacks made by pool threads. */
-#if defined(__x86_64__)
-__attribute__((naked, noinline)) static char *
-af_server_invoke(af_server_handler handler __attribute__((unused)),
-                 char *request __attribute__((unused)),
-                 void *data __attribute__((unused))) {
-  __asm__("pushq %rbp\n\t"
-          "movq %rsp, %rbp\n\t"
-          "pushq %rbx\n\t"
-          "pushq %r12\n\t"
-          "pushq %r13\n\t"
-          "pushq %r14\n\t"
-          "pushq %r15\n\t"
-          "subq $8, %rsp\n\t"
-          "movq %rdi, %rax\n\t"
-          "movq %rsi, %rdi\n\t"
-          "movq %rdx, %rsi\n\t"
-          "call *%rax\n\t"
-          "addq $8, %rsp\n\t"
-          "popq %r15\n\t"
-          "popq %r14\n\t"
-          "popq %r13\n\t"
-          "popq %r12\n\t"
-          "popq %rbx\n\t"
-          "leave\n\t"
-          "ret");
-}
-#else
-static char *af_server_invoke(af_server_handler handler, char *request,
-                              void *data) {
-  return handler(request, data);
-}
-#endif
-
-int af_server_default_worker_count(void) {
-  long processors = sysconf(_SC_NPROCESSORS_ONLN);
-  if (processors < 1) processors = 1;
-  long workers = processors * 2;
-  if (workers < 4) workers = 4;
-  if (workers > 32) workers = 32;
-  return (int)workers;
-}
-
-static void af_server_handle_connection(af_server_pool *pool, int socket_fd) {
-  char *request = NULL;
-  if (_aflat_read_request(socket_fd, 4096, &request) > 0) {
-    char *response = af_server_invoke(pool->handler, request, pool->data);
-    if (response != NULL) {
-      _aflat_send_all(socket_fd, response, strlen(response));
-      af_free(response);
-    }
-  }
-  if (request != NULL) af_free(request);
-  close(socket_fd);
-}
-
-static void *af_server_pool_worker(void *opaque) {
-  af_server_pool *pool = opaque;
-  for (;;) {
-    pthread_mutex_lock(&pool->mutex);
-    while (pool->count == 0 && !pool->stopping)
-      pthread_cond_wait(&pool->available, &pool->mutex);
-    if (pool->stopping && pool->count == 0) {
-      pthread_mutex_unlock(&pool->mutex);
-      return NULL;
-    }
-
-    int socket_fd = pool->queue[pool->head];
-    pool->head = (pool->head + 1) % pool->capacity;
-    pool->count--;
-    pthread_cond_signal(&pool->space);
-    pthread_mutex_unlock(&pool->mutex);
-
-    af_server_handle_connection(pool, socket_fd);
-  }
-}
-
-static void af_server_pool_stop(af_server_pool *pool, int started) {
-  pthread_mutex_lock(&pool->mutex);
-  pool->stopping = 1;
-  pthread_cond_broadcast(&pool->available);
-  pthread_mutex_unlock(&pool->mutex);
-  for (int i = 0; i < started; i++) pthread_join(pool->threads[i], NULL);
-  while (pool->count > 0) {
-    close(pool->queue[pool->head]);
-    pool->head = (pool->head + 1) % pool->capacity;
-    pool->count--;
-  }
-  pthread_cond_destroy(&pool->space);
-  pthread_cond_destroy(&pool->available);
-  pthread_mutex_destroy(&pool->mutex);
-  free(pool->queue);
-  free(pool->threads);
-}
-
-__attribute__((force_align_arg_pointer)) int
-serve_pool(int port, af_server_handler handler, void *data, int worker_count) {
-  if (handler == NULL) return EINVAL;
-  if (worker_count <= 0) worker_count = af_server_default_worker_count();
-
-  af_server_pool pool;
-  memset(&pool, 0, sizeof(pool));
-  pool.handler = handler;
-  pool.data = data;
-  pool.capacity = (size_t)worker_count * 32;
-  if (pool.capacity < 128) pool.capacity = 128;
-  if (pool.capacity > 4096) pool.capacity = 4096;
-  pool.threads = calloc((size_t)worker_count, sizeof(*pool.threads));
-  pool.queue = calloc(pool.capacity, sizeof(*pool.queue));
-  if (pool.threads == NULL || pool.queue == NULL) {
-    free(pool.threads);
-    free(pool.queue);
-    return ENOMEM;
-  }
-
-  pthread_mutex_init(&pool.mutex, NULL);
-  pthread_cond_init(&pool.available, NULL);
-  pthread_cond_init(&pool.space, NULL);
-
-  int started = 0;
-  for (; started < worker_count; started++) {
-    int status = pthread_create(&pool.threads[started], NULL,
-                                af_server_pool_worker, &pool);
-    if (status != 0) {
-      af_server_pool_stop(&pool, started);
-      return status;
-    }
-  }
-
-  int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-  if (server_fd < 0) {
-    perror("socket");
-    af_server_pool_stop(&pool, started);
-    return 1;
-  }
-
-  int opt = 1;
-  setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-  setsockopt(server_fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
-  struct sockaddr_in address;
-  memset(&address, 0, sizeof(address));
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(port);
-  if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    perror("bind");
-    close(server_fd);
-    af_server_pool_stop(&pool, started);
-    return 1;
-  }
-  if (listen(server_fd, 128) < 0) {
-    perror("listen");
-    close(server_fd);
-    af_server_pool_stop(&pool, started);
-    return 1;
-  }
-
-  signal(SIGPIPE, SIG_IGN);
-  for (;;) {
-    int socket_fd = accept(server_fd, NULL, NULL);
-    if (socket_fd < 0) {
-      if (errno == EINTR) continue;
-      perror("accept");
-      continue;
-    }
-
-    pthread_mutex_lock(&pool.mutex);
-    while (pool.count == pool.capacity)
-      pthread_cond_wait(&pool.space, &pool.mutex);
-    pool.queue[pool.tail] = socket_fd;
-    pool.tail = (pool.tail + 1) % pool.capacity;
-    pool.count++;
-    pthread_cond_signal(&pool.available);
-    pthread_mutex_unlock(&pool.mutex);
-  }
-}
-
-__attribute__((force_align_arg_pointer)) int
-serve(int port, char *(*handler)(char *, void *), void *data) {
-  return serve_pool(port, handler, data, 0);
-}
-
-__attribute__((force_align_arg_pointer)) int
-serve_sync(int port, char *(*handler)(char *, void *), void *data) {
-  int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-  struct sockaddr_in address;
-  int opt = 1;
-  int addrlen = sizeof(address);
-
-  if (server_fd < 0) {
-    perror("socket");
-    return 1;
-  }
-  setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-             sizeof(opt));
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(port);
-  if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    perror("bind");
-    close(server_fd);
-    return 1;
-  }
-  if (listen(server_fd, 3) < 0) {
-    perror("listen");
-    close(server_fd);
-    return 1;
-  }
-
-  while (1) {
-    int new_socket =
-        accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-    if (new_socket < 0) {
-      perror("accept");
-      continue;
-    }
-
-    char *request = NULL;
-    if (_aflat_read_request(new_socket, 4096, &request) < 0) {
-      close(new_socket);
-      continue;
-    }
-    char *response = handler(request, data);
-    if (response != NULL) {
-      send(new_socket, response, strlen(response), 0);
-      af_free(response);
-    }
-    af_free(request);
-    close(new_socket);
-  }
-  close(server_fd);
-  return 0;
 }
