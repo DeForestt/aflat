@@ -377,9 +377,8 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
     pop = new asmc::Pop();
     pop->logicalLine = this->logicalLine;
     pop->size = asmc::QWord;
-    pop->op = generator.registers()["%r11"]->get(asmc::QWord);
+    pop->op = generator.registers()["%r9"]->get(asmc::QWord);
 
-    file.text << push;
     file.text << m1;
   } else {
     mov->to = output;

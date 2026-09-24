@@ -1,0 +1,121 @@
+.needs <std>
+.needs <asm>
+
+// Linux x86-64 TCP echo probe. Input: network-order port (2 bytes), then
+// native int connection count. Each connection sends a native int length
+// followed by binary bytes. No HTTP or C networking shim is used.
+fn readExact(const int fd, adr cursor, int remaining) -> bool {
+    while remaining > 0 {
+        const int count = sys_read(fd, cursor, remaining);
+        if count == -4 continue; // EINTR
+        if count <= 0 return false;
+        if count > remaining return false;
+        cursor = cursor + count;
+        remaining = remaining - count;
+    };
+    return true;
+};
+
+fn guard(const adr address, const int size) -> bool {
+    for int i = 0; i < 16; i = i + 1 {
+        const adr before = address + i;
+        const adr after = address + 16 + size + i;
+        if before as char != 'G' return false;
+        if after as char != 'G' return false;
+    };
+    return true;
+};
+
+fn mark(const adr address, const int size) -> void {
+    for int i = 0; i < 16; i = i + 1 {
+        const adr before = address + i;
+        const adr after = address + 16 + size + i;
+        before =: 'G';
+        after =: 'G';
+    };
+};
+
+fn main() -> int {
+    const char[48] storage;
+    const adr base = storage;
+    const adr address = base + 16;
+    mark(base, 16);
+    for int i = 0; i < 16; i = i + 1 {
+        const adr cursor = address + i;
+        cursor =: '\0';
+    };
+    const short family = 2; // AF_INET, native endian
+    address =: family;
+    const adr port = address + 2;
+    if !readExact(0, port, 2) return 10;
+    const adr host = address + 4;
+    // Explicit four bytes of 127.0.0.1, represented as a little-endian int.
+    const int loopback = 16777343;
+    host =: loopback;
+    int connections = 0;
+    if !readExact(0, ?connections, 4) return 11;
+    const int listener = sys_socket(2, 1, 0);
+    if listener < 0 return 12;
+    const int enabled = 1;
+    if sys_setsockopt(listener, 1, 2, ?enabled, 4) != 0 return 13;
+    // sockaddr_in is exactly 16 bytes on this target; reject a short length.
+    if sys_bind(listener, address, 15) != -22 return 31;
+    if sys_bind(listener, address, 16) != 0 return 14;
+    if !guard(base, 16) return 15;
+    if sys_listen(listener, 128) != 0 return 16;
+    sys_write(1, "ready\n", 6);
+    int partialWrites = 0;
+    int wouldBlock = 0;
+    const int initialBlocks = af_live_blocks();
+    const long initialBytes = af_live_bytes();
+    for int connection = 0; connection < connections; connection = connection + 1 {
+        int peerLength = 16;
+        const int client = sys_accept(listener, address, ?peerLength);
+        if client < 0 return 17;
+        if peerLength != 16 return 18;
+        if address as short != family return 19;
+        if !guard(base, 16) return 20;
+        const int sendBuffer = 4096;
+        if sys_setsockopt(client, 1, 7, ?sendBuffer, 4) != 0 return 21;
+        int size = 0;
+        if !readExact(client, ?size, 4) {
+            sys_close(client);
+            continue;
+        };
+        if size < 0 return 22;
+        if size > 8388608 return 23;
+        const adr allocation = af_malloc(size + 32);
+        if allocation == NULL return 24;
+        mark(allocation, size);
+        const adr bytes = allocation + 16;
+        if readExact(client, bytes, size) {
+            int sent = 0;
+            while sent < size {
+                const adr cursor = bytes + sent;
+                const int remaining = size - sent;
+                // MSG_NOSIGNAL | MSG_DONTWAIT: survive reset clients and
+                // exercise partial sends. Busy retry is probe-only policy.
+                const int count = sys_sendto(client, cursor, remaining, 16448, NULL, 0);
+                if count == -4 continue;
+                if count == -11 {
+                    wouldBlock = wouldBlock + 1;
+                    continue;
+                };
+                if count <= 0 break;
+                if count > remaining return 25;
+                if count < remaining partialWrites = partialWrites + 1;
+                sent = sent + count;
+            };
+        };
+        if !guard(allocation, size) return 26;
+        af_free(allocation);
+        sys_close(client);
+    };
+    sys_close(listener);
+    if partialWrites == 0 return 27;
+    if wouldBlock == 0 return 28;
+    if af_live_blocks() != initialBlocks return 29;
+    if af_live_bytes() != initialBytes return 30;
+    sys_write(1, "passed\n", 7);
+    return 0;
+};

@@ -2128,10 +2128,19 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     // allocation. Once the complete chain has produced a value independent of
     // that receiver, preserve the result and release the hidden receiver now;
     // waiting for lexical scope exit lets loop iterations overwrite this slot.
+    // Address-like primitives can borrow the receiver's storage (cstr(),
+    // for example). Keep that owner in the lexical scope just as for a
+    // borrowed class result; only scalar values are independent of it.
     const bool primitiveResult = parse::PRIMITIVE_TYPES.find(output.type) !=
                                  parse::PRIMITIVE_TYPES.end();
+    const bool addressResult = output.type == "adr" ||
+                               output.type == "generic" ||
+                               output.type == "any" || output.type == "object";
+    // Function results mark primitives owned too; that flag does not make
+    // an address independent of the receiver it points into.
     const bool resultOutlivesReceiver =
-        primitiveResult || output.type == "void" || output.owned;
+        !addressResult &&
+        (primitiveResult || output.type == "void" || output.owned);
     if (tempSymbol != nullptr && tempSymbol->owned && tempSymbol->sold == -1 &&
         resultOutlivesReceiver) {
       std::string savedResult;

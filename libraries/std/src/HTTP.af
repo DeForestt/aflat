@@ -376,8 +376,11 @@ shared class HTTPMessage {
 
             if lineEnd == lineStart {
                 my.switch = true;
-                lineStart = lineEnd + 1;
-                continue;
+                // The body is opaque text, not a sequence of header lines.
+                // Preserve embedded/empty CRLF lines and a final line without
+                // CRLF rather than overwriting earlier body fragments.
+                my.body = rsp.subString(lineEnd + 2, rsp.len());
+                return;
             };
 
             const string line = rsp.subString(lineStart, lineEnd);

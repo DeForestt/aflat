@@ -1,0 +1,56 @@
+.needs <std>
+.needs <asm>
+.needs <server>
+import TransportOptions from "HTTP/Transport";
+import {serveConfigured, serveSyncConfigured} from "HTTP/Transport" under transport;
+import {len, str_comp} from "strings" under str;
+
+fn respond(const adr request, const adr context) -> adr {
+    if str.str_comp(context, "context") != 1 return NULL;
+    const adr prefix = "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n";
+    const int prefixSize = str.len(prefix);
+    const int size = str.len(request);
+    const adr response = af_malloc(prefixSize + size + 1);
+    af_memcpy(response, prefix, prefixSize);
+    const adr body = response + prefixSize;
+    af_memcpy(body, request, size + 1);
+    return response;
+};
+
+fn legacy(const adr request, const adr output, const adr context) -> void {
+    output =: respond(request, context);
+};
+
+fn main() -> int {
+    int[8] args;
+    mutable adr cursor = args;
+    mutable int remaining = 32;
+    while remaining > 0 {
+        const int count = sys_read(0, cursor, remaining);
+        if count <= 0 return 90;
+        cursor = cursor + count;
+        remaining = remaining - count;
+    };
+    const let options = TransportOptions();
+    options.maxConnections = args[2];
+    options.timeoutMs = args[3];
+    options.maxRequestBytes = args[4];
+    options.maxHeaderBytes = args[5];
+    options.loopback = true;
+    if args[6] != 0 { options.legacyCallback = true; };
+    const int initialBlocks = af_live_blocks();
+    const long initialBytes = af_live_bytes();
+    mutable adr callback = respond;
+    if args[6] != 0 { callback = legacy; };
+    mutable int status = 0;
+    if args[7] != 0 {
+        status = transport.serveSyncConfigured(args[0], callback, "context", options);
+    } else {
+        status = transport.serveConfigured(args[0], callback, "context", args[1], options);
+    };
+    if status != 0 return status;
+    if af_live_blocks() != initialBlocks return 91;
+    if af_live_bytes() != initialBytes return 92;
+    sys_write(1, "clean shutdown\n", 15);
+    return 0;
+};
