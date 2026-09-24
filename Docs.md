@@ -894,7 +894,17 @@ The access modifier is used to determine the visibility of the field.  The follo
 
 A class decorator stores a function pointer and, for a decorated method, its
 receiver capture. Keep the receiver alive while invoking the stored callback.
-The compiler supplies both constructor arguments for a method decorator:
+
+The compiler creates the decorator as a `local` field embedded in the containing
+object and constructs it directly in that storage. The decorator itself requires
+no separate heap allocation or temporary heap wrapper. This applies to generic
+decorators as well. If the containing object is on the stack, its decorator is
+also on the stack; if the containing object is on the heap, the decorator occupies
+part of that same allocation. Cleanup follows the normal `local` field lifecycle.
+A decorator's constructor may still allocate resources of its own.
+
+The compiler passes the decorated method's function pointer and receiver to the
+decorator constructor, followed by any explicit decorator arguments:
 
 ```aflat
 .needs <std>
@@ -925,8 +935,8 @@ fn main() -> int {
 };
 ```
 
-`decorated` is a Decorator field containing a callback, so invocation goes
-through `runFoo`, not `object.decorated()`.
+`decorated` is a `local Decorator` field containing a callback. Invoke it through
+`object.decorated.runFoo()`.
 
 ## Contracts
 Contracts are used to create OO interfaces. The allows classes that sign them to behave as the parent class.  The syntax is:
@@ -1041,7 +1051,16 @@ safe class <class name> signs <parent class>{
     <class functions>
 };
 ```
-if there is a get() method defined in the class, that method will be implicitly called when attempting to access a safe object.
+When a class defines `fn __class_accessor__()`, reading an object implicitly calls
+that method. This applies to both safe and non-safe classes. On safe classes,
+`get()` is used as a fallback only when `__class_accessor__()` is absent;
+`get()` on a non-safe class remains an ordinary method.
+
+An accessor may return any type, including a primitive or a different class; it
+does not need to return `Self`. It should declare zero explicit arguments. The
+compiler warns if `__class_accessor__` declares any arguments (including optional
+ones), since implicit calls supply none. Explicit method calls and the `my`
+receiver retain their usual behavior.
 
 #### dynamic
 A dynamic class MUST be instantiated on the heap with the new keyword.  If implicit casting is used, it will default to declaring on the heap. The syntax is:

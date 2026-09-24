@@ -701,22 +701,27 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         gen::Type **t = typeList()[sym.type.typeName];
         if (t && !var.selling) {
           gen::Class *cl = dynamic_cast<gen::Class *>(*t);
-          if (cl) {
-            if (cl->safeType && sym.symbol != "my") {
+          if (cl && sym.symbol != "my") {
+            if (cl->safeType)
               output.passable = false;
-              if (cl->nameTable["get"] != nullptr) {
-                ast::Call *callGet = new ast::Call();
-                callGet->ident = var.Ident;
-                callGet->modList = var.modList;
-                callGet->modList << "get";
-                callGet->logicalLine = var.logicalLine;
-                ast::CallExpr *callExpr = new ast::CallExpr();
-                callExpr->call = callGet;
-                callExpr->logicalLine = var.logicalLine;
-                output = this->GenExpr(callExpr, OutputFile, size);
-                callGet->modList.pop();
-                cont = false;
-              }
+            const std::string accessor =
+                cl->nameTable["__class_accessor__"] != nullptr
+                    ? "__class_accessor__"
+                    : (cl->safeType && cl->nameTable["get"] != nullptr ? "get"
+                                                                       : "");
+            if (!accessor.empty()) {
+              ast::Call *callGet = new ast::Call();
+              callGet->ident = var.Ident;
+              callGet->modList = var.modList;
+              callGet->modList << accessor;
+              callGet->logicalLine = var.logicalLine;
+              ast::CallExpr *callExpr = new ast::CallExpr();
+              callExpr->call = callGet;
+              callExpr->logicalLine = var.logicalLine;
+              output = this->GenExpr(callExpr, OutputFile, size, typeHint,
+                                     preferLocalReturn);
+              callGet->modList.pop();
+              cont = false;
             }
           }
         }
