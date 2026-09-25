@@ -326,7 +326,8 @@ fn main() -> int{
 
         test.it("should ignore empty substrings", fn () {
             string s = "beta";
-            test.assertTrue(s.replace(new string(""), "x") == "beta");
+            const string empty = new string("");
+            test.assertTrue(s.replace(empty, "x") == "beta");
         });
 
         test.it("should create substrings", fn () {

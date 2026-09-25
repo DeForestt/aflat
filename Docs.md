@@ -813,6 +813,35 @@ New Vector operations should keep temporary wrappers and guards local and avoid
 allocating inside element-processing loops. Object sorting reuses one scratch
 buffer across all swaps.
 
+### Map Literals
+
+Brace literals with key/value pairs create an `unordered_map` by default. Import
+the map class and let the compiler infer its key and value types from the first
+entry, or provide an explicit type:
+
+```aflat
+import unordered_map from "Collections/unordered_map";
+
+let scores = {"Ada": 10, "Lin": 20}; // unordered_map::<adr, int>
+unordered_map::<adr, int> empty = {};
+
+fn accessors() {
+    return {
+        "get": fn(const int value) { return value; },
+        "set": fn(const int a, const int b) { return a + b; }
+    };
+}; // returns unordered_map::<adr, adr>
+```
+
+Lambda and function-pointer entries infer as `adr`, allowing callbacks with
+different signatures in the same map. Other entries must be compatible with the
+inferred key and value types. Entries are evaluated once, in source order.
+An empty literal needs an explicit map type because it has no entries to infer
+from. A declared `unordered_map::<K, V>` type takes precedence over inference.
+
+The legacy `Map` remains available through `import Map from "Utils/Map"`.
+Explicit `Map` declarations and `new Map()` retain their existing behavior.
+
 ## Classes
 Classes in aflat are effectively structs that can implement functions and support encapsulation and rudimentary inheritance.  The syntax is:
 ```js
@@ -894,7 +923,17 @@ The access modifier is used to determine the visibility of the field.  The follo
 
 A class decorator stores a function pointer and, for a decorated method, its
 receiver capture. Keep the receiver alive while invoking the stored callback.
-The compiler supplies both constructor arguments for a method decorator:
+
+The compiler creates the decorator as a `local` field embedded in the containing
+object and constructs it directly in that storage. The decorator itself requires
+no separate heap allocation or temporary heap wrapper. This applies to generic
+decorators as well. If the containing object is on the stack, its decorator is
+also on the stack; if the containing object is on the heap, the decorator occupies
+part of that same allocation. Cleanup follows the normal `local` field lifecycle.
+A decorator's constructor may still allocate resources of its own.
+
+The compiler passes the decorated method's function pointer and receiver to the
+decorator constructor, followed by any explicit decorator arguments:
 
 ```aflat
 .needs <std>
@@ -925,8 +964,8 @@ fn main() -> int {
 };
 ```
 
-`decorated` is a Decorator field containing a callback, so invocation goes
-through `runFoo`, not `object.decorated()`.
+`decorated` is a `local Decorator` field containing a callback. Invoke it through
+`object.decorated.runFoo()`.
 
 ## Contracts
 Contracts are used to create OO interfaces. The allows classes that sign them to behave as the parent class.  The syntax is:
@@ -1041,7 +1080,16 @@ safe class <class name> signs <parent class>{
     <class functions>
 };
 ```
-if there is a get() method defined in the class, that method will be implicitly called when attempting to access a safe object.
+When a class defines `fn __class_accessor__()`, reading an object implicitly calls
+that method. This applies to both safe and non-safe classes. On safe classes,
+`get()` is used as a fallback only when `__class_accessor__()` is absent;
+`get()` on a non-safe class remains an ordinary method.
+
+An accessor may return any type, including a primitive or a different class; it
+does not need to return `Self`. It should declare zero explicit arguments. The
+compiler warns if `__class_accessor__` declares any arguments (including optional
+ones), since implicit calls supply none. Explicit method calls and the `my`
+receiver retain their usual behavior.
 
 #### dynamic
 A dynamic class MUST be instantiated on the heap with the new keyword.  If implicit casting is used, it will default to declaring on the heap. The syntax is:

@@ -59,6 +59,33 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
     if (this->reference || this->to)
       generator.alert("cannot assign a reference to local field `" +
                       this->Ident + "." + this->modList.peek() + "`");
+    // Initialize embedded storage directly. In particular, lowered class
+    // decorators must not allocate a temporary heap wrapper just to copy it
+    // into their containing object.
+    auto *constructor = dynamic_cast<ast::NewExpr *>(this->expr);
+    if (this->override && constructor != nullptr &&
+        constructor->templateTypes.empty()) {
+      auto *entry = generator.getType(constructor->type.typeName, file);
+      auto *constructed =
+          entry == nullptr ? nullptr : dynamic_cast<gen::Class *>(*entry);
+      if (constructed != nullptr &&
+          constructed->Ident == symbol->type.typeName) {
+        if (constructed->nameTable[constructor->initFuncName] != nullptr) {
+          ast::Call init;
+          init.logicalLine = this->logicalLine;
+          init.ident = this->Ident;
+          init.modList = this->modList;
+          init.modList.push(constructor->initFuncName);
+          init.Args = constructor->args;
+          ast::CallExpr initExpr;
+          initExpr.logicalLine = this->logicalLine;
+          initExpr.call = &init;
+          // The result aliases the field; it is not a discarded owned value.
+          generator.GenExpr(&initExpr, file);
+        }
+        return {file, std::nullopt};
+      }
+    }
     if (var == nullptr) {
       // Calls and other owned rvalues need a binding before they can become a
       // transfer receiver. The binding is released below just like an

@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -132,6 +133,400 @@ TEST_CASE("long literals cover the signed 64-bit range", "[parser][long]") {
     CHECK(error.errorMsg.find("#9223372036854775808") != std::string::npos);
     CHECK(error.errorMsg.find("signed 64-bit range") != std::string::npos);
   }
+}
+
+TEST_CASE("class decorators initialize local fields without allocating",
+          "[codegen][runtime][decorator][local]") {
+  namespace fs = std::filesystem;
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
+  const auto dir = fs::path("tmp/compiler_local_decorator_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  std::ofstream(dir / "main.af") << R"(.needs <std>
+long af_total_allocations();
+mutable int drops = 0;
+class Wrapper {
+  adr getter = getter;
+  any context = context;
+  int bias = bias;
+  fn init(const adr getter, const any context, const int bias) -> Self {
+    return my;
+  };
+  fn get() -> int {
+    const adr getter = my.getter;
+    return getter(my.context) + my.bias;
+  };
+  fn del() -> void { drops = drops + 1; return; };
+};
+types(T)
+shared class GenericWrapper {
+  adr getter = getter;
+  any context = context;
+  fn init(const adr getter, const any context) -> Self { return my; };
+  fn get() -> T {
+    const adr getter = my.getter;
+    return getter(my.context);
+  };
+};
+class Parent {
+  int value = value;
+  fn plain() -> int : Wrapper(3) { return my.value; };
+  fn generic() -> int : GenericWrapper::<int> { return my.value + 1; };
+  fn init(const int value) -> Self { return my; };
+};
+fn checkLocal() -> int {
+  const long before = af_total_allocations();
+  local Parent parent = Parent(40);
+  if parent.plain.get() != 43 { return 1; };
+  if parent.generic.get() != 41 { return 2; };
+  if af_total_allocations() != before { return 3; };
+  return 0;
+};
+fn checkHeap() -> int {
+  const long before = af_total_allocations();
+  const let parent = new Parent(50);
+  if parent.plain.get() != 53 { return 5; };
+  if parent.generic.get() != 51 { return 6; };
+  if af_total_allocations() != before + #1 { return 7; };
+  return 0;
+};
+fn main() -> int {
+  const int localResult = checkLocal();
+  if localResult != 0 { return localResult; };
+  if drops != 1 { return 4; };
+  const int heapResult = checkHeap();
+  if heapResult != 0 { return heapResult; };
+  if drops != 2 { return 8; };
+  return 0;
+};
+)";
+  const auto assembly = dir / "main.s";
+  const auto executable = dir / "main";
+  const auto runtime = dir / "runtime.c";
+  std::ofstream(runtime) << R"(#include <string.h>
+int af_memcpy(void *destination, const void *source, int size) {
+  memcpy(destination, source, size);
+  return 0;
+}
+)";
+  REQUIRE(build((dir / "main.af").string(), assembly.string(),
+                cfg::Mutability::Strict, false));
+  REQUIRE(std::system(("gcc -no-pie -z noexecstack -mstackrealign "
+                       "-mincoming-stack-boundary=3 " +
+                       assembly.string() + " " + runtime.string() +
+                       " libraries/std/src/allocator_runtime.c -pthread -o " +
+                       executable.string())
+                          .c_str()) == 0);
+  REQUIRE(std::system(executable.c_str()) == 0);
+  fs::remove_all(dir);
+}
+
+TEST_CASE("class accessors prefer the explicit hook and preserve result types",
+          "[codegen][runtime][accessor]") {
+  namespace fs = std::filesystem;
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
+  const auto dir = fs::path("tmp/compiler_class_accessor_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  const auto runtime = dir / "runtime.c";
+  const auto executable = dir / "main";
+  std::ofstream(source) << R"(.needs <std>
+shared class Plain {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+  fn __class_accessor__() { return my.value; };
+  fn get() -> int { return -1; };
+};
+shared safe class Preferred {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+  fn __class_accessor__() -> int { return my.value; };
+  fn get() -> int { return -2; };
+};
+shared safe class Legacy {
+  fn init() -> Self { return my; };
+  fn get() -> float { return 1.5; };
+};
+shared class Ordinary {
+  fn init() -> Self { return my; };
+  fn get() -> int { return 7; };
+};
+shared class Text {
+  fn init() -> Self { return my; };
+  fn __class_accessor__() -> adr { return "hello"; };
+};
+shared class Truth {
+  fn init() -> Self { return my; };
+  fn __class_accessor__() -> bool { return true; };
+};
+shared class Fraction {
+  fn init() -> Self { return my; };
+  fn __class_accessor__() { return 2.5; };
+};
+shared class Payload {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+};
+shared class Proxy {
+  loan Payload payload = payload;
+  fn init(const Payload payload) -> Self { return my; };
+  fn __class_accessor__() -> loan Payload { return my.payload; };
+};
+shared class Factory {
+  fn init() -> Self { return my; };
+  fn __class_accessor__() -> local Payload { return Payload(80); };
+};
+types(T)
+shared class Generic {
+  T value = value;
+  fn init(const T value) -> Self { return my; };
+  fn __class_accessor__() -> T { return my.value; };
+};
+shared class Holder {
+  local Plain item = new Plain(42);
+  fn init() -> Self { return my; };
+};
+union Wrapped { Modern(Preferred), Old(Legacy), Normal(Plain) };
+fn consume(const int value) -> int { return value; };
+fn consumeObject(const Plain &&object) -> int { return object; };
+fn main() -> int {
+  local Plain plain = Plain(10);
+  local Preferred preferred = Preferred(20);
+  local Legacy legacy = Legacy();
+  local Ordinary ordinary = Ordinary();
+  local Text text = Text();
+  local Truth truth = Truth();
+  local Fraction fraction = Fraction();
+  local Payload payload = Payload(30);
+  local Proxy proxy = Proxy(payload);
+  local Generic::<int> generic = Generic::<int>(40);
+  local Holder holder = Holder();
+  local Factory factory = Factory();
+  local Payload created = factory;
+  if consume(plain) != 10 { return 1; };
+  if preferred != 20 { return 2; };
+  if plain.get() != -1 { return 3; };
+  if preferred.get() != -2 { return 4; };
+  if legacy != 1.5 { return 5; };
+  const let alias = ordinary;
+  if alias.get() != 7 { return 6; };
+  const adr greeting = text;
+  if (greeting as char) != 'h' { return 7; };
+  if !truth { return 8; };
+  const Payload unwrapped = proxy;
+  if unwrapped.value != 30 { return 9; };
+  if generic != 40 { return 10; };
+  if holder.item != 42 { return 11; };
+  let modern = new Wrapped->Modern(Preferred(50));
+  match modern { Modern(value) => { if value != 50 { return 12; }; }, _ => return 15 };
+  let old = new Wrapped->Old(Legacy());
+  match old { Old(value) => { if value != 1.5 { return 13; }; }, _ => return 16 };
+  let normal = new Wrapped->Normal(Plain(60));
+  match normal { Normal(value) => { if value != 60 { return 14; }; }, _ => return 17 };
+  if fraction != 2.5 { return 18; };
+  const Plain owned = new Plain(70);
+  if consumeObject($owned) != 70 { return 19; };
+  if created.value != 80 { return 20; };
+  return 0;
+};
+)";
+  std::ofstream(runtime) << R"(#include <string.h>
+int af_memcpy(void *destination, const void *source, int size) {
+  memcpy(destination, source, size);
+  return 0;
+}
+)";
+  REQUIRE(build(source.string(), assembly.string(), cfg::Mutability::Strict,
+                false));
+  REQUIRE(std::system(("gcc -no-pie -z noexecstack -mstackrealign "
+                       "-mincoming-stack-boundary=3 " +
+                       assembly.string() + " " + runtime.string() +
+                       " libraries/std/src/allocator_runtime.c -pthread -o " +
+                       executable.string())
+                          .c_str()) == 0);
+  REQUIRE(std::system(executable.c_str()) == 0);
+  fs::remove_all(dir);
+}
+
+TEST_CASE(
+    "class accessor arguments produce a warning without rejecting methods",
+    "[codegen][accessor][warning]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_class_accessor_warning");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  const auto modifier = GENERATE(std::string(""), std::string("safe "));
+  const auto argument =
+      GENERATE(std::string(""), std::string("const int value"),
+               std::string("* const int value"));
+  std::ofstream(source) << ".needs <std>\nshared " << modifier
+                        << R"(class Probe {
+  fn init() -> Self { return my; };
+  fn __class_accessor__()"
+                        << argument << ") -> int { return "
+                        << (argument.empty() ? "7" : "value") << R"(; };
+};
+fn main() -> int {
+  local Probe probe = Probe();
+  return probe.__class_accessor__()"
+                        << (argument.empty() ? "" : "7") << R"();
+};
+)";
+  std::ostringstream diagnostics;
+  struct RestoreOutput {
+    std::streambuf *previous;
+    ~RestoreOutput() { std::cout.rdbuf(previous); }
+  } restoreOutput{std::cout.rdbuf(diagnostics.rdbuf())};
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  std::cout.rdbuf(restoreOutput.previous);
+  INFO(diagnostics.str());
+  REQUIRE(built);
+  const auto warning = diagnostics.str().find(
+      "__class_accessor__ should declare zero explicit arguments");
+  CHECK((warning != std::string::npos) == !argument.empty());
+  if (!argument.empty()) {
+    CHECK(diagnostics.str().find("warning") != std::string::npos);
+    CHECK(diagnostics.str().find(
+              "__class_accessor__ should declare zero explicit arguments",
+              warning + 1) == std::string::npos);
+  }
+  fs::remove_all(dir);
+}
+
+TEST_CASE("map literals infer unordered maps and preserve entry evaluation",
+          "[codegen][runtime][map-literal]") {
+  namespace fs = std::filesystem;
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
+  const auto dir = fs::path("tmp/compiler_default_map_literal");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  std::ofstream(dir / "main.af") << R"(.needs <std>
+import unordered_map from "Collections/unordered_map";
+import Map from "Utils/Map";
+mutable int evaluations = 0;
+fn next() -> int {
+  evaluations = evaluations + 1;
+  return evaluations;
+};
+fn numbers() { return {"first": next(), "second": next()}; };
+fn readNumbers(const unordered_map::<adr, int> values) -> int {
+  return values.get("first").or(0) + values.get("second").or(0);
+};
+fn callbacks() {
+  return {
+    "get": fn(const int value) { return value; },
+    "set": fn(const int a, const int b) { return a + b; }
+  };
+};
+class Item {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+};
+types(T)
+class Property {
+  mutable adr getter;
+  any context = context;
+  fn init(const adr factory, const any context) -> Self {
+    const unordered_map::<adr, adr> access = factory();
+    my.getter = access.get("get").or(NULL);
+    return my;
+  };
+  fn __class_accessor__() -> T {
+    const adr getter = my.getter;
+    return getter(my.context);
+  };
+};
+class Model {
+  int value = 42;
+  fn property() : Property::<int> {
+    return {
+      "get": fn(const Model owner) { return owner.value; },
+      "set": fn(const Model owner, const int value) { return value; }
+    };
+  };
+  fn init() -> Self { return my; };
+};
+fn main() -> int {
+  const let values = numbers();
+  if readNumbers(values) != 3 { return 1; };
+  if evaluations != 2 { return 2; };
+  const unordered_map::<adr, adr> access = callbacks();
+  const adr getter = access.get("get").or(NULL);
+  const adr setter = access.get("set").or(NULL);
+  if getter(7) != 7 { return 3; };
+  if setter(2, 3) != 5 { return 4; };
+  const let nested = {"child": {"value": 10}};
+  if nested.get("child").expect("child").get("value").or(0) != 10 { return 5; };
+  let first = new Item(11);
+  let second = new Item(12);
+  const let ownedValues = {"first": $first, "second": $second};
+  if ownedValues.get("first").expect("first").value != 11 { return 6; };
+  if ownedValues.get("second").expect("second").value != 12 { return 7; };
+  const unordered_map::<adr, int> empty = {};
+  if empty.count() != 0 { return 8; };
+  const unordered_map::<adr, long> hinted = {"value": #13};
+  if hinted.get("value").or(#0) != #13 { return 9; };
+  const Map legacy = {"legacy": 1};
+  if !legacy.has("legacy") { return 10; };
+  const Map explicitLegacy = new Map();
+  if explicitLegacy.has("missing") { return 11; };
+  local Model model = Model();
+  if model.property != 42 { return 12; };
+  delete legacy;
+  delete explicitLegacy;
+  return 0;
+};
+)";
+  cfg::Config config;
+  config.entryPoint = "../" + (dir / "main").string();
+  config.outPutFile = (dir / "main").string();
+  REQUIRE(runConfig(config, "libraries/std/", 'e'));
+  REQUIRE(std::system(config.outPutFile.c_str()) == 0);
+  fs::remove_all(dir);
+}
+
+TEST_CASE("empty untyped map literals require key and value types",
+          "[codegen][map-literal][diagnostic]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_empty_map_literal");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  std::ofstream(source) << R"(.needs <std>
+import unordered_map from "Collections/unordered_map";
+fn main() -> int { const let empty = {}; return 0; };
+)";
+  std::ostringstream diagnostics;
+  struct RestoreOutput {
+    std::streambuf *previous;
+    ~RestoreOutput() { std::cout.rdbuf(previous); }
+  } restoreOutput{std::cout.rdbuf(diagnostics.rdbuf())};
+  const bool built = build(source.string(), (dir / "main.s").string(),
+                           cfg::Mutability::Strict, false);
+  std::cout.rdbuf(restoreOutput.previous);
+  INFO(diagnostics.str());
+  CHECK_FALSE(built);
+  CHECK(diagnostics.str().find(
+            "provide an explicit unordered_map::<K, V> type") !=
+        std::string::npos);
+  fs::remove_all(dir);
 }
 
 TEST_CASE("stack-constructed unique classes run del without freeing the stack",
@@ -1190,10 +1585,15 @@ TEST_CASE("class allocations use the realized decorated layout",
   const auto source = dir / "main.af";
   const auto assembly = dir / "main.s";
 
-  std::ofstream(source) << R"(.needs <std>
-import Render from "Utils/Error/Render";
-import Error from "Utils/Error";
-fn make() -> Error { return new Error("layout"); };
+  const bool decoratorFirst = GENERATE(true, false);
+  INFO("import decorator first: " << decoratorFirst);
+  std::ofstream(source)
+      << ".needs <std>\n"
+      << (decoratorFirst ? "import Render from \"Utils/Error/Render\";\n"
+                           "import Error from \"Utils/Error\";\n"
+                         : "import Error from \"Utils/Error\";\n"
+                           "import Render from \"Utils/Error/Render\";\n")
+      << R"(fn make() -> Error { return new Error("layout"); };
 fn main() -> int { return 0; };
 )";
 
@@ -1203,7 +1603,8 @@ fn main() -> int { return 0; };
   fs::remove_all(dir);
 
   REQUIRE(built);
-  CHECK(text.find("movl\t$40,%eax") != std::string::npos);
+  // Error stores four pointers and the Render decorator's inline int.
+  CHECK(text.find("movl\t$36,%eax") != std::string::npos);
   CHECK(text.find("call\tpub_Error_init") != std::string::npos);
 }
 

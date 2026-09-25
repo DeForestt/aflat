@@ -342,8 +342,11 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   }
 
   if (generator.currentFunction()->autoType) {
+    ast::Type inferredType(from.type, from.size);
+    inferredType.opType = from.op;
     generator.currentFunction()->autoType = false;
-    generator.currentFunction()->type = ast::Type(from.type, from.size);
+    generator.currentFunction()->type = inferredType;
+    generator.currentFunction()->useType = inferredType;
 
     if (generator.scope() == nullptr ||
         generator.currentFunction()->genericTypes.size() > 0 ||
@@ -351,9 +354,9 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       if (generator.nameTable()[generator.currentFunction()->ident.ident] !=
           nullptr) {
         generator.nameTable()[generator.currentFunction()->ident.ident]->type =
-            ast::Type(from.type, from.size);
+            inferredType;
         generator.nameTable()[generator.currentFunction()->ident.ident]
-            ->useType = ast::Type(from.type, from.size);
+            ->useType = inferredType;
       }
     } else {
       if (generator.scope()
@@ -369,16 +372,20 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
       }
       generator.scope()
           ->nameTable[generator.currentFunction()->ident.ident]
-          ->type = ast::Type(from.type, from.size);
+          ->type = inferredType;
+      generator.scope()
+          ->nameTable[generator.currentFunction()->ident.ident]
+          ->useType = inferredType;
       const auto pub =
           generator.scope()
               ->publicNameTable[generator.currentFunction()->ident.ident];
       if (pub != nullptr) {
-        pub->type = ast::Type(from.type, from.size);
+        pub->type = inferredType;
+        pub->useType = inferredType;
       }
     }
 
-    generator.returnType() = ast::Type(from.type, from.size);
+    generator.returnType() = inferredType;
   }
 
   if (!from.passable) {
