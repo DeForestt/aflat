@@ -406,6 +406,129 @@ fn main() -> int {
   fs::remove_all(dir);
 }
 
+TEST_CASE("map literals infer unordered maps and preserve entry evaluation",
+          "[codegen][runtime][map-literal]") {
+  namespace fs = std::filesystem;
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
+  const auto dir = fs::path("tmp/compiler_default_map_literal");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  std::ofstream(dir / "main.af") << R"(.needs <std>
+import unordered_map from "Collections/unordered_map";
+import Map from "Utils/Map";
+mutable int evaluations = 0;
+fn next() -> int {
+  evaluations = evaluations + 1;
+  return evaluations;
+};
+fn numbers() { return {"first": next(), "second": next()}; };
+fn readNumbers(const unordered_map::<adr, int> values) -> int {
+  return values.get("first").or(0) + values.get("second").or(0);
+};
+fn callbacks() {
+  return {
+    "get": fn(const int value) { return value; },
+    "set": fn(const int a, const int b) { return a + b; }
+  };
+};
+class Item {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+};
+types(T)
+class Property {
+  mutable adr getter;
+  any context = context;
+  fn init(const adr factory, const any context) -> Self {
+    const unordered_map::<adr, adr> access = factory();
+    my.getter = access.get("get").or(NULL);
+    return my;
+  };
+  fn __class_accessor__() -> T {
+    const adr getter = my.getter;
+    return getter(my.context);
+  };
+};
+class Model {
+  int value = 42;
+  fn property() : Property::<int> {
+    return {
+      "get": fn(const Model owner) { return owner.value; },
+      "set": fn(const Model owner, const int value) { return value; }
+    };
+  };
+  fn init() -> Self { return my; };
+};
+fn main() -> int {
+  const let values = numbers();
+  if readNumbers(values) != 3 { return 1; };
+  if evaluations != 2 { return 2; };
+  const unordered_map::<adr, adr> access = callbacks();
+  const adr getter = access.get("get").or(NULL);
+  const adr setter = access.get("set").or(NULL);
+  if getter(7) != 7 { return 3; };
+  if setter(2, 3) != 5 { return 4; };
+  const let nested = {"child": {"value": 10}};
+  if nested.get("child").expect("child").get("value").or(0) != 10 { return 5; };
+  let first = new Item(11);
+  let second = new Item(12);
+  const let ownedValues = {"first": $first, "second": $second};
+  if ownedValues.get("first").expect("first").value != 11 { return 6; };
+  if ownedValues.get("second").expect("second").value != 12 { return 7; };
+  const unordered_map::<adr, int> empty = {};
+  if empty.count() != 0 { return 8; };
+  const unordered_map::<adr, long> hinted = {"value": #13};
+  if hinted.get("value").or(#0) != #13 { return 9; };
+  const Map legacy = {"legacy": 1};
+  if !legacy.has("legacy") { return 10; };
+  const Map explicitLegacy = new Map();
+  if explicitLegacy.has("missing") { return 11; };
+  local Model model = Model();
+  if model.property != 42 { return 12; };
+  delete legacy;
+  delete explicitLegacy;
+  return 0;
+};
+)";
+  cfg::Config config;
+  config.entryPoint = "../" + (dir / "main").string();
+  config.outPutFile = (dir / "main").string();
+  REQUIRE(runConfig(config, "libraries/std/", 'e'));
+  REQUIRE(std::system(config.outPutFile.c_str()) == 0);
+  fs::remove_all(dir);
+}
+
+TEST_CASE("empty untyped map literals require key and value types",
+          "[codegen][map-literal][diagnostic]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_empty_map_literal");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  std::ofstream(source) << R"(.needs <std>
+import unordered_map from "Collections/unordered_map";
+fn main() -> int { const let empty = {}; return 0; };
+)";
+  std::ostringstream diagnostics;
+  struct RestoreOutput {
+    std::streambuf *previous;
+    ~RestoreOutput() { std::cout.rdbuf(previous); }
+  } restoreOutput{std::cout.rdbuf(diagnostics.rdbuf())};
+  const bool built = build(source.string(), (dir / "main.s").string(),
+                           cfg::Mutability::Strict, false);
+  std::cout.rdbuf(restoreOutput.previous);
+  INFO(diagnostics.str());
+  CHECK_FALSE(built);
+  CHECK(diagnostics.str().find(
+            "provide an explicit unordered_map::<K, V> type") !=
+        std::string::npos);
+  fs::remove_all(dir);
+}
+
 TEST_CASE("stack-constructed unique classes run del without freeing the stack",
           "[codegen][ownership][stack]") {
   namespace fs = std::filesystem;

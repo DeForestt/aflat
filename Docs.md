@@ -813,6 +813,35 @@ New Vector operations should keep temporary wrappers and guards local and avoid
 allocating inside element-processing loops. Object sorting reuses one scratch
 buffer across all swaps.
 
+### Map Literals
+
+Brace literals with key/value pairs create an `unordered_map` by default. Import
+the map class and let the compiler infer its key and value types from the first
+entry, or provide an explicit type:
+
+```aflat
+import unordered_map from "Collections/unordered_map";
+
+let scores = {"Ada": 10, "Lin": 20}; // unordered_map::<adr, int>
+unordered_map::<adr, int> empty = {};
+
+fn accessors() {
+    return {
+        "get": fn(const int value) { return value; },
+        "set": fn(const int a, const int b) { return a + b; }
+    };
+}; // returns unordered_map::<adr, adr>
+```
+
+Lambda and function-pointer entries infer as `adr`, allowing callbacks with
+different signatures in the same map. Other entries must be compatible with the
+inferred key and value types. Entries are evaluated once, in source order.
+An empty literal needs an explicit map type because it has no entries to infer
+from. A declared `unordered_map::<K, V>` type takes precedence over inference.
+
+The legacy `Map` remains available through `import Map from "Utils/Map"`.
+Explicit `Map` declarations and `new Map()` retain their existing behavior.
+
 ## Classes
 Classes in aflat are effectively structs that can implement functions and support encapsulation and rudimentary inheritance.  The syntax is:
 ```js

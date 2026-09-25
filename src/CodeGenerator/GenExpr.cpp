@@ -74,6 +74,38 @@ static int classInstanceByteSize(gen::CodeGenerator &generator,
   return cl->instanceSize;
 }
 
+static std::string inferMapElementType(gen::CodeGenerator &generator,
+                                       ast::Expr *element) {
+  // Callback maps commonly contain lambdas with different signatures.
+  // Store their code addresses, just as an explicit unordered_map<adr, adr>
+  // does.
+  if (dynamic_cast<ast::Lambda *>(element) != nullptr)
+    return "adr";
+
+  auto *scope = gen::scope::ScopeManager::getInstance();
+  struct RestoreProbeState {
+    gen::scope::ScopeManager *scope;
+    gen::scope::ScopeManager::OwnershipState ownership;
+    ast::Function *function;
+    int asyncState;
+    ~RestoreProbeState() {
+      scope->restoreOwnershipState(ownership);
+      if (function != nullptr)
+        function->asyncStateCounter = asyncState;
+    }
+  } restore{scope, scope->captureOwnershipState(), generator.currentFunction(),
+            generator.currentFunction() == nullptr
+                ? 0
+                : generator.currentFunction()->asyncStateCounter};
+
+  const auto type =
+      generator.InferExprType(static_cast<ast::Expr *>(ast::deepCopy(element)));
+  auto *typeInfo = generator.TypeList()[type];
+  if (typeInfo != nullptr && typeInfo->fPointerArgs.isFPointer)
+    return "adr";
+  return type;
+}
+
 namespace gen {
 namespace {
 
@@ -1762,8 +1794,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     ast::NewExpr newExpr = *dynamic_cast<ast::NewExpr *>(expr);
     ast::Function *af_malloc = nameTable()["af_malloc"];
 
-    if (newExpr.type.typeName == "Map" &&
-        typeHint.rfind("unordered_map", 0) == 0) {
+    if (newExpr.castableMap && typeHint.rfind("unordered_map", 0) == 0) {
       if (typeHint.find('<') != std::string::npos) {
         auto parsedTemplate = gen::utils::parseGenericName(typeHint, *this);
         newExpr.type.typeName = std::get<0>(parsedTemplate);
@@ -1778,6 +1809,24 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           newExpr.templateTypes.push_back(typeName);
         }
       }
+    } else if (newExpr.castableMap && typeHint != "Map") {
+      auto *firstEntry = dynamic_cast<ast::CallExpr *>(newExpr.extention);
+      if (firstEntry == nullptr || firstEntry->call->ident != "set" ||
+          firstEntry->call->Args.count != 2)
+        alert("Cannot infer the key and value types of an empty map literal; "
+              "provide an explicit unordered_map::<K, V> type");
+
+      // Arguments are pushed onto the front of the list by the parser.
+      const auto keyType =
+          inferMapElementType(*this, firstEntry->call->Args.get(1));
+      const auto valueType =
+          inferMapElementType(*this, firstEntry->call->Args.get(0));
+      if (keyType == "generic" || valueType == "generic" || keyType == "void" ||
+          valueType == "void")
+        alert("Cannot infer concrete map key and value types; provide an "
+              "explicit unordered_map::<K, V> type");
+      newExpr.type.typeName = "unordered_map";
+      newExpr.templateTypes = {keyType, valueType};
     }
 
     if (af_malloc == nullptr)
