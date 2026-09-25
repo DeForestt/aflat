@@ -1585,10 +1585,15 @@ TEST_CASE("class allocations use the realized decorated layout",
   const auto source = dir / "main.af";
   const auto assembly = dir / "main.s";
 
-  std::ofstream(source) << R"(.needs <std>
-import Render from "Utils/Error/Render";
-import Error from "Utils/Error";
-fn make() -> Error { return new Error("layout"); };
+  const bool decoratorFirst = GENERATE(true, false);
+  INFO("import decorator first: " << decoratorFirst);
+  std::ofstream(source)
+      << ".needs <std>\n"
+      << (decoratorFirst ? "import Render from \"Utils/Error/Render\";\n"
+                           "import Error from \"Utils/Error\";\n"
+                         : "import Error from \"Utils/Error\";\n"
+                           "import Render from \"Utils/Error/Render\";\n")
+      << R"(fn make() -> Error { return new Error("layout"); };
 fn main() -> int { return 0; };
 )";
 
@@ -1598,7 +1603,8 @@ fn main() -> int { return 0; };
   fs::remove_all(dir);
 
   REQUIRE(built);
-  CHECK(text.find("movl\t$40,%eax") != std::string::npos);
+  // Error stores four pointers and the Render decorator's inline int.
+  CHECK(text.find("movl\t$36,%eax") != std::string::npos);
   CHECK(text.find("call\tpub_Error_init") != std::string::npos);
 }
 
