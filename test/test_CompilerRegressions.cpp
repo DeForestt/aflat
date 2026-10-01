@@ -403,6 +403,101 @@ int af_memcpy(void *destination, const void *source, int size) {
   fs::remove_all(dir);
 }
 
+TEST_CASE("class setters handle safe and non-safe local decorators",
+          "[codegen][runtime][setter][decorator]") {
+  namespace fs = std::filesystem;
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restore;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
+  const auto dir = fs::path("tmp/compiler_class_setter_regression");
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  const auto runtime = dir / "runtime.c";
+  const auto executable = dir / "main";
+  const bool safe = GENERATE(false, true);
+  const bool unique = GENERATE(false, true);
+  INFO("safe property: " << safe);
+  INFO("unique property: " << unique);
+  std::ofstream(source) << R"(.needs <std>
+mutable int writes = 0;
+mutable int evaluations = 0;
+fn initial(const any context) -> int { return 7; };
+fn next() -> int { evaluations = evaluations + 1; return 43; };
+types(T)
+)" << (unique ? "" : "shared ")
+                        << (safe ? "safe " : "") << R"(class Property {
+  private mutable T value;
+  fn init(const adr read, const any context) -> Self {
+    my.value = read(context);
+    return my;
+  };
+  fn __class_accessor__() -> T { return my.value; };
+  fn _set(const T value) -> void {
+    writes = writes + 1;
+    my.value = value;
+  };
+};
+shared safe class Legacy {
+  private mutable int value = 2;
+  fn init() -> Self { return my; };
+  fn get() -> int { return my.value; };
+  fn _set(const int value) -> void { my.value = value; };
+};
+shared class SetterOnly {
+  mutable int value = 0;
+  fn init() -> Self { return my; };
+  fn _set(const int value) -> void { my.value = value; };
+};
+class Model {
+  fn id() : Property::<int> { return 1; };
+  local Legacy legacy = new Legacy();
+  fn init() -> Self { return my; };
+};
+fn main() -> int {
+  const local Model model = Model();
+  const local Property::<int> direct = Property::<int>(initial, NULL);
+  const Property::<int> heap = new Property::<int>(initial, NULL);
+  mutable SetterOnly setterOnly = new SetterOnly();
+  if writes != 0 { return 1; };
+  if model.id != 1 { return 2; };
+  model.id = 42;
+  if model.id != 42 { return 3; };
+  model.id = next();
+  if model.id != 43 { return 4; };
+  if evaluations != 1 { return 5; };
+  direct = 12;
+  if direct != 12 { return 6; };
+  heap = 13;
+  if heap != 13 { return 7; };
+  if writes != 4 { return 8; };
+  model.legacy = 14;
+  if model.legacy != 14 { return 9; };
+  setterOnly = 15;
+  if setterOnly.value != 15 { return 10; };
+  return 0;
+};
+)";
+  std::ofstream(runtime) << R"(#include <string.h>
+int af_memcpy(void *destination, const void *source, int size) {
+  memcpy(destination, source, size);
+  return 0;
+}
+)";
+  REQUIRE(build(source.string(), assembly.string(), cfg::Mutability::Strict,
+                false));
+  REQUIRE(std::system(("gcc -no-pie -z noexecstack -mstackrealign "
+                       "-mincoming-stack-boundary=3 " +
+                       assembly.string() + " " + runtime.string() +
+                       " libraries/std/src/allocator_runtime.c -pthread -o " +
+                       executable.string())
+                          .c_str()) == 0);
+  CHECK(std::system(executable.c_str()) == 0);
+  fs::remove_all(dir);
+}
+
 TEST_CASE(
     "class accessor arguments produce a warning without rejecting methods",
     "[codegen][accessor][warning]") {

@@ -26,14 +26,25 @@ shared class u_map_entry {
 		return my;
 	};
 
-	when (K is adr)
+	when (K is adr and V is primitive)
 	fn del() -> void {
 		af_free(my.key);
 	};
 
-	when (K is not adr)
+	when (K is adr and V is not primitive)
+	fn del() -> void {
+		delete my.value;
+		af_free(my.key);
+	};
+
+	when (K is not adr and V is primitive)
 	fn del() -> void {
 		return;
+	};
+
+	when (K is not adr and V is not primitive)
+	fn del() -> void {
+		delete my.value;
 	};
 
 	fn toString() -> string {
@@ -67,8 +78,14 @@ shared class u_map_bucket {
 	fn replace(const int index, const V &&value) -> bool {
 		const u_map_entry::<K, V> entry =
 			my.entries.get(index).expect("searched for non-existing unordered_map entry"$adr);
-		entry.value = $value;
-		my.entries.set(index, entry);
+		// Replace the stored object rather than invoking V's assignment setter.
+		// Construct first so the existing key remains available to the initializer.
+		const u_map_entry::<K, V> replacement =
+			new u_map_entry::<K, V>(entry.key, $value);
+		delete entry;
+		my.entries.set(index, replacement);
+		// The vector now owns the replacement's fields, as in add().
+		af_free(replacement);
 		return false;
 	};
 

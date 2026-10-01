@@ -1091,6 +1091,14 @@ compiler warns if `__class_accessor__` declares any arguments (including optiona
 ones), since implicit calls supply none. Explicit method calls and the `my`
 receiver retain their usual behavior.
 
+When any class defines `_set(value)`,
+assignment to an existing object calls that method: `object = value` invokes
+`object._set(value)`. This includes `local` fields created by class decorators
+and applies to both unique and shared classes. For example, `model.id = 42`
+invokes the decorator's `_set(42)` while reading `model.id` invokes its accessor.
+No accessor is required for implicit setter calls. Object construction and
+declared field initializers initialize storage directly; they do not invoke `_set`.
+
 #### dynamic
 A dynamic class MUST be instantiated on the heap with the new keyword.  If implicit casting is used, it will default to declaring on the heap. The syntax is:
 
