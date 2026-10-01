@@ -50,6 +50,24 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   const std::string bindingIdent = binding == nullptr ? "" : binding->symbol;
   auto var = dynamic_cast<ast::Var *>(this->expr);
 
+  // Assignment to a property invokes its setter before considering replacement
+  // of the object, including when a decorator is embedded as a local field.
+  // Constructor/default-field initialization must still initialize storage.
+  if (symbol->symbol != "my" && !this->override && !this->to) {
+    auto *entry = generator.typeList()[symbol->type.typeName];
+    auto *cl = entry == nullptr ? nullptr : dynamic_cast<gen::Class *>(*entry);
+    if (cl != nullptr && cl->nameTable["_set"] != nullptr) {
+      ast::Call setter;
+      setter.ident = this->Ident;
+      setter.modList = this->modList;
+      setter.modList << "_set";
+      setter.logicalLine = this->logicalLine;
+      setter.Args.push(this->expr);
+      file << generator.GenSTMT(&setter);
+      return {file, std::nullopt};
+    }
+  }
+
   // A local field is embedded object storage rather than a pointer-sized
   // field. Moving a class value into it must let the source lay out its full
   // state (and invalidate itself), not overwrite the first word of storage.
@@ -59,6 +77,33 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
     if (this->reference || this->to)
       generator.alert("cannot assign a reference to local field `" +
                       this->Ident + "." + this->modList.peek() + "`");
+    // Initialize embedded storage directly. In particular, lowered class
+    // decorators must not allocate a temporary heap wrapper just to copy it
+    // into their containing object.
+    auto *constructor = dynamic_cast<ast::NewExpr *>(this->expr);
+    if (this->override && constructor != nullptr &&
+        constructor->templateTypes.empty()) {
+      auto *entry = generator.getType(constructor->type.typeName, file);
+      auto *constructed =
+          entry == nullptr ? nullptr : dynamic_cast<gen::Class *>(*entry);
+      if (constructed != nullptr &&
+          constructed->Ident == symbol->type.typeName) {
+        if (constructed->nameTable[constructor->initFuncName] != nullptr) {
+          ast::Call init;
+          init.logicalLine = this->logicalLine;
+          init.ident = this->Ident;
+          init.modList = this->modList;
+          init.modList.push(constructor->initFuncName);
+          init.Args = constructor->args;
+          ast::CallExpr initExpr;
+          initExpr.logicalLine = this->logicalLine;
+          initExpr.call = &init;
+          // The result aliases the field; it is not a discarded owned value.
+          generator.GenExpr(&initExpr, file);
+        }
+        return {file, std::nullopt};
+      }
+    }
     if (var == nullptr) {
       // Calls and other owned rvalues need a binding before they can become a
       // transfer receiver. The binding is released below just like an
@@ -213,18 +258,6 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   if (t != nullptr) {
     gen::Class *cl = dynamic_cast<gen::Class *>(*t);
     if (cl != nullptr) {
-      if (cl->safeType && symbol->symbol != "my" && !this->override) {
-        if (cl->nameTable["_set"] != nullptr) {
-          ast::Call *callGet = new ast::Call();
-          callGet->ident = this->Ident;
-          callGet->modList = this->modList;
-          callGet->modList << "_set";
-          callGet->logicalLine = this->logicalLine;
-          callGet->Args.push(this->expr);
-          file << generator.GenSTMT(callGet);
-          return {file, std::nullopt};
-        }
-      }
       if (this->modList.count == 0 && !this->override) {
         // check if the class has an overloaded operator =
         ast::Function *func = cl->overloadTable[ast::Equ];
@@ -331,6 +364,25 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   asmc::Size size;
   std::string output = std::get<0>(resolved);
   asmc::Pop *pop = nullptr;
+  if (this->indices.count > 0) {
+    // Index expressions can overwrite the RHS scratch register or call a
+    // function. Keep the value in the frame until the target is resolved.
+    ast::Type savedType(expr.type, expr.size);
+    savedType.opType = expr.op;
+    const int offset =
+        gen::scope::ScopeManager::getInstance()->assign("", savedType, false);
+    const std::string saved = "-" + std::to_string(offset) + "(%rbp)";
+    auto *stage = new asmc::Mov(*mov2);
+    file.text << stage;
+    auto *save = new asmc::Mov();
+    save->logicalLine = this->logicalLine;
+    save->op = expr.op;
+    save->size = expr.size;
+    save->from = stage->to;
+    save->to = saved;
+    file.text << save;
+    mov2->from = saved;
+  }
   file << targetFile;
   if (this->reference == true) {
     //

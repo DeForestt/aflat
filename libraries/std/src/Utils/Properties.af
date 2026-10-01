@@ -10,7 +10,7 @@ import Observable from "Utils/Observable";
  */
 @Apply(Observable)
 types(T)
-shared safe dynamic class Property {
+class Property {
     private mutable adr getter;
     private mutable adr setter;
     private const any context = context;
@@ -22,7 +22,7 @@ shared safe dynamic class Property {
         return my;
     };
 
-    fn get() -> T {
+    fn __class_accessor__() -> T {
         const let getter = my.getter;
         if (getter == NULL) panic("Attempt to read from a property without a getter.");
         return getter(my.context);

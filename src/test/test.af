@@ -21,6 +21,24 @@ import {async_thread} from "concurrency" under task;
 import {requestLength} from "HTTP/Transport" under transport;
 import {len} from "strings" under cstrings;
 import HTTPMessage from "HTTP";
+import Property, observable from "Utils/Properties";
+
+class PropertySetterProbe {
+    @observable mutable int value = 7;
+    fn init() -> Self { return my; };
+};
+
+mutable int mapSetterCalls = 0;
+mutable int mapValueDrops = 0;
+class MapSetterValue {
+    mutable int value = value;
+    fn init(const int value) -> Self { return my; };
+    fn _set(const int value) -> void {
+        mapSetterCalls = mapSetterCalls + 1;
+        my.value = value;
+    };
+    fn del() -> void { mapValueDrops = mapValueDrops + 1; };
+};
 
 class AsyncSchedulerProbe {
 	mutable bool completed;
@@ -195,6 +213,36 @@ fn checkVectorAllocations() -> int {
 };
 
 fn main() -> int{
+    test.describe("Class setters", fn () {
+        test.it("sets and reads a local unique standard Property", fn () {
+            const local PropertySetterProbe model = PropertySetterProbe();
+            test.assertTrue(model.value == 7);
+            model.value = 42;
+            test.assertTrue(model.value == 42);
+        });
+        test.it("replaces map values without invoking their setters", fn () {
+            mapSetterCalls = 0;
+            mapValueDrops = 0;
+            const let values = new unordered_map::<adr, MapSetterValue>();
+            values.set("key", new MapSetterValue(1));
+            values.set("key", new MapSetterValue(2));
+            test.assertTrue(values.count() == 1);
+            test.assertTrue(values.get("key").unwrap().value == 2);
+            test.assertTrue(mapSetterCalls == 0);
+            test.assertTrue(mapValueDrops == 1);
+            delete values;
+            test.assertTrue(mapValueDrops == 2);
+        });
+        test.it("replaces boxed map values", fn () {
+            const let values = new unordered_map::<adr, Box::<int>>();
+            values.set("key", new Box::<int>(1));
+            values.set("key", new Box::<int>(2));
+            test.assertTrue(values.count() == 1);
+            test.assertTrue(values.get("key").unwrap().get() == 2);
+            delete values;
+        });
+        return true;
+    });
     test.describe("HTTP transport framing", fn () {
         test.it("preserves request body line endings and empty lines", fn () {
             const let message = new HTTPMessage("POST / HTTP/1.1\r\nHost: localhost\r\n\r\none\r\n\r\ntwo", true);
@@ -326,7 +374,8 @@ fn main() -> int{
 
         test.it("should ignore empty substrings", fn () {
             string s = "beta";
-            test.assertTrue(s.replace(new string(""), "x") == "beta");
+            const string empty = new string("");
+            test.assertTrue(s.replace(empty, "x") == "beta");
         });
 
         test.it("should create substrings", fn () {

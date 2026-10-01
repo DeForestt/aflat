@@ -450,6 +450,16 @@ Function::Function(const ScopeMod &scope,
 }
 
 gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
+  if (generator.scope() != nullptr && !this->globalLocked && !this->isLambda &&
+      this->statement != nullptr && !this->hidden &&
+      (this->ident.ident == "__class_accessor__" ||
+       this->ident.ident.rfind("__class_accessor___ovl", 0) == 0) &&
+      !this->argTypes.empty()) {
+    generator.alert(
+        "__class_accessor__ should declare zero explicit arguments; "
+        "implicit accessor calls pass no arguments",
+        false);
+  }
   if (this->sinksReceiver &&
       (generator.scope() == nullptr || this->isLambda || this->globalLocked)) {
     generator.alert("sink can only be used on class methods", true, __FILE__,
