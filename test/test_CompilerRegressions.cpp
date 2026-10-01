@@ -135,6 +135,51 @@ TEST_CASE("long literals cover the signed 64-bit range", "[parser][long]") {
   }
 }
 
+TEST_CASE("indexed assignments preserve values while evaluating their targets",
+          "[codegen][runtime][assignment][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_indexed_assignment");
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  const auto executable = dir / "main";
+  std::ofstream(source) << R"(mutable int calls = 0;
+fn index(const float value) -> int {
+  calls = calls + 1;
+  if value != 9.5 { return 0; };
+  return 2;
+};
+fn fraction() -> float { return 1.25; };
+fn main() -> int {
+  mutable char[4] bytes;
+  mutable int[4] integers;
+  mutable long[4] longs;
+  mutable float[4] fractions;
+  const int i = 2;
+  const char replacement = '_';
+  const int integer = 12345;
+  const long large = #4294967297;
+  bytes[i] = replacement;
+  if bytes[i] != '_' { return 1; };
+  integers[i] = integer;
+  if integers[i] != 12345 { return 2; };
+  longs[i] = large;
+  if longs[i] != #4294967297 { return 3; };
+  fractions[index(9.5)] = fraction();
+  if fractions[i] != 1.25 { return 4; };
+  if calls != 1 { return 5; };
+  return 0;
+};
+)";
+  REQUIRE(build(source.string(), assembly.string(), cfg::Mutability::Strict,
+                false));
+  REQUIRE(std::system(("gcc -no-pie " + assembly.string() + " -o " +
+                       executable.string())
+                          .c_str()) == 0);
+  CHECK(std::system(executable.c_str()) == 0);
+  fs::remove_all(dir);
+}
+
 TEST_CASE("class decorators initialize local fields without allocating",
           "[codegen][runtime][decorator][local]") {
   namespace fs = std::filesystem;

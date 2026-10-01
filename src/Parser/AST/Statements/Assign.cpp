@@ -358,6 +358,25 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   asmc::Size size;
   std::string output = std::get<0>(resolved);
   asmc::Pop *pop = nullptr;
+  if (this->indices.count > 0) {
+    // Index expressions can overwrite the RHS scratch register or call a
+    // function. Keep the value in the frame until the target is resolved.
+    ast::Type savedType(expr.type, expr.size);
+    savedType.opType = expr.op;
+    const int offset =
+        gen::scope::ScopeManager::getInstance()->assign("", savedType, false);
+    const std::string saved = "-" + std::to_string(offset) + "(%rbp)";
+    auto *stage = new asmc::Mov(*mov2);
+    file.text << stage;
+    auto *save = new asmc::Mov();
+    save->logicalLine = this->logicalLine;
+    save->op = expr.op;
+    save->size = expr.size;
+    save->from = stage->to;
+    save->to = saved;
+    file.text << save;
+    mov2->from = saved;
+  }
   file << targetFile;
   if (this->reference == true) {
     //

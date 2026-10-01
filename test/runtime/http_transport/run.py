@@ -3,6 +3,7 @@
 import argparse
 import concurrent.futures
 from contextlib import contextmanager
+import errno
 from pathlib import Path
 import shutil
 import socket
@@ -104,7 +105,13 @@ def exchange(connect, data, expected=200, body=None, fragments=False, delay=0, h
         else:
             peer.sendall(data)
         if halfclose:
-            peer.shutdown(socket.SHUT_WR)
+            try:
+                peer.shutdown(socket.SHUT_WR)
+            except OSError as error:
+                # A rejected request can be answered and closed before this
+                # half-close. Still read and validate its buffered response.
+                if error.errno != errno.ENOTCONN:
+                    raise
         if delay:
             time.sleep(delay)
         status, headers, actual = response(peer)
