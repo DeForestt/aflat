@@ -52,13 +52,16 @@ unique union CLAValue {
 };
 
 // User-provided argument descriptor consumed while building the parser state.
+// isFlag defaults to false for compatibility with existing value options.
+// Pass true as the fifth argument for a boolean flag (no following value).
 shared class Argument {
 	const string longName = longName;
 	const string shortName = shortName;
 	const string description = description;
-	const string defaultValue = defaultValue.or("false");
+	const string defaultValue = if defaultValue == NULL "false" else defaultValue;
+	const bool isFlag = isFlag;
 
-	fn init(const adr longName, const adr shortName, const adr description, ?const adr defaultValue) -> Self {
+	fn init(const adr longName, const adr shortName, const adr description, *const adr defaultValue, *const bool isFlag) -> Self {
 		return my;
 	};
 
@@ -67,7 +70,8 @@ shared class Argument {
 			my.longName.cstr(),
 			my.shortName.cstr(),
 			my.description.cstr(),
-			my.defaultValue.cstr()
+			my.defaultValue.cstr(),
+			my.isFlag
 		);
 	};
 
@@ -123,7 +127,7 @@ shared class CommandLineArgs {
 			foreach argument in my.arguments {
 				if argEquals(`--{argument.longName}`, arg) {
 					found = true;
-					if i + 1 < my.argc {
+					if (!argument.isFlag) & (i + 1 < my.argc) {
 						i = i + 1;
 						if st.str_at(args[i], 0) == '-' {
 							i = i - 1; // Adjust index since we consumed an argument
@@ -131,7 +135,7 @@ shared class CommandLineArgs {
 					};
 				} else if argEquals(`-{argument.shortName}`, arg) {
 					found = true;
-					if i + 1 < my.argc {
+					if (!argument.isFlag) & (i + 1 < my.argc) {
 						i = i + 1;
 						if st.str_at(args[i], 0) == '-' {
 							i = i - 1; // Adjust index since we consumed an argument
@@ -214,6 +218,9 @@ shared class CommandLineArgs {
 			foreach argument in my.arguments {
 				if argument.longName == tag {
 					if argEquals(`--{argument.longName}`, arg) {
+						if argument.isFlag {
+							return new CLAValue->Boolean(true);
+						};
 						if i + 1 < my.argc {
 							if st.str_at(args[i + 1], 0) == '-' {
 								return new CLAValue->Boolean(true);
@@ -223,6 +230,9 @@ shared class CommandLineArgs {
 						return new CLAValue->Boolean(true);
 					};
 					if argEquals(`-{argument.shortName}`, arg) {
+						if argument.isFlag {
+							return new CLAValue->Boolean(true);
+						};
 						if i + 1 < my.argc {
 							if st.str_at(args[i + 1], 0) == '-' {
 								return new CLAValue->Boolean(true);
@@ -246,6 +256,9 @@ shared class CommandLineArgs {
 			foreach argument in my.arguments {
 				if argument.longName == tag {
 					if argEquals(`--{argument.longName}`, arg) {
+						if argument.isFlag {
+							return new Error(`Command line tag {tag} does not have a string value`);
+						};
 						if i + 1 < my.argc {
 							if st.str_at(args[i + 1], 0) == '-' {
 								return new Error(`Command line tag {tag} does not have a string value`);
@@ -255,6 +268,9 @@ shared class CommandLineArgs {
 						return new Error(`Command line tag {tag} does not have a string value`);
 					};
 					if argEquals(`-{argument.shortName}`, arg) {
+						if argument.isFlag {
+							return new Error(`Command line tag {tag} does not have a string value`);
+						};
 						if i + 1 < my.argc {
 							if st.str_at(args[i + 1], 0) == '-' {
 								return new Error(`Command line tag {tag} does not have a string value`);
@@ -278,6 +294,9 @@ shared class CommandLineArgs {
 			foreach argument in my.arguments {
 				if argument.longName == tag {
 					if argEquals(`--{argument.longName}`, arg) {
+						if argument.isFlag {
+							return new Error(`Command line tag {tag} does not have an int value`);
+						};
 						if i + 1 < my.argc {
 							if st.str_at(args[i + 1], 0) == '-' {
 								return new Error(`Command line tag {tag} does not have an int value`);
@@ -287,6 +306,9 @@ shared class CommandLineArgs {
 						return new Error(`Command line tag {tag} does not have an int value`);
 					};
 					if argEquals(`-{argument.shortName}`, arg) {
+						if argument.isFlag {
+							return new Error(`Command line tag {tag} does not have an int value`);
+						};
 						if i + 1 < my.argc {
 							if st.str_at(args[i + 1], 0) == '-' {
 								return new Error(`Command line tag {tag} does not have an int value`);
