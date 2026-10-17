@@ -60,5 +60,5 @@ jobs:
       - name: Check code formatting
         working-directory: ${{github.workspace}}
         run: |
-          git ls-files -z -- '*.cpp' '*.hpp' ':!:Lib/**' ':!:test/catch.hpp' |
+          git ls-files -z -- '*.cpp' '*.hpp' ':!:Lib/**' ':!:test/**' |
             xargs -0 -r clang-format-18 --style=file --dry-run --Werror
