@@ -438,6 +438,9 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     // type two should have at least as many required args as type
     if (type2->fPointerArgs.requiredArgs < type.fPointerArgs.requiredArgs)
       return false;
+    if (type.fPointerArgs.requiredArgs > type.fPointerArgs.argTypes.size() ||
+        type.fPointerArgs.requiredArgs > type2->fPointerArgs.argTypes.size())
+      return false;
     for (int i = 0; i < type.fPointerArgs.requiredArgs; i++) {
       this->canAssign(type.fPointerArgs.argTypes[i],
                       type2->fPointerArgs.argTypes[i].typeName, fmt);
@@ -445,14 +448,23 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
 
     // now check the types of any extra optional args
     if (type2->fPointerArgs.argTypes.size() > type.fPointerArgs.requiredArgs) {
-      for (int i = type.fPointerArgs.requiredArgs - 1;
-           i < type2->fPointerArgs.argTypes.size(); i++) {
+      // Callback declarations describe an argument prefix (HTTP endpoints,
+      // for example, may also receive a wildcard path). Compare only the
+      // optional arguments actually declared on both sides. Starting at -1
+      // for a zero-argument prefix or indexing extra callback arguments read
+      // outside the target signature and could crash the compiler.
+      const auto commonArgs = std::min(type.fPointerArgs.argTypes.size(),
+                                       type2->fPointerArgs.argTypes.size());
+      for (size_t i = type.fPointerArgs.requiredArgs; i < commonArgs; i++) {
         this->canAssign(type.fPointerArgs.argTypes[i],
                         type2->fPointerArgs.argTypes[i].typeName, fmt);
       }
     }
 
     // Check that the optional convertion indices are the same
+    if (type.fPointerArgs.optConvertionIndices.size() >
+        type2->fPointerArgs.optConvertionIndices.size())
+      return false;
     for (int i = 0; i < type.fPointerArgs.optConvertionIndices.size(); i++) {
       if (type.fPointerArgs.optConvertionIndices[i] !=
           type2->fPointerArgs.optConvertionIndices[i])

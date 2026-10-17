@@ -38,8 +38,10 @@ shared class Server {
         const vector::<EndpointRef> endpoints = new vector::<EndpointRef>();
         const vector::<Middleware> middlewares = new vector::<Middleware>();
         mutable loan NotFoundImpl notFound = NULL;
-        int port = 8080;
+        mutable int port = 8080;
         mutable int workerCount = af_server_default_worker_count();
+        mutable int maxRequestBytes = 8388608;
+        mutable int timeoutMs = 30000;
     };
 
     Server init(* const int port, * const int workerCount) {
@@ -54,6 +56,18 @@ shared class Server {
 
     void setWorkerCount(const int workerCount) {
         if workerCount > 0 my.workerCount = workerCount;
+    };
+
+    // Includes headers and body. Defaults to 8 MiB; headers are capped at 64 KiB.
+    void setRequestSizeLimit(const int bytes) {
+        if bytes >= 4 {
+            if bytes <= 1073741824 my.maxRequestBytes = bytes;
+        };
+    };
+
+    // Deadline for receiving a complete request and, separately, sending its reply.
+    void setTimeout(const int milliseconds) {
+        if milliseconds > 0 my.timeoutMs = milliseconds;
     };
 
     void addEndpoint(const Endpoint endpoint) {
@@ -73,7 +87,7 @@ shared class Server {
         const let preamble = "http:";
         const let slash = '/';
         uni.print(`listening on port: {preamble}{slash}{slash}localhost:{my.port}\n`);
-        serve_pool(my.port, fn (const adr _msg, const Server self) {
+        serve_pool_limits(my.port, fn (const adr _msg, const Server self) {
             const let msg_str = new string(_msg);
             const let msg = new HTTPMessage(msg_str, true);
             const string method = http.methodToString(msg.method);
@@ -168,6 +182,6 @@ shared class Server {
             const adr response = af_malloc(out.len() + 1);
             af_memcpy(response, out.cstr(), out.len() + 1);
             return response;
-        }, my, my.workerCount);
+        }, my, my.workerCount, my.maxRequestBytes, my.timeoutMs);
     };
 };

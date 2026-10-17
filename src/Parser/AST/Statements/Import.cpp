@@ -154,6 +154,7 @@ static void registerClassShells(ast::Statement *stmt,
     generator.globalScope() = false;
 
     links::LinkedList<gen::Symbol> table;
+    bool layoutAvailable = true;
     auto collect = [&](auto &&self, ast::Statement *node) -> void {
       if (node == nullptr)
         return;
@@ -218,8 +219,12 @@ static void registerClassShells(ast::Statement *stmt,
         auto nested = nestedEntry == nullptr
                           ? nullptr
                           : dynamic_cast<gen::Class *>(*nestedEntry);
-        if (nested == nullptr)
-          generator.alert("local fields must contain a class type");
+        if (nested == nullptr || nested->instanceSize <= 0) {
+          // Its import may still be pending in this cycle. Keep the type
+          // predeclared and let normal class generation finish its layout.
+          layoutAvailable = false;
+          return;
+        }
         fieldSize = nested->instanceSize;
       }
       const int bytes =
@@ -230,9 +235,15 @@ static void registerClassShells(ast::Statement *stmt,
       table.push(symbol);
     };
 
+    collect(collect, cls->contract);
     collect(collect, cls->statement);
-    type->SymbolTable = table;
-    type->publicSymbols = table;
+    if (layoutAvailable) {
+      type->SymbolTable = table;
+      type->publicSymbols = table;
+      // Circular imports use this shell before the class is generated. Local
+      // fields need its inline size at that point, not the default zero size.
+      type->instanceSize = table.head == nullptr ? 1 : table.peek().byteMod;
+    }
 
     generator.scope() = prevScope;
     generator.globalScope() = prevGlobal;

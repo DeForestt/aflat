@@ -22,6 +22,8 @@ int sys_listen(int s, int backlog);
 int sys_accept(int s, adr upeer_sockaddr, adr upeer_addrlen);
 int sys_sendto(int s, adr buf, int len, int flags, adr to, int tolen);
 int sys_connect(int s, adr name, int namelen);
+int sys_poll(adr descriptors, int count, int timeoutMs);
+int sys_recvfrom(int s, adr buffer, int size, int flags, adr peer, adr peerLength);
 int sys_execve(adr name, adr argv, adr env);
 int sys_clock_gettime(int clk_id, adr tp);
 long sys_seek(int file, long offset, int whence);

@@ -263,11 +263,12 @@ ast::Function *buildAutomaticTransfer(gen::CodeGenerator &generator,
     for (const auto &field : type->SymbolTable) {
       int fieldSize = gen::utils::sizeToInt(field.type.size) *
                       std::max(1, field.type.arraySize);
+      gen::Class *nested = nullptr;
       if (field.local) {
         auto *nestedEntry = generator.typeList()[field.type.typeName];
-        auto *nested = nestedEntry == nullptr
-                           ? nullptr
-                           : dynamic_cast<gen::Class *>(*nestedEntry);
+        nested = nestedEntry == nullptr
+                     ? nullptr
+                     : dynamic_cast<gen::Class *>(*nestedEntry);
         if (nested == nullptr)
           generator.alert("local fields must contain a class type");
         fieldSize = nested->instanceSize;
@@ -286,7 +287,7 @@ ast::Function *buildAutomaticTransfer(gen::CodeGenerator &generator,
       destinationOffset->val = fieldStart;
       destination->expr2 = destinationOffset;
 
-      if (field.local) {
+      if (nested != nullptr && nested->uniqueType) {
         auto *transfer = new ast::Call();
         transfer->logicalLine = logicalLine;
         transfer->ident = "my";
@@ -304,6 +305,7 @@ ast::Function *buildAutomaticTransfer(gen::CodeGenerator &generator,
         source->logicalLine = logicalLine;
         source->Ident = "my";
         source->modList.push(field.symbol);
+        source->addressOf = !field.local;
         copy->Args.push(source);
 
         auto *size = new ast::IntLiteral();

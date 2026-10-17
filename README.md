@@ -179,7 +179,19 @@ modules below are the most commonly used building blocks:
 - `HTTP/Endpoints` - Sugar classes for registering GET/POST/PUT/DELETE/etc. handlers (libraries/std/src/HTTP/Endpoints.af).
 - `HTTP/Server` - Middleware-aware server with a configurable native thread pool that dispatches endpoints, supports wildcards, and formats error responses (libraries/std/src/HTTP/Server.af).
 - `HTTP/Middleware` - Before/after middleware registration helper applied per request (libraries/std/src/HTTP/Middleware.af).
-- `request.c` - C shim exposing `request`, `_aflat_server_spinUp`, and `serve` socket utilities (libraries/std/src/request.c).
+- `Socket` - Owned Linux socket descriptors, IPv4 listeners, and deadline-bounded reads and complete writes (libraries/std/src/Socket.af).
+- `HTTP/Transport` - Aflat HTTP framing, request limits, and a bounded queue feeding native worker threads; implements the existing `serve` and `listen` entry points (libraries/std/src/HTTP/Transport.af).
+- `request.c` - Outbound HTTP client and shell-process helpers (libraries/std/src/request.c). Server networking is implemented in Aflat.
+
+`Server.listen()` keeps its existing endpoint and middleware API. Requests default
+to an 8 MiB total limit, with headers limited to 64 KiB. `setRequestSizeLimit(bytes)`
+changes the total limit; `setTimeout(milliseconds)` changes the default 30-second
+deadline for receiving a complete request and, separately, sending its response.
+Handlers themselves are not interrupted by these I/O deadlines. The server closes
+each connection after one response; chunked request bodies receive 501, ambiguous
+or malformed framing receives 400, oversized requests/headers receive 413/431, and
+incomplete requests that exceed the deadline receive 408. The worker pool uses
+the general thread runtime; async serving is not enabled by this migration.
 
 #### Utility types & error handling
 - `Utils/Option` - Ref-counted Option class with `resolve`, `match`, and defaulting helpers (libraries/std/src/Utils/Option.af).

@@ -2476,6 +2476,8 @@ bool runConfig(cfg::Config &config, const std::string &libPath, char pmode) {
       "String.s",
       "DateTime.s",
       "HTTP.s",
+      "Socket.s",
+      "HTTP_Transport.s",
       "request.s",
       "ATest.s",
       "CLArgs.s",

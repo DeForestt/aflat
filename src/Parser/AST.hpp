@@ -431,6 +431,7 @@ public:
   links::LinkedList<Expr *> args;
   std::vector<std::string> templateTypes;
   std::string initFuncName = "init";
+  // A brace map literal, whose concrete map type is chosen during generation.
   bool castableMap = false;
 
   std::string toString() override {

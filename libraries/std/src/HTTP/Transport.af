@@ -1,0 +1,360 @@
+.needs <std>
+.needs <asm>
+import Socket from "Socket";
+import {listenTcp, accept, read, writeAll, deadline} from "Socket" under net;
+import {len} from "strings" under str;
+import {toInt} from "io" under io;
+
+// Configuration is borrowed by the pool and must remain immutable while serving.
+// maxConnections is useful for bounded servers and graceful test shutdown (0: forever).
+shared class TransportOptions {
+    mutable int maxRequestBytes = 8388608;
+    mutable int maxHeaderBytes = 65536;
+    mutable int timeoutMs = 30000;
+    mutable int maxConnections = 0;
+    mutable int initialBytes = 4096;
+    mutable bool loopback = false;
+    mutable bool legacyCallback = false;
+
+    fn init() -> Self { return my; };
+};
+
+private fn byteAt(const adr text, const int index) -> char {
+    const adr pointer = text + index;
+    return pointer as char;
+};
+
+private fn token(const char c) -> bool {
+    if (c >= 'a') & (c <= 'z') return true;
+    if (c >= 'A') & (c <= 'Z') return true;
+    if (c >= '0') & (c <= '9') return true;
+    return (c == '!') | (c == '#') | (c == '$') | (c == '%') | (c == '&') |
+        (c == '\'') | (c == '*') | (c == '+') | (c == '-') | (c == '.') |
+        (c == '^') | (c == '_') | (c == '`') | (c == '|') | (c == '~');
+};
+
+private fn headerIs(const adr buffer, const int start, const int size, const adr name) -> bool {
+    if size != str.len(name) return false;
+    for int i = 0; i < size; i = i + 1 {
+        char c = byteAt(buffer, start + i);
+        if (c >= 'A') & (c <= 'Z') { c = c + ('a' - 'A'); };
+        if c != byteAt(name, i) return false;
+    };
+    return true;
+};
+
+// Returns total request bytes or a negative HTTP status. Offsets are bounded
+// by an already-complete header block; no substring searches cross that block.
+export fn requestLength(const adr buffer, const int headers, const int maximum) -> int {
+    if headers < 4 return -400;
+    if headers > maximum return -413;
+    int line = 0;
+    while line + 1 < headers {
+        if (byteAt(buffer, line) == '\r') & (byteAt(buffer, line + 1) == '\n') break;
+        line = line + 1;
+    };
+    int firstSpace = 0;
+    while (firstSpace < line) & (byteAt(buffer, firstSpace) != ' ') {
+        if !token(byteAt(buffer, firstSpace)) return -400;
+        firstSpace = firstSpace + 1;
+    };
+    if firstSpace == 0 return -400;
+    int secondSpace = firstSpace + 1;
+    while (secondSpace < line) & (byteAt(buffer, secondSpace) != ' ') {
+        if byteAt(buffer, secondSpace) <= ' ' return -400;
+        secondSpace = secondSpace + 1;
+    };
+    if secondSpace == firstSpace + 1 return -400;
+    if line - secondSpace != 9 return -400;
+    const adr version = "HTTP/1.";
+    for int i = 0; i < 7; i = i + 1 {
+        if byteAt(buffer, secondSpace + 1 + i) != byteAt(version, i) return -400;
+    };
+    const char minor = byteAt(buffer, line - 1);
+    if (minor != '0') & (minor != '1') return -400;
+    int position = line + 2;
+    int contentLength = 0;
+    bool sawLength = false;
+    bool transferEncoding = false;
+    while position < headers - 2 {
+        int end = position;
+        while end + 1 < headers {
+            if (byteAt(buffer, end) == '\r') & (byteAt(buffer, end + 1) == '\n') break;
+            end = end + 1;
+        };
+        int colon = position;
+        while (colon < end) & (byteAt(buffer, colon) != ':') {
+            if !token(byteAt(buffer, colon)) return -400;
+            colon = colon + 1;
+        };
+        if (colon == position) | (colon == end) return -400;
+        int value = colon + 1;
+        while value < end {
+            const char c = byteAt(buffer, value);
+            if (c != ' ') & (c != '\t') break;
+            value = value + 1;
+        };
+        int valueEnd = end;
+        while valueEnd > value {
+            const char c = byteAt(buffer, valueEnd - 1);
+            if (c != ' ') & (c != '\t') break;
+            valueEnd = valueEnd - 1;
+        };
+        for int i = value; i < valueEnd; i = i + 1 {
+            const char c = byteAt(buffer, i);
+            if (c < ' ') & (c != '\t') return -400;
+        };
+        if headerIs(buffer, position, colon - position, "content-length") {
+            if sawLength | (value == valueEnd) return -400;
+            sawLength = true;
+            for int i = value; i < valueEnd; i = i + 1 {
+                const char c = byteAt(buffer, i);
+                if (c < '0') | (c > '9') return -400;
+                const int digit = io.toInt(c);
+                if contentLength > (maximum - headers - digit) / 10 return -413;
+                contentLength = contentLength * 10 + digit;
+                if contentLength > maximum - headers return -413;
+            };
+        };
+        if headerIs(buffer, position, colon - position, "transfer-encoding") {
+            transferEncoding = true;
+        };
+        position = end + 2;
+    };
+    if transferEncoding {
+        if sawLength return -400;
+        return -501; // Chunked request decoding is not yet supported.
+    };
+    return headers + contentLength;
+};
+
+unique class RequestBuffer {
+    mutable adr bytes = NULL;
+
+    fn init() -> Self { return my; };
+    fn del() -> void { af_free(my.bytes); };
+    fn data() -> adr { return my.bytes; };
+
+    fn receive(const int client, const TransportOptions options) -> int {
+        int capacity = options.initialBytes;
+        if capacity < 1024 { capacity = 1024; };
+        if capacity > options.maxHeaderBytes { capacity = options.maxHeaderBytes; };
+        if capacity > options.maxRequestBytes { capacity = options.maxRequestBytes; };
+        my.bytes = af_malloc(capacity + 1);
+        if my.bytes == NULL return -500;
+        int used = 0;
+        int scan = 0;
+        int expected = -1;
+        const long end = net.deadline(options.timeoutMs);
+        while true {
+            if (expected >= 0) & (used >= expected) {
+                const adr terminator = my.bytes + expected;
+                terminator =: '\0';
+                return 200;
+            };
+            if (expected < 0) & (used >= options.maxHeaderBytes) return -431;
+            if used == capacity {
+                int next = capacity * 2;
+                if next > options.maxRequestBytes { next = options.maxRequestBytes; };
+                if (expected < 0) & (next > options.maxHeaderBytes) { next = options.maxHeaderBytes; };
+                if next <= capacity return -413;
+                const adr grown = af_realloc(my.bytes, next + 1);
+                if grown == NULL return -500;
+                my.bytes = grown;
+                capacity = next;
+            };
+            int available = capacity - used;
+            if (expected >= 0) & (available > expected - used) { available = expected - used; };
+            const adr cursor = my.bytes + used;
+            const int count = net.read(client, cursor, available, end);
+            if count == -110 return -408;
+            if count < 0 return 0; // disconnected or unreadable peer
+            if count == 0 {
+                if used == 0 return 0;
+                return -400;
+            };
+            used = used + count;
+            if (expected < 0) {
+                while scan + 3 < used {
+                    if (byteAt(my.bytes, scan) == '\r') & (byteAt(my.bytes, scan + 1) == '\n') &
+                        (byteAt(my.bytes, scan + 2) == '\r') & (byteAt(my.bytes, scan + 3) == '\n') {
+                        expected = requestLength(my.bytes, scan + 4, options.maxRequestBytes);
+                        if (expected < 0) return expected;
+                        break;
+                    };
+                    scan = scan + 1;
+                };
+            };
+        };
+    };
+};
+
+private fn errorResponse(const int status) -> adr {
+    if status == -400 return "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+    if status == -408 return "HTTP/1.1 408 Request Timeout\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+    if status == -413 return "HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+    if status == -431 return "HTTP/1.1 431 Request Header Fields Too Large\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+    if status == -501 return "HTTP/1.1 501 Not Implemented\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+    return "HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+};
+
+private fn handleConnection(const int descriptor, const adr handler, const adr data, const TransportOptions options) -> void {
+    const let client = Socket(descriptor);
+    const let request = RequestBuffer();
+    const int status = request.receive(client.fd(), options);
+    if status == 0 return;
+    if status != 200 {
+        const adr response = errorResponse(status);
+        net.writeAll(client.fd(), response, str.len(response), net.deadline(options.timeoutMs));
+        return;
+    };
+    adr response = NULL;
+    if options.legacyCallback {
+        handler(request.data(), ?response, data);
+    } else {
+        response = handler(request.data(), data);
+    };
+    if response != NULL {
+        net.writeAll(client.fd(), response, str.len(response), net.deadline(options.timeoutMs));
+        af_free(response);
+    };
+};
+
+// The pipe is a bounded queue of four-byte descriptors. A single producer
+// writes each fd atomically; fixed-size reads distribute work to fixed workers.
+// Closing the writer drains the queue, then wakes every worker with EOF.
+private fn poolWorker(const adr opaque, const adr handler, const adr data, const TransportOptions options) -> adr {
+    const int queue = opaque as int;
+    while true {
+        const int descriptor = -1;
+        const int count = sys_read(queue, ?descriptor, 4);
+        if count == -4 continue;
+        if count != 4 break;
+        handleConnection(descriptor, handler, data, options);
+    };
+    return NULL;
+};
+
+fn get_nprocs() -> int;
+
+fn af_server_default_worker_count() -> int {
+    int processors = get_nprocs();
+    if processors < 2 return 4;
+    if processors > 16 return 32;
+    return processors * 2;
+};
+
+// Preserves the legacy return convention: zero success, positive errno failure.
+export fn serveConfigured(const int port, const adr handler, const adr data, int workers, const TransportOptions options) -> int {
+    if handler == NULL return 22;
+    if (options.maxRequestBytes < 4) | (options.maxRequestBytes > 1073741824) return 22;
+    if (options.maxHeaderBytes < 4) | (options.maxHeaderBytes > options.maxRequestBytes) return 22;
+    if (options.timeoutMs <= 0) | (options.maxConnections < 0) return 22;
+    if workers <= 0 { workers = af_server_default_worker_count(); };
+    if workers > 4096 return 22;
+    const int descriptor = net.listenTcp(port, options.loopback);
+    if descriptor < 0 return 0 - descriptor;
+    const let listener = Socket(descriptor);
+    int[2] queue;
+    const int pipeStatus = sys_pipe(queue);
+    if pipeStatus < 0 return 0 - pipeStatus;
+    const adr threads = af_malloc(workers * 8);
+    if threads == NULL {
+        sys_close(queue[0]);
+        sys_close(queue[1]);
+        return 12;
+    };
+    int started = 0;
+    int error = 0;
+    while started < workers {
+        const adr thread = af_worker_thread_create(poolWorker, queue, handler, data, options);
+        if thread == NULL {
+            error = 11;
+            break;
+        };
+        const adr slot = threads + started * 8;
+        slot =: thread;
+        started = started + 1;
+    };
+    int accepted = 0;
+    if error == 0 {
+        while (options.maxConnections == 0) | (accepted < options.maxConnections) {
+            const int client = net.accept(listener.fd());
+            if client < 0 {
+                error = 0 - client;
+                break;
+            };
+            int written = -4;
+            while written == -4 { written = sys_write(queue[1], ?client, 4); };
+            if written != 4 {
+                sys_close(client);
+                error = 5;
+                break;
+            };
+            accepted = accepted + 1;
+        };
+    };
+    sys_close(queue[1]);
+    listener.close();
+    for int i = 0; i < started; i = i + 1 {
+        const adr slot = threads + i * 8;
+        const adr thread = slot as adr;
+        af_worker_thread_await(thread);
+        af_worker_thread_release(thread);
+    };
+    sys_close(queue[0]);
+    af_free(threads);
+    return error;
+};
+
+export fn serveSyncConfigured(const int port, const adr handler, const adr data, const TransportOptions options) -> int {
+    if handler == NULL return 22;
+    if (options.maxRequestBytes < 4) | (options.maxRequestBytes > 1073741824) return 22;
+    if (options.maxHeaderBytes < 4) | (options.maxHeaderBytes > options.maxRequestBytes) return 22;
+    if (options.timeoutMs <= 0) | (options.maxConnections < 0) return 22;
+    const int descriptor = net.listenTcp(port, options.loopback);
+    if descriptor < 0 return 0 - descriptor;
+    const let listener = Socket(descriptor);
+    int accepted = 0;
+    while (options.maxConnections == 0) | (accepted < options.maxConnections) {
+        const int client = net.accept(listener.fd());
+        if client < 0 return 0 - client;
+        handleConnection(client, handler, data, options);
+        accepted = accepted + 1;
+    };
+    return 0;
+};
+
+fn serve_pool_limits(const int port, const adr handler, const adr data, const int workers, const int maxBytes, const int timeoutMs) -> int {
+    const let options = TransportOptions();
+    options.maxRequestBytes = maxBytes;
+    if maxBytes < options.maxHeaderBytes { options.maxHeaderBytes = maxBytes; };
+    options.timeoutMs = timeoutMs;
+    return serveConfigured(port, handler, data, workers, options);
+};
+
+fn serve_pool(const int port, const adr handler, * const adr data, const int workers) -> int {
+    const let options = TransportOptions();
+    return serveConfigured(port, handler, data, workers, options);
+};
+
+fn serve(const int port, const adr handler, * const adr data) -> int {
+    return serve_pool(port, handler, data, 0);
+};
+
+fn serve_sync(const int port, const adr handler, * const adr data) -> int {
+    const let options = TransportOptions();
+    return serveSyncConfigured(port, handler, data, options);
+};
+
+fn _aflat_server_spinUp(const short port, const int requestSize, const adr handler, * const adr data) -> int {
+    const let options = TransportOptions();
+    options.loopback = true;
+    options.legacyCallback = true;
+    options.initialBytes = requestSize;
+    // The historical interface uses a signed short for an unsigned TCP port.
+    const int number = 0;
+    const adr numberAddress = ?number;
+    numberAddress =: port;
+    return serveSyncConfigured(number, handler, data, options);
+};

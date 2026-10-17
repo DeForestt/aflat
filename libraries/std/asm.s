@@ -22,6 +22,8 @@
 .global sys_accept
 .global sys_sendto
 .global sys_connect
+.global sys_poll
+.global sys_recvfrom
 .global sys_execve
 .global sys_clock_gettime
 .global sys_seek
@@ -213,6 +215,8 @@ sys_setsockopt:
     movq	%rsp, %rbp
     pushq	%rbx
     subq	$16, %rsp
+    # Linux syscalls take argument four in r10, not the function ABI's rcx.
+    movq    %rcx, %r10
     movq    $54, %rax
     syscall
     leave
@@ -253,6 +257,7 @@ sys_sendto:
     movq	%rsp, %rbp
     pushq	%rbx
     subq	$16, %rsp
+    movq    %rcx, %r10
     movq    $44, %rax
     syscall
     leave
@@ -266,6 +271,17 @@ sys_connect:
     movq    $42, %rax
     syscall
     leave
+    ret
+
+sys_poll:
+    movq    $7, %rax
+    syscall
+    ret
+
+sys_recvfrom:
+    movq    %rcx, %r10
+    movq    $45, %rax
+    syscall
     ret
 
 sys_execve:

@@ -1,0 +1,139 @@
+.needs <std>
+.needs <asm>
+
+// Linux x86-64 sockets. Descriptors/results use raw negative errno values.
+// Socket owns its descriptor; borrowed descriptors must not be closed elsewhere.
+unique class Socket {
+    private mutable int descriptor = -1;
+
+    fn init(const int descriptor) -> Self {
+        my.descriptor = descriptor;
+        return my;
+    };
+
+    fn fd() -> int { return my.descriptor; };
+
+    fn close() -> void {
+        if my.descriptor >= 0 {
+            // Never retry close after EINTR: the fd may already be reused.
+            sys_close(my.descriptor);
+            my.descriptor = -1;
+        };
+    };
+
+    fn del() -> void { my.close(); };
+};
+
+export fn nowMs() -> long {
+    long[2] value;
+    if sys_clock_gettime(1, value) < 0 return #-1;
+    return value[0] * #1000 + value[1] / #1000000;
+};
+
+// An absolute monotonic deadline bounds the whole transfer, including retries.
+export fn deadline(const int timeoutMs) -> long {
+    const long now = nowMs();
+    if now < #0 return #-1;
+    return now + timeoutMs;
+};
+
+private fn waitReady(const int descriptor, const short events, const long end) -> int {
+    // struct pollfd: int fd, short events, short revents (8 bytes).
+    int[2] entry;
+    entry[0] = descriptor;
+    entry[1] = 0;
+    const adr eventAddress = entry + 4;
+    eventAddress =: events;
+    while true {
+        const long now = nowMs();
+        if now < #0 return -5;
+        const long remaining = end - now;
+        if remaining <= #0 return -110;
+        const adr remainingAddress = ?remaining;
+        int timeout = 2147483647;
+        if remaining < #2147483647 { timeout = remainingAddress as int; };
+        const int ready = sys_poll(entry, 1, timeout);
+        if ready == -4 continue;
+        if ready == 0 return -110;
+        if ready < 0 return ready;
+        return 0;
+    };
+};
+
+export fn read(const int descriptor, const adr buffer, const int size, const long end) -> int {
+    if size < 0 return -22;
+    if size == 0 return 0;
+    while true {
+        const int ready = waitReady(descriptor, 1, end);
+        if ready < 0 return ready;
+        const int count = sys_recvfrom(descriptor, buffer, size, 64, NULL, NULL);
+        if count == -4 continue;
+        if count == -11 continue;
+        return count;
+    };
+};
+
+export fn writeAll(const int descriptor, adr buffer, int size, const long end) -> int {
+    if size < 0 return -22;
+    while size > 0 {
+        const int ready = waitReady(descriptor, 4, end);
+        if ready < 0 return ready;
+        // MSG_NOSIGNAL | MSG_DONTWAIT; no process-global SIGPIPE changes.
+        const int count = sys_sendto(descriptor, buffer, size, 16448, NULL, 0);
+        if count == -4 continue;
+        if count == -11 continue;
+        if count < 0 return count;
+        if count == 0 return -32;
+        buffer = buffer + count;
+        size = size - count;
+    };
+    return 0;
+};
+
+export fn accept(const int listener) -> int {
+    while true {
+        const int client = sys_accept(listener, NULL, NULL);
+        if client == -4 continue;
+        if client == -103 continue; // connection aborted before accept
+        return client;
+    };
+};
+
+export fn listenTcp(const int port, * const bool loopback) -> int {
+    if port < 0 return -22;
+    if port > 65535 return -22;
+    const int descriptor = sys_socket(2, 524289, 0); // AF_INET, STREAM | CLOEXEC
+    if descriptor < 0 return descriptor;
+    const int enabled = 1;
+    const int option = sys_setsockopt(descriptor, 1, 2, ?enabled, 4);
+    if option < 0 {
+        sys_close(descriptor);
+        return option;
+    };
+    // sockaddr_in: family (native), port/address (network order), padding.
+    int[4] address;
+    for int i = 0; i < 4; i = i + 1 { address[i] = 0; };
+    const adr base = address;
+    const short family = 2;
+    base =: family;
+    const int high = port / 256;
+    const int low = port % 256;
+    const adr highAddress = ?high;
+    const adr lowAddress = ?low;
+    const adr highByte = base + 2;
+    const adr lowByte = base + 3;
+    highByte =: highAddress as char;
+    lowByte =: lowAddress as char;
+    if loopback { address[1] = 16777343; };
+    const int bound = sys_bind(descriptor, base, 16);
+    if bound < 0 {
+        sys_close(descriptor);
+        return bound;
+    };
+    const int listening = sys_listen(descriptor, 128);
+    if listening < 0 {
+        sys_close(descriptor);
+        return listening;
+    };
+    return descriptor;
+};

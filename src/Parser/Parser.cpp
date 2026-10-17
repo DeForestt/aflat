@@ -2283,6 +2283,7 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
           auto newExpr = new ast::NewExpr();
           newExpr->logicalLine = eq.lineCount;
           newExpr->type.typeName = "Map";
+          newExpr->castableMap = true;
 
           ast::CallExpr *lastSet = new ast::CallExpr();
           lastSet->logicalLine = eq.lineCount;

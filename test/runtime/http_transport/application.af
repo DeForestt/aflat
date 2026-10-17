@@ -1,0 +1,58 @@
+.needs <std>
+.needs <asm>
+import Server from "HTTP/Server";
+import Endpoint, NotFoundImpl from "HTTP/Endpoint";
+import Middleware from "HTTP/Middleware";
+import HTTPMethod, HTTPMessage, HTTPResponse from "HTTP";
+import string from "String";
+import result from "Utils/result";
+import Error from "Utils/Error";
+import unordered_map from "Collections/unordered_map";
+import {accept, reject} from "Utils/result" under res;
+
+fn echo(const Server server, const HTTPMessage message) -> result::<HTTPResponse> {
+    return res.accept::<HTTPResponse>(new HTTPResponse(message.body.cstr(), "200", "OK"));
+};
+fn wildcard(const Server server, const HTTPMessage message, const string path) -> result::<HTTPResponse> {
+    return res.accept::<HTTPResponse>(new HTTPResponse(path.cstr(), "200", "OK"));
+};
+fn failure(const Server server, const HTTPMessage message) -> result::<HTTPResponse> {
+    return res.reject::<HTTPResponse>(new Error("intentional handler failure"));
+};
+fn slow(const Server server, const HTTPMessage message) -> result::<HTTPResponse> {
+    sleep(0, 200000000);
+    return res.accept::<HTTPResponse>(new HTTPResponse("slow", "200", "OK"));
+};
+fn missing(const Server server, const HTTPMessage message) -> HTTPResponse {
+    return new HTTPResponse("missing", "404", "Not Found");
+};
+fn before(const Server server, const HTTPMessage message) -> loan HTTPMessage {
+    return message;
+};
+fn after(const Server server, const HTTPMessage message, const HTTPResponse response) -> loan HTTPResponse {
+    response.addHeader("X-Middleware", "yes");
+    return response;
+};
+fn hooks(const Server server) -> unordered_map::<adr,adr> {
+    const let map = new unordered_map::<adr,adr>();
+    map.set("before", before);
+    map.set("after", after);
+    return map;
+};
+fn main() -> int {
+    int[2] args;
+    if sys_read(0, args, 8) != 8 return 90;
+    const let server = new Server(args[0], args[1]);
+    server.setWorkerCount(args[1]);
+    if server.workers() != args[1] return 91;
+    server.setRequestSizeLimit(8388608);
+    server.setTimeout(1000);
+    const let post = new Endpoint(echo, server, "/echo", HTTPMethod.POST);
+    const let route = new Endpoint(wildcard, server, "/path/:*", HTTPMethod.GET);
+    const let fail = new Endpoint(failure, server, "/fail", HTTPMethod.GET);
+    const let wait = new Endpoint(slow, server, "/slow", HTTPMethod.GET);
+    const let notFound = new NotFoundImpl(missing, server);
+    const let middleware = new Middleware(hooks, server);
+    server.listen();
+    return 0;
+};

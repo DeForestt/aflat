@@ -136,6 +136,8 @@ ast::Statement *Lower::lowerFunction(ast::Function *func) {
         declare->type.typeName =
             concreteTypeName(func->decorator, func->decoratorTemplateTypes);
         declare->mut = false;
+        declare->local = true;
+        declare->type.isLocal = true;
         declare->TypeName = declare->type.typeName;
         declare->scope = func->scope;
 

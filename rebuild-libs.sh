@@ -133,6 +133,10 @@ function compile_single {
         "HTTP_Endpoint") aflat ./libraries/std/src/HTTP/Endpoint.af -o ./libraries/std/HTTP_Endpoint.s ;;
         "HTTP_Middleware") aflat ./libraries/std/src/HTTP/Middleware.af -o ./libraries/std/HTTP_Middleware.s ;;
         "HTTP_Server") aflat ./libraries/std/src/HTTP/Server.af -o ./libraries/std/HTTP_Server.s ;;
+        "Socket") aflat ./libraries/std/src/Socket.af -o ./libraries/std/Socket.s ;;
+        "HTTP_Transport")
+            aflat ./libraries/std/src/HTTP/Transport.af -o ./libraries/std/Transport.s
+            mv ./libraries/std/Transport.s ./libraries/std/HTTP_Transport.s ;;
         "HTTP_Endpoints") aflat ./libraries/std/src/HTTP/Endpoints.af -o ./libraries/std/HTTP_Endpoints.s ;;
         "Web_Content") aflat ./libraries/std/src/Web/Content.af -o ./libraries/std/Web_Content.s ;;
         "Web_Content_Bind") aflat ./libraries/std/src/Web/Content/Bind.af -o ./libraries/std/Web_Content_Bind.s ;;
@@ -153,7 +157,7 @@ function compile_single {
             echo "  strings, String, uni_string, ATest, HTTP, CLArgs, System, Memory"
             echo "  Result, result, Functions, Observable, Map, Option, option"
             echo "  Properties, Object, Error, Defer, unordered_map, Error_Render"
-            echo "  HTTP_Endpoint, HTTP_Middleware, HTTP_Server, HTTP_Endpoints"
+            echo "  Socket, HTTP_Transport, HTTP_Endpoint, HTTP_Middleware, HTTP_Server, HTTP_Endpoints"
             echo "  Web_Content, Web_Content_Bind, JSON, JSON_Parse, JSON_Property"
             echo "  JSON_Property_Fields"
             echo "  Vector, request, Async, Tuple, Heap"
@@ -190,7 +194,7 @@ done
 
 # Compile remaining libraries in parallel
 for library in \
-    unordered_map Error_Render HTTP_Endpoint HTTP_Middleware HTTP_Server \
+    Socket HTTP_Transport unordered_map Error_Render HTTP_Endpoint HTTP_Middleware HTTP_Server \
     HTTP_Endpoints Web_Content Web_Content_Bind JSON JSON_Property \
     JSON_Property_Fields Vector Heap Tuple JSON_Parse request Async Allocator; do
     queue_library "$library"

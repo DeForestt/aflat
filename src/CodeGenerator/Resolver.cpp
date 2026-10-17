@@ -412,13 +412,15 @@ CodeGenerator::resolveSymbol(std::string ident,
     OutputFile.text << mul;
     asmc::Mov *mov = new asmc::Mov();
     mov->size = asmc::QWord;
-    mov->to = registers()["%rdx"]->get(asmc::QWord);
+    // rdx may already hold the other operand of a surrounding expression.
+    // r13 is index scratch and is no longer needed once the offset is formed.
+    mov->to = registers()["%r13"]->get(asmc::QWord);
     mov->from = access;
     mov->logicalLine = logicalLine();
     OutputFile.text << mov;
 
     asmc::Add *add = new asmc::Add();
-    add->op1 = registers()["%rdx"]->get(asmc::QWord);
+    add->op1 = registers()["%r13"]->get(asmc::QWord);
     add->op2 = registers()["%r12"]->get(asmc::QWord);
     add->size = asmc::QWord;
     add->logicalLine = logicalLine();
