@@ -5,21 +5,43 @@ values. Import `CLAValue`, `Argument`, and `CommandLineArgs` from `CLArgs`.
 
 ## Value and descriptor types
 
-`CLAValue` is a union with `String(string)`, `Number(int)`, `Boolean(bool)`, and
+`CLAValue` is a union with `String(adr)`, `Number(int)`, `Boolean(bool)`, and
 `None` variants. `getString() -> string!` produces an owned string or an Error;
 `toString() -> string` formats any variant.
 
 `Argument` describes an option with const `longName`, `shortName`,
-`description`, and `defaultValue` string fields. Its constructor is:
+`description`, and `defaultValue` string fields, plus a boolean `isFlag` field. Its constructor is:
 
 ```aflat
 fn init(const adr longName, const adr shortName, const adr description,
-        ?const adr defaultValue) -> Self;
+        *const adr defaultValue, *const bool isFlag) -> Self;
 ```
 
-The optional raw default is wrapped locally inside the constructor and
-extracted to initialize a string. Omitting it uses the text `"false"`.
-`__copy__()` returns an independent descriptor.
+The optional raw default initializes a string. Omitting it (or passing `NULL`)
+uses the text `"false"`.
+`isFlag` defaults to `false`, preserving existing value-taking options. Pass
+`true` as the fifth argument to declare a boolean flag:
+
+```aflat
+new Argument("inplace", "i", "Format in place", "false", true)
+new Argument("config", "c", "Configuration file")
+new Argument("count", "n", "Item count", "0", false)
+```
+
+Boolean flags never consume the following positional argument. `getTag()`
+returns `Boolean(true)` when supplied, or `None` when absent. Both
+`getTagString()` and `getTagInt()` return an error for a boolean flag, even
+when a filename or number follows it. `hasTag()` checks presence.
+
+Value options consume the next argument unless it starts with `-`.
+`getTag()` returns that raw value as `String(adr)`; typed accessors return a
+string or parse an integer. For compatibility, a value option without a value
+still returns `Boolean(true)` through `getTag()`, while typed accessors fail.
+`defaultValue` is help metadata; accessors do not substitute it for absent
+options. Unknown flags make `parse()` fail. Positional pop methods return
+arguments in reverse order.
+
+`__copy__()` returns an independent descriptor and preserves `isFlag`.
 
 ## CommandLineArgs
 
@@ -40,7 +62,7 @@ owner instead of keeping only a loan returned from a temporary receiver.
 | `getTagString(const string tag)` | `string!`; retrieve a required string value. |
 | `getTagInt(const string tag)` | `int!`; retrieve an integer value. |
 
-`programName` is set by `parse()`. Raw argv pointers must remain valid while
+`programName` is set by the constructor. Raw argv pointers must remain valid while
 used. A helper forwarding `popCommand()` must also declare a local return.
 
 ## Example
@@ -54,7 +76,7 @@ import CLAValue, Argument, CommandLineArgs from "CLArgs";
 fn main(int argc, adr argv) -> int {
     const let args = new CommandLineArgs(argc, argv);
     args.with_arguments([
-        new Argument("help", "h", "Display help"),
+        new Argument("help", "h", "Display help", "false", true),
         new Argument("config", "c", "Configuration file")
     ]);
     match args.parse() {
