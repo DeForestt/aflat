@@ -8,3 +8,29 @@
 # Coverage
 /coverage
 /coverage.info
+
+# Local caches and build artifacts
+/.cache/
+/build-*/
+/compile_commands.json
+/run
+
+# Local editor and agent state
+/.agents/
+/.codex
+/.nvimlog
+
+# Local build and repository configuration
+/.dockerignore
+/.gitattributes
+/CMakePresets.json
+/CMakeUserPresets.json
+/vcpkg-configuration.json
+/vcpkg.json
+
+# Local documentation and work notes
+/Async.md
+/Comprehensive.md
+/STACK_ARGUMENTS_PROGRESS.md
+/STACK_OBJECT_RETURNS_PROGRESS.md
+/first-steps-validation-report.md

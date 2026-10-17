@@ -1,0 +1,231 @@
+
+.needs <std>
+
+import uni_string from "uni_string";
+import Token, TokenKind, SourceSpan from "../Token";
+
+export class Lexer {
+    uni_string source = $source;
+    mutable int cursor = 0;
+    mutable int line = 1;
+    mutable int column = 1;
+
+    fn init(const uni_string &&source) -> Lexer {
+        return my;
+    };
+
+    fn isIdentifierStart(const char c) -> bool {
+        if (c >= 'a') & (c <= 'z') { return true; };
+        if (c >= 'A') & (c <= 'Z') { return true; };
+        return c == '_';
+    };
+
+    fn isIdentifierPart(const char c) -> bool {
+        if my.isIdentifierStart(c) { return true; };
+        return my.isDigit(c);
+    };
+
+    private fn peek(const int offset) -> char {
+        const int index = my.cursor + offset;
+        if index < 0 | index >= my.source.len() {
+            return '\0';
+        };
+        return my.source.at(index);
+    };
+
+    private fn advance() {
+        if my.cursor >= my.source.len() { return; };
+        const char c = my.peek(0);
+        if c == '\r' {
+            my.line = my.line + 1;
+            my.column = 1;
+        } else if c == '\n' {
+            if my.cursor == 0 {
+                my.line = my.line + 1;
+            } else if my.peek(-1) != '\r' {
+                my.line = my.line + 1;
+            };
+            my.column = 1;
+        } else {
+            my.column = my.column + 1;
+        };
+        my.cursor = my.cursor + 1;
+    };
+
+    private fn isDigit(const char c) -> bool {
+        return c >= '0' & c <= '9';
+    };
+
+    private fn isHexDigit(const char c) -> bool {
+        if my.isDigit(c) { return true; };
+        if (c >= 'a') & (c <= 'f') { return true; };
+        return (c >= 'A') & (c <= 'F');
+    };
+
+    private fn isWhitespace(const char c) -> bool {
+        if c == ' ' { return true; };
+        if c == '\t' { return true; };
+        if c == '\n' { return true; };
+        return c == '\r';
+    };
+
+    private fn isQuote(const char c) -> bool {
+        if c == '"' { return true; };
+        if c == '\'' { return true; };
+        if c == '`' { return true; };
+        return c == '~';
+    };
+
+    private fn isNumberStart() -> bool {
+        const char c = my.peek(0);
+        if my.isDigit(c) { return true; };
+        if c == '-' { return my.isDigit(my.peek(1)); };
+        if c == '#' {
+            if my.isDigit(my.peek(1)) { return true; };
+            if my.peek(1) == '-' { return my.isDigit(my.peek(2)); };
+        };
+        return false;
+    };
+
+    private fn scanNumber() {
+        const bool longLiteral = my.peek(0) == '#';
+        if longLiteral { my.advance(); };
+        if my.peek(0) == '-' { my.advance(); };
+
+        if my.peek(0) == '0' {
+            if my.peek(1) == 'x' {
+                my.advance();
+                my.advance();
+                while my.isHexDigit(my.peek(0)) { my.advance(); };
+                return;
+            };
+            if !longLiteral {
+                if my.peek(1) == 'o' {
+                    my.advance();
+                    my.advance();
+                    while (my.peek(0) >= '0') & (my.peek(0) <= '7') {
+                        my.advance();
+                    };
+                    return;
+                };
+            };
+        };
+
+        while my.isDigit(my.peek(0)) { my.advance(); };
+        if longLiteral { return; };
+        // A dot belongs to a float only when followed by a digit.
+        if my.peek(0) == '.' {
+            if my.isDigit(my.peek(1)) {
+                my.advance();
+                while my.isDigit(my.peek(0)) { my.advance(); };
+            };
+        };
+    };
+
+    private fn scanQuoted() {
+        const char quote = my.peek(0);
+        my.advance();
+        while my.cursor < my.source.len() {
+            const char c = my.peek(0);
+            my.advance();
+            if c == quote { return; };
+            // Tilde-delimited strings are raw; other quotes allow escapes.
+            if c == '\\' & quote != '~' {
+                my.advance();
+            };
+        };
+    };
+
+    private fn isSymbolPair(const char first, const char second) -> bool {
+        if first == '-' {
+            if second == '>' { return true; };
+            return (second == '-') | (second == '=');
+        };
+        if first == ':' { return second == ':'; };
+        if first == '=' { return (second == '=') | (second == '>'); };
+        if first == '!' { return second == '='; };
+        if first == '<' { return (second == '=') | (second == '<'); };
+        if first == '>' { return (second == '=') | (second == '>'); };
+        if first == '&' { return second == '&'; };
+        if first == '|' { return second == '|'; };
+        if first == '+' { return (second == '+') | (second == '='); };
+        if first == '*' { return second == '='; };
+        if first == '/' { return second == '='; };
+        if first == '%' { return second == '='; };
+        return false;
+    };
+
+    fn nextToken() -> local Token {
+        const int start = my.cursor;
+        const int startLine = my.line;
+        const int startColumn = my.column;
+
+        if my.cursor >= my.source.len() {
+            return Token(TokenKind->EndOfFile(), SourceSpan(start, start),
+                         startLine, startColumn);
+        };
+
+        const char c = my.peek(0);
+        if my.isWhitespace(c) {
+            while my.isWhitespace(my.peek(0)) { my.advance(); };
+            return Token(TokenKind->Whitespace(), SourceSpan(start, my.cursor),
+                         startLine, startColumn);
+        };
+
+        if c == '/' & my.peek(1) == '/' {
+            my.advance();
+            my.advance();
+            while my.cursor < my.source.len() {
+                if my.peek(0) == '\n' | my.peek(0) == '\r' { break; };
+                my.advance();
+            };
+            return Token(TokenKind->Comment(), SourceSpan(start, my.cursor),
+                         startLine, startColumn);
+        };
+        if c == '/' & my.peek(1) == '*' {
+            my.advance();
+            my.advance();
+            while my.cursor < my.source.len() {
+                if my.peek(0) == '*' & my.peek(1) == '/' {
+                    my.advance();
+                    my.advance();
+                    break;
+                };
+                my.advance();
+            };
+            return Token(TokenKind->Comment(), SourceSpan(start, my.cursor),
+                         startLine, startColumn);
+        };
+
+        // Keep quoted literals whole, including interpolation source text.
+        if c == 'u' & my.peek(1) == '`' {
+            my.advance();
+            my.scanQuoted();
+            return Token(TokenKind->StringLiteral(), SourceSpan(start, my.cursor),
+                         startLine, startColumn);
+        };
+        if my.isQuote(c) {
+            my.scanQuoted();
+            return Token(TokenKind->StringLiteral(), SourceSpan(start, my.cursor),
+                         startLine, startColumn);
+        };
+
+        if my.isIdentifierStart(c) {
+            while my.isIdentifierPart(my.peek(0)) { my.advance(); };
+            return Token(TokenKind->Identifier(), SourceSpan(start, my.cursor),
+                         startLine, startColumn);
+        };
+
+        if my.isNumberStart() {
+            my.scanNumber();
+            return Token(TokenKind->Number(), SourceSpan(start, my.cursor),
+                         startLine, startColumn);
+        };
+
+        const bool pair = my.isSymbolPair(c, my.peek(1));
+        my.advance();
+        if pair { my.advance(); };
+        return Token(TokenKind->Symbol(), SourceSpan(start, my.cursor),
+                     startLine, startColumn);
+    };
+};

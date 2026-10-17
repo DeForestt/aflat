@@ -1,0 +1,41 @@
+
+.needs <std>
+
+export union TokenKind {
+    Identifier,
+    Number,
+    StringLiteral,
+    Symbol,
+    Whitespace,
+    Comment,
+    EndOfFile
+};
+
+export class SourceSpan {
+    int start = start;
+    int end = end;
+
+    fn init(const int start, const int end) -> SourceSpan {
+        return my;
+    };
+
+    fn len() -> int {
+        return my.end - my.start;
+    };
+};
+
+export class Token {
+    local TokenKind kind = $kind;
+    local SourceSpan span = $span;
+    int line = line;
+    int column = column;
+
+    fn init(
+        const local TokenKind &&kind,
+        const local SourceSpan &&span,
+        const int line,
+        const int column
+    ) -> Token {
+        return my;
+    };
+};

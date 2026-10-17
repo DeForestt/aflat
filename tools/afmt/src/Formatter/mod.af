@@ -1,0 +1,92 @@
+.needs <std>
+
+import uni_string from "uni_string";
+import Lexer from "../Lexer";
+
+export class Formatter {
+    local Lexer lexer = Lexer($source);
+    mutable int indentLevel = 0;
+
+    fn init(const uni_string &&source) -> Formatter {
+        return my;
+    };
+
+
+    fn sourceByte(const int index) -> char {
+      // we should really use try_at here so we get an option... for now it `at` returns '\0' when out of bounds... there are reasons that I am delaying fixing this so... trust me bro.
+      return my.lexer.source.at(index);
+    };
+
+
+    fn format() -> local uni_string {
+        let output = uni_string("");
+        mutable int indentLevel = 0;
+        mutable bool atLineStart = true;
+
+        while true {
+            const let token = my.lexer.nextToken();
+            match token.kind {
+                EndOfFile => break,
+
+                Whitespace => {
+                    for int i = token.span.start; i < token.span.end; i++ {
+                        const char c = my.sourceByte(i);
+
+                        if c == '\n' | c == '\r' {
+                            output.push_in_place(c);
+                            atLineStart = true;
+                        } else if !atLineStart {
+                            output.push_in_place(c);
+                        };
+                    };
+                    continue;
+                },
+
+                _ => {}
+            };
+
+            mutable bool opensIndent = false;
+            mutable bool closesIndent = false;
+
+            match token.kind {
+                Symbol => {
+                    if token.span.len() == 1 {
+                        const char c = my.sourceByte(token.span.start);
+                        opensIndent = (c == '{') | (c == '[');
+                        closesIndent = (c == '}') | (c == ']');
+                    };
+                },
+                _ => {}
+            };
+
+            if atLineStart {
+                mutable int level = indentLevel;
+
+                if closesIndent & level > 0 {
+                    level = level - 1;
+                };
+
+                for int i = 0; i < level * 4; i++ {
+                    output.push_in_place(' ');
+                };
+
+                atLineStart = false;
+            };
+
+            for int i = token.span.start; i < token.span.end; i++ {
+                output.push_in_place(my.sourceByte(i));
+            };
+
+            if opensIndent {
+                indentLevel = indentLevel + 1;
+            };
+
+            if closesIndent & indentLevel > 0 {
+                indentLevel = indentLevel - 1;
+            };
+        };
+
+        return output;
+    };
+};
+
