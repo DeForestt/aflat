@@ -9,36 +9,56 @@ on:
 env:
   BUILD_TYPE: Release
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.cache/ccache
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_COMPILERCHECK: content
+      CCACHE_MAXSIZE: 300M
     steps:
-      - uses: actions/checkout@v3
-      - name: Install Boost
-        run: sudo apt-get update; sudo apt-get install libboost-all-dev
-      - name: create Build Dir
-        run: mkdir build
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libboost-dev ccache
+      - name: Cache C++ compilation
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ubuntu-24.04-${{ runner.arch }}-ccache-v1-${{ hashFiles('CMakeLists.txt') }}-${{ github.sha }}
+          restore-keys: |
+            ubuntu-24.04-${{ runner.arch }}-ccache-v1-${{ hashFiles('CMakeLists.txt') }}-
       - name: Configure CMake
-        working-directory: ${{github.workspace}}/build
-        run: cmake ..
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          -DAFLAT_NATIVE_BUILD=OFF
       - name: Build compiler
-        run: cmake --build build
+        run: cmake --build build --parallel "$(nproc)"
+      - name: Compilation cache statistics
+        if: always()
+        run: ccache --show-stats
       - name: Build stdlib
-        run: bash ./rebuild-libs.sh
+        run: bash ./rebuild-libs.sh -j "$(nproc)"
       - name: Build project
         run: ./bin/aflat build
       - name: Test
         working-directory: ${{github.workspace}}/bin
-        run: ./a.test 
+        run: ./a.test
 
   check-format:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
-      - name: Install clang-format with npm
-        run: npm install -g clang-format
+      - uses: actions/checkout@v4
       - name: Check code formatting
         working-directory: ${{github.workspace}}
         run: |
-          find . -path ./Lib -prune -o -path ./test/catch.hpp -prune -o -regex '.*\.\(cpp\|hpp\)' -exec clang-format -style=file -i {} \+ -exec git add {} \+
-          git diff --cached --exit-code
+          git ls-files -z -- '*.cpp' '*.hpp' ':!:Lib/**' ':!:test/catch.hpp' |
+            xargs -0 -r clang-format-18 --style=file --dry-run --Werror

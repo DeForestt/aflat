@@ -35,7 +35,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push sandbox image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.sandbox
@@ -44,7 +44,8 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
             ${{ env.IMAGE_NAME }}:latest
-          no-cache: true
+          cache-from: type=gha,scope=aflat-sandbox
+          cache-to: type=gha,scope=aflat-sandbox,mode=max
 
       - name: Smoke test sandbox image
         run: docker run --rm "${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}" -c 'aflat --help >/dev/null 2>&1; code=$?; [ "$code" -eq 0 ] || [ "$code" -eq 1 ]'

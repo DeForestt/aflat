@@ -21,6 +21,7 @@
 /.nvimlog
 
 # Local build and repository configuration
+/.githooks/
 /.dockerignore
 /.gitattributes
 /CMakePresets.json
