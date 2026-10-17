@@ -6,93 +6,93 @@ import {Null, String, Number, Boolean} from "JSON" under json;
 import {wrap} from "Memory" under box;
 
 shared class JsonProperty {
-  contract {
-    JSON<any> _serialize = fn (const any __this) -> JSON json.Null();
-    int<any, any> __set = fn (const any __this, const any __value) -> int 0;
-    any<any> __get = fn (const any __this) -> any 0;
-    adr key = key;
-    any value;
-  };
+    contract {
+        JSON<any> _serialize = fn (const any __this) -> JSON json.Null();
+        int<any, any> __set = fn (const any __this, const any __value) -> int 0;
+        any<any> __get = fn (const any __this) -> any 0;
+        adr key = key;
+        any value;
+    };
 
-  fn toString() -> string {
-    return "JsonProperty";
-  };
+    fn toString() -> string {
+        return "JsonProperty";
+    };
 
-  fn serialize() -> JSON {
-    return my._serialize();
-  };
+    fn serialize() -> JSON {
+        return my._serialize();
+    };
 
-  fn key() -> adr {
-    return my.key;
-  };
+    fn key() -> adr {
+        return my.key;
+    };
 
-  fn init(const adr __foo, const any context, const adr key, const any default) {
-    return my;
-  };
+    fn init(const adr __foo, const any context, const adr key, const any default) {
+        return my;
+    };
 };
 
 types(T)
 shared safe class TypedJsonProperty signs JsonProperty {
-  T<T> foo = foo;
+    T<T> foo = foo;
 
-  fn sanitize(const T val) -> T {
-    const let foo = my.foo;
-    return foo(val);
-  };
-
-  when (T is adr)
-  fn serialize() -> JSON {
-    return json.String(my.value);
-  };
-
-  when (T is int)
-  fn serialize() -> JSON {
-    return json.Number(my.value$int);
-  };
-
-  when (T is bool)
-  fn serialize() -> JSON {
-    return json.Boolean(my.value$bool);
-  };
-
-  when (T is string)
-  fn serialize() -> JSON {
-    return json.String(my.value$string.cstr());
-  };
-
-  when (T is uni_string)
-  fn serialize() -> JSON {
-    return json.String(my.value$uni_string.get_buf());
-  };
-
-  when  (T has serialize)
-  fn serialize() -> JSON {
-    const T v = my.value;
-    return v.serialize();
-  };
-
-  fn init(const adr foo, const JsonSerializable context, const adr key, const T default) {
-    my.value = default;
-    my._serialize = fn (const any __this) -> JSON {
-      const Self typed = __this;
-      return typed.serialize();
+    fn sanitize(const T val) -> T {
+        const let foo = my.foo;
+        return foo(val);
     };
-    context.registerField(my);
-  };
-  
-  when (T is not unique)
-  fn get() -> T {
-    return my.value$T;
-  };
 
-  when (T is unique)
-  fn get() -> loan T {
-    return my.value;
-  };
+    when (T is adr)
+    fn serialize() -> JSON {
+        return json.String(my.value);
+    };
 
-  fn _set(const T v) {
-    my.value = my.sanitize(v);
-  };
+    when (T is int)
+    fn serialize() -> JSON {
+        return json.Number(my.value$int);
+    };
+
+    when (T is bool)
+    fn serialize() -> JSON {
+        return json.Boolean(my.value$bool);
+    };
+
+    when (T is string)
+    fn serialize() -> JSON {
+        return json.String(my.value$string.cstr());
+    };
+
+    when (T is uni_string)
+    fn serialize() -> JSON {
+        return json.String(my.value$uni_string.get_buf());
+    };
+
+    when  (T has serialize)
+    fn serialize() -> JSON {
+        const T v = my.value;
+        return v.serialize();
+    };
+
+    fn init(const adr foo, const JsonSerializable context, const adr key, const T default) {
+        my.value = default;
+        my._serialize = fn (const any __this) -> JSON {
+            const Self typed = __this;
+            return typed.serialize();
+        };
+        context.registerField(my);
+    };
+
+    when (T is not unique)
+    fn get() -> T {
+        return my.value$T;
+    };
+
+    when (T is unique)
+    fn get() -> loan T {
+        return my.value;
+    };
+
+    fn _set(const T v) {
+        my.value = my.sanitize(v);
+    };
 };
 
 transform json_field

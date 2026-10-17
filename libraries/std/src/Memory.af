@@ -8,36 +8,36 @@ import {accept, reject} from "Utils/result" under res;
  * Base helper that tracks reference counts with optional locking semantics.
  */
 shared class RefCounted {
-	private mutable int refCount = 0;
-	private mutable bool locked = false;
+    private mutable int refCount = 0;
+    private mutable bool locked = false;
 
-	fn get() -> loan Self {
-		my.refCount = my.refCount + 1;
-		return my;
-	};
+    fn get() -> loan Self {
+        my.refCount = my.refCount + 1;
+        return my;
+    };
 
-  sink fn get() -> Self {
-		my.refCount = my.refCount + 1;
-		return my;
-	};  
+    sink fn get() -> Self {
+        my.refCount = my.refCount + 1;
+        return my;
+    };
 
 
-	fn endScope() {
-		if my.locked return;
-		my.refCount = my.refCount - 1;
-		if (my.refCount <= 0) {
-			delete my;
-		};
-	};
+    fn endScope() {
+        if my.locked return;
+        my.refCount = my.refCount - 1;
+        if (my.refCount <= 0) {
+            delete my;
+        };
+    };
 
-	fn lock() {
-		my.locked = true;
-	};
+    fn lock() {
+        my.locked = true;
+    };
 
-	fn unlock() {
-		my.
-    locked = false;
-	};
+    fn unlock() {
+        my.
+        locked = false;
+    };
 };
 
 types(T)
@@ -45,35 +45,35 @@ types(T)
  * Heap box wrapper that owns a `T` and provides simple getters/setters.
  */
 shared class Box {
-	private mutable T value = $value;
+    private mutable T value = $value;
 
-	fn init(const T &&value) -> Self {
-		return my;
-	};
+    fn init(const T &&value) -> Self {
+        return my;
+    };
 
-	fn get() -> loan T {
-		return my.value;
-	};
+    fn get() -> loan T {
+        return my.value;
+    };
 
-	sink fn get() -> T {
-		return $my.value;
-	};
+    sink fn get() -> T {
+        return $my.value;
+    };
 
-	fn _set(const T &&value) -> loan Self {
-		my.value = $value;
-		return my;
-	};
+    fn _set(const T &&value) -> loan Self {
+        my.value = $value;
+        return my;
+    };
 
-	when (T is primitive)
-	fn toString() -> string {
-		return `Box({my.value})`;
-	};
+    when (T is primitive)
+    fn toString() -> string {
+        return `Box({my.value})`;
+    };
 
-	when (T is not primitive and T has toString)
-	fn toString() -> string {
-		const let renderedValue = my.value.toString();
-		return `Box({renderedValue})`;
-	};
+    when (T is not primitive and T has toString)
+    fn toString() -> string {
+        const let renderedValue = my.value.toString();
+        return `Box({renderedValue})`;
+    };
 };
 
 types(T)
@@ -81,149 +81,149 @@ types(T)
  * Heap owner wrapper that takes exclusive ownership of a `T`.
  */
 unique class owned {
-	private mutable T value = $value;
-  private mutable bool valid = true;
+    private mutable T value = $value;
+    private mutable bool valid = true;
 
-	fn init(const T &&value) -> Self {
-		return my;
-	};
+    fn init(const T &&value) -> Self {
+        return my;
+    };
 
 
-	safe fn view() -> loan immutable T {
-		return my.value;
-	};
+    safe fn view() -> loan immutable T {
+        return my.value;
+    };
 
-  sink fn release() -> T {
-    my.valid = false;
-    return $my.value;
-  };
+    sink fn release() -> T {
+        my.valid = false;
+        return $my.value;
+    };
 
-  sink fn release() -> T {
-    my.valid = false;
-    return $my.value;
-  };
+    sink fn release() -> T {
+        my.valid = false;
+        return $my.value;
+    };
 
-	fn _set(const T &&value) -> loan Self {
-		my.value = $value;
-		return my;
-	};
+    fn _set(const T &&value) -> loan Self {
+        my.value = $value;
+        return my;
+    };
 
-	fn toString() -> uni_string {
-		return `owned({my.value})`;
-	};
-	
-  fn del() {
-    if my.valid == false return;
-		when(T is adr)
-		af_free(my.value);
+    fn toString() -> uni_string {
+        return `owned({my.value})`;
+    };
 
-		when(T is not primitive and T is not adr)
-		delete my.value;
-	};
+    fn del() {
+        if my.valid == false return;
+        when(T is adr)
+        af_free(my.value);
+
+        when(T is not primitive and T is not adr)
+        delete my.value;
+    };
 
 };
 
 class byte_buffer {
-  private mutable adr buffer = af_malloc(size);
-  private mutable adr cursor = my.buffer;
-  private adr end = my.buffer + size;
-  int size = size;
+    private mutable adr buffer = af_malloc(size);
+    private mutable adr cursor = my.buffer;
+    private adr end = my.buffer + size;
+    int size = size;
 
-  fn init(const int size) {
-    return my;
-  };
-
-  fn peek(const int bytes) -> adr! {
-    if bytes < 0
-      return res.reject::<adr>("Negative byte count");
-    if my.cursor + bytes > my.end
-      return res.reject::<adr>("End of Buffer");
-    return my.cursor;
-  };
-
-  fn next(const int bytes) -> adr! {
-    const let last = my.cursor;
-    if bytes < 0
-      return res.reject::<adr>("Negative byte count");
-    if last + bytes > my.end
-      return res.reject::<adr>("End of Buffer");
-    my.cursor = my.cursor + bytes; 
-    return last;
-  };
-
-  fn write_bytes(immutable adr source, const int bytes) -> bool {
-    if bytes < 0 return false;
-    const adr next_cursor = my.cursor + bytes;
-    if next_cursor > my.end return false;
-    af_memcpy(my.cursor, source, bytes);
-    my.cursor = next_cursor;
-    return true;
-  };
-
-  // Zero-fill existing buffer space without allocating. On failure the cursor
-  // and buffer contents are unchanged.
-  fn zfill(const int bytes) -> bool {
-    if bytes < 0 return false;
-    if my.cursor + bytes > my.end return false;
-    mutable adr write = my.cursor;
-    const adr stop = write + bytes;
-    while write < stop {
-      write =: '\0';
-      write = write + 1;
+    fn init(const int size) {
+        return my;
     };
-    my.cursor = stop;
-    return true;
-  };
 
-  fn get() -> loan adr {
-    return my.buffer;
-  };
+    fn peek(const int bytes) -> adr! {
+        if bytes < 0
+        return res.reject::<adr>("Negative byte count");
+        if my.cursor + bytes > my.end
+        return res.reject::<adr>("End of Buffer");
+        return my.cursor;
+    };
 
-  sink fn release() -> adr {
-    const let buff = my.buffer;
-    my.buffer = NULL;
-    return buff;
-  };
+    fn next(const int bytes) -> adr! {
+        const let last = my.cursor;
+        if bytes < 0
+        return res.reject::<adr>("Negative byte count");
+        if last + bytes > my.end
+        return res.reject::<adr>("End of Buffer");
+        my.cursor = my.cursor + bytes;
+        return last;
+    };
 
-  fn del() {
-    if my.buffer != NULL {
-      af_free(my.buffer);
+    fn write_bytes(immutable adr source, const int bytes) -> bool {
+        if bytes < 0 return false;
+        const adr next_cursor = my.cursor + bytes;
+        if next_cursor > my.end return false;
+        af_memcpy(my.cursor, source, bytes);
+        my.cursor = next_cursor;
+        return true;
+    };
+
+    // Zero-fill existing buffer space without allocating. On failure the cursor
+    // and buffer contents are unchanged.
+    fn zfill(const int bytes) -> bool {
+        if bytes < 0 return false;
+        if my.cursor + bytes > my.end return false;
+        mutable adr write = my.cursor;
+        const adr stop = write + bytes;
+        while write < stop {
+            write =: '\0';
+            write = write + 1;
+        };
+        my.cursor = stop;
+        return true;
+    };
+
+    fn get() -> loan adr {
+        return my.buffer;
+    };
+
+    sink fn release() -> adr {
+        const let buff = my.buffer;
+        my.buffer = NULL;
+        return buff;
+    };
+
+    fn del() {
+        if my.buffer != NULL {
+            af_free(my.buffer);
+        }
     }
-  }
 };
 
 
 types(T)
 unique class view {
-  // note that we do not own T; we only keep a raw reference to it.
-  private mutable loan T value = value;
+    // note that we do not own T; we only keep a raw reference to it.
+    private mutable loan T value = value;
 
-  fn init(const T value) {
-    return my;
-  };
+    fn init(const T value) {
+        return my;
+    };
 
-  fn view() -> loan T {
-    return my.value;
-  };
+    fn view() -> loan T {
+        return my.value;
+    };
 
-  fn toString() -> string {
-    return `view({my.value})`;
-  };
+    fn toString() -> string {
+        return `view({my.value})`;
+    };
 };
 
 types(T)
 // Convenience helper to allocate a Box for a value.
 export fn wrap(const T &&value) -> Box::<T> {
-	return new Box::<T>($value);
+    return new Box::<T>($value);
 };
 
 types(T)
 // Convenience helper to allocate an owned wrapper for a value.
 export fn own(const T &&value) -> owned::<T> {
-	return new owned::<T>($value);
+    return new owned::<T>($value);
 };
 
 types(T)
 export fn loan(const T value) -> view::<T> {
-  return new view::<T>(value);
+    return new view::<T>(value);
 }

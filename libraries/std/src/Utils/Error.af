@@ -6,17 +6,17 @@ import Option from "Utils/Option";
 import Map from "Utils/Map";
 
 shared pedantic class Error {
-	contract {
-		private const string _typeName = new string(__typeName__);
-		private mutable adr _render = NULL;
+    contract {
+        private const string _typeName = new string(__typeName__);
+        private mutable adr _render = NULL;
         const adr data = NULL;
-	};
+    };
 
     private const string message = new string(message.cstr());
 
     public void setRender(const adr render) {
         if my._render != NULL
-            panic("Render already set.");
+        panic("Render already set.");
 
         my._render = render;
     };
@@ -36,7 +36,7 @@ shared pedantic class Error {
 
     public string render() {
         if my._render == NULL
-            return `Error: {my._typeName}`;
+        return `Error: {my._typeName}`;
         return my._render();
     };
 
@@ -47,7 +47,7 @@ shared pedantic class Error {
     public string toString() {
         return my.render();
     };
-    
+
     public fn kind() -> loan string {
         return my._typeName;
     };
@@ -55,12 +55,12 @@ shared pedantic class Error {
     public any match(const Map cases, *const any arg1, *const any arg2, *const any arg3, *const any arg4) {
         if cases.has(my._typeName.cstr()) {
             const adr foo = cases.get(my._typeName.cstr()).orElse(
-                fn () return panic("No case for error type")
+            fn () return panic("No case for error type")
             );
             return foo(my, arg1, arg2, arg3, arg4);
         } else {
             const adr foo = cases.get("_").orElse(
-                fn () return panic("No \"_\" case in match")
+            fn () return panic("No \"_\" case in match")
             );
             return foo(my, arg1, arg2, arg3, arg4);
         };

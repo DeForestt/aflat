@@ -116,47 +116,47 @@ export adr listen(const short port, const int bufferSize, const adr callback, co
 // Convert an HTTPMethod enum to its literal string.
 export string methodToString(const HTTPMethod method) {
     if method == HTTPMethod.GET 
-        return `GET`
+    return `GET`
     else if method == HTTPMethod.POST
-        return `POST`
+    return `POST`
     else if method == HTTPMethod.PUT
-        return `PUT`
+    return `PUT`
     else if method == HTTPMethod.DELETE
-        return `DELETE`
+    return `DELETE`
     else if method == HTTPMethod.HEAD
-        return `HEAD`
+    return `HEAD`
     else if method == HTTPMethod.OPTIONS
-        return `OPTIONS`
+    return `OPTIONS`
     else if method == HTTPMethod.TRACE
-        return `TRACE`
+    return `TRACE`
     else if method == HTTPMethod.CONNECT
-        return `CONNECT`
+    return `CONNECT`
     else
-        return `UNKNOWN`;
+    return `UNKNOWN`;
 };
 
 // Parse a method string into its enum representation.
 export HTTPMethod stringToMethod(const string method) {
     if method == "GET"
-        return HTTPMethod.GET
+    return HTTPMethod.GET
     else if method == "POST"
-        return HTTPMethod.POST
+    return HTTPMethod.POST
     else if method == "PUT"
-        return HTTPMethod.PUT
+    return HTTPMethod.PUT
     else if method == "DELETE"
-        return HTTPMethod.DELETE
+    return HTTPMethod.DELETE
     else if method == "HEAD"
-        return HTTPMethod.HEAD
+    return HTTPMethod.HEAD
     else if method == "OPTIONS"
-        return HTTPMethod.OPTIONS
+    return HTTPMethod.OPTIONS
     else if method == "TRACE"
-        return HTTPMethod.TRACE
+    return HTTPMethod.TRACE
     else if method == "CONNECT"
-        return HTTPMethod.CONNECT
+    return HTTPMethod.CONNECT
     else if method == "PATCH"
-        return HTTPMethod.PATCH 
+    return HTTPMethod.PATCH
     else
-        return HTTPMethod.GET;
+    return HTTPMethod.GET;
 };
 
 shared class HTTPHeader {
@@ -247,16 +247,16 @@ shared class HTTPMessage {
         };
 
         my.switch = false;
-        
+
         for int i = 0; i < lines.count(); i = i + 1 {
             const string line = lines.get(i).expect("Invalid HTTP message").copy();
             if line == "\n" {
                 my.switch = true;
                 continue;
             };
-            
+
             if i == 0
-                continue;
+            continue;
 
             if my.switch {
                 const string bodyLine = my.body + line;
@@ -290,9 +290,9 @@ shared class HTTPMessage {
     private void updateMap(const string mq) {
         const string key = mq.subString(0, mq.indexOf('='));
         const string value = if mq.indexOf('&') == -1
-            mq.subString(mq.indexOf('=') + 1, mq.len())
+        mq.subString(mq.indexOf('=') + 1, mq.len())
         else
-            mq.subString(mq.indexOf('=') + 1, mq.indexOf('&'));
+        mq.subString(mq.indexOf('=') + 1, mq.indexOf('&'));
 
         const let valptr = af_malloc(str.len(value.cstr()) + 1);
         af_memcpy(valptr, value.cstr(), str.len(value.cstr()) + 1);
@@ -309,7 +309,7 @@ shared class HTTPMessage {
                 cont = false;
                 break;
             };
-            
+
             my.updateMap(mq);
             if mq.indexOf('&') == -1 {
                 cont = false;
@@ -411,8 +411,8 @@ shared class HTTPMessage {
     };
 
     HTTPMessage init(const string rsp, * const bool isReq) {
-      my.origin = rsp.copy();
-      if isReq my.parseReq() else my.parse();
+        my.origin = rsp.copy();
+        if isReq my.parseReq() else my.parse();
     };
 
     fn toString() -> loan string {
@@ -582,7 +582,7 @@ shared class HTTPRequest {
         const string method = methodToString(my.method);
         const adr headers = my.headersBuffer();
         const int total = method.len() + 1 + endpoint.len() + 9 + 8 + host.len() + 2 +
-                          str.len(headers) + 2 + str.len(my.body) + 1;
+        str.len(headers) + 2 + str.len(my.body) + 1;
         const adr out = af_malloc(total);
         adr write = out;
 
@@ -632,12 +632,12 @@ shared class HTTPRequest {
         };
 
         const string errorMessage = if str.len(buffer) > 0
-            new string(buffer)
+        new string(buffer)
         else
-            new string("HTTP request failed");
+        new string("HTTP request failed");
         af_free(buffer);
         return res.reject::<HTTPMessage>(new Error(errorMessage));
-      };
+    };
 };
 
 shared class HTTPResponse {
@@ -658,7 +658,7 @@ shared class HTTPResponse {
 
         return my;
     };
-    
+
     HTTPResponse init(immutable adr body, immutable adr statusCode, const adr statusMessage) {
         my.body = new string(body);
         my.statusCode = new string(statusCode);

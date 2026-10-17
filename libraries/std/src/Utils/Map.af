@@ -13,7 +13,7 @@ shared class MapNode {
     mutable private MapNode left = NULL;
     mutable private MapNode right = NULL;
     mutable private any data = data;
-    
+
     const private adr key = af_malloc(st.len(key) + 1);
     const int hashVal = st.hash(key);
 

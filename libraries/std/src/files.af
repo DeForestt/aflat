@@ -17,41 +17,41 @@ fn strerror(int code) -> adr;
 
 // Error wrapper for failures encountered when opening files.
 shared class FileError signs Error {
-        int code = code * -1;
+    int code = code * -1;
 
-        private string renderMessage() : Render {
-                const adr myStr = strerror(my.code);
-                return `Failed To Open File Error Code ({my.code}): {myStr}`;
-        };
+    private string renderMessage() : Render {
+        const adr myStr = strerror(my.code);
+        return `Failed To Open File Error Code ({my.code}): {myStr}`;
+    };
 
-        fn init(const int code) -> FileError {
-                return my;
-        };
+    fn init(const int code) -> FileError {
+        return my;
+    };
 };
 
 // Error wrapper for read failures (including EOF conditions).
 shared class ReadError signs Error {
-        private int code = code * -1;
-        private string renderMessage() : Render {
-                if(my.code == -1) {
-                        return `End of File Reached`;
-                };
-                const adr myStr = strerror(my.code);
-                return `Failed To Read File Error Code ({my.code}): {myStr}`;
+    private int code = code * -1;
+    private string renderMessage() : Render {
+        if(my.code == -1) {
+            return `End of File Reached`;
         };
+        const adr myStr = strerror(my.code);
+        return `Failed To Read File Error Code ({my.code}): {myStr}`;
+    };
 
-        fn init(const int code) -> ReadError {
-                return my;
-        };
+    fn init(const int code) -> ReadError {
+        return my;
+    };
 };
 
 private int clearChar(adr pointer, const int size){
-        int i = 0;
-        while(i < size){
-                pointer =: '\0';
-                pointer = pointer + 1;
-                i = i + 1;
-        };
+    int i = 0;
+    while(i < size){
+        pointer =: '\0';
+        pointer = pointer + 1;
+        i = i + 1;
+    };
 };
 
 /**
@@ -78,7 +78,7 @@ shared class File{
      * heap-backed and remain alive until the returned task completes.
      */
     async fn readBytesAtAsync(const adr pointer, const int size,
-                              const long offset) -> long {
+    const long offset) -> long {
         const adr operation = NULL;
         pause af_io_read_begin(my.file, pointer, size, offset, ?operation);
         const long result = af_io_operation_result(operation);
@@ -91,7 +91,7 @@ shared class File{
      * remain alive and unchanged until the returned task completes.
      */
     async fn writeBytesAtAsync(const adr pointer, const int size,
-                               const long offset) -> long {
+    const long offset) -> long {
         const adr operation = NULL;
         pause af_io_write_begin(my.file, pointer, size, offset, ?operation);
         const long result = af_io_operation_result(operation);
@@ -151,13 +151,13 @@ shared class File{
         const char input = '\0';
         const char null = '\0';
         while(input != delim){
-                const int eof = sys_read(my.file, ?input, 1);
-                char inp;
-                inp = input;
-                pointer =: inp;
-                if(inp == delim){pointer =: null};
-                if(eof == 0){pointer =: null; return 1};
-                pointer = pointer + #1;
+            const int eof = sys_read(my.file, ?input, 1);
+            char inp;
+            inp = input;
+            pointer =: inp;
+            if(inp == delim){pointer =: null};
+            if(eof == 0){pointer =: null; return 1};
+            pointer = pointer + #1;
         };
         pointer =: null;
         return  0;
@@ -166,13 +166,13 @@ shared class File{
     fn toVector(const char delim) -> vector::<string> {
         const let l = new vector::<string>();
         const char[256] ibuff;
-        
+
         int eof = my.read(ibuff, delim);
 
         while (eof != 1){
-                l.push_back(new string(ibuff));
-                clearChar(ibuff, 256);
-                eof = my.read(ibuff, delim);
+            l.push_back(new string(ibuff));
+            clearChar(ibuff, 256);
+            eof = my.read(ibuff, delim);
         };
 
         l.push_back(new string(ibuff));
@@ -245,66 +245,66 @@ shared class File{
 
 // Create or truncate a file for read/write access, returning File! result.
 export fn createFile(immutable adr fileName) -> File! {
-        const File file = af_malloc(File);
-        const long flag = #2 | #512 | #64; // O_RDWR | O_CREAT | O_TRUNC
-        file.file = sys_open(fileName, flag, 0o0777);
-        file.it = true;
-        const int test = file.file;
-        if(test < 0) {
-                const let extra = file;
-                af_free($extra);
-                return res.reject::<File>(new FileError(test));
-        };
+    const File file = af_malloc(File);
+    const long flag = #2 | #512 | #64; // O_RDWR | O_CREAT | O_TRUNC
+    file.file = sys_open(fileName, flag, 0o0777);
+    file.it = true;
+    const int test = file.file;
+    if(test < 0) {
+        const let extra = file;
+        af_free($extra);
+        return res.reject::<File>(new FileError(test));
+    };
 
-        return file;
+    return file;
 };
 
 // Create a directory, returning true when created or already present.
 export fn createDirectory(immutable adr directoryName) -> bool! {
-        const int status = sys_mkdir(directoryName, 0o0777);
-        if status == 0 {
-                return res.accept(true);
-        };
-        if status == -17 { // EEXIST
-                return res.accept(true);
-        };
-        return res.reject::<bool>(new FileError(status));
+    const int status = sys_mkdir(directoryName, 0o0777);
+    if status == 0 {
+        return res.accept(true);
+    };
+    if status == -17 { // EEXIST
+        return res.accept(true);
+    };
+    return res.reject::<bool>(new FileError(status));
 };
 
 // Open an existing file for read/write access, returning File! result.
 export fn openFile(immutable adr fileName) -> File! {
-        const File file = af_malloc(File);
-        const long flag = #2;
-        file.file = sys_open(fileName, flag, 0o0777);
-        file.it = true;
-        const int test = file.file;
-        if(test < 0){
-                const let extra = file;
-                af_free($extra);
-                return res.reject::<File>(new FileError(test));
-        };
-        file.fileName = fileName;
-        return file;
+    const File file = af_malloc(File);
+    const long flag = #2;
+    file.file = sys_open(fileName, flag, 0o0777);
+    file.it = true;
+    const int test = file.file;
+    if(test < 0){
+        const let extra = file;
+        af_free($extra);
+        return res.reject::<File>(new FileError(test));
+    };
+    file.fileName = fileName;
+    return file;
 };
 
 
 shared safe dynamic pedantic class FileManager {
-  private mutable int refcount = 1;
-  private mutable bool usable = true;
+    private mutable int refcount = 1;
+    private mutable bool usable = true;
 
-  private mutable File f = NULL;
+    private mutable File f = NULL;
 
-  FileManager init(const adr filename) {
-    my.f = match createFile(filename) {
-        Ok(file) => file,
-        Err() => {
-            my.usable = false;
-        }
+    FileManager init(const adr filename) {
+        my.f = match createFile(filename) {
+            Ok(file) => file,
+            Err() => {
+                my.usable = false;
+            }
+        };
+        return my;
     };
-    return my;
-  };
 
-  loan FileManager cpy<<=>>(const FileManager other) {
+    loan FileManager cpy<<=>>(const FileManager other) {
         if (my.usable) {
             my.f.close();
             delete my.f;
@@ -315,99 +315,99 @@ shared safe dynamic pedantic class FileManager {
         other.usable = false;
         other.f = NULL;
         return my;
-  };
-
-  fn _call() -> File {
-    if !my.usable {
-        // undefined behavior
-        panic("Attempted to use an unusable file");  
     };
-    my.refcount = my.refcount - 1;
-    return $my.f;
-  };
 
-  int del() {
+    fn _call() -> File {
+        if !my.usable {
+            // undefined behavior
+            panic("Attempted to use an unusable file");
+        };
+        my.refcount = my.refcount - 1;
+        return $my.f;
+    };
+
+    int del() {
         if (my.usable) {
-                my.f.close();
-                delete my.f;
+            my.f.close();
+            delete my.f;
         };
         return 0;
-  };
-
-  void endScope() {
-    my.refcount = my.refcount - 1;
-    if (my.refcount == 0) {
-      my.del();
-      af_free(my);
     };
-  };
-  
-  loan FileManager get() {
-    my.refcount = my.refcount + 1;
-    return my;
-  };
+
+    void endScope() {
+        my.refcount = my.refcount - 1;
+        if (my.refcount == 0) {
+            my.del();
+            af_free(my);
+        };
+    };
+
+    loan FileManager get() {
+        my.refcount = my.refcount + 1;
+        return my;
+    };
 
 
 };
 
 class FileHandle {
-  private const uni_string file_name = $file_name;
-  private mutable option::<File> file = opt.None::<File>();
+    private const uni_string file_name = $file_name;
+    private mutable option::<File> file = opt.None::<File>();
 
-  fn init(const uni_string &&file_name) -> FileHandle {
-    return my;
-  };
-
-  sink fn open() -> FileHandle! {
-    match my.file {
-      Some => return res.reject::<FileHandle>("Attempted to open from a file handle that has already has an open file"),
-      None => {
-        const let old_option = my.file;
-        const let new_file = openFile(my.file_name.get_buf())!;
-        my.file = opt.Some($new_file);
-        delete old_option;
-        return $my;
-      }
+    fn init(const uni_string &&file_name) -> FileHandle {
+        return my;
     };
-  };
 
-  sink fn create() -> FileHandle! {
-    match my.file {
-      Some => return res.reject::<FileHandle>("Attempted to create from a file handle that has already has an open file"),
-      None => {
-        const let old_option = my.file;
-        const let new_file = createFile(my.file_name.get_buf())!;
-        my.file = opt.Some($new_file);
-        delete old_option;
-        return $my;
-      }
+    sink fn open() -> FileHandle! {
+        match my.file {
+            Some => return res.reject::<FileHandle>("Attempted to open from a file handle that has already has an open file"),
+            None => {
+                const let old_option = my.file;
+                const let new_file = openFile(my.file_name.get_buf())!;
+                my.file = opt.Some($new_file);
+                delete old_option;
+                return $my;
+            }
+        };
     };
-  };
 
-  fn get() -> &File! {
-    match my.file {
-      Some(file) => return file,
-      None => return res.reject::<&File>("Attempted to read from an uninitialized file"),
+    sink fn create() -> FileHandle! {
+        match my.file {
+            Some => return res.reject::<FileHandle>("Attempted to create from a file handle that has already has an open file"),
+            None => {
+                const let old_option = my.file;
+                const let new_file = createFile(my.file_name.get_buf())!;
+                my.file = opt.Some($new_file);
+                delete old_option;
+                return $my;
+            }
+        };
     };
-  }
 
-  sink fn close() -> int {
-    return 0;
-  };
+    fn get() -> &File! {
+        match my.file {
+            Some(file) => return file,
+            None => return res.reject::<&File>("Attempted to read from an uninitialized file"),
+        };
+    }
 
-  fn del() -> void {
-    match my.file {
-      Some(file) => {
-        file.close();
-        delete my.file;
-        delete my.file_name;
-        return;
-      },
-      None => {
-        delete my.file;
-        delete my.file_name;
-        return;
-      },
+    sink fn close() -> int {
+        return 0;
     };
-  }
+
+    fn del() -> void {
+        match my.file {
+            Some(file) => {
+                file.close();
+                delete my.file;
+                delete my.file_name;
+                return;
+            },
+            None => {
+                delete my.file;
+                delete my.file_name;
+                return;
+            },
+        };
+    }
 }

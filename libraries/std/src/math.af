@@ -11,134 +11,134 @@ export int exp(int base, int pow);
  * Simple linear congruential generator seeded from DateTime.
  */
 shared class Random {
-	private int seed;
+    private int seed;
 
-	int nextInt(const int n){
-		my.seed = (my.seed + 910230123);
-		int result = my.seed;
-		if result < 0
-		 	result = result  * -1;
-		return result % n;
-	};
+    int nextInt(const int n){
+        my.seed = (my.seed + 910230123);
+        int result = my.seed;
+        if result < 0
+        result = result  * -1;
+        return result % n;
+    };
 
-	Random init(){
-		const DateTime now = dt.Now();
-		my.seed = now.getSeconds();
+    Random init(){
+        const DateTime now = dt.Now();
+        my.seed = now.getSeconds();
 
-		delete now;
-		for int i = 0; i < my.nextInt(10); i++
-			my.nextInt(100);
-	};
+        delete now;
+        for int i = 0; i < my.nextInt(10); i++
+        my.nextInt(100);
+    };
 };
 
 // Integer exponentiation for positive powers.
 export int exp(const int base, const int pow){
-	int i = 0;
-	int output = 1;
-	while (i < pow){
-		output = output * base;
-		i = i + 1;
-	};
-	return output;
+    int i = 0;
+    int output = 1;
+    while (i < pow){
+        output = output * base;
+        i = i + 1;
+    };
+    return output;
 };
 
 // reinterpret float bits to integer while preserving sign and magnitude.
 export int floatToInt(const float f){
-	int i = f;
-	const int sign = i >> 31;
-	i = f;
-	int exponent = (i >> 23) & 255;
-	int mantissa = i & 8388607;
+    int i = f;
+    const int sign = i >> 31;
+    i = f;
+    int exponent = (i >> 23) & 255;
+    int mantissa = i & 8388607;
 
-	if exponent == 0 {
-		exponent = 1;
-		const int man = mantissa << 1;
-		mantissa = man;
-	} else {
-		exponent = exponent - 127;
-		mantissa = mantissa | 8388608;
-	};
+    if exponent == 0 {
+        exponent = 1;
+        const int man = mantissa << 1;
+        mantissa = man;
+    } else {
+        exponent = exponent - 127;
+        mantissa = mantissa | 8388608;
+    };
 
-	int whole = mantissa >> (23 - exponent);
-	if sign == 1
-		whole = whole * -1;
-	return whole;
+    int whole = mantissa >> (23 - exponent);
+    if sign == 1
+    whole = whole * -1;
+    return whole;
 };
 
 // naive integer to float conversion using repeated addition.
 export float intToFloat(const int i){
-	// for now, we will cheat by using a for loop
-	// TODO: implement this properly
-	float f = 0.0;
-	for int j = 0; j < i; j++
-		f = f + 1.0;
-	return f;
+    // for now, we will cheat by using a for loop
+    // TODO: implement this properly
+    float f = 0.0;
+    for int j = 0; j < i; j++
+    f = f + 1.0;
+    return f;
 };
 
 // Integer square root via linear search.
 export int sqrt(const int n){
-	int i = 0;
-	while (i * i < n)
-		i = i + 1;
-	return i;
+    int i = 0;
+    while (i * i < n)
+    i = i + 1;
+    return i;
 };
 
 // Exponentiation for 64-bit operands.
 export long longExp(const long base, const int pow){
-	int i = 0;
-	long output = 1;
-	while (i < pow){
-		output = output * base;
-		i = i + 1;
-	};
-	return output;
+    int i = 0;
+    long output = 1;
+    while (i < pow){
+        output = output * base;
+        i = i + 1;
+    };
+    return output;
 };
 
 // Single digit of a long division result for decimal expansion.
 export int longDiv(const int int1, const int int2){
-	int remainder = int1 % int2;
-	remainder = remainder * 10;
-	remainder = remainder / int2;
-	return remainder;
+    int remainder = int1 % int2;
+    remainder = remainder * 10;
+    remainder = remainder / int2;
+    return remainder;
 };
 
 // Absolute value helper for ints.
 export int abs(const int input){
-	if input < 0
-		return input * -1;
-	return input;
+    if input < 0
+    return input * -1;
+    return input;
 };
 
 // Float exponentiation implemented via repeated multiplication.
 export float floatExp(const float base, const int pow){
-	int i = 0;
-	let output = 1.0;
-	while (i < pow){
-		output = output * base;
-		i = i + 1;
-	};
-	return output;
+    int i = 0;
+    let output = 1.0;
+    while (i < pow){
+        output = output * base;
+        i = i + 1;
+    };
+    return output;
 };
 
 // Absolute value helper for floats.
 export float floatAbs(const float input){
-	if input < 0.0
-		return input * -1.0;
-	return input;
+    if input < 0.0
+    return input * -1.0;
+    return input;
 };
 
 // Newton's method for square root
 export float floatSqrt(const float n){
-	const let l = 0.00001;
-	let x = n;
-	int count = 0;
+    const let l = 0.00001;
+    let x = n;
+    int count = 0;
 
-	while (count < 100){
-		count++;
-		const let root = 0.5 * (x + (n / x));
-		if (floatAbs(root - x) < l)
-			return root;
-		x = root; 
-	};
-	return x;
+    while (count < 100){
+        count++;
+        const let root = 0.5 * (x + (n / x));
+        if (floatAbs(root - x) < l)
+        return root;
+        x = root;
+    };
+    return x;
 };

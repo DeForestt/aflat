@@ -5,34 +5,33 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
-    libboost-all-dev \
+    libboost-dev \
     bash \
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 ENV AFLAT_ROOT=/opt/aflat
-COPY . ${AFLAT_ROOT}
+COPY CMakeLists.txt ${AFLAT_ROOT}/
+COPY src ${AFLAT_ROOT}/src
 
 RUN cmake -S ${AFLAT_ROOT} -B ${AFLAT_ROOT}/build -DCMAKE_BUILD_TYPE=Release \
         -DAFLAT_NATIVE_BUILD=OFF \
-    && cmake --build ${AFLAT_ROOT}/build --target aflat \
-    && cd ${AFLAT_ROOT} && bash rebuild-libs.sh
+    && cmake --build ${AFLAT_ROOT}/build --target aflat --parallel "$(nproc)"
 
-
+COPY libraries ${AFLAT_ROOT}/libraries
+COPY rebuild-libs.sh ${AFLAT_ROOT}/
+RUN cd ${AFLAT_ROOT} && bash rebuild-libs.sh -j "$(nproc)"
 
 # ---- runtime ----
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc
-    
-RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
     libc6-dev \
-    bash
-
-RUN rm -rf /var/lib/apt/lists/*
+    bash \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV AFLAT_ROOT=/opt/aflat
 COPY --from=builder ${AFLAT_ROOT}/bin ${AFLAT_ROOT}/bin

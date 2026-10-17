@@ -6,18 +6,18 @@ import vector from "Collections/Vector";
 import {print, printHex} from "io" under io;
 
 shared class Observable {
-  vector::<Function> subscribers = [];
+    vector::<Function> subscribers = [];
 
-	fn subscribe(const Function f) -> void {
-		my.subscribers.push_back(f);
-		return;
-	};
-
-	private fn notify(const any event) -> void {
-    foreach r in my.subscribers {
-      r(event);
+    fn subscribe(const Function f) -> void {
+        my.subscribers.push_back(f);
+        return;
     };
-		return;
-	};
+
+    private fn notify(const any event) -> void {
+        foreach r in my.subscribers {
+            r(event);
+        };
+        return;
+    };
 
 };

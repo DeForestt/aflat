@@ -22,17 +22,17 @@ void af_allocator_unlock();
 //helpers
 
 adr findFreeBlock(const adr __last, int size) {
-  adr current = head;
-  size = size - 1;
-  while (current != NULL) {
-    const Block block = current;
-    if(block.free == 1){
-        if (block.size > size){return current};
-    };
+    adr current = head;
+    size = size - 1;
+    while (current != NULL) {
+        const Block block = current;
+        if(block.free == 1){
+            if (block.size > size){return current};
+        };
 
-    current = block.next;
-  };
-  return NULL;
+        current = block.next;
+    };
+    return NULL;
 };
 
 adr requestSpace(const adr last, const int size){
@@ -145,7 +145,7 @@ int arena_free(const adr &&ptr){
         af_allocator_unlock();
         return 0;
     };
-    
+
     const Block block = getBlock(ptr);
     if !ownsBlock(block) {
         af_allocator_unlock();
@@ -266,7 +266,7 @@ adr arena_realloc(const adr ptr, const int size){
         af_allocator_unlock();
         return ptr;
     };
-    
+
     const adr new_ptr = arena_malloc(size);
     if (new_ptr == NULL){
         af_allocator_unlock();
@@ -299,11 +299,11 @@ int arena_inspectHeap() {
 };
 
 Bit newBit(const int value){
-	const Bit b = af_malloc(Bit);
-	b.value = value;
-	b.last = NULL;
-	b.next = NULL;
-	return b;
+    const Bit b = af_malloc(Bit);
+    b.value = value;
+    b.last = NULL;
+    b.next = NULL;
+    return b;
 };
 
 Times newTimes(){
@@ -325,7 +325,7 @@ int assert(const bool cond, * const adr message){
     if !cond {
         io.print("Failed assert: ");
         if message != NULL
-            io.print(message);
+        io.print(message);
         io.print("\n");
         sys_exit(1);
     };
@@ -474,7 +474,7 @@ adr create(const int size, * const any value) {
     if (ptr == NULL) {
         return NULL;
     };
-    
+
     af_memcpy(ptr, ?value, size);
     return ptr;
 };

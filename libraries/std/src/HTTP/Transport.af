@@ -29,8 +29,8 @@ private fn token(const char c) -> bool {
     if (c >= 'A') & (c <= 'Z') return true;
     if (c >= '0') & (c <= '9') return true;
     return (c == '!') | (c == '#') | (c == '$') | (c == '%') | (c == '&') |
-        (c == '\'') | (c == '*') | (c == '+') | (c == '-') | (c == '.') |
-        (c == '^') | (c == '_') | (c == '`') | (c == '|') | (c == '~');
+    (c == '\'') | (c == '*') | (c == '+') | (c == '-') | (c == '.') |
+    (c == '^') | (c == '_') | (c == '`') | (c == '|') | (c == '~');
 };
 
 private fn headerIs(const adr buffer, const int start, const int size, const adr name) -> bool {
@@ -177,7 +177,7 @@ unique class RequestBuffer {
             if (expected < 0) {
                 while scan + 3 < used {
                     if (byteAt(my.bytes, scan) == '\r') & (byteAt(my.bytes, scan + 1) == '\n') &
-                        (byteAt(my.bytes, scan + 2) == '\r') & (byteAt(my.bytes, scan + 3) == '\n') {
+                    (byteAt(my.bytes, scan + 2) == '\r') & (byteAt(my.bytes, scan + 3) == '\n') {
                         expected = requestLength(my.bytes, scan + 4, options.maxRequestBytes);
                         if (expected < 0) return expected;
                         break;

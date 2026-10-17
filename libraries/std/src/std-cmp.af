@@ -59,11 +59,11 @@ int inspectHeap() {
 };
 
 Bit newBit(const int value){
-	const Bit b = af_malloc(Bit);
-	b.value = value;
-	b.last = NULL;
-	b.next = NULL;
-	return b;
+    const Bit b = af_malloc(Bit);
+    b.value = value;
+    b.last = NULL;
+    b.next = NULL;
+    return b;
 };
 
 Times newTimes(){
@@ -85,7 +85,7 @@ int assert(const bool cond, * const adr message){
     if !cond {
         io.print("Failed assert: ");
         if message != NULL
-            io.print(message);
+        io.print(message);
         io.print("\n");
         sys_exit(1);
     };
@@ -125,7 +125,7 @@ adr create(const int size, * const any value) {
     if (ptr == NULL) {
         return NULL;
     };
-    
+
     af_memcpy(ptr, ?value, size);
     return ptr;
 };

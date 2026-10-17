@@ -5,40 +5,40 @@ import {exp} from "math" under math;
 
 // Interpret an int as a char via pointer casting.
 export char ascii(const int input){
-	const adr caster = ?input;
-	return caster as char;
+    const adr caster = ?input;
+    return caster as char;
 };
 
 // Return the length of a null-terminated string.
 export int len(adr input){
-	const char null = ascii(0);
+    const char null = ascii(0);
     int i = 0;
-	while(input as char != null ){
+    while(input as char != null ){
         i = i + 1;
-		input = input + 1;
-	};
-	return i;
+        input = input + 1;
+    };
+    return i;
 };
 
 // Compare two strings for equality returning 1/0.
 export int str_comp(adr str1, adr str2){
-        const int len1 = len(str1);
-        const int len2 = len(str2);
+    const int len1 = len(str1);
+    const int len2 = len(str2);
 
-        if(len1 != len2){ return 0; };
+    if(len1 != len2){ return 0; };
 
-        int i = 0;
+    int i = 0;
 
-        while(i < len1){
-                i = i + 1;
-                const char ch1 = str1 as char;
-                const char ch2 = str2 as char;
-                if (ch1 != ch2){return 0;};
-                str2 = str2 + 1;
-                str1 = str1 + 1;
-        };
+    while(i < len1){
+        i = i + 1;
+        const char ch1 = str1 as char;
+        const char ch2 = str2 as char;
+        if (ch1 != ch2){return 0;};
+        str2 = str2 + 1;
+        str1 = str1 + 1;
+    };
 
-        return 1;
+    return 1;
 };
 
 // Concatenate str1 and str2 into pointer, null-terminating the result.
@@ -73,7 +73,7 @@ export int str_toInt(immutable adr input){
         mul = -1;
         cursor = cursor + #1;
     };
-    
+
     int factor = 0;
     const int size = len(cursor);
     int result = 0;
@@ -93,116 +93,116 @@ export int str_toInt(immutable adr input){
 
 // Convert an integer to a decimal string in-place.
 export int int_toString(int input, adr buffer){
-        int h = 0;
-        const int ten = 10;
-        int factor = 0;
-        int i = 0;
-        const char null = ascii(0);
+    int h = 0;
+    const int ten = 10;
+    int factor = 0;
+    int i = 0;
+    const char null = ascii(0);
 
-        if (input == 0){
-                buffer =: '0';
-                buffer = buffer + #1;
-                buffer =: null;
-                return 0;
-        };
-
-        if (input < 0){
-                buffer =: '-';
-                buffer = buffer + #1;
-                input = input * -1;
-        };
-
-        h = input * 1;
-        while (h != 0){
-                h = h / ten;
-                i = i + 1;
-        };
-
-        i = i - 1;
-
-        char out = ' ';
-        while (i > -1){
-                factor = math.exp(10, i);
-                h = input / factor;
-                out = io.toChar(h);
-                buffer =: out;
-                buffer = buffer + #1;
-                h = h * factor;
-                input = input - h;
-                i = i - 1;
-        };
+    if (input == 0){
+        buffer =: '0';
+        buffer = buffer + #1;
         buffer =: null;
         return 0;
+    };
+
+    if (input < 0){
+        buffer =: '-';
+        buffer = buffer + #1;
+        input = input * -1;
+    };
+
+    h = input * 1;
+    while (h != 0){
+        h = h / ten;
+        i = i + 1;
+    };
+
+    i = i - 1;
+
+    char out = ' ';
+    while (i > -1){
+        factor = math.exp(10, i);
+        h = input / factor;
+        out = io.toChar(h);
+        buffer =: out;
+        buffer = buffer + #1;
+        h = h * factor;
+        input = input - h;
+        i = i - 1;
+    };
+    buffer =: null;
+    return 0;
 };
 
 // Convert an integer to a zero-padded decimal string with a minimum width.
 export int int_toStringL0(int input, adr buffer, const int size){
-	// load the buffer with the string representation of the input with leading zeros
-	int h = 0;
-	const int ten = 10;
-	int factor = 0;
-	int i = 0;
+    // load the buffer with the string representation of the input with leading zeros
+    int h = 0;
+    const int ten = 10;
+    int factor = 0;
+    int i = 0;
 
-	// find the digits in the number
-	h = input * 1;
-	while h != 0 {
-		h = h / ten;
-		i = i + 1;
-	};
+    // find the digits in the number
+    h = input * 1;
+    while h != 0 {
+        h = h / ten;
+        i = i + 1;
+    };
 
-	// find the number of zeros to add
-	int zeros = size - i;
-	if  zeros < 0 {
-		zeros = 0;
-	};
+    // find the number of zeros to add
+    int zeros = size - i;
+    if  zeros < 0 {
+        zeros = 0;
+    };
 
-	h = 0;
-	i = 0;
+    h = 0;
+    i = 0;
 
-	// add the zeros
-	while  zeros > 0 {
-		buffer =: '0';
-		buffer = buffer + #1;
-		zeros = zeros - 1;
-	};
-
-
-	if (input == 0){
-		buffer =: '0';
-		buffer =: '\0';
-		buffer = buffer + #1;
-		return 0;
-	};
-
-	if (input < 0){
-		buffer =: '-';
-		buffer = buffer + #1;
-		input = input * -1;
-	};
-
-	h = input * 1;
-	while (h != 0){
-		h = h / ten;
-		i = i + 1;
-	};
-
-	i = i - 1;
-
-	char out = ' ';
+    // add the zeros
+    while  zeros > 0 {
+        buffer =: '0';
+        buffer = buffer + #1;
+        zeros = zeros - 1;
+    };
 
 
-	while (i > -1){
-		factor = math.exp(10, i);
-		h = input / factor;
-		out = io.toChar(h);
-		buffer =: out;
-		buffer = buffer + #1;
-		h = h * factor;
-		input = input - h;
-		i = i - 1;
-	};
+    if (input == 0){
+        buffer =: '0';
+        buffer =: '\0';
+        buffer = buffer + #1;
+        return 0;
+    };
 
-	buffer =: '\0';
+    if (input < 0){
+        buffer =: '-';
+        buffer = buffer + #1;
+        input = input * -1;
+    };
+
+    h = input * 1;
+    while (h != 0){
+        h = h / ten;
+        i = i + 1;
+    };
+
+    i = i - 1;
+
+    char out = ' ';
+
+
+    while (i > -1){
+        factor = math.exp(10, i);
+        h = input / factor;
+        out = io.toChar(h);
+        buffer =: out;
+        buffer = buffer + #1;
+        h = h * factor;
+        input = input - h;
+        i = i - 1;
+    };
+
+    buffer =: '\0';
 };
 
 // Return the first index of `find` or -1 if not present.
@@ -210,39 +210,39 @@ export int str_find(adr in, const char find){
     int i = 0;
     const int len = len(in);
     while(i < len){    
-		const char b = in as char;
+        const char b = in as char;
         if(b == find){return i};
         i = i + 1;
-		in = in + 1;
+        in = in + 1;
     };
     return -1;
 };
 
 // Split a string on a separator into two buffers.
 export int str_split(adr str_, const char sep, adr buff1, const adr buff2){
-	const char null = ascii(0);
-	char check = str_ as char;
+    const char null = ascii(0);
+    char check = str_ as char;
 
-	while(check != sep){
-		if (check == null){
-			return -1;
-		};
+    while(check != sep){
+        if (check == null){
+            return -1;
+        };
 
-		if (check != sep){
-			buff1 =: check;
-		};
-		str_ = str_ + 1;
-		buff1 = buff1 + 1;
-		check = str_ as char;
-	};
+        if (check != sep){
+            buff1 =: check;
+        };
+        str_ = str_ + 1;
+        buff1 = buff1 + 1;
+        check = str_ as char;
+    };
     buff1 =: null;
-	
-	str_ = str_ + 1;
-	if (str_ as char == null){
-		return -1;
-	};
-	str_concat("", str_, buff2);
-	return 0;
+
+    str_ = str_ + 1;
+    if (str_ as char == null){
+        return -1;
+    };
+    str_concat("", str_, buff2);
+    return 0;
 };
 
 // Convert a single digit character into its float representation.
@@ -264,358 +264,358 @@ export float charToFloat(const char a){
 // deprecated
 // Parse a decimal string into a float using base-10 arithmetic.
 export int str_toFloat(adr input){
-	const char[20] whole;
-	const char[20] decimal;
+    const char[20] whole;
+    const char[20] decimal;
 
-	str_split(input, '.', whole, decimal);
-	int len = len(whole);
-	len = len - 1;
+    str_split(input, '.', whole, decimal);
+    int len = len(whole);
+    len = len - 1;
 
-	float result = 0.00;
-	int i = 0;
-	float factor = 1.0;
-	while (i < len){
-		factor = factor * 10.0;
-		i = i + 1;
-	};
-	i = 0;
+    float result = 0.00;
+    int i = 0;
+    float factor = 1.0;
+    while (i < len){
+        factor = factor * 10.0;
+        i = i + 1;
+    };
+    i = 0;
 
-	float temp = 0.00;
-	const char nullChar = ascii(0);
-	char inChar = input as char;
-	const float ten = 10.0;
-	while (inChar != nullChar){
-		if (inChar == '.'){
-			factor = 0.1;
-		};
+    float temp = 0.00;
+    const char nullChar = ascii(0);
+    char inChar = input as char;
+    const float ten = 10.0;
+    while (inChar != nullChar){
+        if (inChar == '.'){
+            factor = 0.1;
+        };
 
-		if (inChar != '.'){
-			temp = charToFloat(inChar);
-			const float adder = result + 0.00;
-			result = temp * factor;
-			result = result + adder;
-			factor = factor / ten;
-		};
+        if (inChar != '.'){
+            temp = charToFloat(inChar);
+            const float adder = result + 0.00;
+            result = temp * factor;
+            result = result + adder;
+            factor = factor / ten;
+        };
 
-		input = input + 1;
-		inChar = input as char;
-		i = i + 1;
-	};
-	const adr cast = ?result;
-	float cleas = 0.0;
-	cleas = cleas * cleas;
-	const int ret = cast as int;
-	return ret;
+        input = input + 1;
+        inChar = input as char;
+        i = i + 1;
+    };
+    const adr cast = ?result;
+    float cleas = 0.0;
+    cleas = cleas * cleas;
+    const int ret = cast as int;
+    return ret;
 };
 
 // deprecated
 // Print a float stored in memory using io.printFloat.
 export int sPrintFloat(const adr input){
-	io.printFloat(input);
-	return 0;
+    io.printFloat(input);
+    return 0;
 };
 
 // deprecated
 // Convert a float pointed to by `input` into a string with optional sign.
 export int float_toString(const adr input, const adr obuff, const int signed){
 
-	if(input == #0){
-		return -1;
-	};
+    if(input == #0){
+        return -1;
+    };
 
-	const int percision = 6;
+    const int percision = 6;
 
-	mutable adr mySign = "";
-	// as input into a newBitint
-	const int inputInt = input as int;
-	if (inputInt == 0){
-		io.printInt(0);
-		return 0;
-	};
+    mutable adr mySign = "";
+    // as input into a newBitint
+    const int inputInt = input as int;
+    if (inputInt == 0){
+        io.printInt(0);
+        return 0;
+    };
 
-	//get the sign bit of the float
-	
-	const int sign = inputInt >> 31;
-	
-	//get the exponent of the float
-	
-	mutable int exponent = inputInt >> 23;
-	exponent = exponent & 255;
-	exponent = exponent - 127;
+    //get the sign bit of the float
 
+    const int sign = inputInt >> 31;
 
-	//get the mantissa of the float
-	mutable int mantissa = inputInt & 8388607;
+    //get the exponent of the float
+
+    mutable int exponent = inputInt >> 23;
+    exponent = exponent & 255;
+    exponent = exponent - 127;
 
 
-	//load the manissa bits into a linked list
-	const Bit head = newBit(0);
-
-	//printInt(head.value);
-	mutable Bit current = head;
-	mutable int j = 0;
-	while(j < 23){
-		const Bit nextBit = newBit(mantissa & 1);
-		//printInt(nextBit.value);
-		nextBit.last = ?current;
-		current.next = $nextBit;
-		current = current.next;
-		mantissa = mantissa >> 1;
-		j = j + 1;
-	};
-	
-	const Bit tailBit = newBit(1);
-	tailBit.last = ?current;
-	current.next = $tailBit;
-	current = current.next;
-
-	//find last element in the list
-	current = head;
-	while(current.next != #0){
-		current = current.next;
-	};
+    //get the mantissa of the float
+    mutable int mantissa = inputInt & 8388607;
 
 
-	//print the sign bit
-	if(sign != 0){
-		mySign = "-";
-	};
-	if(signed == 1){
-		if(sign == 0){
-			mySign = "+";
-		};
-	};
-	//convert bits to an int
-	int factor;
-	int result;
+    //load the manissa bits into a linked list
+    const Bit head = newBit(0);
 
-	factor = exponent;
-	int i = 0;
-	while(factor > -1){
-		if (current.value == 1){
-			const int append = math.exp(2, factor);
-			result = result + append;
-		};
-		current = current.last;
-		factor = factor - 1;
-		i = i + 1;
-	};
+    //printInt(head.value);
+    mutable Bit current = head;
+    mutable int j = 0;
+    while(j < 23){
+        const Bit nextBit = newBit(mantissa & 1);
+        //printInt(nextBit.value);
+        nextBit.last = ?current;
+        current.next = $nextBit;
+        current = current.next;
+        mantissa = mantissa >> 1;
+        j = j + 1;
+    };
 
-	factor = math.exp(10, percision);
-	factor = factor * 5;
-	const int two = 2;
-	int decimalPlacess = 0;
+    const Bit tailBit = newBit(1);
+    tailBit.last = ?current;
+    current.next = $tailBit;
+    current = current.next;
 
-	while(i < 23){
-		if (current.value == 1){
-			decimalPlacess = decimalPlacess + factor;
-		};
-		current = current.last;
-		factor = factor / two;
-		i = i + 1;
-	};
+    //find last element in the list
+    current = head;
+    while(current.next != #0){
+        current = current.next;
+    };
 
-	push ?mySign; io.printInt(result); io.print("."); io.printInt(decimalPlacess);
+
+    //print the sign bit
+    if(sign != 0){
+        mySign = "-";
+    };
+    if(signed == 1){
+        if(sign == 0){
+            mySign = "+";
+        };
+    };
+    //convert bits to an int
+    int factor;
+    int result;
+
+    factor = exponent;
+    int i = 0;
+    while(factor > -1){
+        if (current.value == 1){
+            const int append = math.exp(2, factor);
+            result = result + append;
+        };
+        current = current.last;
+        factor = factor - 1;
+        i = i + 1;
+    };
+
+    factor = math.exp(10, percision);
+    factor = factor * 5;
+    const int two = 2;
+    int decimalPlacess = 0;
+
+    while(i < 23){
+        if (current.value == 1){
+            decimalPlacess = decimalPlacess + factor;
+        };
+        current = current.last;
+        factor = factor / two;
+        i = i + 1;
+    };
+
+    push ?mySign; io.printInt(result); io.print("."); io.printInt(decimalPlacess);
     const char[10] rstring;
     int_toString(result, rstring);
     str_concat(mySign, rstring, obuff);
     str_concat(obuff, ".", obuff);
     int_toString(decimalPlacess, rstring);
     str_concat(obuff, rstring, obuff);
-	
-	return 0;	
+
+    return 0;
 };
 
 // Copy a substring of length `length` starting at `start` into buff and return it.
 export adr str_subString(const int start, const int length, mutable adr str_, const adr buff) {
-	mutable adr cleanStart = NULL;
-	cleanStart = ?start;
-	const int go = cleanStart as int;
-	str_ = str_ + go;
+    mutable adr cleanStart = NULL;
+    cleanStart = ?start;
+    const int go = cleanStart as int;
+    str_ = str_ + go;
 
-	mutable adr point;
-	point = buff;
+    mutable adr point;
+    point = buff;
 
-	int i = 0;
+    int i = 0;
 
-	while (i < length) {
-		const char ch = str_ as char;
-		point =: ch;
-		point = point + #1;
-		str_ = str_ + #1;
-		i = i + 1;
-	};
-	point =: '\0';
+    while (i < length) {
+        const char ch = str_ as char;
+        point =: ch;
+        point = point + #1;
+        str_ = str_ + #1;
+        i = i + 1;
+    };
+    point =: '\0';
 
-	return buff;
+    return buff;
 };
 
 // Reverse a string into the destination buffer.
 export adr str_reverse(const adr in, mutable adr buff){
-	const int length = len(in);
-	const adr buffPtr = buff;
-	
-	
-	for mutable int i = length - 1; i > -1; i = i - 1 {
-		
-		mutable adr pointer;
-		pointer = in + i;
-		
-		const char ch = pointer as char;
-		buff =: ch;
-		buff = buff + 1;
-	};
+    const int length = len(in);
+    const adr buffPtr = buff;
 
-	buff =: '\0';
 
-	return buffPtr;
+    for mutable int i = length - 1; i > -1; i = i - 1 {
+
+        mutable adr pointer;
+        pointer = in + i;
+
+        const char ch = pointer as char;
+        buff =: ch;
+        buff = buff + 1;
+    };
+
+    buff =: '\0';
+
+    return buffPtr;
 };
 
 // Return the character at index i or '\0' when out of bounds.
 export char str_at(mutable adr str_, const int i){
-	for mutable int j = 0; j < i; j = j + 1; {
-		str_ = str_ + #1;
-	};
-	const char ch = str_ as char;
-	return ch;
+    for mutable int j = 0; j < i; j = j + 1; {
+        str_ = str_ + #1;
+    };
+    const char ch = str_ as char;
+    return ch;
 };
 
 private fn u32(const int value) -> int {
-	return value;
+    return value;
 };
 
 private fn mul32(const int a, const int b) -> int {
-	return a * b;
+    return a * b;
 };
 
 private fn shl32(const int value, const int count) -> int {
-	return value << count;
+    return value << count;
 };
 
 private fn rotl32(const int value, const int count) -> int {
-	return (value << count) | (value >> (32 - count));
+    return (value << count) | (value >> (32 - count));
 };
 
 private fn byteAt(const adr key, const int index) -> int {
-	const int value = 0;
-	const adr valueAdr = ?value;
-	valueAdr =: str_at(key, index);
-	return value & 255;
+    const int value = 0;
+    const adr valueAdr = ?value;
+    valueAdr =: str_at(key, index);
+    return value & 255;
 };
 
 private fn read32(const adr key, const int index) -> int {
-	return u32(
-		byteAt(key, index) +
-		shl32(byteAt(key, index + 1), 8) +
-		shl32(byteAt(key, index + 2), 16) +
-		shl32(byteAt(key, index + 3), 24)
-	);
+    return u32(
+    byteAt(key, index) +
+    shl32(byteAt(key, index + 1), 8) +
+    shl32(byteAt(key, index + 2), 16) +
+    shl32(byteAt(key, index + 3), 24)
+    );
 };
 
 private fn xxhashRound(const int acc, const int input) -> int {
-	mutable int value = u32(acc + mul32(input, -2048144777));
-	value = rotl32(value, 13);
-	value = mul32(value, -1640531535);
-	return value;
+    mutable int value = u32(acc + mul32(input, -2048144777));
+    value = rotl32(value, 13);
+    value = mul32(value, -1640531535);
+    return value;
 };
 
 // Hash a null-terminated string using a 32-bit xxHash-style mix.
 export fn hash(const adr key) -> int {
-	const int PRIME32_1 = -1640531535;
-	const int PRIME32_2 = -2048144777;
-	const int PRIME32_3 = -1028477379;
-	const int PRIME32_4 = 668265263;
-	const int PRIME32_5 = 374761393;
-	const int seed = 0;
-	const int length = len(key);
-	mutable int index = 0;
-	mutable int hashValue = 0;
+    const int PRIME32_1 = -1640531535;
+    const int PRIME32_2 = -2048144777;
+    const int PRIME32_3 = -1028477379;
+    const int PRIME32_4 = 668265263;
+    const int PRIME32_5 = 374761393;
+    const int seed = 0;
+    const int length = len(key);
+    mutable int index = 0;
+    mutable int hashValue = 0;
 
-	if length >= 16 {
-		mutable int v1 = u32(seed + PRIME32_1 + PRIME32_2);
-		mutable int v2 = u32(seed + PRIME32_2);
-		mutable int v3 = u32(seed);
-		mutable int v4 = u32(seed - PRIME32_1);
+    if length >= 16 {
+        mutable int v1 = u32(seed + PRIME32_1 + PRIME32_2);
+        mutable int v2 = u32(seed + PRIME32_2);
+        mutable int v3 = u32(seed);
+        mutable int v4 = u32(seed - PRIME32_1);
 
-		while index <= length - 16 {
-			v1 = xxhashRound(v1, read32(key, index));
-			index = index + 4;
-			v2 = xxhashRound(v2, read32(key, index));
-			index = index + 4;
-			v3 = xxhashRound(v3, read32(key, index));
-			index = index + 4;
-			v4 = xxhashRound(v4, read32(key, index));
-			index = index + 4;
-		};
+        while index <= length - 16 {
+            v1 = xxhashRound(v1, read32(key, index));
+            index = index + 4;
+            v2 = xxhashRound(v2, read32(key, index));
+            index = index + 4;
+            v3 = xxhashRound(v3, read32(key, index));
+            index = index + 4;
+            v4 = xxhashRound(v4, read32(key, index));
+            index = index + 4;
+        };
 
-		hashValue = u32(
-			rotl32(v1, 1) +
-			rotl32(v2, 7) +
-			rotl32(v3, 12) +
-			rotl32(v4, 18)
-		);
-	} else {
-		hashValue = u32(seed + PRIME32_5);
-	};
+        hashValue = u32(
+        rotl32(v1, 1) +
+        rotl32(v2, 7) +
+        rotl32(v3, 12) +
+        rotl32(v4, 18)
+        );
+    } else {
+        hashValue = u32(seed + PRIME32_5);
+    };
 
-	hashValue = u32(hashValue + length);
+    hashValue = u32(hashValue + length);
 
-	while index <= length - 4 {
-		hashValue = u32(hashValue + mul32(read32(key, index), PRIME32_3));
-		hashValue = mul32(rotl32(hashValue, 17), PRIME32_4);
-		index = index + 4;
-	};
+    while index <= length - 4 {
+        hashValue = u32(hashValue + mul32(read32(key, index), PRIME32_3));
+        hashValue = mul32(rotl32(hashValue, 17), PRIME32_4);
+        index = index + 4;
+    };
 
-	while index < length {
-		hashValue = u32(hashValue + mul32(byteAt(key, index), PRIME32_5));
-		hashValue = mul32(rotl32(hashValue, 11), PRIME32_1);
-		index = index + 1;
-	};
+    while index < length {
+        hashValue = u32(hashValue + mul32(byteAt(key, index), PRIME32_5));
+        hashValue = mul32(rotl32(hashValue, 11), PRIME32_1);
+        index = index + 1;
+    };
 
-	hashValue = hashValue ^ (hashValue >> 15);
-	hashValue = mul32(hashValue, PRIME32_2);
-	hashValue = hashValue ^ (hashValue >> 13);
-	hashValue = mul32(hashValue, PRIME32_3);
-	hashValue = hashValue ^ (hashValue >> 16);
+    hashValue = hashValue ^ (hashValue >> 15);
+    hashValue = mul32(hashValue, PRIME32_2);
+    hashValue = hashValue ^ (hashValue >> 13);
+    hashValue = mul32(hashValue, PRIME32_3);
+    hashValue = hashValue ^ (hashValue >> 16);
 
-	return hashValue;
+    return hashValue;
 };
 
 // Invoke callback for each character in the string, passing index/args.
 export int str_forEach(const adr s, const int<char, *int, any> foo, const adr args){
-	const int in = len(s);
-	for mutable int i = 0; i < in; i = i + 1; {
-		const char c = str_at(s, i);
-		const int break = foo(c, i, args);
-		if (break == 1) {
-			return break;
-		};
-	};
-	return 0;
+    const int in = len(s);
+    for mutable int i = 0; i < in; i = i + 1; {
+        const char c = str_at(s, i);
+        const int break = foo(c, i, args);
+        if (break == 1) {
+            return break;
+        };
+    };
+    return 0;
 };
 
 // Determine if the char is an ASCII digit.
 export bool char_isDigit(const char c) {
-  return c >= '0' & c <= '9';
+    return c >= '0' & c <= '9';
 };
 
 // Determine if the char is an ASCII whitespace character.
 export bool char_isWhiteSpace(const char c) {
-  return (c == ' ') | (c == '\n') | (c == '\t') | (c == '\r');
+    return (c == ' ') | (c == '\n') | (c == '\t') | (c == '\r');
 };
 
 // Convert a hexadecimal string (with optional 0x) to an integer.
 export int hex_toInt(adr hex){
-	mutable int result = 0;
-	mutable int i = 0;
-	mutable char ch = hex as char;
-	while (ch != '\0'){
-		const int temp = io.toInt(ch);
-		const int adder = result * 16;
-		result = temp + adder;
-		hex = hex + 1;
-		ch = hex as char;
-		i = i + 1;
-	};
-	return result;
+    mutable int result = 0;
+    mutable int i = 0;
+    mutable char ch = hex as char;
+    while (ch != '\0'){
+        const int temp = io.toInt(ch);
+        const int adder = result * 16;
+        result = temp + adder;
+        hex = hex + 1;
+        ch = hex as char;
+        i = i + 1;
+    };
+    return result;
 };

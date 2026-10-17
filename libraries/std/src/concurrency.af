@@ -174,15 +174,15 @@ shared class MProcess signs Thread {
 };
 
 shared class FD {
-  public int out;
-  public int in;
+    public int out;
+    public int in;
 };
 
 /**
  * Reference-counted handle used to await background processes or transform
  * their outputs.
  */
- types(T)
+types(T)
 shared safe dynamic pedantic class AsyncResult {
     private MProcess p = NULL;
     private WorkerMode mode = WorkerMode.PROCESS;
@@ -196,11 +196,11 @@ shared safe dynamic pedantic class AsyncResult {
         my.thread = thread;
         return my;
     };
-    
+
     fn get() -> loan Self {
-	  	my.refcount = my.refcount + 1;
-		  return my;
-	  };
+        my.refcount = my.refcount + 1;
+        return my;
+    };
 
     void del() {
         if my.mode == WorkerMode.THREAD {
@@ -462,8 +462,8 @@ export fn makeShared(* const any arg1, * const any arg2, * const any arg3, * con
     const T val = mmap(NULL, T, 1 | 2, 1 | 32, -1, 0);
     when (T has init)
     if true {
-      const adr constructor = T.init;
-      constructor(val, arg1, arg2, arg3, arg4);
+        const adr constructor = T.init;
+        constructor(val, arg1, arg2, arg3, arg4);
     };
 
     return val;
@@ -480,7 +480,7 @@ shared private class AsyncThreadCall {
     public mutable any arg5 = NULL;
 
     fn init(const adr operation, * const any arg1, * const any arg2,
-            * const any arg3, * const any arg4) -> Self {
+    * const any arg3, * const any arg4) -> Self {
         return my;
     };
 
@@ -518,15 +518,15 @@ shared private class AsyncThreadCall {
 types(T)
 when (T is primitive)
 export async fn async_thread(
-        const T<*any, *any, *any, *any, *any> operation,
-        * const any arg1, * const any arg2, * const any arg3,
-        * const any arg4, * const any arg5) -> T {
+const T<*any, *any, *any, *any, *any> operation,
+* const any arg1, * const any arg2, * const any arg3,
+* const any arg4, * const any arg5) -> T {
     const AsyncThreadCall call = new AsyncThreadCall(
-        operation, arg1, arg2, arg3, arg4);
+    operation, arg1, arg2, arg3, arg4);
     call.arg5 = arg5;
     const adr nativeOperation = NULL;
     pause af_cpu_operation_begin(AsyncThreadCall.invokePrimitive, af_free,
-        call, NULL, NULL, ?nativeOperation);
+    call, NULL, NULL, ?nativeOperation);
     if nativeOperation == NULL {
         const adr fallback = call.invokePrimitive();
         const T fallbackValue = fallback as T;
@@ -548,15 +548,15 @@ export async fn async_thread(
 types(T)
 when (T is not primitive)
 export async fn async_thread(
-        const T<*any, *any, *any, *any, *any> operation,
-        * const any arg1, * const any arg2, * const any arg3,
-        * const any arg4, * const any arg5) -> T {
+const T<*any, *any, *any, *any, *any> operation,
+* const any arg1, * const any arg2, * const any arg3,
+* const any arg4, * const any arg5) -> T {
     const AsyncThreadCall call = new AsyncThreadCall(
-        operation, arg1, arg2, arg3, arg4);
+    operation, arg1, arg2, arg3, arg4);
     call.arg5 = arg5;
     const adr nativeOperation = NULL;
     pause af_cpu_operation_begin(AsyncThreadCall.invoke, NULL, call, NULL,
-        NULL, ?nativeOperation);
+    NULL, ?nativeOperation);
     if nativeOperation == NULL return call.invoke();
     mutable T outputValue = NULL;
     af_cpu_operation_take_result(nativeOperation, outputValue);
@@ -570,14 +570,14 @@ export async fn async_thread(
 types(T)
 when (T is not primitive)
 export async fn async_thread_disposable(
-        const adr operation,
-        const adr disposer, * const any arg1, * const any arg2,
-        * const any arg3, * const any arg4) -> T {
+const adr operation,
+const adr disposer, * const any arg1, * const any arg2,
+* const any arg3, * const any arg4) -> T {
     const AsyncThreadCall call = new AsyncThreadCall(
-        operation, arg1, arg2, arg3, arg4);
+    operation, arg1, arg2, arg3, arg4);
     const adr nativeOperation = NULL;
     pause af_cpu_operation_begin(AsyncThreadCall.invoke, disposer, call, NULL,
-        NULL, ?nativeOperation);
+    NULL, ?nativeOperation);
     if nativeOperation == NULL return call.invoke();
     mutable T outputValue = NULL;
     af_cpu_operation_take_result(nativeOperation, outputValue);

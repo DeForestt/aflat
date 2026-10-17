@@ -17,6 +17,6 @@ shared safe dynamic class Defer {
 
     int del() {
         if !my.dismissed
-            my._func();
+        my._func();
     };
 };

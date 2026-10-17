@@ -19,7 +19,7 @@ unique union result {
         match my {
             Ok(value) => return value,
             Err(err) => {
-              panic(msg.cstr());
+                panic(msg.cstr());
             }
         };
     };
@@ -29,7 +29,7 @@ unique union result {
         match my {
             Ok(value) => return value,
             Err(err) => {
-              panic(msg.cstr());
+                panic(msg.cstr());
             }
         };
     };
@@ -39,7 +39,7 @@ unique union result {
         match my {
             Ok(&&value) => return $value,
             Err(err) => {
-              panic(msg.cstr());
+                panic(msg.cstr());
             }
         };
     };
@@ -49,7 +49,7 @@ unique union result {
         match my {
             Ok(value) => return value,
             Err(err) => {
-              panic(msg);
+                panic(msg);
             }
         };
     };
@@ -59,7 +59,7 @@ unique union result {
         match my {
             Ok(value) => return value,
             Err(err) => {
-              panic(msg);
+                panic(msg);
             }
         };
     };
@@ -69,7 +69,7 @@ unique union result {
         match my {
             Ok(&&value) => return $value,
             Err(err) => {
-              panic(msg);
+                panic(msg);
             }
         };
     };
@@ -79,7 +79,7 @@ unique union result {
         match my {
             Ok(value) => return value,
             Err(err) => {
-              panic("Failed to unwrap value");
+                panic("Failed to unwrap value");
             }
         };
     };
@@ -89,7 +89,7 @@ unique union result {
         match my {
             Ok(value) => return value,
             Err(err) => {
-              panic("Failed to unwrap value");
+                panic("Failed to unwrap value");
             }
         };
     };
@@ -99,7 +99,7 @@ unique union result {
         match my {
             Ok(&&value) => return $value,
             Err(err) => {
-              panic("Failed to unwrap value");
+                panic("Failed to unwrap value");
             }
         };
     };
@@ -107,7 +107,7 @@ unique union result {
     safe fn expectErr(const string msg) -> loan Error {
         match my {
             Ok(_) => {
-              panic(msg.cstr());
+                panic(msg.cstr());
             },
             Err(err) => return err
         };
@@ -116,7 +116,7 @@ unique union result {
     safe sink fn expectErr(const string msg) -> Error {
         match my {
             Ok(_) => {
-              panic(msg.cstr());
+                panic(msg.cstr());
             },
             Err(&&err) => return $err
         };
@@ -125,7 +125,7 @@ unique union result {
     safe fn unwrapErr() -> loan Error {
         match my {
             Ok(_) => {
-              panic("Expected Err");
+                panic("Expected Err");
             },
             Err(err) => return err
         };
@@ -134,7 +134,7 @@ unique union result {
     safe sink fn unwrapErr() -> Error {
         match my {
             Ok(_) => {
-              panic("Expected Err");
+                panic("Expected Err");
             },
             Err(&&err) => return $err
         };
@@ -153,7 +153,7 @@ unique union result {
             Err() => return true
         };
     };
-    
+
     when(T is primitive)
     safe fn toString() -> string {
         match my {
@@ -169,7 +169,7 @@ unique union result {
             Err(err) => return `Err({err})`
         }
     };
-    
+
     when(T is not primitive and T missing toString)
     safe fn toString() -> string {
         match my {
