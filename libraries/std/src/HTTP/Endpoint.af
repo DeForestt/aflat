@@ -17,13 +17,13 @@ shared class Endpoint {
         const uni_string path = $path;
         mutable HTTPMethod method;
     };
-    
+
     Endpoint init(const any<Server, HTTPMessage> imp, const Server context, const uni_string &&path, const HTTPMethod method) {
         my.method = method;
         context.addEndpoint(my);
         return my;
     };
-    
+
     fn toString() -> string {
         const string path = my.path.toString();
         const string method = http.methodToString(my.method);

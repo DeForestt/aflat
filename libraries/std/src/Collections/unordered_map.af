@@ -11,455 +11,455 @@ import {len, str_comp, hash} from "strings" under st;
 
 types(K, V)
 shared class u_map_entry {
-	mutable K key = key;
-	mutable V value = $value;
+    mutable K key = key;
+    mutable V value = $value;
 
-	when (K is adr)
-	fn init(const adr key, const V &&value) -> Self {
-		my.key = af_malloc(st.len(key) + 1);
-		af_memcpy(my.key, key, st.len(key) + 1);
-		return my;
-	};
+    when (K is adr)
+    fn init(const adr key, const V &&value) -> Self {
+        my.key = af_malloc(st.len(key) + 1);
+        af_memcpy(my.key, key, st.len(key) + 1);
+        return my;
+    };
 
-	when (K is not adr)
-	fn init(K key, const V &&value) -> Self {
-		return my;
-	};
+    when (K is not adr)
+    fn init(K key, const V &&value) -> Self {
+        return my;
+    };
 
-	when (K is adr and V is primitive)
-	fn del() -> void {
-		af_free(my.key);
-	};
+    when (K is adr and V is primitive)
+    fn del() -> void {
+        af_free(my.key);
+    };
 
-	when (K is adr and V is not primitive)
-	fn del() -> void {
-		delete my.value;
-		af_free(my.key);
-	};
+    when (K is adr and V is not primitive)
+    fn del() -> void {
+        delete my.value;
+        af_free(my.key);
+    };
 
-	when (K is not adr and V is primitive)
-	fn del() -> void {
-		return;
-	};
+    when (K is not adr and V is primitive)
+    fn del() -> void {
+        return;
+    };
 
-	when (K is not adr and V is not primitive)
-	fn del() -> void {
-		delete my.value;
-	};
+    when (K is not adr and V is not primitive)
+    fn del() -> void {
+        delete my.value;
+    };
 
-	fn toString() -> string {
-		return `u_map_entry({my.key}, {my.value})`;
-	};
+    fn toString() -> string {
+        return `u_map_entry({my.key}, {my.value})`;
+    };
 };
 
 types(K, V)
 shared class u_map_bucket {
-	vector::<u_map_entry::<K, V>> entries = new vector::<u_map_entry::<K, V>>();
+    vector::<u_map_entry::<K, V>> entries = new vector::<u_map_entry::<K, V>>();
 
-	when (K is adr)
-	fn matches(const adr left, const adr right) -> bool {
-		return st.str_comp(left, right) == 1;
-	};
+    when (K is adr)
+    fn matches(const adr left, const adr right) -> bool {
+        return st.str_comp(left, right) == 1;
+    };
 
-	when (K is not adr and K has compare)
-	fn matches(const K left, const K right) -> bool {
-		return left.compare(right);
-	};
+    when (K is not adr and K has compare)
+    fn matches(const K left, const K right) -> bool {
+        return left.compare(right);
+    };
 
-	when (K is not adr and K missing compare)
-	fn matches(const K left, const K right) -> bool {
-		return left == right;
-	};
+    when (K is not adr and K missing compare)
+    fn matches(const K left, const K right) -> bool {
+        return left == right;
+    };
 
-	fn init() -> Self {
-		return my;
-	};
+    fn init() -> Self {
+        return my;
+    };
 
-	fn replace(const int index, const V &&value) -> bool {
-		const u_map_entry::<K, V> entry =
-			my.entries.get(index).expect("searched for non-existing unordered_map entry"$adr);
-		// Replace the stored object rather than invoking V's assignment setter.
-		// Construct first so the existing key remains available to the initializer.
-		const u_map_entry::<K, V> replacement =
-			new u_map_entry::<K, V>(entry.key, $value);
-		delete entry;
-		my.entries.set(index, replacement);
-		// The vector now owns the replacement's fields, as in add().
-		af_free(replacement);
-		return false;
-	};
+    fn replace(const int index, const V &&value) -> bool {
+        const u_map_entry::<K, V> entry =
+        my.entries.get(index).expect("searched for non-existing unordered_map entry"$adr);
+        // Replace the stored object rather than invoking V's assignment setter.
+        // Construct first so the existing key remains available to the initializer.
+        const u_map_entry::<K, V> replacement =
+        new u_map_entry::<K, V>(entry.key, $value);
+        delete entry;
+        my.entries.set(index, replacement);
+        // The vector now owns the replacement's fields, as in add().
+        af_free(replacement);
+        return false;
+    };
 
-	fn add(const K key, const V &&value) -> bool {
-		for int i = 0; i < my.entries.count(); i++ {
-			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
-			if my.matches(entry.key, key) {
-				return my.replace(i, $value);
-			};
-		};
+    fn add(const K key, const V &&value) -> bool {
+        for int i = 0; i < my.entries.count(); i++ {
+            const u_map_entry::<K, V> entry =
+            my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
+            if my.matches(entry.key, key) {
+                return my.replace(i, $value);
+            };
+        };
 
-		const u_map_entry::<K, V> entry =
-			new u_map_entry::<K, V>(key, $value);
-		my.entries.push_back(entry);
-		// The entry's fields now live inline in the vector buffer. Release
-		// only the temporary heap shell; the bucket owns the copied fields.
-		af_free(entry);
-		return true;
-	};
+        const u_map_entry::<K, V> entry =
+        new u_map_entry::<K, V>(key, $value);
+        my.entries.push_back(entry);
+        // The entry's fields now live inline in the vector buffer. Release
+        // only the temporary heap shell; the bucket owns the copied fields.
+        af_free(entry);
+        return true;
+    };
 
-	when (K is adr and V is primitive)
-	fn get(const adr key) -> option::<V> {
-		for int i = 0; i < my.entries.count(); i++ {
-			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
-			if my.matches(entry.key, key) {
-				return opt.Some::<V>(entry.value);
-			};
-		};
+    when (K is adr and V is primitive)
+    fn get(const adr key) -> option::<V> {
+        for int i = 0; i < my.entries.count(); i++ {
+            const u_map_entry::<K, V> entry =
+            my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
+            if my.matches(entry.key, key) {
+                return opt.Some::<V>(entry.value);
+            };
+        };
 
-		return opt.None::<V>();
-	};
+        return opt.None::<V>();
+    };
 
-	when (K is adr and V is not primitive and V has __copy__)
-	fn get(const adr key) -> option::<V> {
-		for int i = 0; i < my.entries.count(); i++ {
-			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
-			if my.matches(entry.key, key) {
-				return opt.Some::<V>(entry.value);
-			};
-		};
+    when (K is adr and V is not primitive and V has __copy__)
+    fn get(const adr key) -> option::<V> {
+        for int i = 0; i < my.entries.count(); i++ {
+            const u_map_entry::<K, V> entry =
+            my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
+            if my.matches(entry.key, key) {
+                return opt.Some::<V>(entry.value);
+            };
+        };
 
-		return opt.None::<V>();
-	};
+        return opt.None::<V>();
+    };
 
-	when (K is adr and V is not primitive and V missing __copy__)
-	fn get(const adr key) -> option::<&V> {
-		for int i = 0; i < my.entries.count(); i++ {
-			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
-			if my.matches(entry.key, key) {
-				return opt.Some::<&V>(entry.value);
-			};
-		};
+    when (K is adr and V is not primitive and V missing __copy__)
+    fn get(const adr key) -> option::<&V> {
+        for int i = 0; i < my.entries.count(); i++ {
+            const u_map_entry::<K, V> entry =
+            my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
+            if my.matches(entry.key, key) {
+                return opt.Some::<&V>(entry.value);
+            };
+        };
 
-		return opt.None::<&V>();
-	};
+        return opt.None::<&V>();
+    };
 
-	when (K is not adr and V is primitive)
-	fn get(const K key) -> option::<V> {
-		for int i = 0; i < my.entries.count(); i++ {
-			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
-			if my.matches(entry.key, key) {
-				return opt.Some::<V>(entry.value);
-			};
-		};
+    when (K is not adr and V is primitive)
+    fn get(const K key) -> option::<V> {
+        for int i = 0; i < my.entries.count(); i++ {
+            const u_map_entry::<K, V> entry =
+            my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
+            if my.matches(entry.key, key) {
+                return opt.Some::<V>(entry.value);
+            };
+        };
 
-		return opt.None::<V>();
-	};
+        return opt.None::<V>();
+    };
 
-	when (K is not adr and V is not primitive and V has __copy__)
-	fn get(const K key) -> option::<V> {
-		for int i = 0; i < my.entries.count(); i++ {
-			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
-			if my.matches(entry.key, key) {
-				return opt.Some::<V>(entry.value);
-			};
-		};
+    when (K is not adr and V is not primitive and V has __copy__)
+    fn get(const K key) -> option::<V> {
+        for int i = 0; i < my.entries.count(); i++ {
+            const u_map_entry::<K, V> entry =
+            my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
+            if my.matches(entry.key, key) {
+                return opt.Some::<V>(entry.value);
+            };
+        };
 
-		return opt.None::<V>();
-	};
+        return opt.None::<V>();
+    };
 
-	when (K is not adr and V is not primitive and V missing __copy__)
-	fn get(const K key) -> option::<&V> {
-		for int i = 0; i < my.entries.count(); i++ {
-			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
-			if my.matches(entry.key, key) {
-				return opt.Some::<&V>(entry.value);
-			};
-		};
+    when (K is not adr and V is not primitive and V missing __copy__)
+    fn get(const K key) -> option::<&V> {
+        for int i = 0; i < my.entries.count(); i++ {
+            const u_map_entry::<K, V> entry =
+            my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
+            if my.matches(entry.key, key) {
+                return opt.Some::<&V>(entry.value);
+            };
+        };
 
-		return opt.None::<&V>();
-	};
+        return opt.None::<&V>();
+    };
 
-	fn keysInto(const vector::<K> keys) -> void {
-		for int i = 0; i < my.entries.count(); i++ {
-			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
-			keys.push_back(entry.key);
-		};
-		return;
-	};
+    fn keysInto(const vector::<K> keys) -> void {
+        for int i = 0; i < my.entries.count(); i++ {
+            const u_map_entry::<K, V> entry =
+            my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
+            keys.push_back(entry.key);
+        };
+        return;
+    };
 
-	fn valuesInto(const vector::<V> values) -> void {
-		for int i = 0; i < my.entries.count(); i++ {
-			const u_map_entry::<K, V> entry =
-				my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
-			values.push_back(entry.value);
-		};
-		return;
-	};
+    fn valuesInto(const vector::<V> values) -> void {
+        for int i = 0; i < my.entries.count(); i++ {
+            const u_map_entry::<K, V> entry =
+            my.entries.get(i).expect("searched for non-existing unordered_map entry"$adr);
+            values.push_back(entry.value);
+        };
+        return;
+    };
 
-	fn entryAt(const int index) -> local option::<&u_map_entry::<K, V>> {
-		return my.entries.get_unlocked(index);
-	};
+    fn entryAt(const int index) -> local option::<&u_map_entry::<K, V>> {
+        return my.entries.get_unlocked(index);
+    };
 
-	fn clear() -> void {
-		for int i = 0; i < my.entries.count(); i++ {
-			const u_map_entry::<K, V> entry =
-				my.entries.get_unlocked(i).expect("searched for non-existing unordered_map entry"$adr);
-			delete entry;
-		};
-		const vector::<u_map_entry::<K, V>> previous = my.entries;
-		my.entries = new vector::<u_map_entry::<K, V>>();
-		delete previous;
-		return;
-	};
+    fn clear() -> void {
+        for int i = 0; i < my.entries.count(); i++ {
+            const u_map_entry::<K, V> entry =
+            my.entries.get_unlocked(i).expect("searched for non-existing unordered_map entry"$adr);
+            delete entry;
+        };
+        const vector::<u_map_entry::<K, V>> previous = my.entries;
+        my.entries = new vector::<u_map_entry::<K, V>>();
+        delete previous;
+        return;
+    };
 
-	fn del() -> void {
-		for int i = 0; i < my.entries.count(); i++ {
-			const u_map_entry::<K, V> entry =
-				my.entries.get_unlocked(i).expect("searched for non-existing unordered_map entry"$adr);
-			delete entry;
-		};
-		delete my.entries;
-	};
+    fn del() -> void {
+        for int i = 0; i < my.entries.count(); i++ {
+            const u_map_entry::<K, V> entry =
+            my.entries.get_unlocked(i).expect("searched for non-existing unordered_map entry"$adr);
+            delete entry;
+        };
+        delete my.entries;
+    };
 
-	fn toString() -> string {
-		return `u_map_bucket(count={my.entries.count()})`;
-	};
+    fn toString() -> string {
+        return `u_map_bucket(count={my.entries.count()})`;
+    };
 };
 
 types(K, V)
 unique class unordered_map {
-	private vector::<u_map_bucket::<K, V>> buckets = new vector::<u_map_bucket::<K, V>>(8);
-	private int capasity = 8;
-	private mutable int count = 0;
-	private mutable int iteratorBucket = 0;
-	private mutable int iteratorEntry = 0;
-	private Lock mutex = new Lock();
+    private vector::<u_map_bucket::<K, V>> buckets = new vector::<u_map_bucket::<K, V>>(8);
+    private int capasity = 8;
+    private mutable int count = 0;
+    private mutable int iteratorBucket = 0;
+    private mutable int iteratorEntry = 0;
+    private Lock mutex = new Lock();
 
-	fn init() -> Self {
-		for int i = 0; i < my.capasity; i++ {
-			const u_map_bucket::<K, V> bucket =
-				new u_map_bucket::<K, V>();
-			my.buckets.push_back(bucket);
-			// The bucket's fields now live inline in the vector buffer. Release
-			// only the temporary heap shell; the map owns the copied fields.
-			af_free(bucket);
-		};
-		return my;
-	};
+    fn init() -> Self {
+        for int i = 0; i < my.capasity; i++ {
+            const u_map_bucket::<K, V> bucket =
+            new u_map_bucket::<K, V>();
+            my.buckets.push_back(bucket);
+            // The bucket's fields now live inline in the vector buffer. Release
+            // only the temporary heap shell; the map owns the copied fields.
+            af_free(bucket);
+        };
+        return my;
+    };
 
-	when (K is adr)
-	fn hash(const adr key) -> int {
-		return st.hash(key);
-	};
+    when (K is adr)
+    fn hash(const adr key) -> int {
+        return st.hash(key);
+    };
 
-	when (K is not adr)
-	fn hash(const K key) -> int {
-		return key.hash();
-	};
+    when (K is not adr)
+    fn hash(const K key) -> int {
+        return key.hash();
+    };
 
-	fn index(const K key) -> int {
-		mutable int h = my.hash(key);
-		if h < 0
-			h = h * -1;
+    fn index(const K key) -> int {
+        mutable int h = my.hash(key);
+        if h < 0
+        h = h * -1;
 
-		return h % my.capasity;
-	};
+        return h % my.capasity;
+    };
 
-	safe fn count() -> int {
-		const LockGuard __guard = my.mutex.guard();
-		return my.count;
-	};
+    safe fn count() -> int {
+        const LockGuard __guard = my.mutex.guard();
+        return my.count;
+    };
 
-	fn set(const K key, const V &&value) -> loan Self {
-		const LockGuard __guard = my.mutex.guard();
-		const int index = my.index(key);
-		const u_map_bucket::<K, V> bucket =
-			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
-		const bool added = bucket.add(key, $value);
-		my.buckets.set(index, bucket);
-		if added {
-			my.count = my.count + 1;
-		};
-		return my;
-	};
+    fn set(const K key, const V &&value) -> loan Self {
+        const LockGuard __guard = my.mutex.guard();
+        const int index = my.index(key);
+        const u_map_bucket::<K, V> bucket =
+        my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
+        const bool added = bucket.add(key, $value);
+        my.buckets.set(index, bucket);
+        if added {
+            my.count = my.count + 1;
+        };
+        return my;
+    };
 
-	sink fn set(const K key, const V &&value) -> Self {
-		const LockGuard __guard = my.mutex.guard();
-		const int index = my.index(key);
-		const u_map_bucket::<K, V> bucket =
-			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
-		const bool added = bucket.add(key, $value);
-		my.buckets.set(index, bucket);
-		if added {
-			my.count = my.count + 1;
-		};
-		return my;
-	};
+    sink fn set(const K key, const V &&value) -> Self {
+        const LockGuard __guard = my.mutex.guard();
+        const int index = my.index(key);
+        const u_map_bucket::<K, V> bucket =
+        my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
+        const bool added = bucket.add(key, $value);
+        my.buckets.set(index, bucket);
+        if added {
+            my.count = my.count + 1;
+        };
+        return my;
+    };
 
-	when (K is adr and V is primitive)
-	fn get(const adr key) -> option::<V> {
-		const LockGuard __guard = my.mutex.guard();
-		const int index = my.index(key);
-		const u_map_bucket::<K, V> bucket =
-			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
-		return bucket.get(key);
-	};
+    when (K is adr and V is primitive)
+    fn get(const adr key) -> option::<V> {
+        const LockGuard __guard = my.mutex.guard();
+        const int index = my.index(key);
+        const u_map_bucket::<K, V> bucket =
+        my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
+        return bucket.get(key);
+    };
 
-	when (K is adr and V is not primitive and V has __copy__)
-	fn get(const adr key) -> option::<V> {
-		const LockGuard __guard = my.mutex.guard();
-		const int index = my.index(key);
-		const u_map_bucket::<K, V> bucket =
-			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
-		return bucket.get(key);
-	};
+    when (K is adr and V is not primitive and V has __copy__)
+    fn get(const adr key) -> option::<V> {
+        const LockGuard __guard = my.mutex.guard();
+        const int index = my.index(key);
+        const u_map_bucket::<K, V> bucket =
+        my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
+        return bucket.get(key);
+    };
 
-	when (K is adr and V is not primitive and V missing __copy__)
-	fn get(const adr key) -> option::<&V> {
-		const LockGuard __guard = my.mutex.guard();
-		const int index = my.index(key);
-		const u_map_bucket::<K, V> bucket =
-			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
-		return bucket.get(key);
-	};
+    when (K is adr and V is not primitive and V missing __copy__)
+    fn get(const adr key) -> option::<&V> {
+        const LockGuard __guard = my.mutex.guard();
+        const int index = my.index(key);
+        const u_map_bucket::<K, V> bucket =
+        my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
+        return bucket.get(key);
+    };
 
-	when (K is not adr and V is primitive)
-	fn get(const K key) -> option::<V> {
-		const LockGuard __guard = my.mutex.guard();
-		const int index = my.index(key);
-		const u_map_bucket::<K, V> bucket =
-			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
-		return bucket.get(key);
-	};
+    when (K is not adr and V is primitive)
+    fn get(const K key) -> option::<V> {
+        const LockGuard __guard = my.mutex.guard();
+        const int index = my.index(key);
+        const u_map_bucket::<K, V> bucket =
+        my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
+        return bucket.get(key);
+    };
 
-	when (K is not adr and V is not primitive and V has __copy__)
-	fn get(const K key) -> option::<V> {
-		const LockGuard __guard = my.mutex.guard();
-		const int index = my.index(key);
-		const u_map_bucket::<K, V> bucket =
-			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
-		return bucket.get(key);
-	};
+    when (K is not adr and V is not primitive and V has __copy__)
+    fn get(const K key) -> option::<V> {
+        const LockGuard __guard = my.mutex.guard();
+        const int index = my.index(key);
+        const u_map_bucket::<K, V> bucket =
+        my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
+        return bucket.get(key);
+    };
 
-	when (K is not adr and V is not primitive and V missing __copy__)
-	fn get(const K key) -> option::<&V> {
-		const LockGuard __guard = my.mutex.guard();
-		const int index = my.index(key);
-		const u_map_bucket::<K, V> bucket =
-			my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
-		return bucket.get(key);
-	};
+    when (K is not adr and V is not primitive and V missing __copy__)
+    fn get(const K key) -> option::<&V> {
+        const LockGuard __guard = my.mutex.guard();
+        const int index = my.index(key);
+        const u_map_bucket::<K, V> bucket =
+        my.buckets.get(index).expect("searched for non-existing unordered_map bucket"$adr);
+        return bucket.get(key);
+    };
 
-	when (V is primitive)
-	fn _call(const K key) -> option::<V> {
-		const LockGuard __guard = my.mutex.guard();
-		return my.get(key);
-	};
+    when (V is primitive)
+    fn _call(const K key) -> option::<V> {
+        const LockGuard __guard = my.mutex.guard();
+        return my.get(key);
+    };
 
-	when (V is not primitive and V has __copy__)
-	fn _call(const K key) -> option::<V> {
-		const LockGuard __guard = my.mutex.guard();
-		return my.get(key);
-	};
+    when (V is not primitive and V has __copy__)
+    fn _call(const K key) -> option::<V> {
+        const LockGuard __guard = my.mutex.guard();
+        return my.get(key);
+    };
 
-	when (V is not primitive and V missing __copy__)
-	fn _call(const K key) -> option::<&V> {
-		const LockGuard __guard = my.mutex.guard();
-		return my.get(key);
-	};
+    when (V is not primitive and V missing __copy__)
+    fn _call(const K key) -> option::<&V> {
+        const LockGuard __guard = my.mutex.guard();
+        return my.get(key);
+    };
 
-	fn has(const K key) -> bool {
-		const LockGuard __guard = my.mutex.guard();
-		return my.get(key).isSome();
-	};
+    fn has(const K key) -> bool {
+        const LockGuard __guard = my.mutex.guard();
+        return my.get(key).isSome();
+    };
 
-	fn keys() -> vector::<K> {
-		const LockGuard __guard = my.mutex.guard();
-		const let keys = new vector::<K>();
-		for int i = 0; i < my.buckets.count(); i++ {
-			const u_map_bucket::<K, V> bucket =
-				my.buckets.get(i).expect("searched for non-existing unordered_map bucket"$adr);
-			bucket.keysInto(keys);
-		};
-		return keys;
-	};
+    fn keys() -> vector::<K> {
+        const LockGuard __guard = my.mutex.guard();
+        const let keys = new vector::<K>();
+        for int i = 0; i < my.buckets.count(); i++ {
+            const u_map_bucket::<K, V> bucket =
+            my.buckets.get(i).expect("searched for non-existing unordered_map bucket"$adr);
+            bucket.keysInto(keys);
+        };
+        return keys;
+    };
 
-	fn values() -> vector::<V> {
-		const LockGuard __guard = my.mutex.guard();
-		const let values = new vector::<V>();
-		for int i = 0; i < my.buckets.count(); i++ {
-			const u_map_bucket::<K, V> bucket =
-				my.buckets.get(i).expect("searched for non-existing unordered_map bucket"$adr);
-			bucket.valuesInto(values);
-		};
-		return values;
-	};
+    fn values() -> vector::<V> {
+        const LockGuard __guard = my.mutex.guard();
+        const let values = new vector::<V>();
+        for int i = 0; i < my.buckets.count(); i++ {
+            const u_map_bucket::<K, V> bucket =
+            my.buckets.get(i).expect("searched for non-existing unordered_map bucket"$adr);
+            bucket.valuesInto(values);
+        };
+        return values;
+    };
 
-	fn next() -> option::<&u_map_entry::<K, V>> {
-		while my.iteratorBucket < my.capasity {
-			const u_map_bucket::<K, V> bucket =
-				my.buckets.get_unlocked(my.iteratorBucket).expect("searched for non-existing unordered_map bucket"$adr);
-			const let candidate = bucket.entryAt(my.iteratorEntry);
-			match candidate {
-				Some(entry) => {
-					my.iteratorEntry = my.iteratorEntry + 1;
-					return opt.Some::<&u_map_entry::<K, V>>(entry);
-				},
-				None => {
-					my.iteratorBucket = my.iteratorBucket + 1;
-					my.iteratorEntry = 0;
-				}
-			};
-		};
-		my.iteratorBucket = 0;
-		my.iteratorEntry = 0;
-		return opt.None::<&u_map_entry::<K, V>>();
-	};
+    fn next() -> option::<&u_map_entry::<K, V>> {
+        while my.iteratorBucket < my.capasity {
+            const u_map_bucket::<K, V> bucket =
+            my.buckets.get_unlocked(my.iteratorBucket).expect("searched for non-existing unordered_map bucket"$adr);
+            const let candidate = bucket.entryAt(my.iteratorEntry);
+            match candidate {
+                Some(entry) => {
+                    my.iteratorEntry = my.iteratorEntry + 1;
+                    return opt.Some::<&u_map_entry::<K, V>>(entry);
+                },
+                None => {
+                    my.iteratorBucket = my.iteratorBucket + 1;
+                    my.iteratorEntry = 0;
+                }
+            };
+        };
+        my.iteratorBucket = 0;
+        my.iteratorEntry = 0;
+        return opt.None::<&u_map_entry::<K, V>>();
+    };
 
-	fn iterationGuard() -> LockGuard {
-		const LockGuard guard = my.mutex.guard();
-		my.iteratorBucket = 0;
-		my.iteratorEntry = 0;
-		return guard;
-	};
+    fn iterationGuard() -> LockGuard {
+        const LockGuard guard = my.mutex.guard();
+        my.iteratorBucket = 0;
+        my.iteratorEntry = 0;
+        return guard;
+    };
 
-	fn normalize() -> void {
-		return;
-	};
+    fn normalize() -> void {
+        return;
+    };
 
-	fn clear() -> void {
-		const LockGuard __guard = my.mutex.guard();
-		for int i = 0; i < my.buckets.count(); i++ {
-			const u_map_bucket::<K, V> bucket =
-				my.buckets.get(i).expect("searched for non-existing unordered_map bucket"$adr);
-			bucket.clear();
-			my.buckets.set(i, bucket);
-		};
-		my.count = 0;
-		my.iteratorBucket = 0;
-		my.iteratorEntry = 0;
-		return;
-	};
+    fn clear() -> void {
+        const LockGuard __guard = my.mutex.guard();
+        for int i = 0; i < my.buckets.count(); i++ {
+            const u_map_bucket::<K, V> bucket =
+            my.buckets.get(i).expect("searched for non-existing unordered_map bucket"$adr);
+            bucket.clear();
+            my.buckets.set(i, bucket);
+        };
+        my.count = 0;
+        my.iteratorBucket = 0;
+        my.iteratorEntry = 0;
+        return;
+    };
 
-	fn del() -> void {
-		for int i = 0; i < my.buckets.count(); i++ {
-			const u_map_bucket::<K, V> bucket =
-				my.buckets.get_unlocked(i).expect("searched for non-existing unordered_map bucket"$adr);
-			delete bucket;
-		};
-		delete my.buckets;
-		delete my.mutex;
-	};
+    fn del() -> void {
+        for int i = 0; i < my.buckets.count(); i++ {
+            const u_map_bucket::<K, V> bucket =
+            my.buckets.get_unlocked(i).expect("searched for non-existing unordered_map bucket"$adr);
+            delete bucket;
+        };
+        delete my.buckets;
+        delete my.mutex;
+    };
 
-	fn toString() -> string {
-		const LockGuard __guard = my.mutex.guard();
-		return `unordered_map(keys={my.keys()})`;
-	};
+    fn toString() -> string {
+        const LockGuard __guard = my.mutex.guard();
+        return `unordered_map(keys={my.keys()})`;
+    };
 };

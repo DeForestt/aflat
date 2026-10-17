@@ -169,7 +169,7 @@ unique class vector {
             delete __guard;
             return opt.None::<T>();
         };
-        
+
         return my.get(0);
     };
 
@@ -180,7 +180,7 @@ unique class vector {
             delete __guard;
             return opt.None::<&T>();
         };
-        
+
         return my.get(0);
     };
 
@@ -364,7 +364,7 @@ unique class vector {
         const generic val = my.head + (index * T);
         return opt.Some::<&T>(val);
     };
-    
+
     when (T is not unique and T missing __copy__ and T is not primitive)
     fn get(const int index) -> local option::<&T> {
         const local LockGuard __guard = my.mutex.guard();
@@ -748,47 +748,47 @@ unique class vector {
         my.iteratorIndex = 0;
         return my;
     };
-      
+
     when (T is not primitive and T missing toString)
     fn toString() -> string {
         const local LockGuard __guard = my.mutex.guard();
         return `{__typeName__}(size={my.size}, count={my.count})`;
     };
-    
+
 
     when (T is not primitive and T has toString and T is not unique)
     fn toString() -> string {
-      const local LockGuard __guard = my.mutex.guard();
-      string buf = `{__typeName__}: [`;
-      foreach v in my {
-        const let renderedValue = v.toString();
-        const string renderedSuffix = `{renderedValue},`;
-        buf = buf + renderedSuffix;
-      };
-      return buf + "]";
+        const local LockGuard __guard = my.mutex.guard();
+        string buf = `{__typeName__}: [`;
+        foreach v in my {
+            const let renderedValue = v.toString();
+            const string renderedSuffix = `{renderedValue},`;
+            buf = buf + renderedSuffix;
+        };
+        return buf + "]";
     };
 
 
     when (T is not primitive and T has toString and T is unique)
     fn toString() -> string {
-      const local LockGuard __guard = my.mutex.guard();
-      string buf = `{__typeName__}: [`;
-      foreach v in my {
-        const let renderedValue = v.toString();
-        const string renderedSuffix = `{renderedValue},`;
-        buf = buf + renderedSuffix;
-      };
-      return buf + "]";
+        const local LockGuard __guard = my.mutex.guard();
+        string buf = `{__typeName__}: [`;
+        foreach v in my {
+            const let renderedValue = v.toString();
+            const string renderedSuffix = `{renderedValue},`;
+            buf = buf + renderedSuffix;
+        };
+        return buf + "]";
     };
 
     when (T is primitive)
     fn toString() -> string {
-      const local LockGuard __guard = my.mutex.guard();
-      string buf = `{__typeName__}: [`;
-      foreach v in my {
-        buf = `{buf}{v},`;
-      };
-      return `{buf}]`;
+        const local LockGuard __guard = my.mutex.guard();
+        string buf = `{__typeName__}: [`;
+        foreach v in my {
+            buf = `{buf}{v},`;
+        };
+        return `{buf}]`;
     };
 
     when (T is not primitive and T is unique)
@@ -835,26 +835,26 @@ unique class vector {
         af_free(temp);
     }
 
-   when (T is primitive and T is not adr)
-   fn sort(const adr comparator) -> void {
-       const local LockGuard __guard = my.mutex.guard();
-       if my.count < 2 {
-           delete __guard;
-           return;
-       };
-       // Implement a simple bubble sort for demonstration purposes
-       for int i = 0; i < my.count - 1; i = i + 1 {
-           for int j = 0; j < my.count - i - 1; j = j + 1 {
-               const adr a = my.head + (j * T);
-               const adr b = my.head + ((j + 1) * T);
-               const T a_val = a as T;
-               const T b_val = b as T;
-               const bool c = comparator(a_val, b_val);
-               if c == true {
+    when (T is primitive and T is not adr)
+    fn sort(const adr comparator) -> void {
+        const local LockGuard __guard = my.mutex.guard();
+        if my.count < 2 {
+            delete __guard;
+            return;
+        };
+        // Implement a simple bubble sort for demonstration purposes
+        for int i = 0; i < my.count - 1; i = i + 1 {
+            for int j = 0; j < my.count - i - 1; j = j + 1 {
+                const adr a = my.head + (j * T);
+                const adr b = my.head + ((j + 1) * T);
+                const T a_val = a as T;
+                const T b_val = b as T;
+                const bool c = comparator(a_val, b_val);
+                if c == true {
                     a =: b_val;
                     b =: a_val;
-               };
-           };
-       };
-   }
+                };
+            };
+        };
+    }
 };

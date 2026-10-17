@@ -12,9 +12,9 @@ shared dynamic class Bind {
 
     @computed
     string key = my.name.copy();
-    
+
     @computed string val = my.value.copy();
-    
+
     Bind init(const adr<Content, any> preprocess, const Content context, const adr name) {
         const string prefix = new string("{{");
         const string suffix = new string("}}");

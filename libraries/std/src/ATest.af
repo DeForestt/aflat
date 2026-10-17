@@ -13,35 +13,35 @@ import {accept, reject} from "Utils/result" under res;
 import {Some, None} from "Utils/option" under opt;
 
 shared class FixtureStruct {
-	any<> setUp = setUp;
-	any<any> tearDown = tearDown;
-	fn init(const adr setUp, const adr tearDown) -> Self {
-		return my;
-	};
+    any<> setUp = setUp;
+    any<any> tearDown = tearDown;
+    fn init(const adr setUp, const adr tearDown) -> Self {
+        return my;
+    };
 
-	fn setUp() -> any {
-		if my.setUp != NULL {
-			const let foo = my.setUp;
-			return foo();
-		} else {
-			return NULL;
-		};
-	};
+    fn setUp() -> any {
+        if my.setUp != NULL {
+            const let foo = my.setUp;
+            return foo();
+        } else {
+            return NULL;
+        };
+    };
 
-	fn tearDown(const any value) -> void {
-		if my.tearDown != NULL {
-			const let foo = my.tearDown;
-			foo(value);
-		};
-	};
+    fn tearDown(const any value) -> void {
+        if my.tearDown != NULL {
+            const let foo = my.tearDown;
+            foo(value);
+        };
+    };
 
-	fn _call() -> any {
-		return my.setUp();
-	};
+    fn _call() -> any {
+        return my.setUp();
+    };
 
-	fn toString() -> uni_string {
-		return `FixtureStruct(setUp: {my.setUp != NULL}, tearDown: {my.tearDown != NULL})`;
-	};
+    fn toString() -> uni_string {
+        return `FixtureStruct(setUp: {my.setUp != NULL}, tearDown: {my.tearDown != NULL})`;
+    };
 };
 
 mutable unordered_map::<adr,int> fixtures = NULL;
@@ -50,98 +50,98 @@ mutable Map fixtureData = NULL;
 
 
 shared class DescribeContext {
-	mutable DescribeContext parent = NULL;
-	mutable vector::<adr> beforeEachHooks;
-	mutable vector::<adr> afterEachHooks;
-	mutable vector::<adr> beforeAllHooks;
-	mutable vector::<adr> afterAllHooks;
-	mutable bool beforeAllRan;
+    mutable DescribeContext parent = NULL;
+    mutable vector::<adr> beforeEachHooks;
+    mutable vector::<adr> afterEachHooks;
+    mutable vector::<adr> beforeAllHooks;
+    mutable vector::<adr> afterAllHooks;
+    mutable bool beforeAllRan;
 
-	fn init() -> Self {
-		my.beforeEachHooks = new vector::<adr>();
-		my.afterEachHooks = new vector::<adr>();
-		my.beforeAllHooks = new vector::<adr>();
-		my.afterAllHooks = new vector::<adr>();
-		my.beforeAllRan = false;
-		return my;
-	};
+    fn init() -> Self {
+        my.beforeEachHooks = new vector::<adr>();
+        my.afterEachHooks = new vector::<adr>();
+        my.beforeAllHooks = new vector::<adr>();
+        my.afterAllHooks = new vector::<adr>();
+        my.beforeAllRan = false;
+        return my;
+    };
 
-	fn runBeforeEachHooks() -> void {
-		foreach hook in my.beforeEachHooks {
-			const let cb = hook;
-			cb();
-		};
-	};
+    fn runBeforeEachHooks() -> void {
+        foreach hook in my.beforeEachHooks {
+            const let cb = hook;
+            cb();
+        };
+    };
 
-	fn runAfterEachHooks() -> void {
-		mutable let idx = my.afterEachHooks.count();
-		while idx > 0 {
-			idx = idx - 1;
-			const adr hook = my.afterEachHooks.get(idx).expect("afterEach hook missing");
-			const let cb = hook;
-			cb();
-		};
-	};
+    fn runAfterEachHooks() -> void {
+        mutable let idx = my.afterEachHooks.count();
+        while idx > 0 {
+            idx = idx - 1;
+            const adr hook = my.afterEachHooks.get(idx).expect("afterEach hook missing");
+            const let cb = hook;
+            cb();
+        };
+    };
 
-	fn runBeforeAllHooks() -> void {
-		if my.beforeAllRan return;
-		foreach hook in my.beforeAllHooks {
-			const let cb = hook;
-			cb();
-		};
-		my.beforeAllRan = true;
-	};
+    fn runBeforeAllHooks() -> void {
+        if my.beforeAllRan return;
+        foreach hook in my.beforeAllHooks {
+            const let cb = hook;
+            cb();
+        };
+        my.beforeAllRan = true;
+    };
 
-	fn runAfterAllHooks() -> void {
-		mutable let idx = my.afterAllHooks.count();
-		while idx > 0 {
-			idx = idx - 1;
-			const adr hook = my.afterAllHooks.get(idx).expect("afterAll hook missing");
-			const let cb = hook;
-			cb();
-			};
-		};
+    fn runAfterAllHooks() -> void {
+        mutable let idx = my.afterAllHooks.count();
+        while idx > 0 {
+            idx = idx - 1;
+            const adr hook = my.afterAllHooks.get(idx).expect("afterAll hook missing");
+            const let cb = hook;
+            cb();
+        };
+    };
 
-	fn toString() -> uni_string {
-		return `DescribeContext`;
-	};
+    fn toString() -> uni_string {
+        return `DescribeContext`;
+    };
 
-	fn takeParent() -> DescribeContext {
-		const DescribeContext parent = $my.parent;
-		my.parent = NULL;
-		return $parent;
-	};
+    fn takeParent() -> DescribeContext {
+        const DescribeContext parent = $my.parent;
+        my.parent = NULL;
+        return $parent;
+    };
 };
 
 mutable DescribeContext activeContext = NULL;
 
 fn ensureRootContext() -> void {
-	if activeContext == NULL {
-		activeContext = new DescribeContext();
-	};
+    if activeContext == NULL {
+        activeContext = new DescribeContext();
+    };
 };
 
 fn currentDescribeContext() -> loan DescribeContext {
-	ensureRootContext();
-	return activeContext;
+    ensureRootContext();
+    return activeContext;
 };
 
 fn pushDescribeContext() -> void {
-	ensureRootContext();
-	const DescribeContext ctx = new DescribeContext();
-	ctx.parent = $activeContext;
-	activeContext = $ctx;
+    ensureRootContext();
+    const DescribeContext ctx = new DescribeContext();
+    ctx.parent = $activeContext;
+    activeContext = $ctx;
 };
 
 fn popDescribeContext() -> DescribeContext {
-	ensureRootContext();
-	const DescribeContext ctx = $activeContext;
-	if ctx.parent != NULL {
-		activeContext = ctx.takeParent();
-	} else {
-		activeContext = new DescribeContext();
-	};
-	return $ctx;
+    ensureRootContext();
+    const DescribeContext ctx = $activeContext;
+    if ctx.parent != NULL {
+        activeContext = ctx.takeParent();
+    } else {
+        activeContext = new DescribeContext();
+    };
+    return $ctx;
 };
 
 mutable int totalTests = 0;
@@ -150,302 +150,302 @@ mutable int skippedTests = 0;
 mutable bool currentTestFailed = false;
 
 fn markFailure(const uni_string message) -> void {
-	currentTestFailed = true;
-	uni.print(`      {message}\n`);
+    currentTestFailed = true;
+    uni.print(`      {message}\n`);
 };
 
 // Accessor for the global fixture registry.
 export fn getFixtures() -> loan unordered_map::<adr,int> {
-	if fixtures == NULL {
-		fixtures = new unordered_map::<adr,int>();
-	};
-	return fixtures;
+    if fixtures == NULL {
+        fixtures = new unordered_map::<adr,int>();
+    };
+    return fixtures;
 };
 
 fn getFixtureDefinitions() -> loan vector::<FixtureStruct> {
-	if fixtureDefinitions == NULL {
-		fixtureDefinitions = new vector::<FixtureStruct>();
-	};
-	return fixtureDefinitions;
+    if fixtureDefinitions == NULL {
+        fixtureDefinitions = new vector::<FixtureStruct>();
+    };
+    return fixtureDefinitions;
 };
 
 // Map storing per-fixture state created during setUp.
 export fn getFixtureData() -> loan Map {
-	if fixtureData == NULL {
-		fixtureData = new Map();
-	};
-	return fixtureData;
+    if fixtureData == NULL {
+        fixtureData = new Map();
+    };
+    return fixtureData;
 };
 
 // Invoke tearDown hooks for all built fixtures.
 export fn tearDownFixtures() -> void {
-	const let built = getFixtureData();
-	const let fixtures = getFixtures();
-	const let definitions = getFixtureDefinitions();
-	const let keys = fixtures.keys();
+    const let built = getFixtureData();
+    const let fixtures = getFixtures();
+    const let definitions = getFixtureDefinitions();
+    const let keys = fixtures.keys();
 
-	foreach key in keys {
-		if built.has(key) {
-			const any data = built.get(key).orElse(fn () panic("Fixture data not found"));
-			const int fixtureIndex = fixtures.get(key).expect("Fixture not found");
-			const FixtureStruct fixture = definitions.get(fixtureIndex).expect("Fixture definition not found");
-			fixture.tearDown(data);
-		};
-	};
-	built.clear();
+    foreach key in keys {
+        if built.has(key) {
+            const any data = built.get(key).orElse(fn () panic("Fixture data not found"));
+            const int fixtureIndex = fixtures.get(key).expect("Fixture not found");
+            const FixtureStruct fixture = definitions.get(fixtureIndex).expect("Fixture definition not found");
+            fixture.tearDown(data);
+        };
+    };
+    built.clear();
 };
 
 // Define a describe block with its nested tests and hooks.
 export fn describe(const adr text, const adr implementation) -> void {
-	io.print(text);
-	io.print("\n");
-	pushDescribeContext();
-	const let cb = implementation;
-	cb();
-	const DescribeContext ctx = popDescribeContext();
-	ctx.runAfterAllHooks();
+    io.print(text);
+    io.print("\n");
+    pushDescribeContext();
+    const let cb = implementation;
+    cb();
+    const DescribeContext ctx = popDescribeContext();
+    ctx.runAfterAllHooks();
 };
 
 // Register a named fixture with optional teardown handler.
 export fn fix(const adr name, const adr setUp, * const adr tearDown) -> void {
-	const let fixtures = getFixtures();
-	const let definitions = getFixtureDefinitions();
-	if fixtures.has(name) {
-		const let fixtureData = getFixtureData();
-		const int fixtureIndex = fixtures.get(name).expect("Fixture not found");
-		const FixtureStruct fixture = definitions.get(fixtureIndex).expect("Fixture definition not found");
-		if fixtureData.has(name) {
-			const any data = fixtureData.get(name).orElse(fn () panic("Fixture data not found"));
-			fixture.tearDown(data);
-		};
-	};
+    const let fixtures = getFixtures();
+    const let definitions = getFixtureDefinitions();
+    if fixtures.has(name) {
+        const let fixtureData = getFixtureData();
+        const int fixtureIndex = fixtures.get(name).expect("Fixture not found");
+        const FixtureStruct fixture = definitions.get(fixtureIndex).expect("Fixture definition not found");
+        if fixtureData.has(name) {
+            const any data = fixtureData.get(name).orElse(fn () panic("Fixture data not found"));
+            fixture.tearDown(data);
+        };
+    };
 
-	definitions.push_back(new FixtureStruct(setUp, tearDown));
-	fixtures.set(name, definitions.count() - 1);
+    definitions.push_back(new FixtureStruct(setUp, tearDown));
+    fixtures.set(name, definitions.count() - 1);
 };
 
 // Retrieve fixture data, invoking setUp lazily when necessary.
 export fn getFixture(const uni_string name) -> loan any {
-	const let fd = getFixtureData();
-	const let fixtureNameString = name.toString();
-	const adr fixtureName = fixtureNameString.cstr();
-	if fd.has(fixtureName) {
-		const any data = fd.get(fixtureName).orElse(fn () panic("Fixture data not found"));
-		return data;
-	};
-	const let fixtures = getFixtures();
-	const let definitions = getFixtureDefinitions();
-	const int fixtureIndex = fixtures.get(fixtureName).expect("Fixture not found");
-	const FixtureStruct fixture = definitions.get(fixtureIndex).expect("Fixture definition not found");
-	const any data = fixture.setUp();
-	fd.set(fixtureName, data);
-	return data;
+    const let fd = getFixtureData();
+    const let fixtureNameString = name.toString();
+    const adr fixtureName = fixtureNameString.cstr();
+    if fd.has(fixtureName) {
+        const any data = fd.get(fixtureName).orElse(fn () panic("Fixture data not found"));
+        return data;
+    };
+    const let fixtures = getFixtures();
+    const let definitions = getFixtureDefinitions();
+    const int fixtureIndex = fixtures.get(fixtureName).expect("Fixture not found");
+    const FixtureStruct fixture = definitions.get(fixtureIndex).expect("Fixture definition not found");
+    const any data = fixture.setUp();
+    fd.set(fixtureName, data);
+    return data;
 };
 
 fn runBeforeAllRecursive(const DescribeContext ctx) -> void {
-	if ctx == NULL return;
-	const DescribeContext parent = ctx.parent;
-	if parent != NULL {
-		runBeforeAllRecursive(parent);
-	};
-	ctx.runBeforeAllHooks();
+    if ctx == NULL return;
+    const DescribeContext parent = ctx.parent;
+    if parent != NULL {
+        runBeforeAllRecursive(parent);
+    };
+    ctx.runBeforeAllHooks();
 };
 
 fn runBeforeEachRecursive(const DescribeContext ctx) -> void {
-	if ctx == NULL return;
-	const DescribeContext parent = ctx.parent;
-	if parent != NULL {
-		runBeforeEachRecursive(parent);
-	};
-	ctx.runBeforeEachHooks();
+    if ctx == NULL return;
+    const DescribeContext parent = ctx.parent;
+    if parent != NULL {
+        runBeforeEachRecursive(parent);
+    };
+    ctx.runBeforeEachHooks();
 };
 
 fn runBeforeAllHooksForStack() -> void {
-	const DescribeContext ctx = currentDescribeContext();
-	runBeforeAllRecursive(ctx);
+    const DescribeContext ctx = currentDescribeContext();
+    runBeforeAllRecursive(ctx);
 };
 
 fn runBeforeEachHooksForStack() -> void {
-	const DescribeContext ctx = currentDescribeContext();
-	runBeforeEachRecursive(ctx);
+    const DescribeContext ctx = currentDescribeContext();
+    runBeforeEachRecursive(ctx);
 };
 
 fn runAfterEachHooksForStack() -> void {
-	mutable DescribeContext ctx = currentDescribeContext();
-	while ctx != NULL {
-		ctx.runAfterEachHooks();
-		ctx = ctx.parent;
-	};
+    mutable DescribeContext ctx = currentDescribeContext();
+    while ctx != NULL {
+        ctx.runAfterEachHooks();
+        ctx = ctx.parent;
+    };
 };
 
 // Register a hook executed before each test in the current describe block.
 export fn beforeEach(const adr implementation) -> void {
-	const DescribeContext ctx = currentDescribeContext();
-	ctx.beforeEachHooks.push_back(implementation);
+    const DescribeContext ctx = currentDescribeContext();
+    ctx.beforeEachHooks.push_back(implementation);
 };
 
 // Register a hook executed after each test in the current describe block.
 export fn afterEach(const adr implementation) -> void {
-	const DescribeContext ctx = currentDescribeContext();
-	ctx.afterEachHooks.push_back(implementation);
+    const DescribeContext ctx = currentDescribeContext();
+    ctx.afterEachHooks.push_back(implementation);
 };
 
 // Register a hook executed once before any tests in the describe block.
 export fn beforeAll(const adr implementation) -> void {
-	const DescribeContext ctx = currentDescribeContext();
-	ctx.beforeAllHooks.push_back(implementation);
+    const DescribeContext ctx = currentDescribeContext();
+    ctx.beforeAllHooks.push_back(implementation);
 };
 
 // Register a hook executed once after all tests in the describe block.
 export fn afterAll(const adr implementation) -> void {
-	const DescribeContext ctx = currentDescribeContext();
-	ctx.afterAllHooks.push_back(implementation);
+    const DescribeContext ctx = currentDescribeContext();
+    ctx.afterAllHooks.push_back(implementation);
 };
 
 // Define a concrete test case with the supplied body.
 export fn it(const adr text, const adr implementation) -> void {
-	totalTests = totalTests + 1;
-	currentTestFailed = false;
-	uni.print(`  it: {text}\n`);
-	runBeforeAllHooksForStack();
-	runBeforeEachHooksForStack();
-	const let cb = implementation;
-	cb();
-	runAfterEachHooksForStack();
-	tearDownFixtures();
-	if currentTestFailed {
-		failedTests = failedTests + 1;
-		io.print("      ✗ FAILED\n");
-	} else {
-		io.print("      ✓ PASSED\n");
-	};
+    totalTests = totalTests + 1;
+    currentTestFailed = false;
+    uni.print(`  it: {text}\n`);
+    runBeforeAllHooksForStack();
+    runBeforeEachHooksForStack();
+    const let cb = implementation;
+    cb();
+    runAfterEachHooksForStack();
+    tearDownFixtures();
+    if currentTestFailed {
+        failedTests = failedTests + 1;
+        io.print("      ✗ FAILED\n");
+    } else {
+        io.print("      ✓ PASSED\n");
+    };
 };
 
 // Mark a test as skipped along with a justification.
 export fn itSkip(const uni_string text, const uni_string reason) -> void {
-	skippedTests = skippedTests + 1;
-	uni.print(`  it: {text} (skipped: {reason})\n`);
+    skippedTests = skippedTests + 1;
+    uni.print(`  it: {text} (skipped: {reason})\n`);
 };
 
 types(T)
 // Assert equality of two values using == semantics.
 export fn assertEqual(const T expected, const T actual) -> void {
-	if !(expected == actual) {
-		markFailure(`Expected {expected} but got {actual}`);
-	};
+    if !(expected == actual) {
+        markFailure(`Expected {expected} but got {actual}`);
+    };
 };
 
 private fn assertEqualStrings(const uni_string expected, const uni_string actual) -> void {
-	if !(expected == actual) {
-		markFailure(`Expected {expected} but got {actual}`);
-	};
+    if !(expected == actual) {
+        markFailure(`Expected {expected} but got {actual}`);
+    };
 };
 
 types(T)
 // Assert inequality of two values.
 export fn assertNotEqual(const T expected, const T actual) -> void {
-	if expected == actual {
-		markFailure(`Expected not {expected} but got {actual}`);
-	};
+    if expected == actual {
+        markFailure(`Expected not {expected} but got {actual}`);
+    };
 };
 
 types(T)
 // Assert that an option value is Some.
 export fn assertSome(const T optValue) -> void {
-	if !optValue.isSome() {
-		markFailure("Expected Some but got None");
-	};
+    if !optValue.isSome() {
+        markFailure("Expected Some but got None");
+    };
 };
 
 types(T)
 // Assert that an option value is None.
 export fn assertNone(const T optValue) -> void {
-	if optValue.isSome() {
-		markFailure("Expected None but got Some");
-	};
+    if optValue.isSome() {
+        markFailure("Expected None but got Some");
+    };
 };
 
 types(T)
 // Assert that a result value is Ok.
 export fn assertOk(const T resValue) -> void {
-	if resValue.isErr() {
-		const let err = resValue.unwrapErr();
-		markFailure(`Expected Ok but got Err: {err}`);
-	};
+    if resValue.isErr() {
+        const let err = resValue.unwrapErr();
+        markFailure(`Expected Ok but got Err: {err}`);
+    };
 };
 
 types(T)
 // Assert that a result value is Err.
 export fn assertErr(const T resValue) -> void {
-	if resValue.isOk() {
-		markFailure("Expected Err but got Ok");
-	};
+    if resValue.isOk() {
+        markFailure("Expected Err but got Ok");
+    };
 };
 
 types(T, Z)
 // Assert an option is Some and equals the expected value.
 export fn assertSomeValue(const T value, const Z expected) {
-	if value.isSome() {
-		const let actual = value.unwrap();
-		if actual != expected {
-			markFailure(`Expected Some({expected}) but got Some({actual})`);
-		};
-	} else {
-		markFailure(`Expected Some({expected}) but got None`);
-	};
+    if value.isSome() {
+        const let actual = value.unwrap();
+        if actual != expected {
+            markFailure(`Expected Some({expected}) but got Some({actual})`);
+        };
+    } else {
+        markFailure(`Expected Some({expected}) but got None`);
+    };
 };
 
 types(T, Z)
 // Assert a result is Ok and equals the expected value.
 export fn assertOkValue(const T value, const Z expected) {
-	if value.isOk() {
-		const let actual = value.unwrap();
-		if actual != expected {
-			markFailure(`Expected Ok({expected}) but got Ok({actual})`);
-		};
-	} else {
-		const let err = value.unwrapErr();
-		markFailure(`Expected Ok({expected}) but got Err({err})`);
-	};
+    if value.isOk() {
+        const let actual = value.unwrap();
+        if actual != expected {
+            markFailure(`Expected Ok({expected}) but got Ok({actual})`);
+        };
+    } else {
+        const let err = value.unwrapErr();
+        markFailure(`Expected Ok({expected}) but got Err({err})`);
+    };
 };
 
 // Assert that a condition is true.
 export fn assertTrue(const bool condition) -> void {
-	if !condition {
-		currentTestFailed = true;
-		io.print("      Expected true but got false\n");
-	};
+    if !condition {
+        currentTestFailed = true;
+        io.print("      Expected true but got false\n");
+    };
 };
 
 // Assert that a condition is false.
 export fn assertFalse(const bool condition) -> void {
-	if condition {
-		currentTestFailed = true;
-		io.print("      Expected false but got true\n");
-	};
+    if condition {
+        currentTestFailed = true;
+        io.print("      Expected false but got true\n");
+    };
 };
 
 // Assert that a pointer is NULL.
 export fn assertNull(const adr value) -> void {
-	if value != NULL {
-		markFailure(`Expected null but got {value}`);
-	};
+    if value != NULL {
+        markFailure(`Expected null but got {value}`);
+    };
 };
 
 // Assert that a pointer is not NULL.
 export fn assertNotNull(const adr value) -> void {
-	if value == NULL {
-		markFailure("Expected not null but got null");
-	};
+    if value == NULL {
+        markFailure("Expected not null but got null");
+    };
 };
 
 // Explicitly fail the current test with a message.
 export fn fail(const uni_string message) -> void {
-	markFailure(message);
+    markFailure(message);
 };
 
 // Print a summary of total/passed/skipped tests.
 export fn summary() -> void {
-	const int passed = totalTests - failedTests;
-	uni.print(`Summary: {passed} passed, {failedTests} failed, {skippedTests} skipped (total: {totalTests})\n`);
+    const int passed = totalTests - failedTests;
+    uni.print(`Summary: {passed} passed, {failedTests} failed, {skippedTests} skipped (total: {totalTests})\n`);
 };

@@ -17,10 +17,10 @@ shared class Content {
     };
 
     void loadFile(const adr fileName) {
-		const File f = fs.openFile(fileName).expect("Failed to open file");
-		my.cleanContent = f.readToEnd().expect("Failed to read file");
-		my.content = my.cleanContent.cstr();
-		return;
+        const File f = fs.openFile(fileName).expect("Failed to open file");
+        my.cleanContent = f.readToEnd().expect("Failed to read file");
+        my.content = my.cleanContent.cstr();
+        return;
     };
 
     Content init() {

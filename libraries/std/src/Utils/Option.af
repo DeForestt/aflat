@@ -26,17 +26,17 @@ shared dynamic safe pedantic class Option {
     // it requires two functions, one for the case where the value exists, and one for the case where it does not
     public any resolve(const Function acc, const Function rej, * const any arg, * const any arg2) {
         if my.hasValue
-            return acc(my.value, arg, arg2)
+        return acc(my.value, arg, arg2)
         else
-            return rej(NULL, arg, arg2);
+        return rej(NULL, arg, arg2);
     };
 
     // returns a value if it exists, otherwise preforms a function
     public fn orElse(const Function onNone, * const any arg) -> loan any {
         if my.hasValue
-            return my.value
+        return my.value
         else
-            return onNone(NULL, arg);
+        return onNone(NULL, arg);
     };
 
     // match function is the new canonical way to work with an Option it will use a named match rather than 2 anonymous functions
@@ -50,9 +50,9 @@ shared dynamic safe pedantic class Option {
     // returns a value if it exists, otherwise returns a default value
     public fn or(const any &&defaultValue) -> loan any {
         if my.hasValue
-            return my.value
+        return my.value
         else
-            return defaultValue;
+        return defaultValue;
     };
 
     public bool isSome() {
@@ -61,9 +61,9 @@ shared dynamic safe pedantic class Option {
 
     public string toString() {
         if my.hasValue
-            return "Option: Some"
+        return "Option: Some"
         else
-            return "Option: None";
+        return "Option: None";
     };
 };
 

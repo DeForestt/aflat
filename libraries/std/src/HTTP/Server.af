@@ -32,7 +32,7 @@ shared class EndpointRef {
         return "EndpointRef";
     };
 };
- 
+
 shared class Server {
     contract {
         const vector::<EndpointRef> endpoints = new vector::<EndpointRef>();
@@ -166,7 +166,7 @@ shared class Server {
                     };
                 };
             };
-            
+
             if self.notFound != NULL {
                 const let notFound = self.notFound;
                 const let handler = notFound.imp;

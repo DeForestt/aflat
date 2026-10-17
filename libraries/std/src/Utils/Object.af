@@ -34,7 +34,7 @@ shared class Object {
             my._fields.set(key, value);
             res.accept($value);
         } else
-            res.reject(new Error("Validation failed"));
+        res.reject(new Error("Validation failed"));
     };
 
     public Object init() {

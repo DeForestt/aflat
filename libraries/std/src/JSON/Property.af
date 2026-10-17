@@ -7,37 +7,37 @@ import Box from "Memory";
 import JsonProperty from "JSON/Property/Fields";
 
 shared class JsonPropertyRef {
-  private loan JsonProperty value = value;
+    private loan JsonProperty value = value;
 
-  fn init(const JsonProperty value) -> Self {
-    return my;
-  };
+    fn init(const JsonProperty value) -> Self {
+        return my;
+    };
 
-  fn get() -> loan JsonProperty {
-    return my.value;
-  };
+    fn get() -> loan JsonProperty {
+        return my.value;
+    };
 };
 
 shared class JsonSerializable {
-  contract {
-    vector::<JsonPropertyRef> fields = [];
-  };
-
-  fn registerField(const JsonProperty field) -> loan Self {
-    my.fields.push_back(new JsonPropertyRef(field));
-    return my;
-  };
-
-  fn serialize() -> JSON {
-    const let obj = json.Object(new unordered_map::<adr,Box::<JSON>>());
-    foreach field in my.fields {
-      const JsonProperty current = field.get();
-      obj.set(current.key, current.serialize()).expect("failed to set JSON field");
+    contract {
+        vector::<JsonPropertyRef> fields = [];
     };
-    return obj;
-  };
 
-  fn init() {
-    return my;
-  };
+    fn registerField(const JsonProperty field) -> loan Self {
+        my.fields.push_back(new JsonPropertyRef(field));
+        return my;
+    };
+
+    fn serialize() -> JSON {
+        const let obj = json.Object(new unordered_map::<adr,Box::<JSON>>());
+        foreach field in my.fields {
+            const JsonProperty current = field.get();
+            obj.set(current.key, current.serialize()).expect("failed to set JSON field");
+        };
+        return obj;
+    };
+
+    fn init() {
+        return my;
+    };
 };

@@ -36,24 +36,24 @@ private bool reg(const char c, const char p) {
     if p == '.' return true;
     if p == '*' return true;
     if p == 'd' return
-        c >= '0' & c <= '9';
+    c >= '0' & c <= '9';
     if p == 'D' return
-        c < '0' | c > '9';
+    c < '0' | c > '9';
     if p == 'w' return 
-        (c >= 'a' & 
-            c <= 'z') |
-        (c >= 'A' &
-            c <= 'Z')
-        | (c == '_');
+    (c >= 'a' &
+    c <= 'z') |
+    (c >= 'A' &
+    c <= 'Z')
+    | (c == '_');
     if p == 'W' return
-        !reg(c, 'w');
+    !reg(c, 'w');
     if p == 's' return 
-        c == ' ' | 
-        c == '\t' |
-        c == '\n' |
-        c == '\r';
+    c == ' ' |
+    c == '\t' |
+    c == '\n' |
+    c == '\r';
     if p == 'S' return
-        !reg(c, 's');
+    !reg(c, 's');
     if p == c return true;
     return false;
 };
@@ -214,7 +214,7 @@ unique safe dynamic class string {
             af_free(my.head);
         };
         if prompt != NULL
-            io.print(prompt);
+        io.print(prompt);
         adr buff = af_malloc(1);
         adr save = buff;
         int buffSize = 1;
@@ -249,7 +249,7 @@ unique safe dynamic class string {
         };
         return true;
     };
-    
+
     fn split(const char delim) -> vector::<string> {
         const vector::<string> vec = new vector::<string>();
         const int myLen = str.len(my.head);
@@ -322,7 +322,7 @@ unique safe dynamic class string {
         if !my.isNumeric() return res.reject::<int>(new Error("String is not numeric"));
         return str.str_toInt(my.head);
     };
-    
+
     string concat<<+>>(const string other) {
         const int myLen = str.len(my.head);
         const int otherLen = str.len(other.head);
@@ -345,7 +345,7 @@ unique safe dynamic class string {
         };
         return 0;
     };
-    
+
     int len() {
         return str.len(my.head);
     };
@@ -503,7 +503,7 @@ unique safe dynamic class string {
 
     string trim(* char ch) {
         if ch == '\0'
-            ch = ' ';
+        ch = ' ';
 
         int start = 0;
         int end = my.len() - 1;
@@ -547,7 +547,7 @@ unique safe dynamic class string {
         return $newString;
     };
 
-      fn sort() -> string {
+    fn sort() -> string {
         string newString = new string("");
         for mutable int i = 0; i < my.len(); i = i + 1 {
             const char c = my.at(i);
@@ -762,7 +762,7 @@ export string fString(const string fmt, * adr args) {
 
 export int readInt(const string prompt,  ?const int tries) {
     int count = 0;
-	match tries {
+    match tries {
         Some(t) => count = t,
         None => count = 3
     };
@@ -777,7 +777,7 @@ export int readInt(const string prompt,  ?const int tries) {
             if count <= 0 return 0;
             const string errorText = err.toString();
             const string retryPrompt = fString(
-                "%s please try again (%d tries left): ", {errorText, count});
+            "%s please try again (%d tries left): ", {errorText, count});
             return readInt(retryPrompt, count);
         }
     };

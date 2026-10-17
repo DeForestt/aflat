@@ -149,7 +149,7 @@ unique union JSON {
     private fn deleteList(const vector::<Box::<JSON>> list) -> int {
         for int i = 0; i < list.count(); i++ {
             const Box::<JSON> value =
-                list.get(i).expect("missing boxed JSON list value during cleanup"$adr);
+            list.get(i).expect("missing boxed JSON list value during cleanup"$adr);
             my.deleteBox(value);
         };
         delete list;
@@ -160,7 +160,7 @@ unique union JSON {
         const let values = map.values();
         for int i = 0; i < values.count(); i++ {
             const Box::<JSON> value =
-                values.get(i).expect("missing boxed JSON object value during cleanup"$adr);
+            values.get(i).expect("missing boxed JSON object value during cleanup"$adr);
             my.deleteBox(value);
         };
         delete values;
@@ -329,13 +329,13 @@ unique union JSON {
     /** Schedule compact serialization as a native task. */
     async fn stringifyAsync() -> string {
         return await task.async_thread_disposable::<string>(
-            stringifyInBackground, disposeStringInBackground, my, 0);
+        stringifyInBackground, disposeStringInBackground, my, 0);
     };
 
     /** Schedule pretty serialization as a native task. */
     async fn stringifyPrettyAsync(const int indent) -> string {
         return await task.async_thread_disposable::<string>(
-            stringifyInBackground, disposeStringInBackground, my, indent);
+        stringifyInBackground, disposeStringInBackground, my, indent);
     };
 };
 
@@ -444,30 +444,30 @@ private fn parseStringValue(const string value) -> JSON! {
                     match value.next() {
                         Some(escapeChar) => {
                             lastPos = value.tell();
-	                            if escapeChar == '\"' {
-	                                const char quote = '\"';
-	                                builder.push_in_place(quote);
-	                            } else if escapeChar == '\\' {
-	                                const char backslash = '\\';
-	                                builder.push_in_place(backslash);
-	                            } else if escapeChar == '/' {
-	                                const char slash = '/';
-	                                builder.push_in_place(slash);
-	                            } else if escapeChar == 'b' {
-	                                const char backspace = st.ascii(8);
-	                                builder.push_in_place(backspace);
-	                            } else if escapeChar == 'f' {
-	                                const char formFeed = st.ascii(12);
-	                                builder.push_in_place(formFeed);
-	                            } else if escapeChar == 'n' {
-	                                const char newline = '\n';
-	                                builder.push_in_place(newline);
-	                            } else if escapeChar == 'r' {
-	                                const char carriageReturn = '\r';
-	                                builder.push_in_place(carriageReturn);
-	                            } else if escapeChar == 't' {
-	                                const char tab = '\t';
-	                                builder.push_in_place(tab);
+                            if escapeChar == '\"' {
+                                const char quote = '\"';
+                                builder.push_in_place(quote);
+                            } else if escapeChar == '\\' {
+                                const char backslash = '\\';
+                                builder.push_in_place(backslash);
+                            } else if escapeChar == '/' {
+                                const char slash = '/';
+                                builder.push_in_place(slash);
+                            } else if escapeChar == 'b' {
+                                const char backspace = st.ascii(8);
+                                builder.push_in_place(backspace);
+                            } else if escapeChar == 'f' {
+                                const char formFeed = st.ascii(12);
+                                builder.push_in_place(formFeed);
+                            } else if escapeChar == 'n' {
+                                const char newline = '\n';
+                                builder.push_in_place(newline);
+                            } else if escapeChar == 'r' {
+                                const char carriageReturn = '\r';
+                                builder.push_in_place(carriageReturn);
+                            } else if escapeChar == 't' {
+                                const char tab = '\t';
+                                builder.push_in_place(tab);
                             } else if escapeChar == 'u' {
                                 hexDigits.clear();
                                 for int i = 0; i < 4; i = i + 1 {
@@ -478,17 +478,17 @@ private fn parseStringValue(const string value) -> JSON! {
                                                 const int invalidPos = if value.tell() > 0 value.tell() - 1 else 0;
                                                 return parseError(value, "Invalid unicode escape sequence in string literal", invalidPos);
                                             };
-	                                            hexDigits.push_in_place(hexChar);
+                                            hexDigits.push_in_place(hexChar);
                                         },
                                         None => return parseError(value, "Unterminated unicode escape sequence in string literal", value.len())
                                     };
                                 };
-	                                const let unicodeValue = st.hex_toInt(hexDigits.to_string().cstr());
+                                const let unicodeValue = st.hex_toInt(hexDigits.to_string().cstr());
                                 const char unicodeChar = st.ascii(unicodeValue);
-		                                builder.push_in_place(unicodeChar);
-	                            } else {
-	                                return parseError(value, value, escapePos);
-	                            };
+                                builder.push_in_place(unicodeChar);
+                            } else {
+                                return parseError(value, value, escapePos);
+                            };
                         },
                         None => return parseError(value, "Unterminated escape sequence in string literal", escapePos)
                     };
@@ -499,7 +499,7 @@ private fn parseStringValue(const string value) -> JSON! {
                     const int newlinePos = if value.tell() > 0 value.tell() - 1 else 0;
                     return parseError(value, "Unescaped newline in string literal", newlinePos);
                 } else {
-	                    builder.push_in_place(c);
+                    builder.push_in_place(c);
                 };
             },
             None => return parseError(value, "Unterminated string literal", lastPos)
@@ -668,11 +668,11 @@ export fn parse(const string jsonStr) -> JSON! {
 // Schedule JSON parsing as a native task while preserving Result semantics.
 export async fn parseAsync(const string jsonStr) -> JSON! {
     return await task.async_thread_disposable::<result::<JSON>>(
-        parseInBackground, disposeParsedInBackground, jsonStr);
+    parseInBackground, disposeParsedInBackground, jsonStr);
 };
 
 // Schedule serialization without requiring method-call syntax.
 export async fn stringifyAsync(const JSON value, * const int indent) -> string {
     return await task.async_thread_disposable::<string>(
-        stringifyInBackground, disposeStringInBackground, value, indent);
+    stringifyInBackground, disposeStringInBackground, value, indent);
 };

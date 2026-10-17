@@ -13,539 +13,539 @@ import {Some, None} from "Utils/option" under opt;
 import owned from "Memory";
 
 unique class uni_string {
-  private mutable adr buf = NULL;
-  private mutable int size = 0;
-  private mutable int capacity = 0;
-  private mutable int iter = 0;
+    private mutable adr buf = NULL;
+    private mutable int size = 0;
+    private mutable int capacity = 0;
+    private mutable int iter = 0;
 
-  private fn empty_buffer() -> adr {
-    return "";
-  };
-
-  fn init(immutable adr buffer) {
-    my.copy_from(buffer);
-  };
-
-  fn __from__string(immutable string s) {
-    my.buf = NULL;
-    my.size = 0;
-    my.capacity = 0;
-    my.iter = 0;
-    my.copy_from(s.cstr());
-    return my;
-  };
-
-  fn __from__adr(immutable adr s) {
-    my.buf = NULL;
-    my.size = 0;
-    my.capacity = 0;
-    my.iter = 0;
-    my.copy_from(s);
-    return my;
-  };
-
-  fn del() {
-    if (my.buf != NULL) {
-      af_free(my.buf);
-      my.buf = NULL;
-    };
-    my.size = 0;
-    my.capacity = 0;
-    my.iter = 0;
-  };
-
-  private fn ensure_capacity(const int required) -> void {
-    if required <= my.capacity {
-      return;
+    private fn empty_buffer() -> adr {
+        return "";
     };
 
-    mutable int next_capacity = my.capacity;
-    if next_capacity < 16 {
-      next_capacity = 16;
-    };
-    while next_capacity < required {
-      next_capacity = next_capacity * 2;
+    fn init(immutable adr buffer) {
+        my.copy_from(buffer);
     };
 
-    if my.buf == NULL {
-      my.buf = af_malloc(next_capacity);
-    } else {
-      my.buf = af_realloc(my.buf, next_capacity);
-    };
-    my.capacity = next_capacity;
-  };
-
-  fn copy_from(immutable adr raw) {
-    if raw == my.buf {
-      return;
-    };
-    mutable adr v = raw;
-    if raw == NULL {
-      v = my.empty_buffer();
+    fn __from__string(immutable string s) {
+        my.buf = NULL;
+        my.size = 0;
+        my.capacity = 0;
+        my.iter = 0;
+        my.copy_from(s.cstr());
+        return my;
     };
 
-    const int new_len = st.len(v);
-    my.ensure_capacity(new_len + 1);
-    af_memcpy(my.buf, v, new_len + 1);
-    my.size = new_len;
-    my.iter = 0;
-  };
-
-  safe fn clone() -> uni_string {
-    return new uni_string(my.buf);
-  };
-
-  safe fn get_buf() -> loan immutable adr {
-    return my.buf;
-  };
-
-  safe fn cstr() -> loan immutable adr {
-    return my.buf;
-  };
-
-  safe fn as_buf() -> owned::<adr> {
-    const adr b = af_malloc(my.len() + 1);
-    af_memcpy(b, my.buf, my.len() + 1);
-    return new owned::<adr>($b);
-  };
-
-  fn to_string() -> string {
-    if my.buf == NULL {
-      return new string("");
-    };
-    return new string(my.buf);
-  };
-
-  fn toString() -> string {
-    return my.to_string();
-  };
-
-  safe fn to_int() -> int! {
-    if my.size == 0 {
-      return res.reject::<int>(new Error("String is not numeric"));
+    fn __from__adr(immutable adr s) {
+        my.buf = NULL;
+        my.size = 0;
+        my.capacity = 0;
+        my.iter = 0;
+        my.copy_from(s);
+        return my;
     };
 
-    mutable int start = 0;
-    if my.at(0) == '-' {
-      if my.size == 1 {
-        return res.reject::<int>(new Error("String is not numeric"));
-      };
-      start = 1;
+    fn del() {
+        if (my.buf != NULL) {
+            af_free(my.buf);
+            my.buf = NULL;
+        };
+        my.size = 0;
+        my.capacity = 0;
+        my.iter = 0;
     };
 
-    for int i = start; i < my.size; i = i + 1 {
-      const char c = my.at(i);
-      if c < '0' | c > '9' {
-        return res.reject::<int>(new Error("String is not numeric"));
-      };
+    private fn ensure_capacity(const int required) -> void {
+        if required <= my.capacity {
+            return;
+        };
+
+        mutable int next_capacity = my.capacity;
+        if next_capacity < 16 {
+            next_capacity = 16;
+        };
+        while next_capacity < required {
+            next_capacity = next_capacity * 2;
+        };
+
+        if my.buf == NULL {
+            my.buf = af_malloc(next_capacity);
+        } else {
+            my.buf = af_realloc(my.buf, next_capacity);
+        };
+        my.capacity = next_capacity;
     };
 
-    return res.accept::<int>(st.str_toInt(my.buf));
-  };
+    fn copy_from(immutable adr raw) {
+        if raw == my.buf {
+            return;
+        };
+        mutable adr v = raw;
+        if raw == NULL {
+            v = my.empty_buffer();
+        };
 
-  safe fn len() -> int {
-    return my.size;
-  };
-
-  safe fn at(immutable int index) -> char {
-    if (!my.in_bounds(index)) {
-      return '\0';
+        const int new_len = st.len(v);
+        my.ensure_capacity(new_len + 1);
+        af_memcpy(my.buf, v, new_len + 1);
+        my.size = new_len;
+        my.iter = 0;
     };
-    const adr buff = my.buf;
-    return st.str_at(buff, index);
-  };
 
-  safe fn try_at(immutable int index) -> option::<char> {
-    if (!my.in_bounds(index)) {
-      return opt.None::<char>();
+    safe fn clone() -> uni_string {
+        return new uni_string(my.buf);
     };
-    return opt.Some(my.at(index));
-  };
 
-  fn __from__(immutable uni_string other) {
-    my.copy_from(other.get_buf());
-  };
+    safe fn get_buf() -> loan immutable adr {
+        return my.buf;
+    };
 
-  safe fn split(immutable char delimiter) -> vector::<uni_string> {
-    const vector::<uni_string> vec = new vector::<uni_string>();
-    const int myLen = my.len();
-    const adr base = af_malloc(myLen + 1);
-    mutable int buffIndex = 0;
+    safe fn cstr() -> loan immutable adr {
+        return my.buf;
+    };
 
-    for mutable int i = 0; i < myLen; i = i + 1 {
-      const adr curr = my.buf + i;
-      const char c = curr as char;
-      const adr cursor = base + buffIndex;
-      if (c == delimiter) {
-        cursor =: '\0';
+    safe fn as_buf() -> owned::<adr> {
+        const adr b = af_malloc(my.len() + 1);
+        af_memcpy(b, my.buf, my.len() + 1);
+        return new owned::<adr>($b);
+    };
+
+    fn to_string() -> string {
+        if my.buf == NULL {
+            return new string("");
+        };
+        return new string(my.buf);
+    };
+
+    fn toString() -> string {
+        return my.to_string();
+    };
+
+    safe fn to_int() -> int! {
+        if my.size == 0 {
+            return res.reject::<int>(new Error("String is not numeric"));
+        };
+
+        mutable int start = 0;
+        if my.at(0) == '-' {
+            if my.size == 1 {
+                return res.reject::<int>(new Error("String is not numeric"));
+            };
+            start = 1;
+        };
+
+        for int i = start; i < my.size; i = i + 1 {
+            const char c = my.at(i);
+            if c < '0' | c > '9' {
+                return res.reject::<int>(new Error("String is not numeric"));
+            };
+        };
+
+        return res.accept::<int>(st.str_toInt(my.buf));
+    };
+
+    safe fn len() -> int {
+        return my.size;
+    };
+
+    safe fn at(immutable int index) -> char {
+        if (!my.in_bounds(index)) {
+            return '\0';
+        };
+        const adr buff = my.buf;
+        return st.str_at(buff, index);
+    };
+
+    safe fn try_at(immutable int index) -> option::<char> {
+        if (!my.in_bounds(index)) {
+            return opt.None::<char>();
+        };
+        return opt.Some(my.at(index));
+    };
+
+    fn __from__(immutable uni_string other) {
+        my.copy_from(other.get_buf());
+    };
+
+    safe fn split(immutable char delimiter) -> vector::<uni_string> {
+        const vector::<uni_string> vec = new vector::<uni_string>();
+        const int myLen = my.len();
+        const adr base = af_malloc(myLen + 1);
+        mutable int buffIndex = 0;
+
+        for mutable int i = 0; i < myLen; i = i + 1 {
+            const adr curr = my.buf + i;
+            const char c = curr as char;
+            const adr cursor = base + buffIndex;
+            if (c == delimiter) {
+                cursor =: '\0';
+                vec.push_back(new uni_string(base));
+                buffIndex = 0;
+            } else {
+                cursor =: c;
+                buffIndex = buffIndex + 1;
+            };
+        };
+        const adr endCursor = base + buffIndex;
+        endCursor =: '\0';
         vec.push_back(new uni_string(base));
-        buffIndex = 0;
-      } else {
+        af_free($base);
+        return vec;
+    };
+
+    safe fn is_empty() -> bool {
+        return my.size == 0;
+    };
+
+    fn reset_iter() {
+        my.iter = 0;
+    };
+
+    fn clear() -> void {
+        if my.buf == NULL {
+            my.ensure_capacity(1);
+        };
+        my.buf =: '\0';
+        my.size = 0;
+        my.iter = 0;
+    };
+
+    safe fn in_bounds(immutable int index) -> bool {
+        if (index < 0) {
+            return false;
+        };
+        return index < my.size;
+    };
+
+    fn __copy__() -> uni_string {
+        return my.clone();
+    };
+
+    safe fn copy() -> uni_string {
+        return my.clone();
+    };
+
+    fn next() -> option::<char> {
+        if my.iter >= my.size {
+            my.reset_iter();
+            return opt.None::<char>();
+        };
+        const char c = my.at(my.iter);
+        my.iter = my.iter + 1;
+        if my.iter > my.size {
+            my.reset_iter();
+        };
+        return opt.Some(c);
+    };
+
+    fn peek() -> option::<char> {
+        if my.iter >= my.size {
+            return opt.None::<char>();
+        };
+        const char c = my.at(my.iter);
+        return opt.Some(c);
+    };
+
+    fn concat(immutable uni_string other) -> uni_string {
+        mutable adr left = my.buf;
+        immutable adr rawRight = other.get_buf();
+        mutable adr right = rawRight;
+        if left == NULL {
+            left = my.empty_buffer();
+        };
+        if right == NULL {
+            right = my.empty_buffer();
+        };
+        const let new_len = st.len(left) + st.len(right);
+        const adr new_buf = af_malloc(new_len + 1);
+        st.str_concat(left, right, new_buf);
+        const uni_string s = new uni_string(new_buf);
+        af_free(new_buf);
+        return s;
+    };
+
+    fn push(immutable char c) -> uni_string {
+        const int new_len = my.size + 1;
+        const adr new_buf = af_malloc(new_len + 1);
+        if my.size > 0 {
+            af_memcpy(new_buf, my.buf, my.size);
+        };
+        const adr cursor = new_buf + my.size;
         cursor =: c;
-        buffIndex = buffIndex + 1;
-      };
-    };
-    const adr endCursor = base + buffIndex;
-    endCursor =: '\0';
-    vec.push_back(new uni_string(base));
-    af_free($base);
-    return vec;
-  };
-
-  safe fn is_empty() -> bool {
-    return my.size == 0;
-  };
-
-  fn reset_iter() {
-    my.iter = 0;
-  };
-
-  fn clear() -> void {
-    if my.buf == NULL {
-      my.ensure_capacity(1);
-    };
-    my.buf =: '\0';
-    my.size = 0;
-    my.iter = 0;
-  };
-
-  safe fn in_bounds(immutable int index) -> bool {
-    if (index < 0) {
-      return false;
-    };
-    return index < my.size;
-  };
-
-  fn __copy__() -> uni_string {
-    return my.clone();
-  };
-
-  safe fn copy() -> uni_string {
-    return my.clone();
-  };
-
-  fn next() -> option::<char> {
-    if my.iter >= my.size {
-      my.reset_iter();
-      return opt.None::<char>();
-    };
-    const char c = my.at(my.iter);
-    my.iter = my.iter + 1;
-    if my.iter > my.size {
-      my.reset_iter();
-    };
-    return opt.Some(c);
-  };
-
-  fn peek() -> option::<char> {
-    if my.iter >= my.size {
-      return opt.None::<char>();
-    };
-    const char c = my.at(my.iter);
-    return opt.Some(c);
-  };
-
-  fn concat(immutable uni_string other) -> uni_string {
-    mutable adr left = my.buf;
-    immutable adr rawRight = other.get_buf();
-    mutable adr right = rawRight;
-    if left == NULL {
-      left = my.empty_buffer();
-    };
-    if right == NULL {
-      right = my.empty_buffer();
-    };
-    const let new_len = st.len(left) + st.len(right);
-    const adr new_buf = af_malloc(new_len + 1);
-    st.str_concat(left, right, new_buf);
-    const uni_string s = new uni_string(new_buf);
-    af_free(new_buf);
-    return s;
-  };
-
-  fn push(immutable char c) -> uni_string {
-    const int new_len = my.size + 1;
-    const adr new_buf = af_malloc(new_len + 1);
-    if my.size > 0 {
-      af_memcpy(new_buf, my.buf, my.size);
-    };
-    const adr cursor = new_buf + my.size;
-    cursor =: c;
-    const adr tail = new_buf + new_len;
-    tail =: '\0';
-    const uni_string s = new uni_string(new_buf);
-    af_free(new_buf);
-    return s;
-  };
-
-  fn append_raw(immutable adr raw) -> void {
-    if raw == NULL {
-      return;
-    };
-    const bool appending_self = raw == my.buf;
-    const int right_len = st.len(raw);
-    const int new_len = my.size + right_len;
-    my.ensure_capacity(new_len + 1);
-    const adr right = if appending_self my.buf else raw;
-    if right_len > 0 {
-      af_memcpy(my.buf + my.size, right, right_len);
-    };
-    const adr tail = my.buf + new_len;
-    tail =: '\0';
-    my.size = new_len;
-    my.iter = 0;
-  };
-
-  fn append(immutable uni_string other) -> void {
-    immutable adr raw = other.get_buf();
-    my.append_raw(raw);
-  };
-
-  fn push_in_place(immutable char c) -> void {
-    const int new_len = my.size + 1;
-    my.ensure_capacity(new_len + 1);
-    const adr cursor = my.buf + my.size;
-    cursor =: c;
-    const adr tail = my.buf + new_len;
-    tail =: '\0';
-    my.size = new_len;
-    my.iter = 0;
-  };
-
-  bool compare<<==>>(immutable uni_string other) {
-    return st.str_comp(my.buf, other.buf) == 1;
-  };
-
-  safe fn subString(immutable int start, immutable int end) -> uni_string {
-    if start < 0 {
-      return new uni_string("");
-    };
-    if end < 0 {
-      return new uni_string("");
-    };
-    if start > end {
-      return new uni_string("");
-    };
-    if start > my.size {
-      return new uni_string("");
-    };
-    if end > my.size {
-      return new uni_string("");
+        const adr tail = new_buf + new_len;
+        tail =: '\0';
+        const uni_string s = new uni_string(new_buf);
+        af_free(new_buf);
+        return s;
     };
 
-    const int new_len = end - start;
-    const adr out = af_malloc(new_len + 1);
-    if new_len > 0 {
-      af_memcpy(out, my.buf + start, new_len);
-    };
-    const adr tail = out + new_len;
-    tail =: '\0';
-    const uni_string result = new uni_string(out);
-    af_free(out);
-    return $result;
-  };
-
-  safe fn trim(* char ch) -> uni_string {
-    if ch == '\0' {
-      ch = ' ';
-    };
-
-    mutable int start = 0;
-    mutable int end = my.size;
-
-    while start < my.size & my.at(start) == ch {
-      start = start + 1;
+    fn append_raw(immutable adr raw) -> void {
+        if raw == NULL {
+            return;
+        };
+        const bool appending_self = raw == my.buf;
+        const int right_len = st.len(raw);
+        const int new_len = my.size + right_len;
+        my.ensure_capacity(new_len + 1);
+        const adr right = if appending_self my.buf else raw;
+        if right_len > 0 {
+            af_memcpy(my.buf + my.size, right, right_len);
+        };
+        const adr tail = my.buf + new_len;
+        tail =: '\0';
+        my.size = new_len;
+        my.iter = 0;
     };
 
-    while end > start & my.at(end - 1) == ch {
-      end = end - 1;
+    fn append(immutable uni_string other) -> void {
+        immutable adr raw = other.get_buf();
+        my.append_raw(raw);
     };
 
-    return my.subString(start, end);
-  };
+    fn push_in_place(immutable char c) -> void {
+        const int new_len = my.size + 1;
+        my.ensure_capacity(new_len + 1);
+        const adr cursor = my.buf + my.size;
+        cursor =: c;
+        const adr tail = my.buf + new_len;
+        tail =: '\0';
+        my.size = new_len;
+        my.iter = 0;
+    };
 
-  safe fn indexOf(immutable char ch) -> int {
-    for int i = 0; i < my.size; i = i + 1 {
-      if my.at(i) == ch {
-        return i;
-      };
+    bool compare<<==>>(immutable uni_string other) {
+        return st.str_comp(my.buf, other.buf) == 1;
     };
-    return -1;
-  };
 
-  safe fn equals(immutable uni_string other) -> bool {
-    if my.size != other.len() {
-      return false;
-    };
-    return my.match_from(other, 0, 0);
-  };
+    safe fn subString(immutable int start, immutable int end) -> uni_string {
+        if start < 0 {
+            return new uni_string("");
+        };
+        if end < 0 {
+            return new uni_string("");
+        };
+        if start > end {
+            return new uni_string("");
+        };
+        if start > my.size {
+            return new uni_string("");
+        };
+        if end > my.size {
+            return new uni_string("");
+        };
 
-  safe fn match_from(immutable uni_string other, immutable int my_index, immutable int other_index) -> bool {
-    if (my_index < 0) {
-      return false;
+        const int new_len = end - start;
+        const adr out = af_malloc(new_len + 1);
+        if new_len > 0 {
+            af_memcpy(out, my.buf + start, new_len);
+        };
+        const adr tail = out + new_len;
+        tail =: '\0';
+        const uni_string result = new uni_string(out);
+        af_free(out);
+        return $result;
     };
-    if (other_index < 0) {
-      return false;
-    };
-    const int target_len = other.len();
-    mutable int left = my_index;
-    mutable int right = other_index;
-    while right < target_len {
-      if left >= my.size {
-        return false;
-      };
-      if my.at(left) != other.at(right) {
-        return false;
-      };
-      left = left + 1;
-      right = right + 1;
-    };
-    return true;
-  };
 
-  safe fn starts_with(immutable uni_string prefix) -> bool {
-    if prefix.len() == 0 {
-      return true;
-    };
-    if prefix.len() > my.size {
-      return false;
-    };
-    return my.match_from(prefix, 0, 0);
-  };
+    safe fn trim(* char ch) -> uni_string {
+        if ch == '\0' {
+            ch = ' ';
+        };
 
-  safe fn ends_with(immutable uni_string suffix) -> bool {
-    if suffix.len() == 0 {
-      return true;
-    };
-    if suffix.len() > my.size {
-      return false;
-    };
-    return my.match_from(suffix, my.size - suffix.len(), 0);
-  };
+        mutable int start = 0;
+        mutable int end = my.size;
 
-  safe fn contains(immutable uni_string needle) -> bool {
-    return my.contains_from(needle, 0);
-  };
+        while start < my.size & my.at(start) == ch {
+            start = start + 1;
+        };
 
-  safe fn contains_from(immutable uni_string needle, immutable int index) -> bool {
-    if needle.len() == 0 {
-      return true;
+        while end > start & my.at(end - 1) == ch {
+            end = end - 1;
+        };
+
+        return my.subString(start, end);
     };
-    if index < 0 {
-      return my.contains_from(needle, 0);
+
+    safe fn indexOf(immutable char ch) -> int {
+        for int i = 0; i < my.size; i = i + 1 {
+            if my.at(i) == ch {
+                return i;
+            };
+        };
+        return -1;
     };
-    if index >= my.size {
-      return false;
+
+    safe fn equals(immutable uni_string other) -> bool {
+        if my.size != other.len() {
+            return false;
+        };
+        return my.match_from(other, 0, 0);
     };
-    const int limit = my.size - needle.len();
-    mutable int i = index;
-    while i <= limit {
-      if my.match_from(needle, i, 0) {
+
+    safe fn match_from(immutable uni_string other, immutable int my_index, immutable int other_index) -> bool {
+        if (my_index < 0) {
+            return false;
+        };
+        if (other_index < 0) {
+            return false;
+        };
+        const int target_len = other.len();
+        mutable int left = my_index;
+        mutable int right = other_index;
+        while right < target_len {
+            if left >= my.size {
+                return false;
+            };
+            if my.at(left) != other.at(right) {
+                return false;
+            };
+            left = left + 1;
+            right = right + 1;
+        };
         return true;
-      };
-      i = i + 1;
-    };
-    return false;
-  };
-
-  safe fn find(immutable uni_string sub, immutable int start) -> int {
-    if sub.len() == 0 {
-      return start;
-    };
-    if start < 0 {
-      return -1;
-    };
-    if sub.len() > my.size {
-      return -1;
-    };
-    if start > my.size - sub.len() {
-      return -1;
     };
 
-    mutable int i = start;
-    while i <= my.size - sub.len() {
-      if my.match_from(sub, i, 0) {
-        return i;
-      };
-      i = i + 1;
-    };
-    return -1;
-  };
-
-  safe fn replace(immutable uni_string sub, immutable uni_string n) -> uni_string {
-    if sub.len() == 0 {
-      return my.clone();
+    safe fn starts_with(immutable uni_string prefix) -> bool {
+        if prefix.len() == 0 {
+            return true;
+        };
+        if prefix.len() > my.size {
+            return false;
+        };
+        return my.match_from(prefix, 0, 0);
     };
 
-    mutable int occurrences = 0;
-    mutable int search_index = 0;
-    while true {
-      const int index = my.find(sub, search_index);
-      if index == -1 {
-        break;
-      };
-      occurrences = occurrences + 1;
-      search_index = index + sub.len();
+    safe fn ends_with(immutable uni_string suffix) -> bool {
+        if suffix.len() == 0 {
+            return true;
+        };
+        if suffix.len() > my.size {
+            return false;
+        };
+        return my.match_from(suffix, my.size - suffix.len(), 0);
     };
 
-    if occurrences == 0 {
-      return my.clone();
+    safe fn contains(immutable uni_string needle) -> bool {
+        return my.contains_from(needle, 0);
     };
 
-    const int new_len = my.size + occurrences * (n.len() - sub.len());
-    const adr out = af_malloc(new_len + 1);
-    adr write = out;
-    mutable int read = 0;
-
-    while true {
-      const int index = my.find(sub, read);
-      if index == -1 {
-        break;
-      };
-
-      const int chunk = index - read;
-      if chunk > 0 {
-        af_memcpy(write, my.buf + read, chunk);
-        write = write + chunk;
-      };
-      if n.len() > 0 {
-        af_memcpy(write, n.buf, n.len());
-        write = write + n.len();
-      };
-      read = index + sub.len();
+    safe fn contains_from(immutable uni_string needle, immutable int index) -> bool {
+        if needle.len() == 0 {
+            return true;
+        };
+        if index < 0 {
+            return my.contains_from(needle, 0);
+        };
+        if index >= my.size {
+            return false;
+        };
+        const int limit = my.size - needle.len();
+        mutable int i = index;
+        while i <= limit {
+            if my.match_from(needle, i, 0) {
+                return true;
+            };
+            i = i + 1;
+        };
+        return false;
     };
 
-    const int tail_len = my.size - read;
-    if tail_len > 0 {
-      af_memcpy(write, my.buf + read, tail_len);
-      write = write + tail_len;
+    safe fn find(immutable uni_string sub, immutable int start) -> int {
+        if sub.len() == 0 {
+            return start;
+        };
+        if start < 0 {
+            return -1;
+        };
+        if sub.len() > my.size {
+            return -1;
+        };
+        if start > my.size - sub.len() {
+            return -1;
+        };
+
+        mutable int i = start;
+        while i <= my.size - sub.len() {
+            if my.match_from(sub, i, 0) {
+                return i;
+            };
+            i = i + 1;
+        };
+        return -1;
     };
-    write =: '\0';
 
-    const uni_string result = new uni_string(out);
-    af_free(out);
-    return $result;
-  };
+    safe fn replace(immutable uni_string sub, immutable uni_string n) -> uni_string {
+        if sub.len() == 0 {
+            return my.clone();
+        };
 
-  loan uni_string cpy<<=>>(const uni_string other) {
-    if other.buf == my.buf return my;
-    my.copy_from(other.buf);
-    return my;
-  };
+        mutable int occurrences = 0;
+        mutable int search_index = 0;
+        while true {
+            const int index = my.find(sub, search_index);
+            if index == -1 {
+                break;
+            };
+            occurrences = occurrences + 1;
+            search_index = index + sub.len();
+        };
 
-  uni_string conc<<+>>(immutable uni_string other) {
-    return my.concat(other);
-  };
+        if occurrences == 0 {
+            return my.clone();
+        };
+
+        const int new_len = my.size + occurrences * (n.len() - sub.len());
+        const adr out = af_malloc(new_len + 1);
+        adr write = out;
+        mutable int read = 0;
+
+        while true {
+            const int index = my.find(sub, read);
+            if index == -1 {
+                break;
+            };
+
+            const int chunk = index - read;
+            if chunk > 0 {
+                af_memcpy(write, my.buf + read, chunk);
+                write = write + chunk;
+            };
+            if n.len() > 0 {
+                af_memcpy(write, n.buf, n.len());
+                write = write + n.len();
+            };
+            read = index + sub.len();
+        };
+
+        const int tail_len = my.size - read;
+        if tail_len > 0 {
+            af_memcpy(write, my.buf + read, tail_len);
+            write = write + tail_len;
+        };
+        write =: '\0';
+
+        const uni_string result = new uni_string(out);
+        af_free(out);
+        return $result;
+    };
+
+    loan uni_string cpy<<=>>(const uni_string other) {
+        if other.buf == my.buf return my;
+        my.copy_from(other.buf);
+        return my;
+    };
+
+    uni_string conc<<+>>(immutable uni_string other) {
+        return my.concat(other);
+    };
 };
 
 export fn print(immutable uni_string &&s) {
-  io.print(s.get_buf());
-  return;
+    io.print(s.get_buf());
+    return;
 };
 
 export fn print(immutable uni_string s) {
-  io.print(s.get_buf());
-  return;
+    io.print(s.get_buf());
+    return;
 };
 
 /**
@@ -553,116 +553,116 @@ export fn print(immutable uni_string s) {
  * trailing newline.
  */
 private fn read_string_from_stdin(immutable adr prompt) -> uni_string {
-  if prompt != NULL {
-    io.print(prompt);
-  };
-
-  mutable int capacity = 16;
-  mutable int length = 0;
-  mutable adr buffer = af_malloc(capacity);
-  const char input = '\0';
-
-  while true {
-    const int count = sys_read(0, ?input, 1);
-    if count <= 0 | input == '\n' {
-      break;
+    if prompt != NULL {
+        io.print(prompt);
     };
 
-    if length + 1 >= capacity {
-      capacity = capacity * 2;
-      buffer = af_realloc(buffer, capacity);
+    mutable int capacity = 16;
+    mutable int length = 0;
+    mutable adr buffer = af_malloc(capacity);
+    const char input = '\0';
+
+    while true {
+        const int count = sys_read(0, ?input, 1);
+        if count <= 0 | input == '\n' {
+            break;
+        };
+
+        if length + 1 >= capacity {
+            capacity = capacity * 2;
+            buffer = af_realloc(buffer, capacity);
+        };
+
+        const adr cursor = buffer + length;
+        cursor =: input;
+        length = length + 1;
     };
 
-    const adr cursor = buffer + length;
-    cursor =: input;
-    length = length + 1;
-  };
-
-  const adr tail = buffer + length;
-  tail =: '\0';
-  const uni_string result = new uni_string(buffer);
-  af_free(buffer);
-  return $result;
+    const adr tail = buffer + length;
+    tail =: '\0';
+    const uni_string result = new uni_string(buffer);
+    af_free(buffer);
+    return $result;
 };
 
 export fn read_string(?const uni_string prompt) -> uni_string {
-  if prompt.isSome() {
-    return read_string_from_stdin(prompt.expect("Prompt unexpectedly missing").get_buf());
-  };
-  return read_string_from_stdin(NULL);
+    if prompt.isSome() {
+        return read_string_from_stdin(prompt.expect("Prompt unexpectedly missing").get_buf());
+    };
+    return read_string_from_stdin(NULL);
 };
 
 private adr append_raw(immutable adr out, immutable adr raw) {
-  if raw == NULL {
-    return out;
-  };
-  const int outLen = st.len(out);
-  const int rawLen = st.len(raw);
-  const adr newBuf = af_malloc(outLen + rawLen + 1);
-  st.str_concat(out, raw, newBuf);
-  af_free(out);
-  return newBuf;
+    if raw == NULL {
+        return out;
+    };
+    const int outLen = st.len(out);
+    const int rawLen = st.len(raw);
+    const adr newBuf = af_malloc(outLen + rawLen + 1);
+    st.str_concat(out, raw, newBuf);
+    af_free(out);
+    return newBuf;
 };
 
 private adr append_char(immutable adr out, immutable char c) {
-  const char[2] buff;
-  buff =: c;
-  buff =: '\0';
-  return append_raw(out, buff);
+    const char[2] buff;
+    buff =: c;
+    buff =: '\0';
+    return append_raw(out, buff);
 };
 
 export fn _fUCstr(const adr fmt, * adr args) -> uni_string {
-  mutable adr out = af_malloc(1);
-  out =: '\0';
-  const int fmtLen = st.len(fmt);
+    mutable adr out = af_malloc(1);
+    out =: '\0';
+    const int fmtLen = st.len(fmt);
 
-  for int i = 0; i < fmtLen; i = i + 1 {
-    const char ch = st.str_at(fmt, i);
-    if (ch == '%') {
-      i = i + 1;
-      if (i >= fmtLen) {
-        break;
-      };
+    for int i = 0; i < fmtLen; i = i + 1 {
+        const char ch = st.str_at(fmt, i);
+        if (ch == '%') {
+            i = i + 1;
+            if (i >= fmtLen) {
+                break;
+            };
 
-      const char spec = st.str_at(fmt, i);
-      if (spec == 'a') {
-        out = append_raw(out, args as adr);
-        args = args + adr;
-      } else if (spec == 's') {
-        out = append_raw(out, args as adr);
-        args = args + adr;
-      } else if (spec == 'c') {
-        out = append_char(out, args as char);
-        args = args + char;
-      } else if (spec == 'd') {
-        const char[16] buff;
-        const int n = args as int;
-        st.int_toString(n, buff);
-        out = append_raw(out, buff);
-        args = args + int;
-      } else if (spec == 'f') {
-        const float f = args as float;
-        const string rendered = fmt.floatToString(f);
-        out = append_raw(out, rendered.cstr());
-        args = args + float;
-      } else if (spec == 'b') {
-        const bool b = args as bool;
-        if b {
-          out = append_raw(out, "true");
+            const char spec = st.str_at(fmt, i);
+            if (spec == 'a') {
+                out = append_raw(out, args as adr);
+                args = args + adr;
+            } else if (spec == 's') {
+                out = append_raw(out, args as adr);
+                args = args + adr;
+            } else if (spec == 'c') {
+                out = append_char(out, args as char);
+                args = args + char;
+            } else if (spec == 'd') {
+                const char[16] buff;
+                const int n = args as int;
+                st.int_toString(n, buff);
+                out = append_raw(out, buff);
+                args = args + int;
+            } else if (spec == 'f') {
+                const float f = args as float;
+                const string rendered = fmt.floatToString(f);
+                out = append_raw(out, rendered.cstr());
+                args = args + float;
+            } else if (spec == 'b') {
+                const bool b = args as bool;
+                if b {
+                    out = append_raw(out, "true");
+                } else {
+                    out = append_raw(out, "false");
+                };
+                args = args + bool;
+            } else {
+                out = append_char(out, '%');
+                out = append_char(out, spec);
+            };
         } else {
-          out = append_raw(out, "false");
+            out = append_char(out, ch);
         };
-        args = args + bool;
-      } else {
-        out = append_char(out, '%');
-        out = append_char(out, spec);
-      };
-    } else {
-      out = append_char(out, ch);
     };
-  };
 
-  const uni_string result = new uni_string(out);
-  af_free(out);
-  return $result;
+    const uni_string result = new uni_string(out);
+    af_free(out);
+    return $result;
 };

@@ -51,7 +51,7 @@ shared class DateTime{
     public string toString();
 
     private int Copy<<=>>(DateTime);
-    
+
     private int epochToDate();
 };
 
@@ -92,8 +92,8 @@ private int daysInYear(const int year){
 private int daysSinceJan1(const int month, const int day, const int year){
     int days = 0;
     for int i = 1; i < month; i++
-        days = days + daysInMonth(i, year);
-    
+    days = days + daysInMonth(i, year);
+
     days = days + day - 1;
     return days;
 };
@@ -101,7 +101,7 @@ private int daysSinceJan1(const int month, const int day, const int year){
 private int dateRelativeTo(const int month, const int day, const int year, const int relYear){
     int days = daysSinceJan1(month, day, year);
     for int i = relYear; i < year; i++
-        days = days + daysInYear(i);
+    days = days + daysInYear(i);
     return days;
 };
 
@@ -145,19 +145,19 @@ private int dayOfWeek(const int month, const int day, const int year){
 
 private adr dowToString(const int dow){
     if dow == 0
-        return "Sunday";
+    return "Sunday";
     if dow == 1
-        return "Monday";
+    return "Monday";
     if dow == 2
-        return "Tuesday";
+    return "Tuesday";
     if dow == 3
-        return "Wednesday";
+    return "Wednesday";
     if dow == 4
-        return "Thursday";
+    return "Thursday";
     if dow == 5
-        return "Friday";
+    return "Friday";
     if dow == 6
-        return "Saturday";
+    return "Saturday";
     panic("Invalid day of week");
 };
 
