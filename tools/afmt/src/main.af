@@ -1,0 +1,81 @@
+.needs <std>
+
+import {print} from "uni_string" under uni;
+import uni_string from "uni_string";
+import Argument, CommandLineArgs from "CLArgs";
+import FileHandle from "files";
+import Formatter from "./Formatter";
+
+
+fn getTextFromFile(uni_string &&path) -> uni_string! {
+    const let handle = new FileHandle($path);
+    let file = $handle.open()!;
+    const let input = file.get()!;
+    const let readText = input.readToEnd()!;
+    const let text = new uni_string(readText.cstr());
+    return text;
+};
+
+fn writeTextToFile(uni_string &&path, uni_string contents) -> bool! {
+    const let handle = new FileHandle($path);
+    let file = $handle.create()!;
+    const int written = file.get()!.write(contents.cstr());
+    return written == contents.len();
+};
+
+fn main(int argc, adr argv) -> int {
+    const let args = new CommandLineArgs(argc, argv);
+
+    args.with_arguments([
+        new Argument("help", "h", "Display help", "false", true),
+        new Argument("inplace", "i", "Overwrite the input file with formatted output", "false", true)
+    ]);
+
+    match args.parse() {
+        Ok(_) => {},
+        Err(error) => {
+            uni.print(`Invalid arguments: {error}\n`);
+            return 1;
+        }
+    };
+
+    if args.hasTag("help") {
+        args.printHelp();
+        return 0;
+    };
+
+
+    let path = match args.popCommandRaw() {
+        Ok(value) => resolve value,
+        Err(_) => {
+            uni.print("Usage: afmt [--inplace|-i] <file.af>\n");
+            return 1;
+        }
+    };
+
+
+
+    let contents = getTextFromFile(new uni_string(path)).expect("Failed to read from file");
+
+    const let formatter = Formatter($contents);
+    const let formatted = formatter.format();
+
+    if args.hasTag("inplace") {
+        match writeTextToFile(new uni_string(path), formatted) {
+            Ok(written) => {
+                if !written {
+                    uni.print("Failed to write the complete formatted file\n");
+                    return 1;
+                };
+            },
+            Err(error) => {
+                uni.print(`Failed to write file: {error}\n`);
+                return 1;
+            }
+        };
+    } else {
+        uni.print(formatted);
+    };
+
+    return 0;
+};

@@ -29,6 +29,8 @@ Install with one command:
 curl -s https://raw.githubusercontent.com/DeForestt/aflat/main/install.sh | bash
 ```
 This will automatically add `aflat` to your `PATH` and enable bash/zsh tab completion.
+Installation and updates also build the projects in `tools/`, including `afmt`,
+whose configuration places its executable in the same `bin` directory as `aflat`.
 
 ### Cloning the repository
 ```bash

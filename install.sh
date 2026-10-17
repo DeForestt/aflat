@@ -1,5 +1,17 @@
 #!/bin/bash
 
+set -e
+
+build_tools() {
+  local aflat_dir="$HOME/.aflat/aflat"
+  local tool_dir
+  for tool_dir in "$aflat_dir"/tools/*; do
+    [ -f "$tool_dir/aflat.cfg" ] || continue
+    echo "Building tool: ${tool_dir##*/}"
+    (cd "$tool_dir" && "$aflat_dir/bin/aflat" build)
+  done
+}
+
 install_completion() {
   local comp_script="$HOME/.aflat/aflat/completions/aflat.bash"
   if [ -f "$comp_script" ]; then
@@ -47,6 +59,7 @@ if [ -d ~/.aflat ]; then
   (cd ~/.aflat/aflat && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release)
   (cd ~/.aflat/aflat && cmake --build build --target aflat)
   (cd ~/.aflat/aflat && bash rebuild-libs.sh)
+  build_tools
   install_completion
   echo 'aflat updated'
   exit
@@ -62,10 +75,12 @@ if ! [ -x "$(command -v boost)" ]; then
 fi
 
 # Build aflat
-(cd ~/.aflat/aflat && mkdir bin && make ../. && cd .. && cmake --build build > buildLog.log)
+(cd ~/.aflat/aflat && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release)
+(cd ~/.aflat/aflat && cmake --build build --target aflat)
 
 # Build libs
 (cd ~/.aflat/aflat && bash rebuild-libs.sh)
+build_tools
 install_completion
 
 echo 'Done Please restart your terminal or run source ~/.bashrc or source ~/.zshrc'

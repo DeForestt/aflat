@@ -1,0 +1,10 @@
+# Generated build and test artifacts
+/.cache/
+/bin/
+/coverage/
+/coverage.info
+__pycache__/
+*.pyc
+
+# Local work notes
+/aflat-stdlib-issues.md

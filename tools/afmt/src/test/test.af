@@ -1,0 +1,615 @@
+
+.needs <std>
+.needs <test>
+
+import {describe, it, assertEqual, assertTrue, summary} from "ATest" under test;
+import Lexer from "../Lexer";
+import TokenKind from "../Token";
+import Formatter from "../Formatter";
+
+
+const int identifierKind = 0;
+const int numberKind = 1;
+const int stringLiteralKind = 2;
+const int symbolKind = 3;
+const int whitespaceKind = 4;
+const int commentKind = 5;
+const int endOfFileKind = 6;
+
+fn kindCode(const TokenKind kind) -> int {
+    match kind {
+        Identifier => return 0,
+        Number => return 1,
+        StringLiteral => return 2,
+        Symbol => return 3,
+        Whitespace => return 4,
+        Comment => return 5,
+        EndOfFile => return 6
+    };
+};
+
+fn expectToken(const Lexer lexer, const int kind,
+               const int start, const int end,
+               const int line, const int column) {
+    const let token = lexer.nextToken();
+    test.assertEqual(kind, kindCode(token.kind));
+    test.assertEqual(start, token.span.start);
+    test.assertEqual(end, token.span.end);
+    test.assertEqual(end - start, token.span.len());
+    test.assertEqual(line, token.line);
+    test.assertEqual(column, token.column);
+};
+
+fn expectFormat(const adr source, const adr expectedText) {
+    const let formatter = Formatter(new uni_string(source));
+    const let formatted = formatter.format();
+    const let expected = uni_string(expectedText);
+    test.assertTrue(formatted == expected);
+
+    // Formatting the result again must not change its indentation.
+    const let again = Formatter(formatted.clone());
+    const let second = again.format();
+    test.assertTrue(second == expected);
+};
+
+fn main() -> int {
+    test.describe("Lexer: identifiers", fn () {
+        test.it("recognizes a single identifier", fn () {
+            const let lexer = Lexer("hello");
+            const let token = lexer.nextToken();
+
+            match token.kind {
+                Identifier => test.assertTrue(true),
+                _ => test.assertTrue(false)
+            };
+
+            test.assertEqual(token.span.start, 0);
+            test.assertEqual(token.span.end, 5);
+            test.assertEqual(token.line, 1);
+            test.assertEqual(token.column, 1);
+        });
+
+        test.it("allows digits after the first character", fn () {
+            const let lexer = Lexer("value123");
+            const let token = lexer.nextToken();
+
+            match token.kind {
+                Identifier => test.assertTrue(true),
+                _ => test.assertTrue(false)
+            };
+
+            test.assertEqual(token.span.end, 8);
+        });
+    });
+
+    test.describe("Lexer: positions", fn () {
+        test.it("tracks line and column across newlines", fn () {
+            const let lexer = Lexer("abc\nxyz");
+
+            const let first = lexer.nextToken();
+            const let newline = lexer.nextToken();
+            const let second = lexer.nextToken();
+
+            test.assertEqual(first.line, 1);
+            test.assertEqual(first.column, 1);
+
+            test.assertEqual(newline.span.start, 3);
+            test.assertEqual(newline.span.end, 4);
+
+            test.assertEqual(second.line, 2);
+            test.assertEqual(second.column, 1);
+            test.assertEqual(second.span.start, 4);
+            test.assertEqual(second.span.end, 7);
+        });
+    });
+
+    test.describe("Lexer: end of file", fn () {
+        test.it("returns EOF for empty source", fn () {
+            const let lexer = Lexer("");
+            const let token = lexer.nextToken();
+
+            match token.kind {
+                EndOfFile => test.assertTrue(true),
+                _ => test.assertTrue(false)
+            };
+
+            test.assertEqual(token.span.start, 0);
+            test.assertEqual(token.span.end, 0);
+        });
+
+        test.it("returns EOF after consuming source", fn () {
+            const let lexer = Lexer("x");
+
+            expectToken(lexer, identifierKind, 0, 1, 1, 1);
+            const let eof = lexer.nextToken();
+
+            match eof.kind {
+                EndOfFile => test.assertTrue(true),
+                _ => test.assertTrue(false)
+            };
+
+            test.assertEqual(eof.span.start, 1);
+            test.assertEqual(eof.span.end, 1);
+        });
+    });
+
+    test.describe("Lexer: complete token stream", fn () {
+        test.it("groups decimal integers and fractions", fn () {
+            const let lexer = Lexer("42 3.14 0 -12.5");
+            expectToken(lexer, numberKind, 0, 2, 1, 1);
+            expectToken(lexer, whitespaceKind, 2, 3, 1, 3);
+            expectToken(lexer, numberKind, 3, 7, 1, 4);
+            expectToken(lexer, whitespaceKind, 7, 8, 1, 8);
+            expectToken(lexer, numberKind, 8, 9, 1, 9);
+            expectToken(lexer, whitespaceKind, 9, 10, 1, 10);
+            expectToken(lexer, numberKind, 10, 15, 1, 11);
+            expectToken(lexer, endOfFileKind, 15, 15, 1, 16);
+            expectToken(lexer, endOfFileKind, 15, 15, 1, 16);
+        });
+
+        test.it("recognizes hex octal and long literals", fn () {
+            const let lexer = Lexer("0xAf09 0o755 #123 #-42 #0xFF");
+            expectToken(lexer, numberKind, 0, 6, 1, 1);
+            expectToken(lexer, whitespaceKind, 6, 7, 1, 7);
+            expectToken(lexer, numberKind, 7, 12, 1, 8);
+            expectToken(lexer, whitespaceKind, 12, 13, 1, 13);
+            expectToken(lexer, numberKind, 13, 17, 1, 14);
+            expectToken(lexer, whitespaceKind, 17, 18, 1, 18);
+            expectToken(lexer, numberKind, 18, 22, 1, 19);
+            expectToken(lexer, whitespaceKind, 22, 23, 1, 23);
+            expectToken(lexer, numberKind, 23, 28, 1, 24);
+            expectToken(lexer, endOfFileKind, 28, 28, 1, 29);
+            expectToken(lexer, endOfFileKind, 28, 28, 1, 29);
+        });
+
+        test.it("separates numbers from identifiers and dots", fn () {
+            const let lexer = Lexer("12abc 1..2 3.field 4.5.6");
+            expectToken(lexer, numberKind, 0, 2, 1, 1);
+            expectToken(lexer, identifierKind, 2, 5, 1, 3);
+            expectToken(lexer, whitespaceKind, 5, 6, 1, 6);
+            expectToken(lexer, numberKind, 6, 7, 1, 7);
+            expectToken(lexer, symbolKind, 7, 8, 1, 8);
+            expectToken(lexer, symbolKind, 8, 9, 1, 9);
+            expectToken(lexer, numberKind, 9, 10, 1, 10);
+            expectToken(lexer, whitespaceKind, 10, 11, 1, 11);
+            expectToken(lexer, numberKind, 11, 12, 1, 12);
+            expectToken(lexer, symbolKind, 12, 13, 1, 13);
+            expectToken(lexer, identifierKind, 13, 18, 1, 14);
+            expectToken(lexer, whitespaceKind, 18, 19, 1, 19);
+            expectToken(lexer, numberKind, 19, 22, 1, 20);
+            expectToken(lexer, symbolKind, 22, 23, 1, 23);
+            expectToken(lexer, numberKind, 23, 24, 1, 24);
+            expectToken(lexer, endOfFileKind, 24, 24, 1, 25);
+            expectToken(lexer, endOfFileKind, 24, 24, 1, 25);
+        });
+
+        test.it("handles incomplete numeric prefixes without stalling", fn () {
+            const let lexer = Lexer("0x 0o # - #-");
+            expectToken(lexer, numberKind, 0, 2, 1, 1);
+            expectToken(lexer, whitespaceKind, 2, 3, 1, 3);
+            expectToken(lexer, numberKind, 3, 5, 1, 4);
+            expectToken(lexer, whitespaceKind, 5, 6, 1, 6);
+            expectToken(lexer, symbolKind, 6, 7, 1, 7);
+            expectToken(lexer, whitespaceKind, 7, 8, 1, 8);
+            expectToken(lexer, symbolKind, 8, 9, 1, 9);
+            expectToken(lexer, whitespaceKind, 9, 10, 1, 10);
+            expectToken(lexer, symbolKind, 10, 11, 1, 11);
+            expectToken(lexer, symbolKind, 11, 12, 1, 12);
+            expectToken(lexer, endOfFileKind, 12, 12, 1, 13);
+            expectToken(lexer, endOfFileKind, 12, 12, 1, 13);
+        });
+
+        test.it("keeps escaped quotes and backslashes inside strings", fn () {
+            const let lexer = Lexer("\"a\\\\\"b\\\\\\\\c\";\"\"");
+            expectToken(lexer, stringLiteralKind, 0, 9, 1, 1);
+            expectToken(lexer, symbolKind, 9, 10, 1, 10);
+            expectToken(lexer, stringLiteralKind, 10, 12, 1, 11);
+            expectToken(lexer, endOfFileKind, 12, 12, 1, 13);
+            expectToken(lexer, endOfFileKind, 12, 12, 1, 13);
+        });
+
+        test.it("keeps comment markers inside strings", fn () {
+            const let lexer = Lexer("\"// /* text */\"/");
+            expectToken(lexer, stringLiteralKind, 0, 15, 1, 1);
+            expectToken(lexer, symbolKind, 15, 16, 1, 16);
+            expectToken(lexer, endOfFileKind, 16, 16, 1, 17);
+            expectToken(lexer, endOfFileKind, 16, 16, 1, 17);
+        });
+
+        test.it("recognizes character and escaped character literals", fn () {
+            const let lexer = Lexer("'a' '\\\\n' '\\\\''");
+            expectToken(lexer, stringLiteralKind, 0, 3, 1, 1);
+            expectToken(lexer, whitespaceKind, 3, 4, 1, 4);
+            expectToken(lexer, stringLiteralKind, 4, 8, 1, 5);
+            expectToken(lexer, whitespaceKind, 8, 9, 1, 9);
+            expectToken(lexer, stringLiteralKind, 9, 13, 1, 10);
+            expectToken(lexer, endOfFileKind, 13, 13, 1, 14);
+            expectToken(lexer, endOfFileKind, 13, 13, 1, 14);
+        });
+
+        test.it("recognizes formatted and unique formatted literals", fn () {
+            const let lexer = Lexer("`hello {name}` u`hello {name}` user");
+            expectToken(lexer, stringLiteralKind, 0, 14, 1, 1);
+            expectToken(lexer, whitespaceKind, 14, 15, 1, 15);
+            expectToken(lexer, stringLiteralKind, 15, 30, 1, 16);
+            expectToken(lexer, whitespaceKind, 30, 31, 1, 31);
+            expectToken(lexer, identifierKind, 31, 35, 1, 32);
+            expectToken(lexer, endOfFileKind, 35, 35, 1, 36);
+            expectToken(lexer, endOfFileKind, 35, 35, 1, 36);
+        });
+
+        test.it("handles escaped backticks", fn () {
+            const let lexer = Lexer("`a\\\\`b`;");
+            expectToken(lexer, stringLiteralKind, 0, 6, 1, 1);
+            expectToken(lexer, symbolKind, 6, 7, 1, 7);
+            expectToken(lexer, endOfFileKind, 7, 7, 1, 8);
+            expectToken(lexer, endOfFileKind, 7, 7, 1, 8);
+        });
+
+        test.it("preserves raw multiline strings", fn () {
+            const let lexer = Lexer("~a\\\\\nb~next");
+            expectToken(lexer, stringLiteralKind, 0, 6, 1, 1);
+            expectToken(lexer, identifierKind, 6, 10, 2, 3);
+            expectToken(lexer, endOfFileKind, 10, 10, 2, 7);
+            expectToken(lexer, endOfFileKind, 10, 10, 2, 7);
+        });
+
+        test.it("tracks newlines within quoted strings", fn () {
+            const let lexer = Lexer("\"a\nb\"next");
+            expectToken(lexer, stringLiteralKind, 0, 5, 1, 1);
+            expectToken(lexer, identifierKind, 5, 9, 2, 3);
+            expectToken(lexer, endOfFileKind, 9, 9, 2, 7);
+            expectToken(lexer, endOfFileKind, 9, 9, 2, 7);
+        });
+
+        test.it("consumes an unterminated string through EOF", fn () {
+            const let lexer = Lexer("\"unfinished");
+            expectToken(lexer, stringLiteralKind, 0, 11, 1, 1);
+            expectToken(lexer, endOfFileKind, 11, 11, 1, 12);
+            expectToken(lexer, endOfFileKind, 11, 11, 1, 12);
+        });
+
+        test.it("handles a final escape in an unterminated string", fn () {
+            const let lexer = Lexer("\"unfinished\\\\");
+            expectToken(lexer, stringLiteralKind, 0, 12, 1, 1);
+            expectToken(lexer, endOfFileKind, 12, 12, 1, 13);
+            expectToken(lexer, endOfFileKind, 12, 12, 1, 13);
+        });
+
+        test.it("groups whitespace and tracks tabs as one column", fn () {
+            const let lexer = Lexer(" \t\n  next");
+            expectToken(lexer, whitespaceKind, 0, 5, 1, 1);
+            expectToken(lexer, identifierKind, 5, 9, 2, 3);
+            expectToken(lexer, endOfFileKind, 9, 9, 2, 7);
+            expectToken(lexer, endOfFileKind, 9, 9, 2, 7);
+        });
+
+        test.it("counts CRLF and lone CR as line endings", fn () {
+            const let lexer = Lexer("a\r\nb\rc\nd");
+            expectToken(lexer, identifierKind, 0, 1, 1, 1);
+            expectToken(lexer, whitespaceKind, 1, 3, 1, 2);
+            expectToken(lexer, identifierKind, 3, 4, 2, 1);
+            expectToken(lexer, whitespaceKind, 4, 5, 2, 2);
+            expectToken(lexer, identifierKind, 5, 6, 3, 1);
+            expectToken(lexer, whitespaceKind, 6, 7, 3, 2);
+            expectToken(lexer, identifierKind, 7, 8, 4, 1);
+            expectToken(lexer, endOfFileKind, 8, 8, 4, 2);
+            expectToken(lexer, endOfFileKind, 8, 8, 4, 2);
+        });
+
+        test.it("preserves line comments but leaves the newline", fn () {
+            const let lexer = Lexer("// hello\nnext");
+            expectToken(lexer, commentKind, 0, 8, 1, 1);
+            expectToken(lexer, whitespaceKind, 8, 9, 1, 9);
+            expectToken(lexer, identifierKind, 9, 13, 2, 1);
+            expectToken(lexer, endOfFileKind, 13, 13, 2, 5);
+            expectToken(lexer, endOfFileKind, 13, 13, 2, 5);
+        });
+
+        test.it("ends line comments at CRLF", fn () {
+            const let lexer = Lexer("// hello\r\nnext");
+            expectToken(lexer, commentKind, 0, 8, 1, 1);
+            expectToken(lexer, whitespaceKind, 8, 10, 1, 9);
+            expectToken(lexer, identifierKind, 10, 14, 2, 1);
+            expectToken(lexer, endOfFileKind, 14, 14, 2, 5);
+            expectToken(lexer, endOfFileKind, 14, 14, 2, 5);
+        });
+
+        test.it("handles a line comment ending at EOF", fn () {
+            const let lexer = Lexer("// last");
+            expectToken(lexer, commentKind, 0, 7, 1, 1);
+            expectToken(lexer, endOfFileKind, 7, 7, 1, 8);
+            expectToken(lexer, endOfFileKind, 7, 7, 1, 8);
+        });
+
+        test.it("recognizes empty and adjacent block comments", fn () {
+            const let lexer = Lexer("/**//*x*/next");
+            expectToken(lexer, commentKind, 0, 4, 1, 1);
+            expectToken(lexer, commentKind, 4, 9, 1, 5);
+            expectToken(lexer, identifierKind, 9, 13, 1, 10);
+            expectToken(lexer, endOfFileKind, 13, 13, 1, 14);
+            expectToken(lexer, endOfFileKind, 13, 13, 1, 14);
+        });
+
+        test.it("tracks positions through multiline block comments", fn () {
+            const let lexer = Lexer("/* one\r\ntwo\n*/next");
+            expectToken(lexer, commentKind, 0, 14, 1, 1);
+            expectToken(lexer, identifierKind, 14, 18, 3, 3);
+            expectToken(lexer, endOfFileKind, 18, 18, 3, 7);
+            expectToken(lexer, endOfFileKind, 18, 18, 3, 7);
+        });
+
+        test.it("ignores quote delimiters within comments", fn () {
+            const let lexer = Lexer("/* \"quoted\" `text` */next");
+            expectToken(lexer, commentKind, 0, 21, 1, 1);
+            expectToken(lexer, identifierKind, 21, 25, 1, 22);
+            expectToken(lexer, endOfFileKind, 25, 25, 1, 26);
+            expectToken(lexer, endOfFileKind, 25, 25, 1, 26);
+        });
+
+        test.it("consumes unterminated block comments through EOF", fn () {
+            const let lexer = Lexer("/* unfinished\n*");
+            expectToken(lexer, commentKind, 0, 15, 1, 1);
+            expectToken(lexer, endOfFileKind, 15, 15, 2, 2);
+            expectToken(lexer, endOfFileKind, 15, 15, 2, 2);
+        });
+
+        test.it("distinguishes division from comments", fn () {
+            const let lexer = Lexer("a/b /= // comment");
+            expectToken(lexer, identifierKind, 0, 1, 1, 1);
+            expectToken(lexer, symbolKind, 1, 2, 1, 2);
+            expectToken(lexer, identifierKind, 2, 3, 1, 3);
+            expectToken(lexer, whitespaceKind, 3, 4, 1, 4);
+            expectToken(lexer, symbolKind, 4, 6, 1, 5);
+            expectToken(lexer, whitespaceKind, 6, 7, 1, 7);
+            expectToken(lexer, commentKind, 7, 17, 1, 8);
+            expectToken(lexer, endOfFileKind, 17, 17, 1, 18);
+            expectToken(lexer, endOfFileKind, 17, 17, 1, 18);
+        });
+
+        test.it("groups multi character symbols", fn () {
+            const let lexer = Lexer("-> :: == != <= >= << >> && || ++ -- += -= *= /= %= =>");
+            expectToken(lexer, symbolKind, 0, 2, 1, 1);
+            expectToken(lexer, whitespaceKind, 2, 3, 1, 3);
+            expectToken(lexer, symbolKind, 3, 5, 1, 4);
+            expectToken(lexer, whitespaceKind, 5, 6, 1, 6);
+            expectToken(lexer, symbolKind, 6, 8, 1, 7);
+            expectToken(lexer, whitespaceKind, 8, 9, 1, 9);
+            expectToken(lexer, symbolKind, 9, 11, 1, 10);
+            expectToken(lexer, whitespaceKind, 11, 12, 1, 12);
+            expectToken(lexer, symbolKind, 12, 14, 1, 13);
+            expectToken(lexer, whitespaceKind, 14, 15, 1, 15);
+            expectToken(lexer, symbolKind, 15, 17, 1, 16);
+            expectToken(lexer, whitespaceKind, 17, 18, 1, 18);
+            expectToken(lexer, symbolKind, 18, 20, 1, 19);
+            expectToken(lexer, whitespaceKind, 20, 21, 1, 21);
+            expectToken(lexer, symbolKind, 21, 23, 1, 22);
+            expectToken(lexer, whitespaceKind, 23, 24, 1, 24);
+            expectToken(lexer, symbolKind, 24, 26, 1, 25);
+            expectToken(lexer, whitespaceKind, 26, 27, 1, 27);
+            expectToken(lexer, symbolKind, 27, 29, 1, 28);
+            expectToken(lexer, whitespaceKind, 29, 30, 1, 30);
+            expectToken(lexer, symbolKind, 30, 32, 1, 31);
+            expectToken(lexer, whitespaceKind, 32, 33, 1, 33);
+            expectToken(lexer, symbolKind, 33, 35, 1, 34);
+            expectToken(lexer, whitespaceKind, 35, 36, 1, 36);
+            expectToken(lexer, symbolKind, 36, 38, 1, 37);
+            expectToken(lexer, whitespaceKind, 38, 39, 1, 39);
+            expectToken(lexer, symbolKind, 39, 41, 1, 40);
+            expectToken(lexer, whitespaceKind, 41, 42, 1, 42);
+            expectToken(lexer, symbolKind, 42, 44, 1, 43);
+            expectToken(lexer, whitespaceKind, 44, 45, 1, 45);
+            expectToken(lexer, symbolKind, 45, 47, 1, 46);
+            expectToken(lexer, whitespaceKind, 47, 48, 1, 48);
+            expectToken(lexer, symbolKind, 48, 50, 1, 49);
+            expectToken(lexer, whitespaceKind, 50, 51, 1, 51);
+            expectToken(lexer, symbolKind, 51, 53, 1, 52);
+            expectToken(lexer, endOfFileKind, 53, 53, 1, 54);
+            expectToken(lexer, endOfFileKind, 53, 53, 1, 54);
+        });
+
+        test.it("preserves individual punctuation", fn () {
+            const let lexer = Lexer("(){}[],;.:?@$!<>+-*/%&|=");
+            expectToken(lexer, symbolKind, 0, 1, 1, 1);
+            expectToken(lexer, symbolKind, 1, 2, 1, 2);
+            expectToken(lexer, symbolKind, 2, 3, 1, 3);
+            expectToken(lexer, symbolKind, 3, 4, 1, 4);
+            expectToken(lexer, symbolKind, 4, 5, 1, 5);
+            expectToken(lexer, symbolKind, 5, 6, 1, 6);
+            expectToken(lexer, symbolKind, 6, 7, 1, 7);
+            expectToken(lexer, symbolKind, 7, 8, 1, 8);
+            expectToken(lexer, symbolKind, 8, 9, 1, 9);
+            expectToken(lexer, symbolKind, 9, 10, 1, 10);
+            expectToken(lexer, symbolKind, 10, 11, 1, 11);
+            expectToken(lexer, symbolKind, 11, 12, 1, 12);
+            expectToken(lexer, symbolKind, 12, 13, 1, 13);
+            expectToken(lexer, symbolKind, 13, 14, 1, 14);
+            expectToken(lexer, symbolKind, 14, 15, 1, 15);
+            expectToken(lexer, symbolKind, 15, 16, 1, 16);
+            expectToken(lexer, symbolKind, 16, 17, 1, 17);
+            expectToken(lexer, symbolKind, 17, 18, 1, 18);
+            expectToken(lexer, symbolKind, 18, 19, 1, 19);
+            expectToken(lexer, symbolKind, 19, 20, 1, 20);
+            expectToken(lexer, symbolKind, 20, 21, 1, 21);
+            expectToken(lexer, symbolKind, 21, 22, 1, 22);
+            expectToken(lexer, symbolKind, 22, 23, 1, 23);
+            expectToken(lexer, symbolKind, 23, 24, 1, 24);
+            expectToken(lexer, endOfFileKind, 24, 24, 1, 25);
+            expectToken(lexer, endOfFileKind, 24, 24, 1, 25);
+        });
+
+        test.it("handles empty input", fn () {
+            const let lexer = Lexer("");
+            expectToken(lexer, endOfFileKind, 0, 0, 1, 1);
+            expectToken(lexer, endOfFileKind, 0, 0, 1, 1);
+        });
+
+        test.it("preserves identifiers with underscores", fn () {
+            const let lexer = Lexer("_value123 x_2");
+            expectToken(lexer, identifierKind, 0, 9, 1, 1);
+            expectToken(lexer, whitespaceKind, 9, 10, 1, 10);
+            expectToken(lexer, identifierKind, 10, 13, 1, 11);
+            expectToken(lexer, endOfFileKind, 13, 13, 1, 14);
+            expectToken(lexer, endOfFileKind, 13, 13, 1, 14);
+        });
+
+        test.it("tokenizes a whole function without gaps", fn () {
+            const let lexer = Lexer("fn main() -> int {\nreturn 42;\n};");
+            expectToken(lexer, identifierKind, 0, 2, 1, 1);
+            expectToken(lexer, whitespaceKind, 2, 3, 1, 3);
+            expectToken(lexer, identifierKind, 3, 7, 1, 4);
+            expectToken(lexer, symbolKind, 7, 8, 1, 8);
+            expectToken(lexer, symbolKind, 8, 9, 1, 9);
+            expectToken(lexer, whitespaceKind, 9, 10, 1, 10);
+            expectToken(lexer, symbolKind, 10, 12, 1, 11);
+            expectToken(lexer, whitespaceKind, 12, 13, 1, 13);
+            expectToken(lexer, identifierKind, 13, 16, 1, 14);
+            expectToken(lexer, whitespaceKind, 16, 17, 1, 17);
+            expectToken(lexer, symbolKind, 17, 18, 1, 18);
+            expectToken(lexer, whitespaceKind, 18, 19, 1, 19);
+            expectToken(lexer, identifierKind, 19, 25, 2, 1);
+            expectToken(lexer, whitespaceKind, 25, 26, 2, 7);
+            expectToken(lexer, numberKind, 26, 28, 2, 8);
+            expectToken(lexer, symbolKind, 28, 29, 2, 10);
+            expectToken(lexer, whitespaceKind, 29, 30, 2, 11);
+            expectToken(lexer, symbolKind, 30, 31, 3, 1);
+            expectToken(lexer, symbolKind, 31, 32, 3, 2);
+            expectToken(lexer, endOfFileKind, 32, 32, 3, 3);
+            expectToken(lexer, endOfFileKind, 32, 32, 3, 3);
+        });
+
+    });
+
+    test.describe("Formatter: round trip", fn () {
+      test.it("preserves source exactly", fn () {
+          const let source = uni_string(
+              "fn main() -> int {\n    // Hello\n    return 42;\n};"
+          );
+
+          const let formatter = Formatter(source.clone());
+          const let result = formatter.format();
+
+          test.assertTrue(result == source);
+      });
+    });
+
+    test.describe("Formatter: indentation", fn () {
+        test.it("indents nested blocks with four spaces", fn () {
+            const let source = uni_string(
+                "fn main() -> int {\nif true {\nreturn 42;\n};\n};"
+            );
+
+            const let expected = uni_string(
+                "fn main() -> int {\n    if true {\n        return 42;\n    };\n};"
+            );
+
+            const let formatter = Formatter(source.clone());
+            const let result = formatter.format();
+
+            test.assertTrue(result == expected);
+        });
+
+        test.it("replaces existing indentation", fn () {
+            const let source = uni_string(
+                "fn main() -> int {\n  return 42;\n        };"
+            );
+
+            const let expected = uni_string(
+                "fn main() -> int {\n    return 42;\n};"
+            );
+
+            const let formatter = Formatter(source.clone());
+            const let result = formatter.format();
+
+            test.assertTrue(result == expected);
+        });
+
+        test.it("preserves inline whitespace", fn () {
+            const let source = uni_string(
+                "fn main() -> int { return 42; };"
+            );
+
+            const let formatter = Formatter(source.clone());
+            const let result = formatter.format();
+
+            test.assertTrue(result == source);
+        });
+
+        test.it("preserves blank lines", fn () {
+            const let source = uni_string(
+                "fn main() -> int {\n\nreturn 42;\n};"
+            );
+
+            const let expected = uni_string(
+                "fn main() -> int {\n\n    return 42;\n};"
+            );
+
+            const let formatter = Formatter(source.clone());
+            const let result = formatter.format();
+
+            test.assertTrue(result == expected);
+        });
+    });
+    test.describe("Formatter: delimiter indentation", fn () {
+        test.it("indents an argument list inside a function", fn () {
+            expectFormat(
+                "fn main(int argc, adr argv) -> int {\n    args.with_arguments([\n    new Argument(\"help\", \"h\", \"Display help\")\n    ]);\n}\n",
+                "fn main(int argc, adr argv) -> int {\n    args.with_arguments([\n        new Argument(\"help\", \"h\", \"Display help\")\n    ]);\n}\n"
+            );
+        });
+
+        test.it("indents nested brackets and aligns closing brackets", fn () {
+            expectFormat(
+                "[\n1,\n[\n2\n]\n]\nnext",
+                "[\n    1,\n    [\n        2\n    ]\n]\nnext"
+            );
+        });
+
+        test.it("combines brace and bracket indentation", fn () {
+            expectFormat(
+                "{\nitems = [\n{\nvalue\n},\n];\n}\nnext",
+                "{\n    items = [\n        {\n            value\n        },\n    ];\n}\nnext"
+            );
+        });
+
+        test.it("keeps parentheses neutral at every indentation level", fn () {
+            expectFormat(
+                "call(\nvalue,\n[\nother(\nitem\n)\n]\n)\nnext",
+                "call(\nvalue,\n[\n    other(\n    item\n    )\n]\n)\nnext"
+            );
+        });
+
+        test.it("ignores delimiters in strings and comments", fn () {
+            expectFormat(
+                "[\n\"[ { (\"\n// ] } )\n/* [ { */\nvalue\n]",
+                "[\n    \"[ { (\"\n    // ] } )\n    /* [ { */\n    value\n]"
+            );
+        });
+
+        test.it("preserves inline spacing and balances inline delimiters", fn () {
+            expectFormat(
+                "{\nitems = [ 1,  2 ];\nnext\n}",
+                "{\n    items = [ 1,  2 ];\n    next\n}"
+            );
+        });
+
+        test.it("does not indent below zero for unmatched closing delimiters", fn () {
+            expectFormat(
+                "]\n}\n[\nvalue\n]",
+                "]\n}\n[\n    value\n]"
+            );
+        });
+
+        test.it("replaces tabs and preserves CRLF and blank lines", fn () {
+            expectFormat(
+                "[\r\n\tvalue\r\n\r\n\t]\r\n",
+                "[\r\n    value\r\n\r\n]\r\n"
+            );
+        });
+    });
+
+
+    test.summary();
+    return 0;
+};
+
