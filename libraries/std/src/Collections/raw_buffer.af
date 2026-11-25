@@ -283,6 +283,128 @@ unique class raw_buffer {
         return my.read(index);
     };
 
+    // Check subtraction only after validating start; never add unchecked counts.
+    private fn contains_range(const int start, const int count) -> bool {
+        if (start < 0) | (count < 0) | (start > my.capacity) {
+            return false;
+        };
+        return count <= my.capacity - start;
+    };
+
+    /**
+     * Relocate a range within this buffer, allowing overlap. No allocation or hooks.
+     * Source slots must be live; destination slots outside the source must be vacant.
+     * The collection must mark source-only slots vacant and invalidate affected loans.
+     * Empty ranges permit an index equal to capacity. Bytes are not cleared.
+     */
+    fn relocate(const int source, const int destination, const int count) -> local result::<bool> {
+        const local LockGuard __guard = my.mutex.guard();
+        const bool sourceValid = my.contains_range(source, count);
+        const bool destinationValid = my.contains_range(destination, count);
+        if (sourceValid == false) | (destinationValid == false) {
+            return res.reject::<bool>(new Error("Buffer range out of bounds"));
+        };
+        if (count == 0) | (source == destination) {
+            return res.accept(true);
+        };
+
+        // Copy whole slots in the direction that preserves unread source bytes.
+        if destination > source {
+            for mutable int i = count; i > 0; i = i - 1 {
+                af_memcpy(my.head + ((destination + i - 1) * T),
+                my.head + ((source + i - 1) * T), T);
+            };
+        } else {
+            for mutable int i = 0; i < count; i = i + 1 {
+                af_memcpy(my.head + ((destination + i) * T),
+                my.head + ((source + i) * T), T);
+            };
+        };
+        return res.accept(true);
+    };
+
+    /** Swap two live slots without allocation, __copy__, or destruction. */
+    fn swap(const int left, const int right) -> local result::<bool> {
+        const local LockGuard __guard = my.mutex.guard();
+        const bool leftValid = my.contains_range(left, 1);
+        const bool rightValid = my.contains_range(right, 1);
+        if (leftValid == false) | (rightValid == false) {
+            return res.reject::<bool>(new Error("Buffer index out of bounds"));
+        };
+        if left == right {
+            return res.accept(true);
+        };
+
+        // A byte-sized local scratch works for every T without constructing a T.
+        const adr first = my.head + (left * T);
+        const adr second = my.head + (right * T);
+        for mutable int i = 0; i < T; i = i + 1 {
+            const adr a = first + i;
+            const adr b = second + i;
+            const byte saved = a as byte;
+            const byte value = b as byte;
+            a =: value;
+            b =: saved;
+        };
+        return res.accept(true);
+    };
+
+    when (T is not primitive)
+    /**
+     * Borrow a live class slot even when T has __copy__; never copies or owns T.
+     * The lock ends on return. The collection must enforce the loan's lifetime.
+     */
+    fn borrow(const int index) -> local result::<&T> {
+        const local LockGuard __guard = my.mutex.guard();
+        const local result::<adr> checked = my.address(index);
+        match $checked {
+            Err(&&err) => return res.reject::<&T>($err),
+            Ok(_) => {}
+        };
+        const generic value = my.head + (index * T);
+        return res.accept::<&T>(value);
+    };
+
+    // Both buffer locks must be held by transfer_to before entering this helper.
+    private fn transfer_locked(const raw_buffer::<T> destination, const int sourceIndex, const int destinationIndex, const int count) -> local result::<bool> {
+        const bool sourceValid = my.contains_range(sourceIndex, count);
+        const bool destinationValid = destination.contains_range(destinationIndex, count);
+        if (sourceValid == false) | (destinationValid == false) {
+            return res.reject::<bool>(new Error("Buffer range out of bounds"));
+        };
+        if count > 0 {
+            af_memcpy(destination.head + (destinationIndex * T),
+            my.head + (sourceIndex * T), count * T);
+        };
+        return res.accept(true);
+    };
+
+    /**
+     * Move live slots into vacant slots of another buffer without allocating.
+     * Does not consume either buffer, grow storage, clear bytes, or call hooks.
+     * The collection must record the source as vacant after success.
+     * Self-transfer uses relocate, including its overlap and empty-range rules.
+     */
+    fn transfer_to(const raw_buffer::<T> destination, const int sourceIndex, const int destinationIndex, const int count) -> local result::<bool> {
+        const adr selfAddress = ?my.capacity;
+        const adr otherAddress = ?destination.capacity;
+        if selfAddress == otherAddress {
+            return my.relocate(sourceIndex, destinationIndex, count);
+        };
+
+        // Stable field-address order prevents opposing transfers taking locks
+        // in opposite orders. Never order by head: growth changes that address.
+        if selfAddress < otherAddress {
+            const local LockGuard __sourceGuard = my.mutex.guard();
+            const local LockGuard __destinationGuard = destination.mutex.guard();
+            return my.transfer_locked(destination, sourceIndex, destinationIndex, count);
+        } else {
+            const local LockGuard __destinationGuard = destination.mutex.guard();
+            const local LockGuard __sourceGuard = my.mutex.guard();
+            return my.transfer_locked(destination, sourceIndex, destinationIndex, count);
+        };
+    };
+
     /** Release storage and lock only; the collection must first clean up live elements. */
     fn del() -> void {
         af_free(my.head);
