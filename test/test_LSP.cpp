@@ -267,3 +267,120 @@ TEST_CASE("LSP provides inferred type hints for match bindings",
           std::string::npos);
   REQUIRE(output.find("value\\nint") != std::string::npos);
 }
+
+namespace {
+std::string requestDocument(const std::string &source,
+                            const std::string &method,
+                            bool refreshSupport = false) {
+  std::string escaped;
+  for (char c : source) {
+    if (c == '\n')
+      escaped += "\\n";
+    else {
+      if (c == '"' || c == '\\')
+        escaped += '\\';
+      escaped += c;
+    }
+  }
+  const std::string uri = "file:///tmp/lsp-editor-regression.af";
+  const auto open =
+      "{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didOpen\",\"params\":{"
+      "\"textDocument\":{\"uri\":\"" +
+      uri + "\",\"languageId\":\"aflat\",\"version\":1,\"text\":\"" + escaped +
+      "\"}}}";
+  const auto request = "{\"jsonrpc\":\"2.0\",\"id\":71,\"method\":\"" + method +
+                       "\",\"params\":{\"textDocument\":{\"uri\":\"" + uri +
+                       "\"}}}";
+  const auto initialize =
+      std::string(
+          R"({"jsonrpc":"2.0","id":70,"method":"initialize","params":{"capabilities":{"workspace":{"inlayHint":{"refreshSupport":)") +
+      (refreshSupport ? "true" : "false") + "}}}}}";
+  return runLanguageServer(frame(initialize) + frame(open) + frame(request) +
+                           frame(R"({"jsonrpc":"2.0","method":"exit"})"));
+}
+
+int semanticKindAt(const std::string &output, const std::string &source,
+                   const std::string &needle) {
+  const auto offset = source.find(needle);
+  REQUIRE(offset != std::string::npos);
+  int targetLine = 0, targetColumn = 0;
+  for (size_t i = 0; i < offset; ++i) {
+    if (source[i] == '\n') {
+      ++targetLine;
+      targetColumn = 0;
+    } else
+      ++targetColumn;
+  }
+  const auto start = output.find("\"data\":[");
+  REQUIRE(start != std::string::npos);
+  const auto end = output.find(']', start);
+  std::string data = output.substr(start + 8, end - start - 8);
+  for (auto &c : data)
+    if (c == ',')
+      c = ' ';
+  std::istringstream stream(data);
+  int line = 0, column = 0, dl, dc, length, kind, modifiers;
+  while (stream >> dl >> dc >> length >> kind >> modifiers) {
+    line += dl;
+    column = dl ? dc : column + dc;
+    if (line == targetLine && column == targetColumn)
+      return kind;
+  }
+  return -1;
+}
+} // namespace
+
+TEST_CASE("LSP highlights ownership keywords and imported types without method "
+          "name collisions",
+          "[lsp][semantic][regression]") {
+  const std::string source =
+      ".needs <std>\nimport Lock from \"concurrency\";\n"
+      "types(T) class Buffer {\n"
+      "int capacity = 0;\nLock mutex;\n"
+      "fn init() -> Self;\nfn capacity() -> int;\n"
+      "fn borrow() -> loan adr;\nfn create() -> local Buffer;\n"
+      "fn write(T value) -> void;\n};";
+  const auto output =
+      requestDocument(source, "textDocument/semanticTokens/full");
+  REQUIRE(semanticKindAt(output, source, "from") == 15);
+  REQUIRE(semanticKindAt(output, source, "loan") == 15);
+  REQUIRE(semanticKindAt(output, source, "local") == 15);
+  REQUIRE(semanticKindAt(output, source, "Self") == 1);
+  REQUIRE(semanticKindAt(output, source, "void") == 1);
+  REQUIRE(semanticKindAt(output, source, "Lock mutex") == 2);
+  REQUIRE(semanticKindAt(output, source, "T value") == 6);
+  REQUIRE(semanticKindAt(output, source, "capacity =") == 8);
+  REQUIRE(semanticKindAt(output, source, "capacity()") == 12);
+}
+
+TEST_CASE(
+    "LSP infers imported method results in uninstantiated generic classes",
+    "[lsp][inlay][regression]") {
+  const std::string source =
+      ".needs <std>\nimport Lock, LockGuard from \"concurrency\";\n"
+      "types(T) class Buffer {\nLock mutex;\n"
+      "fn read() -> void {\nlet guard = my.mutex.guard();\n};\n};\n"
+      "fn main() -> int { let n = 1; return n; };";
+  const auto output = requestDocument(source, "textDocument/inlayHint");
+  REQUIRE(output.find("\"label\":\": LockGuard\"") != std::string::npos);
+  REQUIRE(output.find("\"character\":9,\"line\":5") != std::string::npos);
+}
+
+TEST_CASE("LSP does not infer a method result from an unrelated receiver",
+          "[lsp][inlay][regression]") {
+  const std::string source = "class Other { fn guard() -> int; };\n"
+                             "types(T) class Buffer { fn read() -> void {\n"
+                             "let missing = unknown.guard();\n}; };";
+  const auto output = requestDocument(source, "textDocument/inlayHint");
+  REQUIRE(output.find("\"label\":\": int\"") == std::string::npos);
+}
+
+TEST_CASE("LSP refreshes inferred hints only when the client supports refresh",
+          "[lsp][inlay][regression]") {
+  const std::string source = "fn main() -> int { let n = 1; return n; };";
+  const auto enabled = requestDocument(source, "textDocument/inlayHint", true);
+  REQUIRE(enabled.find("\"method\":\"workspace/inlayHint/refresh\"") !=
+          std::string::npos);
+  const auto disabled = requestDocument(source, "textDocument/inlayHint");
+  REQUIRE(disabled.find("workspace/inlayHint/refresh") == std::string::npos);
+}

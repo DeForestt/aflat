@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <chrono>
 #include <condition_variable>
@@ -595,6 +596,7 @@ std::vector<std::string> gatherCompletions(const std::string &text) {
 
 struct SemanticSymbolSets {
   std::unordered_set<std::string> types;
+  std::unordered_set<std::string> typeParameters;
   std::unordered_set<std::string> classes;
   std::unordered_set<std::string> structs;
   std::unordered_set<std::string> enums;
@@ -1114,7 +1116,8 @@ void collectSignatureParameters(ast::Statement *stmt,
   }
 }
 
-std::string inferExpressionType(ast::Expr *expr, const DocumentIndex &index) {
+std::string inferExpressionType(ast::Expr *expr, const DocumentIndex &index,
+                                const std::string &classContext = "") {
   if (expr == nullptr)
     return {};
   if (!expr->typeCast.empty())
@@ -1144,9 +1147,9 @@ std::string inferExpressionType(ast::Expr *expr, const DocumentIndex &index) {
   if (dynamic_cast<ast::IntLiteral *>(expr) != nullptr)
     return "int";
   if (auto *paren = dynamic_cast<ast::ParenExpr *>(expr))
-    return inferExpressionType(paren->expr, index);
+    return inferExpressionType(paren->expr, index, classContext);
   if (auto *paren = dynamic_cast<ast::parenExpr *>(expr))
-    return inferExpressionType(paren->expr, index);
+    return inferExpressionType(paren->expr, index, classContext);
   if (auto *var = dynamic_cast<ast::Var *>(expr)) {
     for (auto it = index.symbols.rbegin(); it != index.symbols.rend(); ++it) {
       if (it->name == var->Ident && !it->detail.empty())
@@ -1158,33 +1161,73 @@ std::string inferExpressionType(ast::Expr *expr, const DocumentIndex &index) {
   if (auto *callExpr = dynamic_cast<ast::CallExpr *>(expr)) {
     if (callExpr->call == nullptr)
       return {};
-    std::string calledName = callExpr->call->ident;
-    if (callExpr->call->modList.count > 0)
-      calledName = callExpr->call->modList.get(0);
-    for (auto it = index.signatures.rbegin(); it != index.signatures.rend();
-         ++it) {
-      if (it->name == calledName) {
-        const auto marker = it->documentation.find('`');
-        const auto end = marker == std::string::npos
-                             ? std::string::npos
-                             : it->documentation.find('`', marker + 1);
-        if (marker != std::string::npos && end != std::string::npos)
-          return it->documentation.substr(marker + 1, end - marker - 1);
+    auto &call = *callExpr->call;
+    std::string calledName = call.ident;
+    std::string receiverType;
+    if (call.modList.count > 0) {
+      calledName = call.modList.get(0);
+      if (call.ident == "my") {
+        receiverType = classContext;
+      } else {
+        for (auto it = index.symbols.rbegin(); it != index.symbols.rend();
+             ++it) {
+          if (it->name == call.ident && it->kind == LSP_SYMBOL_VARIABLE &&
+              it->container.empty()) {
+            receiverType = stripGenerics(it->detail);
+            break;
+          }
+        }
       }
+      // The parser stores member chains in reverse source order.
+      for (int i = call.modList.count - 1; i > 0; --i) {
+        std::string memberType;
+        for (const auto &symbol : index.symbols) {
+          if (!receiverType.empty() && symbol.container == receiverType &&
+              symbol.name == call.modList.get(i) &&
+              symbol.kind == LSP_SYMBOL_VARIABLE) {
+            memberType = stripGenerics(symbol.detail);
+            break;
+          }
+        }
+        receiverType = memberType;
+      }
+      if (receiverType.empty())
+        return {};
     }
+    std::string result;
+    for (const auto &signature : index.signatures) {
+      if (signature.name != calledName || signature.container != receiverType)
+        continue;
+      const auto marker = signature.documentation.find('`');
+      const auto end = marker == std::string::npos
+                           ? std::string::npos
+                           : signature.documentation.find('`', marker + 1);
+      if (marker == std::string::npos || end == std::string::npos)
+        continue;
+      const auto candidate =
+          signature.documentation.substr(marker + 1, end - marker - 1);
+      // Leave overloads with differing return types to compiler inference.
+      if (!result.empty() && result != candidate)
+        return {};
+      result = candidate;
+    }
+    return result;
   }
   return {};
 }
 
 void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
                                DocumentIndex &index,
-                               const std::string &container = "") {
+                               const std::string &container = "",
+                               const std::string &classContext = "") {
   if (stmt == nullptr)
     return;
 
   if (auto *seq = dynamic_cast<ast::Sequence *>(stmt)) {
-    collectIndexFromStatement(seq->Statement1, uri, index, container);
-    collectIndexFromStatement(seq->Statement2, uri, index, container);
+    collectIndexFromStatement(seq->Statement1, uri, index, container,
+                              classContext);
+    collectIndexFromStatement(seq->Statement2, uri, index, container,
+                              classContext);
     return;
   }
 
@@ -1209,8 +1252,8 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
             func->scope == ast::Export);
     // Parameters and locals belong to the function's lexical scope, not to
     // the surrounding class's public member surface.
-    collectIndexFromStatement(func->args, uri, index);
-    collectIndexFromStatement(func->statement, uri, index);
+    collectIndexFromStatement(func->args, uri, index, "", classContext);
+    collectIndexFromStatement(func->statement, uri, index, "", classContext);
     return;
   }
 
@@ -1230,7 +1273,8 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
           index.symbols.back().matchPayloadType = alias->getType().typeName;
       }
     }
-    collectIndexFromStatement(uni->statement, uri, index, uni->ident.ident);
+    collectIndexFromStatement(uni->statement, uri, index, uni->ident.ident,
+                              uni->ident.ident);
     return;
   }
 
@@ -1239,8 +1283,10 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
               TokenSpan{std::max(0, cls->logicalLine - 1), 0,
                         std::max(1, static_cast<int>(cls->ident.ident.size()))},
               LSP_SYMBOL_CLASS);
-    collectIndexFromStatement(cls->contract, uri, index, cls->ident.ident);
-    collectIndexFromStatement(cls->statement, uri, index, cls->ident.ident);
+    collectIndexFromStatement(cls->contract, uri, index, cls->ident.ident,
+                              cls->ident.ident);
+    collectIndexFromStatement(cls->statement, uri, index, cls->ident.ident,
+                              cls->ident.ident);
     return;
   }
 
@@ -1250,7 +1296,8 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
         TokenSpan{std::max(0, strct->logicalLine - 1), 0,
                   std::max(1, static_cast<int>(strct->ident.ident.size()))},
         LSP_SYMBOL_STRUCT);
-    collectIndexFromStatement(strct->statement, uri, index, strct->ident.ident);
+    collectIndexFromStatement(strct->statement, uri, index, strct->ident.ident,
+                              strct->ident.ident);
     return;
   }
 
@@ -1319,7 +1366,7 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
       if (inferred) {
         const auto generatedType = typeName(decAssign->declare->type);
         detail = generatedType.empty() || generatedType == "let"
-                     ? inferExpressionType(decAssign->expr, index)
+                     ? inferExpressionType(decAssign->expr, index, classContext)
                      : generatedType;
       }
       addSymbol(index, decAssign->declare->ident, uri,
@@ -1335,7 +1382,8 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
             std::max(0, decAssign->logicalLine - 1), 0, detail});
       }
     }
-    collectIndexFromStatement(decAssign->expr, uri, index, container);
+    collectIndexFromStatement(decAssign->expr, uri, index, container,
+                              classContext);
     return;
   }
 
@@ -1349,7 +1397,8 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
                                     decAssignArr->declare->ident.size()))},
           LSP_SYMBOL_VARIABLE, typeName(decAssignArr->declare->type));
     }
-    collectIndexFromStatement(decAssignArr->expr, uri, index, container);
+    collectIndexFromStatement(decAssignArr->expr, uri, index, container,
+                              classContext);
     return;
   }
 
@@ -1360,7 +1409,8 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
                           std::max(1, static_cast<int>(name.size()))},
                 LSP_SYMBOL_VARIABLE);
     }
-    collectIndexFromStatement(destructure->expr, uri, index, container);
+    collectIndexFromStatement(destructure->expr, uri, index, container,
+                              classContext);
     return;
   }
 
@@ -1372,40 +1422,45 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
                                           fe->binding_identifier.size()))},
                 LSP_SYMBOL_VARIABLE);
     }
-    collectIndexFromStatement(fe->iterator, uri, index, container);
-    collectIndexFromStatement(fe->implementation, uri, index, container);
+    collectIndexFromStatement(fe->iterator, uri, index, container,
+                              classContext);
+    collectIndexFromStatement(fe->implementation, uri, index, container,
+                              classContext);
     return;
   }
 
   if (auto *f = dynamic_cast<ast::For *>(stmt)) {
-    collectIndexFromStatement(f->declare, uri, index, container);
-    collectIndexFromStatement(f->increment, uri, index, container);
-    collectIndexFromStatement(f->Run, uri, index, container);
+    collectIndexFromStatement(f->declare, uri, index, container, classContext);
+    collectIndexFromStatement(f->increment, uri, index, container,
+                              classContext);
+    collectIndexFromStatement(f->Run, uri, index, container, classContext);
     return;
   }
 
   if (auto *iff = dynamic_cast<ast::If *>(stmt)) {
-    collectIndexFromStatement(iff->expr, uri, index, container);
-    collectIndexFromStatement(iff->statement, uri, index, container);
-    collectIndexFromStatement(iff->elseStatement, uri, index, container);
-    collectIndexFromStatement(iff->elseIf, uri, index, container);
+    collectIndexFromStatement(iff->expr, uri, index, container, classContext);
+    collectIndexFromStatement(iff->statement, uri, index, container,
+                              classContext);
+    collectIndexFromStatement(iff->elseStatement, uri, index, container,
+                              classContext);
+    collectIndexFromStatement(iff->elseIf, uri, index, container, classContext);
     return;
   }
 
   if (auto *wh = dynamic_cast<ast::While *>(stmt)) {
-    collectIndexFromStatement(wh->expr, uri, index, container);
-    collectIndexFromStatement(wh->stmt, uri, index, container);
+    collectIndexFromStatement(wh->expr, uri, index, container, classContext);
+    collectIndexFromStatement(wh->stmt, uri, index, container, classContext);
     return;
   }
 
   if (auto *ret = dynamic_cast<ast::Return *>(stmt)) {
-    collectIndexFromStatement(ret->expr, uri, index, container);
+    collectIndexFromStatement(ret->expr, uri, index, container, classContext);
     return;
   }
 
   if (auto *call = dynamic_cast<ast::Call *>(stmt)) {
     for (auto *arg : call->Args) {
-      collectIndexFromStatement(arg, uri, index, container);
+      collectIndexFromStatement(arg, uri, index, container, classContext);
     }
     return;
   }
@@ -1422,9 +1477,9 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
   }
 
   if (auto *match = dynamic_cast<ast::Match *>(stmt)) {
-    collectIndexFromStatement(match->expr, uri, index, container);
+    collectIndexFromStatement(match->expr, uri, index, container, classContext);
     const auto matchedType =
-        stripGenerics(inferExpressionType(match->expr, index));
+        stripGenerics(inferExpressionType(match->expr, index, classContext));
     for (const auto &c : match->cases) {
       if (!c.pattern.aliasName.empty()) {
         addSymbol(index, c.pattern.aliasName, uri,
@@ -1458,7 +1513,8 @@ void collectIndexFromStatement(ast::Statement *stmt, const std::string &uri,
                                std::max(0, bindingLine - 1), 0, bindingType});
         }
       }
-      collectIndexFromStatement(c.statement, uri, index, container);
+      collectIndexFromStatement(c.statement, uri, index, container,
+                                classContext);
     }
     return;
   }
@@ -1527,7 +1583,9 @@ resolveImportPath(const ast::Import &import, const std::string &currentDir,
     if (!import.path.empty() && import.path.front() == '.') {
       path = std::filesystem::path(currentDir) / path;
     } else {
-      path = std::filesystem::path(libPath).parent_path() / "src" / path;
+      path =
+          (std::filesystem::path(libPath) / ".." / "src").lexically_normal() /
+          path;
     }
   }
   if (path.extension() != ".af")
@@ -1564,8 +1622,6 @@ void indexFileRecursive(const std::string &uri, const std::string &text,
     auto *stmt = parser.parseStmt(tokens);
     std::vector<ast::Import *> imports;
     collectImports(stmt, imports);
-    collectIndexFromStatement(stmt, uri, index);
-    resolveSourceSpans(index, uri, text);
     destroyTokens(tokens);
 
     for (const auto &include : pp.getIncludes()) {
@@ -1585,6 +1641,9 @@ void indexFileRecursive(const std::string &uri, const std::string &text,
                            libPath, visited, index);
       }
     }
+    // Imported signatures must be available while inferring local expressions.
+    collectIndexFromStatement(stmt, uri, index);
+    resolveSourceSpans(index, uri, text);
   } catch (...) {
     // Best effort indexing. Missing or malformed files should not block LSP.
   }
@@ -1914,7 +1973,9 @@ bool isKeyword(const std::string &word) {
       "match",   "when",    "let",      "mutable", "immutable", "public",
       "private", "static",  "export",   "const",   "types",     "safe",
       "sink",    "dynamic", "pedantic", "unique",  "shared",    "delete",
-      "new",     "as",      "under"};
+      "new",     "as",      "under",    "from",    "local",     "loan",
+      "async",   "await",   "yield",    "pause",   "spawn",     "run",
+      "foreach"};
   return keywords.count(word) != 0;
 }
 
@@ -1972,8 +2033,6 @@ int semanticKindForToken(const std::vector<lex::Token *> &tokens, size_t index,
     return TK_PARAMETER;
   if (symbols.variables.count(text) != 0)
     return TK_VARIABLE;
-  if (symbols.functions.count(text) != 0)
-    return TK_FUNCTION;
   if (symbols.enumMembers.count(text) != 0)
     return TK_ENUM_MEMBER;
   if (symbols.structs.count(text) != 0)
@@ -1982,6 +2041,8 @@ int semanticKindForToken(const std::vector<lex::Token *> &tokens, size_t index,
     return TK_ENUM;
   if (symbols.classes.count(text) != 0)
     return TK_CLASS;
+  if (symbols.typeParameters.count(text) != 0)
+    return TK_TYPE_PARAMETER;
   if (symbols.types.count(text) != 0)
     return TK_TYPE;
 
@@ -2006,7 +2067,8 @@ JsonValue makeSemanticPosition(int line, int character) {
   });
 }
 
-JsonValue buildSemanticTokens(const std::string &text) {
+JsonValue buildSemanticTokens(const std::string &text,
+                              const DocumentIndex &index) {
   lex::TokenAllocationScope tokenAllocations;
   std::vector<SemanticToken> semanticTokens;
   SemanticSymbolSets symbols;
@@ -2050,6 +2112,29 @@ JsonValue buildSemanticTokens(const std::string &text) {
       symbols.structs.insert(word->meta);
     else if (previous->meta == "enum")
       symbols.enums.insert(word->meta);
+  }
+  for (size_t i = 0; i + 1 < tokenList.size(); ++i) {
+    auto *word = dynamic_cast<lex::LObj *>(tokenList[i]);
+    auto *open = dynamic_cast<lex::OpSym *>(tokenList[i + 1]);
+    if (!word || word->meta != "types" || !open || open->Sym != '(')
+      continue;
+    for (size_t j = i + 2; j < tokenList.size(); ++j) {
+      if (auto *op = dynamic_cast<lex::OpSym *>(tokenList[j]);
+          op && op->Sym == ')')
+        break;
+      if (auto *parameter = dynamic_cast<lex::LObj *>(tokenList[j]))
+        symbols.typeParameters.insert(parameter->meta);
+    }
+  }
+  symbols.types.insert("Self");
+  symbols.types.insert("void");
+  for (const auto &symbol : index.symbols) {
+    if (symbol.kind == LSP_SYMBOL_CLASS)
+      symbols.classes.insert(symbol.name);
+    else if (symbol.kind == LSP_SYMBOL_STRUCT)
+      symbols.structs.insert(symbol.name);
+    else if (symbol.kind == LSP_SYMBOL_ENUM)
+      symbols.enums.insert(symbol.name);
   }
   semanticTokens.reserve(tokenList.size());
   for (size_t i = 0; i < tokenList.size(); ++i) {
@@ -2240,7 +2325,17 @@ void mergeTypedIndex(DocumentIndex &index, const DocumentIndex &typed,
   if (!typed.inlayHints.empty()) {
     index.inlayHints.erase(
         std::remove_if(index.inlayHints.begin(), index.inlayHints.end(),
-                       [&](const auto &hint) { return hint.uri == uri; }),
+                       [&](const auto &hint) {
+                         return hint.uri == uri &&
+                                std::any_of(typed.inlayHints.begin(),
+                                            typed.inlayHints.end(),
+                                            [&](const auto &inferred) {
+                                              return inferred.uri == hint.uri &&
+                                                     inferred.line ==
+                                                         hint.line &&
+                                                     inferred.name == hint.name;
+                                            });
+                       }),
         index.inlayHints.end());
     std::unordered_set<std::string> seen;
     for (const auto &hint : typed.inlayHints) {
@@ -2290,6 +2385,8 @@ private:
   bool running = true;
   std::unordered_map<std::string, std::string> documents;
   const std::string libPath = libraryHeadPath();
+  std::atomic<bool> inlayHintRefreshSupported{false};
+  uint64_t nextRefreshRequest = 0;
   std::mutex outputMutex;
   std::mutex diagnosticsMutex;
   std::condition_variable diagnosticsReady;
@@ -2448,6 +2545,16 @@ private:
                            {"uri", JsonValue(job.uri)},
                            {"diagnostics", JsonValue(std::move(diagnostics))},
                        }));
+      // Initial requests can precede compiler analysis. Ask supporting clients
+      // to replace provisional hints with the completed type information.
+      if (inlayHintRefreshSupported) {
+        writeMessage(JsonValue(JsonValue::Object{
+            {"jsonrpc", JsonValue("2.0")},
+            {"id",
+             JsonValue("aflat-inlay-" + std::to_string(++nextRefreshRequest))},
+            {"method", JsonValue("workspace/inlayHint/refresh")},
+        }));
+      }
     }
   }
 
@@ -2610,7 +2717,11 @@ private:
       return;
     }
 
-    auto result = buildSemanticTokens(documentText(*uriValue));
+    auto text = documentText(*uriValue);
+    auto index = cachedDocumentIndex(*uriValue);
+    if (!index.has_value())
+      index = buildDocumentIndex(*uriValue, text, libPath);
+    auto result = buildSemanticTokens(text, *index);
     sendResponse(id, result);
   }
 
@@ -2851,6 +2962,10 @@ private:
     const auto *params = findMember(message, "params");
 
     if (*methodValue == "initialize") {
+      inlayHintRefreshSupported =
+          params && asBool(findPath(*params, {"capabilities", "workspace",
+                                              "inlayHint", "refreshSupport"}))
+                        .value_or(false);
       JsonValue::Object completionProvider{
           {"triggerCharacters", JsonValue(JsonValue::Array{
                                     JsonValue("."),
