@@ -1,0 +1,90 @@
+.needs <std>
+import Error from "Utils/Error";
+import string from "String";
+import result from "Utils/result";
+import {reject} from "Utils/result" under res;
+import {reject} from "Utils/Result" under legacy;
+import {str_comp} from "strings" under strings;
+import vector from "Collections/Vector";
+
+fn checkText(const Error error, const adr expected) -> void {
+    const let text = error.render();
+    assert(strings.str_comp(text.cstr(), expected) == 1, "error message changed");
+};
+
+fn constructors() -> void {
+    const let literal = new Error("literal");
+    assert(literal.is("Error"), "literal kind lookup");
+    checkText(literal, "Error: literal");
+    const adr raw = "raw address";
+    const let fromRaw = new Error(raw);
+    checkText(fromRaw, "Error: raw address");
+    const let message = new string("borrowed");
+    const let borrowed = new Error(message);
+    delete message;
+    checkText(borrowed, "Error: borrowed");
+    const let movedMessage = new string("moved");
+    const let moved = new Error($movedMessage);
+    checkText(moved, "Error: moved");
+    const local Error stackError = Error("stack");
+    checkText(stackError, "Error: stack");
+    const int number = 42;
+    const let formatted = new Error(`number {number}`);
+    checkText(formatted, "Error: number 42");
+};
+
+fn fromLocal() -> local result::<int> {
+    const local Error error = Error("local result");
+    return res.reject::<int>($error);
+};
+
+fn propagate() -> local result::<int> {
+    const local let first = fromLocal();
+    match $first {
+        Ok(value) => return result::<int>->Ok(value),
+        Err(&&error) => return res.reject::<int>($error)
+    };
+};
+
+fn transfers() -> void {
+    const local let value = propagate();
+    checkText(value.unwrapErr(), "Error: local result");
+    const let heapResult = res.reject::<int>(new Error("heap result"));
+    checkText(heapResult.unwrapErr(), "Error: heap result");
+};
+
+fn legacyErrors() -> void {
+    const let literal = legacy.reject("literal");
+    checkText(literal.getError(), "Error: literal");
+    const let error = legacy.reject(new Error("owned"));
+    checkText(error.getError(), "Error: owned");
+    const let message = new string("borrowed");
+    const let borrowed = legacy.reject(message);
+    delete message;
+    checkText(borrowed.getError(), "Error: borrowed");
+    const let moved = new string("moved");
+    const let transferred = legacy.reject($moved);
+    checkText(transferred.getError(), "Error: moved");
+};
+
+fn rejectRepeatedly() -> void {
+    let values = new vector::<int>();
+    for mutable int i = 0; i < 1000; i = i + 1 {
+        assert(values.set(-1, 1).isErr(), "expected rejection");
+    };
+};
+
+fn main() -> int {
+    const int blocks = af_live_blocks();
+    const long bytes = af_live_bytes();
+    constructors();
+    assert(af_live_blocks() == blocks, "error constructors leaked");
+    transfers();
+    assert(af_live_blocks() == blocks, "error transfers leaked");
+    legacyErrors();
+    assert(af_live_blocks() == blocks, "legacy errors leaked");
+    rejectRepeatedly();
+    assert(af_live_blocks() == blocks, "repeated rejection leaked blocks");
+    assert(af_live_bytes() == bytes, "repeated rejection leaked bytes");
+    return 0;
+};

@@ -8,9 +8,7 @@ unique class Owned {
     fn del() -> void { drops = drops + 1; };
 };
 
-fn main() -> int {
-    // Error is shared and retains its nested strings. Check rejection behavior
-    // separately from the successful-operation lifetime/allocation fixtures.
+fn failures() -> void {
     let values = new vector::<int>(4);
     values.push_back(1).push_back(2);
     assert(values.set(-1, 7).isErr(), "negative set");
@@ -32,5 +30,13 @@ fn main() -> int {
     assert(ownedValues.get(0).unwrap().value == 1, "rejection changed owned value");
     delete ownedValues;
     assert(drops == 3, "owned cleanup after rejection");
+};
+
+fn main() -> int {
+    const int blocks = af_live_blocks();
+    const long bytes = af_live_bytes();
+    failures();
+    assert(af_live_blocks() == blocks, "rejected vector mutations leaked blocks");
+    assert(af_live_bytes() == bytes, "rejected vector mutations leaked bytes");
     return 0;
 };

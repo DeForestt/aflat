@@ -1,0 +1,92 @@
+.needs <std>
+import Error from "Utils/Error";
+import Render from "Utils/Error/Render";
+import string from "String";
+import result from "Utils/result";
+import {reject} from "Utils/result" under res;
+import {str_comp} from "strings" under strings;
+import {reject} from "Utils/Result" under legacy;
+import FileError, ReadError from "files";
+import NotFoundError, ForbiddenError, BadRequestError, NotImplementedError,
+InternalServerError, OtherHTTPError from "HTTP";
+import DateTimeError from "DateTime";
+
+mutable int drops = 0;
+unique class Payload {
+    int marker = 1;
+    fn init() -> Self { return my; };
+    fn del() -> void { drops = drops + 1; };
+};
+
+unique class BareError signs Error {
+    fn init() -> Self { return my; };
+};
+
+unique class DetailedError signs Error {
+    private const string detail = new string("detail");
+    private const Payload payload = new Payload();
+    private string description() : Render { return `custom {my.detail}`; };
+    fn init() -> Self { return my; };
+};
+
+fn checkDescription(const Error error, const adr kind, const adr message) -> void {
+    assert(strings.str_comp(error.kind().cstr(), kind) == 1, "error kind changed");
+    const let rendered = error.render();
+    assert(strings.str_comp(rendered.cstr(), message) == 1, "rendered error changed");
+};
+
+fn customErrors() -> void {
+    const local let resultValue = res.reject::<int>(new DetailedError());
+    assert(drops == 1, "concrete error payload was not destroyed");
+    checkDescription(resultValue.unwrapErr(), "DetailedError", "custom detail");
+    const local DetailedError stackError = DetailedError();
+    const local let stackResult = res.reject::<int>($stackError);
+    assert(drops == 2, "local concrete error payload was not destroyed");
+    checkDescription(stackResult.unwrapErr(), "DetailedError", "custom detail");
+    const let legacyResult = legacy.reject(new DetailedError());
+    assert(drops == 3, "legacy rejection did not destroy concrete payload");
+    checkDescription(legacyResult.getError(), "DetailedError", "custom detail");
+    const let heapResult = res.reject::<int>(new DetailedError());
+    assert(drops == 4, "heap result did not destroy concrete payload");
+    checkDescription(heapResult.unwrapErr(), "DetailedError", "custom detail");
+    const local DetailedError localError = DetailedError();
+    const let fromLocal = res.reject::<int>($localError);
+    assert(drops == 5, "heap result did not destroy local payload");
+    checkDescription(fromLocal.unwrapErr(), "DetailedError", "custom detail");
+};
+
+fn standardErrors() -> void {
+    const local let bare = res.reject::<int>(new BareError());
+    checkDescription(bare.unwrapErr(), "BareError", "Error: BareError");
+    const local let missing = res.reject::<int>(new NotFoundError("missing"));
+    checkDescription(missing.unwrapErr(), "NotFoundError", "missing");
+    const local let forbidden = res.reject::<int>(new ForbiddenError("forbidden"));
+    checkDescription(forbidden.unwrapErr(), "ForbiddenError", "forbidden");
+    const local let bad = res.reject::<int>(new BadRequestError("bad"));
+    checkDescription(bad.unwrapErr(), "BadRequestError", "bad");
+    const local let unsupported = res.reject::<int>(new NotImplementedError("unsupported"));
+    checkDescription(unsupported.unwrapErr(), "NotImplementedError", "unsupported");
+    const local let internal = res.reject::<int>(new InternalServerError("internal"));
+    checkDescription(internal.unwrapErr(), "InternalServerError", "internal");
+    const local let other = res.reject::<int>(new OtherHTTPError("other", "599"));
+    checkDescription(other.unwrapErr(), "OtherHTTPError", "other");
+    const local let date = res.reject::<int>(new DateTimeError("date"));
+    checkDescription(date.unwrapErr(), "DateTimeError", "DateTimeError: message");
+    const local let read = res.reject::<int>(new ReadError(1));
+    checkDescription(read.unwrapErr(), "ReadError", "End of File Reached");
+    const local let file = res.reject::<int>(new FileError(-2));
+    assert(strings.str_comp(file.unwrapErr().kind().cstr(), "FileError") == 1, "file error kind");
+    const let fileText = file.unwrapErr().render();
+    assert(fileText.cstr() != NULL, "file error rendering");
+};
+
+fn main() -> int {
+    const int blocks = af_live_blocks();
+    const long bytes = af_live_bytes();
+    customErrors();
+    assert(af_live_blocks() == blocks, "custom errors leaked");
+    standardErrors();
+    assert(af_live_blocks() == blocks, "standard errors leaked");
+    assert(af_live_bytes() == bytes, "error payload bytes leaked");
+    return 0;
+};

@@ -53,6 +53,8 @@ jobs:
         run: python3 test/runtime/raw_buffer/run.py
       - name: Test vector storage
         run: python3 test/runtime/vector/run.py
+      - name: Test owned errors
+        run: python3 test/runtime/errors/run.py
       - name: Test
         working-directory: ${{github.workspace}}/bin
         run: ./a.test

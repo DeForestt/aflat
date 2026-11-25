@@ -201,7 +201,7 @@ the general thread runtime; async serving is not enabled by this migration.
 - `Utils/option` - Unique typed union with `Some`/`None`, borrowed `&T` payloads, and heap/local constructor overloads (libraries/std/src/Utils/option.af).
 - `Utils/Result` - Class-based result value for bridging APIs that expect dynamic success/error payloads (libraries/std/src/Utils/Result.af).
 - `Utils/result` - Unique `result<T>` union with owned errors, borrowed `&T` success payloads, and heap/local constructors (libraries/std/src/Utils/result.af).
-- `Utils/Error` - Base `Error` class with type metadata, render hooks, and pattern matching (libraries/std/src/Utils/Error.af).
+- `Utils/Error` - Unique errors with owned messages, render hooks, and kind matching. See [ownership and concrete-error conversion](libraries/std/docs/Error.MD).
 - `Utils/Error/Render` - Decorator that lets errors plug in a render callback (libraries/std/src/Utils/Error/Render.af).
 
 #### Utility infrastructure & patterns

@@ -245,6 +245,36 @@ export fn accept(const local T &&value) -> result::<T> {
     return new result::<T>->Ok($value);
 };
 
+// Snapshot contract signers before storing an Error inline; keep their own
+// destructor responsible for their concrete fields and render state.
+types(T, E)
+when(E is unique and E is not Error and E is not string)
+export fn reject(const E &&err) -> result::<T> {
+    const loan Error borrowedError = err;
+    return new result::<T>->Err(borrowedError.snapshot());
+};
+
+types(T, E)
+when(E is unique and E is not Error and E is not string)
+export fn reject(const local E &&err) -> local result::<T> {
+    const loan Error borrowedError = err;
+    return result::<T>->Err(borrowedError.snapshot());
+};
+
+types(T, E)
+when(E is unique and E is not Error and E is not string)
+export fn reject(const E &&err) -> local result::<T> {
+    const loan Error borrowedError = err;
+    return result::<T>->Err(borrowedError.snapshot());
+};
+
+types(T, E)
+when(E is unique and E is not Error and E is not string)
+export fn reject(const local E &&err) -> result::<T> {
+    const loan Error borrowedError = err;
+    return new result::<T>->Err(borrowedError.snapshot());
+};
+
 types(T)
 // Convenience constructor for building an `Err` from an Error.
 export fn reject(const Error &&err) -> result::<T> {

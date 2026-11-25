@@ -16,81 +16,150 @@ import {fString, print} from "String" under st;
 import vector from "Collections/Vector";
 import with from "Utils/Properties";
 
-shared class NotFoundError signs Error {
+unique class NotFoundError signs Error {
     // 404 Not Found
-    const string message = message.copy();
+    private mutable string message = NULL;
 
     string stdErrorMessage() : Render {
         return `{my.message}`;
+    };
+
+    NotFoundError init(const string &&message) {
+        my.message = $message;
+        return my;
+    };
+
+    NotFoundError init(const adr message) {
+        my.message = new string(message);
+        return my;
     };
 
     NotFoundError init(const string message) {
+        my.message = new string(message.cstr());
         return my;
     };
 };
 
-shared class ForbiddenError signs Error {
+unique class ForbiddenError signs Error {
     // 403 Forbidden
-    const string message = message.copy();
+    private mutable string message = NULL;
 
     string stdErrorMessage() : Render {
         return `{my.message}`;
+    };
+
+    ForbiddenError init(const string &&message) {
+        my.message = $message;
+        return my;
+    };
+
+    ForbiddenError init(const adr message) {
+        my.message = new string(message);
+        return my;
     };
 
     ForbiddenError init(const string message) {
+        my.message = new string(message.cstr());
         return my;
     };
 };
 
-shared class BadRequestError signs Error {
+unique class BadRequestError signs Error {
     // 400 Bad Request
-    const string message = message.copy();
+    private mutable string message = NULL;
 
     string stdErrorMessage() : Render {
         return `{my.message}`;
+    };
+
+    BadRequestError init(const string &&message) {
+        my.message = $message;
+        return my;
+    };
+
+    BadRequestError init(const adr message) {
+        my.message = new string(message);
+        return my;
     };
 
     BadRequestError init(const string message) {
+        my.message = new string(message.cstr());
         return my;
     };
 };
 
-shared class NotImplementedError signs Error {
+unique class NotImplementedError signs Error {
     // 501 Not Implemented
-    const string message = message.copy();
+    private mutable string message = NULL;
 
     string stdErrorMessage() : Render {
         return `{my.message}`;
+    };
+
+    NotImplementedError init(const string &&message) {
+        my.message = $message;
+        return my;
+    };
+
+    NotImplementedError init(const adr message) {
+        my.message = new string(message);
+        return my;
     };
 
     NotImplementedError init(const string message) {
+        my.message = new string(message.cstr());
         return my;
     };
 };
 
-shared class InternalServerError signs Error {
+unique class InternalServerError signs Error {
     // 500 Internal Server Error
-    const string message = message.copy();
+    private mutable string message = NULL;
 
     string stdErrorMessage() : Render {
         return `{my.message}`;
+    };
+
+    InternalServerError init(const string &&message) {
+        my.message = $message;
+        return my;
+    };
+
+    InternalServerError init(const adr message) {
+        my.message = new string(message);
+        return my;
     };
 
     InternalServerError init(const string message) {
+        my.message = new string(message.cstr());
         return my;
     };
 };
 
-shared class OtherHTTPError signs Error {
+unique class OtherHTTPError signs Error {
     // Other HTTP Error
-    const adr message = message.copy().cstr();
-    const adr code = code.copy().cstr();
+    private mutable string message = NULL;
+    private mutable string code = NULL;
 
     string stdErrorMessage() : Render {
         return `{my.message}`;
     };
 
+    OtherHTTPError init(const string &&message, const string &&code) {
+        my.message = $message;
+        my.code = $code;
+        return my;
+    };
+
+    OtherHTTPError init(const adr message, const adr code) {
+        my.message = new string(message);
+        my.code = new string(code);
+        return my;
+    };
+
     OtherHTTPError init(const string message, const string code) {
+        my.message = new string(message.cstr());
+        my.code = new string(code.cstr());
         return my;
     };
 };

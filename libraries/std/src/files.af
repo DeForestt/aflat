@@ -16,7 +16,7 @@ import vector from "Collections/Vector";
 fn strerror(int code) -> adr;
 
 // Error wrapper for failures encountered when opening files.
-shared class FileError signs Error {
+unique class FileError signs Error {
     int code = code * -1;
 
     private string renderMessage() : Render {
@@ -30,7 +30,7 @@ shared class FileError signs Error {
 };
 
 // Error wrapper for read failures (including EOF conditions).
-shared class ReadError signs Error {
+unique class ReadError signs Error {
     private int code = code * -1;
     private string renderMessage() : Render {
         if(my.code == -1) {
