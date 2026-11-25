@@ -66,13 +66,26 @@ Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
     return {.file = file, .expr = std::nullopt};
   }
 
+  // A result is consumable when the match arms may sink its payloads: an
+  // owned heap value, or a caller-owned local value. Local returns carry
+  // ownership in their stack cleanup record rather than the owned flag,
+  // but they are just as consumable by a sink (mirrors the extension-temp
+  // predicate in GenExpr).
+  const bool consumable =
+      exprResult.owned ||
+      (exprResult.storageOrigin == gen::StorageOrigin::Stack &&
+       exprResult.needsDrop && exprResult.transferable);
+
   const auto tempName =
       "$" + std::to_string(generator.tempCount()++) + "_bubble_temp";
   auto type = ast::Type(exprResult.type, exprResult.size);
   auto mod =
       gen::scope::ScopeManager::getInstance()->assign(tempName, type, false);
   auto symbol = gen::scope::ScopeManager::getInstance()->get(tempName);
-  symbol->owned = exprResult.owned;
+  symbol->owned = consumable;
+  symbol->storageOrigin = exprResult.storageOrigin;
+  symbol->stackObjectOffset = exprResult.stackObjectOffset;
+  symbol->stackCleanupNodeOffset = exprResult.stackCleanupNodeOffset;
   symbol->loanProvenance = exprResult.loanProvenance;
   symbol->loanScope = exprResult.loanScope;
 
@@ -95,7 +108,7 @@ Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
   caseOne.pattern.aliasName = "Ok";
   caseOne.pattern.veriableName = "value";
   caseOne.pattern.takesOwnership =
-      exprResult.owned && !bubbleReturnType.isLoan &&
+      consumable && !bubbleReturnType.isLoan &&
       parse::PRIMITIVE_TYPES.find(bubbleReturnType.typeName) ==
           parse::PRIMITIVE_TYPES.end();
   auto var = new ast::Var();
@@ -116,7 +129,7 @@ Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
   caseTwo.pattern.aliasName = "Err";
   caseTwo.pattern.veriableName = "err";
   caseTwo.pattern.takesOwnership =
-      exprResult.owned && foundErr &&
+      consumable && foundErr &&
       parse::PRIMITIVE_TYPES.find(bubbleErrorType.typeName) ==
           parse::PRIMITIVE_TYPES.end();
   auto errVar = new ast::Var();
@@ -131,10 +144,11 @@ Bubble::generateExpression(gen::CodeGenerator &generator, asmc::Size size,
 
   auto result = matchExpr->generateExpression(generator, size, typeHint);
   file << result.file;
-  // The generated match consumes the owned wrapper. Primitive payload arms
-  // copy their value and clean the wrapper; object payload arms transfer the
-  // allocation. Either way the hidden symbol must not be cleaned again.
-  if (exprResult.owned) {
+  // The generated match consumes the consumable wrapper. Primitive payload
+  // arms copy their value and clean the wrapper; object payload arms
+  // transfer the allocation. Either way the hidden symbol must not be
+  // cleaned again.
+  if (consumable) {
     symbol = gen::scope::ScopeManager::getInstance()->get(tempName);
     if (symbol != nullptr)
       symbol->sold = logicalLine;
