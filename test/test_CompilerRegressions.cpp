@@ -1743,8 +1743,9 @@ fn main() -> int { return 0; };
   fs::remove_all(dir);
 
   REQUIRE(built);
-  // Error stores four pointers and the Render decorator's inline int.
-  CHECK(text.find("movl\t$36,%eax") != std::string::npos);
+  // Error stores four pointers, its _hasMessage bool, and the Render
+  // decorator's inline int: 32 + 1 + 4 realized as a 40-byte allocation.
+  CHECK(text.find("movl\t$40,%eax") != std::string::npos);
   CHECK(text.find("call\tpub_Error_init") != std::string::npos);
 }
 
@@ -2343,30 +2344,54 @@ fn main() -> int {
   const auto itemDelBody = text.substr(itemDel, itemInvalidate - itemDel);
   const auto firstFieldLoad = itemDelBody.find("movq\t0(%r14),%r15");
   REQUIRE(firstFieldLoad != std::string::npos);
-  CHECK(itemDelBody.find("movq\t0(%r14),%r15", firstFieldLoad + 1) !=
-        std::string::npos);
+  CHECK(itemDelBody.find("call\tpub_Child_del") != std::string::npos);
   CHECK(itemDelBody.find("call\taf_free") != std::string::npos);
+
+  // Element moves are delegated to raw_buffer: the transfer and the
+  // source-shell free live in the raw_buffer operation's body, wherever it
+  // was emitted, not in the vector method that delegates to it.
+  const auto bufferWrite = text.find(
+      "pub_raw_buffer__std__generic__start__Item__std__generic__end___write:");
+  REQUIRE(bufferWrite != std::string::npos);
+  const auto bufferWriteBody = text.substr(
+      bufferWrite, text.find("\npub_", bufferWrite + 1) - bufferWrite);
+  const auto writeTransfer =
+      bufferWriteBody.find("call\tpub_Item___transfer_to__");
+  REQUIRE(writeTransfer != std::string::npos);
+  CHECK(bufferWriteBody.find("call\taf_free", writeTransfer) !=
+        std::string::npos);
+  const auto bufferReplace = text.find(
+      "pub_raw_buffer__std__generic__start__Item__std__generic__end___"
+      "replace:");
+  REQUIRE(bufferReplace != std::string::npos);
+  const auto bufferReplaceBody = text.substr(
+      bufferReplace, text.find("\npub_", bufferReplace + 1) - bufferReplace);
+  const auto replaceTransfer =
+      bufferReplaceBody.find("call\tpub_Item___transfer_to__");
+  REQUIRE(replaceTransfer != std::string::npos);
+  CHECK(bufferReplaceBody.find("call\taf_free", replaceTransfer) !=
+        std::string::npos);
 
   const auto push = text.find(
       "pub_vector__std__generic__start__Item__std__generic__end___push_back:");
   REQUIRE(push != std::string::npos);
-  const auto transfer = text.find("call\tpub_Item___transfer_to__", push);
-  REQUIRE(transfer != std::string::npos);
-  const auto releaseShell = text.find("call\taf_free", transfer);
-  CHECK(releaseShell != std::string::npos);
+  const auto pushBody =
+      text.substr(push, text.find("\npub_", push + 1) - push);
+  CHECK(pushBody.find("call\tpub_raw_buffer__std__generic__start__Item__std__"
+                      "generic__end___write") != std::string::npos);
   const auto set = text.find(
       "pub_vector__std__generic__start__Item__std__generic__end___set:");
   REQUIRE(set != std::string::npos);
-  const auto setTransfer = text.find("call\tpub_Item___transfer_to__", set);
-  REQUIRE(setTransfer != std::string::npos);
-  CHECK(text.find("call\taf_free", setTransfer) != std::string::npos);
+  const auto setBody = text.substr(set, text.find("\npub_", set + 1) - set);
+  CHECK(setBody.find("call\tpub_raw_buffer__std__generic__start__Item__std__"
+                     "generic__end___replace") != std::string::npos);
   const auto insert = text.find(
       "pub_vector__std__generic__start__Item__std__generic__end___insert:");
   REQUIRE(insert != std::string::npos);
-  const auto insertTransfer =
-      text.find("call\tpub_Item___transfer_to__", insert);
-  REQUIRE(insertTransfer != std::string::npos);
-  CHECK(text.find("call\taf_free", insertTransfer) != std::string::npos);
+  const auto insertBody =
+      text.substr(insert, text.find("\npub_", insert + 1) - insert);
+  CHECK(insertBody.find("call\tpub_raw_buffer__std__generic__start__Item__"
+                        "std__generic__end___write") != std::string::npos);
   const auto vectorDel = text.find(
       "pub_vector__std__generic__start__Item__std__generic__end___del:");
   REQUIRE(vectorDel != std::string::npos);
