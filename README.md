@@ -167,7 +167,7 @@ modules below are the most commonly used building blocks:
 
 #### Collections
 - `Collections/raw_buffer` - Raw storage for collection implementers. Direct application use is a code smell; it does not enforce element ownership or track live slots. See the [contract and limitations](libraries/std/docs/raw_buffer.MD).
-- `Collections/Vector` - Type-parametric `vector` supporting copy/move semantics, iterators, sorting, and optional accessors (libraries/std/src/Collections/Vector.af).
+- `Collections/Vector` - Type-parametric `vector` supporting copy/move semantics, iterators, sorting, and optional accessors. See [storage and ownership](libraries/std/docs/Vector.MD).
 - `Collections/unordered_map` - Hash-tree-backed associative container with `set`/`get`/`keys` and Option-aware lookups (libraries/std/src/Collections/unordered_map.af).
 - `Collections/Tuple` - Value-type tuples with ownership-safe destruction and `make_tuple` helper (libraries/std/src/Collections/Tuple.af).
 

@@ -1,0 +1,65 @@
+.needs <std>
+import vector from "Collections/Vector";
+import {len} from "strings" under strings;
+
+fn greater(const int a, const int b) -> bool { return a > b; };
+
+fn addressGreater(const adr a, const adr b) -> bool {
+    return strings.len(a as adr) > strings.len(b as adr);
+};
+
+fn primitives() -> void {
+    let values = new vector::<int>(4);
+    const long before = af_total_allocations();
+    values.push_back(3).push_back(1).push_back(2);
+    values.sort(greater);
+    assert(af_total_allocations() == before, "push and sort allocate within capacity");
+    assert(values.get(0).unwrap() == 1, "sort first");
+    values.insert(1, 9).unwrap();
+    values.insert(0, 0).unwrap(); // growth while shifting
+    values.insert(values.count(), 10).unwrap();
+    assert(values.count() == 6, "insert count");
+    assert(values.get(2).unwrap() == 9, "insert middle");
+    assert(values.extend(16).unwrap(), "extend after failure");
+    assert(values.count() == 6, "failed growth changed length");
+    values.drop(2).unwrap();
+    assert(values.pop_front().unwrap() == 0, "pop front");
+    assert(values.pop_back().unwrap() == 10, "pop back");
+    assert(values.count() == 3, "remaining count");
+    mutable int sum = 0;
+    foreach value in values { sum = sum + value; };
+    assert(sum == 6, "iteration");
+    values.stitch(values); // self-copy must snapshot length before appending
+    assert(values.count() == 6, "self stitch");
+    assert(values.get(3).unwrap() == 1, "self stitch content");
+    let other = new vector::<int>(); other.push_back(7);
+    values.stitch(other);
+    assert(other.count() == 1, "borrowed stitch consumed source");
+    values.stitch($other);
+    assert(values.count() == 8, "consuming stitch count");
+    let empty = new vector::<int>();
+    values.stitch($empty);
+    assert(values.count() == 8, "empty stitch");
+};
+
+fn addressValues() -> void {
+    let values = new vector::<adr>();
+    const adr a = "a"; const adr bb = "bb"; const adr ccc = "ccc";
+    values.push_back(ccc); values.push_back(a); values.insert(1, bb).unwrap();
+    values.sort(addressGreater);
+    assert(values.get(0).unwrap() == a, "address sort");
+    assert(values.get(1).unwrap() == bb, "address insert");
+    values.set(0, ?ccc).unwrap(); // Preserve the address-source set API.
+    assert(values.pop_front().unwrap() == ccc, "address set/pop");
+    let other = new vector::<adr>(); other.push_back(a);
+    values.stitch(other);
+    assert(values.back().unwrap() == a, "address stitch");
+};
+
+fn main() -> int {
+    const int before = af_live_blocks();
+    primitives();
+    addressValues();
+    assert(af_live_blocks() == before, "vector lifetime leak");
+    return 0;
+};

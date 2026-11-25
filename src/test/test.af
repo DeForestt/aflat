@@ -41,175 +41,175 @@ class MapSetterValue {
 };
 
 class AsyncSchedulerProbe {
-	mutable bool completed;
+    mutable bool completed;
 
-	fn init() -> Self {
-		my.completed = false;
-		return my;
-	};
+    fn init() -> Self {
+        my.completed = false;
+        return my;
+    };
 };
 
 fn finishSchedulerProbe(const AsyncSchedulerProbe probe) -> int {
-	sleep(0, 100000000);
-	probe.completed = true;
-	return 1;
+    sleep(0, 100000000);
+    probe.completed = true;
+    return 1;
 };
 
 fn sumFive(const int a, const int b, const int c, const int d,
-		const int e) -> int {
-	return a + b + c + d + e;
+const int e) -> int {
+    return a + b + c + d + e;
 };
 
 fn stringifyFive(const int a, const int b, const int c, const int d,
-		const int e) -> string {
-	return `{a},{b},{c},{d},{e}`;
+const int e) -> string {
+    return `{a},{b},{c},{d},{e}`;
 };
 
 async fn runSchedulerProbe(const AsyncSchedulerProbe probe) -> int {
-	return await task.async_thread::<int>(finishSchedulerProbe, probe);
+    return await task.async_thread::<int>(finishSchedulerProbe, probe);
 };
 
 async fn schedulerMarker() -> int {
-	return 1;
+    return 1;
 };
 
 unique class AsyncRunValue {
-	int value = value;
+    int value = value;
 
-	fn init(const int value) -> Self {
-		return my;
-	};
+    fn init(const int value) -> Self {
+        return my;
+    };
 };
 
 union Value {
-	Float(float)
+    Float(float)
 };
 
 fn echoFloat(const float value) -> float {
-	return value;
+    return value;
 };
 
 fn addFloats(const float left, const float right) -> float {
-	return left + right;
+    return left + right;
 };
 
 async fn makeAsyncRunValue(const int value) -> AsyncRunValue! {
-	return new AsyncRunValue(value);
+    return new AsyncRunValue(value);
 };
 
 class HookState {
-	mutable bool beforeAllRan;
-	mutable int beforeEachCount;
-	mutable int afterEachCount;
-	mutable bool afterAllRan;
+    mutable bool beforeAllRan;
+    mutable int beforeEachCount;
+    mutable int afterEachCount;
+    mutable bool afterAllRan;
 
-	fn init() -> Self {
-		my.reset();
-		return my;
-	};
+    fn init() -> Self {
+        my.reset();
+        return my;
+    };
 
-	fn reset() -> void {
-		my.beforeAllRan = false;
-		my.beforeEachCount = 0;
-		my.afterEachCount = 0;
-		my.afterAllRan = false;
-	};
+    fn reset() -> void {
+        my.beforeAllRan = false;
+        my.beforeEachCount = 0;
+        my.afterEachCount = 0;
+        my.afterAllRan = false;
+    };
 };
 
 shared class VectorAllocationShape {
-  int value = value;
-  fn init(const int value) -> Self { return my; };
+    int value = value;
+    fn init(const int value) -> Self { return my; };
 };
 mutable int vectorPayloadDrops = 0;
 unique class VectorOwnedPayload {
-  int value = value;
-  fn init(const int value) -> Self { return my; };
-  fn del() -> void { vectorPayloadDrops = vectorPayloadDrops + 1; };
+    int value = value;
+    fn init(const int value) -> Self { return my; };
+    fn del() -> void { vectorPayloadDrops = vectorPayloadDrops + 1; };
 };
 unique class VectorCopiedPayload {
-  int value = value;
-  fn init(const int value) -> Self { return my; };
-  fn __copy__() -> Self { return new VectorCopiedPayload(my.value); };
-  fn del() -> void { vectorPayloadDrops = vectorPayloadDrops + 1; };
+    int value = value;
+    fn init(const int value) -> Self { return my; };
+    fn __copy__() -> Self { return new VectorCopiedPayload(my.value); };
+    fn del() -> void { vectorPayloadDrops = vectorPayloadDrops + 1; };
 };
 fn vectorCopiedMatches(const VectorCopiedPayload value, const adr args) -> bool {
-  return value.value == 40;
+    return value.value == 40;
 };
 fn vectorOwnedMatches(const VectorOwnedPayload value, const adr args) -> bool {
-  return value.value == 20;
+    return value.value == 20;
 };
 fn checkVectorOwnedPayload() -> int {
-  const let values = new vector::<VectorOwnedPayload>(3);
-  values.push_back(new VectorOwnedPayload(10));
-  values.push_back(new VectorOwnedPayload(20));
-  values.push_back(new VectorOwnedPayload(30));
-  const long before = af_total_allocations();
-  if values.get(0).unwrap().value != 10 { return 21; };
-  if values.findFirst(vectorOwnedMatches).unwrap().value != 20 { return 29; };
-  if af_total_allocations() != before { return 22; };
-  const local let last = values.pop_back();
-  const local let first = values.pop_front();
-  if first.unwrap().value != 10 { return 23; };
-  if last.unwrap().value != 30 { return 24; };
-  if values.front().unwrap().value != 20 { return 25; };
-  const let copies = new vector::<VectorCopiedPayload>(1);
-  copies.push_back(new VectorCopiedPayload(40));
-  const local let copied = copies.get(0);
-  if copied.unwrap().value != 40 { return 26; };
-  const long beforeFind = af_total_allocations();
-  const local let found = copies.findFirst(vectorCopiedMatches);
-  if found.unwrap().value != 40 { return 30; };
-  if af_total_allocations() != beforeFind + #1 { return 31; };
-  return 0;
+    const let values = new vector::<VectorOwnedPayload>(3);
+    values.push_back(new VectorOwnedPayload(10));
+    values.push_back(new VectorOwnedPayload(20));
+    values.push_back(new VectorOwnedPayload(30));
+    const long before = af_total_allocations();
+    if values.get(0).unwrap().value != 10 { return 21; };
+    if values.findFirst(vectorOwnedMatches).unwrap().value != 20 { return 29; };
+    if af_total_allocations() != before { return 22; };
+    const local let last = values.pop_back();
+    const local let first = values.pop_front();
+    if first.unwrap().value != 10 { return 23; };
+    if last.unwrap().value != 30 { return 24; };
+    if values.front().unwrap().value != 20 { return 25; };
+    const let copies = new vector::<VectorCopiedPayload>(1);
+    copies.push_back(new VectorCopiedPayload(40));
+    const local let copied = copies.get(0);
+    if copied.unwrap().value != 40 { return 26; };
+    const long beforeFind = af_total_allocations();
+    const local let found = copies.findFirst(vectorCopiedMatches);
+    if found.unwrap().value != 40 { return 30; };
+    if af_total_allocations() != beforeFind + #1 { return 31; };
+    return 0;
 };
 fn vectorShapeGreater(const VectorAllocationShape left, const VectorAllocationShape right) -> bool {
-  return left.value > right.value;
+    return left.value > right.value;
 };
 fn checkVectorSortAllocations() -> int {
-  const let shapes = new vector::<VectorAllocationShape>(3);
-  const let first = VectorAllocationShape(3);
-  const let second = VectorAllocationShape(2);
-  const let third = VectorAllocationShape(1);
-  shapes.push_back(first); shapes.push_back(second); shapes.push_back(third);
-  const long before = af_total_allocations();
-  shapes.sort(vectorShapeGreater);
-  if af_total_allocations() != before + #1 { return 1; };
-  if shapes.front().unwrap().value != 1 { return 2; };
-  if shapes.back().unwrap().value != 3 { return 3; };
-  return 0;
+    const let shapes = new vector::<VectorAllocationShape>(3);
+    const let first = VectorAllocationShape(3);
+    const let second = VectorAllocationShape(2);
+    const let third = VectorAllocationShape(1);
+    shapes.push_back(first); shapes.push_back(second); shapes.push_back(third);
+    const long before = af_total_allocations();
+    shapes.sort(vectorShapeGreater);
+    if af_total_allocations() != before { return 1; };
+    if shapes.front().unwrap().value != 1 { return 2; };
+    if shapes.back().unwrap().value != 3 { return 3; };
+    return 0;
 };
 fn vectorAllocationMatches(const int value, const adr args) -> bool { return value == 3; };
 fn checkVectorAllocations() -> int {
-  const let values = new vector::<int>(4);
-  values.push_back(1); values.push_back(2); values.push_back(3);
-  const let shapes = new vector::<VectorAllocationShape>(2);
-  const let shape = VectorAllocationShape(42);
-  shapes.push_back(shape);
-  const long before = af_total_allocations();
-  for mutable int i = 0; i < 20; i = i + 1 {
-    const local let got = values.get(1);
-    if got.unwrap() != 2 { return 1; };
-    if values.front().unwrap() != 1 { return 2; };
-    if values.back().unwrap() != 3 { return 3; };
-    if values(2).unwrap() != 3 { return 4; };
-    if values.get(-1).isSome() { return 5; };
-    if values.get(3).isSome() { return 6; };
-    if values.findFirst(vectorAllocationMatches).unwrap() != 3 { return 7; };
-    const local let borrowed = shapes.get(0);
-    if borrowed.unwrap().value != 42 { return 8; };
-    if shapes.get_unlocked(0).unwrap().value != 42 { return 9; };
-    mutable int total = 0;
-    foreach value in values { total = total + value; };
-    if total != 6 { return 10; };
-  };
-  if values.pop_front().unwrap() != 1 { return 11; };
-  if values.pop_back().unwrap() != 3 { return 12; };
-  if values.pop_back().unwrap() != 2 { return 13; };
-  if values.pop_back().isSome() { return 14; };
-  if values.front().isSome() { return 15; };
-  if values.back().isSome() { return 16; };
-  if af_total_allocations() != before { return 17; };
-  return 0;
+    const let values = new vector::<int>(4);
+    values.push_back(1); values.push_back(2); values.push_back(3);
+    const let shapes = new vector::<VectorAllocationShape>(2);
+    const let shape = VectorAllocationShape(42);
+    shapes.push_back(shape);
+    const long before = af_total_allocations();
+    for mutable int i = 0; i < 20; i = i + 1 {
+        const local let got = values.get(1);
+        if got.unwrap() != 2 { return 1; };
+        if values.front().unwrap() != 1 { return 2; };
+        if values.back().unwrap() != 3 { return 3; };
+        if values(2).unwrap() != 3 { return 4; };
+        if values.get(-1).isSome() { return 5; };
+        if values.get(3).isSome() { return 6; };
+        if values.findFirst(vectorAllocationMatches).unwrap() != 3 { return 7; };
+        const local let borrowed = shapes.get(0);
+        if borrowed.unwrap().value != 42 { return 8; };
+        if shapes.get_unlocked(0).unwrap().value != 42 { return 9; };
+        mutable int total = 0;
+        foreach value in values { total = total + value; };
+        if total != 6 { return 10; };
+    };
+    if values.pop_front().unwrap() != 1 { return 11; };
+    if values.pop_back().unwrap() != 3 { return 12; };
+    if values.pop_back().unwrap() != 2 { return 13; };
+    if values.pop_back().isSome() { return 14; };
+    if values.front().isSome() { return 15; };
+    if values.back().isSome() { return 16; };
+    if af_total_allocations() != before { return 17; };
+    return 0;
 };
 
 fn main() -> int{
@@ -284,30 +284,30 @@ fn main() -> int{
             test.assertEqual(6, vectorPayloadDrops);
             test.assertEqual(before, after);
         });
-        test.it("reuses a single scratch allocation while sorting objects", fn () {
+        test.it("sorts objects without scratch allocations", fn () {
             test.assertEqual(0, checkVectorSortAllocations());
         });
     });
-	test.describe("Union", fn () {
-		test.it("should preserve float payloads", fn () {
-			let value = new Value->Float(3.5);
+    test.describe("Union", fn () {
+        test.it("should preserve float payloads", fn () {
+            let value = new Value->Float(3.5);
 
-			match value {
-				Float(actual) => {
-					test.assertTrue(actual == 3.5);
-				}
-			};
-		});
-	});
+            match value {
+                Float(actual) => {
+                    test.assertTrue(actual == 3.5);
+                }
+            };
+        });
+    });
 
-	test.describe("Float calls", fn () {
-		test.it("should preserve arguments and return values", fn () {
-			const let actual = echoFloat(addFloats(1.25, 2.25));
-			test.assertTrue(actual == 3.5);
-		});
-	});
+    test.describe("Float calls", fn () {
+        test.it("should preserve arguments and return values", fn () {
+            const let actual = echoFloat(addFloats(1.25, 2.25));
+            test.assertTrue(actual == 3.5);
+        });
+    });
 
-	test.describe("String", fn () {
+    test.describe("String", fn () {
         test.it("should interpolate zero", fn () {
             uni_string value = `{0}`;
             test.assertTrue(value == "0");
@@ -356,7 +356,7 @@ fn main() -> int{
                 Err() => test.assertTrue(false)
             };
         });
-        
+
         test.it("should replace characters", fn () {
             string s = "foo bar";
             test.assertTrue(s.replaceChar(' ', '_') == "foo_bar");
@@ -569,11 +569,11 @@ fn main() -> int{
 
             test.it("should run generic background functions with five arguments", fn () {
                 const int total = run task.async_thread::<int>(
-                    sumFive, 1, 2, 3, 4, 5);
+                sumFive, 1, 2, 3, 4, 5);
                 test.assertEqual(total, 15);
 
                 const string joined = run task.async_thread::<string>(
-                    stringifyFive, 1, 2, 3, 4, 5);
+                stringifyFive, 1, 2, 3, 4, 5);
                 test.assertTrue(joined == "1,2,3,4,5");
             });
 
@@ -608,7 +608,7 @@ fn main() -> int{
                 const string memberPretty = run list.stringifyPrettyAsync(1);
                 test.assertTrue(memberPretty == pretty);
             });
-            
+
             test.describe("JSON.parse", fn () {
                 test.it("should parse directly from a string", fn () {
                     const string jsonString = "\"direct\"";

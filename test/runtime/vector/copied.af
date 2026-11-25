@@ -1,0 +1,53 @@
+.needs <std>
+import vector from "Collections/Vector";
+
+mutable int drops = 0;
+mutable int copies = 0;
+
+unique class Copied {
+    mutable int value = value;
+    fn init(const int value) -> Self { return my; };
+    fn __copy__() -> Self { copies = copies + 1; return new Copied(my.value); };
+    fn del() -> void { drops = drops + 1; };
+};
+
+fn copiedGreater(const Copied a, const Copied b) -> bool { return a.value > b.value; };
+
+fn copyableValues() -> void {
+    drops = 0; copies = 0;
+    let source = new vector::<Copied>(); source.push_back(new Copied(20)); source.push_back(new Copied(10));
+    source.sort(copiedGreater);
+    assert(copies == 0, "sort invoked copy hook");
+    const local let copy = source.get(0);
+    assert(copies == 1, "get did not copy exactly once");
+    match copy {
+        Some(value) => value.value = 99,
+        None => assert(false, "missing copy")
+    };
+    const local let check = source.get(0);
+    assert(check.unwrap().value == 10, "read copy aliases source");
+    delete check; delete copy;
+    let destination = new vector::<Copied>(4);
+    destination.stitch(source);
+    assert(copies == 4, "borrowed stitch must copy each owned value once");
+    assert(source.count() == 2, "borrowed stitch source count");
+    delete source;
+    const local let taken = destination.pop_front();
+    assert(taken.unwrap().value == 10, "copyable pop");
+    assert(copies == 4, "pop copied instead of moving");
+    const local let last = destination.pop_back();
+    assert(last.unwrap().value == 20, "copyable pop back");
+    assert(copies == 4, "pop back copied instead of moving");
+    assert(destination.count() == 0, "pops did not empty vector");
+    delete last;
+    delete taken;
+    delete destination;
+    assert(drops == 6, "copied ownership cleanup");
+};
+
+fn main() -> int {
+    const int before = af_live_blocks();
+    copyableValues();
+    assert(af_live_blocks() == before, "vector lifetime leak");
+    return 0;
+};
