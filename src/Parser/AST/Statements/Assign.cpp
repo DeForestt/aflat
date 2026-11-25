@@ -199,18 +199,27 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
       file << generator.GenSTMT(copy);
     }
 
-    // A direct source owns a separate heap wrapper. The transfer hook has
-    // moved its state, so release that wrapper without invoking `del`.
+    // The transfer hook has moved the source's state into the field, so
+    // release the source shell without invoking `del`. A heap source owns a
+    // separate wrapper that can simply be freed. A stack source has no
+    // wrapper to free: disarm its frame cleanup registration instead, so
+    // the emptied stack shell is not destroyed a second time at frame exit.
     if (releaseSource) {
-      auto *released = new ast::Var();
-      released->logicalLine = this->logicalLine;
-      released->Ident = var->Ident;
-      released->selling = true;
-      auto *freeCall = new ast::Call();
-      freeCall->logicalLine = this->logicalLine;
-      freeCall->ident = "af_free";
-      freeCall->Args.push(released);
-      file << generator.GenSTMT(freeCall);
+      if (source->storageOrigin == gen::StorageOrigin::Stack) {
+        gen::Expr sourceExpr;
+        sourceExpr.stackCleanupNodeOffset = source->stackCleanupNodeOffset;
+        file << generator.emitStackCleanupTransfer(sourceExpr);
+      } else {
+        auto *released = new ast::Var();
+        released->logicalLine = this->logicalLine;
+        released->Ident = var->Ident;
+        released->selling = true;
+        auto *freeCall = new ast::Call();
+        freeCall->logicalLine = this->logicalLine;
+        freeCall->ident = "af_free";
+        freeCall->Args.push(released);
+        file << generator.GenSTMT(freeCall);
+      }
 
       // Field metadata is shared across instances, so only root bindings can
       // carry the per-value sold state.

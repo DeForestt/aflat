@@ -702,6 +702,62 @@ fn main() -> int {
   CHECK(text.find("call\taf_free") == std::string::npos);
 }
 
+TEST_CASE("local fields consume stack-constructed values without a second "
+          "destruction",
+          "[codegen][ownership][stack][local-field]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_local_field_transfer_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+unique class Inner {
+  int value = value;
+  fn init(const int value) -> Self { return my; };
+  fn del() -> void { return; };
+};
+class Outer {
+  private int capacity = capacity;
+  local private Inner storage = Inner(capacity);
+  fn init(const int capacity) -> Self { return my; };
+};
+fn main() -> int {
+  let outer = new Outer(10);
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  const auto initStart = text.find("pub_Outer_init:");
+  REQUIRE(initStart != std::string::npos);
+  const auto initEnd = text.find("\npub_", initStart + 1);
+  const auto body = text.substr(
+      initStart, (initEnd == std::string::npos ? text.size() : initEnd) -
+                     initStart);
+
+  // The bare constructor value is a registered stack temporary whose state
+  // is transferred into the inline field.
+  const auto registered = body.find("lea\tpub_Inner_del(%rip)");
+  const auto transfer = body.find("call\tpub_Inner___transfer_to__");
+  REQUIRE(registered != std::string::npos);
+  REQUIRE(transfer != std::string::npos);
+  REQUIRE(registered < transfer);
+
+  // After the transfer the temporary's cleanup registration is disarmed and
+  // its stack storage is never freed: the field owns the state now, so the
+  // temporary must not be destroyed again at frame exit.
+  const auto afterTransfer = body.substr(transfer);
+  CHECK(afterTransfer.find("movq\t$0,-") != std::string::npos);
+  CHECK(afterTransfer.find("call\taf_free") == std::string::npos);
+}
+
 TEST_CASE("local class returns use a caller-owned stack destination",
           "[codegen][return][stack]") {
   namespace fs = std::filesystem;
