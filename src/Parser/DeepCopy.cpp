@@ -224,6 +224,7 @@ Statement *deepCopy(const Statement *stmt) {
     copy->locked = call->locked;
     copy->logicalLine = call->logicalLine;
     copy->ident = call->ident;
+    copy->imbeddedNamespace = call->imbeddedNamespace;
     copy->Args = copyExprList(call->Args);
     copy->modList = copyStringList(call->modList);
     copy->publify = call->publify;

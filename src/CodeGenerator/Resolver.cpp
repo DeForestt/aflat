@@ -252,7 +252,8 @@ CodeGenerator::resolveSymbol(std::string ident,
     owned = true; // global symbols are corporatly owned
   }
 
-  if (sym == nullptr && nameSpaceTable().contains(ident)) {
+  if (sym == nullptr && nameSpaceTable().contains(ident) &&
+      (modList.count != 0 || typeList()[ident] == nullptr)) {
     nsp = nameSpaceTable().get(ident) + ".";
     if (modList.count == 0)
       alert("NameSpace " + ident + " cannot be used as a variable", true,

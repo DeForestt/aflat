@@ -254,6 +254,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   }
 
   // check if the symbol is a class
+  bool overloadedAssignment = false;
   gen::Type **t = generator.typeList()[symbol->type.typeName];
   if (t != nullptr) {
     gen::Class *cl = dynamic_cast<gen::Class *>(*t);
@@ -284,6 +285,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
           ast::CallExpr *callExpr = new ast::CallExpr();
           callExpr->call = call;
           this->expr = callExpr;
+          overloadedAssignment = true;
         };
       }
     }
@@ -296,6 +298,15 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   gen::Expr expr =
       generator.GenExpr(this->expr, file, symbol->type.size,
                         symbol->type.typeName, symbol->type.isLocal);
+  if (overloadedAssignment && !expr.owned &&
+      expr.type == symbol->type.typeName) {
+    // A mutating assignment operator may return a loan for chaining. That
+    // loan does not replace the receiver's owning binding or its cleanup.
+    if (!fin->mutable_ || fin->readOnly)
+      generator.alert("cannot assign to immutable " + fin->symbol);
+    gen::scope::ScopeManager::getInstance()->addAssign(fin->symbol);
+    return {file, std::nullopt};
+  }
   if (symbol->type.isLocal && expr.storageOrigin != gen::StorageOrigin::Stack)
     generator.alert("a local binding requires a stack-local value", true,
                     __FILE__, __LINE__);

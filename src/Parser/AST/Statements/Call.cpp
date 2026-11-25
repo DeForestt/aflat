@@ -1277,6 +1277,18 @@ gen::GenerationResult Call::generateAttempt(
           generator.canAssign(func->argTypes.at(i), exp.type, mismatchMessage);
         }
       }
+      auto *expectedEntry = generator.typeList()[func->argTypes.at(i).typeName];
+      auto *actualEntry = generator.typeList()[exp.type];
+      if (func->argTypes.at(i).isRvalue && expectedEntry != nullptr &&
+          (*expectedEntry)->uniqueType && actualEntry != nullptr &&
+          dynamic_cast<gen::Class *>(*actualEntry) != nullptr &&
+          func->argTypes.at(i).typeName != exp.type) {
+        this->requestOverloadRetry(
+            generator, overloadTable, overloadIdent, currentOverloadIndex,
+            "cannot transfer concrete type `" + exp.type + "` as `" +
+                func->argTypes.at(i).typeName +
+                "`; convert it to the declared owning type first");
+      }
     };
     if (materializeBorrowedTemporary) {
       const auto ownerName =

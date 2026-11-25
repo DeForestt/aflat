@@ -93,7 +93,9 @@ ast::Statement *buildAutomaticDestructorBody(const gen::Class *type,
     condition->logicalLine = logicalLine;
     condition->op = ast::NotEqu;
 
-    auto *fieldRef = new ast::Var();
+    // Test the stored pointer before invoking any accessor on a nullable field.
+    auto *fieldRef = new ast::Reference();
+    fieldRef->addressOf = false;
     fieldRef->logicalLine = logicalLine;
     fieldRef->Ident = "my";
     fieldRef->modList.push(field.symbol);

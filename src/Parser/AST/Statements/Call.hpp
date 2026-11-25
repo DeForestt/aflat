@@ -35,7 +35,8 @@ public:
 
   // copy constructor
   Call(const Call &other)
-      : Statement(other), ident(other.ident), Args(other.Args),
+      : Statement(other), ident(other.ident),
+        imbeddedNamespace(other.imbeddedNamespace), Args(other.Args),
         modList(other.modList), genericTypes(other.genericTypes),
         publify(other.publify), slick(other.slick),
         receiverTransfer(other.receiverTransfer),

@@ -473,7 +473,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
       std::string nsp;
       var.modList.invert();
       var.modList.reset();
-      if (nameSpaceTable().contains(var.Ident)) {
+      if (nameSpaceTable().contains(var.Ident) &&
+          (var.modList.trail() != 0 || typeList()[var.Ident] == nullptr)) {
         nsp = nameSpaceTable().get(ident) + ".";
         if (var.modList.trail() == 0)
           alert("NameSpace " + ident + " cannot be used as a variable", true,
@@ -1089,6 +1090,12 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
       output = this->GenExpr(stringCall, OutputFile);
       output.type = "string";
+      // The ABI-only std header declares _fString as adr, but its result is
+      // an allocated string. Preserve that ownership when restoring its type.
+      output.owned = true;
+      output.needsDrop = true;
+      output.storageOrigin = StorageOrigin::Heap;
+      output.transferable = true;
     } else if (wantsAdr) {
       output = this->GenExpr(call, OutputFile);
       output.type = "adr";
@@ -2111,7 +2118,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         gen::scope::ScopeManager::getInstance()->assign(tempName, type, false);
     auto *tempSymbol = gen::scope::ScopeManager::getInstance()->get(tempName);
     if (tempSymbol != nullptr) {
-      tempSymbol->owned = output.owned;
+      // A caller-owned local return has a cleanup record rather than a heap
+      // allocation. It still owns its value and can be consumed by a sink.
+      tempSymbol->owned =
+          output.owned || (output.storageOrigin == StorageOrigin::Stack &&
+                           output.needsDrop && output.transferable);
       tempSymbol->storageOrigin = output.storageOrigin;
       tempSymbol->stackObjectOffset = output.stackObjectOffset;
       tempSymbol->stackCleanupNodeOffset = output.stackCleanupNodeOffset;

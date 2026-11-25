@@ -194,6 +194,16 @@ UnionConstructor::generateExpression(gen::CodeGenerator &generator,
     auto tnt = generator.getType(fromExpr.type, file);
     auto cls = tnt ? dynamic_cast<gen::Class *>(*tnt) : nullptr;
     auto nestedUnion = tnt ? dynamic_cast<gen::Union *>(*tnt) : nullptr;
+    // An owning variant stores its declared payload inline. A contract signer
+    // can have a larger layout and a different destructor than that payload.
+    if (cls != nullptr && aliasPayloadType != nullptr &&
+        fromExpr.type != aliasPayloadType->typeName) {
+      generator.alert("cannot store concrete type `" + fromExpr.type +
+                          "` inline as `" + aliasPayloadType->typeName +
+                          "`; convert it to the declared payload type first",
+                      true, __FILE__, __LINE__);
+      return {file, std::nullopt};
+    }
     ownershipBearingPayload = cls != nullptr || nestedUnion != nullptr;
     if (!explicitlyTransferred && addressableSource && cls != nullptr &&
         cls->publicNameTable["__copy__"] != nullptr) {
