@@ -78,6 +78,55 @@ unique class Value {
 
 } // namespace
 
+TEST_CASE("owning unions reject slicing contract signers", "[owned][union]") {
+  const auto result = buildSinkProgram("union_concrete_payload", R"(
+.needs <std>
+unique class Base {
+  contract { int kind = 0; };
+  fn init() -> Self { return my; };
+};
+unique class Concrete signs Base {
+  long extra = 1;
+  fn init() -> Self { return my; };
+};
+unique union Holder { Value(Base) };
+fn main() -> int {
+  const local let value = Holder->Value(new Concrete());
+  return 0;
+};
+)");
+  CHECK_FALSE(result.success);
+  CHECK(hasDiagnostic(result, "convert it to the declared payload type first"));
+}
+
+TEST_CASE("unique contract signers can be borrowed but not sliced by sinks",
+          "[owned][sink][contracts]") {
+  const std::string classes = R"(
+.needs <std>
+unique class Base {
+  contract { int kind = 0; };
+  fn init() -> Self { return my; };
+};
+unique class Concrete signs Base {
+  long extra = 1;
+  fn init() -> Self { return my; };
+};
+)";
+  const auto borrowed =
+      buildSinkProgram("borrow_concrete_contract", classes + R"(
+fn inspect(const Base value) -> int { return value.kind; };
+fn main() -> int { const let value = new Concrete(); return inspect(value); };
+)");
+  INFO(diagnosticsText(borrowed));
+  CHECK(borrowed.success);
+  const auto owned = buildSinkProgram("consume_concrete_contract", classes + R"(
+fn consume(const Base &&value) -> int { return value.kind; };
+fn main() -> int { return consume(new Concrete()); };
+)");
+  CHECK_FALSE(owned.success);
+  CHECK(hasDiagnostic(owned, "convert it to the declared owning type first"));
+}
+
 TEST_CASE("ordinary methods borrow their receiver", "[owned][sink][receiver]") {
   const auto result =
       buildSinkProgram("sink_borrowed_receiver", std::string(valueClass) + R"(
@@ -90,6 +139,66 @@ fn main() -> int {
 
   INFO(diagnosticsText(result));
   CHECK(result.success);
+}
+
+TEST_CASE("caller-owned local return temporaries support sink methods",
+          "[owned][sink][receiver]") {
+  const auto result =
+      buildSinkProgram("sink_local_return", std::string(valueClass) + R"(
+fn make() -> local Value { return Value(7); };
+fn main() -> int { return make().finish() - 7; };
+)");
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+}
+
+TEST_CASE("formatted strings can transfer directly into owning parameters",
+          "[owned][format]") {
+  const auto result = buildSinkProgram("owned_formatted_string", R"(
+.needs <std>
+import string from "String";
+fn consume(const string &&message) -> int { return message.len(); };
+fn main() -> int { return consume(`value {42}`) - 8; };
+)");
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+}
+
+TEST_CASE("automatic destruction checks nullable fields without accessors",
+          "[owned][destructor]") {
+  const auto result = buildSinkProgram("nullable_owned_accessor", R"(
+.needs <std>
+unique safe class Item {
+  fn init() -> Self { return my; };
+  int value = 1;
+  fn get() -> loan Self { return my; };
+};
+unique class Owner { Item item = NULL; fn init() -> Self { return my; }; };
+fn main() -> int { const let owner = new Owner(); return 0; };
+)");
+  INFO(diagnosticsText(result));
+  REQUIRE(result.success);
+  CHECK(result.assembly.find("call\tpub_Item_get") == std::string::npos);
+}
+
+TEST_CASE("assignment operators returning loans retain receiver cleanup",
+          "[owned][assignment]") {
+  const auto result = buildSinkProgram("owned_assignment_loan", R"(
+.needs <std>
+unique class Value {
+  mutable int number = 0;
+  fn init() -> Self { return my; };
+  loan Self assign<<=>>(const int number) { my.number = number; return my; };
+};
+fn main() -> int {
+  mutable let value = new Value();
+  value = 7;
+  return value.number - 7;
+};
+)");
+  INFO(diagnosticsText(result));
+  REQUIRE(result.success);
+  CHECK(result.assembly.find("call\tpub_Value_del") != std::string::npos);
 }
 
 TEST_CASE("owned temporaries may fall back to borrowing overloads",

@@ -166,7 +166,8 @@ modules below are the most commonly used building blocks:
 - `DateTime` - Epoch-based `DateTime` struct with parsing, getters, formatting, and day-of-week math (libraries/std/src/DateTime.af).
 
 #### Collections
-- `Collections/Vector` - Type-parametric `vector` supporting copy/move semantics, iterators, sorting, and optional accessors (libraries/std/src/Collections/Vector.af).
+- `Collections/raw_buffer` - Raw storage for collection implementers. Direct application use is a code smell; it does not enforce element ownership or track live slots. See the [contract and limitations](libraries/std/docs/raw_buffer.MD).
+- `Collections/Vector` - Type-parametric `vector` supporting copy/move semantics, iterators, sorting, and optional accessors. See [storage and ownership](libraries/std/docs/Vector.MD).
 - `Collections/unordered_map` - Hash-tree-backed associative container with `set`/`get`/`keys` and Option-aware lookups (libraries/std/src/Collections/unordered_map.af).
 - `Collections/Tuple` - Value-type tuples with ownership-safe destruction and `make_tuple` helper (libraries/std/src/Collections/Tuple.af).
 
@@ -200,7 +201,7 @@ the general thread runtime; async serving is not enabled by this migration.
 - `Utils/option` - Unique typed union with `Some`/`None`, borrowed `&T` payloads, and heap/local constructor overloads (libraries/std/src/Utils/option.af).
 - `Utils/Result` - Class-based result value for bridging APIs that expect dynamic success/error payloads (libraries/std/src/Utils/Result.af).
 - `Utils/result` - Unique `result<T>` union with owned errors, borrowed `&T` success payloads, and heap/local constructors (libraries/std/src/Utils/result.af).
-- `Utils/Error` - Base `Error` class with type metadata, render hooks, and pattern matching (libraries/std/src/Utils/Error.af).
+- `Utils/Error` - Unique errors with owned messages, render hooks, and kind matching. See [ownership and concrete-error conversion](libraries/std/docs/Error.MD).
 - `Utils/Error/Render` - Decorator that lets errors plug in a render callback (libraries/std/src/Utils/Error/Render.af).
 
 #### Utility infrastructure & patterns

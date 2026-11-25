@@ -579,6 +579,26 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
   int saveIntArgs = generator.intArgsCounter();
   bool isLambda = this->isLambda;
 
+  auto sameSignature = [&](const ast::Function &other) {
+    if (this->argTypes.size() != other.argTypes.size() ||
+        this->type.typeName != other.type.typeName ||
+        this->returnsLocal != other.returnsLocal ||
+        this->sinksReceiver != other.sinksReceiver || this->req != other.req ||
+        this->mutability != other.mutability ||
+        this->readOnly != other.readOnly)
+      return false;
+    for (size_t i = 0; i < this->argTypes.size(); ++i) {
+      const auto &left = this->argTypes[i];
+      const auto &right = other.argTypes[i];
+      if (left.typeName != right.typeName || left.isRvalue != right.isRvalue ||
+          left.isLocal != right.isLocal || left.isLoan != right.isLoan ||
+          left.isReference != right.isReference ||
+          left.arraySize != right.arraySize)
+        return false;
+    }
+    return true;
+  };
+
   auto assignOverloadSuffix =
       [&](links::SLinkedList<ast::Function, std::string> &table,
           bool requireGlobalScope) {
@@ -591,17 +611,21 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
           for (const auto &candidate : table) {
             if (candidate.ident.ident == this->ident.ident &&
                 candidate.scopeName == this->scopeName &&
+                sameSignature(candidate) &&
                 (candidate.hidden || candidate.statement == nullptr))
               return;
           }
         }
         if (auto *firstInstance = table[this->ident.ident]) {
-          bool forwardDeclaration = (firstInstance->statement == nullptr &&
-                                     this->statement != nullptr);
+          bool forwardDeclaration =
+              (firstInstance->statement == nullptr &&
+               this->statement != nullptr &&
+               (requireGlobalScope || sameSignature(*firstInstance)));
           const bool deferredHiddenBody =
               firstInstance->hidden && !this->hidden &&
               firstInstance->scopeName == this->scopeName &&
-              firstInstance->ident.ident == this->ident.ident;
+              firstInstance->ident.ident == this->ident.ident &&
+              sameSignature(*firstInstance);
           if (!forwardDeclaration && !deferredHiddenBody &&
               !firstInstance->wasGeneric &&
               (!requireGlobalScope || this->scopeName == "global")) {
@@ -611,7 +635,10 @@ gen::GenerationResult const Function::generate(gen::CodeGenerator &generator) {
                              std::to_string(this->overloadIndex)]) {
               // Class declaration passes already reserve overload slots.
               // Their bodies must reuse those labels for the existing ABI.
-              if (candidate->hidden || candidate->statement == nullptr)
+              // A new shell reserves a fresh slot. Only a matching body can
+              // reuse a slot reserved by the declaration pass.
+              if (this->statement != nullptr && sameSignature(*candidate) &&
+                  (candidate->hidden || candidate->statement == nullptr))
                 break;
               ++this->overloadIndex;
             }

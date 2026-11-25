@@ -14,36 +14,7 @@ unique union result {
     Ok(T),
     Err(Error)
 
-    when (T is primitive)
-    safe fn expect(const string msg) -> loan T {
-        match my {
-            Ok(value) => return value,
-            Err(err) => {
-                panic(msg.cstr());
-            }
-        };
-    };
-
-    when (T is not primitive)
-    safe fn expect(const string msg) -> loan T {
-        match my {
-            Ok(value) => return value,
-            Err(err) => {
-                panic(msg.cstr());
-            }
-        };
-    };
-
-    when (T is not primitive)
-    safe sink fn expect(const string msg) -> T {
-        match my {
-            Ok(&&value) => return $value,
-            Err(err) => {
-                panic(msg.cstr());
-            }
-        };
-    };
-
+    // Prefer raw diagnostic literals before an implicit string allocation.
     when (T is primitive)
     safe fn expect(const adr msg) -> loan T {
         match my {
@@ -70,6 +41,36 @@ unique union result {
             Ok(&&value) => return $value,
             Err(err) => {
                 panic(msg);
+            }
+        };
+    };
+
+    when (T is primitive)
+    safe fn expect(const string msg) -> loan T {
+        match my {
+            Ok(value) => return value,
+            Err(err) => {
+                panic(msg.cstr());
+            }
+        };
+    };
+
+    when (T is not primitive)
+    safe fn expect(const string msg) -> loan T {
+        match my {
+            Ok(value) => return value,
+            Err(err) => {
+                panic(msg.cstr());
+            }
+        };
+    };
+
+    when (T is not primitive)
+    safe sink fn expect(const string msg) -> T {
+        match my {
+            Ok(&&value) => return $value,
+            Err(err) => {
+                panic(msg.cstr());
             }
         };
     };
@@ -242,6 +243,36 @@ types(T)
 when (T is not primitive)
 export fn accept(const local T &&value) -> result::<T> {
     return new result::<T>->Ok($value);
+};
+
+// Snapshot contract signers before storing an Error inline; keep their own
+// destructor responsible for their concrete fields and render state.
+types(T, E)
+when(E is unique and E is not Error and E is not string)
+export fn reject(const E &&err) -> result::<T> {
+    const loan Error borrowedError = err;
+    return new result::<T>->Err(borrowedError.snapshot());
+};
+
+types(T, E)
+when(E is unique and E is not Error and E is not string)
+export fn reject(const local E &&err) -> local result::<T> {
+    const loan Error borrowedError = err;
+    return result::<T>->Err(borrowedError.snapshot());
+};
+
+types(T, E)
+when(E is unique and E is not Error and E is not string)
+export fn reject(const E &&err) -> local result::<T> {
+    const loan Error borrowedError = err;
+    return result::<T>->Err(borrowedError.snapshot());
+};
+
+types(T, E)
+when(E is unique and E is not Error and E is not string)
+export fn reject(const local E &&err) -> result::<T> {
+    const loan Error borrowedError = err;
+    return new result::<T>->Err(borrowedError.snapshot());
 };
 
 types(T)

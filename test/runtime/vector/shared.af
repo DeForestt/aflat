@@ -1,0 +1,25 @@
+.needs <std>
+import vector from "Collections/Vector";
+
+shared class Shared {
+    int value = value;
+    fn init(const int value) -> Self { return my; };
+};
+
+fn sharedValues() -> void {
+    let first = Shared(1); let second = Shared(2); let third = Shared(3);
+    let values = new vector::<Shared>(4);
+    values.push_back(first); values.push_back(third); values.insert(1, second).unwrap();
+    assert(values.get_unlocked(1).unwrap().value == 2, "shared get");
+    values.drop(1).unwrap();
+    assert(values.back().unwrap().value == 3, "shared shift");
+    const local let taken = values.pop_front();
+    assert(taken.unwrap().value == 1, "shared pop front");
+};
+
+fn main() -> int {
+    const int before = af_live_blocks();
+    sharedValues();
+    assert(af_live_blocks() == before, "vector lifetime leak");
+    return 0;
+};

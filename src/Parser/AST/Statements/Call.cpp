@@ -128,18 +128,19 @@ void ensureLazyConcreteGenericMethod(gen::CodeGenerator &generator,
   if (generator.suppressLazyMethodEmission())
     return;
 
-  auto *body = new ast::Function(*func, false);
-  body->hidden = false;
-  body->locked = false;
-  body->scopeName = cls->Ident;
-  body->globalLocked = false;
   const std::string emittedLabel =
-      "pub_" + cls->Ident + "_" + body->ident.ident;
+      "pub_" + cls->Ident + "_" + func->ident.ident;
   const auto emissionKey = lazyMethodEmissionKey(emittedLabel);
   if (generator.generatedLazyConcreteMethodNames().find(emissionKey) !=
       generator.generatedLazyConcreteMethodNames().end())
     return;
   generator.generatedLazyConcreteMethodNames().insert(emissionKey);
+
+  auto *body = new ast::Function(*func, false);
+  body->hidden = false;
+  body->locked = false;
+  body->scopeName = cls->Ident;
+  body->globalLocked = false;
 
   auto saveReturnType = generator.returnType();
   auto *saveScope = generator.scope();
@@ -1275,6 +1276,18 @@ gen::GenerationResult Call::generateAttempt(
         } else {
           generator.canAssign(func->argTypes.at(i), exp.type, mismatchMessage);
         }
+      }
+      auto *expectedEntry = generator.typeList()[func->argTypes.at(i).typeName];
+      auto *actualEntry = generator.typeList()[exp.type];
+      if (func->argTypes.at(i).isRvalue && expectedEntry != nullptr &&
+          (*expectedEntry)->uniqueType && actualEntry != nullptr &&
+          dynamic_cast<gen::Class *>(*actualEntry) != nullptr &&
+          func->argTypes.at(i).typeName != exp.type) {
+        this->requestOverloadRetry(
+            generator, overloadTable, overloadIdent, currentOverloadIndex,
+            "cannot transfer concrete type `" + exp.type + "` as `" +
+                func->argTypes.at(i).typeName +
+                "`; convert it to the declared owning type first");
       }
     };
     if (materializeBorrowedTemporary) {

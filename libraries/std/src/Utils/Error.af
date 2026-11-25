@@ -4,15 +4,17 @@ import string from "String";
 import Render from "Utils/Error/Render";
 import Option from "Utils/Option";
 import Map from "Utils/Map";
+import {str_comp} from "strings" under strings;
 
-shared pedantic class Error {
+unique pedantic class Error {
     contract {
-        private const string _typeName = new string(__typeName__);
+        private mutable string _typeName = new string(__typeName__);
         private mutable adr _render = NULL;
         const adr data = NULL;
+        private mutable string _message = NULL;
+        private mutable bool _hasMessage = false;
     };
 
-    private const string message = new string(message.cstr());
 
     public void setRender(const adr render) {
         if my._render != NULL
@@ -22,22 +24,52 @@ shared pedantic class Error {
     };
 
     private string stdErrorMessage() : Render {
-        return `{my._typeName}: {my.message}`;
-    };
-
-    Error init(const string message) {
-        return my;
+        return `{my._typeName}: {my._message}`;
     };
 
     Error init(const string &&message) {
-        delete message;
+        my._hasMessage = true;
+        my._message = $message;
         return my;
     };
 
+    Error init(const adr message) {
+        my._hasMessage = true;
+        my._message = new string(message);
+        return my;
+    };
+
+    Error init(const string message) {
+        my._hasMessage = true;
+        my._message = new string(message.cstr());
+        return my;
+    };
+
+    // A concrete contract signer may have a different layout. Preserve its
+    // public description in an independent Error before storing it inline.
+    Error init(const string kind, const string &&rendered) {
+        delete my._typeName;
+        my._typeName = new string(kind.cstr());
+        my._hasMessage = true;
+        my._message = $rendered;
+        my._render = NULL;
+        return my;
+    };
+
+    public fn snapshot() -> Error {
+        return new Error(my._typeName, my.render());
+    };
+
     public string render() {
-        if my._render == NULL
-        return `Error: {my._typeName}`;
+        if my._render == NULL {
+            if my._hasMessage { return new string(my._message.cstr()); };
+            return `Error: {my._typeName}`;
+        };
         return my._render();
+    };
+
+    public bool is(const adr type) {
+        return strings.str_comp(my._typeName.cstr(), type) == 1;
     };
 
     public bool is(const string type) {

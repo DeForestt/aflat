@@ -12,12 +12,14 @@ import {make_tuple} from "Collections/Tuple";
 import {print} from "String" under str;
 import {printInt} from "io" under io;
 import Lock, LockGuard from "concurrency";
+import raw_buffer from "Collections/raw_buffer";
 
 // Keep optional wrappers in caller-owned local storage. New vector operations
 // should avoid per-element allocations unless the payload requires ownership.
 types(T)
 unique class vector {
-    private mutable adr head = NULL;
+    // Vector owns [0, count); raw_buffer owns only the backing allocation.
+    private raw_buffer::<T> storage = NULL;
     private int size = 0;
     private int count = 0;
     private Lock mutex = new Lock();
@@ -29,19 +31,37 @@ unique class vector {
         } else {
             my.size = size;
         };
-        my.head = af_malloc(T * my.size);
+        my.storage = new raw_buffer::<T>(my.size);
         return my;
+    };
+
+    // Called while the vector lock is held. Publish capacity only after success.
+    private fn reserve(const int capacity) -> local result::<bool> {
+        if capacity <= my.size { return res.accept(true); };
+        const local result::<bool> grown = my.storage.grow(capacity);
+        if grown.isOk() { my.size = capacity; };
+        return $grown;
+    };
+
+    private fn make_room() -> local result::<bool> {
+        if my.count < my.size { return res.accept(true); };
+        const int maximum = 2147483647 / T;
+        if my.size >= maximum {
+            return res.reject::<bool>(new Error("Vector capacity exceeds byte-size limit"));
+        };
+        mutable int capacity = maximum;
+        if my.size <= maximum / 2 { capacity = my.size * 2; };
+        return my.reserve(capacity);
     };
 
     when (T is primitive)
     fn push_back(const T value) -> loan Self {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count == my.size {
-            my.size = my.size * 2;
-            my.head = af_realloc(my.head, T * my.size);
-        };
-
-        af_memcpy(my.head + (my.count * T), ?value, T);
+        my.make_room().expect("Failed to grow vector"$adr);
+        when(T is adr)
+        my.storage.write(my.count, ?value).unwrap();
+        when(T is not adr)
+        my.storage.write(my.count, value).unwrap();
         my.count = my.count + 1;
         return my;
     };
@@ -49,12 +69,11 @@ unique class vector {
     when (T is primitive)
     sink fn push_back(const T value) -> Self {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count == my.size {
-            my.size = my.size * 2;
-            my.head = af_realloc(my.head, T * my.size);
-        };
-
-        af_memcpy(my.head + (my.count * T), ?value, T);
+        my.make_room().expect("Failed to grow vector"$adr);
+        when(T is adr)
+        my.storage.write(my.count, ?value).unwrap();
+        when(T is not adr)
+        my.storage.write(my.count, value).unwrap();
         my.count = my.count + 1;
         return my;
     };
@@ -62,14 +81,8 @@ unique class vector {
     when (T is not primitive and T is unique)
     fn push_back(const T &&value) -> loan Self {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count == my.size {
-            my.size = my.size * 2;
-            my.head = af_realloc(my.head, T * my.size);
-        };
-
-        const adr destination = my.head + (my.count * T);
-        value.__transfer_to__(destination);
-        af_free($value);
+        my.make_room().expect("Failed to grow vector"$adr);
+        my.storage.write(my.count, $value).unwrap();
         my.count = my.count + 1;
         return my;
     };
@@ -77,14 +90,8 @@ unique class vector {
     when (T is not primitive and T is unique)
     sink fn push_back(const T &&value) -> Self {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count == my.size {
-            my.size = my.size * 2;
-            my.head = af_realloc(my.head, T * my.size);
-        };
-
-        const adr destination = my.head + (my.count * T);
-        value.__transfer_to__(destination);
-        af_free($value);
+        my.make_room().expect("Failed to grow vector"$adr);
+        my.storage.write(my.count, $value).unwrap();
         my.count = my.count + 1;
         return my;
     };
@@ -92,12 +99,8 @@ unique class vector {
     when (T is not primitive and T is not unique)
     fn push_back(const T value) -> loan Self {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count == my.size {
-            my.size = my.size * 2;
-            my.head = af_realloc(my.head, T * my.size);
-        };
-
-        af_memcpy(my.head + (my.count * T), value, T);
+        my.make_room().expect("Failed to grow vector"$adr);
+        my.storage.write(my.count, value).unwrap();
         my.count = my.count + 1;
         return my;
     };
@@ -105,12 +108,8 @@ unique class vector {
     when (T is not primitive and T is not unique)
     sink fn push_back(const T value) -> Self {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count == my.size {
-            my.size = my.size * 2;
-            my.head = af_realloc(my.head, T * my.size);
-        };
-
-        af_memcpy(my.head + (my.count * T), value, T);
+        my.make_room().expect("Failed to grow vector"$adr);
+        my.storage.write(my.count, value).unwrap();
         my.count = my.count + 1;
         return my;
     };
@@ -123,13 +122,13 @@ unique class vector {
     fn extend(const int capasity) -> result::<bool> {
         const local LockGuard __guard = my.mutex.guard();
         if capasity <= my.size {
-            delete __guard;
             return res.reject::<bool>(new Error("New capacity must be greater than current capacity"));
         };
-
-        my.size = capasity;
-        my.head = af_realloc(my.head, T * my.size);
-        return res.accept(true);
+        const local result::<bool> grown = my.reserve(capasity);
+        match $grown {
+            Ok(value) => return res.accept(value),
+            Err(&&err) => return res.reject::<bool>($err)
+        };
     };
 
     when (T is primitive)
@@ -239,151 +238,136 @@ unique class vector {
     when (T is primitive)
     fn pop_back() -> local option::<T> {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count == 0 {
-            delete __guard;
-            return opt.None::<T>();
-        };
-
+        if my.count == 0 { return opt.None::<T>(); };
+        const local result::<T> taken = my.storage.take(my.count - 1);
+        if taken.isErr() { panic("Failed to extract vector element"); };
         my.count = my.count - 1;
-        const adr val = my.head + (my.count * T);
-        const let r = val as T;
-        return opt.Some::<T>(r);
+        match $taken {
+            Ok(value) => return opt.Some::<T>(value),
+            Err(_) => return opt.None::<T>()
+        };
     };
 
     when (T is not primitive and T is not unique)
     fn pop_back() -> local option::<T> {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count == 0 {
-            delete __guard;
-            return opt.None::<T>();
-        };
+        if my.count == 0 { return opt.None::<T>(); };
+        const local result::<T> taken = my.storage.take(my.count - 1);
+        if taken.isErr() { panic("Failed to extract vector element"); };
         my.count = my.count - 1;
-        const generic val = my.head + (my.count * T);
-        const T val = val;
-        return opt.Some(val);
+        match $taken {
+            Ok(&&value) => return option::<T>->Some($value),
+            Err(_) => return opt.None::<T>()
+        };
     };
 
     when (T is not primitive and T is unique)
     fn pop_back() -> local option::<T> {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count == 0 {
-            delete __guard;
-            return opt.None::<T>();
-        };
+        if my.count == 0 { return opt.None::<T>(); };
+        const local result::<T> taken = my.storage.take(my.count - 1);
+        if taken.isErr() { panic("Failed to extract vector element"); };
         my.count = my.count - 1;
-        const generic val = my.head + (my.count * T);
-        const generic moved = af_malloc(T);
-        af_memcpy(moved, val, T);
-        const T moved = moved;
-        return opt.Some($moved);
+        match $taken {
+            Ok(&&value) => return option::<T>->Some($value),
+            Err(_) => return opt.None::<T>()
+        };
     };
 
     when (T is primitive)
     fn pop_front() -> local option::<T> {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count == 0 {
-            delete __guard;
-            return opt.None::<T>();
-        };
-
-        const adr val = my.head;
-        const let r = val as T;
-        for int i = 1; i < my.count; i = i + 1 {
-            af_memcpy(my.head + ((i - 1) * T), my.head + (i * T), T);
-        };
+        if my.count == 0 { return opt.None::<T>(); };
+        const local result::<T> taken = my.storage.take(0);
+        if taken.isErr() { panic("Failed to extract vector element"); };
+        my.storage.relocate(1, 0, my.count - 1).unwrap();
         my.count = my.count - 1;
-        return opt.Some::<T>(r);
+        match $taken {
+            Ok(value) => return opt.Some::<T>(value),
+            Err(_) => return opt.None::<T>()
+        };
     };
 
     when (T is not primitive and T is not unique)
     fn pop_front() -> local option::<T> {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count == 0 {
-            delete __guard;
-            return opt.None::<T>();
-        };
-
-        const generic val = my.head;
-        const T val = val;
-        for int i = 1; i < my.count; i = i + 1 {
-            af_memcpy(my.head + ((i - 1) * T), my.head + (i * T), T);
-        };
+        if my.count == 0 { return opt.None::<T>(); };
+        const local result::<T> taken = my.storage.take(0);
+        if taken.isErr() { panic("Failed to extract vector element"); };
+        my.storage.relocate(1, 0, my.count - 1).unwrap();
         my.count = my.count - 1;
-        return opt.Some(val);
+        match $taken {
+            Ok(&&value) => return option::<T>->Some($value),
+            Err(_) => return opt.None::<T>()
+        };
     };
 
     when (T is not primitive and T is unique)
     fn pop_front() -> local option::<T> {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count == 0 {
-            delete __guard;
-            return opt.None::<T>();
-        };
-
-        const generic val = my.head;
-        const generic moved = af_malloc(T);
-        af_memcpy(moved, val, T);
-        const T moved = moved;
-        for int i = 1; i < my.count; i = i + 1 {
-            af_memcpy(my.head + ((i - 1) * T), my.head + (i * T), T);
-        };
+        if my.count == 0 { return opt.None::<T>(); };
+        const local result::<T> taken = my.storage.take(0);
+        if taken.isErr() { panic("Failed to extract vector element"); };
+        my.storage.relocate(1, 0, my.count - 1).unwrap();
         my.count = my.count - 1;
-        return opt.Some($moved);
+        match $taken {
+            Ok(&&value) => return option::<T>->Some($value),
+            Err(_) => return opt.None::<T>()
+        };
     };
 
     when (T is primitive)
     fn get(const int index) -> local option::<T> {
         const local LockGuard __guard = my.mutex.guard();
-        if index >= my.count | index < 0 {
-            delete __guard;
-            return opt.None::<T>();
+        if (index >= my.count) | (index < 0) { return opt.None::<T>(); };
+        const local result::<T> value = my.storage.read(index);
+        match $value {
+            Ok(element) => return opt.Some::<T>(element),
+            Err(_) => return opt.None::<T>()
         };
-        const adr val = my.head + (index * T);
-        return opt.Some(val as T);
     };
 
     when (T is not primitive and T has __copy__)
     fn get(const int index) -> local option::<T> {
         const local LockGuard __guard = my.mutex.guard();
-        if index >= my.count | index < 0 {
-            delete __guard;
-            return opt.None::<T>();
-        };
-        const generic val = my.head + (index * T);
-        const T val = val;
-        return opt.Some(val);
+        if (index >= my.count) | (index < 0) { return opt.None::<T>(); };
+        // Copy directly into the option; an owning intermediate result would
+        // require another allocation to move its payload into the option.
+        const local result::<&T> value = my.storage.borrow(index);
+        return opt.Some::<T>(value.unwrap());
     };
 
     when (T is not primitive and T is unique and T missing __copy__)
     fn get(const int index) -> local option::<&T> {
         const local LockGuard __guard = my.mutex.guard();
-        if index >= my.count | index < 0 {
-            delete __guard;
-            return opt.None::<&T>();
+        if (index >= my.count) | (index < 0) { return opt.None::<&T>(); };
+        const local result::<&T> value = my.storage.borrow(index);
+        match value {
+            Ok(element) => return opt.Some::<&T>(element),
+            Err(_) => return opt.None::<&T>()
         };
-        const generic val = my.head + (index * T);
-        return opt.Some::<&T>(val);
     };
 
     when (T is not unique and T missing __copy__ and T is not primitive)
     fn get(const int index) -> local option::<&T> {
         const local LockGuard __guard = my.mutex.guard();
-        if index >= my.count | index < 0 {
-            delete __guard;
-            return opt.None::<&T>();
+        if (index >= my.count) | (index < 0) { return opt.None::<&T>(); };
+        const local result::<&T> value = my.storage.borrow(index);
+        match value {
+            Ok(element) => return opt.Some::<&T>(element),
+            Err(_) => return opt.None::<&T>()
         };
-        const generic val = my.head + (index * T);
-        return opt.Some::<&T>(val);
     };
 
-    // Internal-style fast path for callers that provide their own synchronization.
+    // Skip the vector lock for callers coordinating access; storage still locks.
     when (T is not unique and T missing __copy__ and T is not primitive)
     fn get_unlocked(const int index) -> local option::<&T> {
-        if index >= my.count | index < 0 {
-            return opt.None::<&T>();
+        if (index >= my.count) | (index < 0) { return opt.None::<&T>(); };
+        const local result::<&T> value = my.storage.borrow(index);
+        match value {
+            Ok(element) => return opt.Some::<&T>(element),
+            Err(_) => return opt.None::<&T>()
         };
-        const generic val = my.head + (index * T);
-        return opt.Some::<&T>(val);
     };
 
     when (T is primitive)
@@ -550,58 +534,49 @@ unique class vector {
     when (T is not primitive and T is not unique or T is adr)
     fn set(const int index, const any value) -> result::<bool> {
         const local LockGuard __guard = my.mutex.guard();
-        if index >= my.count {
-            delete __guard;
+        if (index >= my.count) | (index < 0) {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
-        af_memcpy(my.head + (index * T), value, T);
+        my.storage.replace(index, value).unwrap();
         return res.accept(true);
     };
 
     when (T is not primitive and T is unique)
     fn set(const int index, const T &&value) -> result::<bool> {
         const local LockGuard __guard = my.mutex.guard();
-        if index >= my.count {
-            delete __guard;
+        if (index >= my.count) | (index < 0) {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
-        const generic obj = my.head + (index * T);
-        const loan T previous = obj;
-        delete previous;
-        const adr destination = my.head + (index * T);
-        value.__transfer_to__(destination);
-        af_free($value);
+        my.storage.replace(index, $value).unwrap();
         return res.accept(true);
     };
 
     when (T is primitive and T is not adr)
     fn set(const int index, const T value) -> result::<bool> {
         const local LockGuard __guard = my.mutex.guard();
-        if index >= my.count {
-            delete __guard;
+        if (index >= my.count) | (index < 0) {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
-        af_memcpy(my.head + (index * T), ?value, T);
+        my.storage.replace(index, value).unwrap();
         return res.accept(true);
     };
 
     when (T is primitive)
     fn insert(const int index, const T value) -> result::<bool> {
         const local LockGuard __guard = my.mutex.guard();
-        if index > my.count | index < 0 {
-            delete __guard;
+        if (index > my.count) | (index < 0) {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
-
-        if my.count == my.size {
-            my.size = my.size * 2;
-            my.head = af_realloc(my.head, T * my.size);
+        const local result::<bool> grown = my.make_room();
+        match $grown {
+            Err(&&err) => return res.reject::<bool>($err),
+            Ok(_) => {}
         };
-
-        for int i = my.count; i > index; i = i - 1 {
-            af_memcpy(my.head + (i * T), my.head + ((i - 1) * T), T);
-        };
-        af_memcpy(my.head + (index * T), ?value, T);
+        my.storage.relocate(index, index + 1, my.count - index).unwrap();
+        when(T is adr)
+        my.storage.write(index, ?value).unwrap();
+        when(T is not adr)
+        my.storage.write(index, value).unwrap();
         my.count = my.count + 1;
         return res.accept(true);
     };
@@ -609,20 +584,16 @@ unique class vector {
     when (T is not primitive and T is not unique)
     fn insert(const int index, const T value) -> result::<bool> {
         const local LockGuard __guard = my.mutex.guard();
-        if index > my.count | index < 0 {
-            delete __guard;
+        if (index > my.count) | (index < 0) {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
-
-        if my.count == my.size {
-            my.size = my.size * 2;
-            my.head = af_realloc(my.head, T * my.size);
+        const local result::<bool> grown = my.make_room();
+        match $grown {
+            Err(&&err) => return res.reject::<bool>($err),
+            Ok(_) => {}
         };
-
-        for int i = my.count; i > index; i = i - 1 {
-            af_memcpy(my.head + (i * T), my.head + ((i - 1) * T), T);
-        };
-        af_memcpy(my.head + (index * T), value, T);
+        my.storage.relocate(index, index + 1, my.count - index).unwrap();
+        my.storage.write(index, value).unwrap();
         my.count = my.count + 1;
         return res.accept(true);
     };
@@ -630,22 +601,16 @@ unique class vector {
     when (T is not primitive and T is unique)
     fn insert(const int index, const T &&value) -> result::<bool> {
         const local LockGuard __guard = my.mutex.guard();
-        if index > my.count | index < 0 {
-            delete __guard;
+        if (index > my.count) | (index < 0) {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
-
-        if my.count == my.size {
-            my.size = my.size * 2;
-            my.head = af_realloc(my.head, T * my.size);
+        const local result::<bool> grown = my.make_room();
+        match $grown {
+            Err(&&err) => return res.reject::<bool>($err),
+            Ok(_) => {}
         };
-
-        for int i = my.count; i > index; i = i - 1 {
-            af_memcpy(my.head + (i * T), my.head + ((i - 1) * T), T);
-        };
-        const adr destination = my.head + (index * T);
-        value.__transfer_to__(destination);
-        af_free($value);
+        my.storage.relocate(index, index + 1, my.count - index).unwrap();
+        my.storage.write(index, $value).unwrap();
         my.count = my.count + 1;
         return res.accept(true);
     };
@@ -653,14 +618,11 @@ unique class vector {
     when (T is primitive)
     fn drop(const int index) -> result::<bool> {
         const local LockGuard __guard = my.mutex.guard();
-        if index >= my.count | index < 0 {
-            delete __guard;
+        if (index >= my.count) | (index < 0) {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
-
-        for int i = index + 1; i < my.count; i = i + 1 {
-            af_memcpy(my.head + ((i - 1) * T), my.head + (i * T), T);
-        };
+        my.storage.destroy(index).unwrap();
+        my.storage.relocate(index + 1, index, my.count - index - 1).unwrap();
         my.count = my.count - 1;
         return res.accept(true);
     };
@@ -668,14 +630,11 @@ unique class vector {
     when (T is not primitive and T is not unique)
     fn drop(const int index) -> result::<bool> {
         const local LockGuard __guard = my.mutex.guard();
-        if index >= my.count | index < 0 {
-            delete __guard;
+        if (index >= my.count) | (index < 0) {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
-
-        for int i = index + 1; i < my.count; i = i + 1 {
-            af_memcpy(my.head + ((i - 1) * T), my.head + (i * T), T);
-        };
+        my.storage.destroy(index).unwrap();
+        my.storage.relocate(index + 1, index, my.count - index - 1).unwrap();
         my.count = my.count - 1;
         return res.accept(true);
     };
@@ -683,63 +642,87 @@ unique class vector {
     when (T is not primitive and T is unique)
     fn drop(const int index) -> result::<bool> {
         const local LockGuard __guard = my.mutex.guard();
-        if index >= my.count | index < 0 {
-            delete __guard;
+        if (index >= my.count) | (index < 0) {
             return res.reject::<bool>(new Error("Index out of bounds"));
         };
-
-        const generic val = my.head + (index * T);
-        const loan T element = val;
-        delete element;
-        for int i = index + 1; i < my.count; i = i + 1 {
-            af_memcpy(my.head + ((i - 1) * T), my.head + (i * T), T);
-        };
+        my.storage.destroy(index).unwrap();
+        my.storage.relocate(index + 1, index, my.count - index - 1).unwrap();
         my.count = my.count - 1;
         return res.accept(true);
     };
 
-    fn stitch(immutable vector::<T> other) -> loan Self {
-        other.mutex.lock();
-        const int otherCount = other.count;
-        const adr otherValues = af_malloc(otherCount * T);
-        af_memcpy(otherValues, other.head, otherCount * T);
-        other.mutex.unlock();
+    // Capacity arithmetic and collection-level ownership remain vector policy.
+    private fn reserve_append(const int additional) -> void {
+        assert(additional <= (2147483647 / T) - my.count, "Vector capacity exceeds byte-size limit");
+        my.reserve(my.count + additional).expect("Failed to grow vector"$adr);
+    };
 
-        const local LockGuard __guard = my.mutex.guard();
-        const let totalCount = my.count + otherCount;
-        if totalCount > my.size {
-            my.size = totalCount;
-            my.head = af_realloc(my.head, my.size * T);
+    when(T is primitive)
+    private fn append_copy(immutable vector::<T> other, const int index) -> void {
+        my.push_back(other.storage.read(index).unwrap());
+    };
+
+    when(T is not primitive and T is not unique)
+    private fn append_copy(immutable vector::<T> other, const int index) -> void {
+        my.push_back(other.storage.borrow(index).unwrap());
+    };
+
+    when(T is not primitive and T is unique and T has __copy__)
+    private fn append_copy(immutable vector::<T> other, const int index) -> void {
+        const local result::<T> copied = other.storage.read(index);
+        match $copied {
+            Ok(&&value) => { my.push_back($value); },
+            Err(_) => { panic("Failed to copy vector element"); }
         };
-        af_memcpy(my.head + (my.count * T), otherValues, otherCount * T);
-        af_free(otherValues);
-        my.count = totalCount;
+    };
+
+    when(T is primitive or T is not unique or T has __copy__)
+    private fn stitch_copy_locked(immutable vector::<T> other) -> void {
+        const int length = other.count;
+        my.reserve_append(length);
+        for mutable int i = 0; i < length; i = i + 1 {
+            my.append_copy(other, i);
+        };
+    };
+
+    // A borrowed source must not create a second owner of move-only elements.
+    when(T is primitive or T is not unique or T has __copy__)
+    fn stitch(immutable vector::<T> other) -> loan Self {
+        const adr selfAddress = ?my.count;
+        const adr otherAddress = ?other.count;
+        if selfAddress < otherAddress {
+            const local LockGuard __selfGuard = my.mutex.guard();
+            const local LockGuard __otherGuard = other.mutex.guard();
+            my.stitch_copy_locked(other);
+        } else {
+            const local LockGuard __otherGuard = other.mutex.guard();
+            const local LockGuard __selfGuard = my.mutex.guard();
+            my.stitch_copy_locked(other);
+        };
         return my;
     };
 
+    private fn stitch_move_locked(const vector::<T> other) -> void {
+        my.reserve_append(other.count);
+        other.storage.transfer_to(my.storage, 0, my.count, other.count).unwrap();
+        my.count = my.count + other.count;
+        // The consuming parameter will drop its buffer after the guards release.
+        other.count = 0;
+    };
 
     fn stitch(const vector::<T> &&other) -> loan Self {
-        other.mutex.lock();
-        const int otherCount = other.count;
-        const adr otherHead = other.head;
-        const adr otherValues = af_malloc(otherCount * T);
-        af_memcpy(otherValues, otherHead, otherCount * T);
-        other.mutex.unlock();
-
-        const local LockGuard __guard = my.mutex.guard();
-        const let totalCount = my.count + otherCount;
-        if totalCount > my.size {
-            my.size = totalCount;
-            my.head = af_realloc(my.head, my.size * T);
+        const adr selfAddress = ?my.count;
+        const adr otherAddress = ?other.count;
+        assert(selfAddress != otherAddress, "Cannot consume a vector into itself");
+        if selfAddress < otherAddress {
+            const local LockGuard __selfGuard = my.mutex.guard();
+            const local LockGuard __otherGuard = other.mutex.guard();
+            my.stitch_move_locked(other);
+        } else {
+            const local LockGuard __otherGuard = other.mutex.guard();
+            const local LockGuard __selfGuard = my.mutex.guard();
+            my.stitch_move_locked(other);
         };
-        af_memcpy(my.head + (my.count * T), otherValues, otherCount * T);
-        af_free(otherValues);
-        my.count = totalCount;
-        // The elements were relocated into my, so release the old buffer and
-        // shell without running the relocated elements' destructors.
-        af_free(otherHead);
-        delete other.mutex;
-        af_free($other);
         return my;
     };
 
@@ -793,68 +776,58 @@ unique class vector {
 
     when (T is not primitive and T is unique)
     fn del() {
-        for int i = 0; i < my.count; i = i + 1 {
-            const generic val = my.head + (i * T);
-            // Elements live inline in the vector buffer. Run their destructor
-            // without freeing the slot address as a standalone allocation.
-            const loan T element = val;
-            delete element;
+        for mutable int i = 0; i < my.count; i = i + 1 {
+            my.storage.destroy(i).unwrap();
         };
-        af_free(my.head);
+        delete my.storage;
         delete my.mutex;
     };
 
     when (T is primitive or T is not unique)
     fn del() {
-        af_free(my.head);
+        delete my.storage;
         delete my.mutex;
     };
 
-    when (T is not primitive or T is adr)
+    when (T is not primitive)
     fn sort(const adr comparator) -> void {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count < 2 {
-            delete __guard;
-            return;
-        };
-        // Reuse one scratch buffer for all swaps.
-        const adr temp = af_malloc(T);
-        for int i = 0; i < my.count - 1; i = i + 1 {
-            for int j = 0; j < my.count - i - 1; j = j + 1 {
-                const adr a = my.head + (j * T);
-                const adr b = my.head + ((j + 1) * T);
-                const bool swap = comparator(a, b);
-                if swap {
-                    // Swap elements
-                    af_memcpy(temp, a, T);
-                    af_memcpy(a, b, T);
-                    af_memcpy(b, temp, T);
-                };
+        for mutable int i = 0; i < my.count - 1; i = i + 1 {
+            for mutable int j = 0; j < my.count - i - 1; j = j + 1 {
+                const local result::<&T> left = my.storage.borrow(j);
+                const local result::<&T> right = my.storage.borrow(j + 1);
+                const bool exchange = comparator(left.unwrap(), right.unwrap());
+                delete left;
+                delete right;
+                if exchange { my.storage.swap(j, j + 1).unwrap(); };
             };
         };
-        af_free(temp);
-    }
+    };
+
+    when (T is adr)
+    fn sort(const adr comparator) -> void {
+        const local LockGuard __guard = my.mutex.guard();
+        for mutable int i = 0; i < my.count - 1; i = i + 1 {
+            for mutable int j = 0; j < my.count - i - 1; j = j + 1 {
+                const adr left = my.storage.read(j).unwrap();
+                const adr right = my.storage.read(j + 1).unwrap();
+                // The adr comparator receives addresses containing pointer values.
+                const bool exchange = comparator(?left, ?right);
+                if exchange { my.storage.swap(j, j + 1).unwrap(); };
+            };
+        };
+    };
 
     when (T is primitive and T is not adr)
     fn sort(const adr comparator) -> void {
         const local LockGuard __guard = my.mutex.guard();
-        if my.count < 2 {
-            delete __guard;
-            return;
-        };
-        // Implement a simple bubble sort for demonstration purposes
-        for int i = 0; i < my.count - 1; i = i + 1 {
-            for int j = 0; j < my.count - i - 1; j = j + 1 {
-                const adr a = my.head + (j * T);
-                const adr b = my.head + ((j + 1) * T);
-                const T a_val = a as T;
-                const T b_val = b as T;
-                const bool c = comparator(a_val, b_val);
-                if c == true {
-                    a =: b_val;
-                    b =: a_val;
-                };
+        for mutable int i = 0; i < my.count - 1; i = i + 1 {
+            for mutable int j = 0; j < my.count - i - 1; j = j + 1 {
+                const T left = my.storage.read(j).unwrap();
+                const T right = my.storage.read(j + 1).unwrap();
+                const bool exchange = comparator(left, right);
+                if exchange { my.storage.swap(j, j + 1).unwrap(); };
             };
         };
-    }
+    };
 };

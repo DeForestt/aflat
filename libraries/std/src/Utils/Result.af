@@ -58,10 +58,15 @@ shared dynamic safe pedantic class Result {
         return my.success != true;
     };
 
+    void del() {
+        if my.error != NULL { delete my.error; };
+    };
+
     void endScope() {
         my.refcount = my.refcount - 1;
         if my.refcount == 0 {
-            delete my;
+            my.del();
+            af_free(my);
         };
         return;
     };
@@ -87,6 +92,33 @@ export Result accept(const any &&value) {
     return new Result($value);
 };
 
-export Result reject(const Error &&error) {
+types(E)
+when(E is unique and E is not Error and E is not string)
+export fn reject(const E &&error) -> Result {
+    const loan Error borrowedError = error;
+    return new Result(NULL, borrowedError.snapshot());
+};
+
+types(E)
+when(E is Error)
+export fn reject(const E &&error) -> Result {
     return new Result(NULL, $error);
+};
+
+types(E)
+when(E is string)
+export fn reject(const E &&message) -> Result {
+    return new Result(NULL, new Error($message));
+};
+
+types(E)
+when(E is adr)
+export fn reject(const E message) -> Result {
+    return new Result(NULL, new Error(new string(message)));
+};
+
+types(E)
+when(E is string)
+export fn reject(const E message) -> Result {
+    return new Result(NULL, new Error(message));
 };

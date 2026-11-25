@@ -1,0 +1,42 @@
+.needs <std>
+import vector from "Collections/Vector";
+
+mutable int drops = 0;
+unique class Owned {
+    int value = value;
+    fn init(const int value) -> Self { return my; };
+    fn del() -> void { drops = drops + 1; };
+};
+
+fn failures() -> void {
+    let values = new vector::<int>(4);
+    values.push_back(1).push_back(2);
+    assert(values.set(-1, 7).isErr(), "negative set");
+    assert(values.set(values.count(), 7).isErr(), "set length");
+    assert(values.insert(-1, 7).isErr(), "negative insert");
+    assert(values.drop(values.count()).isErr(), "drop length");
+    assert(values.extend(2147483647).isErr(), "extend overflow");
+    assert(values.extend(0).isErr(), "extend shrinking");
+    assert(values.count() == 2, "rejection changed length");
+    assert(values.get(0).unwrap() == 1, "rejection changed first value");
+    assert(values.get(1).unwrap() == 2, "rejection changed second value");
+    assert(values.extend(16).unwrap(), "extend after failure");
+    let ownedValues = new vector::<Owned>();
+    ownedValues.push_back(new Owned(1));
+    assert(ownedValues.set(-1, new Owned(99)).isErr(), "invalid owned set");
+    assert(drops == 1, "rejected value not destroyed");
+    assert(ownedValues.insert(-1, new Owned(98)).isErr(), "invalid owned insert");
+    assert(drops == 2, "rejected insert value not destroyed");
+    assert(ownedValues.get(0).unwrap().value == 1, "rejection changed owned value");
+    delete ownedValues;
+    assert(drops == 3, "owned cleanup after rejection");
+};
+
+fn main() -> int {
+    const int blocks = af_live_blocks();
+    const long bytes = af_live_bytes();
+    failures();
+    assert(af_live_blocks() == blocks, "rejected vector mutations leaked blocks");
+    assert(af_live_bytes() == bytes, "rejected vector mutations leaked bytes");
+    return 0;
+};

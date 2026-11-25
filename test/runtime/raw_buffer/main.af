@@ -1,0 +1,755 @@
+.needs <std>
+.needs <test>
+import raw_buffer from "Collections/raw_buffer";
+import result from "Utils/result";
+import {describe, it, assertEqual, assertTrue, assertErr, summary} from "ATest" under test;
+
+// Match results explicitly so assertion failures remain in ATest's report.
+types(T)
+fn assertBufferOk(const T value) -> void {
+    test.assertTrue(value.isOk());
+};
+
+types(T, V)
+fn assertBufferValue(const T value, const V expected) -> void {
+    match value {
+        Ok(actual) => test.assertEqual(expected, actual),
+        Err(_) => test.assertTrue(false)
+    };
+};
+
+// Simple payloads exercise each class read/write overload without owning resources.
+shared class BufferValue {
+    mutable int value = value;
+    fn init(const int value) -> Self { return my; };
+};
+
+shared class BufferSharedCopy {
+    mutable int value = value;
+    fn init(const int value) -> Self { return my; };
+    fn __copy__() -> Self { return new BufferSharedCopy(my.value); };
+};
+
+mutable int bufferOwnedDrops = 0;
+unique class BufferOwnedValue {
+    int value = value;
+    fn init(const int value) -> Self { return my; };
+    fn del() -> void { bufferOwnedDrops = bufferOwnedDrops + 1; };
+};
+
+mutable int bufferCopies = 0;
+mutable int bufferCopiedDrops = 0;
+unique class BufferCopiedValue {
+    mutable int value = value;
+    fn init(const int value) -> Self { return my; };
+    fn __copy__() -> Self {
+        bufferCopies = bufferCopies + 1;
+        return new BufferCopiedValue(my.value);
+    };
+    fn del() -> void { bufferCopiedDrops = bufferCopiedDrops + 1; };
+};
+
+fn exerciseStorageCleanup() -> void {
+    let buffer = raw_buffer::<int>(4);
+    assertBufferValue(buffer.write(0, 42), true);
+    assertBufferValue(buffer.grow(8), true);
+    assertBufferValue(buffer.read(0), 42);
+};
+
+fn main() -> int {
+    test.describe("raw_buffer storage contract", fn () {
+        test.it("releases backing storage and lock after growth", fn () {
+            // Warm up assertion/runtime infrastructure before measuring live blocks.
+            exerciseStorageCleanup();
+            const int before = af_live_blocks();
+            const long bytes = af_live_bytes();
+            exerciseStorageCleanup();
+            const int after = af_live_blocks();
+            const long afterBytes = af_live_bytes();
+            test.assertEqual(before, after);
+            test.assertEqual(bytes, afterBytes);
+        });
+
+        test.it("does not implicitly destroy elements when storage is dropped", fn () {
+            bufferOwnedDrops = 0;
+            let buffer = raw_buffer::<BufferOwnedValue>(1);
+            assertBufferValue(buffer.write(0, new BufferOwnedValue(7)), true);
+            // Deliberately omit element cleanup for this resource-free probe.
+            delete buffer;
+            test.assertEqual(0, bufferOwnedDrops);
+        });
+
+        test.it("rejects overflowing growth without changing storage", fn () {
+            let buffer = raw_buffer::<int>(1);
+            assertBufferValue(buffer.write(0, 42), true);
+            test.assertErr(buffer.grow(2147483647));
+            test.assertEqual(1, buffer.capacity());
+            assertBufferValue(buffer.read(0), 42);
+        });
+    });
+
+    test.describe("raw_buffer capacity", fn () {
+        test.it("preserves the requested capacity", fn () {
+            let buffer = raw_buffer::<int>(10);
+            test.assertEqual(10, buffer.capacity());
+            test.assertEqual(10, buffer.capacity());
+        });
+
+        test.it("rejects every access to an empty buffer", fn () {
+            let buffer = raw_buffer::<int>(0);
+            test.assertEqual(0, buffer.capacity());
+            test.assertErr(buffer.read(-1));
+            test.assertErr(buffer.read(0));
+            test.assertErr(buffer.write(0, 10));
+            test.assertErr(buffer.replace(0, 20));
+        });
+    });
+
+    test.describe("raw_buffer grow", fn () {
+        test.it("preserves existing values and makes new slots writable across repeated growth", fn () {
+            let buffer = raw_buffer::<int>(2);
+            assertBufferValue(buffer.write(0, 10), true);
+            assertBufferValue(buffer.write(1, -20), true);
+            test.assertErr(buffer.write(2, 30));
+
+            assertBufferValue(buffer.grow(4), true);
+            test.assertEqual(4, buffer.capacity());
+            assertBufferValue(buffer.read(0), 10);
+            assertBufferValue(buffer.read(1), -20);
+            // Newly allocated slots must be initialized before reading them.
+            assertBufferValue(buffer.write(2, 30), true);
+            assertBufferValue(buffer.write(3, 40), true);
+            assertBufferValue(buffer.replace(0, 11), true);
+
+            assertBufferValue(buffer.grow(5), true);
+            test.assertEqual(5, buffer.capacity());
+            assertBufferValue(buffer.read(0), 11);
+            assertBufferValue(buffer.read(1), -20);
+            assertBufferValue(buffer.read(2), 30);
+            assertBufferValue(buffer.read(3), 40);
+            assertBufferValue(buffer.write(4, 50), true);
+            assertBufferValue(buffer.read(4), 50);
+            test.assertErr(buffer.read(5));
+            test.assertErr(buffer.write(5, 60));
+            test.assertErr(buffer.replace(5, 60));
+            test.assertErr(buffer.read(-1));
+        });
+
+        test.it("allocates storage when growing an empty buffer", fn () {
+            let buffer = raw_buffer::<int>(0);
+            assertBufferValue(buffer.grow(2), true);
+            test.assertEqual(2, buffer.capacity());
+            assertBufferValue(buffer.write(0, 12), true);
+            assertBufferValue(buffer.write(1, 34), true);
+            assertBufferValue(buffer.read(0), 12);
+            assertBufferValue(buffer.read(1), 34);
+            test.assertErr(buffer.write(2, 56));
+        });
+
+        test.it("accepts the current capacity for empty and populated buffers", fn () {
+            let empty = raw_buffer::<int>(0);
+            assertBufferValue(empty.grow(0), true);
+            test.assertEqual(0, empty.capacity());
+            test.assertErr(empty.write(0, 10));
+
+            let buffer = raw_buffer::<int>(2);
+            assertBufferValue(buffer.write(0, 10), true);
+            assertBufferValue(buffer.write(1, 20), true);
+            assertBufferValue(buffer.grow(2), true);
+            test.assertEqual(2, buffer.capacity());
+            assertBufferValue(buffer.read(0), 10);
+            assertBufferValue(buffer.read(1), 20);
+            // A no-op must release its lock before the next operation.
+            assertBufferValue(buffer.grow(3), true);
+            assertBufferValue(buffer.write(2, 30), true);
+            assertBufferValue(buffer.read(2), 30);
+        });
+
+        test.it("rejects shrinking and negative capacities without changing stored values", fn () {
+            let buffer = raw_buffer::<int>(2);
+            assertBufferValue(buffer.write(0, 10), true);
+            assertBufferValue(buffer.write(1, 20), true);
+            test.assertErr(buffer.grow(1));
+            test.assertErr(buffer.grow(0));
+            test.assertErr(buffer.grow(-1));
+            test.assertEqual(2, buffer.capacity());
+            assertBufferValue(buffer.read(0), 10);
+            assertBufferValue(buffer.read(1), 20);
+            test.assertErr(buffer.write(2, 30));
+            assertBufferValue(buffer.grow(3), true);
+            test.assertEqual(3, buffer.capacity());
+            assertBufferValue(buffer.read(0), 10);
+            assertBufferValue(buffer.read(1), 20);
+            assertBufferValue(buffer.write(2, 30), true);
+
+            let empty = raw_buffer::<int>(0);
+            test.assertErr(empty.grow(-1));
+            test.assertEqual(0, empty.capacity());
+            assertBufferValue(empty.grow(1), true);
+            assertBufferValue(empty.write(0, 42), true);
+            assertBufferValue(empty.read(0), 42);
+        });
+
+        test.it("preserves byte-sized elements when reallocating storage", fn () {
+            let buffer = raw_buffer::<char>(2);
+            assertBufferValue(buffer.write(0, 'a'), true);
+            assertBufferValue(buffer.write(1, 'z'), true);
+            assertBufferValue(buffer.grow(3), true);
+            test.assertEqual(3, buffer.capacity());
+            assertBufferValue(buffer.read(0), 'a');
+            assertBufferValue(buffer.read(1), 'z');
+            assertBufferValue(buffer.write(2, 'b'), true);
+            assertBufferValue(buffer.read(2), 'b');
+        });
+
+        test.it("relocates unique values without destroying them", fn () {
+            bufferOwnedDrops = 0;
+            let buffer = raw_buffer::<BufferOwnedValue>(2);
+            assertBufferValue(buffer.write(0, new BufferOwnedValue(10)), true);
+            assertBufferValue(buffer.write(1, new BufferOwnedValue(20)), true);
+            assertBufferValue(buffer.grow(3), true);
+            test.assertEqual(3, buffer.capacity());
+            test.assertEqual(0, bufferOwnedDrops);
+            // Read fresh loans after growth; earlier loans would be invalidated.
+            match buffer.read(0) {
+                Ok(stored) => test.assertEqual(10, stored.value),
+                Err(_) => test.assertTrue(false)
+            };
+            match buffer.read(1) {
+                Ok(stored) => test.assertEqual(20, stored.value),
+                Err(_) => test.assertTrue(false)
+            };
+            assertBufferValue(buffer.write(2, new BufferOwnedValue(30)), true);
+            assertBufferValue(buffer.replace(0, new BufferOwnedValue(40)), true);
+            test.assertEqual(1, bufferOwnedDrops);
+            match buffer.read(0) {
+                Ok(stored) => test.assertEqual(40, stored.value),
+                Err(_) => test.assertTrue(false)
+            };
+            match buffer.read(2) {
+                Ok(stored) => test.assertEqual(30, stored.value),
+                Err(_) => test.assertTrue(false)
+            };
+
+            // The collection, not raw_buffer.del, owns live-element cleanup.
+            assertBufferValue(buffer.destroy(0), true);
+            assertBufferValue(buffer.destroy(1), true);
+            assertBufferValue(buffer.destroy(2), true);
+        });
+
+        test.it("preserves copyable objects and their independent read copies after growth", fn () {
+            let buffer = raw_buffer::<BufferCopiedValue>(1);
+            assertBufferValue(buffer.write(0, new BufferCopiedValue(40)), true);
+            assertBufferValue(buffer.grow(2), true);
+            test.assertEqual(2, buffer.capacity());
+            match buffer.read(0) {
+                Ok(copied) => {
+                    test.assertEqual(40, copied.value);
+                    copied.value = 99;
+                },
+                Err(_) => test.assertTrue(false)
+            };
+            assertBufferValue(buffer.write(1, new BufferCopiedValue(50)), true);
+            match buffer.read(0) {
+                Ok(copied) => test.assertEqual(40, copied.value),
+                Err(_) => test.assertTrue(false)
+            };
+            match buffer.read(1) {
+                Ok(copied) => test.assertEqual(50, copied.value),
+                Err(_) => test.assertTrue(false)
+            };
+
+            // The collection, not raw_buffer.del, owns live-element cleanup.
+            assertBufferValue(buffer.destroy(0), true);
+            assertBufferValue(buffer.destroy(1), true);
+        });
+    });
+
+    test.describe("raw_buffer primitive values", fn () {
+        // Raw storage is uninitialized: only read slots after a successful write.
+        test.it("writes and reads the first, middle, and last slots independently", fn () {
+            let buffer = raw_buffer::<int>(3);
+            assertBufferValue(buffer.write(0, 42), true);
+            assertBufferValue(buffer.write(1, -17), true);
+            assertBufferValue(buffer.write(2, 0), true);
+            assertBufferValue(buffer.read(0), 42);
+            assertBufferValue(buffer.read(1), -17);
+            assertBufferValue(buffer.read(2), 0);
+            test.assertEqual(3, buffer.capacity());
+        });
+
+        test.it("overwrites an initialized primitive slot", fn () {
+            let buffer = raw_buffer::<int>(1);
+            assertBufferValue(buffer.write(0, 12), true);
+            assertBufferValue(buffer.write(0, 34), true);
+            assertBufferValue(buffer.read(0), 34);
+        });
+
+        test.it("replaces a value without changing adjacent slots or capacity", fn () {
+            let buffer = raw_buffer::<int>(3);
+            assertBufferOk(buffer.write(0, 10));
+            assertBufferOk(buffer.write(1, 20));
+            assertBufferOk(buffer.write(2, 30));
+            assertBufferValue(buffer.replace(1, 99), true);
+            assertBufferValue(buffer.read(0), 10);
+            assertBufferValue(buffer.read(1), 99);
+            assertBufferValue(buffer.read(2), 30);
+            test.assertEqual(3, buffer.capacity());
+        });
+
+        test.it("uses byte-sized element offsets for chars", fn () {
+            let buffer = raw_buffer::<char>(2);
+            assertBufferValue(buffer.write(0, 'a'), true);
+            assertBufferValue(buffer.write(1, 'z'), true);
+            assertBufferValue(buffer.read(0), 'a');
+            assertBufferValue(buffer.read(1), 'z');
+            assertBufferValue(buffer.replace(0, 'b'), true);
+            assertBufferValue(buffer.read(0), 'b');
+            assertBufferValue(buffer.read(1), 'z');
+        });
+
+        test.it("stores and replaces booleans", fn () {
+            let buffer = raw_buffer::<bool>(2);
+            assertBufferValue(buffer.write(0, true), true);
+            assertBufferValue(buffer.write(1, false), true);
+            assertBufferValue(buffer.read(0), true);
+            assertBufferValue(buffer.read(1), false);
+            assertBufferValue(buffer.replace(0, false), true);
+            assertBufferValue(buffer.read(0), false);
+        });
+
+        test.it("copies address values from the supplied storage", fn () {
+            let buffer = raw_buffer::<adr>(2);
+            const adr first = "first";
+            const adr second = "second";
+            // The adr overload accepts a source address for memcpy.
+            assertBufferValue(buffer.write(0, ?first), true);
+            assertBufferValue(buffer.write(1, ?second), true);
+            assertBufferValue(buffer.read(0), first);
+            assertBufferValue(buffer.read(1), second);
+            assertBufferValue(buffer.replace(0, ?second), true);
+            assertBufferValue(buffer.read(0), second);
+        });
+    });
+
+    test.describe("raw_buffer bounds", fn () {
+        test.it("rejects negative, one-past-end, and distant read indices", fn () {
+            let buffer = raw_buffer::<int>(1);
+            assertBufferOk(buffer.write(0, 42));
+            test.assertErr(buffer.read(-1));
+            test.assertErr(buffer.read(1));
+            test.assertErr(buffer.read(100));
+            assertBufferValue(buffer.read(0), 42);
+        });
+
+        test.it("rejects invalid writes and still allows valid operations", fn () {
+            let buffer = raw_buffer::<int>(1);
+            assertBufferOk(buffer.write(0, 42));
+            test.assertErr(buffer.write(-1, 99));
+            test.assertErr(buffer.write(1, 99));
+            test.assertErr(buffer.write(100, 99));
+            assertBufferValue(buffer.read(0), 42);
+            assertBufferValue(buffer.write(0, 43), true);
+            assertBufferValue(buffer.read(0), 43);
+            test.assertEqual(1, buffer.capacity());
+        });
+
+        test.it("rejects invalid replacements without changing stored values", fn () {
+            let buffer = raw_buffer::<int>(1);
+            assertBufferOk(buffer.write(0, 42));
+            test.assertErr(buffer.replace(-1, 99));
+            test.assertErr(buffer.replace(1, 99));
+            test.assertErr(buffer.replace(100, 99));
+            assertBufferValue(buffer.read(0), 42);
+            assertBufferValue(buffer.replace(0, 43), true);
+            assertBufferValue(buffer.read(0), 43);
+        });
+    });
+
+    test.describe("raw_buffer class values", fn () {
+        test.it("copies non-unique objects into separate slots and replaces them", fn () {
+            let buffer = raw_buffer::<BufferValue>(2);
+            let first = BufferValue(10);
+            let second = BufferValue(20);
+            assertBufferValue(buffer.write(0, first), true);
+            assertBufferValue(buffer.write(1, second), true);
+            first.value = 99;
+            const let stored = buffer.read(0);
+            assertBufferOk(stored);
+            if stored.isOk() { test.assertEqual(10, stored.unwrap().value); };
+            assertBufferValue(buffer.replace(1, first), true);
+            const let replaced = buffer.read(1);
+            assertBufferOk(replaced);
+            if replaced.isOk() { test.assertEqual(99, replaced.unwrap().value); };
+            test.assertErr(buffer.read(-1));
+            test.assertErr(buffer.write(2, second));
+            test.assertErr(buffer.replace(2, second));
+        });
+
+        test.it("moves unique objects and destroys the previous value on replacement", fn () {
+            bufferOwnedDrops = 0;
+            let buffer = raw_buffer::<BufferOwnedValue>(2);
+            assertBufferValue(buffer.write(0, new BufferOwnedValue(10)), true);
+            assertBufferValue(buffer.write(1, new BufferOwnedValue(20)), true);
+            test.assertEqual(0, bufferOwnedDrops);
+            match buffer.read(0) {
+                Ok(stored) => test.assertEqual(10, stored.value),
+                Err(_) => test.assertTrue(false)
+            };
+            test.assertEqual(0, bufferOwnedDrops);
+            assertBufferValue(buffer.replace(0, new BufferOwnedValue(30)), true);
+            test.assertEqual(1, bufferOwnedDrops);
+            const let replaced = buffer.read(0);
+            const let neighbor = buffer.read(1);
+            assertBufferOk(replaced);
+            assertBufferOk(neighbor);
+            if replaced.isOk() { test.assertEqual(30, replaced.unwrap().value); };
+            if neighbor.isOk() { test.assertEqual(20, neighbor.unwrap().value); };
+
+            // The collection, not raw_buffer.del, owns live-element cleanup.
+            delete replaced;
+            delete neighbor;
+            assertBufferValue(buffer.destroy(0), true);
+            assertBufferValue(buffer.destroy(1), true);
+        });
+
+        test.it("rejects unique writes and replacements without destroying stored values", fn () {
+            bufferOwnedDrops = 0;
+            let buffer = raw_buffer::<BufferOwnedValue>(1);
+            assertBufferValue(buffer.write(0, new BufferOwnedValue(10)), true);
+            test.assertErr(buffer.write(-1, new BufferOwnedValue(20)));
+            test.assertErr(buffer.write(1, new BufferOwnedValue(30)));
+            test.assertErr(buffer.replace(-1, new BufferOwnedValue(40)));
+            test.assertErr(buffer.replace(1, new BufferOwnedValue(50)));
+            // Each rejected argument is consumed and destroyed exactly once.
+            test.assertEqual(4, bufferOwnedDrops);
+            test.assertErr(buffer.read(1));
+            match buffer.read(0) {
+                Ok(stored) => test.assertEqual(10, stored.value),
+                Err(_) => test.assertTrue(false)
+            };
+            assertBufferValue(buffer.replace(0, new BufferOwnedValue(60)), true);
+            test.assertEqual(5, bufferOwnedDrops);
+            match buffer.read(0) {
+                Ok(stored) => test.assertEqual(60, stored.value),
+                Err(_) => test.assertTrue(false)
+            };
+
+            // The collection, not raw_buffer.del, owns live-element cleanup.
+            assertBufferValue(buffer.destroy(0), true);
+        });
+
+        test.it("returns independent copies for objects with __copy__", fn () {
+            let buffer = raw_buffer::<BufferCopiedValue>(1);
+            assertBufferValue(buffer.write(0, new BufferCopiedValue(40)), true);
+            match buffer.read(0) {
+                Ok(copied) => {
+                    test.assertEqual(40, copied.value);
+                    copied.value = 99;
+                },
+                Err(_) => test.assertTrue(false)
+            };
+            const let reread = buffer.read(0);
+            assertBufferOk(reread);
+            match reread {
+                Ok(copied) => test.assertEqual(40, copied.value),
+                Err(_) => test.assertTrue(false)
+            };
+            test.assertErr(buffer.read(1));
+
+            // The collection, not raw_buffer.del, owns live-element cleanup.
+            assertBufferValue(buffer.destroy(0), true);
+        });
+    });
+
+    // Slot initialization is managed by the caller. After taking or destroying
+    // an object, write a new value before accessing that slot again.
+    test.describe("raw_buffer take", fn () {
+        test.it("takes non-unique values without __copy__ and allows slot reuse", fn () {
+            let buffer = raw_buffer::<BufferValue>(2);
+            let first = BufferValue(10);
+            let second = BufferValue(20);
+            assertBufferValue(buffer.write(0, first), true);
+            assertBufferValue(buffer.write(1, second), true);
+            const local result::<BufferValue> takenResult = buffer.take(1);
+            match takenResult {
+                Ok(taken) => test.assertEqual(20, taken.value),
+                Err(_) => test.assertTrue(false)
+            };
+            delete takenResult;
+            test.assertEqual(10, first.value);
+            test.assertEqual(20, second.value);
+            test.assertEqual(2, buffer.capacity());
+            match buffer.read(0) {
+                Ok(stored) => test.assertEqual(10, stored.value),
+                Err(_) => test.assertTrue(false)
+            };
+            first.value = 30;
+            assertBufferValue(buffer.write(1, first), true);
+            const local result::<BufferValue> reusedResult = buffer.take(1);
+            match reusedResult {
+                Ok(taken) => test.assertEqual(30, taken.value),
+                Err(_) => test.assertTrue(false)
+            };
+            delete reusedResult;
+        });
+
+        test.it("rejects invalid take indices for non-unique values without __copy__", fn () {
+            let buffer = raw_buffer::<BufferValue>(1);
+            let value = BufferValue(42);
+            assertBufferValue(buffer.write(0, value), true);
+            test.assertErr(buffer.take(-1));
+            test.assertErr(buffer.take(1));
+            test.assertErr(buffer.take(100));
+            const local result::<BufferValue> takenResult = buffer.take(0);
+            match takenResult {
+                Ok(taken) => test.assertEqual(42, taken.value),
+                Err(_) => test.assertTrue(false)
+            };
+            delete takenResult;
+            test.assertEqual(1, buffer.capacity());
+            let empty = raw_buffer::<BufferValue>(0);
+            test.assertErr(empty.take(-1));
+            test.assertErr(empty.take(0));
+        });
+
+        test.it("returns primitive values without changing neighbors or capacity", fn () {
+            let buffer = raw_buffer::<int>(3);
+            assertBufferValue(buffer.write(0, 10), true);
+            assertBufferValue(buffer.write(1, -20), true);
+            assertBufferValue(buffer.write(2, 30), true);
+            assertBufferValue(buffer.take(1), -20);
+            test.assertEqual(3, buffer.capacity());
+            assertBufferValue(buffer.read(0), 10);
+            assertBufferValue(buffer.read(2), 30);
+            assertBufferValue(buffer.write(1, 40), true);
+            assertBufferValue(buffer.take(0), 10);
+            assertBufferValue(buffer.take(2), 30);
+            assertBufferValue(buffer.take(1), 40);
+        });
+
+        test.it("takes chars, booleans, and address values", fn () {
+            let chars = raw_buffer::<char>(2);
+            assertBufferValue(chars.write(0, 'a'), true);
+            assertBufferValue(chars.write(1, 'z'), true);
+            assertBufferValue(chars.take(1), 'z');
+            assertBufferValue(chars.take(0), 'a');
+            let flags = raw_buffer::<bool>(1);
+            assertBufferValue(flags.write(0, false), true);
+            assertBufferValue(flags.take(0), false);
+            let pointers = raw_buffer::<adr>(1);
+            const adr pointer = "taken address";
+            assertBufferValue(pointers.write(0, ?pointer), true);
+            assertBufferValue(pointers.take(0), pointer);
+        });
+
+        test.it("rejects invalid primitive indices and empty buffers", fn () {
+            let buffer = raw_buffer::<int>(1);
+            assertBufferValue(buffer.write(0, 42), true);
+            test.assertErr(buffer.take(-1));
+            test.assertErr(buffer.take(1));
+            test.assertErr(buffer.take(100));
+            assertBufferValue(buffer.take(0), 42);
+            test.assertEqual(1, buffer.capacity());
+            let empty = raw_buffer::<int>(0);
+            test.assertErr(empty.take(-1));
+            test.assertErr(empty.take(0));
+        });
+
+        test.it("transfers unique ownership and keeps taken objects alive across reuse and growth", fn () {
+            bufferOwnedDrops = 0;
+            let buffer = raw_buffer::<BufferOwnedValue>(2);
+            assertBufferValue(buffer.write(0, new BufferOwnedValue(10)), true);
+            assertBufferValue(buffer.write(1, new BufferOwnedValue(20)), true);
+            // Explicit result cleanup makes the destructor-count checks deterministic.
+            const local result::<BufferOwnedValue> firstTaken = buffer.take(0);
+            match firstTaken {
+                Ok(taken) => {
+                    test.assertEqual(10, taken.value);
+                    test.assertEqual(0, bufferOwnedDrops);
+                    assertBufferValue(buffer.write(0, new BufferOwnedValue(30)), true);
+                    assertBufferValue(buffer.grow(3), true);
+                    test.assertEqual(10, taken.value);
+                    test.assertEqual(0, bufferOwnedDrops);
+                },
+                Err(_) => test.assertTrue(false)
+            };
+            delete firstTaken;
+            test.assertEqual(1, bufferOwnedDrops);
+            test.assertEqual(3, buffer.capacity());
+            const local result::<BufferOwnedValue> secondTaken = buffer.take(1);
+            match secondTaken {
+                Ok(taken) => test.assertEqual(20, taken.value),
+                Err(_) => test.assertTrue(false)
+            };
+            delete secondTaken;
+            test.assertEqual(2, bufferOwnedDrops);
+            const local result::<BufferOwnedValue> replacementTaken = buffer.take(0);
+            match replacementTaken {
+                Ok(taken) => test.assertEqual(30, taken.value),
+                Err(_) => test.assertTrue(false)
+            };
+            delete replacementTaken;
+            test.assertEqual(3, bufferOwnedDrops);
+        });
+
+        test.it("moves copyable unique values without invoking __copy__", fn () {
+            bufferCopies = 0;
+            bufferCopiedDrops = 0;
+            let buffer = raw_buffer::<BufferCopiedValue>(1);
+            assertBufferValue(buffer.write(0, new BufferCopiedValue(40)), true);
+            const local result::<BufferCopiedValue> takenResult = buffer.take(0);
+            match takenResult {
+                Ok(taken) => {
+                    test.assertEqual(40, taken.value);
+                    test.assertEqual(0, bufferCopies);
+                    test.assertEqual(0, bufferCopiedDrops);
+                    assertBufferValue(buffer.write(0, new BufferCopiedValue(50)), true);
+                    test.assertEqual(40, taken.value);
+                },
+                Err(_) => test.assertTrue(false)
+            };
+            delete takenResult;
+            test.assertEqual(1, bufferCopiedDrops);
+            assertBufferValue(buffer.destroy(0), true);
+            test.assertEqual(2, bufferCopiedDrops);
+            test.assertEqual(0, bufferCopies);
+        });
+
+        test.it("takes non-unique values with __copy__", fn () {
+            let buffer = raw_buffer::<BufferSharedCopy>(2);
+            let first = BufferSharedCopy(10);
+            let second = BufferSharedCopy(20);
+            assertBufferValue(buffer.write(0, first), true);
+            assertBufferValue(buffer.write(1, second), true);
+            match buffer.take(1) {
+                Ok(taken) => test.assertEqual(20, taken.value),
+                Err(_) => test.assertTrue(false)
+            };
+            assertBufferValue(buffer.write(1, first), true);
+            match buffer.read(0) {
+                Ok(stored) => test.assertEqual(10, stored.value),
+                Err(_) => test.assertTrue(false)
+            };
+            test.assertEqual(2, buffer.capacity());
+        });
+
+        test.it("rejects invalid class indices without destroying stored objects", fn () {
+            bufferOwnedDrops = 0;
+            let buffer = raw_buffer::<BufferOwnedValue>(1);
+            assertBufferValue(buffer.write(0, new BufferOwnedValue(42)), true);
+            test.assertErr(buffer.take(-1));
+            test.assertErr(buffer.take(1));
+            test.assertErr(buffer.take(100));
+            test.assertEqual(0, bufferOwnedDrops);
+            const local result::<BufferOwnedValue> takenResult = buffer.take(0);
+            match takenResult {
+                Ok(taken) => test.assertEqual(42, taken.value),
+                Err(_) => test.assertTrue(false)
+            };
+            delete takenResult;
+            test.assertEqual(1, bufferOwnedDrops);
+            let empty = raw_buffer::<BufferOwnedValue>(0);
+            test.assertErr(empty.take(0));
+            let shared = raw_buffer::<BufferSharedCopy>(0);
+            test.assertErr(shared.take(-1));
+            test.assertErr(shared.take(0));
+        });
+    });
+
+    test.describe("raw_buffer destroy", fn () {
+        test.it("accepts primitive slots and leaves neighboring values and capacity intact", fn () {
+            let buffer = raw_buffer::<int>(3);
+            assertBufferValue(buffer.write(0, 10), true);
+            assertBufferValue(buffer.write(1, 20), true);
+            assertBufferValue(buffer.write(2, 30), true);
+            assertBufferValue(buffer.destroy(1), true);
+            test.assertEqual(3, buffer.capacity());
+            assertBufferValue(buffer.read(0), 10);
+            assertBufferValue(buffer.read(2), 30);
+            assertBufferValue(buffer.write(1, 40), true);
+            assertBufferValue(buffer.read(1), 40);
+            assertBufferValue(buffer.destroy(0), true);
+            assertBufferValue(buffer.destroy(2), true);
+        });
+
+        test.it("destroys unique objects exactly once and allows reinitializing slots", fn () {
+            bufferOwnedDrops = 0;
+            let buffer = raw_buffer::<BufferOwnedValue>(2);
+            assertBufferValue(buffer.write(0, new BufferOwnedValue(10)), true);
+            assertBufferValue(buffer.write(1, new BufferOwnedValue(20)), true);
+            assertBufferValue(buffer.destroy(0), true);
+            test.assertEqual(1, bufferOwnedDrops);
+            test.assertEqual(2, buffer.capacity());
+            match buffer.read(1) {
+                Ok(stored) => test.assertEqual(20, stored.value),
+                Err(_) => test.assertTrue(false)
+            };
+            assertBufferValue(buffer.write(0, new BufferOwnedValue(30)), true);
+            test.assertEqual(1, bufferOwnedDrops);
+            assertBufferValue(buffer.destroy(0), true);
+            test.assertEqual(2, bufferOwnedDrops);
+            assertBufferValue(buffer.destroy(1), true);
+            test.assertEqual(3, bufferOwnedDrops);
+        });
+
+        test.it("destroys copyable unique objects without copying them", fn () {
+            bufferCopies = 0;
+            bufferCopiedDrops = 0;
+            let buffer = raw_buffer::<BufferCopiedValue>(1);
+            assertBufferValue(buffer.write(0, new BufferCopiedValue(40)), true);
+            assertBufferValue(buffer.destroy(0), true);
+            test.assertEqual(1, bufferCopiedDrops);
+            test.assertEqual(0, bufferCopies);
+        });
+
+        test.it("accepts non-unique slots without affecting their original objects", fn () {
+            let buffer = raw_buffer::<BufferValue>(1);
+            let value = BufferValue(10);
+            assertBufferValue(buffer.write(0, value), true);
+            assertBufferValue(buffer.destroy(0), true);
+            test.assertEqual(10, value.value);
+            test.assertEqual(1, buffer.capacity());
+            value.value = 20;
+            assertBufferValue(buffer.write(0, value), true);
+            match buffer.read(0) {
+                Ok(stored) => test.assertEqual(20, stored.value),
+                Err(_) => test.assertTrue(false)
+            };
+        });
+
+        test.it("rejects invalid indices for primitives, classes, and empty buffers", fn () {
+            let numbers = raw_buffer::<int>(1);
+            assertBufferValue(numbers.write(0, 42), true);
+            test.assertErr(numbers.destroy(-1));
+            test.assertErr(numbers.destroy(1));
+            test.assertErr(numbers.destroy(100));
+            assertBufferValue(numbers.read(0), 42);
+            assertBufferValue(numbers.destroy(0), true);
+
+            bufferOwnedDrops = 0;
+            let objects = raw_buffer::<BufferOwnedValue>(1);
+            assertBufferValue(objects.write(0, new BufferOwnedValue(42)), true);
+            test.assertErr(objects.destroy(-1));
+            test.assertErr(objects.destroy(1));
+            test.assertErr(objects.destroy(100));
+            test.assertEqual(0, bufferOwnedDrops);
+            match objects.read(0) {
+                Ok(stored) => test.assertEqual(42, stored.value),
+                Err(_) => test.assertTrue(false)
+            };
+            assertBufferValue(objects.destroy(0), true);
+            test.assertEqual(1, bufferOwnedDrops);
+
+            let empty = raw_buffer::<int>(0);
+            test.assertErr(empty.destroy(0));
+            let emptyObjects = raw_buffer::<BufferOwnedValue>(0);
+            test.assertErr(emptyObjects.destroy(0));
+            let emptyShared = raw_buffer::<BufferValue>(0);
+            test.assertErr(emptyShared.destroy(0));
+        });
+    });
+
+    test.summary();
+    return 0;
+};

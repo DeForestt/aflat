@@ -16,6 +16,116 @@
 bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug);
 
+TEST_CASE("global definitions refine ABI-only forward declarations",
+          "[imports][overloads]") {
+  ast::StatementAllocationScope allocations;
+  lex::Lexer lexer;
+  auto tokens = lexer.Scan("adr refine(adr value);\n"
+                           "int refine(int value) { return value; };\n");
+  tokens.invert();
+  parse::Parser parser;
+  auto *root = parser.parseStmt(tokens);
+  test::mockGen::CodeGenerator generator("mod", parser, "");
+  REQUIRE_NOTHROW(generator.GenSTMT(root));
+  REQUIRE(generator.nameTable()["refine"] != nullptr);
+  CHECK(generator.nameTable()["refine"]->type.typeName == "int");
+  CHECK(generator.nameTable()["refine_ovl1"] == nullptr);
+}
+
+TEST_CASE("class sizes remain available beside matching namespace aliases",
+          "[imports][generics]") {
+  ast::StatementAllocationScope allocations;
+  std::ofstream module("SizeAlias.af");
+  module << "class SizeAlias { int value = 1; fn init() -> Self { return my; "
+            "}; };\n"
+            "export fn value() -> int { return 1; };\n";
+  module.close();
+  lex::Lexer lexer;
+  auto tokens = lexer.Scan(
+      "import SizeAlias, {value} from \"./SizeAlias\" under SizeAlias;\n"
+      "fn size() -> int { return SizeAlias; };\n");
+  tokens.invert();
+  parse::Parser parser;
+  auto *root = parser.parseStmt(tokens);
+  test::mockGen::CodeGenerator generator(
+      "mod", parser, "", std::filesystem::current_path().string());
+  REQUIRE_NOTHROW(generator.GenSTMT(root));
+  REQUIRE_FALSE(generator.hasError());
+  std::remove("SizeAlias.af");
+}
+
+TEST_CASE("imported constructor overloads preserve ownership and arity",
+          "[imports][overloads]") {
+  ast::StatementAllocationScope allocations;
+  std::ofstream module("OverloadedConstructors.af");
+  module << "unique class Payload {};\n"
+            "unique class Choices {\n"
+            "fn init(const adr value) -> Self { return my; };\n"
+            "fn init(const Payload &&value) -> Self { return my; };\n"
+            "fn init(const Payload value) -> Self { return my; };\n"
+            "fn init(const Payload value, const Payload &&second) -> Self { "
+            "return my; };\n"
+            "};\n";
+  module.close();
+  lex::Lexer lexer;
+  auto tokens = lexer.Scan("import Choices from \"./OverloadedConstructors\";");
+  tokens.invert();
+  parse::Parser parser;
+  auto *root = parser.parseStmt(tokens);
+  test::mockGen::CodeGenerator generator(
+      "mod", parser, "", std::filesystem::current_path().string());
+  REQUIRE_NOTHROW(generator.GenSTMT(root));
+  auto entry = generator.typeList()["Choices"];
+  REQUIRE(entry != nullptr);
+  auto *type = dynamic_cast<gen::Class *>(*entry);
+  REQUIRE(type != nullptr);
+  for (const auto &name : {"init", "init_ovl1", "init_ovl2", "init_ovl3"})
+    REQUIRE(type->publicNameTable[name] != nullptr);
+  CHECK(type->publicNameTable["init"]->argTypes[0].typeName == "adr");
+  CHECK(type->publicNameTable["init_ovl1"]->argTypes[0].isRvalue);
+  CHECK_FALSE(type->publicNameTable["init_ovl2"]->argTypes[0].isRvalue);
+  CHECK(type->publicNameTable["init_ovl3"]->argTypes.size() == 2);
+  std::remove("OverloadedConstructors.af");
+}
+
+TEST_CASE("repeated complete class imports do not clone module bodies",
+          "[imports][memory]") {
+  ast::StatementAllocationScope allocations;
+  std::ofstream module("RepeatedClassImport.af");
+  module << "class Plain { int value = 0; };\n"
+            "types(T) class Box { T value; };\n";
+  module.close();
+  lex::Lexer lexer;
+  auto tokens = lexer.Scan("import Plain, Box from \"./RepeatedClassImport\";");
+  tokens.invert();
+  parse::Parser parser;
+  auto *root = parser.parseStmt(tokens);
+  auto *sequence = dynamic_cast<ast::Sequence *>(root);
+  REQUIRE(sequence != nullptr);
+  auto *import = dynamic_cast<ast::Import *>(sequence->Statement1);
+  REQUIRE(import != nullptr);
+  test::mockGen::CodeGenerator generator(
+      "mod", parser, "", std::filesystem::current_path().string());
+  REQUIRE_NOTHROW(import->generateClasses(generator));
+  auto *plain = *generator.typeList()["Plain"];
+  auto *box = generator.genericTypes().at("Box");
+  const auto before = (new ast::Statement)->allocationIndex;
+  for (int i = 0; i < 10; ++i)
+    REQUIRE_NOTHROW(import->generateClasses(generator));
+  REQUIRE((new ast::Statement)->allocationIndex == before + 1);
+  REQUIRE(*generator.typeList()["Plain"] == plain);
+  REQUIRE(generator.genericTypes().at("Box") == box);
+  REQUIRE_FALSE(generator.completedClassImports().empty());
+  const auto imports = generator.completedClassImports();
+  generator.pushEnv();
+  REQUIRE(generator.completedClassImports().empty());
+  REQUIRE_NOTHROW(import->generateClasses(generator));
+  REQUIRE(generator.completedClassImports() == imports);
+  generator.popEnv();
+  REQUIRE(generator.completedClassImports() == imports);
+  std::remove("RepeatedClassImport.af");
+}
+
 TEST_CASE("Parser handles mixed import of classes and functions", "[parser]") {
   lex::Lexer l;
   PreProcessor pp;
@@ -457,6 +567,11 @@ TEST_CASE("Import applies nested namespaces", "[namespaces]") {
   REQUIRE(call != nullptr);
   REQUIRE(call->imbeddedNamespace.has_value());
   REQUIRE(call->imbeddedNamespace.value() == "Inner");
+  auto *copiedCall = dynamic_cast<ast::Call *>(ast::deepCopy(call));
+  REQUIRE(copiedCall != nullptr);
+  REQUIRE(copiedCall->imbeddedNamespace == call->imbeddedNamespace);
+  const ast::Call retry(*copiedCall);
+  REQUIRE(retry.imbeddedNamespace == call->imbeddedNamespace);
 
   std::remove("Inner.af");
   std::remove("Outer.af");

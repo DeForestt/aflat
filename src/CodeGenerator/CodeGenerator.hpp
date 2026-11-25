@@ -39,6 +39,7 @@ public:
     HashMap<ast::Statement *> includedClasses;
     HashMap<std::string> nameSpaceTable;
     std::set<std::string> activeImports;
+    std::set<std::string> completedClassImports;
     std::unordered_map<std::string, std::string> genericTypeConversions;
     std::set<std::string> generatedFunctionNames;
     std::set<std::string> generatedLazyConcreteMethodNames;
@@ -149,6 +150,7 @@ public:
   HashMap<ast::Statement *> &includedClasses();
   HashMap<std::string> &nameSpaceTable();
   std::set<std::string> &activeImports();
+  std::set<std::string> &completedClassImports();
   std::unordered_map<std::string, std::string> &genericTypeConversions();
   std::set<std::string> &generatedFunctionNames();
   const std::set<std::string> &generatedFunctionNames() const;

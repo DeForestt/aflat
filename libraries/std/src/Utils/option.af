@@ -33,36 +33,7 @@ unique union option {
         };
     };
 
-    when (T is primitive)
-    safe fn expect(const string msg) -> loan T {
-        match my {
-            Some(value) => return value,
-            None() => {
-                panic(msg.cstr());
-            }
-        };
-    };
-
-    when (T is not primitive)
-    safe sink fn expect(const string msg) -> T {
-        match my {
-            Some(&&value) => return $value,
-            None() => {
-                panic(msg.cstr());
-            }
-        };
-    };
-
-    when (T is not primitive)
-    safe fn expect(const string msg) -> loan T {
-        match my {
-            Some(value) => return value,
-            None() => {
-                panic(msg.cstr());
-            }
-        };
-    };
-
+    // Prefer raw diagnostic literals before an implicit string allocation.
     when (T is primitive)
     safe fn expect(const adr msg) -> loan T {
         match my {
@@ -89,6 +60,36 @@ unique union option {
             Some(value) => return value,
             None() => {
                 panic(msg);
+            }
+        };
+    };
+
+    when (T is primitive)
+    safe fn expect(const string msg) -> loan T {
+        match my {
+            Some(value) => return value,
+            None() => {
+                panic(msg.cstr());
+            }
+        };
+    };
+
+    when (T is not primitive)
+    safe sink fn expect(const string msg) -> T {
+        match my {
+            Some(&&value) => return $value,
+            None() => {
+                panic(msg.cstr());
+            }
+        };
+    };
+
+    when (T is not primitive)
+    safe fn expect(const string msg) -> loan T {
+        match my {
+            Some(value) => return value,
+            None() => {
+                panic(msg.cstr());
             }
         };
     };

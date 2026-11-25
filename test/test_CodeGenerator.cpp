@@ -3,6 +3,7 @@
 #include "CodeGenerator/MockCodeGenerator.hpp"
 #include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "Parser/AST.hpp"
+#include "Parser/AST/Statements/Class.hpp"
 #include "Parser/AST/Statements/Dec.hpp"
 #include "Parser/AST/Statements/Function.hpp"
 #include "Parser/AST/Statements/Inc.hpp"
@@ -76,6 +77,50 @@ TEST_CASE("functions do not default to masked generation",
   REQUIRE_FALSE(function.mask);
   REQUIRE(function.scope == ast::Public);
   REQUIRE(function.op == ast::None);
+}
+
+TEST_CASE("cached generic lookups do not retain template copies",
+          "[codegen][memory][generics]") {
+  ast::StatementAllocationScope allocations;
+  MOCKGEN
+  ast::Class generic;
+  generic.ident.ident = "Buffer";
+  generic.genericTypes = {"T"};
+  generic.contract = nullptr;
+  generic.statement = new ast::Return;
+  auto *concrete = new gen::Class;
+  concrete->Ident = "Buffer<int>";
+  mockGen.addType(concrete);
+  asmc::File output;
+  std::string name;
+  const auto before = (new ast::Statement)->allocationIndex;
+  for (int i = 0; i < 100; ++i) {
+    auto resolved =
+        mockGen.instantiateGenericClass(&generic, {"int"}, name, output);
+    REQUIRE(*resolved == concrete);
+    REQUIRE(name == "Buffer<int>");
+  }
+  REQUIRE((new ast::Statement)->allocationIndex == before + 1);
+  REQUIRE_THROWS(mockGen.instantiateGenericClass(&generic, {}, name, output));
+}
+
+TEST_CASE("emitted generic lifecycle methods do not retain body copies",
+          "[codegen][memory][generics]") {
+  ast::StatementAllocationScope allocations;
+  MOCKGEN
+  gen::Class concrete;
+  concrete.Ident = "Buffer<int>";
+  concrete.uniqueType = true;
+  ast::Function destructor;
+  destructor.ident.ident = "del";
+  destructor.statement = new ast::Return;
+  concrete.nameTable.push(destructor);
+  mockGen.generatedLazyConcreteMethodNames().insert("pub_Buffer<int>_del");
+  asmc::File output;
+  const auto before = (new ast::Statement)->allocationIndex;
+  for (int i = 0; i < 100; ++i)
+    mockGen.ensureGenericLifecycleMethod(&concrete, output);
+  REQUIRE((new ast::Statement)->allocationIndex == before + 1);
 }
 
 TEST_CASE("canAssign will not assign to types with different names",

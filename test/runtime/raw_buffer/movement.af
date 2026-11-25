@@ -1,0 +1,275 @@
+.needs <std>
+.needs <test>
+import raw_buffer from "Collections/raw_buffer";
+import result from "Utils/result";
+import {describe, it, assertEqual, assertTrue, assertErr, summary} from "ATest" under test;
+import {async_thread} from "concurrency" under task;
+
+mutable int copies = 0;
+mutable int drops = 0;
+unique class Owned {
+    mutable int value = value;
+    long sentinel = #1234567;
+    fn init(const int value) -> Self { return my; };
+    fn __copy__() -> Self {
+        copies = copies + 1;
+        return new Owned(my.value);
+    };
+    fn del() -> void { drops = drops + 1; };
+};
+
+unique class MoveOnly {
+    int value = value;
+    fn init(const int value) -> Self { return my; };
+    fn del() -> void { drops = drops + 1; };
+};
+
+shared class SharedCopy {
+    int value = value;
+    fn init(const int value) -> Self { return my; };
+    fn __copy__() -> Self {
+        copies = copies + 1;
+        return new SharedCopy(my.value);
+    };
+};
+
+fn assertOwned(const raw_buffer::<Owned> buffer, const int index, const int expected) -> void {
+    match buffer.borrow(index) {
+        Ok(value) => {
+            test.assertEqual(expected, value.value);
+            test.assertEqual(#1234567, value.sentinel);
+        },
+        Err(_) => test.assertTrue(false)
+    };
+};
+
+fn transferLoop(const raw_buffer::<int> first, const raw_buffer::<int> second) -> int {
+    for mutable int i = 0; i < 2000; i = i + 1 {
+        // Empty ranges exercise both locks without violating element ownership.
+        if first.transfer_to(second, 0, 0, 0).isErr() { return 1; };
+    };
+    return 0;
+};
+
+async fn opposingTransfers(const raw_buffer::<int> first, const raw_buffer::<int> second) -> int {
+    const let forward = task.async_thread::<int>(transferLoop, first, second);
+    const let backward = task.async_thread::<int>(transferLoop, second, first);
+    spawn forward;
+    spawn backward;
+    const int a = await forward;
+    const int b = await backward;
+    return a + b;
+};
+
+fn main() -> int {
+    test.describe("raw_buffer relocation", fn () {
+        test.it("preserves every small overlapping and disjoint range", fn () {
+            for mutable int capacity = 0; capacity <= 6; capacity = capacity + 1 {
+                for mutable int count = 0; count <= capacity; count = count + 1 {
+                    for mutable int source = 0; source <= capacity - count; source = source + 1 {
+                        for mutable int destination = 0; destination <= capacity - count; destination = destination + 1 {
+                            let buffer = raw_buffer::<int>(capacity);
+                            for mutable int i = 0; i < capacity; i = i + 1 {
+                                buffer.write(i, 10 + i).unwrap();
+                            };
+                            // Primitive destination-only values are discarded before moving.
+                            const long before = af_total_allocations();
+                            test.assertTrue(buffer.relocate(source, destination, count).unwrap());
+                            test.assertEqual(before, af_total_allocations());
+                            for mutable int i = 0; i < capacity; i = i + 1 {
+                                if (i >= destination) & (i < destination + count) {
+                                    test.assertEqual(10 + source + i - destination, buffer.read(i).unwrap());
+                                } else {
+                                    if (i < source) | (i >= source + count) {
+                                        test.assertEqual(10 + i, buffer.read(i).unwrap());
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        });
+
+        test.it("rejects invalid ranges before modifying any bytes", fn () {
+            let buffer = raw_buffer::<int>(3);
+            buffer.write(0, 10).unwrap(); buffer.write(1, 20).unwrap(); buffer.write(2, 30).unwrap();
+            test.assertErr(buffer.relocate(-1, 0, 1));
+            test.assertErr(buffer.relocate(0, -1, 1));
+            test.assertErr(buffer.relocate(0, 1, -1));
+            test.assertErr(buffer.relocate(0, 2, 2));
+            test.assertErr(buffer.relocate(2, 0, 2));
+            test.assertErr(buffer.relocate(1, 1, 2147483647));
+            test.assertErr(buffer.relocate(2147483647, 0, 1));
+            test.assertErr(buffer.relocate(0, 2147483647, 1));
+            test.assertErr(buffer.relocate(4, 4, 0));
+            test.assertEqual(10, buffer.read(0).unwrap());
+            test.assertEqual(20, buffer.read(1).unwrap());
+            test.assertEqual(30, buffer.read(2).unwrap());
+            test.assertTrue(buffer.relocate(3, 3, 0).unwrap());
+            let empty = raw_buffer::<int>(0);
+            test.assertTrue(empty.relocate(0, 0, 0).unwrap());
+            test.assertErr(empty.relocate(0, 0, 1));
+        });
+
+        test.it("moves unique values without copying, allocating, or destroying", fn () {
+            copies = 0; drops = 0;
+            let buffer = raw_buffer::<Owned>(4);
+            buffer.write(0, new Owned(10)).unwrap();
+            buffer.write(1, new Owned(20)).unwrap();
+            buffer.write(2, new Owned(30)).unwrap();
+            const long before = af_total_allocations();
+            buffer.relocate(0, 1, 3).unwrap();
+            buffer.swap(1, 3).unwrap();
+            assertOwned(buffer, 1, 30); assertOwned(buffer, 2, 20); assertOwned(buffer, 3, 10);
+            test.assertEqual(before, af_total_allocations());
+            test.assertEqual(0, copies); test.assertEqual(0, drops);
+            // Slot 0 is now vacant. Reusing it must not destroy stale bytes.
+            buffer.write(0, new Owned(40)).unwrap();
+            for mutable int i = 0; i < 4; i = i + 1 { buffer.destroy(i).unwrap(); };
+            test.assertEqual(4, drops);
+        });
+    });
+
+    test.describe("raw_buffer swap and borrow", fn () {
+        test.it("swaps byte-sized and address values without allocation", fn () {
+            let chars = raw_buffer::<char>(3);
+            chars.write(0, 'a').unwrap(); chars.write(1, 'b').unwrap(); chars.write(2, 'c').unwrap();
+            let pointers = raw_buffer::<adr>(2);
+            const adr first = "first"; const adr second = "second";
+            pointers.write(0, ?first).unwrap(); pointers.write(1, ?second).unwrap();
+            const long before = af_total_allocations();
+            chars.swap(0, 2).unwrap(); chars.swap(1, 1).unwrap();
+            pointers.swap(0, 1).unwrap();
+            test.assertEqual(before, af_total_allocations());
+            test.assertEqual('c', chars.read(0).unwrap());
+            test.assertEqual('b', chars.read(1).unwrap());
+            test.assertEqual('a', chars.read(2).unwrap());
+            test.assertEqual(second, pointers.read(0).unwrap());
+            test.assertEqual(first, pointers.read(1).unwrap());
+            test.assertErr(chars.swap(-1, 0)); test.assertErr(chars.swap(0, 3));
+            test.assertErr(chars.swap(3, 3)); test.assertErr(chars.swap(2147483647, 0));
+            test.assertEqual('c', chars.read(0).unwrap());
+            let empty = raw_buffer::<int>(0);
+            test.assertErr(empty.swap(0, 0));
+        });
+
+        test.it("borrows copyable classes without invoking copy or destruction", fn () {
+            copies = 0; drops = 0;
+            let buffer = raw_buffer::<Owned>(1);
+            buffer.write(0, new Owned(42)).unwrap();
+            const long before = af_total_allocations();
+            const local result::<&Owned> borrowed = buffer.borrow(0);
+            match borrowed {
+                Ok(value) => value.value = 99,
+                Err(_) => test.assertTrue(false)
+            };
+            delete borrowed;
+            assertOwned(buffer, 0, 99);
+            test.assertEqual(before, af_total_allocations());
+            test.assertEqual(0, copies); test.assertEqual(0, drops);
+            test.assertErr(buffer.borrow(-1)); test.assertErr(buffer.borrow(1));
+            buffer.destroy(0).unwrap();
+            test.assertEqual(1, drops);
+            let empty = raw_buffer::<Owned>(0);
+            test.assertErr(empty.borrow(0));
+        });
+
+        test.it("borrows move-only and shared copyable classes", fn () {
+            copies = 0; drops = 0;
+            let uniqueBuffer = raw_buffer::<MoveOnly>(1);
+            uniqueBuffer.write(0, new MoveOnly(7)).unwrap();
+            let sharedBuffer = raw_buffer::<SharedCopy>(1);
+            let original = SharedCopy(8);
+            sharedBuffer.write(0, original).unwrap();
+            const long before = af_total_allocations();
+            match uniqueBuffer.borrow(0) {
+                Ok(value) => test.assertEqual(7, value.value),
+                Err(_) => test.assertTrue(false)
+            };
+            match sharedBuffer.borrow(0) {
+                Ok(value) => test.assertEqual(8, value.value),
+                Err(_) => test.assertTrue(false)
+            };
+            test.assertEqual(before, af_total_allocations());
+            test.assertEqual(0, copies); test.assertEqual(0, drops);
+            uniqueBuffer.destroy(0).unwrap();
+            test.assertEqual(1, drops);
+        });
+    });
+
+    test.describe("raw_buffer transfer", fn () {
+        test.it("transfers owned ranges and leaves buffers independently usable", fn () {
+            copies = 0; drops = 0;
+            let source = raw_buffer::<Owned>(3);
+            let destination = raw_buffer::<Owned>(4);
+            source.write(0, new Owned(10)).unwrap();
+            source.write(1, new Owned(20)).unwrap();
+            source.write(2, new Owned(30)).unwrap();
+            destination.write(3, new Owned(40)).unwrap();
+            const long before = af_total_allocations();
+            source.transfer_to(destination, 1, 0, 2).unwrap();
+            assertOwned(source, 0, 10);
+            assertOwned(destination, 0, 20); assertOwned(destination, 1, 30); assertOwned(destination, 3, 40);
+            test.assertEqual(before, af_total_allocations());
+            test.assertEqual(0, copies); test.assertEqual(0, drops);
+            test.assertEqual(3, source.capacity()); test.assertEqual(4, destination.capacity());
+            source.write(1, new Owned(50)).unwrap();
+            source.destroy(0).unwrap(); source.destroy(1).unwrap();
+            delete source;
+            test.assertEqual(2, drops);
+            assertOwned(destination, 0, 20); assertOwned(destination, 1, 30);
+            destination.destroy(0).unwrap(); destination.destroy(1).unwrap(); destination.destroy(3).unwrap();
+            test.assertEqual(5, drops);
+        });
+
+        test.it("validates both ranges and permits empty transfers at capacity", fn () {
+            let source = raw_buffer::<int>(2);
+            let destination = raw_buffer::<int>(3);
+            source.write(0, 7).unwrap(); source.write(1, 8).unwrap();
+            destination.write(2, 9).unwrap();
+            test.assertErr(source.transfer_to(destination, -1, 0, 1));
+            test.assertErr(source.transfer_to(destination, 0, -1, 1));
+            test.assertErr(source.transfer_to(destination, 0, 0, -1));
+            test.assertErr(source.transfer_to(destination, 1, 0, 2));
+            test.assertErr(source.transfer_to(destination, 0, 2, 2));
+            test.assertErr(source.transfer_to(destination, 1, 1, 2147483647));
+            test.assertErr(source.transfer_to(destination, 2147483647, 0, 0));
+            test.assertErr(source.transfer_to(destination, 0, 2147483647, 0));
+            test.assertTrue(source.transfer_to(destination, 2, 3, 0).unwrap());
+            test.assertEqual(7, source.read(0).unwrap()); test.assertEqual(8, source.read(1).unwrap());
+            test.assertEqual(9, destination.read(2).unwrap());
+            source.transfer_to(destination, 0, 0, 2).unwrap();
+            test.assertEqual(7, destination.read(0).unwrap()); test.assertEqual(8, destination.read(1).unwrap());
+            let empty = raw_buffer::<int>(0);
+            test.assertTrue(source.transfer_to(empty, 2, 0, 0).unwrap());
+            test.assertTrue(empty.transfer_to(source, 0, 2, 0).unwrap());
+            test.assertErr(empty.transfer_to(source, 0, 0, 1));
+        });
+
+        test.it("handles self-transfer overlap in either direction", fn () {
+            let buffer = raw_buffer::<int>(4);
+            buffer.write(0, 10).unwrap(); buffer.write(1, 20).unwrap(); buffer.write(2, 30).unwrap();
+            const long before = af_total_allocations();
+            buffer.transfer_to(buffer, 0, 1, 3).unwrap();
+            test.assertEqual(10, buffer.read(1).unwrap()); test.assertEqual(30, buffer.read(3).unwrap());
+            buffer.transfer_to(buffer, 1, 0, 3).unwrap();
+            buffer.transfer_to(buffer, 0, 0, 3).unwrap();
+            buffer.transfer_to(buffer, 4, 4, 0).unwrap();
+            test.assertEqual(before, af_total_allocations());
+            test.assertEqual(10, buffer.read(0).unwrap()); test.assertEqual(20, buffer.read(1).unwrap());
+            test.assertEqual(30, buffer.read(2).unwrap());
+            test.assertErr(buffer.transfer_to(buffer, 0, 2, 3));
+            test.assertEqual(10, buffer.read(0).unwrap());
+        });
+
+        test.it("orders locks consistently for opposing concurrent transfers", fn () {
+            let first = raw_buffer::<int>(0);
+            let second = raw_buffer::<int>(0);
+            test.assertEqual(0, run opposingTransfers(first, second));
+        });
+    });
+
+    test.summary();
+    return 0;
+};

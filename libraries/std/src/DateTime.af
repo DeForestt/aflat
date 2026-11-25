@@ -13,14 +13,25 @@ import { accept, reject, resultWrapper } from "Utils/result" under res;
 import { optionWrapper, Some, None } from "Utils/option" under opt;
 
 // Generic failure wrapper for DateTime parsing/formatting operations.
-shared class DateTimeError signs Error {
-    const string message = message.copy();
+unique class DateTimeError signs Error {
+    private mutable string message = NULL;
 
     string stdErrorMessage() : Render {
         return `{my._typeName}: message`;
     };
 
+    DateTimeError init(const string &&message) {
+        my.message = $message;
+        return my;
+    };
+
+    DateTimeError init(const adr message) {
+        my.message = new string(message);
+        return my;
+    };
+
     DateTimeError init(const string message) {
+        my.message = new string(message.cstr());
         return my;
     };
 };

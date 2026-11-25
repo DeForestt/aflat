@@ -171,6 +171,7 @@ struct gen::CodeGenerator::Impl {
   HashMap<ast::Statement *> includedClasses;
   HashMap<std::string> nameSpaceTable;
   std::set<std::string> activeImports;
+  std::set<std::string> completedClassImports;
   std::unordered_map<std::string, std::string> genericTypeConversions;
   std::set<std::string> generatedFunctionNames;
   std::set<std::string> generatedLazyConcreteMethodNames;
@@ -843,6 +844,10 @@ HashMap<ast::Statement *> &gen::CodeGenerator::includedClasses() {
 
 HashMap<std::string> &gen::CodeGenerator::nameSpaceTable() {
   return impl->nameSpaceTable;
+}
+
+std::set<std::string> &gen::CodeGenerator::completedClassImports() {
+  return impl->completedClassImports;
 }
 
 std::set<std::string> &gen::CodeGenerator::activeImports() {

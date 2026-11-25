@@ -51,20 +51,19 @@ void emitGenericLifecycleMethod(CodeGenerator &generator, Class *cls,
   if (method == nullptr)
     return;
 
-  auto *body = new ast::Function(*method, false);
-  body->hidden = false;
-  body->locked = false;
-  body->scopeName = cls->Ident;
-  body->globalLocked = false;
-
   const auto emissionKey =
       lifecycleEmissionKey("pub_" + cls->Ident + "_" + methodName);
   if (!generator.generatedLazyConcreteMethodNames()
            .insert(emissionKey)
            .second) {
-    delete body;
     return;
   }
+
+  auto *body = new ast::Function(*method, false);
+  body->hidden = false;
+  body->locked = false;
+  body->scopeName = cls->Ident;
+  body->globalLocked = false;
 
   auto *savedScope = generator.scope();
   const auto savedReturnType = generator.returnType();
@@ -112,6 +111,12 @@ void registerModuleGenericTemplates(
   if (cls == nullptr || cls->genericTypes.empty())
     return;
 
+  auto existing = generator.genericTypes().find(cls->ident.ident);
+  if (existing != generator.genericTypes().end() &&
+      existing->second != nullptr &&
+      existing->second->templateModuleRoot != nullptr)
+    return;
+
   auto *copy = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
   if (copy == nullptr)
     return;
@@ -141,22 +146,29 @@ void CodeGenerator::ensureGenericMethod(Class *cls,
 Type **CodeGenerator::instantiateGenericClass(
     ast::Class *cls, const std::vector<std::string> &types,
     std::string &newName, asmc::File &OutputFile) {
-  auto classStatement = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
   std::unordered_map<std::string, std::string> genericMap;
-  newName = classStatement->ident.ident + "<";
-  if (types.size() != classStatement->genericTypes.size())
+  newName = cls->ident.ident + "<";
+  if (types.size() != cls->genericTypes.size())
     alert("Generic class " + cls->ident.ident + " requires " +
-              std::to_string(classStatement->genericTypes.size()) +
+              std::to_string(cls->genericTypes.size()) +
               " template types, but got " + std::to_string(types.size()),
           true, __FILE__, __LINE__);
   for (size_t i = 0; i < types.size(); i++) {
     newName += types[i];
     if (i < types.size() - 1)
       newName += ",";
-    genericMap[classStatement->genericTypes[i]] = types[i];
+    genericMap[cls->genericTypes[i]] = types[i];
   }
   newName += ">";
   genericMap["Self"] = newName;
+
+  // Most requests resolve an existing specialization. Avoid retaining a copy
+  // of its entire template AST in the compilation arena for each lookup.
+  if (auto result = typeList()[newName]) {
+    ensureGenericLifecycleMethod(dynamic_cast<Class *>(*result), OutputFile);
+    return result;
+  }
+  auto classStatement = dynamic_cast<ast::Class *>(ast::deepCopy(cls));
 
   ast::SourceLocation location;
   const std::string templateFile = cls->templateModuleFile.empty()
@@ -180,52 +192,41 @@ Type **CodeGenerator::instantiateGenericClass(
   classStatement->genericTypes.clear();
   classStatement->hidden =
       true; // we hid the class so all of its functions are private
-  Type **result;
-  if (typeList()[newName] == nullptr) {
-    if (OutputFile.lambdas == nullptr)
-      OutputFile.lambdas = new asmc::File;
-    OutputFile.hasLambda = true;
-    scope::ScopeManager::getInstance()->pushIsolated();
-    auto outerIncludedMemo = this->includedMemo();
-    auto outerIncludedClasses = this->includedClasses();
-    auto outerActiveImports = this->activeImports();
-    this->pushEnv();
-    this->includedMemo() = outerIncludedMemo;
-    this->includedClasses() = outerIncludedClasses;
-    this->activeImports() = outerActiveImports;
-    auto savedCwd = this->cwd();
-    auto savedNameSpaceTable = this->nameSpaceTable();
-    if (cls->templateModuleRoot != nullptr) {
-      if (!cls->templateModuleCwd.empty())
-        this->cwd() = cls->templateModuleCwd;
-      for (const auto &[alias, target] : cls->templateNamespaceMap)
-        this->nameSpaceTable().insert(alias, target);
-      OutputFile.lambdas->operator<<(
-          this->ImportsOnly(cls->templateModuleRoot, true));
-      registerModuleGenericTemplates(
-          cls->templateModuleRoot, cls->templateModuleRoot, *this,
-          cls->templateModuleCwd, cls->templateNamespaceMap,
-          *OutputFile.lambdas);
-    }
-    OutputFile.lambdas->operator<<(this->GenSTMT(classStatement));
-    result = typeList()[newName];
-    auto *concreteClass =
-        result == nullptr ? nullptr : dynamic_cast<Class *>(*result);
-    if (concreteClass != nullptr) {
-      ensureGenericLifecycleMethod(concreteClass, *OutputFile.lambdas);
-    }
-    this->nameSpaceTable() = savedNameSpaceTable;
-    this->cwd() = savedCwd;
-    this->popEnv();
-    scope::ScopeManager::getInstance()->popIsolated();
-  } else {
-    result = typeList()[newName];
-    auto *concreteClass =
-        result == nullptr ? nullptr : dynamic_cast<Class *>(*result);
-    if (concreteClass != nullptr) {
-      ensureGenericLifecycleMethod(concreteClass, OutputFile);
-    }
+  if (OutputFile.lambdas == nullptr)
+    OutputFile.lambdas = new asmc::File;
+  OutputFile.hasLambda = true;
+  scope::ScopeManager::getInstance()->pushIsolated();
+  auto outerIncludedMemo = this->includedMemo();
+  auto outerIncludedClasses = this->includedClasses();
+  auto outerActiveImports = this->activeImports();
+  this->pushEnv();
+  this->includedMemo() = outerIncludedMemo;
+  this->includedClasses() = outerIncludedClasses;
+  this->activeImports() = outerActiveImports;
+  auto savedCwd = this->cwd();
+  auto savedNameSpaceTable = this->nameSpaceTable();
+  if (cls->templateModuleRoot != nullptr) {
+    if (!cls->templateModuleCwd.empty())
+      this->cwd() = cls->templateModuleCwd;
+    for (const auto &[alias, target] : cls->templateNamespaceMap)
+      this->nameSpaceTable().insert(alias, target);
+    OutputFile.lambdas->operator<<(
+        this->ImportsOnly(cls->templateModuleRoot, true));
+    registerModuleGenericTemplates(
+        cls->templateModuleRoot, cls->templateModuleRoot, *this,
+        cls->templateModuleCwd, cls->templateNamespaceMap, *OutputFile.lambdas);
   }
+  OutputFile.lambdas->operator<<(this->GenSTMT(classStatement));
+  auto result = typeList()[newName];
+  auto *concreteClass =
+      result == nullptr ? nullptr : dynamic_cast<Class *>(*result);
+  if (concreteClass != nullptr) {
+    ensureGenericLifecycleMethod(concreteClass, *OutputFile.lambdas);
+  }
+  this->nameSpaceTable() = savedNameSpaceTable;
+  this->cwd() = savedCwd;
+  this->popEnv();
+  scope::ScopeManager::getInstance()->popIsolated();
   return result;
 }
 
@@ -251,7 +252,8 @@ CodeGenerator::resolveSymbol(std::string ident,
     owned = true; // global symbols are corporatly owned
   }
 
-  if (sym == nullptr && nameSpaceTable().contains(ident)) {
+  if (sym == nullptr && nameSpaceTable().contains(ident) &&
+      (modList.count != 0 || typeList()[ident] == nullptr)) {
     nsp = nameSpaceTable().get(ident) + ".";
     if (modList.count == 0)
       alert("NameSpace " + ident + " cannot be used as a variable", true,

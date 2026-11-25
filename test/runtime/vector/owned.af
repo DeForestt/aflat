@@ -1,0 +1,52 @@
+.needs <std>
+import vector from "Collections/Vector";
+
+mutable int drops = 0;
+unique class Owned {
+    int value = value;
+    fn init(const int value) -> Self { return my; };
+    fn del() -> void { drops = drops + 1; };
+};
+
+fn ownedGreater(const Owned a, const Owned b) -> bool { return a.value > b.value; };
+
+fn uniqueValues() -> void {
+    drops = 0;
+    let values = new vector::<Owned>(4);
+    values.push_back(new Owned(30)); values.push_back(new Owned(10));
+    const let inserted = new Owned(20);
+    const long before = af_total_allocations();
+    values.insert(1, $inserted).unwrap();
+    assert(af_total_allocations() == before + #1, "insert allocated per shifted element");
+    const long beforeSort = af_total_allocations();
+    values.sort(ownedGreater);
+    assert(af_total_allocations() == beforeSort, "owned sort allocated");
+    assert(values.get(0).unwrap().value == 10, "owned sort");
+    assert(drops == 0, "movement destroyed values");
+    values.set(1, new Owned(21)).unwrap();
+    assert(drops == 1, "replacement cleanup");
+    const long beforeTake = af_total_allocations();
+    const local let first = values.pop_front();
+    assert(af_total_allocations() == beforeTake + #1, "owned pop added extraction allocations");
+    assert(first.unwrap().value == 10, "owned pop front");
+    values.drop(0).unwrap();
+    assert(drops == 2, "drop cleanup");
+    let source = new vector::<Owned>(); source.push_back(new Owned(40));
+    const long beforeMove = af_total_allocations();
+    values.stitch($source);
+    assert(af_total_allocations() == beforeMove, "consuming stitch allocated temporary storage");
+    assert(drops == 2, "stitch destroyed moved source elements");
+    assert(values.back().unwrap().value == 40, "consuming stitch value");
+    delete values;
+    assert(drops == 4, "destination cleanup");
+    assert(first.unwrap().value == 10, "popped value depends on vector");
+    delete first;
+    assert(drops == 5, "popped cleanup");
+};
+
+fn main() -> int {
+    const int before = af_live_blocks();
+    uniqueValues();
+    assert(af_live_blocks() == before, "vector lifetime leak");
+    return 0;
+};

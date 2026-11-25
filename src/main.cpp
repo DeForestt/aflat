@@ -674,6 +674,11 @@ static std::string generateReadmeContent(const std::string &projectName) {
          "formatting, "
          "and day-of-week math (libraries/std/src/DateTime.af).\n\n";
   out << "#### Collections\n";
+  out << "- `Collections/raw_buffer` - Raw storage for collection "
+         "implementers. "
+         "Direct application use is a code smell; it does not enforce element "
+         "ownership or track live slots "
+         "(libraries/std/docs/raw_buffer.MD).\n";
   out << "- `Collections/Vector` - Type-parametric `vector` supporting "
          "copy/move semantics, "
          "iterators, sorting, and optional accessors "
