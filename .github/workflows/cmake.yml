@@ -49,6 +49,8 @@ jobs:
         run: bash ./rebuild-libs.sh -j "$(nproc)"
       - name: Build project
         run: ./bin/aflat build
+      - name: Test raw buffer storage
+        run: python3 test/runtime/raw_buffer/run.py
       - name: Test
         working-directory: ${{github.workspace}}/bin
         run: ./a.test

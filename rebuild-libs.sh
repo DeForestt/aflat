@@ -148,6 +148,7 @@ function compile_single {
         "JSON_Property_Fields") aflat ./libraries/std/src/JSON/Property/Fields.af -o ./libraries/std/JSON_Property_Fields.s ;;
         "Vector") aflat ./libraries/std/src/Collections/Vector.af -o ./libraries/std/vector.s ;;
         "Heap") aflat ./libraries/std/src/Collections/Heap.af -o ./libraries/std/Heap.s ;;
+        "raw_buffer") aflat ./libraries/std/src/Collections/raw_buffer.af -o ./libraries/std/raw_buffer.s ;;
         "request") gcc -g -no-pie -S -o ./libraries/std/request.s ./libraries/std/src/request.c ;;
         "Async") gcc -O2 -mstackrealign -mincoming-stack-boundary=3 -S -o ./libraries/std/async.s ./libraries/std/src/async_runtime.c ;;
         *)
@@ -160,7 +161,7 @@ function compile_single {
             echo "  Socket, HTTP_Transport, HTTP_Endpoint, HTTP_Middleware, HTTP_Server, HTTP_Endpoints"
             echo "  Web_Content, Web_Content_Bind, JSON, JSON_Parse, JSON_Property"
             echo "  JSON_Property_Fields"
-            echo "  Vector, request, Async, Tuple, Heap"
+            echo "  Vector, request, Async, Tuple, Heap, raw_buffer"
             exit 1 ;;
     esac
 }
@@ -196,7 +197,7 @@ done
 for library in \
     Socket HTTP_Transport unordered_map Error_Render HTTP_Endpoint HTTP_Middleware HTTP_Server \
     HTTP_Endpoints Web_Content Web_Content_Bind JSON JSON_Property \
-    JSON_Property_Fields Vector Heap Tuple JSON_Parse request Async Allocator; do
+    JSON_Property_Fields Vector Heap Tuple raw_buffer JSON_Parse request Async Allocator; do
     queue_library "$library"
 done
 

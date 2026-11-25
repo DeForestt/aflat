@@ -1,0 +1,291 @@
+.needs <std>
+import result from "Utils/result";
+import {accept, reject} from "Utils/result" under res;
+import Lock, LockGuard from "concurrency";
+import Error from "Utils/Error";
+
+types(T)
+/**
+ * Raw storage for implementing collections, not an application-facing container.
+ * Direct application use is a code smell: prefer vector or another owning collection.
+ *
+ * Owns its allocation, but DOES NOT enforce element ownership or track live slots.
+ * The enclosing collection must track initialization, length, moves and destruction,
+ * clean up every live element, and prevent invalid loans and concurrent mutations.
+ * Bounds checks cover capacity only. Reading uninitialized/taken/destroyed slots,
+ * overwriting live unique values with write, or destroying a slot twice is invalid.
+ * Growth relocates bytes and invalidates loans; elements must tolerate relocation.
+ * See libraries/std/docs/raw_buffer.MD for the full contract and overload details.
+ */
+unique class raw_buffer {
+    mutable private adr head = NULL;
+    mutable private int capacity = capacity;
+    private Lock mutex = new Lock();
+
+    /** Allocate uninitialized slots; invalid sizes/allocation failure panic. */
+    fn init(const int capacity) -> Self {
+        assert(capacity >= 0, "Buffer capacity must not be negative");
+        assert(capacity <= 2147483647 / T, "Buffer capacity exceeds byte-size limit");
+        if capacity > 0 {
+            my.head = af_malloc(capacity * T);
+            assert(my.head != NULL, "Failed to allocate buffer");
+        };
+        return my;
+    };
+
+    safe private fn address(const int index) -> local result::<adr> {
+        if (index < 0) | (index >= my.capacity) {
+            return res.reject::<adr>(new Error("Buffer index out of bounds"));
+        };
+
+        return res.accept(my.head + (index * T));
+    };
+
+    /** Number of allocated slots, not the number of live elements. */
+    safe fn capacity() -> int {
+        const local LockGuard __guard = my.mutex.guard();
+        return my.capacity;
+    };
+
+    /** Grow without constructing elements; invalidates all loans if storage moves. */
+    fn grow(const int newCapacity) -> local result::<bool> {
+        const local LockGuard __guard = my.mutex.guard();
+
+        if newCapacity < my.capacity {
+            return res.reject::<bool>(
+            new Error("Cannot reduce buffer capacity")
+            );
+        };
+
+        if newCapacity == my.capacity {
+            return res.accept(true);
+        };
+
+        if newCapacity > 2147483647 / T {
+            return res.reject::<bool>(new Error("Buffer capacity exceeds byte-size limit"));
+        };
+
+        const adr destination = af_malloc(newCapacity * T);
+
+        if destination == NULL {
+            return res.reject::<bool>(
+            new Error("Failed to grow buffer")
+            );
+        };
+
+        if my.head != NULL {
+            af_memcpy(destination, my.head, my.capacity * T);
+            af_free(my.head);
+        };
+
+        my.head = destination;
+        my.capacity = newCapacity;
+
+        return res.accept(true);
+    };
+
+    when (T is primitive)
+    /** Read a live slot: primitive value, __copy__ result, or loan without __copy__. */
+    safe fn read(const int index) -> local result::<T> {
+        const local LockGuard __guard = my.mutex.guard();
+        mutable adr val = NULL;
+        const local result::<adr> checked = my.address(index);
+        match $checked {
+            Err(&&err) => return res.reject::<T>($err),
+            Ok(address) => val = address
+        };
+        return res.accept(val as T);
+    };
+
+    when (T is not primitive and T has __copy__)
+    safe fn read(const int index) -> local result::<T> {
+        const local LockGuard __guard = my.mutex.guard();
+        mutable generic ptr = NULL;
+        const local result::<adr> checked = my.address(index);
+        match $checked {
+            Err(&&err) => return res.reject::<T>($err),
+            Ok(address) => ptr = address
+        };
+        const T val = ptr;
+        return res.accept(val);
+    };
+
+    when (T is not primitive and T missing __copy__)
+    fn read(const int index) -> local result::<&T> {
+        const local LockGuard __guard = my.mutex.guard();
+        const local result::<adr> checked = my.address(index);
+        match $checked {
+            Err(&&err) => return res.reject::<&T>($err),
+            Ok(_) => {}
+        };
+        // Keep the returned loan tied to the buffer, not the temporary result.
+        const generic val = my.head + (index * T);
+        return res.accept::<&T>(val);
+    };
+
+    when (T is not primitive and T is not unique or T is adr)
+    /**
+     * Initialize a slot. Does not destroy previous contents or record initialization.
+     * Non-unique classes and adr copy T bytes from value; adr callers pass ?pointer.
+     * Unique arguments are consumed even on error. Other primitives pass by value.
+     */
+    fn write(const int index, const any value) -> local result::<bool> {
+        const local LockGuard __guard = my.mutex.guard();
+        mutable adr destination = NULL;
+        const local result::<adr> checked = my.address(index);
+        match $checked {
+            Err(&&err) => return res.reject::<bool>($err),
+            Ok(address) => destination = address
+        };
+
+        af_memcpy(destination, value, T);
+
+        return res.accept(true);
+    };
+
+    when (T is not primitive and T is unique)
+    fn write(const int index, const T &&value) -> local result::<bool> {
+        const local LockGuard __guard = my.mutex.guard();
+        mutable adr destination = NULL;
+        const local result::<adr> checked = my.address(index);
+        match $checked {
+            Err(&&err) => return res.reject::<bool>($err),
+            Ok(address) => destination = address
+        };
+
+        value.__transfer_to__(destination);
+        af_free($value);
+
+        return res.accept(true);
+    };
+
+    when (T is primitive and T is not adr)
+    fn write(const int index, const T value) -> local result::<bool> {
+        const local LockGuard __guard = my.mutex.guard();
+        mutable adr destination = NULL;
+        const local result::<adr> checked = my.address(index);
+        match $checked {
+            Err(&&err) => return res.reject::<bool>($err),
+            Ok(address) => destination = address
+        };
+
+        af_memcpy(destination, ?value, T);
+
+        return res.accept(true);
+    };
+
+    when (T is not primitive and T is not unique or T is adr)
+    /** Replace a live slot; only unique elements have their old destructor called. */
+    fn replace(const int index, const any value) -> local result::<bool> {
+        return my.write(index, value);
+    };
+
+    when (T is not primitive and T is unique)
+    fn replace(const int index, const T &&value) -> local result::<bool> {
+        const local LockGuard __guard = my.mutex.guard();
+        mutable adr destination = NULL;
+        const local result::<adr> checked = my.address(index);
+        match $checked {
+            Err(&&err) => return res.reject::<bool>($err),
+            Ok(address) => destination = address
+        };
+
+        const generic obj = destination;
+        const loan T previous = obj;
+        delete previous;
+
+        value.__transfer_to__(destination);
+        af_free($value);
+
+        return res.accept(true);
+    };
+
+    when (T is primitive and T is not adr)
+    fn replace(const int index, const T value) -> local result::<bool> {
+        return my.write(index, value);
+    };
+
+    when (T is not primitive and T is unique)
+    /** Destroy a live unique element in place; other types only get a bounds check.
+     * The collection must mark the slot vacant. Bytes are not cleared.
+     */
+    fn destroy(const int index) -> local result::<bool> {
+        const local LockGuard __guard = my.mutex.guard();
+        mutable generic obj = NULL;
+        const local result::<adr> checked = my.address(index);
+        match $checked {
+            Err(&&err) => return res.reject::<bool>($err),
+            Ok(address) => obj = address
+        };
+
+        const loan T previous = obj;
+        delete previous;
+
+        return res.accept(true);
+    };
+
+    when (T is primitive or T is not unique)
+    fn destroy(const int index) -> local result::<bool> {
+        const local LockGuard __guard = my.mutex.guard();
+        const local result::<adr> checked = my.address(index);
+        match $checked {
+            Err(&&err) => return res.reject::<bool>($err),
+            Ok(_) => {}
+        };
+
+        return res.accept(true);
+    };
+
+    when (T is not primitive and T is unique)
+    /** Take a live element; unique values move to a separate allocation without __copy__.
+     * The collection must mark the slot vacant on success. Bytes are not cleared.
+     */
+    fn take(const int index) -> local result::<T> {
+        const local LockGuard __guard = my.mutex.guard();
+        mutable adr source = NULL;
+        const local result::<adr> checked = my.address(index);
+        match $checked {
+            Err(&&err) => return res.reject::<T>($err),
+            Ok(address) => source = address
+        };
+
+        const adr destination = af_malloc(T);
+
+        if destination == NULL {
+            return res.reject::<T>(
+            new Error("Failed to allocate object")
+            );
+        };
+
+        af_memcpy(destination, source, T);
+
+        const generic obj = destination;
+        const T value = obj;
+
+        return res.accept($value);
+    };
+
+    when (T is not primitive and T is not unique)
+    fn take(const int index) -> local result::<T> {
+        const local LockGuard __guard = my.mutex.guard();
+        mutable generic source = NULL;
+        const local result::<adr> checked = my.address(index);
+        match $checked {
+            Err(&&err) => return res.reject::<T>($err),
+            Ok(address) => source = address
+        };
+
+        return res.accept::<T>($source);
+    };
+
+    when (T is primitive)
+    fn take(const int index) -> local result::<T> {
+        return my.read(index);
+    };
+
+    /** Release storage and lock only; the collection must first clean up live elements. */
+    fn del() -> void {
+        af_free(my.head);
+        delete my.mutex;
+    };
+};
