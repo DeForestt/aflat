@@ -146,6 +146,7 @@ void CodeGenerator::pushEnv() {
   state.includedMemo = std::move(includedMemo());
   state.includedClasses = std::move(includedClasses());
   state.activeImports = std::move(activeImports());
+  state.completedClassImports = std::move(completedClassImports());
   state.genericTypeConversions = std::move(genericTypeConversions());
   state.transforms = std::move(transforms());
   state.inFunction = inFunction();
@@ -164,6 +165,7 @@ void CodeGenerator::pushEnv() {
   includedMemo() = HashMap<ast::Statement *>();
   includedClasses() = HashMap<ast::Statement *>();
   activeImports().clear();
+  completedClassImports().clear();
   genericTypeConversions().clear();
   transforms().clear();
   currentFunction() = nullptr;
@@ -186,6 +188,7 @@ void CodeGenerator::popEnv() {
   includedMemo() = std::move(state.includedMemo);
   includedClasses() = std::move(state.includedClasses);
   activeImports() = std::move(state.activeImports);
+  completedClassImports() = std::move(state.completedClassImports);
   genericTypeConversions() = std::move(state.genericTypeConversions);
   transforms() = std::move(state.transforms);
   inFunction() = state.inFunction;

@@ -16,6 +16,44 @@
 bool build(std::string path, std::string output, cfg::Mutability mutability,
            bool debug);
 
+TEST_CASE("repeated complete class imports do not clone module bodies",
+          "[imports][memory]") {
+  ast::StatementAllocationScope allocations;
+  std::ofstream module("RepeatedClassImport.af");
+  module << "class Plain { int value = 0; };\n"
+            "types(T) class Box { T value; };\n";
+  module.close();
+  lex::Lexer lexer;
+  auto tokens = lexer.Scan("import Plain, Box from \"./RepeatedClassImport\";");
+  tokens.invert();
+  parse::Parser parser;
+  auto *root = parser.parseStmt(tokens);
+  auto *sequence = dynamic_cast<ast::Sequence *>(root);
+  REQUIRE(sequence != nullptr);
+  auto *import = dynamic_cast<ast::Import *>(sequence->Statement1);
+  REQUIRE(import != nullptr);
+  test::mockGen::CodeGenerator generator(
+      "mod", parser, "", std::filesystem::current_path().string());
+  REQUIRE_NOTHROW(import->generateClasses(generator));
+  auto *plain = *generator.typeList()["Plain"];
+  auto *box = generator.genericTypes().at("Box");
+  const auto before = (new ast::Statement)->allocationIndex;
+  for (int i = 0; i < 10; ++i)
+    REQUIRE_NOTHROW(import->generateClasses(generator));
+  REQUIRE((new ast::Statement)->allocationIndex == before + 1);
+  REQUIRE(*generator.typeList()["Plain"] == plain);
+  REQUIRE(generator.genericTypes().at("Box") == box);
+  REQUIRE_FALSE(generator.completedClassImports().empty());
+  const auto imports = generator.completedClassImports();
+  generator.pushEnv();
+  REQUIRE(generator.completedClassImports().empty());
+  REQUIRE_NOTHROW(import->generateClasses(generator));
+  REQUIRE(generator.completedClassImports() == imports);
+  generator.popEnv();
+  REQUIRE(generator.completedClassImports() == imports);
+  std::remove("RepeatedClassImport.af");
+}
+
 TEST_CASE("Parser handles mixed import of classes and functions", "[parser]") {
   lex::Lexer l;
   PreProcessor pp;

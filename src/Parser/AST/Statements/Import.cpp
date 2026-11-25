@@ -377,6 +377,18 @@ emitTypeShells(ast::Statement *added, gen::CodeGenerator &generator,
   std::vector<std::string> typeIdents;
   collectTypeImportIdents(added, typeIdents);
   for (const auto &ident : typeIdents) {
+    // Repeated dependency imports usually find complete types. Check before
+    // extractAll clones a class body that generation would immediately ignore.
+    auto generic = generator.genericTypes().find(ident);
+    if (generic != generator.genericTypes().end() &&
+        generic->second != nullptr &&
+        generic->second->templateModuleRoot != nullptr)
+      continue;
+    auto existing = generator.typeList()[ident];
+    auto existingClass =
+        existing == nullptr ? nullptr : dynamic_cast<gen::Class *>(*existing);
+    if (existingClass != nullptr && !existingClass->declarationOnly)
+      continue;
     auto allStmts = gen::utils::extractAll(ident, added, id);
     for (auto stmt : allStmts) {
       if (dynamic_cast<ast::Class *>(stmt) == nullptr &&
@@ -701,6 +713,9 @@ Import::generateClasses(gen::CodeGenerator &generator) {
     this->cwd = std::filesystem::path(this->path).parent_path().string();
   }
 
+  if (generator.completedClassImports().count(this->path) != 0)
+    return {OutputFile, std::nullopt};
+
   if (generator.activeImports().find(this->path) !=
       generator.activeImports().end()) {
     if (generator.includedMemo().contains(this->path))
@@ -783,6 +798,7 @@ Import::generateClasses(gen::CodeGenerator &generator) {
     OutputFile << generator.GenSTMT(statement);
   }
 
+  generator.completedClassImports().insert(this->path);
   return {OutputFile, std::nullopt};
 }
 } // namespace ast

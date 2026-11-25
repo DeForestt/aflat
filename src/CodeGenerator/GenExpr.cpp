@@ -160,18 +160,19 @@ void ensureLazyConcreteGenericMethod(CodeGenerator &generator, Class *cls,
   if (generator.suppressLazyMethodEmission())
     return;
 
-  auto *body = new ast::Function(*func, false);
-  body->hidden = false;
-  body->locked = false;
-  body->scopeName = cls->Ident;
-  body->globalLocked = false;
   const std::string emittedLabel =
-      "pub_" + cls->Ident + "_" + body->ident.ident;
+      "pub_" + cls->Ident + "_" + func->ident.ident;
   const auto emissionKey = lazyMethodEmissionKey(emittedLabel);
   if (generator.generatedLazyConcreteMethodNames().find(emissionKey) !=
       generator.generatedLazyConcreteMethodNames().end())
     return;
   generator.generatedLazyConcreteMethodNames().insert(emissionKey);
+
+  auto *body = new ast::Function(*func, false);
+  body->hidden = false;
+  body->locked = false;
+  body->scopeName = cls->Ident;
+  body->globalLocked = false;
 
   auto saveReturnType = generator.returnType();
   auto *saveScope = generator.scope();
