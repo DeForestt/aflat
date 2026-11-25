@@ -181,7 +181,14 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
                : gen::scope::ScopeManager::getInstance()->get(ownerName);
   };
   auto *ownerSymbol = getOwner();
-  if (consumesUnion && ownerSymbol == nullptr && exprResult.owned) {
+  // Consumable means the arms may sink the payloads: an owned heap value,
+  // or a caller-owned local value whose ownership lives in its stack
+  // cleanup record rather than the owned flag.
+  const bool consumable =
+      exprResult.owned ||
+      (exprResult.storageOrigin == gen::StorageOrigin::Stack &&
+       exprResult.needsDrop && exprResult.transferable);
+  if (consumesUnion && ownerSymbol == nullptr && consumable) {
     // Consuming matches need a symbol whose sold state can select exactly one
     // cleanup path. Give an owned temporary (including `await` results) the
     // same addressable lifetime as an explicitly named receiver.
@@ -192,6 +199,9 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
         ownerName, ownerType, false, false);
     ownerSymbol = getOwner();
     ownerSymbol->owned = true;
+    ownerSymbol->storageOrigin = exprResult.storageOrigin;
+    ownerSymbol->stackObjectOffset = exprResult.stackObjectOffset;
+    ownerSymbol->stackCleanupNodeOffset = exprResult.stackCleanupNodeOffset;
     ownerSymbol->loanProvenance = exprResult.loanProvenance;
     ownerSymbol->loanScope = exprResult.loanScope;
 

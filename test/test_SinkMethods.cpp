@@ -1028,6 +1028,63 @@ fn propagate() -> int! {
   CHECK(hasDiagnostic(result, "variable outcome was sold"));
 }
 
+TEST_CASE("bubble consumes payloads from a local result",
+          "[owned][bubble][result][local]") {
+  const auto result = buildSinkProgram("bubble_local_result", R"(
+.needs <std>
+import {reject, resultWrapper} from "Utils/result" under result;
+import Error from "Utils/Error";
+
+unique class Buffer {
+  fn init() -> Self { return my; };
+  fn write(const int value) -> local result::<bool> {
+    if value < 0 { return new Error("negative"); };
+    return true;
+  };
+};
+
+fn push(Buffer buffer, const int value) -> bool! {
+  let stored = buffer.write(value)!;
+  return stored;
+};
+
+fn main() -> int { return 0; };
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+}
+
+TEST_CASE("consuming match materializes a local result",
+          "[owned][match][result][local]") {
+  const auto result = buildSinkProgram("match_local_result", R"(
+.needs <std>
+import {reject, resultWrapper} from "Utils/result" under result;
+import Error from "Utils/Error";
+
+unique class Buffer {
+  fn init() -> Self { return my; };
+  fn write(const int value) -> local result::<bool> {
+    if value < 0 { return new Error("negative"); };
+    return true;
+  };
+};
+
+fn push(Buffer buffer, const int value) -> bool! {
+  let stored = match buffer.write(value) {
+    Ok(value) => value,
+    Err(&&err) => return err
+  };
+  return stored;
+};
+
+fn main() -> int { return 0; };
+)");
+
+  INFO(diagnosticsText(result));
+  CHECK(result.success);
+}
+
 TEST_CASE("loaned results cannot chain into sink methods",
           "[owned][sink][receiver]") {
   const auto result =
