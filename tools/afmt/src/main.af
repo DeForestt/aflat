@@ -4,6 +4,7 @@ import {print} from "uni_string" under uni;
 import uni_string from "uni_string";
 import Argument, CommandLineArgs from "CLArgs";
 import FileHandle from "files";
+import {renameFile, removeFile} from "files" under fs;
 import Formatter from "./Formatter";
 
 
@@ -17,10 +18,55 @@ fn getTextFromFile(uni_string &&path) -> uni_string! {
 };
 
 fn writeTextToFile(uni_string &&path, uni_string contents) -> bool! {
-    const let handle = new FileHandle($path);
-    let file = $handle.create()!;
-    const int written = file.get()!.write(contents.cstr());
-    return written == contents.len();
+    // Read the original's permissions first: the formatted text replaces
+    // the file by rename, which swaps in a new inode, so the mode has to
+    // be carried onto the replacement explicitly. Opening the original
+    // read/write also keeps the old behavior of failing on files the
+    // user cannot write.
+    const let pathCopy = new uni_string(path.cstr());
+    const let sourceHandle = new FileHandle($pathCopy);
+    let source = $sourceHandle.open()!;
+    const let sourceFile = source.get()!;
+    const int mode = sourceFile.mode()!;
+
+    // Write the formatted text to a sibling temp file, then rename it
+    // over the original. The original is never opened for writing, so
+    // until the rename lands its bytes are untouched: a failed or
+    // interrupted write cannot destroy it.
+    const let suffix = new uni_string(".afmt.tmp");
+    const let tempPath = path.concat(suffix);
+    const let tempPathCopy = new uni_string(tempPath.cstr());
+    const let tempHandle = new FileHandle($tempPathCopy);
+    let temp = $tempHandle.create()!;
+    const let out = temp.get()!;
+    out.setMode(mode);
+
+    // A single sys_write is not a completion guarantee; loop until the
+    // whole buffer is out.
+    const adr text = contents.cstr();
+    mutable int offset = 0;
+    while offset < contents.len() {
+        const int written = out.write(text + offset);
+        if written <= 0 {
+            match fs.removeFile(tempPath.cstr()) {
+                Ok(_) => {},
+                Err(_) => {}
+            };
+            return false;
+        };
+        offset = offset + written;
+    };
+
+    if out.sync() < 0 {
+        match fs.removeFile(tempPath.cstr()) {
+            Ok(_) => {},
+            Err(_) => {}
+        };
+        return false;
+    };
+
+    const bool renamed = fs.renameFile(tempPath.cstr(), path.cstr())!;
+    return renamed;
 };
 
 fn main(int argc, adr argv) -> int {

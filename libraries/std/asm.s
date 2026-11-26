@@ -28,6 +28,10 @@
 .global sys_clock_gettime
 .global sys_seek
 .global sys_lseek
+.global sys_rename
+.global sys_unlink
+.global sys_fsync
+.global sys_fchmod
 
 brk:
     pushq	%rbp
@@ -311,6 +315,46 @@ sys_lseek:
     pushq	%rbx
     subq	$16, %rsp
     movq    $8, %rax
+    syscall
+    leave
+    ret
+
+sys_rename:
+    pushq	%rbp
+    movq	%rsp, %rbp
+    pushq	%rbx
+    subq	$16, %rsp
+    movq    $82, %rax
+    syscall
+    leave
+    ret
+
+sys_unlink:
+    pushq	%rbp
+    movq	%rsp, %rbp
+    pushq	%rbx
+    subq	$16, %rsp
+    movq    $87, %rax
+    syscall
+    leave
+    ret
+
+sys_fsync:
+    pushq	%rbp
+    movq	%rsp, %rbp
+    pushq	%rbx
+    subq	$16, %rsp
+    movq    $74, %rax
+    syscall
+    leave
+    ret
+
+sys_fchmod:
+    pushq	%rbp
+    movq	%rsp, %rbp
+    pushq	%rbx
+    subq	$16, %rsp
+    movq    $91, %rax
     syscall
     leave
     ret
