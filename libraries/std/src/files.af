@@ -234,6 +234,26 @@ shared class File{
         return sys_close(my.file);
     };
 
+    fn sync() -> int {
+        return sys_fsync(my.file);
+    };
+
+    fn setMode(const int mode) -> int {
+        return sys_fchmod(my.file, mode);
+    };
+
+    fn mode() -> int! {
+        const byte[144] statBuffer; // x86_64 struct stat
+        const int status = sys_fstat(my.file, statBuffer);
+        if status < 0 {
+            return res.reject::<int>(new FileError(status));
+        };
+        // st_mode is a 4-byte field at offset 24 in the x86_64 struct stat.
+        const adr modeAddress = statBuffer + 24;
+        const int mode = modeAddress as int;
+        return res.accept(mode);
+    };
+
     fn rewind() -> void {
         sys_seek(my.file, 0, 0); // SEEK_SET
     };
@@ -285,6 +305,26 @@ export fn openFile(immutable adr fileName) -> File! {
     };
     file.fileName = fileName;
     return file;
+};
+
+
+// Rename a file, atomically replacing the destination when both paths
+// live on the same filesystem.
+export fn renameFile(immutable adr oldName, immutable adr newName) -> bool! {
+    const int status = sys_rename(oldName, newName);
+    if status == 0 {
+        return res.accept(true);
+    };
+    return res.reject::<bool>(new FileError(status));
+};
+
+// Remove a file from the filesystem.
+export fn removeFile(immutable adr fileName) -> bool! {
+    const int status = sys_unlink(fileName);
+    if status == 0 {
+        return res.accept(true);
+    };
+    return res.reject::<bool>(new FileError(status));
 };
 
 

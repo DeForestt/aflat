@@ -57,6 +57,13 @@ jobs:
         run: python3 test/runtime/deque/run.py
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
+      - name: Build afmt
+        working-directory: ${{github.workspace}}/tools/afmt
+        run: |
+          mkdir -p bin
+          ${{github.workspace}}/bin/aflat build -o ./bin/afmt
+      - name: Test afmt CLI
+        run: python3 tools/afmt/src/test/cli_test.py
       - name: Test
         working-directory: ${{github.workspace}}/bin
         run: ./a.test
