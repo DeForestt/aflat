@@ -315,7 +315,7 @@ gen::GenerationResult const Match::generate(gen::CodeGenerator &generator) {
         auto sym = gen::scope::ScopeManager::getInstance()->get(
             *_case.pattern.veriableName);
 
-        if (_case.pattern.takesOwnership && !exprResult.owned) {
+        if (_case.pattern.takesOwnership && !consumable) {
           generator.alert(
               "Cannot take ownership of union payload from an unowned value",
               true, __FILE__, __LINE__);

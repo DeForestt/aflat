@@ -1037,7 +1037,7 @@ import Error from "Utils/Error";
 
 unique class Buffer {
   fn init() -> Self { return my; };
-  fn write(const int value) -> local result::<bool> {
+  fn write(const int value) -> local bool! {
     if value < 0 { return new Error("negative"); };
     return true;
   };
@@ -1064,7 +1064,7 @@ import Error from "Utils/Error";
 
 unique class Buffer {
   fn init() -> Self { return my; };
-  fn write(const int value) -> local result::<bool> {
+  fn write(const int value) -> local bool! {
     if value < 0 { return new Error("negative"); };
     return true;
   };
@@ -1072,7 +1072,7 @@ unique class Buffer {
 
 fn push(Buffer buffer, const int value) -> bool! {
   let stored = match buffer.write(value) {
-    Ok(value) => value,
+    Ok(v) => v,
     Err(&&err) => return err
   };
   return stored;
