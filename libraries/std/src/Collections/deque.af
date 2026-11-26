@@ -1,0 +1,284 @@
+.needs <std>
+import raw_buffer from "Collections/raw_buffer";
+import result from "Utils/result";
+import Error from "Utils/Error";
+import {resultWrapper, reject} from "Utils/result" under res;
+import option from "Utils/option";
+import {optionWrapper, Some, None} from "Utils/option" under opt;
+
+types(T)
+/**
+ * A double-ended queue over raw_buffer, stored as a ring: push and pop at
+ * both ends, with the back index doubling as the storage head pointer.
+ *
+ * The deque owns destruction of its live elements: for unique T, del()
+ * walks the ring destroying each element, because raw_buffer releases
+ * storage only. Growth doubles capacity and relocates the wrapped segment
+ * to the new end, leaving the back index unchanged. peek copies T out when
+ * T is copyable and lends &T otherwise; pop moves the element out.
+ */
+class deque {
+    local private raw_buffer::<T> storage = raw_buffer::<T>(capasity);
+    private mutable int head_pointer = 0;
+    private mutable int count = 0;
+
+
+    fn init(int capasity) -> Self {
+        return my;
+    };
+
+    // Only called for nonempty deques. Avoid adding capacity to a large index.
+    private fn front_index() -> int {
+        mutable int front = my.head_pointer - my.count + 1;
+        if front < 0 {
+            let capacity = my.storage.capacity();
+            front = front + capacity;
+        };
+        return front;
+    };
+
+    private fn ensure_room() -> local bool! {
+        let capacity = my.storage.capacity();
+        if my.count < capacity {
+            return true;
+        };
+
+        let max_capacity = 2147483647 / T;
+        if capacity == max_capacity {
+            return res.reject::<bool>(new Error("Deque capacity limit reached"));
+        };
+        mutable int next_capacity = 1;
+        if capacity > 0 {
+            if capacity > max_capacity / 2 {
+                next_capacity = max_capacity;
+            } else {
+                next_capacity = capacity * 2;
+            };
+        };
+
+        let grown = my.storage.grow(next_capacity)!;
+        // A full wrapped ring has its oldest segment above the back index.
+        // Move that segment to the new end, leaving the back index unchanged.
+        let front = my.head_pointer + 1;
+        if (capacity > 0) & (front < capacity) {
+            let destination = front + (next_capacity - capacity);
+            let length = capacity - front;
+            let __moved = my.storage.relocate(front, destination, length)!;
+        };
+        return grown;
+    };
+
+    when (T is adr)
+    private fn write_value(int index, const T value) -> local bool! {
+        return my.storage.write(index, ?value);
+    };
+
+    when (T is primitive and T is not adr or T is not primitive and T is not unique)
+    private fn write_value(int index, const T value) -> local bool! {
+        return my.storage.write(index, value);
+    };
+
+    when (T is primitive or T is not unique)
+    fn push_back(const T value) -> local bool! {
+        let __ready = my.ensure_room()!;
+        let capacity = my.storage.capacity();
+        let put = (my.head_pointer + 1) % capacity;
+        let written = my.write_value(put, value)!;
+        my.head_pointer = put;
+        my.count = my.count + 1;
+        return written;
+    };
+
+    when (T is not primitive and T is unique)
+    fn push_back(const T &&value) -> local bool! {
+        let __ready = my.ensure_room()!;
+        let capacity = my.storage.capacity();
+        let put = (my.head_pointer + 1) % capacity;
+        let written = my.storage.write(put, $value)!;
+        my.head_pointer = put;
+        my.count = my.count + 1;
+        return written;
+    };
+
+    when (T is primitive or T is not unique)
+    fn push_front(const T value) -> local bool! {
+        if my.count == 0 {
+            return my.push_back(value);
+        };
+        let __ready = my.ensure_room()!;
+        let front = my.front_index();
+        mutable int put = front - 1;
+        if front == 0 {
+            let capacity = my.storage.capacity();
+            put = capacity - 1;
+        };
+        let written = my.write_value(put, value)!;
+        my.count = my.count + 1;
+        return written;
+    };
+
+    when (T is not primitive and T is unique)
+    fn push_front(const T &&value) -> local bool! {
+        if my.count == 0 {
+            return my.push_back($value);
+        };
+        let __ready = my.ensure_room()!;
+        let front = my.front_index();
+        mutable int put = front - 1;
+        if front == 0 {
+            let capacity = my.storage.capacity();
+            put = capacity - 1;
+        };
+        let written = my.storage.write(put, $value)!;
+        my.count = my.count + 1;
+        return written;
+    };
+
+    when (T is primitive)
+    fn peek_back() -> local option::<T> {
+        if my.count == 0 { return opt.None::<T>(); };
+        let index = my.head_pointer;
+        const local result::<T> value = my.storage.read(index);
+        match value {
+            Err => return opt.None::<T>(),
+            Ok(v) => return opt.Some::<T>(v),
+        };
+    };
+
+    when (T is not primitive and T has __copy__)
+    fn peek_back() -> local option::<T> {
+        if my.count == 0 { return opt.None::<T>(); };
+        let index = my.head_pointer;
+        const local result::<&T> value = my.storage.borrow(index);
+        match value {
+            Err => return opt.None::<T>(),
+            Ok(v) => return opt.Some::<T>(v),
+        };
+    };
+
+    when (T is not primitive and T missing __copy__)
+    fn peek_back() -> local option::<&T> {
+        if my.count == 0 { return opt.None::<&T>(); };
+        let index = my.head_pointer;
+        const local result::<&T> value = my.storage.read(index);
+        match value {
+            Err => return opt.None::<&T>(),
+            Ok(v) => return opt.Some::<&T>(v),
+        };
+    };
+
+    when (T is primitive)
+    fn pop_back() -> local option::<T> {
+        if my.count == 0 { return opt.None::<T>(); };
+        let index = my.head_pointer;
+        const local result::<T> taken = my.storage.take(index);
+        match $taken {
+            Err => return opt.None::<T>(),
+            Ok(v) => {
+                if my.head_pointer == 0 {
+                    let capacity = my.storage.capacity();
+                    my.head_pointer = capacity - 1;
+                } else {
+                    my.head_pointer = my.head_pointer - 1;
+                };
+                my.count = my.count - 1;
+                return opt.Some::<T>(v);
+            },
+        };
+    };
+
+    when (T is not primitive)
+    fn pop_back() -> local option::<T> {
+        if my.count == 0 { return opt.None::<T>(); };
+        let index = my.head_pointer;
+        const local result::<T> taken = my.storage.take(index);
+        match $taken {
+            Err => return opt.None::<T>(),
+            Ok(&&v) => {
+                if my.head_pointer == 0 {
+                    let capacity = my.storage.capacity();
+                    my.head_pointer = capacity - 1;
+                } else {
+                    my.head_pointer = my.head_pointer - 1;
+                };
+                my.count = my.count - 1;
+                return option::<T>->Some($v);
+            },
+        };
+    };
+
+    when (T is primitive)
+    fn peek_front() -> local option::<T> {
+        if my.count == 0 { return opt.None::<T>(); };
+        let index = my.front_index();
+        const local result::<T> value = my.storage.read(index);
+        match value {
+            Err => return opt.None::<T>(),
+            Ok(v) => return opt.Some::<T>(v),
+        };
+    };
+
+    when (T is not primitive and T has __copy__)
+    fn peek_front() -> local option::<T> {
+        if my.count == 0 { return opt.None::<T>(); };
+        let index = my.front_index();
+        const local result::<&T> value = my.storage.borrow(index);
+        match value {
+            Err => return opt.None::<T>(),
+            Ok(v) => return opt.Some::<T>(v),
+        };
+    };
+
+    when (T is not primitive and T missing __copy__)
+    fn peek_front() -> local option::<&T> {
+        if my.count == 0 { return opt.None::<&T>(); };
+        let index = my.front_index();
+        const local result::<&T> value = my.storage.read(index);
+        match value {
+            Err => return opt.None::<&T>(),
+            Ok(v) => return opt.Some::<&T>(v),
+        };
+    };
+
+    when (T is primitive)
+    fn pop_front() -> local option::<T> {
+        if my.count == 0 { return opt.None::<T>(); };
+        let index = my.front_index();
+        const local result::<T> taken = my.storage.take(index);
+        match $taken {
+            Err => return opt.None::<T>(),
+            Ok(v) => {
+                my.count = my.count - 1;
+                return opt.Some::<T>(v);
+            },
+        };
+    };
+
+    when (T is not primitive)
+    fn pop_front() -> local option::<T> {
+        if my.count == 0 { return opt.None::<T>(); };
+        let index = my.front_index();
+        const local result::<T> taken = my.storage.take(index);
+        match $taken {
+            Err => return opt.None::<T>(),
+            Ok(&&v) => {
+                my.count = my.count - 1;
+                return option::<T>->Some($v);
+            },
+        };
+    };
+
+    // raw_buffer releases storage; the deque owns destruction of live unique values.
+    when (T is not primitive and T is unique)
+    fn del() -> void {
+        if my.count > 0 {
+            let capacity = my.storage.capacity();
+            mutable int index = my.front_index();
+            for mutable int remaining = my.count; remaining > 0; remaining = remaining - 1 {
+                my.storage.destroy(index).unwrap();
+                index = (index + 1) % capacity;
+            };
+        };
+    };
+
+};

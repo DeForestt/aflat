@@ -1,0 +1,351 @@
+.needs <std>
+.needs <test>
+
+import {describe, it, assertOkValue, assertSomeValue, assertNone, summary} from "ATest" under test;
+
+import deque from "Collections/deque";
+
+fn main() -> int {
+    test.describe("deque push_back and peek_back", fn () {
+        test.it("returns Ok(true) and exposes the first pushed value", fn () {
+            let queue = new deque::<int>(10);
+            test.assertOkValue(queue.push_back(42), true);
+            test.assertSomeValue(queue.peek_back(), 42);
+            delete queue;
+        });
+
+        test.it("preserves zero and negative values", fn () {
+            let queue = new deque::<int>(4);
+            test.assertOkValue(queue.push_back(0), true);
+            test.assertSomeValue(queue.peek_back(), 0);
+            test.assertOkValue(queue.push_back(-23), true);
+            test.assertSomeValue(queue.peek_back(), -23);
+            delete queue;
+        });
+
+        test.it("peeks the latest value after each push", fn () {
+            let queue = new deque::<int>(10);
+            for mutable int value = 1; value <= 5; value = value + 1 {
+                test.assertOkValue(queue.push_back(value), true);
+                test.assertSomeValue(queue.peek_back(), value);
+            };
+            delete queue;
+        });
+
+        test.it("repeated peeks preserve the back value and allow another push", fn () {
+            let queue = new deque::<int>(3);
+            test.assertOkValue(queue.push_back(17), true);
+            test.assertSomeValue(queue.peek_back(), 17);
+            test.assertSomeValue(queue.peek_back(), 17);
+            test.assertSomeValue(queue.peek_back(), 17);
+            test.assertOkValue(queue.push_back(29), true);
+            test.assertSomeValue(queue.peek_back(), 29);
+            delete queue;
+        });
+
+        test.it("keeps accepting pushes across multiple growth cycles", fn () {
+            let queue = new deque::<int>(3);
+            for mutable int value = 1; value <= 11; value = value + 1 {
+                test.assertOkValue(queue.push_back(value), true);
+                test.assertSomeValue(queue.peek_back(), value);
+            };
+            delete queue;
+        });
+
+        test.it("grows from capacity one while updating the back", fn () {
+            let queue = new deque::<int>(1);
+            test.assertOkValue(queue.push_back(12), true);
+            test.assertSomeValue(queue.peek_back(), 12);
+            test.assertOkValue(queue.push_back(0), true);
+            test.assertSomeValue(queue.peek_back(), 0);
+            test.assertOkValue(queue.push_back(-8), true);
+            test.assertSomeValue(queue.peek_back(), -8);
+            delete queue;
+        });
+
+        test.it("keeps separate deque instances independent", fn () {
+            let first = new deque::<int>(2);
+            let second = new deque::<int>(3);
+            test.assertOkValue(first.push_back(10), true);
+            test.assertOkValue(second.push_back(20), true);
+            test.assertOkValue(first.push_back(11), true);
+            test.assertOkValue(first.push_back(12), true);
+            test.assertSomeValue(first.peek_back(), 12);
+            test.assertSomeValue(second.peek_back(), 20);
+            test.assertOkValue(second.push_back(21), true);
+            test.assertSomeValue(first.peek_back(), 12);
+            test.assertSomeValue(second.peek_back(), 21);
+            delete first;
+            delete second;
+        });
+
+        test.it("stores boolean values including false across growth", fn () {
+            let queue = new deque::<bool>(2);
+            test.assertOkValue(queue.push_back(false), true);
+            test.assertSomeValue(queue.peek_back(), false);
+            test.assertOkValue(queue.push_back(true), true);
+            test.assertSomeValue(queue.peek_back(), true);
+            test.assertOkValue(queue.push_back(false), true);
+            test.assertSomeValue(queue.peek_back(), false);
+            delete queue;
+        });
+    });
+
+    test.describe("deque pop_back", fn () {
+        test.it("returns None for an empty deque without changing its state", fn () {
+            let queue = new deque::<int>(3);
+            test.assertNone(queue.pop_back());
+            test.assertNone(queue.pop_back());
+            test.assertNone(queue.peek_back());
+            test.assertOkValue(queue.push_back(42), true);
+            test.assertSomeValue(queue.pop_back(), 42);
+            test.assertNone(queue.pop_back());
+            test.assertNone(queue.peek_back());
+            delete queue;
+        });
+
+        test.it("pops newest to oldest and exposes the previous back", fn () {
+            let queue = new deque::<int>(4);
+            test.assertOkValue(queue.push_back(10), true);
+            test.assertOkValue(queue.push_back(0), true);
+            test.assertOkValue(queue.push_back(-20), true);
+            test.assertSomeValue(queue.pop_back(), -20);
+            test.assertSomeValue(queue.peek_back(), 0);
+            test.assertSomeValue(queue.pop_back(), 0);
+            test.assertSomeValue(queue.peek_back(), 10);
+            test.assertSomeValue(queue.pop_back(), 10);
+            test.assertNone(queue.peek_back());
+            test.assertNone(queue.pop_back());
+            delete queue;
+        });
+
+        test.it("preserves all values across repeated growth", fn () {
+            let queue = new deque::<int>(3);
+            for mutable int value = 1; value <= 10; value = value + 1 {
+                test.assertOkValue(queue.push_back(value), true);
+            };
+            for mutable int value = 10; value >= 1; value = value - 1 {
+                test.assertSomeValue(queue.peek_back(), value);
+                test.assertSomeValue(queue.pop_back(), value);
+            };
+            test.assertNone(queue.pop_back());
+            test.assertNone(queue.peek_back());
+            delete queue;
+        });
+
+        test.it("supports interleaved pushes and pops and reuse after draining", fn () {
+            let queue = new deque::<int>(3);
+            test.assertOkValue(queue.push_back(1), true);
+            test.assertOkValue(queue.push_back(2), true);
+            test.assertSomeValue(queue.pop_back(), 2);
+            test.assertOkValue(queue.push_back(3), true);
+            test.assertOkValue(queue.push_back(4), true);
+            test.assertSomeValue(queue.pop_back(), 4);
+            test.assertSomeValue(queue.pop_back(), 3);
+            test.assertSomeValue(queue.pop_back(), 1);
+            test.assertNone(queue.pop_back());
+            test.assertOkValue(queue.push_back(5), true);
+            test.assertSomeValue(queue.peek_back(), 5);
+            test.assertSomeValue(queue.pop_back(), 5);
+            test.assertNone(queue.pop_back());
+            delete queue;
+        });
+
+        test.it("preserves both values when growing from capacity one and permits reuse", fn () {
+            let queue = new deque::<int>(1);
+            test.assertOkValue(queue.push_back(1), true);
+            test.assertOkValue(queue.push_back(2), true);
+            test.assertSomeValue(queue.pop_back(), 2);
+            test.assertSomeValue(queue.pop_back(), 1);
+            test.assertNone(queue.pop_back());
+            test.assertNone(queue.peek_back());
+            test.assertOkValue(queue.push_back(0), true);
+            test.assertSomeValue(queue.pop_back(), 0);
+            test.assertNone(queue.pop_back());
+            delete queue;
+        });
+
+        test.it("returns Some(false) for a stored false value", fn () {
+            let queue = new deque::<bool>(2);
+            test.assertOkValue(queue.push_back(true), true);
+            test.assertOkValue(queue.push_back(false), true);
+            test.assertSomeValue(queue.pop_back(), false);
+            test.assertSomeValue(queue.pop_back(), true);
+            test.assertNone(queue.pop_back());
+            delete queue;
+        });
+
+        test.it("returns None when popping or peeking a zero-capacity deque", fn () {
+            let queue = new deque::<int>(0);
+            test.assertNone(queue.pop_back());
+            test.assertNone(queue.peek_back());
+            delete queue;
+        });
+    });
+
+    test.describe("deque front operations", fn () {
+        test.it("returns None at both ends of an empty deque", fn () {
+            let queue = new deque::<int>(3);
+            test.assertNone(queue.peek_front());
+            test.assertNone(queue.pop_front());
+            test.assertNone(queue.pop_front());
+            test.assertNone(queue.peek_back());
+            test.assertNone(queue.pop_back());
+            delete queue;
+        });
+
+        test.it("pushes and peeks at the front without removing values", fn () {
+            let queue = new deque::<int>(4);
+            test.assertOkValue(queue.push_front(10), true);
+            test.assertSomeValue(queue.peek_front(), 10);
+            test.assertSomeValue(queue.peek_back(), 10);
+            test.assertOkValue(queue.push_front(0), true);
+            test.assertOkValue(queue.push_front(-20), true);
+            test.assertSomeValue(queue.peek_front(), -20);
+            test.assertSomeValue(queue.peek_front(), -20);
+            test.assertSomeValue(queue.peek_back(), 10);
+            test.assertSomeValue(queue.pop_front(), -20);
+            test.assertSomeValue(queue.pop_front(), 0);
+            test.assertSomeValue(queue.pop_front(), 10);
+            test.assertNone(queue.pop_front());
+            test.assertNone(queue.peek_back());
+            delete queue;
+        });
+
+        test.it("mixes both ends and reuses a drained deque", fn () {
+            let queue = new deque::<int>(3);
+            test.assertOkValue(queue.push_back(2), true);
+            test.assertOkValue(queue.push_front(1), true);
+            test.assertOkValue(queue.push_back(3), true);
+            test.assertSomeValue(queue.pop_front(), 1);
+            test.assertOkValue(queue.push_back(4), true);
+            test.assertSomeValue(queue.pop_back(), 4);
+            test.assertOkValue(queue.push_front(0), true);
+            test.assertSomeValue(queue.pop_back(), 3);
+            test.assertSomeValue(queue.pop_front(), 0);
+            test.assertSomeValue(queue.pop_back(), 2);
+            test.assertNone(queue.peek_front());
+            test.assertNone(queue.pop_front());
+            test.assertOkValue(queue.push_front(5), true);
+            test.assertSomeValue(queue.pop_back(), 5);
+            test.assertOkValue(queue.push_back(6), true);
+            test.assertSomeValue(queue.pop_front(), 6);
+            test.assertNone(queue.peek_back());
+            delete queue;
+        });
+
+        test.it("cycles through every slot without growing", fn () {
+            let queue = new deque::<int>(3);
+            test.assertOkValue(queue.push_back(1), true);
+            test.assertOkValue(queue.push_back(2), true);
+            test.assertOkValue(queue.push_back(3), true);
+            for mutable int value = 1; value <= 20; value = value + 1 {
+                test.assertSomeValue(queue.pop_front(), value);
+                test.assertOkValue(queue.push_back(value + 3), true);
+            };
+            test.assertSomeValue(queue.pop_front(), 21);
+            test.assertSomeValue(queue.pop_front(), 22);
+            test.assertSomeValue(queue.pop_front(), 23);
+            test.assertNone(queue.pop_front());
+            delete queue;
+        });
+
+        test.it("cycles backwards through every slot without growing", fn () {
+            let queue = new deque::<int>(3);
+            test.assertOkValue(queue.push_front(1), true);
+            test.assertOkValue(queue.push_front(2), true);
+            test.assertOkValue(queue.push_front(3), true);
+            for mutable int value = 1; value <= 20; value = value + 1 {
+                test.assertSomeValue(queue.pop_back(), value);
+                test.assertOkValue(queue.push_front(value + 3), true);
+            };
+            test.assertSomeValue(queue.pop_back(), 21);
+            test.assertSomeValue(queue.pop_back(), 22);
+            test.assertSomeValue(queue.pop_back(), 23);
+            test.assertNone(queue.pop_back());
+            delete queue;
+        });
+
+        test.it("preserves false through front operations and growth", fn () {
+            let queue = new deque::<bool>(1);
+            test.assertOkValue(queue.push_front(true), true);
+            test.assertOkValue(queue.push_front(false), true);
+            test.assertSomeValue(queue.peek_front(), false);
+            test.assertSomeValue(queue.pop_front(), false);
+            test.assertSomeValue(queue.pop_back(), true);
+            test.assertNone(queue.pop_front());
+            delete queue;
+        });
+    });
+
+    test.describe("deque growth", fn () {
+        test.it("grows from zero capacity at either end and preserves every value", fn () {
+            let front = new deque::<int>(0);
+            let back = new deque::<int>(0);
+            for mutable int value = 0; value < 40; value = value + 1 {
+                test.assertOkValue(front.push_front(value), true);
+                test.assertOkValue(back.push_back(value), true);
+            };
+            for mutable int value = 0; value < 40; value = value + 1 {
+                test.assertSomeValue(front.pop_back(), value);
+                test.assertSomeValue(back.pop_front(), value);
+            };
+            test.assertNone(front.pop_front());
+            test.assertNone(back.pop_back());
+            delete front;
+            delete back;
+        });
+
+        test.it("preserves order when growing at either end from every ring offset", fn () {
+            for mutable int capacity = 1; capacity <= 7; capacity = capacity + 1 {
+                for mutable int offset = 0; offset < capacity; offset = offset + 1 {
+                    for mutable int direction = 0; direction < 2; direction = direction + 1 {
+                        let queue = new deque::<int>(capacity);
+                        for mutable int value = 1; value <= capacity; value = value + 1 {
+                            test.assertOkValue(queue.push_back(value), true);
+                        };
+                        // Rotate a full ring without growing it.
+                        for mutable int value = 1; value <= offset; value = value + 1 {
+                            test.assertSomeValue(queue.pop_front(), value);
+                            test.assertOkValue(queue.push_back(capacity + value), true);
+                        };
+                        if direction == 0 {
+                            test.assertOkValue(queue.push_back(capacity + offset + 1), true);
+                            for mutable int value = offset + 1; value <= capacity + offset + 1; value = value + 1 {
+                                test.assertSomeValue(queue.peek_front(), value);
+                                test.assertSomeValue(queue.pop_front(), value);
+                            };
+                        } else {
+                            test.assertOkValue(queue.push_front(offset), true);
+                            for mutable int value = capacity + offset; value >= offset; value = value - 1 {
+                                test.assertSomeValue(queue.peek_back(), value);
+                                test.assertSomeValue(queue.pop_back(), value);
+                            };
+                        };
+                        test.assertNone(queue.peek_front());
+                        test.assertNone(queue.peek_back());
+                        delete queue;
+                    };
+                };
+            };
+        });
+
+        test.it("preserves order across repeated growth with pushes at both ends", fn () {
+            let queue = new deque::<int>(3);
+            test.assertOkValue(queue.push_back(0), true);
+            for mutable int value = 1; value <= 30; value = value + 1 {
+                test.assertOkValue(queue.push_front(0 - value), true);
+                test.assertOkValue(queue.push_back(value), true);
+            };
+            for mutable int value = -30; value <= 30; value = value + 1 {
+                test.assertSomeValue(queue.pop_front(), value);
+            };
+            test.assertNone(queue.pop_front());
+            test.assertNone(queue.pop_back());
+            delete queue;
+        });
+    });
+
+    test.summary();
+    return 0;
+};

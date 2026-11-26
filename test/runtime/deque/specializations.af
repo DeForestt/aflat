@@ -1,0 +1,301 @@
+.needs <std>
+.needs <test>
+
+import {describe, it, itSkip, assertEqual, assertTrue, assertOkValue, assertSomeValue, assertNone, summary} from "ATest" under test;
+
+import deque from "Collections/deque";
+import option from "Utils/option";
+
+// Exercise every end operation, wrapped growth, and reuse for each primitive width.
+types(T)
+fn checkPrimitiveDeque(const T first, const T second, const T third) -> void {
+    let queue = new deque::<T>(3);
+    test.assertNone(queue.peek_front());
+    test.assertNone(queue.pop_back());
+    test.assertOkValue(queue.push_back(first), true);
+    test.assertOkValue(queue.push_back(second), true);
+    test.assertOkValue(queue.push_back(third), true);
+    test.assertSomeValue(queue.pop_front(), first);
+    test.assertOkValue(queue.push_back(first), true);
+    // The ring is full and wrapped; inserting at the front must grow it.
+    test.assertOkValue(queue.push_front(second), true);
+    test.assertSomeValue(queue.peek_front(), second);
+    test.assertSomeValue(queue.peek_back(), first);
+    test.assertSomeValue(queue.pop_front(), second);
+    test.assertSomeValue(queue.pop_back(), first);
+    test.assertSomeValue(queue.pop_front(), second);
+    test.assertSomeValue(queue.pop_back(), third);
+    test.assertNone(queue.peek_front());
+    test.assertNone(queue.peek_back());
+    test.assertNone(queue.pop_front());
+    test.assertNone(queue.pop_back());
+    test.assertOkValue(queue.push_front(third), true);
+    test.assertSomeValue(queue.pop_back(), third);
+    delete queue;
+};
+
+fn assertFloat(const option::<float> value, const float expected) -> void {
+    match value {
+        Some(actual) => {
+            const float stored = actual;
+            test.assertTrue(stored == expected);
+        },
+        None => test.assertTrue(false)
+    };
+};
+
+fn checkFloatDeque(float first, float second, float third) -> void {
+    let queue = new deque::<float>(2);
+    test.assertOkValue(queue.push_back(first), true);
+    test.assertOkValue(queue.push_front(second), true);
+    test.assertOkValue(queue.push_back(third), true);
+    assertFloat(queue.peek_front(), second);
+    assertFloat(queue.peek_back(), third);
+    assertFloat(queue.pop_front(), second);
+    assertFloat(queue.pop_back(), third);
+    assertFloat(queue.pop_front(), first);
+    test.assertNone(queue.pop_back());
+    delete queue;
+};
+
+shared class DequePlain {
+    mutable int key = key;
+    fn init(int key) -> Self { return my; };
+};
+
+mutable int dequeOwnedDrops = 0;
+unique class DequeOwned {
+    mutable int key = key;
+    fn init(int key) -> Self { return my; };
+    fn del() -> void { dequeOwnedDrops = dequeOwnedDrops + 1; };
+};
+
+mutable int dequeCopyCount = 0;
+mutable int dequeCopyDrops = 0;
+unique class DequeCopyOwned {
+    mutable int key = key;
+    fn init(int key) -> Self { return my; };
+    fn __copy__() -> Self {
+        dequeCopyCount = dequeCopyCount + 1;
+        return new DequeCopyOwned(my.key);
+    };
+    fn del() -> void { dequeCopyDrops = dequeCopyDrops + 1; };
+};
+
+types(T)
+fn assertPayload(const T value, int expected) -> void {
+    match value {
+        Some(payload) => test.assertEqual(expected, payload.key),
+        None => test.assertTrue(false)
+    };
+};
+
+// Resource-free payload: tests value copying without assuming unique ownership.
+shared class DequeRecord {
+    mutable int key = key;
+    mutable long stamp = stamp;
+    mutable char marker = marker;
+
+    fn init(int key, long stamp, char marker) -> Self { return my; };
+    fn __copy__() -> Self { return new DequeRecord(my.key, my.stamp, my.marker); };
+};
+
+types(T)
+fn assertRecord(const T value, int key, long stamp, char marker) -> void {
+    match value {
+        Some(record) => {
+            test.assertEqual(key, record.key);
+            test.assertEqual(stamp, record.stamp);
+            test.assertEqual(marker, record.marker);
+        },
+        None => test.assertTrue(false)
+    };
+};
+
+
+fn main() -> int {
+    test.describe("deque template specializations", fn () {
+        test.it("preserves chars through wrapped growth and both ends", fn () {
+            checkPrimitiveDeque::<char>('a', 'Z', '0');
+        });
+
+        test.it("preserves byte values including zero", fn () {
+            const byte first = 0;
+            const byte second = 255;
+            const byte third = 42;
+            checkPrimitiveDeque::<byte>(first, second, third);
+        });
+
+        test.itSkip("preserves signed short values beyond the byte range", "compiler rejects short as a size expression in raw_buffer and deque growth");
+
+        test.itSkip("preserves longs beyond the 32-bit range", "compiler rejects long as a size expression in raw_buffer and deque growth");
+
+        test.it("preserves fractional floats and zero", fn () {
+            const float first = 0.0;
+            const float second = -2.5;
+            const float third = 1.25;
+            checkFloatDeque(first, second, third);
+        });
+
+        test.it("preserves false through wrapped growth and mixed end operations", fn () {
+            checkPrimitiveDeque::<bool>(false, true, false);
+        });
+
+        test.it("preserves address values and Some(NULL)", fn () {
+            let queue = new deque::<adr>(2);
+            const adr first = "first pointer";
+            const adr second = "second pointer";
+            const adr empty = NULL;
+            test.assertOkValue(queue.push_back(first), true);
+            test.assertOkValue(queue.push_front(second), true);
+            test.assertOkValue(queue.push_back(empty), true);
+            test.assertSomeValue(queue.peek_front(), second);
+            test.assertSomeValue(queue.peek_back(), empty);
+            test.assertSomeValue(queue.pop_back(), empty);
+            test.assertSomeValue(queue.pop_front(), second);
+            test.assertSomeValue(queue.pop_back(), first);
+            test.assertNone(queue.pop_front());
+            delete queue;
+        });
+
+        test.it("copies all fields of class values through wrapped growth", fn () {
+            let queue = new deque::<DequeRecord>(3);
+            const long first_stamp = #65536 * #65536 + #1;
+            const long second_stamp = first_stamp * #2 - #1;
+            const long third_stamp = first_stamp * #4 - #3;
+            let first = DequeRecord(1, first_stamp, 'a');
+            let second = DequeRecord(2, second_stamp, 'b');
+            let third = DequeRecord(3, third_stamp, 'c');
+            test.assertOkValue(queue.push_back(first), true);
+            test.assertOkValue(queue.push_back(second), true);
+            test.assertOkValue(queue.push_back(third), true);
+            // The buffer stores values independently of the source objects.
+            first.key = 99;
+            first.stamp = #99;
+            first.marker = 'z';
+            assertRecord(queue.pop_front(), 1, first_stamp, 'a');
+            test.assertOkValue(queue.push_back(second), true);
+            test.assertOkValue(queue.push_front(third), true);
+            assertRecord(queue.peek_front(), 3, third_stamp, 'c');
+            assertRecord(queue.peek_back(), 2, second_stamp, 'b');
+            assertRecord(queue.pop_front(), 3, third_stamp, 'c');
+            assertRecord(queue.pop_back(), 2, second_stamp, 'b');
+            assertRecord(queue.pop_front(), 2, second_stamp, 'b');
+            assertRecord(queue.pop_back(), 3, third_stamp, 'c');
+            test.assertNone(queue.pop_front());
+            test.assertNone(queue.pop_back());
+            test.assertOkValue(queue.push_front(first), true);
+            assertRecord(queue.pop_back(), 99, #99, 'z');
+            delete queue;
+        });
+
+        test.it("peeking copyable class values returns independent copies", fn () {
+            let queue = new deque::<DequeRecord>(1);
+            const long first_stamp = #65536 * #65536 + #1;
+            let original = DequeRecord(7, first_stamp, 'q');
+            test.assertOkValue(queue.push_front(original), true);
+            match queue.peek_front() {
+                Some(copy) => {
+                    copy.key = 99;
+                    copy.stamp = #99;
+                    copy.marker = 'z';
+                },
+                None => test.assertTrue(false)
+            };
+            assertRecord(queue.peek_back(), 7, first_stamp, 'q');
+            match queue.peek_back() {
+                Some(copy) => copy.key = 88,
+                None => test.assertTrue(false)
+            };
+            assertRecord(queue.pop_front(), 7, first_stamp, 'q');
+            test.assertNone(queue.peek_front());
+            delete queue;
+        });
+
+        test.it("borrows non-copyable shared values and returns independent popped values", fn () {
+            let queue = new deque::<DequePlain>(2);
+            let first = DequePlain(10);
+            let second = DequePlain(20);
+            test.assertOkValue(queue.push_back(first), true);
+            test.assertOkValue(queue.push_front(second), true);
+            first.key = 99;
+            const local option::<&DequePlain> front = queue.peek_front();
+            assertPayload(front, 20);
+            match front {
+                Some(value) => value.key = 21,
+                None => test.assertTrue(false)
+            };
+            delete front;
+            assertPayload(queue.peek_front(), 21);
+            assertPayload(queue.peek_back(), 10);
+            const local option::<DequePlain> taken = queue.pop_front();
+            test.assertOkValue(queue.push_back(second), true);
+            test.assertOkValue(queue.push_front(first), true);
+            delete queue;
+            assertPayload(taken, 21);
+            delete taken;
+        });
+
+        test.it("moves unique values through growth and destroys each value exactly once", fn () {
+            dequeOwnedDrops = 0;
+            let queue = new deque::<DequeOwned>(2);
+            test.assertOkValue(queue.push_back(new DequeOwned(1)), true);
+            test.assertOkValue(queue.push_front(new DequeOwned(2)), true);
+            test.assertOkValue(queue.push_back(new DequeOwned(3)), true);
+            test.assertEqual(0, dequeOwnedDrops);
+            const local option::<&DequeOwned> front = queue.peek_front();
+            const local option::<&DequeOwned> back = queue.peek_back();
+            assertPayload(front, 2);
+            assertPayload(back, 3);
+            delete front;
+            delete back;
+            test.assertEqual(0, dequeOwnedDrops);
+            const local option::<DequeOwned> taken_front = queue.pop_front();
+            const local option::<DequeOwned> taken_back = queue.pop_back();
+            test.assertEqual(0, dequeOwnedDrops);
+            test.assertOkValue(queue.push_front(new DequeOwned(4)), true);
+            delete queue;
+            test.assertEqual(2, dequeOwnedDrops);
+            assertPayload(taken_front, 2);
+            assertPayload(taken_back, 3);
+            delete taken_front;
+            test.assertEqual(3, dequeOwnedDrops);
+            delete taken_back;
+            test.assertEqual(4, dequeOwnedDrops);
+        });
+
+        test.it("copies unique values only when peeking and moves them when popping", fn () {
+            dequeCopyCount = 0;
+            dequeCopyDrops = 0;
+            let queue = new deque::<DequeCopyOwned>(1);
+            test.assertOkValue(queue.push_front(new DequeCopyOwned(7)), true);
+            test.assertOkValue(queue.push_back(new DequeCopyOwned(8)), true);
+            test.assertEqual(0, dequeCopyCount);
+            const local option::<DequeCopyOwned> front = queue.peek_front();
+            const local option::<DequeCopyOwned> back = queue.peek_back();
+            test.assertEqual(2, dequeCopyCount);
+            assertPayload(front, 7);
+            assertPayload(back, 8);
+            match front {
+                Some(copy) => copy.key = 99,
+                None => test.assertTrue(false)
+            };
+            delete front;
+            delete back;
+            test.assertEqual(2, dequeCopyDrops);
+            const local option::<DequeCopyOwned> taken_front = queue.pop_front();
+            const local option::<DequeCopyOwned> taken_back = queue.pop_back();
+            assertPayload(taken_front, 7);
+            assertPayload(taken_back, 8);
+            test.assertEqual(2, dequeCopyCount);
+            delete queue;
+            test.assertEqual(2, dequeCopyDrops);
+            delete taken_front;
+            delete taken_back;
+            test.assertEqual(4, dequeCopyDrops);
+        });
+    });
+
+    test.summary();
+    return 0;
+};
