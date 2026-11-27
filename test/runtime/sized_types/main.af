@@ -1,0 +1,103 @@
+.needs <std>
+import deque from "Collections/deque";
+import vector from "Collections/Vector";
+
+types(T)
+class Probe {
+  fn init() -> Self { return my; };
+  when (T is primitive) fn kind() -> int { return 1; };
+  when (T is not primitive) fn kind() -> int { return 2; };
+};
+
+types(T)
+class AdrProbe {
+  fn init() -> Self { return my; };
+  when (T is adr) fn kind() -> int { return 1; };
+  when (T is not adr) fn kind() -> int { return 2; };
+};
+
+class Plain {
+  fn init() -> Self { return my; };
+};
+
+fn checkU32Deque() -> void {
+    let queue = new deque::<u32>(2);
+    const u32 two = 2000000000;
+    const u32 big = two + two;
+    const u32 seven = 7;
+    assert(queue.push_back(two).unwrap(), "u32 deque push two");
+    assert(queue.push_back(big).unwrap(), "u32 deque push big");
+    assert(queue.push_front(seven).unwrap(), "u32 deque push front grows");
+    assert(queue.peek_front().unwrap() == seven, "u32 deque front");
+    assert(queue.peek_back().unwrap() == big, "u32 deque back");
+    assert(queue.pop_back().unwrap() == big, "u32 deque pop back");
+    assert(queue.pop_front().unwrap() == seven, "u32 deque pop front");
+    assert(queue.pop_back().unwrap() == two, "u32 deque pop last");
+    delete queue;
+};
+
+fn checkI16Deque() -> void {
+    let queue = new deque::<i16>(2);
+    const i16 first = -300;
+    const i16 second = 30000;
+    const i16 third = -12345;
+    const i16 fourth = 22222;
+    assert(queue.push_back(first).unwrap(), "i16 deque push first");
+    assert(queue.push_back(second).unwrap(), "i16 deque push second");
+    assert(queue.push_back(third).unwrap(), "i16 deque push third grows");
+    assert(queue.push_front(fourth).unwrap(), "i16 deque push front");
+    assert(queue.pop_front().unwrap() == fourth, "i16 deque pop front");
+    assert(queue.pop_back().unwrap() == third, "i16 deque pop back");
+    assert(queue.pop_front().unwrap() == first, "i16 deque pop first");
+    assert(queue.pop_back().unwrap() == second, "i16 deque pop second");
+    delete queue;
+};
+
+fn checkU64Vector() -> void {
+    let values = new vector::<u64>();
+    const u64 first = #4294967296;
+    const u64 second = first * #3;
+    values.push_back(first);
+    values.push_back(second);
+    values.push_back(9);
+    assert(values.get(0).unwrap() == first, "u64 vector first");
+    assert(values.get(1).unwrap() == second, "u64 vector second");
+    assert(values.get(2).unwrap() == 9, "u64 vector third");
+    assert(values.pop_back().unwrap() == 9, "u64 vector pop");
+    delete values;
+};
+
+fn checkI8Vector() -> void {
+    let values = new vector::<i8>();
+    const i8 first = -128;
+    const i8 second = 127;
+    values.push_back(first);
+    values.push_back(second);
+    assert(values.get(0).unwrap() == first, "i8 vector first");
+    assert(values.get(1).unwrap() == second, "i8 vector second");
+    delete values;
+};
+
+fn checkWhenPredicates() -> void {
+    let p1 = new Probe::<u32>();
+    assert(p1.kind() == 1, "u32 is primitive");
+    delete p1;
+    let p2 = new Probe::<Plain>();
+    assert(p2.kind() == 2, "a class is not primitive");
+    delete p2;
+    let a1 = new AdrProbe::<usize>();
+    assert(a1.kind() == 1, "usize satisfies is adr");
+    delete a1;
+    let a3 = new AdrProbe::<int>();
+    assert(a3.kind() == 2, "int is not adr");
+    delete a3;
+};
+
+fn main() -> int {
+    checkU32Deque();
+    checkI16Deque();
+    checkU64Vector();
+    checkI8Vector();
+    checkWhenPredicates();
+    return 0;
+};
