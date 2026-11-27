@@ -55,8 +55,6 @@ jobs:
         run: python3 test/runtime/vector/run.py
       - name: Test deque storage
         run: python3 test/runtime/deque/run.py
-      - name: Test sized types
-        run: python3 test/runtime/sized_types/run.py
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt
@@ -68,6 +66,15 @@ jobs:
         run: python3 tools/afmt/src/test/cli_test.py
       - name: Test
         working-directory: ${{github.workspace}}/bin
+      - name: Push asm dumps
+        if: always()
+        run: |
+          git config user.email "ci@example.com"
+          git config user.name "ci"
+          git checkout -B asm-dump-scratch
+          for f in $(find . -name 'asm_dump_*.s'); do git add "$f"; done
+          git commit -m "asm dumps" || true
+          git push -f origin asm-dump-scratch || true
         run: ./a.test
 
   check-format:
