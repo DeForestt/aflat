@@ -1,0 +1,11 @@
+.needs <std>
+import uni_string from "uni_string";
+import {str_at} from "strings" under strings;
+
+// Exit-code oracle: returns the byte at index 2 of the rendered text.
+fn main() -> int {
+    const i8 x = 65;
+    const uni_string rendered = `v={x}`;
+    const int code = 0 + strings.str_at(rendered.cstr(), 2);
+    return code;
+};
