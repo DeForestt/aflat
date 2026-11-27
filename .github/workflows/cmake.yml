@@ -49,6 +49,21 @@ jobs:
         run: bash ./rebuild-libs.sh -j "$(nproc)"
       - name: Build project
         run: ./bin/aflat build
+      - name: Probe work_cache_dir
+        if: always()
+        run: python3 test/probes/probe.py work_cache_dir
+      - name: Probe work_any_new_file
+        if: always()
+        run: python3 test/probes/probe.py work_any_new_file
+      - name: Probe root_cache_main_s
+        if: always()
+        run: python3 test/probes/probe.py root_cache_main_s
+      - name: Probe root_cache_dir
+        if: always()
+        run: python3 test/probes/probe.py root_cache_dir
+      - name: Probe work_bin_aout
+        if: always()
+        run: python3 test/probes/probe.py work_bin_aout
       - name: Probe cache_main_s
         if: always()
         run: python3 test/probes/probe.py cache_main_s

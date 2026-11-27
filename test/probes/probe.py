@@ -4,39 +4,30 @@ import pathlib, subprocess, sys, tempfile
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SRC = "fn main() -> int { return 0; };\n"
 
-def build(work, no_cache):
+def build(work):
     (work / "src").mkdir(exist_ok=True)
     (work / "bin").mkdir(exist_ok=True)
     (work / "aflat.cfg").write_text("[build]\nmain = main\n")
     (work / "src" / "main.af").write_text(SRC)
-    cmd = [str(ROOT / "bin" / "aflat")]
-    if no_cache:
-        cmd.append("--no-cache")
-    cmd.append("build")
-    subprocess.run(cmd, cwd=work, check=True)
+    subprocess.run([str(ROOT / "bin" / "aflat"), "--no-cache", "build"],
+                   cwd=work, check=True)
 
 def main():
     name = sys.argv[1]
-    aflat_cache = pathlib.Path.home() / ".cache" / "aflat"
     with tempfile.TemporaryDirectory() as tmp:
         work = pathlib.Path(tmp)
-        if name == "cache_main_s":
-            build(work, True)
-            return 0 if (work / ".cache" / "main.s").exists() else 1
-        if name == "cache_main_s_cached":
-            build(work, False)
-            return 0 if (work / ".cache" / "main.s").exists() else 1
-        if name == "any_s_in_work":
-            build(work, True)
-            hits = [p for p in work.rglob("*") if p.suffix == ".s"]
-            return 0 if hits else 1
-        if name == "any_s_in_work_cached":
-            build(work, False)
-            hits = [p for p in work.rglob("*") if p.suffix == ".s"]
-            return 0 if hits else 1
-        if name == "home_cache":
-            build(work, True)
-            return 0 if aflat_cache.exists() else 1
+        build(work)
+        if name == "work_cache_dir":
+            return 0 if (work / ".cache").exists() else 1
+        if name == "work_any_new_file":
+            names = [p.name for p in work.rglob("*") if p.is_file()]
+            return 0 if any("main" in n and n != "main.af" for n in names) else 1
+        if name == "root_cache_main_s":
+            return 0 if (ROOT / ".cache" / "main.s").exists() else 1
+        if name == "root_cache_dir":
+            return 0 if (ROOT / ".cache").exists() else 1
+        if name == "work_bin_aout":
+            return 0 if (work / "bin" / "a.out").exists() else 1
     return 1
 
 if __name__ == "__main__":
