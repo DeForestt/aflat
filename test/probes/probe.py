@@ -100,6 +100,40 @@ fn main() -> int {
     return 0;
 };
 """, 0),
+
+  "byteat_0": (""".needs <std>
+import {byteAt} from "strings" under st;
+fn main() -> int { return st.byteAt("again", 0); };
+""", 97),
+  "byteat_1": (""".needs <std>
+import {byteAt} from "strings" under st;
+fn main() -> int { return st.byteAt("again", 1); };
+""", 103),
+  "byteat_4": (""".needs <std>
+import {byteAt} from "strings" under st;
+fn main() -> int { return st.byteAt("again", 4); };
+""", 110),
+  "str_at_eq_a": (""".needs <std>
+import {str_at} from "strings" under st;
+fn main() -> int {
+    if st.str_at("again", 0) == 'a' { return 0; };
+    return 1;
+};
+""", 0),
+  "str_at_eq_n": (""".needs <std>
+import {str_at} from "strings" under st;
+fn main() -> int {
+    if st.str_at("again", 4) == 'n' { return 0; };
+    return 1;
+};
+""", 0),
+  "hash_full_one": (""".needs <std>
+import {hash} from "strings" under st;
+fn main() -> int {
+    if st.hash("one") == 1675433975 { return 0; };
+    return 1;
+};
+""", 0),
   "map_again": (""".needs <std>
 import unordered_map from "Collections/unordered_map";
 fn main() -> int {
