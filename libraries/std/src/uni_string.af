@@ -607,7 +607,8 @@ private adr append_raw(immutable adr out, immutable adr raw) {
 private adr append_char(immutable adr out, immutable char c) {
     const char[2] buff;
     buff =: c;
-    buff =: '\0';
+    const adr tail = buff + 1;
+    tail =: '\0';
     return append_raw(out, buff);
 };
 

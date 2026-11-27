@@ -1,0 +1,34 @@
+.needs <std>
+
+// Regression coverage for the formatter read shape: a deref-read through
+// a * adr parameter must load the pointee exactly once, at the cast
+// width. The runtime formatters receive their packed argument buffer
+// this way for every narrow specifier (%t/%w/%T/%W).
+fn readChar(* adr p) -> int {
+    const char raw = p as char;
+    return 0 + raw;
+};
+
+fn readShort(* adr p) -> int {
+    const short raw = p as short;
+    return 0 + raw;
+};
+
+fn readByte(* adr p) -> int {
+    const byte raw = p as byte;
+    return 0 + raw;
+};
+
+fn readInt(* adr p) -> int {
+    const int n = p as int;
+    return n;
+};
+
+fn main() -> int {
+    assert(readChar("A") == 65, "char through * adr param");
+    assert(readShort("A") == 65, "short through * adr param");
+    assert(readByte("A") == 65, "byte through * adr param");
+    const int x = 123456;
+    assert(readInt(?x) == 123456, "int through * adr param");
+    return 0;
+};

@@ -1,9 +1,0 @@
-.needs <std>
-
-// Bug A oracle: byte 200 promoted into int arithmetic.
-fn main() -> int {
-    const byte b = 200;
-    const int n = 0 + b;
-    if n == 200 { return 60; };
-    return 61;
-};

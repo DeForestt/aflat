@@ -1,9 +1,0 @@
-.needs <std>
-
-// Isolation: pure local short -> int promotion.
-fn main() -> int {
-    const short s = 30000;
-    const int n = 0 + s;
-    if n == 30000 { return 7; };
-    return 1;
-};

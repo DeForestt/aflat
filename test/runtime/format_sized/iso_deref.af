@@ -1,9 +1,0 @@
-.needs <std>
-
-// Isolation: dereference-read a char through an adr, promote, return it.
-fn main() -> int {
-    const adr p = "A";
-    const char raw = p as char;
-    const int n = 0 + raw;
-    return n;
-};

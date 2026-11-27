@@ -1,8 +1,0 @@
-.needs <std>
-import {fPrint} from "io" under io;
-
-// Hand-packed %w through fPrint: "A" supplies bytes 65, 0 -> value 65.
-fn main() -> int {
-    io.fPrint("v=%w\n", "A");
-    return 0;
-};
