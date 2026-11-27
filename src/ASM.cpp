@@ -405,7 +405,60 @@ std::string asmc::Div::toString() {
   if (this->opType == asmc::Float)
     return "\tdivss\t" + this->op1 + ", " + this->op2 + "\n";
 
-  return "\tcltd\n\tidiv\t" + this->op1 + "\n";
+  // The dividend lives in the accumulator pair (ax, dx:ax, edx:eax or
+  // rdx:rax, by size). Signed division sign-extends the accumulator into
+  // the high half; unsigned division zeroes the high half instead.
+  if (this->isUnsigned) {
+    std::string extend = "";
+    switch (this->size) {
+    case asmc::Byte:
+      extend = "\txor\t%ah, %ah\n";
+      break;
+    case asmc::Word:
+      extend = "\txor\t%dx, %dx\n";
+      break;
+    default:
+      extend = "\txor\t%rdx, %rdx\n";
+      break;
+    }
+    return extend + "\tdiv\t" + this->op1 + "\n";
+  }
+
+  std::string extend = "";
+  switch (this->size) {
+  case asmc::Word:
+    extend = "\tcwd\n";
+    break;
+  default:
+    extend = "\tcltd\n";
+    break;
+  }
+  return extend + "\tidiv\t" + this->op1 + "\n";
+}
+
+std::string asmc::Shr::toString() {
+  std::string size = "";
+  switch (this->size) {
+  case asmc::Byte:
+    size = "b";
+    break;
+  case asmc::Word:
+    size = "w";
+    break;
+  case asmc::DWord:
+    size = "l";
+    break;
+  case asmc::QWord:
+    size = "q";
+    break;
+  case asmc::AUTO:
+    size = "q";
+    break;
+  default:
+    size = "l";
+    break;
+  }
+  return "\tshr" + size + "\t" + this->op1 + ", " + this->op2 + "\n";
 }
 
 std::string asmc::Subq::toString() {
