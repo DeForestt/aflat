@@ -126,9 +126,19 @@ fn main() -> int {
             checkPrimitiveDeque::<byte>(first, second, third);
         });
 
-        test.itSkip("preserves signed short values beyond the byte range", "compiler rejects short as a size expression in raw_buffer and deque growth");
+        test.it("preserves signed short values beyond the byte range", fn () {
+            const short first = -300;
+            const short second = 30000;
+            const short third = -12345;
+            checkPrimitiveDeque::<short>(first, second, third);
+        });
 
-        test.itSkip("preserves longs beyond the 32-bit range", "compiler rejects long as a size expression in raw_buffer and deque growth");
+        test.it("preserves longs beyond the 32-bit range", fn () {
+            const long first = #65536 * #65536 + #1;
+            const long second = first * #2 - #1;
+            const long third = first * #4 - #3;
+            checkPrimitiveDeque::<long>(first, second, third);
+        });
 
         test.it("preserves fractional floats and zero", fn () {
             const float first = 0.0;
