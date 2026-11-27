@@ -9,7 +9,7 @@ import { exp } from "math" under math;
 import Error from "Utils/Error";
 import vector from "Collections/Vector";
 
-import {int_toString, int_toStringL0, len, str_comp, str_at, str_toInt} from "strings" under str;
+import {int_toString, int_toStringL0, long_toString, uint_toString, ulong_toString, len, str_comp, str_at, str_toInt} from "strings" under str;
 import {print, printInt, printHex} from "io" under io;
 
 // Convert an uppercase ASCII character to lowercase; leaves others untouched.
@@ -730,6 +730,94 @@ export string fString(const string fmt, * adr args) {
                     newString = newString + part;
                 };
                 args = args + int;
+            } else if fmt.at(i) == 'l' {
+                const char[24] buff;
+                const long n = args as long;
+                if n == #0 {
+                    newString = newString.push('0');
+                } else {
+                    str.long_toString(n, buff);
+                    const adr buffAdr = buff;
+                    const string part = new string(buffAdr);
+                    newString = newString + part;
+                };
+                args = args + long;
+            } else if fmt.at(i) == 'U' {
+                const char[24] buff;
+                const u64 n = args as u64;
+                if n == 0 {
+                    newString = newString.push('0');
+                } else {
+                    str.ulong_toString(n, buff);
+                    const adr buffAdr = buff;
+                    const string part = new string(buffAdr);
+                    newString = newString + part;
+                };
+                args = args + u64;
+            } else if fmt.at(i) == 'u' {
+                const char[24] buff;
+                const u32 n = args as u32;
+                if n == 0 {
+                    newString = newString.push('0');
+                } else {
+                    str.uint_toString(n, buff);
+                    const adr buffAdr = buff;
+                    const string part = new string(buffAdr);
+                    newString = newString + part;
+                };
+                args = args + u32;
+            } else if fmt.at(i) == 't' {
+                const char[24] buff;
+                const char raw = args as char;
+                const int n = 0 + raw;
+                if n == 0 {
+                    newString = newString.push('0');
+                } else {
+                    str.int_toString(n, buff);
+                    const adr buffAdr = buff;
+                    const string part = new string(buffAdr);
+                    newString = newString + part;
+                };
+                args = args + char;
+            } else if fmt.at(i) == 'w' {
+                const char[24] buff;
+                const short raw = args as short;
+                const int n = 0 + raw;
+                if n == 0 {
+                    newString = newString.push('0');
+                } else {
+                    str.int_toString(n, buff);
+                    const adr buffAdr = buff;
+                    const string part = new string(buffAdr);
+                    newString = newString + part;
+                };
+                args = args + short;
+            } else if fmt.at(i) == 'T' {
+                const char[24] buff;
+                const byte raw = args as byte;
+                const int n = 0 + raw;
+                if n == 0 {
+                    newString = newString.push('0');
+                } else {
+                    str.int_toString(n, buff);
+                    const adr buffAdr = buff;
+                    const string part = new string(buffAdr);
+                    newString = newString + part;
+                };
+                args = args + byte;
+            } else if fmt.at(i) == 'W' {
+                const char[24] buff;
+                const u16 raw = args as u16;
+                const int n = 0 + raw;
+                if n == 0 {
+                    newString = newString.push('0');
+                } else {
+                    str.int_toString(n, buff);
+                    const adr buffAdr = buff;
+                    const string part = new string(buffAdr);
+                    newString = newString + part;
+                };
+                args = args + u16;
             } else if fmt.at(i) == 'f' {
                 const float f = args as float;
                 // Avoid materializing a temporary string for the most common

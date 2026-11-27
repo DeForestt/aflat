@@ -50,6 +50,32 @@ static std::string formattedStringHintForType(const std::string &typeName) {
   return "";
 }
 
+// Format specifier for an integer type name, chosen by canonical type so
+// the specifier's read width matches the width the format args list stored
+// for the argument: the runtime formatters advance through the packed args
+// by the specifier's width. Legacy names land on the same specifier as
+// their sized alias (short -> %w like i16, long -> %l like i64). adr and
+// char never reach this helper: the f-string dispatch handles them first
+// (%a for adr, %c for char).
+static std::string integerFormatSpecifier(const std::string &typeName) {
+  const std::string canonical = gen::utils::integerTypeAlias(typeName);
+  if (canonical == "i8")
+    return "%t";
+  if (canonical == "i16")
+    return "%w";
+  if (canonical == "i64" || canonical == "isize")
+    return "%l";
+  if (canonical == "u8")
+    return "%T";
+  if (canonical == "u16")
+    return "%W";
+  if (canonical == "u32")
+    return "%u";
+  if (canonical == "u64" || canonical == "usize")
+    return "%U";
+  return "%d";
+}
+
 static std::optional<std::string> taskValueType(const std::string &typeName) {
   static const std::string prefix = "task<";
   if (typeName.size() <= prefix.size() || typeName.rfind(prefix, 0) != 0 ||
@@ -1075,6 +1101,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         strLit->val.replace(pos, 3, "%b");
       else if (exp.type == "char")
         strLit->val.replace(pos, 3, "%c");
+      else if (gen::utils::isIntegerTypeName(exp.type))
+        strLit->val.replace(pos, 3, integerFormatSpecifier(exp.type));
       else {
         // Do not stringify the type name itself. Preserve the original value
         // and format it as an address-like fallback instead.

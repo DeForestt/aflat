@@ -1582,6 +1582,50 @@ fn main() -> int {
   CHECK(assembled == 0);
 }
 
+TEST_CASE("f-strings pick width-matched specifiers for sized integers",
+          "[codegen][fstring][sized-types][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_fstring_sized_specifiers");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+
+  std::ofstream(source) << R"(.needs <std>
+fn main() -> int {
+  const i8 a = -128;
+  const i16 b = -30000;
+  const i32 c = -123456789;
+  const i64 d = #1234567890123456789;
+  const u8 e = 255;
+  const u16 f = 65535;
+  const u32 two = 2000000000;
+  const u32 g = two + two;
+  const u64 zero = 0;
+  const u64 h = zero - 1;
+  mutable isize i = 9876543210;
+  i = i * -1;
+  const usize j = 12345678901;
+  const short k = -30000;
+  const long l = #987654321098765432;
+  const byte m = 200;
+  const int n = -42;
+  const char o = 'x';
+  let rendered = `{a} {b} {c} {d} {e} {f} {g} {h} {i} {j} {k} {l} {m} {n} {o}`;
+  return 0;
+};
+)";
+
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+
+  REQUIRE(built);
+  CHECK(text.find("%t %w %d %l %T %W %u %U %l %U %w %l %T %d %c") !=
+        std::string::npos);
+}
+
 TEST_CASE("imported union aliases preserve float operand metadata",
           "[imports][union][float][regression]") {
   namespace fs = std::filesystem;
