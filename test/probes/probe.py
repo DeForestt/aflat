@@ -45,6 +45,39 @@ STAGES = {
 }
 CHECKS.update(STAGES)
 
+STAGES2 = {
+  "u64_e": """fn u64_e() -> void {
+    const u64 first = #4294967296;
+    assert(first == #4294967296, "u64 long literal round trip");
+};
+""",
+  "u64_f": """fn u64_f() -> void {
+    let values = new vector::<i64>();
+    const i64 first = #4294967296;
+    values.push_back(first);
+    assert(values.get(0).unwrap() == first, "i64 vector first");
+    delete values;
+};
+""",
+  "u64_g": """fn u64_g() -> void {
+    let values = new vector::<u64>();
+    const u64 first = 5;
+    values.push_back(first);
+    assert(values.get(0).unwrap() == first, "u64 vector small");
+    delete values;
+};
+""",
+  "u64_h": """fn u64_h() -> void {
+    let values = new vector::<u64>();
+    const u64 first = #4294967296;
+    values.push_back(first);
+    assert(values.count() == 1, "u64 vector count");
+    delete values;
+};
+""",
+}
+CHECKS.update(STAGES2)
+
 def main():
     name = sys.argv[1]
     source = PRELUDE + CHECKS[name] + "\nfn main() -> int { " + name + "(); return 0; };\n"
