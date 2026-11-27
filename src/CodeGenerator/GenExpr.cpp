@@ -545,15 +545,25 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
             }
           }
         };
-      } else if (ident == "int") {
+      } else if (ident == "int" || ident == "i32" || ident == "u32") {
         output.size = asmc::DWord;
         output.access = "$4";
+        output.type = "int";
+      } else if (ident == "short" || ident == "i16" || ident == "u16") {
+        output.size = asmc::DWord;
+        output.access = "$2";
+        output.type = "int";
+      } else if (ident == "long" || ident == "i64" || ident == "u64" ||
+                 ident == "isize" || ident == "usize") {
+        output.size = asmc::DWord;
+        output.access = "$8";
         output.type = "int";
       } else if (ident == "number") {
         output.size = asmc::DWord;
         output.access = "$8";
         output.type = "int";
-      } else if (ident == "char" || ident == "bool" || ident == "byte") {
+      } else if (ident == "char" || ident == "bool" || ident == "byte" ||
+                 ident == "i8" || ident == "u8") {
         output.size = asmc::DWord;
         output.access = "$1";
         output.type = "int";
@@ -1337,9 +1347,13 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         break;
       }
       case ast::Great: {
-        asmc::Sar *andBit = new asmc::Sar();
         gen::Expr expr1 = probeExpr(comp.expr1, Dummy);
         gen::Expr expr2 = probeExpr(comp.expr2, Dummy);
+
+        // Right shift is arithmetic for signed types and logical for
+        // unsigned types.
+        asmc::ArithInst *andBit =
+            static_cast<asmc::ArithInst *>(new asmc::Sar());
 
         this->prepareCompound(comp, OutputFile);
 
@@ -1399,6 +1413,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         div->op1 = expr2.access;
         div->opType = expr1.op;
         div->size = expr1.size;
+        div->isUnsigned = gen::utils::isUnsignedIntegerTypeName(expr1.type);
 
         std::string to1 = registers()["%rdx"]->get(expr1.size);
         std::string to2 = registers()["%rax"]->get(expr1.size);
@@ -1452,6 +1467,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         gen::Expr expr2 = probeExpr(comp.expr2, Dummy);
 
         div->op1 = expr2.access;
+        div->isUnsigned = gen::utils::isUnsignedIntegerTypeName(expr1.type);
 
         if (expr1.op == asmc::Float) {
           std::string to1 = registers()["%xmm1"]->get(asmc::DWord);
