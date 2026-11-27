@@ -1,7 +1,7 @@
 .needs <asm>
 .needs <std>
 
-import {ascii, len} from "strings" under str;
+import {ascii, len, uint_toString, ulong_toString} from "strings" under str;
 import {exp, longExp} from "math" under math;
 import string from "String";
 import { print } from "String" under st;
@@ -370,6 +370,39 @@ export int fPrint(const adr fmt, * adr args) {
             } else if s.at(i) == 'd' {
                 printInt(args as int);
                 args = args + int;
+            } else if s.at(i) == 'l' {
+                printLong(args as long);
+                args = args + long;
+            } else if s.at(i) == 'U' {
+                const char[24] buff;
+                const u64 n = args as u64;
+                str.ulong_toString(n, buff);
+                const adr buffAdr = buff;
+                print(buffAdr);
+                args = args + u64;
+            } else if s.at(i) == 'u' {
+                const char[24] buff;
+                const u32 n = args as u32;
+                str.uint_toString(n, buff);
+                const adr buffAdr = buff;
+                print(buffAdr);
+                args = args + u32;
+            } else if s.at(i) == 't' {
+                const char raw = args as char;
+                printInt(0 + raw);
+                args = args + char;
+            } else if s.at(i) == 'w' {
+                const short raw = args as short;
+                printInt(0 + raw);
+                args = args + short;
+            } else if s.at(i) == 'T' {
+                const byte raw = args as byte;
+                printInt(0 + raw);
+                args = args + byte;
+            } else if s.at(i) == 'W' {
+                const u16 raw = args as u16;
+                printInt(0 + raw);
+                args = args + u16;
             } else if s.at(i) == 's' {
                 st.print(args as string);
                 args = args + adr;

@@ -1,0 +1,51 @@
+.needs <std>
+
+// Regression (Bug A): a narrower integer right operand in a compound
+// expression must be extended to the left operand's width -- sign-extended
+// for signed types, zero-extended for unsigned ones. The compound codegen
+// used to stage the right operand at its own width and leave the upper
+// bits of the register stale, so e.g. 0 + (short)30000 did not equal 30000.
+fn main() -> int {
+    const short s30000 = 30000;
+    const int n30000 = 0 + s30000;
+    assert(n30000 == 30000, "short 30000 promotes");
+
+    const short sNeg = -30000;
+    const int nNeg = 0 + sNeg;
+    assert(nNeg == -30000, "short -30000 sign-extends");
+
+    const short s256 = 256;
+    const int n256 = 0 + s256;
+    assert(n256 == 256, "short 256 keeps its high byte");
+
+    const short sNeg1 = -1;
+    const int nNeg1 = 0 + sNeg1;
+    assert(nNeg1 == -1, "short -1 sign-extends");
+
+    const u16 uMax = 65535;
+    const int nU16 = 0 + uMax;
+    assert(nU16 == 65535, "u16 65535 zero-extends");
+
+    const byte b200 = 200;
+    const int nByte = 0 + b200;
+    assert(nByte == 200, "byte 200 promotes");
+
+    const char cA = 'A';
+    const int nChar = 0 + cA;
+    assert(nChar == 65, "char variable promotes");
+
+    assert(30000 == s30000, "comparison extends the right operand");
+
+    const int nSub = 0 - s30000;
+    assert(nSub == -30000, "subtraction extends the right operand");
+
+    const long wide = #0 + sNeg;
+    const long wideBack = #0 - wide;
+    assert(wideBack == #30000, "short sign-extends into long arithmetic");
+
+    const u32 two = 2000000000;
+    const u32 uBig = two + two;
+    const long uWide = #0 + uBig;
+    assert(uWide == #4000000000, "u32 zero-extends into long arithmetic");
+    return 0;
+};

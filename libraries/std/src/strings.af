@@ -1,7 +1,7 @@
 .needs <std
 
 import {toInt, toChar, printFloat, printInt, print} from "io" under io;
-import {exp} from "math" under math;
+import {exp, longExp} from "math" under math;
 
 // Interpret an int as a char via pointer casting.
 export char ascii(const int input){
@@ -130,6 +130,114 @@ export int int_toString(int input, adr buffer){
         h = h * factor;
         input = input - h;
         i = i - 1;
+    };
+    buffer =: null;
+    return 0;
+};
+
+// Convert a signed 64-bit integer to a decimal string in-place.
+export int long_toString(long input, adr buffer){
+    long h = 0;
+    const long ten = 10;
+    long factor = 0;
+    int i = 0;
+    const char null = ascii(0);
+
+    if (input == #0){
+        buffer =: '0';
+        buffer = buffer + #1;
+        buffer =: null;
+        return 0;
+    };
+
+    if (input < #0){
+        buffer =: '-';
+        buffer = buffer + #1;
+        input = input * -1;
+    };
+
+    h = input * #1;
+    while (h != #0){
+        h = h / ten;
+        i = i + 1;
+    };
+
+    i = i - 1;
+
+    char out = ' ';
+    while (i > -1){
+        factor = math.longExp(#10, i);
+        h = input / factor;
+        out = io.toChar(0 + h);
+        buffer =: out;
+        buffer = buffer + #1;
+        h = h * factor;
+        input = input - h;
+        i = i - 1;
+    };
+    buffer =: null;
+    return 0;
+};
+
+// Convert an unsigned 32-bit integer to a decimal string in-place.
+export int uint_toString(u32 input, adr buffer){
+    const char null = ascii(0);
+
+    if (input == 0){
+        buffer =: '0';
+        buffer = buffer + #1;
+        buffer =: null;
+        return 0;
+    };
+
+    u32 factor = 1;
+    u32 h = input;
+    while (h >= 10){
+        h = h / 10;
+        factor = factor * 10;
+    };
+
+    char out = ' ';
+    while (true){
+        const u32 digit = input / factor;
+        out = io.toChar(0 + digit);
+        buffer =: out;
+        buffer = buffer + #1;
+        input = input - digit * factor;
+        if (factor == 1){ break; };
+        factor = factor / 10;
+    };
+    buffer =: null;
+    return 0;
+};
+
+// Convert an unsigned 64-bit integer to a decimal string in-place.
+export int ulong_toString(u64 input, adr buffer){
+    const char null = ascii(0);
+
+    if (input == 0){
+        buffer =: '0';
+        buffer = buffer + #1;
+        buffer =: null;
+        return 0;
+    };
+
+    u64 factor = 1;
+    u64 h = input;
+    while (h >= 10){
+        h = h / 10;
+        factor = factor * 10;
+    };
+
+    char out = ' ';
+    while (true){
+        const u64 digit = input / factor;
+        out = io.toChar(0 + digit);
+        buffer =: out;
+        buffer = buffer + #1;
+        input = input - digit * factor;
+        if (factor == 1){ break; };
+        factor = factor / 10;
     };
     buffer =: null;
     return 0;

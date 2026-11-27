@@ -57,6 +57,30 @@ jobs:
         run: python3 test/runtime/deque/run.py
       - name: Test sized types
         run: python3 test/runtime/sized_types/run.py
+      - name: Test sized type formatting (uni values)
+        run: python3 test/runtime/format_sized/run.py values_uni
+      - name: Test sized type formatting (string values)
+        run: python3 test/runtime/format_sized/run.py values_string
+      - name: Test sized type formatting (narrow)
+        run: python3 test/runtime/format_sized/run.py vnarrow
+      - name: Test sized type formatting (signed wide)
+        run: python3 test/runtime/format_sized/run.py vsigned
+      - name: Test sized type formatting (unsigned wide)
+        run: python3 test/runtime/format_sized/run.py vunsigned
+      - name: Test sized type formatting (mixed)
+        run: python3 test/runtime/format_sized/run.py mixed
+      - name: Test sized type formatting (regressions)
+        run: python3 test/runtime/format_sized/run.py regressions
+      - name: Test integer promotion regression
+        run: python3 test/runtime/format_sized/run.py promote
+      - name: Test parameter deref regression
+        run: python3 test/runtime/format_sized/run.py deref_param
+      - name: Test sized type formatting (hand fPrint t)
+        run: python3 test/runtime/format_sized/run.py hand_t.af
+      - name: Test sized type formatting (hand fString t)
+        run: python3 test/runtime/format_sized/run.py hand_t_str.af
+      - name: Test sized type formatting (hand uni fUCstr t)
+        run: python3 test/runtime/format_sized/run.py hand_t_uni.af
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt

@@ -1,0 +1,35 @@
+.needs <std>
+import string from "String";
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+fn checkUni(const uni_string actual, const adr expected, const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn main() -> int {
+    const i8 i8min = -128;
+    checkUni(`i8={i8min}`, "i8=-128", "uni i8 min");
+    const i8 i8max = 127;
+    checkUni(`i8={i8max}`, "i8=127", "uni i8 max");
+    const i8 i8zero = 0;
+    checkUni(`i8={i8zero}`, "i8=0", "uni i8 zero");
+
+    const i16 i16neg = -30000;
+    checkUni(`i16={i16neg}`, "i16=-30000", "uni i16 neg");
+    const i16 i16pos = 30000;
+    checkUni(`i16={i16pos}`, "i16=30000", "uni i16 pos");
+
+    const u8 u8max = 255;
+    checkUni(`u8={u8max}`, "u8=255", "uni u8 max");
+
+    const u16 u16max = 65535;
+    checkUni(`u16={u16max}`, "u16=65535", "uni u16 max");
+
+    const short sh = -30000;
+    checkUni(`short={sh}`, "short=-30000", "uni short neg");
+
+    const byte by = 200;
+    checkUni(`byte={by}`, "byte=200", "uni byte");
+    return 0;
+};

@@ -36,6 +36,25 @@ std::int64_t parseLongLiteral(const std::string &source) {
   REQUIRE(literal != nullptr);
   return literal->val;
 }
+
+std::string fstringAsmFor(const std::string &programBody,
+                          const std::string &tag) {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_fstring_probe_" + tag);
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  std::ofstream(source) << ".needs <std>\nimport uni_string from "
+                           "\"uni_string\";\nfn main() -> int {\n" +
+                               programBody + "\n  return 0;\n};\n";
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+  REQUIRE(built);
+  return text;
+}
 } // namespace
 
 TEST_CASE("rebuilt string libraries preserve addresses and inline receivers",
@@ -1580,6 +1599,95 @@ fn main() -> int {
   CHECK(text.find("call\tpub_Vec3_toString") != std::string::npos);
   CHECK(text.find("call\tpub_uni_string_cstr") != std::string::npos);
   CHECK(assembled == 0);
+}
+
+TEST_CASE("fstring specifier for i8", "[codegen][fstring]") {
+  const auto text = fstringAsmFor("  const i8 x = -128;\n  let r = `v={x}`;", "i8");
+  CHECK(text.find("\"v=%t\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier for i16", "[codegen][fstring]") {
+  const auto text =
+      fstringAsmFor("  const i16 x = -30000;\n  let r = `v={x}`;", "i16");
+  CHECK(text.find("\"v=%w\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier for i32", "[codegen][fstring]") {
+  const auto text =
+      fstringAsmFor("  const i32 x = -123456789;\n  let r = `v={x}`;", "i32");
+  CHECK(text.find("\"v=%d\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier for i64", "[codegen][fstring]") {
+  const auto text = fstringAsmFor(
+      "  const i64 x = #1234567890123456789;\n  let r = `v={x}`;", "i64");
+  CHECK(text.find("\"v=%l\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier for u8", "[codegen][fstring]") {
+  const auto text = fstringAsmFor("  const u8 x = 255;\n  let r = `v={x}`;", "u8");
+  CHECK(text.find("\"v=%T\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier for u16", "[codegen][fstring]") {
+  const auto text =
+      fstringAsmFor("  const u16 x = 65535;\n  let r = `v={x}`;", "u16");
+  CHECK(text.find("\"v=%W\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier for u32", "[codegen][fstring]") {
+  const auto text = fstringAsmFor(
+      "  const u32 two = 2000000000;\n  const u32 x = two + two;\n  let r = "
+      "`v={x}`;",
+      "u32");
+  CHECK(text.find("\"v=%u\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier for u64", "[codegen][fstring]") {
+  const auto text = fstringAsmFor(
+      "  const u64 zero = 0;\n  const u64 x = zero - 1;\n  let r = `v={x}`;",
+      "u64");
+  CHECK(text.find("\"v=%U\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier for isize", "[codegen][fstring]") {
+  const auto text = fstringAsmFor(
+      "  mutable isize x = 987654321;\n  x = x * 10;\n  x = x * -1;\n  let r = "
+      "`v={x}`;",
+      "isize");
+  CHECK(text.find("\"v=%l\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier for usize", "[codegen][fstring]") {
+  const auto text = fstringAsmFor(
+      "  const usize base = 123456789;\n  const usize x = base * 100 + 1;\n  "
+      "let r = `v={x}`;",
+      "usize");
+  CHECK(text.find("\"v=%U\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier for short", "[codegen][fstring]") {
+  const auto text =
+      fstringAsmFor("  const short x = -30000;\n  let r = `v={x}`;", "short");
+  CHECK(text.find("\"v=%w\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier for long", "[codegen][fstring]") {
+  const auto text = fstringAsmFor(
+      "  const long x = #987654321098765432;\n  let r = `v={x}`;", "long");
+  CHECK(text.find("\"v=%l\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier for byte", "[codegen][fstring]") {
+  const auto text =
+      fstringAsmFor("  const byte x = 200;\n  let r = `v={x}`;", "byte");
+  CHECK(text.find("\"v=%T\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier for int (control)", "[codegen][fstring]") {
+  const auto text =
+      fstringAsmFor("  const int x = -42;\n  let r = `v={x}`;", "intctl");
+  CHECK(text.find("\"v=%d\"") != std::string::npos);
 }
 
 TEST_CASE("imported union aliases preserve float operand metadata",

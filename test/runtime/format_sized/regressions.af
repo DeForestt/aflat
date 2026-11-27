@@ -1,0 +1,68 @@
+.needs <std>
+import string from "String";
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+fn checkUni(const uni_string actual, const adr expected, const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn checkStr(const string actual, const adr expected, const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn checkAdr(const adr actual, const adr expected, const adr label) -> void {
+    assert(strings.str_comp(actual, expected) == 1, label);
+};
+
+class Marker {
+  fn init() -> Self { return my; };
+  fn toString() -> uni_string { return `Marker`; };
+};
+
+// Pre-existing formatting behavior must not change: int, char, adr,
+// string, bool, float, class toString, and placeholder-free literals.
+fn main() -> int {
+    const int i = -42;
+    checkUni(`int={i}`, "int=-42", "uni int regression");
+    checkStr(`int={i}`, "int=-42", "string int regression");
+    checkAdr(`int={i}`, "int=-42", "adr int regression");
+
+    const char ch = 'x';
+    checkUni(`char={ch}`, "char=x", "uni char regression");
+    checkStr(`char={ch}`, "char=x", "string char regression");
+    checkAdr(`char={ch}`, "char=x", "adr char regression");
+
+    const bool bt = true;
+    const bool bf = false;
+    checkUni(`bool={bt}`, "bool=true", "uni bool true regression");
+    checkUni(`bool={bf}`, "bool=false", "uni bool false regression");
+    checkStr(`bool={bt}`, "bool=true", "string bool regression");
+    checkAdr(`bool={bt}`, "bool=true", "adr bool regression");
+
+    mutable float f = 3.14;
+    checkUni(`float={f}`, "float=3.140000", "uni float regression");
+    checkStr(`float={f}`, "float=3.140000", "string float regression");
+    checkAdr(`float={f}`, "float=3.140000", "adr float regression");
+
+    const let s = new string("hello");
+    checkUni(`str={s}`, "str=hello", "uni string regression");
+    checkStr(`str={s}`, "str=hello", "string string regression");
+    checkAdr(`str={s}`, "str=hello", "adr string regression");
+    delete s;
+
+    const adr p = "pointer";
+    checkUni(`adr={p}`, "adr=pointer", "uni adr regression");
+    checkStr(`adr={p}`, "adr=pointer", "string adr regression");
+    checkAdr(`adr={p}`, "adr=pointer", "adr adr regression");
+
+    const Marker m = new Marker();
+    checkUni(`obj={m}`, "obj=Marker", "uni toString regression");
+    checkStr(`obj={m}`, "obj=Marker", "string toString regression");
+    checkAdr(`obj={m}`, "obj=Marker", "adr toString regression");
+    delete m;
+
+    checkUni(`plain`, "plain", "uni plain literal");
+    checkUni(`lit={42}`, "lit=42", "uni number literal");
+    return 0;
+};
