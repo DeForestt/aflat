@@ -1470,6 +1470,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
         div->op1 = expr2.access;
         div->isUnsigned = gen::utils::isUnsignedIntegerTypeName(expr1.type);
+        div->size = expr1.size;
 
         if (expr1.op == asmc::Float) {
           std::string to1 = registers()["%xmm1"]->get(asmc::DWord);
@@ -1503,11 +1504,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           OutputFile.text << mov;
         }
 
-        // Move the value from edx to eax
+        // Move the value from edx to eax (the remainder of a byte divide
+        // lives in %ah, not %dl)
         asmc::Mov *mov = new asmc::Mov();
         mov->logicalLine = logicalLine();
         mov->to = output.access;
-        mov->from = registers()["%rdx"]->get(expr1.size);
+        mov->from = expr1.size == asmc::Byte
+                        ? "%ah"
+                        : registers()["%rdx"]->get(expr1.size);
         mov->size = expr1.size;
 
         OutputFile.text << div;
