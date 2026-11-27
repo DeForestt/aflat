@@ -5,7 +5,8 @@ import tempfile
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
-TESTS = ["values_uni.af", "values_string.af", "mixed.af", "regressions.af"]
+TESTS = ["values_uni.af", "values_string.af", "vnarrow.af", "vsigned.af",
+         "vunsigned.af", "mixed.af", "regressions.af"]
 
 
 def run(command, cwd):

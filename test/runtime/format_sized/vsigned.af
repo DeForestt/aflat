@@ -1,0 +1,28 @@
+.needs <std>
+import string from "String";
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+fn checkUni(const uni_string actual, const adr expected, const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn main() -> int {
+    const i32 i32neg = -123456789;
+    checkUni(`i32={i32neg}`, "i32=-123456789", "uni i32 neg");
+
+    const i64 i64pos = #1234567890123456789;
+    const i64 i64neg = i64pos * -1;
+    checkUni(`i64={i64neg}`, "i64=-1234567890123456789", "uni i64 neg");
+    checkUni(`i64={i64pos}`, "i64=1234567890123456789", "uni i64 pos");
+    const i64 i64zero = #0;
+    checkUni(`i64={i64zero}`, "i64=0", "uni i64 zero");
+
+    const long lg = #987654321098765432;
+    checkUni(`long={lg}`, "long=987654321098765432", "uni long pos");
+
+    mutable isize isz = 9876543210;
+    isz = isz * -1;
+    checkUni(`isize={isz}`, "isize=-9876543210", "uni isize neg");
+    return 0;
+};

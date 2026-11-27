@@ -1,0 +1,28 @@
+.needs <std>
+import string from "String";
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+fn checkUni(const uni_string actual, const adr expected, const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn main() -> int {
+    const u32 u32two = 2000000000;
+    const u32 u32big = u32two + u32two;
+    checkUni(`u32={u32big}`, "u32=4000000000", "uni u32 above int max");
+    const u32 u32zero = 0;
+    checkUni(`u32={u32zero}`, "u32=0", "uni u32 zero");
+
+    const u64 u64zero = 0;
+    const u64 u64max = u64zero - 1;
+    checkUni(`u64={u64max}`, "u64=18446744073709551615", "uni u64 max");
+    const u64 u64base = 123456789;
+    const u64 u64big = u64base * 1000000000 + 123456789;
+    checkUni(`u64={u64big}`, "u64=123456789123456789", "uni u64 big");
+    checkUni(`u64={u64zero}`, "u64=0", "uni u64 zero");
+
+    const usize usz = 12345678901;
+    checkUni(`usize={usz}`, "usize=12345678901", "uni usize numeric");
+    return 0;
+};
