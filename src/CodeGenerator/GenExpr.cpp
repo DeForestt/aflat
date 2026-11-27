@@ -545,15 +545,16 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
             }
           }
         };
-      } else if (ident == "int") {
+      } else if (ident == "int" || ident == "i32" || ident == "u32") {
         output.size = asmc::DWord;
         output.access = "$4";
         output.type = "int";
-      } else if (ident == "short") {
+      } else if (ident == "short" || ident == "i16" || ident == "u16") {
         output.size = asmc::DWord;
         output.access = "$2";
         output.type = "int";
-      } else if (ident == "long") {
+      } else if (ident == "long" || ident == "i64" || ident == "u64" ||
+                 ident == "isize" || ident == "usize") {
         output.size = asmc::DWord;
         output.access = "$8";
         output.type = "int";
@@ -561,7 +562,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         output.size = asmc::DWord;
         output.access = "$8";
         output.type = "int";
-      } else if (ident == "char" || ident == "bool" || ident == "byte") {
+      } else if (ident == "char" || ident == "bool" || ident == "byte" ||
+                 ident == "i8" || ident == "u8") {
         output.size = asmc::DWord;
         output.access = "$1";
         output.type = "int";
@@ -1345,9 +1347,15 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         break;
       }
       case ast::Great: {
-        asmc::Sar *andBit = new asmc::Sar();
         gen::Expr expr1 = probeExpr(comp.expr1, Dummy);
         gen::Expr expr2 = probeExpr(comp.expr2, Dummy);
+
+        // Right shift is arithmetic for signed types and logical for
+        // unsigned types.
+        asmc::ArithInst *andBit =
+            gen::utils::isUnsignedIntegerTypeName(expr1.type)
+                ? static_cast<asmc::ArithInst *>(new asmc::Shr())
+                : static_cast<asmc::ArithInst *>(new asmc::Sar());
 
         this->prepareCompound(comp, OutputFile);
 
@@ -1407,6 +1415,7 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         div->op1 = expr2.access;
         div->opType = expr1.op;
         div->size = expr1.size;
+        div->isUnsigned = gen::utils::isUnsignedIntegerTypeName(expr1.type);
 
         std::string to1 = registers()["%rdx"]->get(expr1.size);
         std::string to2 = registers()["%rax"]->get(expr1.size);
@@ -1460,6 +1469,8 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         gen::Expr expr2 = probeExpr(comp.expr2, Dummy);
 
         div->op1 = expr2.access;
+        div->isUnsigned = gen::utils::isUnsignedIntegerTypeName(expr1.type);
+        div->size = expr1.size;
 
         if (expr1.op == asmc::Float) {
           std::string to1 = registers()["%xmm1"]->get(asmc::DWord);
@@ -1493,11 +1504,14 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           OutputFile.text << mov;
         }
 
-        // Move the value from edx to eax
+        // Move the value from edx to eax (the remainder of a byte divide
+        // lives in %ah, not %dl)
         asmc::Mov *mov = new asmc::Mov();
         mov->logicalLine = logicalLine();
         mov->to = output.access;
-        mov->from = registers()["%rdx"]->get(expr1.size);
+        mov->from = expr1.size == asmc::Byte
+                        ? "%ah"
+                        : registers()["%rdx"]->get(expr1.size);
         mov->size = expr1.size;
 
         OutputFile.text << div;
@@ -1555,6 +1569,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           instruction->logicalLine = logicalLine();
           instruction->op = registers()["%rax"]->get(asmc::Byte);
           setl = instruction;
+        } else if (gen::utils::isUnsignedIntegerTypeName(expr1.type)) {
+          auto *instruction = new asmc::Setb();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setl = instruction;
         } else {
           auto *instruction = new asmc::Setl();
           instruction->logicalLine = logicalLine();
@@ -1587,6 +1606,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
         asmc::Instruction *setg;
         if (expr1.op == asmc::Float) {
+          auto *instruction = new asmc::Seta();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setg = instruction;
+        } else if (gen::utils::isUnsignedIntegerTypeName(expr1.type)) {
           auto *instruction = new asmc::Seta();
           instruction->logicalLine = logicalLine();
           instruction->op = registers()["%rax"]->get(asmc::Byte);
@@ -1627,6 +1651,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           instruction->logicalLine = logicalLine();
           instruction->op = registers()["%rax"]->get(asmc::Byte);
           setle = instruction;
+        } else if (gen::utils::isUnsignedIntegerTypeName(expr1.type)) {
+          auto *instruction = new asmc::Setbe();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setle = instruction;
         } else {
           auto *instruction = new asmc::Setle();
           instruction->logicalLine = logicalLine();
@@ -1659,6 +1688,11 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
         asmc::Instruction *setge;
         if (expr1.op == asmc::Float) {
+          auto *instruction = new asmc::Setae();
+          instruction->logicalLine = logicalLine();
+          instruction->op = registers()["%rax"]->get(asmc::Byte);
+          setge = instruction;
+        } else if (gen::utils::isUnsignedIntegerTypeName(expr1.type)) {
           auto *instruction = new asmc::Setae();
           instruction->logicalLine = logicalLine();
           instruction->op = registers()["%rax"]->get(asmc::Byte);
