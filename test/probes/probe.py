@@ -4,6 +4,11 @@ import pathlib, subprocess, sys, tempfile
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 PROBES = {
+  "bare": ("""fn main() -> int { return 5; };
+""", 5),
+  "bare_needs": (""".needs <std>
+fn main() -> int { return 5; };
+""", 5),
   "len_again": (""".needs <std>
 import {len} from "strings" under st;
 fn main() -> int { return st.len("again"); };

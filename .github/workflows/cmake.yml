@@ -49,6 +49,15 @@ jobs:
         run: bash ./rebuild-libs.sh -j "$(nproc)"
       - name: Build project
         run: ./bin/aflat build
+      - name: Probe bare
+        if: always()
+        run: python3 test/probes/probe.py bare
+      - name: Probe bare_needs
+        if: always()
+        run: python3 test/probes/probe.py bare_needs
+      - name: Probe control raw_buffer suite
+        if: always()
+        run: python3 test/runtime/raw_buffer/run.py
       - name: Probe len_again
         if: always()
         run: python3 test/probes/probe.py len_again
