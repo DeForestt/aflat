@@ -55,8 +55,8 @@ fn checkI16Deque() -> void {
 
 fn checkU64Vector() -> void {
     let values = new vector::<u64>();
-    const u64 first = #4294967296;
-    const u64 second = first * #3;
+    const u64 first = 65536 * 65536;
+    const u64 second = first * 3;
     values.push_back(first);
     values.push_back(second);
     values.push_back(9);
