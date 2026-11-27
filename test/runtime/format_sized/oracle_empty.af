@@ -1,0 +1,11 @@
+.needs <std>
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+// Oracle probe: what does the uni formatter actually render for an i8?
+fn main() -> int {
+    const i8 x = 65;
+    const uni_string rendered = `v={x}`;
+    assert(strings.str_comp(rendered.cstr(), "v=") == 1, "oracle empty");
+    return 0;
+};

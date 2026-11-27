@@ -83,6 +83,18 @@ jobs:
       - name: Test sized type formatting (oracle char)
         if: always()
         run: python3 test/runtime/format_sized/run.py oracle_char
+      - name: Test sized type formatting (oracle empty)
+        if: always()
+        run: python3 test/runtime/format_sized/run.py oracle_empty
+      - name: Test sized type formatting (oracle literal)
+        if: always()
+        run: python3 test/runtime/format_sized/run.py oracle_literal
+      - name: Test sized type formatting (oracle zero)
+        if: always()
+        run: python3 test/runtime/format_sized/run.py oracle_zero
+      - name: Test sized type formatting (oracle i64)
+        if: always()
+        run: python3 test/runtime/format_sized/run.py oracle_i64
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt
