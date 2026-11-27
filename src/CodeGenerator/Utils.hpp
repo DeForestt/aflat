@@ -11,6 +11,11 @@
 
 namespace gen::utils {
 bool searchSymbol(gen::Symbol sym, std::string str);
+// The canonical sized integer type a name denotes (int -> i32, long ->
+// i64, adr -> usize, ...), or "" when the name is not an integer type.
+std::string integerTypeAlias(const std::string &name);
+bool isIntegerTypeName(const std::string &name);
+bool isUnsignedIntegerTypeName(const std::string &name);
 int sizeToInt(asmc::Size size);
 int alignTo(int value, int alignment);
 asmc::Size toSize(size_t size);
