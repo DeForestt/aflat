@@ -2798,9 +2798,8 @@ TEST_CASE("short and long work as size expressions in generic code",
   // primitive must resolve there, because generic storage code (raw_buffer
   // and the collections built on it) multiplies and divides by T. short and
   // long were missing from that resolution and were rejected outright.
-  std::ofstream(source) << R"(.needs <std>
-types(T)
-fn elementSize() -> int { return T; };
+  std::ofstream(source) << R"(types(T)
+fn elementSize(const T value) -> int { return T; };
 
 types(T)
 fn blockSize(const int count) -> int { return count * T; };
@@ -2809,10 +2808,10 @@ types(T)
 fn capacityLimit() -> int { return 2147483647 / T; };
 
 fn main() -> int {
-  if elementSize::<short>() != 2 { return 1; };
-  if elementSize::<long>() != 8 { return 2; };
-  if elementSize::<int>() != 4 { return 3; };
-  if elementSize::<char>() != 1 { return 4; };
+  if elementSize::<short>(0) != 2 { return 1; };
+  if elementSize::<long>(0) != 8 { return 2; };
+  if elementSize::<int>(0) != 4 { return 3; };
+  if elementSize::<char>(0) != 1 { return 4; };
   if blockSize::<short>(7) != 14 { return 5; };
   if blockSize::<long>(7) != 56 { return 6; };
   if capacityLimit::<short>() != 1073741823 { return 7; };
