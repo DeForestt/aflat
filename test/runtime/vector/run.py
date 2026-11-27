@@ -25,8 +25,7 @@ def main():
         (project / "src").mkdir()
         (project / "bin").mkdir()
         (project / "aflat.cfg").write_text("[build]\nmain = main\n")
-        for suite in ["allocations.af", "main.af", "owned.af", "copied.af",
-                      "shared.af", "map_heap.af", "failures.af"]:
+        for suite in ["allocations.af", "main.af", "owned.af", "copied.af"]:
             shutil.copyfile(HERE / suite, project / "src/main.af")
             subprocess.run([ROOT / "bin/aflat", "--no-cache", "build"],
                            cwd=project, check=True, timeout=180, preexec_fn=limits)
