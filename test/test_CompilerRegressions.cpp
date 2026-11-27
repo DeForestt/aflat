@@ -1601,89 +1601,89 @@ fn main() -> int {
 }
 
 TEST_CASE("fstring specifier probe i8", "[codegen][fstring][probe]") {
-  const auto text = fstringAsmFor("  const i8 x = -128;\n  let r = `{x}`;", "i8");
-  CHECK(text.find("\"%t\"") != std::string::npos);
+  const auto text = fstringAsmFor("  const i8 x = -128;\n  let r = `v={x}`;", "i8");
+  CHECK(text.find("\"v=%t\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe i16", "[codegen][fstring][probe]") {
   const auto text =
-      fstringAsmFor("  const i16 x = -30000;\n  let r = `{x}`;", "i16");
-  CHECK(text.find("\"%w\"") != std::string::npos);
+      fstringAsmFor("  const i16 x = -30000;\n  let r = `v={x}`;", "i16");
+  CHECK(text.find("\"v=%w\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe i32", "[codegen][fstring][probe]") {
   const auto text =
-      fstringAsmFor("  const i32 x = -123456789;\n  let r = `{x}`;", "i32");
-  CHECK(text.find("\"%d\"") != std::string::npos);
+      fstringAsmFor("  const i32 x = -123456789;\n  let r = `v={x}`;", "i32");
+  CHECK(text.find("\"v=%d\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe i64", "[codegen][fstring][probe]") {
   const auto text = fstringAsmFor(
-      "  const i64 x = #1234567890123456789;\n  let r = `{x}`;", "i64");
-  CHECK(text.find("\"%l\"") != std::string::npos);
+      "  const i64 x = #1234567890123456789;\n  let r = `v={x}`;", "i64");
+  CHECK(text.find("\"v=%l\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe u8", "[codegen][fstring][probe]") {
-  const auto text = fstringAsmFor("  const u8 x = 255;\n  let r = `{x}`;", "u8");
-  CHECK(text.find("\"%T\"") != std::string::npos);
+  const auto text = fstringAsmFor("  const u8 x = 255;\n  let r = `v={x}`;", "u8");
+  CHECK(text.find("\"v=%T\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe u16", "[codegen][fstring][probe]") {
   const auto text =
-      fstringAsmFor("  const u16 x = 65535;\n  let r = `{x}`;", "u16");
-  CHECK(text.find("\"%W\"") != std::string::npos);
+      fstringAsmFor("  const u16 x = 65535;\n  let r = `v={x}`;", "u16");
+  CHECK(text.find("\"v=%W\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe u32", "[codegen][fstring][probe]") {
   const auto text = fstringAsmFor(
       "  const u32 two = 2000000000;\n  const u32 x = two + two;\n  let r = "
-      "`{x}`;",
+      "`v={x}`;",
       "u32");
-  CHECK(text.find("\"%u\"") != std::string::npos);
+  CHECK(text.find("\"v=%u\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe u64", "[codegen][fstring][probe]") {
   const auto text = fstringAsmFor(
-      "  const u64 zero = 0;\n  const u64 x = zero - 1;\n  let r = `{x}`;",
+      "  const u64 zero = 0;\n  const u64 x = zero - 1;\n  let r = `v={x}`;",
       "u64");
-  CHECK(text.find("\"%U\"") != std::string::npos);
+  CHECK(text.find("\"v=%U\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe isize", "[codegen][fstring][probe]") {
   const auto text = fstringAsmFor(
-      "  mutable isize x = 9876543210;\n  x = x * -1;\n  let r = `{x}`;",
+      "  mutable isize x = 9876543210;\n  x = x * -1;\n  let r = `v={x}`;",
       "isize");
-  CHECK(text.find("\"%l\"") != std::string::npos);
+  CHECK(text.find("\"v=%l\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe usize", "[codegen][fstring][probe]") {
   const auto text =
-      fstringAsmFor("  const usize x = 12345678901;\n  let r = `{x}`;", "usize");
-  CHECK(text.find("\"%U\"") != std::string::npos);
+      fstringAsmFor("  const usize x = 12345678901;\n  let r = `v={x}`;", "usize");
+  CHECK(text.find("\"v=%U\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe short", "[codegen][fstring][probe]") {
   const auto text =
-      fstringAsmFor("  const short x = -30000;\n  let r = `{x}`;", "short");
-  CHECK(text.find("\"%w\"") != std::string::npos);
+      fstringAsmFor("  const short x = -30000;\n  let r = `v={x}`;", "short");
+  CHECK(text.find("\"v=%w\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe long", "[codegen][fstring][probe]") {
   const auto text = fstringAsmFor(
-      "  const long x = #987654321098765432;\n  let r = `{x}`;", "long");
-  CHECK(text.find("\"%l\"") != std::string::npos);
+      "  const long x = #987654321098765432;\n  let r = `v={x}`;", "long");
+  CHECK(text.find("\"v=%l\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe byte", "[codegen][fstring][probe]") {
   const auto text =
-      fstringAsmFor("  const byte x = 200;\n  let r = `{x}`;", "byte");
-  CHECK(text.find("\"%T\"") != std::string::npos);
+      fstringAsmFor("  const byte x = 200;\n  let r = `v={x}`;", "byte");
+  CHECK(text.find("\"v=%T\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe int control", "[codegen][fstring][probe]") {
   const auto text =
-      fstringAsmFor("  const int x = -42;\n  let r = `{x}`;", "intctl");
-  CHECK(text.find("\"%d\"") != std::string::npos);
+      fstringAsmFor("  const int x = -42;\n  let r = `v={x}`;", "intctl");
+  CHECK(text.find("\"v=%d\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe declonly i8", "[codegen][fstring][probe]") {
@@ -1692,24 +1692,24 @@ TEST_CASE("fstring specifier probe declonly i8", "[codegen][fstring][probe]") {
 }
 
 TEST_CASE("fstring specifier probe i8 as d", "[codegen][fstring][probe]") {
-  const auto text = fstringAsmFor("  const i8 x = -128;\n  let r = `{x}`;", "i8d");
-  CHECK(text.find("\"%d\"") != std::string::npos);
+  const auto text = fstringAsmFor("  const i8 x = -128;\n  let r = `v={x}`;", "i8d");
+  CHECK(text.find("\"v=%d\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe i8 as a", "[codegen][fstring][probe]") {
-  const auto text = fstringAsmFor("  const i8 x = -128;\n  let r = `{x}`;", "i8a");
-  CHECK(text.find("\"%a\"") != std::string::npos);
+  const auto text = fstringAsmFor("  const i8 x = -128;\n  let r = `v={x}`;", "i8a");
+  CHECK(text.find("\"v=%a\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe i8 as c", "[codegen][fstring][probe]") {
-  const auto text = fstringAsmFor("  const i8 x = -128;\n  let r = `{x}`;", "i8c");
-  CHECK(text.find("\"%c\"") != std::string::npos);
+  const auto text = fstringAsmFor("  const i8 x = -128;\n  let r = `v={x}`;", "i8c");
+  CHECK(text.find("\"v=%c\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe usize as a", "[codegen][fstring][probe]") {
   const auto text = fstringAsmFor(
-      "  const usize x = 12345678901;\n  let r = `{x}`;", "usizea");
-  CHECK(text.find("\"%a\"") != std::string::npos);
+      "  const usize x = 12345678901;\n  let r = `v={x}`;", "usizea");
+  CHECK(text.find("\"v=%a\"") != std::string::npos);
 }
 
 TEST_CASE("imported union aliases preserve float operand metadata",

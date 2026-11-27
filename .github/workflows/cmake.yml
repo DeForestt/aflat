@@ -77,6 +77,12 @@ jobs:
       - name: Test sized type formatting (regressions)
         if: always()
         run: python3 test/runtime/format_sized/run.py regressions
+      - name: Test sized type formatting (oracle numeric)
+        if: always()
+        run: python3 test/runtime/format_sized/run.py oracle_num
+      - name: Test sized type formatting (oracle char)
+        if: always()
+        run: python3 test/runtime/format_sized/run.py oracle_char
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt

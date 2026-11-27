@@ -6,7 +6,8 @@ import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 TESTS = ["values_uni.af", "values_string.af", "vnarrow.af", "vsigned.af",
-         "vunsigned.af", "mixed.af", "regressions.af"]
+         "vunsigned.af", "mixed.af", "regressions.af", "oracle_num.af",
+         "oracle_char.af"]
 
 
 def run(command, cwd):
