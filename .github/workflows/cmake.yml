@@ -49,6 +49,21 @@ jobs:
         run: bash ./rebuild-libs.sh -j "$(nproc)"
       - name: Build project
         run: ./bin/aflat build
+      - name: Probe long_ge
+        if: always()
+        run: python3 test/probes/probe.py long_ge
+      - name: Probe long_lt
+        if: always()
+        run: python3 test/probes/probe.py long_lt
+      - name: Probe long_div
+        if: always()
+        run: python3 test/probes/probe.py long_div
+      - name: Probe long_mod
+        if: always()
+        run: python3 test/probes/probe.py long_mod
+      - name: Probe long_mod_small
+        if: always()
+        run: python3 test/probes/probe.py long_mod_small
       - name: Test raw buffer storage
         run: python3 test/runtime/raw_buffer/run.py
       - name: Test vector storage
