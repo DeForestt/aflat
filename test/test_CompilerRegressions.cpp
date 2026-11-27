@@ -2784,3 +2784,47 @@ fn main() -> int {
   CHECK(std::system(config.outPutFile.c_str()) == 0);
   fs::remove_all(dir);
 }
+
+TEST_CASE("short and long work as size expressions in generic code",
+          "[codegen][runtime][generics][sizeof][regression]") {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_sizeof_short_long_regression");
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  const auto executable = dir / "main";
+  // A bare type name in expression position is the type's size. Every
+  // primitive must resolve there, because generic storage code (raw_buffer
+  // and the collections built on it) multiplies and divides by T. short and
+  // long were missing from that resolution and were rejected outright.
+  std::ofstream(source) << R"(.needs <std>
+types(T)
+fn elementSize() -> int { return T; };
+
+types(T)
+fn blockSize(const int count) -> int { return count * T; };
+
+types(T)
+fn capacityLimit() -> int { return 2147483647 / T; };
+
+fn main() -> int {
+  if elementSize::<short>() != 2 { return 1; };
+  if elementSize::<long>() != 8 { return 2; };
+  if elementSize::<int>() != 4 { return 3; };
+  if elementSize::<char>() != 1 { return 4; };
+  if blockSize::<short>(7) != 14 { return 5; };
+  if blockSize::<long>(7) != 56 { return 6; };
+  if capacityLimit::<short>() != 1073741823 { return 7; };
+  if capacityLimit::<long>() != 268435455 { return 8; };
+  return 0;
+};
+)";
+  REQUIRE(build(source.string(), assembly.string(), cfg::Mutability::Strict,
+                false));
+  REQUIRE(std::system(("gcc -no-pie " + assembly.string() + " -o " +
+                       executable.string())
+                          .c_str()) == 0);
+  CHECK(std::system(executable.c_str()) == 0);
+  fs::remove_all(dir);
+}
