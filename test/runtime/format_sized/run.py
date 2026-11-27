@@ -5,7 +5,7 @@ import tempfile
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
-TESTS = ["main.af"]
+TESTS = ["values_uni.af", "values_string.af", "mixed.af", "regressions.af"]
 
 
 def run(command, cwd):
@@ -28,12 +28,19 @@ def main():
         print(f"missing built compiler: {aflat}", file=sys.stderr)
         return 1
 
+    selected = TESTS
+    if len(sys.argv) > 1:
+        selected = [name for name in TESTS if name.startswith(sys.argv[1])]
+        if not selected:
+            print(f"no test matches: {sys.argv[1]}", file=sys.stderr)
+            return 1
+
     with tempfile.TemporaryDirectory() as tmp:
         work = pathlib.Path(tmp)
         (work / "src").mkdir()
         (work / "bin").mkdir()
         (work / "aflat.cfg").write_text("[build]\nmain = main\n")
-        for name in TESTS:
+        for name in selected:
             build_and_run(aflat, work, name)
     return 0
 

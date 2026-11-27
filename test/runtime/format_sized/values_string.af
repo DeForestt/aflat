@@ -1,0 +1,69 @@
+.needs <std>
+import string from "String";
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+fn checkStr(const string actual, const adr expected, const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn main() -> int {
+    const i8 i8min = -128;
+    checkStr(`i8={i8min}`, "i8=-128", "string i8 min");
+    const i8 i8max = 127;
+    checkStr(`i8={i8max}`, "i8=127", "string i8 max");
+    const i8 i8zero = 0;
+    checkStr(`i8={i8zero}`, "i8=0", "string i8 zero");
+
+    const i16 i16neg = -30000;
+    checkStr(`i16={i16neg}`, "i16=-30000", "string i16 neg");
+    const i16 i16pos = 30000;
+    checkStr(`i16={i16pos}`, "i16=30000", "string i16 pos");
+
+    const i32 i32neg = -123456789;
+    checkStr(`i32={i32neg}`, "i32=-123456789", "string i32 neg");
+
+    const i64 i64pos = #1234567890123456789;
+    const i64 i64neg = i64pos * -1;
+    checkStr(`i64={i64neg}`, "i64=-1234567890123456789", "string i64 neg");
+    checkStr(`i64={i64pos}`, "i64=1234567890123456789", "string i64 pos");
+    const i64 i64zero = #0;
+    checkStr(`i64={i64zero}`, "i64=0", "string i64 zero");
+
+    const u8 u8max = 255;
+    checkStr(`u8={u8max}`, "u8=255", "string u8 max");
+
+    const u16 u16max = 65535;
+    checkStr(`u16={u16max}`, "u16=65535", "string u16 max");
+
+    const u32 u32two = 2000000000;
+    const u32 u32big = u32two + u32two;
+    checkStr(`u32={u32big}`, "u32=4000000000", "string u32 above int max");
+    const u32 u32zero = 0;
+    checkStr(`u32={u32zero}`, "u32=0", "string u32 zero");
+
+    const u64 u64zero = 0;
+    const u64 u64max = u64zero - 1;
+    checkStr(`u64={u64max}`, "u64=18446744073709551615", "string u64 max");
+    const u64 u64base = 123456789;
+    const u64 u64big = u64base * 1000000000 + 123456789;
+    checkStr(`u64={u64big}`, "u64=123456789123456789", "string u64 big");
+    checkStr(`u64={u64zero}`, "u64=0", "string u64 zero");
+
+    mutable isize isz = 9876543210;
+    isz = isz * -1;
+    checkStr(`isize={isz}`, "isize=-9876543210", "string isize neg");
+
+    const usize usz = 12345678901;
+    checkStr(`usize={usz}`, "usize=12345678901", "string usize numeric");
+
+    const short sh = -30000;
+    checkStr(`short={sh}`, "short=-30000", "string short neg");
+
+    const long lg = #987654321098765432;
+    checkStr(`long={lg}`, "long=987654321098765432", "string long pos");
+
+    const byte by = 200;
+    checkStr(`byte={by}`, "byte=200", "string byte");
+    return 0;
+};

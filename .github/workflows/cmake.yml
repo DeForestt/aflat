@@ -57,8 +57,17 @@ jobs:
         run: python3 test/runtime/deque/run.py
       - name: Test sized types
         run: python3 test/runtime/sized_types/run.py
-      - name: Test sized type formatting
-        run: python3 test/runtime/format_sized/run.py
+      - name: Test sized type formatting (uni values)
+        run: python3 test/runtime/format_sized/run.py values_uni
+      - name: Test sized type formatting (string values)
+        if: always()
+        run: python3 test/runtime/format_sized/run.py values_string
+      - name: Test sized type formatting (mixed)
+        if: always()
+        run: python3 test/runtime/format_sized/run.py mixed
+      - name: Test sized type formatting (regressions)
+        if: always()
+        run: python3 test/runtime/format_sized/run.py regressions
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt

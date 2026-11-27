@@ -1,0 +1,61 @@
+.needs <std>
+import string from "String";
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+fn checkUni(const uni_string actual, const adr expected, const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn checkStr(const string actual, const adr expected, const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn checkAdr(const adr actual, const adr expected, const adr label) -> void {
+    assert(strings.str_comp(actual, expected) == 1, label);
+};
+
+// Mixed widths in a single format string: the args are packed at each
+// argument's natural width, so a wrong read width anywhere misaligns
+// every value after it.
+fn main() -> int {
+    const i8 a = -128;
+    const i16 b = 30000;
+    const u32 two = 2000000000;
+    const u32 c = two + two;
+    const i64 pos = #1234567890123456789;
+    const i64 d = pos * -1;
+    const u64 zero = 0;
+    const u64 e = zero - 1;
+    const u8 f = 255;
+    const u16 g = 65535;
+    mutable isize h = 9876543210;
+    h = h * -1;
+    const adr expected = "-128|30000|4000000000|-1234567890123456789|18446744073709551615|255|65535|-9876543210";
+    checkUni(`{a}|{b}|{c}|{d}|{e}|{f}|{g}|{h}`, expected, "uni mixed widths");
+    checkStr(`{a}|{b}|{c}|{d}|{e}|{f}|{g}|{h}`, expected, "string mixed widths");
+    checkAdr(`{a}|{b}|{c}|{d}|{e}|{f}|{g}|{h}`, expected, "adr mixed widths");
+
+    // Narrow values after a wide one must still be read at their own
+    // offsets.
+    const long wide = #5000000000;
+    const byte tail8 = 7;
+    const short tail16 = -9;
+    const int tail32 = 11;
+    const adr expected2 = "5000000000/7/-9/11";
+    checkUni(`{wide}/{tail8}/{tail16}/{tail32}`, expected2, "uni narrow after wide");
+    checkStr(`{wide}/{tail8}/{tail16}/{tail32}`, expected2, "string narrow after wide");
+    checkAdr(`{wide}/{tail8}/{tail16}/{tail32}`, expected2, "adr narrow after wide");
+
+    // The adr path (_fCstr) shares String's fString; spot-check the
+    // wide types through it directly.
+    const i64 i64pos = #1234567890123456789;
+    const i64 i64neg = i64pos * -1;
+    checkAdr(`i64={i64neg}`, "i64=-1234567890123456789", "adr i64 neg");
+    const u64 uzero = 0;
+    const u64 umax = uzero - 1;
+    checkAdr(`u64={umax}`, "u64=18446744073709551615", "adr u64 max");
+    const usize usz = 12345678901;
+    checkAdr(`usize={usz}`, "usize=12345678901", "adr usize numeric");
+    return 0;
+};
