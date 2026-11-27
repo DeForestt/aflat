@@ -29,7 +29,8 @@ fn main() -> int {
     const u64 e = zero - 1;
     const u8 f = 255;
     const u16 g = 65535;
-    mutable isize h = 9876543210;
+    mutable isize h = 987654321;
+    h = h * 10;
     h = h * -1;
     const adr expected = "-128|30000|4000000000|-1234567890123456789|18446744073709551615|255|65535|-9876543210";
     checkUni(`{a}|{b}|{c}|{d}|{e}|{f}|{g}|{h}`, expected, "uni mixed widths");
@@ -55,7 +56,8 @@ fn main() -> int {
     const u64 uzero = 0;
     const u64 umax = uzero - 1;
     checkAdr(`u64={umax}`, "u64=18446744073709551615", "adr u64 max");
-    const usize usz = 12345678901;
+    const usize uszbase = 123456789;
+    const usize usz = uszbase * 100 + 1;
     checkAdr(`usize={usz}`, "usize=12345678901", "adr usize numeric");
     return 0;
 };

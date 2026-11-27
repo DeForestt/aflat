@@ -1,0 +1,13 @@
+.needs <std>
+
+// Bug B oracle: deref-read a short through a * adr parameter into a
+// named local, then promote. The buffer "A" supplies bytes 65, 0.
+// Healthy = 65.
+fn probe(* adr p) -> int {
+    const short raw = p as short;
+    return 0 + raw;
+};
+
+fn main() -> int {
+    return probe("A");
+};

@@ -90,6 +90,48 @@ gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound,
     OutputFile.text << popRax;
   }
 
+  // A narrower integer right operand was staged into %rdx at its own
+  // width, which leaves the bits above that width untouched. Consumers
+  // read %rdx at the left operand's width, so extend the staged value to
+  // that width first: sign-extend signed types, zero-extend unsigned
+  // ones. A DWord stage already zeroed the upper half of %rdx (a 32-bit
+  // register write clears bits 32-63), so an unsigned DWord right
+  // operand needs no fixup.
+  if (!isDiv && expr1.op != asmc::Float && expr2.op != asmc::Float &&
+      gen::utils::isIntegerTypeName(expr2.type) &&
+      gen::utils::sizeToInt(expr2.size) > 0 && expr2.size < expr1.size) {
+    const bool unsignedRight =
+        gen::utils::isUnsignedIntegerTypeName(expr2.type);
+    const std::string staged = registers()[r1]->get(expr1.size);
+    if (unsignedRight && expr2.size == asmc::DWord) {
+      // The movl stage already zero-extended into %rdx.
+    } else if (unsignedRight) {
+      auto *mask = new asmc::And();
+      mask->logicalLine = logicalLine();
+      mask->size = expr1.size;
+      mask->op1 =
+          "$" + std::to_string(expr2.size == asmc::Byte ? 0xff : 0xffff);
+      mask->op2 = staged;
+      OutputFile.text << mask;
+    } else {
+      const int shift = (gen::utils::sizeToInt(expr1.size) -
+                         gen::utils::sizeToInt(expr2.size)) *
+                        8;
+      auto *sal = new asmc::Sal();
+      sal->logicalLine = logicalLine();
+      sal->size = expr1.size;
+      sal->op1 = "$" + std::to_string(shift);
+      sal->op2 = staged;
+      OutputFile.text << sal;
+      auto *sar = new asmc::Sar();
+      sar->logicalLine = logicalLine();
+      sar->size = expr1.size;
+      sar->op1 = "$" + std::to_string(shift);
+      sar->op2 = staged;
+      OutputFile.text << sar;
+    }
+  }
+
   return expr1;
 }
 

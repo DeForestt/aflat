@@ -1,0 +1,9 @@
+.needs <std>
+
+// Bug A oracle: subtraction with the narrow operand on the right.
+fn main() -> int {
+    const short s = 30000;
+    const int n = 0 - s;
+    if n == -30000 { return 92; };
+    return 93;
+};

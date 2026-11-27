@@ -50,11 +50,13 @@ fn main() -> int {
     checkUni(`u64={u64big}`, "u64=123456789123456789", "uni u64 big");
     checkUni(`u64={u64zero}`, "u64=0", "uni u64 zero");
 
-    mutable isize isz = 9876543210;
+    mutable isize isz = 987654321;
+    isz = isz * 10;
     isz = isz * -1;
     checkUni(`isize={isz}`, "isize=-9876543210", "uni isize neg");
 
-    const usize usz = 12345678901;
+    const usize uszbase = 123456789;
+    const usize usz = uszbase * 100 + 1;
     checkUni(`usize={usz}`, "usize=12345678901", "uni usize numeric");
 
     const short sh = -30000;

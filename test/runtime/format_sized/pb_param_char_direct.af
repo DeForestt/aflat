@@ -1,0 +1,11 @@
+.needs <std>
+
+// Bug B oracle: deref-read through a * adr parameter used directly as
+// an arithmetic operand, with no named local in between. Healthy = 65.
+fn probe(* adr p) -> int {
+    return 0 + (p as char);
+};
+
+fn main() -> int {
+    return probe("A");
+};

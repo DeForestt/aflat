@@ -104,6 +104,60 @@ jobs:
       - name: Oracle iso promote short
         if: always()
         run: python3 test/runtime/format_sized/run_oracle.py iso_promote16.af 7
+      - name: Oracle pa 256 healthy
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pa_256.af 11
+      - name: Oracle pa 256 byte theory
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pa_256.af 10
+      - name: Oracle pa neg1
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pa_neg1.af 20
+      - name: Oracle pa neg30000
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pa_neg30000.af 40
+      - name: Oracle pa u16
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pa_u16.af 50
+      - name: Oracle pa byte
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pa_byte.af 60
+      - name: Oracle pa cmp
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pa_cmp.af 80
+      - name: Oracle pa sub
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pa_sub.af 92
+      - name: Oracle pa long
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pa_long.af 70
+      - name: Oracle pa u32q control
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pa_u32q.af 95
+      - name: Oracle pb param char healthy
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pb_param_char.af 65
+      - name: Oracle pb param char segfault
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pb_param_char.af -11
+      - name: Oracle pb param char cmp
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pb_param_char_cmp.af 3
+      - name: Oracle pb param char direct
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pb_param_char_direct.af 65
+      - name: Oracle pb param short
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pb_param_short.af 65
+      - name: Oracle pb param int control
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pb_param_int.af 5
+      - name: Oracle pb local fn control
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py pb_local_fn.af 65
+      - name: Oracle hand t segfault
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py hand_t.af -11
       - name: Oracle hand fPrint c
         if: always()
         run: python3 test/runtime/format_sized/run_oracle.py hand_c.af 0

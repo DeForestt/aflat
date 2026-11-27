@@ -1,0 +1,12 @@
+.needs <std>
+
+// Bug B oracle (the confirm/kill probe): deref-read a char through a
+// * adr parameter into a named local, then promote. Healthy = 65.
+fn probe(* adr p) -> int {
+    const char raw = p as char;
+    return 0 + raw;
+};
+
+fn main() -> int {
+    return probe("A");
+};

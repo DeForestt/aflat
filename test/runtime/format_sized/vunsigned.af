@@ -22,7 +22,8 @@ fn main() -> int {
     checkUni(`u64={u64big}`, "u64=123456789123456789", "uni u64 big");
     checkUni(`u64={u64zero}`, "u64=0", "uni u64 zero");
 
-    const usize usz = 12345678901;
+    const usize uszbase = 123456789;
+    const usize usz = uszbase * 100 + 1;
     checkUni(`usize={usz}`, "usize=12345678901", "uni usize numeric");
     return 0;
 };

@@ -1,0 +1,15 @@
+.needs <std>
+
+// Bug B control: deref-read an int through a * adr parameter.
+// 5 = correct, 6 = wrong value.
+fn probe(* adr p) -> int {
+    const int n = p as int;
+    return n;
+};
+
+fn main() -> int {
+    const int x = 123456;
+    const int r = probe(?x);
+    if r == 123456 { return 5; };
+    return 6;
+};

@@ -21,7 +21,8 @@ fn main() -> int {
     const long lg = #987654321098765432;
     checkUni(`long={lg}`, "long=987654321098765432", "uni long pos");
 
-    mutable isize isz = 9876543210;
+    mutable isize isz = 987654321;
+    isz = isz * 10;
     isz = isz * -1;
     checkUni(`isize={isz}`, "isize=-9876543210", "uni isize neg");
     return 0;

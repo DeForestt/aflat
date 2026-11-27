@@ -1,0 +1,8 @@
+.needs <std>
+
+// Bug A oracle: equality comparison with the narrow operand on the right.
+fn main() -> int {
+    const short s = 30000;
+    if 30000 == s { return 80; };
+    return 81;
+};

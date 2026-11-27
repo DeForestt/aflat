@@ -1652,14 +1652,17 @@ TEST_CASE("fstring specifier probe u64", "[codegen][fstring][probe]") {
 
 TEST_CASE("fstring specifier probe isize", "[codegen][fstring][probe]") {
   const auto text = fstringAsmFor(
-      "  mutable isize x = 9876543210;\n  x = x * -1;\n  let r = `v={x}`;",
+      "  mutable isize x = 987654321;\n  x = x * 10;\n  x = x * -1;\n  let r = "
+      "`v={x}`;",
       "isize");
   CHECK(text.find("\"v=%l\"") != std::string::npos);
 }
 
 TEST_CASE("fstring specifier probe usize", "[codegen][fstring][probe]") {
-  const auto text =
-      fstringAsmFor("  const usize x = 12345678901;\n  let r = `v={x}`;", "usize");
+  const auto text = fstringAsmFor(
+      "  const usize base = 123456789;\n  const usize x = base * 100 + 1;\n  "
+      "let r = `v={x}`;",
+      "usize");
   CHECK(text.find("\"v=%U\"") != std::string::npos);
 }
 

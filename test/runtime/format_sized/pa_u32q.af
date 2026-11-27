@@ -1,0 +1,12 @@
+.needs <std>
+
+// Bug A control: u32 4000000000 promoted into long (QWord) arithmetic.
+// A DWord stage zero-extends on its own, so this must hold with or
+// without the extension fixup.
+fn main() -> int {
+    const u32 two = 2000000000;
+    const u32 u = two + two;
+    const long n = #0 + u;
+    if n == #4000000000 { return 95; };
+    return 96;
+};

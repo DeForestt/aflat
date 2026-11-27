@@ -1,0 +1,12 @@
+.needs <std>
+
+// Bug A oracle: short -1 promoted into int arithmetic.
+// 20 = sign-extended (-1), 21 = zero-extended (65535), 22 = byte read (255).
+fn main() -> int {
+    const short s = -1;
+    const int n = 0 + s;
+    if n == -1 { return 20; };
+    if n == 65535 { return 21; };
+    if n == 255 { return 22; };
+    return 23;
+};

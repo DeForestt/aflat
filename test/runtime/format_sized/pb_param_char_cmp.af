@@ -1,0 +1,13 @@
+.needs <std>
+
+// Bug B oracle: is the char read through a * adr parameter itself
+// correct, independent of promotion? 3 = raw == 'A', 4 = wrong value.
+fn probe(* adr p) -> int {
+    const char raw = p as char;
+    if raw == 'A' { return 3; };
+    return 4;
+};
+
+fn main() -> int {
+    return probe("A");
+};
