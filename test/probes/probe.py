@@ -119,8 +119,10 @@ def main():
     aflat = ROOT / "bin" / "aflat"
     with tempfile.TemporaryDirectory() as tmp:
         work = pathlib.Path(tmp)
+        (work / "src").mkdir()
+        (work / "bin").mkdir()
         (work / "aflat.cfg").write_text("[build]\nmain = main\n")
-        (work / "main.af").write_text(source)
+        (work / "src" / "main.af").write_text(source)
         subprocess.run([str(aflat), "--no-cache", "build"], cwd=work, check=True)
         ran = subprocess.run([str(work / "bin" / "a.out")], cwd=work)
         print(f"probe {name}: exit={ran.returncode} expected={expected}")
