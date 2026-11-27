@@ -94,6 +94,24 @@ jobs:
       - name: Probe byte_div
         if: always()
         run: python3 test/probes/probe.py byte_div
+      - name: Probe byteat_0
+        if: always()
+        run: python3 test/probes/probe.py byteat_0
+      - name: Probe byteat_1
+        if: always()
+        run: python3 test/probes/probe.py byteat_1
+      - name: Probe byteat_4
+        if: always()
+        run: python3 test/probes/probe.py byteat_4
+      - name: Probe str_at_eq_a
+        if: always()
+        run: python3 test/probes/probe.py str_at_eq_a
+      - name: Probe str_at_eq_n
+        if: always()
+        run: python3 test/probes/probe.py str_at_eq_n
+      - name: Probe hash_full_one
+        if: always()
+        run: python3 test/probes/probe.py hash_full_one
       - name: Probe map_one
         if: always()
         run: python3 test/probes/probe.py map_one
