@@ -49,6 +49,51 @@ jobs:
         run: bash ./rebuild-libs.sh -j "$(nproc)"
       - name: Build project
         run: ./bin/aflat build
+      - name: Probe len_again
+        if: always()
+        run: python3 test/probes/probe.py len_again
+      - name: Probe len_one
+        if: always()
+        run: python3 test/probes/probe.py len_one
+      - name: Probe hash_one_bucket
+        if: always()
+        run: python3 test/probes/probe.py hash_one_bucket
+      - name: Probe hash_again_bucket
+        if: always()
+        run: python3 test/probes/probe.py hash_again_bucket
+      - name: Probe hash_six_bucket
+        if: always()
+        run: python3 test/probes/probe.py hash_six_bucket
+      - name: Probe hash_again_stable
+        if: always()
+        run: python3 test/probes/probe.py hash_again_stable
+      - name: Probe str_at_again_4
+        if: always()
+        run: python3 test/probes/probe.py str_at_again_4
+      - name: Probe str_at_again_0
+        if: always()
+        run: python3 test/probes/probe.py str_at_again_0
+      - name: Probe str_comp_again
+        if: always()
+        run: python3 test/probes/probe.py str_comp_again
+      - name: Probe char_div
+        if: always()
+        run: python3 test/probes/probe.py char_div
+      - name: Probe char_mod
+        if: always()
+        run: python3 test/probes/probe.py char_mod
+      - name: Probe byte_div
+        if: always()
+        run: python3 test/probes/probe.py byte_div
+      - name: Probe map_one
+        if: always()
+        run: python3 test/probes/probe.py map_one
+      - name: Probe map_six
+        if: always()
+        run: python3 test/probes/probe.py map_six
+      - name: Probe map_again
+        if: always()
+        run: python3 test/probes/probe.py map_again
       - name: Test raw buffer storage
         run: python3 test/runtime/raw_buffer/run.py
       - name: Test vector storage
