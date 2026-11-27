@@ -2788,42 +2788,53 @@ fn main() -> int {
 TEST_CASE("short and long work as size expressions in generic code",
           "[codegen][runtime][generics][sizeof][regression]") {
   namespace fs = std::filesystem;
+  struct RestoreWorkingDirectory {
+    fs::path previous = fs::current_path();
+    ~RestoreWorkingDirectory() { fs::current_path(previous); }
+  } restoreWorkingDirectory;
+  fs::current_path(fs::path(getExePath()).parent_path().parent_path());
   const auto dir = fs::path("tmp/compiler_sizeof_short_long_regression");
   fs::remove_all(dir);
   fs::create_directories(dir);
-  const auto source = dir / "main.af";
-  const auto assembly = dir / "main.s";
-  const auto executable = dir / "main";
-  // A bare type name in expression position is the type's size. Every
-  // primitive must resolve there, because generic storage code (raw_buffer
-  // and the collections built on it) multiplies and divides by T. short and
-  // long were missing from that resolution and were rejected outright.
-  std::ofstream(source) << R"(types(T)
-fn elementSize(const T value) -> int { return T; };
-
-types(T)
-fn blockSize(const int count) -> int { return count * T; };
-
-types(T)
-fn capacityLimit() -> int { return 2147483647 / T; };
-
+  // A bare type name in expression position is the type's size, and
+  // generic storage code (raw_buffer and the collections built on it)
+  // multiplies and divides by T: 2147483647 / T, capacity * T. short and
+  // long were missing from that resolution, so deque::<short> and
+  // deque::<long> were rejected outright. Instantiating the deque with
+  // both types exercises every size expression in raw_buffer, including
+  // the growth path.
+  std::ofstream(dir / "main.af") << R"(.needs <std>
+import deque from "Collections/deque";
 fn main() -> int {
-  if elementSize::<short>(0) != 2 { return 1; };
-  if elementSize::<long>(0) != 8 { return 2; };
-  if elementSize::<int>(0) != 4 { return 3; };
-  if elementSize::<char>(0) != 1 { return 4; };
-  if blockSize::<short>(7) != 14 { return 5; };
-  if blockSize::<long>(7) != 56 { return 6; };
-  if capacityLimit::<short>() != 1073741823 { return 7; };
-  if capacityLimit::<long>() != 268435455 { return 8; };
+  const short sfirst = -300;
+  const short ssecond = 30000;
+  const short sthird = -12345;
+  let sq = new deque::<short>(2);
+  sq.push_back(sfirst).unwrap();
+  sq.push_back(ssecond).unwrap();
+  sq.push_back(sthird).unwrap();
+  if sq.pop_front().unwrap() != sfirst { return 1; };
+  if sq.pop_back().unwrap() != sthird { return 2; };
+  if sq.pop_front().unwrap() != ssecond { return 3; };
+  delete sq;
+  const long lfirst = #65536 * #65536 + #1;
+  const long lsecond = lfirst * #2 - #1;
+  const long lthird = lfirst * #4 - #3;
+  let lq = new deque::<long>(2);
+  lq.push_back(lfirst).unwrap();
+  lq.push_back(lsecond).unwrap();
+  lq.push_back(lthird).unwrap();
+  if lq.pop_front().unwrap() != lfirst { return 4; };
+  if lq.pop_back().unwrap() != lthird { return 5; };
+  if lq.pop_front().unwrap() != lsecond { return 6; };
+  delete lq;
   return 0;
 };
 )";
-  REQUIRE(build(source.string(), assembly.string(), cfg::Mutability::Strict,
-                false));
-  REQUIRE(std::system(("gcc -no-pie " + assembly.string() + " -o " +
-                       executable.string())
-                          .c_str()) == 0);
-  CHECK(std::system(executable.c_str()) == 0);
+  cfg::Config config;
+  config.entryPoint = "../" + (dir / "main").string();
+  config.outPutFile = (dir / "main").string();
+  REQUIRE(runConfig(config, "libraries/std/", 'e'));
+  CHECK(std::system(config.outPutFile.c_str()) == 0);
   fs::remove_all(dir);
 }
