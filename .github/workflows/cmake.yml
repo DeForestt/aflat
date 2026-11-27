@@ -49,6 +49,42 @@ jobs:
         run: bash ./rebuild-libs.sh -j "$(nproc)"
       - name: Build project
         run: ./bin/aflat build
+      - name: Probe iso_a
+        if: always()
+        run: python3 test/probes/probe.py iso_a
+      - name: Probe iso_b
+        if: always()
+        run: python3 test/probes/probe.py iso_b
+      - name: Probe iso_c
+        if: always()
+        run: python3 test/probes/probe.py iso_c
+      - name: Probe iso_d
+        if: always()
+        run: python3 test/probes/probe.py iso_d
+      - name: Probe iso_e
+        if: always()
+        run: python3 test/probes/probe.py iso_e
+      - name: Probe iso_f
+        if: always()
+        run: python3 test/probes/probe.py iso_f
+      - name: Probe iso_g
+        if: always()
+        run: python3 test/probes/probe.py iso_g
+      - name: Probe m_a
+        if: always()
+        run: python3 test/probes/probe.py m_a
+      - name: Probe m_b
+        if: always()
+        run: python3 test/probes/probe.py m_b
+      - name: Probe m_c
+        if: always()
+        run: python3 test/probes/probe.py m_c
+      - name: Probe m_d
+        if: always()
+        run: python3 test/probes/probe.py m_d
+      - name: Probe m_e
+        if: always()
+        run: python3 test/probes/probe.py m_e
       - name: Probe u1
         if: always()
         run: python3 test/probes/probe.py u1
