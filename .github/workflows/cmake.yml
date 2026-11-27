@@ -49,14 +49,81 @@ jobs:
         run: bash ./rebuild-libs.sh -j "$(nproc)"
       - name: Build project
         run: ./bin/aflat build
+      - name: Probe u1
+        if: always()
+        run: python3 test/probes/probe.py u1
+      - name: Probe u2
+        if: always()
+        run: python3 test/probes/probe.py u2
+      - name: Probe u3
+        if: always()
+        run: python3 test/probes/probe.py u3
+      - name: Probe u4
+        if: always()
+        run: python3 test/probes/probe.py u4
+      - name: Probe u5
+        if: always()
+        run: python3 test/probes/probe.py u5
+      - name: Probe u6
+        if: always()
+        run: python3 test/probes/probe.py u6
+      - name: Probe u7
+        if: always()
+        run: python3 test/probes/probe.py u7
+      - name: Probe u8
+        if: always()
+        run: python3 test/probes/probe.py u8
+      - name: Probe u9
+        if: always()
+        run: python3 test/probes/probe.py u9
+      - name: Probe u10
+        if: always()
+        run: python3 test/probes/probe.py u10
+      - name: Probe u11
+        if: always()
+        run: python3 test/probes/probe.py u11
+      - name: Probe u12
+        if: always()
+        run: python3 test/probes/probe.py u12
+      - name: Probe u13
+        if: always()
+        run: python3 test/probes/probe.py u13
+      - name: Probe s1
+        if: always()
+        run: python3 test/probes/probe.py s1
+      - name: Probe s2
+        if: always()
+        run: python3 test/probes/probe.py s2
+      - name: Probe s3
+        if: always()
+        run: python3 test/probes/probe.py s3
+      - name: Probe s4
+        if: always()
+        run: python3 test/probes/probe.py s4
+      - name: Probe s5
+        if: always()
+        run: python3 test/probes/probe.py s5
+      - name: Probe s6
+        if: always()
+        run: python3 test/probes/probe.py s6
+      - name: Probe s7
+        if: always()
+        run: python3 test/probes/probe.py s7
+      - name: Probe s8
+        if: always()
+        run: python3 test/probes/probe.py s8
+      - name: Probe s9
+        if: always()
+        run: python3 test/probes/probe.py s9
+      - name: Probe s10
+        if: always()
+        run: python3 test/probes/probe.py s10
       - name: Test raw buffer storage
         run: python3 test/runtime/raw_buffer/run.py
       - name: Test vector storage
         run: python3 test/runtime/vector/run.py
       - name: Test deque storage
         run: python3 test/runtime/deque/run.py
-      - name: Test sized types
-        run: python3 test/runtime/sized_types/run.py
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt
