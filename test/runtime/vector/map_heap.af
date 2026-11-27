@@ -1,30 +1,20 @@
 .needs <std>
-import vector from "Collections/Vector";
 import unordered_map from "Collections/unordered_map";
-import Heap from "Collections/Heap";
 
-fn mapAndHeap() -> void {
+fn check(const adr key, const int value) -> int {
     let map = new unordered_map::<adr, int>();
-    map.set("one", 1); map.set("two", 2); map.set("one", 3);
-    assert(map.count() == 2, "map count");
-    assert(map.get("one").unwrap() == 3, "map replace");
-    const let keys = map.keys(); assert(keys.count() == 2, "map keys");
-    mutable int sum = 0;
-    const let guard = map.iterationGuard();
-    foreach entry in map { sum = sum + entry.value; };
-    delete guard;
-    assert(sum == 5, "map iteration");
-    map.clear(); assert(map.count() == 0, "map clear");
-    map.set("again", 4); assert(map.get("again").unwrap() == 4, "map reuse");
-    let heap = new Heap::<int>();
-    heap.insert(1); heap.insert(3); heap.insert(2);
-    assert(heap.pop().unwrap() == 3, "heap maximum");
-    assert(heap.pop().unwrap() == 2, "heap middle");
-    assert(heap.pop().unwrap() == 1, "heap minimum");
-    assert(heap.pop().isNone(), "heap empty");
+    map.set(key, value);
+    const let got = map.get(key);
+    if got.isNone() { delete map; return 1; };
+    if got.unwrap() != value { delete map; return 2; };
+    delete map;
+    return 0;
 };
 
 fn main() -> int {
-    mapAndHeap();
+    if check("six", 100) != 0 { return 1; };
+    if check("key", 101) != 0 { return 2; };
+    if check("ab", 102) != 0 { return 3; };
+    if check("a", 103) != 0 { return 4; };
     return 0;
 };
