@@ -90,6 +90,58 @@ jobs:
         if: always()
         working-directory: ${{github.workspace}}/bin
         run: ./a.test
+      - name: Probe specifier i8
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe i8"
+      - name: Probe specifier i16
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe i16"
+      - name: Probe specifier i32
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe i32"
+      - name: Probe specifier i64
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe i64"
+      - name: Probe specifier u8
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe u8"
+      - name: Probe specifier u16
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe u16"
+      - name: Probe specifier u32
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe u32"
+      - name: Probe specifier u64
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe u64"
+      - name: Probe specifier isize
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe isize"
+      - name: Probe specifier usize
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe usize"
+      - name: Probe specifier short
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe short"
+      - name: Probe specifier long
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe long"
+      - name: Probe specifier byte
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe byte"
 
   check-format:
     runs-on: ubuntu-24.04

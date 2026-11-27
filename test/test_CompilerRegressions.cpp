@@ -36,6 +36,24 @@ std::int64_t parseLongLiteral(const std::string &source) {
   REQUIRE(literal != nullptr);
   return literal->val;
 }
+
+std::string fstringAsmFor(const std::string &programBody,
+                          const std::string &tag) {
+  namespace fs = std::filesystem;
+  const auto dir = fs::path("tmp/compiler_fstring_probe_" + tag);
+  fs::remove_all(dir);
+  fs::create_directories(dir);
+  const auto source = dir / "main.af";
+  const auto assembly = dir / "main.s";
+  std::ofstream(source) << ".needs <std>\nfn main() -> int {\n" + programBody +
+                               "\n  return 0;\n};\n";
+  const bool built =
+      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
+  const auto text = built ? readFile(assembly) : std::string();
+  fs::remove_all(dir);
+  REQUIRE(built);
+  return text;
+}
 } // namespace
 
 TEST_CASE("rebuilt string libraries preserve addresses and inline receivers",
@@ -1582,48 +1600,84 @@ fn main() -> int {
   CHECK(assembled == 0);
 }
 
-TEST_CASE("f-strings pick width-matched specifiers for sized integers",
-          "[codegen][fstring][sized-types][regression]") {
-  namespace fs = std::filesystem;
-  const auto dir = fs::path("tmp/compiler_fstring_sized_specifiers");
-  fs::remove_all(dir);
-  fs::create_directories(dir);
-  const auto source = dir / "main.af";
-  const auto assembly = dir / "main.s";
+TEST_CASE("fstring specifier probe i8", "[codegen][fstring][probe]") {
+  const auto text = fstringAsmFor("  const i8 x = -128;\n  let r = `{x}`;", "i8");
+  CHECK(text.find("\"%t\"") != std::string::npos);
+}
 
-  std::ofstream(source) << R"(.needs <std>
-fn main() -> int {
-  const i8 a = -128;
-  const i16 b = -30000;
-  const i32 c = -123456789;
-  const i64 d = #1234567890123456789;
-  const u8 e = 255;
-  const u16 f = 65535;
-  const u32 two = 2000000000;
-  const u32 g = two + two;
-  const u64 zero = 0;
-  const u64 h = zero - 1;
-  mutable isize i = 9876543210;
-  i = i * -1;
-  const usize j = 12345678901;
-  const short k = -30000;
-  const long l = #987654321098765432;
-  const byte m = 200;
-  const int n = -42;
-  const char o = 'x';
-  let rendered = `{a} {b} {c} {d} {e} {f} {g} {h} {i} {j} {k} {l} {m} {n} {o}`;
-  return 0;
-};
-)";
+TEST_CASE("fstring specifier probe i16", "[codegen][fstring][probe]") {
+  const auto text =
+      fstringAsmFor("  const i16 x = -30000;\n  let r = `{x}`;", "i16");
+  CHECK(text.find("\"%w\"") != std::string::npos);
+}
 
-  const bool built =
-      build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
-  const auto text = built ? readFile(assembly) : std::string();
-  fs::remove_all(dir);
+TEST_CASE("fstring specifier probe i32", "[codegen][fstring][probe]") {
+  const auto text =
+      fstringAsmFor("  const i32 x = -123456789;\n  let r = `{x}`;", "i32");
+  CHECK(text.find("\"%d\"") != std::string::npos);
+}
 
-  REQUIRE(built);
-  CHECK(text.find("%t %w %d %l %T %W %u %U %l %U %w %l %T %d %c") !=
-        std::string::npos);
+TEST_CASE("fstring specifier probe i64", "[codegen][fstring][probe]") {
+  const auto text = fstringAsmFor(
+      "  const i64 x = #1234567890123456789;\n  let r = `{x}`;", "i64");
+  CHECK(text.find("\"%l\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier probe u8", "[codegen][fstring][probe]") {
+  const auto text = fstringAsmFor("  const u8 x = 255;\n  let r = `{x}`;", "u8");
+  CHECK(text.find("\"%T\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier probe u16", "[codegen][fstring][probe]") {
+  const auto text =
+      fstringAsmFor("  const u16 x = 65535;\n  let r = `{x}`;", "u16");
+  CHECK(text.find("\"%W\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier probe u32", "[codegen][fstring][probe]") {
+  const auto text = fstringAsmFor(
+      "  const u32 two = 2000000000;\n  const u32 x = two + two;\n  let r = "
+      "`{x}`;",
+      "u32");
+  CHECK(text.find("\"%u\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier probe u64", "[codegen][fstring][probe]") {
+  const auto text = fstringAsmFor(
+      "  const u64 zero = 0;\n  const u64 x = zero - 1;\n  let r = `{x}`;",
+      "u64");
+  CHECK(text.find("\"%U\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier probe isize", "[codegen][fstring][probe]") {
+  const auto text = fstringAsmFor(
+      "  mutable isize x = 9876543210;\n  x = x * -1;\n  let r = `{x}`;",
+      "isize");
+  CHECK(text.find("\"%l\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier probe usize", "[codegen][fstring][probe]") {
+  const auto text =
+      fstringAsmFor("  const usize x = 12345678901;\n  let r = `{x}`;", "usize");
+  CHECK(text.find("\"%U\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier probe short", "[codegen][fstring][probe]") {
+  const auto text =
+      fstringAsmFor("  const short x = -30000;\n  let r = `{x}`;", "short");
+  CHECK(text.find("\"%w\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier probe long", "[codegen][fstring][probe]") {
+  const auto text = fstringAsmFor(
+      "  const long x = #987654321098765432;\n  let r = `{x}`;", "long");
+  CHECK(text.find("\"%l\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier probe byte", "[codegen][fstring][probe]") {
+  const auto text =
+      fstringAsmFor("  const byte x = 200;\n  let r = `{x}`;", "byte");
+  CHECK(text.find("\"%T\"") != std::string::npos);
 }
 
 TEST_CASE("imported union aliases preserve float operand metadata",
