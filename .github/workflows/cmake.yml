@@ -95,6 +95,21 @@ jobs:
       - name: Test sized type formatting (oracle i64)
         if: always()
         run: python3 test/runtime/format_sized/run.py oracle_i64
+      - name: Oracle iso promote char
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py iso_promote.af 65
+      - name: Oracle iso deref char
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py iso_deref.af 65
+      - name: Oracle iso promote short
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py iso_promote16.af 7
+      - name: Oracle hand fPrint c
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py hand_c.af 0
+      - name: Oracle hand fPrint w
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py hand_w.af 0
       - name: Build only oracle_num
         if: always()
         run: python3 test/runtime/format_sized/run_buildonly.py oracle_num.af

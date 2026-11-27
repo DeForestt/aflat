@@ -1,0 +1,8 @@
+.needs <std>
+
+// Isolation: pure local char -> int promotion, no pointers, no format.
+fn main() -> int {
+    const char c = 'A';
+    const int n = 0 + c;
+    return n;
+};

@@ -1,0 +1,8 @@
+.needs <std>
+import {fPrint} from "io" under io;
+
+// Control: hand-packed %c through fPrint (pre-existing specifier).
+fn main() -> int {
+    io.fPrint("v=%c\n", "A");
+    return 0;
+};
