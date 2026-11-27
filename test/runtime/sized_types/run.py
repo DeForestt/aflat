@@ -15,7 +15,7 @@ def run(command, cwd):
 
 def build_and_run(aflat, project_dir, source_name):
     source = pathlib.Path(__file__).with_name(source_name)
-    (project_dir / "main.af").write_text(source.read_text())
+    (project_dir / "src" / "main.af").write_text(source.read_text())
     run([aflat, "--no-cache", "build"], project_dir)
     # The suite uses plain assert(), which aborts with a nonzero exit
     # code on failure, so a clean run is the pass signal.
@@ -30,6 +30,8 @@ def main():
 
     with tempfile.TemporaryDirectory() as tmp:
         work = pathlib.Path(tmp)
+        (work / "src").mkdir()
+        (work / "bin").mkdir()
         (work / "aflat.cfg").write_text("[build]\nmain = main\n")
         for name in TESTS:
             build_and_run(aflat, work, name)
