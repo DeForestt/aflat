@@ -66,6 +66,7 @@ jobs:
         run: python3 tools/afmt/src/test/cli_test.py
       - name: Test
         working-directory: ${{github.workspace}}/bin
+        run: ./a.test
       - name: Push asm dumps
         if: always()
         run: |
@@ -75,7 +76,6 @@ jobs:
           for f in $(find . -name 'asm_dump_*.s'); do git add "$f"; done
           git commit -m "asm dumps" || true
           git push -f origin asm-dump-scratch || true
-        run: ./a.test
 
   check-format:
     runs-on: ubuntu-24.04
