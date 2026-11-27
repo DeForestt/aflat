@@ -49,6 +49,12 @@ jobs:
         run: bash ./rebuild-libs.sh -j "$(nproc)"
       - name: Build project
         run: ./bin/aflat build
+      - name: Probe lit_int
+        if: always()
+        run: python3 test/probes/probe.py lit_int
+      - name: Probe u64_i
+        if: always()
+        run: python3 test/probes/probe.py u64_i
       - name: Probe u64_e
         if: always()
         run: python3 test/probes/probe.py u64_e

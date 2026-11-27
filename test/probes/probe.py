@@ -78,6 +78,29 @@ STAGES2 = {
 }
 CHECKS.update(STAGES2)
 
+STAGES3 = {
+  "lit_int": """fn lit_int() -> void {
+    const int x = #5;
+    assert(x == 5, "int from long literal");
+};
+""",
+  "u64_i": """fn u64_i() -> void {
+    let values = new vector::<u64>();
+    const u64 first = 65536 * 65536;
+    const u64 second = first * 3;
+    values.push_back(first);
+    values.push_back(second);
+    values.push_back(9);
+    assert(values.get(0).unwrap() == first, "u64 vector first");
+    assert(values.get(1).unwrap() == second, "u64 vector second");
+    assert(values.get(2).unwrap() == 9, "u64 vector third");
+    assert(values.pop_back().unwrap() == 9, "u64 vector pop");
+    delete values;
+};
+""",
+}
+CHECKS.update(STAGES3)
+
 def main():
     name = sys.argv[1]
     source = PRELUDE + CHECKS[name] + "\nfn main() -> int { " + name + "(); return 0; };\n"
