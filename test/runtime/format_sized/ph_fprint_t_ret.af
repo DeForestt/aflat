@@ -1,0 +1,9 @@
+.needs <std>
+import {fPrint} from "io" under io;
+
+// Does io.fPrint's %t branch return normally? 42 = yes; a signal
+// return code identifies the crash instead.
+fn main() -> int {
+    io.fPrint("v=%t\n", "A");
+    return 42;
+};

@@ -158,6 +158,33 @@ jobs:
       - name: Oracle hand t segfault
         if: always()
         run: python3 test/runtime/format_sized/run_oracle.py hand_t.af -11
+      - name: Oracle hand t abort
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py hand_t.af -6
+      - name: Oracle hand t fpe
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py hand_t.af -8
+      - name: Oracle ph uni plain
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py ph_uni_plain.af 70
+      - name: Oracle ph uni d
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py ph_uni_d.af 72
+      - name: Oracle ph uni c
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py ph_uni_c.af 74
+      - name: Oracle ph uni t cmp
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py ph_uni_t_cmp.af 76
+      - name: Oracle ph fprint t ret
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py ph_fprint_t_ret.af 42
+      - name: Oracle ph fprint d ret
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py ph_fprint_d_ret.af 43
+      - name: Oracle ph fprint w ret
+        if: always()
+        run: python3 test/runtime/format_sized/run_oracle.py ph_fprint_w_ret.af 44
       - name: Oracle hand fPrint c
         if: always()
         run: python3 test/runtime/format_sized/run_oracle.py hand_c.af 0

@@ -1,0 +1,8 @@
+.needs <std>
+import {fPrint} from "io" under io;
+
+// Control: io.fPrint's %w branch, then return. 44 = returned normally.
+fn main() -> int {
+    io.fPrint("v=%w\n", "A");
+    return 44;
+};

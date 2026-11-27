@@ -1,0 +1,12 @@
+.needs <std>
+import uni_string from "uni_string";
+import {_fUCstr} from "uni_string" under f;
+import {str_comp} from "strings" under strings;
+
+// Direct call to uni_string's _fUCstr with no format specifier at all:
+// exercises only the call/return path. 70 = rendered "v=xy", 71 = not.
+fn main() -> int {
+    const uni_string out = f._fUCstr("v=xy", "A");
+    if strings.str_comp(out.cstr(), "v=xy") == 1 { return 70; };
+    return 71;
+};

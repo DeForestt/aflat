@@ -1,0 +1,13 @@
+.needs <std>
+import uni_string from "uni_string";
+import {_fUCstr} from "uni_string" under f;
+import {str_comp} from "strings" under strings;
+
+// Direct call to uni_string's _fUCstr with %d (a pre-existing
+// specifier) and a hand-packed int. 72 = rendered "v=65", 73 = not.
+fn main() -> int {
+    const int x = 65;
+    const uni_string out = f._fUCstr("v=%d", ?x);
+    if strings.str_comp(out.cstr(), "v=65") == 1 { return 72; };
+    return 73;
+};

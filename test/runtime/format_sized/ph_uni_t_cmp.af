@@ -1,0 +1,12 @@
+.needs <std>
+import uni_string from "uni_string";
+import {_fUCstr} from "uni_string" under f;
+import {str_comp} from "strings" under strings;
+
+// hand_t_uni's check in exit-code form (no assert): 76 = the direct
+// %t call renders "v=65", 77 = it renders something else.
+fn main() -> int {
+    const uni_string out = f._fUCstr("v=%t", "A");
+    if strings.str_comp(out.cstr(), "v=65") == 1 { return 76; };
+    return 77;
+};
