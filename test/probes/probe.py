@@ -1,5 +1,5 @@
 
-import pathlib, subprocess, sys, tempfile
+import os, pathlib, subprocess, sys, tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SRC = "fn main() -> int { return 0; };\n"
@@ -17,17 +17,20 @@ def main():
     with tempfile.TemporaryDirectory() as tmp:
         work = pathlib.Path(tmp)
         build(work)
-        if name == "work_cache_dir":
-            return 0 if (work / ".cache").exists() else 1
-        if name == "work_any_new_file":
-            names = [p.name for p in work.rglob("*") if p.is_file()]
-            return 0 if any("main" in n and n != "main.af" for n in names) else 1
-        if name == "root_cache_main_s":
-            return 0 if (ROOT / ".cache" / "main.s").exists() else 1
-        if name == "root_cache_dir":
-            return 0 if (ROOT / ".cache").exists() else 1
-        if name == "work_bin_aout":
-            return 0 if (work / "bin" / "a.out").exists() else 1
+        if name == "oswalk_s":
+            hits = []
+            for dirpath, _dirs, files in os.walk(work):
+                hits += [f for f in files if f.endswith(".s")]
+            return 0 if hits else 1
+        if name == "direct_main_s":
+            return 0 if (work / ".cache" / "main.s").exists() else 1
+        if name == "direct_src_main_s":
+            return 0 if (work / ".cache" / "src" / "main.s").exists() else 1
+        if name == "oswalk_any":
+            hits = []
+            for dirpath, _dirs, files in os.walk(work):
+                hits += files
+            return 0 if len(hits) > 3 else 1
     return 1
 
 if __name__ == "__main__":

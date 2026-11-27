@@ -49,6 +49,18 @@ jobs:
         run: bash ./rebuild-libs.sh -j "$(nproc)"
       - name: Build project
         run: ./bin/aflat build
+      - name: Probe oswalk_s
+        if: always()
+        run: python3 test/probes/probe.py oswalk_s
+      - name: Probe direct_main_s
+        if: always()
+        run: python3 test/probes/probe.py direct_main_s
+      - name: Probe direct_src_main_s
+        if: always()
+        run: python3 test/probes/probe.py direct_src_main_s
+      - name: Probe oswalk_any
+        if: always()
+        run: python3 test/probes/probe.py oswalk_any
       - name: Probe work_cache_dir
         if: always()
         run: python3 test/probes/probe.py work_cache_dir
