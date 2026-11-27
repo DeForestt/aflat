@@ -142,6 +142,34 @@ jobs:
         if: always()
         working-directory: ${{github.workspace}}/bin
         run: ./a.test "fstring specifier probe byte"
+      - name: Probe specifier int control
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe int control"
+      - name: Probe specifier declonly i8
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe declonly i8"
+      - name: Probe specifier i8 as d
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe i8 as d"
+      - name: Probe specifier i8 as a
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe i8 as a"
+      - name: Probe specifier i8 as c
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe i8 as c"
+      - name: Probe specifier usize as a
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "fstring specifier probe usize as a"
+      - name: Probe control Vec3 case
+        if: always()
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "f-strings keep owned toString results alive while formatting"
 
   check-format:
     runs-on: ubuntu-24.04

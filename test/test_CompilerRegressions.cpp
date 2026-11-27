@@ -1680,6 +1680,38 @@ TEST_CASE("fstring specifier probe byte", "[codegen][fstring][probe]") {
   CHECK(text.find("\"%T\"") != std::string::npos);
 }
 
+TEST_CASE("fstring specifier probe int control", "[codegen][fstring][probe]") {
+  const auto text =
+      fstringAsmFor("  const int x = -42;\n  let r = `{x}`;", "intctl");
+  CHECK(text.find("\"%d\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier probe declonly i8", "[codegen][fstring][probe]") {
+  const auto text = fstringAsmFor("  const i8 x = -128;", "decli8");
+  CHECK_FALSE(text.empty());
+}
+
+TEST_CASE("fstring specifier probe i8 as d", "[codegen][fstring][probe]") {
+  const auto text = fstringAsmFor("  const i8 x = -128;\n  let r = `{x}`;", "i8d");
+  CHECK(text.find("\"%d\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier probe i8 as a", "[codegen][fstring][probe]") {
+  const auto text = fstringAsmFor("  const i8 x = -128;\n  let r = `{x}`;", "i8a");
+  CHECK(text.find("\"%a\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier probe i8 as c", "[codegen][fstring][probe]") {
+  const auto text = fstringAsmFor("  const i8 x = -128;\n  let r = `{x}`;", "i8c");
+  CHECK(text.find("\"%c\"") != std::string::npos);
+}
+
+TEST_CASE("fstring specifier probe usize as a", "[codegen][fstring][probe]") {
+  const auto text = fstringAsmFor(
+      "  const usize x = 12345678901;\n  let r = `{x}`;", "usizea");
+  CHECK(text.find("\"%a\"") != std::string::npos);
+}
+
 TEST_CASE("imported union aliases preserve float operand metadata",
           "[imports][union][float][regression]") {
   namespace fs = std::filesystem;
