@@ -45,8 +45,9 @@ std::string fstringAsmFor(const std::string &programBody,
   fs::create_directories(dir);
   const auto source = dir / "main.af";
   const auto assembly = dir / "main.s";
-  std::ofstream(source) << ".needs <std>\nfn main() -> int {\n" + programBody +
-                               "\n  return 0;\n};\n";
+  std::ofstream(source) << ".needs <std>\nimport uni_string from "
+                           "\"uni_string\";\nfn main() -> int {\n" +
+                               programBody + "\n  return 0;\n};\n";
   const bool built =
       build(source.string(), assembly.string(), cfg::Mutability::Strict, false);
   const auto text = built ? readFile(assembly) : std::string();
