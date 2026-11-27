@@ -341,6 +341,18 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     return true;
   if (type.typeName == "number" && typeName == "byte")
     return true;
+  // The explicitly sized integer types follow the same conversion rules
+  // as int/long: number literals convert to and from every integer type,
+  // and each legacy name is an alias of one sized type, so an alias pair
+  // names the same type and is mutually assignable.
+  if (typeName == "number" && gen::utils::isIntegerTypeName(type.typeName))
+    return true;
+  if (type.typeName == "number" && gen::utils::isIntegerTypeName(typeName))
+    return true;
+  if (!gen::utils::integerTypeAlias(type.typeName).empty() &&
+      gen::utils::integerTypeAlias(type.typeName) ==
+          gen::utils::integerTypeAlias(typeName))
+    return true;
 
   gen::Type **expected = impl->typeList[type.typeName];
   gen::Class *cl = nullptr;
@@ -1369,7 +1381,11 @@ bool gen::CodeGenerator::whenSatisfied(const ast::When &when) {
         return false;
       return true;
     } else if (pred.op == ast::WhenOperator::IS) {
-      auto equal = pred.typeName == pred.ident;
+      // usize is the sized alias of adr, so the two names satisfy each
+      // other's type predicates just as they are mutually assignable.
+      auto equal = pred.typeName == pred.ident ||
+                   (pred.ident == "adr" && pred.typeName == "usize") ||
+                   (pred.ident == "usize" && pred.typeName == "adr");
       if (!pred.negated && !equal)
         return false;
       if (pred.negated && equal)

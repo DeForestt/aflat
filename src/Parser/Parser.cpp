@@ -148,6 +148,19 @@ parse::Parser::Impl::Impl(Parser &parser, int mutability) : parser(parser) {
   this->addType("long", asmc::Hard, asmc::QWord);
   this->addType("adr", asmc::Hard, asmc::QWord);
   this->addType("byte", asmc::Hard, asmc::Byte);
+  // Explicitly sized integer types. The sized names are canonical; the
+  // legacy names above are aliases of the matching sized type (char is
+  // i8, byte is u8, short is i16, int is i32, long is i64, adr is usize).
+  this->addType("i8", asmc::Hard, asmc::Byte);
+  this->addType("i16", asmc::Hard, asmc::Word);
+  this->addType("i32", asmc::Hard, asmc::DWord);
+  this->addType("i64", asmc::Hard, asmc::QWord);
+  this->addType("u8", asmc::Hard, asmc::Byte);
+  this->addType("u16", asmc::Hard, asmc::Word);
+  this->addType("u32", asmc::Hard, asmc::DWord);
+  this->addType("u64", asmc::Hard, asmc::QWord);
+  this->addType("isize", asmc::Hard, asmc::QWord);
+  this->addType("usize", asmc::Hard, asmc::QWord);
   this->addType("float", asmc::Float, asmc::DWord);
   this->addType("bool", asmc::Hard, asmc::Byte);
   this->addType("generic", asmc::Hard, asmc::QWord, true, false);
