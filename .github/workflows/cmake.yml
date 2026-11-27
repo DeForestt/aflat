@@ -95,6 +95,21 @@ jobs:
       - name: Test sized type formatting (oracle i64)
         if: always()
         run: python3 test/runtime/format_sized/run.py oracle_i64
+      - name: Build only oracle_num
+        if: always()
+        run: python3 test/runtime/format_sized/run_buildonly.py oracle_num.af
+      - name: Build only hand_t
+        if: always()
+        run: python3 test/runtime/format_sized/run_buildonly.py hand_t.af
+      - name: Build only hand_t_str
+        if: always()
+        run: python3 test/runtime/format_sized/run_buildonly.py hand_t_str.af
+      - name: Build only hand_t_uni
+        if: always()
+        run: python3 test/runtime/format_sized/run_buildonly.py hand_t_uni.af
+      - name: Build only vnarrow
+        if: always()
+        run: python3 test/runtime/format_sized/run_buildonly.py vnarrow.af
       - name: Test sized type formatting (hand fPrint t)
         if: always()
         run: python3 test/runtime/format_sized/run.py hand_t
