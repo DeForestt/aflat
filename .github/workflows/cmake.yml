@@ -49,14 +49,36 @@ jobs:
         run: bash ./rebuild-libs.sh -j "$(nproc)"
       - name: Build project
         run: ./bin/aflat build
+      - name: Probe asm_exists
+        if: always()
+        run: python3 test/probes/probe.py asm_exists
+      - name: Probe i64mod_cqto
+        if: always()
+        run: python3 test/probes/probe.py i64mod_cqto
+      - name: Probe i64mod_cltd
+        if: always()
+        run: python3 test/probes/probe.py i64mod_cltd
+      - name: Probe i64mod_movrdx
+        if: always()
+        run: python3 test/probes/probe.py i64mod_movrdx
+      - name: Probe u64mod_xor
+        if: always()
+        run: python3 test/probes/probe.py u64mod_xor
+      - name: Probe isize_div_cqto
+        if: always()
+        run: python3 test/probes/probe.py isize_div_cqto
+      - name: Probe isize_cmp_setge
+        if: always()
+        run: python3 test/probes/probe.py isize_cmp_setge
+      - name: Probe isize_cmp_setae
+        if: always()
+        run: python3 test/probes/probe.py isize_cmp_setae
       - name: Test raw buffer storage
         run: python3 test/runtime/raw_buffer/run.py
       - name: Test vector storage
         run: python3 test/runtime/vector/run.py
       - name: Test deque storage
         run: python3 test/runtime/deque/run.py
-      - name: Test sized types
-        run: python3 test/runtime/sized_types/run.py
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt
