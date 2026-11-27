@@ -1,0 +1,77 @@
+<Program> ::= <Class> { <Class> }
+
+<Class> ::= "class" <Ident> "{" <Members> "}"
+
+<Members> ::= <Member> { ";" <Member> }
+
+<Member> ::= <Function>
+          | <Declare>
+
+<Function> ::= <Type> <Ident> "(" [ <Args> ] ")" <Statement>
+
+<Args> ::= <Declare> { "," <Declare> }
+
+<Type> ::= "int"
+        | "float"
+        | "string"
+        | "char"
+        | "byte"
+        | "bool"
+        | "long"
+        | "short"
+        | "adr"
+
+<Ident> ::= <AChar> { <Char> }
+
+<Statement> ::= "if" <Paren_Expr> <Statement>
+              | "if" <Paren_Expr> <Statement> "else" <Statement>
+              | <Declare>
+              | <Declare> "=" <Expr>
+              | <Ident> "=" <Expr>
+              | "while" <Paren_Expr> <Statement>
+              | "for" "(" <Declare> ";" <Expr> ";" <Statement> ")" <Statement>
+              | "{" <Sequence> "}"
+              | "iflush"
+              | "oflush"
+              | "oread"
+              | "return" <Expr>
+
+<Sequence> ::= <Statement> { ";" <Statement> }
+
+<Declare> ::= <Type> <Ident>
+
+<Paren_Expr> ::= "(" <Expr> ")"
+
+<Expr> ::= <String>
+        | <Int>
+        | <Byte>
+        | <Ident>
+        | <Expr> <Op> <Expr>
+
+<Op> ::= "+"
+       | "-"
+       | "*"
+       | "/"
+       | "=="
+       | "!="
+
+<String> ::= "\"" { <WChar> } "\""
+
+<Int> ::= <Digit> { <Digit> }
+
+<Byte> ::= "0x" <HexDigit> <HexDigit>
+
+<WChar> ::= <Char>
+          | " "
+
+<Char> ::= <Digit>
+         | <AChar>
+
+<Digit> ::= [0-9]
+
+<HexDigit> ::= <Digit>
+             | [A-F]
+             | [a-f]
+
+<AChar> ::= [a-z]
+          | [A-Z]
