@@ -8,7 +8,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[3]
 TESTS = ["values_uni.af", "values_string.af", "vnarrow.af", "vsigned.af",
          "vunsigned.af", "mixed.af", "regressions.af", "oracle_num.af",
          "oracle_char.af", "oracle_empty.af", "oracle_literal.af",
-         "oracle_zero.af", "oracle_i64.af"]
+         "oracle_zero.af", "oracle_i64.af", "hand_t.af",
+         "hand_t_str.af", "hand_t_uni.af"]
 
 
 def run(command, cwd):

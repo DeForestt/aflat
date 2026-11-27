@@ -1,0 +1,10 @@
+.needs <std>
+import {fPrint} from "io" under io;
+
+// Hand-packed formatter call, bypassing fstring codegen entirely: the
+// cstr "A" is a 1-byte arg buffer holding 65. If io.fPrint's %t branch
+// is sound this exits 0; a crash here incriminates the formatter.
+fn main() -> int {
+    io.fPrint("v=%t\n", "A");
+    return 0;
+};

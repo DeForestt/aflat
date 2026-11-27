@@ -1,0 +1,12 @@
+.needs <std>
+import string from "String";
+import {fString} from "String" under st;
+import {str_comp} from "strings" under strings;
+
+// Hand-packed call into String's fString with a 1-byte arg buffer.
+fn main() -> int {
+    const string fmt = new string("v=%t");
+    const string out = st.fString(fmt, "A");
+    assert(strings.str_comp(out.cstr(), "v=65") == 1, "hand fString %t");
+    return 0;
+};

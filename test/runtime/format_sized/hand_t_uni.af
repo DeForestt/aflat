@@ -1,0 +1,11 @@
+.needs <std>
+import uni_string from "uni_string";
+import {_fUCstr} from "uni_string" under f;
+import {str_comp} from "strings" under strings;
+
+// Hand-packed call into uni_string's _fUCstr with a 1-byte arg buffer.
+fn main() -> int {
+    const uni_string out = f._fUCstr("v=%t", "A");
+    assert(strings.str_comp(out.cstr(), "v=65") == 1, "hand _fUCstr %t");
+    return 0;
+};

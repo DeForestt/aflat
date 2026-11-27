@@ -95,6 +95,15 @@ jobs:
       - name: Test sized type formatting (oracle i64)
         if: always()
         run: python3 test/runtime/format_sized/run.py oracle_i64
+      - name: Test sized type formatting (hand fPrint t)
+        if: always()
+        run: python3 test/runtime/format_sized/run.py hand_t
+      - name: Test sized type formatting (hand fString t)
+        if: always()
+        run: python3 test/runtime/format_sized/run.py hand_t_str
+      - name: Test sized type formatting (hand uni fUCstr t)
+        if: always()
+        run: python3 test/runtime/format_sized/run.py hand_t_uni
       - name: Oracle len8 is 4
         if: always()
         run: python3 test/runtime/format_sized/run_oracle.py oracle_len8.af 4
