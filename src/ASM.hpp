@@ -295,6 +295,9 @@ public:
 
 class Div : public ArithInst {
 public:
+  // Unsigned division zeroes the high half of the dividend pair and uses
+  // div; signed division sign-extends it and uses idiv.
+  bool isUnsigned = false;
   std::string toString();
 };
 
@@ -326,6 +329,11 @@ public:
 };
 
 class Sar : public ArithInst {
+public:
+  std::string toString();
+};
+
+class Shr : public ArithInst {
 public:
   std::string toString();
 };
