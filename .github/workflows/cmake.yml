@@ -49,14 +49,27 @@ jobs:
         run: bash ./rebuild-libs.sh -j "$(nproc)"
       - name: Build project
         run: ./bin/aflat build
+      - name: Probe checkU32Deque
+        if: always()
+        run: python3 test/probes/probe.py checkU32Deque
+      - name: Probe checkI16Deque
+        if: always()
+        run: python3 test/probes/probe.py checkI16Deque
+      - name: Probe checkU64Vector
+        if: always()
+        run: python3 test/probes/probe.py checkU64Vector
+      - name: Probe checkI8Vector
+        if: always()
+        run: python3 test/probes/probe.py checkI8Vector
+      - name: Probe checkWhenPredicates
+        if: always()
+        run: python3 test/probes/probe.py checkWhenPredicates
       - name: Test raw buffer storage
         run: python3 test/runtime/raw_buffer/run.py
       - name: Test vector storage
         run: python3 test/runtime/vector/run.py
       - name: Test deque storage
         run: python3 test/runtime/deque/run.py
-      - name: Test sized types
-        run: python3 test/runtime/sized_types/run.py
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt
