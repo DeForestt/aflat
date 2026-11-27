@@ -19,6 +19,40 @@ void gen::utils::shellStatement(ast::Statement *stmt) {
   }
 }
 
+std::string gen::utils::integerTypeAlias(const std::string &name) {
+  if (name == "char" || name == "i8")
+    return "i8";
+  if (name == "short" || name == "i16")
+    return "i16";
+  if (name == "int" || name == "i32")
+    return "i32";
+  if (name == "long" || name == "i64")
+    return "i64";
+  if (name == "byte" || name == "u8")
+    return "u8";
+  if (name == "u16")
+    return "u16";
+  if (name == "u32")
+    return "u32";
+  if (name == "u64")
+    return "u64";
+  if (name == "adr" || name == "usize")
+    return "usize";
+  if (name == "isize")
+    return "isize";
+  return "";
+}
+
+bool gen::utils::isIntegerTypeName(const std::string &name) {
+  return !integerTypeAlias(name).empty();
+}
+
+bool gen::utils::isUnsignedIntegerTypeName(const std::string &name) {
+  const std::string canonical = integerTypeAlias(name);
+  return canonical == "u8" || canonical == "u16" || canonical == "u32" ||
+         canonical == "u64" || canonical == "usize";
+}
+
 int gen::utils::sizeToInt(asmc::Size size) {
   switch (size) {
   case asmc::Size::Byte:
