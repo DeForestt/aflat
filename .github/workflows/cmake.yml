@@ -106,18 +106,43 @@ jobs:
           ${{github.workspace}}/bin/aflat build -o ./bin/afmt
       - name: Test afmt CLI
         run: python3 tools/afmt/src/test/cli_test.py
-      - name: Test
+      - name: Test (unit, conversions)
         working-directory: ${{github.workspace}}/bin
         run: |
           set +e
-          ./a.test -r compact > test-out.txt 2>&1
+          ./a.test "[conversions]" -r compact > test-out.txt 2>&1
           status=$?
           if [ $status -ne 0 ]; then
-            grep -E "FAILED:|test cases:" test-out.txt | head -20 | \
-              sed -e 's/%/%25/g' -e 's/\r/%0D/g' | \
-              while IFS= read -r line; do
-                echo "::error title=unit test failure::$line"
-              done
+            grep -E "FAILED:|test cases:" test-out.txt | head -20 > failures.txt
+            while IFS= read -r line; do
+              printf '::error title=unit test failure::%s\n' "$line"
+            done < failures.txt
+          fi
+          exit $status
+      - name: Test (unit, sized types and int types)
+        working-directory: ${{github.workspace}}/bin
+        run: |
+          set +e
+          ./a.test "[sized-types],[inttypes]" -r compact > test-out.txt 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then
+            grep -E "FAILED:|test cases:" test-out.txt | head -20 > failures.txt
+            while IFS= read -r line; do
+              printf '::error title=unit test failure::%s\n' "$line"
+            done < failures.txt
+          fi
+          exit $status
+      - name: Test (unit, all other cases)
+        working-directory: ${{github.workspace}}/bin
+        run: |
+          set +e
+          ./a.test "~[conversions]~[sized-types]~[inttypes]" -r compact > test-out.txt 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then
+            grep -E "FAILED:|test cases:" test-out.txt | head -20 > failures.txt
+            while IFS= read -r line; do
+              printf '::error title=unit test failure::%s\n' "$line"
+            done < failures.txt
           fi
           exit $status
 
