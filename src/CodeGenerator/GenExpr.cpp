@@ -5,6 +5,7 @@
 #include <chrono>
 
 #include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/Conversions.hpp"
 #include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
@@ -1445,6 +1446,27 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         div->size = expr1.size;
         div->isUnsigned = gen::utils::isUnsignedIntegerTypeName(expr1.type);
 
+        // Common-type rule (design section 6): the division runs at
+        // the type covering both operands; the Div instruction's size
+        // and signedness come from the common type.
+        gen::utils::OperandInfo divLeftInfo, divRightInfo;
+        const gen::utils::IntTypeInfo *divCommon = nullptr;
+        if (expr1.op != asmc::Float &&
+            gen::utils::integerOperandInfo(comp.expr1, expr1.type,
+                                           divLeftInfo) &&
+            gen::utils::integerOperandInfo(comp.expr2, expr2.type,
+                                           divRightInfo) &&
+            !(divLeftInfo.isLiteral && divRightInfo.isLiteral)) {
+          divCommon = gen::utils::commonIntType(divLeftInfo, divRightInfo);
+          if (divCommon == nullptr)
+            alert(gen::utils::noCommonTypeDiagnostic(
+                      gen::utils::operandDisplayName(divLeftInfo, expr1.type),
+                      gen::utils::operandDisplayName(divRightInfo, expr2.type)),
+                  true, __FILE__, __LINE__);
+          div->size = gen::utils::toSize(divCommon->widthBytes);
+          div->isUnsigned = !divCommon->isSigned;
+        }
+
         std::string to1 = registers()["%rdx"]->get(expr1.size);
         std::string to2 = registers()["%rax"]->get(expr1.size);
         output.access = registers()["%rax"]->get(expr1.size);
@@ -1468,7 +1490,18 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           eax->from = expr1.access;
           eax->to = registers()["%rax"]->get(expr1.size);
           eax->size = expr1.size;
+          if (divCommon != nullptr && divLeftInfo.isLiteral &&
+              divCommon->widthBytes > gen::utils::sizeToInt(expr1.size)) {
+            // A literal dividend materializes at the common width.
+            eax->size = div->size;
+            eax->to = registers()["%rax"]->get(div->size);
+          }
           OutputFile.text << eax;
+          if (divCommon != nullptr && !divLeftInfo.isLiteral &&
+              divLeftInfo.typeInfo != nullptr &&
+              divLeftInfo.typeInfo->widthBytes < divCommon->widthBytes)
+            emitIntegerExtension(OutputFile, "%rax", *divLeftInfo.typeInfo,
+                                 *divCommon);
           mov->op = expr1.op;
 
           expr2 = this->GenExpr(comp.expr2, OutputFile, expr1.size);
@@ -1476,15 +1509,38 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           mov->to = registers()["%rcx"]->get(expr1.size);
           mov->size = expr1.size;
           mov->op = expr1.op;
-          div->op1 = mov->to;
-          output.access = registers()["%rax"]->get(expr1.size);
+          if (divCommon != nullptr && divRightInfo.isLiteral) {
+            mov->size = div->size;
+            mov->to = registers()["%rcx"]->get(div->size);
+          } else if (divCommon != nullptr) {
+            // Stage the divisor at its own width, then extend it in
+            // %rcx; moving it at the dividend's width would read past
+            // a narrower divisor's storage.
+            mov->size = expr2.size;
+            mov->to = registers()["%rcx"]->get(expr2.size);
+          }
+          div->op1 = divCommon != nullptr ? registers()["%rcx"]->get(div->size)
+                                          : mov->to;
+          output.access = registers()["%rax"]->get(
+              divCommon != nullptr ? div->size : expr1.size);
 
           OutputFile.text << mov;
+          if (divCommon != nullptr && !divRightInfo.isLiteral &&
+              divRightInfo.typeInfo != nullptr &&
+              divRightInfo.typeInfo->widthBytes < divCommon->widthBytes)
+            emitIntegerExtension(OutputFile, "%rcx", *divRightInfo.typeInfo,
+                                 *divCommon);
         }
 
         OutputFile.text << div;
-        output.size = expr1.size;
-        output.type = expr1.type;
+        if (divCommon != nullptr) {
+          output.size = div->size;
+          output.type = gen::utils::commonResultName(
+              divLeftInfo, expr1.type, divRightInfo, expr2.type, *divCommon);
+        } else {
+          output.size = expr1.size;
+          output.type = expr1.type;
+        }
         break;
       }
       case ast::Mod: {
@@ -1499,6 +1555,27 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         div->op1 = expr2.access;
         div->isUnsigned = gen::utils::isUnsignedIntegerTypeName(expr1.type);
         div->size = expr1.size;
+
+        // Common-type rule (design section 6), as for Div above; the
+        // remainder also takes the common type (below), which fixes
+        // the 64-bit % defect: the result was hardcoded to int/DWord.
+        gen::utils::OperandInfo modLeftInfo, modRightInfo;
+        const gen::utils::IntTypeInfo *modCommon = nullptr;
+        if (expr1.op != asmc::Float &&
+            gen::utils::integerOperandInfo(comp.expr1, expr1.type,
+                                           modLeftInfo) &&
+            gen::utils::integerOperandInfo(comp.expr2, expr2.type,
+                                           modRightInfo) &&
+            !(modLeftInfo.isLiteral && modRightInfo.isLiteral)) {
+          modCommon = gen::utils::commonIntType(modLeftInfo, modRightInfo);
+          if (modCommon == nullptr)
+            alert(gen::utils::noCommonTypeDiagnostic(
+                      gen::utils::operandDisplayName(modLeftInfo, expr1.type),
+                      gen::utils::operandDisplayName(modRightInfo, expr2.type)),
+                  true, __FILE__, __LINE__);
+          div->size = gen::utils::toSize(modCommon->widthBytes);
+          div->isUnsigned = !modCommon->isSigned;
+        }
 
         if (expr1.op == asmc::Float) {
           std::string to1 = registers()["%xmm1"]->get(asmc::DWord);
@@ -1518,7 +1595,17 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           eax->from = expr1.access;
           eax->to = registers()["%rax"]->get(expr1.size);
           eax->size = expr1.size;
+          if (modCommon != nullptr && modLeftInfo.isLiteral &&
+              modCommon->widthBytes > gen::utils::sizeToInt(expr1.size)) {
+            eax->size = div->size;
+            eax->to = registers()["%rax"]->get(div->size);
+          }
           OutputFile.text << eax;
+          if (modCommon != nullptr && !modLeftInfo.isLiteral &&
+              modLeftInfo.typeInfo != nullptr &&
+              modLeftInfo.typeInfo->widthBytes < modCommon->widthBytes)
+            emitIntegerExtension(OutputFile, "%rax", *modLeftInfo.typeInfo,
+                                 *modCommon);
           mov->op = expr1.op;
 
           expr2 = this->GenExpr(comp.expr2, OutputFile, expr1.size);
@@ -1526,10 +1613,24 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
           mov->to = registers()["%rcx"]->get(expr1.size);
           mov->size = expr1.size;
           mov->op = expr1.op;
-          div->op1 = mov->to;
-          output.access = registers()["%rax"]->get(expr1.size);
+          if (modCommon != nullptr && modRightInfo.isLiteral) {
+            mov->size = div->size;
+            mov->to = registers()["%rcx"]->get(div->size);
+          } else if (modCommon != nullptr) {
+            mov->size = expr2.size;
+            mov->to = registers()["%rcx"]->get(expr2.size);
+          }
+          div->op1 = modCommon != nullptr ? registers()["%rcx"]->get(div->size)
+                                          : mov->to;
+          output.access = registers()["%rax"]->get(
+              modCommon != nullptr ? div->size : expr1.size);
 
           OutputFile.text << mov;
+          if (modCommon != nullptr && !modRightInfo.isLiteral &&
+              modRightInfo.typeInfo != nullptr &&
+              modRightInfo.typeInfo->widthBytes < modCommon->widthBytes)
+            emitIntegerExtension(OutputFile, "%rcx", *modRightInfo.typeInfo,
+                                 *modCommon);
         }
 
         // Move the value from edx to eax (the remainder of a byte divide
@@ -1537,16 +1638,24 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
         asmc::Mov *mov = new asmc::Mov();
         mov->logicalLine = logicalLine();
         mov->to = output.access;
-        mov->from = expr1.size == asmc::Byte
-                        ? "%ah"
-                        : registers()["%rdx"]->get(expr1.size);
-        mov->size = expr1.size;
+        mov->from =
+            (modCommon != nullptr ? div->size : expr1.size) == asmc::Byte
+                ? "%ah"
+                : registers()["%rdx"]->get(modCommon != nullptr ? div->size
+                                                                : expr1.size);
+        mov->size = modCommon != nullptr ? div->size : expr1.size;
 
         OutputFile.text << div;
         if (expr1.op != asmc::Float)
           OutputFile.text << mov;
-        output.size = asmc::DWord;
-        output.type = "int";
+        if (modCommon != nullptr) {
+          output.size = div->size;
+          output.type = gen::utils::commonResultName(
+              modLeftInfo, expr1.type, modRightInfo, expr2.type, *modCommon);
+        } else {
+          output.size = asmc::DWord;
+          output.type = "int";
+        }
         break;
       }
       case ast::CompEqu: {

@@ -100,6 +100,46 @@ TEST_CASE("integer literals parse at 64-bit precision", "[conversions]") {
   REQUIRE(threw);
 }
 
+TEST_CASE("common type covers both operand ranges, order-free",
+          "[conversions]") {
+  auto typed = [](const char *name) {
+    gen::utils::OperandInfo info;
+    info.present = true;
+    info.typeInfo = gen::utils::intTypeInfo(name);
+    return info;
+  };
+  auto literal = [](std::int64_t value) {
+    gen::utils::OperandInfo info;
+    info.present = true;
+    info.isLiteral = true;
+    info.literalValue = value;
+    return info;
+  };
+  auto common = [](const gen::utils::OperandInfo &a,
+                   const gen::utils::OperandInfo &b) {
+    const auto *info = gen::utils::commonIntType(a, b);
+    return info == nullptr ? std::string("") : info->canonical;
+  };
+  REQUIRE(common(typed("i32"), typed("u32")) == "i64");
+  REQUIRE(common(typed("u32"), typed("i32")) == "i64");
+  REQUIRE(common(typed("i8"), typed("u8")) == "i16");
+  REQUIRE(common(typed("u8"), typed("i8")) == "i16");
+  REQUIRE(common(typed("u32"), typed("i64")) == "i64");
+  REQUIRE(common(typed("u32"), typed("usize")) == "usize");
+  REQUIRE(common(typed("usize"), typed("u32")) == "usize");
+  REQUIRE(common(typed("i64"), typed("isize")) == "i64");
+  REQUIRE(common(typed("isize"), typed("i64")) == "i64");
+  REQUIRE(common(typed("u64"), typed("u32")) == "u64");
+  REQUIRE(common(typed("i64"), typed("u64")) == "");
+  REQUIRE(common(typed("isize"), typed("usize")) == "");
+  REQUIRE(common(typed("i64"), typed("usize")) == "");
+  // A literal participates by value.
+  REQUIRE(common(typed("u64"), literal(5)) == "u64");
+  REQUIRE(common(typed("i32"), literal(5000000000LL)) == "i64");
+  REQUIRE(common(typed("u32"), literal(-1)) == "i64");
+  REQUIRE(common(typed("u64"), literal(-1)) == "");
+}
+
 TEST_CASE("conversion diagnostics name both types and the reason",
           "[conversions]") {
   const std::string implicit =

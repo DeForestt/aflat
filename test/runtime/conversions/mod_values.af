@@ -1,0 +1,47 @@
+.needs <std>
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn checkText(const uni_string actual, const adr expected,
+             const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn main() -> int {
+    // The 64-bit % defect: the remainder is read at the operation's
+    // width, not truncated to int.
+    const long hundred = #100;
+    const long rem = hundred % 3;
+    check(rem == #1, "mod #100 % 3 at QWord");
+    check(#100 % 3 == #1, "mod literal #100 % 3 at QWord");
+
+    const long negHundred = #-100;
+    const long negRem = negHundred % 3;
+    check(negRem == #-1, "mod negative QWord dividend");
+
+    // A remainder that does not fit in 32 bits survives whole.
+    const long bigDividend = #5000000007;
+    const long bigRem = bigDividend % #4294967296;
+    check(bigRem == #705032711, "mod wide remainder at QWord");
+
+    // Mixed-width mod computes at the common type.
+    const u32 zero32 = 0;
+    const u32 max32 = zero32 - 1;
+    const u64 modMixed = max32 % #7;
+    checkText(`v={modMixed}`, "v=3", "mod u32 % literal");
+
+    // Division follows the same rule.
+    const i64 quot = bigDividend / #1000000000;
+    check(quot == #5, "div at QWord");
+    const i32 negSeven = -7;
+    const u32 three = 3;
+    const i64 mixedQuot = negSeven / three;
+    check(mixedQuot == #-2, "div i32 / u32 at i64");
+    const i64 mixedRem = negSeven % three;
+    check(mixedRem == #-1, "mod i32 % u32 at i64");
+    return 0;
+};

@@ -1,0 +1,39 @@
+.needs <std>
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn main() -> int {
+    // Comparisons use the same common type as arithmetic, in both
+    // operand orders: -1 as i32 is less than any u32, and is never
+    // silently reinterpreted as 4294967295.
+    const i32 neg = -1;
+    const u32 big = 4000000000;
+    check(neg < big, "cmp i32 -1 < u32 big");
+    check(big > neg, "cmp u32 big > i32 -1 (reversed)");
+    check(neg != big, "cmp i32 -1 != u32 big");
+    check(big != neg, "cmp u32 big != i32 -1 (reversed)");
+
+    const u32 zero32 = 0;
+    const u32 max32 = zero32 - 1;
+    const i64 maxAs64 = #4294967295;
+    check(max32 == maxAs64, "cmp u32 max == i64 value");
+    check(maxAs64 == max32, "cmp i64 value == u32 max (reversed)");
+    check(max32 <= maxAs64, "cmp u32 max <= i64 value");
+    check(maxAs64 >= max32, "cmp i64 value >= u32 max (reversed)");
+
+    // Signedness comes from the common type: at i16, -128 < 255.
+    const i8 s8 = -128;
+    const u8 u8v = 255;
+    check(s8 < u8v, "cmp i8 -128 < u8 255 at i16");
+    check(u8v > s8, "cmp u8 255 > i8 -128 at i16 (reversed)");
+    check(s8 == -128, "cmp i8 == literal");
+    check(u8v == 255, "cmp u8 == literal");
+
+    // A u32 holding its maximum is greater than every i32.
+    const i32 i32max = 2147483647;
+    check(max32 > i32max, "cmp u32 max > i32 max at i64");
+    check(i32max < max32, "cmp i32 max < u32 max at i64 (reversed)");
+    return 0;
+};

@@ -29,9 +29,9 @@ int runSizedProgram(const std::string &name, const std::string &source) {
     fs::remove_all(dir);
     return -1000;
   }
-  if (std::system(("gcc -no-pie " + assembly.string() + " -o " +
-                   executable.string())
-                      .c_str()) != 0) {
+  if (std::system(
+          ("gcc -no-pie " + assembly.string() + " -o " + executable.string())
+              .c_str()) != 0) {
     fs::remove_all(dir);
     return -2000;
   }
@@ -167,7 +167,7 @@ fn main() -> int {
   CHECK(ran == 0);
 }
 
-TEST_CASE("mixed width arithmetic follows the left operand type",
+TEST_CASE("mixed width arithmetic follows the common type",
           "[sized-types][mixed]") {
   const int ran = runSizedProgram("sized_types_mixed", R"(
 fn main() -> int {
@@ -177,8 +177,8 @@ fn main() -> int {
   if sumWide != #4294967297 { return 1; };
   const i32 twoB = 2000000000;
   const i64 twoB64 = #2000000000;
-  const i32 wrapped = twoB + twoB64;
-  if wrapped != -294967296 { return 2; };
+  const i64 sum = twoB + twoB64;
+  if sum != #4000000000 { return 2; };
   const int legacy = 7;
   const i32 sized = 8;
   if legacy + sized != 15 { return 3; };
@@ -191,4 +191,3 @@ fn main() -> int {
 )");
   CHECK(ran == 0);
 }
-

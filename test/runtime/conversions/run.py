@@ -31,6 +31,9 @@ PASS_PROGRAMS = [
     "literal_bounds",
     "arg_values",
     "return_values",
+    "mixed_values",
+    "mod_values",
+    "compare_values",
 ]
 
 FAIL_PROGRAMS = {
@@ -151,6 +154,45 @@ FULL_FAIL_PROGRAMS = {
         "};\n"
         "fn main() -> int { return 0; };\n",
         ["cannot implicitly convert"],
+    ),
+    "mixed_no_common_i64_u64": (
+        ".needs <std>\n"
+        "fn main() -> int {\n"
+        "    const i64 a = #1;\n"
+        "    const u64 b = #2;\n"
+        "    const i64 c = a + b;\n"
+        "    return 0;\n"
+        "};\n",
+        ["no integer type can represent"],
+    ),
+    "mixed_no_common_isize_usize": (
+        ".needs <std>\n"
+        "fn main() -> int {\n"
+        "    const isize a = #1;\n"
+        "    const usize b = 2;\n"
+        "    const isize c = a + b;\n"
+        "    return 0;\n"
+        "};\n",
+        ["no integer type can represent"],
+    ),
+    "mixed_no_common_i64_usize": (
+        ".needs <std>\n"
+        "fn main() -> int {\n"
+        "    const i64 a = #1;\n"
+        "    const usize b = 2;\n"
+        "    const i64 c = a - b;\n"
+        "    return 0;\n"
+        "};\n",
+        ["no integer type can represent"],
+    ),
+    "cmp_no_common_u64_negative": (
+        ".needs <std>\n"
+        "fn main() -> int {\n"
+        "    const u64 b = #2;\n"
+        "    if b == -1 { return 1; };\n"
+        "    return 0;\n"
+        "};\n",
+        ["no integer type can represent"],
     ),
 }
 

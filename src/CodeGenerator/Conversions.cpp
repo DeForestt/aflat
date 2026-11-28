@@ -122,6 +122,128 @@ std::string literalRangeDiagnostic(std::int64_t value,
   return message;
 }
 
+bool integerOperandInfo(ast::Expr *expr, const std::string &probedType,
+                        OperandInfo &out) {
+  std::int64_t literalValue = 0;
+  if (integerLiteralValue(expr, literalValue)) {
+    out.present = true;
+    out.isLiteral = true;
+    out.literalValue = literalValue;
+    out.typeInfo = nullptr;
+    return true;
+  }
+  if (const IntTypeInfo *info = classifiableIntType(probedType)) {
+    out.present = true;
+    out.isLiteral = false;
+    out.typeInfo = info;
+    return true;
+  }
+  if (probedType == "number") {
+    // A computed value of literal provenance (a compound of literals)
+    // was computed at int width; i32 is its honest provenance.
+    out.present = true;
+    out.isLiteral = false;
+    out.typeInfo = intTypeInfo("i32");
+    return true;
+  }
+  return false;
+}
+
+namespace {
+
+bool rangeCovers(const IntTypeInfo &info, std::int64_t coverMin,
+                 std::uint64_t coverMax) {
+  return intTypeMin(info) <= coverMin && coverMax <= intTypeMax(info);
+}
+
+void operandRange(const OperandInfo &op, std::int64_t &mn, std::uint64_t &mx) {
+  if (op.isLiteral) {
+    // A literal contributes its single value. A negative value adds
+    // nothing to the pair's positive reach (every integer type's max
+    // is positive, and literal-literal pairs never reach this code),
+    // so it contributes 0 there rather than a wrapped uint64.
+    mn = op.literalValue;
+    mx = op.literalValue < 0 ? 0 : static_cast<std::uint64_t>(op.literalValue);
+    return;
+  }
+  mn = intTypeMin(*op.typeInfo);
+  mx = intTypeMax(*op.typeInfo);
+}
+
+} // namespace
+
+const IntTypeInfo *commonIntType(const OperandInfo &a, const OperandInfo &b) {
+  std::int64_t aMin = 0, bMin = 0;
+  std::uint64_t aMax = 0, bMax = 0;
+  operandRange(a, aMin, aMax);
+  operandRange(b, bMin, bMax);
+  const std::int64_t coverMin = aMin < bMin ? aMin : bMin;
+  const std::uint64_t coverMax = aMax > bMax ? aMax : bMax;
+
+  static const char *const kCanonical[] = {
+      "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64", "isize", "usize"};
+  const IntTypeInfo *best = nullptr;
+  for (const char *name : kCanonical) {
+    const IntTypeInfo *cand = intTypeInfo(name);
+    if (cand == nullptr || !rangeCovers(*cand, coverMin, coverMax))
+      continue;
+    if (best == nullptr || cand->widthBytes < best->widthBytes)
+      best = cand;
+  }
+  if (best == nullptr)
+    return nullptr;
+
+  // Operand preference: an operand whose own type covers the pair
+  // wins over the minimal cover (u32 + usize computes at usize, not
+  // u64). When both operands cover and differ, they are a
+  // range-identical pair and the fixed-width name wins.
+  const IntTypeInfo *prefA = a.isLiteral ? nullptr : a.typeInfo;
+  const IntTypeInfo *prefB = b.isLiteral ? nullptr : b.typeInfo;
+  const bool aCovers =
+      prefA != nullptr && rangeCovers(*prefA, coverMin, coverMax);
+  const bool bCovers =
+      prefB != nullptr && rangeCovers(*prefB, coverMin, coverMax);
+  if (aCovers && bCovers && prefA->canonical != prefB->canonical) {
+    if (prefA->canonical == "i64" || prefA->canonical == "u64")
+      return prefA;
+    if (prefB->canonical == "i64" || prefB->canonical == "u64")
+      return prefB;
+    return prefA;
+  }
+  if (aCovers)
+    return prefA;
+  if (bCovers)
+    return prefB;
+  return best;
+}
+
+std::string noCommonTypeDiagnostic(const std::string &aName,
+                                   const std::string &bName) {
+  return "no integer type can represent every value of both " +
+         displayName(aName) + " and " + displayName(bName) +
+         "; convert one operand explicitly (a checked `as` conversion "
+         "or `as wrap`) before the operation";
+}
+
+std::string operandDisplayName(const OperandInfo &info,
+                               const std::string &typeName) {
+  if (info.isLiteral)
+    return "the integer literal " + std::to_string(info.literalValue);
+  return typeName;
+}
+
+std::string commonResultName(const OperandInfo &a, const std::string &aName,
+                             const OperandInfo &b, const std::string &bName,
+                             const IntTypeInfo &common) {
+  if (!a.isLiteral && a.typeInfo != nullptr &&
+      a.typeInfo->canonical == common.canonical)
+    return aName;
+  if (!b.isLiteral && b.typeInfo != nullptr &&
+      b.typeInfo->canonical == common.canonical)
+    return bName;
+  return common.canonical;
+}
+
 } // namespace gen::utils
 
 void gen::CodeGenerator::emitIntegerExtension(asmc::File &OutputFile,

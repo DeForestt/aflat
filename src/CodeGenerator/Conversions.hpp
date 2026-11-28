@@ -65,4 +65,50 @@ std::string implicitConversionDiagnostic(const std::string &srcName,
 std::string literalRangeDiagnostic(std::int64_t value,
                                    const std::string &dstName);
 
+// One operand of a binary integer operation, resolved for the
+// common-type rule (design section 6). A literal operand participates
+// by value; a typed operand by its type's range; a computed value of
+// literal provenance (its expression type is "number") carries i32
+// provenance. Operands that do not participate (classes, floats,
+// adr-typed pointers, NULL) leave `present` false: the operation
+// keeps its legacy typing for them.
+struct OperandInfo {
+  bool present = false;
+  bool isLiteral = false;
+  std::int64_t literalValue = 0;
+  const IntTypeInfo *typeInfo = nullptr;
+};
+
+// Resolve an operand from its AST node and its generated type.
+// Returns false (and leaves `out` untouched) when the operand does
+// not participate in the common-type lattice.
+bool integerOperandInfo(ast::Expr *expr, const std::string &probedType,
+                        OperandInfo &out);
+
+// The common type of a binary operation: the integer type whose
+// range covers both operands' ranges (a literal contributes its
+// single value), preferring an operand's own type when it covers,
+// and the fixed-width name on range-identical pairs (i64 over isize,
+// u64 over usize). The result depends only on the pair of ranges,
+// never on operand order. Returns nullptr when no integer type
+// covers both: the operation is a diagnostic.
+const IntTypeInfo *commonIntType(const OperandInfo &a, const OperandInfo &b);
+
+// Diagnostic for a binary operation with no common type.
+std::string noCommonTypeDiagnostic(const std::string &aName,
+                                   const std::string &bName);
+
+// The display name of an operand for common-type diagnostics: the
+// literal's value for a literal operand, the written type name
+// otherwise.
+std::string operandDisplayName(const OperandInfo &info,
+                               const std::string &typeName);
+
+// The result type name of a common-type operation: the written name
+// of an operand whose canonical type is the common type (preserving
+// alias flavor), else the common type's canonical name.
+std::string commonResultName(const OperandInfo &a, const std::string &aName,
+                             const OperandInfo &b, const std::string &bName,
+                             const IntTypeInfo &common);
+
 } // namespace gen::utils

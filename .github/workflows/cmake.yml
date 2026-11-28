@@ -103,6 +103,12 @@ jobs:
         run: python3 test/runtime/conversions/run.py return_values
       - name: Test integer conversions (call and return diagnostics)
         run: python3 test/runtime/conversions/run.py full_fails
+      - name: Test integer conversions (mixed arithmetic)
+        run: python3 test/runtime/conversions/run.py mixed_values
+      - name: Test integer conversions (division and modulo)
+        run: python3 test/runtime/conversions/run.py mod_values
+      - name: Test integer conversions (comparisons)
+        run: python3 test/runtime/conversions/run.py compare_values
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt

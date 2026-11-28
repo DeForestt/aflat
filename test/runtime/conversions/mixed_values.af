@@ -1,0 +1,74 @@
+.needs <std>
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn checkText(const uni_string actual, const adr expected,
+             const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn main() -> int {
+    // i32 + u32 computes at i64 (the ticket's example), in both
+    // operand orders: a negative i32 survives next to a large u32.
+    const i32 neg = -1;
+    const u32 big = 4000000000;
+    const i64 sumA = neg + big;
+    check(sumA == #3999999999, "mixed i32 + u32 at i64");
+    const i64 sumB = big + neg;
+    check(sumB == #3999999999, "mixed u32 + i32 at i64 (reversed)");
+
+    // i8 + u8 computes at i16.
+    const i8 s8 = -128;
+    const u8 u8v = 255;
+    const i16 pair = s8 + u8v;
+    check(pair == 127, "mixed i8 + u8 at i16");
+    const i16 pairR = u8v + s8;
+    check(pairR == 127, "mixed u8 + i8 at i16 (reversed)");
+
+    // u32 + i64 stays i64; the u32 operand zero-extends.
+    const u32 zero32 = 0;
+    const u32 max32 = zero32 - 1;
+    const i64 wide = #5;
+    const i64 sumC = max32 + wide;
+    check(sumC == #4294967300, "mixed u32 + i64 at i64");
+    const i64 sumD = wide + max32;
+    check(sumD == #4294967300, "mixed i64 + u32 at i64 (reversed)");
+
+    // Same-type arithmetic is unchanged, wraparound included.
+    const i32 twoB = 2000000000;
+    const i32 wrapped = twoB + twoB;
+    check(wrapped == -294967296, "mixed i32 + i32 still wraps at i32");
+
+    // A literal participates by value: u64var + 1 stays u64, and a
+    // wide literal lifts an i32 expression to i64.
+    const u64 zeroU = 0;
+    const u64 base = zeroU - 1;
+    const u64 wrappedU = base + 1;
+    checkText(`v={wrappedU}`, "v=0", "mixed u64 + literal wraps at u64");
+    const i32 small = 7;
+    const i64 lifted = small + #5000000000;
+    check(lifted == #5000000007, "mixed i32 + wide literal at i64");
+    const i64 liftedR = #5000000000 + small;
+    check(liftedR == #5000000007, "mixed wide literal + i32 at i64");
+
+    // Subtraction and multiplication follow the same common type.
+    const i64 diff = big - neg;
+    check(diff == #4000000001, "mixed u32 - i32 at i64");
+    const i16 prod = s8 * u8v;
+    check(prod == -32640, "mixed i8 * u8 at i16");
+
+    // Shifts keep the left operand's type (the documented exception):
+    // the result of u32 << int is u32-width.
+    const u32 shBase = 1;
+    const i32 shAmt = 31;
+    const u32 shifted = shBase << shAmt;
+    checkText(`v={shifted}`, "v=2147483648", "shift keeps left type u32");
+    const i32 negShift = -256;
+    const i32 arithShift = negShift >> 4;
+    check(arithShift == -16, "signed >> stays arithmetic");
+    return 0;
+};
