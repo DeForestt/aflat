@@ -25,15 +25,19 @@ def main() -> int:
         return 0
     picked = []
     for i, ln in enumerate(lines):
-        if ("FAILED" in ln or "test cases:" in ln or "error" in ln.lower()):
+        low = ln.lower()
+        if ("FAILED" in ln or "test cases:" in ln or "error" in low
+                or "undefined" in low):
             picked.append(ln)
             for nxt in lines[i + 1:i + 3]:
                 picked.append(nxt)
         if len(picked) >= 14:
             break
     picked = picked[:14]
-    if not picked:
-        picked = [ln for ln in lines if ln.strip()][-6:]
+    tail = [ln for ln in lines if ln.strip()][-4:]
+    for ln in tail:
+        if ln not in picked:
+            picked.append(ln)
     for ln in picked:
         print(f"::error title={title}::{esc(ln[:400])}")
     return 0

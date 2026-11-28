@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/Conversions.hpp"
 #include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
@@ -88,6 +89,65 @@ gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound,
     popRax->logicalLine = logicalLine();
     popRax->op = registers()["%rax"]->get(asmc::QWord);
     OutputFile.text << popRax;
+  }
+
+  // Convert one staged operand (held in %rdi or %rdx at its own
+  // width) to the common width. A literal is re-materialized at the
+  // common width when it was staged narrower, because the staged
+  // copy may have been truncated; a typed value is extended in
+  // place, which also cleans the register's stale upper bits.
+  auto convertStagedOperand = [&](const std::string &reg,
+                                  const gen::Expr &value,
+                                  const gen::utils::OperandInfo &info,
+                                  const gen::utils::IntTypeInfo &common) {
+    if (info.isLiteral) {
+      if (common.widthBytes > gen::utils::sizeToInt(value.size)) {
+        auto *mov = new asmc::Mov();
+        mov->logicalLine = logicalLine();
+        mov->size = gen::utils::toSize(common.widthBytes);
+        mov->from = "$" + std::to_string(info.literalValue);
+        mov->to = registers()[reg]->get(mov->size);
+        OutputFile.text << mov;
+      }
+      return;
+    }
+    if (info.typeInfo != nullptr &&
+        info.typeInfo->widthBytes < common.widthBytes)
+      emitIntegerExtension(OutputFile, reg, *info.typeInfo, common);
+  };
+
+  // Common-type rule for mixed integer expressions (design section
+  // 6): when both operands participate in the integer lattice, the
+  // operation runs at the smallest type covering both ranges, with
+  // both staged operands converted to that width, and the result
+  // carries the common type -- independent of operand order. Shifts
+  // are the documented exception (the left operand's type rules) and
+  // keep the legacy staging below, as do pointer arithmetic (an
+  // adr-typed operand), NULL, floats, and class operands.
+  const bool isShift = compound.op == ast::Less || compound.op == ast::Great;
+  if (!isDiv && !isShift && expr1.op != asmc::Float &&
+      expr2.op != asmc::Float) {
+    gen::utils::OperandInfo leftInfo, rightInfo;
+    const bool leftOk =
+        gen::utils::integerOperandInfo(compound.expr1, expr1.type, leftInfo);
+    const bool rightOk =
+        gen::utils::integerOperandInfo(compound.expr2, expr2.type, rightInfo);
+    if (leftOk && rightOk && !(leftInfo.isLiteral && rightInfo.isLiteral)) {
+      const gen::utils::IntTypeInfo *common =
+          gen::utils::commonIntType(leftInfo, rightInfo);
+      if (common == nullptr)
+        alert(gen::utils::noCommonTypeDiagnostic(
+                  gen::utils::operandDisplayName(leftInfo, expr1.type),
+                  gen::utils::operandDisplayName(rightInfo, expr2.type)),
+              true, __FILE__, __LINE__);
+      convertStagedOperand("%rdi", expr1, leftInfo, *common);
+      convertStagedOperand("%rdx", expr2, rightInfo, *common);
+      gen::Expr result = expr1;
+      result.size = gen::utils::toSize(common->widthBytes);
+      result.type = gen::utils::commonResultName(
+          leftInfo, expr1.type, rightInfo, expr2.type, *common);
+      return result;
+    }
   }
 
   // A narrower integer right operand was staged into %rdx at its own

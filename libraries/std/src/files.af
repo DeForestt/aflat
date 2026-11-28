@@ -12,6 +12,17 @@ import option from "Utils/option";
 import {Some, None} from "Utils/option" under opt;
 import vector from "Collections/Vector";
 
+// Read the low bytes of an integer value as an int, truncating the
+// wider source. The `0 +` idiom at the call sites below relied on a
+// mixed compound computing at int width; under the conversions
+// design's common-type rule the compound takes the wider type, so
+// the truncation is spelled with the same pointer-cast read ascii
+// uses. The design's explicit `as wrap` replaces this once it lands.
+fn fileTruncateToInt(const adr valueAddress) -> int {
+    return valueAddress as int;
+};
+
+
 
 fn strerror(int code) -> adr;
 
@@ -109,15 +120,15 @@ shared class File{
         const int descriptor = my.file;
         const long current = sys_lseek(descriptor, 0, 1); // SEEK_CUR
         if current < 0 {
-            return res.reject::<string>(new ReadError(0 + current));
+            return res.reject::<string>(new ReadError(fileTruncateToInt(?current)));
         };
         const long endPosition = sys_lseek(descriptor, 0, 2); // SEEK_END
         if endPosition < 0 {
-            return res.reject::<string>(new ReadError(0 + endPosition));
+            return res.reject::<string>(new ReadError(fileTruncateToInt(?endPosition)));
         };
         const long reset = sys_lseek(descriptor, current, 0); // SEEK_SET
         if reset < 0 {
-            return res.reject::<string>(new ReadError(0 + reset));
+            return res.reject::<string>(new ReadError(fileTruncateToInt(?reset)));
         };
 
         const long remaining = endPosition - current;
@@ -125,13 +136,13 @@ shared class File{
             return res.reject::<string>(new ReadError(1));
         };
 
-        const int size = 0 + remaining;
+        const int size = fileTruncateToInt(?remaining);
         const adr buffer = af_malloc(size + 1);
         const long bytesRead = await my.readBytesAtAsync(buffer, size, current);
         if bytesRead < 0 {
             const let failedBuffer = buffer;
             af_free($failedBuffer);
-            return res.reject::<string>(new ReadError(0 + bytesRead));
+            return res.reject::<string>(new ReadError(fileTruncateToInt(?bytesRead)));
         };
         if bytesRead == 0 {
             const let emptyBuffer = buffer;
@@ -197,21 +208,21 @@ shared class File{
         const int file = my.file;
         const long current = sys_lseek(file, 0, 1); // SEEK_CUR
         if current < 0 {
-            return res.reject::<string>(new ReadError(0 + current));
+            return res.reject::<string>(new ReadError(fileTruncateToInt(?current)));
         };
         const long endPos = sys_lseek(file, 0, 2); // SEEK_END
         if endPos < 0 {
-            return res.reject::<string>(new ReadError(0 + endPos));
+            return res.reject::<string>(new ReadError(fileTruncateToInt(?endPos)));
         };
         const long remaining = endPos - current;
         const long reset = sys_lseek(file, current, 0); // SEEK_SET
         if reset < 0 {
-            return res.reject::<string>(new ReadError(0 + reset));
+            return res.reject::<string>(new ReadError(fileTruncateToInt(?reset)));
         };
         if remaining <= 0 {
             return res.reject::<string>(new ReadError(1));
         };
-        const int size = 0 + remaining;
+        const int size = fileTruncateToInt(?remaining);
         const adr buffer = af_malloc(1 + size);
         const int err = sys_read(file, buffer, size);
         if err < -1 {
