@@ -1,0 +1,31 @@
+.needs <std>
+import result from "Utils/result";
+import {accept, reject, resultWrapper} from "Utils/result" under res;
+import Error from "Utils/Error";
+import string from "String";
+import {str_comp} from "strings" under strings;
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn main() -> int {
+    const u64 zero64 = 0;
+    const u64 huge = zero64 - 1;
+    let r5 = huge as i64;
+    check(r5.isErr(), "cast checked u64 max -> i64 is Err");
+    const u32 over = 3000000000;
+    let r6 = over as i32;
+    check(r6.isErr(), "cast checked u32 3e9 -> i32 is Err");
+    const u8 byteVal = 200;
+    let r7 = byteVal as i8;
+    check(r7.isErr(), "cast checked u8 200 -> i8 is Err");
+    const u8 byteOk = 100;
+    let r8 = byteOk as i8;
+    check(r8.unwrap() == 100, "cast checked u8 100 -> i8 value");
+
+    // Wrap: always the plain value at the destination width.
+    check((neg as wrap u32) == 4294967286, "cast wrap i32 -10 -> u32");
+    check((wide as wrap i32) == 705032704, "cast wrap i64 -> i32 low bits");
+    return 0;
+};
