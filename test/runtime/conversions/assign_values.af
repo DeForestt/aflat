@@ -70,5 +70,13 @@ fn main() -> int {
     mutable byte nb = 0;
     nb = #200;
     check(nb == 200, "assign #200 -> byte");
+
+    // adr-typed values are pointers, not integer sources (design
+    // section 2.2): they keep their legacy rules at the boundaries,
+    // as io.printHex's `h = input` relies on.
+    const adr p = af_malloc(64);
+    mutable long bits = 0;
+    bits = p;
+    check(bits == p, "assign adr -> long keeps legacy rules");
     return 0;
 };

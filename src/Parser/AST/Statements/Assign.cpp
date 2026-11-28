@@ -346,7 +346,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
       gen::utils::ConversionKind::NotConvertible;
   const gen::utils::IntTypeInfo *assignSrcInfo = nullptr;
   const gen::utils::IntTypeInfo *assignDstInfo =
-      gen::utils::intTypeInfo(symbol->type.typeName);
+      gen::utils::classifiableIntType(symbol->type.typeName);
   if ((!this->reference || symbol->type.isReference) &&
       assignDstInfo != nullptr) {
     std::int64_t literalValue = 0;
@@ -358,7 +358,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
                             literalValue, symbol->type.typeName),
                         true, __FILE__, __LINE__);
       assignConversion = gen::utils::ConversionKind::LiteralFits;
-    } else if ((assignSrcInfo = gen::utils::intTypeInfo(expr.type)) !=
+    } else if ((assignSrcInfo = gen::utils::classifiableIntType(expr.type)) !=
                nullptr) {
       assignConversion =
           gen::utils::classifyConversion(*assignSrcInfo, *assignDstInfo);

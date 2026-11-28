@@ -80,7 +80,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       // sequence below; checked-required conversions are diagnosed
       // here instead of falling through to canAssign.
       const gen::utils::IntTypeInfo *decIntInfo =
-          gen::utils::intTypeInfo(dec->type.typeName);
+          gen::utils::classifiableIntType(dec->type.typeName);
       const gen::utils::IntTypeInfo *exprIntInfo = nullptr;
       gen::utils::ConversionKind intConversion =
           gen::utils::ConversionKind::NotConvertible;
@@ -99,7 +99,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
             generator.alert(gen::utils::literalRangeDiagnostic(
                                 literalValue, dec->type.typeName),
                             true, __FILE__, __LINE__);
-        } else if ((exprIntInfo = gen::utils::intTypeInfo(expr.type)) !=
+        } else if ((exprIntInfo = gen::utils::classifiableIntType(expr.type)) !=
                    nullptr) {
           intConversion =
               gen::utils::classifyConversion(*exprIntInfo, *decIntInfo);
@@ -349,7 +349,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
     // by value and checked-required conversions are always diagnosed
     // at compile time.
     const gen::utils::IntTypeInfo *globalIntInfo =
-        gen::utils::intTypeInfo(dec->type.typeName);
+        gen::utils::classifiableIntType(dec->type.typeName);
     bool globalIntHandled = false;
     if (globalIntInfo != nullptr) {
       std::int64_t literalValue = 0;
@@ -362,7 +362,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
                           true, __FILE__, __LINE__);
         globalIntHandled = true;
       } else if (const gen::utils::IntTypeInfo *expIntInfo =
-                     gen::utils::intTypeInfo(exp.type)) {
+                     gen::utils::classifiableIntType(exp.type)) {
         const gen::utils::ConversionKind kind =
             gen::utils::classifyConversion(*expIntInfo, *globalIntInfo);
         if (kind == gen::utils::ConversionKind::CheckedRequired)

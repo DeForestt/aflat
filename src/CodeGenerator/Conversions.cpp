@@ -28,6 +28,12 @@ ConversionKind classifyConversion(const std::string &srcType,
   return classifyConversion(*src, *dst);
 }
 
+const IntTypeInfo *classifiableIntType(const std::string &name) {
+  if (name == "adr")
+    return nullptr;
+  return intTypeInfo(name);
+}
+
 std::string intTypeRange(const IntTypeInfo &info) {
   return std::to_string(intTypeMin(info)) + ".." +
          std::to_string(intTypeMax(info));

@@ -34,6 +34,14 @@ ConversionKind classifyConversion(const std::string &srcType,
 // "-2147483648..2147483647" or "0..4294967295".
 std::string intTypeRange(const IntTypeInfo &info);
 
+// The IntTypeInfo a conversion boundary uses for a type as written,
+// or nullptr when the type does not participate in the conversion
+// rules. `adr` is excluded even though it aliases usize: an adr-typed
+// value is a pointer, not an integer source (design section 2.2), and
+// keeps its existing pointer rules at every boundary. Only the
+// `usize` spelling is the integer face of the alias.
+const IntTypeInfo *classifiableIntType(const std::string &name);
+
 // True when a literal value is representable in the destination type.
 bool literalFits(std::int64_t value, const IntTypeInfo &dst);
 
