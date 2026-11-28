@@ -130,7 +130,12 @@ jobs:
         run: ./a.test "sized integer types have their named sizes"
       - name: Test (unit, sized aliases)
         working-directory: ${{github.workspace}}/bin
-        run: ./a.test "sized integer aliases are interchangeable with legacy names"
+        run: |
+          set +e
+          ./a.test "sized integer aliases are interchangeable with legacy names" -r compact > test-out.txt 2>&1
+          status=$?
+          python3 ../test/ci_report.py test-out.txt "sized aliases"
+          exit $status
       - name: Test (unit, sized unsigned)
         working-directory: ${{github.workspace}}/bin
         run: ./a.test "unsigned integers wrap and use unsigned division, comparison and shift"
