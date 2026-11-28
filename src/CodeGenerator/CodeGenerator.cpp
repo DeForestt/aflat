@@ -14,6 +14,7 @@
 #include <sstream>
 #include <utility>
 
+#include "CodeGenerator/Conversions.hpp"
 #include "CodeGenerator/Expr.hpp"
 #include "CodeGenerator/GenerationResult.hpp"
 #include "CodeGenerator/Scope/ScopeManager.hpp"
@@ -341,18 +342,35 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     return true;
   if (type.typeName == "number" && typeName == "byte")
     return true;
-  // The explicitly sized integer types follow the same conversion rules
-  // as int/long: number literals convert to and from every integer type,
-  // and each legacy name is an alias of one sized type, so an alias pair
-  // names the same type and is mutually assignable.
+  // Number literals convert to and from every integer type; whether a
+  // specific literal fits is judged by value at the boundaries, which
+  // see the literal itself (this function only sees type names).
   if (typeName == "number" && gen::utils::isIntegerTypeName(type.typeName))
     return true;
   if (type.typeName == "number" && gen::utils::isIntegerTypeName(typeName))
     return true;
-  if (!gen::utils::integerTypeAlias(type.typeName).empty() &&
-      gen::utils::integerTypeAlias(type.typeName) ==
-          gen::utils::integerTypeAlias(typeName))
+  // adr and usize are one canonical type (design section 2.2), so
+  // the pair stays mutually assignable at the type-name level, as
+  // the old alias clause had it. (The value boundaries exclude adr
+  // via classifiableIntType; canAssign sees only names, and the
+  // legacy rules below cover only an adr source, not this pair.)
+  if ((type.typeName == "adr" && typeName == "usize") ||
+      (type.typeName == "usize" && typeName == "adr"))
     return true;
+  // Typed integer-to-integer assignability is the conversion
+  // classifier: identity (alias pairs included) and lossless
+  // conversions are assignable. Checked-required conversions are not;
+  // the boundaries that meet one produce the conversion diagnostic
+  // instead of the generic cannot-assign error. adr-typed values are
+  // excluded (classifiableIntType): they are pointers and keep the
+  // legacy rules below.
+  if (gen::utils::classifiableIntType(type.typeName) != nullptr &&
+      gen::utils::classifiableIntType(typeName) != nullptr) {
+    const gen::utils::ConversionKind kind =
+        gen::utils::classifyConversion(typeName, type.typeName);
+    return kind == gen::utils::ConversionKind::Identity ||
+           kind == gen::utils::ConversionKind::Lossless;
+  }
 
   gen::Type **expected = impl->typeList[type.typeName];
   gen::Class *cl = nullptr;

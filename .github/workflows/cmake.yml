@@ -97,6 +97,12 @@ jobs:
         run: python3 test/runtime/conversions/run.py literal_bounds
       - name: Test integer conversions (diagnostics)
         run: python3 test/runtime/conversions/run.py fails
+      - name: Test integer conversions (arguments)
+        run: python3 test/runtime/conversions/run.py arg_values
+      - name: Test integer conversions (returns)
+        run: python3 test/runtime/conversions/run.py return_values
+      - name: Test integer conversions (call and return diagnostics)
+        run: python3 test/runtime/conversions/run.py full_fails
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt
@@ -119,19 +125,29 @@ jobs:
             done < failures.txt
           fi
           exit $status
-      - name: Test (unit, sized types and int types)
+      - name: Test (unit, sized sizes)
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "sized integer types have their named sizes"
+      - name: Test (unit, sized aliases)
         working-directory: ${{github.workspace}}/bin
         run: |
           set +e
-          ./a.test "[sized-types],[inttypes]" -r compact > test-out.txt 2>&1
+          ./a.test "sized integer aliases are interchangeable with legacy names" -r compact > test-out.txt 2>&1
           status=$?
-          if [ $status -ne 0 ]; then
-            grep -E "FAILED:|test cases:" test-out.txt | head -20 > failures.txt
-            while IFS= read -r line; do
-              printf '::error title=unit test failure::%s\n' "$line"
-            done < failures.txt
-          fi
+          python3 ../test/ci_report.py test-out.txt "sized aliases"
           exit $status
+      - name: Test (unit, sized unsigned)
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "unsigned integers wrap and use unsigned division, comparison and shift"
+      - name: Test (unit, sized signed)
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "signed integers wrap and use signed division, comparison and shift"
+      - name: Test (unit, sized mixed)
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "[mixed]"
+      - name: Test (unit, int types)
+        working-directory: ${{github.workspace}}/bin
+        run: ./a.test "[inttypes]"
       - name: Test (unit, all other cases)
         working-directory: ${{github.workspace}}/bin
         run: |
