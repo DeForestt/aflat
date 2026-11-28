@@ -88,8 +88,16 @@ TEST_CASE("integer literals parse at 64-bit precision", "[conversions]") {
   REQUIRE(parseIntLiteralValue("5000000000") == 5000000000LL);
   REQUIRE(parseIntLiteralValue("-2147483648") == INT32_MIN);
   REQUIRE(parseIntLiteralValue("0xFFFFFFFF") == 4294967295LL);
-  REQUIRE_THROWS_WITH(parseIntLiteralValue("99999999999999999999"),
-                      Catch::Matchers::Contains("signed 64-bit"));
+  // err::Exception is not a std::exception (it carries errorMsg), so
+  // the out-of-range diagnostic is checked with a manual catch.
+  bool threw = false;
+  try {
+    parseIntLiteralValue("99999999999999999999");
+  } catch (const err::Exception &error) {
+    threw = true;
+    REQUIRE(error.errorMsg.find("signed 64-bit") != std::string::npos);
+  }
+  REQUIRE(threw);
 }
 
 TEST_CASE("conversion diagnostics name both types and the reason",
