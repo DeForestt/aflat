@@ -51,6 +51,27 @@ An 8-byte untyped memory address on the supported x86-64 target.  In aflat, poin
 ```js
 adr a = NULL;
 ```
+### Sized integer types
+The explicitly sized integer types name their width and signedness directly:
+
+| Type | Width | Range |
+|------|-------|-------|
+| `i8` | 1 byte | -128..127 |
+| `i16` | 2 bytes | -32768..32767 |
+| `i32` | 4 bytes | -2147483648..2147483647 |
+| `i64` | 8 bytes | -9223372036854775808..9223372036854775807 |
+| `u8` | 1 byte | 0..255 |
+| `u16` | 2 bytes | 0..65535 |
+| `u32` | 4 bytes | 0..4294967295 |
+| `u64` | 8 bytes | 0..18446744073709551615 |
+| `isize` | pointer width (8 bytes on x86-64) | the range of `i64` on x86-64 |
+| `usize` | pointer width (8 bytes on x86-64) | the range of `u64` on x86-64 |
+
+The legacy names are aliases of the sized types and are interchangeable with them: `char` is `i8`, `byte` is `u8`, `short` is `i16`, `int` is `i32`, `long` is `i64`, and `adr` is `usize`. One nuance: an `adr` value is a pointer, not an integer, at conversion boundaries — see [Integer conversions](#integer-conversions).
+```js
+u32 count = 0;
+i64 wide = #5000000000;
+```
 ### generic
 The generic type is essentially the same as the adr type, but it is used to indicate that the pointer is meant to point to some object. This is meant to be used with a function or class that needs to preform operations on any sort of reference type object. The generic type also suppresses implicit casting, which is useful when you want to make sure that the pointer is pointing to the correct type.
 ```js
@@ -72,6 +93,190 @@ Inference also does not request a conversion to some other object type.
 ```js
 let i = "hello"; // this will assign an adr to i
 ```
+
+## Integer conversions
+
+A value of one integer type becomes a value of another only when the
+conversion cannot lose information, unless the programmer explicitly
+asks for a checked or wrapping conversion. The compiler never guesses:
+a conversion that could change the value is rejected at compile time
+with a diagnostic naming both types, both ranges, and the explicit
+forms that remain available.
+
+### The classification
+
+Every integer-to-integer conversion is classified by range containment:
+
+- **Identity** — the two types have the same range (alias pairs such as
+  `int` and `i32` included). No code is emitted.
+- **Lossless** — the destination's range covers the source's range
+  (`i32` to `i64`, `u32` to `i64`, `u8` to `i16`). The conversion is
+  implicit everywhere and emits a real sign or zero extension, so the
+  value arrives exactly: an `int` holding -5 declared or assigned into
+  a `long` arrives as -5.
+- **Checked-required** — some source values are unrepresentable in the
+  destination: narrowing (`i64` to `i32`), sign changes (`i32` to
+  `u32`, `i32` to `usize` — a wider destination does not help, because
+  `usize` cannot hold negative values), and `u64` to `i64`. Implicit
+  use is a compile-time error; use an explicit conversion (below).
+
+The classification applies uniformly at every value boundary:
+declarations, assignments, function call arguments, return values,
+and the payloads of `option`/`result` wrappers (which convert at the
+wrapper call's argument boundary). Overload resolution consults the
+same classification, so a lossless-convertible argument matches a
+parameter it previously could not.
+
+### Literals
+
+A literal is judged by its value, not by a default type: a literal
+bound for an integer destination is accepted exactly when the value
+fits the destination, at the exact bounds and rejected one past them,
+including a negative literal bound for an unsigned type. A `#` long
+literal bound for a 64-bit destination is bit-preserving and always
+fits there. A decimal literal above the signed 64-bit range is a
+compile error. A bare `let` keeps the `i32` default, so a literal
+outside that range without a destination type is diagnosed instead of
+silently changing width:
+
+```js
+const byte b = 200;   // ok
+const byte c = 300;   // error: integer literal 300 does not fit in byte (u8) (range 0..255)
+const u32 u = -1;     // error: integer literal -1 does not fit in u32 (range 0..4294967295)
+let x = 5000000000;   // error: does not fit in i32; use a # literal or an i64 destination
+```
+
+### Mixed expressions: the common type
+
+A binary arithmetic or comparison operation whose operands are both
+integers runs at the **common type**: the smallest integer type whose
+range covers both operands' ranges, preferring an operand's own type
+when it covers, and the fixed-width name on range-identical pairs.
+The result depends only on the pair of types, never on operand order.
+A literal operand participates by its value.
+
+| Operands | Common type |
+|----------|-------------|
+| `i32`, `u32` | `i64` |
+| `i8`, `u8` | `i16` |
+| `i16`, `u16` | `i32` |
+| `u32`, `i64` | `i64` |
+| `u32`, `usize` | `usize` |
+| `i64`, `isize` | `i64` |
+| `u64`, `u32` | `u64` |
+| literal `-1`, `u32` | `i64` |
+| `i64`, `u64` | none — compile-time diagnostic |
+| `isize`, `usize` | none — compile-time diagnostic |
+| `i64`, `usize` | none — compile-time diagnostic |
+
+Both operands are converted to the common width, the operation runs
+with the common type's signedness (comparisons included — `-1` as an
+`i32` is less than every `u32`, and a `u64` compared against `-1` is a
+diagnostic, not a silent reinterpretation), and the result carries the
+common type. Division and modulo follow the same rule, and `%` yields
+the common type. Shifts are the one documented exception: `<<` and
+`>>` keep the left operand's type as the result type, the shift amount
+may be any integer type, and `>>` is arithmetic exactly when the left
+operand is signed.
+
+### Explicit conversions: `as` and `as wrap`
+
+The postfix `as` converts a value explicitly, following any primary
+expression:
+
+```js
+checkedValue as u32        // checked conversion
+checkedValue as wrap u32   // wrapping conversion
+```
+
+- A conversion that is identity or lossless evaluates to the plain
+  converted value.
+- A checked-required conversion evaluates to a `result::<T>`: `Ok`
+  with the converted value when the runtime value is in range, or
+  `Err` with an `Error` naming the value, both types, and the
+  destination range when it is not:
+
+  ```
+  checked conversion failed: value -10 of type i32 is out of range for type u32 (range 0..4294967295)
+  ```
+
+  It composes with the usual `result` machinery — `match`, `unwrap`,
+  `expect`, and `!` bubbling.
+- A constant operand is judged at compile time: out of range is a
+  diagnostic (`checked conversion of constant -10 from i32 to u32
+  always fails`), in range is a plain constant.
+- `as wrap` always evaluates to the plain value at the destination
+  width: widened by the source's signedness, narrowed by taking the
+  low bits. It never fails and never produces a `result`. Use it only
+  when wrapping is the intent.
+
+### `adr` is a pointer
+
+`adr` and `usize` are one canonical type, but an `adr`-typed value is
+a pointer, not an integer, at conversion boundaries: it keeps the
+pointer rules it has always had. `adr` ± integer is pointer arithmetic
+with the result typed `adr`, comparisons against `NULL` keep their
+special handling, and `as` on an `adr` operand is still a dereference
+read at the target type's width (`ptr as char` reads a `char` through
+`ptr`). Only the `usize` spelling is the integer face of the alias.
+`NULL` arithmetic (for example `NULL + seconds`) is likewise outside
+the integer rules and unchanged.
+
+### Diagnostics
+
+Conversion diagnostics share one shape — source, destination, reason,
+remedy:
+
+```
+cannot implicitly convert int (i32) to usize: usize cannot represent negative int (i32) values (int (i32) range -2147483648..2147483647, usize range 0..18446744073709551615). Use a checked conversion (`value as usize`) if the value is known to fit, or `as wrap` if wrapping is intended.
+integer literal 300 does not fit in byte (u8) (range 0..255)
+no integer type can represent every value of both i64 and u64; convert one operand explicitly (a checked `as` conversion or `as wrap`) before the operation
+checked conversion of constant -10 from i32 to u32 always fails: -10 is outside the range of u32 (0..4294967295)
+```
+
+### Migration guide
+
+Patterns the rules now reject, and their replacements:
+
+1. **A signed value bound for `usize`** (or any checked-required
+   destination):
+
+   ```js
+   const int n = 5;
+   const usize m = n;            // rejected
+   const usize m = (n as usize).expect("n is non-negative");
+   ```
+
+2. **Comparing an unsigned value against a negative literal:**
+
+   ```js
+   if (u < -1) { /* rejected: no common type */ }
+   if (u == (maxU32 as u64)) { /* convert one side explicitly */ }
+   ```
+
+3. **An oversized literal in a narrow type:**
+
+   ```js
+   const byte b = 300;           // rejected
+   const byte b = 300 as wrap byte;  // if wrapping is intended
+   const u16 b = 300;            // or use a type that fits
+   ```
+
+4. **Mixing `i64` and `u64` in one expression:**
+
+   ```js
+   const i64 total = a + b;      // rejected: no common type
+   const i64 total = a + (b as i64).expect("b fits");
+   ```
+
+One historical idiom deserves a note: `0 + x` used to compute at `int`
+width because the left operand was a literal, and code in the standard
+library used it to truncate a wider value into an `int`. Under the
+common-type rule the compound takes the wider type, so those sites now
+say what they mean — the library's `files` and `strings` modules use a
+small `truncateToInt` helper (a raw read of the value's low bytes, the
+same pointer-cast read as `ascii`) at the former `0 +` sites, and
+`as wrap` is the spelling to prefer in new code.
 
 ## User Defined Types...
 Class and union values are addressed through an 8-byte reference on x86-64.
@@ -654,7 +859,7 @@ Returns the address of the identifier.
 <dereference> ::= <identifier> as <type>
 ```
 eg: `foo as int`
-Returns the value stored at the address. Casts the value to the type specified.
+When the identifier holds an `adr`, returns the value stored at the address, read at the type specified. When the identifier holds an integer, `as` is instead the explicit conversion described in [Integer conversions](#integer-conversions) — the value itself is converted, and nothing is read through it. The postfix form `expr as Type` (and `expr as wrap Type`) applies the same conversion after any primary expression.
 
 ### Variable
 ```bnf
