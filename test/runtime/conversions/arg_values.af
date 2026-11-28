@@ -1,0 +1,46 @@
+.needs <std>
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn checkText(const uni_string actual, const adr expected,
+             const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn takeI64(const i64 v) -> i64 { return v; };
+fn takeU64(const u64 v) -> u64 { return v; };
+fn takeI32(const i32 v) -> i32 { return v; };
+fn takeByte(const byte v) -> int { return v; };
+fn sumI64(const i64 a, const i64 b) -> i64 { return a + b; };
+
+fn main() -> int {
+    // The motivating case: a bare int literal argument to an i64
+    // parameter arrives at the parameter's width, sign included.
+    check(takeI64(-10) == #-10, "arg literal -10 -> i64 param");
+    check(takeI64(-2147483647 - 1) == #-2147483648,
+          "arg literal i32 min -> i64 param");
+    check(takeI64(0 - 5) == #-5, "arg computed 0 - 5 -> i64 param");
+
+    // Typed widening arguments are extended to the parameter width.
+    const i8 a8 = -128;
+    check(takeI64(a8) == #-128, "arg i8 min -> i64");
+    const i32 a32 = -5;
+    check(takeI64(a32) == #-5, "arg i32 -5 -> i64");
+    const u32 zero32 = 0;
+    const u32 max32 = zero32 - 1;
+    check(takeI64(max32) == #4294967295, "arg u32 max -> i64");
+    checkText(`v={takeU64(max32)}`, "v=4294967295", "arg u32 max -> u64");
+    check(sumI64(a8, a32) == #-133, "args i8 and i32 -> i64 params");
+
+    // Narrow parameters receive literals at their own width.
+    check(takeByte(200) == 200, "arg literal 200 -> byte param");
+    check(takeI32(#-7) == -7, "arg # literal -> i32 param");
+
+    // A nested call's result widens into the outer parameter.
+    check(takeI64(takeI32(-99)) == #-99, "arg call result i32 -> i64");
+    return 0;
+};

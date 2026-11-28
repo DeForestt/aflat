@@ -6,6 +6,7 @@
 #include <unordered_set>
 
 #include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/Conversions.hpp"
 #include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Exceptions.hpp"
@@ -1246,6 +1247,26 @@ gen::GenerationResult Call::generateAttempt(
       bool canRetry = overloadTable != nullptr && currentOverloadIndex >= 0 &&
                       !overloadIdent.empty();
       auto ensureAssignable = [&](gen::Expr &value) {
+        // Integer arguments are judged by the conversion classifier:
+        // a literal by its value, a typed value by range. A pair the
+        // classifier accepts needs no canAssign/imply detour, and a
+        // checked-required pair cannot be implied into existence.
+        if (const gen::utils::IntTypeInfo *paramInfo =
+                gen::utils::classifiableIntType(
+                    func->argTypes.at(i).typeName)) {
+          std::int64_t literalValue = 0;
+          if (gen::utils::integerLiteralValue(rem, literalValue))
+            return gen::utils::literalFits(literalValue, *paramInfo) ||
+                   (paramInfo->widthBytes == 8 &&
+                    gen::utils::longLiteralSource(rem));
+          if (gen::utils::classifiableIntType(value.type) != nullptr) {
+            const gen::utils::ConversionKind kind =
+                gen::utils::classifyConversion(value.type,
+                                               func->argTypes.at(i).typeName);
+            return kind == gen::utils::ConversionKind::Identity ||
+                   kind == gen::utils::ConversionKind::Lossless;
+          }
+        }
         if (generator.canAssign(func->argTypes.at(i), value.type, "", false,
                                 false)) {
           return true;
@@ -1266,6 +1287,29 @@ gen::GenerationResult Call::generateAttempt(
       };
 
       if (!ensureAssignable(exp)) {
+        if (!canRetry) {
+          // An integer pair the classifier rejects gets the conversion
+          // diagnostic, not the generic irreconcilable-types error.
+          if (const gen::utils::IntTypeInfo *paramInfo =
+                  gen::utils::classifiableIntType(
+                      func->argTypes.at(i).typeName)) {
+            std::int64_t literalValue = 0;
+            if (gen::utils::integerLiteralValue(rem, literalValue) &&
+                !gen::utils::literalFits(literalValue, *paramInfo) &&
+                !(paramInfo->widthBytes == 8 &&
+                  gen::utils::longLiteralSource(rem)))
+              generator.alert(gen::utils::literalRangeDiagnostic(
+                                  literalValue, func->argTypes.at(i).typeName),
+                              true, __FILE__, __LINE__);
+            if (gen::utils::classifiableIntType(exp.type) != nullptr &&
+                gen::utils::classifyConversion(exp.type,
+                                               func->argTypes.at(i).typeName) ==
+                    gen::utils::ConversionKind::CheckedRequired)
+              generator.alert(gen::utils::implicitConversionDiagnostic(
+                                  exp.type, func->argTypes.at(i).typeName),
+                              true, __FILE__, __LINE__);
+          }
+        }
         std::string mismatchMessage = gen::utils::format(
             "function {} expected type `{}` but received type `{}` these "
             "types are irreconcilable the argument type(s) are ({})",
@@ -1290,6 +1334,68 @@ gen::GenerationResult Call::generateAttempt(
                 "`; convert it to the declared owning type first");
       }
     };
+    // Convert the argument value to the parameter's width before it
+    // is saved and marshalled: a lossless integer conversion emits a
+    // real extension staged through %rbx, and a literal that fits is
+    // materialized at the parameter width by widening the move. This
+    // is what makes print_num(-10) print -10: the argument arrives at
+    // the width the callee reads.
+    if (paramType != nullptr && exp.op != asmc::Float) {
+      if (const gen::utils::IntTypeInfo *paramInfo =
+              gen::utils::classifiableIntType(paramType->typeName)) {
+        std::int64_t literalValue = 0;
+        if (gen::utils::integerLiteralValue(arg, literalValue)) {
+          if (gen::utils::literalFits(literalValue, *paramInfo) ||
+              (paramInfo->widthBytes == 8 &&
+               gen::utils::longLiteralSource(arg)))
+            exp.size = paramType->size;
+        } else {
+          const gen::utils::IntTypeInfo *argInfo =
+              gen::utils::classifiableIntType(exp.type);
+          gen::utils::ConversionKind argConversion =
+              gen::utils::ConversionKind::NotConvertible;
+          if (argInfo != nullptr) {
+            argConversion =
+                gen::utils::classifyConversion(*argInfo, *paramInfo);
+          } else if (exp.type == "number") {
+            // A computed value of literal provenance has i32
+            // provenance, as at the declaration boundary.
+            argInfo = gen::utils::intTypeInfo("i32");
+            const gen::utils::ConversionKind asI32 =
+                gen::utils::classifyConversion(*argInfo, *paramInfo);
+            if (asI32 == gen::utils::ConversionKind::Lossless ||
+                asI32 == gen::utils::ConversionKind::Identity)
+              argConversion = asI32;
+            else
+              argInfo = nullptr;
+          }
+          if (argConversion == gen::utils::ConversionKind::Lossless &&
+              argInfo != nullptr &&
+              argInfo->widthBytes < paramInfo->widthBytes) {
+            if (!argInfo->isSigned && argInfo->widthBytes < 4) {
+              auto *zero = new asmc::Xor();
+              zero->logicalLine = this->logicalLine;
+              zero->op1 = generator.registers()["%rbx"]->get(asmc::QWord);
+              zero->op2 = zero->op1;
+              zero->size = asmc::QWord;
+              file.text << zero;
+            }
+            auto *stage = new asmc::Mov();
+            stage->logicalLine = this->logicalLine;
+            stage->size = exp.size;
+            stage->op = exp.op;
+            stage->from = exp.access;
+            stage->to = generator.registers()["%rbx"]->get(exp.size);
+            file.text << stage;
+            if (argInfo->isSigned)
+              generator.emitIntegerExtension(file, "%rbx", *argInfo,
+                                             *paramInfo);
+            exp.access = generator.registers()["%rbx"]->get(paramType->size);
+            exp.size = paramType->size;
+          }
+        }
+      }
+    }
     if (materializeBorrowedTemporary) {
       const auto ownerName =
           "$" + std::to_string(generator.tempCount()++) + "_call_owner";

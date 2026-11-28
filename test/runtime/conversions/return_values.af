@@ -1,0 +1,45 @@
+.needs <std>
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn checkText(const uni_string actual, const adr expected,
+             const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn retI64FromI32() -> i64 {
+    const i32 v = -5;
+    return v;
+};
+fn retI64Literal() -> i64 { return -10; };
+fn retI64Computed() -> i64 { return 0 - 5; };
+fn retU64FromU32() -> u64 {
+    const u32 zero = 0;
+    const u32 max = zero - 1;
+    return max;
+};
+fn retByteLiteral() -> byte { return 200; };
+fn retI32FromI16() -> i32 {
+    const i16 v = -30000;
+    return v;
+};
+fn retIsizeFromI8() -> isize {
+    const i8 v = -128;
+    return v;
+};
+
+fn main() -> int {
+    check(retI64FromI32() == #-5, "return i32 -5 -> i64");
+    check(retI64Literal() == #-10, "return literal -10 -> i64");
+    check(retI64Computed() == #-5, "return computed 0 - 5 -> i64");
+    checkText(`v={retU64FromU32()}`, "v=4294967295",
+              "return u32 max -> u64");
+    check(retByteLiteral() == 200, "return literal 200 -> byte");
+    check(retI32FromI16() == -30000, "return i16 -> i32");
+    check(retIsizeFromI8() == #-128, "return i8 min -> isize");
+    return 0;
+};

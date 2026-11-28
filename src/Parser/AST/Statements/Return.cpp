@@ -2,6 +2,7 @@
 
 #include "ASM.hpp"
 #include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/Conversions.hpp"
 #include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/AST.hpp"
@@ -394,6 +395,32 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
   };
 
   if (!generator.currentFunction()->optional &&
+      !generator.currentFunction()->error && !this->empty &&
+      from.op != asmc::Float) {
+    // An integer return the classifier rejects gets the conversion
+    // diagnostic instead of the imply/cannot-assign path below.
+    if (const gen::utils::IntTypeInfo *retInfo =
+            gen::utils::classifiableIntType(generator.returnType().typeName)) {
+      std::int64_t literalValue = 0;
+      if (gen::utils::integerLiteralValue(this->expr, literalValue) &&
+          !gen::utils::literalFits(literalValue, *retInfo) &&
+          !(retInfo->widthBytes == 8 &&
+            gen::utils::longLiteralSource(this->expr)))
+        generator.alert(gen::utils::literalRangeDiagnostic(
+                            literalValue, generator.returnType().typeName),
+                        true, __FILE__, __LINE__);
+      if (const gen::utils::IntTypeInfo *fromInfo =
+              gen::utils::classifiableIntType(from.type)) {
+        if (gen::utils::classifyConversion(*fromInfo, *retInfo) ==
+            gen::utils::ConversionKind::CheckedRequired)
+          generator.alert(gen::utils::implicitConversionDiagnostic(
+                              from.type, generator.returnType().typeName),
+                          true, __FILE__, __LINE__);
+      }
+    }
+  }
+
+  if (!generator.currentFunction()->optional &&
       !generator.currentFunction()->error &&
       !generator.canAssign(generator.returnType(), from.type,
                            "the return type of this function is {} but the "
@@ -410,6 +437,60 @@ gen::GenerationResult const Return::generate(gen::CodeGenerator &generator) {
     from = generator.GenExpr(this->expr, file, asmc::AUTO,
                              generator.returnType().typeName, localReturn);
     from.adoptImmutableRequirement(prev);
+  }
+
+  // Widen an integer return value to the declared return width
+  // before the %rax move below: the caller reads the return register
+  // at the return type's width, so a narrower value is extended here
+  // rather than inherited from whatever the expression left behind.
+  if (!generator.currentFunction()->optional &&
+      !generator.currentFunction()->error &&
+      !generator.currentFunction()->returnsLocal && !this->empty &&
+      from.op != asmc::Float) {
+    if (const gen::utils::IntTypeInfo *retInfo =
+            gen::utils::classifiableIntType(generator.returnType().typeName)) {
+      const gen::utils::IntTypeInfo *fromInfo =
+          gen::utils::classifiableIntType(from.type);
+      gen::utils::ConversionKind retConversion =
+          gen::utils::ConversionKind::NotConvertible;
+      if (fromInfo != nullptr) {
+        retConversion = gen::utils::classifyConversion(*fromInfo, *retInfo);
+      } else if (from.type == "number") {
+        // A computed value of literal provenance has i32 provenance,
+        // as at the declaration boundary.
+        fromInfo = gen::utils::intTypeInfo("i32");
+        const gen::utils::ConversionKind asI32 =
+            gen::utils::classifyConversion(*fromInfo, *retInfo);
+        if (asI32 == gen::utils::ConversionKind::Lossless ||
+            asI32 == gen::utils::ConversionKind::Identity)
+          retConversion = asI32;
+        else
+          fromInfo = nullptr;
+      }
+      if (retConversion == gen::utils::ConversionKind::Lossless &&
+          fromInfo != nullptr && fromInfo->widthBytes < retInfo->widthBytes) {
+        if (!fromInfo->isSigned && fromInfo->widthBytes < 4) {
+          auto *zero = new asmc::Xor();
+          zero->logicalLine = this->logicalLine;
+          zero->op1 = generator.registers()["%rbx"]->get(asmc::QWord);
+          zero->op2 = zero->op1;
+          zero->size = asmc::QWord;
+          file.text << zero;
+        }
+        auto *stage = new asmc::Mov();
+        stage->logicalLine = this->logicalLine;
+        stage->size = from.size;
+        stage->op = from.op;
+        stage->from = from.access;
+        stage->to = generator.registers()["%rbx"]->get(from.size);
+        file.text << stage;
+        if (fromInfo->isSigned)
+          generator.emitIntegerExtension(file, "%rbx", *fromInfo, *retInfo);
+        from.access =
+            generator.registers()["%rbx"]->get(generator.returnType().size);
+        from.size = generator.returnType().size;
+      }
+    }
   }
 
   if (from.loanProvenance == gen::LoanProvenance::Lexical &&
