@@ -48,7 +48,14 @@ jobs:
       - name: Build stdlib
         run: bash ./rebuild-libs.sh -j "$(nproc)"
       - name: Build project
-        run: ./bin/aflat build
+        run: |
+          set +e
+          ./bin/aflat build > project-out.txt 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then
+            python3 test/ci_report.py project-out.txt "build project"
+          fi
+          exit $status
       - name: Test raw buffer storage
         run: python3 test/runtime/raw_buffer/run.py
       - name: Test vector storage
