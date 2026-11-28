@@ -1,0 +1,67 @@
+.needs <std>
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn checkText(const uni_string actual, const adr expected,
+             const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn main() -> int {
+    // Signed widening through assignment (no declaration zeroing here:
+    // the value must be extended, not truncated or zero-filled).
+    const i8 a8 = -128;
+    mutable i64 w = 12345;
+    w = a8;
+    check(w == #-128, "assign i8 min -> i64");
+
+    const i16 a16 = -30000;
+    w = a16;
+    check(w == #-30000, "assign i16 -> i64");
+
+    // The original -10 class: a literal-led negative assigned into a
+    // wider variable must arrive negative.
+    mutable long led = 7;
+    led = 0 - 5;
+    check(led == #-5, "assign 0 - 5 -> long");
+    mutable i64 led64 = 9;
+    led64 = 0 - 10;
+    check(led64 == #-10, "assign 0 - 10 -> i64");
+
+    const i32 negOne = -1;
+    w = negOne;
+    check(w == #-1, "assign i32 -1 -> i64");
+
+    // Unsigned widening through assignment.
+    const u32 zero32 = 0;
+    const u32 b32 = zero32 - 1;
+    w = b32;
+    check(w == #4294967295, "assign u32 max -> i64");
+    mutable usize sz = 1;
+    sz = b32;
+    checkText(`v={sz}`, "v=4294967295", "assign u32 max -> usize");
+
+    const u8 b8 = 255;
+    mutable u16 w16 = 1;
+    w16 = b8;
+    check(w16 == 255, "assign u8 max -> u16");
+
+    // Narrow literal assignment stores at the destination width even
+    // when the literal is written with the long prefix.
+    mutable byte nb = 0;
+    nb = #200;
+    check(nb == 200, "assign #200 -> byte");
+
+    // adr-typed values are pointers, not integer sources (design
+    // section 2.2): they keep their legacy rules at the boundaries,
+    // as io.printHex's `h = input` relies on.
+    const adr p = af_malloc(64);
+    mutable long bits = 0;
+    bits = p;
+    check(bits == p, "assign adr -> long keeps legacy rules");
+    return 0;
+};

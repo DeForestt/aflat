@@ -81,6 +81,22 @@ jobs:
         run: python3 test/runtime/format_sized/run.py hand_t_str.af
       - name: Test sized type formatting (hand uni fUCstr t)
         run: python3 test/runtime/format_sized/run.py hand_t_uni.af
+      - name: Test integer conversions (sign extension declarations)
+        run: python3 test/runtime/conversions/run.py decl_sign_ext
+      - name: Test integer conversions (literal-led declarations)
+        run: python3 test/runtime/conversions/run.py decl_sign_lit
+      - name: Test integer conversions (unsigned declarations)
+        run: python3 test/runtime/conversions/run.py decl_unsigned
+      - name: Test integer conversions (loaded declarations)
+        run: python3 test/runtime/conversions/run.py decl_loaded
+      - name: Test integer conversions (assignments)
+        run: python3 test/runtime/conversions/run.py assign_values
+      - name: Test integer conversions (field assignments)
+        run: python3 test/runtime/conversions/run.py assign_fields
+      - name: Test integer conversions (literal bounds)
+        run: python3 test/runtime/conversions/run.py literal_bounds
+      - name: Test integer conversions (diagnostics)
+        run: python3 test/runtime/conversions/run.py fails
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt
@@ -90,9 +106,45 @@ jobs:
           ${{github.workspace}}/bin/aflat build -o ./bin/afmt
       - name: Test afmt CLI
         run: python3 tools/afmt/src/test/cli_test.py
-      - name: Test
+      - name: Test (unit, conversions)
         working-directory: ${{github.workspace}}/bin
-        run: ./a.test
+        run: |
+          set +e
+          ./a.test "[conversions]" -r compact > test-out.txt 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then
+            grep -E "FAILED:|test cases:" test-out.txt | head -20 > failures.txt
+            while IFS= read -r line; do
+              printf '::error title=unit test failure::%s\n' "$line"
+            done < failures.txt
+          fi
+          exit $status
+      - name: Test (unit, sized types and int types)
+        working-directory: ${{github.workspace}}/bin
+        run: |
+          set +e
+          ./a.test "[sized-types],[inttypes]" -r compact > test-out.txt 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then
+            grep -E "FAILED:|test cases:" test-out.txt | head -20 > failures.txt
+            while IFS= read -r line; do
+              printf '::error title=unit test failure::%s\n' "$line"
+            done < failures.txt
+          fi
+          exit $status
+      - name: Test (unit, all other cases)
+        working-directory: ${{github.workspace}}/bin
+        run: |
+          set +e
+          ./a.test "~[conversions]~[sized-types]~[inttypes]" -r compact > test-out.txt 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then
+            grep -E "FAILED:|test cases:" test-out.txt | head -20 > failures.txt
+            while IFS= read -r line; do
+              printf '::error title=unit test failure::%s\n' "$line"
+            done < failures.txt
+          fi
+          exit $status
 
   check-format:
     runs-on: ubuntu-24.04

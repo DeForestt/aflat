@@ -11,6 +11,7 @@
 
 #include "ASM.hpp"
 #include "CodeGenerator/Expr.hpp"
+#include "CodeGenerator/IntTypes.hpp"
 #include "CodeGenerator/Types.hpp"
 #include "HashMap.hpp"
 #include "LinkedList.hpp"
@@ -78,6 +79,15 @@ public:
                             bool isDiv = false);
   gen::Expr genArithmetic(asmc::ArithInst *, ast::Compound compound,
                           asmc::File &OutputFile);
+  // Emit the instructions that widen the integer value held in the
+  // named register from the source type's width to the destination
+  // type's width, preserving the value: sign-extend a signed source,
+  // zero-extend an unsigned one. The bits above the source width are
+  // not assumed to hold anything. Same-width and narrower destinations
+  // emit nothing; narrowing is never emitted implicitly.
+  void emitIntegerExtension(asmc::File &OutputFile, const std::string &reg,
+                            const utils::IntTypeInfo &src,
+                            const utils::IntTypeInfo &dst);
   asmc::File memMove(std::string from, std::string to, int bytes);
   asmc::File setOffset(std::string to, int offset, std::string from,
                        asmc::Size size, asmc::OpType op = asmc::Hard);

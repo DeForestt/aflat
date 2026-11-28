@@ -1,6 +1,7 @@
 #include "Parser/AST/Statements/Assign.hpp"
 
 #include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/Conversions.hpp"
 #include "CodeGenerator/Expr.hpp"
 #include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
@@ -337,8 +338,52 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
   if (plainOwnershipBearingLvalue)
     expr.owned = false;
 
+  // Integer assignments route through the conversion classifier (as
+  // declarations do): a literal source is judged by value, a typed
+  // integer source by range, and a lossless widening emits a real
+  // extension in the store sequence below.
+  gen::utils::ConversionKind assignConversion =
+      gen::utils::ConversionKind::NotConvertible;
+  const gen::utils::IntTypeInfo *assignSrcInfo = nullptr;
+  const gen::utils::IntTypeInfo *assignDstInfo =
+      gen::utils::classifiableIntType(symbol->type.typeName);
+  if ((!this->reference || symbol->type.isReference) &&
+      assignDstInfo != nullptr) {
+    std::int64_t literalValue = 0;
+    if (gen::utils::integerLiteralValue(this->expr, literalValue)) {
+      if (!gen::utils::literalFits(literalValue, *assignDstInfo) &&
+          !(assignDstInfo->widthBytes == 8 &&
+            gen::utils::longLiteralSource(this->expr)))
+        generator.alert(gen::utils::literalRangeDiagnostic(
+                            literalValue, symbol->type.typeName),
+                        true, __FILE__, __LINE__);
+      assignConversion = gen::utils::ConversionKind::LiteralFits;
+    } else if ((assignSrcInfo = gen::utils::classifiableIntType(expr.type)) !=
+               nullptr) {
+      assignConversion =
+          gen::utils::classifyConversion(*assignSrcInfo, *assignDstInfo);
+      if (assignConversion == gen::utils::ConversionKind::CheckedRequired)
+        generator.alert(gen::utils::implicitConversionDiagnostic(
+                            expr.type, symbol->type.typeName),
+                        true, __FILE__, __LINE__);
+    } else if (expr.type == "number" && expr.op != asmc::Float) {
+      // A computed value of literal provenance has i32 provenance (see
+      // DecAssign): classify it as i32 so a widening assignment
+      // sign-extends it instead of storing a partial width.
+      assignSrcInfo = gen::utils::intTypeInfo("i32");
+      const gen::utils::ConversionKind asI32 =
+          gen::utils::classifyConversion(*assignSrcInfo, *assignDstInfo);
+      if (asI32 == gen::utils::ConversionKind::Lossless ||
+          asI32 == gen::utils::ConversionKind::Identity)
+        assignConversion = asI32;
+      else
+        assignSrcInfo = nullptr;
+    }
+  }
+
   if (!this->reference || symbol->type.isReference) {
-    if (!generator.canAssign(
+    if (assignConversion == gen::utils::ConversionKind::NotConvertible &&
+        !generator.canAssign(
             symbol->type, expr.type,
             "symbol of type {} cannot be assigned to type {}")) {
       auto prev = expr;
@@ -436,7 +481,27 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
 
   mov2->logicalLine = this->logicalLine;
   mov->logicalLine = this->logicalLine;
+  const bool assignWiden =
+      assignConversion == gen::utils::ConversionKind::Lossless &&
+      assignSrcInfo != nullptr && assignDstInfo != nullptr &&
+      assignSrcInfo->widthBytes < assignDstInfo->widthBytes;
+  if (assignWiden) {
+    mov->size = symbol->type.size;
+    mov->from = generator.registers()["%rbx"]->get(symbol->type.size);
+  }
+  if (assignConversion == gen::utils::ConversionKind::LiteralFits &&
+      gen::utils::sizeToInt(expr.size) >
+          gen::utils::sizeToInt(symbol->type.size)) {
+    // A `#` literal is generated at QWord regardless of the size hint;
+    // a value that fits a narrower destination is stored at the
+    // destination's width.
+    mov->size = symbol->type.size;
+    mov->from = generator.registers()["%rbx"]->get(symbol->type.size);
+  }
   file.text << mov2;
+  if (assignWiden)
+    generator.emitIntegerExtension(file, "%rbx", *assignSrcInfo,
+                                   *assignDstInfo);
   file.text << mov;
   if (pop != nullptr) {
     file.text << pop;

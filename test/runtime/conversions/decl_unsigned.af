@@ -1,0 +1,62 @@
+.needs <std>
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn checkText(const uni_string actual, const adr expected,
+             const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn main() -> int {
+    // Unsigned widening preserves values with the highest bit set.
+    const u8 b8 = 255;
+    const i16 b8to16 = b8;
+    check(b8to16 == 255, "decl u8 max -> i16");
+    const u16 b8toU16 = b8;
+    check(b8toU16 == 255, "decl u8 max -> u16");
+    const i64 b8to64 = b8;
+    check(b8to64 == #255, "decl u8 max -> i64");
+    const usize b8toSize = b8;
+    check(b8toSize == 255, "decl u8 max -> usize");
+
+    const u16 b16 = 65535;
+    const i32 b16to32 = b16;
+    check(b16to32 == 65535, "decl u16 max -> i32");
+    const u64 b16to64 = b16;
+    checkText(`v={b16to64}`, "v=65535", "decl u16 max -> u64");
+
+    const u32 zero32 = 0;
+    const u32 b32 = zero32 - 1;
+    const i64 b32to64 = b32;
+    check(b32to64 == #4294967295, "decl u32 max -> i64");
+    const u64 b32toU64 = b32;
+    checkText(`v={b32toU64}`, "v=4294967295", "decl u32 max -> u64");
+    const usize b32toSize = b32;
+    checkText(`v={b32toSize}`, "v=4294967295", "decl u32 max -> usize");
+
+    const u64 zero64 = 0;
+    const u64 b64 = zero64 - 1;
+    const usize b64toSize = b64;
+    checkText(`v={b64toSize}`, "v=18446744073709551615",
+              "decl u64 max -> usize");
+
+    // Alias pairs.
+    const short sh = -700;
+    const int shToInt = sh;
+    check(shToInt == -700, "decl short -> int");
+    const byte by = 200;
+    const u16 byTo16 = by;
+    check(byTo16 == 200, "decl byte -> u16");
+    const char ch = 'A';
+    const i16 chTo16 = ch;
+    check(chTo16 == 65, "decl char -> i16");
+
+    const u8 z8 = 0;
+    const u64 z8to64 = z8;
+    check(z8to64 == 0, "decl u8 zero -> u64");
+    return 0;
+};
