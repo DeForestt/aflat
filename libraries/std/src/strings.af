@@ -15,7 +15,7 @@ export char ascii(const int input){
 // design's common-type rule the compound takes the wider type, so
 // the truncation is spelled with the same pointer-cast read ascii
 // uses. The design's explicit `as wrap` replaces this once it lands.
-fn truncateToInt(const adr valueAddress) -> int {
+fn strTruncateToInt(const adr valueAddress) -> int {
     return valueAddress as int;
 };
 
@@ -178,7 +178,7 @@ export int long_toString(long input, adr buffer){
     while (i > -1){
         factor = math.longExp(#10, i);
         h = input / factor;
-        out = io.toChar(truncateToInt(?h));
+        out = io.toChar(strTruncateToInt(?h));
         buffer =: out;
         buffer = buffer + #1;
         h = h * factor;
@@ -210,7 +210,7 @@ export int uint_toString(u32 input, adr buffer){
     char out = ' ';
     while (true){
         const u32 digit = input / factor;
-        out = io.toChar(truncateToInt(?digit));
+        out = io.toChar(strTruncateToInt(?digit));
         buffer =: out;
         buffer = buffer + #1;
         input = input - digit * factor;
@@ -242,7 +242,7 @@ export int ulong_toString(u64 input, adr buffer){
     char out = ' ';
     while (true){
         const u64 digit = input / factor;
-        out = io.toChar(truncateToInt(?digit));
+        out = io.toChar(strTruncateToInt(?digit));
         buffer =: out;
         buffer = buffer + #1;
         input = input - digit * factor;
