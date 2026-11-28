@@ -132,7 +132,9 @@ gen::Expr gen::CodeGenerator::genExplicitCast(ast::ExplicitCast *cast,
   // jumps on the extended value: an unsigned destination's bound
   // fits the same comparison, a u64 destination needs no upper test,
   // and a u64 -> i64 conversion is exactly the sign test.
-  const std::string resultTypeName = "result::<" + dstName + ">";
+  // The canonical internal spelling of the instantiated union type
+  // (the source spelling result::<T> is not a type-list name).
+  const std::string resultTypeName = "result<" + dstName + ">";
   const std::string srcTempName =
       "$" + std::to_string(tempCount()++) + "_cast_src";
   const std::string dstTempName =
