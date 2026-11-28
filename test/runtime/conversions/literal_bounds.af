@@ -1,0 +1,57 @@
+.needs <std>
+import uni_string from "uni_string";
+import {str_comp} from "strings" under strings;
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn checkText(const uni_string actual, const adr expected,
+             const adr label) -> void {
+    assert(strings.str_comp(actual.cstr(), expected) == 1, label);
+};
+
+fn main() -> int {
+    // Literals are accepted at the exact bounds of their destination.
+    const i8 s8lo = -128;
+    check(s8lo == -128, "literal i8 min");
+    const i8 s8hi = 127;
+    check(s8hi == 127, "literal i8 max");
+    const u8 u8hi = 255;
+    check(u8hi == 255, "literal u8 max");
+    const i16 s16lo = -32768;
+    check(s16lo == -32768, "literal i16 min");
+    const i16 s16hi = 32767;
+    check(s16hi == 32767, "literal i16 max");
+    const u16 u16hi = 65535;
+    check(u16hi == 65535, "literal u16 max");
+    const i32 s32lo = -2147483647 - 1;
+    check(s32lo == -2147483647 - 1, "literal i32 min");
+    const u32 u32hi = 4294967295;
+    checkText(`v={u32hi}`, "v=4294967295", "literal u32 max");
+    const i64 s64hi = #9223372036854775807;
+    check(s64hi == #9223372036854775807, "literal i64 max");
+    const u64 u64mid = #18446744073709551615;
+    checkText(`v={u64mid}`, "v=18446744073709551615", "literal u64 max");
+    const usize usizeMid = #18446744073709551615;
+    checkText(`v={usizeMid}`, "v=18446744073709551615",
+              "literal usize max");
+    const byte b200 = 200;
+    check(b200 == 200, "literal byte 200");
+    const byte bHash = #200;
+    check(bHash == 200, "literal #200 into byte");
+    const char cA = 65;
+    check(cA == 65, "literal 65 into char");
+
+    // The same bounds through assignment.
+    mutable u8 m8 = 0;
+    m8 = 255;
+    check(m8 == 255, "assign literal u8 max");
+    mutable i16 m16 = 0;
+    m16 = -32768;
+    check(m16 == -32768, "assign literal i16 min");
+    mutable u32 m32 = 0;
+    m32 = 4294967295;
+    checkText(`v={m32}`, "v=4294967295", "assign literal u32 max");
+    return 0;
+};

@@ -313,7 +313,10 @@ public:
 
 class IntLiteral : public Expr {
 public:
-  int val;
+  // Literal values are stored at 64-bit precision; whether a value is
+  // acceptable is judged against the destination type at each boundary
+  // (see gen::utils::literalFits), not by the literal's own width.
+  std::int64_t val;
   std::string toString() override { return std::to_string(val); }
 };
 

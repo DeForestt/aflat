@@ -1,6 +1,7 @@
 #include "Parser/AST/Statements/DecAssign.hpp"
 
 #include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/Conversions.hpp"
 #include "CodeGenerator/Scope/ScopeManager.hpp"
 #include "CodeGenerator/Utils.hpp"
 #include "Parser/Parser.hpp"
@@ -73,9 +74,64 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
         generator.alert("a local binding requires a stack-local value", true,
                         __FILE__, __LINE__);
 
+      // Integer declarations route through the conversion classifier:
+      // a literal source is judged by value, a typed integer source by
+      // range. Lossless conversions emit a real extension in the store
+      // sequence below; checked-required conversions are diagnosed
+      // here instead of falling through to canAssign.
+      const gen::utils::IntTypeInfo *decIntInfo =
+          gen::utils::intTypeInfo(dec->type.typeName);
+      const gen::utils::IntTypeInfo *exprIntInfo = nullptr;
+      gen::utils::ConversionKind intConversion =
+          gen::utils::ConversionKind::NotConvertible;
+      if (decIntInfo != nullptr && dec->type.typeName != "let") {
+        std::int64_t literalValue = 0;
+        if (gen::utils::integerLiteralValue(this->expr, literalValue)) {
+          const bool literalFitsDest =
+              gen::utils::literalFits(literalValue, *decIntInfo) ||
+              (decIntInfo->widthBytes == 8 &&
+               gen::utils::longLiteralSource(this->expr));
+          intConversion = literalFitsDest
+                              ? gen::utils::ConversionKind::LiteralFits
+                              : gen::utils::ConversionKind::CheckedRequired;
+          if (intConversion == gen::utils::ConversionKind::CheckedRequired &&
+              !dec->trust)
+            generator.alert(gen::utils::literalRangeDiagnostic(
+                                literalValue, dec->type.typeName),
+                            true, __FILE__, __LINE__);
+        } else if ((exprIntInfo = gen::utils::intTypeInfo(expr.type)) !=
+                   nullptr) {
+          intConversion =
+              gen::utils::classifyConversion(*exprIntInfo, *decIntInfo);
+          if (intConversion == gen::utils::ConversionKind::CheckedRequired &&
+              !dec->trust)
+            generator.alert(gen::utils::implicitConversionDiagnostic(
+                                expr.type, dec->type.typeName),
+                            true, __FILE__, __LINE__);
+        } else if (expr.type == "number" && expr.op != asmc::Float) {
+          // A computed value of literal provenance has i32 provenance:
+          // classify it as i32 so a widening declaration sign-extends
+          // it (the literal-led-negative class) instead of relying on
+          // the zeroing store. Checked-required destinations keep the
+          // legacy path for now.
+          exprIntInfo = gen::utils::intTypeInfo("i32");
+          const gen::utils::ConversionKind asI32 =
+              gen::utils::classifyConversion(*exprIntInfo, *decIntInfo);
+          if (asI32 == gen::utils::ConversionKind::Lossless ||
+              asI32 == gen::utils::ConversionKind::Identity)
+            intConversion = asI32;
+          else
+            exprIntInfo = nullptr;
+        }
+      }
+      const bool intConversionHandled =
+          intConversion == gen::utils::ConversionKind::Identity ||
+          intConversion == gen::utils::ConversionKind::Lossless ||
+          intConversion == gen::utils::ConversionKind::LiteralFits;
+
       const auto testType =
           allowAdr ? ast::Type("adr", asmc::QWord) : dec->type;
-      if (!dec->trust && dec->type.typeName != "let" &&
+      if (!intConversionHandled && !dec->trust && dec->type.typeName != "let" &&
           !generator.canAssign(testType, expr.type,
                                "type {} cannot be assigned to type {}")) {
         auto prev = expr;
@@ -90,6 +146,18 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
           generator.alert("Cannot infer type of variable because the "
                           "expression is of type " +
                           expr.type);
+        }
+        if (expr.type == "number") {
+          // A literal bound without a destination keeps the i32
+          // default; one outside that range is diagnosed instead of
+          // silently changing width.
+          std::int64_t literalValue = 0;
+          if (gen::utils::integerLiteralValue(this->expr, literalValue) &&
+              !gen::utils::literalFits(literalValue,
+                                       *gen::utils::intTypeInfo("i32")))
+            generator.alert(
+                gen::utils::literalRangeDiagnostic(literalValue, "i32"), true,
+                __FILE__, __LINE__);
         }
         dec->type.typeName = expr.type;
         dec->type.size = expr.size;
@@ -177,6 +245,11 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
         file.text << zero;
       }
       file.text << mov2;
+      if (intConversion == gen::utils::ConversionKind::Lossless &&
+          exprIntInfo != nullptr && decIntInfo != nullptr &&
+          exprIntInfo->isSigned &&
+          exprIntInfo->widthBytes < decIntInfo->widthBytes)
+        generator.emitIntegerExtension(file, "%rbx", *exprIntInfo, *decIntInfo);
       file.text << mov;
       s->owned = expr.owned && !dec->type.isLoan;
       s->type.isLocal = dec->local;
@@ -272,7 +345,35 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
       var->command = "quad";
     }
     gen::Expr exp = generator.GenExpr(this->expr, file);
-    if (!generator.canAssign(
+    // Global integer initializers are constants: literals are judged
+    // by value and checked-required conversions are always diagnosed
+    // at compile time.
+    const gen::utils::IntTypeInfo *globalIntInfo =
+        gen::utils::intTypeInfo(dec->type.typeName);
+    bool globalIntHandled = false;
+    if (globalIntInfo != nullptr) {
+      std::int64_t literalValue = 0;
+      if (gen::utils::integerLiteralValue(this->expr, literalValue)) {
+        if (!gen::utils::literalFits(literalValue, *globalIntInfo) &&
+            !(globalIntInfo->widthBytes == 8 &&
+              gen::utils::longLiteralSource(this->expr)))
+          generator.alert(gen::utils::literalRangeDiagnostic(
+                              literalValue, dec->type.typeName),
+                          true, __FILE__, __LINE__);
+        globalIntHandled = true;
+      } else if (const gen::utils::IntTypeInfo *expIntInfo =
+                     gen::utils::intTypeInfo(exp.type)) {
+        const gen::utils::ConversionKind kind =
+            gen::utils::classifyConversion(*expIntInfo, *globalIntInfo);
+        if (kind == gen::utils::ConversionKind::CheckedRequired)
+          generator.alert(gen::utils::implicitConversionDiagnostic(
+                              exp.type, dec->type.typeName),
+                          true, __FILE__, __LINE__);
+        globalIntHandled = kind == gen::utils::ConversionKind::Identity;
+      }
+    }
+    if (!globalIntHandled &&
+        !generator.canAssign(
             dec->type, exp.type,
             "cannot assign type {} cannot be assigned to type {}")) {
       auto prev = exp;

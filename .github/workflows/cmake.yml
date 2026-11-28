@@ -81,6 +81,8 @@ jobs:
         run: python3 test/runtime/format_sized/run.py hand_t_str.af
       - name: Test sized type formatting (hand uni fUCstr t)
         run: python3 test/runtime/format_sized/run.py hand_t_uni.af
+      - name: Test integer conversions
+        run: python3 test/runtime/conversions/run.py
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt
