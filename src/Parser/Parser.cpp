@@ -7,6 +7,8 @@
 #include <unordered_set>
 #include <utility>
 
+#include "CodeGenerator/TargetInfo.hpp"
+#include "CodeGenerator/Utils.hpp"
 #include "Exceptions.hpp"
 #include "Parser/AST.hpp"
 #include "Parser/AST/Expressions/Bubble.hpp"
@@ -138,15 +140,44 @@ struct Parser::Impl {
 
 } // namespace parse
 
+std::unordered_map<std::string, int> parse::buildPrimitiveTypes() {
+  const int pointerWidth = gen::currentTarget().pointerWidthBytes;
+  return {{"int", 4},
+          {"short", 2},
+          {"char", 1},
+          {"long", 8},
+          {"adr", pointerWidth},
+          {"byte", 1},
+          {"float", 4},
+          {"bool", 1},
+          {"generic", 8},
+          {"number", 8},
+          {"i8", 1},
+          {"i16", 2},
+          {"i32", 4},
+          {"i64", 8},
+          {"isize", pointerWidth},
+          {"u8", 1},
+          {"u16", 2},
+          {"u32", 4},
+          {"u64", 8},
+          {"usize", pointerWidth}};
+}
+
 parse::Parser::Impl::Impl(Parser &parser, int mutability) : parser(parser) {
   this->typeList.foo = ast::Type::compare;
   this->mutability = mutability;
+
+  // The target-sized types (adr, isize, usize) register at the target's
+  // pointer width; every other primitive has a fixed width.
+  const asmc::Size pointerSize =
+      gen::utils::toSize(gen::currentTarget().pointerWidthBytes);
 
   this->addType("int", asmc::Hard, asmc::DWord);
   this->addType("short", asmc::Hard, asmc::Word);
   this->addType("char", asmc::Hard, asmc::Byte);
   this->addType("long", asmc::Hard, asmc::QWord);
-  this->addType("adr", asmc::Hard, asmc::QWord);
+  this->addType("adr", asmc::Hard, pointerSize);
   this->addType("byte", asmc::Hard, asmc::Byte);
   // Explicitly sized integer types. The sized names are canonical; the
   // legacy names above are aliases of the matching sized type (char is
@@ -159,8 +190,8 @@ parse::Parser::Impl::Impl(Parser &parser, int mutability) : parser(parser) {
   this->addType("u16", asmc::Hard, asmc::Word);
   this->addType("u32", asmc::Hard, asmc::DWord);
   this->addType("u64", asmc::Hard, asmc::QWord);
-  this->addType("isize", asmc::Hard, asmc::QWord);
-  this->addType("usize", asmc::Hard, asmc::QWord);
+  this->addType("isize", asmc::Hard, pointerSize);
+  this->addType("usize", asmc::Hard, pointerSize);
   this->addType("float", asmc::Float, asmc::DWord);
   this->addType("bool", asmc::Hard, asmc::Byte);
   this->addType("generic", asmc::Hard, asmc::QWord, true, false);

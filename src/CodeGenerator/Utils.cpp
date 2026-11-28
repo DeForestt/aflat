@@ -2,7 +2,12 @@
 
 #include <unistd.h>
 
+#include <cstdint>
+#include <unordered_map>
+
 #include "CodeGenerator/CodeGenerator.hpp"
+#include "CodeGenerator/IntTypes.hpp"
+#include "CodeGenerator/TargetInfo.hpp"
 
 using namespace gen::utils;
 
@@ -43,14 +48,80 @@ std::string gen::utils::integerTypeAlias(const std::string &name) {
   return "";
 }
 
+namespace {
+
+gen::utils::IntTypeInfo makeIntTypeInfo(const std::string &canonical,
+                                        int widthBytes, bool isSigned) {
+  gen::utils::IntTypeInfo info;
+  info.canonical = canonical;
+  info.widthBytes = widthBytes;
+  info.isSigned = isSigned;
+  info.minSigned = 0;
+  info.maxUnsigned = 0;
+  if (isSigned) {
+    info.minSigned = widthBytes >= 8
+                         ? INT64_MIN
+                         : -(std::int64_t(1) << (widthBytes * 8 - 1));
+  } else {
+    info.maxUnsigned = widthBytes >= 8
+                           ? UINT64_MAX
+                           : ((std::uint64_t(1) << (widthBytes * 8)) - 1);
+  }
+  return info;
+}
+
+const std::unordered_map<std::string, gen::utils::IntTypeInfo> &intTypeTable() {
+  static const std::unordered_map<std::string, gen::utils::IntTypeInfo> table =
+      [] {
+        const int pointerWidth = gen::currentTarget().pointerWidthBytes;
+        std::unordered_map<std::string, gen::utils::IntTypeInfo> entries;
+        entries.emplace("i8", makeIntTypeInfo("i8", 1, true));
+        entries.emplace("i16", makeIntTypeInfo("i16", 2, true));
+        entries.emplace("i32", makeIntTypeInfo("i32", 4, true));
+        entries.emplace("i64", makeIntTypeInfo("i64", 8, true));
+        entries.emplace("isize", makeIntTypeInfo("isize", pointerWidth, true));
+        entries.emplace("u8", makeIntTypeInfo("u8", 1, false));
+        entries.emplace("u16", makeIntTypeInfo("u16", 2, false));
+        entries.emplace("u32", makeIntTypeInfo("u32", 4, false));
+        entries.emplace("u64", makeIntTypeInfo("u64", 8, false));
+        entries.emplace("usize", makeIntTypeInfo("usize", pointerWidth, false));
+        return entries;
+      }();
+  return table;
+}
+
+} // namespace
+
+const gen::utils::IntTypeInfo *
+gen::utils::intTypeInfo(const std::string &name) {
+  const std::string canonical = integerTypeAlias(name);
+  if (canonical.empty())
+    return nullptr;
+  const auto &table = intTypeTable();
+  const auto it = table.find(canonical);
+  return it == table.end() ? nullptr : &it->second;
+}
+
+std::int64_t gen::utils::intTypeMin(const IntTypeInfo &info) {
+  return info.isSigned ? info.minSigned : 0;
+}
+
+std::uint64_t gen::utils::intTypeMax(const IntTypeInfo &info) {
+  if (!info.isSigned)
+    return info.maxUnsigned;
+  if (info.widthBytes >= 8)
+    return static_cast<std::uint64_t>(INT64_MAX);
+  return static_cast<std::uint64_t>(
+      (std::int64_t(1) << (info.widthBytes * 8 - 1)) - 1);
+}
+
 bool gen::utils::isIntegerTypeName(const std::string &name) {
-  return !integerTypeAlias(name).empty();
+  return intTypeInfo(name) != nullptr;
 }
 
 bool gen::utils::isUnsignedIntegerTypeName(const std::string &name) {
-  const std::string canonical = integerTypeAlias(name);
-  return canonical == "u8" || canonical == "u16" || canonical == "u32" ||
-         canonical == "u64" || canonical == "usize";
+  const IntTypeInfo *info = intTypeInfo(name);
+  return info != nullptr && !info->isSigned;
 }
 
 int gen::utils::sizeToInt(asmc::Size size) {
