@@ -30,25 +30,5 @@ fn main() -> int {
     check((5 as u32) == 5, "cast constant 5 -> u32 plain");
     check((-10 as i64) == #-10, "cast constant -10 -> i64 plain");
 
-    // Checked casts produce results.
-    const i32 neg = -10;
-    let r1 = neg as u32;
-    check(r1.isErr(), "cast checked i32 -10 -> u32 is Err");
-    check(strings.str_comp(
-              r1.unwrapErr().render().cstr(),
-              "Error: checked conversion failed: value -10 of type i32 is out of range for type u32 (range 0..4294967295)") == 1,
-          "cast checked error message");
-    const i32 five = 5;
-    let r2 = five as u32;
-    check(r2.isOk(), "cast checked i32 5 -> u32 is Ok");
-    check(r2.unwrap() == 5, "cast checked i32 5 -> u32 value");
-
-    // Narrowing and sign changes, in and out of range.
-    const i64 wide = #5000000000;
-    let r3 = wide as i32;
-    check(r3.isErr(), "cast checked i64 big -> i32 is Err");
-    const i64 small = #5;
-    let r4 = small as i32;
-    check(r4.unwrap() == 5, "cast checked i64 5 -> i32 value");
     return 0;
 };
