@@ -35,6 +35,7 @@ PASS_PROGRAMS = [
     "mod_values",
     "compare_values",
     "cast_values",
+    "cast_wrap",
     "cast_extra",
 ]
 

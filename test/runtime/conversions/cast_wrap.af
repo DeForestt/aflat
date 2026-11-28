@@ -1,0 +1,12 @@
+.needs <std>
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn main() -> int {
+    const u32 big32 = 4000000000;
+    check((big32 as wrap i32) == -294967296, "cast wrap u32 -> i32 bits");
+    check((-10 as wrap u32) == 4294967286, "cast wrap constant");
+    return 0;
+};
