@@ -34,6 +34,12 @@ PASS_PROGRAMS = [
     "mixed_values",
     "mod_values",
     "compare_values",
+    "cast_values",
+    "cast_probe",
+    "cast_checked1",
+    "cast_checked2",
+    "cast_wrap",
+    "cast_extra",
 ]
 
 FAIL_PROGRAMS = {
@@ -193,6 +199,22 @@ FULL_FAIL_PROGRAMS = {
         "    return 0;\n"
         "};\n",
         ["no integer type can represent"],
+    ),
+    "cast_constant_negative_to_unsigned": (
+        ".needs <std>\n"
+        "fn main() -> int {\n"
+        "    let n = -10 as u32;\n"
+        "    return 0;\n"
+        "};\n",
+        ["checked conversion of constant", "always fails"],
+    ),
+    "cast_constant_too_big_for_byte": (
+        ".needs <std>\n"
+        "fn main() -> int {\n"
+        "    let n = 300 as byte;\n"
+        "    return 0;\n"
+        "};\n",
+        ["checked conversion of constant", "always fails"],
     ),
 }
 

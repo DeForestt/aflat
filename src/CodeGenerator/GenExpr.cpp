@@ -1186,6 +1186,9 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
     output.access = registers()["%xmm0"]->get(asmc::DWord);
     output.size = asmc::DWord;
     output.type = "float";
+  } else if (dynamic_cast<ast::ExplicitCast *>(expr) != nullptr) {
+    output = this->genExplicitCast(dynamic_cast<ast::ExplicitCast *>(expr),
+                                   OutputFile);
   } else if (dynamic_cast<ast::DeReference *>(expr)) {
     ast::DeReference deRef = *dynamic_cast<ast::DeReference *>(expr);
 
@@ -1200,26 +1203,47 @@ gen::Expr gen::CodeGenerator::GenExpr(ast::Expr *expr, asmc::File &OutputFile,
 
     gen::Symbol *sym = &std::get<1>(resolved);
 
-    asmc::Mov *mov = new asmc::Mov();
-    asmc::Mov *mov2 = new asmc::Mov();
+    // An `as` on an integer-typed variable is the explicit conversion
+    // (design section 4), not a dereference: the variable's value is
+    // converted, not read through. adr-typed variables (and
+    // references) keep the dereference below.
+    const bool divertToCast =
+        !sym->type.isReference &&
+        gen::utils::classifiableIntType(sym->type.typeName) != nullptr &&
+        gen::utils::classifiableIntType(deRef.type.typeName) != nullptr;
+    if (divertToCast) {
+      auto *varExpr = new ast::Var();
+      varExpr->Ident = deRef.Ident;
+      varExpr->modList = deRef.modList;
+      varExpr->logicalLine = deRef.logicalLine;
+      auto *cast = new ast::ExplicitCast();
+      cast->logicalLine = deRef.logicalLine;
+      cast->expr = varExpr;
+      cast->targetType = deRef.type.typeName;
+      cast->wrap = false;
+      output = this->genExplicitCast(cast, OutputFile);
+    } else {
+      asmc::Mov *mov = new asmc::Mov();
+      asmc::Mov *mov2 = new asmc::Mov();
 
-    mov->logicalLine = logicalLine();
-    mov2->logicalLine = logicalLine();
+      mov->logicalLine = logicalLine();
+      mov2->logicalLine = logicalLine();
 
-    mov->size = asmc::QWord;
-    mov->from = std::get<0>(resolved);
-    mov->to = registers()["%rax"]->get(asmc::QWord);
+      mov->size = asmc::QWord;
+      mov->from = std::get<0>(resolved);
+      mov->to = registers()["%rax"]->get(asmc::QWord);
 
-    mov2->from = "(" + registers()["%rax"]->get(asmc::QWord) + ")";
-    mov2->size = deRef.type.size;
-    mov2->to = registers()["%rax"]->get(deRef.type.size);
+      mov2->from = "(" + registers()["%rax"]->get(asmc::QWord) + ")";
+      mov2->size = deRef.type.size;
+      mov2->to = registers()["%rax"]->get(deRef.type.size);
 
-    output.access = mov2->to;
-    output.size = mov2->size;
-    output.type = deRef.type.typeName;
+      output.access = mov2->to;
+      output.size = mov2->size;
+      output.type = deRef.type.typeName;
 
-    OutputFile.text << mov;
-    OutputFile.text << mov2;
+      OutputFile.text << mov;
+      OutputFile.text << mov2;
+    }
   } else if (dynamic_cast<ast::Compound *>(expr) != nullptr) {
     ast::Compound comp = *dynamic_cast<ast::Compound *>(expr);
     asmc::File Dummy = asmc::File();

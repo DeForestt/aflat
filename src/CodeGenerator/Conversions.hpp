@@ -64,6 +64,11 @@ std::string implicitConversionDiagnostic(const std::string &srcName,
 // Diagnostic for a literal that does not fit its destination type.
 std::string literalRangeDiagnostic(std::int64_t value,
                                    const std::string &dstName);
+// Diagnostic for a checked conversion (explicit `as`) of a constant
+// that is out of range: the conversion is rejected at compile time.
+std::string checkedConstantDiagnostic(std::int64_t value,
+                                      const std::string &srcName,
+                                      const std::string &dstName);
 
 // One operand of a binary integer operation, resolved for the
 // common-type rule (design section 6). A literal operand participates

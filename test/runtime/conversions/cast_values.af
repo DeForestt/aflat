@@ -1,0 +1,34 @@
+.needs <std>
+import result from "Utils/result";
+import {accept, reject, resultWrapper} from "Utils/result" under res;
+import Error from "Utils/Error";
+import string from "String";
+import {str_comp} from "strings" under strings;
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn idI32(const i32 v) -> i32 { return v; };
+
+fn tryCast(const i32 v) -> u32! {
+    return (v as u32)!;
+};
+
+fn main() -> int {
+    // Lossless `as` is the plain converted value (no result wrapper).
+    const i8 s8 = -128;
+    check((s8 as i64) == #-128, "cast lossless i8 -> i64 plain");
+    const i32 n32 = -5;
+    check((n32 as long) == #-5, "cast lossless i32 -> long plain");
+    check((n32 as int) == -5, "cast identity i32 -> int plain");
+    const u32 big32 = 4000000000;
+    check((big32 as u64) == #4000000000, "cast lossless u32 -> u64 plain");
+    check((idI32(-99) as i64) == #-99, "cast call result -> i64 plain");
+
+    // Constants in range are plain values too.
+    check((5 as u32) == 5, "cast constant 5 -> u32 plain");
+    check((-10 as i64) == #-10, "cast constant -10 -> i64 plain");
+
+    return 0;
+};

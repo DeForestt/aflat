@@ -116,6 +116,18 @@ jobs:
         run: python3 test/runtime/conversions/run.py mod_values
       - name: Test integer conversions (comparisons)
         run: python3 test/runtime/conversions/run.py compare_values
+      - name: Test integer conversions (explicit casts)
+        run: python3 test/runtime/conversions/run.py cast_values
+      - name: Test integer conversions (cast probe)
+        run: python3 test/runtime/conversions/run.py cast_probe
+      - name: Test integer conversions (checked casts 1)
+        run: python3 test/runtime/conversions/run.py cast_checked1
+      - name: Test integer conversions (checked casts 2)
+        run: python3 test/runtime/conversions/run.py cast_checked2
+      - name: Test integer conversions (cast wrap)
+        run: python3 test/runtime/conversions/run.py cast_wrap
+      - name: Test integer conversions (cast deref and bubble)
+        run: python3 test/runtime/conversions/run.py cast_extra
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt

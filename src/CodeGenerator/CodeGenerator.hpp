@@ -79,6 +79,10 @@ public:
                             bool isDiv = false);
   gen::Expr genArithmetic(asmc::ArithInst *, ast::Compound compound,
                           asmc::File &OutputFile);
+  // Generate an explicit conversion (`expr as Type` / `as wrap`):
+  // the checked, wrapping, and dereference forms of design section
+  // 4. Implemented in GenCast.cpp.
+  gen::Expr genExplicitCast(ast::ExplicitCast *cast, asmc::File &OutputFile);
   // Emit the instructions that widen the integer value held in the
   // named register from the source type's width to the destination
   // type's width, preserving the value: sign-extend a signed source,
