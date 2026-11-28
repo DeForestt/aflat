@@ -140,8 +140,8 @@ gen::Expr gen::CodeGenerator::prepareCompound(ast::Compound compound,
                   gen::utils::operandDisplayName(leftInfo, expr1.type),
                   gen::utils::operandDisplayName(rightInfo, expr2.type)),
               true, __FILE__, __LINE__);
-      convertStagedOperand(OutputFile, "%rdi", expr1, leftInfo, *common);
-      convertStagedOperand(OutputFile, "%rdx", expr2, rightInfo, *common);
+      convertStagedOperand("%rdi", expr1, leftInfo, *common);
+      convertStagedOperand("%rdx", expr2, rightInfo, *common);
       gen::Expr result = expr1;
       result.size = gen::utils::toSize(common->widthBytes);
       result.type = gen::utils::commonResultName(
