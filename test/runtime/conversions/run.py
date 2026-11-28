@@ -198,7 +198,7 @@ FULL_FAIL_PROGRAMS = {
     "cast_constant_negative_to_unsigned": (
         ".needs <std>\n"
         "fn main() -> int {\n"
-        "    const n = -10 as u32;\n"
+        "    let n = -10 as u32;\n"
         "    return 0;\n"
         "};\n",
         ["checked conversion of constant", "always fails"],
@@ -206,7 +206,7 @@ FULL_FAIL_PROGRAMS = {
     "cast_constant_too_big_for_byte": (
         ".needs <std>\n"
         "fn main() -> int {\n"
-        "    const n = 300 as byte;\n"
+        "    let n = 300 as byte;\n"
         "    return 0;\n"
         "};\n",
         ["checked conversion of constant", "always fails"],
