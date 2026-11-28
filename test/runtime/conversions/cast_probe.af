@@ -16,7 +16,7 @@ fn main() -> int {
     const i32 five = 5;
     let r2 = five as u32;
     io.print("r2 built\n");
-    const i32 v2 = r2.unwrap();
+    const u32 v2 = r2.unwrap();
     io.print("r2 unwrapped\n");
     const i64 wide = #5000000000;
     let r3 = wide as i32;
