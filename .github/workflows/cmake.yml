@@ -81,8 +81,10 @@ jobs:
         run: python3 test/runtime/format_sized/run.py hand_t_str.af
       - name: Test sized type formatting (hand uni fUCstr t)
         run: python3 test/runtime/format_sized/run.py hand_t_uni.af
-      - name: Test integer conversions (signed declarations)
-        run: python3 test/runtime/conversions/run.py decl_signed
+      - name: Test integer conversions (sign extension declarations)
+        run: python3 test/runtime/conversions/run.py decl_sign_ext
+      - name: Test integer conversions (literal-led declarations)
+        run: python3 test/runtime/conversions/run.py decl_sign_lit
       - name: Test integer conversions (unsigned declarations)
         run: python3 test/runtime/conversions/run.py decl_unsigned
       - name: Test integer conversions (loaded declarations)

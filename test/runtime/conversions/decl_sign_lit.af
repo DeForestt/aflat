@@ -1,0 +1,18 @@
+.needs <std>
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn main() -> int {
+    // Literal-led negatives arrive by construction, not register luck.
+    const long ledLong = 0 - 5;
+    check(ledLong == #-5, "decl 0 - 5 -> long");
+    const i64 led64 = 0 - 5;
+    check(led64 == #-5, "decl 0 - 5 -> i64");
+
+    const i32 zi = 0;
+    const i64 ziWide = zi;
+    check(ziWide == #0, "decl i32 zero -> i64");
+    return 0;
+};

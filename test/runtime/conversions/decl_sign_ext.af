@@ -5,7 +5,7 @@ fn check(const bool cond, const adr label) -> void {
 };
 
 fn main() -> int {
-    // Signed widening preserves negative values (declarations).
+    // Direct variable-to-variable signed widening at declarations.
     const i8 a8 = -128;
     const i16 a8to16 = a8;
     check(a8to16 == -128, "decl i8 min -> i16");
@@ -35,21 +35,11 @@ fn main() -> int {
     const long legacyWide = legacy;
     check(legacyWide == #-5, "decl int -5 -> long");
 
-    // Literal-led negatives arrive by construction, not register luck.
-    const long ledLong = 0 - 5;
-    check(ledLong == #-5, "decl 0 - 5 -> long");
-    const i64 led64 = 0 - 5;
-    check(led64 == #-5, "decl 0 - 5 -> i64");
-
-    // Range-identical pairs across names need no code but must work.
+    // Range-identical pairs across names.
     const i64 wide = #-1234567890123456789;
     const isize wideAsSize = wide;
     check(wideAsSize == #-1234567890123456789, "decl i64 -> isize");
     const i64 backAgain = wideAsSize;
     check(backAgain == #-1234567890123456789, "decl isize -> i64");
-
-    const i32 zi = 0;
-    const i64 ziWide = zi;
-    check(ziWide == #0, "decl i32 zero -> i64");
     return 0;
 };

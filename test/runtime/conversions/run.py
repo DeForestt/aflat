@@ -22,7 +22,8 @@ AFLAT = ROOT / "bin" / "aflat"
 SUITE = Path(__file__).resolve().parent
 
 PASS_PROGRAMS = [
-    "decl_signed",
+    "decl_sign_ext",
+    "decl_sign_lit",
     "decl_unsigned",
     "decl_loaded",
     "assign_values",
