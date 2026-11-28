@@ -23,8 +23,15 @@ def main() -> int:
     except OSError as exc:
         print(f"::error title={title}::cannot read log: {exc}")
         return 0
-    picked = [ln for ln in lines
-              if "FAILED" in ln or "test cases:" in ln][:12]
+    picked = []
+    for i, ln in enumerate(lines):
+        if ("FAILED" in ln or "test cases:" in ln or "error" in ln.lower()):
+            picked.append(ln)
+            for nxt in lines[i + 1:i + 3]:
+                picked.append(nxt)
+        if len(picked) >= 14:
+            break
+    picked = picked[:14]
     if not picked:
         picked = [ln for ln in lines if ln.strip()][-6:]
     for ln in picked:
