@@ -1,0 +1,31 @@
+.needs <std>
+import result from "Utils/result";
+import {accept, reject, resultWrapper} from "Utils/result" under res;
+import Error from "Utils/Error";
+import string from "String";
+import {str_comp} from "strings" under strings;
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn tryCast(const i32 v) -> u32! {
+    return (v as u32)!;
+};
+
+fn main() -> int {
+    // adr operands keep the dereference meaning of `as`.
+    const adr p = af_malloc(16);
+    p =: 'A';
+    const adr q = p + 1;
+    q =: 'B';
+    check((p as char) == 'A', "cast adr deref bare");
+    check(((p + 1) as char) == 'B', "cast adr deref computed");
+
+    // A checked cast bubbles through a ! function.
+    let r9 = tryCast(-3);
+    check(r9.isErr(), "cast bubble err");
+    let r10 = tryCast(7);
+    check(r10.unwrap() == 7, "cast bubble ok");
+    return 0;
+};
