@@ -10,6 +10,8 @@ fn check(const bool cond, const adr label) -> void {
 };
 
 fn main() -> int {
+    const i32 neg = -10;
+    const i64 wide = #5000000000;
     const u64 zero64 = 0;
     const u64 huge = zero64 - 1;
     let r5 = huge as i64;
