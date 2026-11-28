@@ -2153,10 +2153,35 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
                dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
       auto asObject = *dynamic_cast<lex::LObj *>(tokens.peek());
       if (asObject.meta == "as") {
-        auto deRef = new ast::DeReference();
-        deRef->logicalLine = asObject.lineCount;
         tokens.pop();
-        if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+        // `as wrap` is the wrapping conversion, never a dereference:
+        // it applies to the identifier's value directly.
+        if (tokens.count > 0 &&
+            dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr &&
+            dynamic_cast<lex::LObj *>(tokens.peek())->meta == "wrap") {
+          tokens.pop();
+          auto wrapType = dynamic_cast<lex::LObj *>(tokens.pop());
+          if (wrapType == nullptr)
+            throw err::Exception(
+                "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+                " Expected typename after 'as wrap'");
+          if (this->typeList[wrapType->meta] == nullptr)
+            throw err::Exception(
+                "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
+                " Unknown Type " + wrapType->meta);
+          auto *varExpr = new ast::Var();
+          varExpr->Ident = obj.meta;
+          varExpr->modList = modList;
+          varExpr->logicalLine = asObject.lineCount;
+          auto *cast = new ast::ExplicitCast();
+          cast->logicalLine = asObject.lineCount;
+          cast->expr = varExpr;
+          cast->targetType = wrapType->meta;
+          cast->wrap = true;
+          output = cast;
+        } else if (dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+          auto deRef = new ast::DeReference();
+          deRef->logicalLine = asObject.lineCount;
           auto view = *dynamic_cast<lex::LObj *>(tokens.pop());
           deRef->Ident = obj.meta;
           deRef->modList = modList;
