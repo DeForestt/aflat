@@ -66,7 +66,7 @@ fn main() -> int {
 
     // Wrap: always the plain value at the destination width.
     check((neg as wrap u32) == 4294967286, "cast wrap i32 -10 -> u32");
-    check((wide as wrap i32) == 705032711, "cast wrap i64 -> i32 low bits");
+    check((wide as wrap i32) == 705032704, "cast wrap i64 -> i32 low bits");
     check((big32 as wrap i32) == -294967296, "cast wrap u32 -> i32 bits");
     check((-10 as wrap u32) == 4294967286, "cast wrap constant");
 
