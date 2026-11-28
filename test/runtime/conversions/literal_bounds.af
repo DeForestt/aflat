@@ -31,11 +31,16 @@ fn main() -> int {
     checkText(`v={u32hi}`, "v=4294967295", "literal u32 max");
     const i64 s64hi = #9223372036854775807;
     check(s64hi == #9223372036854775807, "literal i64 max");
-    const u64 u64mid = #18446744073709551615;
-    checkText(`v={u64mid}`, "v=18446744073709551615", "literal u64 max");
-    const usize usizeMid = #18446744073709551615;
+    // The u64/usize maxima are not writable as decimal literals (a
+    // decimal literal above INT64_MAX is a compile error by design);
+    // they are reached by wraparound, as in the sized-types suite.
+    const u64 zeroU = 0;
+    const u64 u64mid = zeroU - 1;
+    checkText(`v={u64mid}`, "v=18446744073709551615", "u64 max value");
+    const usize zeroS = 0;
+    const usize usizeMid = zeroS - 1;
     checkText(`v={usizeMid}`, "v=18446744073709551615",
-              "literal usize max");
+              "usize max value");
     const byte b200 = 200;
     check(b200 == 200, "literal byte 200");
     const byte bHash = #200;
