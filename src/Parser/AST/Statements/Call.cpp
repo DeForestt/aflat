@@ -1287,9 +1287,19 @@ gen::GenerationResult Call::generateAttempt(
       };
 
       if (!ensureAssignable(exp)) {
-        if (!canRetry) {
-          // An integer pair the classifier rejects gets the conversion
-          // diagnostic, not the generic irreconcilable-types error.
+        // An integer pair the classifier rejects gets the conversion
+        // diagnostic, not the generic irreconcilable-types error --
+        // but only once no further overload candidate can take the
+        // argument (a lone function still carries an overload table,
+        // so canRetry alone does not settle this).
+        bool hasNextOverload = false;
+        if (overloadTable != nullptr && currentOverloadIndex >= 0 &&
+            !overloadIdent.empty()) {
+          const std::string nextCandidate =
+              overloadIdent + "_ovl" + std::to_string(currentOverloadIndex + 1);
+          hasNextOverload = (*overloadTable)[nextCandidate] != nullptr;
+        }
+        if (!hasNextOverload) {
           if (const gen::utils::IntTypeInfo *paramInfo =
                   gen::utils::classifiableIntType(
                       func->argTypes.at(i).typeName)) {
