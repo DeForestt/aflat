@@ -155,6 +155,26 @@ FULL_FAIL_PROGRAMS = {
 }
 
 
+def annotate(title: str, text: str) -> None:
+    """Surface failure details as GitHub workflow annotations.
+
+    Actions logs are not readable in every environment; lines printed
+    in ::error:: workflow-command form become check-run annotations,
+    which are. Keep each failure to a handful of short lines.
+    """
+    def esc(s: str) -> str:
+        return (s.replace("%", "%25").replace("\r", "%0D")
+                 .replace("\n", "%0A"))
+    def esc_prop(s: str) -> str:
+        return esc(s).replace(":", "%3A").replace(",", "%2C")
+    lines = [ln for ln in text.splitlines() if ln.strip()][:10]
+    if not lines:
+        lines = ["(no output)"]
+    for ln in lines:
+        print(f"::error title={esc_prop(title)}::{esc(ln[:400])}",
+              flush=True)
+
+
 def write_project(project: Path, source: str) -> None:
     (project / "src").mkdir(parents=True)
     (project / "aflat.cfg").write_text(' {
@@ -184,6 +204,7 @@ def run_pass(name: str) -> bool:
         built = build(project)
         if built.returncode != 0:
             print(f"FAIL {name}: build failed\n{built.stdout}{built.stderr}")
+            annotate(f"conversions {name} build", built.stdout + built.stderr)
             return False
         ran = subprocess.run(
             [str(project / "bin" / "a.out")],
@@ -193,6 +214,8 @@ def run_pass(name: str) -> bool:
         if ran.returncode != 0:
             print(f"FAIL {name}: exited {ran.returncode}\n"
                   f"{ran.stdout}{ran.stderr}")
+            annotate(f"conversions {name} run (exit {ran.returncode})",
+                     ran.stdout + ran.stderr)
             return False
     print(f"PASS {name}")
     return True
@@ -211,10 +234,13 @@ def run_fail(name: str, body: str, needles: list, global_scope: bool) -> bool:
         output = built.stdout + built.stderr
         if built.returncode == 0:
             print(f"FAIL {name}: expected a compile error, build succeeded")
+            annotate(f"conversions {name}",
+                     "expected a compile error, build succeeded")
             return False
         missing = [n for n in needles if n not in output]
         if missing:
             print(f"FAIL {name}: diagnostic missing {missing}\n{output}")
+            annotate(f"conversions {name} missing {missing}", output)
             return False
     print(f"PASS {name}")
     return True
@@ -228,10 +254,13 @@ def run_full_fail(name: str, source: str, needles: list) -> bool:
         output = built.stdout + built.stderr
         if built.returncode == 0:
             print(f"FAIL {name}: expected a compile error, build succeeded")
+            annotate(f"conversions {name}",
+                     "expected a compile error, build succeeded")
             return False
         missing = [n for n in needles if n not in output]
         if missing:
             print(f"FAIL {name}: diagnostic missing {missing}\n{output}")
+            annotate(f"conversions {name} missing {missing}", output)
             return False
     print(f"PASS {name}")
     return True
