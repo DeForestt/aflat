@@ -108,7 +108,18 @@ jobs:
         run: python3 tools/afmt/src/test/cli_test.py
       - name: Test
         working-directory: ${{github.workspace}}/bin
-        run: ./a.test
+        run: |
+          set +e
+          ./a.test -r compact > test-out.txt 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then
+            grep -E "FAILED:|test cases:" test-out.txt | head -20 | \
+              sed -e 's/%/%25/g' -e 's/\r/%0D/g' | \
+              while IFS= read -r line; do
+                echo "::error title=unit test failure::$line"
+              done
+          fi
+          exit $status
 
   check-format:
     runs-on: ubuntu-24.04
