@@ -40,6 +40,14 @@ jobs:
           -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           -DAFLAT_NATIVE_BUILD=OFF
+      - name: DIAGNOSTIC syntax check (temporary)
+        run: |
+          for f in src/CodeGenerator/Conversions.cpp src/CodeGenerator/ExprArithmetic.cpp src/CodeGenerator/GenExpr.cpp test/test_Conversions.cpp test/test_SizedTypes.cpp; do
+            echo "=== $f"
+            g++ -fsyntax-only -std=c++17 -I src -I test "$f" 2>&1 | head -30
+          done > syntax-out.txt 2>&1
+          python3 test/ci_report.py syntax-out.txt "syntax check"
+          true
       - name: Build compiler
         run: cmake --build build --parallel "$(nproc)"
       - name: Compilation cache statistics
