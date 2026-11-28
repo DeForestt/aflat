@@ -439,6 +439,14 @@ Statement *deepCopy(const Statement *stmt) {
     copyExprFields(copy, bubble);
     return copy;
   }
+  if (auto cast = dynamic_cast<const ExplicitCast *>(stmt)) {
+    auto *copy = new ExplicitCast();
+    copy->expr = static_cast<Expr *>(deepCopy(cast->expr));
+    copy->targetType = cast->targetType;
+    copy->wrap = cast->wrap;
+    copyExprFields(copy, cast);
+    return copy;
+  }
   if (auto match = dynamic_cast<const Match *>(stmt)) {
     auto *copy = new Match();
     copy->expr = static_cast<Expr *>(deepCopy(match->expr));

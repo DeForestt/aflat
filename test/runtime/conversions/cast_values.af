@@ -1,0 +1,86 @@
+.needs <std>
+import result from "Utils/result";
+import Error from "Utils/Error";
+import string from "String";
+import {str_comp} from "strings" under strings;
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn idI32(const i32 v) -> i32 { return v; };
+
+fn tryCast(const i32 v) -> u32! {
+    return (v as u32)!;
+};
+
+fn main() -> int {
+    // Lossless `as` is the plain converted value (no result wrapper).
+    const i8 s8 = -128;
+    check((s8 as i64) == #-128, "cast lossless i8 -> i64 plain");
+    const i32 n32 = -5;
+    check((n32 as long) == #-5, "cast lossless i32 -> long plain");
+    check((n32 as int) == -5, "cast identity i32 -> int plain");
+    const u32 big32 = 4000000000;
+    check((big32 as u64) == #4000000000, "cast lossless u32 -> u64 plain");
+    check((idI32(-99) as i64) == #-99, "cast call result -> i64 plain");
+
+    // Constants in range are plain values too.
+    check((5 as u32) == 5, "cast constant 5 -> u32 plain");
+    check((-10 as i64) == #-10, "cast constant -10 -> i64 plain");
+
+    // Checked casts produce results.
+    const i32 neg = -10;
+    let r1 = neg as u32;
+    check(r1.isErr(), "cast checked i32 -10 -> u32 is Err");
+    check(strings.str_comp(
+              r1.unwrapErr().render().cstr(),
+              "Error: checked conversion failed: value -10 of type i32 is out of range for type u32 (range 0..4294967295)") == 1,
+          "cast checked error message");
+    const i32 five = 5;
+    let r2 = five as u32;
+    check(r2.isOk(), "cast checked i32 5 -> u32 is Ok");
+    check(r2.unwrap() == 5, "cast checked i32 5 -> u32 value");
+
+    // Narrowing and sign changes, in and out of range.
+    const i64 wide = #5000000000;
+    let r3 = wide as i32;
+    check(r3.isErr(), "cast checked i64 big -> i32 is Err");
+    const i64 small = #5;
+    let r4 = small as i32;
+    check(r4.unwrap() == 5, "cast checked i64 5 -> i32 value");
+    const u64 zero64 = 0;
+    const u64 huge = zero64 - 1;
+    let r5 = huge as i64;
+    check(r5.isErr(), "cast checked u64 max -> i64 is Err");
+    const u32 over = 3000000000;
+    let r6 = over as i32;
+    check(r6.isErr(), "cast checked u32 3e9 -> i32 is Err");
+    const u8 byteVal = 200;
+    let r7 = byteVal as i8;
+    check(r7.isErr(), "cast checked u8 200 -> i8 is Err");
+    const u8 byteOk = 100;
+    let r8 = byteOk as i8;
+    check(r8.unwrap() == 100, "cast checked u8 100 -> i8 value");
+
+    // Wrap: always the plain value at the destination width.
+    check((neg as wrap u32) == 4294967295, "cast wrap i32 -10 -> u32");
+    check((wide as wrap i32) == 705032711, "cast wrap i64 -> i32 low bits");
+    check((big32 as wrap i32) == -294967296, "cast wrap u32 -> i32 bits");
+    check((-10 as wrap u32) == 4294967295, "cast wrap constant");
+
+    // adr operands keep the dereference meaning of `as`.
+    const adr p = af_malloc(16);
+    p =: 'A';
+    const adr q = p + 1;
+    q =: 'B';
+    check((p as char) == 'A', "cast adr deref bare");
+    check(((p + 1) as char) == 'B', "cast adr deref computed");
+
+    // A checked cast bubbles through a ! function.
+    let r9 = tryCast(-3);
+    check(r9.isErr(), "cast bubble err");
+    let r10 = tryCast(7);
+    check(r10.unwrap() == 7, "cast bubble ok");
+    return 0;
+};

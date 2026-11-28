@@ -375,6 +375,23 @@ public:
   }
 };
 
+// An explicit conversion postfix: `expr as Type` (checked) or
+// `expr as wrap Type` (wrapping/truncating). Produced by the parser
+// for non-identifier primaries; identifier primaries keep producing
+// DeReference, whose code generation diverts integer-typed symbols
+// here (see GenExpr). On an adr operand `as` is a dereference read,
+// handled in the cast's code generation as well.
+class ExplicitCast : public Expr {
+public:
+  Expr *expr = nullptr;
+  std::string targetType;
+  bool wrap = false;
+
+  std::string toString() override {
+    return expr->toString() + (wrap ? " as wrap " : " as ") + targetType;
+  }
+};
+
 class CallExpr : public Expr {
 public:
   Call *call;

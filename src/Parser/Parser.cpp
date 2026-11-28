@@ -2406,6 +2406,38 @@ parse::Parser::Impl::parseExpr(links::LinkedList<lex::Token *> &tokens) {
         "Line: " + std::to_string(lex::tokenLine(tokens.peek())) +
         " Unknown Expr");
 
+  // Explicit conversion postfix, binding tighter than the compound
+  // operators below: `expr as Type` / `expr as wrap Type`. (A bare
+  // identifier primary has already consumed its `as` above, as a
+  // DeReference; code generation diverts integer-typed variables
+  // from there to the same cast.)
+  if (tokens.count > 0 && dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr) {
+    auto asObject = *dynamic_cast<lex::LObj *>(tokens.peek());
+    if (asObject.meta == "as") {
+      tokens.pop();
+      bool wrap = false;
+      if (tokens.count > 0 &&
+          dynamic_cast<lex::LObj *>(tokens.peek()) != nullptr &&
+          dynamic_cast<lex::LObj *>(tokens.peek())->meta == "wrap") {
+        tokens.pop();
+        wrap = true;
+      }
+      auto typeName = dynamic_cast<lex::LObj *>(tokens.pop());
+      if (typeName == nullptr)
+        throw err::Exception("Line: " + std::to_string(asObject.lineCount) +
+                             " Expected typename after 'as'");
+      if (this->typeList[typeName->meta] == nullptr)
+        throw err::Exception("Line: " + std::to_string(asObject.lineCount) +
+                             " Unknown Type " + typeName->meta);
+      auto cast = new ast::ExplicitCast();
+      cast->logicalLine = asObject.lineCount;
+      cast->expr = output;
+      cast->targetType = typeName->meta;
+      cast->wrap = wrap;
+      output = cast;
+    }
+  }
+
   if (tokens.count > 0)
     if (dynamic_cast<lex::OpSym *>(tokens.peek()) != nullptr) {
       auto sym = *dynamic_cast<lex::OpSym *>(tokens.peek());

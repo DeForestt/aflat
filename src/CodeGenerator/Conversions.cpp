@@ -122,6 +122,20 @@ std::string literalRangeDiagnostic(std::int64_t value,
   return message;
 }
 
+std::string checkedConstantDiagnostic(std::int64_t value,
+                                      const std::string &srcName,
+                                      const std::string &dstName) {
+  const IntTypeInfo *dst = intTypeInfo(dstName);
+  std::string message = "checked conversion of constant " +
+                        std::to_string(value) + " from " +
+                        displayName(srcName) + " to " + displayName(dstName) +
+                        " always fails: " + std::to_string(value) +
+                        " is outside the range of " + dstName;
+  if (dst != nullptr)
+    message += " (" + intTypeRange(*dst) + ")";
+  return message;
+}
+
 bool integerOperandInfo(ast::Expr *expr, const std::string &probedType,
                         OperandInfo &out) {
   std::int64_t literalValue = 0;
