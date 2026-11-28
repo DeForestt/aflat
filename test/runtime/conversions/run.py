@@ -176,14 +176,11 @@ def annotate(title: str, text: str) -> None:
 
 
 def write_project(project: Path, source: str) -> None:
+    # Same project shape as the other runtime suites (deque, vector,
+    # format_sized): an INI config and a pre-created bin directory.
     (project / "src").mkdir(parents=True)
-    (project / "aflat.cfg").write_text(' {
-        "name": "conversions-test",
-        "bin": "bin",
-        "src": "src",
-        "entry": "main.af",
-        "include": []
-    }')
+    (project / "bin").mkdir(parents=True)
+    (project / "aflat.cfg").write_text("[build]\nmain = main\n")
     (project / "src" / "main.af").write_text(source)
 
 
@@ -205,6 +202,11 @@ def run_pass(name: str) -> bool:
         if built.returncode != 0:
             print(f"FAIL {name}: build failed\n{built.stdout}{built.stderr}")
             annotate(f"conversions {name} build", built.stdout + built.stderr)
+            return False
+        if not (project / "bin" / "a.out").exists():
+            print(f"FAIL {name}: build produced no bin/a.out")
+            annotate(f"conversions {name} build",
+                     "build exited 0 but produced no bin/a.out")
             return False
         ran = subprocess.run(
             [str(project / "bin" / "a.out")],
@@ -296,4 +298,10 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except SystemExit:
+        raise
+    except Exception as exc:  # harness bug: surface it as an annotation
+        annotate("conversions harness", f"{type(exc).__name__}: {exc}")
+        raise
