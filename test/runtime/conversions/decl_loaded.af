@@ -1,0 +1,28 @@
+.needs <std>
+import vector from "Collections/Vector";
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn main() -> int {
+    // Values loaded from memory widen by the same rules.
+    let values = new vector::<i16>(2);
+    values.push_back(-30000);
+    values.push_back(30000);
+    const i16 loaded = values.get(0).unwrap();
+    const i64 loadedWide = loaded;
+    check(loadedWide == #-30000, "decl loaded i16 -> i64");
+    let uvalues = new vector::<u16>(1);
+    uvalues.push_back(65535);
+    const u16 loadedU = uvalues.get(0).unwrap();
+    const u32 loadedUWide = loadedU;
+    check(loadedUWide == 65535, "decl loaded u16 -> u32");
+
+    // adr sources declare into integer types under the legacy rules
+    // (design section 2.2 carve-out), not the classifier.
+    const adr p = af_malloc(64);
+    const long pBits = p;
+    check(pBits == p, "decl adr -> long keeps legacy rules");
+    return 0;
+};

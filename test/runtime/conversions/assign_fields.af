@@ -1,0 +1,23 @@
+.needs <std>
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+class Holder {
+    i64 wide = 0;
+    u32 count = 0;
+    fn init() -> Self { return my; };
+};
+
+fn main() -> int {
+    // Field assignment widens by the same rules as locals.
+    let holder = new Holder();
+    const i16 fieldSrc = -12345;
+    holder.wide = fieldSrc;
+    check(holder.wide == #-12345, "assign field i16 -> i64");
+    const u16 countSrc = 65535;
+    holder.count = countSrc;
+    check(holder.count == 65535, "assign field u16 -> u32");
+    return 0;
+};

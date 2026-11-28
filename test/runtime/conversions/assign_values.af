@@ -11,12 +11,6 @@ fn checkText(const uni_string actual, const adr expected,
     assert(strings.str_comp(actual.cstr(), expected) == 1, label);
 };
 
-class Holder {
-    i64 wide = 0;
-    u32 count = 0;
-    fn init() -> Self { return my; };
-};
-
 fn main() -> int {
     // Signed widening through assignment (no declaration zeroing here:
     // the value must be extended, not truncated or zero-filled).
@@ -55,15 +49,6 @@ fn main() -> int {
     mutable u16 w16 = 1;
     w16 = b8;
     check(w16 == 255, "assign u8 max -> u16");
-
-    // Field assignment widens by the same rules.
-    let holder = new Holder();
-    const i16 fieldSrc = -12345;
-    holder.wide = fieldSrc;
-    check(holder.wide == #-12345, "assign field i16 -> i64");
-    const u16 countSrc = 65535;
-    holder.count = countSrc;
-    check(holder.count == 65535, "assign field u16 -> u32");
 
     // Narrow literal assignment stores at the destination width even
     // when the literal is written with the long prefix.

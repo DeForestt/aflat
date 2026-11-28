@@ -1,0 +1,55 @@
+.needs <std>
+
+fn check(const bool cond, const adr label) -> void {
+    assert(cond, label);
+};
+
+fn main() -> int {
+    // Signed widening preserves negative values (declarations).
+    const i8 a8 = -128;
+    const i16 a8to16 = a8;
+    check(a8to16 == -128, "decl i8 min -> i16");
+    const i32 a8to32 = a8;
+    check(a8to32 == -128, "decl i8 min -> i32");
+    const i64 a8to64 = a8;
+    check(a8to64 == #-128, "decl i8 min -> i64");
+    const isize a8toSize = a8;
+    check(a8toSize == #-128, "decl i8 min -> isize");
+
+    const i16 a16 = -30000;
+    const i32 a16to32 = a16;
+    check(a16to32 == -30000, "decl i16 -> i32");
+    const i64 a16to64 = a16;
+    check(a16to64 == #-30000, "decl i16 -> i64");
+
+    const i32 negOne = -1;
+    const i64 negOne64 = negOne;
+    check(negOne64 == #-1, "decl i32 -1 -> i64");
+    const i32 mn = -2147483647;
+    const i32 i32min = mn - 1;
+    const i64 i32min64 = i32min;
+    check(i32min64 == #-2147483648, "decl i32 min -> i64");
+
+    // The motivating shape: an int variable declared into a long.
+    const int legacy = -5;
+    const long legacyWide = legacy;
+    check(legacyWide == #-5, "decl int -5 -> long");
+
+    // Literal-led negatives arrive by construction, not register luck.
+    const long ledLong = 0 - 5;
+    check(ledLong == #-5, "decl 0 - 5 -> long");
+    const i64 led64 = 0 - 5;
+    check(led64 == #-5, "decl 0 - 5 -> i64");
+
+    // Range-identical pairs across names need no code but must work.
+    const i64 wide = #-1234567890123456789;
+    const isize wideAsSize = wide;
+    check(wideAsSize == #-1234567890123456789, "decl i64 -> isize");
+    const i64 backAgain = wideAsSize;
+    check(backAgain == #-1234567890123456789, "decl isize -> i64");
+
+    const i32 zi = 0;
+    const i64 ziWide = zi;
+    check(ziWide == #0, "decl i32 zero -> i64");
+    return 0;
+};

@@ -81,14 +81,26 @@ jobs:
         run: python3 test/runtime/format_sized/run.py hand_t_str.af
       - name: Test sized type formatting (hand uni fUCstr t)
         run: python3 test/runtime/format_sized/run.py hand_t_uni.af
-      - name: Test integer conversions (declarations)
-        run: python3 test/runtime/conversions/run.py decl_values
+      - name: Test integer conversions (signed declarations)
+        run: python3 test/runtime/conversions/run.py decl_signed
+      - name: Test integer conversions (unsigned declarations)
+        run: python3 test/runtime/conversions/run.py decl_unsigned
+      - name: Test integer conversions (loaded declarations)
+        run: python3 test/runtime/conversions/run.py decl_loaded
       - name: Test integer conversions (assignments)
         run: python3 test/runtime/conversions/run.py assign_values
+      - name: Test integer conversions (field assignments)
+        run: python3 test/runtime/conversions/run.py assign_fields
       - name: Test integer conversions (literal bounds)
         run: python3 test/runtime/conversions/run.py literal_bounds
       - name: Test integer conversions (diagnostics)
         run: python3 test/runtime/conversions/run.py fails
+      - name: Test integer conversions (arguments)
+        run: python3 test/runtime/conversions/run.py arg_values
+      - name: Test integer conversions (returns)
+        run: python3 test/runtime/conversions/run.py return_values
+      - name: Test integer conversions (call and return diagnostics)
+        run: python3 test/runtime/conversions/run.py full_fails
       - name: Test owned errors
         run: python3 test/runtime/errors/run.py
       - name: Build afmt
