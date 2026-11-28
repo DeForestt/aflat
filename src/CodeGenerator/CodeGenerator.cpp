@@ -349,6 +349,14 @@ bool gen::CodeGenerator::canAssign(ast::Type type, std::string typeName,
     return true;
   if (type.typeName == "number" && gen::utils::isIntegerTypeName(typeName))
     return true;
+  // adr and usize are one canonical type (design section 2.2), so
+  // the pair stays mutually assignable at the type-name level, as
+  // the old alias clause had it. (The value boundaries exclude adr
+  // via classifiableIntType; canAssign sees only names, and the
+  // legacy rules below cover only an adr source, not this pair.)
+  if ((type.typeName == "adr" && typeName == "usize") ||
+      (type.typeName == "usize" && typeName == "adr"))
+    return true;
   // Typed integer-to-integer assignability is the conversion
   // classifier: identity (alias pairs included) and lossless
   // conversions are assignable. Checked-required conversions are not;
