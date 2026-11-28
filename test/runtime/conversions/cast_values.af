@@ -1,5 +1,6 @@
 .needs <std>
 import result from "Utils/result";
+import {accept, reject, resultWrapper} from "Utils/result" under res;
 import Error from "Utils/Error";
 import string from "String";
 import {str_comp} from "strings" under strings;
