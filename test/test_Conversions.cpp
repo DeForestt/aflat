@@ -89,7 +89,7 @@ TEST_CASE("integer literals parse at 64-bit precision", "[conversions]") {
   REQUIRE(parseIntLiteralValue("-2147483648") == INT32_MIN);
   REQUIRE(parseIntLiteralValue("0xFFFFFFFF") == 4294967295LL);
   REQUIRE_THROWS_WITH(parseIntLiteralValue("99999999999999999999"),
-                      Catch::Matchers::ContainsSubstring("signed 64-bit"));
+                      Catch::Matchers::Contains("signed 64-bit"));
 }
 
 TEST_CASE("conversion diagnostics name both types and the reason",
