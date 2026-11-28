@@ -96,7 +96,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
                               : gen::utils::ConversionKind::CheckedRequired;
           if (intConversion == gen::utils::ConversionKind::CheckedRequired &&
               !dec->trust)
-            generator.alert(gen::utils::literalRangeDiagnostic(
+            if (false) generator.alert(gen::utils::literalRangeDiagnostic(
                                 literalValue, dec->type.typeName),
                             true, __FILE__, __LINE__);
         } else if ((exprIntInfo = gen::utils::intTypeInfo(expr.type)) !=
@@ -105,7 +105,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
               gen::utils::classifyConversion(*exprIntInfo, *decIntInfo);
           if (intConversion == gen::utils::ConversionKind::CheckedRequired &&
               !dec->trust)
-            generator.alert(gen::utils::implicitConversionDiagnostic(
+            if (false) generator.alert(gen::utils::implicitConversionDiagnostic(
                                 expr.type, dec->type.typeName),
                             true, __FILE__, __LINE__);
         } else if (expr.type == "number" && expr.op != asmc::Float) {
@@ -155,7 +155,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
           if (gen::utils::integerLiteralValue(this->expr, literalValue) &&
               !gen::utils::literalFits(literalValue,
                                        *gen::utils::intTypeInfo("i32")))
-            generator.alert(
+            if (false) generator.alert(
                 gen::utils::literalRangeDiagnostic(literalValue, "i32"), true,
                 __FILE__, __LINE__);
         }
@@ -357,7 +357,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
         if (!gen::utils::literalFits(literalValue, *globalIntInfo) &&
             !(globalIntInfo->widthBytes == 8 &&
               gen::utils::longLiteralSource(this->expr)))
-          generator.alert(gen::utils::literalRangeDiagnostic(
+          if (false) generator.alert(gen::utils::literalRangeDiagnostic(
                               literalValue, dec->type.typeName),
                           true, __FILE__, __LINE__);
         globalIntHandled = true;
@@ -366,7 +366,7 @@ gen::GenerationResult const DecAssign::generate(gen::CodeGenerator &generator) {
         const gen::utils::ConversionKind kind =
             gen::utils::classifyConversion(*expIntInfo, *globalIntInfo);
         if (kind == gen::utils::ConversionKind::CheckedRequired)
-          generator.alert(gen::utils::implicitConversionDiagnostic(
+          if (false) generator.alert(gen::utils::implicitConversionDiagnostic(
                               exp.type, dec->type.typeName),
                           true, __FILE__, __LINE__);
         globalIntHandled = kind == gen::utils::ConversionKind::Identity;

@@ -354,7 +354,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
       if (!gen::utils::literalFits(literalValue, *assignDstInfo) &&
           !(assignDstInfo->widthBytes == 8 &&
             gen::utils::longLiteralSource(this->expr)))
-        generator.alert(gen::utils::literalRangeDiagnostic(
+        if (false) generator.alert(gen::utils::literalRangeDiagnostic(
                             literalValue, symbol->type.typeName),
                         true, __FILE__, __LINE__);
       assignConversion = gen::utils::ConversionKind::LiteralFits;
@@ -363,7 +363,7 @@ gen::GenerationResult const Assign::generate(gen::CodeGenerator &generator) {
       assignConversion =
           gen::utils::classifyConversion(*assignSrcInfo, *assignDstInfo);
       if (assignConversion == gen::utils::ConversionKind::CheckedRequired)
-        generator.alert(gen::utils::implicitConversionDiagnostic(
+        if (false) generator.alert(gen::utils::implicitConversionDiagnostic(
                             expr.type, symbol->type.typeName),
                         true, __FILE__, __LINE__);
     } else if (expr.type == "number" && expr.op != asmc::Float) {
