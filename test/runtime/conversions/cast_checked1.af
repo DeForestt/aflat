@@ -14,8 +14,9 @@ fn main() -> int {
     const i32 neg = -10;
     let r1 = neg as u32;
     check(r1.isErr(), "cast checked i32 -10 -> u32 is Err");
+    const let rendered = r1.unwrapErr().render();
     check(strings.str_comp(
-              r1.unwrapErr().render().cstr(),
+              rendered.cstr(),
               "Error: checked conversion failed: value -10 of type i32 is out of range for type u32 (range 0..4294967295)") == 1,
           "cast checked error message");
     const i32 five = 5;
